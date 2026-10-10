@@ -24,7 +24,7 @@ import PropostaAditivoPage from "./page";
 describe("proposta de aditivo — fiação das páginas dos painéis", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.sessao.mockResolvedValue({});
+    mocks.sessao.mockResolvedValue({ papeis: ["SECRETARIA_ACADEMICA"] });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
     mocks.efeitos.mockResolvedValue({ ok: false, erro: "Indisponível." });
     mocks.acerto.mockResolvedValue({ ok: false, erro: "Indisponível." });
@@ -43,5 +43,34 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
 
   it("sem páginas na URL: ambos na primeira", async () => {
     expect(await props({})).toEqual({ historico: { pagina: 1, paginaOriginais: 1 }, originais: { pagina: 1, paginaConferencias: 1 } });
+  });
+
+  // docs/42 L691 (docs/43 §6 item 7): a mensagem das taxas não tinha link, e os acertos são telas do Financeiro.
+  describe("acertos do Financeiro: link só para quem abre, motivo para a Secretaria", () => {
+    const comAcertos = () => {
+      mocks.efeitos.mockResolvedValue({ ok: true, dado: { vigenciaInicio: "2026-11-01T00:00:00.000Z", acertosTaxaAplicados: 0, efeitos: [], aplicacoesCampos: [], pendencias: [], aplicado: false,
+        primeiraMensalidade: { vencimentoProposto: "2026-11-10", cobranca: { id: "cobranca-interna", versao: 3 }, pendencia: "Acerto pendente." } } });
+      mocks.acerto.mockResolvedValue({ ok: true, dado: { estado: "PRONTA_PARA_SELECAO" } });
+    };
+    const html = async () => renderToStaticMarkup(await PropostaAditivoPage({ params: Promise.resolve({ id: "m1", propostaId: "p1" }), searchParams: Promise.resolve({}) }));
+
+    it("Secretaria: sem link para /financeiro; diz quem faz e o que fazer", async () => {
+      comAcertos();
+      const tela = await html();
+      expect(tela).not.toContain('href="/financeiro');
+      expect(tela).toContain("O acerto do vencimento da primeira mensalidade é feito pelo Financeiro");
+      expect(tela).toContain("A consulta individual das taxas está disponível para o Financeiro");
+      expect(tela).toContain("Cobrança de origem: a primeira mensalidade emitida, na versão 3.");
+      expect(tela).not.toContain("cobranca-interna");
+    });
+
+    it("Administração: os links dos dois acertos, inclusive o das taxas que faltava", async () => {
+      mocks.sessao.mockResolvedValue({ papeis: ["ADMINISTRADOR"] });
+      comAcertos();
+      const tela = await html();
+      expect(tela).toContain('href="/financeiro/acertos-vencimento/m1/p1"');
+      expect(tela).toContain('href="/financeiro/acertos-taxa/m1/p1">Abrir o acerto das taxas no Financeiro</a>');
+      expect(tela).not.toContain("Avise o Financeiro");
+    });
   });
 });

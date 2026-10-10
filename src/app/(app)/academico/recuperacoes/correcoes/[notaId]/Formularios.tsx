@@ -35,7 +35,7 @@ export function Revisar({ propostaId }: { propostaId: string }) {
     {revisao && <><p>Nota vigente: {revisao.anterior.nota}. Proposta: {revisao.proposta.nota}.</p>
       <p>{revisao.impactos.planos.length} plano(s) aprovado(s) de recuperação vinculado(s) serão conferidos contra o resultado corrigido nas próximas operações.</p>
       <p>{revisao.impactos.mudancas.length} mudança(s) de nível aprovada(s) ou executada(s) exigirão revisão, sem movimentação automática do aluno.</p>
-      <ul>{revisao.impactos.mudancas.map(m => <li key={m.id}>Solicitação {m.id}: {rotular(STATUS_MUDANCA_ACADEMICA_LABEL, m.status)}</li>)}</ul>
+      <ul>{revisao.mudancasLegiveis.map(m => <li key={m.id}>Mudança para a turma {m.turmaDestino}: {rotular(STATUS_MUDANCA_ACADEMICA_LABEL, m.status)}</li>)}</ul>
       {!revisao.podeAprovar && <p>Esta proposta não pode ser aprovada no estado atual. Confira a versão vigente.</p>}
       <Formulario titulo="Registrar decisão" executar={d => decidirCorrecaoRecuperacao({ propostaId, propostaHash: revisao.propostaHash, impactosHash: revisao.impactosHash, aprovada: campo(d,"decisao") === "aprovar", motivo: campo(d,"motivo") })}>
         <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="aprovar" disabled={!revisao.podeAprovar}>Aprovar e aplicar</option><option value="rejeitar">Rejeitar</option></select></label>

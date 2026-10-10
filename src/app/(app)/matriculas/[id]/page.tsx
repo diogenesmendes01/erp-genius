@@ -11,7 +11,7 @@ export default async function MatriculaHubPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const { usuario, cabecalho } = await carregarCabecalho(id);
   if (!cabecalho) notFound();
-  const secoes = secoesParaPapeis(usuario.papeis, id);
+  const secoes = secoesParaPapeis(usuario.papeis, id, cabecalho.alunoId);
 
   return (
     <div className="space-y-4">

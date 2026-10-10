@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { consultarCabecalhoMatricula } from "@/server/matricula/cabecalho";
 import { consultarFechamentosHoras } from "@/server/matricula/fechamento-horas-consulta";
 import { PrepararFechamento } from "./PrepararFechamento";
 import { DecidirFechamento } from "./DecidirFechamento";
@@ -27,11 +28,14 @@ const data = (s: string) => s.split("-").reverse().join("/");
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>;
   searchParams: Promise<{ aluno?: string; cursor?: string; versao?: string }> }) {
-  await exigirSessaoPagina(Papel.FINANCEIRO);
+  const usuario = await exigirSessaoPagina(Papel.FINANCEIRO);
   const { id } = await params, q = await searchParams;
-  if (!q.aluno) return <p role="alert">Abra os fechamentos pela ficha financeira da matrícula.</p>;
+  // Sem ?aluno= (favorito, histórico, URL digitada) a página era um beco (docs/42 L905): o aluno sai da própria
+  // matrícula, com o alcance do cabeçalho de /matriculas/[id]. Fora do alcance, o motivo e uma saída.
+  const alunoId = q.aluno || (await consultarCabecalhoMatricula(usuario, id))?.alunoId;
+  if (!alunoId) return <section className="space-y-3"><p role="alert">Matrícula não encontrada no seu alcance; não há fechamentos por hora para consultar.</p><Link href="/financeiro" className="underline">Ir para o Financeiro</Link></section>;
   const [r, preferencia] = await Promise.all([
-    consultarFechamentosHoras({ alunoId: q.aluno, matriculaId: id, cursor: q.cursor, rascunhoId: q.versao }),
+    consultarFechamentosHoras({ alunoId, matriculaId: id, cursor: q.cursor, rascunhoId: q.versao }),
     consultarPreferenciaFusoEquipe(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
@@ -43,7 +47,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   };
   return <div className="space-y-4">
     <Link href={`/matriculas/${id}/ocorrencias-financeiras`} className="underline">Conferência das particulares</Link>
-    <h1 className="text-2xl">Fechamentos por hora · {d.matricula.codigo ?? id}</h1>
+    <h1 className="text-2xl">Fechamentos por hora · {d.matricula.codigo ?? "matrícula sem código"}</h1>
     <p>Histórico dos rascunhos de apuração. Salvar uma versão não aprova condições, emite cobrança ou confirma pagamento.</p>
     {!q.versao && <PrepararFechamento alunoId={d.matricula.alunoId} matriculaId={id} />}
     {q.versao && <Link href={base} className="underline">Todas as versões</Link>}
@@ -70,7 +74,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <p>Escolha proposta: {v.referenciaProposta.escolha === "AGUARDAR" ? "aguardar conferências pendentes" : "emissão parcial sujeita à aprovação"}.</p></>}
         {v.decisao && <p>Decisão: {v.decisao.aprovada ? "proposta aprovada" : "proposta rejeitada"} por {v.decisao.decisor.nome}. {v.decisao.motivo} A decisão não comprova emissão.</p>}
         {v.emissao && <div className="rounded border p-3">
-          <h3 className="font-medium">Cobrança emitida · {v.emissao.cobranca.codigo ?? v.emissao.cobranca.id}</h3>
+          <h3 className="font-medium">Cobrança emitida · {v.emissao.cobranca.codigo ?? "sem código"}</h3>
           <p>Emitida por {v.emissao.executor.nome} em {instanteAdministrativo(v.emissao.criadaEm)}.</p>
           <p>Valor original: {formatarMoeda(v.emissao.cobranca.valorOriginal, v.emissao.cobranca.moeda)}. Valor atual: {formatarMoeda(v.emissao.cobranca.valorNegociado, v.emissao.cobranca.moeda)}. Saldo: {v.emissao.cobranca.saldo == null ? "a conferir" : formatarMoeda(v.emissao.cobranca.saldo, v.emissao.cobranca.moeda)}.</p>
           <Link className="underline" href={`/alunos/${d.matricula.alunoId}/financeiro`}>Consultar cobrança e recebimentos na ficha financeira</Link>
@@ -94,7 +98,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
             const cobrancaId = p.destinacao.tipo === "FATURADA" ? p.destinacao.cobrancaId : null;
             const anterior = cobrancaId ? d.cobrancasAnteriores.find(c => c.cobrancaId === cobrancaId) : null;
             return <li key={p.encontroId}>{encontro(p.encontroId)} · {p.destinacao.tipo === "FATURADA" ? "Já faturado em cobrança anterior" : "Destinação das horas antecipadas já conferida"}.
-              {anterior && <> <Link className="underline" href={`${base}&versao=${encodeURIComponent(anterior.rascunhoId)}`}>Consultar fechamento da cobrança {anterior.codigo ?? anterior.cobrancaId}</Link></>}
+              {anterior && <> <Link className="underline" href={`${base}&versao=${encodeURIComponent(anterior.rascunhoId)}`}>Consultar fechamento da cobrança {anterior.codigo ?? "sem código"}</Link></>}
             </li>;
           })}</ul>
           {m.data.apuracao.semCobranca.length > 0 && <ul>{m.data.apuracao.semCobranca.map(p => <li key={p.encontroId}>{instanteEncontro(p.origem.inicio)} · Sem cobrança: {rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, p.desfecho).toLowerCase()}.</li>)}</ul>}
