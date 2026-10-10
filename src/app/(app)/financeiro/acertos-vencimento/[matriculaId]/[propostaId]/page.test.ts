@@ -1,8 +1,9 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), versao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), versao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), cabecalho: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
+vi.mock("@/server/matricula/cabecalho", () => ({ consultarCabecalhoMatricula: mocks.cabecalho }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/lib/prisma", () => ({ prisma: { versaoCondicoesAditivo: { findFirst: mocks.versao } } }));
 vi.mock("@/server/contratos/vencimento-aditivo", () => ({ consultarVencimentosAditivo: mocks.consulta }));
@@ -11,13 +12,25 @@ import Page from "./page";
 const entrada = () => ({ params: Promise.resolve({ matriculaId: "m1", propostaId: "p1" }), searchParams: Promise.resolve({ pagina: "2" }) });
 const dado = () => ({ versao: 2, vigenciaInicio: "2026-09-01T00:00:00Z", revisaoHash: "hash", pagina: 2, temProxima: true,
  alvo: { podePreparar: true, vencimentoProposto: "2026-11-15", pendencia: "Conferir antes de aplicar", cobranca: { id: "c1" } },
- propostas: [{ id: "acerto1", estado: "APROVADA", fuso: "America/Sao_Paulo", vencimentoAnterior: "2026-10-15T12:00:00Z", vencimentoNovo: "2026-11-15T12:00:00Z", motivo: "Alteração <script>", evidencia: "Contrato conferido", podeDecidir: false, podeSolicitarAplicacao: true, decisao: { motivo: "Conferência independente" }, aplicadaEm: null as string | null }],
+ propostas: [{ id: "acerto1", estado: "APROVADA", criadaEm: "2026-09-10T15:00:00Z", fuso: "America/Sao_Paulo", vencimentoAnterior: "2026-10-15T12:00:00Z", vencimentoNovo: "2026-11-15T12:00:00Z", motivo: "Alteração <script>", evidencia: "Contrato conferido", podeDecidir: false, podeSolicitarAplicacao: true, decisao: { motivo: "Conferência independente" }, aplicadaEm: null as string | null }],
 });
 beforeEach(() => { vi.resetAllMocks(); mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } }); mocks.versao.mockResolvedValue({ id: "v1" }); mocks.consulta.mockResolvedValue({ ok: true, dado: dado() }); });
 it("nega acesso antes de consultar versão e histórico", async () => {
  mocks.sessao.mockRejectedValue(new Error("Sem acesso"));
  await expect(Page(entrada())).rejects.toThrow("Sem acesso");
  expect(mocks.versao).not.toHaveBeenCalled(); expect(mocks.consulta).not.toHaveBeenCalled(); expect(mocks.preferencia).not.toHaveBeenCalled();
+ expect(mocks.cabecalho).not.toHaveBeenCalled();
+});
+it("identifica aluno e matrícula pelo código; nem a matrícula nem a proposta saem como id (docs/43 §6 item 7)", async () => {
+ mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"] });
+ mocks.cabecalho.mockResolvedValue({ id: "m1", codigo: "M-000123", status: "ATIVA", alunoId: "a1", aluno: "Ana Silva", produto: "Inglês · Regular" });
+ const html = renderToStaticMarkup(await Page(entrada()));
+ expect(mocks.cabecalho).toHaveBeenCalledWith({ id: "fin", papeis: ["FINANCEIRO"] }, "m1");
+ expect(html).toContain('aria-label="Aluno e matrícula deste acerto"');
+ expect(html).toContain(">Ana Silva</a>");
+ expect(html).toContain("Matrícula: M-000123 · Inglês · Regular");
+ expect(html).toContain("Proposta de 10/09/2026, 09:00 (horário exibido em America/Costa_Rica; origem UTC) · ");
+ expect(html.replace(/href="[^"]*"/g, "")).not.toMatch(/Matrícula m1|acerto1/);
 });
 it("consulta matrícula/proposta exatas e renderiza aplicação sem oferecer decisão", async () => {
  const html = renderToStaticMarkup(await Page(entrada()));

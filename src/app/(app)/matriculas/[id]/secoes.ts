@@ -10,7 +10,10 @@ import { Papel } from "@prisma/client";
 // pedagógica, mas a aba Contrato é só da Secretaria — ofertá-la levaria a uma página que eles não
 // abrem. Nessas URLs eles veem o cabeçalho sem aba marcada, e é intencional.
 
-export type SecaoMatricula = { caminho: string; rotulo: string; papeis: Papel[] };
+// `contextoAluno`: a página da seção lê o aluno da URL (`?aluno=`). A aba leva o aluno do cabeçalho e, sem ele,
+// não aparece — antes a aba "Fechamentos de horas" apontava para a rota sem `?aluno=` e caía no beco da própria
+// página (docs/42 L905; docs/43 §6 item 7).
+export type SecaoMatricula = { caminho: string; rotulo: string; papeis: Papel[]; contextoAluno?: true };
 
 const { VENDEDOR: VEND, GERENTE_COMERCIAL: GC, SECRETARIA_ACADEMICA: SEC, FINANCEIRO: FIN, GERENTE_PEDAGOGICO: GP, ADMINISTRADOR: ADM } = Papel;
 
@@ -30,16 +33,24 @@ export const SECOES_MATRICULA: SecaoMatricula[] = [
   { caminho: "disponibilidade-oferta", rotulo: "Disponibilidade", papeis: [SEC, GP, FIN] },
   { caminho: "indisponibilidade-oferta", rotulo: "Indisponibilidade", papeis: [SEC, GP, FIN, ADM] },
   { caminho: "ocorrencias-financeiras", rotulo: "Ocorrências financeiras", papeis: [FIN] },
-  { caminho: "fechamentos-horas", rotulo: "Fechamentos de horas", papeis: [FIN] },
+  { caminho: "fechamentos-horas", rotulo: "Fechamentos de horas", papeis: [FIN], contextoAluno: true },
   { caminho: "desistencia", rotulo: "Desistência", papeis: [SEC, ADM] },
 ];
 
 /** Papéis que abrem ao menos uma seção — o guard do layout e do hub. */
 export const PAPEIS_MATRICULA: Papel[] = [...new Set(SECOES_MATRICULA.flatMap((s) => s.papeis))];
 
-export function secoesParaPapeis(papeis: Papel[], matriculaId: string) {
+/**
+ * Abas do papel. A seção com `contextoAluno` leva `?aluno=` e acende pelo caminho (`prefixo`); sem `alunoId`
+ * ela fica de fora, em vez de oferecer um link que a página não abre.
+ */
+export function secoesParaPapeis(papeis: Papel[], matriculaId: string, alunoId?: string | null): { href: string; label: string; prefixo?: string }[] {
   const admin = papeis.includes(ADM);
   return SECOES_MATRICULA
     .filter((s) => admin || s.papeis.some((p) => papeis.includes(p)))
-    .map((s) => ({ href: `/matriculas/${matriculaId}/${s.caminho}`, label: s.rotulo }));
+    .filter((s) => !s.contextoAluno || !!alunoId)
+    .map((s) => {
+      const caminho = `/matriculas/${matriculaId}/${s.caminho}`;
+      return s.contextoAluno && alunoId ? { href: `${caminho}?aluno=${encodeURIComponent(alunoId)}`, label: s.rotulo, prefixo: caminho } : { href: caminho, label: s.rotulo };
+    });
 }

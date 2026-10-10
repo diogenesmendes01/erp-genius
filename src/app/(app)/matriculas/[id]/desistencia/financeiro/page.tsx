@@ -28,6 +28,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const d = resultado.dado;
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const instanteAdministrativo = (valor: Date | string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
+  // As memórias guardam o id da cobrança; a tela diz QUAL cobrança é — tipo, vencimento e valor, cruzando com
+  // as cobranças da matrícula já carregadas (docs/42 L798; docs/43 §6 item 7).
+  const rotuloCobranca = (cobrancaId: string) => {
+    const c = d.cobrancas.find(x => x.id === cobrancaId);
+    return c ? `${TIPO_COBRANCA_LABEL[c.tipo]} · vencimento ${formatarDataCivil(c.vencimento.slice(0, 10))} · ${formatarMoeda(c.valorNegociado, c.moeda)}` : "Cobrança fora da lista desta matrícula";
+  };
+  const alunoDoAcerto = acertoResultado.ok ? acertoResultado.dado?.matricula.alunoId ?? null : null;
   return <section className="space-y-5">
     <VoltarPara href="/financeiro/desistencias" />
     <h1 className="text-2xl font-medium">Conferência financeira da desistência · {d.matricula.codigo ?? "Matrícula"}</h1>
@@ -60,7 +67,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {acerto.propostas.map(proposta => <article key={proposta.id} className="space-y-3 rounded border p-4">
             <h3 className="font-medium">Memória versão {proposta.versao} de {proposta.preparadorNome} · {instanteAdministrativo(proposta.criadaEmISO)} ({fusoExibicao}; origem UTC)</h3>
             {proposta.anteriorId && <p>Reapresentada da versão anterior: {proposta.motivoReapresentacao}</p>}
-            <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Devido</th><th>Saldo</th><th>Crédito</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{formatarMoeda(item.devido, item.moeda)}</td><td>{formatarMoeda(item.saldoDevido, item.moeda)}</td><td>{formatarMoeda(item.creditoApurado, item.moeda)}</td></tr>)}</tbody></table>
+            <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Devido</th><th>Saldo</th><th>Crédito</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{rotuloCobranca(item.cobrancaId)}</td><td>{formatarMoeda(item.devido, item.moeda)}</td><td>{formatarMoeda(item.saldoDevido, item.moeda)}</td><td>{formatarMoeda(item.creditoApurado, item.moeda)}</td></tr>)}</tbody></table>
             {!proposta.decisao && proposta.podeDecidir && <DecidirAcertoContratualFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} />}
             {proposta.decisao && <p>{proposta.decisao.aprovada ? "Aprovada" : "Rejeitada"} por {proposta.decisao.decisorNome}: {proposta.decisao.motivo}</p>}
             {proposta.decisao?.aprovada && !proposta.decisao.aplicacao && !proposta.podeAplicar && <p role="status">A aplicação aguarda decisão administrativa aprovada para este pedido e a alçada da pessoa que aprovou a memória.</p>}
@@ -84,8 +91,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {!base.propostas.length && <EstadoVazio bloco>Nenhuma reconferência registrada.</EstadoVazio>}
           {base.propostas.map(proposta => <div key={proposta.id} className="space-y-3 border-t pt-3"><h4>Delta {proposta.versao} · {proposta.preparadorNome} · {rotular(ESTADO_RECONFERENCIA_DELTA_DESISTENCIA_LABEL, proposta.estado)}</h4><p>Preparada em {instanteAdministrativo(proposta.criadaEmISO)} ({fusoExibicao}; origem UTC).</p>
             {proposta.pendencia && <p role="status">{proposta.pendencia}</p>}
-            <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Ajuste devido</th><th>Ajuste saldo</th><th>Crédito novo</th><th>Redução bloqueada</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{item.cobrancaId}</td><td>{formatarMoeda(item.ajusteDevido, item.moeda)}</td><td>{formatarMoeda(item.ajusteSaldo, item.moeda)}</td><td>{formatarMoeda(item.creditoDelta, item.moeda)}</td><td>{formatarMoeda(item.reducaoCredito, item.moeda)}</td></tr>)}</tbody></table>
-            {proposta.creditosExternos.length > 0 && <table className="w-full text-left text-sm"><caption className="text-left font-medium">Créditos externos preservados nesta fotografia</caption><thead><tr><th>Crédito</th><th>Moeda</th><th>Saldo disponível</th></tr></thead><tbody>{proposta.creditosExternos.map(credito => <tr key={credito.id}><td>{credito.id}</td><td>{credito.moeda}</td><td>{formatarMoeda(credito.saldoDisponivel, credito.moeda)}</td></tr>)}</tbody></table>}
+            <table className="w-full text-left text-sm"><thead><tr><th>Cobrança</th><th>Ajuste devido</th><th>Ajuste saldo</th><th>Crédito novo</th><th>Redução bloqueada</th></tr></thead><tbody>{proposta.itens.map(item => <tr key={item.cobrancaId}><td>{rotuloCobranca(item.cobrancaId)}</td><td>{formatarMoeda(item.ajusteDevido, item.moeda)}</td><td>{formatarMoeda(item.ajusteSaldo, item.moeda)}</td><td>{formatarMoeda(item.creditoDelta, item.moeda)}</td><td>{formatarMoeda(item.reducaoCredito, item.moeda)}</td></tr>)}</tbody></table>
+            {proposta.creditosExternos.length > 0 && <table className="w-full text-left text-sm"><caption className="text-left font-medium">Créditos externos preservados nesta fotografia</caption><thead><tr><th>Crédito</th><th>Moeda</th><th>Saldo disponível</th></tr></thead><tbody>{proposta.creditosExternos.map((credito, indice) => <tr key={credito.id}><td>{alunoDoAcerto ? <Link className="underline" href={`/alunos/${alunoDoAcerto}/creditos/${credito.id}`}>Crédito {indice + 1}</Link> : `Crédito ${indice + 1}`}</td><td>{credito.moeda}</td><td>{formatarMoeda(credito.saldoDisponivel, credito.moeda)}</td></tr>)}</tbody></table>}
             {proposta.podeDecidirFinanceiro && <DecidirReconferenciaDeltaFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} administrativo={false} />}
             {proposta.podeDecidirAdministrativo && <DecidirReconferenciaDeltaFormulario propostaId={proposta.id} fotografiaHash={proposta.fotografiaHash} administrativo />}
             {proposta.decisaoFinanceira && <p>Decisão financeira: {proposta.decisaoFinanceira.aprovada ? "aprovada" : "rejeitada"} por {proposta.decisaoFinanceira.decisorNome}: {proposta.decisaoFinanceira.motivo}</p>}

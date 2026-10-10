@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { decidirSegundaChamada, proporSegundaChamada } from "@/server/avaliacoes/segunda-chamada";
 import { disponibilizarSegundaChamada } from "@/server/avaliacoes/segunda-chamada-disponibilizacao";
@@ -34,12 +34,14 @@ const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
 }).format(new Date(valor));
 
 export function SegundaChamadaPainel({
-  alocacaoId, codigoAvaliacao, itens, ativa, fuso, fusoEntrada,
+  alocacaoId, codigoAvaliacao, itens, ativa, bloqueio, fuso, fusoEntrada,
 }: {
   alocacaoId: string;
   codigoAvaliacao: string;
   itens: Item[];
   ativa: boolean;
+  /** No lugar do formulário quando `ativa` é falso: o motivo e o que fazer (docs/42 L1670). */
+  bloqueio?: ReactNode;
   fuso: string;
   fusoEntrada: string;
 }) {
@@ -61,6 +63,7 @@ export function SegundaChamadaPainel({
   const feedback = (grupo: string) => <FeedbackAcao erro={origem === grupo ? acao.erro : null} sucesso={origem === grupo ? acao.sucesso : null} />;
 
   return <div className="space-y-4">
+    {!ativa && bloqueio}
     {ativa && <form className="space-y-2 rounded border p-4" onSubmit={async evento => {
       evento.preventDefault();
       const elemento = evento.currentTarget;
@@ -147,7 +150,7 @@ export function SegundaChamadaPainel({
         {item.podeOperar && item.reserva && <div className="space-y-2">
           <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reserva.id)}/cancelamento`}>Propor ou conferir cancelamento da agenda</Link>
           <Link className="block underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reserva.id)}/remarcacao`}>Propor ou conferir remarcação da agenda</Link>
-          <p role="status">Reserva {item.reserva.status === "CONSUMIDA_FALTA" ? "consumida por falta; encontro não realizado" : item.reserva.status === "PENDENCIA_ESCOLA" ? "liberada sem consumo por impedimento da escola; revisão pendente" : rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, item.reserva.status)}. Encontro vinculado: {item.reserva.encontroId ?? "não informado"}.</p>
+          <p role="status">Reserva {item.reserva.status === "CONSUMIDA_FALTA" ? "consumida por falta; encontro não realizado" : item.reserva.status === "PENDENCIA_ESCOLA" ? "liberada sem consumo por impedimento da escola; revisão pendente" : rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, item.reserva.status)}. Encontro vinculado: {item.reserva.encontroId ? "registrado na agenda" : "não informado"}.</p>
           {item.reserva.status === "RESERVADA" && <FormularioOcorrencia reservaId={item.reserva.id} fuso={fusoEntrada} />}
         </div>}
       </article>)}

@@ -441,6 +441,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Registrar proposta → secundario/lg",
     "<button> Registrando… · Registrar decisão → secundario/lg",
   ],
+  "academico/reposicoes/page.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
   "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/FormularioOcorrencia.tsx": [
     "<button> Registrando… · Registrar ocorrência → secundario/lg",
   ],
