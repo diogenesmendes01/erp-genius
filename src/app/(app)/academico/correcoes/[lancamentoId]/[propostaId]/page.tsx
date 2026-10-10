@@ -16,7 +16,7 @@ export default async function RevisaoPage({ params }: { params: Promise<{ lancam
     <IdentificacaoAvaliacao dados={d.identificacao} />
     {d.notasPropostas.map(n => { const antes = d.notasVigentes.find(a => a.habilidade === n.habilidade); return <div key={n.habilidade} className="rounded border p-3"><p>{HABILIDADE_LABEL[n.habilidade]} — vigente: {antes?.nota}; proposta: {n.nota}</p><p className="whitespace-pre-wrap">Comentário vigente: {antes?.comentarioAluno || "Sem comentário"}</p><p className="whitespace-pre-wrap">Comentário proposto: {n.comentarioAluno || "Sem comentário"}</p></div>; })}
     <h2 className="text-xl font-medium">Mudanças acadêmicas que exigem revisão</h2>
-    {!d.impactos.length ? <EstadoVazio bloco>Nenhuma mudança aprovada ou executada identificada para este vínculo.</EstadoVazio> : <><p>A correção não desfaz a movimentação. Os casos abaixo precisam de revisão pedagógica.</p>{d.impactos.map(i => <p key={i.id}>Solicitação {i.id} — {i.status === "EXECUTADA" ? "Executada" : "Aprovada"}</p>)}</>}
+    {!d.impactos.length ? <EstadoVazio bloco>Nenhuma mudança aprovada ou executada identificada para este vínculo.</EstadoVazio> : <><p>A correção não desfaz a movimentação. Os casos abaixo precisam de revisão pedagógica.</p>{d.impactosLegiveis.map(i => <p key={i.id}>Mudança para a turma {i.turmaDestino} — {i.status === "EXECUTADA" ? "executada" : "aprovada"}</p>)}</>}
     {!d.podeAprovar && <p role="status">Esta proposta não está disponível para aprovação. Pode já ter sido decidida, ter uma versão ou origem mais recente, ou exigir outro aprovador.</p>}
     {d.podeDecidir && <DecidirCorrecao propostaId={propostaId} propostaHash={d.propostaHash} impactosHash={d.impactosHash} podeAprovar={d.podeAprovar} />}
   </section>;

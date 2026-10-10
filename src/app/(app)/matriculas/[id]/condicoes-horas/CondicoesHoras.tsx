@@ -25,7 +25,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
   const instanteAdministrativo = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; };
   const vigencia = (valor: string) => { const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, d.fuso ?? "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; referência contratual preservada)`; };
   return <div className="space-y-4">
-    <p>Matrícula {d.codigo ?? d.matriculaId} · {d.moeda}</p>
+    <p>Matrícula {d.codigo ?? "sem código"} · {d.moeda}</p>
     <MensagemStatus texto={d.impedimento} />
     {d.podePreparar && d.documentoId && d.fuso && <form className="space-y-3 rounded border p-4" onSubmit={async event => {
       event.preventDefault(); const f = new FormData(event.currentTarget);

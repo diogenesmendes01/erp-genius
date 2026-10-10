@@ -10,6 +10,7 @@ import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 import { carregarImpactosProgressaoPorAproveitamentoTx } from "./impactos-progressao-tx";
+import { impactosLegiveisTx } from "./impactos-legiveis";
 import { registrarCasosRevisaoProgressaoTx } from "./casos-revisao-progressao-tx";
 
 const id = z.string().min(1).max(100), motivo = z.string().trim().min(5).max(2000);
@@ -105,7 +106,9 @@ export async function revisarCorrecaoRecuperacao(propostaId: string) {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     return prisma.$transaction(async tx => {
       const v = await revisar(tx, u.id, id.parse(propostaId));
-      return { propostaId: v.p.id, propostaHash: v.p.entradaHash, anterior: v.r.vigente, proposta: { nota: v.p.nota, comentarioAluno: v.p.comentarioAluno, motivo: v.p.motivo }, impactos: v.impactos, impactosHash: v.impactosHash, podeAprovar: v.podeAprovar };
+      return { propostaId: v.p.id, propostaHash: v.p.entradaHash, anterior: v.r.vigente, proposta: { nota: v.p.nota, comentarioAluno: v.p.comentarioAluno, motivo: v.p.motivo }, impactos: v.impactos, impactosHash: v.impactosHash, podeAprovar: v.podeAprovar,
+        // Texto legível de cada mudança impactada (turma de destino pelo código); `impactos` segue o recorte do hash.
+        mudancasLegiveis: await impactosLegiveisTx(tx, v.impactos.mudancas) };
     });
   });
 }

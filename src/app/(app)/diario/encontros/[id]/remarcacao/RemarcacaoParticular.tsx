@@ -31,7 +31,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir e submeter proposta</button>
     </fieldset></form>}
     {dados.propostas.map(p => <article key={p.id} className="space-y-2 rounded border p-3">
-      <p>{p.entrada.data} às {p.entrada.horario} · {p.entrada.fuso}</p><p>Professor: {dados.professores.find(x => x.id === p.entrada.professorId)?.nome ?? p.entrada.professorId}</p>
+      <p>{p.entrada.data} às {p.entrada.horario} · {p.entrada.fuso}</p><p>Professor: {dados.professores.find(x => x.id === p.entrada.professorId)?.nome ?? "professor fora da lista"}</p>
       <p>{p.entrada.evidenciaEscolha}</p><p>{p.entrada.motivo}</p>
       {p.entrada.motivoExcecaoNaoLetiva && <p>Exceção não letiva incluída na aprovação: {p.entrada.motivoExcecaoNaoLetiva}</p>}
       {p.conferencia && <><p>Intervalo conferido: {formatarInstanteExibicao(p.conferencia.inicio, fusoExibicao, p.entrada.fuso).texto} até {formatarInstanteExibicao(p.conferencia.fim, fusoExibicao, p.entrada.fuso).texto} ({fusoExibicao}).</p>

@@ -38,7 +38,7 @@ export default async function MatriculaLayout({ children, params }: Props & { ch
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">{STATUS_MATRICULA_LABEL[cabecalho.status]}</span>
           <span className="text-gray-500">{cabecalho.produto}</span>
         </div>
-        <SubTabs tabs={secoesParaPapeis(usuario.papeis, id)} ariaLabel="Seções da matrícula" />
+        <SubTabs tabs={secoesParaPapeis(usuario.papeis, id, cabecalho.alunoId)} ariaLabel="Seções da matrícula" />
       </section>
       {children}
     </div>
