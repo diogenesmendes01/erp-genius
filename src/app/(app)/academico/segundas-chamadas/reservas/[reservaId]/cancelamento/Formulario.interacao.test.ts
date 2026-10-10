@@ -39,13 +39,13 @@ describe("Cancelamento de segunda chamada — prévia da conversão", () => {
   it("sem data digitada, nada a mostrar; com data em outro fuso, mostra o horário no fuso de exibição", () => {
     expect(previa()).toBeNull();
     digitarData("2026-09-22T11:00:00.000");
-    expect(previa()).toBe("Isso será 22/09/2026, 14:00 em São Paulo (America/Sao_Paulo), o fuso em que a tela exibe os horários.");
+    expect(previa()).toBe("Isso será 22/09/2026, 14:00 em America/Sao_Paulo, o fuso em que a tela exibe os horários.");
   });
 
   it("a prévia muda com o fuso: trocar para Manaus muda o horário; voltar ao fuso de exibição a esconde", () => {
     digitarData("2026-09-22T11:00");
     trocarFuso("America/Manaus");
-    expect(previa()).toContain("22/09/2026, 12:00 em São Paulo");
+    expect(previa()).toContain("22/09/2026, 12:00 em America/Sao_Paulo");
     trocarFuso("America/Sao_Paulo");
     expect(previa()).toBeNull();
   });

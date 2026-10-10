@@ -11,6 +11,8 @@ vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({
   consultarPreferenciaFusoEquipe: vi.fn().mockResolvedValue({ ok: true, dado: { fusoExibicao: null } }),
 }));
+// A página resolve o fuso inicial da remarcação (docs/43 §6 item 6): teste unitário nunca vai ao banco.
+vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: vi.fn().mockResolvedValue(null) }));
 vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) =>
     React.createElement("a", { href }, children),
