@@ -4,18 +4,20 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { listarLinhasConciliacaoFinanceira } from "@/server/migracao/consultas-financeiras";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
 import { STATUS_PROPOSTA_CONCILIACAO_FINANCEIRA_MIGRACAO_LABEL, rotular } from "@/lib/labels";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function FilaConciliacaoPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
+export default async function FilaConciliacaoPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.FINANCEIRO);
-  const { cursor } = await searchParams;
-  const resultado = await listarLinhasConciliacaoFinanceira({ cursor });
+  const pagina = lerPagina(await searchParams);
+  const resultado = await listarLinhasConciliacaoFinanceira({ pagina });
   return <section className="max-w-5xl space-y-4">
     <VoltarPara href="/financeiro" />
     <h1 className="text-xl font-medium">Conciliação financeira da migração</h1>
     <p>Confira as fontes históricas e proponha sua conciliação com o contrato correspondente. A proposta exige aprovação independente.</p>
     {!resultado.ok || !resultado.dado ? <p role="alert">{resultado.ok ? "Consulta sem resultado." : resultado.erro}</p> : <>
-      {resultado.dado.itens.length === 0 && (cursor
+      {resultado.dado.itens.length === 0 && (pagina > 1
         ? <EstadoVazio>Nenhuma linha financeira nesta página.</EstadoVazio>
         : <EstadoVazio>Nenhuma linha financeira da migração para conciliar.</EstadoVazio>)}
       <ul className="space-y-3">{resultado.dado.itens.map(linha => <li key={linha.id} className="rounded border p-4">
@@ -24,8 +26,7 @@ export default async function FilaConciliacaoPage({ searchParams }: { searchPara
         <p>{linha.propostasConciliacaoFinanceira[0] ? "Última proposta: " + rotular(STATUS_PROPOSTA_CONCILIACAO_FINANCEIRA_MIGRACAO_LABEL, linha.propostasConciliacaoFinanceira[0].status) : "Aguardando conferência"}</p>
         <Link href={"/financeiro/migracao/" + encodeURIComponent(linha.id)} className="text-brand-700 underline">Conferir linha</Link>
       </li>)}</ul>
-      {resultado.dado.proximoCursor && <Link href={"/financeiro/migracao?cursor=" + encodeURIComponent(resultado.dado.proximoCursor)}>Próximas linhas</Link>}
+      <Paginacao pagina={pagina} temProxima={resultado.dado.temProxima} href={(p) => hrefLista("/financeiro/migracao", { pagina: p })} rotulo="Páginas de linhas financeiras da migração" />
     </>}
-    {cursor && <Link href="/financeiro/migracao">Primeira página</Link>}
   </section>;
 }

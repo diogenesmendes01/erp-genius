@@ -20,7 +20,7 @@ const proposta = {
   estado: "APROVADA",
 };
 
-const resultado = { ok: true, dado: { itens: [proposta], proximoCursor: null } };
+const resultado = { ok: true, dado: { itens: [proposta], pagina: 1, temProxima: false } };
 
 describe("listagem de equivalências", () => {
   beforeEach(() => {
@@ -56,6 +56,31 @@ describe("listagem de equivalências", () => {
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
 
+  describe("paginação nos dois sentidos (E4)", () => {
+    const render = async (sp: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ matriculaId: "matricula/1", ...sp }) }));
+
+    it("primeira página: só Próxima, com a matrícula e sem link para si mesma", async () => {
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [proposta], pagina: 1, temProxima: true } });
+      const html = await render({});
+      expect(mocks.listar).toHaveBeenCalledWith({ matriculaId: "matricula/1", pagina: 1 });
+      expect(html).not.toContain("Anterior");
+      expect(html).not.toContain("pagina=1");
+      expect(html).toContain('href="/academico/equivalencias?matriculaId=matricula%2F1&amp;pagina=2">Próxima');
+    });
+
+    it("no meio: Anterior e Próxima na página certa, sem perder a matrícula; da segunda, Anterior volta sem ?pagina=1", async () => {
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [proposta], pagina: 3, temProxima: true } });
+      const meio = await render({ pagina: "3" });
+      expect(mocks.listar).toHaveBeenCalledWith({ matriculaId: "matricula/1", pagina: 3 });
+      expect(meio).toContain('href="/academico/equivalencias?matriculaId=matricula%2F1&amp;pagina=2">← Anterior');
+      expect(meio).toContain('href="/academico/equivalencias?matriculaId=matricula%2F1&amp;pagina=4">Próxima');
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [proposta], pagina: 2, temProxima: false } });
+      const segunda = await render({ pagina: "2" });
+      expect(segunda).toContain('href="/academico/equivalencias?matriculaId=matricula%2F1">← Anterior');
+      expect(segunda).not.toContain("Próxima");
+    });
+  });
+
   // Revisão R1 da #134 (B1/B5): a fila de autorizadas é recortada da página; a página 1 só afirma
   // "nenhuma nesta matrícula" quando a lista inteira coube nela.
   describe("autorizações aguardando execução — vazio", () => {
@@ -63,7 +88,7 @@ describe("listagem de equivalências", () => {
     const render = async (sp: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ matriculaId: "matricula-1", ...sp }) }));
 
     it("página 1 com mais páginas: não afirma ausência na matrícula", async () => {
-      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(50), proximoCursor: "p49" } });
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(50), pagina: 1, temProxima: true } });
       const html = await render({});
       expect(html).toContain("Nenhuma proposta autorizada entre as mais recentes. Confira as próximas propostas.");
       expect(html).not.toContain("nesta matrícula.");
@@ -71,23 +96,23 @@ describe("listagem de equivalências", () => {
     });
 
     it("página 1 com a lista inteira: afirma que nenhuma aguarda execução na matrícula", async () => {
-      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(2), proximoCursor: null } });
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(2), pagina: 1, temProxima: false } });
       expect(await render({})).toContain("Nenhuma proposta autorizada aguarda execução nesta matrícula.");
     });
 
     it("página seguinte: texto de página e volta ao início com a matrícula", async () => {
-      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(2), proximoCursor: null } });
-      const html = await render({ cursor: "p49" });
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: rejeitadas(2), pagina: 2, temProxima: false } });
+      const html = await render({ pagina: "2" });
       expect(html).toContain("Nenhuma proposta autorizada aguarda execução nesta página.");
       expect(html).toContain('<a class="inline-block underline" href="/academico/equivalencias?matriculaId=matricula-1">Ir para a primeira página</a>');
     });
 
     it("página vazia: só o vazio da lista, sem o da fila (e página seguinte não afirma ausência na matrícula)", async () => {
-      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [], proximoCursor: null } });
+      mocks.listar.mockResolvedValue({ ok: true, dado: { itens: [], pagina: 1, temProxima: false } });
       const primeira = await render({});
       expect(primeira).toContain("Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.");
       expect(primeira).not.toContain("Nenhuma proposta autorizada");
-      const seguinte = await render({ cursor: "p49" });
+      const seguinte = await render({ pagina: "2" });
       expect(seguinte).toContain("Nenhuma proposta de aproveitamento nesta página.");
       expect(seguinte).not.toContain("encontrada para esta matrícula");
     });

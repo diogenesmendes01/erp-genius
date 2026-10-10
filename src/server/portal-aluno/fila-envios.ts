@@ -3,9 +3,10 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroPermissao, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 
-const Entrada = z.object({ cursor: z.string().trim().min(1).max(100).optional() }).strict();
+const Entrada = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional() }).strict();
 
 export type ItemFilaEnviosPortalAluno = {
   id: string;
@@ -21,14 +22,15 @@ export type ItemFilaEnviosPortalAluno = {
 
 export type FilaEnviosPortalAluno = {
   itens: ItemFilaEnviosPortalAluno[];
-  proximoCursor: string | null;
+  pagina: number;
+  temProxima: boolean;
 };
 
-/** Visão operacional sem destinatário, token, link ou recibo do provedor. */
-export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } = {}) {
+/** Visão operacional sem destinatário, token, link ou recibo do provedor. Paginada por número (E4), em ordem de id. */
+export async function consultarFilaEnviosPortalAluno(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-    const dados = Entrada.parse(input);
+    const { pagina = 1 } = Entrada.parse(input);
     return prisma.$transaction(async (tx) => {
       const usuario = await tx.usuario.findUnique({
         where: { id: sessao.id },
@@ -38,10 +40,9 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
         papel === Papel.SECRETARIA_ACADEMICA || papel === Papel.ADMINISTRADOR,
       )) throw new ErroPermissao("Sua permissão mudou; inicie a operação novamente.");
 
-      const registros = await tx.solicitacaoEnvioPortalAluno.findMany({
-        ...(dados.cursor ? { where: { id: { gt: dados.cursor } } } : {}),
+      const lidos = await tx.solicitacaoEnvioPortalAluno.findMany({
         orderBy: { id: "asc" },
-        take: 21,
+        ...janelaDaPagina(pagina, 20),
         select: {
           id: true,
           finalidade: true,
@@ -52,7 +53,8 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
           conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, criadaEm: true, secretariaId: true, secretaria: { select: { nome: true } }, decisao: { select: { aprovada: true, decididaEm: true, solicitacaoReemitidaId: true } } } },
         },
       });
-      const itens = registros.slice(0, 20).map((registro) => ({
+      const { registros, temProxima } = recorteDaPagina(lidos, 20);
+      const itens = registros.map((registro) => ({
         id: registro.id,
         alunoNome: [registro.conta.aluno.primeiroNome, registro.conta.aluno.sobrenome].filter(Boolean).join(" "),
         finalidade: registro.finalidade,
@@ -63,10 +65,7 @@ export async function consultarFilaEnviosPortalAluno(input: { cursor?: string } 
         podeRegistrarEvidencia: usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA) || usuario.papeis.includes(Papel.ADMINISTRADOR),
         podeDecidirReemissao: usuario.papeis.includes(Papel.ADMINISTRADOR) && registro.conciliacoes[0]?.secretariaId !== sessao.id,
       })) satisfies ItemFilaEnviosPortalAluno[];
-      return {
-        itens,
-        proximoCursor: registros.length > 20 ? registros[19]!.id : null,
-      } satisfies FilaEnviosPortalAluno;
+      return { itens, pagina, temProxima } satisfies FilaEnviosPortalAluno;
     });
   });
 }

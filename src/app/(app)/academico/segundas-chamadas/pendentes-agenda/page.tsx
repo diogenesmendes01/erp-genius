@@ -6,6 +6,8 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
 const situacao = (valor: { pendente: boolean; saldo: number; statusMatricula: string; alocacaoAtiva: boolean; possuiReservaTerminal: boolean; possuiPendenciaEscola: boolean }) => {
   if (valor.possuiPendenciaEscola) return "Impedimento da escola pendente de revisão";
@@ -16,26 +18,15 @@ const situacao = (valor: { pendente: boolean; saldo: number; statusMatricula: st
   return "Disponibilizada para preparação";
 };
 
-function lerCursor(valor: string | undefined) {
-  if (!valor) return undefined;
-  try {
-    const cursor = JSON.parse(valor) as { criadaEm?: unknown; id?: unknown };
-    return typeof cursor.criadaEm === "string" && typeof cursor.id === "string" ? { criadaEm: cursor.criadaEm, id: cursor.id } : null;
-  } catch { return null; }
-}
-
-export default async function PendentesAgenda({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
+export default async function PendentesAgenda({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
-  const { cursor: cursorBruto } = await searchParams;
-  const cursor = lerCursor(cursorBruto);
-  if (cursor === null) return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">Cursor de fila inválido.</p></section>;
-  const [r, preferencia] = await Promise.all([listarSegundasChamadasSemAgenda(cursor ? { cursor } : {}), consultarPreferenciaFusoEquipe()]);
+  const pagina = lerPagina(await searchParams);
+  const [r, preferencia] = await Promise.all([listarSegundasChamadasSemAgenda({ pagina }), consultarPreferenciaFusoEquipe()]);
   if (!r.ok || !r.dado) return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p></section>;
   const d = r.dado;
   const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <section className="space-y-4">
     <VoltarPara href="/academico" />
-    {cursorBruto && <Link className="underline" href="/academico/segundas-chamadas/pendentes-agenda">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Segundas chamadas pendentes de agenda</h1><p>Prepare a prévia antes de propor uma agenda. A listagem não confirma disponibilidade de professor ou horário.</p></header>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma segunda chamada pendente de agenda foi encontrada.</EstadoVazio>}
     {d.itens.map(item => <article key={item.propostaSegundaChamadaId} className="space-y-2 rounded border p-4">
@@ -44,7 +35,7 @@ export default async function PendentesAgenda({ searchParams }: { searchParams: 
       <p>Prazo atual: {formatarInstanteExibicao(item.prazoAte, fuso, "UTC").texto} ({fuso}; origem UTC). Situação: {situacao(item.situacao)}.</p>
       <Preparo item={item} />
     </article>)}
-    {d.proximoCursor && <Link className="underline" href={`/academico/segundas-chamadas/pendentes-agenda?cursor=${encodeURIComponent(JSON.stringify(d.proximoCursor))}`}>Próximas pendências</Link>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista("/academico/segundas-chamadas/pendentes-agenda", { pagina: p })} rotulo="Páginas de segundas chamadas pendentes de agenda" />
   </section>;
 }
 

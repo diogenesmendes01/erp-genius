@@ -11,12 +11,14 @@ import { PreviaAgenda } from "./PreviaAgenda";
 import { AgendaPublicada } from "../../AgendaPublicada";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
-export default async function Operacao({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
+export default async function Operacao({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
   const { propostaId } = await params;
-  const { depoisId } = await searchParams;
+  const pagina = lerPagina(await searchParams);
   const [r, preferencia, fusoInstitucional] = await Promise.all([
-    consultarOperacaoRecuperacao({ propostaId, depoisId }),
+    consultarOperacaoRecuperacao({ propostaId, pagina }),
     consultarPreferenciaFusoEquipe(),
     consultarFusoInstitucional(),
   ]);
@@ -66,9 +68,9 @@ export default async function Operacao({ params, searchParams }: { params: Promi
       {reserva.podeCancelarPelaEscola && <CancelarPelaEscola reservaId={reserva.id} />}
       {d.podeGerirDesignacoes && <Link className="block underline" href={`/academico/recuperacoes/reservas/${encodeURIComponent(reserva.id)}/cancelamento`}>Propor ou revisar cancelamento de recuperação agendada</Link>}
     </article>)}
-    {!d.reservas.length && (depoisId
+    {!d.reservas.length && (pagina > 1
       ? <EstadoVazio bloco acao={<Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`}>Ir para a primeira página</Link>}>Nenhuma reserva nesta página.</EstadoVazio>
       : <EstadoVazio bloco>Nenhuma reserva registrada para este plano.</EstadoVazio>)}
-    {d.proximoId && <Link className="underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}?${new URLSearchParams({ depoisId: d.proximoId })}`}>Próximas reservas</Link>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista(`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}`, { pagina: p })} rotulo="Páginas de reservas do plano" />
   </section>;
 }

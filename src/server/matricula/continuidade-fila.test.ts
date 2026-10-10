@@ -6,6 +6,7 @@ vi.mock("@/server/_shared", async (original) => {
   return { ...real, exigirSessaoComPapel: m.sessao };
 });
 vi.mock("./continuidade-estado-tx", () => ({ carregarContinuidadeMensalTx: m.estado }));
+import { findManyOrdenado, idsEmOrdem, terminaNoId } from "@/test/consulta-paginada";
 import { consultarFilaContinuidadeMensal } from "./continuidade-fila";
 
 const linha = (id: string) => ({ id, codigo: `M-${id}`, aluno: { primeiroNome: "Ana", sobrenome: "Silva" } });
@@ -20,10 +21,26 @@ describe("consultarFilaContinuidadeMensal", () => {
     m.matriculas.mockResolvedValue(Array.from({ length: 21 }, (_, i) => linha(String(i).padStart(2, "0"))));
     const resultado = await consultarFilaContinuidadeMensal();
     if (!resultado.ok || !resultado.dado) throw new Error("Fila ausente");
-    expect(resultado.dado.proximoCursor).toBe("19");
+    expect(resultado.dado.temProxima).toBe(true);
+    expect(resultado.dado.pagina).toBe(1);
     expect(resultado.dado.itens).toHaveLength(20);
     expect(resultado.dado.itens[0]).toMatchObject({ matriculaId: "00", alunoNome: "Ana Silva", estado: "PRONTA", cobertura: { inicio: "2026-11-01" }, vencimento: "2026-11-05" });
-    expect(m.matriculas).toHaveBeenCalledWith(expect.objectContaining({ take: 21, orderBy: { id: "asc" } }));
+    expect(m.matriculas).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 21, orderBy: { id: "asc" } }));
+  });
+  it("pagina por número nos dois sentidos: ida e volta trazem as mesmas matrículas", async () => {
+    m.matriculas.mockImplementation(findManyOrdenado(idsEmOrdem(41).map(linha)));
+    const ler = async (pagina: number) => {
+      const r = await consultarFilaContinuidadeMensal({ pagina });
+      if (!r.ok || !r.dado) throw new Error("Fila ausente");
+      return r.dado;
+    };
+    const p1 = await ler(1), p2 = await ler(2), p3 = await ler(3), volta = await ler(2), inicio = await ler(1);
+    expect(terminaNoId(m.matriculas.mock.calls[0][0].orderBy)).toBe(true);
+    expect([p1.temProxima, p2.temProxima, p3.temProxima]).toEqual([true, true, false]);
+    expect(p3.itens.map((i) => i.matriculaId)).toEqual(["r40"]);
+    expect(volta.itens).toEqual(p2.itens);
+    expect(inicio.itens).toEqual(p1.itens);
+    expect(new Set([...p1.itens, ...p2.itens, ...p3.itens].map((i) => i.matriculaId)).size).toBe(41);
   });
   it("revalida papel no banco e não deixa papel revogado consultar", async () => {
     m.usuario.mockResolvedValue({ ativo: true, papeis: ["SECRETARIA_ACADEMICA"] });

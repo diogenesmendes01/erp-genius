@@ -3,15 +3,17 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 
 const entrada = z.object({
-  cursor: z.string().trim().min(1).max(100).optional(),
+  pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1),
 }).strict();
 
 /**
  * Fila administrativa de agendas de segunda chamada. A consulta não expõe
  * lançamentos, notas, prazos, motivos, evidências ou qualquer dado financeiro.
+ * Paginada por número (E4), em ordem estável (reservadaEm, id).
  */
 export async function listarAgendasSegundaChamada(input: z.input<typeof entrada> = {}) {
   return executarAcao(async () => {
@@ -22,31 +24,10 @@ export async function listarAgendasSegundaChamada(input: z.input<typeof entrada>
     );
     const d = entrada.parse(input);
     return prisma.$transaction(async (tx) => {
-      const escopo = { agenda: { isNot: null } };
-      const cursor = d.cursor
-        ? await tx.reservaSegundaChamada.findFirst({
-            where: { ...escopo, id: d.cursor },
-            select: { id: true, reservadaEm: true },
-          })
-        : null;
-      if (d.cursor && !cursor) {
-        throw new ErroRegra("O cursor não pertence à fila de agendas de segunda chamada.");
-      }
-
-      const reservas = await tx.reservaSegundaChamada.findMany({
-        where: {
-          ...escopo,
-          ...(cursor
-            ? {
-                OR: [
-                  { reservadaEm: { lt: cursor.reservadaEm } },
-                  { reservadaEm: cursor.reservadaEm, id: { lt: cursor.id } },
-                ],
-              }
-            : {}),
-        },
+      const lidas = await tx.reservaSegundaChamada.findMany({
+        where: { agenda: { isNot: null } },
         orderBy: [{ reservadaEm: "desc" }, { id: "desc" }],
-        take: 21,
+        ...janelaDaPagina(d.pagina, 20),
         select: {
           id: true,
           status: true,
@@ -73,8 +54,9 @@ export async function listarAgendasSegundaChamada(input: z.input<typeof entrada>
         },
       });
 
+      const { registros: reservas, temProxima } = recorteDaPagina(lidas, 20);
       return {
-        itens: reservas.slice(0, 20).map((reserva) => {
+        itens: reservas.map((reserva) => {
           const aluno = reserva.matricula.aluno;
           const nomeAluno = aluno.nomePreferido || [aluno.primeiroNome, aluno.sobrenome]
             .filter((parte): parte is string => Boolean(parte))
@@ -101,7 +83,8 @@ export async function listarAgendasSegundaChamada(input: z.input<typeof entrada>
               : null,
           };
         }),
-        proximoCursor: reservas.length > 20 ? reservas[19].id : null,
+        pagina: d.pagina,
+        temProxima,
       };
     });
   });

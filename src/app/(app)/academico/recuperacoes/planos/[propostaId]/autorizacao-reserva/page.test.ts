@@ -13,7 +13,8 @@ const dado = {
   propostaId: "proposta", propostaHash: "hash", statusMatricula: "PAUSADA", podeAutorizar: false, habilidades: [],
   identificacao: { aluno: "Ana", matriculaId: "matricula", matriculaCodigo: "M1", oferta: "Inglês", turma: "T1", nivel: "A1" },
   historico: [{ id: "autorizacao", habilidade: "FALA", autorizador: { nome: "Gestora" }, criadaEm: "2026-10-01T02:30:00.000Z", prazoAte: "2026-10-02T02:30:00.000Z", motivo: "Reserva autorizada.", reserva: null, podeReservar: false }],
-  proximoId: null,
+  pagina: 1,
+  temProxima: false,
 };
 
 describe("autorização de reserva de recuperação", () => {
@@ -37,6 +38,28 @@ describe("autorização de reserva de recuperação", () => {
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ propostaId: "proposta" }), searchParams: Promise.resolve({}) }));
     expect(html).toContain("01/10/2026, 02:30");
     expect(html).toContain("UTC; origem UTC");
+  });
+
+  it("paginação nos dois sentidos: primeira só com Próxima; no meio, as duas; da segunda, Anterior sem ?pagina=1", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+    const render = async (busca: Record<string, string>) => renderToStaticMarkup(await Page({ params: Promise.resolve({ propostaId: "proposta/1" }), searchParams: Promise.resolve(busca) }));
+    const base = "/academico/recuperacoes/planos/proposta%2F1/autorizacao-reserva";
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, temProxima: true } });
+    const primeira = await render({});
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ propostaId: "proposta/1", pagina: 1 });
+    expect(primeira).not.toContain("Anterior");
+    expect(primeira).not.toContain("pagina=1");
+    expect(primeira).toContain(`href="${base}?pagina=2">Próxima`);
+
+    const meio = await render({ pagina: "3" });
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ propostaId: "proposta/1", pagina: 3 });
+    expect(meio).toContain(`href="${base}?pagina=2">← Anterior`);
+    expect(meio).toContain(`href="${base}?pagina=4">Próxima`);
+
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, pagina: 2, temProxima: false } });
+    const segunda = await render({ pagina: "2" });
+    expect(segunda).toContain(`href="${base}">← Anterior`);
+    expect(segunda).not.toContain("Próxima");
   });
 
   it("executa a guarda antes de consultar dados ou preferência", async () => {

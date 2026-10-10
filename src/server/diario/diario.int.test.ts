@@ -167,7 +167,8 @@ describe("D08 — diário persistido, transferência e revogação", () => {
     expect(await listarExcecoesGravacao()).toMatchObject({ ok: true, dado: { itens: [{ id: p.dado.id, podeDecidir: false, decisao: null, diarioParaRevisao: null }] } });
     como(c.sucessor);
     expect(await listarExcecoesGravacao()).toMatchObject({ ok: true, dado: { itens: [] } });
-    expect((await listarExcecoesGravacao({ cursor: p.dado.id })).ok).toBe(false);
+    // A página é contada no escopo de quem consulta: nenhuma página mostra a exceção de outro professor.
+    expect(await listarExcecoesGravacao({ pagina: 2 })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false } });
     como(c.professor);
     await prisma.usuario.update({ where: { id: c.professor.id }, data: { papeis: ["PROFESSOR", "GERENTE_PEDAGOGICO"] } });
     const decisao = { excecaoId: p.dado.id, aprovar: true, motivo: "Evidências conferidas pela gestão" };

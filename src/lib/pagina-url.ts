@@ -10,10 +10,16 @@ function valor(p: ParametrosUrl, chave: string): string {
   return (Array.isArray(v) ? v[0] : v ?? "").trim();
 }
 
-/** Página da URL: inteiro 1..100000; qualquer outra coisa vira 1. */
-export function lerPagina(p: ParametrosUrl): number {
-  const n = Number(valor(p, "pagina") || 1);
-  return Number.isInteger(n) && n >= 1 && n <= 100000 ? n : 1;
+/** Maior página aceita na URL e nas consultas numeradas. */
+export const PAGINA_MAXIMA = 100000;
+
+/** Chave de número de página na URL: `pagina` e a de um segundo painel da mesma tela (`paginaPendencias`). */
+const CHAVE_DE_PAGINA = /^pagina([A-Z]\w*)?$/;
+
+/** Página da URL (`chave`, padrão `pagina`): inteiro 1..100000; qualquer outra coisa vira 1. */
+export function lerPagina(p: ParametrosUrl, chave = "pagina"): number {
+  const n = Number(valor(p, chave) || 1);
+  return Number.isInteger(n) && n >= 1 && n <= PAGINA_MAXIMA ? n : 1;
 }
 
 /** Texto livre da URL (busca), sem espaços nas pontas e com teto de tamanho. */
@@ -25,16 +31,31 @@ export function lerOpcao<T extends string>(p: ParametrosUrl, chave: string, opco
   return (opcoes as readonly string[]).includes(v) ? (v as T) : null;
 }
 
-/** Link da lista com os parâmetros preenchidos (vazios e página 1 ficam de fora). */
+/** Link da lista com os parâmetros preenchidos. Vazios ficam de fora, e a página 1 também (a de `pagina` e
+ * a de `paginaX` de um segundo painel): a primeira página não ganha `?pagina=1` para si mesma. */
 export function hrefLista(base: string, params: Record<string, string | number | null | undefined>): string {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v === null || v === undefined || v === "") continue;
-    if (k === "pagina" && Number(v) <= 1) continue;
+    if (CHAVE_DE_PAGINA.test(k) && Number(v) <= 1) continue;
     q.set(k, String(v));
   }
   const s = q.toString();
   return s ? `${base}?${s}` : base;
+}
+
+/**
+ * Janela de uma consulta numerada (E4, paginação nos dois sentidos): pula as páginas anteriores e lê um
+ * registro a mais, que só diz se existe a próxima. A ordem da consulta tem de terminar no `id` (desempate
+ * estável): a mesma página lida de novo devolve os mesmos registros, na ida e na volta.
+ */
+export function janelaDaPagina(pagina: number, porPagina: number): { skip: number; take: number } {
+  return { skip: (pagina - 1) * porPagina, take: porPagina + 1 };
+}
+
+/** Os registros da página e se existe a seguinte, a partir do que a janela leu. */
+export function recorteDaPagina<T>(lidos: readonly T[], porPagina: number): { registros: T[]; temProxima: boolean } {
+  return { registros: lidos.slice(0, porPagina), temProxima: lidos.length > porPagina };
 }
 
 /** Faixa exibida ("X–Y de N") e se há página seguinte. */

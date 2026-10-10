@@ -4,7 +4,8 @@ import { Papel, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento, type Resultado } from "@/server/_shared";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { executarAcao, exigirSessaoComPapel, ErroPermissao, registrarEvento, type Resultado } from "@/server/_shared";
 
 const LIMITE = 20;
 const minutos = z.number().int().positive().max(2147483647);
@@ -12,9 +13,8 @@ const ConfiguracaoSchema = z.object({
   prazoRegularizacaoDiarioMinutos: minutos,
   intervaloLembreteDiarioMinutos: minutos,
 }).strict();
-const ConsultaSchema = z.object({ cursor: z.string().min(1).max(500).optional() }).strict();
+const ConsultaSchema = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict();
 
-type Cursor = { fim: Date; id: string };
 export type ItemAvisoDiario = {
   id: string;
   encontroId: string;
@@ -36,22 +36,10 @@ export type ConsultaAvisosDiario = {
   configuracao: { prazoRegularizacaoDiarioMinutos: number | null; intervaloLembreteDiarioMinutos: number | null };
   gestao: boolean;
   itens: ItemAvisoDiario[];
-  proximoCursor: string | null;
+  pagina: number;
+  temProxima: boolean;
 };
 
-function lerCursor(cursor: string | undefined): Cursor | null {
-  if (!cursor) return null;
-  try {
-    const bruto = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
-    const dado = z.object({ fim: z.string().datetime({ offset: true }), id: z.string().min(1).max(100) }).strict().parse(bruto);
-    return { fim: new Date(dado.fim), id: dado.id };
-  } catch {
-    throw new ErroRegra("Cursor de avisos inválido.");
-  }
-}
-function cursorDe(cursor: Cursor | null) {
-  return cursor ? Buffer.from(JSON.stringify({ fim: cursor.fim.toISOString(), id: cursor.id })).toString("base64url") : null;
-}
 function somarMinutos(instante: Date, quantidade: number) {
   return new Date(instante.getTime() + quantidade * 60_000);
 }
@@ -158,12 +146,12 @@ async function atualizarCicloTx(
 
 /** Q22: refresh por acesso ao painel. É pull interno; não há job, e-mail ou
  * retroenvio. Cada chamada toca no máximo a página atual e até 20 ciclos
- * abertos do próprio usuário para encerrar fontes revogadas. */
-export async function consultarAvisosDiario(input: { cursor?: string } = {}): Promise<Resultado<ConsultaAvisosDiario>> {
+ * abertos do próprio usuário para encerrar fontes revogadas. Paginada por número
+ * (E4), em ordem estável (fim desc, id desc). */
+export async function consultarAvisosDiario(input: { pagina?: number } = {}): Promise<Resultado<ConsultaAvisosDiario>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-    const dados = ConsultaSchema.parse(input);
-    const cursor = lerCursor(dados.cursor);
+    const { pagina: numeroPagina } = ConsultaSchema.parse(input);
     return prisma.$transaction(async (tx) => {
       // Q24 cria/revoga designações sob a mesma trava; obtê-la antes de usuário,
       // configuração e encontros mantém a ordem de bloqueio do diário.
@@ -180,12 +168,11 @@ export async function consultarAvisosDiario(input: { cursor?: string } = {}): Pr
       const politicaCompleta = !!configuracao && configuracao.prazoRegularizacaoDiarioMinutos !== null && configuracao.intervaloLembreteDiarioMinutos !== null;
 
       await encerrarCiclosObsoletosTx(tx, { usuarioId: sessao.id, papeis: usuario.papeis, gestao, agora });
-      const depoisDoCursor = cursor ? { OR: [{ fim: { lt: cursor.fim } }, { fim: cursor.fim, id: { lt: cursor.id } }] } : {};
       const escopoDocente = gestao ? {} : escopoResponsavel(sessao.id, usuario.papeis, agora);
       const encontros = await tx.encontroAgenda.findMany({ where: {
         finalidade: "AULA", status: "PREVISTO", fim: { lte: agora },
-        AND: [escopoDocente, depoisDoCursor],
-      }, orderBy: [{ fim: "desc" }, { id: "desc" }], take: LIMITE + 1, select: {
+        AND: [escopoDocente],
+      }, orderBy: [{ fim: "desc" }, { id: "desc" }], ...janelaDaPagina(numeroPagina, LIMITE), select: {
           id: true, professorId: true, inicio: true, fim: true, fusoOrigem: true,
           turma: { select: { codigo: true, nome: true } }, professor: { select: { nome: true } },
           diario: { select: { conteudo: true, registros: { select: { presente: true } } } },
@@ -193,7 +180,7 @@ export async function consultarAvisosDiario(input: { cursor?: string } = {}): Pr
           excecoesGravacao: { where: { decisao: { aprovada: true } }, select: { id: true } },
           designacoesRegularizacaoAula: { where: { responsavelId: sessao.id, revogacao: { is: null } }, select: { id: true } },
       } });
-      const pagina = encontros.slice(0, LIMITE);
+      const { registros: pagina, temProxima } = recorteDaPagina(encontros, LIMITE);
       const itens: ItemAvisoDiario[] = [];
       for (const encontroPagina of pagina) {
         await tx.$queryRaw`SELECT id FROM "EncontroAgenda" WHERE id = ${encontroPagina.id} FOR UPDATE`;
@@ -237,12 +224,11 @@ export async function consultarAvisosDiario(input: { cursor?: string } = {}): Pr
           podeRegularizar: responsavel,
         });
       }
-      const ultimo = pagina.at(-1);
       return {
         configurada: politicaCompleta,
         configuracao: { prazoRegularizacaoDiarioMinutos: configuracao?.prazoRegularizacaoDiarioMinutos ?? null,
           intervaloLembreteDiarioMinutos: configuracao?.intervaloLembreteDiarioMinutos ?? null },
-        gestao, itens, proximoCursor: encontros.length > LIMITE && ultimo ? cursorDe({ fim: ultimo.fim, id: ultimo.id }) : null,
+        gestao, itens, pagina: numeroPagina, temProxima,
       };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   });

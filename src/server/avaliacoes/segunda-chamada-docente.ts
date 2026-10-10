@@ -2,6 +2,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
@@ -10,7 +11,7 @@ import { autorizacaoEspecialSegundaChamadaVigente } from "./segunda-chamada-auto
 import { instanteUtcSql } from "./segunda-chamada-utc";
 
 const id = z.string().min(1).max(100);
-const filaSchema = z.object({ depoisId: id.optional() }).strict();
+const filaSchema = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict();
 const detalheSchema = z.object({ reservaId: id }).strict();
 
 type ReservaDocente = {
@@ -74,16 +75,18 @@ const selecionarReserva = Prisma.sql`
     FROM "VersaoLancamentoAvaliacao" l LEFT JOIN "DecisaoLancamentoAvaliacao" d ON d."lancamentoId"=l.id
     WHERE l."segundaChamadaRealizacaoId"=realizada.id ORDER BY l.versao DESC LIMIT 1) lancamento ON true`;
 
-export async function listarSegundasChamadasDocente(input: { depoisId?: string } = {}) {
+/** Fila paginada por número (E4), em ordem de id: ida e volta trazem as mesmas reservas. */
+export async function listarSegundasChamadasDocente(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
-    const u = await exigirSessaoComPapel(Papel.PROFESSOR), d = filaSchema.parse(input);
+    const u = await exigirSessaoComPapel(Papel.PROFESSOR), d = filaSchema.parse(input), janela = janelaDaPagina(d.pagina, 20);
     return prisma.$transaction(async tx => {
       await exigirProfessorAtivo(tx, u.id);
-      const reservas = await tx.$queryRaw<ReservaDocente[]>(Prisma.sql`${selecionarReserva} WHERE ${escopoDocente(u.id)} AND r.id>${d.depoisId ?? ""} ORDER BY r.id ASC LIMIT 21`);
-      const itens = await Promise.all(reservas.slice(0,20).map(async r => ({ reservaId: r.reservaId, codigoAvaliacao: r.codigoAvaliacao, inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), fusoOrigem: r.fusoOrigem, status: r.status,
+      const lidas = await tx.$queryRaw<ReservaDocente[]>(Prisma.sql`${selecionarReserva} WHERE ${escopoDocente(u.id)} ORDER BY r.id ASC LIMIT ${janela.take} OFFSET ${janela.skip}`);
+      const { registros: reservas, temProxima } = recorteDaPagina(lidas, 20);
+      const itens = await Promise.all(reservas.map(async r => ({ reservaId: r.reservaId, codigoAvaliacao: r.codigoAvaliacao, inicio: r.inicio.toISOString(), fim: r.fim.toISOString(), fusoOrigem: r.fusoOrigem, status: r.status,
         aluno: r.aluno, matriculaCodigo: r.matriculaCodigo, turma: r.turma, realizacao: r.realizacaoId && r.realizadaEm ? { id: r.realizacaoId, realizadaEm: r.realizadaEm.toISOString() } : null,
         podeRealizar: await podeRealizarTx(tx, r, u.id) })));
-      return { itens, proximoId: reservas.length > 20 ? reservas[19].reservaId : null };
+      return { itens, pagina: d.pagina, temProxima };
     });
   });
 }
