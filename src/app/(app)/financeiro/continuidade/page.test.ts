@@ -10,8 +10,7 @@ import Page from "./page";
 
 const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: {
   itens: [{ matriculaId: "matricula/a?", codigo: "MAT-608", alunoNome: "Ana", estado: "OFERTA_PENDENTE", motivo: "Confirmação de oferta aguarda decisão.", cobertura: { inicio: "2099-11-03", fim: "2099-12-02" }, vencimento: "2099-11-10" }],
-  pagina: 1,
-  temProxima: true,
+  temAnterior: false, temProxima: true, anterior: null, proxima: "m-20",
   ...sobrescrever,
 } });
 const render = async (params: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve(params) }));
@@ -22,7 +21,7 @@ describe("FilaContinuidadeMensalPage", () => {
   it("interrompe no guard e não consulta a fila quando o acesso é negado", async () => {
     mocks.sessao.mockRejectedValue(new Error("acesso negado"));
 
-    await expect(Page({ searchParams: Promise.resolve({ pagina: "2" }) })).rejects.toThrow("acesso negado");
+    await expect(Page({ searchParams: Promise.resolve({ depois: "m-20" }) })).rejects.toThrow("acesso negado");
 
     expect(mocks.consultar).not.toHaveBeenCalled();
   });
@@ -34,7 +33,7 @@ describe("FilaContinuidadeMensalPage", () => {
     const html = await render({});
 
     expect(mocks.sessao).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
-    expect(mocks.consultar).toHaveBeenCalledWith({ pagina: 1 });
+    expect(mocks.consultar).toHaveBeenCalledWith({});
     expect(html).toContain("MAT-608 · Ana");
     expect(html).toContain("Oferta pendente");
     expect(html).toContain("/matriculas/matricula%2Fa%3F/continuidade-mensal");
@@ -44,40 +43,43 @@ describe("FilaContinuidadeMensalPage", () => {
     expect(html).not.toContain("Emitir");
   });
 
-  it("paginação nos dois sentidos: primeira só com Próxima; no meio, as duas; Anterior aponta para a página certa", async () => {
+  it("cursor nos dois sentidos: o início só com Próxima; Anterior e Próxima levam o cursor certo", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });
     mocks.consultar.mockResolvedValue(resposta());
-    const primeira = await render({});
-    expect(primeira).not.toContain("Anterior");
-    expect(primeira).toContain('href="/financeiro/continuidade?pagina=2">Próxima');
+    const inicio = await render({});
+    expect(inicio).not.toContain("Anterior");
+    expect(inicio).toContain('href="/financeiro/continuidade?depois=m-20">Próxima');
+    expect(inicio).not.toContain("pagina=");
 
-    const meio = await render({ pagina: "3" });
-    expect(mocks.consultar).toHaveBeenLastCalledWith({ pagina: 3 });
-    expect(meio).toContain('href="/financeiro/continuidade?pagina=2">← Anterior');
-    expect(meio).toContain('href="/financeiro/continuidade?pagina=4">Próxima');
+    mocks.consultar.mockResolvedValue(resposta({ temAnterior: true, anterior: "m-21", proxima: "m-40" }));
+    const meio = await render({ depois: "m-20" });
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ depois: "m-20" });
+    expect(meio).toContain('href="/financeiro/continuidade?antes=m-21">← Anterior');
+    expect(meio).toContain('href="/financeiro/continuidade?depois=m-40">Próxima');
 
-    mocks.consultar.mockResolvedValue(resposta({ pagina: 2, temProxima: false }));
-    const ultima = await render({ pagina: "2" });
-    expect(ultima).toContain('href="/financeiro/continuidade">← Anterior');
+    mocks.consultar.mockResolvedValue(resposta({ temAnterior: true, temProxima: false, anterior: "m-41", proxima: null }));
+    const ultima = await render({ depois: "m-40" });
+    expect(ultima).toContain('href="/financeiro/continuidade?antes=m-41">← Anterior');
     expect(ultima).not.toContain("Próxima");
   });
 
-  it("distingue fila zerada (primeira página), página seguinte vazia e falha de consulta", async () => {
+  it("distingue fila zerada (início), ponto da fila sem matrículas e falha de consulta", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.ADMINISTRADOR] });
-    mocks.consultar.mockResolvedValue(resposta({ itens: [], temProxima: false }));
-    // Primeira página sem itens: a fila está zerada — nada de "nesta página" (docs/42, vazio paginado).
+    mocks.consultar.mockResolvedValue(resposta({ itens: [], temProxima: false, proxima: null }));
+    // Início sem itens: a fila está zerada — nada de "nesta página" nem link para si (docs/42, vazio paginado).
     const vazio = await render({});
-    expect(mocks.consultar).toHaveBeenCalledWith({ pagina: 1 });
+    expect(mocks.consultar).toHaveBeenCalledWith({});
     expect(vazio).toContain("Nenhuma matrícula precisa de acompanhamento na continuidade mensal.");
     expect(vazio).not.toContain("nesta página");
     expect(vazio).not.toContain("Próxima");
     expect(vazio).not.toContain("Anterior");
+    expect(vazio).not.toContain('href="/financeiro/continuidade"');
 
-    // Página seguinte vazia: o texto é de paginação e a volta para a anterior continua ao lado.
-    const seguinte = await render({ pagina: "2" });
-    expect(seguinte).toContain("Nenhuma matrícula precisa de acompanhamento nesta página.");
-    expect(seguinte).not.toContain("na continuidade mensal.");
-    expect(seguinte).toContain('href="/financeiro/continuidade">← Anterior');
+    // Cursor que não leva a nada: o vazio diz isso e leva de volta ao início.
+    const alem = await render({ depois: "m-sumida" });
+    expect(alem).toContain("Nenhuma matrícula a partir deste ponto da fila");
+    expect(alem).not.toContain("na continuidade mensal.");
+    expect(alem).toContain('href="/financeiro/continuidade">Ir para o início da fila');
 
     mocks.consultar.mockResolvedValue({ ok: false, erro: "Consulta indisponível agora." });
     const erro = await render({});

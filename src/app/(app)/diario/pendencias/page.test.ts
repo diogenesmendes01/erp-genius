@@ -14,8 +14,7 @@ const base = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: 
   configuracao: { prazoRegularizacaoDiarioMinutos: 60, intervaloLembreteDiarioMinutos: 30 },
   gestao: false,
   itens: [{ id: "aviso/a?", encontroId: "encontro/a?", turma: "Turma A", professor: "Prof. Ana", inicio: "2026-09-16T13:00:00.000Z", fim: "2026-09-16T14:00:00.000Z", fusoOrigem: "America/Sao_Paulo", pendencias: ["Chamada pendente"], vencimento: "2026-09-16T15:00:00.000Z", atrasada: false, ultimoLembreteEm: null, proximoLembreteEm: null, quantidadeLembretes: 0, podeRegularizar: true }],
-  pagina: 1,
-  temProxima: true,
+  temAnterior: false, temProxima: true, anterior: null, proxima: "encontro-20",
   ...sobrescrever,
 } });
 
@@ -32,33 +31,47 @@ describe("PendenciasDiarioPage", () => {
     expect(html).toContain("Configurar avisos");
   });
 
-  it("exibe vencimento, ação limitada e as duas direções da paginação para o professor", async () => {
+  it("exibe vencimento, ação limitada e os dois sentidos da fila para o professor", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.PROFESSOR] });
-    mocks.consultar.mockResolvedValue(base());
-    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "3" }) }));
-    expect(mocks.consultar).toHaveBeenCalledWith({ pagina: 3 });
+    mocks.consultar.mockResolvedValue(base({ temAnterior: true, anterior: "encontro-21", proxima: "encontro-40" }));
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "encontro-20" }) }));
+    expect(mocks.consultar).toHaveBeenCalledWith({ depois: "encontro-20" });
     expect(html).toContain("Chamada pendente");
     expect(html).toContain("Abrir diário para regularizar");
     expect(html).toContain("encontro%2Fa%3F");
-    expect(html).toContain('href="/diario/pendencias?pagina=2">← Anterior');
-    expect(html).toContain('href="/diario/pendencias?pagina=4">Próxima');
+    expect(html).toContain('href="/diario/pendencias?antes=encontro-21">← Anterior');
+    expect(html).toContain('href="/diario/pendencias?depois=encontro-40">Próxima');
     expect(html).toContain("07:00");
     expect(html).toContain("09:00");
     expect(html).toContain("exibido em America/Costa_Rica; origem America/Sao_Paulo");
     expect(mocks.preferencia).toHaveBeenCalledTimes(1);
   });
 
-  it("primeira página só com Próxima; da segunda, Anterior volta sem ?pagina=1; a última não tem Próxima", async () => {
+  it("início só com Próxima e sem link para si; voltando, o cursor chega à consulta; a última não tem Próxima", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.PROFESSOR] });
     mocks.consultar.mockResolvedValue(base());
-    const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-    expect(mocks.consultar).toHaveBeenLastCalledWith({ pagina: 1 });
-    expect(primeira).not.toContain("Anterior");
-    expect(primeira).toContain('href="/diario/pendencias?pagina=2">Próxima');
-    mocks.consultar.mockResolvedValue(base({ pagina: 2, temProxima: false }));
-    const segunda = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
-    expect(segunda).toContain('href="/diario/pendencias">← Anterior');
-    expect(segunda).not.toContain("Próxima →");
+    const inicio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(mocks.consultar).toHaveBeenLastCalledWith({});
+    expect(inicio).not.toContain("Anterior");
+    expect(inicio).not.toContain("pagina");
+    expect(inicio).toContain('href="/diario/pendencias?depois=encontro-20">Próxima');
+    mocks.consultar.mockResolvedValue(base({ temAnterior: true, temProxima: false, anterior: "encontro-41", proxima: null }));
+    const ultima = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ antes: "encontro-60" }) }));
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ antes: "encontro-60" });
+    expect(ultima).toContain('href="/diario/pendencias?antes=encontro-41">← Anterior');
+    expect(ultima).not.toContain("Próxima →");
+  });
+
+  it("vazio: no início, sem link para si; num ponto da fila sem pendências, a volta ao início", async () => {
+    mocks.sessao.mockResolvedValue({ papeis: [Papel.PROFESSOR] });
+    mocks.consultar.mockResolvedValue(base({ itens: [], temProxima: false, proxima: null }));
+    const inicio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(inicio).toContain("Nenhuma pendência de diário encontrada.");
+    expect(inicio).not.toContain('href="/diario/pendencias"');
+    const alem = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "encontro-sumido" }) }));
+    expect(alem).toContain("Nenhuma pendência de diário a partir deste ponto da fila.");
+    expect(alem).toContain('href="/diario/pendencias">Ir para o início da fila');
+    expect(alem).not.toContain("nesta página");
   });
 
   it("mostra acompanhamento vencido à gestão sem oferecer escrita sem atribuição", async () => {

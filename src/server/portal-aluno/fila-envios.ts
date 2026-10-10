@@ -3,10 +3,10 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoDaPagina, type NavegacaoFila } from "@/lib/cursor-fila";
 import { ErroPermissao, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 
-const Entrada = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional() }).strict();
+const Entrada = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 
 export type ItemFilaEnviosPortalAluno = {
   id: string;
@@ -20,17 +20,17 @@ export type ItemFilaEnviosPortalAluno = {
   podeDecidirReemissao: boolean;
 };
 
-export type FilaEnviosPortalAluno = {
+export type FilaEnviosPortalAluno = NavegacaoDaPagina & {
   itens: ItemFilaEnviosPortalAluno[];
-  pagina: number;
-  temProxima: boolean;
 };
 
-/** Visão operacional sem destinatário, token, link ou recibo do provedor. Paginada por número (E4), em ordem de id. */
-export async function consultarFilaEnviosPortalAluno(input: { pagina?: number } = {}) {
+/** Visão operacional sem destinatário, token, link ou recibo do provedor. Fila de trabalho com cursor nos dois sentidos
+ * (E4, decisão de 10/10/2026), em ordem de id: a próxima continua do último item visto, e uma solicitação nova
+ * (reemissão) não desloca a página de quem está conciliando. */
+export async function consultarFilaEnviosPortalAluno(input: NavegacaoFila = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-    const { pagina = 1 } = Entrada.parse(input);
+    const nav = Entrada.parse(input);
     return prisma.$transaction(async (tx) => {
       const usuario = await tx.usuario.findUnique({
         where: { id: sessao.id },
@@ -40,9 +40,10 @@ export async function consultarFilaEnviosPortalAluno(input: { pagina?: number } 
         papel === Papel.SECRETARIA_ACADEMICA || papel === Papel.ADMINISTRADOR,
       )) throw new ErroPermissao("Sua permissão mudou; inicie a operação novamente.");
 
-      const lidos = await tx.solicitacaoEnvioPortalAluno.findMany({
-        orderBy: { id: "asc" },
-        ...janelaDaPagina(pagina, 20),
+      const { registros, ...navegacao } = await lerPaginaDaFila(nav, 20, (leitura, take) => tx.solicitacaoEnvioPortalAluno.findMany({
+        where: corteDoId(leitura, "asc"),
+        orderBy: { id: direcaoDeLeitura(leitura)("asc") },
+        take,
         select: {
           id: true,
           finalidade: true,
@@ -52,8 +53,7 @@ export async function consultarFilaEnviosPortalAluno(input: { pagina?: number } 
           conta: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } },
           conciliacoes: { orderBy: { versao: "desc" }, take: 1, select: { id: true, estadoHash: true, evidencia: true, versao: true, criadaEm: true, secretariaId: true, secretaria: { select: { nome: true } }, decisao: { select: { aprovada: true, decididaEm: true, solicitacaoReemitidaId: true } } } },
         },
-      });
-      const { registros, temProxima } = recorteDaPagina(lidos, 20);
+      }), (registro) => registro.id);
       const itens = registros.map((registro) => ({
         id: registro.id,
         alunoNome: [registro.conta.aluno.primeiroNome, registro.conta.aluno.sobrenome].filter(Boolean).join(" "),
@@ -65,7 +65,7 @@ export async function consultarFilaEnviosPortalAluno(input: { pagina?: number } 
         podeRegistrarEvidencia: usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA) || usuario.papeis.includes(Papel.ADMINISTRADOR),
         podeDecidirReemissao: usuario.papeis.includes(Papel.ADMINISTRADOR) && registro.conciliacoes[0]?.secretariaId !== sessao.id,
       })) satisfies ItemFilaEnviosPortalAluno[];
-      return { itens, pagina, temProxima } satisfies FilaEnviosPortalAluno;
+      return { itens, ...navegacao } satisfies FilaEnviosPortalAluno;
     });
   });
 }

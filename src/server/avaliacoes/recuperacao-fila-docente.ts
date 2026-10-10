@@ -2,7 +2,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { camposNavegacaoFila, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoFila } from "@/lib/cursor-fila";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
@@ -13,12 +13,14 @@ import { agendasRecuperacaoAutorizadasTx } from "./recuperacao-agenda-consulta-t
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autorizacao-tx";
 
-/** Paginada por número (E4), em ordem de id: a mesma página lida na ida e na volta traz as mesmas tentativas. */
-export async function listarTentativasRecuperacaoDesignadas(input: { pagina?: number; modo?: "pendentes" | "historico" } = {}) {
+/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026), em ordem de id: registrar a realização
+ * de uma tentativa a tira da fila de pendentes sem deslocar as seguintes, e a próxima continua da última vista. O
+ * histórico (`modo: "historico"`) usa o mesmo cursor. */
+export async function listarTentativasRecuperacaoDesignadas(input: NavegacaoFila & { modo?: "pendentes" | "historico" } = {}) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
-    const d = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1), modo: z.enum(["pendentes", "historico"]).default("pendentes") }).strict().parse(input);
-    const janela = janelaDaPagina(d.pagina, 20);
+    const d = z.object({ ...camposNavegacaoFila, modo: z.enum(["pendentes", "historico"]).default("pendentes") }).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS).parse(input);
+    const nav = { depois: d.depois, antes: d.antes };
     return prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${u.id} FOR SHARE`;
@@ -27,7 +29,7 @@ export async function listarTentativasRecuperacaoDesignadas(input: { pagina?: nu
       const escopo = d.modo === "historico"
         ? Prisma.sql`(realizada."professorId" = ${u.id} OR realizada."registradaPorId" = ${u.id} OR EXISTS (SELECT 1 FROM "NotaRecuperacao" nota WHERE nota."realizacaoId" = realizada.id AND nota."autorId" = ${u.id}))`
         : Prisma.sql`recuperacao_designada(i.id, ${u.id})`;
-      const itens = await tx.$queryRaw<{ id: string; habilidade: string; primeiroNome: string; sobrenome: string | null; matriculaCodigo: string | null; matriculaId: string; turma: string | null; nivel: string; realizacaoId: string | null }[]>`
+      const ler = (leitura: NavegacaoFila, take: number) => tx.$queryRaw<{ id: string; habilidade: string; primeiroNome: string; sobrenome: string | null; matriculaCodigo: string | null; matriculaId: string; turma: string | null; nivel: string; realizacaoId: string | null }[]>(Prisma.sql`
         SELECT i.id, i.habilidade, aluno."primeiroNome", aluno.sobrenome, m.codigo AS "matriculaCodigo", m.id AS "matriculaId", COALESCE(t.nome,t.codigo) AS turma, nivel.codigo AS nivel, realizada.id AS "realizacaoId"
         FROM "ItemReservaTentativaRecuperacao" i JOIN "ReservaTentativaRecuperacao" r ON r.id = i."reservaId"
         JOIN "PropostaPlanoRecuperacao" p ON p.id = r."propostaId" JOIN "Matricula" m ON m.id = p."matriculaId"
@@ -35,10 +37,11 @@ export async function listarTentativasRecuperacaoDesignadas(input: { pagina?: nu
         JOIN "Turma" t ON t.id = a."turmaId" JOIN "Nivel" nivel ON nivel.id = p."nivelId"
         LEFT JOIN "RealizacaoRecuperacao" realizada ON realizada."itemReservaId" = i.id
         WHERE ${escopo}
-        ORDER BY i.id ASC LIMIT ${janela.take} OFFSET ${janela.skip}`;
-      const { registros, temProxima } = recorteDaPagina(itens, 20);
+          ${leitura.depois !== undefined ? Prisma.sql`AND i.id > ${leitura.depois}` : leitura.antes !== undefined ? Prisma.sql`AND i.id < ${leitura.antes}` : Prisma.empty}
+        ORDER BY i.id ${leitura.antes !== undefined ? Prisma.sql`DESC` : Prisma.sql`ASC`} LIMIT ${take}`);
+      const { registros, ...navegacao } = await lerPaginaDaFila(nav, 20, ler, (i) => i.id);
       const agendas = await agendasRecuperacaoAutorizadasTx(tx, registros.map(i => i.id), u.id);
-      return { modo: d.modo, pagina: d.pagina, temProxima, itens: registros.map(i => ({ id: i.id, habilidade: i.habilidade, aluno: nomeCompleto(i), matriculaCodigo: i.matriculaCodigo, matriculaId: i.matriculaId, turma: i.turma, nivel: i.nivel, realizada: i.realizacaoId !== null, realizacaoId: i.realizacaoId, agenda: agendas.get(i.id) ?? null })) };
+      return { modo: d.modo, ...navegacao, itens: registros.map(i => ({ id: i.id, habilidade: i.habilidade, aluno: nomeCompleto(i), matriculaCodigo: i.matriculaCodigo, matriculaId: i.matriculaId, turma: i.turma, nivel: i.nivel, realizada: i.realizacaoId !== null, realizacaoId: i.realizacaoId, agenda: agendas.get(i.id) ?? null })) };
     });
   });
 }
