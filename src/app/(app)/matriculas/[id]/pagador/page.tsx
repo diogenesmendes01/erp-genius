@@ -6,13 +6,17 @@ import { PagadorFormulario } from "./PagadorFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { TIPO_PAGADOR_LABEL, rotular } from "@/lib/labels";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 export default async function PagadorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, busca = await searchParams;
   const pagina = busca.pagina ? Number(busca.pagina) : 1;
-  const [r, h] = await Promise.all([consultarTelaPagador(id), consultarHistoricoPagador({ matriculaId: id, pagina })]);
+  const [r, h, preferencia] = await Promise.all([consultarTelaPagador(id), consultarHistoricoPagador({ matriculaId: id, pagina }), consultarPreferenciaFusoEquipe()]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado, p = d.registro;
+  // Histórico no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6): antes era o ISO cru.
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   return <div className="space-y-4"><VoltarPara href="/secretaria" />
     <h1 className="text-2xl">Pagador da contratação · {d.matricula.codigo ?? "Em preparação"}</h1>
     <p>Aluno: {d.matricula.aluno.primeiroNome} {d.matricula.aluno.sobrenome}</p>
@@ -26,7 +30,7 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
     <section className="space-y-3"><h2 className="text-xl">Histórico do pagador</h2>
       {!h.ok || !h.dado ? <p role="alert">{h.ok ? "Histórico indisponível." : h.erro}</p> : <>
         {h.dado.registros.map((v) => <details key={v.id} className="rounded border p-3"><summary>Versão {v.versao} · {v.dados.nome} · {v.preparador.nome}</summary>
-          <p>Registrada em {v.criadaEm.toISOString()} (UTC). Tipo: {rotular(TIPO_PAGADOR_LABEL, v.tipo)}.</p>
+          <p>Registrada em {formatarInstanteExibicao(v.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC). Tipo: {rotular(TIPO_PAGADOR_LABEL, v.tipo)}.</p>
           <p>Documento: {v.dados.documento || "Não informado"}</p><p>E-mail: {v.dados.email || "Não informado"}</p><p>Telefone: {v.dados.telefoneE164 || "Não informado"}</p><p>Endereço: {v.dados.endereco || "Não informado"}</p><p>Motivo: {v.motivo}</p>
         </details>)}
         {!h.dado.registros.length && (pagina > 1

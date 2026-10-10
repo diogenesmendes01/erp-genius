@@ -16,6 +16,7 @@ import {
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { CampoFuso } from "@/components/CampoFuso";
 
 type Props = {
   linhaId: string;
@@ -86,7 +87,7 @@ export function AplicarVinculoMigracao(props: Props) {
     {!ensaioPermitido && <p className="text-amber-800">Nenhum ensaio vigente pronto para esta fotografia.</p>}
     {!destinosCompletos && <p className="text-amber-800">Revise as correspondências de produto, turma e situação antes de aplicar.</p>}
     <div className="grid gap-2 sm:grid-cols-2">
-      <label>Fuso IANA<input aria-label="Fuso IANA" className="block rounded border p-1" placeholder="America/Costa_Rica" value={formulario.fusoReferencia} onChange={(event) => atualizar("fusoReferencia", event.target.value)} /></label>
+      <label>Fuso IANA<CampoFuso aria-label="Fuso IANA" name="fusoReferencia" required={false} className="block rounded border p-1" placeholder="America/Costa_Rica" valor={formulario.fusoReferencia} onChange={(valor) => atualizar("fusoReferencia", valor)} /></label>
       <label>Início da vigência<input aria-label="Início da vigência" type="date" className="block rounded border p-1" value={formulario.inicioAlocacao} onChange={(event) => atualizar("inicioAlocacao", event.target.value)} /></label>
       <label>Fim da vigência<input aria-label="Fim da vigência" type="date" className="block rounded border p-1" value={formulario.fimAlocacao} onChange={(event) => atualizar("fimAlocacao", event.target.value)} /></label>
       <label>Semântica do fim<select aria-label="Semântica do fim" className="block rounded border p-1" value={formulario.semanticaFim} onChange={(event) => atualizar("semanticaFim", event.target.value as FormularioVinculo["semanticaFim"])}><option value="">Selecione</option><option value="LIMITE_EXCLUSIVO">Limite exclusivo</option><option value="ULTIMO_DIA_COBERTO">Último dia coberto</option></select></label>

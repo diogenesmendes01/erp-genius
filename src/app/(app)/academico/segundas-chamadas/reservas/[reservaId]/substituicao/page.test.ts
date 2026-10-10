@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ consultar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn(async () => ({ ok: true, dado: { fusoExibicao: "America/Sao_Paulo" } })) }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-substituicao", () => ({ consultarSubstituicaoAgendaSegundaChamada: mocks.consultar }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }) }));
 import Page from "./page";
 import { Formulario } from "./Formulario";
@@ -33,6 +34,9 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     expect(html).toContain("antesVersao=3");
     expect(html).not.toContain("hash-interno");
     expect(html).not.toContain("encontro-interno");
+    // docs/43 §6 item 6: o registro da proposta sai no fuso de exibição, com a origem — não mais o ISO cru.
+    expect(html).toContain("Registrada em 16/09/2026, 07:00 (America/Sao_Paulo; origem UTC).");
+    expect(html).not.toContain("2026-09-16T10:00:00.000Z");
   });
 
   it("mostra apenas o erro da consulta", async () => {
