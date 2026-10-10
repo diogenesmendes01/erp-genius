@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarIndisponibilidadesDocentes } from "@/server/agenda/indisponibilidade-consulta";
@@ -10,8 +9,10 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function IndisponibilidadesPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
+export default async function IndisponibilidadesPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
   const equipe = usuario.papeis.some((p) => ["SECRETARIA_ACADEMICA", "GERENTE_PEDAGOGICO", "ADMINISTRADOR"].includes(p));
   const [professores, config, preferencia] = await Promise.all([
@@ -19,8 +20,8 @@ export default async function IndisponibilidadesPage({ searchParams }: { searchP
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
     consultarPreferenciaFusoEquipe(),
   ]);
-  const { cursor } = await searchParams;
-  const r = await consultarIndisponibilidadesDocentes({ cursor });
+  const pagina = lerPagina(await searchParams);
+  const r = await consultarIndisponibilidadesDocentes({ pagina });
   return <div className="space-y-5">
     <VoltarPara href="/academico" />
     <header><h1 className="text-2xl font-medium">Indisponibilidades docentes</h1><p className="mt-1 text-sm text-gray-600">A aprovação registra a ausência. Aulas e reservas particulares afetadas precisam de solução aprovada e permanecem na agenda até lá.</p></header>
@@ -44,6 +45,6 @@ export default async function IndisponibilidadesPage({ searchParams }: { searchP
         {a.podeDecidir && <DecisaoAusencia id={a.id} impactoHash={a.impactoHash} />}
       </article>;
     })}
-    {r.ok && r.dado?.proximoCursor && <Link className="text-brand-700 underline" href={`/academico/indisponibilidades?cursor=${encodeURIComponent(r.dado.proximoCursor)}`}>Próximas solicitações</Link>}
+    <Paginacao pagina={pagina} temProxima={r.ok && !!r.dado?.temProxima} href={(p) => hrefLista("/academico/indisponibilidades", { pagina: p })} rotulo="Páginas de solicitações de indisponibilidade" />
   </div>;
 }

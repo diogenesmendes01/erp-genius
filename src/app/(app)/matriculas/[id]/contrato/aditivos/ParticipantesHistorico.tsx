@@ -4,11 +4,13 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { rotular } from "@/lib/labels";
 import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista } from "@/lib/pagina-url";
 
 export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, paginaOriginais, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; pagina: number; /** Página dos originais da mesma tela: os links daqui a preservam. */ paginaOriginais: number; preferenciaFusoExibicao?: string | null }) {
   const r = await consultarConferenciasParticipantesAditivo({ matriculaId, propostaId, pagina });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Histórico indisponível." : r.erro}</p>;
-  const d = r.dado, href = (p: number) => `/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(propostaId)}?${new URLSearchParams({ paginaConferencias: String(p), paginaOriginais: String(paginaOriginais) })}`;
+  const d = r.dado, href = (p: number) => hrefLista(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(propostaId)}`, { paginaConferencias: p, paginaOriginais });
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
   const data = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Histórico de conferências dos signatários</h2>
@@ -24,6 +26,6 @@ export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, 
         {p.representacao && <><p className="whitespace-pre-wrap">Representação: {p.representacao.descricao}</p><p>Evidência: {p.representacao.evidencia.nome}</p></>}
       </div>)}
     </details>)}
-    <nav aria-label="Páginas das conferências" className="flex gap-3">{pagina > 1 && <Link className="underline" href={href(pagina - 1)}>Conferências anteriores</Link>}<span>Página {pagina}</span>{d.maisRegistros && <Link className="underline" href={href(pagina + 1)}>Próximas conferências</Link>}</nav>
+    <Paginacao pagina={pagina} temProxima={d.maisRegistros} href={href} rotulo="Páginas das conferências" />
   </section>;
 }

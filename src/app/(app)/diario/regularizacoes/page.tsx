@@ -8,13 +8,15 @@ import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerOpcao, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
 
-export default async function RegularizacoesAulaPage({ searchParams }: { searchParams: Promise<{ cursor?: string; modo?: "PENDENTES" | "HISTORICO" }> }) {
+export default async function RegularizacoesAulaPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-  const { cursor, modo: modoParam } = await searchParams;
-  const modo = modoParam === "HISTORICO" ? "HISTORICO" : "PENDENTES";
-  const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ cursor, modo }), consultarPreferenciaFusoEquipe()]);
+  const q = await searchParams, pagina = lerPagina(q);
+  const modo = lerOpcao(q, "modo", ["PENDENTES", "HISTORICO"] as const) ?? "PENDENTES";
+  const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ pagina, modo }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
     <VoltarPara href="/diario" />
     <div>
@@ -43,10 +45,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
           {resultado.dado?.gestao && <GerirDesignacoes encontroId={item.id} somenteLeitura={!item.podeGerir} fusoExibicao={fuso} />}
         </article>;
       })}
-      <div className="flex gap-4 text-sm text-brand-700">
-        {cursor && <Link className="underline" href={`/diario/regularizacoes?modo=${modo}`}>{modo === "HISTORICO" ? "Histórico recente" : "Regularizações recentes"}</Link>}
-        {resultado.dado.proximoCursor && <Link className="underline" href={`/diario/regularizacoes?modo=${modo}&cursor=${encodeURIComponent(resultado.dado.proximoCursor)}`}>{modo === "HISTORICO" ? "Mais histórico" : "Próximas regularizações"}</Link>}
-      </div>
+      <Paginacao pagina={pagina} temProxima={resultado.dado.temProxima} href={(p) => hrefLista("/diario/regularizacoes", { modo, pagina: p })} rotulo={modo === "HISTORICO" ? "Páginas do histórico de regularizações" : "Páginas de regularizações pendentes"} />
     </>}
   </div>;
 }

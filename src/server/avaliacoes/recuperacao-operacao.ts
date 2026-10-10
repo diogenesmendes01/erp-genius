@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
@@ -16,10 +17,11 @@ import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autoriza
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { preparacaoRecuperacaoVigenteTx } from "./recuperacao-preparacao-vigencia-tx";
 
-export async function consultarOperacaoRecuperacao(input: { propostaId: string; depoisId?: string }) {
+/** As reservas do plano são paginadas por número (E4), em ordem de id: ida e volta trazem as mesmas reservas. */
+export async function consultarOperacaoRecuperacao(input: { propostaId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-    const d = z.object({ propostaId: z.string().min(1).max(100), depoisId: z.string().min(1).max(100).optional() }).strict().parse(input);
+    const d = z.object({ propostaId: z.string().min(1).max(100), pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict().parse(input);
     return prisma.$transaction(async tx => {
       const ref = await tx.propostaPlanoRecuperacao.findUnique({ where: { id: d.propostaId }, select: { alocacaoId: true } });
       if (!ref) throw new ErroRegra("Plano não encontrado.");
@@ -56,14 +58,15 @@ export async function consultarOperacaoRecuperacao(input: { propostaId: string; 
       const preparacaoEspecialVigente = !!candidataDisponibilizacao && await preparacaoRecuperacaoVigenteTx(tx, p.id, agoraPreparacao, candidataDisponibilizacao.id);
       const agendas = await tx.propostaAgendaRecuperacao.findMany({ where: { itemReserva: { reserva: { propostaId: p.id } }, encontro: { status: "PREVISTO" } }, select: { itemReserva: { select: { reservaId: true } } } });
       const reservasAgendadas = new Set(agendas.map(a => a.itemReserva.reservaId));
-      const reservas = await tx.reservaTentativaRecuperacao.findMany({ where: { propostaId: p.id, ...(d.depoisId ? { id: { gt: d.depoisId } } : {}) }, orderBy: { id: "asc" }, take: 21,
+      const reservasLidas = await tx.reservaTentativaRecuperacao.findMany({ where: { propostaId: p.id }, orderBy: { id: "asc" }, ...janelaDaPagina(d.pagina, 20),
         select: { id: true, motivo: true, criadaEm: true, cancelamento: { select: { motivo: true, evidencia: true } }, itens: { select: { id: true, habilidade: true, realizacao: { select: { id: true, realizadaEm: true } } } } } });
-      const agendasDaPagina = await agendasRecuperacaoAutorizadasTx(tx, reservas.slice(0,20).flatMap(r => r.itens.map(i => i.id)), u.id);
+      const { registros: reservas, temProxima } = recorteDaPagina(reservasLidas, 20);
+      const agendasDaPagina = await agendasRecuperacaoAutorizadasTx(tx, reservas.flatMap(r => r.itens.map(i => i.id)), u.id);
       const consultadaEm = new Date();
       const situacaoContratual = (await carregarSituacoesNaAula(tx, [p.matriculaId], consultadaEm)).get(p.matriculaId) ?? "A_CONFERIR";
       const autorizacoes = new Map<string, string>();
       if (situacaoContratual === "PAUSADA" || situacaoContratual === "ENCERRADA") {
-        for (const reserva of reservas.slice(0, 20)) {
+        for (const reserva of reservas) {
           if (reserva.cancelamento) continue;
           for (const item of reserva.itens) {
             if (item.realizacao) continue;
@@ -83,8 +86,8 @@ export async function consultarOperacaoRecuperacao(input: { propostaId: string; 
         podeDisponibilizar: gestao && (p.autorizacaoPreparacaoId ? preparacaoEspecialVigente : vinculoValido || preparacaoEspecialVigente) && !fontesMudaram && !p.disponibilizacao,
         podeReservar: gestao && vinculoValido && !fontesMudaram && prazoAte !== null && prazoAte > new Date(),
         disponibilizacao: p.disponibilizacao ? { inicio: p.disponibilizacao.disponibilizadaEm.toISOString(), prazoOriginal: p.disponibilizacao.prazoAte.toISOString(), prazoVigente: prazoAte!.toISOString(), condicoes: p.disponibilizacao.condicoes, evidenciaComunicacao: p.disponibilizacao.evidenciaComunicacao } : null,
-        proximoId: reservas.length > 20 ? reservas[19].id : null,
-        reservas: reservas.slice(0, 20).map(r => ({ ...r, criadaEm: r.criadaEm.toISOString(), podeCancelarPelaEscola: gestao && !r.cancelamento && !reservasAgendadas.has(r.id) && r.itens.some(i => !i.realizacao),
+        pagina: d.pagina, temProxima,
+        reservas: reservas.map(r => ({ ...r, criadaEm: r.criadaEm.toISOString(), podeCancelarPelaEscola: gestao && !r.cancelamento && !reservasAgendadas.has(r.id) && r.itens.some(i => !i.realizacao),
           itens: r.itens.map(i => {
             const agenda = agendasDaPagina.get(i.id) ?? null;
             const realizacao = i.realizacao ? { ...i.realizacao, realizadaEm: i.realizacao.realizadaEm.toISOString() } : null;

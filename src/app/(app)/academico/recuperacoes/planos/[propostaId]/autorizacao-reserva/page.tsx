@@ -10,13 +10,15 @@ import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL, rotular, STATUS_MATRICULA_LABEL } from "@/lib/labels";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function AutorizacaoReserva({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<{ depoisId?: string }> }) {
+export default async function AutorizacaoReserva({ params, searchParams }: { params: Promise<{ propostaId: string }>; searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
   const { propostaId } = await params;
-  const { depoisId } = await searchParams;
+  const pagina = lerPagina(await searchParams);
   const [resultado, preferencia, fusoInstitucional] = await Promise.all([
-    consultarAutorizacoesReservaRecuperacao({ propostaId, ...(depoisId ? { depoisId } : {}) }),
+    consultarAutorizacoesReservaRecuperacao({ propostaId, pagina }),
     consultarPreferenciaFusoEquipe(),
     consultarFusoInstitucional(),
   ]);
@@ -41,6 +43,6 @@ export default async function AutorizacaoReserva({ params, searchParams }: { par
       <p>A realização durante pausa ou encerramento ainda exige a autorização específica de realização.</p>
     </article>)}
     {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização especial registrada.</EstadoVazio>}
-    {d.proximoId && <Link className="underline" href={`?depoisId=${encodeURIComponent(d.proximoId)}`}>Próximas autorizações</Link>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista(`/academico/recuperacoes/planos/${encodeURIComponent(propostaId)}/autorizacao-reserva`, { pagina: p })} rotulo="Páginas do histórico de autorizações especiais" />
   </section>;
 }

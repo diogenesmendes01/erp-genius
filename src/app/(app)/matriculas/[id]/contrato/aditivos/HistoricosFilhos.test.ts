@@ -42,8 +42,24 @@ describe("históricos filhos de aditivo", () => {
 
     const participantes = renderToStaticMarkup(await ParticipantesHistorico({ matriculaId: "matricula", propostaId: "proposta", pagina: 3, paginaOriginais: 4 }));
     expect(participantes).toContain("Nenhuma conferência nesta página.");
-    expect(participantes).toContain(`<a class="underline" href="${base}?paginaConferencias=1&amp;paginaOriginais=4">Ir para a primeira página</a>`);
-    expect(participantes).toContain(`href="${base}?paginaConferencias=2&amp;paginaOriginais=4">Conferências anteriores</a>`);
+    // A primeira página das conferências não leva "paginaConferencias=1" (hrefLista), mas mantém a dos originais.
+    expect(participantes).toContain(`<a class="underline" href="${base}?paginaOriginais=4">Ir para a primeira página</a>`);
+    expect(participantes).toContain(`href="${base}?paginaConferencias=2&amp;paginaOriginais=4">← Anterior</a>`);
+  });
+
+  it("conferências paginam nos dois sentidos (Paginacao): primeira só com Próxima; no meio, as duas, preservando os originais", async () => {
+    const base = "/matriculas/matricula/contrato/aditivos/proposta";
+    const registro = { id: "conferencia", versao: 1, autor: "Secretaria", criadaEm: new Date("2026-10-01T03:30:00Z"), motivo: "Participantes", maioridade: null, participantes: [] };
+    mocks.participantes.mockResolvedValue({ ok: true, dado: { registros: [registro], maisRegistros: true } });
+    const primeira = renderToStaticMarkup(await ParticipantesHistorico({ matriculaId: "matricula", propostaId: "proposta", pagina: 1, paginaOriginais: 2 }));
+    expect(primeira).not.toContain("Anterior");
+    expect(primeira).not.toContain("paginaConferencias=1");
+    expect(primeira).toContain(`href="${base}?paginaConferencias=2&amp;paginaOriginais=2">Próxima`);
+    const meio = renderToStaticMarkup(await ParticipantesHistorico({ matriculaId: "matricula", propostaId: "proposta", pagina: 3, paginaOriginais: 2 }));
+    expect(meio).toContain(`href="${base}?paginaConferencias=2&amp;paginaOriginais=2">← Anterior`);
+    expect(meio).toContain(`href="${base}?paginaConferencias=4&amp;paginaOriginais=2">Próxima`);
+    const segunda = renderToStaticMarkup(await ParticipantesHistorico({ matriculaId: "matricula", propostaId: "proposta", pagina: 2, paginaOriginais: 1 }));
+    expect(segunda).toContain(`href="${base}">← Anterior`);
   });
 
   it("primeira página vazia: o texto diz que não há registro, sem link de volta", async () => {

@@ -2,6 +2,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
@@ -12,10 +13,12 @@ import { agendasRecuperacaoAutorizadasTx } from "./recuperacao-agenda-consulta-t
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { carregarAutorizacaoEspecialRecuperacaoTx } from "./recuperacao-autorizacao-tx";
 
-export async function listarTentativasRecuperacaoDesignadas(input: { depoisId?: string; modo?: "pendentes" | "historico" } = {}) {
+/** Paginada por número (E4), em ordem de id: a mesma página lida na ida e na volta traz as mesmas tentativas. */
+export async function listarTentativasRecuperacaoDesignadas(input: { pagina?: number; modo?: "pendentes" | "historico" } = {}) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
-    const d = z.object({ depoisId: z.string().min(1).max(100).optional(), modo: z.enum(["pendentes", "historico"]).default("pendentes") }).strict().parse(input);
+    const d = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1), modo: z.enum(["pendentes", "historico"]).default("pendentes") }).strict().parse(input);
+    const janela = janelaDaPagina(d.pagina, 20);
     return prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${u.id} FOR SHARE`;
@@ -31,10 +34,11 @@ export async function listarTentativasRecuperacaoDesignadas(input: { depoisId?: 
         JOIN "Aluno" aluno ON aluno.id = m."alunoId" JOIN "AlocacaoTurma" a ON a.id = p."alocacaoId"
         JOIN "Turma" t ON t.id = a."turmaId" JOIN "Nivel" nivel ON nivel.id = p."nivelId"
         LEFT JOIN "RealizacaoRecuperacao" realizada ON realizada."itemReservaId" = i.id
-        WHERE ${escopo} AND i.id > ${d.depoisId ?? ''}
-        ORDER BY i.id ASC LIMIT 21`;
-      const agendas = await agendasRecuperacaoAutorizadasTx(tx, itens.slice(0,20).map(i => i.id), u.id);
-      return { modo: d.modo, proximoId: itens.length > 20 ? itens[19].id : null, itens: itens.slice(0,20).map(i => ({ id: i.id, habilidade: i.habilidade, aluno: nomeCompleto(i), matriculaCodigo: i.matriculaCodigo, matriculaId: i.matriculaId, turma: i.turma, nivel: i.nivel, realizada: i.realizacaoId !== null, realizacaoId: i.realizacaoId, agenda: agendas.get(i.id) ?? null })) };
+        WHERE ${escopo}
+        ORDER BY i.id ASC LIMIT ${janela.take} OFFSET ${janela.skip}`;
+      const { registros, temProxima } = recorteDaPagina(itens, 20);
+      const agendas = await agendasRecuperacaoAutorizadasTx(tx, registros.map(i => i.id), u.id);
+      return { modo: d.modo, pagina: d.pagina, temProxima, itens: registros.map(i => ({ id: i.id, habilidade: i.habilidade, aluno: nomeCompleto(i), matriculaCodigo: i.matriculaCodigo, matriculaId: i.matriculaId, turma: i.turma, nivel: i.nivel, realizada: i.realizacaoId !== null, realizacaoId: i.realizacaoId, agenda: agendas.get(i.id) ?? null })) };
     });
   });
 }

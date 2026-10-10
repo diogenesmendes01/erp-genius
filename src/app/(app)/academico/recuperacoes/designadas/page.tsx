@@ -5,12 +5,15 @@ import { listarTentativasRecuperacaoDesignadas } from "@/server/avaliacoes/recup
 import { AgendaPublicada } from "../AgendaPublicada";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function Designadas({ searchParams }: { searchParams: Promise<{ depoisId?: string; modo?: string }> }) {
+export default async function Designadas({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR);
-  const { depoisId, modo } = await searchParams;
-  const r = await listarTentativasRecuperacaoDesignadas({ depoisId, modo: modo === "historico" ? "historico" : "pendentes" });
+  const q = await searchParams, pagina = lerPagina(q);
+  const r = await listarTentativasRecuperacaoDesignadas({ pagina, modo: q.modo === "historico" ? "historico" : "pendentes" });
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
+  const modo = r.dado.modo;
   return <section className="space-y-4">
     <Link className="underline" href="/academico/avaliacoes">Avaliações</Link>
     <h1 className="text-2xl font-medium">Minhas recuperações</h1>
@@ -20,9 +23,9 @@ export default async function Designadas({ searchParams }: { searchParams: Promi
       <AgendaPublicada agenda={i.agenda} />
       {r.dado!.modo === "historico" && i.realizacaoId ? <Link className="underline" href={`/academico/recuperacoes/${encodeURIComponent(i.realizacaoId)}`}>Consultar registros desta recuperação</Link> : <><p>{i.realizada ? "Realização registrada; nota ou conferência pendente." : "Realização ainda não registrada."}</p><Link className="underline" href={`/academico/recuperacoes/tentativas/${encodeURIComponent(i.id)}`}>Abrir tentativa atribuída</Link></>}
     </article>)}
-    {!r.dado.itens.length && (depoisId
+    {!r.dado.itens.length && (pagina > 1
       ? <EstadoVazio bloco acao={<Link className="underline" href={`?${new URLSearchParams({ modo: r.dado.modo })}`}>Ir para a primeira página</Link>}>Nenhuma tentativa disponível nesta página.</EstadoVazio>
       : <EstadoVazio bloco>{r.dado.modo === "historico" ? "Nenhuma avaliação de recuperação no seu histórico." : "Nenhuma tentativa pendente atribuída a você."}</EstadoVazio>)}
-    {r.dado.proximoId && <Link className="underline" href={`?${new URLSearchParams({ depoisId: r.dado.proximoId, modo: r.dado.modo })}`}>Próximas tentativas</Link>}
+    <Paginacao pagina={pagina} temProxima={r.dado.temProxima} href={(p) => hrefLista("/academico/recuperacoes/designadas", { modo, pagina: p })} rotulo="Páginas de tentativas de recuperação" />
   </section>;
 }

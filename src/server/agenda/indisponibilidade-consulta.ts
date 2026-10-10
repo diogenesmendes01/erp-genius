@@ -3,12 +3,14 @@ import { hashImpactoAusencia } from "./indisponibilidade-impacto";
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
 
+/** Paginada por número (E4), em ordem estável (criadoEm, id): a volta à página traz as mesmas solicitações. */
 const Filtro = z.object({
   professorId: z.string().min(1).optional(),
   situacao: z.enum(["TODAS", "PENDENTE", "APROVADA", "REJEITADA"]).default("TODAS"),
-  cursor: z.string().min(1).optional(),
+  pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1),
   limite: z.number().int().min(1).max(100).default(30),
 }).strict();
 
@@ -26,12 +28,11 @@ export async function consultarIndisponibilidadesDocentes(input: z.input<typeof 
         ...(d.situacao === "PENDENTE" ? { decisao: { is: null } } : {}),
         ...(["APROVADA", "REJEITADA"].includes(d.situacao) ? { decisao: { aprovada: d.situacao === "APROVADA" } } : {}),
       };
-      const registros = await tx.indisponibilidadeDocente.findMany({ where,
-        orderBy: [{ criadoEm: "desc" }, { id: "desc" }], take: d.limite + 1,
-        ...(d.cursor ? { cursor: { id: d.cursor }, skip: 1 } : {}),
+      const lidos = await tx.indisponibilidadeDocente.findMany({ where,
+        orderBy: [{ criadoEm: "desc" }, { id: "desc" }], ...janelaDaPagina(d.pagina, d.limite),
         include: { decisao: true, professor: { select: { nome: true } } },
       });
-      const pagina = registros.slice(0, d.limite);
+      const { registros: pagina, temProxima } = recorteDaPagina(lidos, d.limite);
       const emAnaliseOuAprovadas = pagina.filter((r) => !r.decisao || r.decisao.aprovada);
       const encontros = emAnaliseOuAprovadas.length ? await tx.encontroAgenda.findMany({ where: { status: "PREVISTO",
         OR: emAnaliseOuAprovadas.map((a) => ({ professorId: a.professorId, inicio: { lt: a.fim }, fim: { gt: a.inicio } })),
@@ -54,7 +55,7 @@ export async function consultarIndisponibilidadesDocentes(input: z.input<typeof 
           .map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })) : [],
         encontrosPendentes: r.decisao?.aprovada ? encontros.filter((e) => e.professorId === r.professorId && e.inicio < r.fim && r.inicio < e.fim)
           .map((e) => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })) : [],
-      })), proximoCursor: registros.length > d.limite ? pagina[pagina.length - 1].id : null };
+      })), pagina: d.pagina, temProxima };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
 }

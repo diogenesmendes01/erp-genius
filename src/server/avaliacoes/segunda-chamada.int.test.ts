@@ -442,7 +442,7 @@ it("professor designado registra somente sua segunda chamada enquanto mantém at
   expect(await consultarSegundaChamadaDocente({ reservaId })).toMatchObject({ ok: false });
   entrar(substituto);
   expect(await listarSegundasChamadasDocente({})).toMatchObject({ ok: true, dado: { itens: [{ reservaId, codigoAvaliacao: "I1", podeRealizar: true }] } });
-  expect(await listarSegundasChamadasDocente({ depoisId: reservaId })).toMatchObject({ ok: true, dado: { itens: [], proximoId: null } });
+  expect(await listarSegundasChamadasDocente({ pagina: 2 })).toMatchObject({ ok: true, dado: { itens: [], pagina: 2, temProxima: false } });
   const detalhe = await consultarSegundaChamadaDocente({ reservaId });
   expect(detalhe).toMatchObject({ ok: true, dado: { identificacao: { matriculaId, aluno: "Aluno segunda chamada" }, podeRealizar: true, podeLancarNota: false, habilidadesNecessarias: ["FALA"] } });
   expect(JSON.stringify(detalhe)).not.toMatch(/entradaHash|snapshot|telefone|responsavelFinanceiro|chaveIdempotencia/);
@@ -584,7 +584,7 @@ it("regulariza nota de segunda chamada por designação específica sem trocar o
   expect(await listarSegundasChamadasDocente({})).toMatchObject({ ok: true, dado: { itens: [{ reservaId, podeRealizar: false }] } });
   expect(await consultarSegundaChamadaDocente({ reservaId })).toMatchObject({ ok: true, dado: { podeLancarNota: true, podeRealizar: false, regularizacao: true } });
   expect(await consultarSegundaChamadaDocente({ reservaId: "reserva-sem-atribuicao" })).toMatchObject({ ok: false });
-  expect(await listarSegundasChamadasDocente({ depoisId: reservaId })).toMatchObject({ ok: true, dado: { itens: [], proximoId: null } });
+  expect(await listarSegundasChamadasDocente({ pagina: 2 })).toMatchObject({ ok: true, dado: { itens: [], pagina: 2, temProxima: false } });
   expect(await salvarNotaOriginalSegundaChamada({ realizacaoId: fonte.id, lancamento: { ...lancamento, motivoRegularizacao: undefined, evidenciasRegularizacao: undefined } })).toMatchObject({ ok: false });
   expect(await salvarNotaOriginalSegundaChamada({ realizacaoId: fonte.id, lancamento: { ...lancamento, realizadaPorId: regularizador } })).toMatchObject({ ok: false });
   const registro = await prisma.registroAvaliacaoMatricula.findFirstOrThrow({ where: { alocacaoId, codigoAvaliacao: "I1" } });
@@ -1407,13 +1407,14 @@ it("fila administrativa permite Secretaria localizar a reserva sem abrir notas o
   const secretaria = (await criarUsuario(["SECRETARIA_ACADEMICA"])).id;
   entrar(secretaria);
   const r = await listarAgendasSegundaChamada({});
-  expect(r).toMatchObject({ ok: true, dado: { proximoCursor: null,
+  expect(r).toMatchObject({ ok: true, dado: { pagina: 1, temProxima: false,
     itens: [{ reservaId: reserva.reservaId, codigoAvaliacao: "I1", statusReserva: "RESERVADA" }] } });
   if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
   expect(Object.keys(r.dado.itens[0]).sort()).toEqual([
     "reservaId", "statusReserva", "codigoAvaliacao", "reservadaEm", "matricula", "aluno", "turma", "agenda",
   ].sort());
-  expect(await listarAgendasSegundaChamada({ cursor: "inexistente" })).toMatchObject({ ok: false });
+  expect(await listarAgendasSegundaChamada({ pagina: 2 })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false } });
+  expect(await listarAgendasSegundaChamada({ pagina: 0 })).toMatchObject({ ok: false });
   entrar(professor);
   expect(await listarAgendasSegundaChamada({})).toMatchObject({ ok: false });
   await prisma.usuario.update({ where: { id: secretaria }, data: { ativo: false } });
