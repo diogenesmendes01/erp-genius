@@ -40,10 +40,12 @@ it("pagina matrículas legadas em conferência sem esconder as seguintes nem cri
   expect(primeira.dado.itens).toHaveLength(20);
   expect(primeira.dado.itens.every(i => i.estado === "A_CONFERIR")).toBe(true);
   expect(primeira.dado.temProxima).toBe(true);
-  const segunda = await consultarFilaContinuidadeMensal({ pagina: 2 });
+  expect(primeira.dado.proxima).toBe("fila-19");
+  const segunda = await consultarFilaContinuidadeMensal({ depois: primeira.dado.proxima! });
   if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
-  expect(segunda.dado.itens).toHaveLength(1);
+  expect(segunda.dado.itens.map(i => i.matriculaId)).toEqual(["fila-20"]);
   expect(segunda.dado.temProxima).toBe(false);
+  expect(segunda.dado.temAnterior).toBe(true);
   expect(new Set([...primeira.dado.itens, ...segunda.dado.itens].map(i => i.matriculaId)).size).toBe(21);
   expect({ cobrancas: await prisma.cobranca.count(), eventos: await prisma.evento.count() }).toEqual(antes);
 });

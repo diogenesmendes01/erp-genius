@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarFilaEnviosPortalAluno } from "@/server/portal-aluno/fila-envios";
@@ -6,23 +7,24 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { ConciliacaoEnvio } from "./ConciliacaoEnvio";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { Paginacao } from "@/components/Paginacao";
+import { PaginacaoFila } from "@/components/PaginacaoFila";
 import { FINALIDADE_TOKEN_PORTAL_ALUNO_LABEL, SITUACAO_ENVIO_PORTAL_ALUNO_LABEL, rotular } from "@/lib/labels";
-import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
+import { hrefLista, type ParametrosUrl } from "@/lib/pagina-url";
+import { cursorDaLeitura, lerNavegacao } from "@/lib/cursor-fila";
 
 export default async function EnviosPortalPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-  const pagina = lerPagina(await searchParams);
+  const nav = lerNavegacao(await searchParams);
   const [resultado, preferencia] = await Promise.all([
-    consultarFilaEnviosPortalAluno({ pagina }),
+    consultarFilaEnviosPortalAluno(nav),
     consultarPreferenciaFusoEquipe(),
   ]);
   if (!resultado.ok || !resultado.dado) return <section><h1 className="text-2xl font-medium">Envios de acesso ao portal</h1><p role="alert">Não foi possível consultar a fila.</p></section>;
-  const { itens, temProxima } = resultado.dado;
+  const { itens, anterior, proxima } = resultado.dado;
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const instanteAdministrativo = (valor: Date) => {
     const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
     return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
   };
-  return <section className="space-y-4"><header><VoltarPara href="/secretaria" /><h1 className="text-2xl font-medium">Envios de acesso ao portal</h1><p className="text-sm text-gray-600">Aceito pelo provedor não confirma entrega. Resultado incerto exige conciliação; esta tela não reenvia automaticamente.</p></header><ul className="space-y-2">{itens.map(i => <li key={i.id} className="rounded border p-3"><strong>{i.alunoNome}</strong><p>{rotular(FINALIDADE_TOKEN_PORTAL_ALUNO_LABEL, i.finalidade)} · {rotular(SITUACAO_ENVIO_PORTAL_ALUNO_LABEL, i.situacao)}</p><p className="text-xs text-gray-500">Preparada em {instanteAdministrativo(i.criadoEm)}. Atualizada em {instanteAdministrativo(i.atualizadoEm)}.</p>{(i.situacao === "INCERTO" || i.conciliacao) && <ConciliacaoEnvio item={i} preferenciaFusoExibicao={preferenciaFusoExibicao}/>}</li>)}</ul>{!itens.length && (pagina > 1 ? <EstadoVazio bloco role="status">Nenhuma solicitação nesta página.</EstadoVazio> : <EstadoVazio bloco role="status">Nenhuma solicitação de acesso ao portal na fila.</EstadoVazio>)}<Paginacao pagina={pagina} temProxima={temProxima} href={(p) => hrefLista("/secretaria/envios-portal", { pagina: p })} rotulo="Páginas de envios de acesso ao portal" /></section>;
+  return <section className="space-y-4"><header><VoltarPara href="/secretaria" /><h1 className="text-2xl font-medium">Envios de acesso ao portal</h1><p className="text-sm text-gray-600">Aceito pelo provedor não confirma entrega. Resultado incerto exige conciliação; esta tela não reenvia automaticamente.</p></header><ul className="space-y-2">{itens.map(i => <li key={i.id} className="rounded border p-3"><strong>{i.alunoNome}</strong><p>{rotular(FINALIDADE_TOKEN_PORTAL_ALUNO_LABEL, i.finalidade)} · {rotular(SITUACAO_ENVIO_PORTAL_ALUNO_LABEL, i.situacao)}</p><p className="text-xs text-gray-500">Preparada em {instanteAdministrativo(i.criadoEm)}. Atualizada em {instanteAdministrativo(i.atualizadoEm)}.</p>{(i.situacao === "INCERTO" || i.conciliacao) && <ConciliacaoEnvio item={i} preferenciaFusoExibicao={preferenciaFusoExibicao}/>}</li>)}</ul>{!itens.length && (cursorDaLeitura(nav) !== null ? <EstadoVazio bloco role="status" acao={<Link className="underline" href="/secretaria/envios-portal">Ir para o início da fila</Link>}>Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.</EstadoVazio> : <EstadoVazio bloco role="status">Nenhuma solicitação de acesso ao portal na fila.</EstadoVazio>)}<PaginacaoFila anterior={anterior} proxima={proxima} href={(cursor) => hrefLista("/secretaria/envios-portal", cursor)} rotulo="Navegação da fila de envios de acesso ao portal" /></section>;
 }

@@ -122,16 +122,19 @@ describe("fila administrativa de desistência", () => {
     entrar(admin.id);
     const primeira = await listarPendenciasAdministrativasDesistencia();
     if (!primeira.ok || !primeira.dado?.temProxima) throw new Error("Primeira página ausente.");
-    const segunda = await listarPendenciasAdministrativasDesistencia({ pagina: 2 });
+    const segunda = await listarPendenciasAdministrativasDesistencia({ depois: primeira.dado.proxima! });
     if (!segunda.ok || !segunda.dado) throw new Error("Segunda página ausente.");
     const listados = [...primeira.dado.itens, ...segunda.dado.itens].map((item) => item.pedido.id);
     expect(primeira.dado.itens).toHaveLength(20);
+    expect(primeira.dado.temAnterior).toBe(false);
     expect(segunda.dado.itens).toHaveLength(1);
     expect(segunda.dado.temProxima).toBe(false);
     expect(new Set(listados)).toEqual(new Set(ids));
-    // Volta à primeira página: os mesmos pedidos, na mesma ordem.
-    const volta = await listarPendenciasAdministrativasDesistencia({ pagina: 1 });
+    // Volta a partir do primeiro item da segunda: os mesmos pedidos da primeira, na mesma ordem, sem anterior.
+    const volta = await listarPendenciasAdministrativasDesistencia({ antes: segunda.dado.anterior! });
     if (!volta.ok || !volta.dado) throw new Error("Volta ausente.");
     expect(volta.dado.itens.map((item) => item.pedido.id)).toEqual(primeira.dado.itens.map((item) => item.pedido.id));
+    expect(volta.dado.temAnterior).toBe(false);
+    expect(await listarPendenciasAdministrativasDesistencia({ depois: "a b" })).toMatchObject({ ok: false });
   });
 });

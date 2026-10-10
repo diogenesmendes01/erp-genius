@@ -8,15 +8,16 @@ import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { Paginacao } from "@/components/Paginacao";
-import { hrefLista, lerOpcao, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
+import { PaginacaoFila } from "@/components/PaginacaoFila";
+import { hrefLista, lerOpcao, type ParametrosUrl } from "@/lib/pagina-url";
+import { cursorDaLeitura, lerNavegacao } from "@/lib/cursor-fila";
 
 
 export default async function RegularizacoesAulaPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-  const q = await searchParams, pagina = lerPagina(q);
+  const q = await searchParams, nav = lerNavegacao(q);
   const modo = lerOpcao(q, "modo", ["PENDENTES", "HISTORICO"] as const) ?? "PENDENTES";
-  const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ pagina, modo }), consultarPreferenciaFusoEquipe()]);
+  const [resultado, preferencia] = await Promise.all([listarRegularizacoesAula({ ...nav, modo }), consultarPreferenciaFusoEquipe()]);
   return <div className="space-y-5">
     <VoltarPara href="/diario" />
     <div>
@@ -29,7 +30,9 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
         <Link className={modo === "PENDENTES" ? "font-medium underline" : "underline"} href="/diario/regularizacoes?modo=PENDENTES">Pendências</Link>
         <Link className={modo === "HISTORICO" ? "font-medium underline" : "underline"} href="/diario/regularizacoes?modo=HISTORICO">Histórico</Link>
       </nav>}
-      {!resultado.dado.itens.length && <EstadoVazio>{modo === "HISTORICO" ? "Nenhuma designação encontrada no histórico." : "Nenhuma regularização pendente."}</EstadoVazio>}
+      {!resultado.dado.itens.length && (cursorDaLeitura(nav) !== null
+        ? <EstadoVazio acao={<Link className="underline" href={hrefLista("/diario/regularizacoes", { modo })}>Ir para o início da fila</Link>}>Nenhuma aula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.</EstadoVazio>
+        : <EstadoVazio>{modo === "HISTORICO" ? "Nenhuma designação encontrada no histórico." : "Nenhuma regularização pendente."}</EstadoVazio>)}
       {resultado.dado.itens.map((item) => {
         const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem);
         const formatar = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
@@ -45,7 +48,7 @@ export default async function RegularizacoesAulaPage({ searchParams }: { searchP
           {resultado.dado?.gestao && <GerirDesignacoes encontroId={item.id} somenteLeitura={!item.podeGerir} fusoExibicao={fuso} />}
         </article>;
       })}
-      <Paginacao pagina={pagina} temProxima={resultado.dado.temProxima} href={(p) => hrefLista("/diario/regularizacoes", { modo, pagina: p })} rotulo={modo === "HISTORICO" ? "Páginas do histórico de regularizações" : "Páginas de regularizações pendentes"} />
+      <PaginacaoFila anterior={resultado.dado.anterior} proxima={resultado.dado.proxima} href={(cursor) => hrefLista("/diario/regularizacoes", { modo, ...cursor })} rotulo={modo === "HISTORICO" ? "Navegação do histórico de regularizações" : "Navegação da fila de regularizações pendentes"} />
     </>}
   </div>;
 }

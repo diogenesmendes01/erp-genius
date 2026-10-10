@@ -6,8 +6,9 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { Paginacao } from "@/components/Paginacao";
-import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
+import { PaginacaoFila } from "@/components/PaginacaoFila";
+import { hrefLista, type ParametrosUrl } from "@/lib/pagina-url";
+import { cursorDaLeitura, lerNavegacao } from "@/lib/cursor-fila";
 
 function dataNoFuso(valor: string, fuso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
@@ -15,8 +16,8 @@ function dataNoFuso(valor: string, fuso: string) {
 
 export default async function PendenciasDiarioPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
-  const pagina = lerPagina(await searchParams);
-  const [resultado, preferencia] = await Promise.all([consultarAvisosDiario({ pagina }), consultarPreferenciaFusoEquipe()]);
+  const nav = lerNavegacao(await searchParams);
+  const [resultado, preferencia] = await Promise.all([consultarAvisosDiario(nav), consultarPreferenciaFusoEquipe()]);
 
   return <section className="space-y-5">
     <VoltarPara href="/diario" />
@@ -28,7 +29,9 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
     {resultado.ok && resultado.dado && <>
       {!resultado.dado.configurada && <p role="alert" className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">Os prazos de regularização e lembrete do diário ainda não foram configurados.{usuario.papeis.includes(Papel.ADMINISTRADOR) && <> <Link className="underline" href="/configuracao/operacao/avisos-diario">Configurar avisos</Link>.</>}</p>}
       {resultado.dado.gestao && <p className="text-sm text-gray-600">Acompanhamento da gestão: alertas começam somente depois do prazo de regularização.</p>}
-      {!resultado.dado.itens.length && <EstadoVazio>Nenhuma pendência de diário encontrada.</EstadoVazio>}
+      {!resultado.dado.itens.length && (cursorDaLeitura(nav) !== null
+        ? <EstadoVazio acao={<Link className="underline" href="/diario/pendencias">Ir para o início da fila</Link>}>Nenhuma pendência de diário a partir deste ponto da fila.</EstadoVazio>
+        : <EstadoVazio>Nenhuma pendência de diário encontrada.</EstadoVazio>)}
       {resultado.dado.itens.map((item) => {
         const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, item.fusoOrigem);
         return <article key={item.id} className="space-y-2 rounded border bg-[var(--surface)] p-4">
@@ -42,7 +45,7 @@ export default async function PendenciasDiarioPage({ searchParams }: { searchPar
         <p className="text-sm text-gray-600">{item.quantidadeLembretes > 0 ? `${item.quantidadeLembretes} lembrete(s) registrado(s).` : "Nenhum lembrete registrado."}{item.ultimoLembreteEm && <> Último: {dataNoFuso(item.ultimoLembreteEm, fuso)}.</>}{item.proximoLembreteEm && <> Próximo: {dataNoFuso(item.proximoLembreteEm, fuso)}.</>}</p>
         {item.podeRegularizar && <Link className="inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${encodeURIComponent(item.encontroId)}`}>Abrir diário para regularizar</Link>}
       </article>})}
-      <Paginacao pagina={pagina} temProxima={resultado.dado.temProxima} href={(p) => hrefLista("/diario/pendencias", { pagina: p })} rotulo="Páginas de pendências" />
+      <PaginacaoFila anterior={resultado.dado.anterior} proxima={resultado.dado.proxima} href={(cursor) => hrefLista("/diario/pendencias", cursor)} rotulo="Navegação da fila de pendências" />
     </>}
   </section>;
 }

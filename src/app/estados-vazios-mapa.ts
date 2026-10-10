@@ -143,6 +143,7 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
 export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/academico/MudancasAcademicasPainel.tsx": [
     "compacto · Não há turma de destino disponível no mesmo idioma, modalidade e formato.",
+    "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · Nenhuma solicitação acadêmica neste filtro.",
     "compacto · Nenhum parecer registrado.",
   ],
@@ -218,6 +219,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhuma turma planejada sem histórico ou agenda publicada foi encontrada.",
   ],
   "src/app/(app)/academico/grades/page.tsx": [
+    "bloco · Nenhuma proposta a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · Nenhuma proposta encontrada.",
   ],
   "src/app/(app)/academico/indisponibilidades/SolicitarAusencia.tsx": [
@@ -237,7 +239,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhuma proposta de correção registrada para esta nota.",
   ],
   "src/app/(app)/academico/recuperacoes/designadas/page.tsx": [
-    "bloco · Nenhuma tentativa disponível nesta página.",
+    "bloco · Nenhuma tentativa a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · {r.dado.modo === \"historico\" ? \"Nenhuma avaliação de recuperação no seu histórico.\" : \"Nenhuma tenta",
   ],
   "src/app/(app)/academico/recuperacoes/page.tsx": [
@@ -312,6 +314,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhuma segunda chamada designada está disponível.",
   ],
   "src/app/(app)/academico/segundas-chamadas/pendentes-agenda/page.tsx": [
+    "bloco · Nenhuma segunda chamada pendente a partir deste ponto da fila: o link ficou antigo ou a fila termino",
     "bloco · Nenhuma segunda chamada pendente de agenda foi encontrada.",
   ],
   "src/app/(app)/academico/segundas-chamadas/propostas/[propostaId]/agenda/page.tsx": [
@@ -460,9 +463,11 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhum encontro disponível.",
   ],
   "src/app/(app)/diario/excecoes-gravacao/page.tsx": [
+    "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · Nenhuma solicitação encontrada.",
   ],
   "src/app/(app)/diario/pendencias/page.tsx": [
+    "compacto · Nenhuma pendência de diário a partir deste ponto da fila.",
     "compacto · Nenhuma pendência de diário encontrada.",
   ],
   "src/app/(app)/diario/regularizacoes-gravacao/RegularizacoesGravacao.tsx": [
@@ -472,6 +477,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma designação registrada.",
   ],
   "src/app/(app)/diario/regularizacoes/page.tsx": [
+    "compacto · Nenhuma aula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "compacto · {modo === \"HISTORICO\" ? \"Nenhuma designação encontrada no histórico.\" : \"Nenhuma regularização pende",
   ],
   "src/app/(app)/diario/reposicoes/ReposicoesEquipe.tsx": [
@@ -528,11 +534,11 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhuma proposta de acerto registrada.",
   ],
   "src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal.tsx": [
-    "bloco · Nenhuma matrícula precisa de acompanhamento nesta página.",
+    "bloco · Nenhuma matrícula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · Nenhuma matrícula precisa de acompanhamento na continuidade mensal.",
   ],
   "src/app/(app)/financeiro/desistencias/page.tsx": [
-    "bloco · Nenhum pedido nesta página.",
+    "bloco · Nenhum pedido a partir deste ponto da fila: os pedidos seguintes já foram concluídos ou o link ficou",
     "bloco · Nenhum pedido de desistência aguardando conferência financeira.",
   ],
   "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx": [
@@ -725,17 +731,17 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma mensalidade registrada.",
   ],
   "src/app/(app)/secretaria/avisos-agenda/page.tsx": [
-    "compacto · Nenhum aviso nesta página.",
+    "compacto · Nenhum aviso a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "compacto · Nenhum aviso de alteração na agenda.",
-    "compacto · Nenhuma pendência nesta página.",
+    "compacto · Nenhuma pendência a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "compacto · Nenhuma pendência operacional registrada.",
   ],
   "src/app/(app)/secretaria/desistencias/page.tsx": [
-    "bloco · Nenhum pedido pendente nesta página.",
+    "bloco · Nenhum pedido pendente a partir deste ponto da fila: os seguintes já foram decididos ou o link ficou",
     "bloco · Nenhum pedido aguardando decisão administrativa.",
   ],
   "src/app/(app)/secretaria/envios-portal/page.tsx": [
-    "bloco · Nenhuma solicitação nesta página.",
+    "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · Nenhuma solicitação de acesso ao portal na fila.",
   ],
   "src/app/(app)/secretaria/reservas/[id]/page.tsx": [
