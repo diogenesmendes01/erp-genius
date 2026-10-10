@@ -1,12 +1,12 @@
 "use client";
 
-import { useId } from "react";
 import { useRouter } from "next/navigation";
 import { registrarOcorrenciaSegundaChamadaLocal } from "@/server/avaliacoes/segunda-chamada-ocorrencia-local";
 import { botaoClasses } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
 
 const tipos = [
   ["FALTA", "Falta"],
@@ -15,7 +15,6 @@ const tipos = [
 
 export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; fuso: string }) {
   const router = useRouter();
-  const listaFusosId = useId();
   // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
   const acao = useAcaoCliente({ idempotente: false });
 
@@ -44,15 +43,9 @@ export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; f
       <label className="block">Data e hora da ocorrência
         <input name="dataHoraLocal" type="datetime-local" step="0.001" required className="block rounded border p-2" />
       </label>
-      <label className="block">Fuso IANA
-        <input name="fuso" list={listaFusosId} defaultValue={fuso} required className="block rounded border p-2" />
+      <label className="block">Fuso da data e hora
+        <CampoFuso padrao={fuso} className="block rounded border p-2" />
       </label>
-      <datalist id={listaFusosId}>
-        <option value="UTC" />
-        <option value="America/Sao_Paulo" />
-        <option value="America/Manaus" />
-        <option value="America/Rio_Branco" />
-      </datalist>
       <label className="block">Motivo
         <CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" />
       </label>

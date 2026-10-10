@@ -4,6 +4,9 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarAgendasIniciaisSegundaChamada } from "@/server/avaliacoes/segunda-chamada-agenda-inicial";
 import { Formulario } from "./Formulario";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoInicialDeEntrada } from "@/server/operacao/fuso-exibicao";
 
 const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short", timeStyle: "short", timeZone: fuso,
@@ -22,15 +25,20 @@ export default async function AgendaInicial({ params, searchParams }: {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const { propostaId } = await params;
   const { antesId } = await searchParams;
-  const r = await consultarAgendasIniciaisSegundaChamada({ propostaSegundaChamadaId: propostaId, ...(antesId ? { antesId } : {}) });
+  const [r, fusoInstitucional, preferencia] = await Promise.all([
+    consultarAgendasIniciaisSegundaChamada({ propostaSegundaChamadaId: propostaId, ...(antesId ? { antesId } : {}) }),
+    consultarFusoInstitucional(),
+    consultarPreferenciaFusoEquipe(),
+  ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
+  const fusoInicial = fusoInicialDeEntrada(fusoInstitucional, preferencia.ok ? preferencia.dado?.fusoExibicao : null);
   return <section className="space-y-4">
     <Link className="underline" href="/academico">Acadêmico</Link>
     <h1 className="text-2xl font-medium">Agenda inicial da segunda chamada</h1>
     <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · {d.identificacao.nivel}</p>
     <p>O encontro e a reserva só são criados na aprovação independente da agenda concreta.</p>
-    <Formulario propostaSegundaChamadaId={propostaId} professores={d.professores} podePropor={d.podePropor} />
+    <Formulario propostaSegundaChamadaId={propostaId} professores={d.professores} podePropor={d.podePropor} fusoInicial={fusoInicial} />
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma agenda inicial foi preparada.</EstadoVazio>}
     {d.itens.map(item => <article key={item.id} className="space-y-2 rounded border p-4">

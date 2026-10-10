@@ -37,7 +37,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
  <p>{d.identificacao.aluno} · Matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · {d.identificacao.nivel}</p>
  <p>A aprovação independente cancela este encontro. Cancelamento pela escola ou pedido do aluno dentro da antecedência devolve a oportunidade; pedido tardio do aluno consome. Vale a data original do pedido, não a data da aprovação. Não cria nota, presença ou cobrança.</p>
  <h2 className="font-medium">Agenda atual</h2><Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />
- {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} fusoInstitucional={fusoInstitucional} />}
+ {d.podePropor && <Formulario reservaId={reservaId} estadoConferido={d.estadoConferido} fusoInstitucional={fusoInstitucional} fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC")} />}
  <h2 className="font-medium">Propostas e decisões</h2>
  {d.propostas.map(p => <article key={p.id} className="space-y-3 rounded border p-4">
  <p>Origem: {p.origem === "ALUNO" ? "aluno" : "escola"}. Proposta de {p.autorNome}. Ocorrência informada: {formatarInstanteExibicao(p.ocorridaEm, resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC"), "UTC").texto} ({resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC")}; origem UTC).</p>
