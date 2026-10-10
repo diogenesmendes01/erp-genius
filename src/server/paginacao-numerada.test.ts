@@ -6,6 +6,10 @@ import type { ArgsPaginados } from "@/test/consulta-paginada";
 // trazem os mesmos registros; nenhuma página repete ou perde registro; a ordem termina no id (ou, na
 // consulta SQL crua, LIMIT/OFFSET recebem a janela da página).
 //
+// Só as LISTAS e os HISTÓRICOS ficam aqui. As FILAS de trabalho (pendências que somem quando alguém age
+// nelas) passaram a cursor nos dois sentidos (decisão de 10/10/2026) e são testadas em
+// src/server/filas-cursor.test.ts.
+//
 // O Prisma é de mentira (src/test/consulta-paginada.ts): `findMany` ordena e aplica skip/take sobre as
 // linhas do teste; `$queryRaw` devolve a janela LIMIT/OFFSET das linhas cruas ou, sem OFFSET, o usuário
 // ativo das conferências de papel. Tudo o mais que cada consulta chama de fora (identificação, agendas,
@@ -67,19 +71,12 @@ vi.mock("@/server/matricula/desistencia-administrativa", () => ({
   } }),
 }));
 
-import { listarDesistenciasFinanceiras } from "./matricula/desistencia-financeiro-consulta";
-import { listarPendenciasAdministrativasDesistencia } from "./matricula/desistencia-administrativa-fila";
-import { consultarAvisosAlteracaoAgenda } from "./comunicacoes-agenda/consultas";
 import { listarAutorizacoesComunicacaoAcademica } from "./comunicacoes-agenda/autorizacoes";
 import { consultarLotesPreparacaoMigracao } from "./migracao/consultas";
 import { listarLinhasConciliacaoFinanceira } from "./migracao/consultas-financeiras";
-import { listarExcecoesGravacao } from "./diario/excecao-consulta";
-import { listarRegularizacoesAula } from "./diario/regularizacao-consultas";
 import { listarPropostasEquivalencia } from "./avaliacoes/equivalencia-consulta";
 import { consultarIndisponibilidadesDocentes } from "./agenda/indisponibilidade-consulta";
 import { listarAgendasSegundaChamada } from "./avaliacoes/segunda-chamada-agendas";
-import { listarSegundasChamadasSemAgenda } from "./avaliacoes/segunda-chamada-fila-agenda";
-import { listarTentativasRecuperacaoDesignadas } from "./avaliacoes/recuperacao-fila-docente";
 import { consultarHistoricoPreparacaoRecuperacao } from "./avaliacoes/recuperacao-preparacao-historico";
 
 type Pagina = { pagina: number; temProxima: boolean; ids: string[] };
@@ -96,26 +93,6 @@ type Caso = { nome: string; porPagina: number; modelo: string | null; linha: (id
 
 const CASOS: Caso[] = [
   {
-    nome: "desistências para conferência financeira", porPagina: 20, modelo: "matricula",
-    linha: (id) => ({ id, codigo: null, pedidosDesistenciaPreparacao: [] }),
-    ler: async (pagina) => { const d = dado(await listarDesistenciasFinanceiras({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
-  },
-  {
-    nome: "desistências pendentes de decisão administrativa (SQL)", porPagina: 20, modelo: null,
-    linha: (id) => ({ matriculaId: id, pedidoId: `pedido-${id}` }),
-    ler: async (pagina) => { const d = dado(await listarPendenciasAdministrativasDesistencia({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
-  },
-  {
-    nome: "avisos de alteração na agenda", porPagina: 20, modelo: "avisoAlteracaoAgenda",
-    linha: (id) => ({ id, matriculaId: "m", canal: "EMAIL", situacao: "PREPARADO", criadoEm: quando, atualizadoEm: quando, aluno: { primeiroNome: "Ana", sobrenome: null }, itens: [] }),
-    ler: async (pagina) => { const d = dado(await consultarAvisosAlteracaoAgenda({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
-  },
-  {
-    nome: "pendências operacionais dos avisos", porPagina: 20, modelo: "pendenciaAvisoAgenda",
-    linha: (id) => ({ id, matriculaId: "m", motivo: "CONTATO_INDISPONIVEL", situacao: "PENDENTE", criadoEm: quando, resolvidaEm: null, observacaoResolucao: null, matricula: { codigo: null, aluno: { primeiroNome: "Ana", sobrenome: null } }, resolvidaPor: null }),
-    ler: async (pagina) => { const d = dado(await consultarAvisosAlteracaoAgenda({ paginaPendencias: pagina })); return { pagina: d.paginaPendencias, temProxima: d.temProximaPendencia, ids: d.pendencias.map((i) => i.id) }; },
-  },
-  {
     nome: "histórico de autorizações de comunicação", porPagina: 25, modelo: "autorizacaoComunicacaoAcademica",
     linha: (id) => ({ id, vigenteEm: quando }),
     ler: async (pagina) => { const d = await listarAutorizacoesComunicacaoAcademica({ matriculaId: "m", pagina }); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
@@ -131,16 +108,6 @@ const CASOS: Caso[] = [
     ler: async (pagina) => { const d = dado(await listarLinhasConciliacaoFinanceira({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
   },
   {
-    nome: "exceções de gravação", porPagina: 30, modelo: "excecaoGravacaoEncontro",
-    linha: (id) => ({ id, encontroId: "e", solicitanteId: "outro", motivo: "Falha", criadoEm: quando, snapshot: {}, solicitante: { nome: "Prof" }, decisao: null, encontro: { inicio: quando, fim: quando, fusoOrigem: "UTC", status: "PREVISTO", diario: null } }),
-    ler: async (pagina) => { const d = dado(await listarExcecoesGravacao({ apenasPendentes: false, pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
-  },
-  {
-    nome: "regularizações de aula", porPagina: 30, modelo: "encontroAgenda",
-    linha: (id) => ({ id, status: "PREVISTO", inicio: quando, fim: quando, fusoOrigem: "UTC", professorId: "p", professor: { nome: "Prof" }, turma: { codigo: "T" }, designacoesRegularizacaoAula: [] }),
-    ler: async (pagina) => { const d = dado(await listarRegularizacoesAula({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
-  },
-  {
     nome: "propostas de aproveitamento", porPagina: 50, modelo: "propostaEquivalenciaAvaliacao",
     linha: (id) => ({ id, versao: 1, criadaEm: quando, motivo: "Motivo", turmaOrigem: { nome: null, codigo: "A" }, turmaDestino: { nome: null, codigo: "B" }, decisao: null }),
     ler: async (pagina) => { const d = dado(await listarPropostasEquivalencia({ matriculaId: "m", pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
@@ -154,16 +121,6 @@ const CASOS: Caso[] = [
     nome: "agendas de segunda chamada", porPagina: 20, modelo: "reservaSegundaChamada",
     linha: (id) => ({ id, status: "RESERVADA", codigoAvaliacao: "I1", reservadaEm: quando, matricula: { codigo: null, aluno: { primeiroNome: "Ana", sobrenome: null, nomePreferido: null } }, proposta: { turma: { codigo: "T", nome: null } }, agenda: null }),
     ler: async (pagina) => { const d = dado(await listarAgendasSegundaChamada({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.reservaId) }; },
-  },
-  {
-    nome: "segundas chamadas pendentes de agenda (SQL)", porPagina: 20, modelo: null,
-    linha: (id) => ({ propostaSegundaChamadaId: id, alocacaoId: "a", matriculaId: "m", turmaId: "t", codigoAvaliacao: "I1", aluno: "Ana", matriculaCodigo: null, turma: "T", prazoAte: quando, criadaEm: quando, possuiReservaTerminal: false, possuiPendenciaEscola: false }),
-    ler: async (pagina) => { const d = dado(await listarSegundasChamadasSemAgenda({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.propostaSegundaChamadaId) }; },
-  },
-  {
-    nome: "tentativas de recuperação designadas (SQL)", porPagina: 20, modelo: null,
-    linha: (id) => ({ id, habilidade: "FALA", primeiroNome: "Ana", sobrenome: null, matriculaCodigo: null, matriculaId: "m", turma: "T", nivel: "A1", realizacaoId: null }),
-    ler: async (pagina) => { const d = dado(await listarTentativasRecuperacaoDesignadas({ pagina })); return { pagina: d.pagina, temProxima: d.temProxima, ids: d.itens.map((i) => i.id) }; },
   },
   {
     nome: "histórico de autorizações de preparação", porPagina: 20, modelo: "autorizacaoEspecialPreparacaoRecuperacao",
@@ -215,9 +172,9 @@ describe("consultas numeradas: ida e volta (E4)", () => {
   });
 
   it("página fora do intervalo é recusada antes de consultar", async () => {
-    expect(await listarDesistenciasFinanceiras({ pagina: 0 })).toMatchObject({ ok: false });
-    expect(await listarSegundasChamadasSemAgenda({ pagina: 100001 })).toMatchObject({ ok: false });
-    expect(await consultarAvisosAlteracaoAgenda({ paginaPendencias: 1.5 })).toMatchObject({ ok: false });
+    expect(await consultarLotesPreparacaoMigracao({ pagina: 0 })).toMatchObject({ ok: false });
+    expect(await listarAgendasSegundaChamada({ pagina: 100001 })).toMatchObject({ ok: false });
+    expect(await consultarIndisponibilidadesDocentes({ pagina: 1.5 })).toMatchObject({ ok: false });
     expect(estado.chamadas).toEqual([]);
     expect(estado.janelasRaw).toEqual([]);
   });

@@ -3,14 +3,16 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoFila } from "@/lib/cursor-fila";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 
-/** Paginada por número (E4): a página é contada no escopo de quem consulta, em ordem de id. */
-export async function listarRegularizacoesAula(input: { pagina?: number; modo?: "PENDENTES" | "HISTORICO" } = {}) {
+/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026), no escopo de quem consulta e em ordem de
+ * id: regularizar uma aula a tira da fila de pendentes sem deslocar as seguintes, e a próxima continua da última vista.
+ * O histórico (`modo: "HISTORICO"`) usa o mesmo cursor. */
+export async function listarRegularizacoesAula(input: NavegacaoFila & { modo?: "PENDENTES" | "HISTORICO" } = {}) {
   return executarAcao(async () => {
     const usuario = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-    const d = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1), modo: z.enum(["PENDENTES", "HISTORICO"]).default("PENDENTES") }).strict().parse(input);
+    const d = z.object({ ...camposNavegacaoFila, modo: z.enum(["PENDENTES", "HISTORICO"]).default("PENDENTES") }).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS).parse(input);
     return prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${usuario.id} FOR SHARE`;
@@ -19,19 +21,19 @@ export async function listarRegularizacoesAula(input: { pagina?: number; modo?: 
       const gestao = u.papeis.some(p => p === Papel.GERENTE_PEDAGOGICO || p === Papel.ADMINISTRADOR);
       if (d.modo === "HISTORICO" && !gestao) throw new ErroPermissao();
       const agora = new Date();
-      const encontros = await tx.encontroAgenda.findMany({ where: { finalidade: "AULA",
+      const { registros, ...navegacao } = await lerPaginaDaFila({ depois: d.depois, antes: d.antes }, 30, (leitura, take) => tx.encontroAgenda.findMany({ where: { finalidade: "AULA",
         ...(d.modo === "PENDENTES" ? { status: "PREVISTO" as const, fim: { lte: agora } } : { designacoesRegularizacaoAula: { some: {} } }),
         ...(!gestao ? { designacoesRegularizacaoAula: { some: { responsavelId: usuario.id, revogacao: null } } } : {}),
-      }, orderBy: { id: "asc" }, ...janelaDaPagina(d.pagina, 30), select: { id: true, status: true, inicio: true, fim: true, fusoOrigem: true, professorId: true,
+        ...corteDoId(leitura, "asc"),
+      }, orderBy: { id: direcaoDeLeitura(leitura)("asc") }, take, select: { id: true, status: true, inicio: true, fim: true, fusoOrigem: true, professorId: true,
         professor: { select: { nome: true } }, turma: { select: { codigo: true } },
         designacoesRegularizacaoAula: { where: { revogacao: null }, select: { id: true, responsavelId: true, responsavel: { select: { nome: true } } } },
-      } });
-      const { registros, temProxima } = recorteDaPagina(encontros, 30);
+      } }), (e) => e.id);
       return { gestao, modo: d.modo, itens: registros.map(e => ({ id: e.id, status: e.status, podeGerir: gestao && e.status === "PREVISTO" && e.fim <= agora, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoOrigem: e.fusoOrigem,
         turma: e.turma?.codigo ?? (e.turma ? "Turma sem código" : "Particular"), professor: e.professor?.nome ?? "Professor não identificado",
         podeRegularizar: e.status === "PREVISTO" && e.fim <= agora && (e.designacoesRegularizacaoAula.some(a => a.responsavelId === usuario.id) || e.professorId === usuario.id && u.papeis.includes(Papel.PROFESSOR)),
         designacao: e.designacoesRegularizacaoAula[0] ? { id: e.designacoesRegularizacaoAula[0].id, responsavel: e.designacoesRegularizacaoAula[0].responsavel.nome } : null,
-      })), pagina: d.pagina, temProxima };
+      })), ...navegacao };
     });
   });
 }

@@ -4,7 +4,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { alemDoCursor, camposNavegacaoFila, cursorDaLeitura, direcaoDeLeitura, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoDaPagina, type NavegacaoFila } from "@/lib/cursor-fila";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, registrarEvento, type Resultado } from "@/server/_shared";
 
 const LIMITE = 20;
@@ -13,7 +13,7 @@ const ConfiguracaoSchema = z.object({
   prazoRegularizacaoDiarioMinutos: minutos,
   intervaloLembreteDiarioMinutos: minutos,
 }).strict();
-const ConsultaSchema = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict();
+const ConsultaSchema = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 
 export type ItemAvisoDiario = {
   id: string;
@@ -31,13 +31,11 @@ export type ItemAvisoDiario = {
   quantidadeLembretes: number;
   podeRegularizar: boolean;
 };
-export type ConsultaAvisosDiario = {
+export type ConsultaAvisosDiario = NavegacaoDaPagina & {
   configurada: boolean;
   configuracao: { prazoRegularizacaoDiarioMinutos: number | null; intervaloLembreteDiarioMinutos: number | null };
   gestao: boolean;
   itens: ItemAvisoDiario[];
-  pagina: number;
-  temProxima: boolean;
 };
 
 function somarMinutos(instante: Date, quantidade: number) {
@@ -146,12 +144,15 @@ async function atualizarCicloTx(
 
 /** Q22: refresh por acesso ao painel. É pull interno; não há job, e-mail ou
  * retroenvio. Cada chamada toca no máximo a página atual e até 20 ciclos
- * abertos do próprio usuário para encerrar fontes revogadas. Paginada por número
- * (E4), em ordem estável (fim desc, id desc). */
-export async function consultarAvisosDiario(input: { pagina?: number } = {}): Promise<Resultado<ConsultaAvisosDiario>> {
+ * abertos do próprio usuário para encerrar fontes revogadas. Fila de trabalho com
+ * cursor nos dois sentidos (E4, decisão de 10/10/2026), em ordem estável (fim desc,
+ * id desc): o cursor é o encontro do fim (ou do começo) da página, lido no escopo
+ * mas sem o filtro de pendência — regularizar a aula âncora não a perde, e a
+ * próxima continua de onde a pessoa parou sem pular ninguém. */
+export async function consultarAvisosDiario(input: NavegacaoFila = {}): Promise<Resultado<ConsultaAvisosDiario>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-    const { pagina: numeroPagina } = ConsultaSchema.parse(input);
+    const nav = ConsultaSchema.parse(input);
     return prisma.$transaction(async (tx) => {
       // Q24 cria/revoga designações sob a mesma trava; obtê-la antes de usuário,
       // configuração e encontros mantém a ordem de bloqueio do diário.
@@ -169,20 +170,26 @@ export async function consultarAvisosDiario(input: { pagina?: number } = {}): Pr
 
       await encerrarCiclosObsoletosTx(tx, { usuarioId: sessao.id, papeis: usuario.papeis, gestao, agora });
       const escopoDocente = gestao ? {} : escopoResponsavel(sessao.id, usuario.papeis, agora);
-      const encontros = await tx.encontroAgenda.findMany({ where: {
-        finalidade: "AULA", status: "PREVISTO", fim: { lte: agora },
-        AND: [escopoDocente],
-      }, orderBy: [{ fim: "desc" }, { id: "desc" }], ...janelaDaPagina(numeroPagina, LIMITE), select: {
+      const ler = async (leitura: NavegacaoFila, take: number) => {
+        const cursor = cursorDaLeitura(leitura);
+        const ancora = cursor === null ? null : await tx.encontroAgenda.findFirst({ where: { id: cursor, AND: [escopoDocente] }, select: { id: true, fim: true } });
+        if (cursor !== null && !ancora) return [];
+        const sentido = direcaoDeLeitura(leitura);
+        return tx.encontroAgenda.findMany({ where: {
+          finalidade: "AULA", status: "PREVISTO", fim: { lte: agora },
+          AND: [escopoDocente, ...(ancora ? [{ OR: [{ fim: alemDoCursor(leitura, "desc", ancora.fim) }, { fim: ancora.fim, id: alemDoCursor(leitura, "desc", ancora.id) }] }] : [])],
+        }, orderBy: [{ fim: sentido("desc") }, { id: sentido("desc") }], take, select: {
           id: true, professorId: true, inicio: true, fim: true, fusoOrigem: true,
           turma: { select: { codigo: true, nome: true } }, professor: { select: { nome: true } },
           diario: { select: { conteudo: true, registros: { select: { presente: true } } } },
           publicacaoGravacao: { select: { id: true } },
           excecoesGravacao: { where: { decisao: { aprovada: true } }, select: { id: true } },
           designacoesRegularizacaoAula: { where: { responsavelId: sessao.id, revogacao: { is: null } }, select: { id: true } },
-      } });
-      const { registros: pagina, temProxima } = recorteDaPagina(encontros, LIMITE);
+        } });
+      };
+      const { registros: encontros, ...navegacao } = await lerPaginaDaFila(nav, LIMITE, ler, (encontro) => encontro.id);
       const itens: ItemAvisoDiario[] = [];
-      for (const encontroPagina of pagina) {
+      for (const encontroPagina of encontros) {
         await tx.$queryRaw`SELECT id FROM "EncontroAgenda" WHERE id = ${encontroPagina.id} FOR UPDATE`;
         const encontro = await tx.encontroAgenda.findUnique({ where: { id: encontroPagina.id }, select: {
           id: true, turmaId: true, finalidade: true, status: true, professorId: true, inicio: true, fim: true, fusoOrigem: true,
@@ -228,7 +235,7 @@ export async function consultarAvisosDiario(input: { pagina?: number } = {}): Pr
         configurada: politicaCompleta,
         configuracao: { prazoRegularizacaoDiarioMinutos: configuracao?.prazoRegularizacaoDiarioMinutos ?? null,
           intervaloLembreteDiarioMinutos: configuracao?.intervaloLembreteDiarioMinutos ?? null },
-        gestao, itens, pagina: numeroPagina, temProxima,
+        gestao, itens, ...navegacao,
       };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   });

@@ -27,6 +27,16 @@ describe("datas do painel de mudanças acadêmicas", () => {
     expect(html).toMatch(/30\/09\/2026.*21:30/);
   });
 
+  it("vazio da fila (E4): no início, o filtro está vazio; a partir de um cursor, o vazio leva ao início da fila", () => {
+    const inicio = renderToStaticMarkup(createElement(MudancasAcademicasPainel, { solicitacoes: [] }));
+    expect(inicio).toContain("Nenhuma solicitação acadêmica neste filtro.");
+    expect(inicio).not.toContain("Ir para o início da fila");
+    const ponto = renderToStaticMarkup(createElement(MudancasAcademicasPainel, { solicitacoes: [], inicioDaFila: "/academico?historico=todos" }));
+    expect(ponto).toContain("Nenhuma solicitação a partir deste ponto da fila");
+    expect(ponto).toContain('href="/academico?historico=todos">Ir para o início da fila');
+    expect(ponto).not.toContain("nesta página");
+  });
+
   it("mantém o fallback legado de São Paulo", () => {
     const html = renderToStaticMarkup(createElement(MudancasAcademicasPainel, { solicitacoes: [solicitacao] as never }));
     expect(html).toContain("Instantes administrativos exibidos em America/Sao_Paulo (origem UTC).");

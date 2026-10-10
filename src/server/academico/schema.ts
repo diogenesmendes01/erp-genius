@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { StatusMudancaAcademica } from "@prisma/client";
 import { PAGINA_MAXIMA } from "@/lib/pagina-url";
+import { camposNavegacaoFila, MENSAGEM_DOIS_SENTIDOS, umSentido } from "@/lib/cursor-fila";
 
 const motivo = z.string().trim().min(5, "Informe uma justificativa com pelo menos 5 caracteres.").max(2000);
 export const HorarioCompativelSchema = z.literal(true, {
@@ -45,6 +46,10 @@ export const FiltrosSolicitacoesAcademicasSchema = z.object({
   /** Página numerada (E4), 50 por página; a ordem (criadoEm, id) é estável na ida e na volta. */
   pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional(),
 });
+
+/** Fila de /academico (E4, decisão de 10/10/2026): abertas (ou todas, com `historico`), por cursor nos dois sentidos. */
+export const FilaSolicitacoesAcademicasSchema = z.object({ ...camposNavegacaoFila, historico: z.boolean().optional() })
+  .strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 
 export interface ContextoMudancaAcademica {
   alunoId: string;

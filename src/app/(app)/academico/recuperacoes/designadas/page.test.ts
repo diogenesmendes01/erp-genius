@@ -8,54 +8,57 @@ vi.mock("../AgendaPublicada", () => ({ AgendaPublicada: () => null }));
 
 import Designadas from "./page";
 
-// Revisão R1 da #134 (B5): página 1 × página seguinte nos dois modos; a volta preserva o modo.
-describe("minhas recuperações — vazio paginado", () => {
+const semNavegacao = { temAnterior: false, temProxima: false, anterior: null, proxima: null };
+
+// Revisão R1 da #134 (B5): início × ponto da fila sem itens nos dois modos; a volta preserva o modo.
+describe("minhas recuperações — vazio da fila", () => {
   beforeEach(() => { vi.resetAllMocks(); mocks.sessao.mockResolvedValue({}); });
   const render = async (sp: Record<string, string>, modo: "pendentes" | "historico") => {
-    mocks.listar.mockResolvedValue({ ok: true, dado: { modo, itens: [], pagina: Number(sp.pagina ?? 1), temProxima: false } });
+    mocks.listar.mockResolvedValue({ ok: true, dado: { modo, itens: [], ...semNavegacao } });
     return renderToStaticMarkup(await Designadas({ searchParams: Promise.resolve(sp) }));
   };
 
-  it("página 1: diz que não há tentativa (pendentes) ou avaliação (histórico), sem 'nesta página'", async () => {
+  it("início: diz que não há tentativa (pendentes) ou avaliação (histórico), sem 'nesta página' nem link para si", async () => {
     const pendentes = await render({}, "pendentes");
     expect(pendentes).toContain("Nenhuma tentativa pendente atribuída a você.");
     expect(pendentes).not.toContain("nesta página");
     const historico = await render({ modo: "historico" }, "historico");
     expect(historico).toContain("Nenhuma avaliação de recuperação no seu histórico.");
-    expect(historico).not.toContain("Ir para a primeira página");
+    expect(historico).not.toContain("Ir para o início da fila");
   });
 
-  it("página seguinte do histórico: a volta ao início continua no histórico", async () => {
-    const html = await render({ modo: "historico", pagina: "2" }, "historico");
-    expect(html).toContain("Nenhuma tentativa disponível nesta página.");
-    expect(html).toContain('<a class="underline" href="?modo=historico">Ir para a primeira página</a>');
-    expect(html).toContain('href="/academico/recuperacoes/designadas?modo=historico">← Anterior');
+  it("cursor que não leva a nada no histórico: a volta ao início continua no histórico", async () => {
+    const html = await render({ modo: "historico", depois: "t-sumida" }, "historico");
+    expect(html).toContain("Nenhuma tentativa a partir deste ponto da fila");
+    expect(html).not.toContain("nesta página");
+    expect(html).toContain('<a class="underline" href="?modo=historico">Ir para o início da fila</a>');
   });
 });
 
-describe("minhas recuperações — paginação nos dois sentidos (E4)", () => {
+describe("minhas recuperações — cursor nos dois sentidos (E4, fila)", () => {
   beforeEach(() => { vi.resetAllMocks(); mocks.sessao.mockResolvedValue({}); });
   const item = { id: "t/1", habilidade: "FALA", aluno: "Ana", matriculaCodigo: "M-1", matriculaId: "m", turma: "T-1", nivel: "A1", realizada: false, realizacaoId: null, agenda: null };
   const render = async (sp: Record<string, string>, dado: Record<string, unknown>) => {
-    mocks.listar.mockResolvedValue({ ok: true, dado: { modo: "pendentes", itens: [item], pagina: 1, temProxima: true, ...dado } });
+    mocks.listar.mockResolvedValue({ ok: true, dado: { modo: "pendentes", itens: [item], temAnterior: false, temProxima: true, anterior: null, proxima: "t-20", ...dado } });
     return renderToStaticMarkup(await Designadas({ searchParams: Promise.resolve(sp) }));
   };
 
-  it("primeira página: só Próxima, mantendo o modo e sem link para si mesma", async () => {
+  it("início: só Próxima, mantendo o modo e sem link para si mesmo", async () => {
     const html = await render({}, {});
-    expect(mocks.listar).toHaveBeenCalledWith({ pagina: 1, modo: "pendentes" });
+    expect(mocks.listar).toHaveBeenCalledWith({ modo: "pendentes" });
     expect(html).not.toContain("Anterior");
-    expect(html).not.toContain("pagina=1");
-    expect(html).toContain('href="/academico/recuperacoes/designadas?modo=pendentes&amp;pagina=2">Próxima');
+    expect(html).not.toContain("pagina");
+    expect(html).toContain('href="/academico/recuperacoes/designadas?modo=pendentes&amp;depois=t-20">Próxima');
   });
 
-  it("no meio do histórico, os dois sentidos; da segunda, Anterior volta sem ?pagina=1 e a última não tem Próxima", async () => {
-    const meio = await render({ modo: "historico", pagina: "3" }, { modo: "historico", pagina: 3 });
-    expect(mocks.listar).toHaveBeenCalledWith({ pagina: 3, modo: "historico" });
-    expect(meio).toContain('href="/academico/recuperacoes/designadas?modo=historico&amp;pagina=2">← Anterior');
-    expect(meio).toContain('href="/academico/recuperacoes/designadas?modo=historico&amp;pagina=4">Próxima');
-    const ultima = await render({ pagina: "2" }, { pagina: 2, temProxima: false });
-    expect(ultima).toContain('href="/academico/recuperacoes/designadas?modo=pendentes">← Anterior');
+  it("no meio do histórico, os dois sentidos com o cursor certo; a última não tem Próxima", async () => {
+    const meio = await render({ modo: "historico", depois: "t-20" }, { modo: "historico", temAnterior: true, anterior: "t-21", proxima: "t-40" });
+    expect(mocks.listar).toHaveBeenCalledWith({ depois: "t-20", modo: "historico" });
+    expect(meio).toContain('href="/academico/recuperacoes/designadas?modo=historico&amp;antes=t-21">← Anterior');
+    expect(meio).toContain('href="/academico/recuperacoes/designadas?modo=historico&amp;depois=t-40">Próxima');
+    const ultima = await render({ antes: "t-60" }, { temAnterior: true, temProxima: false, anterior: "t-41", proxima: null });
+    expect(mocks.listar).toHaveBeenLastCalledWith({ antes: "t-60", modo: "pendentes" });
+    expect(ultima).toContain('href="/academico/recuperacoes/designadas?modo=pendentes&amp;antes=t-41">← Anterior');
     expect(ultima).not.toContain("Próxima");
   });
 });

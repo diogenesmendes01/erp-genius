@@ -2,7 +2,7 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoFila } from "@/lib/cursor-fila";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { conferirCancelamentoFinanceiroDesistenciaTx } from "./desistencia-financeira-tx";
@@ -45,18 +45,18 @@ export async function consultarCancelamentoFinanceiroDesistencia(input: { matric
   });
 }
 
-/** Fila paginada por número (E4): a ordem por `id` é estável, então ida e volta mostram os mesmos pedidos. */
-export async function listarDesistenciasFinanceiras(input: { pagina?: number } = {}) {
+/** Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026): a ordem por `id` é estável e a
+ * leitura continua do último pedido visto, então concluir um pedido da página não faz a próxima pular outro. */
+export async function listarDesistenciasFinanceiras(input: NavegacaoFila = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO);
-    const { pagina = 1 } = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional() }).strict().parse(input);
+    const nav = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS).parse(input);
     const usuario = await prisma.usuario.findUnique({ where: { id: sessao.id }, select: { ativo: true, papeis: true } });
     if (!usuario?.ativo || !usuario.papeis.some(p => p === Papel.FINANCEIRO || p === Papel.ADMINISTRADOR)) throw new ErroPermissao();
-    const lidos = await prisma.matricula.findMany({ where: { status: { in: ["RASCUNHO", "AGUARDANDO"] },
-      pedidosDesistenciaPreparacao: { some: {} }, cobrancas: { some: {} }, efetivacaoDesistenciaPreparacao: null },
-      orderBy: { id: "asc" }, ...janelaDaPagina(pagina, 20),
-      select: { id: true, codigo: true, pedidosDesistenciaPreparacao: { orderBy: { versao: "desc" }, take: 1, select: { versao: true, motivo: true } } } });
-    const { registros, temProxima } = recorteDaPagina(lidos, 20);
-    return { itens: registros.map(m => ({ id: m.id, codigo: m.codigo, pedido: m.pedidosDesistenciaPreparacao[0] })), pagina, temProxima };
+    const { registros, ...navegacao } = await lerPaginaDaFila(nav, 20, (leitura, take) => prisma.matricula.findMany({ where: { status: { in: ["RASCUNHO", "AGUARDANDO"] },
+      pedidosDesistenciaPreparacao: { some: {} }, cobrancas: { some: {} }, efetivacaoDesistenciaPreparacao: null, ...corteDoId(leitura, "asc") },
+      orderBy: { id: direcaoDeLeitura(leitura)("asc") }, take,
+      select: { id: true, codigo: true, pedidosDesistenciaPreparacao: { orderBy: { versao: "desc" }, take: 1, select: { versao: true, motivo: true } } } }), m => m.id);
+    return { itens: registros.map(m => ({ id: m.id, codigo: m.codigo, pedido: m.pedidosDesistenciaPreparacao[0] })), ...navegacao };
   });
 }

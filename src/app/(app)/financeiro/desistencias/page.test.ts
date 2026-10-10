@@ -10,8 +10,7 @@ import Page from "./page";
 
 const resposta = (sobrescrever: Record<string, unknown> = {}) => ({ ok: true, dado: {
   itens: [{ id: "matricula/a?", codigo: "MAT-596", pedido: { versao: 4, motivo: "Condições financeiras aguardam conferência" } }],
-  pagina: 1,
-  temProxima: true,
+  temAnterior: false, temProxima: true, anterior: null, proxima: "m-ultima",
   ...sobrescrever,
 } });
 
@@ -23,58 +22,59 @@ describe("FilaDesistenciasFinanceirasPage", () => {
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
 
     expect(mocks.sessao).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
-    expect(mocks.listar).toHaveBeenCalledWith({ pagina: 1 });
+    expect(mocks.listar).toHaveBeenCalledWith({});
     expect(html).toContain("MAT-596");
     expect(html).toContain("/matriculas/matricula%2Fa%3F/desistencia/financeiro");
     expect(html).not.toContain("CRC");
     expect(html).not.toContain("saldo");
   });
 
-  it("paginação nos dois sentidos: a primeira página só tem Próxima; no meio, as duas; Anterior volta à página certa", async () => {
+  it("fila por cursor nos dois sentidos: o início só tem Próxima; Anterior e Próxima levam o cursor certo", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });
     mocks.listar.mockResolvedValue(resposta());
-    const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-    expect(primeira).not.toContain("Anterior");
-    expect(primeira).toContain('href="/financeiro/desistencias?pagina=2"');
-    expect(primeira).toContain("Próxima");
+    const inicio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(inicio).not.toContain("Anterior");
+    expect(inicio).toContain('href="/financeiro/desistencias?depois=m-ultima">Próxima');
+    expect(inicio).not.toContain("pagina=");
 
-    mocks.listar.mockResolvedValue(resposta({ pagina: 3 }));
-    const meio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "3" }) }));
-    expect(mocks.listar).toHaveBeenLastCalledWith({ pagina: 3 });
-    expect(meio).toContain('href="/financeiro/desistencias?pagina=2">← Anterior');
-    expect(meio).toContain('href="/financeiro/desistencias?pagina=4">Próxima');
+    mocks.listar.mockResolvedValue(resposta({ temAnterior: true, anterior: "m-primeira", proxima: "m-ultima" }));
+    const meio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "m-antes" }) }));
+    expect(mocks.listar).toHaveBeenLastCalledWith({ depois: "m-antes" });
+    expect(meio).toContain('href="/financeiro/desistencias?antes=m-primeira">← Anterior');
+    expect(meio).toContain('href="/financeiro/desistencias?depois=m-ultima">Próxima');
 
-    // Da segunda página, Anterior volta à primeira sem ?pagina=1.
-    mocks.listar.mockResolvedValue(resposta({ pagina: 2, temProxima: false }));
-    const segunda = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
-    expect(segunda).toContain('href="/financeiro/desistencias">← Anterior');
-    expect(segunda).not.toContain("Próxima");
+    // Voltando (antes=…), o cursor chega intacto à consulta; sem próxima, só Anterior.
+    mocks.listar.mockResolvedValue(resposta({ temAnterior: true, temProxima: false, anterior: "m-primeira", proxima: null }));
+    const fim = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ antes: "m-depois" }) }));
+    expect(mocks.listar).toHaveBeenLastCalledWith({ antes: "m-depois" });
+    expect(fim).toContain("← Anterior");
+    expect(fim).not.toContain("Próxima");
   });
 
-  it("declara explicitamente uma página vazia", async () => {
+  it("vazio: no início, fila zerada sem link para si; depois do fim, volta ao início", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });
-    mocks.listar.mockResolvedValue(resposta({ itens: [], temProxima: false }));
+    mocks.listar.mockResolvedValue(resposta({ itens: [], temProxima: false, proxima: null }));
 
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-
-    // Primeira página: fila zerada, não "nesta página" (docs/42), e sem navegação.
     expect(html).toContain("Nenhum pedido de desistência aguardando conferência financeira.");
     expect(html).not.toContain("nesta página");
     expect(html).not.toContain("Próxima");
     expect(html).not.toContain("Anterior");
+    expect(html).not.toContain('href="/financeiro/desistencias"');
 
-    const seguinte = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
-    expect(seguinte).toContain("Nenhum pedido nesta página.");
-    expect(seguinte).toContain('href="/financeiro/desistencias">← Anterior');
+    const alem = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "m-sumida" }) }));
+    expect(alem).toContain("Nenhum pedido a partir deste ponto da fila");
+    expect(alem).toContain('href="/financeiro/desistencias">Ir para o início da fila');
+    expect(alem).not.toContain("nesta página");
   });
 
-  it("mostra somente erro quando a consulta falha", async () => {
+  it("mostra somente erro quando a consulta falha (cursor inválido inclusive)", async () => {
     mocks.sessao.mockResolvedValue({ papeis: [Papel.FINANCEIRO] });
-    mocks.listar.mockResolvedValue({ ok: false, erro: "Consulta indisponível agora." });
+    mocks.listar.mockResolvedValue({ ok: false, erro: "Cursor de navegação inválido. Volte ao início da fila." });
 
-    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "x y" }) }));
 
-    expect(html).toContain("Consulta indisponível agora.");
+    expect(html).toContain("Cursor de navegação inválido.");
     expect(html).not.toContain("Desistências para conferência financeira");
   });
 });

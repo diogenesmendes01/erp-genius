@@ -220,13 +220,14 @@ it("pagina pendências sem duplicar encontros nem devolver histórico na fila", 
   const primeira = await listarRegularizacoesAula();
   if (!primeira.ok || !primeira.dado?.temProxima) throw new Error(JSON.stringify(primeira));
   expect(primeira.dado.itens).toHaveLength(30);
-  const segunda = await listarRegularizacoesAula({ pagina: 2 });
+  const segunda = await listarRegularizacoesAula({ depois: primeira.dado.proxima! });
   if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
   expect(segunda.dado.itens).toHaveLength(1);
   expect(segunda.dado.temProxima).toBe(false);
-  const volta = await listarRegularizacoesAula({ pagina: 1 });
+  const volta = await listarRegularizacoesAula({ antes: segunda.dado.anterior! });
   if (!volta.ok || !volta.dado) throw new Error(JSON.stringify(volta));
   expect(volta.dado.itens.map(e => e.id)).toEqual(primeira.dado.itens.map(e => e.id));
+  expect(volta.dado.temAnterior).toBe(false);
   expect(new Set([...primeira.dado.itens, ...segunda.dado.itens].map(e => e.id)).size).toBe(31);
   expect(JSON.stringify(primeira)).not.toContain("registros");
 });

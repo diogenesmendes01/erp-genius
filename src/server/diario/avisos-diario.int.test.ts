@@ -278,8 +278,8 @@ it("encerra ciclo cancelado além da primeira página sem concluir as vinte font
   const primeira = await consultarAvisosDiario({});
   if (!primeira.ok || !primeira.dado?.temProxima) throw new Error(JSON.stringify(primeira));
   expect(primeira.dado.itens).toHaveLength(20);
-  const segunda = await consultarAvisosDiario({ pagina: 2 });
-  expect(segunda).toMatchObject({ ok: true, dado: { pagina: 2, temProxima: false } });
+  const segunda = await consultarAvisosDiario({ depois: primeira.dado.proxima! });
+  expect(segunda).toMatchObject({ ok: true, dado: { temAnterior: true, temProxima: false } });
   expect(segunda).toMatchObject({ ok: true, dado: { itens: [expect.objectContaining({ encontroId: encontros[20]!.id })] } });
   await prisma.encontroAgenda.update({ where: { id: encontros[20]!.id }, data: { status: "CANCELADO" } });
 
