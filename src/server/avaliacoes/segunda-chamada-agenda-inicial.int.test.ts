@@ -249,7 +249,7 @@ it("proposta aguardando decisão fica na fila; agenda aplicada sai dela sem apag
   expect(depois.dado.itens).toHaveLength(0);
   expect(await prisma.propostaSegundaChamada.count()).toBe(1);
   expect(await prisma.reservaSegundaChamada.count()).toBe(1);
-  expect(await listarSegundasChamadasSemAgenda({ cursor: { id: "fonte-inexistente", criadaEm: new Date().toISOString() } })).toMatchObject({ ok: false });
+  expect(await listarSegundasChamadasSemAgenda({ pagina: 0 })).toMatchObject({ ok: false });
 });
 
 it("fila pagina fontes sem duplicar itens quando chega uma autorização nova", async () => {
@@ -266,10 +266,11 @@ it("fila pagina fontes sem duplicar itens quando chega uma autorização nova", 
   const primeira = await listarSegundasChamadasSemAgenda({});
   if (!primeira.ok || !primeira.dado) throw new Error(JSON.stringify(primeira));
   expect(primeira.dado.itens).toHaveLength(20);
-  expect(primeira.dado.proximoCursor).toBeTruthy();
-  // A fonte usada como cursor pode sair da fila antes da leitura da próxima página.
+  expect(primeira.dado.temProxima).toBe(true);
+  // A última fonte da primeira página sai da fila (agendada) e chega uma autorização nova antes da leitura
+  // da segunda página: uma saída e uma entrada à frente se compensam na contagem por número de página.
   await prepararCalendario();
-  const horario = { propostaSegundaChamadaId: primeira.dado.proximoCursor!.id, professorId: professor,
+  const horario = { propostaSegundaChamadaId: primeira.dado.itens[19]!.propostaSegundaChamadaId, professorId: professor,
     inicio: new Date(Date.now() + 60 * 60_000).toISOString(), fim: new Date(Date.now() + 90 * 60_000).toISOString(), fusoOrigem: "UTC" };
   const previa = await consultarPreviaAgendaInicialSegundaChamada(horario);
   if (!previa.ok || !previa.dado) throw new Error(JSON.stringify(previa));
@@ -281,10 +282,10 @@ it("fila pagina fontes sem duplicar itens quando chega uma autorização nova", 
   expect(await decidirAgendaInicialSegundaChamada({ propostaId: propostaCursor.dado.id, propostaHash: propostaCursor.dado.entradaHash,
     aprovada: true, motivo: "Aprovação da fonte utilizada como cursor" })).toMatchObject({ ok: true });
   await criarFonte(22);
-  const segunda = await listarSegundasChamadasSemAgenda({ cursor: primeira.dado.proximoCursor! });
+  const segunda = await listarSegundasChamadasSemAgenda({ pagina: 2 });
   if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
   expect(segunda.dado.itens).toHaveLength(2);
-  expect(segunda.dado.proximoCursor).toBeNull();
+  expect(segunda.dado.temProxima).toBe(false);
   const nomes = [...primeira.dado.itens, ...segunda.dado.itens].map(item => item.aluno);
   expect(new Set(nomes).size).toBe(22);
   expect(nomes).not.toContain("Aluno pagina 22");

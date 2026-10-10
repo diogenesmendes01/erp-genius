@@ -8,6 +8,7 @@ vi.mock("@/server/_shared", async (original) => {
   return { ...real, exigirSessaoComPapel: m.sessao };
 });
 
+import { findManyOrdenado, idsEmOrdem, terminaNoId } from "@/test/consulta-paginada";
 import { consultarFilaEnviosPortalAluno } from "./fila-envios";
 
 const linha = (id: string) => ({
@@ -40,21 +41,37 @@ describe("consultarFilaEnviosPortalAluno", () => {
 
     if (!resultado.ok || !resultado.dado) throw new Error("Fila ausente");
     expect(resultado.dado.itens).toHaveLength(20);
-    expect(resultado.dado.proximoCursor).toBe("19");
+    expect(resultado.dado.temProxima).toBe(true);
+    expect(resultado.dado.pagina).toBe(1);
     expect(resultado.dado.itens[0]).toEqual({
       id: "00", alunoNome: "Ana Silva", finalidade: "CONVITE", situacao: "PREPARADO",
       criadoEm: new Date("2026-09-16T10:00:00.000Z"), atualizadoEm: new Date("2026-09-16T11:00:00.000Z"), conciliacao: null, podeRegistrarEvidencia: true, podeDecidirReemissao: false,
     });
-    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { id: "asc" }, take: 21 }));
+    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { id: "asc" }, skip: 0, take: 21 }));
     expect(JSON.stringify(resultado.dado)).not.toMatch(/segredo@example|nao-expor@example|chave-interna|token|link/i);
   });
 
-  it("aplica o cursor somente como limite ascendente do id", async () => {
-    m.envios.mockResolvedValue([]);
+  it("pagina por número nos dois sentidos: ida e volta trazem os mesmos itens; a primeira não tem anterior e a última não tem próxima", async () => {
+    m.envios.mockImplementation(findManyOrdenado(idsEmOrdem(45).reverse().map(linha)));
+    const ler = async (pagina?: number) => {
+      const r = await consultarFilaEnviosPortalAluno(pagina ? { pagina } : {});
+      if (!r.ok || !r.dado) throw new Error("Fila ausente");
+      return r.dado;
+    };
+    const p1 = await ler(), p2 = await ler(2), p3 = await ler(3), volta = await ler(2), inicio = await ler(1);
+    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ skip: 20, take: 21 }));
+    expect(terminaNoId(m.envios.mock.calls[0][0].orderBy)).toBe(true);
+    expect([p1.pagina, p1.temProxima, p2.temProxima, p3.temProxima]).toEqual([1, true, true, false]);
+    expect(p3.itens.map((i) => i.id)).toEqual(["40", "41", "42", "43", "44"].map((n) => `r${n}`));
+    expect(volta.itens).toEqual(p2.itens);
+    expect(inicio.itens).toEqual(p1.itens);
+    expect(new Set([...p1.itens, ...p2.itens, ...p3.itens].map((i) => i.id)).size).toBe(45);
+  });
 
-    await consultarFilaEnviosPortalAluno({ cursor: "solicitacao-20" });
-
-    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { gt: "solicitacao-20" } } }));
+  it("recusa página fora do intervalo sem consultar", async () => {
+    await expect(consultarFilaEnviosPortalAluno({ pagina: 0 })).resolves.toMatchObject({ ok: false });
+    await expect(consultarFilaEnviosPortalAluno({ pagina: 1.5 })).resolves.toMatchObject({ ok: false });
+    expect(m.envios).not.toHaveBeenCalled();
   });
 
   it("revalida o papel no banco antes da consulta", async () => {

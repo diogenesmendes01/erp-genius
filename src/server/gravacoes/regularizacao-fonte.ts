@@ -3,6 +3,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
 import { obterDriveOrganizacaoId, obterTokenDrive } from "./credenciais";
 import { obterTokenPublicacaoDrive } from "./credenciais-publicacao";
@@ -137,22 +138,23 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
   });
 }
 
-/** Dados operacionais mínimos para a tela de regularização; não incluem URL ou token do Drive. */
-const Consulta = z.object({ cursor: z.string().optional(), busca: z.string().trim().max(120).optional() }).strict();
+/** Dados operacionais mínimos para a tela de regularização; não incluem URL ou token do Drive.
+ * Paginada por número (E4): a mesma página de cada lista (10 fontes de aula, 10 de reposição, 20
+ * propostas), em ordem de id; há próxima se qualquer uma das três continua. */
+const Consulta = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1), busca: z.string().trim().max(120).optional() }).strict();
 export async function consultarRegularizacoesFonteGravacao(entrada: unknown = {}) {
   const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const dados = Consulta.parse(entrada);
-  let cursor: { p?: string | null; m?: string | null; q?: string | null } = {};
-  if (dados.cursor) try { cursor = JSON.parse(Buffer.from(dados.cursor, "base64url").toString("utf8")); } catch { throw new ErroRegra("Cursor de regularização inválido."); }
   const busca = dados.busca || undefined;
   return prisma.$transaction(async (tx) => {
     await exigirGestaoFresca(tx, autor.id);
-    const [publicacoes, materiais, propostas] = await Promise.all([
-      cursor.p === null ? Promise.resolve([]) : tx.publicacaoGravacaoAula.findMany({ where: busca ? { OR: [{ id: { contains: busca } }, { arquivoOficialId: { contains: busca } }] } : undefined, orderBy: { id: "asc" }, ...(cursor.p ? { cursor: { id: cursor.p }, skip: 1 } : {}), take: 11, select: { id: true, encontroId: true, arquivoOficialId: true, criadaEm: true, encontro: { select: { inicio: true, fusoOrigem: true, turma: { select: { codigo: true, nome: true } } } }, fontesRevisao: { orderBy: { versao: "desc" }, take: 1, select: { versao: true } } } }),
-      cursor.m === null ? Promise.resolve([]) : tx.materialReposicaoGravacao.findMany({ where: busca ? { OR: [{ id: { contains: busca } }, { arquivoOficialId: { contains: busca } }, { reposicao: { matricula: { codigo: { contains: busca } } } }] } : undefined, orderBy: { id: "asc" }, ...(cursor.m ? { cursor: { id: cursor.m }, skip: 1 } : {}), take: 11, select: { id: true, reposicaoId: true, arquivoOficialId: true, publicadoEm: true, reposicao: { select: { matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } } } }, fontesRevisao: { orderBy: { versao: "desc" }, take: 1, select: { versao: true } } } }),
-      cursor.q === null ? Promise.resolve([]) : tx.propostaRegularizacaoFonteGravacao.findMany({ orderBy: { id: "asc" }, ...(cursor.q ? { cursor: { id: cursor.q }, skip: 1 } : {}), take: 21, select: { id: true, preparadorId: true, alvo: true, publicacaoAulaId: true, materialReposicaoId: true, arquivoOficialId: true, driveRevisionId: true, motivo: true, versaoEsperada: true, criadaEm: true, publicacaoAula: { select: { encontro: { select: { inicio: true, fusoOrigem: true, turma: { select: { codigo: true, nome: true } } } } } }, materialReposicao: { select: { reposicao: { select: { matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } } } } } }, preparador: { select: { nome: true } }, decisao: { select: { aprovada: true, motivo: true, decididaEm: true, decisor: { select: { nome: true } } } } } }),
+    const [publicacoesLidas, materiaisLidos, propostasLidas] = await Promise.all([
+      tx.publicacaoGravacaoAula.findMany({ where: busca ? { OR: [{ id: { contains: busca } }, { arquivoOficialId: { contains: busca } }] } : undefined, orderBy: { id: "asc" }, ...janelaDaPagina(dados.pagina, 10), select: { id: true, encontroId: true, arquivoOficialId: true, criadaEm: true, encontro: { select: { inicio: true, fusoOrigem: true, turma: { select: { codigo: true, nome: true } } } }, fontesRevisao: { orderBy: { versao: "desc" }, take: 1, select: { versao: true } } } }),
+      tx.materialReposicaoGravacao.findMany({ where: busca ? { OR: [{ id: { contains: busca } }, { arquivoOficialId: { contains: busca } }, { reposicao: { matricula: { codigo: { contains: busca } } } }] } : undefined, orderBy: { id: "asc" }, ...janelaDaPagina(dados.pagina, 10), select: { id: true, reposicaoId: true, arquivoOficialId: true, publicadoEm: true, reposicao: { select: { matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } } } }, fontesRevisao: { orderBy: { versao: "desc" }, take: 1, select: { versao: true } } } }),
+      tx.propostaRegularizacaoFonteGravacao.findMany({ orderBy: { id: "asc" }, ...janelaDaPagina(dados.pagina, 20), select: { id: true, preparadorId: true, alvo: true, publicacaoAulaId: true, materialReposicaoId: true, arquivoOficialId: true, driveRevisionId: true, motivo: true, versaoEsperada: true, criadaEm: true, publicacaoAula: { select: { encontro: { select: { inicio: true, fusoOrigem: true, turma: { select: { codigo: true, nome: true } } } } } }, materialReposicao: { select: { reposicao: { select: { matricula: { select: { codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } } } } } }, preparador: { select: { nome: true } }, decisao: { select: { aprovada: true, motivo: true, decididaEm: true, decisor: { select: { nome: true } } } } } }),
     ]);
-    const maisP = publicacoes.length > 10, maisM = materiais.length > 10, maisQ = propostas.length > 20;
-    return { publicacoes: publicacoes.slice(0, 10), materiais: materiais.slice(0, 10), propostas: propostas.slice(0, 20).map((p) => ({ ...p, podeDecidir: !p.decisao && p.preparadorId !== autor.id })), proximoCursor: maisP || maisM || maisQ ? Buffer.from(JSON.stringify({ p: maisP ? publicacoes[9]?.id : null, m: maisM ? materiais[9]?.id : null, q: maisQ ? propostas[19]?.id : null })).toString("base64url") : null };
+    const publicacoes = recorteDaPagina(publicacoesLidas, 10), materiais = recorteDaPagina(materiaisLidos, 10), propostas = recorteDaPagina(propostasLidas, 20);
+    return { publicacoes: publicacoes.registros, materiais: materiais.registros, propostas: propostas.registros.map((p) => ({ ...p, podeDecidir: !p.decisao && p.preparadorId !== autor.id })),
+      pagina: dados.pagina, temProxima: publicacoes.temProxima || materiais.temProxima || propostas.temProxima };
   });
 }

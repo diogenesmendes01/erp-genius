@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarHistoricoPreparacaoRecuperacao } from "@/server/avaliacoes/recuperacao-preparacao-historico";
@@ -7,12 +6,14 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, lerTexto, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function HistoricoPreparacao({ searchParams }: { searchParams: Promise<{ alocacaoId?: string; depoisId?: string }> }) {
+export default async function HistoricoPreparacao({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
-  const { alocacaoId = "", depoisId } = await searchParams;
+  const q = await searchParams, alocacaoId = lerTexto(q, "alocacaoId"), pagina = lerPagina(q);
   const [resultado, preferencia] = await Promise.all([
-    consultarHistoricoPreparacaoRecuperacao({ alocacaoId, ...(depoisId ? { depoisId } : {}) }),
+    consultarHistoricoPreparacaoRecuperacao({ alocacaoId, pagina }),
     consultarPreferenciaFusoEquipe(),
   ]);
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
@@ -20,7 +21,6 @@ export default async function HistoricoPreparacao({ searchParams }: { searchPara
   const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
   const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
   const caminhoPlanos = `/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`;
-  const caminhoHistorico = `/academico/recuperacoes/planos/autorizacoes-preparacao?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`;
 
   return <section className="space-y-4">
     <VoltarPara href={caminhoPlanos} para="Planos de recuperação" />
@@ -33,7 +33,6 @@ export default async function HistoricoPreparacao({ searchParams }: { searchPara
       <p className="whitespace-pre-wrap">{autorizacao.motivo}</p>
     </article>)}
     {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização de preparação registrada.</EstadoVazio>}
-    {d.proximoId && <Link className="block underline" href={`?${new URLSearchParams({ alocacaoId: d.alocacaoId, depoisId: d.proximoId })}`}>Próximas autorizações</Link>}
-    {depoisId && <Link className="block underline" href={caminhoHistorico}>Primeira página do histórico</Link>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista("/academico/recuperacoes/planos/autorizacoes-preparacao", { alocacaoId: d.alocacaoId, pagina: p })} rotulo="Páginas do histórico de autorizações de preparação" />
   </section>;
 }

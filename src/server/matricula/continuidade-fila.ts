@@ -3,10 +3,11 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 import { carregarContinuidadeMensalTx } from "./continuidade-estado-tx";
 
-const Entrada = z.object({ cursor: z.string().trim().min(1).max(100).optional() }).strict();
+const Entrada = z.object({ pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional() }).strict();
 
 type EstadoFilaContinuidade = "AGUARDAR_PRAZO" | "PRONTA" | "OFERTA_PENDENTE" | "INDISPONIVEL" | "CONFERENCIA" | "A_CONFERIR";
 export type ItemFilaContinuidadeMensal = {
@@ -18,31 +19,31 @@ export type ItemFilaContinuidadeMensal = {
   cobertura: { inicio: string; fim: string } | null;
   vencimento: string | null;
 };
-export type FilaContinuidadeMensal = { itens: ItemFilaContinuidadeMensal[]; proximoCursor: string | null };
+export type FilaContinuidadeMensal = { itens: ItemFilaContinuidadeMensal[]; pagina: number; temProxima: boolean };
 
-/** Incremento 608: visão financeira, paginada e sem efeitos; a emissão revalida tudo no comando próprio. */
-export async function consultarFilaContinuidadeMensal(input: { cursor?: string } = {}) {
+/** Incremento 608: visão financeira, paginada (por número, em ordem de id — E4) e sem efeitos; a emissão revalida tudo no comando próprio. */
+export async function consultarFilaContinuidadeMensal(input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.ADMINISTRADOR);
-    const dados = Entrada.parse(input);
+    const { pagina = 1 } = Entrada.parse(input);
     return prisma.$transaction(async (tx) => {
       const usuario = await tx.usuario.findUnique({ where: { id: sessao.id }, select: { ativo: true, papeis: true } });
       if (!usuario?.ativo || !usuario.papeis.some((papel) => papel === Papel.FINANCEIRO || papel === Papel.ADMINISTRADOR)) throw new ErroPermissao();
-      const registros = await tx.matricula.findMany({
+      const lidos = await tx.matricula.findMany({
         where: {
           status: "ATIVA",
-          ...(dados.cursor ? { id: { gt: dados.cursor } } : {}),
           OR: [
             { preparacaoComercial: { regime: "MENSALIDADE" } },
             { preparacaoComercial: null, cobrancas: { some: { tipo: "MENSALIDADE" } } },
           ],
         },
-        orderBy: { id: "asc" }, take: 21,
+        orderBy: { id: "asc" }, ...janelaDaPagina(pagina, 20),
         select: { id: true, codigo: true, aluno: { select: { primeiroNome: true, sobrenome: true } } },
       });
+      const { registros, temProxima } = recorteDaPagina(lidos, 20);
       const agora = new Date();
       const itens: ItemFilaContinuidadeMensal[] = [];
-      for (const matricula of registros.slice(0, 20)) {
+      for (const matricula of registros) {
         const alunoNome = [matricula.aluno.primeiroNome, matricula.aluno.sobrenome].filter(Boolean).join(" ");
         try {
           const estado = await carregarContinuidadeMensalTx(tx, { matriculaId: matricula.id, agora });
@@ -62,7 +63,7 @@ export async function consultarFilaContinuidadeMensal(input: { cursor?: string }
           itens.push({ matriculaId: matricula.id, codigo: matricula.codigo, alunoNome, estado: "A_CONFERIR", motivo: erro.message, cobertura: null, vencimento: null });
         }
       }
-      return { itens, proximoCursor: registros.length > 20 ? registros[19]!.id : null } satisfies FilaContinuidadeMensal;
+      return { itens, pagina, temProxima } satisfies FilaContinuidadeMensal;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30_000 });
   });
 }

@@ -2,6 +2,7 @@
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { docenteAtual } from "@/server/diario/permissoes";
@@ -9,10 +10,11 @@ import { identificarMatriculaAvaliacao } from "./identificacao";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { designadoRecuperacao } from "./recuperacao-designacao-acesso";
 
-export async function listarRecuperacoesRealizadas(input: { alocacaoId: string; depoisId?: string }) {
+/** Paginada por número (E4), 50 por página, em ordem de id: ida e volta trazem as mesmas realizações. */
+export async function listarRecuperacoesRealizadas(input: { alocacaoId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-    const d = z.object({ alocacaoId: z.string().min(1).max(100), depoisId: z.string().min(1).max(100).optional() }).strict().parse(input);
+    const d = z.object({ alocacaoId: z.string().min(1).max(100), pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict().parse(input);
     return prisma.$transaction(async tx => {
       const a = await bloquearLancamento(tx, d.alocacaoId);
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${u.id} FOR SHARE`;
@@ -26,10 +28,11 @@ export async function listarRecuperacoesRealizadas(input: { alocacaoId: string; 
       const escopoHistorico = { OR: [{ professorId: u.id }, { registradaPorId: u.id }, { notas: { some: { autorId: u.id } } }, { id: { in: designadas.map(r => r.id) } }] };
       const filtro = { itemReserva: { reserva: { proposta: { alocacaoId: a.id, matriculaId: a.matriculaId } } }, ...(!gestao && !atual ? escopoHistorico : {}) };
       if (!gestao && !atual && !await tx.realizacaoRecuperacao.count({ where: filtro })) throw new ErroPermissao();
-      const rs = await tx.realizacaoRecuperacao.findMany({ where: { ...filtro, ...(d.depoisId ? { id: { gt: d.depoisId } } : {}) }, orderBy: { id: "asc" }, take: 51,
+      const lidas = await tx.realizacaoRecuperacao.findMany({ where: filtro, orderBy: { id: "asc" }, ...janelaDaPagina(d.pagina, 50),
         select: { id: true, realizadaEm: true, itemReserva: { select: { habilidade: true } }, notas: { where: !gestao && !atual ? { OR: [{ autorId: u.id }, { realizacao: { professorId: u.id } }, { realizacaoId: { in: designadas.map(r => r.id) } }] } : {}, orderBy: { versao: "desc" }, take: 1, select: { submetida: true, decisao: { select: { aprovada: true } } } } } });
-      return { identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), proximoId: rs.length > 50 ? rs[49].id : null,
-        realizacoes: rs.slice(0, 50).map(r => ({ id: r.id, realizadaEm: r.realizadaEm.toISOString(), habilidade: r.itemReserva.habilidade,
+      const { registros: rs, temProxima } = recorteDaPagina(lidas, 50);
+      return { identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), pagina: d.pagina, temProxima,
+        realizacoes: rs.map(r => ({ id: r.id, realizadaEm: r.realizadaEm.toISOString(), habilidade: r.itemReserva.habilidade,
           estado: !r.notas.length ? "Sem nota" : r.notas[0].decisao?.aprovada ? "Oficializada" : r.notas[0].decisao ? "Rejeitada" : r.notas[0].submetida ? "Aguardando conferência" : "Rascunho" })) };
     });
   });

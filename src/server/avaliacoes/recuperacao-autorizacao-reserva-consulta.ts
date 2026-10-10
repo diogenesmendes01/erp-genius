@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
@@ -12,10 +13,11 @@ import { HABILIDADES } from "./calculo";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
 
-export async function consultarAutorizacoesReservaRecuperacao(input: { propostaId: string; depoisId?: string }) {
+/** Histórico paginado por número (E4), em ordem de id: ida e volta trazem as mesmas autorizações. */
+export async function consultarAutorizacoesReservaRecuperacao(input: { propostaId: string; pagina?: number }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
-    const d = z.object({ propostaId: z.string().min(1).max(100), depoisId: z.string().min(1).max(100).optional() }).strict().parse(input);
+    const d = z.object({ propostaId: z.string().min(1).max(100), pagina: z.number().int().min(1).max(PAGINA_MAXIMA).default(1) }).strict().parse(input);
     return prisma.$transaction(async tx => {
       await conferirGestorAvaliacao(tx, u.id);
       const ref = await tx.propostaPlanoRecuperacao.findUnique({ where: { id: d.propostaId }, select: { alocacaoId: true } });
@@ -34,11 +36,12 @@ export async function consultarAutorizacoesReservaRecuperacao(input: { propostaI
         const limite = regra.habilidades.find(h => h.habilidade === habilidade)!.limiteRecuperacoes + await quantidadeExtraRecuperacaoTx(tx, p.matriculaId, p.nivelId, habilidade);
         saldos.set(habilidade, Math.max(0, limite - ocupadas));
       }
-      const registros = await tx.autorizacaoEspecialReservaRecuperacao.findMany({ where: { propostaId: p.id, ...(d.depoisId ? { id: { gt: d.depoisId } } : {}) }, orderBy: { id: "asc" }, take: 21,
+      const lidos = await tx.autorizacaoEspecialReservaRecuperacao.findMany({ where: { propostaId: p.id }, orderBy: { id: "asc" }, ...janelaDaPagina(d.pagina, 20),
         include: { autorizador: { select: { nome: true, ativo: true, papeis: true } }, reserva: { select: { id: true } } } });
+      const { registros, temProxima } = recorteDaPagina(lidos, 20);
       return { propostaId: p.id, propostaHash: p.entradaHash, statusMatricula: p.matricula.status, podeAutorizar, habilidades,
-        identificacao: await identificarMatriculaAvaliacao(tx, p.matriculaId, p.alocacao.turmaId), proximoId: registros.length > 20 ? registros[19].id : null,
-        historico: registros.slice(0, 20).map(a => {
+        identificacao: await identificarMatriculaAvaliacao(tx, p.matriculaId, p.alocacao.turmaId), pagina: d.pagina, temProxima,
+        historico: registros.map(a => {
           const fonte = { matriculaId: p.matriculaId, alocacaoId: p.alocacaoId, regraId: p.regraId, propostaId: p.id, propostaHash: p.entradaHash,
             decisaoId: p.decisao?.id, disponibilizacaoId: p.disponibilizacao?.id, habilidade: a.habilidade, statusMatricula: p.matricula.status };
           return { id: a.id, habilidade: a.habilidade, motivo: a.motivo, prazoAte: a.prazoAte.toISOString(), criadaEm: a.criadaEm.toISOString(),

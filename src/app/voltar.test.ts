@@ -10,11 +10,6 @@ import { DESTINOS_FORA_DO_SHELL, rotuloDoDestino } from "@/lib/trilha";
 const EXCECOES: Record<string, number> = {
   "src/app/(app)/acesso-negado/page.tsx": 1, // chamada principal da tela ("Voltar ao início")
   "src/app/(app)/diario/reposicoes/page.tsx": 1, // reinício da paginação
-  "src/app/(app)/financeiro/continuidade/page.tsx": 1, // reinício da paginação
-  "src/app/(app)/financeiro/desistencias/page.tsx": 1, // reinício da paginação
-  "src/app/(app)/secretaria/avisos-agenda/page.tsx": 2, // reinício da paginação
-  "src/app/(app)/secretaria/desistencias/page.tsx": 1, // reinício da paginação
-  "src/app/(app)/secretaria/envios-portal/page.tsx": 1, // reinício da paginação
   "src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/page.tsx": 1, // "Voltar para UTC" (fuso)
   "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/page.tsx": 2, // versão atual / recentes
   "src/app/(app)/academico/recuperacoes/planos/[propostaId]/autorizacao-reserva/page.tsx": 1, // frase de instrução

@@ -12,13 +12,13 @@ vi.mock("./MudancasAcademicasPainel", () => ({
 
 import Page from "./page";
 
-const renderizar = (filtros: { historico?: string; antesDe?: string } = {}) => Page({ searchParams: Promise.resolve(filtros) });
+const renderizar = (filtros: { historico?: string; pagina?: string } = {}) => Page({ searchParams: Promise.resolve(filtros) });
 
 describe("painel acadêmico", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.sessao.mockResolvedValue({ papeis: ["SECRETARIA_ACADEMICA", "GERENTE_PEDAGOGICO"] });
-    mocks.listar.mockResolvedValue({ ok: true, dado: { solicitacoes: [], proximo: "cursor-proximo" } });
+    mocks.listar.mockResolvedValue({ ok: true, dado: { solicitacoes: [], pagina: 1, temProxima: true } });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
   });
 
@@ -26,8 +26,25 @@ describe("painel acadêmico", () => {
     const html = renderToStaticMarkup(await renderizar({ historico: "todos" }));
     expect(html).toContain("fuso=America/Costa_Rica");
     expect(html).toContain('href="/diario/encontros"');
-    expect(html).toContain('href="/academico?historico=todos&amp;antesDe=cursor-proximo"');
-    expect(mocks.listar).toHaveBeenCalledWith({ apenasAbertas: false, antesDe: undefined });
+    expect(html).toContain('href="/academico?historico=todos&amp;pagina=2">Próxima');
+    expect(mocks.listar).toHaveBeenCalledWith({ apenasAbertas: false, pagina: 1 });
+  });
+
+  it("paginação nos dois sentidos: primeira só com Próxima; no meio, as duas com o filtro; da segunda, Anterior sem ?pagina=1", async () => {
+    const primeira = renderToStaticMarkup(await renderizar());
+    expect(primeira).not.toContain("Anterior");
+    expect(primeira).not.toContain("pagina=1");
+    expect(primeira).toContain('href="/academico?pagina=2">Próxima');
+
+    const meio = renderToStaticMarkup(await renderizar({ historico: "todos", pagina: "3" }));
+    expect(mocks.listar).toHaveBeenLastCalledWith({ apenasAbertas: false, pagina: 3 });
+    expect(meio).toContain('href="/academico?historico=todos&amp;pagina=2">← Anterior');
+    expect(meio).toContain('href="/academico?historico=todos&amp;pagina=4">Próxima');
+
+    mocks.listar.mockResolvedValue({ ok: true, dado: { solicitacoes: [], pagina: 2, temProxima: false } });
+    const segunda = renderToStaticMarkup(await renderizar({ pagina: "2" }));
+    expect(segunda).toContain('href="/academico">← Anterior');
+    expect(segunda).not.toContain("Próxima");
   });
 
   it("as sub-seções da área ficam nas abas do layout (E2): a página não repete links soltos antes do título", async () => {

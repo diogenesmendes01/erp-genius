@@ -1,21 +1,22 @@
-import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarTelaAutorizacoesComunicacaoAcademica } from "@/server/comunicacoes-agenda/autorizacoes";
 import { AutorizacoesFormulario } from "./AutorizacoesFormulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function AutorizacoesComunicacaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ cursor?: string }> }) {
+export default async function AutorizacoesComunicacaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
   const { id } = await params;
-  const { cursor } = await searchParams;
+  const pagina = lerPagina(await searchParams);
   // A consulta e a preparação dos dados ficam no try (falha → o mesmo alerta de antes); o JSX é montado
   // fora dele (react-hooks/error-boundaries: try/catch não pega erro de renderização).
   let dados;
   try {
     const [tela, preferencia] = await Promise.all([
-      consultarTelaAutorizacoesComunicacaoAcademica({ matriculaId: id, cursor }),
+      consultarTelaAutorizacoesComunicacaoAcademica({ matriculaId: id, pagina }),
       consultarPreferenciaFusoEquipe(),
     ]);
     dados = {
@@ -27,6 +28,7 @@ export default async function AutorizacoesComunicacaoPage({ params, searchParams
   const { tela, historico, fusoExibicao } = dados;
   return <section className="space-y-5"><VoltarPara href="/secretaria" />
       <header><h1 className="text-2xl font-medium">Destinatários acadêmicos · {tela.matricula.codigo ?? "Matrícula em preparação"}</h1><p>{tela.matricula.alunoNome}</p><p className="text-sm text-gray-600">Ser responsável ou pagador não autoriza avisos. Registre evidência explícita para cada matrícula.</p></header>
-      <AutorizacoesFormulario matriculaId={id} responsaveis={tela.responsaveis} historico={historico} preferenciaFusoExibicao={fusoExibicao} />{(cursor || tela.historico.proximoCursor) && <nav aria-label="Páginas do histórico" className="flex gap-4">{cursor && <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao`}>Início</Link>}{tela.historico.proximoCursor && <Link className="underline" href={`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao?cursor=${encodeURIComponent(tela.historico.proximoCursor)}`}>Próxima página</Link>}</nav>}
+      <AutorizacoesFormulario matriculaId={id} responsaveis={tela.responsaveis} historico={historico} preferenciaFusoExibicao={fusoExibicao} />
+      <Paginacao pagina={pagina} temProxima={tela.historico.temProxima} href={(p) => hrefLista(`/matriculas/${encodeURIComponent(id)}/autorizacoes-comunicacao`, { pagina: p })} rotulo="Páginas do histórico" />
     </section>;
 }

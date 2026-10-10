@@ -7,6 +7,8 @@ import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { STATUS_ENCONTRO_LABEL, STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 
 const rotulosReserva = STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL;
 const rotulosEncontro = STATUS_ENCONTRO_LABEL;
@@ -22,15 +24,15 @@ function dataHora(valor: string, fuso: string) {
 export default async function AgendasSegundaChamadaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string }>;
+  searchParams: Promise<ParametrosUrl>;
 }) {
   await exigirSessaoPagina(
     Papel.SECRETARIA_ACADEMICA,
     Papel.GERENTE_PEDAGOGICO,
     Papel.ADMINISTRADOR,
   );
-  const { cursor } = await searchParams;
-  const [resultado, preferencia] = await Promise.all([listarAgendasSegundaChamada(cursor ? { cursor } : {}), consultarPreferenciaFusoEquipe()]);
+  const pagina = lerPagina(await searchParams);
+  const [resultado, preferencia] = await Promise.all([listarAgendasSegundaChamada({ pagina }), consultarPreferenciaFusoEquipe()]);
   if (!resultado.ok || !resultado.dado) {
     return <section className="space-y-3"><VoltarPara href="/academico" /><p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p></section>;
   }
@@ -38,7 +40,6 @@ export default async function AgendasSegundaChamadaPage({
 
   return <section className="space-y-4">
     <VoltarPara href="/academico" />
-    {cursor && <Link className="underline" href="/academico/segundas-chamadas/agendas">Primeira página</Link>}
     <header><h1 className="text-2xl font-medium">Agendas de segunda chamada</h1><p>Consulte as reservas agendadas e abra a remarcação da oportunidade correspondente.</p></header>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma agenda de segunda chamada foi encontrada.</EstadoVazio>}
     {d.itens.map((item) => <article key={item.reservaId} className="space-y-2 rounded border p-4">
@@ -48,6 +49,6 @@ export default async function AgendasSegundaChamadaPage({
       <p>Situação da reserva: {rotular(rotulosReserva, item.statusReserva)}. Situação do encontro: {item.agenda ? rotular(rotulosEncontro, item.agenda.status) : "Sem agenda"}.</p>
       <div className="flex gap-4"><Link className="underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reservaId)}/remarcacao`}>Abrir remarcação</Link><Link className="underline" href={`/academico/segundas-chamadas/reservas/${encodeURIComponent(item.reservaId)}/substituicao`}>Substituir professor</Link></div>
     </article>)}
-    {d.proximoCursor && <Link className="inline-block underline" href={`/academico/segundas-chamadas/agendas?cursor=${encodeURIComponent(d.proximoCursor)}`}>Próximas agendas</Link>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista("/academico/segundas-chamadas/agendas", { pagina: p })} rotulo="Páginas de agendas de segunda chamada" />
   </section>;
 }
