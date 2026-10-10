@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Papel } from "@prisma/client";
 import { describe, expect, it } from "vitest";
+import { hrefDaAbaAtiva } from "@/lib/nav";
 import { PAPEIS_MATRICULA, SECOES_MATRICULA, secoesParaPapeis } from "./secoes";
 
 const RAIZ = join("src", "app", "(app)", "matriculas", "[id]");
@@ -43,7 +44,7 @@ describe("seções da matrícula", () => {
   });
 
   it("cada papel vê só as abas que abre; administrador vê todas", () => {
-    const rotulos = (papeis: Papel[]) => secoesParaPapeis(papeis, "m1").map((s) => s.label);
+    const rotulos = (papeis: Papel[]) => secoesParaPapeis(papeis, "m1", "a1").map((s) => s.label);
     expect(rotulos([Papel.VENDEDOR])).toEqual(["Preparação", "Reserva"]);
     expect(rotulos([Papel.FINANCEIRO])).toEqual([
       "Pagador", "Condições de entrada", "Condições por hora", "Continuidade mensal", "Entrada particular",
@@ -55,6 +56,18 @@ describe("seções da matrícula", () => {
 
   it("os links apontam para a seção da matrícula", () => {
     expect(secoesParaPapeis([Papel.SECRETARIA_ACADEMICA], "abc")[0]).toEqual({ href: "/matriculas/abc/preparacao", label: "Preparação" });
+  });
+
+  it("\"Fechamentos de horas\" leva o aluno (?aluno=) e acende pelo caminho; sem aluno, a aba não aparece (docs/42 L905)", () => {
+    const comAluno = secoesParaPapeis([Papel.FINANCEIRO], "m 1", "a/1");
+    expect(comAluno.find((s) => s.label === "Fechamentos de horas")).toEqual({
+      href: "/matriculas/m 1/fechamentos-horas?aluno=a%2F1", label: "Fechamentos de horas", prefixo: "/matriculas/m 1/fechamentos-horas",
+    });
+    expect(hrefDaAbaAtiva("/matriculas/m 1/fechamentos-horas", comAluno)).toBe("/matriculas/m 1/fechamentos-horas?aluno=a%2F1");
+    expect(secoesParaPapeis([Papel.FINANCEIRO], "m1").map((s) => s.label)).not.toContain("Fechamentos de horas");
+    expect(secoesParaPapeis([Papel.FINANCEIRO], "m1", null).map((s) => s.label)).not.toContain("Fechamentos de horas");
+    // Lista fechada (cópia literal): só esta seção depende do aluno na URL.
+    expect(SECOES_MATRICULA.filter((s) => s.contextoAluno).map((s) => s.caminho)).toEqual(["fechamentos-horas"]);
   });
 });
 

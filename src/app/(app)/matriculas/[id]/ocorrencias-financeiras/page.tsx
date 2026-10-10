@@ -14,7 +14,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const d = r.dado;
   return <div className="space-y-4">
     <VoltarPara href={`/alunos/${d.matricula.alunoId}/financeiro`} para="Ficha financeira" />
-    <h1 className="text-2xl">Conferência das particulares · {d.matricula.codigo ?? id}</h1>
+    <h1 className="text-2xl">Conferência das particulares · {d.matricula.codigo ?? "matrícula sem código"}</h1>
     <p>Confira os informes e a versão contratual antes de registrar a apuração. Conferência não é cobrança emitida nem pagamento.</p>
     <Link href={`/matriculas/${id}/condicoes-horas`} className="underline">Condições contratuais por hora</Link>
     <p><Link href={`/matriculas/${id}/fechamentos-horas?aluno=${encodeURIComponent(d.matricula.alunoId)}`} className="underline">Histórico de fechamentos por hora</Link></p>

@@ -9,11 +9,15 @@ import { ImpactosTaxaOperacao } from "../../ImpactosTaxaOperacao";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_COMISSAO_LABEL, rotular, STATUS_PROPOSTA_ACERTO_TAXA_ADITIVO_LABEL } from "@/lib/labels";
 import { VoltarPara } from "@/components/VoltarPara";
+import { IdentificacaoRegistro } from "@/components/IdentificacaoRegistro";
+import { consultarCabecalhoMatricula } from "@/server/matricula/cabecalho";
 export default async function AcertoTaxaDetalhe({ params }: { params: Promise<{ matriculaId: string; propostaId: string }> }) {
-  await exigirSessaoPagina(Papel.FINANCEIRO); const d = await params;
-  const [previa, historico, impactos] = await Promise.all([consultarAcertoTaxaPorProposta(d), listarHistoricoAcertosTaxa(d), consultarImpactosTaxaAditivo(d)]);
+  const usuario = await exigirSessaoPagina(Papel.FINANCEIRO); const d = await params;
+  const [previa, historico, impactos, cabecalho] = await Promise.all([consultarAcertoTaxaPorProposta(d), listarHistoricoAcertosTaxa(d), consultarImpactosTaxaAditivo(d), consultarCabecalhoMatricula(usuario, d.matriculaId)]);
   const podePreparar = impactos.ok && (!impactos.dado || ["REJEITADO", "OBSOLETO"].includes(impactos.dado.status));
-  return <main className="space-y-5"><VoltarPara href="/financeiro/acertos-taxa" /><h1 className="text-2xl">Acerto da taxa · matrícula {d.matriculaId}</h1>
+  return <main className="space-y-5"><VoltarPara href="/financeiro/acertos-taxa" /><h1 className="text-2xl">Acerto da taxa</h1>
+    {/* De quem é o acerto: aluno e matrícula pelo código, não o id da URL (docs/43 §6 item 7). */}
+    {cabecalho && <IdentificacaoRegistro rotulo="Aluno e matrícula deste acerto" dados={{ aluno: cabecalho.aluno, alunoHref: `/alunos/${encodeURIComponent(cabecalho.alunoId)}`, matriculaCodigo: cabecalho.codigo, matriculaComplemento: cabecalho.produto }} />}
     {!previa.ok ? <p role="alert">{previa.erro}</p> : previa.dado?.estado === "PRONTA_PARA_SELECAO" ? <>{podePreparar && <section id="preparar-impactos"><ImpactosTaxaFormulario matriculaId={d.matriculaId} propostaId={d.propostaId} conclusaoId={previa.dado.conclusaoId} revisaoHash={previa.dado.revisaoHash} cobrancas={previa.dado.cobrancas} /></section>}<AcertoTaxaFormulario matriculaId={d.matriculaId} propostaAditivoId={d.propostaId} conclusaoId={previa.dado.conclusaoId} revisaoHash={previa.dado.revisaoHash} cobrancas={previa.dado.cobrancas} /></> : <p>{previa.dado?.mensagem}</p>}
     {!impactos.ok && <p role="alert">{impactos.erro}</p>}
     {impactos.ok && <ImpactosTaxaOperacao conjunto={impactos.ok ? impactos.dado ?? null : null} acertos={historico.ok ? (historico.dado ?? []).map(p => ({ id: p.id, cobrancaId: p.cobrancaId, codigo: p.codigo, moeda: p.moeda, valorNovo: p.valorNovo, vencimentoNovo: p.vencimentoNovo, status: p.status })) : []} reprepararHref={`/financeiro/acertos-taxa/${encodeURIComponent(d.matriculaId)}/${encodeURIComponent(d.propostaId)}#preparar-impactos`} />}

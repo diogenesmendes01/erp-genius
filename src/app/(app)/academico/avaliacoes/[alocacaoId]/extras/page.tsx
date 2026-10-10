@@ -16,7 +16,7 @@ export default async function ExtrasPage({ params, searchParams }: { params: Pro
   return <section className="space-y-4">
     <VoltarPara href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`} para="Avaliações" />
     <h1 className="text-2xl font-medium">Oportunidades extras de recuperação</h1>
-    <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.oferta} · {d.identificacao.nivel}</p>
+    <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.oferta} · {d.identificacao.nivel}</p>
     <p>Quando o saldo estiver esgotado, professor ou gestão pode propor uma quantidade adicional. Outra pessoa da Gestão Pedagógica/Administração decide. A autorização não dispensa notas mínimas, plano aprovado ou prazo de realização.</p>
     {d.habilidadesSolicitaveis.length ? <ProporExtra alocacaoId={alocacaoId} habilidades={d.habilidadesSolicitaveis} /> : <EstadoVazio bloco>Nenhuma habilidade deste vínculo ativo exige oportunidade extra neste momento.</EstadoVazio>}
     <h2 className="text-xl font-medium">Propostas e decisões</h2>

@@ -295,6 +295,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Não há encontro próprio ministrado com presença disponível para esta correção.",
     "compacto · Não há entrega completa disponível para esta correção.",
   ],
+  "src/app/(app)/academico/reposicoes/page.tsx": [
+    "bloco · Nenhuma matrícula encontrada para “{busca}”.",
+  ],
   "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/SegundaChamadaPainel.tsx": [
     "compacto · Nenhuma proposta nesta avaliação.",
   ],

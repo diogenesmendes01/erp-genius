@@ -36,8 +36,21 @@ export default async function PendentesAgenda({ searchParams }: { searchParams: 
       <h2 className="font-medium">{item.aluno} · avaliação {item.codigoAvaliacao}</h2>
       <p>Matrícula {item.matriculaCodigo ?? "sem código"} · Turma {item.turma}.</p>
       <p>Prazo atual: {formatarInstanteExibicao(item.prazoAte, fuso, "UTC").texto} ({fuso}; origem UTC). Situação: {situacao(item.situacao)}.</p>
-      <Link className="underline" href={`/academico/segundas-chamadas/propostas/${encodeURIComponent(item.propostaSegundaChamadaId)}/agenda`}>Preparar agenda inicial</Link>
+      <Preparo item={item} />
     </article>)}
     <PaginacaoFila anterior={d.anterior} proxima={d.proxima} href={(cursor) => hrefLista("/academico/segundas-chamadas/pendentes-agenda", cursor)} rotulo="Navegação da fila de segundas chamadas pendentes de agenda" />
   </section>;
+}
+
+// "Preparar agenda inicial" aparecia em todo item, também nos que a própria fila diz que não dão (docs/42 L1722;
+// docs/43 §6 item 7): a Secretaria preenchia professor e horário para só descobrir na prévia. O link fica onde a
+// prévia pode seguir (disponível, ou "a prévia confirmará"); nos demais, o motivo e o que fazer, na mesma ordem
+// de `situacao`.
+function Preparo({ item }: { item: { propostaSegundaChamadaId: string; situacao: Parameters<typeof situacao>[0] } }) {
+  const href = `/academico/segundas-chamadas/propostas/${encodeURIComponent(item.propostaSegundaChamadaId)}/agenda`;
+  const s = item.situacao;
+  if (s.possuiPendenciaEscola) return <p className="text-sm text-gray-700">Agenda indisponível até a Gestão Pedagógica revisar o impedimento registrado pela escola. <Link className="underline" href={href}>Consultar as propostas desta segunda chamada</Link></p>;
+  if (["PAUSADA", "ENCERRADA"].includes(s.statusMatricula)) return <p className="text-sm text-gray-700">Matrícula pausada ou encerrada: a agenda exige autorização específica da Gestão Pedagógica para esta segunda chamada; com ela registrada, a prévia confirma. <Link className="underline" href={href}>Conferir a autorização na prévia</Link></p>;
+  if (!s.pendente || s.saldo <= 0) return <p className="text-sm text-gray-700">Sem oportunidade pendente nem saldo nesta avaliação: não há agenda a preparar. <Link className="underline" href={href}>Consultar as propostas desta segunda chamada</Link></p>;
+  return <Link className="underline" href={href}>Preparar agenda inicial</Link>;
 }

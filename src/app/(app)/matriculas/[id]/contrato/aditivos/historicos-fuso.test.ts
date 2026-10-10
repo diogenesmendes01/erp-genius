@@ -28,7 +28,7 @@ const instante = new Date("2026-10-01T02:30:00.000Z");
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.guarda.mockResolvedValue({ id: "secretaria" });
+  mocks.guarda.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
   mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
   mocks.aditivos.mockResolvedValue({ ok: true, dado: {
     matricula: { aluno: "Ana" }, fonte: null, impedimento: "Sem fonte", modelos: [], paginaModelos: 1, maisModelos: false,

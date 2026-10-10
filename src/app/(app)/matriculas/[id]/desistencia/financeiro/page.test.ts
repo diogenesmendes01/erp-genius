@@ -194,7 +194,9 @@ describe("DesistenciaFinanceiraPage", () => {
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
 
     expect(html).toContain("Créditos externos preservados nesta fotografia");
-    expect(html).toContain("credito-externo");
+    // O crédito é um link legível para a tela dele; o id só vai no href (docs/43 §6 item 7).
+    expect(html).toContain('<a class="underline" href="/alunos/aluno/creditos/credito-externo">Crédito 1</a>');
+    expect(html.replace(/href="[^"]*"/g, "")).not.toContain("credito-externo");
     expect(html).toContain("BRL");
     expect(html).toContain("R$ 17,00");
     expect(html).toContain("Comprovante não confere.");
@@ -217,6 +219,29 @@ describe("DesistenciaFinanceiraPage", () => {
     expect(html).toContain("perdeu a alçada atual");
     expect(html).toContain("nenhuma aprovação antiga volta a valer automaticamente");
     expect(html).toContain('data-delta="preparar"');
+  });
+
+  it("memória e reconferência dizem qual cobrança é (tipo · vencimento · valor), nunca o id (docs/42 L798)", async () => {
+    mocks.consultar.mockResolvedValue(resposta({ podePropor: false, propostas: [] }));
+    mocks.acerto.mockResolvedValue({ ok: true, dado: {
+      matricula: { id: "m", alunoId: "aluno" }, pedido: null, condicoes: null, podePreparar: false, impedimento: null, temMaisPropostas: false,
+      propostas: [{ id: "acerto", versao: 1, preparadorNome: "Financeiro A", criadaEmISO: "2026-10-01T04:30:00.000Z", podeDecidir: false, podeAplicar: false, decisao: null,
+        itens: [
+          { cobrancaId: "cobranca-interna", moeda: "CRC", devido: "90.00", saldoDevido: "90.00", creditoApurado: "0.00" },
+          { cobrancaId: "cobranca-de-outra", moeda: "CRC", devido: "10.00", saldoDevido: "10.00", creditoApurado: "0.00" },
+        ] }],
+    } });
+    mocks.delta.mockResolvedValue({ ok: true, dado: { podePreparar: false, impedimento: null, aplicacoesBase: [{ id: "base", criadaEmISO: "2026-10-01T06:30:00.000Z", podePreparar: false, preparoBloqueadoPor: null,
+      propostas: [{ id: "delta", versao: 1, estado: "APLICADA", criadaEmISO: "2026-10-01T07:30:00.000Z", preparadorNome: "Financeiro C", fotografiaHash: "d".repeat(64), pendencia: null,
+        itens: [{ cobrancaId: "cobranca-interna", moeda: "CRC", ajusteDevido: "1.00", ajusteSaldo: "1.00", creditoDelta: "0.00", reducaoCredito: "0.00" }], creditosExternos: [],
+        podeDecidirFinanceiro: false, podeDecidirAdministrativo: false, podeAplicar: false, decisaoFinanceira: null, decisaoAdministrativa: null, aplicacao: null }] }] } });
+
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
+
+    expect(html.match(/<td>Taxa de matrícula · vencimento 15\/10\/2026 · ₡ 90<\/td>/g)).toHaveLength(2);
+    expect(html).toContain("<td>Cobrança fora da lista desta matrícula</td>");
+    expect(html).not.toContain("cobranca-interna");
+    expect(html).not.toContain("cobranca-de-outra");
   });
 
   it("mostra o erro sem montar valores ou formulários", async () => {

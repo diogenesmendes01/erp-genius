@@ -57,3 +57,54 @@ it("consulta dados e preferência somente após a guarda da página", async () =
   expect(mocks.consulta).not.toHaveBeenCalled();
   expect(mocks.preferencia).not.toHaveBeenCalled();
 });
+
+// docs/42 L1670 (docs/43 §6 item 7): o formulário sumia sem explicar quando a matrícula não estava ativa.
+const comEstado = (estado: Record<string, unknown>) => mocks.consulta.mockResolvedValue({ ok: true, dado: {
+  fusoExibicao: "UTC", proximoId: null,
+  estado: { limiteBase: 2, extrasAprovados: 0, reservasOcupadas: 0, saldo: 2, ativa: true, statusMatricula: "ATIVA", ...estado },
+  itens: [],
+} });
+
+it("matrícula pausada: no lugar do formulário, o motivo e o link da autorização para a gestão", async () => {
+  comEstado({ statusMatricula: "PAUSADA" });
+  const html = await renderizar();
+  expect(html).not.toContain("Propor segunda chamada");
+  expect(html).toContain("Nova proposta indisponível");
+  expect(html).toContain("A matrícula está pausada. Uma nova realização exige autorização específica.");
+  expect(html).toContain('<a class="underline" href="/academico/segundas-chamadas/alocacao/final/autorizacoes">Registrar a autorização específica</a>');
+});
+
+it("matrícula encerrada para professor: o motivo e a quem pedir (sem link da gestão)", async () => {
+  mocks.sessao.mockResolvedValue({ papeis: [Papel.PROFESSOR] });
+  comEstado({ statusMatricula: "ENCERRADA" });
+  const html = await renderizar();
+  expect(html).not.toContain("Propor segunda chamada");
+  expect(html).toContain("A matrícula está encerrada.");
+  expect(html).toContain("Peça a autorização à Gestão Pedagógica.");
+  expect(html).not.toContain("/autorizacoes");
+});
+
+it("vínculo inativo também explica no lugar do formulário; matrícula ativa mostra o formulário e nenhum motivo", async () => {
+  comEstado({ ativa: false });
+  const inativo = await renderizar();
+  expect(inativo).toContain("O vínculo com a turma está inativo. Uma nova realização exige autorização específica.");
+  expect(inativo).not.toContain("Propor segunda chamada");
+  comEstado({});
+  const ativo = await renderizar();
+  expect(ativo).toContain("Propor segunda chamada");
+  expect(ativo).not.toContain("Nova proposta indisponível");
+});
+
+it("o encontro vinculado à reserva não aparece como id", async () => {
+  mocks.consulta.mockResolvedValue({ ok: true, dado: {
+    fusoExibicao: "UTC", proximoId: null,
+    estado: { limiteBase: 2, extrasAprovados: 0, reservasOcupadas: 1, saldo: 1, ativa: true, statusMatricula: "ATIVA" },
+    itens: [{ id: "proposta", motivo: "Avaliação pendente", evidencias: "Pedido documentado", criadaEm: "2026-01-01T02:30:00Z",
+      decisao: { aprovada: true, motivo: "Autorizada" }, podeDecidir: false, propostaHash: "hash",
+      disponibilizacao: { id: "disponivel", prazoAte: "2026-01-02T02:30:00Z" },
+      reserva: { id: "reserva", status: "RESERVADA", encontroId: "encontro-interno" }, podeOperar: true }],
+  } });
+  const html = await renderizar();
+  expect(html).toContain("Encontro vinculado: registrado na agenda.");
+  expect(html).not.toContain("encontro-interno");
+});
