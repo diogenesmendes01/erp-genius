@@ -4,47 +4,54 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), listar: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
-vi.mock("@/server/academico/consultas", () => ({ listarSolicitacoesAcademicas: mocks.listar }));
+vi.mock("@/server/academico/consultas", () => ({ listarFilaSolicitacoesAcademicas: mocks.listar }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("./MudancasAcademicasPainel", () => ({
-  MudancasAcademicasPainel: ({ fusoExibicao }: { fusoExibicao: string }) => createElement("p", { "data-testid": "painel" }, `fuso=${fusoExibicao}`),
+  MudancasAcademicasPainel: ({ fusoExibicao, inicioDaFila }: { fusoExibicao: string; inicioDaFila: string | null }) => createElement("p", { "data-testid": "painel" }, `fuso=${fusoExibicao} inicio=${inicioDaFila}`),
 }));
 
 import Page from "./page";
 
-const renderizar = (filtros: { historico?: string; pagina?: string } = {}) => Page({ searchParams: Promise.resolve(filtros) });
+const renderizar = (filtros: { historico?: string; depois?: string; antes?: string } = {}) => Page({ searchParams: Promise.resolve(filtros) });
+const fila = (n: Record<string, unknown> = {}) => ({ ok: true, dado: { solicitacoes: [], temAnterior: false, temProxima: true, anterior: null, proxima: "s-50", ...n } });
 
 describe("painel acadêmico", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.sessao.mockResolvedValue({ papeis: ["SECRETARIA_ACADEMICA", "GERENTE_PEDAGOGICO"] });
-    mocks.listar.mockResolvedValue({ ok: true, dado: { solicitacoes: [], pagina: 1, temProxima: true } });
+    mocks.listar.mockResolvedValue(fila());
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
   });
 
-  it("passa a preferência ao painel sem remover o link para Encontros nem a paginação", async () => {
+  it("passa a preferência ao painel sem remover o link para Encontros nem a navegação da fila", async () => {
     const html = renderToStaticMarkup(await renderizar({ historico: "todos" }));
     expect(html).toContain("fuso=America/Costa_Rica");
     expect(html).toContain('href="/diario/encontros"');
-    expect(html).toContain('href="/academico?historico=todos&amp;pagina=2">Próxima');
-    expect(mocks.listar).toHaveBeenCalledWith({ apenasAbertas: false, pagina: 1 });
+    expect(html).toContain('href="/academico?historico=todos&amp;depois=s-50">Próxima');
+    expect(mocks.listar).toHaveBeenCalledWith({ historico: true });
   });
 
-  it("paginação nos dois sentidos: primeira só com Próxima; no meio, as duas com o filtro; da segunda, Anterior sem ?pagina=1", async () => {
-    const primeira = renderToStaticMarkup(await renderizar());
-    expect(primeira).not.toContain("Anterior");
-    expect(primeira).not.toContain("pagina=1");
-    expect(primeira).toContain('href="/academico?pagina=2">Próxima');
+  it("fila por cursor nos dois sentidos: o início só com Próxima; no meio, as duas com o filtro e o cursor certo", async () => {
+    const inicio = renderToStaticMarkup(await renderizar());
+    expect(mocks.listar).toHaveBeenLastCalledWith({ historico: false });
+    expect(inicio).not.toContain("Anterior");
+    expect(inicio).not.toContain("pagina");
+    expect(inicio).toContain('href="/academico?depois=s-50">Próxima');
+    expect(inicio).toContain("inicio=null");
 
-    const meio = renderToStaticMarkup(await renderizar({ historico: "todos", pagina: "3" }));
-    expect(mocks.listar).toHaveBeenLastCalledWith({ apenasAbertas: false, pagina: 3 });
-    expect(meio).toContain('href="/academico?historico=todos&amp;pagina=2">← Anterior');
-    expect(meio).toContain('href="/academico?historico=todos&amp;pagina=4">Próxima');
+    mocks.listar.mockResolvedValue(fila({ temAnterior: true, anterior: "s-51", proxima: "s-100" }));
+    const meio = renderToStaticMarkup(await renderizar({ historico: "todos", depois: "s-50" }));
+    expect(mocks.listar).toHaveBeenLastCalledWith({ depois: "s-50", historico: true });
+    expect(meio).toContain('href="/academico?historico=todos&amp;antes=s-51">← Anterior');
+    expect(meio).toContain('href="/academico?historico=todos&amp;depois=s-100">Próxima');
+    // Um ponto da fila sem solicitações leva de volta ao início, com o filtro.
+    expect(meio).toContain("inicio=/academico?historico=todos");
 
-    mocks.listar.mockResolvedValue({ ok: true, dado: { solicitacoes: [], pagina: 2, temProxima: false } });
-    const segunda = renderToStaticMarkup(await renderizar({ pagina: "2" }));
-    expect(segunda).toContain('href="/academico">← Anterior');
-    expect(segunda).not.toContain("Próxima");
+    mocks.listar.mockResolvedValue(fila({ temAnterior: true, temProxima: false, anterior: "s-101", proxima: null }));
+    const ultima = renderToStaticMarkup(await renderizar({ antes: "s-150" }));
+    expect(mocks.listar).toHaveBeenLastCalledWith({ antes: "s-150", historico: false });
+    expect(ultima).toContain('href="/academico?antes=s-101">← Anterior');
+    expect(ultima).not.toContain("Próxima");
   });
 
   it("as sub-seções da área ficam nas abas do layout (E2): a página não repete links soltos antes do título", async () => {

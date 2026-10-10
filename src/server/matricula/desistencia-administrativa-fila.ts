@@ -3,13 +3,11 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
+import { camposNavegacaoFila, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoDaPagina, type NavegacaoFila } from "@/lib/cursor-fila";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, type Resultado } from "@/server/_shared";
 import { consultarDecisaoAdministrativaDesistencia } from "./desistencia-administrativa";
 
-const entradaSchema = z.object({
-  pagina: z.number().int().min(1).max(PAGINA_MAXIMA).optional(),
-}).strict();
+const entradaSchema = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 
 export type ItemFilaAdministrativaDesistencia = {
   id: string;
@@ -24,10 +22,8 @@ export type ItemFilaAdministrativaDesistencia = {
   exigeConferencia: boolean;
 };
 
-export type FilaAdministrativaDesistencia = {
+export type FilaAdministrativaDesistencia = NavegacaoDaPagina & {
   itens: ItemFilaAdministrativaDesistencia[];
-  pagina: number;
-  temProxima: boolean;
 };
 
 type Candidato = { matriculaId: string; pedidoId: string };
@@ -53,16 +49,17 @@ async function exigirLeitorAtual(usuarioId: string) {
  * devolvido. Uma alteração concorrente pode, portanto, reduzir uma página, mas
  * nunca transforma esta lista em autorização para decidir.
  *
- * Paginação numerada (E4): a ordem por `m.id` é estável, então a mesma página lida
- * na ida e na volta traz os mesmos candidatos.
+ * Fila de trabalho com cursor nos dois sentidos (E4, decisão de 10/10/2026): a
+ * ordem por `m.id` é estável e a leitura continua do último candidato visto
+ * (`m.id > depois`) ou volta a partir do primeiro (`m.id < antes`, lida ao contrário).
+ * Decidir um pedido da página não desloca os seguintes, e a próxima não pula ninguém.
  */
 export async function listarPendenciasAdministrativasDesistencia(
-  input: { pagina?: number } = {},
+  input: NavegacaoFila = {},
 ): Promise<Resultado<FilaAdministrativaDesistencia>> {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-    const { pagina = 1 } = entradaSchema.parse(input);
-    const janela = janelaDaPagina(pagina, 20);
+    const nav = entradaSchema.parse(input);
     await exigirLeitorAtual(sessao.id);
 
     // O LATERAL fixa somente o pedido mais recente da matrícula. Assim, uma
@@ -70,7 +67,7 @@ export async function listarPendenciasAdministrativasDesistencia(
     // Os jsonpaths cobrem a fotografia produzida por carregarConferencia…;
     // os EXISTS cobrem as mesmas fontes no estado corrente, sem carregar dados
     // financeiros para a fila.
-    const candidatos = await prisma.$queryRaw<Candidato[]>(Prisma.sql`
+    const ler = (leitura: NavegacaoFila, take: number) => prisma.$queryRaw<Candidato[]>(Prisma.sql`
       SELECT m.id AS "matriculaId", ultimo.id AS "pedidoId"
       FROM "Matricula" m
       JOIN LATERAL (
@@ -106,11 +103,12 @@ export async function listarPendenciasAdministrativasDesistencia(
           OR jsonb_path_exists(ultimo."snapshotJson", '$.processos[*] ? (@.conclusao != null)')
           OR jsonb_path_exists(ultimo."snapshotJson", '$.financeiro.cobrancas[*] ? (@.status == "PAGO" || @.pagoEm != null || (@.valorRecebido != null && @.valorRecebido != "0.00") || @.valorLiquidadoCredito != "0.00" || (@.valorCompensadoPermuta != null && @.valorCompensadoPermuta != "0.00") || @.informes[*].status == "A_CONFERIR" || @.informes[*].status == "CONFIRMADO" || @.recebimentos[*].id != null)')
         )
-      ORDER BY m.id ASC
-      LIMIT ${janela.take} OFFSET ${janela.skip}
+        ${leitura.depois !== undefined ? Prisma.sql`AND m.id > ${leitura.depois}` : leitura.antes !== undefined ? Prisma.sql`AND m.id < ${leitura.antes}` : Prisma.empty}
+      ORDER BY m.id ${leitura.antes !== undefined ? Prisma.sql`DESC` : Prisma.sql`ASC`}
+      LIMIT ${take}
     `);
 
-    const { registros: daPagina, temProxima } = recorteDaPagina(candidatos, 20);
+    const { registros: daPagina, ...navegacao } = await lerPaginaDaFila(nav, 20, ler, (c) => c.matriculaId);
     const itens: ItemFilaAdministrativaDesistencia[] = [];
     for (const candidato of daPagina) {
       // Esta consulta repete a autorização fresca e a revalidação da fotografia
@@ -138,6 +136,6 @@ export async function listarPendenciasAdministrativasDesistencia(
       });
     }
     await exigirLeitorAtual(sessao.id);
-    return { itens, pagina, temProxima };
+    return { itens, ...navegacao };
   });
 }

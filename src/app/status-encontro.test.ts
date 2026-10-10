@@ -43,7 +43,7 @@ const TELAS: Record<string, (status: string) => Promise<string>> = {
     return renderToStaticMarkup(await EncontrosPage({ searchParams: Promise.resolve({}) }));
   },
   "/diario/regularizacoes": async (status) => {
-    mocks.regularizacoes.mockResolvedValue({ ok: true, dado: { gestao: false, pagina: 1, temProxima: false, itens: [{ id: "e", turma: "T-1", inicio, fim, fusoOrigem: "UTC", status, professor: "Ana", designacao: null, podeRegularizar: false, podeGerir: false }] } });
+    mocks.regularizacoes.mockResolvedValue({ ok: true, dado: { gestao: false, temAnterior: false, temProxima: false, anterior: null, proxima: null, itens: [{ id: "e", turma: "T-1", inicio, fim, fusoOrigem: "UTC", status, professor: "Ana", designacao: null, podeRegularizar: false, podeGerir: false }] } });
     return renderToStaticMarkup(await RegularizacoesPage({ searchParams: Promise.resolve({}) }));
   },
   "/academico/segundas-chamadas/agendas": async (status) => {

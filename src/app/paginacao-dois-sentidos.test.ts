@@ -10,7 +10,9 @@ import { ehTeste, soParaFrente } from "../../scripts/medicao-ux/nucleo.mjs";
 // Regra 1 — link só para frente. Todo link de página (atributo `href` de elemento JSX e propriedade `href`
 // de objeto em qualquer lugar: `{...{ href }}`, `createElement(Link, { href })`) que AVANÇA uma chave de página precisa,
 // no mesmo arquivo, de um link que RECUA a mesma chave. Os links do <Paginacao> (src/components/Paginacao.tsx,
-// "← Anterior · Página N · Próxima →") ficam de fora: o componente já anda nos dois sentidos.
+// "← Anterior · Página N · Próxima →") e do <PaginacaoFila> (src/components/PaginacaoFila.tsx, cursor das filas)
+// ficam de fora: os componentes já andam nos dois sentidos. No cursor de duas chaves (`antes…`/`depois…`),
+// recuar por uma cobre avançar pela outra da mesma lista (`antesPendencias` cobre `depoisPendencias`).
 //   - Chave de página: `cursor`, `antes…`, `depois…`, `xCursor`, `pagina`, `paginaX` (as mesmas de
 //     vazio-paginado.test.ts). A chave é lida onde a URL é montada: `?chave=` em template ou em `+`,
 //     `chave=valor` literal, propriedade de objeto (`hrefLista`, `URLSearchParams`, espalhamento, nome
@@ -26,8 +28,9 @@ import { ehTeste, soParaFrente } from "../../scripts/medicao-ux/nucleo.mjs";
 //     (com os argumentos no lugar dos parâmetros), objeto local lido por propriedade, template aninhado e
 //     `.toString()`. Não desce em acesso a propriedade de dado (`d.proximoCursor` é valor; `d` não é URL).
 // Regra 2 — página lida sem navegação. Arquivo que lê chave de página da URL (tipo do `searchParams`,
-// `lerPagina(…)`, `.get("chave")`) precisa mostrar alguma navegação de página: <Paginacao>, um link de
-// página ou um componente importado do projeto (./, ../, @/) que mostre (até três níveis).
+// `lerPagina(…)`, `lerNavegacao(…)`, `.get("chave")`) precisa mostrar alguma navegação de página: <Paginacao>,
+// <PaginacaoFila>, um link de página ou um componente importado do projeto (./, ../, @/) que mostre (até três níveis).
+// Regra 3 — filas de trabalho por cursor (decisão de 10/10/2026): descrita junto do código, abaixo de `casosDoArquivo`.
 //
 // Exceções: arquivo + trecho exato (o texto normalizado da expressão do link, ou as chaves lidas na
 // regra 2) + motivo; cada uma tem de casar com exatamente um caso, e a lista é conferida contra a cópia
@@ -48,8 +51,12 @@ import { ehTeste, soParaFrente } from "../../scripts/medicao-ux/nucleo.mjs";
 const RAIZES = ["src/app", "src/components"];
 
 // <regra>
-/** O componente de paginação nos dois sentidos: seus links não passam pela regra. */
+/** Os componentes de paginação nos dois sentidos (página numerada e cursor das filas): seus links não passam pela regra. */
 const PAGINACAO = "Paginacao";
+const PAGINACAO_FILA = "PaginacaoFila";
+const NAVEGADORES = new Set([PAGINACAO, PAGINACAO_FILA]);
+/** Cursor nos dois sentidos com duas chaves (`antes…`/`depois…`): recuar por uma cobre avançar pela outra. */
+const PAR_DO_CURSOR = (chave: string) => (/^antes/.test(chave) ? chave.replace(/^antes/, "depois") : /^depois/.test(chave) ? chave.replace(/^depois/, "antes") : null);
 /** Chave de página na URL: cursor (`cursor`, `antes…`, `depois…`, `xCursor`) ou número (`pagina`, `paginaX`). */
 const CHAVE = /^(cursor|antes|depois|before|after)([A-Z]\w*)?$|^(?!proxim|next)\w+Cursor$|^(pagina|page)([A-Z]\w*)?$/;
 /** Número de página: `+ 1` avança, `- 1` recua. */
@@ -367,13 +374,13 @@ function lerLink(expr: ts.Expression, trecho: string, amb: Ambiente): LinkDePagi
   return { trecho, frente: [...frente].sort(), tras: [...tras].sort() };
 }
 
-/** Links de página do arquivo (fora do <Paginacao>) e se o arquivo mostra <Paginacao>. */
-export function linksDePagina(fonte: string): { links: LinkDePagina[]; paginacao: boolean } {
+/** Links de página do arquivo (fora do <Paginacao>/<PaginacaoFila>) e se o arquivo mostra cada um. */
+export function linksDePagina(fonte: string): { links: LinkDePagina[]; paginacao: boolean; paginacaoFila: boolean } {
   const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const amb = ambienteDoArquivo(sf);
   const links: LinkDePagina[] = [];
   const lidos = new Set<ts.Node>();
-  let paginacao = false;
+  let paginacao = false, paginacaoFila = false;
   const ler = (expr: ts.Expression, trecho: ts.Node) => {
     lidos.add(expr);
     const l = lerLink(expr, normaliza(trecho.getText(sf)), amb);
@@ -383,7 +390,8 @@ export function linksDePagina(fonte: string): { links: LinkDePagina[]; paginacao
   const visita = (n: ts.Node, naPaginacao: boolean) => {
     let dentro = naPaginacao;
     if (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) {
-      if (n.tagName.getText(sf) === PAGINACAO) { paginacao = true; dentro = true; }
+      const tag = n.tagName.getText(sf);
+      if (NAVEGADORES.has(tag)) { dentro = true; if (tag === PAGINACAO) paginacao = true; else paginacaoFila = true; }
       if (!dentro) {
         // `{...{ href }}` e `{...props}` com `const props = { href }`: a propriedade `href` do objeto é lida abaixo.
         for (const at of n.attributes.properties) {
@@ -398,7 +406,7 @@ export function linksDePagina(fonte: string): { links: LinkDePagina[]; paginacao
     ts.forEachChild(n, (c) => visita(c, ts.isJsxElement(n) ? naPaginacao : dentro));
   };
   visita(sf, false);
-  return { links, paginacao };
+  return { links, paginacao, paginacaoFila };
 }
 
 /** Chaves de página que o arquivo lê da URL: tipo do `searchParams`, `lerPagina(…)`, `.get("chave")`. */
@@ -422,6 +430,12 @@ export function chavesLidas(fonte: string): string[] {
     if (ts.isCallExpression(n)) {
       const nome = nomeDe(n.expression), [primeiro, segundo] = n.arguments;
       if (nome === "lerPagina") chaves.add(segundo && ehTexto(segundo) ? segundo.text : "pagina");
+      // `lerNavegacao(q, "Pendencias")`: o cursor da fila, nos dois sentidos (`depoisX`/`antesX`).
+      if (nome === "lerNavegacao") {
+        const sufixo = segundo && ehTexto(segundo) ? segundo.text : segundo ? "?" : "";
+        chaves.add(`depois${sufixo}`);
+        chaves.add(`antes${sufixo}`);
+      }
       if (nome === "get" && primeiro && ehTexto(primeiro) && CHAVE.test(primeiro.text)) chaves.add(primeiro.text);
     }
     ts.forEachChild(n, visita);
@@ -475,8 +489,8 @@ function temNavegacao(arquivo: string, lerFonte: LerFonte, nivel = 0, vistos = n
   vistos.add(arquivo);
   const fonte = lerFonte(arquivo);
   if (fonte === null) return false;
-  const { links, paginacao } = linksDePagina(fonte);
-  if (paginacao || links.length) return true;
+  const { links, paginacao, paginacaoFila } = linksDePagina(fonte);
+  if (paginacao || paginacaoFila || links.length) return true;
   return componentesMostrados(arquivo, fonte, lerFonte).some((f) => temNavegacao(f, lerFonte, nivel + 1, vistos));
 }
 
@@ -485,7 +499,8 @@ export function casosDoArquivo(arquivo: string, lerFonte: LerFonte): Caso[] {
   const fonte = lerFonte(arquivo);
   if (fonte === null) return [];
   const { links } = linksDePagina(fonte);
-  const recuadas = new Set(links.flatMap((l) => l.tras));
+  // A chave recuada cobre a si mesma e, no cursor de duas chaves, o seu par (`antes` recua o que `depois` avança).
+  const recuadas = new Set(links.flatMap((l) => l.tras.flatMap((c) => [c, PAR_DO_CURSOR(c) ?? c])));
   const casos: Caso[] = [];
   for (const l of links) {
     const faltam = l.frente.filter((c) => !recuadas.has(c));
@@ -493,6 +508,91 @@ export function casosDoArquivo(arquivo: string, lerFonte: LerFonte): Caso[] {
   }
   const lidas = chavesLidas(fonte);
   if (lidas.length && !temNavegacao(arquivo, lerFonte)) casos.push({ arquivo, regra: "le-pagina-sem-navegacao", trecho: lidas.join(", "), chaves: lidas });
+  return casos;
+}
+
+// Regra 3 — fila de trabalho por cursor (decisão de 10/10/2026). Fila é a lista de pendências que somem
+// quando alguém age nelas: na página numerada, resolver itens da página 1 desloca a 2, e quem avança pula
+// registros. Cada tela de FILAS (cópia literal) e cada consulta da fila:
+//   - TELA (a page e os componentes do projeto que ela mostra, até três níveis): não usa página numerada —
+//     identificador `lerPagina`/`janelaDaPagina`/`recorteDaPagina`/`faixaDaPagina`/`paginaAlemDoFim`/`Paginacao`
+//     (inclusive como nome importado, renomeado ou lido por propriedade/colchete), nome `pagina`/`paginaX`/`page…`
+//     (variável, propriedade, chave), texto `"pagina"`/`"paginaX"` e `pagina=` dentro de texto ou template
+//     (URL montada à mão);
+//   - TELA: mostra <PaginacaoFila> (na page ou num componente mostrado) e lê o cursor com `lerNavegacao` na page;
+//   - CONSULTA (o corpo da função exportada da fila, no arquivo do servidor; helpers locais chamados não são
+//     seguidos): lê por `lerPaginaDaFila` e não usa a janela numerada — os mesmos identificadores e nomes,
+//     propriedade `skip` nem `OFFSET` em texto/template.
+// Falha fechado: arquivo ou função que não se encontra é caso. Exceções: arquivo + trecho exato + motivo,
+// conferidas contra a cópia literal ANCORAS_FILA; cada uma casa com exatamente um caso.
+
+/** Identificadores da página numerada. */
+const NUMERADA = new Set(["lerPagina", "janelaDaPagina", "recorteDaPagina", "faixaDaPagina", "paginaAlemDoFim", PAGINACAO]);
+/** Nome de número de página (variável, propriedade, chave). */
+const NOME_NUMERADO = /^(pagina|page)([A-Z]\w*)?$/;
+/** Texto que é a chave numerada (`"pagina"`) ou que monta `pagina=` numa URL. */
+const TEXTO_NUMERADO = /^pagina([A-Z]\w*)?$|(^|[?&])pagina([A-Z]\w*)?=/;
+
+export type CasoFila = { arquivo: string; regra: "fila-numerada" | "fila-sem-cursor" | "consulta-numerada" | "consulta-sem-cursor"; trecho: string };
+
+/** Usos de página numerada num nó (o arquivo inteiro ou o corpo de uma função). `servidor`: também `skip` e `OFFSET`. */
+function usosNumerados(raiz: ts.Node, sf: ts.SourceFile, servidor: boolean): string[] {
+  const achados: string[] = [];
+  const marca = (n: ts.Node) => achados.push(normaliza(n.getText(sf)));
+  const visita = (n: ts.Node) => {
+    if (ts.isIdentifier(n) && (NUMERADA.has(n.text) || NOME_NUMERADO.test(n.text))) marca(n);
+    else if (ehTexto(n) && (NUMERADA.has(n.text) || TEXTO_NUMERADO.test(n.text) || (servidor && /\bOFFSET\b/i.test(n.text)))) marca(n);
+    else if ((ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n) || ts.isJsxText(n)) && (TEXTO_NUMERADO.test(n.text.trim()) || /[?&]pagina([A-Z]\w*)?=/.test(n.text) || (servidor && /\bOFFSET\b/i.test(n.text)))) marca(n);
+    else if (servidor && (ts.isPropertyAssignment(n) || ts.isShorthandPropertyAssignment(n)) && ts.isIdentifier(n.name) && n.name.text === "skip") marca(n.name);
+    ts.forEachChild(n, visita);
+  };
+  visita(raiz);
+  return achados;
+}
+
+/** Chama `nome(…)` (direto ou por propriedade) em algum ponto do nó. */
+function chama(raiz: ts.Node, nome: string): boolean {
+  const visita = (n: ts.Node): true | undefined => (ts.isCallExpression(n) && nomeDe(n.expression) === nome) || ts.forEachChild(n, visita) ? true : undefined;
+  return visita(raiz) === true;
+}
+
+/** A page e os componentes do projeto que ela mostra (até três níveis), sem repetir. */
+function arquivosDaTela(arquivo: string, lerFonte: LerFonte, nivel = 0, vistos = new Set<string>()): string[] {
+  if (nivel > 3 || vistos.has(arquivo)) return [];
+  vistos.add(arquivo);
+  const fonte = lerFonte(arquivo);
+  if (fonte === null) return [];
+  return [arquivo, ...componentesMostrados(arquivo, fonte, lerFonte).flatMap((f) => arquivosDaTela(f, lerFonte, nivel + 1, vistos))];
+}
+
+/** Casos da regra 3 numa tela de fila: página numerada na tela ou nos componentes dela; sem <PaginacaoFila> ou sem `lerNavegacao`. */
+export function casosDaFila(arquivo: string, lerFonte: LerFonte): CasoFila[] {
+  const fonte = lerFonte(arquivo);
+  if (fonte === null) return [{ arquivo, regra: "fila-sem-cursor", trecho: "arquivo não encontrado" }];
+  const casos: CasoFila[] = [];
+  const telas = arquivosDaTela(arquivo, lerFonte);
+  for (const f of telas) {
+    const sf = ts.createSourceFile("x.tsx", lerFonte(f) ?? "", ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    for (const trecho of usosNumerados(sf, sf, false)) casos.push({ arquivo: f, regra: "fila-numerada", trecho });
+  }
+  if (!telas.some((f) => linksDePagina(lerFonte(f) ?? "").paginacaoFila)) casos.push({ arquivo, regra: "fila-sem-cursor", trecho: "<PaginacaoFila>" });
+  if (!chama(ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX), "lerNavegacao")) casos.push({ arquivo, regra: "fila-sem-cursor", trecho: "lerNavegacao" });
+  return casos;
+}
+
+/** Casos da regra 3 na consulta da fila: a função exportada `funcao` do arquivo do servidor. */
+export function casosDaConsulta(arquivo: string, funcao: string, lerFonte: LerFonte): CasoFila[] {
+  const fonte = lerFonte(arquivo);
+  const sf = fonte === null ? null : ts.createSourceFile("x.ts", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const acharCorpo = (n: ts.Node): ts.Node | undefined => {
+    if (ts.isFunctionDeclaration(n) && n.name?.text === funcao && n.body) return n.body;
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === funcao && n.initializer && ehFuncao(n.initializer) && n.initializer.body) return n.initializer.body;
+    return ts.forEachChild(n, acharCorpo);
+  };
+  const corpo = sf ? acharCorpo(sf) : undefined;
+  if (!sf || !corpo) return [{ arquivo, regra: "consulta-sem-cursor", trecho: `${funcao}: função não encontrada` }];
+  const casos: CasoFila[] = usosNumerados(corpo, sf, true).map((trecho) => ({ arquivo, regra: "consulta-numerada" as const, trecho: `${funcao}: ${trecho}` }));
+  if (!chama(corpo, "lerPaginaDaFila")) casos.push({ arquivo, regra: "consulta-sem-cursor", trecho: `${funcao}: lerPaginaDaFila` });
   return casos;
 }
 // </regra>
@@ -579,37 +679,70 @@ const SO_PARA_FRENTE_MEDIDOS: readonly string[] = [
   "src/app/(app)/pipeline/KanbanBoard.tsx",
 ];
 
-/** As telas que esta PR passou para <Paginacao> (27 da medição + /alunos/[id]/academico, mesma consulta de /academico). */
+/**
+ * Das 28 telas que a #158 passou para <Paginacao>, as 16 que são LISTA ou HISTÓRICO (o item não sai da lista quando
+ * alguém age nele): continuam com página numerada. As outras 12 são FILAS (abaixo).
+ */
 const MIGRADAS: readonly string[] = [
   "src/app/(app)/academico/equivalencias/page.tsx",
   "src/app/(app)/academico/grades/nova/page.tsx",
-  "src/app/(app)/academico/grades/page.tsx",
   "src/app/(app)/academico/indisponibilidades/page.tsx",
-  "src/app/(app)/academico/page.tsx",
-  "src/app/(app)/academico/recuperacoes/designadas/page.tsx",
   "src/app/(app)/academico/recuperacoes/page.tsx",
   "src/app/(app)/academico/recuperacoes/planos/[propostaId]/autorizacao-reserva/page.tsx",
   "src/app/(app)/academico/recuperacoes/planos/[propostaId]/page.tsx",
   "src/app/(app)/academico/recuperacoes/planos/autorizacoes-preparacao/page.tsx",
   "src/app/(app)/academico/segundas-chamadas/agendas/page.tsx",
   "src/app/(app)/academico/segundas-chamadas/minhas/page.tsx",
-  "src/app/(app)/academico/segundas-chamadas/pendentes-agenda/page.tsx",
   "src/app/(app)/alunos/[id]/academico/page.tsx",
   "src/app/(app)/configuracao/migracao/page.tsx",
-  "src/app/(app)/diario/excecoes-gravacao/page.tsx",
-  "src/app/(app)/diario/pendencias/page.tsx",
   "src/app/(app)/diario/regularizacoes-gravacao/page.tsx",
-  "src/app/(app)/diario/regularizacoes/page.tsx",
-  "src/app/(app)/financeiro/continuidade/page.tsx",
-  "src/app/(app)/financeiro/desistencias/page.tsx",
   "src/app/(app)/financeiro/migracao/[linhaId]/page.tsx",
   "src/app/(app)/financeiro/migracao/page.tsx",
   "src/app/(app)/matriculas/[id]/autorizacoes-comunicacao/page.tsx",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesHistorico.tsx",
-  "src/app/(app)/secretaria/avisos-agenda/page.tsx",
-  "src/app/(app)/secretaria/desistencias/page.tsx",
-  "src/app/(app)/secretaria/envios-portal/page.tsx",
 ];
+
+type Fila = { tela: string; consulta: { arquivo: string; funcao: string } };
+
+/**
+ * Filas de trabalho (decisão de 10/10/2026): cursor nos dois sentidos, nunca página numerada. Cada tela com a função
+ * do servidor que lê a fila (na de grades, a própria page consulta o banco).
+ */
+const FILAS: readonly Fila[] = [
+  { tela: "src/app/(app)/academico/grades/page.tsx", consulta: { arquivo: "src/app/(app)/academico/grades/page.tsx", funcao: "GradesPage" } },
+  { tela: "src/app/(app)/academico/page.tsx", consulta: { arquivo: "src/server/academico/consultas.ts", funcao: "listarFilaSolicitacoesAcademicas" } },
+  { tela: "src/app/(app)/academico/recuperacoes/designadas/page.tsx", consulta: { arquivo: "src/server/avaliacoes/recuperacao-fila-docente.ts", funcao: "listarTentativasRecuperacaoDesignadas" } },
+  { tela: "src/app/(app)/academico/segundas-chamadas/pendentes-agenda/page.tsx", consulta: { arquivo: "src/server/avaliacoes/segunda-chamada-fila-agenda.ts", funcao: "listarSegundasChamadasSemAgenda" } },
+  { tela: "src/app/(app)/diario/excecoes-gravacao/page.tsx", consulta: { arquivo: "src/server/diario/excecao-consulta.ts", funcao: "listarExcecoesGravacao" } },
+  { tela: "src/app/(app)/diario/pendencias/page.tsx", consulta: { arquivo: "src/server/diario/avisos-pendencias-diario.ts", funcao: "consultarAvisosDiario" } },
+  { tela: "src/app/(app)/diario/regularizacoes/page.tsx", consulta: { arquivo: "src/server/diario/regularizacao-consultas.ts", funcao: "listarRegularizacoesAula" } },
+  { tela: "src/app/(app)/financeiro/continuidade/page.tsx", consulta: { arquivo: "src/server/matricula/continuidade-fila.ts", funcao: "consultarFilaContinuidadeMensal" } },
+  { tela: "src/app/(app)/financeiro/desistencias/page.tsx", consulta: { arquivo: "src/server/matricula/desistencia-financeiro-consulta.ts", funcao: "listarDesistenciasFinanceiras" } },
+  { tela: "src/app/(app)/secretaria/avisos-agenda/page.tsx", consulta: { arquivo: "src/server/comunicacoes-agenda/consultas.ts", funcao: "consultarAvisosAlteracaoAgenda" } },
+  { tela: "src/app/(app)/secretaria/desistencias/page.tsx", consulta: { arquivo: "src/server/matricula/desistencia-administrativa-fila.ts", funcao: "listarPendenciasAdministrativasDesistencia" } },
+  { tela: "src/app/(app)/secretaria/envios-portal/page.tsx", consulta: { arquivo: "src/server/portal-aluno/fila-envios.ts", funcao: "consultarFilaEnviosPortalAluno" } },
+];
+
+/** Cópia literal das filas (tela | arquivo da consulta | função): mudar FILAS sem mudar aqui (ou o contrário) falha. */
+const FILAS_LITERAL: readonly string[] = [
+  "src/app/(app)/academico/grades/page.tsx | src/app/(app)/academico/grades/page.tsx | GradesPage",
+  "src/app/(app)/academico/page.tsx | src/server/academico/consultas.ts | listarFilaSolicitacoesAcademicas",
+  "src/app/(app)/academico/recuperacoes/designadas/page.tsx | src/server/avaliacoes/recuperacao-fila-docente.ts | listarTentativasRecuperacaoDesignadas",
+  "src/app/(app)/academico/segundas-chamadas/pendentes-agenda/page.tsx | src/server/avaliacoes/segunda-chamada-fila-agenda.ts | listarSegundasChamadasSemAgenda",
+  "src/app/(app)/diario/excecoes-gravacao/page.tsx | src/server/diario/excecao-consulta.ts | listarExcecoesGravacao",
+  "src/app/(app)/diario/pendencias/page.tsx | src/server/diario/avisos-pendencias-diario.ts | consultarAvisosDiario",
+  "src/app/(app)/diario/regularizacoes/page.tsx | src/server/diario/regularizacao-consultas.ts | listarRegularizacoesAula",
+  "src/app/(app)/financeiro/continuidade/page.tsx | src/server/matricula/continuidade-fila.ts | consultarFilaContinuidadeMensal",
+  "src/app/(app)/financeiro/desistencias/page.tsx | src/server/matricula/desistencia-financeiro-consulta.ts | listarDesistenciasFinanceiras",
+  "src/app/(app)/secretaria/avisos-agenda/page.tsx | src/server/comunicacoes-agenda/consultas.ts | consultarAvisosAlteracaoAgenda",
+  "src/app/(app)/secretaria/desistencias/page.tsx | src/server/matricula/desistencia-administrativa-fila.ts | listarPendenciasAdministrativasDesistencia",
+  "src/app/(app)/secretaria/envios-portal/page.tsx | src/server/portal-aluno/fila-envios.ts | consultarFilaEnviosPortalAluno",
+];
+
+/** Exceções da regra 3: arquivo + trecho exato + motivo. Nenhuma hoje — o mecanismo fica para um caso que precise. */
+const EXCECOES_FILA: readonly Excecao[] = [];
+/** Cópia literal das âncoras das exceções da regra 3. */
+const ANCORAS_FILA: readonly string[] = [];
 
 // ---------------------------------------------------------------------------------------------------
 // Fontes do projeto e autotestes
@@ -708,6 +841,86 @@ describe("paginação nos dois sentidos — autotestes da trava (fonte virtual)"
     expect(trechos("export default async function P(props: { searchParams: Promise<{ pagina?: string }> }) { return <ul />; }")).toEqual(["le-pagina-sem-navegacao: pagina [pagina]"]);
     // Import só de tipo não é componente mostrado.
     expect(trechos(`import type { Lista } from "./Lista";\n${pagina}`, { "src/app/x/Lista.tsx": "export function Lista() { return <Paginacao pagina={1} temProxima href={h} rotulo=\"r\" />; }" })).toHaveLength(1);
+    // O cursor da fila também é página lida da URL; <PaginacaoFila> é navegação.
+    expect(trechos("const nav = lerNavegacao(await searchParams);\nconst x = <ul />;")).toEqual(["le-pagina-sem-navegacao: antes, depois [antes, depois]"]);
+    expect(trechos("const nav = lerNavegacao(q, \"Pendencias\");\nconst x = <PaginacaoFila anterior={a} proxima={p} href={h} rotulo=\"r\" />;")).toEqual([]);
+  });
+
+  it("cursor de duas chaves: recuar por `antes` cobre avançar por `depois` (e só o par da mesma lista)", () => {
+    expect(trechos("const x = <nav><Link href={hrefLista(\"/x\", { antes: d.anterior })}>A</Link><Link href={hrefLista(\"/x\", { depois: d.proxima })}>P</Link></nav>;")).toEqual([]);
+    expect(trechos("const x = <nav><Link href={`?antesPendencias=${d.anterior}`}>A</Link><Link href={`?depoisPendencias=${d.proxima}`}>P</Link></nav>;")).toEqual([]);
+    // O recuo de outra lista não cobre: `antes` (avisos) não cobre `depoisPendencias`.
+    expect(trechos("const x = <nav><Link href={`?antes=${d.anterior}`}>A</Link><Link href={`?depoisPendencias=${d.proxima}`}>P</Link></nav>;")).toEqual(["so-para-frente: `?depoisPendencias=${d.proxima}` [depoisPendencias]"]);
+    // Só avançar por `depois`, sem recuo nenhum, continua acusado.
+    expect(trechos("const x = <Link href={hrefLista(\"/x\", { depois: d.proxima })}>P</Link>;")).toEqual(["so-para-frente: hrefLista(\"/x\", { depois: d.proxima }) [depois]"]);
+    // Os links do <PaginacaoFila> ficam com ele, como os do <Paginacao>.
+    expect(trechos("const x = <PaginacaoFila anterior={a} proxima={p} href={(c) => `?depois=${c}`} rotulo=\"r\" />;")).toEqual([]);
+  });
+});
+
+describe("filas por cursor — autotestes da regra 3 (fonte virtual)", () => {
+  const TELA = "src/app/f/page.tsx";
+  const NAV = "<PaginacaoFila anterior={d.anterior} proxima={d.proxima} href={(c) => hrefLista(\"/f\", c)} rotulo=\"Fila\" />";
+  const bom = [
+    "import { PaginacaoFila } from \"@/components/PaginacaoFila\";",
+    "import { lerNavegacao } from \"@/lib/cursor-fila\";",
+    "export default async function P({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {",
+    "  const nav = lerNavegacao(await searchParams);",
+    "  const d = await listar(nav);",
+    `  return <section>${NAV}</section>;`,
+    "}",
+  ].join("\n");
+  const fila = (fonte: string, extras: Record<string, string> = {}) => casosDaFila(TELA, virtual({ [TELA]: fonte, "src/components/PaginacaoFila.tsx": "export function PaginacaoFila() { return null; }", ...extras }))
+    .map((c) => `${c.regra}: ${c.arquivo === TELA ? "" : `${c.arquivo} | `}${c.trecho}`);
+  const SERVIDOR = "src/server/f.ts";
+  const consulta = (fonte: string) => casosDaConsulta(SERVIDOR, "listarFila", virtual({ [SERVIDOR]: fonte })).map((c) => `${c.regra}: ${c.trecho}`);
+
+  it("tela de fila certa: cursor lido, <PaginacaoFila>, nada numerado", () => {
+    expect(fila(bom)).toEqual([]);
+  });
+
+  it("página numerada na tela é acusada em cada forma", () => {
+    expect(fila(bom.replace("lerNavegacao(await searchParams)", "lerPagina(await searchParams)"))).toEqual(["fila-numerada: lerPagina", "fila-sem-cursor: lerNavegacao"]);
+    expect(fila(`${bom}\nconst y = <Paginacao pagina={1} temProxima={false} href={h} rotulo="r" />;`)).toEqual(["fila-numerada: Paginacao", "fila-numerada: pagina"]);
+    expect(fila(`${bom}\nconst j = janelaDaPagina(2, 20), r = recorteDaPagina(l, 20);`)).toEqual(["fila-numerada: janelaDaPagina", "fila-numerada: recorteDaPagina"]);
+    // Renomeado no import, lido por propriedade ou por colchete.
+    expect(fila(`import { lerPagina as ler } from "@/lib/pagina-url";\n${bom}`)).toEqual(["fila-numerada: lerPagina"]);
+    expect(fila(`import * as u from "@/lib/pagina-url";\n${bom}\nconst n = u.lerPagina(q);`)).toEqual(["fila-numerada: lerPagina"]);
+    expect(fila(`${bom}\nconst n = u["lerPagina"](q);`)).toEqual(["fila-numerada: \"lerPagina\""]);
+    // Nome e chave numerados, e a URL montada à mão.
+    expect(fila(`${bom}\nconst paginaPendencias = 2;`)).toEqual(["fila-numerada: paginaPendencias"]);
+    expect(fila(`${bom}\nconst h = hrefLista("/f", { pagina: 2 });`)).toEqual(["fila-numerada: pagina"]);
+    expect(fila(`${bom}\nconst h = hrefLista("/f", { ["pagina"]: 2 });`)).toEqual(["fila-numerada: \"pagina\""]);
+    expect(fila(`${bom}\nconst h = "/f?pagina=2";`)).toEqual(["fila-numerada: \"/f?pagina=2\""]);
+    expect(fila(`${bom}\nconst h = \`/f?modo=x&pagina=\${n + 1}\`;`)).toEqual(["fila-numerada: `/f?modo=x&pagina=${"]);
+  });
+
+  it("componente mostrado pela tela também é conferido (até três níveis)", () => {
+    const lista = "export function Lista() { return <Paginacao pagina={2} temProxima href={h} rotulo=\"r\" />; }";
+    expect(fila(`import { Lista } from "./Lista";\n${bom.replace("<section>", "<section><Lista />")}`, { "src/app/f/Lista.tsx": lista }))
+      .toEqual(["fila-numerada: src/app/f/Lista.tsx | Paginacao", "fila-numerada: src/app/f/Lista.tsx | pagina"]);
+    // <PaginacaoFila> num componente mostrado vale como navegação da fila.
+    const semNav = bom.replace(NAV, "<Navegacao />");
+    expect(fila(`import { Navegacao } from "./Navegacao";\n${semNav}`, { "src/app/f/Navegacao.tsx": "import { PaginacaoFila } from \"@/components/PaginacaoFila\";\nexport function Navegacao() { return <PaginacaoFila anterior={null} proxima={null} href={h} rotulo=\"r\" />; }" })).toEqual([]);
+  });
+
+  it("tela de fila sem <PaginacaoFila> ou sem ler o cursor é acusada; arquivo ausente falha fechado", () => {
+    expect(fila(bom.replace(NAV, "<ul />"))).toEqual(["fila-sem-cursor: <PaginacaoFila>"]);
+    expect(fila(bom.replace("lerNavegacao(await searchParams)", "{ depois: q.depois }"))).toEqual(["fila-sem-cursor: lerNavegacao"]);
+    expect(casosDaFila("src/app/nao/existe.tsx", virtual({}))).toEqual([{ arquivo: "src/app/nao/existe.tsx", regra: "fila-sem-cursor", trecho: "arquivo não encontrado" }]);
+  });
+
+  it("consulta da fila: lerPaginaDaFila e nada de janela numerada, skip ou OFFSET no corpo da função", () => {
+    const ok = "export async function listarFila(input) { return lerPaginaDaFila(nav, 20, (l, take) => prisma.x.findMany({ where: corteDoId(l, \"asc\"), take }), (r) => r.id); }";
+    expect(consulta(ok)).toEqual([]);
+    expect(consulta("export async function listarFila(input) { const { skip, take } = janelaDaPagina(input.pagina, 20); return prisma.x.findMany({ skip, take }); }"))
+      .toEqual(["consulta-numerada: listarFila: janelaDaPagina", "consulta-numerada: listarFila: pagina", "consulta-numerada: listarFila: skip", "consulta-sem-cursor: listarFila: lerPaginaDaFila"]);
+    expect(consulta(ok.replace("take })", "take, skip: 20 })"))).toEqual(["consulta-numerada: listarFila: skip"]);
+    expect(consulta(`${ok.slice(0, -1)} const r = await tx.$queryRaw\`SELECT 1 LIMIT \${t} OFFSET \${o}\`; }`)).toEqual(["consulta-numerada: listarFila: } OFFSET ${"]);
+    // Helper local com janela numerada não é seguido (limite declarado); a função tem de existir.
+    expect(consulta(`function aux() { return janelaDaPagina(1, 2); }\n${ok}`)).toEqual([]);
+    expect(consulta("export async function outra() {}")).toEqual(["consulta-sem-cursor: listarFila: função não encontrada"]);
+    expect(consulta("export const listarFila = async () => prisma.x.findMany({ skip: 0 });")).toEqual(["consulta-numerada: listarFila: skip", "consulta-sem-cursor: listarFila: lerPaginaDaFila"]);
   });
 });
 
@@ -750,5 +963,24 @@ describe("paginação nos dois sentidos — telas", () => {
   it("as telas migradas mostram <Paginacao> e nenhuma delas é exceção", () => {
     for (const arquivo of MIGRADAS) expect(linksDePagina(readFileSync(arquivo, "utf8")).paginacao, arquivo).toBe(true);
     expect(MIGRADAS.filter((f) => EXCECOES_PAGINACAO.some((e) => e.arquivo === f))).toEqual([]);
+  });
+
+  it("filas de trabalho: cursor nos dois sentidos na tela e na consulta, nunca página numerada (ou exceção ancorada)", () => {
+    expect(FILAS.map((f) => `${f.tela} | ${f.consulta.arquivo} | ${f.consulta.funcao}`)).toEqual([...FILAS_LITERAL]);
+    // Fila e lista são classificações exclusivas; as 28 telas da #158 estão numa das duas.
+    expect(FILAS.filter((f) => MIGRADAS.includes(f.tela))).toEqual([]);
+    expect(FILAS.length + MIGRADAS.length).toBe(28);
+    const todos = FILAS.flatMap((f) => [...casosDaFila(f.tela, lerDoDisco), ...casosDaConsulta(f.consulta.arquivo, f.consulta.funcao, lerDoDisco)]);
+    const casadas = new Map<number, number>();
+    const soltos: string[] = [];
+    for (const c of todos) {
+      const i = EXCECOES_FILA.findIndex((e) => e.arquivo === c.arquivo && e.trecho === c.trecho);
+      if (i >= 0) { casadas.set(i, (casadas.get(i) ?? 0) + 1); continue; }
+      soltos.push(`${c.arquivo} | ${c.regra} | ${c.trecho}`);
+    }
+    expect(soltos).toEqual([]);
+    expect(EXCECOES_FILA.map((e, i) => ({ vezes: casadas.get(i) ?? 0, e })).filter((x) => x.vezes !== 1).map((x) => `${x.vezes}× ${x.e.arquivo} | ${x.e.trecho}`)).toEqual([]);
+    expect(EXCECOES_FILA.filter((e) => e.motivo.trim().length < 20)).toEqual([]);
+    expect(EXCECOES_FILA.map((e) => `${e.arquivo} | ${e.trecho}`)).toEqual([...ANCORAS_FILA]);
   });
 });

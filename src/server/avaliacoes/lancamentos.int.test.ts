@@ -1570,7 +1570,7 @@ it("designação permite registrar nota de outro realizador sem abrir o plano ou
   entrar(substituto);
   expect(await listarTentativasRecuperacaoDesignadas()).toMatchObject({ ok: true, dado: { itens: [] } });
   expect(await listarTentativasRecuperacaoDesignadas({ modo: "historico" })).toMatchObject({ ok: true, dado: { itens: [expect.objectContaining({ realizacaoId: realizada.dado.id })] } });
-  expect(await listarTentativasRecuperacaoDesignadas({ modo: "historico", pagina: 2 })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false } });
+  expect(await listarTentativasRecuperacaoDesignadas({ modo: "historico", depois: fala.id })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false } });
   expect((await consultarTentativaRecuperacaoDesignada(fala.id)).ok).toBe(false);
   expect(await consultarNotaRecuperacao({ realizacaoId: realizada.dado.id })).toMatchObject({ ok: true, dado: { podeLancar: false, notas: [expect.objectContaining({ autor: "Usuário Teste" })] } });
   expect((await salvarNotaRecuperacao({ ...nota, versaoEsperada: 1, chaveIdempotencia: "alterar-apos-revogacao" })).ok).toBe(false);
