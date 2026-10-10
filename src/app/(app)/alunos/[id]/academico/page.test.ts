@@ -34,7 +34,7 @@ describe("mudanças acadêmicas na ficha do aluno", () => {
     mocks.sessao.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA", "GERENTE_PEDAGOGICO"] });
     mocks.aluno.mockResolvedValue({ aluno: { id: "aluno" } });
     mocks.contexto.mockResolvedValue({ ok: true, dado: null });
-    mocks.lista.mockResolvedValue({ ok: true, dado: { solicitacoes: [], proximo: "cursor" } });
+    mocks.lista.mockResolvedValue({ ok: true, dado: { solicitacoes: [], pagina: 1, temProxima: true } });
     mocks.vinculos.mockResolvedValue(vinculos);
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
   });
@@ -43,11 +43,24 @@ describe("mudanças acadêmicas na ficha do aluno", () => {
     const html = renderToStaticMarkup(await renderizar());
     expect(html).toContain("fuso=America/Costa_Rica");
     expect(mocks.contexto).toHaveBeenCalledWith("aluno", "matricula-b");
-    expect(mocks.lista).toHaveBeenCalledWith({ alunoId: "aluno", matriculaId: "matricula-b", antesDe: undefined });
+    expect(mocks.lista).toHaveBeenCalledWith({ alunoId: "aluno", matriculaId: "matricula-b", pagina: 1 });
     expect(html).toContain('href="/alunos/aluno/academico?matriculaId=matricula-a"');
     expect(html).toContain('href="/alunos/aluno/academico?matriculaId=matricula-b"');
     expect(html).toContain('href="/academico/avaliacoes/alocacao-b"');
-    expect(html).toContain('href="/alunos/aluno/academico?antesDe=cursor&amp;matriculaId=matricula-b"');
+    expect(html).toContain('href="/alunos/aluno/academico?matriculaId=matricula-b&amp;pagina=2">Próxima');
+    expect(html).not.toContain("Anterior");
+  });
+
+  it("paginação nos dois sentidos sem perder a matrícula: no meio as duas; da segunda, Anterior sem ?pagina=1", async () => {
+    const pagina = (n: string) => Page({ params: Promise.resolve({ id: "aluno" }), searchParams: Promise.resolve({ matriculaId: "matricula-b", pagina: n }) });
+    const meio = renderToStaticMarkup(await pagina("3"));
+    expect(mocks.lista).toHaveBeenLastCalledWith({ alunoId: "aluno", matriculaId: "matricula-b", pagina: 3 });
+    expect(meio).toContain('href="/alunos/aluno/academico?matriculaId=matricula-b&amp;pagina=2">← Anterior');
+    expect(meio).toContain('href="/alunos/aluno/academico?matriculaId=matricula-b&amp;pagina=4">Próxima');
+    mocks.lista.mockResolvedValue({ ok: true, dado: { solicitacoes: [], pagina: 2, temProxima: false } });
+    const segunda = renderToStaticMarkup(await pagina("2"));
+    expect(segunda).toContain('href="/alunos/aluno/academico?matriculaId=matricula-b">← Anterior');
+    expect(segunda).not.toContain("Próxima");
   });
 
   it("usa São Paulo quando a preferência não estiver disponível", async () => {

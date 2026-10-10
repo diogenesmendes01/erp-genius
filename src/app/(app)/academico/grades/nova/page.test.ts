@@ -27,6 +27,29 @@ it("guarda antes da consulta e seleciona apenas a turma planejada retornada pelo
   expect(mocks.preparar.mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({ turmaInicialId: "turma-1", turmas: [expect.objectContaining({ id: "turma-1", duracao: 180 })] }));
 });
 
+it("paginação nos dois sentidos: janela numerada, Anterior na página certa e a busca mantida", async () => {
+  const turma = (i: number) => ({ id: `turma-${String(i).padStart(2, "0")}`, codigo: `T-${i}`, dataInicio: null, horarioInicio: "22:00", diasSemana: [1], professor: null, modalidade: { aulasPorNivel: 1, horasAula: 1, frequencia: "1x/semana" }, propostasGrade: [] });
+  // 31 lidas = 30 da página + a que só diz que há próxima.
+  mocks.turmas.mockResolvedValue(Array.from({ length: 31 }, (_, i) => turma(i)));
+  const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "T" }) }));
+  expect(mocks.turmas).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 0, take: 31, orderBy: [{ codigo: "asc" }, { id: "asc" }] }));
+  expect(mocks.preparar.mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({ turmas: expect.any(Array) }));
+  expect((mocks.preparar.mock.calls.at(-1)?.[0] as { turmas: unknown[] }).turmas).toHaveLength(30);
+  expect(primeira).not.toContain("Anterior");
+  expect(primeira).not.toContain("pagina=1");
+  expect(primeira).toContain('href="/academico/grades/nova?busca=T&amp;pagina=2">Próxima');
+
+  const meio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "T", pagina: "3" }) }));
+  expect(mocks.turmas).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 60, take: 31 }));
+  expect(meio).toContain('href="/academico/grades/nova?busca=T&amp;pagina=2">← Anterior');
+  expect(meio).toContain('href="/academico/grades/nova?busca=T&amp;pagina=4">Próxima');
+
+  mocks.turmas.mockResolvedValue([turma(60)]);
+  const ultima = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "T", pagina: "2" }) }));
+  expect(ultima).toContain('href="/academico/grades/nova?busca=T">← Anterior');
+  expect(ultima).not.toContain("Próxima");
+});
+
 it("não seleciona identificador repetido ou turma inelegível", async () => {
   const repetida = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ turmaId: ["turma-1", "turma-2"] }) }));
   expect(repetida).toContain("Seleção de turma inválida.");

@@ -116,17 +116,22 @@ describe("fila administrativa de desistência", () => {
     } });
   });
 
-  it("pagina vinte matrículas por id sem duplicá-las", async () => {
+  it("pagina vinte matrículas por id sem duplicá-las, nos dois sentidos", async () => {
     const ids = [(await pedido("pagina-base")).id];
     for (let indice = 1; indice <= 20; indice += 1) ids.push((await criarItemFormal(String(indice))).id);
     entrar(admin.id);
     const primeira = await listarPendenciasAdministrativasDesistencia();
-    if (!primeira.ok || !primeira.dado?.proximoCursor) throw new Error("Primeira página ausente.");
-    const segunda = await listarPendenciasAdministrativasDesistencia({ cursor: primeira.dado.proximoCursor });
+    if (!primeira.ok || !primeira.dado?.temProxima) throw new Error("Primeira página ausente.");
+    const segunda = await listarPendenciasAdministrativasDesistencia({ pagina: 2 });
     if (!segunda.ok || !segunda.dado) throw new Error("Segunda página ausente.");
     const listados = [...primeira.dado.itens, ...segunda.dado.itens].map((item) => item.pedido.id);
     expect(primeira.dado.itens).toHaveLength(20);
     expect(segunda.dado.itens).toHaveLength(1);
+    expect(segunda.dado.temProxima).toBe(false);
     expect(new Set(listados)).toEqual(new Set(ids));
+    // Volta à primeira página: os mesmos pedidos, na mesma ordem.
+    const volta = await listarPendenciasAdministrativasDesistencia({ pagina: 1 });
+    if (!volta.ok || !volta.dado) throw new Error("Volta ausente.");
+    expect(volta.dado.itens.map((item) => item.pedido.id)).toEqual(primeira.dado.itens.map((item) => item.pedido.id));
   });
 });

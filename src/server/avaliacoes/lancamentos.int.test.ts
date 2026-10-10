@@ -999,17 +999,20 @@ it("registra autorização de preparação após pausa e exige seu vínculo na p
   const primeira = await consultarHistoricoPreparacaoRecuperacao({ alocacaoId });
   if (!primeira.ok || !primeira.dado) throw new Error(JSON.stringify(primeira));
   expect(primeira.dado.historico).toHaveLength(20);
-  expect(primeira.dado.proximoId).not.toBeNull();
+  expect(primeira.dado.temProxima).toBe(true);
   expect(primeira.dado.historico.find(a => a.id === registro.id)).toMatchObject({ quantidadePropostas: 1 });
   expect(primeira.dado.historico[0]).not.toHaveProperty("snapshot");
   expect(primeira.dado.historico[0]).not.toHaveProperty("entradaHash");
-  const segunda = await consultarHistoricoPreparacaoRecuperacao({ alocacaoId, depoisId: primeira.dado.proximoId! });
+  const segunda = await consultarHistoricoPreparacaoRecuperacao({ alocacaoId, pagina: 2 });
   if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
   expect(segunda.dado.historico).toHaveLength(1);
-  expect(segunda.dado.proximoId).toBeNull();
+  expect(segunda.dado.temProxima).toBe(false);
   expect(new Set([...primeira.dado.historico, ...segunda.dado.historico].map(a => a.id)).size).toBe(21);
+  const volta = await consultarHistoricoPreparacaoRecuperacao({ alocacaoId, pagina: 1 });
+  if (!volta.ok || !volta.dado) throw new Error(JSON.stringify(volta));
+  expect(volta.dado.historico.map(a => a.id)).toEqual(primeira.dado.historico.map(a => a.id));
   const outroVinculo = await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId, turmaId, ativa: false, criadoEm: new Date("2026-01-01T00:00:00Z"), encerradaEm: new Date("2026-01-02T00:00:00Z") } });
-  expect(await consultarHistoricoPreparacaoRecuperacao({ alocacaoId: outroVinculo.id })).toMatchObject({ ok: true, dado: { historico: [], proximoId: null } });
+  expect(await consultarHistoricoPreparacaoRecuperacao({ alocacaoId: outroVinculo.id })).toMatchObject({ ok: true, dado: { historico: [], temProxima: false } });
 });
 
 it("disponibiliza plano aprovado antes da pausa sem substituir proposta ou decisão", async () => {
@@ -1567,7 +1570,7 @@ it("designação permite registrar nota de outro realizador sem abrir o plano ou
   entrar(substituto);
   expect(await listarTentativasRecuperacaoDesignadas()).toMatchObject({ ok: true, dado: { itens: [] } });
   expect(await listarTentativasRecuperacaoDesignadas({ modo: "historico" })).toMatchObject({ ok: true, dado: { itens: [expect.objectContaining({ realizacaoId: realizada.dado.id })] } });
-  expect(await listarTentativasRecuperacaoDesignadas({ modo: "historico", depoisId: fala.id })).toMatchObject({ ok: true, dado: { itens: [] } });
+  expect(await listarTentativasRecuperacaoDesignadas({ modo: "historico", pagina: 2 })).toMatchObject({ ok: true, dado: { itens: [], temProxima: false } });
   expect((await consultarTentativaRecuperacaoDesignada(fala.id)).ok).toBe(false);
   expect(await consultarNotaRecuperacao({ realizacaoId: realizada.dado.id })).toMatchObject({ ok: true, dado: { podeLancar: false, notas: [expect.objectContaining({ autor: "Usuário Teste" })] } });
   expect((await salvarNotaRecuperacao({ ...nota, versaoEsperada: 1, chaveIdempotencia: "alterar-apos-revogacao" })).ok).toBe(false);

@@ -11,25 +11,38 @@ import Page from "./page";
 
 describe("AgendasSegundaChamadaPage", () => {
   mocks.consultarPreferenciaFusoEquipe.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
-  it("mantém navegação paginada com identificadores codificados e rótulos operacionais", async () => {
-    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: {
-      itens: [{
-        reservaId: "reserva/a?",
-        statusReserva: "LIBERADA_CANCELAMENTO_TEMPESTIVO",
-        codigoAvaliacao: "FALA",
-        reservadaEm: "2026-09-15T10:00:00.000Z",
-        matricula: { codigo: "M-1" }, aluno: "Ana", turma: { codigo: "T-1", nome: "Turma" },
-        agenda: { inicio: "2026-09-16T10:00:00.000Z", fim: "2026-09-16T11:00:00.000Z", fusoOrigem: "UTC", status: "PREVISTO" },
-      }],
-      proximoCursor: "cursor &/",
-    } });
+  const itemA = {
+    reservaId: "reserva/a?",
+    statusReserva: "LIBERADA_CANCELAMENTO_TEMPESTIVO",
+    codigoAvaliacao: "FALA",
+    reservadaEm: "2026-09-15T10:00:00.000Z",
+    matricula: { codigo: "M-1" }, aluno: "Ana", turma: { codigo: "T-1", nome: "Turma" },
+    agenda: { inicio: "2026-09-16T10:00:00.000Z", fim: "2026-09-16T11:00:00.000Z", fusoOrigem: "UTC", status: "PREVISTO" },
+  };
 
-    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ cursor: "anterior" }) }));
-    expect(html).toContain("Primeira página");
+  it("mantém navegação paginada nos dois sentidos, com identificadores codificados e rótulos operacionais", async () => {
+    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: { itens: [itemA], pagina: 3, temProxima: true } });
+
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "3" }) }));
+    expect(mocks.listarAgendasSegundaChamada).toHaveBeenLastCalledWith({ pagina: 3 });
     expect(html).toContain("reserva%2Fa%3F/remarcacao");
-    expect(html).toContain("cursor=cursor%20%26%2F");
+    expect(html).toContain('href="/academico/segundas-chamadas/agendas?pagina=2">← Anterior');
+    expect(html).toContain('href="/academico/segundas-chamadas/agendas?pagina=4">Próxima');
     expect(html).toContain("Cancelada dentro do prazo");
     expect(html).toContain("Previsto");
+  });
+
+  it("primeira página só com Próxima; da segunda, Anterior volta sem ?pagina=1; a última não tem Próxima", async () => {
+    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: { itens: [itemA], pagina: 1, temProxima: true } });
+    const primeira = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(mocks.listarAgendasSegundaChamada).toHaveBeenLastCalledWith({ pagina: 1 });
+    expect(primeira).not.toContain("Anterior");
+    expect(primeira).not.toContain("pagina=1");
+    expect(primeira).toContain('href="/academico/segundas-chamadas/agendas?pagina=2">Próxima');
+    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: true, dado: { itens: [itemA], pagina: 2, temProxima: false } });
+    const segunda = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
+    expect(segunda).toContain('href="/academico/segundas-chamadas/agendas">← Anterior');
+    expect(segunda).not.toContain("Próxima");
   });
 
   it("não confunde encontro em rascunho com encontro em conferência", async () => {
@@ -42,7 +55,7 @@ describe("AgendasSegundaChamadaPage", () => {
         matricula: { codigo: "M-2" }, aluno: "Bia", turma: { codigo: "T-2", nome: "Turma" },
         agenda: { inicio: "2026-09-16T10:00:00.000Z", fim: "2026-09-16T11:00:00.000Z", fusoOrigem: "UTC", status: "RASCUNHO" },
       }],
-      proximoCursor: null,
+      pagina: 1, temProxima: false,
     } });
 
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
@@ -60,7 +73,7 @@ describe("AgendasSegundaChamadaPage", () => {
         matricula: { codigo: "M-3" }, aluno: "Cau", turma: { codigo: "T-3", nome: "Turma" },
         agenda: { inicio: "2026-09-16T10:00:00.000Z", fim: "2026-09-16T11:00:00.000Z", fusoOrigem: "UTC", status: "STATUS_FUTURO" },
       }],
-      proximoCursor: null,
+      pagina: 1, temProxima: false,
     } });
 
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
@@ -70,10 +83,10 @@ describe("AgendasSegundaChamadaPage", () => {
   });
 
   it("mostra somente o erro da consulta", async () => {
-    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: false, erro: "Cursor inválido." });
+    mocks.listarAgendasSegundaChamada.mockResolvedValue({ ok: false, erro: "Consulta recusada." });
 
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-    expect(html).toContain("Cursor inválido.");
+    expect(html).toContain("Consulta recusada.");
     expect(html).not.toContain("evidência");
     expect(html).not.toContain("cobrança");
   });

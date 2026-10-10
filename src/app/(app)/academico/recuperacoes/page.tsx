@@ -7,12 +7,14 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, lerTexto, type ParametrosUrl } from "@/lib/pagina-url";
 
-export default async function Recuperacoes({ searchParams }: { searchParams: Promise<{ alocacaoId?: string; depoisId?: string }> }) {
+export default async function Recuperacoes({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
-  const { alocacaoId = "", depoisId } = await searchParams;
+  const q = await searchParams, alocacaoId = lerTexto(q, "alocacaoId"), pagina = lerPagina(q);
   const [r, preferencia] = await Promise.all([
-    listarRecuperacoesRealizadas({ alocacaoId, depoisId }),
+    listarRecuperacoesRealizadas({ alocacaoId, pagina }),
     consultarPreferenciaFusoEquipe(),
   ]);
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
@@ -23,9 +25,9 @@ export default async function Recuperacoes({ searchParams }: { searchParams: Pro
     <IdentificacaoAvaliacao dados={r.dado.identificacao} />
     <p>Recuperações realizadas neste vínculo. Lançar a nota não dispensa a conferência independente.</p>
     {r.dado.realizacoes.map(item => <Link key={item.id} className="block rounded border p-3 underline" href={`/academico/recuperacoes/${encodeURIComponent(item.id)}`}>{rotular(HABILIDADE_LABEL, item.habilidade)} · {formatarInstanteExibicao(item.realizadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC) · {item.estado}</Link>)}
-    {!r.dado.realizacoes.length && (depoisId
+    {!r.dado.realizacoes.length && (pagina > 1
       ? <EstadoVazio bloco acao={<Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId })}`}>Ir para a primeira página</Link>}>Nenhuma realização disponível nesta página.</EstadoVazio>
       : <EstadoVazio bloco>Nenhuma recuperação realizada neste vínculo.</EstadoVazio>)}
-    {r.dado.proximoId && <Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId, depoisId: r.dado.proximoId })}`}>Próximas realizações</Link>}
+    <Paginacao pagina={pagina} temProxima={r.dado.temProxima} href={(p) => hrefLista("/academico/recuperacoes", { alocacaoId, pagina: p })} rotulo="Páginas de recuperações realizadas" />
   </section>;
 }

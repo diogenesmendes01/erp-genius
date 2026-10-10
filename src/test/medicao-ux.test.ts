@@ -7,7 +7,7 @@ import { amostra, argumentosDaAmostra, gerador, sortear } from "../../scripts/me
 import { medir } from "../../scripts/medicao-ux/metricas.mjs";
 import {
   chamaServerAction, contarCores, contraste, ehTeste, estimativaEstratificada, exigirNode, hexParaRgb, inteiroDoArgumento,
-  mapaDeCores, nomesDeControles, normalizarSeveridade, paginasCobertas, paresReprovados, semCatchCentral, semCatchLiteral,
+  mapaDeCores, nomesDeControles, normalizarSeveridade, paginasCobertas, paresReprovados, semCatchCentral, semCatchLiteral, soParaFrente, temProxima,
 } from "../../scripts/medicao-ux/nucleo.mjs";
 
 // Guarda a lógica de medição do docs/43-medicao-auditoria-ux.md (scripts/medicao-ux): cada número
@@ -138,6 +138,13 @@ describe("nucleo: herança, testes e catch central", () => {
     for (const central of ["useAcaoCliente(", "executarAcaoCliente(() => a())", "criarExecutor("]) {
       expect(semCatchCentral(`${sem}\n${central}`), central).toBe(false);
     }
+  });
+  it("paginação só para frente: \"Próxima\" sem \"Anterior\" (literal, com caixa)", () => {
+    expect([temProxima("<a>Próxima</a>"), soParaFrente("<a>Próxima</a>")]).toEqual([true, true]);
+    expect(soParaFrente("<a>Anterior</a><a>Próxima</a>")).toBe(false);
+    // Critério literal da métrica: "anteriores" minúsculo não conta como volta; sem "Próxima" não é paginação.
+    expect(soParaFrente("<a>Conferências anteriores</a><a>Próximas conferências</a>")).toBe(true);
+    expect(soParaFrente("<a>Mais recentes</a>")).toBe(false);
   });
 });
 

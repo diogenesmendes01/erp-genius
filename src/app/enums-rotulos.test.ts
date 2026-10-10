@@ -1432,7 +1432,7 @@ const TELAS: Record<string, Tela> = {
       mocks.avisos.mockResolvedValue({ ok: true, dado: {
         itens: [{ id: "a", alunoNome: "Ana", canal: c.canal, situacao: c.situacao, atualizadoEm: instante }],
         pendencias: [{ id: "p", matriculaId: "m", matriculaCodigo: "M-1", alunoNome: "Ana", motivo: c.motivo, situacao: "PENDENTE", criadoEm: instante }],
-        proximoCursor: null, proximoCursorPendencia: null,
+        pagina: 1, temProxima: false, paginaPendencias: 1, temProximaPendencia: false,
       } });
       return renderToStaticMarkup(await AvisosAgendaPage({ searchParams: Promise.resolve({}) }));
     },
@@ -1444,7 +1444,7 @@ const TELAS: Record<string, Tela> = {
   },
   "/secretaria/envios-portal": {
     renderizar: async (c) => {
-      mocks.envios.mockResolvedValue({ ok: true, dado: { proximoCursor: null, itens: [
+      mocks.envios.mockResolvedValue({ ok: true, dado: { pagina: 1, temProxima: false, itens: [
         { id: "e", alunoNome: "Ana", finalidade: c.finalidade, situacao: c.situacao, criadoEm: instante, atualizadoEm: instante, conciliacao: null },
       ] } });
       return renderToStaticMarkup(await EnviosPortalPage({ searchParams: Promise.resolve({}) }));
@@ -1483,7 +1483,7 @@ const TELAS: Record<string, Tela> = {
   },
   "/academico/segundas-chamadas/minhas": {
     renderizar: async (c) => {
-      mocks.segundas.mockResolvedValue({ ok: true, dado: { proximoId: null, itens: [{
+      mocks.segundas.mockResolvedValue({ ok: true, dado: { pagina: 1, temProxima: false, itens: [{
         reservaId: "r", codigoAvaliacao: "AV", inicio: "2026-01-01T02:30:00.000Z", fim: "2026-01-01T03:30:00.000Z", fusoOrigem: "UTC",
         status: c.status, aluno: "Ana", matriculaCodigo: "M", turma: "T", realizacao: null, podeRealizar: false,
       }] } });

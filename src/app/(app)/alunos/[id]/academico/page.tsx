@@ -11,15 +11,17 @@ import { SOLICITANTES_ACADEMICOS } from "@/server/academico/estado";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina } from "@/lib/pagina-url";
 
-export default async function AcademicoAlunoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ antesDe?: string; matriculaId?: string }> }) {
+export default async function AcademicoAlunoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string; matriculaId?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR);
   const { id } = await params;
-  const { antesDe, matriculaId } = await searchParams;
+  const q = await searchParams, { matriculaId } = q, pagina = lerPagina(q);
   const ficha = await obterAluno(id, usuario);
   if (!ficha) notFound();
   const amplo = usuario.papeis.some((p) => SOLICITANTES_ACADEMICOS.includes(p));
-  const [contexto, lista, vinculos, preferencia] = await Promise.all([listarContextoMudancaAcademica(id, matriculaId), listarSolicitacoesAcademicas({ alunoId: id, matriculaId, antesDe }),
+  const [contexto, lista, vinculos, preferencia] = await Promise.all([listarContextoMudancaAcademica(id, matriculaId), listarSolicitacoesAcademicas({ alunoId: id, matriculaId, pagina }),
     prisma.alocacaoTurma.findMany({ where: { alunoId: id, ativa: true, matriculaId: { not: null }, ...(!amplo ? { turma: escopoTurmasDocente(usuario.id) } : {}) }, orderBy: { id: "asc" },
       select: { id: true, matriculaId: true, matricula: { select: { codigo: true } }, turma: { select: { codigo: true, nome: true, nivel: { select: { codigo: true, idioma: { select: { nome: true } } } } } } },
     }),
@@ -42,6 +44,6 @@ export default async function AcademicoAlunoPage({ params, searchParams }: { par
       {vinculos.map(v => <Link key={v.id} className="block underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(v.matriculaId!)}`}>{v.matricula?.codigo ?? "Contrato sem código"} · consultar ausências e reposições</Link>)}
     </nav>}
     <MudancasAcademicasPainel key={matriculaId ?? "legado"} contexto={contexto.ok ? contexto.dado : null} solicitacoes={dados?.solicitacoes ?? []} erroConsulta={!contexto.ok ? contexto.erro : !lista.ok ? lista.erro : null} podeExecutarEquivalencia={temPapel(usuario, Papel.SECRETARIA_ACADEMICA)} fusoExibicao={fusoExibicao} />
-    {dados?.proximo && <Link className="inline-block text-sm text-brand-700 underline" href={`/alunos/${id}/academico?antesDe=${encodeURIComponent(dados.proximo)}${matriculaId ? `&matriculaId=${encodeURIComponent(matriculaId)}` : ""}`}>Solicitações anteriores</Link>}
+    <Paginacao pagina={pagina} temProxima={!!dados?.temProxima} href={(p) => hrefLista(`/alunos/${id}/academico`, { matriculaId, pagina: p })} rotulo="Páginas de solicitações acadêmicas" />
   </div>;
 }
