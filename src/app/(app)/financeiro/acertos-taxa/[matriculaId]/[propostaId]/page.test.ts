@@ -2,8 +2,9 @@ import { expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
-const m = vi.hoisted(() => ({ guard: vi.fn(), previa: vi.fn(), historico: vi.fn(), impactos: vi.fn() }));
+const m = vi.hoisted(() => ({ guard: vi.fn(), previa: vi.fn(), historico: vi.fn(), impactos: vi.fn(), cabecalho: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: m.guard }));
+vi.mock("@/server/matricula/cabecalho", () => ({ consultarCabecalhoMatricula: m.cabecalho }));
 vi.mock("@/server/contratos/aditivo-acerto-taxa-consulta", () => ({ consultarAcertoTaxaPorProposta: m.previa, listarHistoricoAcertosTaxa: m.historico }));
 vi.mock("@/server/contratos/aditivo-taxa-impactos", () => ({ consultarImpactosTaxaAditivo: m.impactos }));
 vi.mock("@/app/(app)/matriculas/[id]/contrato/aditivos/ImpactosTaxaFormulario", () => ({ ImpactosTaxaFormulario: () => createElement("div", null, "Preparar conjunto") }));
@@ -34,6 +35,20 @@ it.each(["PENDENTE", "APROVADO", "COMPLETO"])("não oferece novo conjunto quando
   const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ matriculaId: "m1", propostaId: "p1" }) }));
   expect(html).not.toContain("Preparar conjunto");
 });
+it("identifica aluno e matrícula pelo código, não pelo id da URL (docs/43 §6 item 7)", async () => {
+  m.guard.mockResolvedValue({ id: "financeiro", papeis: [Papel.FINANCEIRO] });
+  m.previa.mockResolvedValue({ ok: true, dado: { estado: "SEM_TAXAS", mensagem: "Sem taxas." } });
+  m.historico.mockResolvedValue({ ok: true, dado: [] });
+  m.impactos.mockResolvedValue({ ok: true, dado: null });
+  m.cabecalho.mockResolvedValue({ id: "matricula-interna", codigo: null, status: "ATIVA", alunoId: "a1", aluno: "Ana Silva", produto: "Inglês · Regular" });
+  const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ matriculaId: "matricula-interna", propostaId: "p1" }) }));
+  expect(m.cabecalho).toHaveBeenCalledWith({ id: "financeiro", papeis: [Papel.FINANCEIRO] }, "matricula-interna");
+  expect(html).toContain("<h1 class=\"text-2xl\">Acerto da taxa</h1>");
+  expect(html).toContain(">Ana Silva</a>");
+  expect(html).toContain("Matrícula: sem código · Inglês · Regular");
+  expect(html.replace(/href="[^"]*"/g, "")).not.toContain("matricula-interna");
+});
+
 it("não confunde falha da consulta com ausência de conjunto", async () => {
   m.guard.mockResolvedValue({ id: "financeiro", papeis: [Papel.FINANCEIRO] });
   m.previa.mockResolvedValue({ ok: true, dado: { estado: "PRONTA_PARA_SELECAO", cobrancas: [] } });

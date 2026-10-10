@@ -29,7 +29,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
   const [cobrancasAcerto, setCobrancasAcerto] = useState<string[]>([]);
   const rotuloCobranca = (cobrancaId: string) => {
     const cobranca = cobrancas.find((item) => item.id === cobrancaId);
-    return cobranca ? `${cobranca.codigo ?? rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)} (${rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)})` : cobrancaId;
+    return cobranca ? `${cobranca.codigo ?? rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)} (${rotular(TIPO_COBRANCA_LABEL, cobranca.tipo)})` : "Cobrança fora desta matrícula";
   };
   const descreverAcerto = (acerto: NonNullable<ReturnType<typeof RegrasEncerramentoSchema.parse>["acertoDesistenciaPreparacao"]>) => {
     const valor = acerto.tipo === "VALOR_FIXO" ? `${formatarMoeda(acerto.valor, "")} fixo` : `${acerto.percentual}% do valor negociado`;

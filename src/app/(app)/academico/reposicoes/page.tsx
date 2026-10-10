@@ -8,19 +8,48 @@ import type { OperacaoEntrega } from "@/app/(app)/diario/reposicoes/OperacaoEntr
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { botaoClasses } from "@/components/Botao";
+import { buscarMatriculasParaReposicao, LIMITE_BUSCA_REPOSICAO } from "@/server/diario/reposicao-busca-matricula";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
-export default async function ReposicoesEquipePage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string; origemCursor?: string }> }) {
+export default async function ReposicoesEquipePage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string; origemCursor?: string; busca?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
   const podeOperarEntrega = usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
-  const { matriculaId, cursor, origemCursor } = await searchParams;
+  const { matriculaId, cursor, origemCursor, busca: buscaBruta } = await searchParams;
+  const busca = (buscaBruta ?? "").trim().slice(0, 100);
   const preferencia = await consultarPreferenciaFusoEquipe();
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
+  const encontradas = !matriculaId && busca.length >= 2 ? await buscarMatriculasParaReposicao({ busca }) : null;
   return <div className="space-y-5">
     <VoltarPara href="/academico" />
-    {!matriculaId && <><h1 className="text-2xl font-medium">Reposições individuais</h1><p role="status">Abra esta tela pelo contexto da matrícula para consultar a ausência de origem e o histórico acadêmico.</p></>}
+    {!matriculaId && <EscolherMatricula busca={busca} r={encontradas} />}
     {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
   </div>;
+}
+
+// Sem `?matriculaId=` a tela era um beco (docs/42 L1244; docs/43 §6 item 7): só a frase "abra pelo contexto da
+// matrícula". Agora ela dá a busca e a lista para escolher a matrícula, e diz o outro caminho (a ficha do aluno).
+function EscolherMatricula({ busca, r }: { busca: string; r: Awaited<ReturnType<typeof buscarMatriculasParaReposicao>> | null }) {
+  return <>
+    <h1 className="text-2xl font-medium">Reposições individuais</h1>
+    <p>Escolha a matrícula para consultar a ausência de origem e o histórico acadêmico. Também é possível abrir pela ficha do aluno, em mudanças acadêmicas.</p>
+    <form method="get" action="/academico/reposicoes" role="search" aria-label="Buscar matrícula para reposições" className="flex flex-wrap items-center gap-2">
+      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar matrícula por aluno ou código" placeholder="Aluno ou código da matrícula…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
+      <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
+      {busca && <Link href="/academico/reposicoes" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
+    </form>
+    {!r ? <p className="text-sm text-gray-600">Digite ao menos duas letras do nome do aluno ou o código da matrícula. <Link className="text-brand-700 underline" href="/alunos">Abrir a lista de alunos</Link></p>
+      : !r.ok || !r.dado ? <p role="alert">{r.ok ? "Busca indisponível." : r.erro}</p>
+      : <>
+        {r.dado.itens.length ? <ul className="space-y-2" aria-label="Matrículas encontradas">{r.dado.itens.map((m) => <li key={m.id} className="rounded border p-3">
+          <Link className="text-brand-700 underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(m.id)}`}>{m.codigo ?? "Matrícula sem código"} · {m.aluno}</Link>
+          <span className="text-sm text-gray-600"> · {m.produto} · {rotular(STATUS_MATRICULA_LABEL, m.status)}</span>
+        </li>)}</ul> : <EstadoVazio bloco acao={<Link className="underline" href="/alunos">Abrir a lista de alunos</Link>}>Nenhuma matrícula encontrada para “{busca}”.</EstadoVazio>}
+        {r.dado.maisResultados && <p className="text-sm text-gray-600">Mostrando as {LIMITE_BUSCA_REPOSICAO} matrículas mais recentes da busca. Refine pelo código ou pelo nome completo.</p>}
+      </>}
+  </>;
 }
 
 async function Conteudo({ matriculaId, cursor, origemCursor, podeOperarEntrega, fusoExibicao, preferenciaFusoExibicao }: { matriculaId: string; cursor?: string; origemCursor?: string; podeOperarEntrega: boolean; fusoExibicao: string; preferenciaFusoExibicao: string | null }) {

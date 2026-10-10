@@ -6,14 +6,15 @@ import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { abasVisiveis, type AbaFinanceiro, type PermissoesFinanceiro } from "./abas";
 import type { AprovacaoRow } from "./FinanceiroPainel";
+import { PAPEIS_FINANCEIRO } from "./papeis";
 
 // /financeiro por rota (docs/42-auditoria-frontend-ux.md, E8): o layout (barra de abas com contagens)
 // e cada página de aba pedem o mesmo contexto — papéis, permissões e as três filas pendentes. Uma vez
 // por requisição. `cache` vem do React embutido no Next; no Vitest (React 18.3) a função roda sem memo.
 const memo: <F extends (...args: never[]) => unknown>(f: F) => F = typeof cache === "function" ? cache : (f) => f;
 
-// Painel financeiro global (doc 07 / nav): Admin, Financeiro, Gerente Comercial.
-const PAPEIS_FINANCEIRO: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL];
+// Painel financeiro global (doc 07 / nav): Admin, Financeiro, Gerente Comercial — em ./papeis, que também
+// decide quem recebe link para /financeiro em outras telas.
 
 export type ContextoFinanceiro = { papeis: Papel[]; permissoes: PermissoesFinanceiro };
 

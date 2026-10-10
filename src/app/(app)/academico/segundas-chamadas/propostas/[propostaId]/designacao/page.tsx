@@ -35,7 +35,7 @@ export default async function Designacao({ params, searchParams }: {
   return <section className="space-y-4">
     <Link className="underline" href="/academico/avaliacoes">Avaliações</Link>
     <h1 className="text-2xl font-medium">Designação da segunda chamada · {d.codigoAvaliacao}</h1>
-    <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.turma}.</p>
+    <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma}.</p>
     <p>Não altera o professor de encontro já publicado. Para regularizar uma aplicação registrada por outra pessoa, use a designação da avaliação.</p>
     {d.atual ? <p>
       Última designação: {d.atual.professor.nome} · {data(d.atual.inicio)} até {d.atual.fim ? data(d.atual.fim) : "sem término"} ({fusoExibicao}; origem UTC).

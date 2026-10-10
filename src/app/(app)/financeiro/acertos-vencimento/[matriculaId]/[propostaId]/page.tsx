@@ -10,16 +10,19 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
+import { consultarCabecalhoMatricula } from "@/server/matricula/cabecalho";
+import { IdentificacaoRegistro } from "@/components/IdentificacaoRegistro";
 
 export default async function Pagina({ params, searchParams }: {
  params: Promise<{ matriculaId: string; propostaId: string }>;
  searchParams: Promise<{ pagina?: string }>;
 }) {
- await exigirSessaoPagina(Papel.FINANCEIRO);
+ const usuario = await exigirSessaoPagina(Papel.FINANCEIRO);
  const { matriculaId, propostaId } = await params;
- const [versao, preferencia] = await Promise.all([
+ const [versao, preferencia, cabecalho] = await Promise.all([
    prisma.versaoCondicoesAditivo.findFirst({ where: { matriculaId, propostaId }, select: { id: true } }),
    consultarPreferenciaFusoEquipe(),
+   consultarCabecalhoMatricula(usuario, matriculaId),
  ]);
  if (!versao) return <p role="status">Formalize as condições do aditivo antes de preparar o acerto.</p>;
  const pagina = Number((await searchParams).pagina ?? 1);
@@ -32,14 +35,16 @@ export default async function Pagina({ params, searchParams }: {
  const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, "UTC");
  return <main className="space-y-5"><VoltarPara href="/financeiro" />
  <h1 className="text-2xl">Acerto do vencimento da primeira mensalidade</h1>
- <p>Matrícula {matriculaId} · versão contratual {d.versao}</p>
+ {/* De quem é o acerto: aluno e matrícula pelo código, não o id da URL (docs/43 §6 item 7). */}
+ {cabecalho && <IdentificacaoRegistro rotulo="Aluno e matrícula deste acerto" dados={{ aluno: cabecalho.aluno, alunoHref: `/alunos/${encodeURIComponent(cabecalho.alunoId)}`, matriculaCodigo: cabecalho.codigo, matriculaComplemento: cabecalho.produto }} />}
+ <p>Versão contratual {d.versao}</p>
  <p>Vigência aprovada: {vigencia.texto} (horário exibido em {vigencia.fuso}; referência contratual preservada). A aplicação fica disponível a partir desse momento.</p>
  <p>Novo vencimento contratado: {formatarDataCivil(d.alvo.vencimentoProposto)}. {d.alvo.pendencia}</p>
  {d.alvo.podePreparar && <VencimentoFormulario modo="preparar" matriculaId={matriculaId} versaoCondicoesId={versao.id} revisaoHash={d.revisaoHash} />}
  <h2 className="text-xl">Histórico e decisões</h2>
  {!d.propostas.length && <EstadoVazio bloco>Nenhuma proposta de acerto registrada.</EstadoVazio>}
  {d.propostas.map(p => <section key={p.id} className="space-y-2 rounded border p-4">
- <h3>Proposta {p.id} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, p.estado)}</h3><p>{data(p.vencimentoAnterior,p.fuso)} → {data(p.vencimentoNovo,p.fuso)} ({p.fuso})</p>
+ <h3>Proposta de {instanteAdministrativo(p.criadaEm)} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, p.estado)}</h3><p>{data(p.vencimentoAnterior,p.fuso)} → {data(p.vencimentoNovo,p.fuso)} ({p.fuso})</p>
  <p>Motivo: {p.motivo}</p><p>Evidência: {p.evidencia}</p>
  {p.decisao && <p>Decisão: {p.decisao.motivo}</p>}
  {p.podeDecidir && <VencimentoFormulario modo="decidir" propostaId={p.id} />}

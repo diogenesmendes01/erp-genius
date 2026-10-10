@@ -7,6 +7,7 @@ import { EntradaCorrecaoNotaSchema, proporCorrecaoNotaTx } from "./correcao-tx";
 import { DecisaoCorrecaoSchema, decidirCorrecaoNotaTx, revisarCorrecaoNotaTx } from "./correcao-decisao-tx";
 import { NotasLancamentoSchema } from "./lancamento-schema";
 import { identificarMatriculaAvaliacao } from "./identificacao";
+import { impactosLegiveisTx } from "./impactos-legiveis";
 export async function proporCorrecaoNota(input: z.input<typeof EntradaCorrecaoNotaSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -20,7 +21,9 @@ export async function revisarCorrecaoNota(propostaId: string) {
       const r = await revisarCorrecaoNotaTx(tx, u.id, z.string().min(1).max(100).parse(propostaId));
       return { propostaId: r.p.id, propostaHash: r.p.entradaHash, versao: r.p.versao, motivo: r.p.motivo,
         notasPropostas: NotasLancamentoSchema.parse(r.p.notas), notasVigentes: r.vigente.notas, origemHash: r.vigente.origemHash,
-        impactos: r.impactos, impactosHash: r.impactosHash, podeAprovar: r.podeAprovar, podeDecidir: !r.p.decisao && r.p.autorId !== u.id,
+        impactos: r.impactos, impactosHash: r.impactosHash,
+        // Texto legível de cada impacto (turma de destino pelo código); `impactos` segue o recorte do hash.
+        impactosLegiveis: await impactosLegiveisTx(tx, r.impactos), podeAprovar: r.podeAprovar, podeDecidir: !r.p.decisao && r.p.autorId !== u.id,
         identificacao: await identificarMatriculaAvaliacao(tx, r.a.matriculaId, r.a.turmaId), lancamentoId: r.p.lancamentoId };
     });
   });

@@ -21,7 +21,7 @@ export default async function MinhaSegundaChamada({ params }: { params: Promise<
   return <section className="space-y-4">
     <VoltarPara href="/academico/segundas-chamadas/minhas" />
     <h1 className="text-2xl font-medium">Segunda chamada designada · {d.codigoAvaliacao}</h1>
-    <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? d.identificacao.matriculaId} · {d.identificacao.turma} · nível {d.identificacao.nivel}.</p>
+    <p>{d.identificacao.aluno} · matrícula {d.identificacao.matriculaCodigo ?? "sem código"} · {d.identificacao.turma} · nível {d.identificacao.nivel}.</p>
     <p>Horário reservado: {formatarInstanteExibicao(d.horario.inicio, fuso, d.horario.fusoOrigem).texto} a {formatarInstanteExibicao(d.horario.fim, fuso, d.horario.fusoOrigem).texto} ({fuso}; origem {d.horario.fusoOrigem}).</p>
     <p>Situação da reserva: {rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, d.status)}.</p>
     {!d.realizacao && d.podeRealizar && <FormularioRealizacao reservaId={d.reservaId} fusoInstitucional={fusoInstitucional} />}
