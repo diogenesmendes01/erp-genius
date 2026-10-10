@@ -21,6 +21,7 @@ vi.mock("@/server/avaliacoes/lancamentos", () => ({ salvarLancamentoAvaliacaoLoc
 
 import type { ReactNode } from "react";
 import { LancarNotas, ConferirNotas } from "./Formularios";
+import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto, type No } from "@/test/tela-sem-dom";
@@ -107,12 +108,15 @@ describe("LancarNotas — fuso no próprio formulário (sem navegar)", () => {
   const tela = () => m.ganchos!.renderizar(LancarNotas, props);
   const campo = (nome: string): No => elementos(tela()).find((n) => n.type === "input" && n.props.name === nome)!;
   const digitar = (nome: string, valor: string) => (campo(nome).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+  // O fuso é o CampoFuso controlado (docs/43 §6 item 6): `valor` + `onChange(texto)`.
+  const fuso = (): No => elementos(tela()).find((n) => n.type === CampoFuso)!;
+  const trocarFuso = (valor: string) => (fuso().props.onChange as (v: string) => void)(valor);
 
   it("trocar o fuso não navega nem remonta: a data da última versão acompanha o fuso e o resto do estado fica", () => {
-    expect(campo("fuso").props.value).toBe("UTC");
+    expect(fuso().props.valor).toBe("UTC");
     expect(campo("realizadaEm").props.value).toBe("2026-10-01T02:30:00.000");
-    digitar("fuso", "America/Sao_Paulo");
-    expect(campo("fuso").props.value).toBe("America/Sao_Paulo");
+    trocarFuso("America/Sao_Paulo");
+    expect(fuso().props.valor).toBe("America/Sao_Paulo");
     expect(campo("realizadaEm").props.value).toBe("2026-09-30T23:30:00.000");
     expect(texto(elementos(tela()).find((n) => n.type === "label" && texto(n.props.children).startsWith("Data e horário"))?.props.children)).toContain("(America/Sao_Paulo)");
     expect(m.refresh).not.toHaveBeenCalled();
@@ -120,20 +124,20 @@ describe("LancarNotas — fuso no próprio formulário (sem navegar)", () => {
 
   it("a data digitada sobrevive à troca de fuso (não é sobrescrita pela conversão)", () => {
     digitar("realizadaEm", "2026-10-02T10:00");
-    digitar("fuso", "America/Costa_Rica");
+    trocarFuso("America/Costa_Rica");
     expect(campo("realizadaEm").props.value).toBe("2026-10-02T10:00");
-    expect(campo("fuso").props.value).toBe("America/Costa_Rica");
+    expect(fuso().props.valor).toBe("America/Costa_Rica");
   });
 
   it("envia no fuso escolhido no formulário; fuso inválido não chama a action e diz por quê", async () => {
-    digitar("fuso", "America/Costa_Rica");
+    trocarFuso("America/Costa_Rica");
     m.salvar.mockResolvedValueOnce({ ok: true });
     await submeter(tela(), { realizadaEm: "2026-10-02T10:00", modo: "rascunho", "nota-FALA": "9", "comentario-FALA": "" });
     expect(m.salvar.mock.calls[0][0]).toMatchObject({ fuso: "America/Costa_Rica", realizadaLocal: "2026-10-02T10:00" });
-    digitar("fuso", "Lugar/Nenhum");
+    trocarFuso("Lugar/Nenhum");
     await submeter(tela(), { realizadaEm: "2026-10-02T10:00", modo: "rascunho", "nota-FALA": "9", "comentario-FALA": "" });
     expect(m.salvar).toHaveBeenCalledTimes(1);
-    expect(campo("fuso").props["aria-invalid"]).toBe(true);
+    expect(fuso().props["aria-invalid"]).toBe(true);
     expect(anuncios(tela()).alerta).toEqual(["Informe um fuso válido, como America/Sao_Paulo ou America/Costa_Rica."]);
   });
 

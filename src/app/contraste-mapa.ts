@@ -25,7 +25,7 @@ export const SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surf
  */
 export const SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"] as const;
 
-/** Fundos sólidos (não invertem no escuro) que levam texto branco: ≥ 4,5:1 nos dois temas. */
+/** Fundos sólidos (valor próprio por tema, sempre com texto branco): ≥ 4,5:1 nos dois temas. */
 export const FUNDOS_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"] as const;
 
 /**

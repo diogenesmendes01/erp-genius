@@ -356,7 +356,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aprovar e publicar encontros → primario/lg",
     "<button> Rejeitar proposta → perigo/lg",
   ],
-  "academico/grades/nova/PrepararGrade.tsx": [
+  "academico/grades/nova/PrepararGradeFormulario.tsx": [
     "<button> Preparando… · Preparar para revisão → primario/lg",
   ],
   "academico/grades/nova/page.tsx": [

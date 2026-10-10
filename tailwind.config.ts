@@ -39,7 +39,7 @@ const config: Config = {
           700: "var(--brand-text)",
           800: "var(--brand-text)",
         },
-        // Fundo de botão primário — não inverte no dark (ver globals.css). Uso:
+        // Fundo de botão primário — valor próprio por tema, sempre com texto branco (ver globals.css). Uso:
         // bg-brand-solid + hover:brightness-95. Distinto de brand-700 (só texto/link).
         "brand-solid": "var(--brand-solid)",
         // semânticas (bg = tom claro/escuro; texto inverte)

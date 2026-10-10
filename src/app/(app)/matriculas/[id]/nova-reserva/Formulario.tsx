@@ -8,6 +8,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { CampoFuso } from "@/components/CampoFuso";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 type Base = NonNullable<Extract<Awaited<ReturnType<typeof consultarFormularioNovaReserva>>, { ok: true }>["dado"]>;
@@ -68,7 +69,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
     <div>{pagina > 1 && <button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => buscar(pagina - 1)}>Professores anteriores</button>} {mais && <button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => buscar(pagina + 1)}>Mais professores</button>}</div>
     <FeedbackAcao erro={acaoConsulta.erro} />
     <label className="block">Professor<select value={professorId} onChange={(e) => { setProfessor(e.target.value); invalidar(); }} className="block border p-2"><option value="">Selecione</option>{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
-    <label className="block">Fuso dos horários<input value={fuso} onChange={(e) => { setFuso(e.target.value); invalidar(); }} className="block border p-2" /><span>Exemplo: America/Sao_Paulo</span></label>
+    <label className="block">Fuso dos horários<CampoFuso name="fusoOrigem" valor={fuso} onChange={(valor) => { setFuso(valor); invalidar(); }} required={false} className="block border p-2" /><span>Exemplo: America/Sao_Paulo</span></label>
     {encontros.map((e, i) => <fieldset key={i} className="flex flex-wrap gap-3 rounded border p-3"><legend>Encontro {i + 1}</legend>{(["data", "horario", "duracao"] as const).map((campo) => <label key={campo}>{campo === "data" ? "Data" : campo === "horario" ? "Horário" : "Duração em minutos"}<input type={campo === "data" ? "date" : campo === "horario" ? "time" : "number"} min={campo === "duracao" ? 1 : undefined} max={campo === "duracao" ? 1440 : undefined} value={e[campo]} onChange={(event) => { setEncontros(encontros.map((v, j) => j === i ? { ...v, [campo]: event.target.value } : v)); invalidar(); }} className="block border p-2" /></label>)}<button type="button" className={botaoClasses({ variante: "perigo" })} disabled={encontros.length === 1} onClick={() => { setEncontros(encontros.filter((_, j) => j !== i)); invalidar(); }}>Remover</button></fieldset>)}
     <button type="button" disabled={encontros.length >= 1000} onClick={() => { setEncontros([...encontros, { data: "", horario: "", duracao: "" }]); invalidar(); }} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Adicionar encontro</button>
     <button type="button" onClick={revisar} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Revisar horários e condições</button>
