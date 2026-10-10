@@ -9,13 +9,19 @@ import { ModeloFormulario } from "../ModeloFormulario";
 import { DecidirModelo } from "../DecidirModelo";
 import { PAPEIS_MODELO, CONDICOES_MODELO } from "../labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 
 export default async function ModeloPage({ params, searchParams }: { params: Promise<{ codigo: string }>; searchParams: Promise<{ pagina?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const codigo = (await params).codigo;
   if (!PrepararModeloSchema.shape.codigo.safeParse(codigo).success) notFound();
   const p = Number((await searchParams).pagina ?? 1), pagina = Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1;
-  const dados = await consultarModelosContratuais({ codigo, pagina });
+  const [dados, preferencia] = await Promise.all([consultarModelosContratuais({ codigo, pagina }), consultarPreferenciaFusoEquipe()]);
+  // Preparação e decisão no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6; docs/42 L2382):
+  // antes, "2026-09-22 14:03:11 UTC" recortado do ISO.
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const quando = (valor: Date | string) => `${formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto} (${fusoExibicao}; origem UTC)`;
   if (!dados.modelos.length && pagina === 1) notFound();
   const atual = pagina === 1 ? dados.modelos[0] : null;
   const conteudoAtual = atual ? ConteudoModeloSchema.safeParse(atual.conteudo) : null;
@@ -32,7 +38,7 @@ export default async function ModeloPage({ params, searchParams }: { params: Pro
       return <details key={m.id} open={i === 0} className="rounded border p-4">
         <summary className="cursor-pointer font-medium">Versão {m.versao} — {m.decisao ? m.decisao.aprovada ? "Publicada" : "Rejeitada" : "Aguardando decisão"}</summary>
         <div className="mt-4 space-y-4">
-          <p>Preparada por {m.preparador.nome}, em {m.criadaEm.toISOString().replace("T", " ").slice(0, 19)} UTC.</p>
+          <p>Preparada por {m.preparador.nome}, em {quando(m.criadaEm)}.</p>
           <p className="whitespace-pre-wrap">Motivo: {m.motivo}</p>
           {!c.success ? <p role="alert">Estrutura de conteúdo inválida. Encaminhe para conferência; esta tela não permite publicar a versão.</p> : <>
             <h4 className="text-lg font-medium">{c.data.titulo}</h4>
@@ -42,7 +48,7 @@ export default async function ModeloPage({ params, searchParams }: { params: Pro
             {c.data.secoes.map((s, j) => <article key={j} className="rounded bg-gray-50 p-4"><h5 className="font-medium">{j + 1}. {s.titulo}</h5><p className="mt-2 whitespace-pre-wrap break-words">{s.texto}</p></article>)}
             <div><h5 className="font-medium">Assinaturas exigidas</h5><ul>{c.data.assinaturas.map((a, j) => <li key={j}>{PAPEIS_MODELO[a.papel]} — {CONDICOES_MODELO[a.condicao]}</li>)}</ul></div>
           </>}
-          {m.decisao ? <div className="border-t pt-3"><p>{m.decisao.aprovada ? "Publicada" : "Rejeitada"} por {m.decisao.decisor.nome}, em {m.decisao.criadaEm.toISOString().replace("T", " ").slice(0, 19)} UTC.</p><p className="whitespace-pre-wrap">{m.decisao.motivo}</p></div>
+          {m.decisao ? <div className="border-t pt-3"><p>{m.decisao.aprovada ? "Publicada" : "Rejeitada"} por {m.decisao.decisor.nome}, em {quando(m.decisao.criadaEm)}.</p><p className="whitespace-pre-wrap">{m.decisao.motivo}</p></div>
             : c.success && usuario.papeis.includes(Papel.ADMINISTRADOR) && usuario.id !== m.preparador.id ? <DecidirModelo modeloId={m.id} conteudoHash={m.conteudoHash} />
               : <p>Esta versão aguarda decisão de outra pessoa da Administração.</p>}
         </div>

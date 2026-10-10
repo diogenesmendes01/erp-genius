@@ -39,4 +39,20 @@ describe("TerminoIndisponibilidadeOferta", () => {
     expect(seguinte).not.toContain("para esta indisponibilidade.");
     expect(seguinte).toMatch(/<a[^>]*href="\?pagina=1"[^>]*>Ir para a primeira página<\/a>/);
   });
+
+  // docs/43 §6 item 6 (docs/42 L939): sem fuso da escola, o instante era o ISO cru com "(fuso institucional não configurado)".
+  it("sem fuso da escola: aviso explícito com o caminho para configurar, e o instante em UTC formatado — não o ISO", () => {
+    const proposta = { id: "p", fim: "2026-09-20", motivo: "Motivo", evidenciaTexto: "Evidência", criadaEm: "2026-09-12T13:41:07.482Z", decisao: null, podeDecidir: false };
+    const render = (fusoInstitucional: string | null) => renderToStaticMarkup(createElement(TerminoIndisponibilidadeOferta, {
+      registroId: "registro", inicio: "2026-09-10", dados: { pagina: 1, temProxima: false, podePropor: false, propostas: [proposta] }, fusoInstitucional,
+    } as never));
+    const sem = render(null);
+    expect(sem).toContain("Fuso da escola não configurado; horários exibidos em UTC.");
+    expect(sem).toContain('href="/configuracao/operacao"');
+    expect(sem).toContain("Proposta registrada em 12/09/2026, 13:41 UTC.");
+    expect(sem).not.toContain("2026-09-12T13:41");
+    const com = render("America/Sao_Paulo");
+    expect(com).not.toContain("Fuso da escola não configurado");
+    expect(com).toContain("Proposta registrada em 12/09/2026, 10:41.");
+  });
 });

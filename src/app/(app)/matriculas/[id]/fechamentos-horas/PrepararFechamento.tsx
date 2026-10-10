@@ -8,8 +8,10 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
 
-export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; matriculaId: string }) {
+/** `fusoInicial`: fuso da escola ou da preferência (fusoInicialDeEntrada); "" deixa o campo vazio e obrigatório. */
+export function PrepararFechamento({ alunoId, matriculaId, fusoInicial = "" }: { alunoId: string; matriculaId: string; fusoInicial?: string }) {
   // A conferência é leitura e o rascunho leva chave de idempotência estável: na falha de transporte, reenviar sem alterar confere a mesma operação.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   const [referencia, setReferencia] = useState(""), [preparado, setPreparado] = useState<Parameters<typeof prepararFechamentoHoras>[0] | null>(null);
@@ -49,7 +51,7 @@ export function PrepararFechamento({ alunoId, matriculaId }: { alunoId: string; 
       <label className="block">Referência contratual<select className={classe} required value={referencia} onChange={e => setReferencia(e.target.value)}><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></select></label>
       {referencia === "CICLO_MATRICULA" && <label className="block">Data de referência do ciclo<input className={classe} type="date" name="ancora" required /></label>}
       <label className="block">Uma data dentro do período a apurar<input className={classe} type="date" name="data" required /></label>
-      <label className="block">Fuso do período<input className={classe} name="fuso" placeholder="Ex.: America/Sao_Paulo" required /></label>
+      <label className="block">Fuso do período<CampoFuso padrao={fusoInicial} className={classe} /></label>
       <label className="block">Vencimento contratado<input className={classe} type="date" name="vencimento" required /></label>
       <label className="block">Cláusula e condições do período<CampoTexto className={classe} name="clausula" minLength={5} maxLength={2000} required /></label>
       <label className="block">Se houver encontros pendentes<select className={classe} name="escolha" required defaultValue=""><option value="">Selecione</option><option value="AGUARDAR">Aguardar conferência</option><option value="PROPOR_PARCIAL">Propor emissão parcial para aprovação</option></select></label>

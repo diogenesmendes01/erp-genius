@@ -9,6 +9,7 @@ import { PAISES_ISO } from "@/lib/paises-iso";
 import { criarMatricula } from "@/server/matricula/acoes";
 import { solicitarAberturaTurma } from "@/server/turmas/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { CampoFuso } from "@/components/CampoFuso";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
@@ -540,7 +541,7 @@ export function MatriculaFormulario({
             <h2 className="mb-4 text-sm font-medium">Operacional</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-fuso" rotulo="Fuso horário">
-                {(campo) => <input {...campo} className={inputCls} value={fuso} onChange={(e) => setFuso(e.target.value)} placeholder="Ex.: America/Costa_Rica" />}
+                {(campo) => <CampoFuso {...campo} name="alunoFuso" required={false} className={inputCls} valor={fuso} onChange={setFuso} placeholder="Ex.: America/Costa_Rica" />}
               </Campo>
             </div>
             <div className="mt-4 border-t border-gray-100 pt-4">

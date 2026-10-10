@@ -11,6 +11,7 @@ import { IdentificacaoAvaliacao } from "../../Identificacao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL } from "@/lib/labels";
+import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
 
 export default async function LancamentoPage({ params, searchParams }: {
   params: Promise<{ alocacaoId: string; codigo: string }>; searchParams: Promise<{ pagina?: string; fuso?: string }>;
@@ -21,6 +22,9 @@ export default async function LancamentoPage({ params, searchParams }: {
   const validacaoFuso = FusoInstitucionalSchema.safeParse(busca.fuso ?? fusoInstitucional ?? "UTC");
   if (!validacaoFuso.success) return <div role="alert">Fuso inválido. <Link className="underline" href="?fuso=UTC">Voltar para UTC</Link></div>;
   const fusoEntrada = validacaoFuso.data;
+  // Sem fuso na URL e sem fuso da escola, a entrada continua em UTC (o cálculo não muda), mas a tela diz isso
+  // (docs/43 §6 item 6): antes o UTC entrava calado, como se fosse o fuso escolhido.
+  const semFusoDaEscola = !busca.fuso && !fusoInstitucional;
   const [r, preferencia] = await Promise.all([
     consultarLancamentosAvaliacao({ alocacaoId, codigoAvaliacao: codigo, pagina: Number.isInteger(p) && p > 0 && p <= 100000 ? p : 1 }),
     consultarPreferenciaFusoEquipe(),
@@ -39,6 +43,7 @@ export default async function LancamentoPage({ params, searchParams }: {
     {d.oficial && <p role="status">Esta avaliação possui notas oficiais. Alterações exigem o fluxo de correção com aprovação independente.</p>}
     {/* Sem key de versão, fuso ou página (docs/43 §6 item 3): o fuso é escolhido dentro do formulário, e trocar a
         página do histórico ou receber a versão nova depois de salvar não remonta o que foi digitado. */}
+    {semFusoDaEscola && <AvisoFusoNaoConfigurado />}
     {d.podeLancar && c.avaliacao && c.escala && <LancarNotas fuso={fusoEntrada} alocacaoId={alocacaoId} codigoAvaliacao={codigo} versaoEsperada={d.versaoEsperada} habilidades={c.avaliacao.habilidades} escala={c.escala}
       realizadores={d.realizadores} registradorId={d.registradorId}
       anterior={anterior ? { realizadaEm: dataHoraAvaliacaoLocal(anterior.realizadaEm, fusoEntrada), instante: new Date(anterior.realizadaEm).toISOString(), notas: anterior.notas } : null} />}

@@ -10,7 +10,7 @@ const campo = (d: FormData, nome: string) => String(d.get(nome) ?? "");
 // mensagem de resultado incerto conforme a idempotência desta action, e o desfecho volta nesse formato.
 const resposta = (d: DesfechoAcao<unknown>) => d.tipo === "ok" ? { ok: true as const } : { ok: false as const, erro: d.mensagem };
 
-export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsperada, fusoInstitucional }: { disponibilizacaoId: string; prazoAnterior: string; versaoEsperada: number; fusoInstitucional: string | null }) {
+export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsperada, fusoInstitucional, fusoExibicao }: { disponibilizacaoId: string; prazoAnterior: string; versaoEsperada: number; fusoInstitucional: string | null; fusoExibicao?: string }) {
   const tentativa = useRef<{ entrada: string; chave: string } | null>(null);
   return <Formulario titulo="Propor prorrogação" executar={async d => {
     const dados = { disponibilizacaoId, prazoAnterior, versaoEsperada, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), motivo: campo(d, "motivo") }, entrada = JSON.stringify(dados);
@@ -21,7 +21,7 @@ export function ProporProrrogacao({ disponibilizacaoId, prazoAnterior, versaoEsp
     if (r.tipo === "ok") tentativa.current = null;
     return resposta(r);
   }}>
-    <Horario rotulo="Novo prazo proposto" fusoInstitucional={fusoInstitucional} />
+    <Horario rotulo="Novo prazo proposto" fusoInstitucional={fusoInstitucional} fusoExibicao={fusoExibicao} />
     <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <p>O prazo só muda após aprovação por outra pessoa da gestão. A proposta não concede nova tentativa.</p>
   </Formulario>;
