@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, cloneElement, type ReactElement, type ReactNode } from "react";
 import { Campo, type LigacaoCampo } from "@/components/Campo";
 import { Botao } from "@/components/Botao";
 
@@ -100,6 +100,21 @@ export function identidadeNoReact(raiz: ReactNode, tipo: unknown): { caminho: nu
     return Array.isArray(filhos) ? busca(filhos, caminho) : busca(filhos, [...caminho, 0]);
   };
   return busca(raiz, []);
+}
+
+/**
+ * A primeira pintura de um Server Component com `<Suspense>` (E10, docs/43 §6 item 10): cada limite trocado
+ * pelo seu `fallback` — o que o Next manda antes de a consulta lenta terminar. Os componentes assíncronos de
+ * dentro do limite não são chamados, então a árvore devolvida pode ir direto ao renderToStaticMarkup.
+ */
+export function primeiraPintura(v: ReactNode): ReactNode {
+  if (Array.isArray(v)) return v.map(primeiraPintura);
+  if (!v || typeof v !== "object" || !("props" in v)) return v;
+  const el = v as ReactElement<{ children?: ReactNode; fallback?: ReactNode }>;
+  if (el.type === Suspense) return primeiraPintura(el.props.fallback);
+  const filhos = el.props.children;
+  if (filhos === undefined || typeof filhos === "function") return el;
+  return cloneElement(el, undefined, ...(Array.isArray(filhos) ? filhos.map(primeiraPintura) : [primeiraPintura(filhos)]));
 }
 
 /** Texto visível de um nó (strings e números dos filhos). */
