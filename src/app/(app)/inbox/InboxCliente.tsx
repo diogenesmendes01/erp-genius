@@ -46,6 +46,7 @@ import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 
 // UI da inbox (doc 26 §Camada 3). O componente NÃO fala com o Prisma: página server
 // carrega lista + thread; toda mutação é Server Action (docs/13 §fronteira).
@@ -292,7 +293,7 @@ function StatusEnvio({ status }: { status: string }) {
 
 const ORIGEM_LABEL: Record<string, string> = { CRON: "régua", LOTE: "lote", HUMANO: "" };
 
-function Thread({
+export function Thread({
   thread,
   podeCobranca,
   preferenciaFusoExibicao,
@@ -314,6 +315,9 @@ function Thread({
   const [evidenciaOptIn, setEvidenciaOptIn] = useState("");
   const [criandoLead, setCriandoLead] = useState(false);
   const [editarNome, setEditarNome] = useState(false);
+  // "Registrar opt-out" bloqueia toda mensagem ao contato, e só a administração desfaz, com evidência
+  // (docs/42 L2298): o botão só abre a confirmação; a action roda no ConfirmarAcao, que mostra a falha.
+  const [confirmarOptOut, setConfirmarOptOut] = useState(false);
   const optOut = !!thread.contato.optOutEm;
 
   async function criarLead() {
@@ -427,7 +431,7 @@ function Thread({
               </span>
             </button>}
             {optOut ? (
-              thread.podeReautorizar ? <label className="grid gap-1 text-xs">Evidência da nova autorização
+              thread.podeReautorizar ? <label className="grid gap-1 text-xs">Evidência da nova autorização (mínimo de 12 caracteres)
               <input value={evidenciaOptIn} onChange={(e) => setEvidenciaOptIn(e.target.value)} minLength={12} maxLength={1000} className="rounded border p-1.5" />
               <button
                 className={btnSec}
@@ -439,7 +443,12 @@ function Thread({
             ) : (
               <button
                 className={btnSec}
-                onClick={() => run(registrarOptOutContato(thread.contato.id), "Opt-out registrado — automações bloqueadas.")}
+                disabled={confirmarOptOut}
+                onClick={() => {
+                  onErro(null);
+                  onNota(null);
+                  setConfirmarOptOut(true);
+                }}
               >
                 Registrar opt-out
               </button>
@@ -464,6 +473,8 @@ function Thread({
       {vincular && (
         <VincularPainel
           contatoId={thread.contato.id}
+          contatoNome={thread.contato.nome}
+          contatoTelefone={thread.contato.telefone}
           atendimentoId={thread.conversaId}
           onFechar={() => setVincular(false)}
           onFeito={(msg) => {
@@ -584,6 +595,27 @@ function Thread({
         onErro={onErro}
         onNota={onNota}
       />
+
+      {confirmarOptOut && (
+        <ConfirmarAcao
+          titulo={`Registrar o opt-out de ${thread.contato.nome}?`}
+          confirmacao="opt-out"
+          idempotente={false}
+          acao={() => registrarOptOutContato(thread.contato.id)}
+          aoConcluir={() => {
+            setConfirmarOptOut(false);
+            onNota("Opt-out registrado — automações bloqueadas.");
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmarOptOut(false)}
+        >
+          <p>
+            Nenhuma mensagem sai mais para {thread.contato.nome} ({thread.contato.telefone}) por nenhum número da escola: nem as
+            automáticas (régua de cobrança e régua comercial) nem as enviadas por aqui.
+          </p>
+          <p>Só a administração desfaz, registrando a evidência da nova autorização do contato (mínimo de 12 caracteres).</p>
+        </ConfirmarAcao>
+      )}
 
       {pagar && thread.cobrancaAtiva && (
         <PagamentoModal
@@ -928,20 +960,29 @@ export function EditarNomePainel({
   );
 }
 
-function VincularPainel({
+type AlvoVinculo = { tipo: "aluno" | "responsavel" | "lead"; id: string };
+
+export function VincularPainel({
   contatoId,
+  contatoNome,
+  contatoTelefone,
   atendimentoId,
   onFechar,
   onFeito,
   onErro,
 }: {
   contatoId: string;
+  contatoNome: string;
+  contatoTelefone: string;
   atendimentoId: string;
   onFechar: () => void;
   onFeito: (msg: string) => void;
   onErro: (m: string | null) => void;
 }) {
   const [q, setQ] = useState("");
+  // Vincular amarra o histórico da conversa a outra pessoa e não há desvincular pela tela (docs/42 L2298):
+  // escolher um nome só abre a confirmação, com o efeito escrito; a action roda no ConfirmarAcao.
+  const [escolha, setEscolha] = useState<{ alvo: AlvoVinculo; nome: string; vinculoComo: string } | null>(null);
   const [resultados, setResultados] = useState<PessoasVinculo | null>(null);
   const [buscando, setBuscando] = useState(false);
 
@@ -964,10 +1005,9 @@ function VincularPainel({
     return () => clearTimeout(t);
   }, [q, atendimentoId]);
 
-  async function vincular(alvo: { tipo: "aluno" | "responsavel" | "lead"; id: string }, nome: string) {
-    const r = await vincularContatoWhatsApp({ contatoId, atendimentoId, alvo });
-    if (!r.ok) return onErro(r.erro ?? "Erro ao vincular.");
-    onFeito(`Contato vinculado a ${nome}.`);
+  function escolher(alvo: AlvoVinculo, nome: string, vinculoComo: string) {
+    onErro(null);
+    setEscolha({ alvo, nome, vinculoComo });
   }
 
   return (
@@ -991,19 +1031,38 @@ function VincularPainel({
           <GrupoVinculo
             titulo="Alunos"
             itens={resultados.alunos.map((a) => ({ id: a.id, nome: a.nome }))}
-            onEscolher={(i) => vincular({ tipo: "aluno", id: i.id }, i.nome)}
+            onEscolher={(i) => escolher({ tipo: "aluno", id: i.id }, i.nome, "aluno")}
           />
           <GrupoVinculo
             titulo="Responsáveis"
             itens={resultados.responsaveis.map((r) => ({ id: r.id, nome: r.nome }))}
-            onEscolher={(i) => vincular({ tipo: "responsavel", id: i.id }, i.nome)}
+            onEscolher={(i) => escolher({ tipo: "responsavel", id: i.id }, i.nome, "responsável")}
           />
           <GrupoVinculo
             titulo="Leads"
             itens={resultados.leads.map((l) => ({ id: l.id, nome: `${l.nome}${l.codigo ? ` (${l.codigo})` : ""}` }))}
-            onEscolher={(i) => vincular({ tipo: "lead", id: i.id }, i.nome)}
+            onEscolher={(i) => escolher({ tipo: "lead", id: i.id }, i.nome, "lead")}
           />
         </div>
+      )}
+      {escolha && (
+        <ConfirmarAcao
+          titulo={`Vincular esta conversa a ${escolha.nome} (${escolha.vinculoComo})?`}
+          confirmacao="vínculo"
+          idempotente={false}
+          acao={() => vincularContatoWhatsApp({ contatoId, atendimentoId, alvo: escolha.alvo })}
+          aoConcluir={() => {
+            setEscolha(null);
+            onFeito(`Contato vinculado a ${escolha.nome}.`);
+          }}
+          aoCancelar={() => setEscolha(null)}
+        >
+          <p>
+            O contato {contatoNome} ({contatoTelefone}) passa a ficar ligado a <strong>{escolha.nome}</strong> ({escolha.vinculoComo}): o
+            histórico desta conversa, e o das próximas mensagens deste número, aparece no cadastro dele.
+          </p>
+          <p>Não há desvincular pela tela: corrigir um vínculo errado exige a administração, com revisão do histórico.</p>
+        </ConfirmarAcao>
       )}
     </div>
   );

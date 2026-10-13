@@ -39,8 +39,10 @@ vi.mock("./AcessoAulasPainel", () => ({ AcessoAulasPainel: () => null }));
 import { AcaoRapida, DetalheCobranca, FilaCobranca } from "./FilaCobranca";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
-import { botao, criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
+import { botao, criarGanchos, elementos, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
 import { anuncios } from "@/test/feedback-acao";
+import { confirmarNoDialogo } from "@/test/confirmacao-tela";
+import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { lerFiltrosFila } from "@/server/cobrancas/filtros-fila";
 
 const item: FilaCobrancaItem = {
@@ -192,15 +194,78 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirma�
   });
 });
 
-describe("FilaCobranca \u2014 lote: falha parcial em role=\"alert\", resumo em role=\"status\" (#153)", () => {
-  /** Seleciona a cobrança para o lote e aprova; devolve o que a tela anuncia depois. */
+/** Marca a caixa do lote da linha `i` (na ordem da tela). */
+const marcarNoLote = (i = 0) => {
+  const caixas = elementos(tela()).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
+  (caixas[i].props.onChange as () => void)();
+};
+const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
+
+describe("FilaCobranca — \"Aprovar e enviar lote\" passa pela confirmação (docs/42 L2018; fatia B, issue #169)", () => {
+  it("clicar não envia; a revisão lista nome, valor e degrau de cada cobrança e diz quantas mensagens saem; só confirmar envia, uma vez", async () => {
+    marcarNoLote();
+    (botao(tela(), "Aprovar e enviar lote").props.onClick as () => void)();
+    expect(m.lote).not.toHaveBeenCalled();
+    const [c] = confirmacoes(tela());
+    expect(c.props.titulo).toBe("Enviar 1 mensagem de cobrança pelo WhatsApp?");
+    expect(c.props.confirmacao).toBe("envio de 1 mensagem");
+    expect(c.props.idempotente).toBe(false);
+    const resumo = c.props.children as No;
+    const consequencia = texto((resumo.type as (p: unknown) => ReactNode)(resumo.props)).replace(/\s+/g, " ");
+    expect(consequencia).toContain("Sai 1 mensagem real de cobrança");
+    expect(consequencia).toContain("Ana Silva · R$");
+    expect(consequencia).toContain("degrau D+3 (Cobrar)");
+    expect(consequencia).toContain("Mensagem enviada não pode ser desfeita.");
+    expect(m.lote).not.toHaveBeenCalled(); // renderizar a confirmação não executa
+    await (c.props.acao as () => Promise<unknown>)();
+    expect(m.lote).toHaveBeenCalledTimes(1);
+    expect(m.lote).toHaveBeenCalledWith({ cobrancaIds: ["cobranca-1"] });
+  });
+
+  it("enquanto a revisão está aberta, \"Aprovar e enviar lote\" e \"Limpar\" ficam travados", () => {
+    marcarNoLote();
+    (botao(tela(), "Aprovar e enviar lote").props.onClick as () => void)();
+    expect(botao(tela(), "Aprovar e enviar lote").props.disabled).toBe(true);
+    expect(botao(tela(), "Limpar").props.disabled).toBe(true);
+  });
+
+  it("voltar não envia e preserva a seleção", () => {
+    marcarNoLote();
+    (botao(tela(), "Aprovar e enviar lote").props.onClick as () => void)();
+    (confirmacoes(tela())[0].props.aoCancelar as () => void)();
+    const t = tela();
+    expect(confirmacoes(t)).toHaveLength(0);
+    expect(m.lote).not.toHaveBeenCalled();
+    expect(elementos(t).find((n: No) => n.type === "input" && n.props.type === "checkbox")!.props.checked).toBe(true);
+    expect(botao(t, "Aprovar e enviar lote").props.disabled).toBe(false);
+  });
+
+  it("erro e falha de rede aparecem dentro do diálogo, que continua aberto (antes, a falha de rede travava a barra)", async () => {
+    marcarNoLote();
+    (botao(tela(), "Aprovar e enviar lote").props.onClick as () => void)();
+    m.lote.mockResolvedValueOnce({ ok: false, erro: "Canal de cobrança sem número remetente." });
+    expect(await confirmarNoDialogo(confirmacoes(tela())[0], usar)).toEqual({ erro: "Canal de cobrança sem número remetente.", confirmarDisponivel: true });
+    m.lote.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    expect(confirmacoes(tela())).toHaveLength(1);
+    expect(m.refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe("FilaCobranca — lote: falha parcial em role=\"alert\", resumo em role=\"status\" (#153)", () => {
+  /** Seleciona a cobrança para o lote, confirma e conclui; devolve o que a tela anuncia depois. */
   async function aprovarLote(dado: { enfileiradas: number; despachadas: number; simuladas: number; falhas: number; puladas: { motivo: string }[] }) {
     m.lote.mockResolvedValueOnce({ ok: true, dado });
-    const caixa = elementos(tela()).find((n: No) => n.type === "input" && n.props.type === "checkbox")!;
-    (caixa.props.onChange as () => void)();
-    await (botao(tela(), "Aprovar e enviar lote").props.onClick as () => Promise<void>)();
+    marcarNoLote();
+    (botao(tela(), "Aprovar e enviar lote").props.onClick as () => void)();
+    const [c] = confirmacoes(tela());
+    const r = await (c.props.acao as () => Promise<{ ok: boolean; dado?: unknown }>)();
     expect(m.lote).toHaveBeenCalledWith({ cobrancaIds: ["cobranca-1"] });
-    return anuncios(tela());
+    (c.props.aoConcluir as (d: unknown) => void)(r.dado);
+    const t = tela();
+    expect(confirmacoes(t)).toHaveLength(0);
+    expect(elementos(t).filter((n: No) => n.type === "input" && n.props.type === "checkbox").every((n: No) => n.props.checked === false)).toBe(true);
+    return anuncios(t);
   }
 
   it("com falha: a contagem de falhas sai como erro; o resumo do que saiu, como status", async () => {

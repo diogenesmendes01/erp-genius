@@ -10,7 +10,7 @@ import { MAPA_BOTOES } from "./botoes-mapa";
 // dentro do teste): sem roteador do App Router e sem server actions.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
 vi.mock("@/server/turmas/acoes", () => ({ criarTurma: async () => ({ ok: true }), editarTurma: async () => ({ ok: true }) }));
-vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => ({ ok: true }), salvarPoliticaRegua: async () => ({ ok: true }) }));
+vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => ({ ok: true }), estimarAlcanceRegua: async () => ({ ok: true }), salvarPoliticaRegua: async () => ({ ok: true }) }));
 
 // E1 (docs/42-auditoria-frontend-ux.md): o botão tem uma fonte só (botaoClasses / <Botao>, em
 // src/components/Botao.tsx). A migração é por ÁREA; nas áreas desta lista (que só cresce) e em

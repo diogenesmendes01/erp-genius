@@ -210,4 +210,46 @@ describe("ConfirmarAcao \u2014 interação", () => {
     expect(acao).not.toHaveBeenCalled();
     expect(props.aoConcluir).not.toHaveBeenCalled();
   });
+
+  it("digitação (fatia B, docs/42 L2428): só o nome exato habilita; nome errado ou apagado volta a travar; o clique travado não executa", async () => {
+    props = { ...props, digitacao: { rotulo: "Digite Costa Rica para confirmar", esperado: "Costa Rica" } };
+    const campoDe = (t: ReactNode): No => elementos(t).find((n: No) => n.type === "input")!;
+    const digitar = (valor: string) => (campoDe(tela()).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+    let t = tela();
+    expect(campoDe(t).props.type).toBe("text");
+    expect(campoDe(t).props.value).toBe("");
+    expect(texto(elementos(t).find((n: No) => n.type === "label"))).toContain("Digite Costa Rica para confirmar");
+    expect(botaoPorTexto(t, CONFIRMAR).props.disabled).toBe(true);
+    await clicar(t, CONFIRMAR);
+    expect(acao).not.toHaveBeenCalled();
+    digitar("costa rica"); // caixa diferente não vale
+    expect(botaoPorTexto(tela(), CONFIRMAR).props.disabled).toBe(true);
+    digitar("  Costa Rica ");
+    t = tela();
+    expect(botaoPorTexto(t, CONFIRMAR).props.disabled).toBe(false);
+    digitar("Costa");
+    t = tela();
+    expect(botaoPorTexto(t, CONFIRMAR).props.disabled).toBe(true);
+    await clicar(t, CONFIRMAR);
+    await esvaziar();
+    expect(acao).not.toHaveBeenCalled();
+    digitar("Costa Rica");
+    await clicar(tela(), CONFIRMAR);
+    await esvaziar();
+    expect(acao).toHaveBeenCalledTimes(1);
+    expect(props.aoConcluir).toHaveBeenCalledTimes(1);
+  });
+
+  it("digitação: o campo trava durante a execução", async () => {
+    props = { ...props, digitacao: { rotulo: "Digite Costa Rica para confirmar", esperado: "Costa Rica" } };
+    const campoDe = (t: ReactNode): No => elementos(t).find((n: No) => n.type === "input")!;
+    (campoDe(tela()).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: "Costa Rica" } });
+    let liberar: (r: Resultado<Dado>) => void = () => {};
+    acao.mockImplementationOnce(() => new Promise((r: (v: Resultado<Dado>) => void) => { liberar = r; }));
+    const promessa = clicar(tela(), CONFIRMAR);
+    expect(campoDe(tela()).props.disabled).toBe(true);
+    liberar({ ok: true, dado: { baixadas: 1 } });
+    await promessa;
+    expect(campoDe(tela()).props.disabled).toBe(false);
+  });
 });
