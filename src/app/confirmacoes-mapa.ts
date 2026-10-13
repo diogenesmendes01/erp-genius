@@ -1,6 +1,7 @@
 // Lista FECHADA das ações irreversíveis ou de efeito externo cobertas pelo <ConfirmarAcao>
-// (docs/42-auditoria-frontend-ux.md, E1 e padrão 8; docs/43-medicao-auditoria-ux.md §6 item 1, fatia A:
-// efeito externo ou financeiro). Para cada uma, a trava em src/app/confirmacoes.test.ts exige, pelo AST:
+// (docs/42-auditoria-frontend-ux.md, E1 e padrão 8; docs/43-medicao-auditoria-ux.md §6 item 1 e §7.5 item 1;
+// fatia A, #154: efeito externo ou financeiro; fatia B, #169: as demais ações irreversíveis). Para cada uma, a
+// trava em src/app/confirmacoes.test.ts exige, pelo AST:
 // - no arquivo listado, toda referência à action (inclusive importada com outro nome) está DENTRO da prop
 //   `acao` de um <ConfirmarAcao> importado de "@/components/ConfirmarAcao" — fora disso, só com exceção
 //   ancorada abaixo; e ao menos uma referência está numa confirmação;
@@ -8,9 +9,10 @@
 // - nenhum window.confirm no app (a confirmação é o componente).
 // Tirar uma ação daqui ou mudar uma exceção exige mudar também a cópia literal no teste.
 //
-// Fatia B (ainda sem confirmação, docs/43 §6 item 1): encerrar país, "Faltou" no check-in, vincular
-// contato e opt-out na inbox, aprovar replanejamento/quantidade de aulas/presença histórica, desativar
-// usuário/preço/idioma e inativar empresa.
+// Fatia B (#169): encerrar país, "Faltou" no check-in, vincular contato e opt-out na inbox, aprovar
+// replanejamento/quantidade de aulas/presença histórica, desativar usuário/preço/idioma, inativar empresa,
+// revogar cobertura e aprovar o lote da fila de cobrança. A ativação da régua (L2517) ganhou a estimativa de
+// alcance (estimarAlcanceRegua, só leitura) dentro da confirmação que já existia.
 
 export type AcaoConfirmada = {
   /** Tela (caminho a partir da raiz do repositório). */
@@ -110,6 +112,98 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "L2518",
     efeito: "salva template aprovado, que volta a rascunho e tira do ar os degraus que o usam",
   },
+  // Fatia B (#169).
+  {
+    arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "aprovarLoteCobranca",
+    achado: "L2018",
+    efeito: "aprova o lote e manda uma mensagem real de cobrança por cobrança selecionada",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx",
+    modulo: "@/server/paises/acoes",
+    acao: "alterarStatusPais",
+    achado: "L2428",
+    efeito: "encerra o país: transição terminal, sem volta pela tela (sai das novas matrículas e das ofertas)",
+  },
+  {
+    arquivo: "src/app/(app)/home/HomeProfessor.tsx",
+    modulo: "@/server/comercial/acoes",
+    acao: "checkinExperimental",
+    achado: "L2693",
+    efeito: "marca o lead como no-show e dispara a recuperação de no-show, sem correção pela tela",
+  },
+  {
+    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "vincularContatoWhatsApp",
+    achado: "L2298",
+    efeito: "amarra o histórico da conversa a um aluno, responsável ou lead; não há desvincular pela tela",
+  },
+  {
+    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "registrarOptOutContato",
+    achado: "L2298",
+    efeito: "bloqueia toda mensagem ao contato; só a administração desfaz, com evidência",
+  },
+  {
+    arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx",
+    modulo: "@/server/agenda/replanejamento-decisao",
+    acao: "decidirEAplicarReplanejamentoConjunto",
+    achado: "L1102",
+    efeito: "aprova e aplica o conjunto: reescreve as datas dos encontros previstos de todas as turmas",
+  },
+  {
+    arquivo: "src/app/(app)/academico/modalidades/[id]/quantidade/propostas/[propostaId]/DecidirQuantidadeAulas.tsx",
+    modulo: "@/server/agenda/modalidade-quantidade",
+    acao: "decidirAlteracaoQuantidadeAulasModalidade",
+    achado: "L1218",
+    efeito: "aprova e aplica a nova quantidade de aulas em todas as turmas impactadas, na mesma operação",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx",
+    modulo: "@/server/migracao/presenca-historica",
+    acao: "decidirPresencaHistoricaMigracao",
+    achado: "L2499",
+    efeito: "aprova e aplica a presença histórica no diário de aulas",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/usuarios/UsuariosPainel.tsx",
+    modulo: "@/server/acesso/acoes",
+    acao: "alternarUsuarioAtivo",
+    achado: "L2413",
+    efeito: "desativa o usuário: a pessoa perde o acesso ao sistema na hora",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx",
+    modulo: "@/server/catalogo/acoes",
+    acao: "alternarIdiomaAtivo",
+    achado: "L2340",
+    efeito: "desativa o idioma usado pelos produtos do catálogo",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx",
+    modulo: "@/server/catalogo/acoes",
+    acao: "alternarPrecoAtivo",
+    achado: "L2340",
+    efeito: "desativa o preço de referência; a combinação pode ficar sem preço para novas matrículas",
+  },
+  {
+    arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx",
+    modulo: "@/server/empresas/acoes",
+    acao: "definirSituacaoEmpresa",
+    achado: "L2281",
+    efeito: "inativa a empresa (contratos e faturas continuam como estão)",
+  },
+  {
+    arquivo: "src/app/(app)/carteiras/CoberturasPainel.tsx",
+    modulo: "@/server/acesso/coberturas",
+    acao: "revogarCobertura",
+    achado: "L2244",
+    efeito: "tira do substituto o acesso à carteira do titular na hora; voltar exige conceder nova cobertura",
+  },
 ];
 
 /**
@@ -140,6 +234,52 @@ export const EXCECOES_CONFIRMACAO: ExcecaoConfirmacao[] = [
     arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx",
     trecho: "salvarTemplateWhatsApp(dados)",
     motivo: "template novo, em rascunho, em revisão ou rejeitado não derruba degrau nenhum ao salvar; o aprovado abre o ConfirmarAcao",
+  },
+  // Fatia B (#169): a mesma action serve à ida irreversível (confirmada) e à volta, que tem caminho pela tela.
+  {
+    arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx",
+    trecho: "alterarStatusPais(id, alvo)",
+    motivo: "ativar, pausar e reativar têm volta na própria linha; Encerrar (terminal) não chega aqui: escolherTransicao abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/home/HomeProfessor.tsx",
+    trecho: "checkinExperimental(id, true)",
+    motivo: "Compareceu segue o funil (proposta comercial) sem disparar a recuperação de no-show; o Faltou abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx",
+    trecho: "decidirEAplicarReplanejamentoConjunto({ calendarioId, revisaoId, aprovar: false, motivo, excecoesAutorizadas: [] })",
+    motivo: "rejeitar só encerra a revisão, sem mexer na agenda; aprovar e aplicar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/academico/modalidades/[id]/quantidade/propostas/[propostaId]/DecidirQuantidadeAulas.tsx",
+    trecho: "decidirAlteracaoQuantidadeAulasModalidade({ propostaId, aprovar: false, motivo })",
+    motivo: "rejeitar só encerra a proposta (REJEITADA), sem mudar turma nenhuma; aprovar e aplicar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx",
+    trecho: "decidirPresencaHistoricaMigracao({propostaId:p.id,aprovada:false,motivo,chaveIdempotencia:chaveAtual()})",
+    motivo: "rejeitar não toca o diário (a proposta só fica REJEITADA); aprovar e aplicar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/usuarios/UsuariosPainel.tsx",
+    trecho: "alternarUsuarioAtivo(id)",
+    motivo: "ativar devolve o acesso e tem volta na própria linha; desativar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx",
+    trecho: "alternarIdiomaAtivo(id)",
+    motivo: "ativar o idioma tem volta na própria linha; desativar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx",
+    trecho: "alternarPrecoAtivo(id)",
+    motivo: "reativar um preço do histórico tem volta na própria linha; desativar o ativo abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx",
+    trecho: "definirSituacaoEmpresa(empresa.id, true)",
+    motivo: "reativar a empresa tem volta pelo mesmo botão; inativar abre o ConfirmarAcao",
   },
 ];
 

@@ -6,6 +6,7 @@ import { StatusPais } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { alterarStatusPais, alternarProdutoPais } from "@/server/paises/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { PaisFormulario, type PaisParaEditar } from "./PaisFormulario";
 import { botaoClasses } from "@/components/Botao";
@@ -71,10 +72,32 @@ export function PaisesPainel({
   const [origem, setOrigem] = useState<string | null>(null);
   const [catalogo, setCatalogo] = useState<string | null>(null);
 
+  // Encerrar é terminal: ENCERRADO não tem transição de volta pela tela (docs/42 L2428). O botão só abre a
+  // confirmação, que repete produtos, preços e alunos do país e pede o nome digitado; a action roda no
+  // ConfirmarAcao. Ativar, pausar e reativar têm volta pela própria linha e continuam diretos.
+  const [encerrando, setEncerrando] = useState<PaisRow | null>(null);
+
   async function mudarStatus(id: string, alvo: StatusPais) {
     setOrigem("status:" + id);
     const d = await acao.executar(() => alterarStatusPais(id, alvo), CONFIRMACAO_STATUS[alvo]);
     if (d?.tipo === "ok") router.refresh();
+  }
+
+  function escolherTransicao(p: PaisRow, alvo: StatusPais) {
+    if (alvo !== StatusPais.ENCERRADO) {
+      void mudarStatus(p.id, alvo);
+      return;
+    }
+    setOrigem("status:" + p.id);
+    acao.limpar();
+    setEncerrando(p);
+  }
+
+  function encerrado(p: PaisRow) {
+    setEncerrando(null);
+    setOrigem("status:" + p.id);
+    acao.setSucesso(CONFIRMACAO_STATUS[StatusPais.ENCERRADO]);
+    router.refresh();
   }
 
   async function toggleProduto(paisId: string, produtoId: string) {
@@ -119,6 +142,9 @@ export function PaisesPainel({
                 <th className="px-4 py-2 font-medium">Moeda</th>
                 <th className="px-4 py-2 font-medium">DDI</th>
                 <th className="px-4 py-2 font-medium">Documentos</th>
+                <th className="px-4 py-2 font-medium">Produtos</th>
+                <th className="px-4 py-2 font-medium">Preços</th>
+                <th className="px-4 py-2 font-medium">Alunos</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium text-right">Ações</th>
               </tr>
@@ -135,6 +161,9 @@ export function PaisesPainel({
                   <td className="px-4 py-3 text-gray-600">
                     {p.tiposDocumento.map((d) => d.nome).join(", ") || "—"}
                   </td>
+                  <td className="px-4 py-3 text-gray-600">{p.produtosOferecidos.length}</td>
+                  <td className="px-4 py-3 text-gray-600">{p._count.precos}</td>
+                  <td className="px-4 py-3 text-gray-600">{p._count.alunos}</td>
                   <td className="px-4 py-3">
                     <span
                       className={
@@ -171,8 +200,8 @@ export function PaisesPainel({
                       {ACOES_STATUS[p.status].map((a) => (
                         <button
                           key={a.alvo}
-                          onClick={() => mudarStatus(p.id, a.alvo)}
-                          disabled={acao.ocupado}
+                          onClick={() => escolherTransicao(p, a.alvo)}
+                          disabled={acao.ocupado || encerrando !== null}
                           className={botaoClasses({ variante: a.variante, tamanho: "sm" })}
                         >
                           {a.label}
@@ -190,7 +219,7 @@ export function PaisesPainel({
                 </tr>,
                 catalogo === p.id ? (
                   <tr key={p.id + "-cat"} className="bg-gray-50">
-                    <td colSpan={6} className="px-4 py-3">
+                    <td colSpan={9} className="px-4 py-3">
                       <div className="text-xs font-medium text-gray-600">Idiomas/modalidades habilitados neste país</div>
                       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 md:grid-cols-3">
                         {produtos.map((prod) => (
@@ -216,6 +245,39 @@ export function PaisesPainel({
           </table>
         </div>
       )}
+
+      {encerrando && (
+        <ConfirmarAcao
+          titulo={`Encerrar o país ${encerrando.nome}?`}
+          confirmacao="encerramento do país"
+          idempotente={false}
+          digitacao={{ rotulo: `Digite ${encerrando.nome} para confirmar`, esperado: encerrando.nome }}
+          acao={() => alterarStatusPais(encerrando.id, StatusPais.ENCERRADO)}
+          aoConcluir={() => encerrado(encerrando)}
+          aoCancelar={() => setEncerrando(null)}
+        >
+          <ResumoEncerramento pais={encerrando} />
+        </ConfirmarAcao>
+      )}
     </div>
+  );
+}
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+/** O que o encerramento atinge: produtos habilitados, preços e alunos do país — e que não há volta. */
+function ResumoEncerramento({ pais }: { pais: PaisRow }) {
+  return (
+    <>
+      <p>
+        <strong>{pais.nome}</strong> ({pais.codigoISO}) tem {plural(pais.produtosOferecidos.length, "produto habilitado", "produtos habilitados")},{" "}
+        {plural(pais._count.precos, "preço cadastrado", "preços cadastrados")} (com o histórico) e {plural(pais._count.alunos, "aluno cadastrado", "alunos cadastrados")}.
+      </p>
+      <p>
+        O país sai das novas matrículas e das ofertas do catálogo. Alunos, matrículas, preços e cobranças que já existem
+        continuam; nada é apagado.
+      </p>
+      <p>Encerrar não tem volta pela tela: um país encerrado não pode ser reativado aqui.</p>
+    </>
   );
 }

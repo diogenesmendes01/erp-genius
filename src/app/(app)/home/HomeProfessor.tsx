@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { checkinExperimental } from "@/server/comercial/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -44,10 +45,24 @@ export function HomeProfessor({
   const acao = useAcaoCliente({ idempotente: false });
   const [alvo, setAlvo] = useState<string | null>(null);
 
-  async function checkin(id: string, compareceu: boolean) {
+  async function compareceu(id: string) {
     setAlvo(id);
-    const d = await acao.executar(() => checkinExperimental(id, compareceu));
+    const d = await acao.executar(() => checkinExperimental(id, true));
     if (d?.tipo === "ok") router.refresh();
+  }
+
+  // "Faltou" grava no-show e dispara a recuperação de no-show, sem desfazer nem correção pela tela: o
+  // check-in só vale para experimental agendada (docs/42 L2693). O botão só abre a confirmação com o nome
+  // do lead e a data da aula; a action roda no ConfirmarAcao, que mostra a falha dentro dele.
+  const [faltou, setFaltou] = useState<Experimental | null>(null);
+  function pedirFalta(e: Experimental) {
+    setAlvo(e.id);
+    acao.limpar();
+    setFaltou(e);
+  }
+  function faltaRegistrada() {
+    setFaltou(null);
+    router.refresh();
   }
 
   const data = (valor: string) => formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
@@ -103,15 +118,15 @@ export function HomeProfessor({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => checkin(e.id, true)}
-                    disabled={acao.ocupado}
+                    onClick={() => compareceu(e.id)}
+                    disabled={acao.ocupado || faltou !== null}
                     className={botaoClasses({ tamanho: "sm" })}
                   >
                     Compareceu
                   </button>
                   <button
-                    onClick={() => checkin(e.id, false)}
-                    disabled={acao.ocupado}
+                    onClick={() => pedirFalta(e)}
+                    disabled={acao.ocupado || faltou !== null}
                     className={botaoClasses({ variante: "secundario", tamanho: "sm" })}
                   >
                     Faltou
@@ -124,6 +139,24 @@ export function HomeProfessor({
           </ul>
         )}
       </section>
+
+      {faltou && (
+        <ConfirmarAcao
+          titulo={`Marcar ${faltou.nome} como faltou?`}
+          confirmacao="falta"
+          idempotente={false}
+          acao={() => checkinExperimental(faltou.id, false)}
+          aoConcluir={faltaRegistrada}
+          aoCancelar={() => setFaltou(null)}
+        >
+          <p>
+            Aula experimental de {data(faltou.data).texto} ({data(faltou.data).fuso}; origem UTC). O lead passa a{" "}
+            <strong>não compareceu</strong> e entra na recuperação de no-show: com a régua comercial ativa, ele recebe
+            mensagens de remarcação pelo WhatsApp a partir de 30 minutos depois da aula.
+          </p>
+          <p>Não há desfazer pela tela: depois da falta, o check-in desta experimental não aceita correção aqui.</p>
+        </ConfirmarAcao>
+      )}
 
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Minhas turmas</h2>
