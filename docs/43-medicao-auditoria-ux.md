@@ -2,6 +2,8 @@
 
 Data: 07/10/2026. Código medido: `origin/main` em `6b105093` (depois da #138). Linha de base: `1ca53675`, o `main` que a auditoria leu. O merge da auditoria (`9bd583d2`) já continha a #64, então não serve de base. Escopo: as PRs #64–#138 (ganhos rápidos 1–24 e projetos E1–E8).
 
+> **Atualização de 13/10/2026:** remedição na main `e5418550` (depois da #161) na §7. As seções 1–6 abaixo continuam sendo a fotografia de 07/10.
+
 ## 1. Resumo em 10 linhas
 
 1. **Cor e tipografia: tudo zerado.** `bg-brand-700` caiu de 65 arquivos para 0, `bg-white` de 40 para 0, shades fora do mapa de 98 para 0, `shadow-*` de 5 para 0 e `font-semibold` de 8 para 0. A classe de cor fora do token caiu de 4,2% para 0,0%, com trava no CI (`src/app/paleta.test.ts`).
@@ -611,6 +613,8 @@ Linhas sorteadas por `node scripts/medicao-ux/amostra.mjs 6 3 42`, na ordem do d
 
 ## 6. O que ainda falta (priorizado)
 
+> Em 13/10/2026 os itens 1–7 desta lista já foram entregues (#153–#161); ver §7.5.
+
 **Fora desta lista:**
 - **Travas de teste** com brechas conhecidas já estão nos issues: #139 (vazio paginado), #140 (botões), #141 (`aria-sort` e ordenação com acento) e #142 (enum cru).
 - **Em andamento** em PRs paralelas, sem proposta nova aqui (os números deste documento são de `6b105093`, antes delas):
@@ -657,3 +661,616 @@ Ordem por (achados Alta destravados × risco) ÷ esforço:
 11. **Média e Baixa.** Repetir a amostra (`amostra.mjs` com outra semente) depois dos itens 1–4. Pela estimativa estratificada atual, ≈ 517 desses achados (71% de 727, IC 95% 63–79%) ainda estão abertos, e a maior parte cai nos padrões 1–4 acima.
 
 As métricas de fluxo da 7.7 (cliques até concluir uma matrícula, tempo até o primeiro sinal, reenvios após erro) continuam **sem medição**. Exigem um operador real e cronômetro e devem ser feitas antes de declarar a auditoria encerrada.
+
+## 7. Remedição de 13/10/2026 (main e5418550)
+
+Código medido: `origin/main` em `e5418550` (merge da #161). As seções 1–6 mediram `6b105093`, depois da #138; entre as duas medições entraram as PRs #143–#161 (análise PR a PR no doc 44 §7). Tudo o que entra na `main` é publicado automaticamente no UAT (doc 44 §3). O UAT não foi aberto nesta remedição e as telas não foram vistas rodando: todos os vereditos abaixo são por leitura de código.
+
+O método é o da seção 2:
+- métricas por `node scripts/medicao-ux/metricas.mjs` na `e5418550`;
+- os 145 achados Alta conferidos um a um no código;
+- a mesma amostra de 126 achados Média/Baixa (`node scripts/medicao-ux/amostra.mjs 6 3 42`), com a estimativa estratificada de `scripts/medicao-ux/nucleo.mjs`. Rodar o cálculo com os vereditos antigos reproduz exatamente os 71,1% da seção 5.
+
+**Resumo.**
+- **Achados Alta (145):** de 37 resolvidos, 21 parciais e 87 abertos para **79 resolvidos, 26 parciais e 40 abertos**. Nenhum piorou.
+- **Média e Baixa (727):** os abertos caíram de 71,1% (IC 95% 63,1–79,2%, ≈ 517) para **58,9% (IC 95% 50,3–67,5%, ≈ 428)**.
+- **§6:** os itens 1–7 foram entregues (#153–#161), cada um com restos; os itens 8–11 não foram iniciados (§7.5).
+
+### 7.1 Métricas
+
+Mesma legenda da seção 3: ✅ meta atingida, ◐ andou e não atingiu a meta, ✖ não andou ou piorou.
+
+| Métrica | 07/10 (§3) | 13/10 | Situação |
+|---|---|---|---|
+| Paginações só para frente ("Próxima" sem "Anterior") | 31 de 62 | **4 de 37**. `Paginacao` é usado em 24 arquivos (eram 7) | ◐ (#158, #161). O critério do script só vê "Próxima". A trava `paginacao-dois-sentidos.test.ts` ainda ancora como pendência 26 telas (27 links) de versões e históricos por cursor, que andam num sentido só |
+| Campos de fuso fora do `CampoFuso` | 11 campos visíveis (13 linhas do grep) | **0** pelo critério da trava `fuso-instante.test.ts`. O grep `name="fuso` ainda dá 11 linhas, mas 9 são `CampoFuso` (contando o `Controller` de `PaisFormulario`), 1 é `hidden` (`ReposicoesEquipe`) e 1 é o `onChange` do formulário da agenda da segunda chamada. `CampoFuso` tem 30 usos (eram 10); `defaultValue="UTC"`: 0 | ✅ (#159) |
+| Instantes crus na tela | 8 (`toISOString()` impresso) | **1** pelo critério antigo, e é falso positivo: em `academico/grades/[id]/page.tsx:37` o `toISOString()` vai para `data(...)`, que formata. **0** pelo critério da trava `fuso-instante.test.ts` | ✅ (#159) |
+| `beforeunload` | 0 | **4** linhas, todas em `src/lib/aviso-ao-sair.ts` (`useAvisoAoSair`) | ◐ (#155). Cobre recarga, fechar a aba e sair do site; o clique num link interno do Next não dispara o evento (`aviso-ao-sair.ts:12-13`) |
+| `window.confirm` | 1 (`ReguaComercialPainel.tsx:127`) | **0**. `ConfirmarAcao` existe, e a trava `confirmacoes.test.ts` proíbe `window.confirm` | ✅ (#154). A confirmação cobre só a fatia A (§7.5) |
+| `aria-invalid` | 22, para 631 `required` | **37**, para 629 `required` | ◐ (#145). O `Campo` único é usado em só 2 telas: `FichaAluno` e `MatriculaFormulario` |
+| Fluxos que terminam só em `router.refresh()` | 41 de 169 (24%) | **40 de 172 (23%)**, contando sucesso via `useAcaoCliente`/`FeedbackAcao`/`MensagemStatus` (137 pelo grep literal) | ◐. Longe da meta de < 10% |
+| `<Suspense>` | 0 | **0** | ✖ |
+| `loading.tsx` | 9 arquivos; 188 de 193 páginas cobertas | **9 arquivos; 188 de 193** | ◐. Sem mudança |
+| Pares de token reprovando AA | 4 famílias | **3 famílias**: `#fff/--brand` (4,059:1 no escuro), `--border` e `--brand-border` (1,25–1,57:1). Saiu `--border-control`, agora com 3,19 (claro) e 3,18 (escuro) sobre `surface-muted`. `#fff/--brand` continua na conta porque o script conta por token, mas não tem mais uso com texto: o único `bg-brand-600` restante é a barra sem texto da `HomeVendedor`. `--border` e `--brand-border` estão em bordas decorativas | ◐ (#156, #157) |
+| Controles sem nome acessível | **0 reais** (7 candidatos, todos falso positivo) | **69 no script, falso positivo.** 61 estão em `FichaAluno` (24) e `MatriculaFormulario` (37), que recebem `id` e `aria-*` pelo spread `{...campo}` do `Campo` (#145), e o script não segue spread. 7 são comentários em `Campo` (3), `CampoFuso` (2) e `CampoTexto` (2). Sobra 1 candidato em `FichaLead`, conferido nesta remedição: é o comentário da linha 116 (`<input type="datetime-local">` dentro de `//`). Controles reais sem nome: **0** | ✅. Varredura estática; não houve auditoria em leitor de tela |
+| `<p>Nenhum…</p>` cru | 9 | **10** (`EstadoVazio` tem 267 usos; eram 260) | ◐. Subiu 1 |
+| `outline-none` sem substituto | 42 pelo grep literal, 0 efetivos | **43** pelo grep literal (57 linhas com `outline-none`). Vale a mesma ressalva da seção 3: a regra global de `focus-visible` tem especificidade 0-1-1, maior que a 0-1-0 de `.outline-none`, e todas as 57 linhas também têm classe `focus:` ou `focus-visible:`. Efetivos: 0 | ✅ |
+
+Nas demais métricas medidas pelo script, a situação não mudou. Números que andaram sem mudar a situação:
+- importações de `@/components/*`: 866 → 963;
+- componentes em `src/components`: 24 → 30;
+- mapas de rótulo ad-hoc pelo grep: 22 → 25;
+- listas com `useFiltrosUrl`: 4 → 5.
+
+### 7.2 Achados Alta (145)
+
+| Faixa (linhas do doc 42) | Achados | Resolvido antes → agora | Parcial antes → agora | Aberto antes → agora |
+|---|---|---|---|---|
+| 1–48 (L224–L1126) | 48 | 9 → 22 | 6 → 8 | 33 → 18 |
+| 49–96 (L1156–L2201) | 48 | 10 → 29 | 8 → 8 | 30 → 11 |
+| 97–145 (L2202–L2707) | 49 | 18 → 28 | 7 → 10 | 24 → 11 |
+| **Total** | **145** | **37 → 79** (26% → 54%) | **21 → 26** (14% → 18%) | **87 → 40** (60% → 28%) |
+
+**O que mudou.** 56 achados mudaram de status, e nenhum piorou:
+- aberto → resolvido: 33;
+- parcial → resolvido: 9;
+- aberto → parcial: 14.
+
+Conferência: 37 + 33 + 9 = 79 resolvidos; 21 − 9 + 14 = 26 parciais; 87 − 33 − 14 = 40 abertos.
+
+**Por qual PR** ("(p)" marca os que ficaram parciais):
+
+| PR | Achados que mudaram de status | Qtde |
+|---|---|---|
+| #145 (`Campo` único) | 471, 472 | 2 |
+| #153 (feedback separado) | 309 (p), 892 (p), 1183, 1219, 1400 (p), 1438, 1671, 2442, 2457, 2485 | 10 |
+| #153 + #155 | 1315, 1389 | 2 |
+| #154 (`ConfirmarAcao`, fatia A) | 799, 906, 2014, 2016, 2281 (p), 2516, 2517 (p), 2518 | 8 |
+| #155 (não perder o digitado) | 562, 629, 1059 (p), 1081, 1314, 1327, 1761, 1814, 1835, 2202, 2203, 2217, 2367 (p), 2368, 2395 | 15 |
+| #158 (paginação nos dois sentidos) | 1709 (p) | 1 |
+| #159 (fuso e instante) | 530, 729 (p), 1126, 1540, 1590, 1786, 2429 (p) | 7 |
+| #160 (becos e identificação) | 279, 577 (p), 691, 798, 905, 1244, 1399 (p), 1670, 1722 (p), 1989, 2676 (p) | 11 |
+| **Total** | | **56** |
+
+As #158/#161 também trocaram a paginação de `/secretaria/envios-portal` (L431) para cursor nos dois sentidos, sem mudar o status. A #159 acrescentou a prévia de conversão em L1566, que continua parcial.
+
+**Tabela por achado.** `L` = linha do achado em `docs/42-auditoria-frontend-ux.md`. Os caminhos são relativos a `src/app/(app)/`, salvo quando indicado; na área "Público, portal do aluno, home e preferências", são relativos a `src/app/`. Na coluna PR, "—" quer dizer que nada mudou depois de `6b105093`, e a PR entre parênteses é a que já tinha resolvido antes do doc 43. Na coluna "O que falta", **Efeito** é o que o usuário final vê hoje e **Falta** é o que ainda precisa ser feito.
+
+**Alunos e turmas**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 224 | /alunos | 1 | aberto | aberto | `alunos/ImportarAlunosModal.tsx:122-123`: `disabled={enviando}` e rótulo "Importar" mesmo com `res` preenchido; `fileRef` só é limpo em `fechar()` (`:32`); `src/app/api/alunos/importar/route.ts:151`: `tx.aluno.create` sem dedupe | — | **Efeito:** um segundo clique em "Importar" recadastra a planilha inteira em duplicidade. **Falta:** depois do resultado, trocar para "Importar outra planilha", limpar `fileRef`/`res`, desabilitar até escolher novo arquivo (e idealmente dedupe no servidor). |
+| 225 | /alunos | 2 | parcial | parcial | `ImportarAlunosModal.tsx:68`: `bloquearFechamento={enviando \|\| !!res}`; `:100-113`: erros só em memória; `:117-125` só "Fechar"/"Importar" | (#89, anterior) | **Efeito:** o modal não fecha mais por acidente, mas, ao fechar, a lista de linhas rejeitadas se perde. **Falta:** botão "Baixar linhas com erro (.csv)" (ou cópia). |
+| 240 | /alunos/[id] | 1 | resolvido | resolvido | `alunos/[id]/FichaAluno.tsx:265`: `<FeedbackAcao erro={modal === "editar" ? acao.erro : null} />` dentro do `<Drawer>` (`:258`) | (#87) | **Efeito:** a falha ao salvar aparece dentro do Drawer, acima dos botões. Nada falta. |
+| 241 | /alunos/[id] | 2 | resolvido | resolvido | `FichaAluno.tsx:462,469` e `:502,509`: `disabled={acao.ocupado}` e "Confirmando…" | (#87) | **Efeito:** o duplo clique não gera duas pausas ou encerramentos. Nada falta. |
+| 279 | /alunos/[id]/creditos/[creditoId] | 1 | aberto | **resolvido** | `creditos/[creditoId]/page.tsx:23-26`: `<IdentificacaoRegistro rotulo="Aluno e matrícula deste crédito" … aluno, matriculaCodigo … "saldo disponível ${formatarMoeda(...)}">`; o cabeçalho vem de `consultarCabecalhoMatricula`, sem filtro para FINANCEIRO/ADMIN (`server/matricula/cabecalho.ts:19`) | #160 | **Efeito:** quem aprova o uso ou a devolução vê o aluno (com link), o código da matrícula e o saldo. Nada falta. O nome fica num bloco logo abaixo do `h1`, e não no próprio título. |
+| 293 | /alunos/[id]/financeiro | 1 | aberto | aberto | `alunos/[id]/financeiro/FichaFinanceira.tsx:155-159`: colunas Tipo/Vencimento/Valor/Status/Ações, sem "Contrato"; `:77`: `contrato` por aluno, sem uso por cobrança | — | **Efeito:** com dois contratos ativos, as mensalidades se misturam e o ajuste pode cair na cobrança errada. **Falta:** enviar `matriculaId` e código por cobrança e criar a coluna "Contrato" (ou agrupar por matrícula). |
+| 294 | /alunos/[id]/financeiro | 2 | resolvido | resolvido | `FichaFinanceira.tsx:366`: `<FeedbackAcao erro={acao.erro} />` dentro do modal de ajuste | (#85) | **Efeito:** o erro do ajuste aparece dentro do modal. Nada falta. |
+| 295 | /alunos/[id]/financeiro | 3 | resolvido | resolvido | `ResumoFinanceiroComercial.tsx:62`: `<FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />` (alerta vermelho e status verde separados) | (#85) | **Efeito:** a recusa de alçada é anunciada como erro, não como informação. Nada falta. |
+| 308 | /alunos/[id]/movimentacoes | 1 | aberto | aberto | Nenhum `useEffect` em `alunos/[id]/movimentacoes/*.tsx`; `MovimentacoesPainel.tsx:100` "Consultar propostas", `CompensacoesPainel.tsx:75` "Carregar compensações", `ComprasHorasPainel.tsx:35`, `RecomposicaoPainel.tsx:56`, `VinculosLegados.tsx:44` (todos só no clique) | — | **Efeito:** a página abre com seções vazias, e o operador conclui que não há pendências. **Falta:** carregar no servidor ou na montagem, deixar o botão só como "Atualizar" e mostrar o contador de pendências no título. |
+| 309 | /alunos/[id]/movimentacoes | 2 | aberto | **parcial** | `movimentacoes/EfetivarAcerto.tsx:14-18`: `onClick` executa `efetivarAcertoEncerramento` direto; `:18` `<FeedbackAcao erro sucesso />` (falha agora em `role="alert"` vermelho) | #153 | **Efeito:** a falha passou a aparecer como erro, mas o encerramento irreversível continua num clique só. **Falta:** `ConfirmarAcao` listando as matrículas que serão encerradas. |
+| 323 | /alunos/[id]/portal | 1 | resolvido | resolvido | `portal/painel.tsx:50-53`: quatro `section` com `bg-surface` | (#66) | **Efeito:** os cartões ficam legíveis no tema escuro. Nada falta. |
+| 324 | /alunos/[id]/portal | 2 | resolvido | resolvido | `painel.tsx:51-53`: `disabled={acao.ocupado}` e `FeedbackAcao` por seção (`alvo === "convite"`…) | (#87) | **Efeito:** o resultado aparece na seção que originou a ação, e não há convite duplo. Nada falta. |
+
+**Secretaria**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 361 | /secretaria | 1 | resolvido | resolvido | `secretaria/page.tsx:20-43`: `busca`, `whereBuscaMatriculas`, `skip/take`, `<Paginacao>` | (#103) | **Efeito:** qualquer matrícula pode ser achada por aluno ou código. Nada falta. |
+| 363 | /secretaria | 3 | aberto | aberto | `secretaria/SecretariaPainel.tsx:26-27`: um único `erro`/`ocupado`; `:33`: alerta único no topo; todos os botões usam `disabled={ocupado}` | — | **Efeito:** o erro na 37ª matrícula aparece fora da tela, e um clique trava os botões de todos os cards. **Falta:** um `Record<matriculaId, {erro, ocupado}>`, com o alerta dentro do `<article>` afetado. |
+| 406 | /secretaria/reservas/particulares/[id] | 1 | aberto | aberto | `secretaria/reservas/particulares/[id]/page.tsx:14`: `fuso = r.reserva.horarios[0]?.fusoOrigem ?? "UTC"`, aplicado a todos os horários (`:20`) e passado a `PrepararResolucao` (`:23`) | — | **Efeito:** horários de professores em outro fuso aparecem com hora e rótulo errados, e a prorrogação pode ser gravada no instante errado. **Falta:** formatar cada horário com o próprio `h.fusoOrigem` e usar o fuso administrativo (preferência de equipe) no prazo e no campo de prorrogação. |
+| 431 | /secretaria/envios-portal | 1 | aberto | aberto | `src/server/portal-aluno/fila-envios.ts:9`: `Entrada = z.object(camposNavegacaoFila)` (só navegação, sem `situacao`); `:45` `orderBy: { id }`; `secretaria/envios-portal/page.tsx:17-29` lista tudo, sem abas | (#158/#161 só trocaram a paginação para cursor nos dois sentidos) | **Efeito:** para achar os "Resultado incerto", ainda é preciso varrer todas as páginas, agora podendo voltar. **Falta:** filtro `situacao` no schema e abas "Incertos" (padrão), "Falhas" e "Todos". |
+
+**Matrículas — entrada e contratação**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 471 | /matriculas/nova | 1 | parcial | **resolvido** | `src/components/Campo.tsx:66-75`: `<label htmlFor={id}>` + `id`/`aria-*` no controle; `matriculas/nova/MatriculaFormulario.tsx:549-558`: "Rótulo visível em cada campo" no contato de emergência (`Nome do contato`, `Parentesco`, `Telefone`); `:577-588` no responsável; o placeholder fica só como exemplo (`+506...`) | #145 | **Efeito:** todo campo tem nome acessível e rótulo visível, e clicar no rótulo foca o campo. Nada falta. |
+| 472 | /matriculas/nova | 2 | parcial | **resolvido** | `MatriculaFormulario.tsx:67`: `errosDoPasso1(...): ErrosDeCampos` (todos os erros); `:358-360`: `setTentouPasso1(true); if (focarPrimeiroComErro(validarPasso1(), IDS_PASSO1)) return;`; `Campo.tsx:39` `CONTROLE_INVALIDO = "aria-[invalid=true]:border-red-500"` aplicado em `inputCls` (`:19-21`) | #145 | **Efeito:** ao clicar em "Próximo", todos os campos inválidos ficam marcados com mensagem, e o foco vai para o primeiro. Nada falta. |
+| 530 | /matriculas/[id]/preparacao | 1 | aberto | **resolvido** | `matriculas/[id]/preparacao/page.tsx:21-22`: `const fuso = … ?? "UTC"; const data = (d, origem = fuso) => \`${x.texto} (${x.fuso})\`` (o fuso é sempre impresso; o "·" órfão sumiu) | #159 | **Efeito:** cada data mostra o fuso ao lado, inclusive quando cai em UTC, e os horários da particular usam o `h.fusoOrigem` de cada um (`:57`). Nada falta. |
+| 531 | /matriculas/[id]/preparacao | 2 | parcial | parcial | `preparacao/DecidirPreco.tsx:23`: Aprovar `secundario` e Rejeitar `perigo`, ambos direto em `decidir()`, sem confirmação e sem repetir valores | (#135, anterior) | **Efeito:** os botões se distinguem, mas um clique ainda registra a decisão comercial irreversível. **Falta:** repetir "Taxa · Mensalidade · desconto" no card e confirmar a aprovação em duas etapas. |
+| 547 | /matriculas/[id]/emissao | 1 | aberto | aberto | `matriculas/[id]/emissao/page.tsx:32`: lista do plano linha a linha, sem soma nem contagem; `emissao/ConfirmarEmissao.tsx:24`: "Confirmar conferência e emitir cobranças" | — | **Efeito:** a Secretaria emite cobranças reais sem ver quantas são nem o total. **Falta:** somar as linhas `CONFERENCIA_SECRETARIA`, exibir "Serão emitidas N cobranças · total X" acima do formulário e repetir o total no botão. |
+| 562 | /matriculas/[id]/pagador | 1 | aberto | **resolvido** | `matriculas/[id]/pagador/PagadorFormulario.tsx:36`: `useState(() => rascunhosIniciais(atual))`, um rascunho por tipo; `:39-47` campos controlados por `rascunhos[tipo]`; não há mais `<fieldset key={tipo}>` | #155 | **Efeito:** trocar Responsável ↔ Empresa preserva o que foi digitado em cada tipo. Nada falta. |
+| 577 | /matriculas/[id]/entrada-particular | 1 | aberto | **parcial** | `entrada-particular/page.tsx:30-32`: `abreFinanceiro(usuario.papeis) ? <Link href="/financeiro"> : <p>… <Link href={/secretaria?matriculaId=…}>`; mas `emissao/page.tsx:23` (ramo EMITIDA, guard só SECRETARIA_ACADEMICA em `:13`) mantém `<Link className="underline" href="/financeiro">Abrir Financeiro</Link>` incondicional | #160 | **Efeito:** na entrada particular a Secretaria recebe o caminho certo, mas na emissão concluída ainda cai em "acesso negado". **Falta:** aplicar a mesma guarda em `emissao/page.tsx:23` e, para quem tem o papel, linkar a cobrança específica em vez da raiz `/financeiro` (vale para as duas telas). |
+
+**Matrículas — contrato, aditivos e substituições**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 629 | …/contrato/previas/[previaId]/participantes | 1 | aberto | **resolvido** | `participantes/SeletorMaioridade.tsx:20-28`: seletor client com `router.replace(..., { scroll: false })` e o aviso "não apaga o que já foi preenchido"; `participantes/page.tsx:47-49`: `<FormularioParticipantes>` sem `key`; `participantes/Formulario.tsx:24`: `valores` em estado por nome de campo | #155 | **Efeito:** trocar a maioridade atualiza os papéis exigidos sem perder nome, e-mail, documento e evidência digitados. Nada falta. |
+| 666 | …/contrato/substituicoes/[propostaId] | 1 | aberto | aberto | `substituicoes/[propostaId]/page.tsx:34-37`: `grid xl:grid-cols-2` com dois `<TextoPrevia dados={doc.texto} />` integrais | — | **Efeito:** a comparação continua no olho, e abaixo de `xl` os textos empilham. **Falta:** tabela "campo / enviado / substituto" com as divergências marcadas e o texto integral em `<details>`. |
+| 691 | …/contrato/aditivos/[propostaId] | 1 | aberto | **resolvido** | `aditivos/[propostaId]/page.tsx:42-44`: `abreAcertos ? <p>… <Link href={/financeiro/acertos-taxa/${id}/${propostaId}}>Abrir o acerto das taxas no Financeiro</Link></p> : <p>… Avise o Financeiro.</p>`; os imports mortos `AcertoTaxaFormulario`/`ImpactosTaxaFormulario` foram removidos (`:1-16`) | #160 | **Efeito:** quem abre o Financeiro chega ao acerto das taxas por link, e a Secretaria recebe a orientação no lugar de um beco. Nada falta. |
+| 703 | …/aditivos/[propostaId]/alcadas | 1 | parcial | parcial | `aditivos/[propostaId]/alcadas/page.tsx:22`: `VoltarPara` ao aditivo + `h1` genérico; o cabeçalho com aluno e código vem do layout (`matriculas/[id]/layout.tsx:30-43`); não há versão nem link de PDF | (#90/#110, anteriores) | **Efeito:** quem decide a alçada vê aluno e matrícula e pode voltar, mas não sabe qual versão da proposta aprova nem abre o documento. **Falta:** a versão da proposta no cabeçalho e o link para `/api/matriculas/{id}/aditivos/{propostaId}/previa-pdf`. |
+| 715 | …/aditivos/[propostaId]/originais/[artefatoId] | 1 | aberto | aberto | `contrato/aditivos/CondicoesFormalizadasFormulario.tsx:14`: `<form>` com `h2`, `p`, `FeedbackAcao` e botão, sem checkbox, motivo ou resumo | — | **Efeito:** as condições contratuais são aplicadas na matrícula com um clique, sem conferência. **Falta:** checkbox de conferência, motivo gravado e lista dos campos que passam a valer, com a vigência formalizada. |
+| 729 | …/contrato/aditivos/agenda | 1 | aberto | **parcial** | `aditivos/agenda/ConferenciaAgendaFormulario.tsx:36`: `<CampoFuso name={fuso-${encontro.id}} padrao={encontro.fusoOrigem} />` (pré-preenchido; `setCustomValidity` barra fuso inválido no próprio campo, `src/components/CampoFuso.tsx:96-99`); `:35` mantém a mensagem única "Informe datas, horários e fuso válidos." | #159 | **Efeito:** um identificador inválido é barrado no campo do encontro, mas um fuso válido e errado ainda passa, e as demais falhas continuam sem nomear o encontro. **Falta:** restringir aos fusos suportados pela escola (select) e, na falha, nomear o encontro e o campo. |
+
+**Matrículas — ciclo de vida, desistência e compensações**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 787 | …/desistencia/documentos | 1 | aberto | aberto | `desistencia/documentos/page.tsx:31`: `<li key={doc.id}>{doc.nome}</li>`; `src/server/matricula/desistencia-documental.ts:68`: `select: { id, categoria, nome }`, sem `url` | — | **Efeito:** a "conferência documental" lista nomes que não se abrem, e o operador precisa sair do ERP. **Falta:** exibir a categoria, incluir `url` no select e renderizar link (com fallback textual). |
+| 798 | …/desistencia/financeiro | 1 | aberto | **resolvido** | `desistencia/financeiro/page.tsx:33-36`: `rotuloCobranca` → "`TIPO · vencimento · valor`"; usado em `:70` e `:94`; os créditos externos viram "Crédito N" com link (`:95`) | #160 | **Efeito:** o Financeiro vê qual cobrança cada linha ajusta, em vez de um UUID. Nada falta. O UUID não ficou em `title`, mas isso era só um detalhe da recomendação. |
+| 799 | …/desistencia/financeiro | 2 | aberto | **resolvido** | `desistencia/financeiro/AcertoContratualFormularios.tsx:83-95`: `<ConfirmarAcao … conferencia="Confirmo os valores acima.">` com "Serão ajustadas N cobranças / Será criado crédito de X"; `ReconferenciaDeltaFormularios.tsx:138-152`: o mesmo padrão; listado em `src/app/confirmacoes-mapa.ts` | #154 | **Efeito:** as duas aplicações exigem diálogo com resumo do impacto e caixa de conferência. Nada falta. |
+| 853 | …/compensacoes/[cobrancaId]/periodo-integral | 1 | aberto | aberto | `compensacoes/[cobrancaId]/periodo-integral/PeriodoIntegral.tsx:193-207`: `aplicarRegularizacaoPeriodoIntegral` direto no `onClick` de "Aplicar regularização aprovada" | — | **Efeito:** um clique constitui crédito ou reprograma a cobertura, sem resumo. **Falta:** `ConfirmarAcao` com "será constituído crédito de X" / "cobertura de A a B" e a caixa de conferência. |
+| 891 | …/continuidade-mensal | 1 | aberto | aberto | `continuidade-mensal/CondicoesContinuidadeMensal.tsx:125`: "Transcreva o calendário financeiro aplicável"; `:127-131` ID, versão, referência e vigências vazios; `:134` feriados um a um; `:45` `useState<string[]>([])` | — | **Efeito:** o operador redigita o calendário inteiro a cada versão, com risco de vencimento errado. **Falta:** selecionar um calendário cadastrado ou, como paliativo, pré-preencher com a última versão aprovada e aceitar colagem de várias datas. |
+| 892 | …/continuidade-mensal | 2 | aberto | **parcial** | `CondicoesContinuidadeMensal.tsx:61-62`: `preparo.setErro("Informe os dias úteis e todos os feriados…")`; `:143` botão; `:147` `<FeedbackAcao erro={preparo.erro} … />` logo após o formulário; `src/components/FeedbackAcao.tsx:20-24` faz `scrollIntoView` + `focus()` na mensagem | #153 | **Efeito:** clicar em "Preparar para revisão" com falta de dados agora rola até o erro, junto do botão, e o anuncia. **Falta:** levar o foco ao campo faltante (dias úteis ou feriado vazio), e não só à mensagem. |
+| 905 | …/fechamentos-horas | 1 | parcial | **resolvido** | `fechamentos-horas/page.tsx:35-37`: `alunoId = q.aluno \|\| (await consultarCabecalhoMatricula(usuario, id))?.alunoId`; fora do alcance, a mensagem leva link "Ir para o Financeiro"; `matriculas/[id]/secoes.ts:36` `contextoAluno: true` faz a aba levar `?aluno=` | #160 | **Efeito:** favorito, histórico ou aba abrem a página normalmente, sem o parâmetro. Nada falta. |
+| 906 | …/fechamentos-horas | 2 | aberto | **resolvido** | `fechamentos-horas/EmitirFechamento.tsx:24-41`: o botão só abre `<ConfirmarAcao conferencia={\`Confirmo a emissão de ${total} para este período.\`}>` | #154 | **Efeito:** a cobrança real só sai depois de confirmar o valor exibido. Nada falta. |
+| 934 | …/indisponibilidade-oferta | 1 | aberto | aberto | `indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx:86`: o relato confirmado só tem link para `/termino`; não há link para `/compensacoes/{cobrancaId}` no arquivo nem em `page.tsx:20-21` | — | **Efeito:** depois de confirmar a indisponibilidade, não há caminho para apurar a compensação do aluno. **Falta:** listar as mensalidades cuja cobertura intersecta o período, com "Apurar compensação na mensalidade". |
+
+**Acadêmico — calendário, grades, regras, modalidades, admissões**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 1014 | /academico/admissoes/[id] | 1 | aberto | aberto | `academico/admissoes/[id]/JanelaFormulario.tsx:32`: `<input type="date" required value={limiteEntrada} …>` sem `min` | — | **Efeito:** dá para preparar e aprovar uma janela com limite já vencido. **Falta:** `min` = hoje no `fusoConferido` e `<p role="alert">` "Data no passado…" antes do envio. |
+| 1035 | /academico/admissoes/excecoes/[reservaId] | 1 | aberto | aberto | `admissoes/excecoes/[reservaId]/FormularioExcecao.tsx:26`: `<select name="decisao" … defaultValue="rejeitar"><option value="rejeitar">Rejeitar</option>…` | — (a #159 mexeu só em `page.tsx`) | **Efeito:** quem envia sem tocar no select rejeita a exceção por inércia. **Falta:** `defaultValue=""`, `<option value="" disabled>Selecione</option>` e `required`. |
+| 1036 | /academico/admissoes/excecoes/[reservaId] | 2 | resolvido | resolvido | `FormularioExcecao.tsx:15-22,27`: `useAcaoCliente` + `<FeedbackAcao erro={acao.erro} />` | (#87) | **Efeito:** a falha de rede ou de sessão aparece como erro, com a instrução certa. Nada falta. |
+| 1058 | /academico/calendario/novo | 1 | aberto | aberto | `academico/calendario/novo/PrepararCalendario.tsx:49`: `onClick={() => setPeriodos((a) => a.filter((x) => x.id !== p.id))}` | — | **Efeito:** um clique errado apaga o período sem desfazer. **Falta:** marcar como removido (riscado + "Restaurar") e filtrar só no envio. |
+| 1059 | /academico/calendario/novo | 2 | aberto | **parcial** | `PrepararCalendario.tsx:20-21`: `useAvisoAoSair(!salvo && (motivo… \|\| JSON.stringify(periodos) !== …))`; `src/lib/aviso-ao-sair.ts:12-13`: "O clique num link interno do Next … não dispara o evento; interceptá-lo … fica como pendência" | #155 | **Efeito:** F5, fechar a aba ou sair do site pedem confirmação, mas o cenário citado no doc 42 ("Voltar ao calendário" ou Sidebar, que são links internos) ainda perde tudo em silêncio. **Falta:** interceptar a navegação interna com diálogo de confirmação. |
+| 1070 | /academico/calendario/[id] | 1 | aberto | aberto | `academico/calendario/[id]/page.tsx:18`: `encontroAgenda.count({ where: { status: "PREVISTO" } })` sem filtro de calendário ou turma; `:42`: `<DecidirCalendario podePublicar={… && !possuiAgenda}>` (bloco de decisão segue, desabilitado); `:39` alerta sem link | — | **Efeito:** depois da primeira grade publicada, "Aprovar e publicar" nunca habilita e o bloco continua oferecendo o botão. **Falta:** quando `possuiAgenda`, trocar o bloco de decisão pela explicação com link para `/replanejamento`. Também falta corrigir a contagem para o escopo do calendário. |
+| 1081 | …/calendario/[id]/replanejamento | 1 | aberto | **resolvido** | `calendario/[id]/replanejamento/EditorRevisao.tsx:64-66`: "Sempre montado (docs/42 L1081)" `<SalvarRevisao … desatualizado={alterado \|\| ocupado} />`; `SalvarRevisao.tsx:40-41`: "Confira os ajustes antes de guardar…" + botão `disabled={desatualizado …}` | #155 | **Efeito:** o bloco de salvar fica visível, desabilitado e explica que é preciso conferir de novo. Nada falta. |
+| 1102 | …/revisoes/[revisaoId] | 1 | aberto | aberto | `calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx:20`: "Aprovar e aplicar conjunto" envia direto; `src/app/confirmacoes-mapa.ts:11-13` põe "aprovar replanejamento" na "Fatia B (ainda sem confirmação)" | — | **Efeito:** a ação que reescreve as datas da agenda dispara com um clique, protegida só por um motivo de 5 caracteres. **Falta:** checkbox "Conferi as datas, os conflitos e as exceções" e `ConfirmarAcao` com "N turmas, M encontros, K exceções". |
+| 1103 | …/revisoes/[revisaoId] | 2 | resolvido | resolvido | `DecidirReplanejamento.tsx:14-15,19`: `useAcaoCliente({ idempotente: false })` + `<FeedbackAcao erro={acao.erro} />` | (#87) | **Efeito:** a falha mostra a instrução de conferir antes de repetir. Nada falta. |
+| 1126 | /academico/grades/nova | 1 | aberto | **resolvido** | `academico/grades/nova/PrepararGrade.tsx:13`: `fusoInicial = fusoInicialDeEntrada(institucional, preferência)`; `PrepararGradeFormulario.tsx:28,61`: `<CampoFuso valor={fuso} … sugestoes={FUSOS_DA_GRADE} />`; `src/components/CampoFuso.tsx:96-99`: `setCustomValidity(validadeDoFuso(texto))` | #159 | **Efeito:** o fuso vem pré-preenchido com o institucional, e "America/Sao Paulo" ou "GMT-3" são barrados no próprio campo antes do envio. Nada falta no comportamento. O controle é um input validado com datalist, e não o `<select>` sugerido; foi uma escolha deliberada, para aceitar turmas fora da sede. |
+| 1156 | /academico/regras/[nivelId] | 1 | aberto | aberto | `regras/[nivelId]/Formularios.tsx:64`: `onClick={() => { mudou(); setQuantidade(q => q - 1); }}` sem confirmação; campos continuam `defaultValue` (`:56-62`) | — | Efeito: um clique em "Remover última avaliação" ainda apaga 5 campos e 4 caixas da avaliação em silêncio, e readicionar não traz nada de volta. Falta confirmação ("Remover a avaliação {n}?…") ou campos controlados que preservem o digitado. |
+| 1182 | …/regras/turmas/[turmaId]/historica | 1 | resolvido | resolvido | `historica/page.tsx:41`: `rounded bg-gray-50 p-3` | (#67) | Efeito: no tema escuro, a "Fotografia conferida" fica legível. Nada a fazer. |
+| 1183 | …/regras/turmas/[turmaId]/historica | 2 | aberto | **resolvido** | `ConferenciaRegraHistorica.tsx:96-102`: `useAcaoCliente({ idempotente: false })`, `if (d?.tipo === "incerto") acao.setErro(MSG_DECISAO_INCERTA)`; `<FeedbackAcao erro sucesso>` (`:113`) | #153 | Efeito: se a decisão falhar no transporte, o gestor vê em vermelho que ela não foi confirmada, em vez de nada. Nada a fazer. |
+| 1184 | …/regras/turmas/[turmaId]/historica | 3 | parcial | parcial | `ConferenciaRegraHistorica.tsx:104-111`: `<fieldset>` sem `<legend>`; `<select name="decisao" aria-label="Decisão da conferência">` e `<CampoTexto … aria-label="Motivo da decisão">` sem `<label>` visível e sem classe | — (aria-label da #84) | Efeito: o leitor de tela anuncia os campos, mas quem enxerga vê controles crus, sem rótulo, fora do design system. Falta `<fieldset><legend>Decisão desta conferência</legend>`, `<label className="block">` visível e `className="block w-full rounded border p-2"`. |
+| 1204 | /academico/modalidades/[id]/quantidade | 1 | resolvido | resolvido | `AlterarQuantidadeAulas.tsx:17,20`: `tentativa = useRef<{ assinatura; chave }>`, chave nova só quando a assinatura muda | (#85) | Efeito: reenviar depois de uma falha de rede não cria uma segunda proposta. Nada a fazer. |
+| 1205 | /academico/modalidades/[id]/quantidade | 2 | resolvido | resolvido | `AlterarQuantidadeAulas.tsx:18,20-21`: `previaAcao`/`acao.executar(...)` + `<FeedbackAcao erro>` | (#85) | Efeito: uma exceção vira mensagem de erro junto do botão. Nada a fazer. |
+| 1218 | …/quantidade/propostas/[propostaId] | 1 | aberto | aberto | `DecidirQuantidadeAulas.tsx:14`: `onClick={() => decidir(true)}` direto, sem caixa "Conferi as {n} turmas" nem diálogo; `src/app/confirmacoes-mapa.ts:11-13` põe "aprovar … quantidade de aulas" na fatia B, "ainda sem confirmação" | — | Efeito: um clique em "Aprovar e aplicar" muda a quantidade de aulas de todas as turmas, sem pedir confirmação nem dizer quantas são. Falta checkbox obrigatório "Conferi as {n} turmas impactadas" e `<ConfirmarAcao>` com o resumo (fatia B da E1). |
+| 1219 | …/quantidade/propostas/[propostaId] | 2 | parcial | **resolvido** | `DecidirQuantidadeAulas.tsx:13`: `acao.executar(…, aprovar ? "Alteração aprovada e aplicada." : "Proposta rejeitada.")`, depois `router.refresh()`; o `window.location.reload()` saiu. Depois do refresh, `page.tsx:12` mostra "Aplicada por {decisor} em …" | #153 | Efeito: a página não recarrega inteira, e o estado aplicado fica escrito na tela. Nada a fazer. |
+| 1230 | /academico/indisponibilidades | 1 | aberto | aberto | `indisponibilidades/SolicitarAusencia.tsx:39`: `<select name="professorId" required>{professores.map(…)}</select>` sem `<option value="">`; o nome escolhido não aparece perto do envio | — | Efeito: o primeiro professor em ordem alfabética continua pré-selecionado, e a ausência pode ir para a pessoa errada. Falta `<option value="">Selecione o professor</option>` e o nome escolhido em destaque acima do botão. |
+| 1231 | /academico/indisponibilidades | 2 | aberto | aberto | `indisponibilidades/DecisaoAusencia.tsx:27`: `disabled={ocupado \|\| !impactoHash \|\| motivo.trim().length < 5}`, sem texto quando `!impactoHash` | — | Efeito: o botão "Aprovar indisponibilidade" fica apagado sem dizer por quê. Falta a frase "A conferência de impacto expirou…" e um botão "Atualizar conferência" (`router.refresh()`). |
+| 1244 | /academico/reposicoes | 1 | aberto | **resolvido** | `academico/reposicoes/page.tsx:27,34-53`: `EscolherMatricula` com `<form method="get" role="search">`, lista de matrículas encontradas (link `?matriculaId=`) e link "Abrir a lista de alunos" | #160 | Efeito: quem chega pelo índice consegue buscar e abrir a matrícula na própria tela. Nada a fazer. |
+| 1256 | …/reposicoes/correcoes/[reposicaoId] | 1 | aberto | aberto | `CorrecoesConclusaoReposicao.tsx:140`: `Horário da validação (UTC)<input name="validadaEm" type="datetime-local">`; `isoUtc` (`:67`) e `:124-125` ("informe a validação em UTC") | — | Efeito: o operador ainda converte de cabeça para UTC, e um horário local digitado grava até 3 h deslocado. Falta aceitar a entrada no fuso de exibição (CampoFuso), converter no cliente e mostrar a equivalência (`PreviaConversao`). |
+
+**Acadêmico — avaliações, correções e equivalências**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 1314 | /academico/avaliacoes/[alocacaoId]/[codigo] | 1 | aberto | **resolvido** | `[codigo]/page.tsx:44-47`: `<LancarNotas fuso={fusoEntrada} …>` sem `key` e sem `<form method="get">`; `[codigo]/Formularios.tsx:45-54,71`: `useState(fusoInicial)` + `<CampoFuso valor={fuso} onChange={trocarFuso}>` | #155 | Efeito: trocar o fuso não recarrega a página nem apaga as notas e os comentários digitados. Resíduo sem impacto na UI: o ramo "Fuso inválido" (`page.tsx:23`) continua para `?fuso=` digitado à mão na URL. |
+| 1315 | /academico/avaliacoes/[alocacaoId]/[codigo] | 2 | aberto | **resolvido** | `Formularios.tsx:41,61-68,87`: `useAcaoCliente` + `<FeedbackAcao erro={acao.erro} sucesso={acao.sucesso}>` (erro em `role="alert"` vermelho, sucesso em verde); sem `key` de versão, o refresh não remonta o formulário | #153 + #155 | Efeito: "Versão já alterada" (vermelho) e "Versão registrada" (verde) ficam distintos, e a confirmação continua na tela depois de salvar. Nada a fazer. |
+| 1327 | …/[codigo]/designacao | 1 | aberto | **resolvido** | `designacao/page.tsx:31-33`: `<FormularioDesignacao …>` sem `key` e sem form GET; `designacao/Formulario.tsx:33,37,44,72`: motivo e termo controlados, `router.replace(\`?busca=…\`, { scroll: false })` | #155 | Efeito: buscar professor não apaga o motivo digitado. Nada a fazer. |
+| 1365 | …/[alocacaoId]/fechamento | 1 | resolvido | resolvido | `fechamento/page.tsx:63,85`, `ConfirmarFechamento.tsx:44`, `ExcecaoFrequencia.tsx:112,118`: só `amber-200/700`, `green-200`, mapeados em `tailwind.config.ts:49,51` | (#67) | Efeito: pendências e avisos legíveis no escuro. Nada a fazer. |
+| 1389 | /academico/correcoes/[lancamentoId] | 1 | aberto | **resolvido** | `correcoes/[lancamentoId]/page.tsx:25-27`: `<ProporCorrecao …>` sem `key`; `Formularios.tsx:16-24,33`: `useAcaoCliente` + `<FeedbackAcao erro sucesso>` | #153 + #155 | Efeito: proposta recusada aparece em vermelho, a aceita em verde, e a confirmação sobrevive ao refresh. Nada a fazer. |
+| 1399 | …/correcoes/[lancamentoId]/[propostaId] | 1 | aberto | **parcial** | `[propostaId]/page.tsx:19`: `Mudança para a turma {i.turmaDestino} — executada`; `src/server/avaliacoes/impactos-legiveis.ts:8` devolve só `{ id, status, turmaDestino }`; o checkbox de `Formularios.tsx:48` continua "Conferi … impactos apresentados" | #160 | Efeito: o decisor deixou de ver UUID e vê a turma de destino, mas ainda aprova sem saber a origem, a data e o caso a revisar. Falta turma de origem, data e link de cada item para `/academico/correcoes/revisoes/<casoId>`. |
+| 1400 | …/correcoes/[lancamentoId]/[propostaId] | 2 | aberto | **parcial** | `Formularios.tsx:41-44,50`: erro e sucesso separados (`FeedbackAcao`); mas `[propostaId]/page.tsx:21` `{d.podeDecidir && <DecidirCorrecao …/>}` desmonta no refresh, e `:20` só exibe o genérico "Pode já ter sido decidida, ter uma versão…" | #153 | Efeito: o erro agora aparece em vermelho, mas a confirmação "Correção aprovada e aplicada." some no refresh, e a página não diz o que aconteceu. Falta redirecionar para `/academico/correcoes/<lancamentoId>` com banner do server component, ou ao menos mostrar a decisão registrada na página. |
+| 1411 | /academico/correcoes/revisoes/[casoId] | 1 | aberto | aberto | `ResolucaoRevisaoProgressao.tsx:26,34`: `casos: { id: string }[]`; `:164`: `{previa.casos.length} … casos serão incluídos`; `:183`: `{proposta.casos.length} … incluído(s)` | — | Efeito: quem propõe e quem aprova continua decidindo um lote sem ver quais casos. Falta trazer aluno, turma e data de cada caso do servidor e listá-los na prévia e no histórico. |
+| 1437 | /academico/equivalencias/[propostaId] | 1 | aberto | aberto | `AcoesEquivalencia.tsx:58`: `horarioCompativel: true` fixo; `:90`: `<input type="checkbox" required …/>` sem `name`; `page.tsx:82`: turmas só por `textoTurma` (código/nome) | — | Efeito: a pessoa atesta compatibilidade de horário sem ver o horário de nenhuma das turmas, e o atestado é fixo no envio. Falta exibir `diasHorario` de origem e destino e derivar `horarioCompativel` do checkbox, com `name`. |
+| 1438 | /academico/equivalencias/[propostaId] | 2 | aberto | **resolvido** | `AcoesEquivalencia.tsx:29-30,82,93`: `decisao`/`execucao = useAcaoCliente(…)`, cada uma com `<FeedbackAcao erro sucesso>` | #153 | Efeito: "Transferência efetivada" (verde) e "Autorização já utilizada" (vermelho) deixam de ser idênticos. Nada a fazer. |
+
+**Acadêmico — recuperações**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 1540 | /academico/recuperacoes/planos/[propostaId] | 1 | parcial | **resolvido** | `planos/[propostaId]/Formularios.tsx:32-36`: `Horario` com `<CampoFuso padrao={fusoInstitucional ?? ""}>` (datalist) e `<PreviaConversao local fuso fusoExibicao>`; `page.tsx:44` passa `fusoExibicao` | #159 | Efeito: antes de enviar, o operador vê "Isso será dd/mm hh:mm em {fuso de exibição}" sempre que digita em outro fuso. Observação: a prévia converte para o fuso de exibição, não para UTC, e cumpre o pedido de "conversão resultante". |
+| 1566 | …/planos/[propostaId]/prorrogacoes | 1 | parcial | parcial | `prorrogacoes/Formularios.tsx:13,24`: recebe `prazoAnterior`, mas usa `<Horario …>`, cujo `<input name="dataHora" type="datetime-local" step="0.001" required …>` (`planos/[propostaId]/Formularios.tsx:34`) não tem `min` | (#159 só acrescentou a prévia) | Efeito: o fuso e a prévia estão certos, mas ainda dá para propor prazo anterior ao vigente e só descobrir no erro do servidor. Falta `min` igual ao prazo vigente (convertido para o fuso do campo). |
+| 1590 | …/tentativas/[itemReservaId] | 1 | parcial | **resolvido** | `tentativas/[itemReservaId]/page.tsx:31`: `<Realizar … fusoInstitucional={fusoInstitucional} fusoExibicao={fusoExibicao} />`; prévia em `planos/[propostaId]/Formularios.tsx:36` | #159 | Efeito: o professor vê a conversão do horário da realização antes de enviar. Nada a fazer. |
+| 1603 | …/tentativas/[itemReservaId]/agenda | 1 | resolvido | resolvido | `tentativas/[itemReservaId]/agenda/Formulario.tsx:28-30`: `{...periodo.propsInicio}`, fim com `min={periodo.min}`, `<CampoFuso padrao={fusoInstitucional ?? ""}>` | (#69/#78) | Efeito: horário publicado no fuso certo; fim anterior ao início é barrado no campo. Nada a fazer. |
+
+**Acadêmico — segundas chamadas**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 1670 | …/segundas-chamadas/[alocacaoId]/[codigoAvaliacao] | 1 | aberto | **resolvido** | `[codigoAvaliacao]/page.tsx:17-24`: `bloqueio` "Nova proposta indisponível", com "A matrícula está {status}…" e link "Registrar a autorização específica" para `…/autorizacoes` (gestão) ou "Peça a autorização à Gestão Pedagógica"; `SegundaChamadaPainel.tsx:66` `{!ativa && bloqueio}` | #160 | Efeito: com matrícula pausada ou encerrada, a pessoa lê o motivo e tem o caminho da autorização. Nada a fazer. |
+| 1671 | …/segundas-chamadas/[alocacaoId]/[codigoAvaliacao] | 2 | aberto | **resolvido** | `SegundaChamadaPainel.tsx:57-63`: `if (d?.tipo === "ok") router.refresh()`; `feedback(grupo)` mostra erro ou sucesso só no grupo `item:${id}` que disparou a ação | #153 | Efeito: sem recarga total; a confirmação aparece no card alterado e a rolagem é mantida. Nada a fazer. |
+| 1709 | /academico/segundas-chamadas/agendas | 1 | aberto | **parcial** | `agendas/page.tsx:34-35,52`: `lerPagina` + `<Paginacao pagina={pagina} temProxima …>` (página numerada); nenhum `<form>` de busca, data, turma ou situação | #158 | Efeito: a secretaria sabe em que página está, mas ainda folheia a fila às cegas para achar "o aluno X". Falta form GET com `busca` (aluno/matrícula) e `de`/`ate`, propagados nos links de página. |
+| 1722 | …/segundas-chamadas/pendentes-agenda | 1 | aberto | **parcial** | `pendentes-agenda/page.tsx:49-56`: `Preparo` só mostra "Preparar agenda inicial" nos itens que a prévia pode seguir; nos demais, o texto do motivo. Para PAUSADA/ENCERRADA (`:53`), o link "Conferir a autorização na prévia" vai para a mesma tela de agenda (`href` de `:50`) | #160 | Efeito: a secretaria não perde mais tempo preenchendo agenda de item sem saldo ou com impedimento, mas nas matrículas pausadas é levada de novo à tela de preparo. Falta, nesse caso, o link para `…/[alocacaoId]/[codigoAvaliacao]/autorizacoes`, que a doc 42 pede. |
+| 1747 | …/segundas-chamadas/minhas/[reservaId] | 1 | parcial | parcial | `minhas/[reservaId]/Formulario.tsx:17,30-31`: `FormularioRealizacao({ reservaId, fusoInstitucional })`; `datetime-local` sem `min`/`max`; `page.tsx:18,27`: o fuso do encontro (`fuso`) não vai ao formulário | — | Efeito: o professor pode registrar um horário fora do encontro (ou deslocado pelo fuso) e só ver a recusa do servidor. Falta passar o fuso do encontro como padrão, aplicar `min`/`max` iguais ao intervalo do encontro e mostrar o intervalo válido junto do campo. |
+| 1761 | …/propostas/[propostaId]/agenda | 1 | aberto | **resolvido** | `propostas/[propostaId]/agenda/Formulario.tsx:28-29,41`: `CAMPOS_DA_PREVIA = ["professorId","inicioLocal","fimLocal","fusoOrigem"]`; `onChange` limpa a prévia só nesses campos e mostra `AVISO_PREVIA_DESCARTADA` | #155 | Efeito: digitar no motivo ou na evidência não apaga a prévia conferida; quando ela cai, a tela diz por quê. Nada a fazer. |
+| 1785 | …/reservas/[reservaId]/cancelamento | 1 | aberto | aberto | `cancelamento/page.tsx:20-27,44`: `Efeito` só dentro do `map` de propostas; `cancelamento/Formulario.tsx:37-40`: origem, data e fuso sem efeito calculado | — | Efeito: quem propõe ainda não sabe se a proposta vai devolver ou consumir a oportunidade do aluno. Falta calcular o efeito ao vivo no formulário (origem + `dataHoraLocal` + regra de antecedência). |
+| 1786 | …/reservas/[reservaId]/cancelamento | 2 | parcial | **resolvido** | `cancelamento/Formulario.tsx:16,38-40`: `<CampoFuso padrao={fusoInstitucional ?? ""} onChange={setFuso}>` + `<PreviaConversao local={dataHoraLocal} fuso={fuso} fusoExibicao={fusoExibicao}>`; `page.tsx:40` | #159 | Efeito: o fuso vem preenchido e o instante convertido aparece antes do envio. O "junto com o efeito" depende do L1785, que segue aberto. |
+| 1814 | …/reservas/[reservaId]/substituicao | 1 | aberto | **resolvido** | `substituicao/page.tsx:53-55`: `<Formulario …>` sem `key={substitutoId}`; `Formulario.tsx:49,51,53`: `router.replace` mantém o componente montado; evidência e motivo fora de condicional | #155 | Efeito: trocar o professor no select não apaga o motivo nem a evidência. Nada a fazer. |
+
+**Diário de aulas**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 1835 | /diario | 1 | aberto | **resolvido** | `diario/DiarioAulas.tsx:30-40`: `mesclarChamada` preserva `presente`/`observacao`; `:65`: `if (!preenchidos) setRegistros([])`; `:75-77,95-102`: `TrocaPendente` pede confirmação quando sai aluno já preenchido; `:135` | #155 | Efeito: trocar a data não apaga a chamada já feita, e a tela avisa antes de descartar alguém. Nada a fazer. |
+| 1863 | /diario/encontros/[id] | 1 | aberto | aberto | `diario/encontros/[id]/page.tsx:21`: `role={ocorrencias.ok && ocorrencias.dado ? undefined : "alert"}` e `className={… ? "text-gray-600" : "text-red-700"}` | — | Efeito: quando há ocorrências, a falha ao carregar a chamada continua um texto cinza que o leitor de tela não anuncia. Falta `role="alert"` e estilo de erro sempre, ou mensagens distintas vindas da resposta. |
+| 1864 | /diario/encontros/[id] | 2 | aberto | aberto | `diario/encontros/[id]/page.tsx:24`: `<p role="alert">Há vínculos que precisam de conferência da gestão antes do lançamento.</p>`, sem lista nem ação | — | Efeito: o professor continua travado, sem saber quais vínculos estão pendentes, quem resolve e como pedir. Falta listar os vínculos e dar ação ou link ("Solicitar conferência à gestão" ou a matrícula) com o responsável. |
+| 1901 | /diario/encontros/[id]/correcao | 1 | resolvido | resolvido | `CorrecaoAula.tsx:130,131,142,338,365`: `bg-surface`; sem `rose-*`, `amber-900`, `*-800`; `border-blue-200`/`border-green-200` (`:364,366`) agora mapeados (`tailwind.config.ts:49,52`) | (#66/#67) | Efeito: "antes e depois" legível no escuro. Nada a fazer. |
+| 1947 | /diario/regularizacoes-gravacao | 1 | resolvido | resolvido | `RegularizacoesGravacao.tsx:21-22`: `bg-surface` | (#66) | Efeito: cartões legíveis no escuro. Nada a fazer. |
+| 1989 | /diario/reposicoes/[id]/troca-fonte | 1 | aberto | **resolvido** | `troca-fonte/page.tsx:18,22-25`: `consultarIdentificacaoReposicao` + `<IdentificacaoRegistro rotulo="Aluno e reposição desta troca">` com aluno (link), código da matrícula, produto e "Reposição por gravação da aula de {data} · turma" | #160 | Efeito: quem aprova a troca vê de qual aluno e de qual aula se trata. Ressalva: se a identificação vier `null` (`{identificacao && …}`), a tela volta ao estado antigo sem aviso. |
+| 1990 | /diario/reposicoes/[id]/troca-fonte | 2 | resolvido | resolvido | `TrocaFonteReposicao.tsx:66,73,81`: `bg-surface` | (#66) | Efeito: blocos legíveis no escuro. Nada a fazer. |
+
+**Financeiro**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 2014 | /financeiro | 1 | aberto | **resolvido** | `FilaCobranca.tsx:154-157`: `pedirEnvioViaApi` só abre a confirmação; `:420` ("Cobrar"/"Lembrar" da linha) e `:441` (detalhe); `:451-460`: `<ConfirmarAcao titulo="Enviar … para {aluno} pelo WhatsApp?" confirmacao="envio para {primeiro nome}" acao={() => enfileirarCobrancaWhatsApp(...)}>`; `:484-501`: destinatário, número, valor, degrau do template, "não pode ser desfeita" | #154 | Efeito: um clique errado na fila não manda mais cobrança real; o envio exige "Confirmar envio para Ana". Observação: o diálogo descreve o degrau do template e não reproduz o texto literal. |
+| 2015 | /financeiro | 2 | resolvido | resolvido | `FilaCobranca.tsx:373`: linha com `<button>`; `:592-599`: `useDialogo(painel, …)`, `role="dialog"`, `aria-modal="true"` | (#89) | Efeito: detalhe da cobrança operável por teclado, com Esc e foco preso. Nada a fazer. |
+| 2016 | /financeiro | 3 | aberto | **resolvido** | `FinanceiroPainel.tsx:100`: `onFechar={() => { …; setConfirmarFechamento(true); }}`; `:105-125`: `<ConfirmarAcao titulo="Fechar o mês e marcar as comissões aprovadas como pagas?">` com "{n} comissões aprovadas passam a pagas, total {X}" e "Não há desfazer pela tela" | #154 | Efeito: fechar o mês exige confirmação com quantidade e total. Observação: a competência não é citada, o que não impede o uso. |
+| 2017 | /financeiro | 4 | aberto | aberto | `FinanceiroPainel.tsx:427-429`: `.filter(([, v]) => v.trim() !== "" && Number(v) > 0)` seguido de `if (entradas.length === 0) return;` | — | Efeito: cotação inválida continua descartada em silêncio, e o operador acha que salvou. Falta validar cada campo (moeda inválida marcada em vermelho) e mostrar "Nenhuma cotação válida para salvar". |
+| 2065 | /financeiro/acertos-cobertura/[matriculaId]/[propostaId] | 1 | parcial | parcial | `acertos-cobertura/ImpactosCoberturaFormulario.tsx:32`: `podePreparar` com 6 condições; `:43`: `disabled={acao.ocupado \|\| !podePreparar}`, sem lista nem contagem de pendências | — (mínimo visível da #121) | Efeito: numa matrícula com muitas mensalidades, o operador continua sem saber qual campo prende o botão. Falta listar as pendências por mensalidade, ou "N de M pendentes" acima do botão, e marcar os cards incompletos. |
+
+**Comercial**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 2201 | /leads/[id] | 1 | resolvido | resolvido | `leads/[id]/FichaLead.tsx:436-439`: `if (!(await executar("interacao", …))) return; setNota(""); … setModal("none")`; o mesmo em `:474-475` e `:500` | (#87) | Efeito: se a action recusar, o painel fica aberto e o texto é preservado. Nada a fazer. |
+| 2202 | /leads/[id] | 2 | parcial | **resolvido** | `leads/[id]/FichaLead.tsx:543` `const leitura = confirmado && … ? confirmado.valores : persistido` e `:589` `{leitura[k] \|\| "—"}`. A edição só fecha com sucesso: `:577` `if (await run(...)) { …; setEditar(false); }`. Ao entrar em edição, o rascunho volta ao persistido (`:559` `setF(leitura)`). | #155 | Nada. **Efeito para o usuário:** um resumo recusado ou cancelado não aparece mais como salvo. |
+| 2203 | /leads/[id] | 3 | aberto | **resolvido** | `FichaLead.tsx:611-616`: `servidor` é recalculado a cada render a partir de `lead`, e `valores = { ...base, ...edicao }`. Só os campos editados sobrepõem o servidor, e `:644` envia `valores`. | #155 | Nada. **Efeito:** agendar a experimental pela barra e depois clicar "Salvar datas" não sobrescreve mais a data nova com a antiga. |
+| 2217 | /leads/[id]/contratacao | 1 | aberto | **resolvido** | `leads/[id]/contratacao/page.tsx:32` `<PreparacaoFormulario key={o.selecionada.id} …>`. A página de cadastros e a de turmas saíram da `key`. `PreparacaoFormulario.tsx:20-21` guarda o aluno e a turma escolhidos no estado. | #155 | Nada obrigatório. A recomendação acessória, carregar as turmas sem trocar de rota, não foi feita. A `versaoEntrada` também saiu da `key`; a agenda conferida para outra versão é invalidada (`:24`). **Efeito:** "Mais turmas" ou "Cadastros anteriores" não apagam mais taxa, valor, motivo e agenda. |
+| 2229 | /pipeline | 1 | resolvido | resolvido | `pipeline/KanbanBoard.tsx:396-414`: `<Modal …>` com `<FeedbackAcao erro={acaoPerda.erro} …/>` dentro do modal. `:330` `if (desfecho?.tipo !== "ok") return;` | — (#87/#89) | Opcional: validar no cliente que "Outro" exige observação, antes de enviar. **Efeito:** o erro da perda aparece no próprio modal. |
+| 2269 | /empresas | 1 | resolvido | resolvido | `empresas/EmpresasCliente.tsx:177` `<th …>Faturas a receber</th>` | — (#101) | Detalhe de vocabulário: a ficha rotula o mesmo status como "Fechada — a pagar" (`src/lib/labels.ts:455`). **Efeito:** a coluna não diz mais "em aberto" para faturas fechadas. |
+| 2281 | /empresas/[id] | 1 | aberto | **parcial** | `empresas/[id]/FichaEmpresa.tsx:201,209` `onClick={() => pedirConfirmacao(f, "pagar"\|"cancelar")}` abre `<ConfirmarAcao>` (`:223-255`). O resumo traz código, competência, nº de cobranças, total e "Não há desfazer". O botão foi renomeado para "Cancelar fatura" (`:211`). Mas `:266-287`: "Inativar empresa" chama `run("contrato", () => salvarEmpresa({… ativo: !empresa.ativo}))` sem confirmar. | #154 | Falta confirmar "Inativar empresa". "Cancelar fatura" continua ao lado de "Registrar pagamento", na mesma `<span className="flex … gap-3">` (`:196`), e não foi para um menu secundário. **Efeito:** pagar ou cancelar fatura não acontece mais por engano; inativar a empresa ainda acontece. |
+| 2282 | /empresas/[id] | 2 | aberto | aberto | `src/server/empresas/acoes.ts:99` `export async function fecharFaturaB2B` continua sem chamador em `src/app`. `empresas/[id]/page.tsx:21-24` ainda consulta `listarProdutosParaMatricula()` e `competenciasFaturaveis(id)`, e `FichaEmpresa.tsx:59-60` declara `produtos`/`competencias` sem usar. | — | Falta expor o fechamento por competência ou remover as duas consultas e as props. **Efeito:** o financeiro continua sem gerar fatura pela tela, e a página faz duas consultas à toa. |
+| 2295 | /inbox | 1 | aberto | aberto | `inbox/InboxCliente.tsx:784-788` `onChange={(e) => { … if (f) void subirEEnviar(f); }}`. `:751-757` `gravador.onstop = () => { … void subirEEnviar(new File(...)) }`. `:714` `subirEEnviar(file, legenda = "")`. | — (inbox sem mudança desde `6b105093`) | Falta um passo de revisão: prévia, legenda e "Enviar"/"Descartar". **Efeito:** o PDF errado continua indo direto para o cliente. |
+| 2296 | /inbox | 2 | aberto | aberto | `InboxCliente.tsx:392` `janela 24h fechada — texto livre pode ser recusado (use template)`. O composer (`:775-830`) não tem seletor de template. | — | Falta o seletor de templates aprovados com a janela fechada, ou uma instrução executável. **Efeito:** o operador continua procurando um envio de template que não existe. |
+| 2297 | /inbox | 3 | parcial | parcial | Promessa, `InboxCliente.tsx:538-540`: `await marcarConversaTratada(...)` sem ler o retorno, seguido de `onNota("Promessa registrada — régua pausada até a data.")`. Pagamento, `:601-602`: também não lê `r.ok`, só o `catch`, e anuncia "Pagamento registrado." sem prometer pausa. | — | Falta checar `r.ok` na promessa (e no pagamento) e, na falha, avisar que a régua **não** foi pausada. **Efeito:** a tela ainda pode anunciar "régua pausada" sem a pausa ter acontecido. |
+| 2298 | /inbox | 4 | aberto | aberto | `InboxCliente.tsx:967-970` `vincular(...)` chama `vincularContatoWhatsApp` direto. `:440-444` "Registrar opt-out" vai direto no `onClick`. `:430-436` o campo de evidência tem `minLength={12}`, sem texto de ajuda. Não há `desvincular` em `src`. | — | Faltam: confirmar o vínculo com o efeito escrito, oferecer desvincular e escrever "mínimo de 12 caracteres". **Efeito:** um clique errado ainda amarra o histórico a outra pessoa, sem volta pela tela. |
+| 2299 | /inbox | 5 | parcial | parcial | A busca é feita no servidor e há aviso de lista limitada (`InboxCliente.tsx:247-252`, #102). A thread ainda corta em 300 mensagens: `src/server/whatsapp/consultas-inbox.ts:130` `mensagens: { orderBy: { criadoEm: "desc" }, take: 300`, sem "carregar anteriores" nem aviso. | — | Falta paginação "carregar mensagens anteriores" na thread, ou ao menos avisar o corte. **Efeito:** conversas longas perdem o começo em silêncio. |
+| 2300 | /inbox | 6 | resolvido | resolvido | Não há `bg-white`, `violet-*` nem `amber-300/500` em `inbox/` (grep vazio). | — (#66/#67) | Nada. **Efeito:** os cartões ficam legíveis no tema escuro. |
+
+**Configuração**
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 2324 | /configuracao | 1 | parcial | parcial | Existem `(app)/error.tsx`, `(app)/not-found.tsx` e `(app)/loading.tsx`, este acima do `configuracao/layout.tsx`. Não há `loading.tsx` em `configuracao/` nem nas sub-rotas: `find src/app -name loading.tsx` lista só academico, alunos, financeiro, inbox, leads, pipeline, `(app)` e portal-aluno. `SubTabs.tsx` não mostra indicador de pendência. | — | Falta `loading.tsx` em `configuracao/` (o boundary de `(app)` não cobre a troca entre sub-abas irmãs sob o mesmo layout). `not-found.tsx` por segmento é opcional, porque o de `(app)` cobre. **Efeito:** ao clicar numa sub-aba, a tela anterior continua congelada. |
+| 2367 | /configuracao/contratos/novo | 1 | aberto | **parcial** | `configuracao/contratos/ModeloFormulario.tsx:28` `useAvisoAoSair(!salvo && (tocado \|\| JSON.stringify(valor) !== …))`. `src/lib/aviso-ao-sair.ts` registra `beforeunload` e reconhece no próprio comentário: "O clique num link interno do Next … não dispara o evento". | #155 | Falta proteger a navegação interna: o clique numa sub-aba ou num link do menu ainda apaga tudo. Também falta rascunho persistido (`localStorage`/autosave) com "rascunho recuperado". **Efeito:** F5 e fechar a aba agora pedem confirmação; trocar de sub-aba ainda perde horas de redação. |
+| 2368 | /configuracao/contratos/novo | 2 | aberto | **resolvido** | `ModeloFormulario.tsx:51-55`: com divergência, guarda `pendente` e explica. `:98-104` mostra o resumo da tentativa (título, nº de seções), com os botões "Reenviar a proposta anterior" (`reenviarAnterior`, `:38-41`, usa `tentativa.current.entrada` e a mesma chave) e "Descartar a tentativa anterior" (`:42-44`). | #155 | Nada. O resumo mostra só título e nº de seções, mas remete ao histórico. **Efeito:** depois de uma queda, o redator reenvia ou descarta sem precisar recarregar e perder tudo. |
+| 2395 | /configuracao/turmas | 1 | aberto | **resolvido** | `configuracao/turmas/TurmasPainel.tsx:127` `aoFechar={() => { if (turmaAlterada) setConfirmandoDescarte(true); else fecharFormulario(); }}`. `:128-135` "Descartar a turma não salva?" com "Descartar alterações"/"Continuar editando". `TurmaFormulario.tsx:122` informa `alterado`. | #155 | Nada. "Cancelar" dentro do formulário fecha direto, mas é uma ação explícita. **Efeito:** clicar no fundo ou apertar Esc não apaga mais a turma preenchida. |
+| 2412 | /configuracao/usuarios | 1 | aberto | aberto | `configuracao/usuarios/UsuarioFormulario.tsx:99` `<input id="usuario-senha" type="password" {...register("senha")} …>`, sem `autoComplete`. O `<form>` (`:79`) também não tem. | — | Faltam `autoComplete="new-password"` no campo e, na edição, um clique em "Definir nova senha" antes de habilitar. **Efeito:** o navegador ainda pode preencher a senha do administrador no cadastro de outro usuário. |
+| 2428 | /configuracao/paises | 1 | parcial | parcial | `configuracao/paises/PaisesPainel.tsx:41,45` `{ label: "Encerrar", alvo: StatusPais.ENCERRADO, variante: "perigo" }`, sem confirmação. `:25` `_count` continua no tipo, mas as colunas (`:118-123`) são País/Moeda/DDI/Documentos/Status/Ações. | — (#135) | Faltam: confirmação com digitação do nome do país, repetindo produtos, preços e alunos; e as colunas com esses números. **Efeito:** dá para encerrar, sem volta, um mercado com alunos ativos num clique. |
+| 2429 | /configuracao/paises | 2 | aberto | **parcial** | Fuso: `PaisFormulario.tsx:107-110` `<CampoFuso …>` mais o erro `errors.fuso`, e `src/server/paises/schema.ts:29` `.refine((fuso) => … fusoIanaValido(fuso), MSG_FUSO_PAIS_INVALIDO)`, validado no servidor (`acoes.ts:49,85` `PaisSchema.parse`). Idioma: `PaisFormulario.tsx:114` continua `<input … placeholder="es">` e `schema.ts:30` `idioma: z.string().min(1)`. | #159 | Falta o idioma: select ou lista fechada, com validação no schema. O erro do idioma já é exibido. **Efeito:** um fuso digitado errado não grava mais; um idioma inválido ainda grava. |
+| 2442 | /configuracao/operacao | 1 | parcial | **resolvido** | `OperacaoFormulario.tsx:30`, `PrazosPortalFormulario.tsx:38` e `PrazosEntregaReposicaoFormulario.tsx:26`: todos `<FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />`. `FeedbackAcao` renderiza o erro em `role="alert"` vermelho e o sucesso em `MensagemStatus` verde. | #153 | Nada. **Efeito:** uma falha de gravação não se passa mais por "Configuração salva". |
+| 2457 | /configuracao/operacao/avisos-diario | 1 | aberto | **resolvido** | `operacao/avisos-diario/AvisosDiarioFormulario.tsx:30` `<FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />` | #153 | Nada. **Efeito:** erro e sucesso dos avisos do diário ficam distinguíveis. |
+| 2469 | /configuracao/migracao | 1 | resolvido | resolvido | `configuracao/migracao/PreparacaoMigracaoPainel.tsx:16,18`: dois `useAcaoCliente`. `:23` mostra `<FeedbackAcao erro={leitura.erro} sucesso={leitura.sucesso} />` logo depois de "Ler arquivo" e outro depois de "Preparar lote". | — (#86) | Nada. **Efeito:** um CSV com delimitador errado aparece como erro, junto do botão. |
+| 2483 | /configuracao/migracao/[loteId] | 1 | aberto | aberto | `src/server/migracao/consultas.ts:46` `linhas: { orderBy: { linhaOrigem: "asc" }, select: { … dadosOrigem … } }`, sem `take`. Em `migracao/[loteId]/page.tsx:24`, cada linha tem `<pre …>{JSON.stringify(linha.dadosOrigem, null, 2)}</pre>`, fora de `<details>`. | — | Faltam paginação na consulta e na tela, e o JSON em `<details>` fechado. **Efeito:** um lote grande ainda vira um documento gigante que trava a rolagem. |
+| 2484 | /configuracao/migracao/[loteId] | 2 | resolvido | resolvido | Não há `bg-white`, `sky-`, `emerald-` nem `amber-300` em `configuracao/migracao/` (grep vazio). Os `<pre>` usam `bg-gray-50`/`bg-surface`. | — (#67) | Nada. **Efeito:** os blocos de ensaio ficam legíveis no escuro. |
+| 2485 | /configuracao/migracao/[loteId] | 3 | aberto | **resolvido** | `EnsaioVinculoMigracao.tsx:31-40`: `useAcaoCliente` e `feedback(alvo)` com `<FeedbackAcao erro=… sucesso=…/>` por bloco. `AplicarCadastroMigracao.tsx:13-17` usa `acao.executar` / `acao.setErro`, e `:21` `<FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-2" />`. | #153 | Nada. **Efeito:** "Ensaio registrado." e uma falha não aparecem mais iguais. |
+| 2499 | /configuracao/migracao/presenca/[linhaId] | 1 | aberto | aberto | `migracao/presenca/[linhaId]/PresencaHistorica.tsx:16` `<select name="decisao" …><option value="APROVAR">Aprovar e aplicar</option><option value="REJEITAR">Rejeitar</option></select>`, botão `"Decidir"`, sem confirmação. | — | Faltam: opção vazia padrão, botão com o nome da ação escolhida e confirmação que repita aluno, aula e participação. **Efeito:** preencher o motivo e clicar ainda aplica a presença histórica no diário. |
+| 2516 | /configuracao/whatsapp | 1 | aberto | **resolvido** | `configuracao/whatsapp/PoliticaPainel.tsx:116-120` `pedirKill()` só abre a confirmação, e o botão em `:150-155` chama `onClick={pedirKill}`. `:380-403` `<ConfirmarAcao titulo={form.killSwitch ? "Destravar a automação de cobrança?" : "Congelar toda a automação de cobrança?"} …>`, com o texto do que volta a sair. | #154 | Nada. **Efeito:** congelar ou destravar a cobrança automática exige confirmar, nos dois sentidos. |
+| 2517 | /configuracao/whatsapp | 2 | aberto | **parcial** | A passagem para ATIVA abre `ConfirmarAcao` nos quatro painéis: `PoliticaPainel.tsx:85` `ativando` e `:406-429`, com remetente, janela, teto e degraus automáticos/em lote. `ComercialPainel.tsx:56-57,78` e `:271-299` mostram o texto da saudação e o número do gestor. `ReguaComercialPainel.tsx:130,155` e `:319-345` incluem `Alcance: só os ${pilotoLeads.length} lead(s) do piloto` ou "GO-LIVE GERAL". | #154 | Falta a **estimativa numérica de alcance**. Na régua de cobrança só há "toda cobrança com degrau … devido" (`PoliticaPainel.tsx:428`), e no go-live geral "todos os leads elegíveis", sem contagem. **Efeito:** ativar o envio real exige confirmar e mostra a configuração, mas não diz quantas pessoas vão receber. |
+| 2518 | /configuracao/whatsapp | 3 | aberto | **resolvido** | `TemplatesPainel.tsx:79` `editandoAprovado = original?.statusMeta === "APROVADO"`. `:188-193` mostra o alerta no topo do formulário (`bg-amber-50 … text-amber-800`). `:83-89` faz o Salvar abrir `<ConfirmarAcao titulo="Salvar o template aprovado … e devolvê-lo a rascunho?">` (`:247-265`). | #154 | Nada. **Efeito:** editar um template aprovado avisa antes e exige confirmar que o degrau sai do ar. |
+
+**Público, portal do aluno, home e preferências** (caminhos relativos a `src/app/`)
+
+| L | Rota | # | Status antigo | Status novo | Evidência atual | PR | O que falta |
+|---|---|---|---|---|---|---|---|
+| 2566 | /pagar/[token] | 1 | resolvido | resolvido | `pagar/[token]/PagarCliente.tsx:50` `{formatarMoeda(valor, moeda)}` | — (#93) | Nada. **Efeito:** o pagador vê "R$ 1.200,50", não "BRL 1.200,5". |
+| 2581 | /certificado/[codigo] | 1 | resolvido | resolvido | `certificado/[codigo]/page.tsx:18-19` `border-green-200 bg-green-50` / `text-green-700`, com `green.200` mapeado em `tailwind.config.ts:49` | — (#67) | Nada. **Efeito:** o selo de autenticidade fica legível no escuro. |
+| 2593 | /portal (legado) | 1 | parcial | parcial | `src/server/_shared/sessao.ts:153` `if (!alvo.includes(Papel.ALUNO)) redirect("/portal")`. `(portal)/portal/page.tsx` faz `redirect("/portal-aluno")`, e `src/server/portal-aluno/sessao.ts:114` faz `redirect("/portal-aluno/entrar")`. Não há mensagem sobre acesso próprio, só "Entre com o e-mail individual confirmado no seu convite" (`portal-aluno/entrar/page.tsx:29`). | — (#64) | Falta explicar que a área do aluno usa acesso próprio, ou mapear a sessão. **Efeito:** o aluno logado na equipe ainda cai num segundo login sem entender por quê. Já não há erro. |
+| 2602 | /portal-aluno | 1 | resolvido | resolvido | `portal-aluno/page.tsx:17` `exigirSessaoPortalAlunoPagina()`, que redireciona, e `portal-aluno/error.tsx` com "Entrar de novo" → `/portal-aluno/entrar` | — (#64) | Nada. **Efeito:** sessão expirada leva ao login, não à tela de erro do Next. |
+| 2603 | /portal-aluno | 2 | resolvido | resolvido | `portal-aluno/page.tsx:19` `rounded-lg border bg-surface p-4`; não há `bg-white` em `portal-aluno/`. | — (#66) | Nada. **Efeito:** os cartões ficam legíveis no escuro. |
+| 2616 | /portal-aluno/entrar | 1 | resolvido | resolvido | `portal-aluno/entrar/page.tsx:27` `rounded-xl border bg-surface p-7`, sem `shadow-sm` | — (#66) | Nada. **Efeito:** o card de login fica legível no escuro. |
+| 2626 | /portal-aluno/ativar | 1 | aberto | aberto | `portal-aluno/ativar/page.tsx:8-14` `const token = useRef("")` mais `window.history.replaceState(…)`. Não usa `sessionStorage`, e o formulário (`:28`) é renderizado mesmo sem token. `:19` `if (!token.current) throw new Error();` → `:25` "Este link não está disponível…". | — | Faltam: guardar o token em `sessionStorage` e, sem token, não mostrar o formulário, com orientação e link para `/portal-aluno/recuperar`. **Efeito:** um F5 queima o link em silêncio e o aluno só descobre depois de digitar a senha. |
+| 2627 | /portal-aluno/ativar | 2 | aberto | aberto | `ativar/page.tsx:28` tem um único `<input required minLength={12} maxLength={72} name="senha" type="password" …>`. O texto é só "Crie uma senha que só você conhece." | — | Faltam: a regra "mínimo de 12 caracteres" visível, "Repita a senha" ou mostrar senha, e bloqueio enquanto as duas não coincidirem. **Efeito:** um erro de digitação ainda tranca o aluno fora do portal. |
+| 2628 | /portal-aluno/ativar | 3 | resolvido | resolvido | `ativar/page.tsx:28` `rounded-xl border bg-surface p-7`, sem sombra | — (#66) | Nada. **Efeito:** a tela fica legível no escuro. |
+| 2639 | /portal-aluno/recuperar | 1 | aberto | aberto | `portal-aluno/recuperar/page.tsx:11-12` `try { await fetch(...) } finally { setEnviando(false); setEnviado(true); }`, sem `catch` e sem conferir `resposta.ok`. | — | Faltam: `setEnviado(true)` só depois de uma resposta ok, e um `catch` com mensagem de falha que mantenha o formulário. **Efeito:** offline ou com erro 500, o aluno vê "pedido enviado" e espera algo que nunca chegou. |
+| 2640 | /portal-aluno/recuperar | 2 | resolvido | resolvido | `recuperar/page.tsx:14` `bg-surface`, sem sombra | — (#66) | Nada. **Efeito:** a tela fica legível no escuro. |
+| 2651 | /portal-aluno/preferencias | 1 | resolvido | resolvido | `portal-aluno/preferencias-formulario.tsx:21` `rounded border bg-surface p-4` | — (#66) | Nada. **Efeito:** o formulário fica legível no escuro. |
+| 2664 | /portal-aluno/resultados | 1 | resolvido | resolvido | `portal-aluno/resultados/page.tsx:82-86` `border-green-200 bg-green-50 text-green-700` / `border-amber-200 bg-amber-50 text-amber-700`. `:58,65` `bg-surface-muted`. Não há `-950`, `-300`, `amber-900` nem `bg-white`. | — (#67) | Nada. **Efeito:** o veredito do nível fica legível no escuro. |
+| 2676 | /portal-aluno/reposicoes/[id] | 1 | aberto | **parcial** | `portal-aluno/reposicoes/[id]/page.tsx:56-62` calcula `motivoSemRelato`, por exemplo "O material ainda não foi liberado…" ou "A gravação não está liberada para você…". `relatar-indisponibilidade.tsx:56` `{!podeRelatar && <p …>{motivoSemRelato ?? …}</p>}`. O formulário continua condicionado a `podeRelatar={podeReproduzir}` (`page.tsx:81`, `relatar-indisponibilidade.tsx:55`). | #160 | O bloco vazio deixou de existir: agora explica o motivo e manda procurar a secretaria. Mas o canal de aviso **continua sumindo** exatamente quando a gravação não abre. Falta permitir o relato ao aluno dono da reposição, já que o servidor revalida o vínculo, ou oferecer outro canal na tela. **Efeito:** o aluno entende por que não pode relatar, mas ainda precisa sair do portal para avisar a escola. |
+| 2677 | /portal-aluno/reposicoes/[id] | 2 | resolvido | resolvido | `reposicoes/[id]/page.tsx:65,71` `bg-surface` e `:78` `border-amber-200 bg-amber-50`. `entrega-gravacao.tsx:26-27`, `relatar-indisponibilidade.tsx:43` e `video-gravacao.tsx:10` usam `bg-surface`. | — (#66/#67) | Nada. **Efeito:** os blocos ficam legíveis no escuro. |
+| 2691 | /home | 1 | resolvido | resolvido | `src/components/Sidebar.tsx:126` `… hidden h-dvh w-56 … md:flex`. `(app)/layout.tsx:20` `<BarraMobile …/>` e `:22` `main … p-4 md:p-8`. | — (#94) | Nada. **Efeito:** o professor usa o sistema no celular sem a sidebar ocupar a tela. |
+| 2692 | /home | 2 | resolvido | resolvido | `(app)/home/HomeProfessor.tsx:107,114` `disabled={acao.ocupado}` nos dois botões | — (#87) | Nada. **Efeito:** não saem dois check-ins contraditórios. |
+| 2693 | /home | 3 | aberto | aberto | `HomeProfessor.tsx:112-117` `onClick={() => checkin(e.id, false)}` ("Faltou") direto, sem confirmação nem desfazer. | — | Faltam confirmação inline ou "Desfazer" por 10 s, com reversão no servidor. **Efeito:** um toque errado ainda marca o lead como no-show, sem volta pela tela. |
+| 2707 | /preferencias | 1 | resolvido | resolvido | `(app)/preferencias/FusoExibicaoFormulario.tsx:24` `rounded border bg-surface p-5` | — (#66) | Nada. **Efeito:** o formulário fica legível no escuro. |
+
+### 7.3 Amostra Média/Baixa (126 de 727)
+
+#### 7.3.1 Resumo
+
+1. **Estimativa nova:** **58,9% dos 727 achados Média/Baixa continuam abertos (IC 95% 50,3–67,5%), ≈ 428 achados (≈ 366–491).** Antes eram 71,1% (IC 63,1–79,2%), ≈ 517 achados.
+2. **Queda pareada:** na mesma amostra, a fração estimada que saiu de "aberto" é de **12,2 p.p. (IC 95% 6,4–18,0), ≈ 89 achados.** Os dois intervalos se sobrepõem, mas a diferença pareada exclui zero. Nenhum achado regrediu.
+3. **Amostra crua:** eram 17 resolvidos, 18 parciais e 91 abertos. Agora são **32 resolvidos, 18 parciais e 76 abertos.** Ao todo, 19 achados mudaram:
+   - 11 passaram de aberto para resolvido;
+   - 4 passaram de aberto para parcial;
+   - 4 passaram de parcial para resolvido.
+4. **Origem das mudanças:**
+   - **17 vieram de código novo:**
+     - #153, feedback separado: 5 achados (705, 776, 1328, 1687 parcial e 2041);
+     - #159, fuso e instante: 5 achados (549, 1037, 1800, e 2652 e 2709 parciais);
+     - #158/#161, paginação nos dois sentidos: 3 achados (419, 924 e 1469);
+     - #160, identificação do registro: 3 achados (268, 283 e 582);
+     - #143, abas do diário: 1 achado (1839).
+   - **2 são reclassificações sem código novo** (L270 e L1645). O doc 43 deu "aberto" a títulos `text-xl`/`text-2xl` sem `font-medium` na classe, mas a regra base de `globals.css:143-153` (ganho rápido 9, `e9b1c29d`, anterior ao doc 43) já renderiza h1–h6 com peso 500.
+   - **Só pelo código, sem as 2 reclassificações:** 59,8% abertos (IC 51,2–68,4%), ≈ 435 achados.
+5. **Sem efeito na amostra:** a #154 (`ConfirmarAcao`) não moveu nenhum achado. A confirmação entrou só na "fatia A" de `src/app/confirmacoes-mapa.ts`, a de efeito externo ou financeiro. As 5 confirmações da amostra continuam abertas:
+   - Drawer da ficha do aluno;
+   - Cancelar do diário;
+   - lote da fila de cobrança;
+   - revogar cobertura;
+   - "Retirar a conclusão".
+6. **Sem efeito na amostra:** a #145 (`Campo` com `aria-invalid`) também não moveu nenhum achado. A #155 só fechou junto com a #153 (L1328) e ficou parcial em 2519.
+
+#### 7.3.2 Contagens por estrato, antes e depois
+
+R = resolvido, P = parcial, A = aberto. A amostra tem 6 achados Média e 3 Baixa por área. A população é o total de achados do estrato no doc 42.
+
+| Área | Média antes R/P/A | Média depois R/P/A | Baixa antes R/P/A | Baixa depois R/P/A | População Média / Baixa |
+|---|---|---|---|---|---|
+| Alunos e turmas | 2 / 0 / 4 | **3 / 0 / 3** | 1 / 1 / 1 | **2 / 1 / 0** | 26 / 14 |
+| Secretaria | 0 / 1 / 5 | **1 / 1 / 4** | 0 / 0 / 3 | 0 / 0 / 3 | 22 / 9 |
+| Matrículas — entrada | 0 / 2 / 4 | **2 / 0 / 4** | 1 / 0 / 2 | 1 / 0 / 2 | 34 / 9 |
+| Matrículas — contrato | 0 / 1 / 5 | 0 / 1 / 5 | 1 / 0 / 2 | **2 / 0 / 1** | 30 / 16 |
+| Matrículas — ciclo | 1 / 2 / 3 | **2 / 2 / 2** | 0 / 0 / 3 | **1 / 0 / 2** | 62 / 12 |
+| Acadêmico — base | 0 / 0 / 6 | **1 / 0 / 5** | 0 / 0 / 3 | 0 / 0 / 3 | 56 / 5 |
+| Acadêmico — avaliações | 1 / 0 / 5 | **2 / 0 / 4** | 1 / 0 / 2 | 1 / 0 / 2 | 33 / 16 |
+| Acadêmico — recuperações | 0 / 1 / 5 | 0 / 1 / 5 | 0 / 1 / 2 | **2 / 0 / 1** | 44 / 19 |
+| Acadêmico — segundas chamadas | 1 / 0 / 5 | **2 / 1 / 3** | 1 / 0 / 2 | 1 / 0 / 2 | 33 / 19 |
+| Diário de aulas | 1 / 1 / 4 | **2 / 1 / 3** | 0 / 0 / 3 | 0 / 0 / 3 | 44 / 14 |
+| Financeiro | 2 / 0 / 4 | **3 / 0 / 3** | 0 / 2 / 1 | 0 / 2 / 1 | 32 / 24 |
+| Comercial | 2 / 2 / 2 | 2 / 2 / 2 | 1 / 0 / 2 | 1 / 0 / 2 | 28 / 11 |
+| Configuração | 0 / 2 / 4 | 0 / 2 / 4 | 0 / 1 / 2 | 0 / 1 / 2 | 36 / 30 |
+| Público e portal | 1 / 0 / 5 | **1 / 2 / 3** | 0 / 1 / 2 | 0 / 1 / 2 | 35 / 14 |
+| **Total** | **11 / 12 / 61** (84) | **21 / 13 / 50** (84) | **6 / 6 / 30** (42) | **11 / 5 / 26** (42) | **515 / 212** |
+
+Em negrito, os estratos que mudaram. Comercial e Configuração não mudaram nada.
+
+#### 7.3.3 Estimativa estratificada para os 727 (IC 95%)
+
+| Status | Antes (`6b105093`) | Depois (`e5418550`) | ≈ achados, antes → depois |
+|---|---|---|---|
+| Resolvido | 12,6% (7,1–18,1%) | **24,9% (17,6–32,1%)** | 92 → **181** |
+| Parcial | 16,3% (9,6–22,9%) | **16,2% (9,6–22,8%)** | 118 → **118** |
+| Aberto | 71,1% (63,1–79,2%) | **58,9% (50,3–67,5%)** | 517 → **428** |
+
+- **Sem as 2 reclassificações:** resolvido 24,0% (16,8–31,2%), ≈ 174; parcial 16,2%, ≈ 118; aberto 59,8% (51,2–68,4%), ≈ 435.
+- **Amostra aleatória simples, sem peso (só referência):** 76/126 = 60,3% abertos (Wald 51,8–68,9%). Antes eram 72,2%.
+- **Queda pareada de "aberto":** 12,2 p.p., IC 95% 6,4–18,0%, ≈ 89 achados. É a mesma estimativa estratificada, aplicada à variável "era aberto e deixou de ser".
+- **Limites do intervalo:**
+  - como no doc 43, um estrato com 0 ou 3 de 3 contribui com variância zero, o que deixa o intervalo otimista;
+  - com 6 e 3 achados por estrato, o número de cada área é indicativo, não estimativa.
+
+#### 7.3.4 Padrões entre os que continuam abertos ou parciais
+
+São 94 achados não resolvidos: 76 abertos e 18 parciais. Cada um recebeu até 2 etiquetas; o "(p)" marca os parciais.
+
+| Padrão | Achados | Quantos | O que se repete |
+|---|---|---|---|
+| **Texto e microcopy** | 257, 408, 420, 445, 645, 654, 718 (p), 829 (p), 869, 937, 1259, 1316, 1441, 1494, 1556 (p), 1617, 1765, 1803, 1854, 1890, 1913 (p), 2082 (p), 2272, 2432, 2652 (p), 2709 (p) | 26 | Rótulos que não dizem o que fazem: "Conferir e submeter" grava direto, "Próximos encontros" para página mais antiga, "se o horário a atingir", "Tentativa" que leva à designação. Também plurais "(s)", jargão ("identificador IANA", "fonte preservada a conferir"), slugs e valores crus (`fornecedor`, `VALIDADORES`, IDs de reserva e consumo) e frases longas sem marcador curto. |
+| **Layout e hierarquia** | 257, 270 (p), 378, 381, 420, 434 (p), 536, 551, 603, 693, 778, 829 (p), 1170, 1207, 1368, 1506, 1616, 1723, 1966, 1980, 2079, 2133, 2187 (p), 2458, 2486, 2712 (p) | 26 | Dado concatenado com "·" num `<li>` em vez de tabela ou `<dl>` (551, 1207, 2486, 829); estado crítico sem destaque, como "Prazo vencido", vigente ou expirada e urgência (378, 1616, 1723); fluxo sem andamento de etapas (603, 693); antes e depois só em prosa (1170); `<h1>` duplicado (1980, 2458). |
+| **Navegação e becos** | 445, 645, 654, 682, 762 (p), 1047, 1209, 1259, 1300, 1428, 1529, 1617, 1804, 1913 (p), 2079, 2219, 2326 (p), 2553 | 18 | Erro da página como `<p role="alert">` solto, sem `<h1>`, volta nem "Tentar de novo" (762, 1529, 1804, 2079 e, em parte, 381). Falta link para onde se resolve (445, 654, 682, 1300, 1913). Ainda há `window.location.assign` (1209), login sem `callbackUrl` (2553) e paginação só para frente em `/academico/calendario` (1047). |
+| **Feedback de ação** | 312, 377, 515, 534, 603, 937, 1316, 1354, 1556 (p), 1605, 1687 (p), 1952, 2430 (p), 2431, 2567, 2606 | 16 | Sucesso que só faz `router.refresh()`, sem mensagem nem `reset()` (1354, 1687 parcial). Mensagem fixa que ignora o modo (1316). Botão desabilitado sem dizer por quê (312, 534, 2431). Formulário que some sem explicação (377, 937). Revisão invalidada em silêncio (515). Resultado no fim da seção, longe da ação (1952). Status errado no público: `/pagar` só tem "pago/aberto" (2567) e o `sair` não confere `ok` (2606). |
+| **Validação de campo** | 312, 394, 534, 567, 630, 1157, 1748, 2130, 2206, 2431, 2501, 2652 (p), 2709 (p) | 13 | `<select>` que nasce numa decisão ("Aprovar e aplicar", "Presente") sem opção vazia (2130, 2501); `<select>` que executa a ação no `onChange` (2206); `min`/`max`/`pattern`/`title` ausentes (394, 567, 1157, 1748); só `issues[0]` e nada por campo (630); fuso em input + datalist (2652, 2709). |
+| **Dados não perdidos** | 242, 879, 1084, 1354, 1687 (p), 1836, 2519 (p) | 7 | Esc, fundo ou Cancelar descartam a edição (242, 1836). Formulário de nova versão não copia a anterior (879, 1084). O `useAvisoAoSair` (#155) cobre só o editor de templates do WhatsApp (2519). |
+| **Confirmação** | 242, 1258, 1836, 2018, 2244 | 5 | São a "fatia B" de `confirmacoes-mapa.ts`, ainda sem confirmação: aprovar e enviar lote de cobrança (2018), revogar cobertura (2244), "Retirar a conclusão" como primeira opção do select (1258) e o descarte de edição (242, 1836). |
+| **Acessibilidade** | 583, 630, 1980, 2206, 2219, 2272, 2458 | 7 | `role="alert"` por item e resumo sem `role` (583); dois `<h1>` na mesma rota (1980, 2458); falta `aria-current` ou `aria-expanded` (2219, 2272); erro sem `aria-invalid` nem foco (630). |
+| **Estado de rota** | 381, 762 (p), 1529, 1804, 2031 (p), 2190 (p) | 6 | Faltam `loading.tsx`/`error.tsx` com o formato do segmento (2031, 2190), e o erro de consulta devolvido como parágrafo (381, 762, 1529, 1804). |
+| **Fuso e data** | 394, 778, 1084, 1506, 1616 | 5 | O horário atual não é mostrado ao editar (1084, 394); falta data no título da versão (778); `CampoFuso` repetido em cada item (1506). |
+| **Outro** | 2354, 2572, 2584 | 3 | Lista de contratos sem estado da decisão (2354); `/pagar` sem `noindex` (2572); emoji em "Certificado autêntico ✅" (2584). |
+| **Mobile** | — | 0 | Nenhum achado da amostra é de mobile. |
+
+**Leitura.**
+- **Fecha em lote:** como no doc 43, o que fechou foi o que uma PR transversal resolve em lote:
+  - `FeedbackAcao` (#153);
+  - `formatarInstanteExibicao` e `CampoFuso` (#159);
+  - `Paginacao`/`PaginacaoFila` (#158/#161);
+  - `IdentificacaoRegistro` (#160).
+- **Continua aberto:** os padrões que exigem decisão tela a tela:
+  - texto e rótulo;
+  - estrutura da informação, ou seja, tabela em vez de `<li>` com "·";
+  - destino dos links;
+  - botões desabilitados sem motivo.
+
+  Com as categorias "texto", "layout" e "navegação", eles somam a maior parte dos 94 não resolvidos.
+- **Em lote, o que mais renderia:**
+  - o cabeçalho de erro com volta e "Tentar de novo" no lugar do `<p role="alert">` solto. São 4 abertos e 1 parcial na amostra, e o doc 43 já contava mais de 30 páginas de `/matriculas/[id]`;
+  - a fatia B da confirmação.
+
+#### 7.3.5 Tabela por achado
+
+Na ordem do doc 43 (linha L do doc 42). Os caminhos são relativos a `src/app/(app)/`, salvo os que começam com `app/`, `components/`, `lib/` ou `server/`, que são relativos a `src/`. Na coluna PR:
+- "—" quer dizer sem PR nova que mude o status;
+- "(antes)" marca a PR que já tinha resolvido antes do doc 43.
+
+| L | Severidade | Área | Veredito antigo | Veredito novo | Evidência atual | PR |
+|---|---|---|---|---|---|---|
+| 229 | Média | Alunos e turmas | resolvido | resolvido | `alunos/AlunosLista.tsx:141-143` "N–M de T alunos (encontrados) (de X no total)" acima da tabela, com `Paginacao` em `:198` | #92 (antes) |
+| 242 | Média | Alunos e turmas | aberto | aberto | `alunos/[id]/FichaAluno.tsx:260` `onClose` do Drawer limpa e fecha sem comparar `ed` com `valoresEd()`; `components/Drawer.tsx:38,46` Esc (useDialogo) e fundo fecham sem guarda | — |
+| 257 | Média | Alunos e turmas | aberto | aberto | `alunos/[id]/academico/page.tsx:34-37` lista "Escolha o contrato…", mas sem aviso quando falta `matriculaId` com 2+ vínculos; `academico/MudancasAcademicasPainel.tsx:72` só "Turma atual: {label}" sem contrato | — |
+| 268 | Média | Alunos e turmas | aberto | resolvido | `alunos/[id]/agenda-aditivo/page.tsx:17` `IdentificacaoRegistro` "Aluno desta agenda" com nome e link do aluno logo abaixo do `<h1>` (h1 continua genérico em `:16`) | #160 |
+| 270 | Baixa | Alunos e turmas | aberto | parcial | `alunos/[id]/agenda-aditivo/page.tsx:16` h1 `text-2xl` sem `font-medium` (peso 500 vem da base em `app/globals.css:143-153`); `:20` link `className="underline"` sem `text-brand-700`. Reclassificação, sem código novo | — (regra base do ganho rápido 9, `e9b1c29d`, anterior ao doc 43) |
+| 283 | Baixa | Alunos e turmas | parcial | resolvido | `alunos/[id]/creditos/[creditoId]/page.tsx:32` cobrança de origem por código · tipo · vencimento; `:33` aplicação/decisão remetidas ao acerto, sem UUID; `PropostaUsoCredito.tsx:20-22` cobrança por código; valores com `formatarMoeda` | #160 |
+| 312 | Média | Alunos e turmas | aberto | aberto | `alunos/[id]/movimentacoes/NovaPausa.tsx:68` botão "Registrar proposta…" só `disabled={ocupado}`; pendências listadas em `:66` sem aviso junto ao botão | — |
+| 326 | Média | Alunos e turmas | resolvido | resolvido | `alunos/[id]/portal/painel.tsx:53` `rotular(SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, troca.situacao)` | #138 (antes) |
+| 327 | Baixa | Alunos e turmas | resolvido | resolvido | `alunos/[id]/portal/painel.tsx:51-53` todos os botões com `botaoClasses` (primário/secundário/perigo) | #114/#135 (antes) |
+| 377 | Média | Secretaria | aberto | aberto | `secretaria/reservas/ConferirReserva.tsx:51-57` resultado só em `acao.sucesso` local; `secretaria/reservas/page.tsx:31` desmonta o componente quando `podeConferir` vira falso após o refresh | — |
+| 378 | Média | Secretaria | aberto | aberto | `secretaria/reservas/page.tsx:28` " · Prazo vencido" concatenado no fim da linha de prazo/fuso, sem destaque | — |
+| 381 | Baixa | Secretaria | aberto | aberto | `secretaria/reservas/page.tsx:14` erro devolve só `VoltarPara` + alerta, sem `<h1>`, sem as `<nav>` e sem "Tente novamente" | — |
+| 394 | Baixa | Secretaria | aberto | aberto | `secretaria/reservas/[id]/Formularios.tsx:30` date/time sem `min` nem `defaultValue`; prazo atual só fora do formulário em `secretaria/reservas/[id]/page.tsx:18` | — |
+| 408 | Baixa | Secretaria | aberto | aberto | `secretaria/reservas/particulares/[id]/page.tsx:16` `<h1>Resolução da reserva particular</h1>` sem aluno nem matrícula; identificação só via link em `:21` | — |
+| 419 | Média | Secretaria | aberto | resolvido | `secretaria/desistencias/page.tsx:32` `PaginacaoFila` com "← Anterior" e "Próxima →" reais (cursor `antes`/`depois` em `server/matricula/desistencia-administrativa-fila.ts:106-107`) | #158, #161 |
+| 420 | Média | Secretaria | aberto | aberto | `secretaria/desistencias/page.tsx:27-30` as quatro frases longas continuam sem marcador curto | — |
+| 434 | Média | Secretaria | parcial | parcial | `secretaria/envios-portal/ConciliacaoEnvio.tsx:25` botões com `botaoClasses` (primário vs secundário), mas os dois `CampoTexto` seguem `className="block w-full border"` sem raio nem padding | — |
+| 445 | Média | Secretaria | aberto | aberto | `secretaria/avisos-agenda/page.tsx:33` `<li>` de avisos só com aluno, canal, situação e data; sem link à matrícula nem referência ao encontro (as pendências têm link) | — |
+| 504 | Baixa | Matrículas — entrada | resolvido | resolvido | `matriculas/[id]/reserva/ReservarFormulario.tsx:17` CampoTexto `minLength={5}` exibe "Mínimo 5 caracteres · x/2000" | #121 (antes) |
+| 515 | Média | Matrículas — entrada | aberto | aberto | `matriculas/[id]/nova-reserva/Formulario.tsx:29` `invalidar()` zera revisão/conferido sem mensagem; chamado nos campos em `:71-74` | — |
+| 534 | Média | Matrículas — entrada | aberto | aberto | `matriculas/[id]/preparacao/DecidirPreco.tsx:23` Aprovar desabilitado por `!podeAprovar` sem motivo; `:22` CampoTexto sem `minLength` (só contador x/2000, sem "mínimo 5") | — |
+| 536 | Média | Matrículas — entrada | aberto | aberto | `matriculas/[id]/preparacao/page.tsx:25` link "Pedido de desistência da preparação" logo após o cabeçalho, mesmo estilo de `:59` | — |
+| 549 | Média | Matrículas — entrada | parcial | resolvido | `matriculas/[id]/emissao/page.tsx:23` conferência por `formatarInstanteExibicao` com fuso e origem; vencimentos `formatarDataCivil` em `:23` e `:32` | #159 |
+| 551 | Média | Matrículas — entrada | aberto | aberto | `matriculas/[id]/emissao/page.tsx:32` plano ainda em `<ul>` com tipo/valor/vencimento/etapa/cobertura/minutos concatenados por "·", sem total | — |
+| 567 | Baixa | Matrículas — entrada | aberto | aberto | `matriculas/[id]/pagador/PagadorFormulario.tsx:66` telefone com `pattern` e só placeholder; sem `title` nem texto auxiliar | — |
+| 582 | Média | Matrículas — entrada | parcial | resolvido | `matriculas/[id]/entrada-particular/page.tsx:19` "Matrícula {codigo ?? "sem código"}" (sem UUID); vencimento `formatarDataCivil` em `:27` | #160 |
+| 583 | Baixa | Matrículas — entrada | aberto | aberto | `matriculas/[id]/entrada-particular/page.tsx:25` `role="alert"` por pendência; resumo em `:20` sem `role` | — |
+| 603 | Média | Matrículas — contrato | aberto | aberto | `matriculas/[id]/contrato/page.tsx:30-36` só VoltarPara, h1, links e parágrafo genérico; nenhuma etapa do contrato (prévia/envio/assinatura/aceite) | — |
+| 608 | Baixa | Matrículas — contrato | resolvido | resolvido | `matriculas/[id]/page.tsx:10-18` hub "Seções da matrícula"; `matriculas/[id]/layout.tsx:32-41` cabeçalho com link ao hub e abas; `contrato/page.tsx:31` VoltarPara | #90 (antes) |
+| 630 | Média | Matrículas — contrato | aberto | aberto | `matriculas/[id]/contrato/previas/[previaId]/participantes/Formulario.tsx:45` só `issues[0]?.message`; erro em `:75` depois do fieldset, sem `aria-invalid` por campo nem foco | — |
+| 645 | Baixa | Matrículas — contrato | aberto | aberto | `matriculas/[id]/contrato/originais/[artefatoId]/page.tsx:49-50` PDF com `target="_blank"`; "Baixar auditoria preservada" sem `download` nem formato | — |
+| 654 | Média | Matrículas — contrato | aberto | aberto | `matriculas/[id]/contrato/substituicoes/page.tsx:30` frase única; sem `d.fonte.estado` nem link para o original | — |
+| 682 | Média | Matrículas — contrato | aberto | aberto | `matriculas/[id]/contrato/aditivos/page.tsx:25-27` nenhum link para `aditivos/agenda` (nem em `Formularios.tsx`); `?agenda=` só lido em `:20` | — |
+| 693 | Média | Matrículas — contrato | aberto | aberto | `matriculas/[id]/contrato/aditivos/[propostaId]/page.tsx:33-51` seções em sequência plana; nenhum `AndamentoAditivo` | — |
+| 705 | Baixa | Matrículas — contrato | aberto | resolvido | `matriculas/[id]/contrato/aditivos/[propostaId]/alcadas/Formulario.tsx:28` `FeedbackAcao` separa erro (`role="alert"`, vermelho) de sucesso (`role="status"`, verde) | #153 |
+| 718 | Média | Matrículas — contrato | parcial | parcial | `matriculas/[id]/contrato/aditivos/[propostaId]/originais/[artefatoId]/page.tsx:68-69` estado rotulado e ambiente teste/produção; `Fornecedor: {processo.fornecedor}` e `{conclusao.fornecedor}` crus | #138 (antes) |
+| 762 | Média | Matrículas — ciclo | parcial | parcial | `matriculas/[id]/desistencia/page.tsx:23` ainda `return <p role="alert">` solto, sem h1 nem "Tentar de novo"; o layout `matriculas/[id]/layout.tsx:26` só dá casca quando há cabeçalho; não há `matriculas/[id]/error.tsx` (só o `error.tsx` raiz, que não é acionado porque a página não lança); o mesmo padrão segue em ~20 páginas do lote | — |
+| 776 | Média | Matrículas — ciclo | aberto | resolvido | `matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx:34` usa `FeedbackAcao`: erro em `role="alert"` vermelho (`components/FeedbackAcao.tsx:29`), sucesso em região polite verde (`:36`) | #153 |
+| 778 | Baixa | Matrículas — ciclo | aberto | aberto | `matriculas/[id]/desistencia/administracao/page.tsx:32` h3 só "Versão N · registrador"; `server/matricula/desistencia-administrativa.ts` não seleciona `criadoEm` (nenhuma ocorrência) | — |
+| 829 | Média | Matrículas — ciclo | parcial | parcial | `matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx:69` status rotulados e valores com `formatarMoeda`, mas o fundamento continua em parágrafos corridos (sem `<dl>`) com IDs crus de reserva, consumo, compra e documento | — |
+| 857 | Média | Matrículas — ciclo | resolvido | resolvido | `matriculas/[id]/compensacoes/[cobrancaId]/periodo-integral/PeriodoIntegral.tsx:142` início controlado por `useInicioDoPeriodo` e `min={periodo.min}` no fim | #78 (antes) |
+| 869 | Baixa | Matrículas — ciclo | aberto | aberto | `matriculas/[id]/condicoes/CondicoesFormulario.tsx:27` dia de vencimento `min=1 max=31` sem texto sobre meses com menos dias; a ajuda da linha 25 cobre só a cobertura | — |
+| 879 | Média | Matrículas — ciclo | aberto | aberto | `matriculas/[id]/condicoes-horas/CondicoesHoras.tsx:23,49-55` preço começa `""` e antecedência, data, hora e cláusulas sem `defaultValue`; nada copiado de `d.versoes[0].regras` | — |
+| 924 | Baixa | Matrículas — ciclo | aberto | resolvido | `matriculas/[id]/autorizacoes-comunicacao/page.tsx:32` usa `Paginacao` com "← Anterior · Página N · Próxima →" (`components/Paginacao.tsx:25-27`) | #158 |
+| 937 | Média | Matrículas — ciclo | aberto | aberto | `matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx:40` `{d.podeRegistrar && <form…>}` sem ramo alternativo; nenhuma explicação quando falso | — |
+| 1037 | Média | Acadêmico — base | aberto | resolvido | `academico/admissoes/excecoes/[reservaId]/page.tsx:22-24,38` criação, prazo, encontros e histórico via `formatarInstanteExibicao(…, fusoExibicao, "UTC")` com "(fuso; origem UTC)"; limite de entrada como data civil | #159 |
+| 1047 | Média | Acadêmico — base | aberto | aberto | `academico/calendario/page.tsx:29` só link "Versões anteriores" por cursor; sem "Anterior" nem link para a primeira página | — |
+| 1084 | Média | Acadêmico — base | aberto | aberto | `academico/calendario/[id]/replanejamento/EditorRevisao.tsx:47-51,56` ao escolher o encontro não aparece data/hora atual; novo ajuste nasce com `data: ""`, `horario: ""` | — |
+| 1157 | Média | Acadêmico — base | aberto | aberto | `academico/regras/[nivelId]/Formularios.tsx:23` `replace(",", ".")` troca só a primeira vírgula; `:46,49-50,59` campos `inputMode="decimal"` sem `pattern`/`title` nem validação no `onBlur` | — |
+| 1170 | Média | Acadêmico — base | aberto | aberto | `academico/regras/turmas/[turmaId]/page.tsx:21-24` alterações só em prosa ("Campos alterados: …") e dois `ResumoRegra` completos lado a lado, sem destaque nem tabela antes/depois | — |
+| 1207 | Média | Acadêmico — base | aberto | aberto | `academico/modalidades/[id]/quantidade/AlterarQuantidadeAulas.tsx:21` impactos em `<li>` com `<strong>`/`<br/>`/`<span>` concatenando causa e pendências; sem tabela nem contador de turmas com pendência | — |
+| 1209 | Baixa | Acadêmico — base | aberto | aberto | `academico/modalidades/[id]/quantidade/AlterarQuantidadeAulas.tsx:20` sucesso ainda faz `window.location.assign(...)` | — |
+| 1258 | Baixa | Acadêmico — base | aberto | aberto | `academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx:139` "Retirar a conclusão, sem nova fonte" segue como primeira `<option>` do mesmo `<select>`; sem fieldset de radio nem alerta do efeito | — |
+| 1259 | Baixa | Acadêmico — base | aberto | aberto | `academico/reposicoes/correcoes/[reposicaoId]/page.tsx:44-46` "Conclusão seguinte" antes de "Conclusão anterior"; sem "Versão N de M"; "Correções anteriores" (`:48`) sem distinção visual | — |
+| 1300 | Média | Acadêmico — avaliações | aberto | aberto | `academico/avaliacoes/[alocacaoId]/page.tsx:57,62` `<li>{rótulo}: {n}.</li>` das pendências operacionais e de segunda chamada, sem `<Link>` para resolver | — |
+| 1316 | Média | Acadêmico — avaliações | aberto | aberto | `academico/avaliacoes/[alocacaoId]/[codigo]/Formularios.tsx:66` sucesso fixo "Versão registrada. A submissão exige conferência…" mesmo com `modo=rascunho` (`:85`) | — |
+| 1328 | Média | Acadêmico — avaliações | aberto | resolvido | `academico/avaliacoes/[alocacaoId]/[codigo]/designacao/Formulario.tsx:75` `FeedbackAcao` (erro `role="alert"` vermelho / sucesso polite verde); `:51` limpa campos sem remontar; `designacao/page.tsx:33` sem `key` de versão | #153, #155 |
+| 1342 | Baixa | Acadêmico — avaliações | resolvido | resolvido | `academico/avaliacoes/[alocacaoId]/equivalencia/page.tsx:16` `notFound()` cai em `(app)/not-found.tsx:8-16` dentro do shell; mensagem genérica e volta para /home, sem not-found próprio do segmento | #64 (antes) |
+| 1353 | Média | Acadêmico — avaliações | resolvido | resolvido | `academico/avaliacoes/[alocacaoId]/extras/page.tsx:25` e `extras/Formularios.tsx:24` `rotular(HABILIDADE_LABEL, …)` no título e no select | #138 (antes) |
+| 1354 | Média | Acadêmico — avaliações | aberto | aberto | `academico/recuperacoes/planos/[propostaId]/Formularios.tsx:23` `if (!r.ok) setErro(r.erro); else router.refresh();` sem sucesso nem `reset()` | — |
+| 1368 | Baixa | Acadêmico — avaliações | aberto | aberto | `academico/avaliacoes/[alocacaoId]/fechamento/ExcecaoFrequencia.tsx:21-26` tipo sem `percentual`/`minimoPercentual`; bloco de decisão `:140-157` sem os números (só em `fechamento/page.tsx:75`) | — |
+| 1428 | Média | Acadêmico — avaliações | aberto | aberto | `academico/equivalencias/page.tsx:19` sem `matriculaId` só `VoltarPara` + "Selecione uma matrícula…", sem busca nem redirect; `lib/nav.ts` sem `/academico/equivalencias` | — |
+| 1441 | Baixa | Acadêmico — avaliações | aberto | aberto | `academico/equivalencias/[propostaId]/page.tsx:94` células "Conferir regra preservada" / "Fonte preservada a conferir" | — |
+| 1469 | Baixa | Acadêmico — recuperações | parcial | resolvido | `academico/recuperacoes/page.tsx:31` `<Paginacao>` numerada com "← Anterior" real (`components/Paginacao.tsx:25`); `:29` "Ir para a primeira página" na página vazia | #158 |
+| 1494 | Baixa | Acadêmico — recuperações | aberto | aberto | `academico/recuperacoes/correcoes/[notaId]/Formularios.tsx:36` "{n} plano(s) aprovado(s) de recuperação vinculado(s)" | — |
+| 1506 | Média | Acadêmico — recuperações | aberto | aberto | `academico/recuperacoes/AgendaPublicada.tsx:27,31` `CampoFuso` e botão "Atualizar situação" por item; instanciado em `designadas/page.tsx:24` sem modo compacto | — |
+| 1529 | Média | Acadêmico — recuperações | aberto | aberto | `academico/recuperacoes/planos/autorizacoes-preparacao/page.tsx:14` `alocacaoId` vazio via `lerTexto`; `:19` erro como `<p role="alert">` solto, sem cabeçalho nem volta para os planos | — |
+| 1556 | Média | Acadêmico — recuperações | parcial | parcial | `academico/recuperacoes/planos/[propostaId]/autorizacao-reserva/page.tsx:34` situação com `STATUS_MATRICULA_LABEL`; `:36` e `:42` "nas condições atuais" sem motivo específico | #138 (antes) |
+| 1605 | Média | Acadêmico — recuperações | aberto | aberto | `academico/recuperacoes/tentativas/[itemReservaId]/agenda/page.tsx:28` `ProporAgenda` sem `PreviaAgenda`; conflitos só em `:37` (pendências após guardar) | — |
+| 1616 | Média | Acadêmico — recuperações | aberto | aberto | `academico/recuperacoes/tentativas/[itemReservaId]/autorizacao/page.tsx:36-40` histórico com "Prazo até…" igual para todas, sem vigente/expirada | — |
+| 1617 | Média | Acadêmico — recuperações | aberto | aberto | `academico/recuperacoes/tentativas/[itemReservaId]/autorizacao/page.tsx:29` `VoltarPara` href `…/designacao` com rótulo "Tentativa" | — |
+| 1645 | Baixa | Acadêmico — recuperações | aberto | resolvido | `designacao/propostas/page.tsx:26` e `PreviaSubstituicao.tsx:28` `<h2 className="text-xl">` sem a classe, mas o peso 500 vem da regra base de `globals.css:143-153` (h1–h6); o título renderiza no padrão da área. Reclassificação, sem código novo | — (regra base do ganho rápido 9, `e9b1c29d`, anterior ao doc 43) |
+| 1687 | Média | Acadêmico — segundas chamadas | aberto | parcial | `academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes/Formulario.tsx:27-28,39` sucesso "Realização especial autorizada." via FeedbackAcao (role="status", separado do erro), mas sem `form.reset()`, sem o prazo na mensagem e sem foco na mensagem | #153 |
+| 1698 | Baixa | Acadêmico — segundas chamadas | resolvido | resolvido | `lib/labels.ts:278` mapa único `STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL`, usado em `historico/page.tsx:32`, `agendas/page.tsx:13` e `minhas/page.tsx:28` | #138 (antes) |
+| 1723 | Média | Acadêmico — segundas chamadas | aberto | aberto | `academico/segundas-chamadas/pendentes-agenda/page.tsx:38` "Prazo atual: ..." segue em texto corrido junto da situação; sem badge de urgência nem filtro `?urgencia` | — |
+| 1748 | Média | Acadêmico — segundas chamadas | aberto | aberto | `academico/segundas-chamadas/minhas/[reservaId]/Formulario.tsx:64` nota com `inputMode="decimal"` sem type=number/min/max/step; `onSubmit` (:48-58) não valida a escala nem marca aria-invalid | — |
+| 1765 | Baixa | Acadêmico — segundas chamadas | aberto | aberto | `academico/segundas-chamadas/propostas/[propostaId]/agenda/page.tsx:53` mesma frase "Proposta histórica sem referência de calendário; ela pode ser rejeitada, mas exige nova proposta…" | — |
+| 1788 | Média | Acadêmico — segundas chamadas | resolvido | resolvido | `academico/segundas-chamadas/reservas/[reservaId]/cancelamento/page.tsx:18` `rotular(STATUS_ENCONTRO_LABEL…)` e `rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL…)` | #138 (antes) |
+| 1800 | Média | Acadêmico — segundas chamadas | aberto | resolvido | `academico/segundas-chamadas/reservas/[reservaId]/remarcacao/Formulario.tsx:54` `CampoFuso` com `padrao={fusoInicial}`, que `page.tsx:61` preenche por `fusoInicialDeEntrada(fusoInstitucional, preferência)`; validação IANA no próprio campo | #159 |
+| 1803 | Média | Acadêmico — segundas chamadas | aberto | aberto | `academico/segundas-chamadas/reservas/[reservaId]/remarcacao/Formulario.tsx:56` rótulo "Justificativa de exceção não letiva, se o horário a atingir" inalterado; campo sempre visível | — |
+| 1804 | Baixa | Acadêmico — segundas chamadas | aberto | aberto | `academico/segundas-chamadas/reservas/[reservaId]/remarcacao/page.tsx:44` ramo de erro devolve `<p role="alert">` solto, sem link "Acadêmico" nem identificação | — |
+| 1836 | Média | Diário de aulas | aberto | aberto | `diario/DiarioAulas.tsx:153` Cancelar = `onClick={() => { consulta.current++; setAberto(false); }}` sem confirmação (a #155 só protege a troca de data, :142-143) | — |
+| 1839 | Média | Diário de aulas | aberto | resolvido | `diario/layout.tsx:18` sub-seções viram `SubTabs` (secoes.ts); `diario/page.tsx:18` restou um único link `inline-block` | #143 |
+| 1854 | Baixa | Diário de aulas | aberto | aberto | `diario/encontros/page.tsx:29` link de paginação ainda "Próximos encontros" | — |
+| 1890 | Média | Diário de aulas | aberto | aberto | `diario/encontros/[id]/remarcacao/RemarcacaoParticular.tsx:31` botão "Conferir e submeter proposta" registra direto; conferência só no cartão criado (:37-38) | — |
+| 1913 | Média | Diário de aulas | parcial | parcial | `diario/encontros/[id]/gravacao/page.tsx:9,13` `VoltarPara href="/diario"`, mas a mensagem segue sem próximo passo nem link para `/diario/encontros/{id}` | — |
+| 1925 | Média | Diário de aulas | resolvido | resolvido | `diario/pendencias/page.tsx:30` `border-amber-200 bg-amber-50 … text-amber-700` (shades mapeadas) | #67 (antes) |
+| 1952 | Média | Diário de aulas | aberto | aberto | `diario/regularizacoes-gravacao/RegularizacoesGravacao.tsx:22` `<MensagemStatus texto={feito} />` e `<p role="alert">` continuam no fim da seção, após a lista de propostas | — |
+| 1966 | Baixa | Diário de aulas | aberto | aberto | `diario/excecoes-gravacao/page.tsx:28` `<h2>{p.professor} · {exibicao.texto}</h2>` sem turma nem resumo antes do `<details>` (:30) | — |
+| 1980 | Baixa | Diário de aulas | aberto | aberto | `diario/reposicoes/ReposicaoDocente.tsx:26,34` `<h1 className="text-xl font-medium">` nos cartões, junto do `<h1>` de `reposicoes/page.tsx:18` | — |
+| 2018 | Média | Financeiro | aberto | aberto | `financeiro/FilaCobranca.tsx:236-240,360` "Aprovar e enviar lote" chama `enviarLote` → `aprovarLoteCobranca` direto; ConfirmarAcao (:451) só cobre o envio individual | — |
+| 2021 | Média | Financeiro | resolvido | resolvido | `financeiro/FilaCobranca.tsx:646,710` só shades mapeadas (`text-amber-800`, `bg-amber-600`, `bg-success`, `border-danger`); sem `text-red-800`/`text-blue-800`/`-500` fora do mapa (`tailwind.config.ts:48-51`) | #67 (antes) |
+| 2031 | Baixa | Financeiro | parcial | parcial | `financeiro/acertos-taxa/` sem `loading.tsx`/`error.tsx`; só os genéricos `(app)/loading.tsx` e `(app)/error.tsx` (sem link "Voltar ao Financeiro") | #64 (antes) |
+| 2041 | Média | Financeiro | aberto | resolvido | `financeiro/acertos-taxa/DecisaoTaxa.tsx:37` e `ImpactosTaxaOperacao.tsx:42` usam `FeedbackAcao` (erro `role="alert"` vermelho, sucesso em região polite verde) | #153 |
+| 2079 | Média | Financeiro | aberto | aberto | `financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx:27,30` sem versão ou com falha devolve `<p>` solto, sem `VoltarPara`/h1 nem link ao aditivo (cabeçalho só em :36-37) | — |
+| 2082 | Baixa | Financeiro | parcial | parcial | `financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx:47` título "Proposta de <instante> · <rótulo>": sem id cru e com data, mas sem autor nem "v<N>" | #160 |
+| 2130 | Média | Financeiro | aberto | aberto | `financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx:33` `<select name="decisao">` começa em "Aprovar e aplicar", sem opção vazia nem `required` | — |
+| 2133 | Baixa | Financeiro | aberto | aberto | `financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx:116` `CampoTexto` de Motivo/Evidência do complemento sem `className` nem `rows` (CampoTexto não aplica classe padrão) | — |
+| 2145 | Média | Financeiro | resolvido | resolvido | `financeiro/permuta/PermutaOperacional.tsx:134,147,155` saldo, limite e valor aplicados com `formatarMoeda` | #93 (antes) |
+| 2187 | Média | Comercial | parcial | parcial | `leads/LeadsLista.tsx:116,168-170,189-192` busca, contagem e vazio distinto; `:177-182` `th` estáticos, sem ordenação por coluna | #95 (antes) |
+| 2190 | Média | Comercial | parcial | parcial | `leads/(lista)/loading.tsx` e `(app)/error.tsx` ("Tentar de novo"/reset) existem; `leads/[id]/` sem `loading.tsx` próprio (só `layout.tsx`) | #64/#81 (antes) |
+| 2206 | Média | Comercial | aberto | aberto | `leads/[id]/FichaLead.tsx:383-394` `<select value="">` executa `moverEtapa` no `onChange` | — |
+| 2207 | Média | Comercial | resolvido | resolvido | `leads/[id]/FichaLead.tsx:782-783` `border-blue-200` (mapeado) e título `text-blue-700` | #67 (antes) |
+| 2219 | Baixa | Comercial | aberto | aberto | `leads/[id]/contratacao/page.tsx:22` lista de ofertas como `<Link className="underline">` sem destaque nem `aria-current`; seleção só no h2 de :24 | — |
+| 2244 | Média | Comercial | aberto | aberto | `carteiras/CoberturasPainel.tsx:25,36` "Revogar" chama `revogar(c.id)` → `revogarCobertura` num clique, sem confirmação | — |
+| 2271 | Média | Comercial | resolvido | resolvido | `empresas/EmpresasCliente.tsx:123-178` busca, situação e colunas ordenáveis; `server/empresas/consultas.ts:39-42` `orderBy` da URL, `skip`/`take` | #98/#136 (antes) |
+| 2272 | Baixa | Comercial | aberto | aberto | `empresas/EmpresasCliente.tsx:89` toggle `setCriando((v) => !v)` com rótulo fixo "Nova empresa", sem `aria-expanded` | — |
+| 2303 | Baixa | Comercial | resolvido | resolvido | `inbox/AtendimentosPainel.tsx:112,127` revisão de falha usa `FeedbackAcao` com erro e sucesso separados | #87 (antes) |
+| 2326 | Baixa | Configuração | parcial | parcial | `configuracao/layout.tsx:16-19` h1 "Configuração" e subtítulo fixos (trilha fica no shell, #99); `configuracao/contratos/[codigo]/page.tsx:29` mantém link ad hoc "Todos os modelos" em vez de `VoltarPara` | — |
+| 2354 | Média | Configuração | aberto | aberto | `configuracao/contratos/page.tsx:14` só "última versão N, M versões registradas", sem badge de estado; `server/contratos/modelos.ts:50-52` `groupBy` por código sem `decisao` nem ordenação por "aguardando" | — |
+| 2430 | Média | Configuração | parcial | parcial | `configuracao/paises/PaisesPainel.tsx:200-202` `checked` ainda vem de `p.produtosOferecidos` (props) e só muda após `router.refresh()`; checkbox desabilitado durante a ação, sem estado otimista | — |
+| 2431 | Média | Configuração | aberto | aberto | `configuracao/paises/PaisesPainel.tsx:171-177` "Ativar" só desabilita com `acao.ocupado`; moeda/documento/preço não aparecem na linha nem no `title` | — |
+| 2432 | Baixa | Configuração | aberto | aberto | `configuracao/paises/PaisFormulario.tsx:15,151-153` `<option>` renderiza `{v}` direto de `VALIDADORES` (slugs crus `cpf`, `cedula_cr`...) | — |
+| 2458 | Baixa | Configuração | aberto | aberto | `configuracao/operacao/avisos-diario/page.tsx:12` `<h1 className="text-2xl">` abaixo do `<h1>` do layout (`configuracao/layout.tsx:16`) | — |
+| 2486 | Média | Configuração | aberto | aberto | `configuracao/migracao/[loteId]/page.tsx:24` lista única de linhas; pendências (`text-amber-800`) e colisões (`text-red-700`) no fim de cada `<li>`, sem contadores, filtros nem ordenação | — |
+| 2501 | Média | Configuração | aberto | aberto | `configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx:15` select "Participação" abre em `<option value="PRESENTE">`, sem opção vazia; validação em `:14` aceita o padrão | — |
+| 2519 | Média | Configuração | parcial | parcial | `configuracao/whatsapp/TemplatesPainel.tsx:59` `useAvisoAoSair` só no editor de templates; Política, Comercial, Números, Avisos da agenda e Régua sem aviso ao sair nem indicador "alterações não salvas" (uma rota por seção desde #100) | #155 |
+| 2553 | Média | Público e portal | aberto | aberto | `app/login/page.tsx:33` `router.push("/home")` fixo; `server/_shared/sessao.ts:140,147` `redirect("/login")` sem `callbackUrl` | — |
+| 2567 | Média | Público e portal | aberto | aberto | `app/pagar/[token]/PagarCliente.tsx:23-24` `status === "PAGO" ? "pago" : "aberto"`; cancelada/vencida exibida como aberta | — |
+| 2572 | Baixa | Público e portal | aberto | aberto | `app/pagar/[token]/page.tsx:1-9` sem `export const metadata` nem `robots`; nenhuma regra noindex em `app/pagar` | — |
+| 2584 | Baixa | Público e portal | aberto | aberto | `app/certificado/[codigo]/page.tsx:19` "Certificado autêntico ✅" com emoji, sem ícone Tabler | — |
+| 2606 | Média | Público e portal | aberto | aberto | `app/portal-aluno/sair.tsx:8` `await fetch(...)` sem checar `ok` nem `catch`; `router.replace` sempre | — |
+| 2652 | Média | Público e portal | aberto | parcial | `app/portal-aluno/preferencias-formulario.tsx:22-23` `CampoFuso` segue input + datalist (rótulos nas opções, sem select/"Outro fuso"); erro virou "Não reconhecemos esse fuso. Escolha um da lista..." (`server/operacao/fuso.ts:14`), mas a dica ainda cita "identificador IANA" | #159 |
+| 2682 | Média | Público e portal | resolvido | resolvido | `app/portal-aluno/reposicoes/[id]/page.tsx:65` matrícula via `rotular(STATUS_MATRICULA_LABEL)`; `relatar-indisponibilidade.tsx:53` situação rotulada; consequência da matrícula não ativa em `page.tsx:61` (só para o relato) | #138/#93 (antes), #160 |
+| 2709 | Média | Público e portal | aberto | parcial | `preferencias/FusoExibicaoFormulario.tsx:25-26` `CampoFuso` input + datalist (sem select/"Outro"); erro reescrito via `MSG_FUSO_NAO_RECONHECIDO`; dica ainda diz "identificador IANA" | #159 |
+| 2712 | Baixa | Público e portal | parcial | parcial | `preferencias/FusoExibicaoFormulario.tsx:27` sucesso via `FeedbackAcao`; botão "Salvar preferência" ainda `variante: "secundario"` | #87 (antes) |
+
+#### 7.3.6 Casos limítrofes e decisões
+
+- **Reclassificações (L270, L1645).** Não houve mudança de código. O doc 43 cobrava `font-medium` na classe, mas a regra base de `globals.css` já dá peso 500 a h1–h6 desde antes da medição. Os dois achados ficaram assim:
+  - L1645 pedia só o peso, então passou a resolvido;
+  - L270 também pedia cor de marca no link, então ficou parcial.
+- **Resolvidos com redação diferente da sugerida:**
+  - **L268:** o nome do aluno aparece num bloco `IdentificacaoRegistro` logo abaixo do `<h1>`, e não no próprio `<h1>`.
+  - **L582:** o texto que sobra quando falta o código é "sem código", e não "em preparação".
+  - **L283:** nenhum UUID aparece mais na tela, mas o id não foi para `title`.
+
+  Nos três casos, o defeito descrito não ocorre mais.
+- **L1800 (resolvido) e L2652/L2709 (parciais).** O `CampoFuso` (#159) continua sendo input + datalist, por decisão registrada em `components/CampoFuso.tsx:14-17`.
+  - Na remarcação, o defeito era o campo vazio com erro só no servidor. Agora o campo vem pré-preenchido com o fuso da escola ou a preferência e é validado no cliente.
+  - No portal e em `/preferencias`, a recomendação era um `<select>` com "Outro fuso". A filtragem do datalist por `value` no Firefox/Safari continua, e a dica ainda diz "identificador IANA".
+- **L1469 (resolvido).** Com itens na lista, não há link "Primeira página", mas há "← Anterior" página a página, o que elimina o "só avança".
+- **L1342.** Foi mantido resolvido. O 404 fica dentro do shell, mas a mensagem é genérica e volta para `/home`. É limítrofe com parcial.
+- **Arquivos tocados sem mudar o veredito:** L515, L879, L937, L1084, L1209, L1836, L2079 e L2082. As PRs #153, #155, #159 e #160 mexeram nesses arquivos por outros motivos, e o defeito apontado não mudou.
+- **Vistos de passagem, fora da amostra:**
+  - `recuperacoes/page.tsx:27` imprime `{item.estado}` cru;
+  - `designadas/page.tsx:23` mostra `i.matriculaId` cru quando falta o código;
+  - o emoji ✅ aparece também em `app/pagar/[token]/PagarCliente.tsx:58`.
+
+#### 7.3.7 Como reproduzir
+
+```
+node scripts/medicao-ux/amostra.mjs 6 3 42      # a mesma amostra de 126
+```
+
+O cálculo usou `estimativaEstratificada` (`scripts/medicao-ux/nucleo.mjs:247`), com as populações por área × severidade de `achadosDoRepositorio()`. Com a coluna "veredito antigo", ele devolve exatamente os 71,1% (63,1–79,2%) do doc 43. Com a coluna "veredito novo", devolve os 58,9% (50,3–67,5%) acima.
+
+### 7.4 Correções a esta medição
+
+Erros ou imprecisões das seções 3–5, achados na remedição. As seções 1–6 não foram reescritas; a correção vale a partir daqui.
+
+- **L1070 (§4.1).** A evidência diz que o botão desabilitado "não remete ao replanejamento". Mas a página já tinha, desde `afc9a42d` (16/09, antes da base), o link "Conferir proposta de novas datas e conflitos" para `/replanejamento` (`calendario/[id]/page.tsx:35`). O status "aberto" continua certo por outro motivo: a contagem de encontros `PREVISTO` segue sem filtro de calendário ou turma (`page.tsx:18`), e o bloco de decisão continua oferecendo o botão desabilitado (`:42`).
+- **L577 (§4.1).** A evidência cita só `entrada-particular`. O achado do doc 42 inclui o mesmo link morto para `/financeiro` em `matriculas/[id]/emissao/page.tsx:23`, no ramo EMITIDA, cuja guarda é só SECRETARIA_ACADEMICA (`:13`). Esse link continua lá, e por isso o achado fica parcial depois da #160, e não resolvido.
+- **L1059 (§4.1).** "Nenhum `beforeunload`" estava certo em 07/10. A #155 criou o `useAvisoAoSair`, mas ele cobre só F5, fechar a aba e sair do site. O cenário do doc 42 (o link interno "Voltar ao calendário" ou a Sidebar) ainda perde tudo em silêncio, e o próprio código registra isso como pendência (`src/lib/aviso-ao-sair.ts:12-13`). Por isso L1059 conta como parcial, e não como resolvido. O mesmo vale para L2367.
+- **L1901 (§4.1).** A evidência diz que as cores fora do mapa foram removidas pela #67. As bordas `border-blue-200` e `border-green-200` continuam em `CorrecaoAula.tsx:364,366`, em vez dos `border-brand-200`/`border-gray-200` pedidos. Elas passam porque `blue.200` e `green.200` foram mapeados em `tailwind.config.ts:49,52` (#67). O status "resolvido" está certo; a evidência é que estava imprecisa.
+- **L270 e L1645 (§5.1).** Os dois receberam "aberto" por faltar `font-medium` na classe do título. Mas o peso já vinha da regra base de `globals.css:143-153` (ganho rápido 9, `e9b1c29d`, anterior ao doc 43), que dá peso 500 a h1–h6, como a própria seção 3 registra em "Headings sem `font-medium`". L1645 pedia só o peso e passa a resolvido. L270 também pedia cor de marca no link e fica parcial. É reclassificação, sem código novo; sem ela, a estimativa de abertos seria 59,8% (§7.3).
+- **Atribuições erradas a PRs (§3).**
+  - A regra global de `focus-visible` (7.4, "✅ (#71)") e o token `--border-control` ("token novo da #71") vieram da #65/#66 (`373dc1de`), e não da #71, que nem toca `globals.css`. A #65 chegou à `main` pelo merge da #66 (doc 44 §3).
+  - A trava `responsivo.test.ts`, citada junto da #75 (7.5), nasceu na #94.
+
+  Detalhes no doc 44 §7.1.
+- **Ressalvas sem mudança de status.**
+  - **L2269:** a coluna virou "Faturas a receber", e não "Faturas a pagar", como recomendado; a ficha usa "Fechada — a pagar" para o mesmo status (`src/lib/labels.ts:455`).
+  - **L2229:** a validação no cliente de "Outro exige observação", também recomendada, nunca foi feita.
+  - **L2297:** além de o pagamento não prometer pausa, o retorno de `marcarConversaTratada` não é lido nem na promessa nem no pagamento (`InboxCliente.tsx:538-540` e `:600-605`), então uma recusa da action (`ok: false`) passa sem aviso.
+
+### 7.5 O que falta (atualiza a §6)
+
+**Itens da §6 em `e5418550`:**
+
+| Item da §6 | Situação | PR | O que resta |
+|---|---|---|---|
+| 1. `ConfirmarAcao` nas ações irreversíveis | entregue a fatia A (efeito externo ou financeiro) | #154 | **Fatia B, sem confirmação** (`src/app/confirmacoes-mapa.ts:11-13`): encerrar país, "Faltou" no check-in, vincular contato e opt-out na inbox, aprovar replanejamento, quantidade de aulas e presença histórica, desativar usuário, preço e idioma, e inativar empresa. "Aprovar e enviar lote" da fila de cobrança também vai direto (L2018 da amostra), e `enviarLote` não tem `try/catch`. Na ativação do WhatsApp, falta a estimativa numérica de alcance (L2517) |
+| 2. Erro e sucesso separados | entregue | #153 | 40 de 172 fluxos (23%) ainda terminam só em `router.refresh()`, longe da meta de < 10%. O `catch` de `ConferenciaRegraHistorica` e os `window.location.reload()` de `SegundaChamadaPainel` e `DecidirQuantidadeAulas` já foram corrigidos (L1183, L1671, L1219), mas `AlterarQuantidadeAulas.tsx:20` ainda faz `window.location.assign` no sucesso (L1209 da amostra) |
+| 3. Não perder o que foi digitado | entregue | #155 | 17 formulários com versão no `key` (exceções `VERSAO_PENDENTE`, de 22 exceções em `formularios-preservados.test.ts`). O aviso ao sair não cobre link interno (L1059, L2367), e não há rascunho persistido. Entre os painéis do WhatsApp, só o editor de templates tem aviso ao sair (L2519) |
+| 4. Paginação nos dois sentidos | entregue | #158, #161 | 4 de 37 arquivos ainda só com "Próxima". 26 telas (27 links) de versões e históricos por cursor andam num sentido só, ancoradas como pendência em `paginacao-dois-sentidos.test.ts`. Os 13 `*.int.test.ts` das duas PRs nunca rodaram (issue #162). Faltam filtros em envios do portal (L431) e nas agendas de segunda chamada (L1709) |
+| 5. Contraste | entregue | #156, #157 | `--border` e `--brand-border`, decorativos, seguem reprovando. `#fff/--brand` continua na conta do script, sem uso com texto |
+| 6. Fuso e instante | entregue | #159 | L1566 (`min` do novo prazo da prorrogação), L1747 (fuso e intervalo do encontro na realização da segunda chamada), L406 (todos os horários no fuso do primeiro) e L1256 (horário da validação ainda em UTC). `fusoIanaValido` (`src/server/operacao/fuso.ts:9`) recusa identificadores como `EST5EDT`. O idioma do país continua texto livre (L2429) |
+| 7. Becos sem saída e identificação do registro | entregue | #160 | 66 IDs crus e 12 telas de detalhe sem identificação, com teto na trava (`identificacao-registro.test.ts:378` e `:421`). Continua o link morto de `emissao/page.tsx:23` (L577), falta o caminho para a compensação (L934), e L1399 e L1722 ficaram parciais |
+| 8. Portal público | não iniciado | — | `/portal-aluno/ativar` (L2626, L2627), `/portal-aluno/recuperar` (L2639), `/pagar/[token]` só com "pago/aberto" (L2567 da amostra), `/login` sem `callbackUrl` (L2553 da amostra) |
+| 9. Consultas e dados no servidor | não iniciado | — | A fila de cobrança continua sem `take` (`listarFilaCobranca`, `src/server/cobrancas/consultas.ts:202`; a #144 trouxe o filtro na URL, não a paginação). Continuam também: o lote de migração sem `take` (L2483), a thread da inbox cortada em 300 mensagens (L2299), a importação de alunos sem deduplicação (L224) e a fila de envios do portal sem filtro de situação (L431). Os demais pontos do item (`/pipeline`, informes de pagamento, cobranças em `listarAlunos`) não foram reconferidos nesta remedição |
+| 10. Borda de rota restante | não iniciado | — | `<Suspense>` em 0 e `loading.tsx` em 9, sem mudança; `/configuracao` sem `loading.tsx` (L2324) |
+| 11. Média e Baixa | não iniciado | — | A §7.3 remediu a mesma amostra (semente 42), o que mede a evolução pareada. A amostra com outra semente não foi sorteada |
+
+**Achados Alta ainda abertos (40) e parciais (26), por padrão:**
+
+| Padrão | Abertos | Parciais | O que se repete |
+|---|---|---|---|
+| Inbox (WhatsApp) | 2295, 2296, 2298 | 2297, 2299 | Anexo e áudio enviados sem revisão; nenhum envio de template com a janela fechada; vínculo de contato e opt-out num clique, sem desvincular; promessa que anuncia "régua pausada" sem ler o retorno; thread cortada em 300 mensagens |
+| Portal do aluno (ativar e recuperar) | 2626, 2627, 2639 | 2593, 2676 | Token de ativação só em memória (um F5 queima o link); senha sem regra visível nem confirmação; "pedido enviado" mesmo com falha; segundo login sem explicação; relato de indisponibilidade escondido quando a gravação não abre |
+| Confirmação (fatia B e resumo do impacto) | 547, 715, 853, 1058, 1102, 1156, 1218, 2499, 2693 | 309, 531, 2281, 2428, 2517 | "Faltou" no check-in, presença histórica, quantidade de aulas, replanejamento, emissão sem total, condições formalizadas, regularização de período integral, remover período ou avaliação sem desfazer; entre os parciais, efetivar acerto de encerramento, decidir preço, encerrar país, inativar empresa e o alcance da ativação do WhatsApp |
+| Lote de migração | 2483 | — | Consulta sem `take` e o JSON de cada linha aberto fora de `<details>` |
+| Decidir sem ver o dado | 293, 666, 787, 891, 1411, 1437, 1785, 1864 | 703, 1399, 2065 | Coluna de contrato, comparação de textos, documentos sem link, casos do lote, horário das turmas, efeito do cancelamento, vínculos pendentes; calendário financeiro redigitado a cada versão |
+| Carregamento e feedback | 308, 363, 1231, 1863, 2017 | 225, 892, 1400, 2324 | Seções vazias até o clique, erro único fora da tela, botão apagado sem motivo, falha em texto cinza, cotação descartada em silêncio; confirmação que some no refresh |
+| Campos e validação | 224, 1014, 1035, 1230, 2412 | 1184, 2429 | Importação que duplica, data no passado aceita, `<select>` que nasce numa decisão ou num professor, senha sem `autoComplete`; idioma do país em texto livre |
+| Fuso e instante | 406, 1256 | 729, 1566, 1747 | Horários no fuso do primeiro, entrada em UTC, prazos e intervalos sem `min`/`max` |
+| Becos e caminho que falta | 431, 934, 1070, 2282 | 577, 1709, 1722 | Fila sem filtro de situação, compensação sem caminho, publicar calendário que nunca habilita, fechamento de fatura B2B sem tela; link morto da emissão, agendas sem busca, link de autorização errado |
+| Não perder o digitado | — | 1059, 2367 | O aviso ao sair não cobre link interno |
+| **Total** | **40** | **26** | |
+
+**Issues.** Abertas: #141 (só a parte B2, ordenação com acento no Postgres, que depende de collation), #152 e #162. Fechadas: #139 (pela #147), #140 (pela #148) e #142 (pela #150). Ver doc 44 §4.
+
+**Métrica de fluxo.** As métricas da 7.7 (cliques até concluir uma matrícula, tempo até o primeiro sinal, reenvios após erro) continuam **sem medição**. Dependem de um operador real e de cronômetro, e devem ser feitas antes de declarar a auditoria encerrada.
