@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import type { DegrauConfig, NumeroConfig, PoliticaConfig, TemplateConfig } from "@/server/whatsapp/consultas";
-import { acionarKillSwitchRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
+import { acionarKillSwitchRegua, estimarAlcanceRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
+import type { AlcanceRegua } from "@/server/whatsapp/alcance-regua";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -27,6 +28,29 @@ const ESTADO_HINT: Record<string, string> = {
   SHADOW: "Ensaio: o cron gera intenções SIMULADAS — nada é enviado de verdade.",
   ATIVA: "Valendo: degraus automáticos disparam sozinhos dentro da janela.",
 };
+
+/** A estimativa de alcance da ativação (docs/42 L2517), pedida ao servidor quando a confirmação abre. */
+type EstadoAlcance = { estado: "carregando" } | { estado: "pronto"; alcance: AlcanceRegua } | { estado: "indisponivel"; motivo: string };
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+/** Quantas pessoas recebem: o número primeiro, e o que fica de fora (sem destino) ou depende de aprovação (lote). */
+function TextoAlcance({ alcance }: { alcance: EstadoAlcance | null }) {
+  if (!alcance || alcance.estado === "carregando") return <p>Calculando quantas pessoas vão receber…</p>;
+  if (alcance.estado === "indisponivel") return <p>Não foi possível estimar quantas pessoas vão receber: {alcance.motivo}</p>;
+  const a = alcance.alcance;
+  return (
+    <>
+      <p>
+        <strong>{a.pessoas === 1 ? "1 pessoa vai receber" : `${a.pessoas} pessoas vão receber`}</strong> mensagem automática de cobrança
+        na próxima rodada da régua ({plural(a.cobrancas, "cobrança com degrau automático devido hoje", "cobranças com degrau automático devido hoje")}).
+      </p>
+      {a.semDestino > 0 && <p>{plural(a.semDestino, "cobrança devida não tem", "cobranças devidas não têm")} destinatário financeiro válido e não {a.semDestino === 1 ? "recebe" : "recebem"}.</p>}
+      {a.emLote > 0 && <p>{plural(a.emLote, "cobrança entra", "cobranças entram")} no degrau de lote e só {a.emLote === 1 ? "sai" : "saem"} quando alguém aprovar o lote na fila.</p>}
+      <p>É a contagem de agora: as travas da régua (janela, teto por contato, silêncio depois de resposta, opt-out) ainda podem adiar ou barrar parte dos envios.</p>
+    </>
+  );
+}
 
 /** Janela e dias em texto: "9h às 20h, seg, ter, qua, qui, sex". */
 function textoJanela(inicio: number, fim: number, dias: number[]): string {
@@ -100,11 +124,29 @@ export function PoliticaPainel({
   }
   const SUCESSO_SALVAR = "Política salva — cron, fila e timeline passam a ler esta configuração.";
 
+  // Quantas pessoas recebem (docs/42 L2517): estimado no servidor, com a regra do cron e os degraus do formulário,
+  // quando a confirmação da ativação abre. Só a resposta do último pedido vale (o diálogo pode ter sido reaberto).
+  const [alcance, setAlcance] = useState<EstadoAlcance | null>(null);
+  const pedidoAlcance = useRef(0);
+  async function estimarAlcance() {
+    const pedido = ++pedidoAlcance.current;
+    setAlcance({ estado: "carregando" });
+    let proximo: EstadoAlcance;
+    try {
+      const r = await estimarAlcanceRegua(dadosPolitica());
+      proximo = r.ok && r.dado ? { estado: "pronto", alcance: r.dado } : { estado: "indisponivel", motivo: r.ok ? "a consulta não devolveu a contagem." : r.erro };
+    } catch {
+      proximo = { estado: "indisponivel", motivo: "falha de rede. Confira a fila de cobrança antes de ativar." };
+    }
+    if (pedido === pedidoAlcance.current) setAlcance(proximo);
+  }
+
   async function salvar() {
     if (ativando) {
       setOrigem("salvar");
       acao.limpar();
       setConfirmar("salvar");
+      await estimarAlcance();
       return;
     }
     const desfecho = await run("salvar", () => salvarPoliticaRegua(dadosPolitica()), SUCESSO_SALVAR);
@@ -425,7 +467,9 @@ export function PoliticaPainel({
             <li>Automáticos (saem sozinhos): {armadosAutomaticos || "nenhum"}</li>
             <li>Em lote (saem quando alguém aprova o lote): {armadosEmLote || "nenhum"}</li>
           </ul>
-          <p>Alcance: toda cobrança com degrau automático ou de lote devido entra na fila e é enviada dentro da janela. Mensagem enviada não volta atrás; para parar depois, use o kill switch.</p>
+          <TextoAlcance alcance={alcance} />
+          {form.killSwitch && <p>O kill switch está ligado: nada sai até alguém destravar.</p>}
+          <p>Mensagem enviada não volta atrás; para parar depois, use o kill switch.</p>
         </ConfirmarAcao>
       )}
     </section>

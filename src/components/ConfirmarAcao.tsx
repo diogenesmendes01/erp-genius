@@ -15,6 +15,8 @@ import type { Resultado } from "@/server/_shared/resultado";
 // - foco inicial no botão seguro ("Voltar"); Escape e clique no fundo cancelam; o foco volta a quem abriu;
 // - botão de confirmação sempre `perigo`, nomeado pela ação ("Confirmar envio para Ana");
 // - `conferencia` (opcional) exige marcar "Confirmo os valores acima" antes de habilitar a confirmação;
+// - `digitacao` (opcional) exige digitar o nome do registro — para o que não tem volta pela tela, como
+//   encerrar um país (docs/42 L2428) — antes de habilitar a confirmação;
 // - a ação roda aqui, pelo executor único (useAcaoCliente): ocupado trava os dois botões, o Escape e o
 //   fundo; erro e resultado incerto aparecem DENTRO do diálogo (FeedbackAcao), que continua aberto. No
 //   sucesso o diálogo chama `aoConcluir` — quem abriu fecha a confirmação e anuncia o resultado na tela.
@@ -31,6 +33,11 @@ export type PropsConfirmarAcao<T> = {
   confirmacao: string;
   /** Texto da caixa que precisa ser marcada antes de confirmar (conferência dos valores). */
   conferencia?: string;
+  /**
+   * Nome que precisa ser digitado antes de confirmar (o registro que some sem volta): `rotulo` diz o que
+   * digitar ("Digite Costa Rica para confirmar"); `esperado` é o texto exato (espaços nas pontas não contam).
+   */
+  digitacao?: { rotulo: string; esperado: string };
   /** A ação. Só é chamada no clique de confirmação. */
   acao: () => Promise<Resultado<T>>;
   /** A action recebe chave de idempotência estável? Decide a instrução do resultado incerto. */
@@ -43,16 +50,19 @@ export type PropsConfirmarAcao<T> = {
   aoCancelar: () => void;
 };
 
-export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, acao, idempotente, aoConcluir, aoFalhar, aoCancelar }: PropsConfirmarAcao<T>) {
+export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, digitacao, acao, idempotente, aoConcluir, aoFalhar, aoCancelar }: PropsConfirmarAcao<T>) {
   const execucao = useAcaoCliente({ idempotente });
   const [conferido, setConferido] = useState(false);
+  const [digitado, setDigitado] = useState("");
   const voltar = useRef<HTMLButtonElement>(null);
   const descricaoId = useId();
   const ocupado = execucao.ocupado;
   const aguardaConferencia = conferencia !== undefined && !conferido;
+  const aguardaDigitacao = digitacao !== undefined && digitado.trim() !== digitacao.esperado.trim();
+  const aguarda = aguardaConferencia || aguardaDigitacao;
 
   async function confirmar() {
-    if (aguardaConferencia) return;
+    if (aguarda) return;
     const desfecho = await execucao.executar(acao);
     if (!desfecho) return; // clique repetido durante a execução: ignorado pela trava do executor
     if (desfecho.tipo === "ok") aoConcluir(desfecho.dado);
@@ -78,12 +88,26 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, a
           <span>{conferencia}</span>
         </label>
       )}
+      {digitacao !== undefined && (
+        <label className="mt-3 grid gap-1 text-sm text-gray-800">
+          <span>{digitacao.rotulo}</span>
+          <input
+            type="text"
+            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            value={digitado}
+            disabled={ocupado}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setDigitado(e.target.value)}
+          />
+        </label>
+      )}
       <FeedbackAcao erro={execucao.erro} className="mt-3" />
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Botao ref={voltar} variante="secundario" disabled={ocupado} onClick={cancelar}>
           Voltar
         </Botao>
-        <Botao variante="perigo" disabled={ocupado || aguardaConferencia} aria-busy={ocupado || undefined} onClick={confirmar}>
+        <Botao variante="perigo" disabled={ocupado || aguarda} aria-busy={ocupado || undefined} onClick={confirmar}>
           {ocupado ? "Confirmando\u2026" : <>Confirmar {confirmacao}</>}
         </Botao>
       </div>

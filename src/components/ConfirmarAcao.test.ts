@@ -63,4 +63,13 @@ describe("ConfirmarAcao \u2014 marcação", () => {
   it("nada de erro antes de confirmar (o FeedbackAcao só aparece com mensagem)", () => {
     expect(html()).not.toContain('role="alert"');
   });
+
+  it("com digitação: o campo de texto vem vazio, rotulado pelo que digitar, e a confirmação desabilitada", () => {
+    const h = html({ digitacao: { rotulo: "Digite Costa Rica para confirmar", esperado: "Costa Rica" } });
+    expect(h).toMatch(/<label[^>]*><span>Digite Costa Rica para confirmar<\/span><input type="text"[^>]*value=""[^>]*\/><\/label>/);
+    const [voltar, confirmar] = botoes(h);
+    expect(voltar.atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
+    expect(confirmar.atributos).toContain('disabled=""');
+    expect(html()).not.toContain('type="text"');
+  });
 });

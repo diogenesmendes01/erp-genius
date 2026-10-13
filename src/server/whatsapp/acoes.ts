@@ -17,7 +17,8 @@ import {
 import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { REGUA } from "@/server/cobrancas/regua";
 import { POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabrica";
-import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
+import { carregarPoliticaRegua, traduzirDegrausPolitica, type PoliticaCarregada } from "@/server/cobrancas/politica";
+import { contarAlcanceRegua, type AlcanceRegua } from "./alcance-regua";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
@@ -898,17 +899,43 @@ export async function sincronizarTemplatesMeta(): Promise<Resultado<ResultadoSyn
 
 const TIPO_ROTULO_POR_PASSO = new Map(REGUA.map((d) => [d.passo, { tipo: d.tipo, rotulo: d.rotulo }]));
 
+/** Degraus do formulário com tipo e rótulo fixos do passo; D+15 conserva envio manual (a restrição de aulas é a D+30). */
+function degrausComTipoFixo(degraus: ReturnType<typeof PoliticaReguaSchema.parse>["degraus"]) {
+  return degraus.map((d) => {
+    const fixo = TIPO_ROTULO_POR_PASSO.get(d.passo);
+    if (!fixo) throw new ErroRegra(`Passo desconhecido: ${d.passo}.`);
+    return { ...d, tipo: fixo.tipo, rotulo: fixo.rotulo, modo: d.passo === "D+15" ? ("MANUAL" as const) : d.modo };
+  });
+}
+
+/**
+ * Estimativa de alcance da ativação da régua (docs/42 L2517), só leitura: quantas pessoas recebem mensagem
+ * automática se a política do formulário passar a valer agora. Os degraus do formulário passam pela mesma
+ * tradução da política guardada (traduzirDegrausPolitica) e a contagem usa a regra do cron (decidirEnvioCron,
+ * em alcance-regua.ts) — nada é gravado nem enviado. Mesma alçada de salvar a política.
+ */
+export async function estimarAlcanceRegua(input: PoliticaReguaInput): Promise<Resultado<AlcanceRegua>> {
+  return executarAcao(async () => {
+    await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const dados = PoliticaReguaSchema.parse(input);
+    const degraus = degrausComTipoFixo(dados.degraus);
+    const ids = degraus.map((d) => d.templateId).filter((x): x is string => !!x);
+    const templates = ids.length ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true } }) : [];
+    const nomePorId = new Map(templates.map((t) => [t.id, t.nome]));
+    const politica = traduzirDegrausPolitica(
+      degraus.map((d) => ({ ...d, templateNome: d.templateId ? nomePorId.get(d.templateId) ?? null : null })),
+    );
+    return contarAlcanceRegua(politica, new Date());
+  });
+}
+
 export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = PoliticaReguaSchema.parse(input);
 
     // D+15 conserva envio manual. A restrição automática de aulas tem política própria D+30.
-    const degraus = dados.degraus.map((d) => {
-      const fixo = TIPO_ROTULO_POR_PASSO.get(d.passo);
-      if (!fixo) throw new ErroRegra(`Passo desconhecido: ${d.passo}.`);
-      return { ...d, tipo: fixo.tipo, rotulo: fixo.rotulo, modo: d.passo === "D+15" ? ("MANUAL" as const) : d.modo };
-    });
+    const degraus = degrausComTipoFixo(dados.degraus);
 
     // Prontidão (S15): armar a política (SHADOW/ATIVA) valida o canal por número
     // (doc 26: "degrau só arma se o template estiver pronto para o driver do remetente").

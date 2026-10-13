@@ -8,6 +8,7 @@ import { PAPEL_LABEL } from "@/lib/labels";
 import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
 import { botaoClasses } from "@/components/Botao";
@@ -41,10 +42,25 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
   const [alvo, setAlvo] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
 
-  async function alternar(id: string, sucesso: string) {
+  async function ativar(id: string) {
     setAlvo(id);
-    const desfecho = await acao.executar(() => alternarUsuarioAtivo(id), sucesso);
+    const desfecho = await acao.executar(() => alternarUsuarioAtivo(id), "Usuário ativado.");
     if (desfecho?.tipo === "ok") router.refresh();
+  }
+
+  // Desativar tira a pessoa do sistema na hora (docs/42 L2413): o botão só abre a confirmação, que nomeia a
+  // pessoa; a action roda no ConfirmarAcao, que mostra a falha dentro dele. Ativar continua direto.
+  const [desativando, setDesativando] = useState<UsuarioRow | null>(null);
+  function pedirDesativacao(u: UsuarioRow) {
+    setAlvo(u.id);
+    acao.limpar();
+    setDesativando(u);
+  }
+  function desativado(u: UsuarioRow) {
+    setDesativando(null);
+    setAlvo(u.id);
+    acao.setSucesso("Usuário desativado.");
+    router.refresh();
   }
 
   return (
@@ -130,8 +146,8 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
                       Editar
                     </button>
                     <button
-                      onClick={() => alternar(u.id, u.ativo ? "Usuário desativado." : "Usuário ativado.")}
-                      disabled={acao.ocupado}
+                      onClick={() => (u.ativo ? pedirDesativacao(u) : ativar(u.id))}
+                      disabled={acao.ocupado || desativando !== null}
                       className={botaoClasses({ variante: u.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                     >
                       {u.ativo ? "Desativar" : "Ativar"}
@@ -144,6 +160,21 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
           </tbody>
         </table>
       </div>
+
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar o acesso de ${desativando.nome}?`}
+          confirmacao="desativação do acesso"
+          idempotente={false}
+          acao={() => alternarUsuarioAtivo(desativando.id)}
+          aoConcluir={() => desativado(desativando)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>{desativando.nome} ({desativando.email}) perde o acesso ao sistema na hora.</p>
+          {desativando.papeis.length > 0 && <p>Papéis que deixam de valer: {desativando.papeis.map((p) => PAPEL_LABEL[p]).join(", ")}.</p>}
+          <p>O cadastro e o histórico ficam guardados; para devolver o acesso, use &quot;Ativar&quot; nesta lista.</p>
+        </ConfirmarAcao>
+      )}
     </div>
   );
 }

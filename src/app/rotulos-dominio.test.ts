@@ -17,6 +17,7 @@ const NAO_E_DINHEIRO_CRU: Record<string, number> = {
   "src/app/(app)/financeiro/FilaCobranca.tsx#d.valor": 1, // indicador já formatado pelo painel
   "src/app/(app)/secretaria/CondicoesEncerramento.tsx#acerto.valor": 1, // texto montado por descreverAcerto
   "src/app/(app)/configuracao/catalogo/ProdutosPainel.tsx#p._count.precos": 1, // contagem de preços
+  "src/app/(app)/configuracao/paises/PaisesPainel.tsx#p._count.precos": 1, // contagem de preços do país (coluna "Preços", docs/42 L2428)
   "src/app/(app)/diario/reposicoes/ReposicoesEquipe.tsx#previa.saldo": 1, // saldo de reposições (quantidade)
   "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/page.tsx#estado.saldo": 1, // tentativas
   "src/app/(app)/matriculas/[id]/contrato/TextoPrevia.tsx#c.valor": 1, // valor de campo do contrato (texto)
