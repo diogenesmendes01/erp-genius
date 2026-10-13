@@ -1,3 +1,4 @@
+import { Suspense, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +13,7 @@ vi.mock("@/server/diario/reposicao-consulta", () => ({ consultarReposicoesEquipe
 vi.mock("@/server/diario/reposicao-entrega-operacional", () => ({ consultarOperacaoEntregaReposicao: vi.fn() }));
 vi.mock("@/app/(app)/diario/reposicoes/ReposicoesEquipe", () => ({ ReposicoesEquipe: () => null, SolicitarReposicao: () => null }));
 import Page from "./page";
+import { elementos, primeiraPintura } from "@/test/tela-sem-dom";
 
 const renderizar = async (busca?: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve(busca ?? {}) }));
 
@@ -59,5 +61,53 @@ describe("/academico/reposicoes sem matrícula na URL", () => {
     const html = await renderizar({ busca: "a" });
     expect(mocks.buscar).not.toHaveBeenCalled();
     expect(html).toContain("Digite ao menos duas letras");
+  });
+});
+
+// E10 (docs/42 /academico/reposicoes #2; docs/43 §6 item 10): Conteudo — a consulta da matrícula e uma por
+// gravação autorizada — não segura mais a página inteira: fica num <Suspense> com esqueleto.
+describe("/academico/reposicoes com matrícula: a consulta pesada fica num <Suspense>", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.sessao.mockResolvedValue({ id: "sec", papeis: [Papel.SECRETARIA_ACADEMICA] });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } });
+  });
+
+  const abrir = (busca: Record<string, string>) => Page({ searchParams: Promise.resolve(busca) });
+  const limites = (arvore: ReactNode) => elementos(arvore).filter((n) => n.type === Suspense) as unknown as ReactElement<{ children: ReactElement; fallback: ReactNode }>[];
+
+  it("a página sai sem consultar a matrícula; a primeira pintura tem o voltar e o esqueleto anunciado no lugar do conteúdo", async () => {
+    const arvore = await abrir({ matriculaId: "m1" });
+    expect(mocks.consultar).not.toHaveBeenCalled();
+    expect(mocks.buscar).not.toHaveBeenCalled();
+    expect(limites(arvore)).toHaveLength(1);
+    const primeira = renderToStaticMarkup(primeiraPintura(arvore) as ReactElement);
+    expect(primeira).toContain('href="/academico"');
+    expect(primeira).toMatch(/<p class="sr-only" role="status">Carregando reposições da matrícula<\/p>/);
+    expect(primeira.split('data-esqueleto="titulo"').length - 1).toBe(1); // o h1 está dentro do Conteudo
+  });
+
+  it("o conteúdo, quando chega, é o mesmo de antes: consulta com matrícula e cursores, erro em alerta", async () => {
+    const [limite] = limites(await abrir({ matriculaId: "m1", cursor: "c2" }));
+    const filho = limite.props.children;
+    mocks.consultar.mockResolvedValue({ ok: false, erro: "Matrícula fora do escopo." });
+    const html = renderToStaticMarkup((await (filho.type as (p: unknown) => Promise<ReactNode>)(filho.props)) as ReactElement);
+    expect(mocks.consultar).toHaveBeenCalledWith({ matriculaId: "m1", cursor: "c2", origemCursor: undefined });
+    expect(html).toContain('<p role="alert">Matrícula fora do escopo.</p>');
+  });
+
+  it("o key do <Suspense> muda com a matrícula e os cursores: os dados anteriores não ficam na tela como se fossem os novos", async () => {
+    const chave = async (busca: Record<string, string>) => limites(await abrir(busca))[0].key;
+    const base = await chave({ matriculaId: "m1" });
+    expect(base).not.toBeNull();
+    expect(await chave({ matriculaId: "m1" })).toBe(base);
+    expect(await chave({ matriculaId: "m2" })).not.toBe(base);
+    expect(await chave({ matriculaId: "m1", cursor: "c2" })).not.toBe(base);
+    expect(await chave({ matriculaId: "m1", origemCursor: "o2" })).not.toBe(base);
+    expect(await chave({ matriculaId: "m1", cursor: "c2" })).not.toBe(await chave({ matriculaId: "m1", origemCursor: "c2" }));
+  });
+
+  it("sem matrícula na URL não há <Suspense>: a busca não tem consulta lenta a isolar", async () => {
+    expect(limites(await abrir({}))).toHaveLength(0);
   });
 });

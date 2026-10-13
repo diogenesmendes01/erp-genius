@@ -7,7 +7,7 @@ export default function LoadingApp() {
       <p className="sr-only" role="status">
         Carregando
       </p>
-      <div className="h-7 w-48 rounded-md bg-surface-muted" />
+      <div data-esqueleto="titulo" className="h-7 w-48 rounded-md bg-surface-muted" />
       <div className="h-24 rounded-lg bg-surface-muted" />
       <div className="h-24 rounded-lg bg-surface-muted" />
       <div className="h-24 rounded-lg bg-surface-muted" />

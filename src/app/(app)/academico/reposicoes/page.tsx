@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
@@ -10,6 +11,7 @@ import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
+import { EsqueletoCartoes } from "@/components/Esqueleto";
 import { buscarMatriculasParaReposicao, LIMITE_BUSCA_REPOSICAO } from "@/server/diario/reposicao-busca-matricula";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
@@ -25,7 +27,13 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
   return <div className="space-y-5">
     <VoltarPara href="/academico" />
     {!matriculaId && <EscolherMatricula busca={busca} r={encontradas} />}
-    {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+    {/* A consulta da matrícula e uma por gravação autorizada (Conteudo) não seguram mais a página inteira
+        (docs/42 /academico/reposicoes #2): o "voltar" sai antes e o esqueleto ocupa o lugar do conteúdo. O key
+        muda com a matrícula e os cursores — ao trocar de página ou de matrícula, o esqueleto volta no lugar
+        dos dados anteriores, em vez de mostrá-los como se fossem os novos. */}
+    {matriculaId && <Suspense key={[matriculaId, cursor ?? "", origemCursor ?? ""].join("|")} fallback={<EsqueletoCartoes rotulo="reposições da matrícula" cartoes={2} />}>
+      <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+    </Suspense>}
   </div>;
 }
 
