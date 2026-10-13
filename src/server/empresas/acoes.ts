@@ -81,6 +81,35 @@ export async function salvarEmpresa(
 }
 
 /**
+ * Inativar ou reativar a empresa pela ficha (docs/42 L2281; fatia B do ConfirmarAcao, issue #169). Grava só a
+ * situação, com o estado-alvo explícito: repetir não inverte nada (a mesma situação é um no-op) e não reenvia o
+ * cadastro inteiro — reenviar por `salvarEmpresa` sobrescreveria uma edição feita no meio do caminho. Mesma alçada
+ * e mesmo evento de `salvarEmpresa`.
+ */
+export async function definirSituacaoEmpresa(id: string, ativo: boolean): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, ...PAPEIS_B2B);
+    if (typeof id !== "string" || !id.trim()) throw new ErroRegra("Empresa não informada.");
+    if (typeof ativo !== "boolean") throw new ErroRegra("Situação da empresa inválida.");
+    await prisma.$transaction(async (tx) => {
+      const antes = await tx.empresa.findUnique({ where: { id }, select: { nome: true, ativo: true } });
+      if (!antes) throw new ErroRegra("Empresa não encontrada.");
+      if (antes.ativo === ativo) return;
+      await tx.empresa.update({ where: { id }, data: { ativo } });
+      await registrarEvento(tx, {
+        tipo: "EmpresaEditada",
+        agregadoTipo: "Empresa",
+        agregadoId: id,
+        autorId: autor.id,
+        payload: { nome: antes.nome, ativo, antes: { ativo: antes.ativo } },
+      });
+    });
+    revalidar();
+  });
+}
+
+/**
  * MATRÍCULAS EM LOTE (doc 03 §B2B): cria aluno + matrícula ATIVA + cronograma de
  * mensalidades para CADA colaborador, numa única transação (falha no meio = nada gravado).
  * Vencimentos no dia da EMPRESA; moeda = moeda local do país da empresa.

@@ -41,6 +41,20 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", modulo: "@/server/comercial/acoes", acao: "salvarConfigComercial", achado: "L2517" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", modulo: "@/server/comercial/acoes", acao: "salvarReguaComercial", achado: "L2517" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "salvarTemplateWhatsApp", achado: "L2518" },
+  // Fatia B (#169).
+  { arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx", modulo: "@/server/whatsapp/acoes", acao: "aprovarLoteCobranca", achado: "L2018" },
+  { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", modulo: "@/server/paises/acoes", acao: "alterarStatusPais", achado: "L2428" },
+  { arquivo: "src/app/(app)/home/HomeProfessor.tsx", modulo: "@/server/comercial/acoes", acao: "checkinExperimental", achado: "L2693" },
+  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", modulo: "@/server/whatsapp/acoes", acao: "vincularContatoWhatsApp", achado: "L2298" },
+  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", modulo: "@/server/whatsapp/acoes", acao: "registrarOptOutContato", achado: "L2298" },
+  { arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx", modulo: "@/server/agenda/replanejamento-decisao", acao: "decidirEAplicarReplanejamentoConjunto", achado: "L1102" },
+  { arquivo: "src/app/(app)/academico/modalidades/[id]/quantidade/propostas/[propostaId]/DecidirQuantidadeAulas.tsx", modulo: "@/server/agenda/modalidade-quantidade", acao: "decidirAlteracaoQuantidadeAulasModalidade", achado: "L1218" },
+  { arquivo: "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx", modulo: "@/server/migracao/presenca-historica", acao: "decidirPresencaHistoricaMigracao", achado: "L2499" },
+  { arquivo: "src/app/(app)/configuracao/usuarios/UsuariosPainel.tsx", modulo: "@/server/acesso/acoes", acao: "alternarUsuarioAtivo", achado: "L2413" },
+  { arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx", modulo: "@/server/catalogo/acoes", acao: "alternarIdiomaAtivo", achado: "L2340" },
+  { arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx", modulo: "@/server/catalogo/acoes", acao: "alternarPrecoAtivo", achado: "L2340" },
+  { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", modulo: "@/server/empresas/acoes", acao: "definirSituacaoEmpresa", achado: "L2281" },
+  { arquivo: "src/app/(app)/carteiras/CoberturasPainel.tsx", modulo: "@/server/acesso/coberturas", acao: "revogarCobertura", achado: "L2244" },
 ];
 
 /** Cópia literal das exceções (arquivo, trecho exato). */
@@ -49,6 +63,16 @@ const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [
   { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", trecho: "salvarConfigComercial(dadosComerciais())" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", trecho: "salvarReguaComercial(dadosRegua())" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", trecho: "salvarTemplateWhatsApp(dados)" },
+  // Fatia B (#169).
+  { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", trecho: "alterarStatusPais(id, alvo)" },
+  { arquivo: "src/app/(app)/home/HomeProfessor.tsx", trecho: "checkinExperimental(id, true)" },
+  { arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx", trecho: "decidirEAplicarReplanejamentoConjunto({ calendarioId, revisaoId, aprovar: false, motivo, excecoesAutorizadas: [] })" },
+  { arquivo: "src/app/(app)/academico/modalidades/[id]/quantidade/propostas/[propostaId]/DecidirQuantidadeAulas.tsx", trecho: "decidirAlteracaoQuantidadeAulasModalidade({ propostaId, aprovar: false, motivo })" },
+  { arquivo: "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx", trecho: "decidirPresencaHistoricaMigracao({propostaId:p.id,aprovada:false,motivo,chaveIdempotencia:chaveAtual()})" },
+  { arquivo: "src/app/(app)/configuracao/usuarios/UsuariosPainel.tsx", trecho: "alternarUsuarioAtivo(id)" },
+  { arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx", trecho: "alternarIdiomaAtivo(id)" },
+  { arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx", trecho: "alternarPrecoAtivo(id)" },
+  { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", trecho: "definirSituacaoEmpresa(empresa.id, true)" },
 ];
 
 /** Cópia literal dos imports que saem do src (arquivo, especificador exato). */

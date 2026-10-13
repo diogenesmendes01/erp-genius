@@ -13,6 +13,12 @@ export type ExcecaoEstadoVazio = { arquivo: string; condicao: string; folha: str
 
 export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
   {
+    arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx",
+    condicao: "autorizadas.length",
+    folha: "<p>Nenhuma exceção de dia não letivo autorizada.</p>",
+    motivo: "frase do resumo de impacto dentro do diálogo de confirmação (o que a aprovação vai aplicar), não lista sem itens",
+  },
+  {
     arquivo: "src/app/(app)/academico/calendario/novo/PrepararCalendario.tsx",
     condicao: "!periodos.length",
     folha: "<p>A proposta não contém períodos não letivos.</p>",
