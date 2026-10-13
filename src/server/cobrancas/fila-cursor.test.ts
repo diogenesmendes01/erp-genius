@@ -61,7 +61,7 @@ function cobranca(id: string, i: number, pais = "Brasil") {
 }
 
 /** `n` cobranças; o atraso decresce com o índice, então a ordem da fila (maior atraso primeiro) é a do índice. */
-function semear(n: number, pais = (_i: number) => "Brasil") {
+function semear(n: number, pais: (i: number) => string = () => "Brasil") {
   abertas = [];
   atrasoPorVencimento.clear();
   for (let i = 0; i < n; i++) {

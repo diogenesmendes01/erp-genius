@@ -83,7 +83,8 @@ describe("consultarFilaEnviosPortalAluno", () => {
     await consultarFilaEnviosPortalAluno({ situacao: "falhas", depois: "r19" });
     expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: { situacao: "FALHOU", id: { gt: "r19" } }, take: 21 }));
     await consultarFilaEnviosPortalAluno({ situacao: "todos", antes: "r40" });
-    expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: { id: { lt: "r40" } }, orderBy: { id: "desc" } }));
+    // Com a volta vazia, lerPaginaDaFila relê o primeiro trecho (src/lib/cursor-fila.ts); a leitura "antes" é a penúltima.
+    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { lt: "r40" } }, orderBy: { id: "desc" } }));
     await consultarFilaEnviosPortalAluno();
     expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: {} }));
   });

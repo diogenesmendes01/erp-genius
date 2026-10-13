@@ -77,7 +77,7 @@ describe("detalhe da preparação de migração", () => {
     mocks.consultar.mockResolvedValue({ ok: true, dado: { ...LOTE, linhas: [], pagina: 9, temProxima: false, totalLinhas: 3 } });
     const html = renderToStaticMarkup(await Pagina({ params: Promise.resolve({ loteId: "lote-1" }), searchParams: Promise.resolve({ pagina: "9" }) }));
     expect(html).toContain("Nenhuma linha neste trecho do lote");
-    expect(html).toContain('href="/configuracao/migracao/lote-1">Voltar ao início do lote');
+    expect(html).toContain('href="/configuracao/migracao/lote-1">Ir para a primeira página');
     expect(html).not.toContain("nesta página");
   });
 
