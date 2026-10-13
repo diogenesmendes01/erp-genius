@@ -295,7 +295,8 @@ function Tile({ titulo, valor, sub, cls }: { titulo: string; valor: string; sub?
   );
 }
 
-function RenegociarModal({
+/** Exportado para o teste do pré-preenchimento do valor (R1 da #173, C2); a tela usa só a ficha. */
+export function RenegociarModal({
   cobranca,
   moeda,
   podePerdao,

@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { Campo, type LigacaoCampo } from "./Campo";
 import { CampoMoeda } from "./CampoMoeda";
+import { DICA_PONTO_DECIMAL, DICA_PONTO_MILHAR } from "@/lib/dinheiro";
 import { elementos, texto, type No } from "@/test/tela-sem-dom";
 
 // C6 do doc 44 (issue #167): em moeda sem centavos (CRC, CLP), sair do campo com "100,50" virava "101"
@@ -28,7 +29,7 @@ function sairDoCampo(p: Partial<Props>) {
 
 const avisos = (arvore: ReactNode) => elementos(arvore).filter((n) => n.props.role === "alert");
 
-const AVISO_CRC = "CRC não tem centavos — informe um valor inteiro. O valor digitado não é arredondado.";
+const AVISO_CRC = "CRC normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.";
 
 describe("CampoMoeda — moeda sem centavos não arredonda no blur (C6, issue #167)", () => {
   it("100,50 em CRC: ao sair do campo o valor NÃO muda e o aviso aparece", () => {
@@ -42,7 +43,7 @@ describe("CampoMoeda — moeda sem centavos não arredonda no blur (C6, issue #1
   it("100,50 em CLP: mesmo comportamento, com o código da moeda no aviso", () => {
     const { onChange, arvore } = sairDoCampo({ value: "100,50", moeda: "CLP" });
     expect(onChange).not.toHaveBeenCalled();
-    expect(texto(avisos(arvore)[0])).toMatch(/^CLP não tem centavos/);
+    expect(texto(avisos(arvore)[0])).toMatch(/^CLP normalmente não usa centavos/);
   });
 
   it("100 em CRC: sem aviso, e o blur continua normalizando (sem casas)", () => {
@@ -64,14 +65,27 @@ describe("CampoMoeda — moeda sem centavos não arredonda no blur (C6, issue #1
     expect(avisos(arvore)).toHaveLength(0);
   });
 
-  it("texto ambíguo ou inválido (1.23, 1.234, 1.234,56) fica como está, sem aviso de centavos", () => {
-    for (const value of ["1.23", "1.234", "1.234,56"]) {
+  it("pré-preenchimento fracionado em CRC (saldo 1250,50): o blur não mexe e o aviso é o neutro (R1 da #173, B1)", () => {
+    const { onChange, arvore } = sairDoCampo({ value: "1250,50", moeda: "CRC" });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(avisos(arvore).map((n) => texto(n))).toEqual([AVISO_CRC]);
+  });
+
+  it("texto ambíguo ou inválido (1.23, 1.234, 1.234,56) fica como está; ganha a dica do ponto, não o aviso de centavos", () => {
+    const esperado: Record<string, string> = { "1.23": DICA_PONTO_DECIMAL, "1.234": DICA_PONTO_MILHAR, "1.234,56": DICA_PONTO_MILHAR };
+    for (const value of Object.keys(esperado)) {
       for (const moeda of ["BRL", "CRC"]) {
         const { onChange, arvore } = sairDoCampo({ value, moeda });
         expect(onChange, `${value} ${moeda}`).not.toHaveBeenCalled();
-        expect(avisos(arvore), `${value} ${moeda}`).toHaveLength(0);
+        expect(avisos(arvore).map((n) => texto(n)), `${value} ${moeda}`).toEqual([esperado[value]]);
       }
     }
+  });
+
+  it("texto inválido sem ponto (abc) fica como está, sem dica nem aviso", () => {
+    const { onChange, arvore } = sairDoCampo({ value: "abc", moeda: "BRL" });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(avisos(arvore)).toHaveLength(0);
   });
 
   it("1,23 em BRL é aceito e normalizado", () => {
@@ -96,6 +110,13 @@ describe("CampoMoeda — aviso visível e associado ao campo", () => {
     ));
     expect(attr(tag(h, "input"), "aria-describedby")).toBe("taxa-dica taxa-erro taxa-aviso-moeda");
     expect(h).toContain('id="taxa-aviso-moeda"');
+  });
+
+  it("dica do ponto (R1 da #173, C1): 100.50 mostra \"use vírgula\" ligada ao input pelo mesmo id do aviso", () => {
+    const h = html({ id: "valor", value: "100.50", moeda: "BRL" });
+    expect(attr(tag(h, "input"), "aria-describedby")).toBe("valor-aviso-moeda");
+    expect(h).toContain(`<span id="valor-aviso-moeda" role="alert" class="mt-1 block text-xs text-amber-700">${DICA_PONTO_DECIMAL}</span>`);
+    expect(attr(tag(h, "input"), "value")).toBe("100.50");
   });
 
   it("sem id: o aviso continua visível e anunciado (role=alert), sem inventar describedby", () => {

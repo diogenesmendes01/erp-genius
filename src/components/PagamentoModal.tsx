@@ -120,7 +120,9 @@ export function PagamentoModal({
       <p className="mb-1 block text-xs font-medium text-gray-600">
         Saldo restante: {formatarMoeda(saldo, moeda)}
       </p>
-      <CampoMoeda value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
+      {/* id do useId do modal: com ele, o aviso do CampoMoeda (centavos em CRC/CLP, ponto ambíguo) entra no
+          aria-describedby do input (R1 da #173, C3). */}
+      <CampoMoeda id={`${campoId}-valor`} value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
       {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {formatarMoeda(diff, moeda)}.</p>}
       {diff < 0 && (
         <label className="mb-2 flex items-center gap-2 text-xs text-amber-700">
