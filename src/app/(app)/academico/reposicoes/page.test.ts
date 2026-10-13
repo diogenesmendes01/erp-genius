@@ -96,15 +96,14 @@ describe("/academico/reposicoes com matrícula: a consulta pesada fica num <Susp
     expect(html).toContain('<p role="alert">Matrícula fora do escopo.</p>');
   });
 
-  it("o key do <Suspense> muda com a matrícula e os cursores: os dados anteriores não ficam na tela como se fossem os novos", async () => {
+  it("o key do <Suspense> é a matrícula: outra matrícula recomeça o painel; trocar de página não remonta (não apaga o digitado)", async () => {
     const chave = async (busca: Record<string, string>) => limites(await abrir(busca))[0].key;
     const base = await chave({ matriculaId: "m1" });
     expect(base).not.toBeNull();
     expect(await chave({ matriculaId: "m1" })).toBe(base);
     expect(await chave({ matriculaId: "m2" })).not.toBe(base);
-    expect(await chave({ matriculaId: "m1", cursor: "c2" })).not.toBe(base);
-    expect(await chave({ matriculaId: "m1", origemCursor: "o2" })).not.toBe(base);
-    expect(await chave({ matriculaId: "m1", cursor: "c2" })).not.toBe(await chave({ matriculaId: "m1", origemCursor: "c2" }));
+    expect(await chave({ matriculaId: "m1", cursor: "c2" })).toBe(base);
+    expect(await chave({ matriculaId: "m1", origemCursor: "o2" })).toBe(base);
   });
 
   it("sem matrícula na URL não há <Suspense>: a busca não tem consulta lenta a isolar", async () => {

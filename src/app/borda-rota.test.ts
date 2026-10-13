@@ -1,9 +1,14 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { ERROR_SEM_RESET, ROTAS_COM_ERROR, ROTAS_COM_LOADING, SUSPENSE_OBRIGATORIO } from "./borda-rota-mapa";
 import { papeisDoGuardArquivo } from "@/test/guard-pagina";
+
+/** Há alguma page.tsx dentro da pasta (em qualquer nível)? */
+function temPaginaNaSubarvore(rota: string): boolean {
+  return readdirSync(rota, { recursive: true, encoding: "utf8" }).some((c) => basename(c) === "page.tsx");
+}
 
 // E10 — borda de rota (docs/43 §6 item 10; docs/42 §3 ganho rápido 2 e §5.3). Trava ESTÁTICA: os
 // loading.tsx e error.tsx próprios existem onde a lista fechada diz (e só lá), todo loading.tsx anuncia
@@ -47,9 +52,11 @@ export function anunciaCarregamento(fonte: string): boolean {
 }
 
 /** Rotas da lista sem a página (a rota não existe com esse caminho) ou sem o arquivo de borda. */
-export function rotasIncompletas(rotas: readonly string[], arquivo: string, existe: (caminho: string) => boolean): string[] {
+export function rotasIncompletas(rotas: readonly string[], arquivo: string, existe: (caminho: string) => boolean, temPaginaAbaixo: (rota: string) => boolean = () => false): string[] {
+  // Segmento sem page/layout próprios (ex.: `alunos/`, só com `[id]/`) ainda é rota: o error.tsx dele envolve as
+  // páginas filhas. Basta haver uma page.tsx na subárvore.
   return rotas.flatMap((rota) => [
-    ...(existe(`${rota}/page.tsx`) || existe(`${rota}/layout.tsx`) ? [] : [`${rota}: rota sem page.tsx nem layout.tsx`]),
+    ...(existe(`${rota}/page.tsx`) || existe(`${rota}/layout.tsx`) || temPaginaAbaixo(rota) ? [] : [`${rota}: rota sem page.tsx nem layout.tsx`]),
     ...(existe(`${rota}/${arquivo}`) ? [] : [`${rota}: sem ${arquivo}`]),
   ]);
 }
@@ -180,11 +187,11 @@ describe("borda de rota: listas fechadas (E10)", () => {
   });
 
   it("cada rota da lista existe com esse caminho e tem o seu loading.tsx — o teste falha se o arquivo sumir", () => {
-    expect(rotasIncompletas(ROTAS_COM_LOADING, "loading.tsx", existsSync)).toEqual([]);
+    expect(rotasIncompletas(ROTAS_COM_LOADING, "loading.tsx", existsSync, temPaginaNaSubarvore)).toEqual([]);
   });
 
   it("cada rota da lista tem o seu error.tsx", () => {
-    expect(rotasIncompletas(ROTAS_COM_ERROR, "error.tsx", existsSync)).toEqual([]);
+    expect(rotasIncompletas(ROTAS_COM_ERROR, "error.tsx", existsSync, temPaginaNaSubarvore)).toEqual([]);
   });
 
   it("nenhum loading.tsx ou error.tsx fora da lista: arquivo novo de borda entra no mapa (e no render)", () => {
@@ -248,6 +255,10 @@ describe("borda de rota: autoteste dos detectores (fonte virtual)", () => {
     expect(rotasIncompletas(["src/app/a", "src/app/c"], "loading.tsx", existe)).toEqual([]);
     expect(rotasIncompletas(["src/app/b"], "loading.tsx", existe)).toEqual(["src/app/b: sem loading.tsx"]);
     expect(rotasIncompletas(["src/app/zz"], "loading.tsx", existe)).toEqual(["src/app/zz: rota sem page.tsx nem layout.tsx", "src/app/zz: sem loading.tsx"]);
+    // Segmento só com subpastas (ex.: `alunos/` com `[id]/page.tsx`) conta como rota; pasta sem página abaixo, não.
+    const comFilha = (r: string) => r === "src/app/d";
+    expect(rotasIncompletas(["src/app/d"], "loading.tsx", existe, comFilha)).toEqual(["src/app/d: sem loading.tsx"]);
+    expect(rotasIncompletas(["src/app/zz"], "loading.tsx", existe, comFilha)).toEqual(["src/app/zz: rota sem page.tsx nem layout.tsx", "src/app/zz: sem loading.tsx"]);
   });
 
   it("error.tsx que lê o erro, sem reset, sem \"use client\" ou que não liga o reset é pego", () => {
