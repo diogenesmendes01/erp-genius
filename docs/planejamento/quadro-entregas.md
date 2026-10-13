@@ -56,6 +56,13 @@ Uma linha por PR, de #133 a #161. Os números #139–#142, #152 e #162 são issu
 | #159 | Fuso e instante: 20 campos pelo `CampoFuso`; `PaisSchema` valida fuso IANA; `AvisoFusoNaoConfigurado`; `PreviaConversao`; item 6 | `b59744b9`, 10/10/2026 15:44 | Integrador em `c406fff7`, suíte sem banco configurado: 593/593 arquivos, 4.062 testes; 11/11 KILLED. **APPROVE** escrito na R1, em modo leve | L1566, L1747, L406 e L1256 parciais; `fusoIanaValido` recusa `EST5EDT` (`src/server/operacao/fuso.ts:9`); ramo `fuso === ""` sem efeito (`src/server/paises/schema.ts:29`); validade só no `onChange` |
 | #160 | Becos sem saída e identificação do registro (`IdentificacaoRegistro`) fora de `/matriculas/[id]`; item 7 | `19be34de`, 10/10/2026 17:10 | Integrador em `a51d4e1e`: 591/591 arquivos, 4.057 testes; 12/12 KILLED. **APPROVE** escrito na R2. O último commit (`f50608f5`, merge com a #158) teve só a verificação do integrador: 609/609 arquivos, 4.208 testes | 66 IDs crus e 12 telas de detalhe sem identificação (tetos em `identificacao-registro.test.ts:378` e `:421`); link para `/financeiro` sem `abreFinanceiro` em `matriculas/[id]/emissao/page.tsx:23`; L934 e L1709 |
 | #161 | Filas de trabalho por cursor nos dois sentidos: 12 filas e 11 consultas, `PaginacaoFila` e `cursor-fila.ts` | `e5418550`, 10/10/2026 17:18 | Integrador em `8c697968`, suíte sem banco configurado: 604/604 arquivos, 4.194 testes; 15/15 KILLED. **APPROVE** escrito na R1 e na R2 (review leve). Os 8 `*.int.test.ts` alterados **não foram executados** | **#162 aberta**; C1, subselect da âncora sem escopo em `segunda-chamada-fila-agenda.ts`; decisões de produto em aberto (`autorizacoes-preparacao` como histórico; link no vazio em vez de redirect) |
+| #163 | Docs de 13/10: o que está e o que não está publicado no UAT, remedição da auditoria de UX (doc 43 §7) e análise das PRs #63–#161 (doc 44) | `e864ef4d`, 13/10/2026 15:47 | Só documentação. **APPROVE** escrito na R1 | As pendências do doc 44 §5 viraram as issues #164–#170 |
+| #171 | Trava `guard-pagina`: B7, B8 e B9 da R3 da #143 (carga dinâmica do módulo do guard, contaminação por chave e desestruturação, recusa branda sob laço, `switch` e operador lógico); fecha a #152 | `4cb396b7`, 13/10/2026 16:13 | Integrador em `824ab622`, com o TS2345 corrigido: `tsc` 0; 612/612 arquivos, 4.271/4.271 testes; 10/10 KILLED e controle. **APPROVE** escrito na R1 | #170: atribuição a membro (`obj.p = sessao.papeis`) e chave não literal ainda escapam |
+| #172 | Item 8 (portal público): `/portal-aluno/ativar` (token na aba, regra e confirmação da senha), `/recuperar` sem falso "enviado", `/pagar/[token]` com os 6 casos e `noindex`, `/login` com `callbackUrl` só interno (`src/proxy.ts` novo) | `77fe6f1e`, 13/10/2026 16:42 | Integrador em `5e870be9`: `tsc` 0; 626/626 arquivos, 4.366/4.366 testes; 17/17 KILLED (X3 equivalente) e controle; R1 C1 (`router.refresh()` depois de pagar) aplicado. **APPROVE** escrito na R2 | #170: `maxLength` em caracteres; aviso `set-state-in-effect`; troca de e-mail em "link indisponível"; 422 genérico; `/login` #1, #3, #5 e #6 |
+| #173 | Moeda: `parseMoeda` recusa ponto ambíguo (`1.23`); CRC/CLP sem arredondamento, com aviso neutro; dica do ponto no `CampoMoeda`; permuta sem moeda mostra "moeda não definida"; fecha a #167 | `02444a1d`, 13/10/2026 16:53 | Integrador em `28a8a55a`: `tsc` 0; 630/630 arquivos, 4.405/4.405 testes; 13/13 + 9/9 KILLED e controles. **APPROVE** escrito na R2 | #170: a dica do ponto é anunciada (`role="alert"`) durante a digitação |
+| #174 | Item 10 (borda de rota): `loading.tsx` com o formato da tela em 8 rotas, `error.tsx` em 15 áreas (`ErroArea`), `<Suspense>` em `/academico/reposicoes` e na preparação da matrícula, trava `borda-rota.test.ts`; C3 da #170 (esqueleto do financeiro em dobro) | `4c4f526a`, 13/10/2026 17:27 | Integrador em `c5e17404`, com o `key` do `<Suspense>` só pela matrícula e a trava aceitando segmento com páginas filhas: `tsc` 0; 633/633 arquivos, 4.478/4.478 testes; 20/20 KILLED e controle. **APPROVE** escrito na R1 | Conferir no UAT o esqueleto do financeiro e os `<Suspense>`; #170: volta do erro do hub da matrícula; `matriculas/nova`, `configuracao/whatsapp` e `/portal` sem `loading.tsx` |
+| #175 | Fatia B do `ConfirmarAcao` (13 ações, digitação do nome ao encerrar país, alcance numérico ao ativar a régua com `estimarAlcanceRegua`, `definirSituacaoEmpresa` com estado-alvo); regra do cron extraída para `decidirEnvioCron`; fecha a #169 | `f8a9c0e7`, 13/10/2026 18:09 | Integrador em `5009916b`, com travas de enum e de estado vazio, TS2345 e `cron.test.ts` novo: `tsc` 0; 646/646 arquivos, 4.560/4.560 testes; 19/19 KILLED e 2 controles. `cron.int.test.ts` **não executado** (#162). **APPROVE** escrito na R2 | #170: botão da ativação habilitado durante a estimativa; alternadores de usuário, idioma e preço invertem o estado; "Desvincular" na inbox; L325, L1479, L2019 e L2142 sem confirmação |
+| #176 | Item 11: amostra Média/Baixa com a semente 20261013 na `main` `4c4f526a` (doc 43 §7.6) | `d1f2c03f`, 13/10/2026 17:59 | Só documentação. Integrador: sorteio reproduzido (126 achados = as 126 linhas da tabela), contagens por estrato conferidas e estimativa recalculada (66,8% abertos, IC 58,7–74,9%). **APPROVE** escrito na R1 | Os padrões com mais abertos: layout e hierarquia, texto e validação de campo |
 
 ### Tarefas operacionais pendentes
 
@@ -84,6 +91,13 @@ Próximos itens do doc 43, não iniciados (ver doc 43 §7.5):
 - **Item 9:** consultas e dados no servidor.
 - **Item 10:** borda de rota restante (`<Suspense>` e `loading.tsx`).
 - **Item 11:** Média e Baixa, repetir a amostra com outra semente.
+
+**Atualização de 13/10/2026, fim do dia (integrador):**
+- **Itens 8, 10 e 11:** entregues (#172, #174 e #176). O item 9 está em andamento (`claude/e9-consultas-servidor`).
+- **Issues fechadas:** #152 (pela #171), #167 (#173) e #169 (#175).
+- **#170:** em andamento por grupos (`claude/fu170-grupo-a`); o C3 foi resolvido pela #174.
+- **Abertas sem frente:** #141 (collation, depende do integrador), #162 (testes de integração, depende do banco de teste isolado), #164 (portar a #62), #165 (operação no UAT), #166 (idempotência, exige migração) e #168 (inbox).
+- **Média e Baixa na semente 20261013:** 66,8% abertos (IC 58,7–74,9%, ≈ 486), contra 58,9% na semente 42. Os intervalos se sobrepõem (doc 43 §7.6).
 
 ## Integração da main na PR #61 — 21/09/2026
 
@@ -1522,6 +1536,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Sem loading próprio: `matriculas/nova`, as sub-rotas de `configuracao/whatsapp` (layout com abas próprio) e
   `/portal`. Sem error.tsx próprio: `home`, `preferencias` e `acesso-negado` (o de `(app)` basta) e `/login`.
 - Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+**Atualização de 13/10/2026 (integrador):** mergeada pela #174 (`4c4f526a`). Ver "Entregas desde a #133". Falta conferir no UAT o esqueleto do financeiro e os dois `<Suspense>`.
 
 ## ConfirmarAcao, fatia B (issue #169; 13/10/2026)
 
