@@ -1492,6 +1492,37 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+## E10 — borda de rota (docs/43 §6 item 10; 13/10/2026)
+
+### Solução implementada (branch `claude/e10-borda-rota`)
+- `loading.tsx` com o formato da tela em `/matriculas/[id]`, `/academico`, `/diario` e `/secretaria` (título, linha de
+  apoio, busca e cartões; as abas, quando a área tem, ficam com o layout), `/configuracao` (só a tabela: o layout já
+  tem o h1 e as sub-abas), `/login` (cartão de acesso), `/pagar/[token]` e `/certificado/[codigo]` (título e cartão no
+  centro). As rotas existem com esses caminhos; `/pagar` e `/certificado` só existem com o parâmetro.
+- C3 da #170 confirmado na leitura: o `(painel)/loading.tsx` do financeiro desenhava título e abas dentro do layout que já
+  os desenha. Agora desenha só indicadores e tabela; o `EsqueletoAbas` saiu.
+- `error.tsx` de área onde o doc 42 pede: acadêmico, alunos, configuração (título h2, abaixo do h1 do layout), diário,
+  financeiro, matrícula, secretaria e o lote comercial (leads, pipeline, carteiras, comissões, empresas, inbox). Cada um
+  com o título da área, "Tentar de novo" (`reset`), `VoltarPara` ao índice da área (ao início quando é o índice que
+  falha) e nada de `message`/`digest`. Nas páginas públicas `/pagar/[token]` e `/certificado/[codigo]`, o erro deixa de
+  cair no `global-error` ("fale com um administrador") e fala com quem recebeu o link.
+- `<Suspense>` nas telas que o doc cita: `/academico/reposicoes` (o `Conteudo`, com uma consulta por gravação) e
+  `/matriculas/[id]/preparacao` (a prontidão da Secretaria, que vinha encadeada depois da consulta principal). O guard
+  continua sendo a primeira instrução; contrato de dados e permissões não mudaram.
+- Travas: `src/app/borda-rota.test.ts` (listas fechadas em `borda-rota-mapa.ts`, anúncio acessível, error.tsx sem
+  `error`, Suspense obrigatório, autotestes) e `src/app/borda-rota.render.test.ts` (render de cada loading e error).
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Verificação: pelo integrador (suíte unitária, `tsc --noEmit`, eslint
+  e mutação).
+
+### Pendências
+- Na primeira entrada numa área com layout (ex.: da Secretaria para `/matriculas/X/preparacao`), quem cobre a espera do
+  layout é o `(app)/loading.tsx` genérico; o esqueleto da área aparece depois, dentro do layout.
+- Sem loading próprio: `matriculas/nova`, as sub-rotas de `configuracao/whatsapp` (layout com abas próprio) e
+  `/portal`. Sem error.tsx próprio: `home`, `preferencias` e `acesso-negado` (o de `(app)` basta) e `/login`.
+- Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
+
 ## ConfirmarAcao, fatia B (issue #169; 13/10/2026)
 
 ### Solução implementada (branch `claude/fu169-confirmacoes-b`)
