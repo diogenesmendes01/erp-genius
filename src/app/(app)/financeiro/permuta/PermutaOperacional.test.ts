@@ -197,3 +197,28 @@ it("recorre a UTC para a aplicação quando a preferência está ausente", () =>
   expect(texto).toContain("01/01/2026, 02:30");
   expect(texto).toContain("horário exibido em UTC; origem UTC");
 });
+
+it("acordo sem moeda (moeda nula) mostra \"moeda não definida\" no lugar de cada valor, nunca o número solto (issue #167, C20)", () => {
+  preparar();
+  const semMoeda = [{ ...acordos[0], moeda: null, confirmacoes: [{ ...acordos[0].confirmacoes[0], propostas: [{ ...acordos[0].confirmacoes[0].propostas[0], decisao: { aprovada: true, efetivada: true, motivo: "Serviço conferido", aplicacoes: [{ id: "aplicacao", cobrancaId: "cobranca", valor: "100.00", aplicadaEm: "2026-09-18T12:00:00Z" }] } }] }] }];
+  const arvore = PermutaOperacional({ acordos: semMoeda, podeFinanceiro: true, podePedagogico: false, podeAprovar: false });
+  const texto = textoDoNo(arvore);
+
+  expect(textoDoNo(todos(arvore, "h2"))).toBe("M-1 · moeda não definida");
+  expect(texto).toContain("Moeda não definida neste acordo: os valores não são exibidos para não serem lidos em outra moeda.");
+  // Valor por unidade, total, saldo, limite, proposta e aplicação: todos no estado explícito.
+  expect(texto).toContain("× moeda não definida = moeda não definida");
+  expect(texto).toContain("saldo moeda não definida · limite moeda não definida");
+  expect(texto).toContain("Proposta de moeda não definida");
+  expect(textoDoNo(todos(arvore, "li"))).toContain("C-1: moeda não definida");
+  // Nenhum valor monetário formatado sem moeda ("100,00", "50,00") nem com moeda inventada.
+  expect(texto).not.toMatch(/\b(?:100|50),00\b/);
+  expect(texto).not.toContain("R$");
+});
+
+it("acordo com moeda não mostra o estado de moeda não definida", () => {
+  preparar();
+  const texto = textoDoNo(PermutaOperacional({ acordos, podeFinanceiro: true, podePedagogico: false, podeAprovar: false }));
+  expect(texto).not.toMatch(/moeda não definida/i);
+  expect(texto).toContain("R$ 50,00 = R$ 100,00");
+});

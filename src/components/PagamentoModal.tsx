@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { FormaPagamento } from "@prisma/client";
 import { FORMA_PAGAMENTO_LABEL } from "@/lib/labels";
-import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, formatarMoedaParaCampo, parseMoeda } from "@/lib/dinheiro";
 import { registrarPagamento } from "@/server/financeiro/acoes";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { CampoMoeda } from "@/components/CampoMoeda";
@@ -55,7 +55,9 @@ export function PagamentoModal({
   // A baixa parte do saldo restante (issue #10): pagar o que falta, não o negociado cheio.
   const saldo = saldoRestante ?? valorEsperado;
   const [chaveIdempotencia] = useState(() => crypto.randomUUID());
-  const [valor, setValor] = useState(String(saldo));
+  // formatarMoedaParaCampo (não String cru): "150.5" seria recusado por parseMoeda (ponto ambíguo,
+  // issue #167); o campo começa no formato que ele mesmo produz, sem arredondar moeda sem centavos.
+  const [valor, setValor] = useState(() => formatarMoedaParaCampo(saldo, moeda));
   const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
   const [data, setData] = useState("");
   const [comprovanteUrl, setComp] = useState("");
@@ -118,7 +120,9 @@ export function PagamentoModal({
       <p className="mb-1 block text-xs font-medium text-gray-600">
         Saldo restante: {formatarMoeda(saldo, moeda)}
       </p>
-      <CampoMoeda value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
+      {/* id do useId do modal: com ele, o aviso do CampoMoeda (centavos em CRC/CLP, ponto ambíguo) entra no
+          aria-describedby do input (R1 da #173, C3). */}
+      <CampoMoeda id={`${campoId}-valor`} value={valor} onChange={setValor} moeda={moeda} className={inputCls + " mb-1"} ariaLabel="Valor recebido" />
       {diff > 0 && <p className="mb-2 text-xs text-amber-600">Parcial — saldo {formatarMoeda(diff, moeda)}.</p>}
       {diff < 0 && (
         <label className="mb-2 flex items-center gap-2 text-xs text-amber-700">
