@@ -3,6 +3,8 @@
 Data: 07/10/2026. Código medido: `origin/main` em `6b105093` (depois da #138). Linha de base: `1ca53675`, o `main` que a auditoria leu. O merge da auditoria (`9bd583d2`) já continha a #64, então não serve de base. Escopo: as PRs #64–#138 (ganhos rápidos 1–24 e projetos E1–E8).
 
 > **Atualização de 13/10/2026:** remedição na main `e5418550` (depois da #161) na §7. As seções 1–6 abaixo continuam sendo a fotografia de 07/10.
+>
+> **Atualização de 13/10/2026 (item 11):** amostra Média/Baixa com outra semente (20261013) na main `4c4f526a` (depois da #174) na §7.6.
 
 ## 1. Resumo em 10 linhas
 
@@ -1253,7 +1255,7 @@ Erros ou imprecisões das seções 3–5, achados na remedição. As seções 1�
 | 8. Portal público | não iniciado | — | `/portal-aluno/ativar` (L2626, L2627), `/portal-aluno/recuperar` (L2639), `/pagar/[token]` só com "pago/aberto" (L2567 da amostra), `/login` sem `callbackUrl` (L2553 da amostra) |
 | 9. Consultas e dados no servidor | não iniciado | — | A fila de cobrança continua sem `take` (`listarFilaCobranca`, `src/server/cobrancas/consultas.ts:202`; a #144 trouxe o filtro na URL, não a paginação). Continuam também: o lote de migração sem `take` (L2483), a thread da inbox cortada em 300 mensagens (L2299), a importação de alunos sem deduplicação (L224) e a fila de envios do portal sem filtro de situação (L431). Os demais pontos do item (`/pipeline`, informes de pagamento, cobranças em `listarAlunos`) não foram reconferidos nesta remedição |
 | 10. Borda de rota restante | não iniciado | — | `<Suspense>` em 0 e `loading.tsx` em 9, sem mudança; `/configuracao` sem `loading.tsx` (L2324) |
-| 11. Média e Baixa | não iniciado | — | A §7.3 remediu a mesma amostra (semente 42), o que mede a evolução pareada. A amostra com outra semente não foi sorteada |
+| 11. Média e Baixa | não iniciado | — | A §7.3 remediu a mesma amostra (semente 42), o que mede a evolução pareada. A amostra com outra semente não foi sorteada. **Nota (13/10/2026, depois da #174):** a amostra com outra semente (20261013) foi feita na `main` `4c4f526a` e está na §7.6: 66,8% abertos (IC 58,7–74,9%), com intervalo que se sobrepõe ao da §7.3 |
 
 **Achados Alta ainda abertos (40) e parciais (26), por padrão:**
 
@@ -1274,3 +1276,264 @@ Erros ou imprecisões das seções 3–5, achados na remedição. As seções 1�
 **Issues.** Abertas: #141 (só a parte B2, ordenação com acento no Postgres, que depende de collation), #152 e #162. Fechadas: #139 (pela #147), #140 (pela #148) e #142 (pela #150). Ver doc 44 §4.
 
 **Métrica de fluxo.** As métricas da 7.7 (cliques até concluir uma matrícula, tempo até o primeiro sinal, reenvios após erro) continuam **sem medição**. Dependem de um operador real e de cronômetro, e devem ser feitas antes de declarar a auditoria encerrada.
+
+### 7.6 Amostra Média/Baixa com nova semente (main `4c4f526a`)
+
+Item 11 da §6. Código medido: `origin/main` em `4c4f526a` (merge da #174). Depois da §7 entraram na `main` as PRs #171–#174 (guards de página, portal público, moeda e borda de rota). Por isso esta amostra mede a `main` atual, e não a `e5418550` da §7.3.
+
+O UAT não foi aberto e o app não foi rodado. Todos os vereditos são por leitura de código, como na §7.
+
+#### 7.6.1 Resumo
+
+1. **Estimativa com a semente nova:** **66,8% dos 727 achados Média/Baixa continuam abertos (IC 95% 58,7–74,9%), ≈ 486 achados (≈ 427–544).** Os resolvidos são 18,3% (11,7–24,9%), ≈ 133, e os parciais 14,9% (8,9–20,9%), ≈ 109.
+2. **Comparação com a §7.3** (semente 42, remedida na `e5418550`): lá a estimativa era de 58,9% abertos (IC 50,3–67,5%), ≈ 428.
+   - **Os intervalos se sobrepõem**, entre 58,7% e 67,5%. A diferença pontual de 7,9 p.p. não basta para afirmar que as duas amostras medem frações diferentes.
+   - Não é amostra pareada: 105 dos 126 achados são outros. Por isso não há diferença pareada.
+   - A estimativa central da semente nova é mais alta, mesmo medindo um código mais novo. Uma hipótese, que não foi medida: os 126 achados da semente 42 estavam listados linha a linha no doc 43, e várias PRs de #153 a #161 citam esses achados. Assim, a semente 42 pode ter recebido mais correção do que a média da população.
+   - **Para planejar:** usar as duas estimativas centrais, ≈ 430 a 490 achados abertos, como ordem de grandeza, e não um número único.
+3. **Amostra crua:** 25 resolvidos, 19 parciais e 82 abertos. Numa amostra aleatória simples sem peso, só como referência, seriam 65,1% abertos (Wald 56,8–73,4%).
+4. **Sobreposição com a semente 42:** 21 dos 126 achados coincidem (L312, 326, 378, 381, 408, 419, 603, 1047, 1157, 1209, 1316, 1687, 1788, 1854, 2244, 2303, 2354, 2553, 2567, 2606 e 2712). Eles entram na estimativa e estão marcados com ¹ na tabela 7.6.6.
+   - 19 mantêm o veredito da §7.3.5.
+   - 2 passaram de aberto para resolvido com a #172: L2553 (`callbackUrl` no login) e L2567 (`/pagar` com todos os status).
+   - **Os 105 novos:** 19 resolvidos, 17 parciais e 69 abertos. A estimativa estratificada só com eles dá 68,0% abertos (IC 59,4–76,7%). Os 21 repetidos (6 resolvidos, 2 parciais e 13 abertos), portanto, não explicam a diferença em relação à §7.3.
+5. **Efeito das PRs #171–#174 na amostra:**
+   - **#172** (portal público) resolveu 4 achados: L2553, L2567, L2570 e L2629.
+   - **#174** (borda de rota) levou 4 achados a parcial: L602, L1505, L1544 e L1764. O `loading.tsx` e o `error.tsx` novos de `/matriculas/[id]` e `/academico` cobrem por herança. Mas o erro de consulta continua sendo devolvido pela página como `<p role="alert">` solto, e o loading da área não reaparece na navegação dentro do segmento.
+   - **#171** (guards) e **#173** (moeda) não moveram nenhum achado da amostra.
+6. **Abertos por severidade** (estratificado): Média 68,7% (IC 59,2–78,2%) e Baixa 62,1% (IC 46,5–77,7%).
+
+#### 7.6.2 Método
+
+- **Sorteio:** `node scripts/medicao-ux/amostra.mjs 6 3 20261013`, com 6 Média e 3 Baixa por área, ou 126 de 727. A semente 20261013 é a data da medição. O gerador e a alocação são os mesmos da §5; só muda a semente.
+- **Veredito:** para cada achado, li a linha do doc 42 e o código atual (o arquivo citado ou o que o substituiu). O critério é o da §2 e da §7.3:
+  - **resolvido:** o defeito descrito não ocorre mais;
+  - **parcial:** uma parte da recomendação foi feita, ou só uma das telas citadas foi corrigida;
+  - **aberto:** o defeito continua.
+- **Regra herdada da §7.4:** título sem `font-medium` na classe não é defeito, porque a regra base de `app/globals.css` já dá peso 500 a h1–h6.
+- **Achados repetidos:** os 21 que já estavam na semente 42 foram conferidos de novo na `4c4f526a`, e não copiados da §7.3.5.
+- **Estimativa:** `estimativaEstratificada` (`scripts/medicao-ux/nucleo.mjs:247`), com as populações por área × severidade de `achadosDoRepositorio()`. É o mesmo cálculo da §7.3. Para conferir, o script refeito com as contagens "depois" da §7.3.2 devolve exatamente 58,9% (50,3–67,5%).
+- **Etiquetas de padrão:** cada achado aberto ou parcial recebeu até 2 etiquetas, da mesma lista da §7.3.4.
+
+#### 7.6.3 Contagens por estrato
+
+R = resolvido, P = parcial, A = aberto. São 6 achados Média e 3 Baixa por área. Com essa alocação, o número de cada área é indicativo, não estimativa.
+
+| Área | Média R / P / A | Baixa R / P / A | População Média / Baixa |
+|---|---|---|---|
+| Alunos e turmas | 2 / 1 / 3 | 1 / 0 / 2 | 26 / 14 |
+| Secretaria | 2 / 1 / 3 | 0 / 0 / 3 | 22 / 9 |
+| Matrículas — entrada | 1 / 1 / 4 | 0 / 0 / 3 | 34 / 9 |
+| Matrículas — contrato | 1 / 1 / 4 | 0 / 0 / 3 | 30 / 16 |
+| Matrículas — ciclo | 2 / 0 / 4 | 1 / 1 / 1 | 62 / 12 |
+| Acadêmico — base | 0 / 0 / 6 | 2 / 0 / 1 | 56 / 5 |
+| Acadêmico — avaliações | 0 / 0 / 6 | 1 / 0 / 2 | 33 / 16 |
+| Acadêmico — recuperações | 0 / 2 / 4 | 0 / 1 / 2 | 44 / 19 |
+| Acadêmico — segundas chamadas | 1 / 1 / 4 | 0 / 1 / 2 | 33 / 19 |
+| Diário de aulas | 0 / 2 / 4 | 0 / 0 / 3 | 44 / 14 |
+| Financeiro | 0 / 1 / 5 | 1 / 1 / 1 | 32 / 24 |
+| Comercial | 2 / 1 / 3 | 2 / 1 / 0 | 28 / 11 |
+| Configuração | 1 / 2 / 3 | 1 / 0 / 2 | 36 / 30 |
+| Público e portal | 3 / 0 / 3 | 1 / 1 / 1 | 35 / 14 |
+| **Total** | **15 / 13 / 56** (84) | **10 / 6 / 26** (42) | **515 / 212** |
+
+#### 7.6.4 Estimativa estratificada para os 727 (IC 95%) e comparação
+
+| Status | Semente 42, §7.3 (`e5418550`) | Semente 20261013 (`4c4f526a`) | ≈ achados, 42 → 20261013 |
+|---|---|---|---|
+| Resolvido | 24,9% (17,6–32,1%) | **18,3% (11,7–24,9%)** | 181 → **133** |
+| Parcial | 16,2% (9,6–22,8%) | **14,9% (8,9–20,9%)** | 118 → **109** |
+| Aberto | 58,9% (50,3–67,5%) | **66,8% (58,7–74,9%)** | 428 → **486** |
+
+- **Os intervalos se sobrepõem nos três status.** No "aberto", a faixa comum vai de 58,7% a 67,5%.
+- **Só os 105 novos:** resolvido 17,0% (9,7–24,4%), parcial 14,9% (8,6–21,2%) e aberto 68,0% (59,4–76,7%), ≈ 495.
+- **Limites:**
+  - como na §7.3, um estrato com 0 ou 3 de 3 (ou 0 ou 6 de 6) contribui com variância zero, o que deixa o intervalo otimista;
+  - as duas amostras foram medidas em `main` diferentes (`e5418550` e `4c4f526a`). A comparação mistura, portanto, a variação de amostragem com o efeito das PRs #171–#174. Na amostra nova, esse efeito é pequeno: 4 achados resolvidos e 4 parciais (§7.6.1, item 5).
+
+#### 7.6.5 Padrões entre os abertos e parciais
+
+São 101 achados não resolvidos: 82 abertos e 19 parciais. Cada um recebeu até 2 etiquetas; o "(p)" marca os parciais.
+
+| Padrão | Abertos | Parciais | Achados | O que se repete |
+|---|---|---|---|---|
+| **Layout e hierarquia** | 20 | 3 | 244 (p), 298, 378, 407, 535, 580, 603, 717, 765, 841, 1049, 1072, 1378, 1379, 1424, 1697, 1902, 2045 (p), 2104, 2106, 2354, 2605, 2712 (p) | Estado ou etapa que não aparece: contrato sem etapa (603, 717), desistência sem estado ao lado do link (765), modelo sem estado da decisão (2354) e "Prazo vencido" sem destaque (378). Também: motivo inteiro em `whitespace-pre-wrap` (1049, 2106), cartões onde caberia tabela (407, 1697), resultado longe do botão (1902, 1072) e lista sem filtro (1378) |
+| **Texto e microcopy** | 17 | 3 | 299, 408, 435 (p), 788, 804 (p), 841, 1316, 1329, 1424, 1530, 1568, 1632, 1675, 1852, 1854, 2104, 2158 (p), 2270, 2415, 2607 | Registro sem aluno ou matrícula (408, 1424, 2104) e IDs crus (2158). Também: mensagem que não diz a causa ("Confira a versão…, prazo…, data…", 1568; "(usuário inativo)", 1329), rótulo enganoso (1675, 1854, 2270 "Colaboradores" que conta matrículas), sufixo de fuso repetido por linha (435, 2415) e "Q165" vindo do servidor (804) |
+| **Validação de campo** | 17 | 2 | 312, 432, 474, 520, 694, 733, 923, 1157, 1318, 1672, 1840 (p), 1868, 1976, 2129, 2131, 2142, 2218, 2470, 2488 (p) | Validação só no servidor ou só no submit: um erro por vez (2131, 2488), mensagem única para seis campos (2129) e erro depois do botão (2218). Também: opções que o servidor vai recusar (474, 923, 1672), `<select>` que nasce em "Aprovar e compensar" (2142), botão de recusa que pula o `required` (432) e `FormData` sem o submitter, que manda "Pedir correção" como conclusão (1976) |
+| **Feedback de ação** | 15 | 4 | 311, 312, 520, 535, 552, 1303, 1316, 1367, 1568, 1672, 1687 (p), 1840 (p), 2019, 2218, 2248 (p), 2505, 2522 (p), 2606, 2681 | Botão desabilitado sem dizer por quê (311, 520, 1840). Também: sucesso só com `router.refresh()` (552, 1367), "Sair" e vídeo que falham em silêncio (2606, 2681) e mensagem sem estilo (2505) |
+| **Navegação e becos** | 15 | 3 | 381, 550, 680, 719, 730, 765, 1047, 1115, 1209, 1303, 1518, 1620 (p), 1776, 1801, 1852, 1854, 1963 (p), 2246 (p) | Falta o caminho para destravar (550, 680, 1303); volta errada (`VoltarPara href="/alunos"`, 730). Também: paginação só para frente fora de `Paginacao` (1047, 1620), links e abas sem estilo nem `aria-current` (1115, 1801, 1963) e `window.location.assign` (1209) |
+| **Acessibilidade** | 8 | 2 | 396, 552, 1115, 1194, 1491, 1805, 1902, 1904, 1963 (p), 2522 (p) | `<main>` dentro de `<main>` (1194); `role="status"` estático (396) ou ausente (1491); `aria-live` no painel inteiro (1904); checkbox desabilitado sem descrição (1805) |
+| **Estado de rota** | 3 | 5 | 381, 532 (p), 602 (p), 1505 (p), 1518, 1544 (p), 1764 (p), 1776 | O erro de consulta continua devolvido pela página como `<p role="alert">` solto. Os `error.tsx` da #174 só pegam exceção, não o `return` da página. O loading da área não reaparece na navegação interna |
+| **Fuso e data** | 5 | 1 | 407, 435 (p), 501, 1530, 2415, 2500 | Data em UTC forçado (2500), vigência que não aparece (1530), prazo sem o tempo restante (501) |
+| **Confirmação** | 5 | 0 | 325, 1479, 2019, 2142, 2244 | Só L2244 (revogar cobertura) está na fatia B de `confirmacoes-mapa.ts`. Os outros quatro estão fora das fatias A e B: aprovar a troca de e-mail que revoga sessões (325), oficializar a nota de recuperação (1479), decidir pedido de desconto sem motivo (2019) e aprovar compensação de permuta, que abate mensalidades (2142) |
+| **Outro** | 5 | 0 | 925, 1378, 1976, 1992, 2354 | Decisão que depende do `submitter` (1976, 1992); `<strong>` no nome (925) |
+| **Dados não perdidos** | 1 | 0 | 923 | Evidência digitada perdida quando o servidor recusa o responsável já autorizado |
+| **Mobile** | 1 | 0 | 2605 | Cabeçalho do portal do aluno com links colados e área de toque pequena |
+
+**Leitura.**
+- **Onde está o grosso:** os três padrões com mais abertos são Layout e hierarquia (20), Texto e microcopy (17) e Validação de campo (17). Feedback de ação e Navegação e becos vêm logo atrás, com 15 cada. É o mesmo quadro da §7.3.4, com uma diferença: a validação de campo pesa mais aqui (19 de 101, contra 13 de 94).
+- **Validação de campo:** em geral, o defeito é o servidor recusar o que a tela deixou escolher. Isso se resolve tela a tela, não com um componente.
+- **Confirmação:** a amostra nova acha quatro ações sem confirmação que não estão em nenhuma das fatias de `confirmacoes-mapa.ts`. Uma delas (2142) tem efeito financeiro, que é o critério da fatia A.
+- **Em lote, o que mais renderia:** o mesmo da §7.3.4. O cabeçalho de erro com volta e "Tentar de novo" no lugar do `<p role="alert">` devolvido pela página aparece em 8 achados (381, 532, 602, 1518, 1776, e em parte 1505, 1544 e 1764). A #174 criou os `error.tsx`, mas as páginas continuam fazendo `return <p role="alert">` antes de qualquer exceção.
+
+#### 7.6.6 Tabela por achado
+
+Na ordem do doc 42. Os caminhos são relativos a `src/app/(app)/`, salvo os que começam com `app/`, `components/`, `lib/` ou `server/`, que são relativos a `src/`. O ¹ marca os 21 achados que também estão na amostra da semente 42.
+
+| L | Área | Severidade | Veredito | Evidência atual |
+|---|---|---|---|---|
+| 228 | Alunos e turmas | Média | resolvido | `alunos/ImportarAlunosModal.tsx:67` usa `Modal` (`components/Modal.tsx`: `role="dialog"`, `aria-modal`, Esc e foco preso e devolvido) |
+| 244 | Alunos e turmas | Média | parcial | `alunos/[id]/FichaAluno.tsx:189,505` "Outro" sem observação agora é barrado no cliente com foco; o painel (`:476-509`) ainda não lista as matrículas que serão encerradas |
+| 311 | Alunos e turmas | Média | aberto | `alunos/[id]/movimentacoes/MovimentacoesPainel.tsx:140` "Aplicar proposta aprovada" desabilitado por `!podeAprovar`; o aviso de `:136` só existe dentro do bloco de decisão |
+| 312 ¹ | Alunos e turmas | Média | aberto | `alunos/[id]/movimentacoes/NovaPausa.tsx:68` botão só `disabled={ocupado}`; pendências em `:66` sem aviso junto ao botão |
+| 325 | Alunos e turmas | Média | aberto | `alunos/[id]/portal/painel.tsx:53` "Aprovar e aplicar" é submit direto, sem confirmação da revogação, colado em "Rejeitar" |
+| 326 ¹ | Alunos e turmas | Média | resolvido | `alunos/[id]/portal/painel.tsx:53` `rotular(SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, …)` |
+| 246 | Alunos e turmas | Baixa | resolvido | `alunos/[id]/FichaAluno.tsx:532` cartão de turma sugerida usa `text-blue-700`; não há `text-blue-800` em `(app)` |
+| 298 | Alunos e turmas | Baixa | aberto | `alunos/[id]/financeiro/page.tsx:141-151` links de três fluxos por matrícula seguem soltos, sem seção nem agrupamento por contrato |
+| 299 | Alunos e turmas | Baixa | aberto | `alunos/[id]/financeiro/page.tsx:151` link da secretaria ainda usa `{m.codigo}` sem fallback; `:142` já usa "sem código" |
+| 367 | Secretaria | Média | resolvido | `secretaria/CondicoesEncerramento.tsx:32,110` tipos via `rotular(TIPO_COBRANCA_LABEL)`, sem "Q165"; `SecretariaPainel.tsx:51,66` status rotulado e datas com `formatarDataCivil` |
+| 378 ¹ | Secretaria | Média | aberto | `secretaria/reservas/page.tsx:28` " · Prazo vencido" concatenado no fim da linha de prazo e fuso, sem destaque |
+| 407 | Secretaria | Média | aberto | `secretaria/reservas/particulares/[id]/page.tsx:21` `<ul>` plano "professor · início — fim · fuso", sem agrupar por dia e repetindo data e fuso |
+| 419 ¹ | Secretaria | Média | resolvido | `secretaria/desistencias/page.tsx:32` `PaginacaoFila` com "Anterior" e "Próxima" (#158/#161) |
+| 432 | Secretaria | Média | aberto | `secretaria/envios-portal/ConciliacaoEnvio.tsx` "Não autorizar" é `type="button"` e chama `decidir(…, false)` sem validar o motivo `required minLength={5}` |
+| 435 | Secretaria | Média | parcial | `secretaria/envios-portal/page.tsx:29` finalidade com `rotular(FINALIDADE_TOKEN_PORTAL_ALUNO_LABEL)`; o sufixo "(horário exibido em X; origem UTC)" continua duas vezes por item |
+| 381 ¹ | Secretaria | Baixa | aberto | `secretaria/reservas/page.tsx:14` erro devolve só `VoltarPara` e `<p role="alert">`, sem `<h1>`, sem as `<nav>` e sem "Tentar de novo" |
+| 396 | Secretaria | Baixa | aberto | `secretaria/reservas/[id]/page.tsx:17` e `particulares/[id]/page.tsx:17` mantêm `role="status"` em parágrafo estático do servidor |
+| 408 ¹ | Secretaria | Baixa | aberto | `secretaria/reservas/particulares/[id]/page.tsx:16` `<h1>` sem aluno nem matrícula; identificação só pelo link de `:22` |
+| 474 | Matrículas — entrada | Média | aberto | `matriculas/nova/page.tsx:31,46` `listarTurmasAbertas()` sem argumentos; o filtro só tira turmas lotadas, sem filtrar por produto ou nível |
+| 517 | Matrículas — entrada | Média | resolvido | `matriculas/[id]/nova-reserva/Formulario.tsx:79,82-83` pagador e tipos com `rotular`; valores com `formatarMoeda` |
+| 532 | Matrículas — entrada | Média | parcial | `matriculas/[id]/preparacao/page.tsx:17` erro segue como `<p role="alert">` solto, sem "Tentar de novo"; o cabeçalho e as abas do `[id]/layout.tsx` dão a volta |
+| 535 | Matrículas — entrada | Média | aberto | `matriculas/[id]/preparacao/page.tsx:49` impedimento é `<p>` cru, sem `role`, sem cor, e o formulário some |
+| 550 | Matrículas — entrada | Média | aberto | `matriculas/[id]/emissao/page.tsx:29` "Nenhum documento anexado" sem lista dos exigidos nem link para anexar |
+| 580 | Matrículas — entrada | Média | aberto | `matriculas/[id]/entrada-particular/page.tsx:22-24` itens na ordem do servidor; "exigido" e "confirmado" na mesma frase, sem destaque |
+| 501 | Matrículas — entrada | Baixa | aberto | `matriculas/[id]/reserva/page.tsx:18,21` só a data absoluta do prazo, sem o tempo restante |
+| 520 | Matrículas — entrada | Baixa | aberto | `matriculas/[id]/nova-reserva/Formulario.tsx:86` botão desabilitado por checkbox ou motivo curto, sem dizer qual falta |
+| 552 | Matrículas — entrada | Baixa | aberto | `matriculas/[id]/emissao/ConfirmarEmissao.tsx:17` sucesso só faz `router.refresh()`, sem mensagem nem foco |
+| 602 | Matrículas — contrato | Média | parcial | `matriculas/[id]/loading.tsx` e `error.tsx` existem, mas `contrato/page.tsx:25` ainda devolve `<p role="alert">` solto quando a consulta falha |
+| 603 ¹ | Matrículas — contrato | Média | aberto | `matriculas/[id]/contrato/page.tsx:32-36` título, links e parágrafo; nenhuma etapa do contrato |
+| 669 | Matrículas — contrato | Média | resolvido | `matriculas/[id]/layout.tsx:32-41` cabeçalho com código, aluno e estado acima de `substituicoes/[propostaId]` (o `<h1>` de `:29` segue genérico) |
+| 680 | Matrículas — contrato | Média | aberto | `matriculas/[id]/contrato/aditivos/page.tsx:27` sem original, mostra só `<p role="status">{d.impedimento}</p>`, sem caminho para destravar |
+| 717 | Matrículas — contrato | Média | aberto | `matriculas/[id]/contrato/aditivos/[propostaId]/originais/[artefatoId]/page.tsx:61-74` seções condicionais em sequência, sem indicador de etapa |
+| 730 | Matrículas — contrato | Média | aberto | `matriculas/[id]/contrato/aditivos/agenda/page.tsx:11` `VoltarPara href="/alunos"` |
+| 694 | Matrículas — contrato | Baixa | aberto | `matriculas/[id]/contrato/aditivos/Formularios.tsx:88-89` checkbox sem `name` (igual à base) e "Aprovar" como `<option disabled={superada}>` |
+| 719 | Matrículas — contrato | Baixa | aberto | `matriculas/[id]/contrato/aditivos/[propostaId]/originais/[artefatoId]/page.tsx:23,55` paginação aninhada com quatro parâmetros, sem âncora nem indicação do bloco |
+| 733 | Matrículas — contrato | Baixa | aberto | `matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx:36-37` sem contador nem "selecionar todos"; botão só desabilitado por `pendente` |
+| 765 | Matrículas — ciclo | Média | aberto | `matriculas/[id]/desistencia/page.tsx:27-28` links "Conferir documentos e assinaturas" e "Consultar decisão administrativa" sem estado da etapa |
+| 788 | Matrículas — ciclo | Média | aberto | `matriculas/[id]/desistencia/documentos/page.tsx:36,38` "Processo {i + 1}" e "Referência externa registrada." sem o valor; o DTO segue booleano |
+| 828 | Matrículas — ciclo | Média | resolvido | `matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx:69` erro e sucesso da decisão dentro do `<article>` de cada revisão (`alvo === decidir:<id>`) |
+| 841 | Matrículas — ciclo | Média | aberto | `matriculas/[id]/compensacoes/[cobrancaId]/CompensacaoCobertura.tsx:96-101` cartão da proposta sem data nem autor |
+| 907 | Matrículas — ciclo | Média | resolvido | `matriculas/[id]/fechamentos-horas/PrepararFechamento.tsx:54` `CampoFuso` pré-preenchido e validado no cliente (#159) |
+| 923 | Matrículas — ciclo | Média | aberto | `matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx:40` `responsaveis.map` ainda oferece quem já está autorizado |
+| 804 | Matrículas — ciclo | Baixa | parcial | `matriculas/[id]/desistencia/financeiro/page.tsx` sem "Q165"/"Q121" fixos, mas mostra o impedimento do servidor "…memória contratual Q165." (`server/matricula/desistencia-reconferencia-delta-consulta.ts:71`) |
+| 925 | Matrículas — ciclo | Baixa | aberto | `matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx:41` nome do responsável continua em `<strong>` |
+| 939 | Matrículas — ciclo | Baixa | resolvido | `matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx:22,37` instante em pt-BR com "UTC" e `AvisoFusoNaoConfigurado` uma vez no topo |
+| 1047 ¹ | Acadêmico — base | Média | aberto | `academico/calendario/page.tsx:29` só "Versões anteriores" por cursor; sem "Anterior" nem volta à primeira página |
+| 1049 | Acadêmico — base | Média | aberto | `academico/calendario/page.tsx:26` motivo inteiro em `whitespace-pre-wrap`, sem truncar |
+| 1072 | Acadêmico — base | Média | aberto | `academico/calendario/[id]/page.tsx:35` link do replanejamento continua depois da lista de períodos não letivos (`:31-34`) |
+| 1115 | Acadêmico — base | Média | aberto | `academico/grades/page.tsx:41` `<nav>` "Pendentes / Incluir histórico" sem `aria-current` nem estilo do filtro ativo |
+| 1157 ¹ | Acadêmico — base | Média | aberto | `academico/regras/[nivelId]/Formularios.tsx:23` `replace(",", ".")` troca só a primeira vírgula; nenhum `pattern` no arquivo |
+| 1194 | Acadêmico — base | Média | aberto | `academico/modalidades/quantidade/page.tsx:9` e `[id]/quantidade/page.tsx:9-10` ainda abrem `<main>` dentro do `<main>` do layout |
+| 1005 | Acadêmico — base | Baixa | resolvido | `academico/admissoes/page.tsx:21` usa `STATUS_TURMA_LABEL`, tipado `Record<StatusTurma, string>` (`lib/labels.ts:263`): status novo sem rótulo não compila |
+| 1026 | Acadêmico — base | Baixa | resolvido | `academico/admissoes/excecoes/page.tsx:13` `h1 text-2xl` recebe peso 500 da regra base de `app/globals.css` (como L1645 na §7.4) |
+| 1209 ¹ | Acadêmico — base | Baixa | aberto | `academico/modalidades/[id]/quantidade/AlterarQuantidadeAulas.tsx:20` sucesso ainda faz `window.location.assign(...)` |
+| 1303 | Acadêmico — avaliações | Média | aberto | `academico/avaliacoes/[alocacaoId]/page.tsx:49-50` links de extras e planos ainda condicionados a `consolidado.ok`, sem motivo junto |
+| 1316 ¹ | Acadêmico — avaliações | Média | aberto | `academico/avaliacoes/[alocacaoId]/[codigo]/Formularios.tsx:66` sucesso fixo "…exige conferência…" mesmo com `modo=rascunho` |
+| 1367 | Acadêmico — avaliações | Média | aberto | `academico/avaliacoes/[alocacaoId]/fechamento/ConfirmarFechamento.tsx:38-40,56` sucesso só faz `reset()` e `refresh()`; `FeedbackAcao` sem `sucesso` |
+| 1378 | Acadêmico — avaliações | Média | aberto | `academico/correcoes/page.tsx:13,24` lê só `pagina`; lista sem filtro por tipo, por caso preparado nem contagem |
+| 1379 | Acadêmico — avaliações | Média | aberto | `academico/correcoes/page.tsx:27` "Situação na correção… Situação atual…" em texto corrido, sem destaque quando divergem |
+| 1424 | Acadêmico — avaliações | Média | aberto | `academico/equivalencias/page.tsx:42` cabeçalho e cartões sem aluno nem código da matrícula |
+| 1290 | Acadêmico — avaliações | Baixa | resolvido | `academico/avaliacoes/Identificacao.tsx:5` usa `IdentificacaoRegistro`, que mostra "sem código" no lugar do UUID (#160) |
+| 1318 | Acadêmico — avaliações | Baixa | aberto | `academico/avaliacoes/[alocacaoId]/[codigo]/Formularios.tsx:82` nota em texto livre `maxLength={100}`, sem faixa da escala no cliente |
+| 1329 | Acadêmico — avaliações | Baixa | aberto | `academico/avaliacoes/[alocacaoId]/[codigo]/designacao/page.tsx:28` " (usuário inativo)" concatenado, sem dizer o que fazer |
+| 1479 | Acadêmico — recuperações | Média | aberto | `academico/recuperacoes/[realizacaoId]/Formularios.tsx:45-47` "Oficializar esta versão" é opção do select e vai no submit, sem checkbox de conferência |
+| 1491 | Acadêmico — recuperações | Média | aberto | `academico/recuperacoes/correcoes/[notaId]/Formularios.tsx:35-38` resultado da conferência renderizado sem `role="status"` |
+| 1505 | Acadêmico — recuperações | Média | parcial | `academico/loading.tsx` cobre a entrada na área, mas `recuperacoes/designadas` não tem `loading.tsx`; aba e paginação por query string seguem sem sinal |
+| 1518 | Acadêmico — recuperações | Média | aberto | `academico/recuperacoes/planos/page.tsx:22,28` `alocacaoId = ""` vai à consulta; o erro sai como `<p role="alert">` sem cabeçalho nem link |
+| 1530 | Acadêmico — recuperações | Média | aberto | `academico/recuperacoes/planos/autorizacoes-preparacao/page.tsx:31` "Prazo até…" sem dizer se está vigente, expirada ou consumida |
+| 1544 | Acadêmico — recuperações | Média | parcial | `academico/loading.tsx` cobre a entrada vinda de outra seção; `recuperacoes/planos/[propostaId]` segue sem `loading.tsx` na volta de agenda e designação |
+| 1568 | Acadêmico — recuperações | Baixa | aberto | `academico/recuperacoes/planos/[propostaId]/prorrogacoes/page.tsx:38` "Aprovação indisponível. Confira a versão…, prazo…, data… e situação…": quatro hipóteses, sem a causa |
+| 1620 | Acadêmico — recuperações | Baixa | parcial | `academico/recuperacoes/tentativas/[itemReservaId]/autorizacao/page.tsx:32` situação rotulada; `:42` "Autorizações mais antigas" segue só para frente, enquanto as irmãs usam `Paginacao` |
+| 1632 | Acadêmico — recuperações | Baixa | aberto | `academico/recuperacoes/tentativas/[itemReservaId]/designacao/page.tsx:36` "Mostrando os primeiros 50 professores" sem o total e sem limpar a busca |
+| 1672 | Acadêmico — segundas chamadas | Média | aberto | `academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/page.tsx:17` `podePropor` checa só vínculo e matrícula; com saldo 0 o formulário de proposta continua |
+| 1675 | Acadêmico — segundas chamadas | Média | aberto | `academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/FormularioOcorrencia.tsx:35` texto fala em cancelamento, mas `tipos` (`:11-14`) só tem Falta e Impedimento |
+| 1687 ¹ | Acadêmico — segundas chamadas | Média | parcial | `academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes/Formulario.tsx:27-28,39` sucesso via `FeedbackAcao`, mas sem `reset()`, sem o prazo na mensagem e sem foco |
+| 1697 | Acadêmico — segundas chamadas | Média | aberto | `academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/page.tsx:31-36` histórico em cartões `<article>`, sem tabela, filtro nem contador |
+| 1788 ¹ | Acadêmico — segundas chamadas | Média | resolvido | `academico/segundas-chamadas/reservas/[reservaId]/cancelamento/page.tsx:18` `rotular(STATUS_ENCONTRO_LABEL…)` e `rotular(STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL…)` |
+| 1801 | Acadêmico — segundas chamadas | Média | aberto | `academico/segundas-chamadas/reservas/[reservaId]/remarcacao/page.tsx:90-91` "Primeira página" e "Propostas anteriores" sem `className`, sem cor nem sublinhado |
+| 1764 | Acadêmico — segundas chamadas | Baixa | parcial | `academico/error.tsx` e `academico/loading.tsx` cobrem `propostas/[propostaId]/agenda` por herança; navegando dentro de `segundas-chamadas` o loading da área não reaparece |
+| 1776 | Acadêmico — segundas chamadas | Baixa | aberto | `academico/segundas-chamadas/propostas/[propostaId]/designacao/page.tsx:29` falha da consulta devolve `<p role="alert">` solto, sem título nem volta |
+| 1805 | Acadêmico — segundas chamadas | Baixa | aberto | `academico/segundas-chamadas/reservas/[reservaId]/remarcacao/Formulario.tsx:49` checkbox `disabled={decisao !== "aprovar"}` sem texto da dependência |
+| 1840 | Diário de aulas | Média | parcial | `diario/DiarioAulas.tsx:151` lista vazia agora explicada com `EstadoVazio`; `:153` conteúdo vazio e turma não escolhida desabilitam "Salvar aula" sem explicar |
+| 1852 | Diário de aulas | Média | aberto | `diario/encontros/page.tsx:26` link só com `PREVISTO && fim <= agora`; quando falha, nenhum motivo |
+| 1902 | Diário de aulas | Média | aberto | `diario/encontros/[id]/correcao/CorrecaoAula.tsx:377` `<Impactos>` no fim do return, longe do botão de `:367`, sem rolagem nem foco |
+| 1963 | Diário de aulas | Média | parcial | `diario/excecoes-gravacao/page.tsx:35` passou a `PaginacaoFila`; as abas de `:22` seguem sem classe nem `aria-current` |
+| 1976 | Diário de aulas | Média | aberto | `diario/reposicoes/ReposicaoDocente.tsx:36,40` `new FormData(form)` sem o submitter não traz `operacao`; "Pedir correção" cai em concluir, e o `formNoValidate` anula o `minLength` |
+| 1992 | Diário de aulas | Média | aberto | `diario/reposicoes/[id]/troca-fonte/TrocaFonteReposicao.tsx:87` `aprovar` ainda vem de `submitter?.getAttribute("value")`, com rejeição como fallback |
+| 1854 ¹ | Diário de aulas | Baixa | aberto | `diario/encontros/page.tsx:29` link de paginação ainda diz "Próximos encontros" |
+| 1868 | Diário de aulas | Baixa | aberto | `diario/encontros/[id]/PublicarGravacao.tsx:19,41` URL colada barrada pelo `pattern`; o handler faz `return` silencioso, sem extrair o ID |
+| 1904 | Diário de aulas | Baixa | aberto | `diario/encontros/[id]/correcao/CorrecaoAula.tsx:122` `aria-live="polite"` no painel de impactos inteiro |
+| 2019 | Financeiro | Média | aberto | `financeiro/FinanceiroPainel.tsx:306,313` Aprovar e Rejeitar chamam `onDecidir(a.id, true/false)` direto, sem campo de motivo |
+| 2104 | Financeiro | Média | aberto | `financeiro/desistencias/page.tsx:22` linha mostra só `{m.codigo ?? "Matrícula"} · Pedido {versao}`, sem aluno, valor nem data |
+| 2129 | Financeiro | Média | aberto | `financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx:22,30` moeda com `uppercase` só visual e validada por `/^[A-Z]{3}$/`; uma mensagem genérica para seis campos |
+| 2131 | Financeiro | Média | aberto | `financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx:45-52` `propostaValida` ainda devolve só a primeira falha |
+| 2142 | Financeiro | Média | aberto | `financeiro/permuta/PermutaOperacional.tsx:161` select `aprovar` nasce em "Aprovar e compensar", sem opção vazia |
+| 2158 | Financeiro | Média | parcial | `financeiro/recebimentos/page.tsx:22,25` valor e data formatados; seguem `Matrícula {r.matriculaId}` e `Cobrança {v.cobrancaId}` crus |
+| 2045 | Financeiro | Baixa | parcial | `financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx` `h3` agora `font-medium`; a `<table>` de impacto segue sem classe nem `scope` |
+| 2105 | Financeiro | Baixa | resolvido | `financeiro/desistencias/page.tsx:23` `PaginacaoFila` com "Anterior" e "Próxima" (#158/#161) |
+| 2106 | Financeiro | Baixa | aberto | `financeiro/desistencias/page.tsx:22` motivo inteiro em `whitespace-pre-wrap`, sem limite de linhas |
+| 2204 | Comercial | Média | resolvido | `leads/[id]/FichaLead.tsx:267,287,369,570,637` `FeedbackAcao` em cada seção, junto da ação que falha |
+| 2218 | Comercial | Média | aberto | `leads/[id]/contratacao/PreparacaoFormulario.tsx:26-29,53` validações só no submit e erro em `<p role="alert">` depois do botão |
+| 2244 ¹ | Comercial | Média | aberto | `carteiras/CoberturasPainel.tsx` "Revogar" chama `revogar(c.id)` → `revogarCobertura` num clique, sem confirmação |
+| 2246 | Comercial | Média | parcial | `carteiras/page.tsx:18-26` lista paginada com total (sem corte silencioso em 100); continua sem busca e sem filtro por vendedor ou período |
+| 2270 | Comercial | Média | aberto | `server/empresas/consultas.ts:62` `colaboradores: e._count.matriculas` conta matrículas; coluna "Colaboradores" em `empresas/EmpresasCliente.tsx:175` |
+| 2302 | Comercial | Média | resolvido | `inbox/InboxCliente.tsx:158-160,260` lista `w-full md:w-80`, escondida no celular quando há thread, com volta "Conversas" |
+| 2220 | Comercial | Baixa | resolvido | `leads/[id]/contratacao/AgendaParticularFormulario.tsx:37` fuso por `CampoFuso`, validado no cliente (#159) |
+| 2248 | Comercial | Baixa | parcial | `carteiras/CoberturasPainel.tsx` "Fim" com `min` do início (`useInicioDoPeriodo`); o erro segue fora do `<form>`, sem foco nem rolagem |
+| 2303 ¹ | Comercial | Baixa | resolvido | `inbox/AtendimentosPainel.tsx:127` revisão de falha usa `FeedbackAcao` com erro e sucesso separados |
+| 2354 ¹ | Configuração | Média | aberto | `configuracao/contratos/page.tsx:14` só "última versão N, M versões registradas", sem estado da decisão |
+| 2370 | Configuração | Média | resolvido | `configuracao/contratos/ModeloFormulario.tsx:95` envio com `botaoClasses({ tamanho: "lg" })`; não há mais `bg-black` |
+| 2470 | Configuração | Média | aberto | `configuracao/migracao/PreparacaoMigracaoPainel.tsx:22` regra do ID de aluno só no clique de "Preparar lote"; os selects não marcam coluna já usada |
+| 2488 | Configuração | Média | parcial | `configuracao/migracao/[loteId]/AplicarVinculoMigracao.tsx:90` fuso por `CampoFuso`; `:62` ainda `setErro(erros[0])`, um erro por vez no rodapé (`:103`) |
+| 2500 | Configuração | Média | aberto | `configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx:13` datas forçadas em `timeZone:"UTC"` com sufixo " UTC", inclusive no select da aula |
+| 2522 | Configuração | Média | parcial | `configuracao/whatsapp/ReguaComercialPainel.tsx:103-115` só a resposta mais recente vale (controle de corrida); segue sem debounce, sem "buscando"/"nenhum lead" e sem `role="combobox"` (`:285-300`) |
+| 2402 | Configuração | Baixa | resolvido | `configuracao/turmas/ImportarTurmasModal.tsx:5` usa `Modal`; nenhum `shadow-*` em `configuracao/turmas` |
+| 2415 | Configuração | Baixa | aberto | `configuracao/usuarios/UsuariosPainel.tsx:32,99` "(horário exibido em X; origem UTC)" repetido em cada linha de "Último acesso" |
+| 2505 | Configuração | Baixa | aberto | `configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx` três `<p role="alert">` sem classe e `<MensagemStatus texto={ok} />` sem estilo |
+| 2553 ¹ | Público e portal | Média | resolvido | `app/login/page.tsx:45` volta para `callbackUrl` interno; `server/_shared/sessao.ts:133-141,158,165` o guard monta o login com volta (#172) |
+| 2567 ¹ | Público e portal | Média | resolvido | `app/pagar/[token]/quadro.ts:64-77` quadro próprio para link inválido ou expirado, paga, cancelada, vencida e pendente (#172) |
+| 2605 | Público e portal | Média | aberto | `app/portal-aluno/page.tsx:19` dois links sublinhados com `ml-4` e "Sair" com a mesma aparência (`sair.tsx`), sem área de toque |
+| 2606 ¹ | Público e portal | Média | aberto | `app/portal-aluno/sair.tsx:8` `await fetch(...)` sem checar `ok` nem `catch`; `router.replace` sempre |
+| 2629 | Público e portal | Média | resolvido | `app/portal-aluno/ativar/page.tsx:25,99` "e-mail validado" é sucesso via `FeedbackAcao`, separado do erro (#172) |
+| 2681 | Público e portal | Média | aberto | `app/portal-aluno/reposicoes/[id]/video-gravacao.tsx:18,20` `onError` no `<video>` com a fonte em `<source>` filho; o handler não dispara |
+| 2570 | Público e portal | Baixa | resolvido | `app/pagar/[token]/requisicao.ts:15,18` mensagem própria em vez de `corpo.erro`; `PagarCliente.tsx:36,41` botão vira "Tentar de novo" e `FeedbackAcao` (#172) |
+| 2607 | Público e portal | Baixa | aberto | `app/portal-aluno/page.tsx:19` vazio diz só "Não há reposições para este acesso." |
+| 2712 ¹ | Público e portal | Baixa | parcial | `preferencias/FusoExibicaoFormulario.tsx:27` sucesso via `FeedbackAcao`; botão "Salvar preferência" segue `variante: "secundario"` |
+
+#### 7.6.7 Casos limítrofes e decisões
+
+- **Resolvidos por um caminho diferente do sugerido:**
+  - **L669:** o `<h1>` da proposta de substituição continua genérico. O código e o aluno aparecem no cabeçalho do `[id]/layout.tsx`, acima dele. É o mesmo critério do L268 na §7.3.6.
+  - **L1005:** não há fallback (`?? t.status`), mas `STATUS_TURMA_LABEL` é `Record<StatusTurma, string>`. Um status novo sem rótulo não compila, então o "undefined" na tela não acontece.
+  - **L2220 e L907:** o fuso usa `CampoFuso` (input + datalist), e não um `<select>`. Mesmo assim, o erro de digitação é barrado no cliente, que era o defeito.
+  - **L2567:** `quadro.ts` trata link inválido ou expirado, paga, cancelada, vencida e pendente. Uma cobrança `PENDENTE` com vencimento já passado, ainda não marcada como `ATRASADO`, aparece como pendente. Isso depende de como o status é gravado no servidor, e não da tela.
+- **L1026:** reclassificação, com o mesmo critério de L1645 na §7.4.
+- **Parciais pela borda de rota (L1505, L1544, L1764):**
+  - o `academico/loading.tsx` e o `academico/error.tsx` da #174 cobrem a rota por herança;
+  - mas o loading só reaparece quando muda o filho direto de `/academico`, e não na troca de query string nem na navegação dentro de `recuperacoes/…` ou `segundas-chamadas/…`;
+  - L1764 pedia `loading.tsx` e `error.tsx` no segmento. O erro ficou coberto e o loading, em parte.
+- **L1976 está pior do que o doc 42 descreve.** `new FormData(evento.currentTarget)` sem o submitter não leva o `operacao` do botão (`ReposicaoDocente.tsx:36,40`). Assim, "Pedir correção ao aluno" também cai em concluir a reposição.
+- **L694:** o checkbox de conferência é `required` desde a base (`1ca53675`). O defeito que o achado aponta, sem `name` e com "Aprovar" como `<option disabled>`, continua igual.
+- **L2246 (parcial):** a lista de coberturas passou a ter paginação com total, então o corte silencioso em 100 acabou. Busca e filtro por vendedor ou período continuam ausentes.
+- **L2522 (parcial):** a busca do piloto ganhou controle de corrida ("só a resposta mais recente vale"). Faltam debounce, o estado "buscando/nenhum" e a semântica de combobox.
+- **Vistos de passagem, fora do defeito do achado:**
+  - a tabela de impacto de `financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx` (L2045) imprime `{c.tipo}` cru;
+  - em `academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/page.tsx:17`, o bloqueio novo explica vínculo e matrícula inativos, mas não o saldo zerado do L1672.
+
+#### 7.6.8 Como reproduzir
+
+```
+git checkout 4c4f526a
+node scripts/medicao-ux/amostra.mjs 6 3 20261013   # a amostra nova de 126
+node scripts/medicao-ux/amostra.mjs 6 3 42         # para conferir a sobreposição (21 linhas)
+```
+
+A estimativa usa `estimativaEstratificada` (`scripts/medicao-ux/nucleo.mjs:247`) sobre as contagens da tabela 7.6.3, com as populações de `achadosDoRepositorio()`, como na §7.3.7.
