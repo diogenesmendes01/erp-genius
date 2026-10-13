@@ -1,18 +1,17 @@
 import { referenciaDestinoCobranca } from "./elegibilidade";
-import { StatusCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
-import type { PassoRegua } from "@/server/cobrancas/regua";
 import { despacharFila, type ResultadoDespacho } from "./despachante";
 import { enfileirarIntencaoCobranca, ErroCobrancaAlterada } from "./fila";
-import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
+import { garantirContato } from "./identidade";
+import { carregarCobrancasDaRegua, decidirEnvioCron } from "./alcance-regua";
 import { renderizarTemplate, TEXTOS_FABRICA } from "./render";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 
 // CRON DA RÉGUA (doc 26 §Camada 1): reusa o MESMO cérebro e a MESMA projeção da fila
 // humana (montarReguaPorCobranca + proximaAcao) — nunca recalcula "quem dispara" com
-// lógica própria (doc 29 regra 1). Só grava INTENÇÕES; quem envia é o despachante.
+// lógica própria (doc 29 regra 1). Só grava INTENÇÕES; quem envia é o despachante. A regra de quem recebe é
+// decidirEnvioCron (alcance-regua.ts), a mesma que conta o alcance na ativação da régua (docs/42 L2517).
 
 export interface ResultadoCron {
   executou: boolean;
@@ -56,16 +55,7 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
   // TRAVA S1 (lei): régua automática exige driver oficial — o cron nem enfileira em Baileys.
   if (numero.driver !== "META_CLOUD") return zerado("trava_driver_oficial");
 
-  const cobrancas = await prisma.cobranca.findMany({
-    where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
-    include: INCLUDE_DESTINO,
-  });
-
-  const regua = await montarReguaPorCobranca(
-    cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
-    agora,
-    politica.degraus,
-  );
+  const { cobrancas, regua } = await carregarCobrancasDaRegua(agora, politica.degraus);
 
   const templates = await prisma.templateWhatsApp.findMany();
   const templatePorId = new Map(templates.map((t) => [t.id, t]));
@@ -75,25 +65,20 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
 
   for (const cobranca of cobrancas) {
     const calc = regua.get(cobranca.id);
-    if (!calc || calc.estado !== "acao_devida" || !calc.passo) continue;
+    const decisao = decidirEnvioCron(cobranca, calc, politica.modoPorPasso);
+    if (decisao.tipo === "sem_acao" || !calc) continue;
     r.acoesDevidas += 1;
 
-    const passo = calc.passo as PassoRegua;
-    // D+15 (bloquear) nunca vira intenção automática — aprovação humana sempre (lei).
-    if (calc.tipoAcao === "bloquear") {
+    // D+15 (bloquear) e degrau manual/lote nunca viram intenção automática — aprovação humana sempre (lei).
+    if (decisao.tipo === "nao_automatico") {
       r.degrausNaoAutomaticos += 1;
       continue;
     }
-    if (politica.modoPorPasso.get(passo) !== "AUTOMATICO") {
-      r.degrausNaoAutomaticos += 1;
-      continue;
-    }
-
-    const destino = resolverDestinoCobranca(cobranca);
-    if (!destino) {
+    if (decisao.tipo === "sem_destino") {
       r.semDestino += 1; // S2: sem destino → intenção não nasce; item segue na fila humana
       continue;
     }
+    const { passo, destino } = decisao;
 
     // Template do degrau: config da política → por nome (modelo de fábrica) → texto de fábrica.
     const templateId = politica.templateIdPorPasso.get(passo) ?? null;

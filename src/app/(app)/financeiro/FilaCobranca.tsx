@@ -11,7 +11,7 @@ import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { registrarCobrancaWhatsApp } from "@/server/financeiro/acoes";
 import { prepararCobrancaManual } from "@/server/financeiro/cobranca-manual";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
-import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca, type EnvioApiResultado } from "@/server/whatsapp/acoes";
+import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca, type EnvioApiResultado, type LoteResultado } from "@/server/whatsapp/acoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
@@ -120,8 +120,10 @@ export function FilaCobranca({
   const [pagar, setPagar] = useState<FilaCobrancaItem | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
-  const [selecao, setSelecao] = useState<Set<string>>(new Set());
-  const [enviandoLote, setEnviandoLote] = useState(false);
+  // Seleção do lote: o item inteiro, por id (o item que sai da visão pelo filtro continua no lote e na revisão).
+  const [selecao, setSelecao] = useState<Map<string, FilaCobrancaItem>>(new Map());
+  // Lote cujo envio espera confirmação: a seleção congelada no clique (docs/42 L2018; docs/43 §7.5 item 1).
+  const [confirmarLote, setConfirmarLote] = useState<FilaCobrancaItem[] | null>(null);
   // Cobrança cujo envio via API espera confirmação (linha da fila ou gaveta do detalhe).
   const [confirmarEnvio, setConfirmarEnvio] = useState<FilaCobrancaItem | null>(null);
 
@@ -224,26 +226,32 @@ export function FilaCobranca({
     }
   }
 
-  function alternarSelecao(id: string) {
+  function alternarSelecao(item: FilaCobrancaItem) {
     setSelecao((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
+      const n = new Map(s);
+      if (n.has(item.id)) n.delete(item.id);
+      else n.set(item.id, item);
       return n;
     });
   }
 
-  async function enviarLote() {
+  // "Aprovar e enviar lote" manda N mensagens reais de uma vez, sem desfazer: o botão só abre a revisão do lote
+  // (nome, valor e degrau de cada cobrança) e a confirmação diz quantas mensagens saem. A action roda no
+  // ConfirmarAcao, que mostra o erro e o resultado incerto dentro dele; voltar preserva a seleção.
+  function pedirEnvioLote() {
     setErro(null);
     setNota(null);
-    setEnviandoLote(true);
-    const r = await aprovarLoteCobranca({ cobrancaIds: [...selecao] });
-    setEnviandoLote(false);
-    if (!r.ok) {
-      setErro(r.erro ?? "Erro no lote.");
+    setConfirmarLote([...selecao.values()]);
+  }
+
+  function loteConcluido(d: LoteResultado | undefined) {
+    setConfirmarLote(null);
+    setSelecao(new Map());
+    router.refresh();
+    if (!d) {
+      setNota("Lote aprovado.");
       return;
     }
-    const d = r.dado!;
     const partes = [
       `${d.enfileiradas} aprovada(s)`,
       d.despachadas ? `${d.despachadas} enviada(s)` : null,
@@ -253,8 +261,6 @@ export function FilaCobranca({
     setNota(`Lote: ${partes.join(" · ")}.`);
     // Falha parcial é erro (docs/43 §6 item 2): sai em role="alert", não somada à nota de sucesso.
     if (d.falhas) setErro(d.falhas === 1 ? "1 envio do lote falhou; o item continua na fila manual." : `${d.falhas} envios do lote falharam; os itens continuam na fila manual.`);
-    setSelecao(new Set());
-    router.refresh();
   }
 
   const elegivelLote = (i: FilaCobrancaItem) => i.estado === "acao_devida" && !!i.passo && !!i.destino;
@@ -357,10 +363,10 @@ export function FilaCobranca({
       {podeOperar && selecao.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-brand-200 bg-brand-50 px-3 py-2">
           <span className="text-sm text-gray-700">{selecao.size} selecionada(s) para envio em lote</span>
-          <button className={btnPri} disabled={enviandoLote} onClick={enviarLote}>
-            {enviandoLote ? "Enviando…" : "Aprovar e enviar lote"}
+          <button className={btnPri} disabled={confirmarLote !== null} onClick={pedirEnvioLote}>
+            Aprovar e enviar lote
           </button>
-          <button className={btnSec} onClick={() => setSelecao(new Set())}>Limpar</button>
+          <button className={btnSec} disabled={confirmarLote !== null} onClick={() => setSelecao(new Map())}>Limpar</button>
         </div>
       )}
 
@@ -385,7 +391,7 @@ export function FilaCobranca({
                     aria-label={`Selecionar ${item.aluno.nome} para o lote`}
                     className="relative z-10 h-3.5 w-3.5 accent-brand-600"
                     checked={selecao.has(item.id)}
-                    onChange={() => alternarSelecao(item.id)}
+                    onChange={() => alternarSelecao(item)}
                   />
                 )}
                 <button
@@ -460,6 +466,19 @@ export function FilaCobranca({
         </ConfirmarAcao>
       )}
 
+      {confirmarLote && (
+        <ConfirmarAcao
+          titulo={`Enviar ${confirmarLote.length === 1 ? "1 mensagem" : `${confirmarLote.length} mensagens`} de cobrança pelo WhatsApp?`}
+          confirmacao={`envio de ${confirmarLote.length === 1 ? "1 mensagem" : `${confirmarLote.length} mensagens`}`}
+          idempotente={false}
+          acao={() => aprovarLoteCobranca({ cobrancaIds: confirmarLote.map((i: FilaCobrancaItem) => i.id) })}
+          aoConcluir={loteConcluido}
+          aoCancelar={() => setConfirmarLote(null)}
+        >
+          <ResumoLote itens={confirmarLote} />
+        </ConfirmarAcao>
+      )}
+
       {pagar && (
         <PagamentoModal
           cobrancaId={pagar.id}
@@ -498,6 +517,29 @@ function ResumoEnvioApi({ item }: { item: FilaCobrancaItem }) {
         {item.respondeuEm ? " O contato respondeu depois da última cobrança." : ""}
       </p>
       <p>Uma mensagem enviada não pode ser desfeita.</p>
+    </>
+  );
+}
+
+/** A revisão do lote: cada cobrança com o nome, o valor e o degrau, e que as mensagens não voltam atrás. */
+function ResumoLote({ itens }: { itens: FilaCobrancaItem[] }) {
+  return (
+    <>
+      <p>
+        {itens.length === 1 ? "Sai 1 mensagem real" : `Saem ${itens.length} mensagens reais`} de cobrança, uma por cobrança, para o
+        responsável financeiro de cada uma:
+      </p>
+      <ul className="max-h-60 list-disc space-y-0.5 overflow-y-auto pl-5">
+        {itens.map((i: FilaCobrancaItem) => (
+          <li key={i.id}>
+            {i.aluno.nome} · {formatarMoeda(valorDevido(i), i.moeda)} · degrau {i.passo ?? "devido"}{i.rotuloAcao ? ` (${i.rotuloAcao})` : ""}
+          </li>
+        ))}
+      </ul>
+      <p>
+        Cada envio passa pelas travas da régua (janela de horário, teto por contato, conversa em aberto); o que não puder sair agora volta com o
+        motivo. Mensagem enviada não pode ser desfeita.
+      </p>
     </>
   );
 }

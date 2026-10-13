@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 
@@ -37,10 +38,25 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
     router.refresh();
   }
 
-  async function alternar(id: string, sucesso: string) {
+  async function ativar(id: string) {
     setOrigem(id);
-    const d = await acao.executar(() => alternarIdiomaAtivo(id), sucesso);
+    const d = await acao.executar(() => alternarIdiomaAtivo(id), "Idioma ativado.");
     if (d?.tipo === "ok") router.refresh();
+  }
+
+  // Desativar o idioma atinge os produtos que o usam (docs/42 L2340): o botão só abre a confirmação, que nomeia o
+  // idioma e conta os produtos; a action roda no ConfirmarAcao, que mostra a falha. Ativar continua direto.
+  const [desativando, setDesativando] = useState<IdiomaRow | null>(null);
+  function pedirDesativacao(i: IdiomaRow) {
+    setOrigem(i.id);
+    acao.limpar();
+    setDesativando(i);
+  }
+  function desativado(i: IdiomaRow) {
+    setDesativando(null);
+    setOrigem(i.id);
+    acao.setSucesso("Idioma desativado.");
+    router.refresh();
   }
 
   return (
@@ -76,8 +92,8 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
-                    onClick={() => alternar(i.id, i.ativo ? "Idioma desativado." : "Idioma ativado.")}
-                    disabled={acao.ocupado}
+                    onClick={() => (i.ativo ? pedirDesativacao(i) : ativar(i.id))}
+                    disabled={acao.ocupado || desativando !== null}
                     className={botaoClasses({ variante: i.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
@@ -108,6 +124,23 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         </button>
       </div>
       <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-3" />
+
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar ${desativando.nome}?`}
+          confirmacao="desativação do idioma"
+          idempotente={false}
+          acao={() => alternarIdiomaAtivo(desativando.id)}
+          aoConcluir={() => desativado(desativando)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>
+            {desativando._count.produtos === 1 ? "1 produto usa este idioma" : `${desativando._count.produtos} produtos usam este idioma`}
+            {desativando.niveis.length ? ` (${desativando.niveis.length === 1 ? "1 nível" : `${desativando.niveis.length} níveis`})` : ""}.
+          </p>
+          <p>O idioma passa a inativo no catálogo. Os produtos, as matrículas e as turmas que já existem continuam cadastrados; para voltar, use &quot;Ativar&quot; nesta lista.</p>
+        </ConfirmarAcao>
+      )}
     </section>
   );
 }

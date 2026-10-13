@@ -1523,6 +1523,32 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `/portal`. Sem error.tsx próprio: `home`, `preferencias` e `acesso-negado` (o de `(app)` basta) e `/login`.
 - Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
 
+## ConfirmarAcao, fatia B (issue #169; 13/10/2026)
+
+### Solução implementada (branch `claude/fu169-confirmacoes-b`)
+- 13 ações novas no mapa fechado `src/app/confirmacoes-mapa.ts` (cópia literal em `confirmacoes.test.ts`), cada uma só
+  dentro da prop `acao` de um `<ConfirmarAcao>`, com a consequência escrita e erro/incerto dentro do diálogo: encerrar
+  país (L2428, com o nome digitado e as colunas Produtos/Preços/Alunos), "Faltou" (L2693), vincular contato e opt-out
+  (L2298, com "mínimo de 12 caracteres"), aprovar replanejamento (L1102) e quantidade de aulas (L1218, as duas com
+  "Conferi…"), presença histórica (L2499, decisão vazia e botão com o nome da ação), desativar usuário (L2413), idioma
+  e preço (L2340, com aviso de combinação sem preço), inativar empresa (L2281, action nova `definirSituacaoEmpresa`
+  com estado-alvo explícito), revogar cobertura (L2244) e "Aprovar e enviar lote" (L2018, revisão com nome, valor e
+  degrau; sem `try/catch` solto).
+- Ativação da régua (L2517): consulta nova só de leitura `estimarAlcanceRegua`; a regra de quem recebe saiu do cron para
+  `decidirEnvioCron` (`src/server/whatsapp/alcance-regua.ts`), usada pelo cron e pela contagem. O diálogo diz
+  "N pessoas vão receber…".
+- `ConfirmarAcao` ganhou `digitacao` (nome exato antes de confirmar). Sem schema nem migração.
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Testes de interação por tela (`*.confirmacao.test.ts`), testes do
+  servidor com Prisma em mock (`alcance-regua.test.ts`, `estimar-alcance.test.ts`, `empresas/situacao.test.ts`).
+
+### Pendências
+- Integrador: suíte unitária completa, `tsc --noEmit`, eslint e mutação; `cron.int.test.ts` num perfil isolado
+  (o cron passou a usar `decidirEnvioCron`).
+- Desvincular contato pela inbox (L2298) precisa de action nova e regra de permissão: fora desta fatia.
+- Alternadores de usuário, idioma e preço continuam invertendo o estado atual no servidor (contrato existente).
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E11 — amostra Média/Baixa com nova semente (docs/43 §6 item 11; 13/10/2026)
