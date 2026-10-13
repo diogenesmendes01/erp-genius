@@ -20,6 +20,9 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
   const conferencia = await conferirRevisaoParaDecisao({ calendarioId: id, revisaoId });
   const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, r.calendario.fusoInstitucional);
   const data = (v: Date | string) => formatarInstanteExibicao(v, fusoExibicao, r.calendario.fusoInstitucional).texto;
+  // Tamanho do conjunto para a confirmação da aprovação (docs/42 L1102): turmas e encontros que mudam de data.
+  const alterados = r.snapshot.revisoes.map((t) => t.previsao?.propostas.filter((p) => p.alterado).length ?? 0);
+  const resumo = { turmas: alterados.filter((n) => n > 0).length, encontros: alterados.reduce((soma, n) => soma + n, 0) };
   return <div className="space-y-5">
     <VoltarPara href={`/academico/calendario/${id}/revisoes`} para="Histórico" />
     <h1 className="text-2xl font-medium">Revisão {r.versao} · Calendário {r.calendario.versao}</h1>
@@ -32,7 +35,7 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
         <p>{conferencia.dado.estadoCorresponde ? "O conjunto ainda corresponde à consulta atual." : "Não foi confirmada a correspondência com a agenda atual."}</p>
         <ul className="list-inside list-disc">{conferencia.dado.motivos.map((m) => <li key={m}>{m}</li>)}</ul>
         {!!conferencia.dado.excecoes.length && <p>{conferencia.dado.excecoes.length} encontros exigem exceção explícita de dia não letivo; consulte suas datas e justificativas no conteúdo abaixo.</p>}
-        {conferencia.dado.decisaoConjunta ? <p>{conferencia.dado.decisaoConjunta.aprovada ? "Esta revisão foi aprovada" : "Esta revisão foi rejeitada"} por {conferencia.dado.decisaoConjunta.decisorNome}. Motivo: {conferencia.dado.decisaoConjunta.motivo}</p> : <DecidirReplanejamento calendarioId={id} revisaoId={revisaoId} podeAprovar={conferencia.dado.aprovacaoDisponivel} podeRejeitar={conferencia.dado.rejeicaoDisponivel} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} excecoes={conferencia.dado.excecoes.map((e) => ({ encontroId: e.encontroId, codigo: e.codigo, inicio: e.inicio, fusoOrigem: e.fusoOrigem, motivoProposto: e.motivoProposto }))} />}
+        {conferencia.dado.decisaoConjunta ? <p>{conferencia.dado.decisaoConjunta.aprovada ? "Esta revisão foi aprovada" : "Esta revisão foi rejeitada"} por {conferencia.dado.decisaoConjunta.decisorNome}. Motivo: {conferencia.dado.decisaoConjunta.motivo}</p> : <DecidirReplanejamento calendarioId={id} revisaoId={revisaoId} resumo={resumo} podeAprovar={conferencia.dado.aprovacaoDisponivel} podeRejeitar={conferencia.dado.rejeicaoDisponivel} preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} excecoes={conferencia.dado.excecoes.map((e) => ({ encontroId: e.encontroId, codigo: e.codigo, inicio: e.inicio, fusoOrigem: e.fusoOrigem, motivoProposto: e.motivoProposto }))} />}
       </>}
     </section>
     <ConteudoRevisao r={r.snapshot} historico preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />

@@ -8,6 +8,7 @@ import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
@@ -80,11 +81,30 @@ export function PrecosPainel({
     router.refresh();
   }
 
-  async function alternar(id: string, sucesso: string) {
+  async function reativar(id: string) {
     setOrigem(id);
-    const d = await acao.executar(() => alternarPrecoAtivo(id), sucesso);
+    const d = await acao.executar(() => alternarPrecoAtivo(id), "Preço reativado.");
     if (d?.tipo === "ok") router.refresh();
   }
+
+  // Desativar o preço ativo deixa a combinação país × produto × tipo sem preço de referência (docs/42 L2340): o
+  // botão só abre a confirmação, que nomeia a combinação e avisa quando não resta outro preço ativo; a action roda
+  // no ConfirmarAcao, que mostra a falha. Reativar continua direto.
+  const [desativando, setDesativando] = useState<PrecoRow | null>(null);
+  function pedirDesativacao(p: PrecoRow) {
+    setOrigem(p.id);
+    acao.limpar();
+    setDesativando(p);
+  }
+  function desativado(p: PrecoRow) {
+    setDesativando(null);
+    setOrigem(p.id);
+    acao.setSucesso("Preço desativado.");
+    router.refresh();
+  }
+  const mesmaCombinacao = (a: PrecoRow, b: PrecoRow) =>
+    a.pais.nome === b.pais.nome && a.produto.idioma.nome === b.produto.idioma.nome && a.produto.modalidade.nome === b.produto.modalidade.nome && a.tipoCobranca === b.tipoCobranca;
+  const restaAtivo = (p: PrecoRow) => precos.some((o: PrecoRow) => o.id !== p.id && o.ativo && mesmaCombinacao(o, p));
 
   return (
     <section>
@@ -214,7 +234,7 @@ export function PrecosPainel({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => alternar(p.id, p.ativo ? "Preço desativado." : "Preço reativado.")} disabled={acao.ocupado} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
+                    <button onClick={() => (p.ativo ? pedirDesativacao(p) : reativar(p.id))} disabled={acao.ocupado || desativando !== null} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
                     <FeedbackAcao erro={origem === p.id ? acao.erro : null} sucesso={origem === p.id ? acao.sucesso : undefined} className="mt-1 text-left" />
@@ -225,6 +245,28 @@ export function PrecosPainel({
           </tbody>
         </table>
       </div>
+
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar o preço de ${desativando.produto.idioma.nome} · ${desativando.produto.modalidade.nome} em ${desativando.pais.nome}?`}
+          confirmacao="desativação do preço"
+          idempotente={false}
+          acao={() => alternarPrecoAtivo(desativando.id)}
+          aoConcluir={() => desativado(desativando)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>
+            {TIPO_COBRANCA_LABEL[desativando.tipoCobranca]} de {formatarMoeda(desativando.valor, desativando.moeda)} passa ao histórico.
+          </p>
+          {restaAtivo(desativando) ? (
+            <p>Outro preço ativo da mesma combinação continua valendo.</p>
+          ) : (
+            <p>
+              <strong>Não resta outro preço ativo</strong> para {desativando.pais.nome} × {desativando.produto.idioma.nome} · {desativando.produto.modalidade.nome} × {TIPO_COBRANCA_LABEL[desativando.tipoCobranca]}: novas matrículas desse produto ficam sem preço de referência até você reativar este ou criar outro.
+            </p>
+          )}
+        </ConfirmarAcao>
+      )}
     </section>
   );
 }

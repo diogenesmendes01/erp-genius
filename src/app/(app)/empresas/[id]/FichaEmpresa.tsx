@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import type { ColaboradorRelatorio, FaturaResumo } from "@/server/empresas/consultas";
 import {
   cancelarFaturaB2B,
+  definirSituacaoEmpresa,
   pagarFaturaB2B,
-  salvarEmpresa,
 } from "@/server/empresas/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -87,6 +87,21 @@ export function FichaEmpresa({
     acao.setSucesso(mensagem);
     router.refresh();
   }
+  // Inativar a empresa (docs/42 L2281, a parte que faltava): o botão só abre a confirmação, que diz o que muda e o
+  // que fica; a action roda no ConfirmarAcao, com o estado-alvo explícito. Reativar continua direto.
+  const [confirmarInativacao, setConfirmarInativacao] = useState(false);
+  function pedirInativacao() {
+    setOrigem("contrato");
+    acao.limpar();
+    setConfirmarInativacao(true);
+  }
+  function inativada() {
+    setConfirmarInativacao(false);
+    setOrigem("contrato");
+    acao.setSucesso("Empresa inativada.");
+    router.refresh();
+  }
+  const faturasEmAberto = faturas.filter((f: FaturaResumo) => f.status === "FECHADA").length;
   const feedback = (secao: "faturas" | "contrato") => (
     <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
   );
@@ -265,28 +280,29 @@ export function FichaEmpresa({
         </dl>
         <button
           className={`${botaoClasses({ variante: empresa.ativo ? "perigo" : "secundario" })} mt-3`}
-          disabled={ocupado}
-          onClick={() =>
-            run("contrato", () =>
-              salvarEmpresa({
-                id: empresa.id,
-                nome: empresa.nome,
-                paisId: empresa.paisId ?? undefined,
-                documento: empresa.documento ?? undefined,
-                contatoNome: empresa.contatoNome ?? undefined,
-                contatoEmail: empresa.contatoEmail ?? undefined,
-                contatoTelefone: empresa.contatoTelefone ?? undefined,
-                diaVencimento: empresa.diaVencimento,
-                observacoes: empresa.observacoes ?? undefined,
-                ativo: !empresa.ativo,
-              }),
-              empresa.ativo ? "Empresa inativada." : "Empresa reativada.",
-            )
-          }
+          disabled={ocupado || confirmarInativacao}
+          onClick={() => (empresa.ativo ? pedirInativacao() : run("contrato", () => definirSituacaoEmpresa(empresa.id, true), "Empresa reativada."))}
         >
           {empresa.ativo ? "Inativar empresa" : "Reativar empresa"}
         </button>
         {feedback("contrato")}
+        {confirmarInativacao && (
+          <ConfirmarAcao
+            titulo={`Inativar a empresa ${empresa.nome}?`}
+            confirmacao="inativação da empresa"
+            idempotente
+            acao={() => definirSituacaoEmpresa(empresa.id, false)}
+            aoConcluir={inativada}
+            aoCancelar={() => setConfirmarInativacao(false)}
+          >
+            <p>
+              {empresa.nome}{empresa.codigo ? ` (${empresa.codigo})` : ""} passa a inativa.{" "}
+              {colaboradores.length === 1 ? "O contrato individual vinculado continua" : `Os ${colaboradores.length} contratos individuais vinculados continuam`} como
+              {colaboradores.length === 1 ? " está" : " estão"}, e {faturasEmAberto === 1 ? "a fatura em aberto também" : `as ${faturasEmAberto} faturas em aberto também`}: nada é cancelado nem baixado.
+            </p>
+            <p>Para voltar, use &quot;Reativar empresa&quot; nesta ficha.</p>
+          </ConfirmarAcao>
+        )}
       </section>
     </div>
   );

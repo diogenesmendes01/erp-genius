@@ -11,7 +11,7 @@ vi.mock("@/server/turmas/acoes", () => ({
   editarTurma: async () => ({ ok: true }),
   solicitarAberturaTurma: async () => ({ ok: true }),
 }));
-vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => ({ ok: true }), salvarPoliticaRegua: async () => ({ ok: true }) }));
+vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => ({ ok: true }), estimarAlcanceRegua: async () => ({ ok: true }), salvarPoliticaRegua: async () => ({ ok: true }) }));
 vi.mock("@/server/matricula/acoes", () => ({ criarMatricula: async () => ({ ok: true }) }));
 
 import { TurmaFormulario } from "./(app)/configuracao/turmas/TurmaFormulario";

@@ -78,7 +78,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx": [
     "<button> Registrando… · Registrar proposta → primario/lg",
-    "<button> Registrando… · Decidir → secundario/sm",
+    "<button> Registrando… · Rejeitar · Aprovar e aplicar · Decidir → perigo|secundario/sm",
     "<button> Registrando… · Registrar resolução → secundario/sm",
   ],
   "configuracao/operacao/OperacaoFormulario.tsx": [
@@ -623,7 +623,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "const btnSec → secundario/sm",
     "<Link> limpar filtro → fantasma/sm",
     "<button> Buscando… · Buscar → secundario/md",
-    "<button> Enviando… · Aprovar e enviar lote → btnPri",
+    "<button> Aprovar e enviar lote → btnPri",
     "<button> Limpar → btnSec",
     "<button> Consultar acesso → perigo/sm",
     "<button> → btnSec",
