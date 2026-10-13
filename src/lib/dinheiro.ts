@@ -130,7 +130,8 @@ export function parseMoeda(texto: string): number | null {
  * usa duas casas (comportamento anterior, para quem ainda não tem a moeda à mão).
  * Moeda sem centavos com valor fracionado NUNCA é arredondada (C6 do doc 44, issue #167): sai
  * com duas casas ("100,50", não "101"), como `formatarMoeda` faz na exibição — quem decide o
- * valor é o operador, avisado pelo `CampoMoeda` (ver `avisoSemCentavos`).
+ * valor é o operador, avisado pelo `CampoMoeda` (ver `avisoSemCentavos`). É também o formato de
+ * pré-preenchimento: `String(150.5)` daria "150.5", que `parseMoeda` recusa (ponto ambíguo).
  */
 export function formatarMoedaParaCampo(valor: number, moeda?: string): string {
   const casas = moeda && casasDecimais(moeda) === 0 && Number.isInteger(valor) ? 0 : 2;
@@ -140,15 +141,46 @@ export function formatarMoedaParaCampo(valor: number, moeda?: string): string {
 /**
  * Aviso para o texto de um campo de dinheiro numa moeda sem centavos (CRC, CLP…) quando ele traz
  * casas decimais: "100,50" em CRC. O campo não arredonda (C6 do doc 44, issue #167) — o operador
- * precisa ver o problema antes de salvar. Devolve null quando não há o que avisar: moeda com
- * centavos ou ausente, texto vazio ou não interpretável (esse é erro de quem valida o campo) ou
- * valor inteiro.
+ * precisa ver o valor antes de salvar. O texto é NEUTRO de propósito (R1 da #173, B1): saldo
+ * fracionado em CRC existe e é legítimo (o servidor compara valores exatos e aceita duas casas), e
+ * pode vir pré-preenchido pelo próprio sistema (`formatarMoedaParaCampo(1250.5, "CRC")` = "1250,50"
+ * no PagamentoModal). Mandar "informar um inteiro" levaria o operador a deixar ₡0,50 em aberto ou
+ * receber ₡0,50 a mais; o aviso só pede para conferir e diz que nada é arredondado.
+ * Devolve null quando não há o que avisar: moeda com centavos ou ausente, texto vazio ou não
+ * interpretável (esse é erro de quem valida o campo; ver `avisoPontoAmbiguo`) ou valor inteiro.
  */
 export function avisoSemCentavos(texto: string, moeda?: string | null): string | null {
   if (!moeda || casasDecimais(moeda) !== 0) return null;
   const numero = parseMoeda(texto);
   if (numero === null || Number.isInteger(numero)) return null;
-  return `${normalizar(moeda)} não tem centavos — informe um valor inteiro. O valor digitado não é arredondado.`;
+  return `${normalizar(moeda)} normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.`;
+}
+
+/** Dica de `avisoPontoAmbiguo` para o ponto usado como decimal ("100.50"). */
+export const DICA_PONTO_DECIMAL = "Use vírgula para os centavos (ex.: 100,50).";
+/** Dica de `avisoPontoAmbiguo` para o ponto usado como milhar ("1.234", "1.234,56"). */
+export const DICA_PONTO_MILHAR = "Não use ponto de milhar: digite o valor sem separador (ex.: 1234,56).";
+
+/**
+ * Dica para um texto com ponto que `parseMoeda` recusou (R1 da #173, C1). Sem ela, "100.50" caía na
+ * mensagem genérica dos chamadores ("…com no máximo duas casas decimais."), que engana: o valor TEM
+ * duas casas, o problema é o ponto. Função pura; o `CampoMoeda` a mostra ligada ao input.
+ * Decisão sobre "1.234" e "1.234,56": a dica de vírgula ("ex.: 100,50") ali induziria "1,234" — que
+ * também é recusado —, então esses recebem a dica de milhar. Regras, em ordem:
+ *   - texto aceito por `parseMoeda`, ou sem ponto → null (nada a dizer sobre ponto);
+ *   - ponto com 1 a 3 dígitos antes e 1 a 2 depois, o formato que o C5 recusa ("100.50", "1.23",
+ *     "12.5") → `DICA_PONTO_DECIMAL`;
+ *   - ponto seguido de exatamente 3 dígitos, como separador de milhar ("1.234", "1.234,56",
+ *     "1.234.567") → `DICA_PONTO_MILHAR`;
+ *   - qualquer outro texto com ponto ("100.", "1.2.3", "R$ 1.5") → null: ou está no meio da digitação,
+ *     ou não é número, e a mensagem do chamador basta.
+ */
+export function avisoPontoAmbiguo(texto: string): string | null {
+  const limpo = texto.trim();
+  if (!limpo.includes(".") || parseMoeda(limpo) !== null) return null;
+  if (/^\d{1,3}\.\d{1,2}$/.test(limpo)) return DICA_PONTO_DECIMAL;
+  if (/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(limpo)) return DICA_PONTO_MILHAR;
+  return null;
 }
 
 /** Texto exibido no lugar de um valor cuja moeda não está definida (C20 do doc 44, issue #167). */

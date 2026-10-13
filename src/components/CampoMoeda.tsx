@@ -1,6 +1,6 @@
 "use client";
 
-import { simboloMoeda, parseMoeda, formatarMoedaParaCampo, casasDecimais, avisoSemCentavos } from "@/lib/dinheiro";
+import { simboloMoeda, parseMoeda, formatarMoedaParaCampo, casasDecimais, avisoSemCentavos, avisoPontoAmbiguo } from "@/lib/dinheiro";
 
 // Substitui type="number" step="0.01" nos campos de dinheiro (ver docs/42-auditoria-frontend-ux.md,
 // ganho rápido 13). Duas garantias que o número nativo não dá:
@@ -16,7 +16,12 @@ import { simboloMoeda, parseMoeda, formatarMoedaParaCampo, casasDecimais, avisoS
 // Moeda sem centavos (CRC, CLP…; ver casasDecimais) com casas decimais no texto — "100,50" em CRC —
 // NÃO é normalizada no blur (antes virava "101" em silêncio — C6 do doc 44, issue #167): o texto fica
 // como o operador digitou e um aviso visível (role="alert", ligado ao input por aria-describedby
-// quando há id) diz que a moeda não tem centavos. O valor nunca é arredondado aqui.
+// quando há id) pede para conferir o valor — em tom neutro, porque saldo fracionado em CRC é legítimo e
+// pode vir pré-preenchido (R1 da #173, B1). O valor nunca é arredondado aqui.
+// Texto com ponto que parseMoeda recusou ("100.50", "1.234") ganha, no mesmo lugar, a dica de
+// avisoPontoAmbiguo (R1 da #173, C1): "use vírgula para os centavos" ou "não use ponto de milhar". As
+// mensagens de validação dos chamadores não mudam. Os dois avisos nunca coexistem: um exige texto
+// aceito, o outro texto recusado.
 // Sem ganchos de React de propósito: vários testes de tela chamam este componente como função.
 export function CampoMoeda({
   value,
@@ -53,7 +58,7 @@ export function CampoMoeda({
   "aria-describedby"?: string;
 }) {
   const semCentavos = !!moeda && casasDecimais(moeda) === 0;
-  const aviso = avisoSemCentavos(value, moeda);
+  const aviso = avisoSemCentavos(value, moeda) ?? avisoPontoAmbiguo(value);
   // O aviso entra na descrição do input junto com a dica/erro do <Campo> (quando houver).
   const avisoId = aviso && id ? `${id}-aviso-moeda` : undefined;
   const descritoPor = [ariaDescribedby, avisoId].filter(Boolean).join(" ") || undefined;

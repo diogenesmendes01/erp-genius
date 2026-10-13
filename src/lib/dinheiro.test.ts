@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatarMoeda, simboloMoeda, somarPorMoeda, formatarValores, consolidar, parseMoeda, formatarMoedaParaCampo, casasDecimais, avisoSemCentavos, formatarMoedaOuIndefinida, MOEDA_NAO_DEFINIDA } from "./dinheiro";
+import { formatarMoeda, simboloMoeda, somarPorMoeda, formatarValores, consolidar, parseMoeda, formatarMoedaParaCampo, casasDecimais, avisoSemCentavos, avisoPontoAmbiguo, DICA_PONTO_DECIMAL, DICA_PONTO_MILHAR, formatarMoedaOuIndefinida, MOEDA_NAO_DEFINIDA } from "./dinheiro";
 
 describe("dinheiro — formatação por moeda", () => {
   it("usa símbolo e casas decimais corretos por moeda", () => {
@@ -146,11 +146,24 @@ describe("dinheiro — formatarMoedaParaCampo (normalização ao perder o foco)"
 });
 
 describe("dinheiro — avisoSemCentavos (C6, issue #167)", () => {
-  it("100,50 em CRC e CLP: avisa, citando a moeda, que não há centavos e que nada é arredondado", () => {
-    expect(avisoSemCentavos("100,50", "CRC")).toBe("CRC não tem centavos — informe um valor inteiro. O valor digitado não é arredondado.");
-    expect(avisoSemCentavos("100,50", "CLP")).toBe("CLP não tem centavos — informe um valor inteiro. O valor digitado não é arredondado.");
-    expect(avisoSemCentavos("100,5", "crc")).toMatch(/^CRC não tem centavos/);
-    expect(avisoSemCentavos("1234.5", "CRC")).toMatch(/^CRC não tem centavos/);
+  it("100,50 em CRC e CLP: aviso neutro, citando a moeda, que pede para conferir e diz que nada é arredondado", () => {
+    expect(avisoSemCentavos("100,50", "CRC")).toBe("CRC normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.");
+    expect(avisoSemCentavos("100,50", "CLP")).toBe("CLP normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.");
+    expect(avisoSemCentavos("100,5", "crc")).toMatch(/^CRC normalmente não usa centavos/);
+    expect(avisoSemCentavos("1234.5", "CRC")).toMatch(/^CRC normalmente não usa centavos/);
+  });
+
+  it("R1 da #173, B1: o aviso nunca manda trocar para inteiro nem arredondar (saldo fracionado em CRC é legítimo)", () => {
+    const aviso = avisoSemCentavos("100,50", "CRC")!;
+    expect(aviso).not.toMatch(/inteiro|arredonde|informe/i);
+    expect(aviso).toMatch(/sem arredondamento/);
+  });
+
+  it("R1 da #173, B1: pré-preenchimento fracionado em CRC (saldo 1250,50) sai 1250,50 e recebe só o aviso neutro", () => {
+    const prefill = formatarMoedaParaCampo(1250.5, "CRC");
+    expect(prefill).toBe("1250,50");
+    expect(parseMoeda(prefill)).toBe(1250.5); // o valor exato do saldo é o que vai para o servidor
+    expect(avisoSemCentavos(prefill, "CRC")).toBe("CRC normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.");
   });
 
   it("sem aviso: 100 em CRC, 100,00 em CRC (inteiro), 100,50 em BRL, sem moeda, texto vazio ou inválido", () => {
@@ -162,6 +175,30 @@ describe("dinheiro — avisoSemCentavos (C6, issue #167)", () => {
     expect(avisoSemCentavos("100,50", null)).toBeNull();
     expect(avisoSemCentavos("", "CRC")).toBeNull();
     expect(avisoSemCentavos("1.234,56", "CRC")).toBeNull(); // inválido é erro de quem valida, não aviso de centavos
+  });
+});
+
+describe("dinheiro — avisoPontoAmbiguo (R1 da #173, C1)", () => {
+  it("ponto usado como decimal, no formato que parseMoeda recusa: dica de vírgula", () => {
+    expect(DICA_PONTO_DECIMAL).toBe("Use vírgula para os centavos (ex.: 100,50).");
+    for (const texto of ["100.50", "1.23", "12.5", "1.2", " 100.50 "]) {
+      expect(parseMoeda(texto), texto).toBeNull();
+      expect(avisoPontoAmbiguo(texto), texto).toBe(DICA_PONTO_DECIMAL);
+    }
+  });
+
+  it("ponto usado como milhar (1.234, 1.234,56, 1.234.567): dica de milhar, não a de vírgula (que levaria a 1,234)", () => {
+    expect(DICA_PONTO_MILHAR).toBe("Não use ponto de milhar: digite o valor sem separador (ex.: 1234,56).");
+    for (const texto of ["1.234", "1.234,56", "1.234.567", "12.345,6"]) {
+      expect(parseMoeda(texto), texto).toBeNull();
+      expect(avisoPontoAmbiguo(texto), texto).toBe(DICA_PONTO_MILHAR);
+    }
+  });
+
+  it("sem dica: texto aceito (com ou sem ponto), sem ponto, vazio, no meio da digitação ou não numérico", () => {
+    for (const texto of ["1234.56", "0.5", "100,50", "100", "", "1,234", "abc", "100.", "1.2.3", "R$ 1.5", "1234.567"]) {
+      expect(avisoPontoAmbiguo(texto), texto).toBeNull();
+    }
   });
 });
 
