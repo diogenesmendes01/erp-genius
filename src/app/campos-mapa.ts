@@ -19,6 +19,13 @@ export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
+  "src/app/portal-aluno/ativar/page.tsx": [
+    "Nova senha · obrigatório · input · dica · erro: errosCampos.senha",
+    "Repita a senha · obrigatório · input · dica · erro: errosCampos.confirmacao",
+  ],
+  "src/app/portal-aluno/recuperar/page.tsx": [
+    "E-mail · obrigatório · input",
+  ],
   "src/app/(app)/alunos/[id]/FichaAluno.tsx": [
     "Nome · obrigatório · input · erro: errosEdicao.primeiroNome",
     "Sobrenome(s) · obrigatório · input · erro: errosEdicao.sobrenome",

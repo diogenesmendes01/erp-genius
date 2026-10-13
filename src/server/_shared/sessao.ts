@@ -1,4 +1,5 @@
 import { Papel } from "@prisma/client";
+import { CABECALHO_CAMINHO, enderecoDoLogin } from "@/lib/destino-interno";
 import { congelar, memoPorRequisicao } from "./memo-requisicao";
 
 // Guards de Server Action (ver docs/13 §"Padrão de Server Action" e §"Regras inegociáveis").
@@ -125,6 +126,23 @@ export async function exigirSessaoComPapel(...alvo: Papel[]): Promise<UsuarioSes
 }
 
 /**
+ * Endereço do login que devolve a pessoa à página pedida (docs/42 /login #2; docs/43 §6 item 8): o proxy
+ * (src/proxy.ts) informa o caminho num cabeçalho e o login o recebe em `callbackUrl`, só se for interno
+ * (enderecoDoLogin valida). Fora de uma requisição (testes, scripts) ou sem o cabeçalho, `/login` puro.
+ */
+async function loginComVolta(): Promise<string> {
+  try {
+    const { headers } = await import("next/headers");
+    return enderecoDoLogin((await headers()).get(CABECALHO_CAMINHO));
+  } catch (e) {
+    // O sinal de renderização dinâmica do Next segue adiante (na prática o auth() acima já o lançou); o resto —
+    // headers() chamado fora de uma requisição — só perde a volta.
+    if (e && typeof e === "object" && (e as { digest?: unknown }).digest === "DYNAMIC_SERVER_USAGE") throw e;
+    return "/login";
+  }
+}
+
+/**
  * Guard de PÁGINA (Server Component). Diferente das Server Actions (que lançam e
  * devolvem {ok:false}), aqui bloqueamos a renderização ANTES de qualquer consulta:
  * sem sessão → /login; sem papel → /acesso-negado. Retorna o usuário para reuso
@@ -137,14 +155,14 @@ export async function exigirSessaoPagina(...alvo: Papel[]): Promise<UsuarioSessa
   const session = await auth();
   const user = session?.user;
   if (!user?.id) {
-    redirect("/login");
+    redirect(await loginComVolta());
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
   }
   // Papéis frescos do banco (mesma razão de exigirSessao): usuário desativado ou com
   // papel revogado cai AGORA, não no próximo login.
   const usuario = await carregarUsuarioFresco(user.id);
   if (!usuario) {
-    redirect("/login");
+    redirect(await loginComVolta());
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
   }
   // Usuário só-portal (review PR #60): a única página dele é o /portal — qualquer outra
