@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { FormaPagamento } from "@prisma/client";
 import { FORMA_PAGAMENTO_LABEL } from "@/lib/labels";
-import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, formatarMoedaParaCampo, parseMoeda } from "@/lib/dinheiro";
 import { registrarPagamento } from "@/server/financeiro/acoes";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { CampoMoeda } from "@/components/CampoMoeda";
@@ -55,7 +55,9 @@ export function PagamentoModal({
   // A baixa parte do saldo restante (issue #10): pagar o que falta, não o negociado cheio.
   const saldo = saldoRestante ?? valorEsperado;
   const [chaveIdempotencia] = useState(() => crypto.randomUUID());
-  const [valor, setValor] = useState(String(saldo));
+  // formatarMoedaParaCampo (não String cru): "150.5" seria recusado por parseMoeda (ponto ambíguo,
+  // issue #167); o campo começa no formato que ele mesmo produz, sem arredondar moeda sem centavos.
+  const [valor, setValor] = useState(() => formatarMoedaParaCampo(saldo, moeda));
   const [forma, setForma] = useState<FormaPagamento>(FormaPagamento.TRANSFERENCIA);
   const [data, setData] = useState("");
   const [comprovanteUrl, setComp] = useState("");

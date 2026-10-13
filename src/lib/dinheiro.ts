@@ -93,27 +93,74 @@ function ordemMoeda(moeda: string): number {
  * mesma regra que já protegia RecebimentoDestinadoForm.tsx (antiga `centavos()` local,
  * promovida pra cá — ver docs/42-auditoria-frontend-ux.md, achado "dinheiro em
  * type=number step=0.01"), agora compartilhada por todo `CampoMoeda`.
+ *
+ * Ponto ambíguo (C5 do doc 44, issue #167): em pt-BR o ponto é o separador de MILHAR (doc 42,
+ * risco 6: "`1.234` (separador de milhar pt-BR) é aceito como 1,234"). "1.23" não é milhar
+ * completo, mas tem o formato do começo de um ("1.230" com um dígito a menos, ou "123" com um
+ * ponto a mais) — adivinhar 1,23 é exatamente o que o doc proíbe. Por isso o ponto só vale como
+ * decimal quando NÃO pode ser milhar pt-BR:
+ *   - parte inteira com 4+ dígitos ("1234.56"): quem agrupa milhar teria escrito "1.234";
+ *   - parte inteira começando por 0 ("0.5", "0.50"): nenhum milhar começa por zero.
+ * Com 1 a 3 dígitos antes do ponto ("1.23", "12.5", "100.50") o texto é recusado (null); a
+ * vírgula ("1,23") continua sem ambiguidade e é o que o próprio campo produz no blur.
+ *
  * Devolve o valor na unidade principal da moeda (não em centavos) ou `null` se o texto
  * estiver vazio ou não puder ser interpretado com segurança — a chamadora decide a mensagem.
  */
 export function parseMoeda(texto: string): number | null {
-  const normalizado = texto.trim().replace(",", ".");
-  if (!/^\d+(?:\.\d{1,2})?$/.test(normalizado)) return null;
-  return Number(normalizado);
+  const limpo = texto.trim();
+  // Vírgula decimal (o formato do campo) ou inteiro puro: sem ambiguidade.
+  if (/^\d+(?:,\d{1,2})?$/.test(limpo)) return Number(limpo.replace(",", "."));
+  const comPonto = /^(\d+)\.\d{1,2}$/.exec(limpo);
+  if (!comPonto) return null;
+  const inteiro = comPonto[1];
+  // 1 a 3 dígitos sem zero à esquerda antes do ponto = possível milhar pt-BR → ambíguo, recusa.
+  if (inteiro.length <= 3 && !inteiro.startsWith("0")) return null;
+  return Number(limpo);
 }
 
 /**
  * Formata um valor já válido para reexibição no campo, sempre com vírgula decimal e sem
  * separador de milhar (o que `parseMoeda` entende de volta, sem ambiguidade). Uso típico:
  * normalizar o texto do campo ao perder o foco (`onBlur`), depois que o operador termina de
- * digitar — nunca a cada tecla, para não brigar com o cursor.
+ * digitar — nunca a cada tecla, para não brigar com o cursor — e pré-preencher o campo com um
+ * valor que veio do servidor.
  * `moeda` é opcional: quando informada, respeita as casas decimais da moeda (CRC/CLP saem
  * sem centavos, "100" em vez de "100,00" — mesma convenção de `formatarMoeda`); omitida,
  * usa duas casas (comportamento anterior, para quem ainda não tem a moeda à mão).
+ * Moeda sem centavos com valor fracionado NUNCA é arredondada (C6 do doc 44, issue #167): sai
+ * com duas casas ("100,50", não "101"), como `formatarMoeda` faz na exibição — quem decide o
+ * valor é o operador, avisado pelo `CampoMoeda` (ver `avisoSemCentavos`).
  */
 export function formatarMoedaParaCampo(valor: number, moeda?: string): string {
-  const casas = moeda ? casasDecimais(moeda) : 2;
+  const casas = moeda && casasDecimais(moeda) === 0 && Number.isInteger(valor) ? 0 : 2;
   return valor.toFixed(casas).replace(".", ",");
+}
+
+/**
+ * Aviso para o texto de um campo de dinheiro numa moeda sem centavos (CRC, CLP…) quando ele traz
+ * casas decimais: "100,50" em CRC. O campo não arredonda (C6 do doc 44, issue #167) — o operador
+ * precisa ver o problema antes de salvar. Devolve null quando não há o que avisar: moeda com
+ * centavos ou ausente, texto vazio ou não interpretável (esse é erro de quem valida o campo) ou
+ * valor inteiro.
+ */
+export function avisoSemCentavos(texto: string, moeda?: string | null): string | null {
+  if (!moeda || casasDecimais(moeda) !== 0) return null;
+  const numero = parseMoeda(texto);
+  if (numero === null || Number.isInteger(numero)) return null;
+  return `${normalizar(moeda)} não tem centavos — informe um valor inteiro. O valor digitado não é arredondado.`;
+}
+
+/** Texto exibido no lugar de um valor cuja moeda não está definida (C20 do doc 44, issue #167). */
+export const MOEDA_NAO_DEFINIDA = "moeda não definida";
+
+/**
+ * `formatarMoeda` para registros em que a moeda pode faltar (ex.: acordo de permuta com
+ * `moeda` nula). Sem moeda, o número NÃO é exibido sem símbolo — um "1.250,00" solto num ERP
+ * multimoeda seria lido na moeda errada —; sai o estado explícito `MOEDA_NAO_DEFINIDA`.
+ */
+export function formatarMoedaOuIndefinida(valor: number | string, moeda: string | null | undefined): string {
+  return moeda && moeda.trim() !== "" ? formatarMoeda(valor, moeda) : MOEDA_NAO_DEFINIDA;
 }
 
 /**
