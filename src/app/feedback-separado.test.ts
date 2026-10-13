@@ -1321,6 +1321,10 @@ export const MIGRADOS = [
   "src/app/(app)/secretaria/envios-portal/ConciliacaoEnvio.tsx",
   "src/app/(app)/secretaria/reservas/ConferirReserva.tsx",
   "src/app/(app)/secretaria/reservas/[id]/Formularios.tsx",
+  // Portal público (docs/43 §6 item 8).
+  "src/app/pagar/[token]/PagarCliente.tsx",
+  "src/app/portal-aluno/ativar/page.tsx",
+  "src/app/portal-aluno/recuperar/page.tsx",
 ];
 
 describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" (docs/43 §6 item 2)", () => {

@@ -33,6 +33,9 @@ import { EXCECOES_CAMPO, MAPA_CAMPOS, type ExcecaoCampo } from "./campos-mapa";
 const AREAS_MIGRADAS: { pasta: string; subpastas: boolean }[] = [
   { pasta: "src/app/(app)/matriculas/nova", subpastas: true },
   { pasta: "src/app/(app)/alunos/[id]", subpastas: false },
+  // Portal público (docs/43 §6 item 8): definir a senha e pedir a recuperação.
+  { pasta: "src/app/portal-aluno/ativar", subpastas: false },
+  { pasta: "src/app/portal-aluno/recuperar", subpastas: false },
 ];
 
 const RAIZES = ["src/app", "src/components"];
@@ -484,6 +487,8 @@ describe("detector do Campo (autoteste)", () => {
     expect(AREAS_MIGRADAS).toEqual([
       { pasta: "src/app/(app)/matriculas/nova", subpastas: true },
       { pasta: "src/app/(app)/alunos/[id]", subpastas: false },
+      { pasta: "src/app/portal-aluno/ativar", subpastas: false },
+      { pasta: "src/app/portal-aluno/recuperar", subpastas: false },
     ]);
   });
 

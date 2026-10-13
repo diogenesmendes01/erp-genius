@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, numero, numeroOuNull } from "@/server/_shared";
+import { tokenPagamentoBemFormado } from "@/lib/token-pagamento";
 import { baixarCobrancaTx, type ResultadoBaixa } from "./baixa";
 
 // GATEWAY DE PAGAMENTO POR DRIVER (Fase 2, doc 03 · P1 do doc 15 segue aberta): o contrato
@@ -53,7 +54,7 @@ export interface CobrancaPublica {
 
 /** Projeção MÍNIMA da cobrança para a página pública de pagamento (nada de dados pessoais). */
 export async function cobrancaPorToken(token: string): Promise<CobrancaPublica | null> {
-  if (!/^[0-9a-f]{16,64}$/.test(token)) return null;
+  if (!tokenPagamentoBemFormado(token)) return null;
   const cobranca = await prisma.cobranca.findUnique({
     where: { gatewayRef: token },
     include: { matricula: { include: { aluno: { select: { primeiroNome: true } } } } },
