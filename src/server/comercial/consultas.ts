@@ -1,4 +1,4 @@
-import { Papel, Prisma } from "@prisma/client";
+import { Papel, Prisma, type EtapaLead } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { exigirSessaoComPapel } from "@/server/_shared";
@@ -236,6 +236,11 @@ async function whereListaLeads(usuario: UsuarioSessao, filtros: FiltrosLead): Pr
   return { AND: [await escopoComercialAtual(usuario), whereFiltrosLead(filtros)] };
 }
 
+const INCLUDE_LEAD_LISTA = {
+  pais: { select: { nome: true } },
+  vendedor: { select: { id: true, nome: true } },
+} satisfies Prisma.LeadInclude;
+
 export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead = {}, pagina?: { skip: number; take: number }) {
   if (!podeListarLeads(usuario)) return [];
   const leads = await prisma.lead.findMany({
@@ -243,13 +248,44 @@ export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead =
     // id como desempate: sem ele, leads criados no mesmo instante podiam trocar de página entre consultas.
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
     ...(pagina ?? {}),
-    include: {
-      pais: { select: { nome: true } },
-      vendedor: { select: { id: true, nome: true } },
-    },
+    include: INCLUDE_LEAD_LISTA,
   });
+  return comProjecoesDeEventos(leads);
+}
 
-  // Projeções de eventos: última ação (qualquer evento) e desde quando está na etapa atual.
+/** Cartões por coluna do /pipeline (cada etapa, de cada tipo PF/B2B): os mais recentes; o resto fica em /leads. */
+export const LEADS_POR_COLUNA_FUNIL = 50;
+
+export type TotalColunaFunil = { etapa: EtapaLead; b2b: boolean; total: number };
+
+/**
+ * Leads do funil (/pipeline) com teto por coluna (docs/43 §6 item 9 e §7.5: `listarLeads` era chamada sem filtro nem
+ * `take`, e o quadro trazia a carteira inteira). Um `groupBy` dá o total de cada coluna (etapa × tipo) e cada coluna
+ * com lead lê os LEADS_POR_COLUNA_FUNIL mais recentes; as projeções de eventos rodam uma vez, sobre todos os cartões
+ * lidos (não por coluna). O quadro diz quando uma coluna passou do teto e leva à lista filtrada.
+ */
+export async function listarLeadsFunil(usuario: UsuarioSessao): Promise<{ leads: LeadListado[]; totais: TotalColunaFunil[] }> {
+  if (!podeListarLeads(usuario)) return { leads: [], totais: [] };
+  const escopo = await escopoComercialAtual(usuario);
+  const grupos = await prisma.lead.groupBy({ by: ["etapa", "b2b"], where: escopo, _count: { _all: true } });
+  const totais = grupos.map((g) => ({ etapa: g.etapa, b2b: g.b2b, total: g._count._all }));
+  const colunas = await Promise.all(
+    totais
+      .filter((t) => t.total > 0)
+      .map((t) =>
+        prisma.lead.findMany({
+          where: { AND: [escopo, whereFiltrosLead({ etapa: t.etapa, b2b: t.b2b })] },
+          orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+          take: LEADS_POR_COLUNA_FUNIL,
+          include: INCLUDE_LEAD_LISTA,
+        }),
+      ),
+  );
+  return { leads: await comProjecoesDeEventos(colunas.flat()), totais };
+}
+
+/** Projeções de eventos dos leads lidos: última ação (qualquer evento) e desde quando está na etapa atual. */
+async function comProjecoesDeEventos<T extends { id: string; criadoEm: Date }>(leads: T[]) {
   const ids = leads.map((l) => l.id);
   const [ultimas, mudancasEtapa] = ids.length
     ? await Promise.all([

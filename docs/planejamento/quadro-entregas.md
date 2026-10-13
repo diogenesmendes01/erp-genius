@@ -1571,3 +1571,26 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - As métricas de fluxo da 7.7 continuam sem medição.
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
+
+## E9 — consultas e dados no servidor (docs/43 §6 item 9; 13/10/2026)
+
+### Entrega (branch `claude/e9-consultas-servidor`)
+- Fila de cobrança (`/financeiro/cobrancas`) em trechos de 50 por cursor nos dois sentidos (`depois`/`antes`), com o filtro da URL da #144 mantido. O cursor leva a chave de ordem da fila (`prioridade_atraso_id`), e por isso pagar o item do cursor não faz a próxima pular ninguém. A consulta lê a fila inteira só com o que ordena, filtra e conta. O detalhe pesado (vencimento civil, destino, envios, respostas, mensagem) é lido só para o trecho, com `take`. O lote só leva o que está na tela.
+- Informes a conferir (`/financeiro/informes`) viraram fila por cursor (30 por vez). O número da aba vem de um `count`.
+- Lote de migração (`/configuracao/migracao/[loteId]`): linhas paginadas (25 por página, `Paginacao`) e o JSON de cada linha e de cada tentativa divergente dentro de `<details>` fechado.
+- Importação de alunos: a linha que repete um aluno já cadastrado, ou uma linha anterior da mesma planilha, é ignorada e volta com o motivo. Critérios: documento no mesmo país, ou nome + e-mail, nome + telefone ou nome + nascimento. No modal, depois do resultado, o botão passa a ser "Importar outra planilha" (docs/42 L224).
+- Envios do portal: abas "Incertos" (padrão), "Falhas" e "Todos" na URL (`?situacao=`), mantidas no cursor (docs/42 L431).
+- `/pipeline`: teto de 50 cartões por coluna (etapa × tipo), com `groupBy` para os totais. A coluna cortada mostra "Os N mais recentes de M" e leva à lista de `/leads`.
+- Travas atualizadas: `paginacao-dois-sentidos` (2 filas novas), `estados-vazios-mapa` e `botoes-mapa`.
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Testes novos ou atualizados: `fila-cursor`, `fila-contadores`, `filtros-fila`, `fila-informes`, `fila-envios`, `consultas-lote`, `importacao-duplicidade`, `consultas` (comercial), `route.test` da importação e os de tela (cobranças, informes no painel, envios, lote, modal de importação, Kanban, FilaCobranca).
+- Integrador: suíte unitária completa, `tsc --noEmit`, eslint e mutação.
+
+### Pendências
+- A fila de cobrança ainda lê todas as cobranças abertas na passada leve, porque a ordem e os cartões dependem da régua calculada em memória. Um `take` real nessa leitura exigiria gravar o estado da régua no banco, o que pede migração e não foi feito.
+- A deduplicação não tem índice único: duas importações simultâneas ainda podem duplicar. Um documento só é achado no cadastro quando lá está igual ao da planilha ou sem pontuação: "8822-1381" no cadastro e "88221381" na planilha não casam. Resolver isso pede uma coluna normalizada com índice único, ou seja, migração.
+- `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
+- A thread da inbox cortada em 300 mensagens é da issue #168.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.

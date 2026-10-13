@@ -5,8 +5,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { camposNavegacaoFila, corteDoId, direcaoDeLeitura, lerPaginaDaFila, MENSAGEM_DOIS_SENTIDOS, umSentido, type NavegacaoDaPagina, type NavegacaoFila } from "@/lib/cursor-fila";
 import { ErroPermissao, executarAcao, exigirSessaoComPapel } from "@/server/_shared";
+import { SITUACOES_FILA_ENVIOS, whereSituacaoFilaEnvios, type SituacaoFilaEnvios } from "./filtro-fila-envios";
 
-const Entrada = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
+// `situacao` (docs/42 L431): o recorte da tela. Sem ele, a consulta lê todas as situações (a tela abre em "incertos").
+const Entrada = z.object({ ...camposNavegacaoFila, situacao: z.enum(SITUACOES_FILA_ENVIOS).optional() }).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS);
 
 export type ItemFilaEnviosPortalAluno = {
   id: string;
@@ -26,11 +28,13 @@ export type FilaEnviosPortalAluno = NavegacaoDaPagina & {
 
 /** Visão operacional sem destinatário, token, link ou recibo do provedor. Fila de trabalho com cursor nos dois sentidos
  * (E4, decisão de 10/10/2026), em ordem de id: a próxima continua do último item visto, e uma solicitação nova
- * (reemissão) não desloca a página de quem está conciliando. */
-export async function consultarFilaEnviosPortalAluno(input: NavegacaoFila = {}) {
+ * (reemissão) não desloca a página de quem está conciliando. O recorte de situação (incertos, falhas, todos) vale
+ * para os dois sentidos: o cursor anda dentro do recorte. */
+export async function consultarFilaEnviosPortalAluno(input: NavegacaoFila & { situacao?: SituacaoFilaEnvios } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-    const nav = Entrada.parse(input);
+    const { situacao = "todos", ...nav } = Entrada.parse(input);
+    const recorte = whereSituacaoFilaEnvios(situacao);
     return prisma.$transaction(async (tx) => {
       const usuario = await tx.usuario.findUnique({
         where: { id: sessao.id },
@@ -41,7 +45,7 @@ export async function consultarFilaEnviosPortalAluno(input: NavegacaoFila = {}) 
       )) throw new ErroPermissao("Sua permissão mudou; inicie a operação novamente.");
 
       const { registros, ...navegacao } = await lerPaginaDaFila(nav, 20, (leitura, take) => tx.solicitacaoEnvioPortalAluno.findMany({
-        where: corteDoId(leitura, "asc"),
+        where: { ...recorte, ...corteDoId(leitura, "asc") },
         orderBy: { id: direcaoDeLeitura(leitura)("asc") },
         take,
         select: {
