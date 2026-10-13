@@ -14,7 +14,7 @@ describe("recuperar — render", () => {
 
   it("formulário com o e-mail ligado ao rótulo, obrigatório e com autocomplete", () => {
     expect(html).toMatch(/<label[^>]*for="recuperar-email"[^>]*>E-mail/);
-    expect(html).toMatch(/<input(?=[^>]*id="recuperar-email")(?=[^>]*type="email")(?=[^>]*autocomplete="email")(?=[^>]*required)[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*id="recuperar-email")(?=[^>]*type="email")(?=[^>]*autoComplete="email")(?=[^>]*required)[^>]*>/);
     expect(html).toContain("Solicitar recuperação");
   });
 

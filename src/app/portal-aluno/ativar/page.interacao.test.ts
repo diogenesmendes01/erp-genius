@@ -116,7 +116,7 @@ describe("ativar — a senha", () => {
     expect(pagina).toContain("Mínimo de 12 caracteres");
     expect(pagina).toContain("Repita a senha");
     expect(pagina.match(/<input[^>]*type="password"[^>]*>/g)).toHaveLength(2);
-    expect(pagina.match(/autocomplete="new-password"/g)).toHaveLength(2);
+    expect(pagina.match(/autoComplete="new-password"/g)).toHaveLength(2);
     expect(campos(tela()).map((c) => c.props.id)).toEqual(["ativar-senha", "ativar-confirmacao"]);
   });
 
