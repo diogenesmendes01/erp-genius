@@ -1524,3 +1524,24 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## E11 — amostra Média/Baixa com nova semente (docs/43 §6 item 11; 13/10/2026)
+
+### Entrega (branch `claude/e11-amostra-media-baixa`, só documentação)
+- Doc 43 §7.6: amostra de 126 dos 727 achados Média/Baixa com a semente 20261013 (`node scripts/medicao-ux/amostra.mjs 6 3 20261013`), na `main` `4c4f526a` (depois da #174). Cada achado tem veredito e evidência `arquivo:linha`.
+- Estimativa estratificada: **66,8% abertos (IC 95% 58,7–74,9%), ≈ 486 achados**. A §7.3 (semente 42, `e5418550`) deu 58,9% (IC 50,3–67,5%); os intervalos se sobrepõem. Não é amostra pareada.
+- 21 dos 126 achados coincidem com a semente 42. Dois deles passaram de aberto para resolvido com a #172 (L2553, L2567). Os 105 novos dão 68,0% abertos.
+- Padrões com mais abertos: layout e hierarquia (20), texto e microcopy (17) e validação de campo (17).
+- Nota no item 11 da tabela da §7.5.
+
+### Verificação
+- Vereditos só por leitura de código. O UAT não foi aberto e o app não foi rodado.
+- A estimativa usou `estimativaEstratificada` de `scripts/medicao-ux/nucleo.mjs`. O mesmo cálculo, com as contagens da §7.3.2, reproduz os 58,9% (50,3–67,5%).
+- Sem mudança em `src/`. A suíte não foi rodada; o `medicao-ux.test.ts` lê as seções 2.1, 4 e 5 do doc 43, que não mudaram.
+
+### Pendências
+- Ações sem confirmação fora das fatias A e B de `confirmacoes-mapa.ts`: L325, L1479, L2019 e L2142. A L2142 tem efeito financeiro.
+- O `<p role="alert">` devolvido pela página no erro de consulta continua; os `error.tsx` da #174 não o substituem (8 achados da amostra).
+- As métricas de fluxo da 7.7 continuam sem medição.
+
+**Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
