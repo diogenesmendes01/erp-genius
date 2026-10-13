@@ -21,7 +21,9 @@ import ts from "typescript";
  * - o identificador `exigirSessaoPagina` aparece em qualquer outro lugar além do import e desse
  *   guard (segunda chamada, função-isca nunca chamada, `obj.exigirSessaoPagina`, declaração local);
  * - o guard é importado com alias, por `import * as`/default de `@/server/_shared`, ou o módulo é
- *   carregado por `import()`/`require` — a chamada real ficaria com outro nome;
+ *   carregado por `import()`/`require`/`import x = require(…)` — a chamada real ficaria com outro nome,
+ *   até sem o identificador (`m["exigirSessaoPagina"](…)`). `import()`/`require` com especificador não
+ *   literal também falha: não dá para saber qual módulo vem;
  * - a chamada não tem papéis, ou algum argumento não é `Papel.X` literal (`...PAPEIS`, constante);
  * - `Papel` não vem de `import { Papel } from "@prisma/client"` sem alias, ou há outra declaração
  *   chamada `Papel` no arquivo (um objeto local poderia remapear `Papel.SECRETARIA_ACADEMICA`).
@@ -30,14 +32,17 @@ import ts from "typescript";
  * abre a página" se nada depois recusa uma parte deles. Também falha alto quando o arquivo:
  * - tem recusa dura em qualquer ponto: `throw`, `Promise.reject`, `redirect`/`permanentRedirect`/
  *   `notFound`/`forbidden`/`unauthorized`, `<AcessoNegado>`, `exigirPapel`/`exigirSessaoComPapel`/
- *   `exigirSessao`, qualquer import de `next/navigation`, ou import de `@/server/_shared` além de
- *   `exigirSessaoPagina` e `temPapel`. Nenhuma das páginas das abas faz isso hoje; se uma precisar
- *   (ex.: notFound por registro inexistente), a trava ganha uma exceção ancorada e testada;
+ *   `exigirSessao`, qualquer carga de `next/navigation` (import estático, `import()`, `require` ou
+ *   `import x = require(…)`), ou import de `@/server/_shared` além de `exigirSessaoPagina` e
+ *   `temPapel`. Nenhuma das páginas das abas faz isso hoje; se uma precisar (ex.: notFound por
+ *   registro inexistente), a trava ganha uma exceção ancorada e testada;
  * - tem recusa branda: `return` de um componente de topo (função declarada no topo do arquivo, ou
- *   arrow/function atribuída a uma const de topo) sob `if`/`switch` cuja condição lê papel, ou
- *   `return cond ? … : …` / `return cond && …` com condição que lê papel. "Lê papel" = cita
- *   `papeis`, `temPapel` ou `Papel`, ou uma variável inicializada a partir disso (propagado até o
- *   ponto fixo; o próprio guard não contamina o usuário que ele devolve).
+ *   arrow/function atribuída a uma const de topo) sob `if`/`switch`/`case`/`while`/`do`/`for` cuja
+ *   condição lê papel, ou `return cond ? … : …` / `return cond && …` / `cond || …` / `cond ?? …`
+ *   (também sob parênteses, `as`, `satisfies` ou `!`) com condição que lê papel. "Lê papel" = cita
+ *   `papeis`, `temPapel` ou `Papel` (também como chave lida: `x["papeis"]`, `{ papeis: p } = x`), ou
+ *   uma variável inicializada, atribuída ou desestruturada a partir disso (propagado até o ponto fixo;
+ *   o próprio guard não contamina o usuário que ele devolve, só a chave `papeis` lida dele).
  * Ajuste de tela por papel continua livre: `{usuario.papeis.includes(Papel.X) && <Link/>}` no JSX,
  * `const secretaria = temPapel(…)` usado num texto, `return` condicionado dentro de um `.map(...)`.
  * Limite: uma recusa escondida numa função IMPORTADA de outro módulo não é vista.
@@ -80,11 +85,56 @@ const IDENTIFICADORES_QUE_RECUSAM = new Set(["AcessoNegado", "exigirPapel", "exi
 const IMPORTS_PERMITIDOS_DO_GUARD = new Set([GUARD, "temPapel"]);
 const LEITURA_DE_PAPEL = ["papeis", "temPapel", "Papel"];
 const OPERADORES_LOGICOS = new Set<ts.SyntaxKind>([ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken]);
+/** Os operadores da recusa branda em texto, para o autoteste comparar com a cópia literal dele (R3 da #143, B9). */
+export const OPERADORES_LOGICOS_DA_RECUSA = Array.from(OPERADORES_LOGICOS, (operador) => ts.tokenToString(operador));
 
-const semParenteses = (expr: ts.Expression): ts.Expression => (ts.isParenthesizedExpression(expr) ? semParenteses(expr.expression) : expr);
+/** Tira parênteses e envoltórios de tipo (`as`, `satisfies`, `!`), que não mudam o valor. (`<T>x` não existe em TSX.) */
+const semEnvoltorio = (expr: ts.Expression): ts.Expression =>
+  ts.isParenthesizedExpression(expr) || ts.isAsExpression(expr) || ts.isSatisfiesExpression(expr) || ts.isNonNullExpression(expr)
+    ? semEnvoltorio(expr.expression) : expr;
 const nomesDoBinding = (nome: ts.BindingName): string[] =>
   ts.isIdentifier(nome) ? [nome.text]
     : (nome.elements as readonly ts.ArrayBindingElement[]).flatMap((e) => (ts.isOmittedExpression(e) ? [] : nomesDoBinding(e.name)));
+/** Texto da chave (`papeis`, `"papeis"`, `["papeis"]`); undefined quando é calculada (`[k]`). */
+const textoDaChave = (chave: ts.PropertyName): string | undefined =>
+  ts.isComputedPropertyName(chave) ? (ts.isStringLiteralLike(chave.expression) ? chave.expression.text : undefined) : chave.text;
+const ehAtribuicao = (tipo: ts.SyntaxKind) => tipo >= ts.SyntaxKind.FirstAssignment && tipo <= ts.SyntaxKind.LastAssignment;
+
+/** Destino de uma atribuição: cada nome atribuído, e a chave que o preenche na desestruturação (`({ papeis: p } = x)`). */
+type Destino = { nome: string; chave?: ts.PropertyName };
+function destinosDaAtribuicao(alvo: ts.Expression): Destino[] {
+  const expr = semEnvoltorio(alvo);
+  if (ts.isIdentifier(expr)) return [{ nome: expr.text }];
+  // Valor padrão na desestruturação: `[p = []] = x`.
+  if (ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.EqualsToken) return destinosDaAtribuicao(expr.left);
+  if (ts.isArrayLiteralExpression(expr)) return expr.elements.flatMap((e): Destino[] => destinosDaAtribuicao(ts.isSpreadElement(e) ? e.expression : e));
+  if (ts.isObjectLiteralExpression(expr)) {
+    return expr.properties.flatMap((p): Destino[] => {
+      if (ts.isShorthandPropertyAssignment(p)) return [{ nome: p.name.text }];
+      if (ts.isSpreadAssignment(p)) return destinosDaAtribuicao(p.expression);
+      if (!ts.isPropertyAssignment(p)) return [];
+      const chave = p.name;
+      const destinos = destinosDaAtribuicao(p.initializer);
+      return [...destinos, ...destinos.map((d): Destino => ({ nome: d.nome, chave }))];
+    });
+  }
+  return [];
+}
+
+/**
+ * Carga de módulo fora do `import` estático: `import("m")`, `require("m")` ou `import x = require("m")`.
+ * Devolve o especificador; null quando ele não é literal; undefined quando o nó não carrega módulo.
+ */
+function moduloCarregado(no: ts.Node): string | null | undefined {
+  let especificador: ts.Expression | undefined;
+  if (ts.isExternalModuleReference(no)) especificador = no.expression;
+  else if (ts.isCallExpression(no)) {
+    const alvo = semEnvoltorio(no.expression);
+    if (alvo.kind !== ts.SyntaxKind.ImportKeyword && !(ts.isIdentifier(alvo) && alvo.text === "require")) return undefined;
+    especificador = no.arguments[0];
+  } else return undefined;
+  return especificador && ts.isStringLiteralLike(especificador) ? especificador.text : null;
+}
 
 /** Componente de topo: função declarada no topo do arquivo, ou arrow/function atribuída a uma const de topo. */
 function ehComponenteDeTopo(fn: ts.Node, sf: ts.SourceFile): boolean {
@@ -113,30 +163,48 @@ function verificarRecusas(sf: ts.SourceFile, instrucaoGuard: ts.Statement, falha
     }
   }
 
-  // Nomes que leem papel (ponto fixo): variáveis inicializadas a partir de papel e as props/chaves que
-  // recebem papel (`<Conteudo podeVer={u.papeis…} />` contamina o parâmetro `podeVer` do componente,
-  // pelo nome). O guard não contamina o usuário que ele devolve.
+  // Nomes que leem papel (ponto fixo): variáveis inicializadas, atribuídas ou desestruturadas a partir de
+  // papel e as props/chaves que recebem papel (`<Conteudo podeVer={u.papeis…} />` contamina o parâmetro
+  // `podeVer` do componente, pelo nome). O guard não contamina o usuário que ele devolve; a chave `papeis`
+  // lida dele, sim (`const { papeis: p } = sessao`, R3 da #143, E15).
   const lePapel = new Set(LEITURA_DE_PAPEL);
-  const fontes: { nomes: string[]; valor: ts.Node }[] = [];
+  // Chave de objeto (`{ papeis: { has: … } }` num filtro do Prisma) e nome de atributo JSX não leem papel.
+  const ehChave = (id: ts.Identifier) => (ts.isPropertyAssignment(id.parent) || ts.isJsxAttribute(id.parent)) && id.parent.name === id;
+  // Acesso por string (`sessao["papeis"]`) lê a chave como `sessao.papeis`.
+  const ehChaveDeAcesso = (texto: ts.StringLiteralLike) => ts.isElementAccessExpression(texto.parent) && texto.parent.argumentExpression === texto;
+  const citaPapel = (no: ts.Node): boolean =>
+    (ts.isIdentifier(no) && lePapel.has(no.text) && !ehChave(no))
+    || (ts.isStringLiteralLike(no) && lePapel.has(no.text) && ehChaveDeAcesso(no))
+    || !!ts.forEachChild(no, (filho) => citaPapel(filho) || undefined);
+  const fontes: { nomes: string[]; le: () => boolean }[] = [];
+  const porValor = (nomes: string[], valor: ts.Node) => { fontes.push({ nomes, le: () => citaPapel(valor) }); };
+  // Desestruturação: `p` em `{ papeis: p }` lê o que a chave lê. Chave calculada (`{ [k]: p }`) lê papel, por cautela.
+  const porChave = (nomes: string[], chave: ts.PropertyName) => {
+    const texto = textoDaChave(chave);
+    fontes.push({ nomes, le: () => texto === undefined || lePapel.has(texto) });
+  };
   const coletar = (no: ts.Node) => {
     if (ts.isVariableDeclaration(no) && no.initializer && !(ts.isVariableStatement(instrucaoGuard) && no.parent.parent === instrucaoGuard)) {
-      fontes.push({ nomes: nomesDoBinding(no.name), valor: no.initializer });
+      porValor(nomesDoBinding(no.name), no.initializer);
+    }
+    if (ts.isBindingElement(no) && no.propertyName) porChave(nomesDoBinding(no.name), no.propertyName);
+    if (ts.isBinaryExpression(no) && ehAtribuicao(no.operatorToken.kind)) {
+      for (const destino of destinosDaAtribuicao(no.left)) {
+        porValor([destino.nome], no.right);
+        if (destino.chave) porChave([destino.nome], destino.chave);
+      }
     }
     if (ts.isJsxAttribute(no) && ts.isIdentifier(no.name) && no.initializer && ts.isJsxExpression(no.initializer) && no.initializer.expression) {
-      fontes.push({ nomes: [no.name.text], valor: no.initializer.expression });
+      porValor([no.name.text], no.initializer.expression);
     }
-    if (ts.isPropertyAssignment(no) && ts.isIdentifier(no.name)) fontes.push({ nomes: [no.name.text], valor: no.initializer });
+    if (ts.isPropertyAssignment(no) && ts.isIdentifier(no.name)) porValor([no.name.text], no.initializer);
     ts.forEachChild(no, coletar);
   };
   coletar(sf);
-  // Chave de objeto (`{ papeis: { has: … } }` num filtro do Prisma) e nome de atributo JSX não leem papel.
-  const ehChave = (id: ts.Identifier) => (ts.isPropertyAssignment(id.parent) || ts.isJsxAttribute(id.parent)) && id.parent.name === id;
-  const citaPapel = (no: ts.Node): boolean =>
-    (ts.isIdentifier(no) && lePapel.has(no.text) && !ehChave(no)) || !!ts.forEachChild(no, (filho) => citaPapel(filho) || undefined);
   for (let mudou = true; mudou;) {
     mudou = false;
-    for (const { nomes, valor } of fontes) {
-      if (!citaPapel(valor)) continue;
+    for (const { nomes, le } of fontes) {
+      if (!le()) continue;
       for (const nome of nomes) if (!lePapel.has(nome)) { lePapel.add(nome); mudou = true; }
     }
   }
@@ -144,8 +212,11 @@ function verificarRecusas(sf: ts.SourceFile, instrucaoGuard: ts.Statement, falha
   const visitar = (no: ts.Node) => {
     // Recusa dura, em qualquer ponto do arquivo.
     if (ts.isThrowStatement(no)) falha(`throw na linha ${linha(no)} — a página das abas não recusa depois do guard`);
+    if (moduloCarregado(no) === "next/navigation") {
+      falha(`next/navigation carregado dinamicamente (linha ${linha(no)}) — a página das abas não recusa por conta própria; o guard decide`);
+    }
     if (ts.isCallExpression(no)) {
-      const alvo = semParenteses(no.expression);
+      const alvo = semEnvoltorio(no.expression);
       if (ts.isIdentifier(alvo) && CHAMADAS_QUE_RECUSAM.has(alvo.text)) falha(`${alvo.text}(...) na linha ${linha(no)} — a página das abas não recusa depois do guard`);
       if (ts.isPropertyAccessExpression(alvo) && alvo.name.text === "reject" && ts.isIdentifier(alvo.expression) && alvo.expression.text === "Promise") {
         falha(`Promise.reject na linha ${linha(no)} — a página das abas não recusa depois do guard`);
@@ -158,7 +229,7 @@ function verificarRecusas(sf: ts.SourceFile, instrucaoGuard: ts.Statement, falha
       let fn: ts.Node = no.parent;
       while (!ts.isFunctionLike(fn) && !ts.isSourceFile(fn)) fn = fn.parent;
       if (ehComponenteDeTopo(fn, sf)) {
-        const expr = no.expression && semParenteses(no.expression);
+        const expr = no.expression && semEnvoltorio(no.expression);
         const condicaoDoRetorno = expr && (ts.isConditionalExpression(expr) ? expr.condition
           : ts.isBinaryExpression(expr) && OPERADORES_LOGICOS.has(expr.operatorToken.kind) ? expr.left
             : undefined);
@@ -168,7 +239,9 @@ function verificarRecusas(sf: ts.SourceFile, instrucaoGuard: ts.Statement, falha
             : ts.isSwitchStatement(pai) && filho !== pai.expression ? pai.expression
               : ts.isCaseClause(pai) && filho !== pai.expression ? pai.expression
                 : (ts.isWhileStatement(pai) || ts.isDoStatement(pai)) && filho !== pai.expression ? pai.expression
-                  : undefined;
+                  : ts.isForStatement(pai) && filho === pai.statement ? pai.condition
+                    : (ts.isForInStatement(pai) || ts.isForOfStatement(pai)) && filho === pai.statement ? pai.expression
+                      : undefined;
           if (condicao && citaPapel(condicao)) falha(`return sob condição de papel na linha ${linha(no)} — recusa branda depois do guard`);
         }
       }
@@ -218,7 +291,8 @@ export function papeisDoGuardFonte(fonte: string, origem: string): string[] {
   const guard = guardDaInstrucao(padrao!.body!.statements[0]);
 
   // 3. Nenhuma outra ocorrência: do guard (fora do import e do guard) nem de declaração chamada Papel.
-  //    Carregar o módulo do guard por import()/require também falha — a chamada viria com outro nome.
+  //    Carregar o módulo do guard por import()/require também falha — a chamada viria com outro nome, ou
+  //    sem nome nenhum (`m["exigirSessaoPagina"](…)`, R3 da #143, B7); e import()/require sem literal, sempre.
   const visitar = (no: ts.Node) => {
     if (ts.isIdentifier(no) && no.text === GUARD) {
       const doImport = ts.isImportSpecifier(no.parent) && no.parent.name === no && !no.parent.propertyName;
@@ -236,10 +310,12 @@ export function papeisDoGuardFonte(fonte: string, origem: string): string[] {
         && no.parent.parent.parent.parent.moduleSpecifier.text === "@prisma/client";
       if (!canonico) falha("declaração local chamada Papel — ela sombrearia o enum de @prisma/client");
     }
-    if (ts.isCallExpression(no) && no.arguments.length > 0 && ts.isStringLiteralLike(no.arguments[0]) && ehModuloGuard(no.arguments[0].text)
-      && (no.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(no.expression) && no.expression.text === "require"))) {
-      falha(`${MODULO_GUARD} carregado dinamicamente — importe { ${GUARD} } pelo nome`);
+    const carregado = moduloCarregado(no);
+    if (carregado === null) {
+      const { line } = sf.getLineAndCharacterOfPosition(no.getStart(sf));
+      falha(`import()/require com especificador não literal (linha ${line + 1}) — não dá para saber qual módulo vem`);
     }
+    if (carregado !== undefined && ehModuloGuard(carregado)) falha(`${MODULO_GUARD} carregado dinamicamente — importe { ${GUARD} } pelo nome`);
     ts.forEachChild(no, visitar);
   };
   visitar(sf);
