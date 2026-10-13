@@ -29,9 +29,11 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
     {!matriculaId && <EscolherMatricula busca={busca} r={encontradas} />}
     {/* A consulta da matrícula e uma por gravação autorizada (Conteudo) não seguram mais a página inteira
         (docs/42 /academico/reposicoes #2): o "voltar" sai antes e o esqueleto ocupa o lugar do conteúdo. O key
-        muda com a matrícula e os cursores — ao trocar de página ou de matrícula, o esqueleto volta no lugar
-        dos dados anteriores, em vez de mostrá-los como se fossem os novos. */}
-    {matriculaId && <Suspense key={[matriculaId, cursor ?? "", origemCursor ?? ""].join("|")} fallback={<EsqueletoCartoes rotulo="reposições da matrícula" cartoes={2} />}>
+        é só a matrícula (identidade do registro): trocar de matrícula recomeça o painel com o esqueleto. Trocar
+        de página NÃO remonta, para não apagar a justificativa que estiver sendo digitada em SolicitarReposicao
+        (docs/43 §6 item 3; trava formularios-preservados) — a navegação do App Router mantém a tela anterior até
+        a nova chegar. */}
+    {matriculaId && <Suspense key={matriculaId} fallback={<EsqueletoCartoes rotulo="reposições da matrícula" cartoes={2} />}>
       <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     </Suspense>}
   </div>;
