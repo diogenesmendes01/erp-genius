@@ -1465,3 +1465,29 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `quantidade-transporte` e as integrações WhatsApp num perfil isolado.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## E8 — portal público (docs/43 §6 item 8; 13/10/2026)
+
+### Solução implementada (branch `claude/e8-portal-publico`)
+- `/portal-aluno/ativar` (L2626, L2627, L2629, L2630): o segredo do link vai para o `sessionStorage` da aba antes de sair
+  da barra e é relido no F5; sem link, a tela não mostra o formulário e oferece "Pedir um novo link" e "Já tenho senha:
+  entrar". Regra da senha escrita (12 caracteres, 72 bytes) com contador, "Repita a senha" que bloqueia o envio,
+  `autoComplete="new-password"` nos dois campos, `useAcaoCliente` + `FeedbackAcao` (e-mail validado é sucesso, 422 tira o
+  formulário, falha de rede tem instrução própria).
+- `/portal-aluno/recuperar` (L2639, L2641, L2642): a confirmação só aparece com a resposta aceita, numa região de status já
+  montada; recusa e falha de rede viram alerta com o formulário preenchido. A confirmação é a mesma para qualquer e-mail.
+- `/pagar/[token]` (L2567, L2568, L2569, L2570, L2571, L2572): quadro próprio para link inválido, link expirado, cobrança
+  paga, cancelada, vencida e pendente; só pendente e vencida mantêm o caminho de pagamento; `robots: noindex`.
+- `/login` (L2553, L2555): o guard manda `/login?callbackUrl=<caminho>` (o caminho chega pelo `src/proxy.ts`) e o login
+  volta para lá só se for caminho interno (`src/lib/destino-interno.ts`); queda de rede no `signIn` vira mensagem.
+- Botões de login, pagar, entrar, ativar e recuperar em `Botao`/`botaoClasses`, sob a trava `botoes.test.ts`.
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Testes novos e travas alteradas listados na PR; o integrador roda.
+
+### Pendências
+- Integrador: rodar a suíte unitária, `tsc --noEmit` e eslint; conferir o `src/proxy.ts` (primeiro proxy do projeto) no UAT.
+- `/api/portal-aluno/token` devolve 422 também para a senha que o Zod recusa; a tela evita o caso validando antes.
+- Link de troca de e-mail (`VALIDAR_TROCA_EMAIL`) cai na mesma tela, que sempre manda senha; a rota recusa esse caso.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.

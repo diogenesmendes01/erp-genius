@@ -1,81 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { useRouter } from "next/navigation";
+import { Botao } from "@/components/Botao";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { pagarCobrancaSimulada } from "./requisicao";
 
-export function PagarCliente({
-  token,
-  descricao,
-  valor,
-  moeda,
-  status,
-  vencimentoISO,
-  simuladoHabilitado,
-}: {
-  token: string;
-  descricao: string;
-  valor: number;
-  moeda: string;
-  status: string;
-  vencimentoISO: string;
-  simuladoHabilitado: boolean;
-}) {
-  const [estado, setEstado] = useState<"aberto" | "pagando" | "pago" | "erro">(
-    status === "PAGO" ? "pago" : "aberto",
-  );
-  const [erro, setErro] = useState<string | null>(null);
+// Caminho de pagamento da cobrança pendente ou vencida (a página decide quando ele aparece; ./quadro.ts).
+// Erro e sucesso separados (useAcaoCliente + FeedbackAcao; docs/43 §6 item 8): a recusa sai em role="alert"
+// com o botão "Tentar de novo", a confirmação em role="status", e a falha de rede como resultado não confirmado
+// (recarregar mostra se a cobrança já está paga — a baixa não tem chave de idempotência). Depois do pagamento
+// aceito, a página é renderizada de novo, e o quadro do servidor passa de "em aberto" a "paga".
+export function PagarCliente({ token, simuladoHabilitado }: { token: string; simuladoHabilitado: boolean }) {
+  const acao = useAcaoCliente({ idempotente: false });
+  const router = useRouter();
 
   async function pagar() {
-    setEstado("pagando");
-    setErro(null);
-    try {
-      const r = await fetch("/api/pagamentos/webhook/simulado", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-      const corpo = (await r.json()) as { ok?: boolean; erro?: string };
-      if (!r.ok || !corpo.ok) throw new Error(corpo.erro ?? "Falha no pagamento.");
-      setEstado("pago");
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha no pagamento.");
-      setEstado("erro");
-    }
+    const desfecho = await acao.executar(() => pagarCobrancaSimulada(token), "Pagamento confirmado. Obrigado!");
+    if (desfecho?.tipo === "ok") router.refresh();
+  }
+
+  if (!simuladoHabilitado) {
+    return (
+      <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        Pagamento online indisponível no momento. Para pagar, fale com a Secretaria da escola, que indica outro canal.
+      </p>
+    );
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-surface p-4">
-      <div className="text-sm text-gray-500">{descricao}</div>
-      <div className="mt-1 text-2xl font-medium">
-        {formatarMoeda(valor, moeda)}
-      </div>
-      <div className="text-xs text-gray-400">
-        Vencimento: {new Date(vencimentoISO).toLocaleDateString("pt-BR")}
-      </div>
-
-      {estado === "pago" ? (
-        <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
-          Pagamento confirmado. Obrigado! ✅
-        </p>
-      ) : simuladoHabilitado ? (
+    <div className="mt-4">
+      {!acao.sucesso && (
         <>
-          <button
-            className="mt-4 w-full rounded-md bg-brand-solid px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
-            disabled={estado === "pagando"}
-            onClick={pagar}
-          >
-            {estado === "pagando" ? "Processando…" : "Pagar (ambiente de teste)"}
-          </button>
-          <p className="mt-2 text-[11px] text-gray-400">
-            Ambiente de demonstração — nenhum valor real é cobrado.
-          </p>
+          <Botao tamanho="lg" className="w-full" disabled={acao.ocupado} onClick={pagar}>
+            {acao.ocupado ? "Processando…" : acao.erro ? "Tentar de novo" : "Pagar (ambiente de teste)"}
+          </Botao>
+          <p className="mt-2 text-xs text-gray-600">Ambiente de demonstração — nenhum valor real é cobrado.</p>
         </>
-      ) : (
-        <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
-          Pagamento online indisponível no momento — fale com a escola para concluir por outro canal.
-        </p>
       )}
-      {erro && <p role="alert" className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-2" />
     </div>
   );
 }
