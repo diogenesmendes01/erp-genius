@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // texto e saída; só pendente e vencida têm caminho de pagamento. A consulta é mock (nenhum banco).
 const m = vi.hoisted(() => ({ cobranca: vi.fn(), simulado: vi.fn() }));
 vi.mock("@/server/financeiro/gateway", () => ({ cobrancaPorToken: m.cobranca, pagamentoSimuladoHabilitado: m.simulado }));
+// O PagarCliente usa o router do App Router para renderizar a página de novo depois do pagamento.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 
 import PagarPage, { metadata } from "./page";
 

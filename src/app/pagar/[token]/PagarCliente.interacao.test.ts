@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // docs/43 §6 item 8 (docs/42 /pagar #5 e #6): o pagamento no ambiente de teste anuncia erro e sucesso em regiões
 // separadas, troca o rótulo para "Tentar de novo" depois da recusa e some com o botão depois do sucesso. Sem DOM
 // e sem rede: ganchos de src/test/tela-sem-dom.ts; a chamada ao webhook (./requisicao) é um mock.
-const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, pagar: vi.fn() }));
+const m = vi.hoisted(() => ({ ganchos: null as null | import("@/test/tela-sem-dom").Ganchos, pagar: vi.fn(), refresh: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push: vi.fn() }) }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
@@ -42,6 +43,17 @@ describe("PagarCliente", () => {
     sucesso: "Pagamento confirmado. Obrigado!",
     incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
     ocupado: () => botaoDePagar()?.props.disabled === true,
+  });
+
+  it("pagamento aceito: a página é renderizada de novo (o quadro vai a \"paga\"); recusa e falha de rede não", async () => {
+    m.pagar.mockResolvedValueOnce({ ok: false, erro: "Não conseguimos concluir o pagamento." });
+    await clicarPagar();
+    m.pagar.mockRejectedValueOnce(new Error("rede"));
+    await clicarPagar();
+    expect(m.refresh).not.toHaveBeenCalled();
+    m.pagar.mockResolvedValueOnce({ ok: true });
+    await clicarPagar();
+    expect(m.refresh).toHaveBeenCalledTimes(1);
   });
 
   it("paga a cobrança do token da página", async () => {
