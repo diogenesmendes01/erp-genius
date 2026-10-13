@@ -8,6 +8,7 @@ import { SEGMENTO_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
 import { LeadSchema, type LeadInput } from "@/server/comercial/schema";
 import { criarLead, editarLead } from "@/server/comercial/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { formatarMoedaParaCampo } from "@/lib/dinheiro";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
@@ -28,6 +29,13 @@ export interface LeadParaEditar {
   valorPrevisto: number | null;
   planoPrevisto: string;
   comissaoPrevista: number | null;
+}
+
+// Valor numérico vindo do lead salvo entra no formato do próprio campo ("1500,50"): String(1500.5)
+// daria "1500.5", e um ponto com até 3 dígitos antes ("150.5") é recusado por parseMoeda (issue #167).
+function valorDoCampo(valor: unknown): string {
+  if (valor == null) return "";
+  return typeof valor === "number" ? formatarMoedaParaCampo(valor) : String(valor);
 }
 
 export function LeadFormulario({
@@ -168,7 +176,7 @@ export function LeadFormulario({
             control={control}
             name="valorPrevisto"
             render={({ field }) => (
-              <CampoMoeda id="lead-valor-previsto" value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
+              <CampoMoeda id="lead-valor-previsto" value={valorDoCampo(field.value)} onChange={field.onChange} className={inputCls} />
             )}
           />
         </div>
@@ -182,7 +190,7 @@ export function LeadFormulario({
             control={control}
             name="comissaoPrevista"
             render={({ field }) => (
-              <CampoMoeda id="lead-comissao-prevista" value={field.value == null ? "" : String(field.value)} onChange={field.onChange} className={inputCls} />
+              <CampoMoeda id="lead-comissao-prevista" value={valorDoCampo(field.value)} onChange={field.onChange} className={inputCls} />
             )}
           />
         </div>

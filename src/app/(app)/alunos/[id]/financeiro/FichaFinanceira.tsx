@@ -10,7 +10,7 @@ import {
   STATUS_COMISSAO_LABEL,
   TIPO_AJUSTE_LABEL,
 } from "@/lib/labels";
-import { formatarMoeda, formatarValores, parseMoeda, type ValorMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, formatarMoedaParaCampo, formatarValores, parseMoeda, type ValorMoeda } from "@/lib/dinheiro";
 import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -295,7 +295,8 @@ function Tile({ titulo, valor, sub, cls }: { titulo: string; valor: string; sub?
   );
 }
 
-function RenegociarModal({
+/** Exportado para o teste do pré-preenchimento do valor (R1 da #173, C2); a tela usa só a ficha. */
+export function RenegociarModal({
   cobranca,
   moeda,
   podePerdao,
@@ -310,7 +311,8 @@ function RenegociarModal({
 }) {
   const tipos = [TipoAjuste.DESCONTO, TipoAjuste.BOLSA, TipoAjuste.ALTERACAO_VALOR, TipoAjuste.RENEGOCIACAO, ...(podePerdao ? [TipoAjuste.PERDAO] : [])];
   const [tipo, setTipo] = useState<TipoAjuste>(TipoAjuste.DESCONTO);
-  const [valorPara, setValor] = useState(String(cobranca.valorNegociado));
+  // formatarMoedaParaCampo (não String cru): "150.5" seria recusado por parseMoeda (ponto ambíguo, issue #167).
+  const [valorPara, setValor] = useState(() => formatarMoedaParaCampo(cobranca.valorNegociado, moeda));
   const [vigencia, setVig] = useState<Vigencia>(Vigencia.ESTA_COBRANCA);
   const [novoVenc, setVenc] = useState("");
   const [motivo, setMotivo] = useState("");

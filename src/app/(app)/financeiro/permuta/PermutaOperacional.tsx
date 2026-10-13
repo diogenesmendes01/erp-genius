@@ -10,7 +10,7 @@ import {
 } from "@/server/financeiro/permuta-servico";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
-import { formatarMoeda } from "@/lib/dinheiro";
+import { formatarMoeda, formatarMoedaOuIndefinida, MOEDA_NAO_DEFINIDA } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
@@ -134,8 +134,10 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
       <label>Contrapartida <input required name="contrapartida" /></label><label>Fórmula objetiva <input required name="formulaDescricao" placeholder="2 horas x R$ 50,00" /></label><fieldset key={matriculaSelecionada}><legend>Mensalidades elegíveis: informe o limite apenas nas escolhidas</legend>{elegiveis.map(c => <label key={c.id} className="block">{c.codigo} · {formatarDataCivil(c.vencimento)} · saldo {formatarMoeda(c.saldo, c.moeda)}<input name={`limite:${c.id}`} inputMode="decimal" aria-label={`Limite ${c.codigo} ${formatarDataCivil(c.vencimento)}`} /></label>)}</fieldset>
     </Acao>}
     {acordos.map(acordo => <article key={acordo.id} className="space-y-3 rounded border p-3">
-      <h2 className="font-medium">{acordo.matricula} · {acordo.moeda}</h2>
-      <p>{acordo.quantidadePactuada} {rotular(UNIDADE_PERMUTA_SERVICO_LABEL, acordo.unidade).toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade != null ? formatarMoeda(acordo.valorPorUnidade, acordo.moeda ?? "") : "—"} = {acordo.valorTotalPactuado != null ? formatarMoeda(acordo.valorTotalPactuado, acordo.moeda ?? "") : "—"}</>}. {acordo.contrapartida}</p>
+      <h2 className="font-medium">{acordo.matricula} · {acordo.moeda ?? MOEDA_NAO_DEFINIDA}</h2>
+      {/* Acordo sem moeda (issue #167, C20): nenhum valor sai sem símbolo — cada um vira "moeda não definida". */}
+      {!acordo.moeda && <p className="text-sm text-amber-700">Moeda não definida neste acordo: os valores não são exibidos para não serem lidos em outra moeda.</p>}
+      <p>{acordo.quantidadePactuada} {rotular(UNIDADE_PERMUTA_SERVICO_LABEL, acordo.unidade).toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade != null ? formatarMoedaOuIndefinida(acordo.valorPorUnidade, acordo.moeda) : "—"} = {acordo.valorTotalPactuado != null ? formatarMoedaOuIndefinida(acordo.valorTotalPactuado, acordo.moeda) : "—"}</>}. {acordo.contrapartida}</p>
       <p className="text-sm">{acordo.formulaDescricao}</p>
       {podePedagogico && <Acao legenda="Confirmar serviço por período" onSubmit={async formulario => confirmarServicoPermuta({ acordoId: acordo.id, periodoInicio: campo(formulario, "periodoInicio"), periodoFim: campo(formulario, "periodoFim"), quantidadeComprovada: campo(formulario, "quantidadeComprovada"), referenciaServico: campo(formulario, "referenciaServico"), evidencia: campo(formulario, "evidencia"), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
         <CamposPeriodo nomeInicio="periodoInicio" nomeFim="periodoFim" /><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>
@@ -144,15 +146,15 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
         <p>{confirmacao.periodoInicio}–{confirmacao.periodoFim}: {confirmacao.quantidadeComprovada} ({confirmacao.referenciaServico})</p>
         {podeFinanceiro && <Acao legenda="Propor destinação da compensação" onSubmit={async formulario => proporCompensacaoPermuta({ confirmacaoId: confirmacao.id, destinos: acordo.cobrancas.filter(c => campo(formulario, `destino:${c.id}`)).map(c => ({ cobrancaId: c.id, valor: campo(formulario, `destino:${c.id}`) })), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
           <p>Distribua o valor comprovado; deixe vazias as cobranças que não participam.</p>
-          {acordo.cobrancas.map(c => <label key={c.id} className="block">{c.codigo} · saldo {c.saldo != null ? formatarMoeda(c.saldo, acordo.moeda ?? "") : "—"} · limite {formatarMoeda(c.valorMaximo, acordo.moeda ?? "")}<input name={`destino:${c.id}`} inputMode="decimal" aria-label={`Valor para ${c.codigo}`} /></label>)}
+          {acordo.cobrancas.map(c => <label key={c.id} className="block">{c.codigo} · saldo {c.saldo != null ? formatarMoedaOuIndefinida(c.saldo, acordo.moeda) : "—"} · limite {formatarMoedaOuIndefinida(c.valorMaximo, acordo.moeda)}<input name={`destino:${c.id}`} inputMode="decimal" aria-label={`Valor para ${c.codigo}`} /></label>)}
         </Acao>}
         {confirmacao.propostas.map(proposta => <div key={proposta.id} className="rounded border p-2">
-          <p>Proposta de {formatarMoeda(proposta.valor, acordo.moeda ?? "")}: {proposta.decisao ? (proposta.decisao.aprovada ? (proposta.decisao.efetivada ? "compensação aplicada" : "aprovada, aguardando conferência de aplicação") : "rejeitada") : "aguarda decisão independente"}</p>
+          <p>Proposta de {formatarMoedaOuIndefinida(proposta.valor, acordo.moeda)}: {proposta.decisao ? (proposta.decisao.aprovada ? (proposta.decisao.efetivada ? "compensação aplicada" : "aprovada, aguardando conferência de aplicação") : "rejeitada") : "aguarda decisão independente"}</p>
           {proposta.decisao && <p className="text-sm">Motivo da decisão: {proposta.decisao.motivo}</p>}
           {!!proposta.decisao?.aplicacoes?.length && <details>
             <summary>Compensações aplicadas</summary>
             <ul>{proposta.decisao.aplicacoes.map(aplicacao => <li key={aplicacao.id}>
-              {(() => { const exibicao = formatarInstanteExibicao(aplicacao.aplicadaEm, preferenciaFusoExibicao, "UTC"); return <>{acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {formatarMoeda(aplicacao.valor, acordo.moeda ?? "")} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC) · serviço compensado</>; })()}
+              {(() => { const exibicao = formatarInstanteExibicao(aplicacao.aplicadaEm, preferenciaFusoExibicao, "UTC"); return <>{acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {formatarMoedaOuIndefinida(aplicacao.valor, acordo.moeda)} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC) · serviço compensado</>; })()}
             </li>)}</ul>
           </details>}
           {podeAprovar && !proposta.decisao && <Acao legenda="Decidir proposta" onSubmit={async formulario => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: campo(formulario, "aprovar") === "sim", motivo: campo(formulario, "motivo") })}>
