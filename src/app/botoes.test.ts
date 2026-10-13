@@ -22,6 +22,12 @@ vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => 
 const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/pipeline", "src/app/(app)/home", "src/app/(app)/carteiras", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado"];
 
 /**
+ * Telas públicas fora do shell (docs/43 §6 item 8): login da equipe, pagamento por link e o acesso ao portal do
+ * aluno (entrar, ativar, recuperar). Seguem a mesma regra das áreas, com subpastas. A lista só cresce.
+ */
+const TELAS_PUBLICAS_MIGRADAS = ["src/app/login", "src/app/pagar", "src/app/portal-aluno/entrar", "src/app/portal-aluno/ativar", "src/app/portal-aluno/recuperar"];
+
+/**
  * Componentes compartilhados (src/components, com subpastas) seguem a mesma regra das áreas. Fica
  * de fora só Botao.tsx: é a fonte das classes (os literais das variantes moram lá).
  */
@@ -1134,7 +1140,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [];
 
 const arquivos = [
-  ...AREAS_MIGRADAS.flatMap((raiz) =>
+  ...[...AREAS_MIGRADAS, ...TELAS_PUBLICAS_MIGRADAS].flatMap((raiz) =>
     (readdirSync(raiz, { recursive: true }) as string[])
       .filter((f) => /\.tsx$/.test(f))
       .map((f) => ({ arquivo: join(raiz, f).split("\\").join("/"), conteudo: readFileSync(join(raiz, f), "utf-8") })),
@@ -1172,6 +1178,15 @@ describe("botões nas áreas migradas", () => {
 
   it("a lista de áreas migradas só cresce (uma área não sai num rebase distraído)", () => {
     expect(AREAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/pipeline", "src/app/(app)/home", "src/app/(app)/carteiras", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado"]));
+  });
+
+  it("as telas públicas estão sob a trava e a lista só cresce (docs/43 §6 item 8)", () => {
+    expect(TELAS_PUBLICAS_MIGRADAS).toEqual(expect.arrayContaining(["src/app/login", "src/app/pagar", "src/app/portal-aluno/entrar", "src/app/portal-aluno/ativar", "src/app/portal-aluno/recuperar"]));
+    const lidos = arquivos.map(({ arquivo }) => arquivo);
+    expect(lidos).toEqual(expect.arrayContaining([
+      "src/app/login/page.tsx", "src/app/pagar/[token]/page.tsx", "src/app/pagar/[token]/PagarCliente.tsx",
+      "src/app/portal-aluno/entrar/page.tsx", "src/app/portal-aluno/ativar/page.tsx", "src/app/portal-aluno/recuperar/page.tsx",
+    ]));
   });
 
   it("variante e tamanho de cada botão migrado ficam como decididos (src/app/botoes-mapa.ts)", () => {
