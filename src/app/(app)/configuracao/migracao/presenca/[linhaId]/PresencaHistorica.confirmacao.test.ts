@@ -62,7 +62,7 @@ describe("PresencaHistorica — decidir", () => {
   it("a decisão nasce vazia e o botão, desabilitado, só diz \"Decidir\"; escolher nomeia o botão pela ação", () => {
     let t = tela();
     expect(select(t).props.value).toBe("");
-    const opcoes = elementos(select(t)).filter((n: No) => n.type === "option");
+    const opcoes = elementos(select(t).props.children as ReactNode).filter((n: No) => n.type === "option");
     expect(opcoes.map((o: No) => [o.props.value, texto(o.props.children), !!o.props.disabled])).toEqual([["", "Escolha a decisão", true], ["APROVAR", "Aprovar e aplicar", false], ["REJEITAR", "Rejeitar", false]]);
     expect(texto(botaoDecidir(t).props.children)).toBe("Decidir");
     expect(botaoDecidir(t).props.disabled).toBe(true);

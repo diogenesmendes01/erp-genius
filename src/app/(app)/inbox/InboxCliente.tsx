@@ -982,7 +982,7 @@ export function VincularPainel({
   const [q, setQ] = useState("");
   // Vincular amarra o histórico da conversa a outra pessoa e não há desvincular pela tela (docs/42 L2298):
   // escolher um nome só abre a confirmação, com o efeito escrito; a action roda no ConfirmarAcao.
-  const [escolha, setEscolha] = useState<{ alvo: AlvoVinculo; nome: string; papel: string } | null>(null);
+  const [escolha, setEscolha] = useState<{ alvo: AlvoVinculo; nome: string; vinculoComo: string } | null>(null);
   const [resultados, setResultados] = useState<PessoasVinculo | null>(null);
   const [buscando, setBuscando] = useState(false);
 
@@ -1005,9 +1005,9 @@ export function VincularPainel({
     return () => clearTimeout(t);
   }, [q, atendimentoId]);
 
-  function escolher(alvo: AlvoVinculo, nome: string, papel: string) {
+  function escolher(alvo: AlvoVinculo, nome: string, vinculoComo: string) {
     onErro(null);
-    setEscolha({ alvo, nome, papel });
+    setEscolha({ alvo, nome, vinculoComo });
   }
 
   return (
@@ -1047,7 +1047,7 @@ export function VincularPainel({
       )}
       {escolha && (
         <ConfirmarAcao
-          titulo={`Vincular esta conversa a ${escolha.nome} (${escolha.papel})?`}
+          titulo={`Vincular esta conversa a ${escolha.nome} (${escolha.vinculoComo})?`}
           confirmacao="vínculo"
           idempotente={false}
           acao={() => vincularContatoWhatsApp({ contatoId, atendimentoId, alvo: escolha.alvo })}
@@ -1058,7 +1058,7 @@ export function VincularPainel({
           aoCancelar={() => setEscolha(null)}
         >
           <p>
-            O contato {contatoNome} ({contatoTelefone}) passa a ficar ligado a <strong>{escolha.nome}</strong> ({escolha.papel}): o
+            O contato {contatoNome} ({contatoTelefone}) passa a ficar ligado a <strong>{escolha.nome}</strong> ({escolha.vinculoComo}): o
             histórico desta conversa, e o das próximas mensagens deste número, aparece no cadastro dele.
           </p>
           <p>Não há desvincular pela tela: corrigir um vínculo errado exige a administração, com revisão do histórico.</p>
