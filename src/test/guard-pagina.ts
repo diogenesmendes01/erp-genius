@@ -315,7 +315,7 @@ export function papeisDoGuardFonte(fonte: string, origem: string): string[] {
       const { line } = sf.getLineAndCharacterOfPosition(no.getStart(sf));
       falha(`import()/require com especificador não literal (linha ${line + 1}) — não dá para saber qual módulo vem`);
     }
-    if (carregado !== undefined && ehModuloGuard(carregado)) falha(`${MODULO_GUARD} carregado dinamicamente — importe { ${GUARD} } pelo nome`);
+    if (typeof carregado === "string" && ehModuloGuard(carregado)) falha(`${MODULO_GUARD} carregado dinamicamente — importe { ${GUARD} } pelo nome`);
     ts.forEachChild(no, visitar);
   };
   visitar(sf);
