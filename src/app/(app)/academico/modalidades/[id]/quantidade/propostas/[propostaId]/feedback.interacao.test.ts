@@ -38,7 +38,7 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); });
 
-const RESUMO = { modalidade: "Inglês regular", quantidadeAnterior: 40, quantidadeNova: 44, turmas: 6 };
+const RESUMO = { nomeModalidade: "Inglês regular", quantidadeAnterior: 40, quantidadeNova: 44, turmas: 6 };
 const tela = () => m.ganchos!.renderizar(DecidirQuantidadeAulas, { propostaId: "proposta-1", resumo: RESUMO });
 const confirmacao = (): No | undefined => elementos(tela()).find((n: No) => n.type === ConfirmarAcao);
 const MOTIVO = "Conferi o impacto nas turmas";

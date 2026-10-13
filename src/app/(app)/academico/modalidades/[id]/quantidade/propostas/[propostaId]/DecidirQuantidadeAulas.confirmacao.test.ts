@@ -30,7 +30,7 @@ import { confirmarNoDialogo } from "@/test/confirmacao-tela";
 
 const MOTIVO = "Conferi o impacto nas turmas";
 const tela = (turmas = 6): ReactNode => m.ganchos!.renderizar(DecidirQuantidadeAulas, {
-  propostaId: "proposta-1", resumo: { modalidade: "Inglês regular", quantidadeAnterior: 40, quantidadeNova: 44, turmas },
+  propostaId: "proposta-1", resumo: { nomeModalidade: "Inglês regular", quantidadeAnterior: 40, quantidadeNova: 44, turmas },
 });
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
