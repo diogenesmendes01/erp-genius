@@ -1005,6 +1005,24 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "acesso-negado/page.tsx": [
     "<Link> Voltar ao início → primario/lg",
   ],
+  // Telas públicas fora do shell (docs/43 §6 item 8; chave com o caminho inteiro).
+  "src/app/login/page.tsx": [
+    "<Botao> Entrando… · Entrar → primario/lg",
+  ],
+  "src/app/pagar/[token]/PagarCliente.tsx": [
+    "<Botao> Processando… · Tentar de novo · Pagar (ambiente de teste) → primario/lg",
+  ],
+  "src/app/portal-aluno/entrar/page.tsx": [
+    "<Botao> Entrando… · Entrar → primario/lg",
+  ],
+  "src/app/portal-aluno/ativar/page.tsx": [
+    "<Link> Pedir um novo link → primario/lg",
+    "<Link> Já tenho senha: entrar → secundario/lg",
+    "<Botao> Confirmando… · Confirmar acesso → primario/lg",
+  ],
+  "src/app/portal-aluno/recuperar/page.tsx": [
+    "<Botao> Solicitando… · Solicitar recuperação → primario/lg",
+  ],
   // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
   "src/components/ConfirmarAcao.tsx": [
     "<Botao> Voltar → secundario/md",

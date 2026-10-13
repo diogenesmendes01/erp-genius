@@ -7,6 +7,8 @@ import { z } from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { IconSchool } from "@tabler/icons-react";
+import { Botao } from "@/components/Botao";
+import { destinoAposLogin } from "@/lib/destino-interno";
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -25,12 +27,22 @@ export default function LoginPage() {
 
   async function onSubmit(data: Form) {
     setErro(null);
-    const res = await signIn("credentials", { ...data, redirect: false });
-    if (res?.error) {
+    let recusado = false;
+    try {
+      const res = await signIn("credentials", { ...data, redirect: false });
+      recusado = !!res?.error;
+    } catch {
+      // Queda de rede ou servidor fora: sem isto o botão voltava a "Entrar" e nada era dito (docs/42 /login #4).
+      setErro("Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.");
+      return;
+    }
+    if (recusado) {
       setErro("E-mail ou senha incorretos.");
       return;
     }
-    router.push("/home");
+    // Volta à página pedida antes do login (o guard manda `?callbackUrl=`), só se for caminho interno:
+    // destinoAposLogin recusa URL externa e `//…` (sem open redirect) e cai no /home (docs/42 /login #2).
+    router.push(destinoAposLogin(new URLSearchParams(window.location.search).get("callbackUrl")));
     router.refresh();
   }
 
@@ -75,13 +87,9 @@ export default function LoginPage() {
 
           {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-60"
-          >
+          <Botao type="submit" tamanho="lg" className="mt-2" disabled={isSubmitting}>
             {isSubmitting ? "Entrando…" : "Entrar"}
-          </button>
+          </Botao>
         </form>
       </div>
     </div>
