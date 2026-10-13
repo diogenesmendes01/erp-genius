@@ -605,6 +605,10 @@ const VERSAO_PENDENTE = "pendência fora do recorte do item 3 (docs/43 §6): a v
 
 export const EXCECOES: Excecao[] = [
   {
+    arquivo: "src/app/(app)/academico/reposicoes/page.tsx", regra: "key", trecho: "key={matriculaId}",
+    motivo: "identidade do registro, não filtro nem página: o <Suspense> recomeça só quando a matrícula escolhida na URL muda (outra matrícula, outras ausências) — os cursores ficam fora do key para não apagar o digitado ao paginar",
+  },
+  {
     arquivo: "src/app/(app)/alunos/[id]/academico/page.tsx", regra: "key", trecho: "key={matriculaId ?? \"legado\"}",
     motivo: "identidade do registro, não filtro nem página: a matrícula escolhida na URL troca o contexto inteiro do painel (outra matrícula, outras solicitações) — começar do zero é o esperado",
   },
@@ -718,6 +722,7 @@ describe("formulários preservam o digitado: sem key volátil, sem <form> aninha
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES.map((e) => `${e.arquivo} :: ${e.regra} :: ${e.trecho}`)).toEqual([
+      "src/app/(app)/academico/reposicoes/page.tsx :: key :: key={matriculaId}",
       "src/app/(app)/alunos/[id]/academico/page.tsx :: key :: key={matriculaId ?? \"legado\"}",
       "src/app/(app)/matriculas/[id]/contrato/page.tsx :: key :: key={`${s.modelo}:${revisao.dado.revisaoHash}`}",
       "src/app/(app)/configuracao/contratos/[codigo]/page.tsx :: key :: key={atual.id}",

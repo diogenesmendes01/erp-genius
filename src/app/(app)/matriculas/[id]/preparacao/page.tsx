@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ConferirReserva } from "@/app/(app)/secretaria/reservas/ConferirReserva";
 import { consultarPendenciasPreparacao } from "@/server/secretaria/prontidao-preparacao";
 import { DecidirPreco } from "./DecidirPreco";
@@ -7,6 +8,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPreparacaoContratacao } from "@/server/matricula/preparacao-consulta";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { VoltarPara } from "@/components/VoltarPara";
+import { EsqueletoSecao } from "@/components/Esqueleto";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FORMA_AGENDA_OFERTA_LABEL, STATUS_RESERVA_VAGA_LABEL, rotular } from "@/lib/labels";
 export default async function PreparacaoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +16,10 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
   const { id } = await params, resultado = await consultarPreparacaoContratacao({ matriculaId: id });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const { matricula: m, preparacao: p } = resultado.dado;
-  const prontidao = usuario.papeis.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR) ? await consultarPendenciasPreparacao(id) : null;
+  // Secretaria e Administração veem o diagnóstico de prontidão. A consulta dele vinha encadeada depois da
+  // principal e segurava a página inteira (docs/42 /matriculas/[id] #3: "/preparacao faz 2 consultas
+  // encadeadas"); agora a proposta aparece primeiro e o quadro de pendências chega no <Suspense> abaixo.
+  const secretaria = usuario.papeis.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR);
   const tipos: Record<string, string> = { MATRICULA: "Taxa de matrícula", MENSALIDADE: "Mensalidade", HORA_PARTICULAR: "Hora particular (60 minutos)" };
   // Um fuso só, sempre impresso ao lado da hora (docs/42 L530): antes o UTC entrava calado quando a reserva não
   // tinha fuso, e a linha da preparação repetia a expressão sem o fallback, deixando um "·" órfão.
@@ -22,13 +27,8 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
   const data = (d: Date, origem = fuso) => { const x = formatarInstanteExibicao(d, null, origem); return `${x.texto} (${x.fuso})`; };
   return <div className="space-y-4"><VoltarPara href={`/secretaria?matriculaId=${id}`} para="Contratação" /><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
     <p>{m.aluno.primeiroNome} {m.aluno.sobrenome} · {m.produto.idioma.nome} · {m.produto.modalidade.nome} · {m.pais.nome}</p>
-    {prontidao && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Pedido de desistência da preparação</Link>}
-    {prontidao && <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Pendências para conferência da Secretaria</h2>
-      {!prontidao.ok || !prontidao.dado ? <p role="alert">{prontidao.ok ? "Diagnóstico indisponível." : prontidao.erro}</p> : <>
-        {prontidao.dado.pendencias.length ? <ul className="list-disc pl-5">{prontidao.dado.pendencias.map((p) => <li key={p.codigo}>{p.descricao}</li>)}</ul> : <p>Conferências básicas atendidas; prossiga com a conferência contratual completa.</p>}
-        <p>{prontidao.dado.proximasEtapas}</p>
-      </>}
-    </section>}
+    {secretaria && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Pedido de desistência da preparação</Link>}
+    {secretaria && <Suspense fallback={<QuadroPendencias><EsqueletoSecao rotulo="pendências para conferência da Secretaria" /></QuadroPendencias>}><PendenciasPreparacao matriculaId={id} /></Suspense>}
     {!p ? <p>Esta matrícula não possui o registro de preparação comercial. Consulte os documentos e o histórico da contratação.</p> : <>
       <p role="status">Condições propostas: conferência e aprovações pendentes.</p><p>Preparada por {p.preparador.nome} em {data(p.criadaEm)}.</p>
       <dl className="space-y-2"><div><dt>Regime proposto</dt><dd>{tipos[p.regime]}</dd></div><div><dt>Taxa proposta</dt><dd>{formatarMoeda(Number(p.taxaProposta), p.moeda)}</dd></div><div><dt>Valor proposto por mensalidade ou hora</dt><dd>{formatarMoeda(Number(p.valorServicoProposto), p.moeda)}</dd></div></dl>
@@ -51,12 +51,27 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
       <p>A análise preserva os limites da preparação e não substitui as demais conferências ou aprovações da contratação.</p>
       <h2 className="text-xl">Reserva vinculada à preparação</h2>
       {p.reserva && <p>{p.reserva.turma.codigo ?? p.reserva.turma.nome} · {STATUS_RESERVA_VAGA_LABEL[p.reserva.status]} · Prazo: {data(p.reserva.expiraEm)}</p>}
-      {prontidao && p.reservaParticular?.status === "ATIVA" && p.reservaParticular.expiraEm <= new Date() && <ConferirReserva reservaId={p.reservaParticular.id} particular />}
+      {secretaria && p.reservaParticular?.status === "ATIVA" && p.reservaParticular.expiraEm <= new Date() && <ConferirReserva reservaId={p.reservaParticular.id} particular />}
       {p.reservaParticularOriginal && p.reservaParticularOriginal.id !== p.reservaParticular?.id && <p>Uma nova reserva substituiu a original. A reserva de origem permanece no histórico como {STATUS_RESERVA_VAGA_LABEL[p.reservaParticularOriginal.status]}.</p>}
-      {prontidao && p.reservaParticular && ["EXPIRADA", "LIBERADA"].includes(p.reservaParticular.status) && <Link className="underline" href={`/matriculas/${id}/nova-reserva`}>Retomar com nova reserva particular</Link>}
+      {secretaria && p.reservaParticular && ["EXPIRADA", "LIBERADA"].includes(p.reservaParticular.status) && <Link className="underline" href={`/matriculas/${id}/nova-reserva`}>Retomar com nova reserva particular</Link>}
       {p.reservaParticular && <><p>Particular · {STATUS_RESERVA_VAGA_LABEL[p.reservaParticular.status]} · Prazo: {data(p.reservaParticular.expiraEm)}</p><ul>{p.reservaParticular.horarios.map((h) => <li key={h.id}>{h.professor.nome} · {data(h.inicio, h.fusoOrigem)} — {data(h.fim, h.fusoOrigem)}</li>)}</ul><p>Confira o contrato e a emissão inicial com os horários reservados. O envio ao serviço de assinatura e a ativação desta particular ainda dependem da conclusão das integrações.</p></>}
       <p>{m.secretariaAssumiuEm ? "A Secretaria já assumiu a matrícula." : "Aguardando a Secretaria assumir a matrícula."}</p>
       <Link className="underline" href={`/matriculas/${id}/reserva`}>Consultar reserva atual da contratação</Link>
     </>}
   </div>;
+}
+
+/** Moldura do quadro de pendências: o título não depende da consulta, por isso sai junto com o esqueleto. */
+function QuadroPendencias({ children }: { children: React.ReactNode }) {
+  return <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Pendências para conferência da Secretaria</h2>{children}</section>;
+}
+
+async function PendenciasPreparacao({ matriculaId }: { matriculaId: string }) {
+  const prontidao = await consultarPendenciasPreparacao(matriculaId);
+  return <QuadroPendencias>
+    {!prontidao.ok || !prontidao.dado ? <p role="alert">{prontidao.ok ? "Diagnóstico indisponível." : prontidao.erro}</p> : <>
+      {prontidao.dado.pendencias.length ? <ul className="list-disc pl-5">{prontidao.dado.pendencias.map((p) => <li key={p.codigo}>{p.descricao}</li>)}</ul> : <p>Conferências básicas atendidas; prossiga com a conferência contratual completa.</p>}
+      <p>{prontidao.dado.proximasEtapas}</p>
+    </>}
+  </QuadroPendencias>;
 }

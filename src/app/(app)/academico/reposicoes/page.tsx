@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
@@ -10,6 +11,7 @@ import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
+import { EsqueletoCartoes } from "@/components/Esqueleto";
 import { buscarMatriculasParaReposicao, LIMITE_BUSCA_REPOSICAO } from "@/server/diario/reposicao-busca-matricula";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
 
@@ -25,7 +27,15 @@ export default async function ReposicoesEquipePage({ searchParams }: { searchPar
   return <div className="space-y-5">
     <VoltarPara href="/academico" />
     {!matriculaId && <EscolherMatricula busca={busca} r={encontradas} />}
-    {matriculaId && <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+    {/* A consulta da matrícula e uma por gravação autorizada (Conteudo) não seguram mais a página inteira
+        (docs/42 /academico/reposicoes #2): o "voltar" sai antes e o esqueleto ocupa o lugar do conteúdo. O key
+        é só a matrícula (identidade do registro): trocar de matrícula recomeça o painel com o esqueleto. Trocar
+        de página NÃO remonta, para não apagar a justificativa que estiver sendo digitada em SolicitarReposicao
+        (docs/43 §6 item 3; trava formularios-preservados) — a navegação do App Router mantém a tela anterior até
+        a nova chegar. */}
+    {matriculaId && <Suspense key={matriculaId} fallback={<EsqueletoCartoes rotulo="reposições da matrícula" cartoes={2} />}>
+      <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+    </Suspense>}
   </div>;
 }
 
