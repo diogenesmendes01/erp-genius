@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Botao } from "@/components/Botao";
 
 export default function EntrarPortalAlunoPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function EntrarPortalAlunoPage() {
       <label className="block text-sm">E-mail<input required name="email" type="email" autoComplete="email" className="mt-1 w-full rounded border px-3 py-2" /></label>
       <label className="block text-sm">Senha<input required name="senha" type="password" autoComplete="current-password" className="mt-1 w-full rounded border px-3 py-2" /></label>
       {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
-      <button disabled={enviando} className="w-full rounded bg-brand-solid px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{enviando ? "Entrando…" : "Entrar"}</button>
+      <Botao type="submit" tamanho="lg" className="w-full" disabled={enviando}>{enviando ? "Entrando…" : "Entrar"}</Botao>
     </form>
     <Link href="/portal-aluno/recuperar" className="mt-5 block text-sm text-brand-700 underline">Não consigo acessar meu e-mail ou senha</Link>
   </div></section>;
