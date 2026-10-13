@@ -47,6 +47,26 @@ it("exibe o status canônico mesmo quando a referência de período já passou",
   expect(html).toContain("22:00–01:00");
 });
 
+it("início e término saem como o dia gravado, mesmo num navegador em UTC−3 (C52 da #170)", () => {
+  // Turma importada grava o dia à meia-noite UTC; com toLocaleDateString, em São Paulo, 15/10 virava 14/10.
+  const anterior = process.env.TZ;
+  process.env.TZ = "America/Sao_Paulo";
+  try {
+    const html = renderToStaticMarkup(createElement(TurmasPainel, {
+      turmas: [{ ...turma, dataInicio: "2026-10-15T00:00:00.000Z", dataFim: "2026-12-20T00:00:00.000Z" }],
+      modalidades: [{ id: "modalidade-1", label: "Regular", frequencia: "1x/semana", horasAula: 3 }],
+      niveis: [{ id: "nivel-1", label: "Português A1" }],
+      professores: [],
+    }));
+    expect(html).toContain("15/10/2026 → 20/12/2026");
+    expect(html).not.toContain("14/10/2026");
+    expect(html).not.toContain("19/12/2026");
+  } finally {
+    if (anterior === undefined) delete process.env.TZ;
+    else process.env.TZ = anterior;
+  }
+});
+
 it("oferece a preparação real para a turma planejada sem referência de término", () => {
   const html = renderToStaticMarkup(createElement(TurmasPainel, {
     turmas: [{ ...turma, status: "PLANEJADA", dataFim: null }],
