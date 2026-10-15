@@ -5,11 +5,11 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
 - Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
-- Perfil de teste do worktree: `dev-email` (banco descartável isolado; o `tester` do brief foi substituído pelo perfil atribuído pelo integrador). Medição feita no checkout do integrador (`/home/claude/erp-genius`).
+- Perfil de teste do worktree: `dev-email` (banco descartável isolado; o `tester` do brief foi substituído pelo perfil atribuído pelo integrador). Unitários reexecutados neste worktree (commit `392d6d8` sobre `f8a9c0e`; só docs mudaram); `test:int` medido no checkout do integrador (`/home/claude/erp-genius`, banco `erp_genius_test`).
 - Suíte completa, sem filtro.
 - `tsc --noEmit`: saída 0.
-- `npm test` (`vitest run`): saída 0; 646 arquivos, 4560 testes, 0 falhas.
-- `test:int` (`vitest.integration.config.ts`): **PENDENTE** na data deste commit. A execução completa ainda estava em andamento; o resultado (código de saída, totais e falhas) sai em `int.txt`/`int.json` da linha de base do integrador e deve ser anotado aqui antes de qualquer bloco comparar com `LB_FALHAS`. Falha que aparecer lá é preexistente.
+- `npm test` (`vitest run`): saída 0; 646 arquivos, 4560 testes, 0 falhas. Medido no worktree em 15/10/2026 com `--reporter=json`: `numTotalTests` 4560, `numFailedTests` 0, `success` true, 646 arquivos (evidência local não versionada: `tmp/lb-unit.json`; coincide com a medição do integrador).
+- `test:int` (`vitest.integration.config.ts`): **PENDENTE** (ainda em andamento depois de mais de 70 min; sem `int.json` até 15/10 ~20:00 UTC, 193 arquivos `*.int.test.ts`); o resultado (código de saída, totais e falhas) sai em `int.txt`/`int.json` da linha de base do integrador e deve ser anotado aqui antes de qualquer bloco comparar com `LB_FALHAS`. Falha que aparecer lá é preexistente.
 
 ### LB_FALHAS
 
