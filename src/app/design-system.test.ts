@@ -1,5 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import config from "../../tailwind.config";
 import { TEXTO_SOBRE_SOLIDO } from "./contraste-mapa";
 import { paresTexto, reprovados, reprovadosSolidos, temasDoCss } from "./contraste-nucleo";
 
@@ -122,5 +124,42 @@ describe("design system: tokens nos dois temas", () => {
     const css = CSS.replace(/(\.dark \{[\s\S]*?--on-brand-solid:\s*)#0a0a0a/, "$1#ffffff");
     expect(css).not.toBe(CSS);
     expect(reprovadosSolidos(css).length).toBeGreaterThan(0);
+  });
+
+  it("tailwind mapeia as cores novas", () => {
+    const c = config.theme!.extend!.colors as Record<string, unknown>;
+    expect(c["on-brand"]).toBe("var(--on-brand-solid)");
+    expect(c["surface-raised"]).toBe("var(--surface-raised)");
+    expect(c.highlight).toBe("var(--highlight)");
+    expect(c.pressed).toBe("var(--pressed)");
+    expect(c["border-soft"]).toBe("var(--border-soft)");
+    expect(c.disabled).toBe("var(--text-disabled)");
+    expect(c.entry).toBe("var(--entry)");
+    expect(c["entry-accent"]).toBe("var(--entry-accent)");
+    expect(c.composer).toBe("var(--composer)");
+    expect((c.brand as Record<string, string>)["800"]).toBe("var(--brand-strong)");
+    expect(c.cold).toEqual({ 700: "var(--cold-text)" });
+  });
+
+  it("raios, sombras e fonte do design system", () => {
+    const ext = config.theme!.extend!;
+    expect(ext.borderRadius).toMatchObject({ md: "8px", item: "10px", lg: "12px", xl: "12px", dialog: "14px" });
+    expect(ext.boxShadow).toEqual({ popover: "var(--shadow-popover)", dialog: "var(--shadow-dialog)" });
+    expect(ext.fontFamily).toEqual({ sans: ["var(--font-sans)", "Segoe UI", "Roboto", "system-ui", "sans-serif"] });
+  });
+
+  it("nenhum asset ou ícone do WhatsApp", () => {
+    const proibido = /IconBrandWhatsapp|whatsapp[-_]?(logo|wallpaper)|wallpaper-(light|dark)/i;
+    const ofensores: string[] = [];
+    for (const raiz of ["src", "public"]) {
+      let arquivos: string[] = [];
+      try { arquivos = readdirSync(raiz, { recursive: true }) as string[]; } catch { continue; }
+      for (const f of arquivos) {
+        const caminho = join(raiz, f);
+        if (proibido.test(f) && !/\.test\.tsx?$/.test(f)) ofensores.push(caminho);
+        else if (/\.(tsx?|css|svg|json)$/.test(f) && !/\.test\.tsx?$/.test(f) && proibido.test(readFileSync(caminho, "utf-8"))) ofensores.push(caminho);
+      }
+    }
+    expect(ofensores).toEqual([]);
   });
 });

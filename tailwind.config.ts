@@ -13,6 +13,20 @@ const config: Config = {
         // superfícies
         surface: "var(--surface)",
         "surface-muted": "var(--surface-muted)",
+        "surface-raised": "var(--surface-raised)",
+        // texto sobre fundo sólido de marca (branco no claro, preto no escuro)
+        "on-brand": "var(--on-brand-solid)",
+        // camadas de interação translúcidas e borda suave
+        highlight: "var(--highlight)",
+        pressed: "var(--pressed)",
+        "border-soft": "var(--border-soft)",
+        disabled: "var(--text-disabled)",
+        // balão de mensagem e compositor (Fase 3)
+        entry: "var(--entry)",
+        "entry-accent": "var(--entry-accent)",
+        composer: "var(--composer)",
+        // temperatura Frio
+        cold: { 700: "var(--cold-text)" },
         // neutros (texto/borda) — shades mapeadas para os tokens
         gray: {
           50: "var(--surface-muted)",
@@ -37,7 +51,7 @@ const config: Config = {
           500: "var(--brand)",
           600: "var(--brand)",
           700: "var(--brand-text)",
-          800: "var(--brand-text)",
+          800: "var(--brand-strong)",
         },
         // Fundo de botão primário — valor próprio por tema, sempre com texto branco (ver globals.css). Uso:
         // bg-brand-solid + hover:brightness-95. Distinto de brand-700 (só texto/link).
@@ -71,8 +85,18 @@ const config: Config = {
       borderRadius: {
         DEFAULT: "8px",
         md: "8px",
-        lg: "10px",
+        item: "10px",
+        lg: "12px",
         xl: "12px",
+        dialog: "14px",
+      },
+      // Sombra só em camada flutuante: menu/popover e modal/drawer.
+      boxShadow: {
+        popover: "var(--shadow-popover)",
+        dialog: "var(--shadow-dialog)",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "Segoe UI", "Roboto", "system-ui", "sans-serif"],
       },
     },
   },
