@@ -180,6 +180,14 @@ describe("campos de formulário (base em @layer base)", () => {
     expect(m?.[0]).toContain("textarea");
   });
 
+  it("no celular o textarea não recebe 44 px (mantém os 90 px)", () => {
+    const i = base.indexOf("@media (max-width: 767px)");
+    const media = base.slice(i).replace(/\/\*[\s\S]*?\*\//g, "");
+    const regra44 = /([^{}]*)\{[^}]*min-height:\s*44px/.exec(media);
+    expect(regra44?.[1]).toBeDefined();
+    expect(regra44?.[1]).not.toContain("textarea");
+  });
+
   it("disabled usa text-disabled e cursor-not-allowed", () => {
     const i = base.indexOf(":disabled");
     const trecho = base.slice(i, base.indexOf("}", i));
