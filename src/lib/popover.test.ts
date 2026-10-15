@@ -38,6 +38,11 @@ describe("proximoIndiceMenu", () => {
     expect(proximoIndiceMenu(1, "End", 3)).toBe(2);
     expect(proximoIndiceMenu(2, "Home", 3)).toBe(0);
   });
+  it("foco fora dos itens (-1): ArrowDown vai ao primeiro, ArrowUp ao último", () => {
+    expect(proximoIndiceMenu(-1, "ArrowDown", 3)).toBe(0);
+    expect(proximoIndiceMenu(-1, "ArrowUp", 3)).toBe(2);
+    expect(proximoIndiceMenu(-1, "ArrowUp", 1)).toBe(0);
+  });
   it("lista vazia devolve -1", () => {
     expect(proximoIndiceMenu(0, "ArrowDown", 0)).toBe(-1);
   });
@@ -50,6 +55,7 @@ describe("acaoTecladoMenu", () => {
   });
   it("setas, Home e End focam o item certo, mesmo com o foco fora dos itens (gatilho)", () => {
     expect(acaoTecladoMenu("ArrowDown", -1, 3)).toEqual({ tipo: "focar", indice: 0 });
+    expect(acaoTecladoMenu("ArrowUp", -1, 3)).toEqual({ tipo: "focar", indice: 2 });
     expect(acaoTecladoMenu("ArrowDown", 2, 3)).toEqual({ tipo: "focar", indice: 0 });
     expect(acaoTecladoMenu("ArrowUp", 0, 3)).toEqual({ tipo: "focar", indice: 2 });
     expect(acaoTecladoMenu("Home", 2, 3)).toEqual({ tipo: "focar", indice: 0 });
