@@ -233,3 +233,8 @@
     }
   }
 }
+
+/* Movimento reduzido: quem pediu menos movimento ao sistema não vê animação nem transição (esqueleto, hover, rolagem suave). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
+}
