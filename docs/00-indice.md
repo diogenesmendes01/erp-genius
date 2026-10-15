@@ -86,6 +86,7 @@
 | [Corpos das próximas entregas e revisão de integração](planejamento/revisao-integracao-corpos-entregas.md) | 14 corpos para revisão antes das issues; escopo, permissões, dependências e aceite após Q100–Q102. Planejamento, sem implementação comprovada |
 | [SPEC-ERP-005 — Linha comercial do WhatsApp](specs/whatsapp-linha-comercial.md) | Número de VENDAS como espelho do WhatsApp do vendedor: atendimento único por conversa, acesso dono/gerente/admin, lead automático ou "Criar lead", histórico de 30 dias; critérios LC-01–LC-15. Aprovada 26/09/2026; Fases 0–4 codificadas, testes ainda sem execução |
 | [`09-fase0-telas.md`](09-fase0-telas.md) | Especificação tela por tela da Fase 0 (UX) |
+| [Guia do fluxo de CRM](guia-dev-fluxo-crm.md) | **Handoff para programadores:** cada tela do CRM com rota, arquivos, guard, layout, botões, modais e server actions; máquina de etapas, cron/cadências e achados da leitura do código (commit `f8a9c0e`) |
 | [`24-cobrancas-regua-fluxo.md`](24-cobrancas-regua-fluxo.md) | Redesenho de Cobranças: régua + cérebro/braço + dash/lista/detalhe |
 | [`25-motor-de-risco-cobranca.md`](25-motor-de-risco-cobranca.md) | **Spec V2 (não implementado)**: motor de risco do aluno — score explicável + faseamento |
 | [`26-whatsapp-v1.md`](26-whatsapp-v1.md) | **Especificação original:** WhatsApp bimotor, régua e inbox; implementação parcial e situação operacional no doc 41 |

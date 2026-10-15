@@ -331,6 +331,7 @@ KPIs: Leads hoje · Conversão (matriculados ÷ total, histórico todo) · Matr�
 - **Arquivos:** `src/app/(app)/pipeline/page.tsx`, `KanbanBoard.tsx`, `colunas.ts`, `loading.tsx`, `error.tsx`.
 - **Guard:** `exigirSessaoPagina()` sem papel; `listarLeads` devolve `[]` para quem não é ADM/GC/VEND (quadro vazio).
 - **Dados:** `comercial/consultas.ts:listarLeads` — todos os leads do escopo, **sem paginação**, `criadoEm desc`; projeta `ultimaAcaoEm` e `etapaDesde` a partir dos eventos. Relógio do cliente atualiza a cada 60 s.
+  > **Muda com a [#180](https://github.com/diogenesmendes01/erp-genius/pull/180) (ainda aberta em 15/10/2026):** a página passa a usar `comercial/consultas.ts:listarLeadsFunil` — `groupBy` com o total por coluna (etapa × PF/B2B) e no máximo 50 cartões mais recentes por coluna; a coluna cortada mostra "Os 50 mais recentes de N." com o link "Ver todos em Leads". Atualizar esta seção e a §10 quando ela entrar no `main`.
 
 **Layout visual (ordem):**
 1. h1 "Pipeline" + seletor segmentado (`bg-gray-100 p-1`) **"Pessoa Física" | "Empresa (B2B)"** (filtra por `lead.b2b`).
@@ -742,7 +743,7 @@ Encontrados na leitura do código; **não foram reproduzidos rodando o app**. Ca
 
 | Domínio | Arquivos |
 |---|---|
-| CRM (leads) | `src/server/comercial/{acoes,consultas,schema,filtros,captura,experimental,regua-comercial,regua-fabrica}.ts` |
+| CRM (leads) | `src/server/comercial/{acoes,consultas,schema,filtros,captura,experimental,regua-comercial,regua-fabrica}.ts` (Kanban: `listarLeads` hoje; `listarLeadsFunil` após a #180) |
 | Regras / escopo / sessão | `src/server/_shared/{regras,escopo-comercial,sessao}.ts` |
 | Home | `src/server/home/consultas.ts` |
 | IA (copiloto) | `src/server/ia/{copiloto,acoes,consultas}.ts` |
