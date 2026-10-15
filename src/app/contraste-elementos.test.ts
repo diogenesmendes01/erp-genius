@@ -32,7 +32,7 @@ describe("indicadores de seleção com texto: bg-brand-solid, nunca bg-brand-500
       dataInicio: "", dataFim: "", capacidade: 12, rolling: false,
     };
     const html = renderToStaticMarkup(createElement(TurmaFormulario, { turma, modalidades: [], niveis: [], professores: [], onClose: () => {} }));
-    expect(botoes(html, "true")).toEqual(new Array<string>(2).fill("rounded-md border px-3 py-1.5 text-sm border-brand-solid bg-brand-solid text-on-brand"));
+    expect(botoes(html, "true")).toEqual(new Array<string>(2).fill("rounded-full border px-3 py-1.5 text-sm max-sm:min-h-11 border-brand-solid bg-brand-solid text-on-brand"));
     expect(botoes(html, "false")).toHaveLength(5);
     for (const c of botoes(html, "false")) expect(c).not.toMatch(/bg-brand|text-white/);
     expect(html).not.toMatch(/bg-brand-(?:500|600)/);
