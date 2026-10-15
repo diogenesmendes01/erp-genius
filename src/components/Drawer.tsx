@@ -64,7 +64,7 @@ export function Drawer({
       >
         <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
           <h2 className="text-base font-medium">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Fechar" className="-m-2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+          <button type="button" onClick={onClose} aria-label="Fechar" className="-m-2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-full text-gray-500 hover:bg-highlight hover:text-gray-700 max-sm:min-h-11 max-sm:min-w-11">
             <IconX size={20} />
           </button>
         </header>
