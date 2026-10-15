@@ -162,4 +162,12 @@ describe("design system: tokens nos dois temas", () => {
     }
     expect(ofensores).toEqual([]);
   });
+
+  it("globals desliga animação em reduced-motion", () => {
+    const bloco = CSS.match(/@media \(prefers-reduced-motion: reduce\)\s*\{([^}]*\{[^}]*\})\s*\}/);
+    expect(bloco, "falta o @media (prefers-reduced-motion: reduce)").not.toBeNull();
+    const corpo = bloco![1].replace(/\s+/g, " ");
+    expect(corpo).toContain("*, *::before, *::after");
+    for (const d of ["animation: none !important", "transition: none !important", "scroll-behavior: auto !important"]) expect(corpo).toContain(d);
+  });
 });
