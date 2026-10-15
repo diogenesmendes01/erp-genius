@@ -22,7 +22,8 @@ export function rotuloBotaoMenu(aberta: boolean, naoLidas: number): string {
 // Shell mobile (docs/42-auditoria-frontend-ux.md, E6): abaixo de md a Sidebar some e esta barra fica
 // no topo — menu (a mesma navegação numa gaveta à esquerda), nome da área, tema, fuso e sair. As duas
 // partes entram juntas: esconder a Sidebar sem a barra deixaria o usuário sem logout e sem tema.
-// Alvos de toque ≥ 40px: todo controle da barra tem min-h-10/min-w-10 (ícones de 24px).
+// Alvos de toque: todo controle da barra tem min-h-10/min-w-10 (≥ 40px) e, abaixo de sm, max-sm:min-h-11/
+// max-sm:min-w-11 (≥ 44px); os itens da gaveta (NavLinks) também chegam a 44px abaixo de sm. Ícones de 24px.
 export function BarraMobile({ papeis, nome, naoLidasInbox = 0 }: { papeis: string[]; nome: string; naoLidasInbox?: number }) {
   const [aberta, setAberta] = useState(false);
   const pathname = usePathname();
