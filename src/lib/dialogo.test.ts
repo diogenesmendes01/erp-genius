@@ -32,7 +32,7 @@ describe("Modal", () => {
     expect(dialogo).toContain("max-h-[90dvh]");
     expect(dialogo).toContain("overflow-y-auto");
     const id = dialogo.match(/aria-labelledby="([^"]+)"/)![1];
-    expect(html).toContain(`<h3 id="${id}" class="mb-3 text-sm font-medium">Registrar recebimento</h3>`);
+    expect(html).toContain(`<h3 id="${id}" class="mb-3 text-xl font-medium">Registrar recebimento</h3>`);
   });
 });
 

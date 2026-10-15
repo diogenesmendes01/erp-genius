@@ -65,7 +65,7 @@ export function ImportarAlunosModal() {
       </button>
 
       {aberto && (
-        <Modal titulo="Cadastrar alunos por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} largura="max-w-lg">
+        <Modal titulo="Cadastrar alunos por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} larga>
           <p className="mb-4 text-sm text-gray-500">
             Envie uma planilha <strong>.xlsx</strong>. Apenas <strong>Nome</strong> e{" "}
             <strong>País</strong> são obrigatórios; os demais campos são opcionais. Baixe o modelo
