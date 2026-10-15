@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { posicaoPopover, proximoIndiceMenu } from "@/lib/popover";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { acaoTecladoMenu, posicaoPopover } from "@/lib/popover";
 
 export const CLASSE_PAINEL_MENU = "min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover";
 export const CLASSE_ITEM_MENU =
@@ -35,8 +35,13 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
       viewport: { largura: window.innerWidth, altura: window.innerHeight },
     });
     setPos({ topo, esquerda });
-    habilitados()[0]?.focus();
   }, [aberto]);
+
+  // Foco no primeiro item só depois de pos definido: com visibility:hidden o elemento não recebe foco.
+  useEffect(() => {
+    if (aberto && pos) habilitados()[0]?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto, pos !== null]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -44,27 +49,25 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
       const alvo = e.target as Node;
       if (!painelRef.current?.contains(alvo) && !gatilhoRef.current?.contains(alvo)) fechar(false);
     };
-    document.addEventListener("mousedown", fora);
-    return () => document.removeEventListener("mousedown", fora);
-  }, [aberto, fechar]);
-
-  const aoTeclar = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      fechar(true);
-      return;
-    }
-    if (e.key === "Tab") {
-      fechar(false);
-      return;
-    }
-    if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End") {
-      e.preventDefault();
+    // Teclado em document: funciona também com o foco ainda no gatilho.
+    const tecla = (e: globalThis.KeyboardEvent) => {
       const lista = habilitados();
-      const atual = lista.indexOf(document.activeElement as HTMLButtonElement);
-      lista[proximoIndiceMenu(atual, e.key, lista.length)]?.focus();
-    }
-  };
+      const acao = acaoTecladoMenu(e.key, lista.indexOf(document.activeElement as HTMLButtonElement), lista.length);
+      if (acao.tipo === "fechar") {
+        if (acao.devolverFoco) e.preventDefault();
+        fechar(acao.devolverFoco);
+      } else if (acao.tipo === "focar") {
+        e.preventDefault();
+        lista[acao.indice]?.focus();
+      }
+    };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", tecla);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", tecla);
+    };
+  }, [aberto, fechar]);
 
   return (
     <>
@@ -86,7 +89,6 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
           id={id}
           role="menu"
           aria-label={rotulo}
-          onKeyDown={aoTeclar}
           style={{ position: "fixed", top: pos?.topo ?? 0, left: pos?.esquerda ?? 0, visibility: pos ? "visible" : "hidden", zIndex: 50 }}
           className={CLASSE_PAINEL_MENU}
         >

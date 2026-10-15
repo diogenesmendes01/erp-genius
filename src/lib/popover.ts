@@ -35,3 +35,20 @@ export function proximoIndiceMenu(atual: number, tecla: "ArrowDown" | "ArrowUp" 
   if (tecla === "ArrowDown") return (atual + 1) % total;
   return (atual - 1 + total) % total;
 }
+
+export type AcaoTecladoMenu =
+  | { tipo: "fechar"; devolverFoco: boolean }
+  | { tipo: "focar"; indice: number }
+  | { tipo: "nenhuma" };
+
+// Decisão de teclado do menu (pura): Escape fecha e devolve o foco ao gatilho; Tab fecha sem devolver;
+// setas/Home/End movem o foco entre os itens habilitados (atual = índice focado, -1 se nenhum).
+export function acaoTecladoMenu(tecla: string, atual: number, total: number): AcaoTecladoMenu {
+  if (tecla === "Escape") return { tipo: "fechar", devolverFoco: true };
+  if (tecla === "Tab") return { tipo: "fechar", devolverFoco: false };
+  if (tecla === "ArrowDown" || tecla === "ArrowUp" || tecla === "Home" || tecla === "End") {
+    const indice = proximoIndiceMenu(atual, tecla, total);
+    return indice < 0 ? { tipo: "nenhuma" } : { tipo: "focar", indice };
+  }
+  return { tipo: "nenhuma" };
+}
