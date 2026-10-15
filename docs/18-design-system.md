@@ -22,7 +22,7 @@
   falha se um peso maior voltar ao código.
 
 ## Cantos & bordas
-- Raios: `rounded-md` = 8px · `rounded-lg` = 10px · `rounded-xl` = 12px · `rounded-full` (chips/avatar).
+- Raios: `rounded-md` = 8px (campo, cartão pequeno) · `rounded-item` = 10px (item de lista) · `rounded-lg`/`rounded-xl` = 12px (painel) · `rounded-dialog` = 14px · `rounded-full` (botão, chip, avatar).
 - Bordas: 1px na cor `--border` (preto 10% no claro; branco 12% no escuro).
 
 ## Ícones
@@ -128,7 +128,7 @@ dois temas) são as únicas sombras do sistema: menu/popover e modal/drawer. Fic
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
-`bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Então:
+`bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
 - **Botão primário:** `bg-brand-solid text-white hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
@@ -141,7 +141,7 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
   nos dois temas. (Os componentes ainda usam `text-white` no primário; a troca para `--on-brand-solid` vem na
   Task do `Botao`, pois no escuro o branco sobre o verde `#21C063` não passa.)
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
-- Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.
+- Evite hex literal; a única sombra é de camada flutuante: `shadow-popover` (menu, popover) e `shadow-dialog` (modal, drawer). Nenhuma outra `shadow-*`; novas cores entram como token novo no `globals.css`.
 - **Só use as shades mapeadas no `tailwind.config.ts`** (`gray`, `brand`/`brand-solid`, `green`,
   `red`, `amber`, `blue`, `indigo`, `orange`, `ai`/`ai-solid`, `danger`, `success`). Qualquer
   outra cor (`rose`, `emerald`, `sky`, `slate`, `violet`, `purple`, `cyan`, `teal`, `yellow`,
