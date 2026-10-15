@@ -1593,6 +1593,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
   effect), que já existia em `f8a9c0e`.
 - Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
+- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
+  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
 - Sem schema nem migração; `*.int.test.ts` não alterados.
 
 ### Pendências
