@@ -7,6 +7,70 @@ export const CLASSE_PAINEL_MENU = "min-w-[220px] rounded-[9px] border border-gra
 export const CLASSE_ITEM_MENU =
   "flex w-full items-center gap-3 px-5 py-3 text-left text-sm hover:bg-highlight focus-visible:bg-highlight disabled:cursor-not-allowed disabled:text-disabled";
 
+type Alvo = {
+  addEventListener(tipo: string, f: (e: Event) => void, captura?: boolean): void;
+  removeEventListener(tipo: string, f: (e: Event) => void, captura?: boolean): void;
+};
+
+/**
+ * Ouvintes do menu aberto; devolve a limpeza. Exportada para o teste ligar o menu com `document` falso.
+ * - Teclado em document, na fase de CAPTURA: roda antes do ouvinte do diálogo (useDialogo, fase de bolha).
+ *   No Escape, o menu fecha e chama stopPropagation, então um Modal/Drawer/ConfirmarAcao em volta não
+ *   fecha junto. O Tab fecha o menu e segue para o diálogo, que mantém o foco preso.
+ * - Scroll (captura, pega rolagem de qualquer lista) e resize fecham o menu: o painel é position:fixed e
+ *   ficaria solto sobre outra linha, com ações (até de perigo) parecendo de outro item.
+ */
+export function ligarMenuAberto(o: {
+  doc: Alvo & { activeElement: Element | null };
+  /** Padrão: a janela global (o teste passa uma falsa). */
+  win?: Alvo;
+  painel: () => { contains(n: Node | null): boolean } | null;
+  gatilho: () => { contains(n: Node | null): boolean } | null;
+  habilitados: () => { focus(): void }[];
+  fechar: (devolverFoco: boolean) => void;
+}): () => void {
+  // Só os dois métodos da janela (a trava de confirmacoes.test.ts não aceita `window` passado como valor).
+  const win: Alvo = o.win ?? {
+    addEventListener: (t, f, c) => window.addEventListener(t, f, c),
+    removeEventListener: (t, f, c) => window.removeEventListener(t, f, c),
+  };
+  const fora = (e: Event) => {
+    const alvo = e.target as Node;
+    if (!o.painel()?.contains(alvo) && !o.gatilho()?.contains(alvo)) o.fechar(false);
+  };
+  const tecla = (ev: Event) => {
+    const e = ev as KeyboardEvent;
+    const lista = o.habilitados();
+    const acao = acaoTecladoMenu(e.key, lista.indexOf(o.doc.activeElement as unknown as { focus(): void }), lista.length);
+    if (acao.tipo === "fechar") {
+      if (acao.devolverFoco) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      o.fechar(acao.devolverFoco);
+    } else if (acao.tipo === "focar") {
+      e.preventDefault();
+      lista[acao.indice]?.focus();
+    }
+  };
+  const rolou = (e: Event) => {
+    const alvo = e.target as Node | null;
+    if (alvo && o.painel()?.contains(alvo)) return;
+    o.fechar(false);
+  };
+  const redimensionou = () => o.fechar(false);
+  o.doc.addEventListener("mousedown", fora);
+  o.doc.addEventListener("keydown", tecla, true);
+  win.addEventListener("scroll", rolou, true);
+  win.addEventListener("resize", redimensionou);
+  return () => {
+    o.doc.removeEventListener("mousedown", fora);
+    o.doc.removeEventListener("keydown", tecla, true);
+    win.removeEventListener("scroll", rolou, true);
+    win.removeEventListener("resize", redimensionou);
+  };
+}
+
 type ItemMenu = { rotulo: string; icone?: ReactNode; perigo?: boolean; desabilitado?: boolean; aoEscolher: () => void };
 
 // Menu de ações. Posição e teclado vêm de funções puras (@/lib/popover); aqui só se ligam eventos.
@@ -39,34 +103,20 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
 
   // Foco no primeiro item só depois de pos definido: com visibility:hidden o elemento não recebe foco.
   useEffect(() => {
-    if (aberto && pos) habilitados()[0]?.focus();
+    // preventScroll: o foco não pode rolar a página, senão o ouvinte de scroll fecharia o menu recém-aberto.
+    if (aberto && pos) habilitados()[0]?.focus({ preventScroll: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, pos !== null]);
 
   useEffect(() => {
     if (!aberto) return;
-    const fora = (e: MouseEvent) => {
-      const alvo = e.target as Node;
-      if (!painelRef.current?.contains(alvo) && !gatilhoRef.current?.contains(alvo)) fechar(false);
-    };
-    // Teclado em document: funciona também com o foco ainda no gatilho.
-    const tecla = (e: globalThis.KeyboardEvent) => {
-      const lista = habilitados();
-      const acao = acaoTecladoMenu(e.key, lista.indexOf(document.activeElement as HTMLButtonElement), lista.length);
-      if (acao.tipo === "fechar") {
-        if (acao.devolverFoco) e.preventDefault();
-        fechar(acao.devolverFoco);
-      } else if (acao.tipo === "focar") {
-        e.preventDefault();
-        lista[acao.indice]?.focus();
-      }
-    };
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", tecla);
-    return () => {
-      document.removeEventListener("mousedown", fora);
-      document.removeEventListener("keydown", tecla);
-    };
+    return ligarMenuAberto({
+      doc: document,
+      painel: () => painelRef.current,
+      gatilho: () => gatilhoRef.current,
+      habilitados,
+      fechar,
+    });
   }, [aberto, fechar]);
 
   return (

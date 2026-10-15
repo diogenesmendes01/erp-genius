@@ -32,6 +32,8 @@ export function proximoIndiceMenu(atual: number, tecla: "ArrowDown" | "ArrowUp" 
   if (total <= 0) return -1;
   if (tecla === "Home") return 0;
   if (tecla === "End") return total - 1;
+  // Foco fora dos itens (gatilho ou padding do painel): seta para baixo vai ao primeiro, para cima ao último.
+  if (atual < 0) return tecla === "ArrowUp" ? total - 1 : 0;
   if (tecla === "ArrowDown") return (atual + 1) % total;
   return (atual - 1 + total) % total;
 }
