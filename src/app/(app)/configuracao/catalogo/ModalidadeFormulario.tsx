@@ -12,7 +12,7 @@ import { botaoClasses } from "@/components/Botao";
 import { SEGMENTO_LABEL } from "@/lib/labels";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 const SEGMENTOS: { value: Segmento; label: string }[] = Object.values(Segmento).map((value) => ({ value, label: SEGMENTO_LABEL[value] }));
 
