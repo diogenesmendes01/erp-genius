@@ -143,8 +143,7 @@
 @layer base {
   html {
     font-family:
-      var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-      Helvetica, Arial, sans-serif;
+      var(--font-sans), "Segoe UI", Roboto, system-ui, sans-serif;
   }
   body {
     background-color: var(--bg-page);
@@ -167,8 +166,8 @@
     accent-color: var(--brand);
   }
 
-  /* Só regular (400) e medium (500) são pesos reais (ver docs/18). Headings, dt, b, strong e th
-     pedem negrito por padrão e cairiam no negrito sintético do navegador (ganho rápido 9). */
+  /* Pesos em uso: 400, 500 e 600 (ver docs/18). Headings, dt, b, strong e th pedem negrito (700)
+     por padrão; aqui são levados a 600, peso real da Roboto variável. */
   h1,
   h2,
   h3,
@@ -179,7 +178,7 @@
   b,
   strong,
   th {
-    font-weight: 500;
+    font-weight: 600;
   }
 
   /* Indicador de foco único para todo o app — cobre os controles que hoje usam

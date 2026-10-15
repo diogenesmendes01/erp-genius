@@ -11,15 +11,14 @@
 - **Sentence case sempre:** nada de Title Case nem CAIXA ALTA (inclusive sem `uppercase` no CSS).
 
 ## Tipografia
-- Fonte: **Anthropic Sans**, carregada localmente via `next/font/local` em
-  [`src/app/layout.tsx`](../src/app/layout.tsx) (arquivos `.otf` em `src/app/fonts/`), exposta
-  na variável `--font-sans`. `globals.css` referencia `var(--font-sans)`.
-- **Padrão de pesos (canônico):** apenas **regular (400)** e **medium (500)** — nada de
-  negrito pesado (`font-bold` evitado; use `font-medium`).
-  `layout.tsx` registra só esses dois arquivos e `src/app/fonts/` contém só eles. Elementos que
-  o navegador deixa em negrito por padrão (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 500 em
-  `globals.css` — qualquer peso acima de 500 seria negrito sintético. `src/app/tipografia.test.ts`
-  falha se um peso maior voltar ao código.
+- Fonte: **Roboto variável** (eixo de peso 100–900, `font-display: swap`), carregada localmente via
+  `next/font/local` em [`src/app/layout.tsx`](../src/app/layout.tsx) (`roboto-variable.woff2` e
+  `LICENSE-Roboto.txt`, Apache 2.0, em `src/app/fonts/`), exposta na variável `--font-sans`. A pilha é
+  `var(--font-sans), "Segoe UI", Roboto, system-ui, sans-serif`.
+- **Padrão de pesos (canônico):** **regular (400)**, **medium (500)** e **semibold (600)** — nada acima de
+  600 (`font-bold` evitado; use `font-semibold`). Elementos que o navegador deixa em negrito por padrão
+  (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 600 em `globals.css`.
+  `src/app/tipografia.test.ts` confere a fonte, o hash e falha se um peso maior voltar ao código.
 
 ## Cantos & bordas
 - Raios: `rounded-md` = 8px (campo, cartão pequeno) · `rounded-item` = 10px (item de lista) · `rounded-lg`/`rounded-xl` = 12px (painel) · `rounded-dialog` = 14px · `rounded-full` (botão, chip, avatar).
