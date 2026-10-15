@@ -24,7 +24,7 @@ export function BarraAbasFinanceiro({ abas, contagem }: { abas: AbaFinanceiro[];
             href={hrefAba(a)}
             scroll={false}
             aria-current={ativa ? "page" : undefined}
-            className={"rounded-md px-3 py-1.5 text-sm " + (ativa ? "bg-brand-solid font-medium text-on-brand" : "text-gray-600 hover:bg-gray-100")}
+            className={"rounded-full px-3 py-1.5 text-sm transition-colors max-sm:inline-flex max-sm:min-h-11 max-sm:items-center " + (ativa ? "bg-brand-solid font-medium text-on-brand" : "text-gray-600 hover:bg-highlight")}
           >
             {rotulo(a)}
           </Link>

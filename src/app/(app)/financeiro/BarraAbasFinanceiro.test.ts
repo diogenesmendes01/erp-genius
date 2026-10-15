@@ -52,4 +52,15 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
     expect(html).toContain(">Aprovações (1)<");
     expect(render(["aprovacoes"], { aprovacoes: 0 })).toContain(">Aprovações<");
   });
+
+  it("abas em pílula como a SubTabs: rounded-full, hover translúcido e 44 px no celular (DS-C)", () => {
+    const html = render(["comissoes", "descontos"]);
+    for (const m of html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)) {
+      const cls = m[1].split(" ");
+      expect(cls).toContain("rounded-full");
+      expect(cls).toContain("max-sm:min-h-11");
+      expect(cls).not.toContain("rounded-md");
+    }
+    expect(html).toContain("hover:bg-highlight");
+  });
 });
