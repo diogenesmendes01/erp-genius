@@ -3,10 +3,14 @@
 // tailwind.config.ts, no globals.css ou no código: mudar o mapa sem mudar a cópia (ou o contrário) falha.
 
 /**
- * Shades do tailwind.config.ts que apontam para var(--brand). --brand clareia no tema escuro (#6b6ef5) e,
- * com texto branco, dá 4,06:1 — abaixo dos 4,5:1 da WCAG 1.4.3. Fundo com texto branco é bg-brand-solid.
+ * Fundos verdes que invertem no escuro, como sufixo da classe `bg-`: as shades do tailwind.config.ts que apontam
+ * para var(--brand) (clareia no escuro: com texto branco dá 4,06:1) e os dois sólidos, `brand-solid` e `success`
+ * (var(--brand-solid)/var(--success-solid), que viram #21c063 no escuro). Nenhum leva text-white: o texto sobre
+ * os sólidos é text-on-brand (var(--on-brand-solid): branco no claro, #0a0a0a no escuro). Só as shades 500|600
+ * sem texto ficam na lista fechada abaixo; brand-solid e success sem texto (barra, ponto) são livres.
+ * bg-danger e bg-ai-solid não invertem e seguem com text-white.
  */
-export const SHADES_FUNDO_DA_MARCA = ["500", "600"] as const;
+export const SHADES_FUNDO_DA_MARCA = ["brand-500", "brand-600", "brand-solid", "success"] as const;
 
 /**
  * Superfícies sobre as quais um controle de formulário aparece: o fundo da página (body), o cartão

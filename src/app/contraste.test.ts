@@ -53,6 +53,9 @@ import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_F
 
 /** Cópias literais das listas fechadas de src/app/contraste-mapa.ts. */
 const COPIA_SHADES = ["500", "600"];
+/** Fundos verdes que invertem no escuro, na ordem do mapa: as shades do --brand e os dois sólidos (texto: text-on-brand). */
+const COPIA_FUNDOS_QUE_INVERTEM = ["brand-500", "brand-600", "brand-solid", "success"];
+const SOLIDOS_DA_MARCA = ["brand-solid", "success"];
 const COPIA_SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
 const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
 /** As três superfícies da seleção antes do design system (o neutro não cabia); usadas pelos autotestes com CSS virtual. */
@@ -81,7 +84,7 @@ const varDe = (v: string | Record<string, string> | undefined): string => {
 
 describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)", () => {
   it("listas fechadas: mapa = cópia literal = o que o tailwind.config.ts e o globals.css dizem", () => {
-    expect([...SHADES_FUNDO_DA_MARCA]).toEqual(COPIA_SHADES);
+    expect([...SHADES_FUNDO_DA_MARCA]).toEqual(COPIA_FUNDOS_QUE_INVERTEM);
     expect([...SUPERFICIES]).toEqual(COPIA_SUPERFICIES);
     expect([...SUPERFICIES_DA_SELECAO]).toEqual(COPIA_SUPERFICIES_DA_SELECAO);
     expect([...FUNDOS_SOLIDOS]).toEqual(COPIA_SOLIDOS);
@@ -91,6 +94,9 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
 
     // Toda cor do config que aponta para --brand (em qualquer nome) é uma das shades proibidas com text-white.
     expect(entradasCom("var(--brand)")).toEqual(COPIA_SHADES.map((s) => `brand.${s}`));
+    // E os dois sólidos verdes (que inverteram para o texto escuro no escuro) são as outras duas entradas da lista.
+    expect(entradasCom("var(--brand-solid)")).toEqual(["brand-solid"]);
+    expect(entradasCom("var(--success-solid)")).toEqual(["success"]);
     // A borda de controle é só o gray-300.
     expect(entradasCom("var(--border-control)")).toEqual(["gray.300"]);
     // Superfícies: cartão, sutil, gray-50/100 do config e o fundo do body no globals.css.
@@ -222,14 +228,18 @@ const MARCA = "\u0000";
 /** Acima disso as alternativas viram uma só, com todas as classes juntas (mais estrito, nunca mais frouxo). */
 const LIMITE = 512;
 
-const M_BRANCO = "fundo da marca (clareia no escuro) com texto branco";
+const M_BRANCO = "fundo que inverte no escuro com texto branco";
 const M_DESCONHECIDO = "fundo da marca com classe que não se sabe daqui (pode trazer texto branco)";
 const M_COMPONENTE = "fundo da marca passado a componente (ele pode pôr texto branco)";
 const M_FORA = "fundo da marca fora de className analisável";
 
 const FUNDO = new RegExp(`^bg-(?:brand-(?:${COPIA_SHADES.join("|")})|\\[(?:var\\(\\s*)?--brand\\s*\\)?\\])(?:/\\S+)?$`);
+// brand-solid e success: o verde clareia no escuro e o texto sobre ele é text-on-brand (preto). Só o branco é ofensa; o
+// fundo sem texto é permitido (não entra na lista fechada de fundos sem texto, que cobre só as shades do --brand).
+const SOLIDO = /^bg-(?:brand-solid|success|\[(?:var\(\s*)?--(?:brand|success)-solid\s*\)?\])(?:\/\S+)?$/;
 const BRANCO = /^text-(?:white|\[(?:#fff(?:fff)?|white)\])(?:\/\S+)?$/i;
 const AMOSTRAS_FUNDO = [...COPIA_SHADES.map((s) => `bg-brand-${s}`), "bg-[var(--brand)]", "bg-[--brand]"];
+const AMOSTRAS_SOLIDO = [...SOLIDOS_DA_MARCA.map((s) => `bg-${s}`), "bg-[var(--brand-solid)]", "bg-[var(--success-solid)]", "bg-[--brand-solid]"];
 const AMOSTRAS_BRANCO = ["text-white", "text-[#fff]", "text-[white]"];
 const JUNTORES = new Set(["cn", "clsx", "classNames", "cx", "twMerge", "twJoin"]);
 const REPASSAM_CLASSE = new Set(["Link"]);
@@ -255,7 +265,7 @@ function utilitario(classe: string): string {
   return classe.slice(inicio).replace(/^!|!$/g, "");
 }
 
-type Papel = "fundo" | "branco" | "desconhecido";
+type Papel = "fundo" | "solido" | "branco" | "desconhecido";
 
 /** O que uma classe pode ser. Pedaço desconhecido colado (`bg-brand-${x}`) vale por tudo que poderia formar. */
 function papeisDa(classe: string): Papel[] {
@@ -263,12 +273,14 @@ function papeisDa(classe: string): Papel[] {
   const papeis: Papel[] = classe.includes(MARCA) ? ["desconhecido"] : [];
   if (!u.includes(MARCA)) {
     if (FUNDO.test(u)) papeis.push("fundo");
+    if (SOLIDO.test(u)) papeis.push("solido");
     if (BRANCO.test(u)) papeis.push("branco");
     return papeis;
   }
   if (!u.split(MARCA).join("")) return papeis;
   const re = new RegExp(`^${u.split(MARCA).map(escapar).join("[\\s\\S]*")}$`);
   if (AMOSTRAS_FUNDO.some((a) => re.test(a))) papeis.push("fundo");
+  if (AMOSTRAS_SOLIDO.some((a) => re.test(a))) papeis.push("solido");
   if (AMOSTRAS_BRANCO.some((a) => re.test(a))) papeis.push("branco");
   return papeis;
 }
@@ -276,7 +288,7 @@ function papeisDa(classe: string): Papel[] {
 const classesDe = (alternativa: string) => alternativa.split(/\s+/).filter(Boolean);
 function motivoDa(alternativa: string): string | null {
   const p = new Set(classesDe(alternativa).flatMap(papeisDa));
-  if (p.has("fundo") && p.has("branco")) return M_BRANCO;
+  if ((p.has("fundo") || p.has("solido")) && p.has("branco")) return M_BRANCO;
   if (p.has("fundo") && p.has("desconhecido")) return M_DESCONHECIDO;
   return null;
 }
@@ -653,6 +665,7 @@ export function contrasteNoFonte(fonte: string, arquivo = "x.tsx"): { ofensas: O
       if (/--brand(?![\w-])/.test(t)) return true;
       const u = utilitario(t);
       if (FUNDO.test(u)) return true;
+      if (SOLIDO.test(u) && partes.some((x) => BRANCO.test(utilitario(x)))) return true;
       const ponta = (i === 0 && coladoInicio) || (i === partes.length - 1 && coladoFim) || /[-[(:]$/.test(t);
       return ponta && /bg-|brand/.test(t) && AMOSTRAS_FUNDO.some((a) => a.includes(u));
     });
@@ -673,7 +686,7 @@ export function contrasteNoCss(css: string): string[] {
   const texto = semComentarios(css);
   const achados: string[] = [];
   for (const m of texto.matchAll(/@apply\s+([^;{}]+)/g)) {
-    if (temFundo(m[1])) achados.push(`@apply ${m[1].trim()}: ${motivoDa(m[1]) ?? "fundo da marca"}`);
+    if (temFundo(m[1]) || motivoDa(m[1])) achados.push(`@apply ${m[1].trim()}: ${motivoDa(m[1]) ?? "fundo da marca"}`);
   }
   for (const m of texto.matchAll(/(?:^|[;{\s])(background(?:-color)?|--[\w-]+)\s*:\s*([^;{}]*var\(\s*--brand\s*\)[^;{}]*)/g)) {
     achados.push(`${m[1]}: ${m[2].trim()}`);
@@ -697,11 +710,13 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
   it("o detector de classe: variantes, opacidade, valor arbitrário e pedaço desconhecido", () => {
     for (const a of AMOSTRAS_FUNDO) expect(FUNDO.test(a), a).toBe(true);
     for (const a of AMOSTRAS_BRANCO) expect(BRANCO.test(a), a).toBe(true);
-    for (const c of ["bg-brand-solid", "bg-brand-50", "bg-brand-700", "bg-[var(--brand-solid)]", "border-brand-600", "text-brand-600"]) expect(FUNDO.test(c), c).toBe(false);
+    for (const c of ["bg-brand-solid", "bg-brand-50", "bg-brand-700", "bg-[var(--brand-solid)]", "bg-success", "border-brand-600", "text-brand-600"]) expect(FUNDO.test(c), c).toBe(false);
+    for (const a of AMOSTRAS_SOLIDO) expect(SOLIDO.test(a), a).toBe(true);
+    for (const c of ["bg-brand-600", "bg-success-bg", "bg-danger", "bg-ai-solid", "border-success", "text-success"]) expect(SOLIDO.test(c), c).toBe(false);
     expect(utilitario("data-[on=1]:hover:!bg-brand-600")).toBe("bg-brand-600");
     expect(utilitario("[&>span]:bg-brand-600")).toBe("bg-brand-600");
     expect(utilitario("bg-[url(http://x)]")).toBe("bg-[url(http://x)]");
-    expect(papeisDa(`bg-brand-${MARCA}`)).toEqual(["desconhecido", "fundo"]);
+    expect(papeisDa(`bg-brand-${MARCA}`)).toEqual(["desconhecido", "fundo", "solido"]);
     expect(papeisDa(`text-${MARCA}`)).toEqual(["desconhecido", "branco"]);
     expect(papeisDa(`${MARCA}:bg-brand-600`)).toEqual(["desconhecido", "fundo"]);
     expect(papeisDa(MARCA)).toEqual(["desconhecido"]);
@@ -752,17 +767,20 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
   });
 
   it("acusa por botaoClasses e <Botao>, também com outro nome ou por namespace", () => {
-    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={\`\${botaoClasses()} bg-brand-600\`}>x</button>;`)).toEqual([M_BRANCO]);
-    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO]);
-    // Variante que não se sabe: vale por todas — primário e perigo têm text-white.
-    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={botaoClasses({ variante: v }) + " bg-brand-600"}>x</button>;`)).toEqual([M_BRANCO, M_BRANCO]);
-    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao variante={v} className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO, M_BRANCO]);
-    // Spread: variante e tamanho valem por todos (primário e perigo × 3 tamanhos).
-    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao {...props} className="bg-brand-600">x</Botao>;`)).toEqual(new Array<string>(6).fill(M_BRANCO));
-    expect(motivos('import { botaoClasses as bc } from "@/components/Botao";\nconst r = <a className={bc() + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
-    expect(motivos('import { Botao as B } from "@/components/Botao";\nconst r = <B className="bg-brand-600">x</B>;')).toEqual([M_BRANCO]);
-    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <UI.Botao className="bg-brand-600">x</UI.Botao>;')).toEqual([M_BRANCO]);
-    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <a className={UI.botaoClasses() + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
+    // O primário (padrão) agora leva text-on-brand: sozinho, com bg-brand-600, não tem texto branco. O perigo ainda tem.
+    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={\`\${botaoClasses({ variante: "perigo" })} bg-brand-600\`}>x</button>;`)).toEqual([M_BRANCO]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao variante="perigo" className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao className="bg-brand-600">x</Botao>;`)).toEqual([]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao className="bg-brand-solid">x</Botao>;`)).toEqual([]);
+    // Variante que não se sabe: vale por todas — só o perigo tem text-white.
+    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={botaoClasses({ variante: v }) + " bg-brand-600"}>x</button>;`)).toEqual([M_BRANCO]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao variante={v} className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO]);
+    // Spread: variante e tamanho valem por todos (perigo × 3 tamanhos).
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao {...props} className="bg-brand-600">x</Botao>;`)).toEqual(new Array<string>(3).fill(M_BRANCO));
+    expect(motivos('import { botaoClasses as bc } from "@/components/Botao";\nconst r = <a className={bc({ variante: "perigo" }) + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
+    expect(motivos('import { Botao as B } from "@/components/Botao";\nconst r = <B variante="perigo" className="bg-brand-600">x</B>;')).toEqual([M_BRANCO]);
+    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <UI.Botao variante="perigo" className="bg-brand-600">x</UI.Botao>;')).toEqual([M_BRANCO]);
+    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <a className={UI.botaoClasses({ variante: "perigo" }) + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
     // Fantasma não tem texto branco: sobra como fundo (e cai na lista fechada).
     expect(contrasteNoFonte(`${IMPORTA_BOTAO}const r = <Botao variante="fantasma" className="bg-brand-600">x</Botao>;`).ofensas).toEqual([]);
   });
@@ -775,6 +793,24 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
     expect(motivos('import { EXTRA } from "./x";\nconst r = <i className={`bg-brand-600 ${EXTRA}`} />;')).toEqual([M_DESCONHECIDO]);
     expect(motivos('const r = <i className={"bg-brand-600 " + VARIANTES_BOTAO.primario} />;')).toEqual([M_DESCONHECIDO]);
     expect(motivos('const r = <i className={tw`bg-brand-600 text-white`} />;')).toEqual([M_FORA]);
+  });
+
+  it("fundo sólido da marca com text-white é ofensa", () => {
+    expect(motivos(`<span className="bg-brand-solid text-white">x</span>`)).toEqual([M_BRANCO]);
+    expect(motivos(`<Link className="bg-success text-white" href="/">x</Link>`)).toEqual([M_BRANCO]);
+    expect(motivos(`<span className="bg-brand-solid text-on-brand">x</span>`)).toEqual([]);
+    expect(motivos('<i className="hover:bg-success/90 text-white/80" />')).toEqual([M_BRANCO]);
+    expect(motivos('<i className="bg-[var(--success-solid)] text-white" />')).toEqual([M_BRANCO]);
+    expect(motivos('const C = "bg-brand-solid text-white";\nconst r = <i className={C} />;')).toEqual([M_BRANCO]);
+    expect(motivos('export const ATIVA = "bg-brand-solid text-white";')).toEqual([M_FORA]);
+    // Os que não invertem no escuro continuam com branco.
+    expect(motivos('<i className="bg-danger text-white" />')).toEqual([]);
+    expect(motivos('<i className="bg-ai-solid text-white" />')).toEqual([]);
+  });
+
+  it("Botao primário usa text-on-brand", () => {
+    expect(VARIANTES_BOTAO.primario).toContain("text-on-brand");
+    expect(VARIANTES_BOTAO.primario).not.toContain("text-white");
   });
 
   it("acusa fundo passado a componente e fundo fora de className analisável", () => {
@@ -795,8 +831,12 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
 
   it("deixa passar: bg-brand-solid, fundo sem texto, estados diferentes, outras shades e classes sem fundo", () => {
     for (const fonte of [
-      '<i className="rounded bg-brand-solid px-2 text-white" />',
-      '<i className={ativo ? "bg-brand-solid font-medium text-white" : "text-gray-600 hover:bg-gray-100"} />',
+      '<i className="rounded bg-brand-solid px-2 text-on-brand" />',
+      '<i className="rounded bg-success px-2 text-on-brand" />',
+      '<i className="rounded bg-danger px-2 text-white" />',
+      '<i className="rounded bg-ai-solid px-2 text-white" />',
+      '<i className="h-1 bg-brand-solid" />',
+      '<i className={ativo ? "bg-brand-solid font-medium text-on-brand" : "text-gray-600 hover:bg-gray-100"} />',
       '<i className={ativo ? "bg-brand-600" : "text-white"} />',
       '<i className="bg-brand-50 text-brand-700 focus:border-brand-500 focus:ring-brand-500" />',
       'export const MAPA = { a: "bg-brand-50 text-brand-700" };',
@@ -816,7 +856,8 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
     expect(contrasteNoCss(".x { @apply h-1 bg-brand-500; }")).toEqual(["@apply h-1 bg-brand-500: fundo da marca"]);
     expect(contrasteNoCss(".x { background-color: var(--brand); color: #fff; }")).toEqual(["background-color: var(--brand)"]);
     expect(contrasteNoCss(".x { --fundo: var( --brand ); }")).toEqual(["--fundo: var( --brand )"]);
-    expect(contrasteNoCss(".x { outline: 2px solid var(--brand); accent-color: var(--brand); background: var(--brand-solid); @apply bg-brand-solid text-white; }")).toEqual([]);
+    expect(contrasteNoCss(".x { outline: 2px solid var(--brand); accent-color: var(--brand); background: var(--brand-solid); @apply bg-brand-solid text-on-brand; }")).toEqual([]);
+    expect(contrasteNoCss(".x { @apply bg-brand-solid text-white; }")).toEqual([`@apply bg-brand-solid text-white: ${M_BRANCO}`]);
     expect(contrasteNoCss(".x { /* background: var(--brand); */ }")).toEqual([]);
   });
 
