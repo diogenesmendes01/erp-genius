@@ -1602,3 +1602,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) os dois temas com a Roboto.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
+
+- Branch `claude/fase0-ds-b-camadas`, empilhada sobre `claude/fase0-ds-a-fundacao` (`9ead958..cb121aa`; Task 7 `9ead958..e0269c3`).
+- Tarefa: Task 7, Modal, ConfirmarAcao e Drawer como camadas elevadas (`bg-surface-raised`, `shadow-dialog`, `rounded-dialog`, bordas lógicas).
+- Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
