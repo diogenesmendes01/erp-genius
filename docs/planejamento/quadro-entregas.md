@@ -1632,3 +1632,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - O focar após o posicionamento (`visibility` do painel) é ligação de DOM sem teste automatizado, porque não há jsdom.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Verificação do integrador: bloco DS-B (2026-10-15)
+- Branch: `claude/fase0-ds-b-primitivos` (empilhada sobre `claude/fase0-ds-a-fundacao`). Tarefa 10: Chip, ItemLista, Avatar e Menu.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 653 arquivos e 4.606 testes (linha de base da main: 646 e 4.560).
+- `npm run lint`: saída 0.
+- Sem schema nem migração; testes de integração não alterados.
