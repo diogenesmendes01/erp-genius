@@ -14,7 +14,7 @@ describe("Botao (E1)", () => {
 
   it("variantes e tamanhos exatos (só tokens, sem sombra nem cor crua)", () => {
     expect(VARIANTES_BOTAO).toEqual({
-      primario: "bg-brand-solid text-white hover:brightness-95",
+      primario: "bg-brand-solid text-on-brand hover:brightness-95",
       secundario: "border border-gray-300 bg-surface text-gray-700 hover:bg-gray-50",
       perigo: "bg-danger text-white hover:brightness-95",
       fantasma: "text-brand-700 hover:bg-gray-100",
