@@ -130,15 +130,15 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-solid text-white hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
-- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-solid text-white`.
+- **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
+- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-solid text-on-brand`.
   `bg-brand-500`/`bg-brand-600` (que clareiam no escuro) **nunca** levam `text-white`, em nenhuma
   forma de `className`; ficam para fundo sem texto (barra de progresso). A trava é
   `src/app/contraste.test.ts`, que também recalcula pelos tokens do `globals.css` o contraste do
   texto de cada fundo sólido (o par de `TEXTO_SOBRE_SOLIDO`, ≥ 4,5:1), da borda de controle sobre cada
   superfície (≥ 3:1) e do `--brand-solid` sobre a página, o cartão, a superfície sutil e o neutro (≥ 3:1),
-  nos dois temas. (Os componentes ainda usam `text-white` no primário; a troca para `--on-brand-solid` vem na
-  Task do `Botao`, pois no escuro o branco sobre o verde `#21C063` não passa.)
+  nos dois temas. `text-white` sobre `bg-brand-solid` é reprovado: no escuro o branco sobre o verde `#21C063`
+  não passa; `text-on-brand` (`--on-brand-solid`) é branco no claro e preto no escuro.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
 - Evite hex literal; a única sombra é de camada flutuante: `shadow-popover` (menu, popover) e `shadow-dialog` (modal, drawer). Nenhuma outra `shadow-*`; novas cores entram como token novo no `globals.css`.
 - **Só use as shades mapeadas no `tailwind.config.ts`** (`gray`, `brand`/`brand-solid`, `green`,
