@@ -1602,3 +1602,27 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) os dois temas com a Roboto.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-avisos`)
+- `src/components/Aviso.tsx`: caixa única de aviso (`rounded-md p-3 text-sm` + tom). Tons `info`, `sucesso`, `atencao`
+  e `erro`; os três últimos com borda inicial de 3 px. Papel `alert` no erro e `status` nos demais (`papel="nenhum"`
+  quando a região anunciante é outra).
+- `FeedbackAcao`, `MensagemStatus` (prop `tom` nova), `ErroArea` (via `EstadoRota aviso="erro"`) e
+  `AvisoFusoNaoConfigurado` passam a usar o `Aviso`, sem mudar as props existentes.
+- Esqueleto pulsa (`animate-pulse`). O `@media (prefers-reduced-motion: reduce)` de `src/app/globals.css` desliga
+  animação, transição e rolagem suave (teste em `src/app/design-system.test.ts`).
+- `docs/18-design-system.md`: seção "Avisos e movimento reduzido".
+
+### Verificação
+- Revisão final (diff `9ead958..51e683d`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, sem filtro,
+  648 arquivos e 4.586 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos
+  preexistentes e fora dos arquivos da task.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os avisos nos dois temas e o esqueleto com movimento reduzido.
+- Demais tasks do DS-B (5–8 e 10) e DS-C seguem nos próprios PRs.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
