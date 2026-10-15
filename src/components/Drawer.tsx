@@ -44,7 +44,7 @@ export function Drawer({
       {/* backdrop */}
       <div
         onClick={onClose}
-        className={"absolute inset-0 bg-black/30 transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0")}
+        className={"absolute inset-0 bg-black/60 transition-opacity duration-200 " + (open ? "opacity-100" : "opacity-0")}
       />
       {/* painel */}
       <aside
@@ -56,8 +56,8 @@ export function Drawer({
         aria-label={title}
         tabIndex={-1}
         className={
-          `absolute top-0 flex h-full flex-col border-gray-200 bg-surface transition-transform duration-200 ${largura} ` +
-          (lado === "esquerda" ? "left-0 border-r " : "right-0 border-l ") +
+          `absolute top-0 flex h-full flex-col border-gray-200 bg-surface-raised shadow-dialog transition-transform duration-200 ${largura} ` +
+          (lado === "esquerda" ? "left-0 border-e " : "right-0 border-s ") +
           (open ? "translate-x-0" : lado === "esquerda" ? "-translate-x-full" : "translate-x-full")
         }
       >
