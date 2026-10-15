@@ -20,12 +20,19 @@ const comInput = (props: Props) =>
 const tag = (html: string, nome: string) => new RegExp(`<${nome}\\b[^>]*>`).exec(html)?.[0] ?? "";
 const attr = (trecho: string, nome: string) => new RegExp(`\\s${nome}="([^"]*)"`).exec(trecho)?.[1];
 
+describe("rótulo do campo (design system)", () => {
+  it("rótulo do campo é 14 px medium", () => {
+    expect(ROTULO_CAMPO).toContain("text-sm");
+    expect(ROTULO_CAMPO).toContain("font-medium");
+  });
+});
+
 describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao controle", () => {
   it("o rótulo aponta para o id do controle (htmlFor ↔ id); classes só de tokens", () => {
     const html = comInput({ id: "aluno-nome" });
     expect(tag(html, "label")).toBe(`<label for="aluno-nome" class="${ROTULO_CAMPO}">`);
     expect(attr(tag(html, "input"), "id")).toBe("aluno-nome");
-    expect(ROTULO_CAMPO).toBe("mb-1 block text-xs text-gray-600");
+    expect(ROTULO_CAMPO).toBe("mb-1 block text-sm font-medium text-gray-800");
     expect(DICA_CAMPO).toBe("mt-1 block text-xs text-gray-500");
     expect(ERRO_CAMPO).toBe("mt-1 block text-xs text-red-700");
     expect(CONTROLE_INVALIDO).toBe("aria-[invalid=true]:border-red-500");
