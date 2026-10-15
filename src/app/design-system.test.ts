@@ -163,3 +163,34 @@ describe("design system: tokens nos dois temas", () => {
     expect(ofensores).toEqual([]);
   });
 });
+
+describe("campos de formulário (base em @layer base)", () => {
+  const base = CSS.slice(CSS.indexOf("@layer base"));
+  const SELETOR = 'input:not([type="checkbox"]):not([type="radio"]),\n  select,\n  textarea';
+  const bloco = (seletor: string) => {
+    const i = base.indexOf(seletor + " {");
+    return i < 0 ? "" : base.slice(i, base.indexOf("}", i));
+  };
+
+  it("base de campos usa surface-muted, raio 8 e 44 px no celular", () => {
+    expect(bloco(SELETOR)).toMatch(/background-color:\s*var\(--surface-muted\)/);
+    expect(bloco(SELETOR)).toMatch(/border-radius:\s*8px/);
+    const m = /@media \(max-width: 767px\) \{[^@]*?min-height:\s*44px/.exec(base);
+    expect(m?.[0]).toContain("input:not");
+    expect(m?.[0]).toContain("textarea");
+  });
+
+  it("disabled usa text-disabled e cursor-not-allowed", () => {
+    const i = base.indexOf(":disabled");
+    const trecho = base.slice(i, base.indexOf("}", i));
+    expect(trecho).toMatch(/color:\s*var\(--text-disabled\)/);
+    expect(trecho).toMatch(/cursor:\s*not-allowed/);
+  });
+
+  it("textarea tem altura mínima de 90 px e redimensiona na vertical", () => {
+    const i = base.search(/^ {2}textarea \{\n {4}min-height/m);
+    const t = base.slice(i, base.indexOf("}", i));
+    expect(t).toMatch(/min-height:\s*90px/);
+    expect(t).toMatch(/resize:\s*vertical/);
+  });
+});
