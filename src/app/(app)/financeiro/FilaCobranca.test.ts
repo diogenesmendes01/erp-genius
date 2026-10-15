@@ -160,6 +160,8 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
     const html = detalhe(item, null);
     expect(html).toContain("bg-black/60");
     expect(html).toMatch(/role="dialog"[^>]*class="[^"]*bg-surface-raised[^"]*shadow-dialog/);
+    // O valor não se parte (o símbolo ₡ ficava numa linha e o número em outra).
+    expect(html).toContain('class="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800"');
   });
 
   it("a linha quebra no celular (flex-wrap) e os chips de estado são pílulas", () => {

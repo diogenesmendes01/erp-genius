@@ -661,7 +661,7 @@ export function DetalheCobranca({
             {item.turma ?? "sem turma"} · {item.pais} · {item.codigo}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
+            <span className="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
             <span className="text-xs text-gray-500">
               {rotular(TIPO_COBRANCA_LABEL, item.tipo)}
               {item.competencia ? ` ${formatarCompetencia(item.competencia)}` : ""} · {rotuloVencimento(item.vencimento)}
