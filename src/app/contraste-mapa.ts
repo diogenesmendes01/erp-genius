@@ -18,15 +18,25 @@ export const SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surf
 /**
  * Superfícies sobre as quais fica um indicador de seleção em bg-brand-solid (aba, passo, chip, botão
  * primário): o fundo da seleção tem de se destacar delas com ≥ 3:1 (WCAG 1.4.11), nos dois temas.
- * Fica de fora --neutral-muted (gray-100): ele é o vizinho da seleção (passo seguinte, chip
- * desmarcado, hover da aba inativa), não o fundo sob ela — e no escuro nenhuma cor cumpre as duas
- * contas sobre ele (3:1 exige luminância ≥ 0,1846; 4,5:1 com branco, ≤ 0,1833). A trava confere essa
- * impossibilidade pelos tokens: se --neutral-muted mudar e ela sumir, ele volta para a lista.
+ * Com os tokens do design system o --neutral-muted (gray-100: chip, hover) também entra: #ededed e
+ * #2a2c2c aceitam a seleção (3,86 e 5,88:1). Antes ele ficava de fora porque, no escuro de então
+ * (#2f2f2c), nenhuma cor cumpria as duas contas; o autoteste de selecaoImpossivelSobre segue com hex fixo.
  */
-export const SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"] as const;
+export const SUPERFICIES_DA_SELECAO = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"] as const;
 
-/** Fundos sólidos (valor próprio por tema, sempre com texto branco): ≥ 4,5:1 nos dois temas. */
+/** Fundos sólidos (valor próprio por tema): o texto do par de TEXTO_SOBRE_SOLIDO tem ≥ 4,5:1 sobre eles nos dois temas. */
 export const FUNDOS_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"] as const;
+
+/**
+ * Texto de cada fundo sólido. O verde (brand/success) tem texto próprio por tema, --on-brand-solid
+ * (#fff no claro, #0a0a0a no escuro, onde o verde clareia); danger e ai levam branco nos dois temas.
+ */
+export const TEXTO_SOBRE_SOLIDO = {
+  "--brand-solid": "--on-brand-solid",
+  "--success-solid": "--on-brand-solid",
+  "--danger-solid": "white",
+  "--ai-solid": "white",
+} as const;
 
 /**
  * Usos aceitos de bg-brand-500|600, todos sem texto: arquivo + classe exata (a alternativa lida pela

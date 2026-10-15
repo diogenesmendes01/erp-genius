@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
 import { BASE_BOTAO, TAMANHOS_BOTAO, VARIANTES_BOTAO, type TamanhoBotao, type VarianteBotao } from "@/components/Botao";
 import { contraste, corSobre, hexParaRgb } from "../../scripts/medicao-ux/nucleo.mjs";
+import { contraste as contrasteLocal, corSobre as corSobreLocal, hexParaRgb as hexLocal, paresDeContraste, razao, reprovados, reprovadosSolidos, selecaoImpossivelSobre, semComentarios, temasDoCss, token } from "./contraste-nucleo";
 import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_FUNDO_DA_MARCA, SUPERFICIES, SUPERFICIES_DA_SELECAO } from "./contraste-mapa";
 
 // Trava de contraste (docs/43-medicao-auditoria-ux.md §6 item 5; docs/42 §7.4 "pares de token reprovando AA").
@@ -53,7 +54,9 @@ import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_F
 /** Cópias literais das listas fechadas de src/app/contraste-mapa.ts. */
 const COPIA_SHADES = ["500", "600"];
 const COPIA_SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
-const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"];
+const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
+/** As três superfícies da seleção antes do design system (o neutro não cabia); usadas pelos autotestes com CSS virtual. */
+const SELECAO_ANTIGA = ["--bg-page", "--surface", "--surface-muted"];
 const COPIA_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"];
 const COPIA_FUNDOS_SEM_TEXTO = [{ arquivo: "src/app/(app)/home/HomeVendedor.tsx", trecho: "h-full bg-brand-600" }];
 const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [];
@@ -61,107 +64,6 @@ const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [];
 // ---------------------------------------------------------------------------------------------------
 // 1. Tokens
 // ---------------------------------------------------------------------------------------------------
-
-type Tema = "claro" | "escuro";
-type Rgb = number[];
-
-const semComentarios = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
-
-/**
- * Tokens de `:root` (claro) e `.dark` (escuro, herdando o claro), lidos bloco a bloco. Falha fechada: uma
- * declaração `--x:` em qualquer outro contexto (aninhada num @media, seletor composto, `html.dark`) é erro.
- */
-export function temasDoCss(css: string): Record<Tema, Record<string, string>> {
-  const texto = semComentarios(css);
-  const claro: Record<string, string> = {};
-  const escuro: Record<string, string> = {};
-  const fora: string[] = [];
-  const pilha: string[] = [];
-  let inicio = 0;
-  const declaracao = (fim: number) => {
-    const m = texto.slice(inicio, fim).trim().match(/^(--[\w-]+)\s*:\s*([\s\S]*\S)$/);
-    if (!m) return;
-    const contexto = pilha.join(" > ");
-    if (contexto === ":root") claro[m[1]] = m[2];
-    else if (contexto === ".dark") escuro[m[1]] = m[2];
-    else fora.push(`${m[1]} em "${contexto || "(fora de bloco)"}"`);
-  };
-  for (let i = 0; i < texto.length; i++) {
-    const c = texto[i];
-    if (c === "{") {
-      pilha.push(texto.slice(inicio, i).trim().replace(/\s+/g, " "));
-      inicio = i + 1;
-    } else if (c === "}") {
-      declaracao(i);
-      pilha.pop();
-      inicio = i + 1;
-    } else if (c === ";") {
-      declaracao(i);
-      inicio = i + 1;
-    }
-  }
-  if (fora.length) throw new Error(`token declarado fora de :root/.dark: ${fora.join("; ")}`);
-  return { claro, escuro: { ...claro, ...escuro } };
-}
-
-const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-const RGB = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+|1\.0*)\s*)?\)$/;
-
-/** Razão WCAG de uma cor (hex ou rgb/rgba, composta sobre o fundo) sobre um fundo opaco em hex. */
-export function razao(frente: string, fundo: string): number {
-  if (!HEX.test(fundo)) throw new Error(`fundo não é cor opaca em hex: ${fundo}`);
-  const f: Rgb = hexParaRgb(fundo);
-  if (HEX.test(frente)) return contraste(hexParaRgb(frente), f);
-  if (!RGB.test(frente)) throw new Error(`valor de cor não suportado: ${frente}`);
-  const composta = corSobre(frente, f);
-  return Math.min(contraste(composta, f), contraste(composta.map(Math.round), f));
-}
-
-const token = (T: Record<string, string>, nome: string): string => {
-  const v = T[nome];
-  if (v === undefined) throw new Error(`token ausente: ${nome}`);
-  return v;
-};
-
-type Par = { tema: Tema; par: string; valor: number; minimo: number };
-
-/**
- * Texto branco sobre cada fundo sólido (≥ 4,5), --border-control sobre cada superfície (≥ 3) e --brand-solid
- * sobre cada superfície que fica sob a seleção (≥ 3), nos dois temas.
- */
-export function paresDeContraste(
-  css: string,
-  superficies: readonly string[],
-  solidos: readonly string[],
-  branco: string,
-  superficiesDaSelecao: readonly string[] = [],
-): Par[] {
-  const temas = temasDoCss(css);
-  const pares: Par[] = [];
-  for (const tema of ["claro", "escuro"] as const) {
-    const T = temas[tema];
-    for (const s of solidos) pares.push({ tema, par: `${branco}/${s}`, valor: razao(branco, token(T, s)), minimo: 4.5 });
-    for (const s of superficies) pares.push({ tema, par: `--border-control/${s}`, valor: razao(token(T, "--border-control"), token(T, s)), minimo: 3 });
-    for (const s of superficiesDaSelecao) pares.push({ tema, par: `--brand-solid/${s}`, valor: razao(token(T, "--brand-solid"), token(T, s)), minimo: 3 });
-  }
-  return pares;
-}
-
-/**
- * Verdadeiro quando nenhuma cor opaca tem, ao mesmo tempo, ≥ 4,5:1 com o branco (luminância ≤ 1,05/4,5 − 0,05)
- * e ≥ 3:1 sobre o fundo de luminância L — mais clara (≥ 3(L + 0,05) − 0,05) ou mais escura ((L + 0,05)/3 − 0,05).
- */
-export function selecaoImpossivelSobre(superficie: string): boolean {
-  if (!HEX.test(superficie)) throw new Error(`fundo não é cor opaca em hex: ${superficie}`);
-  // Luminância pela própria razão: contra o branco (luminância 1), razão = 1,05 / (L + 0,05).
-  const L = 1.05 / contraste([255, 255, 255], hexParaRgb(superficie)) - 0.05;
-  const maximoComBranco = 1.05 / 4.5 - 0.05;
-  const cabeMaisClara = 3 * (L + 0.05) - 0.05 <= maximoComBranco;
-  const cabeMaisEscura = (L + 0.05) / 3 - 0.05 >= 0;
-  return !cabeMaisClara && !cabeMaisEscura;
-}
-const reprovados = (pares: Par[]) =>
-  pares.filter((p) => !(p.valor >= p.minimo)).map((p) => `${p.tema} ${p.par} ${p.valor.toFixed(3)}:1 < ${p.minimo}:1`);
 
 const CSS = readFileSync("src/app/globals.css", "utf-8");
 const CORES = (config.theme?.extend?.colors ?? {}) as Record<string, string | Record<string, string>>;
@@ -195,14 +97,15 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     const cinzas = CORES.gray as Record<string, string>;
     const body = semComentarios(CSS).match(/\bbody\s*\{[^}]*background-color:\s*var\((--[\w-]+)\)/)?.[1];
     expect([...new Set([varDe(CORES.surface), varDe(CORES["surface-muted"]), varDe(cinzas["50"]), varDe(cinzas["100"]), body])].sort()).toEqual(COPIA_SUPERFICIES);
-    // Superfícies sob a seleção: as superfícies menos o neutro (gray-100), e só ele, porque no escuro nenhuma
-    // cor passa nele junto com o branco. Se o neutro mudar e a conta ficar possível, ele volta para a lista.
+    // Superfícies sob a seleção: todas as superfícies. Com o design system o --neutral-muted (#ededed / #2a2c2c)
+    // aceita a seleção nos dois temas (3,86 e 5,88:1), então nada fica de fora. Se uma superfície voltar a tornar a
+    // conta impossível, ela sai da lista e este teste confere a impossibilidade.
     const foraDaSelecao = COPIA_SUPERFICIES.filter((s) => !COPIA_SUPERFICIES_DA_SELECAO.includes(s));
     expect(COPIA_SUPERFICIES_DA_SELECAO.every((s) => COPIA_SUPERFICIES.includes(s))).toBe(true);
-    expect(foraDaSelecao).toEqual([varDe(cinzas["100"])]);
+    expect(foraDaSelecao).toEqual([]);
     for (const s of foraDaSelecao) expect(selecaoImpossivelSobre(token(temasDoCss(CSS).escuro, s)), s).toBe(true);
     // Fundos sólidos: todo token *-solid do globals.css, cada um com uma cor no config.
-    const solidos = Object.keys(temasDoCss(CSS).claro).filter((t) => t.endsWith("-solid")).sort();
+    const solidos = Object.keys(temasDoCss(CSS).claro).filter((t) => t.endsWith("-solid") && !t.startsWith("--on-")).sort();
     expect(solidos).toEqual(COPIA_SOLIDOS);
     for (const s of COPIA_SOLIDOS) expect(entradasCom(`var(${s})`), s).toHaveLength(1);
     expect(entradasCom("var(--brand-solid)")).toEqual(["brand-solid"]);
@@ -210,9 +113,11 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(CORES.white).toBe("#ffffff");
   });
 
-  it("texto branco ≥ 4,5:1 sobre cada fundo sólido; --border-control e --brand-solid ≥ 3:1 sobre as superfícies, nos dois temas", () => {
-    const pares = paresDeContraste(CSS, COPIA_SUPERFICIES, COPIA_SOLIDOS, CORES.white as string, COPIA_SUPERFICIES_DA_SELECAO);
-    expect(pares).toHaveLength(2 * (COPIA_SOLIDOS.length + COPIA_SUPERFICIES.length + COPIA_SUPERFICIES_DA_SELECAO.length));
+  it("texto de cada fundo sólido ≥ 4,5:1 (par do mapa); --border-control e --brand-solid ≥ 3:1 sobre as superfícies, nos dois temas", () => {
+    // O texto sobre cada sólido não é mais sempre branco (--on-brand-solid): vale o par de TEXTO_SOBRE_SOLIDO.
+    expect(reprovadosSolidos()).toEqual([]);
+    const pares = paresDeContraste(CSS, COPIA_SUPERFICIES, [], CORES.white as string, COPIA_SUPERFICIES_DA_SELECAO);
+    expect(pares).toHaveLength(2 * (COPIA_SUPERFICIES.length + COPIA_SUPERFICIES_DA_SELECAO.length));
     expect(pares.filter((p) => p.par.startsWith("--brand-solid/")).map((p) => `${p.tema} ${p.par}`)).toEqual(
       (["claro", "escuro"] as const).flatMap((tema) => COPIA_SUPERFICIES_DA_SELECAO.map((s) => `${tema} --brand-solid/${s}`)),
     );
@@ -232,7 +137,7 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
   --surface-muted: #2b2b29;
   --brand-solid: ${escuro};
 }`;
-    const conta = (escuro: string) => reprovados(paresDeContraste(virtual(escuro), [], ["--brand-solid"], "#ffffff", COPIA_SUPERFICIES_DA_SELECAO));
+    const conta = (escuro: string) => reprovados(paresDeContraste(virtual(escuro), [], ["--brand-solid"], "#ffffff", SELECAO_ANTIGA));
     // O escuro de antes (o hex do claro): 7,90:1 com branco passa, mas o fundo some nas três superfícies.
     expect(conta("#4338ca")).toEqual([
       "escuro --brand-solid/--bg-page 2.181:1 < 3:1",
@@ -247,7 +152,7 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(conta("#6566ef")).toEqual(["escuro #ffffff/--brand-solid 4.468:1 < 4.5:1"]);
     expect(conta("#6264ec")).toEqual([]);
     // O claro passa com folga: 7,56 / 7,90 / 7,17:1.
-    const claro = paresDeContraste(virtual("#6264ec"), [], [], "#ffffff", COPIA_SUPERFICIES_DA_SELECAO).filter((p) => p.tema === "claro");
+    const claro = paresDeContraste(virtual("#6264ec"), [], [], "#ffffff", SELECAO_ANTIGA).filter((p) => p.tema === "claro");
     expect(claro.map((p) => p.valor.toFixed(2))).toEqual(["7.56", "7.90", "7.17"]);
     // Sem --brand-solid no tema, erro (não aprovação).
     expect(() => paresDeContraste(":root {\n  --surface: #ffffff;\n}", [], [], "#ffffff", ["--surface"])).toThrow(/token ausente: --brand-solid/);
@@ -256,6 +161,14 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(selecaoImpossivelSobre("#2b2b29")).toBe(false);
     expect(selecaoImpossivelSobre("#efeee9")).toBe(false);
     expect(() => selecaoImpossivelSobre("var(--x)")).toThrow(/fundo não é cor opaca/);
+  });
+
+  it("a conta copiada em contraste-nucleo.ts dá o mesmo resultado que scripts/medicao-ux/nucleo.mjs", () => {
+    for (const [a, b] of [["#ffffff", "#1b8755"], ["#0a0a0a", "#21c063"], ["#858383", "#f7f5f3"], ["#abc", "#161717"]]) {
+      expect(hexLocal(a)).toEqual(hexParaRgb(a));
+      expect(contrasteLocal(hexLocal(a), hexLocal(b))).toBe(contraste(hexParaRgb(a), hexParaRgb(b)));
+    }
+    for (const v of ["rgba(0, 0, 0, 0.6)", "rgba(255, 255, 255, .1)", "#123456"]) expect(corSobreLocal(v, hexParaRgb("#f7f5f3"))).toEqual(corSobre(v, hexParaRgb("#f7f5f3")));
   });
 
   it("autoteste da conta: os valores antigos reprovam com os números do docs/43; formas que a conta não lê são erro", () => {
