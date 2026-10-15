@@ -52,6 +52,8 @@ const config: Config = {
           600: "var(--brand)",
           700: "var(--brand-text)",
           800: "var(--brand-strong)",
+          // accent-soft: fundo suave de seleção (chip, item de lista, avatar)
+          bg: "var(--brand-bg)",
         },
         // Fundo de botão primário — valor próprio por tema, sempre com texto branco (ver globals.css). Uso:
         // bg-brand-solid + hover:brightness-95. Distinto de brand-700 (só texto/link).

@@ -125,9 +125,17 @@ Razões medidas pela trava (`src/app/contraste-nucleo.ts`):
 `--shadow-popover` (`0 5px 20px #0002` / `0 6px 24px #0006`) e `--shadow-dialog` (`0 15px 60px #0006`, igual nos
 dois temas) são as únicas sombras do sistema: menu/popover e modal/drawer. Ficam fora da conta de contraste.
 
+## Primitivos — Chip, ItemLista, Avatar e Menu
+Base das Fases 2 e 3 (`src/components`). Todos usam só tokens; `bg-brand-bg` é o `--brand-bg` (accent-soft) e `text-brand-800` o `--brand-strong`.
+- **`Chip`** (`{ selecionado, onClick, children, contagem? }`): `<button type="button" aria-pressed>` em pílula, `border-border-soft`, `max-sm:min-h-11 min-h-8`. Selecionado `bg-brand-bg text-brand-800 border-transparent`; normal `text-gray-600 hover:bg-highlight`.
+- **`ItemLista`** (`{ titulo, resumo?, meta?, inicio?, selecionado?, href?, onClick? }`): `min-h-[76px] rounded-item p-3 gap-3 hover:bg-highlight`; título e resumo com `truncate`. Selecionado: `aria-current="true"` e `bg-brand-bg text-brand-800`. Com `href` vira link; sem, botão.
+- **`Avatar`** (`{ nome, tamanho?: 32 | 40 | 48, quadrado? }`): até 2 iniciais em `bg-brand-bg text-brand-800`; sem nome mostra `#`; `quadrado` (B2B) usa `rounded-md`, senão `rounded-full`.
+- **`Menu`** (`{ rotulo, gatilho, itens }`, cliente): `role="menu"`/`menuitem`, painel `min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover`, item `px-5 py-3 hover:bg-highlight`. Setas/Home/End circulam; Escape fecha e devolve o foco ao gatilho.
+- **`src/lib/popover.ts`**: `posicaoPopover` (abaixo por padrão, acima se não couber; 6 px da âncora e 8 px das bordas) e `proximoIndiceMenu`, funções puras testadas.
+
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
-`bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
+`bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-bg` = `--brand-bg`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
 - **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
