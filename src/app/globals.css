@@ -149,12 +149,28 @@
     background-color: var(--bg-page);
     color: var(--text-primary);
   }
-  /* Campos de formulário seguem os tokens nos dois temas (sem branco fixo nativo). */
+  /* Campos de formulário seguem os tokens nos dois temas (sem branco fixo nativo). Superfície sutil e
+     raio 8; checkbox/radio ficam de fora. Classe utilitária (ex.: bg-surface) vence esta base. */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background-color: var(--surface-muted);
+    border-radius: 8px;
+  }
   input,
   select,
   textarea {
-    background-color: var(--surface);
     color: var(--text-primary);
+  }
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    color: var(--text-disabled);
+    cursor: not-allowed;
+  }
+  textarea {
+    min-height: 90px;
+    resize: vertical;
   }
   input::placeholder,
   textarea::placeholder {
@@ -209,6 +225,12 @@
     select,
     textarea {
       font-size: 16px;
+    }
+    /* Alvo de toque de 44 px (checkbox/radio ficam de fora). */
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      min-height: 44px;
     }
   }
 }
