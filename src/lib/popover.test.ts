@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { posicaoPopover, proximoIndiceMenu } from "./popover";
+import { acaoTecladoMenu, posicaoPopover, proximoIndiceMenu } from "./popover";
 
 const viewport = { largura: 400, altura: 800 };
 const painel = { largura: 220, altura: 200 };
@@ -40,5 +40,23 @@ describe("proximoIndiceMenu", () => {
   });
   it("lista vazia devolve -1", () => {
     expect(proximoIndiceMenu(0, "ArrowDown", 0)).toBe(-1);
+  });
+});
+
+describe("acaoTecladoMenu", () => {
+  it("Escape fecha devolvendo o foco; Tab fecha sem devolver", () => {
+    expect(acaoTecladoMenu("Escape", -1, 3)).toEqual({ tipo: "fechar", devolverFoco: true });
+    expect(acaoTecladoMenu("Tab", 0, 3)).toEqual({ tipo: "fechar", devolverFoco: false });
+  });
+  it("setas, Home e End focam o item certo, mesmo com o foco fora dos itens (gatilho)", () => {
+    expect(acaoTecladoMenu("ArrowDown", -1, 3)).toEqual({ tipo: "focar", indice: 0 });
+    expect(acaoTecladoMenu("ArrowDown", 2, 3)).toEqual({ tipo: "focar", indice: 0 });
+    expect(acaoTecladoMenu("ArrowUp", 0, 3)).toEqual({ tipo: "focar", indice: 2 });
+    expect(acaoTecladoMenu("Home", 2, 3)).toEqual({ tipo: "focar", indice: 0 });
+    expect(acaoTecladoMenu("End", 0, 3)).toEqual({ tipo: "focar", indice: 2 });
+  });
+  it("sem itens habilitados ou outra tecla: nenhuma ação", () => {
+    expect(acaoTecladoMenu("ArrowDown", -1, 0)).toEqual({ tipo: "nenhuma" });
+    expect(acaoTecladoMenu("a", 0, 3)).toEqual({ tipo: "nenhuma" });
   });
 });
