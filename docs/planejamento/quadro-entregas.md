@@ -2,6 +2,20 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 1 (E0) — linha de base em 15/10/2026
+
+- Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
+- Perfil de teste do worktree: `dev-email` (banco descartável isolado; o `tester` do brief foi substituído pelo perfil atribuído pelo integrador). Medição feita no checkout do integrador (`/home/claude/erp-genius`).
+- Suíte completa, sem filtro.
+- `tsc --noEmit`: saída 0.
+- `npm test` (`vitest run`): saída 0; 646 arquivos, 4560 testes, 0 falhas.
+- `test:int` (`vitest.integration.config.ts`): **PENDENTE** na data deste commit. A execução completa ainda estava em andamento; o resultado (código de saída, totais e falhas) sai em `int.txt`/`int.json` da linha de base do integrador e deve ser anotado aqui antes de qualquer bloco comparar com `LB_FALHAS`. Falha que aparecer lá é preexistente.
+
+### LB_FALHAS
+
+- Unitários: nenhuma.
+- Integração: pendente (ver acima).
+
 ## Situação em 13/10/2026 — publicação no UAT e auditoria de UX
 
 Base conferida: `main` em `e5418550` (merge da #161, 10/10/2026). Esta seção é a fotografia de 13/10; as seções abaixo continuam sendo os registros de 21/09 e anteriores. Análise PR a PR no doc 44 (§3 para publicação, §7 para as PRs) e remedição da auditoria de UX no doc 43 §7.
