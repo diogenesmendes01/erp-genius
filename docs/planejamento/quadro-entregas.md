@@ -1653,8 +1653,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
-**Estado**: Implementado; aguardando o integrador. Não concluído.
-
 ## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
 
 - Branch `claude/fase0-ds-b-camadas`, empilhada sobre `claude/fase0-ds-a-fundacao` (`9ead958..cb121aa`; Task 7 `9ead958..e0269c3`).
@@ -1707,3 +1705,40 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Demais tasks do DS-B (5–8 e 10) e DS-C seguem nos próprios PRs.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — primitivos (Fase 0, Task 10; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-primitivos`)
+- Primitivos novos em `src/components`: `Chip`, `ItemLista` (com `aria-current`), `Avatar` (iniciais da primeira e
+  da última palavra) e `Menu` (painel `shadow-popover`, item de perigo, alvo de 44 px abaixo de `sm`). Documentados no
+  doc 18 ("Primitivos — Chip, ItemLista, Avatar e Menu"); `brand.bg` mapeado no `tailwind.config.ts`.
+- `src/lib/popover.ts` (puro): `posicaoPopover` (lado com mais espaço, limitado à margem), `proximoIndiceMenu` e
+  `acaoTecladoMenu`. Com o foco fora dos itens (gatilho), a seta para baixo vai ao primeiro e a seta para cima ao último.
+- Menu dentro de diálogo: o teclado do menu é ouvido em `document` na fase de captura. O Escape fecha só o menu
+  (`stopPropagation`) e devolve o foco ao gatilho. Um Modal, Drawer ou ConfirmarAcao em volta (`useDialogo`) continua
+  aberto, e o Tab segue para o diálogo, que mantém o foco preso.
+- O painel é `position: fixed`. Scroll (captura, em qualquer lista) e resize fecham o menu, para ele não ficar solto
+  sobre outra linha.
+- Teste de interação sem DOM (`Menu.interacao.test.ts`): `useDialogo` ligado com `document` falso que entrega captura
+  antes da bolha. Cobre Escape com diálogo e menu abertos, ArrowUp a partir do gatilho, Tab, scroll e resize.
+- `src/app/botoes.test.ts`: exceções com motivo para Chip, ItemLista e Menu.
+
+### Verificação
+- Depois das correções da revisão final: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 653 arquivos e
+  4.606 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos (nenhum em arquivo do
+  bloco).
+- O novo teste de Escape falha se o ouvinte do menu voltar à fase de bolha. Isso foi conferido.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Falta conferir no navegador (UAT): o menu dentro do drawer, a posição perto das bordas e os dois temas.
+- O focar após o posicionamento (`visibility` do painel) é ligação de DOM sem teste automatizado, porque não há jsdom.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Verificação do integrador: bloco DS-B (2026-10-15)
+- Branch: `claude/fase0-ds-b-primitivos` (empilhada sobre `claude/fase0-ds-a-fundacao`). Tarefa 10: Chip, ItemLista, Avatar e Menu.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 653 arquivos e 4.606 testes (linha de base da main: 646 e 4.560).
+- `npm run lint`: saída 0.
+- Sem schema nem migração; testes de integração não alterados.
