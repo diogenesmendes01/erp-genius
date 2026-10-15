@@ -137,6 +137,15 @@ Modal, confirmação e drawer são camadas elevadas: fundo `bg-surface-raised`, 
 - **Drawer**: `bg-surface-raised shadow-dialog` com borda `border-s border-gray-200` (ou `border-e` pela esquerda).
 - Escape, contenção de Tab, devolução do foco e `inert` seguem como antes (`useDialogo`).
 
+## Avisos e movimento reduzido
+`src/components/Aviso.tsx` é a caixa única de aviso: `rounded-md p-3 text-sm` + tom. `info` = `bg-surface-muted`;
+`sucesso` = `bg-green-100 text-green-700 border-s-[3px] border-green-700`; `atencao` = `bg-amber-100 text-amber-800
+border-s-[3px] border-amber-600`; `erro` = `bg-red-100 text-red-700 border-s-[3px] border-red-600`. Papel: `alert`
+no erro, `status` nos outros (`papel="nenhum"` quando a região anunciante é outra, como a sr-only do
+`MensagemStatus`). `FeedbackAcao`, `MensagemStatus` (com `tom`), `ErroArea` (via `EstadoRota aviso="erro"`) e
+`AvisoFusoNaoConfigurado` usam o `Aviso` sem mudar suas props. O esqueleto pulsa (`animate-pulse`); o
+`@media (prefers-reduced-motion: reduce)` de `globals.css` desliga animação, transição e rolagem suave.
+
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:

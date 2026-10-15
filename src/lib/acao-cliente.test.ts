@@ -124,11 +124,11 @@ describe("FeedbackAcao", () => {
 
   it("erro: alerta focável (recebe o foco e é trazido à vista ao aparecer)", () => {
     const html = renderToStaticMarkup(createElement(FeedbackAcao, { erro: "Cobrança já quitada.", className: "mb-3" }));
-    expect(html).toContain('<p tabindex="-1" role="alert" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 mb-3">Cobrança já quitada.</p>');
+    expect(html).toContain('<div role="alert" tabindex="-1" class="rounded-md p-3 text-sm bg-red-100 text-red-700 border-s-[3px] border-red-600 mb-3"><div>Cobrança já quitada.</div></div>');
   });
 
   it("sucesso: anunciado pela região polite sempre montada, com a cópia visível fora da leitura", () => {
     const html = renderToStaticMarkup(createElement(FeedbackAcao, { erro: null, sucesso: "Fatura cancelada." }));
-    expect(html).toBe('<p role="status" class="sr-only">Fatura cancelada.</p><p aria-hidden="true" class="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">Fatura cancelada.</p>');
+    expect(html).toBe('<p role="status" class="sr-only">Fatura cancelada.</p><div aria-hidden="true" class="rounded-md p-3 text-sm bg-green-100 text-green-700 border-s-[3px] border-green-700"><div>Fatura cancelada.</div></div>');
   });
 });
