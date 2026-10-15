@@ -11,7 +11,7 @@ import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
