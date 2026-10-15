@@ -164,3 +164,10 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
   falha com cor fora do mapa, shade não listada (inclusive sob `dark:`/`hover:`), sombra
   (`shadow-*`, `drop-shadow-*`, `shadow-[…]`) ou cor arbitrária (`bg-[#…]`, `rgb()`, `hsl()`). Ele lê o mapa direto do `tailwind.config.ts` — mapear uma shade
   nova no config já a libera.
+
+## Navegação
+
+- **Sidebar:** `bg-surface-muted border-e border-gray-200`, largura `w-56`. Item `min-h-10 max-sm:min-h-11 rounded-item px-3 text-sm text-gray-800 hover:bg-highlight`; item ativo (`aria-current="page"`) `bg-brand-bg text-brand-800 font-medium` (seleção suave). Contador de não lidas `rounded-full bg-brand-solid text-on-brand`; avatar `bg-brand-bg text-brand-800`.
+- **Barra mobile:** mesmos estados da sidebar (`rounded-item`, `hover:bg-highlight`, `bg-surface-muted`); botões com `max-sm:min-h-11 max-sm:min-w-11`; itens da gaveta (a mesma `NavLinks`) com `max-sm:min-h-11`.
+- **Sub-abas:** pílula `rounded-full px-3 py-1.5 text-sm max-sm:min-h-11`; ativa `bg-brand-solid text-on-brand font-medium`, inativa `text-gray-600 hover:bg-highlight`.
+- A estrutura de menus (`src/lib/nav.ts`) não muda. A trilha (`Trilha.tsx`) não precisou de ajuste: já usa só tokens.
