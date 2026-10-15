@@ -89,7 +89,7 @@ export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Naveg
               onClick={aoNavegar}
               aria-current={ativo ? "page" : undefined}
               className={
-                "flex min-h-10 items-center gap-3 rounded-item px-3 text-sm transition-colors " +
+                "flex min-h-10 items-center gap-3 rounded-item px-3 text-sm transition-colors max-sm:min-h-11 " +
                 (ativo
                   ? "bg-brand-bg text-brand-800 font-medium"
                   : "text-gray-800 hover:bg-highlight")
