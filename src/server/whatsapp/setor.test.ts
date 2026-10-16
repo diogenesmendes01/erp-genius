@@ -31,4 +31,10 @@ describe("setor do atendente", () => {
     expect(setoresDoUsuario([Papel.VENDEDOR, Papel.GERENTE_COMERCIAL])).toEqual(["COMERCIAL"]);
     expect(setoresDoUsuario([Papel.VENDEDOR, Papel.FINANCEIRO])).toEqual(["COMERCIAL", "FINANCEIRO"]);
   });
+  it("ordem de saida independe da ordem dos papeis", () => {
+    expect(setoresDoUsuario([Papel.FINANCEIRO, Papel.VENDEDOR])).toEqual(["COMERCIAL", "FINANCEIRO"]);
+    expect(setoresDoUsuario([Papel.VENDEDOR, Papel.FINANCEIRO])).toEqual(["COMERCIAL", "FINANCEIRO"]);
+    expect(setoresDoUsuario([Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR])).toEqual(["SECRETARIA", "COMERCIAL", "FINANCEIRO", "PEDAGOGICO"]);
+    expect(setoresDoUsuario([Papel.VENDEDOR, Papel.SECRETARIA_ACADEMICA])).toEqual(["SECRETARIA", "COMERCIAL", "FINANCEIRO", "PEDAGOGICO"]);
+  });
 });
