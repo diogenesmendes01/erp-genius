@@ -1,5 +1,6 @@
 import {
   EtapaLead,
+  OrigemCanal,
   Temperatura,
   Segmento,
   MotivoPerda,
@@ -118,6 +119,19 @@ export const ETAPA_EXTENSO_LABEL: Readonly<Record<EtapaLead, string>> = Object.f
   MATRICULADO: "Matriculado",
   NO_SHOW: "No-show",
   PERDIDO: "Perdido",
+});
+
+export const ORIGEM_CANAL_LABEL: Readonly<Record<OrigemCanal, string>> = Object.freeze({
+  WHATSAPP: "WhatsApp",
+  INSTAGRAM: "Instagram",
+  ANUNCIO: "Anúncio",
+  GOOGLE: "Google",
+  SITE: "Site",
+  INDICACAO: "Indicação",
+  EVENTO: "Evento",
+  LINKEDIN: "Linkedin",
+  IMPORTACAO: "Importação",
+  OUTRO: "Outro",
 });
 
 export const TEMPERATURA_LABEL: Record<Temperatura, string> = {

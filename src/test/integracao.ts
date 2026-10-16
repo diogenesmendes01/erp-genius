@@ -1,4 +1,4 @@
-import { Papel, StatusPais, TipoCobranca } from "@prisma/client";
+import { Prisma, Papel, StatusPais, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 // Helpers das suites de integração (*.int.test.ts). O banco é o Postgres de TESTE
@@ -85,4 +85,17 @@ export async function eventosDo(agregadoTipo: string, agregadoId: string) {
     where: { agregadoTipo, agregadoId },
     orderBy: { criadoEm: "asc" },
   });
+}
+
+/**
+ * Aluno mínimo (país próprio criado sob demanda, reaproveitado se já existir).
+ * `extra` sobrescreve/complementa os campos (ex.: `pessoaId`).
+ */
+export async function criarAlunoMinimo(extra: Partial<Prisma.AlunoUncheckedCreateInput> = {}) {
+  const pais =
+    (await prisma.pais.findFirst({ where: { codigoISO: "CR" } })) ??
+    (await prisma.pais.create({
+      data: { nome: "Costa Rica", codigoISO: "CR", moedaLocal: "CRC", ddi: "+506", status: StatusPais.ATIVO },
+    }));
+  return prisma.aluno.create({ data: { primeiroNome: "Aluno", paisId: pais.id, ...extra } });
 }
