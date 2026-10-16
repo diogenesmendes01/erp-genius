@@ -30,3 +30,26 @@ describe("Modal \u2192 useDialogo", () => {
     expect(m.useDialogo.mock.calls[0][1]).toEqual({ aberto: true, aoFechar, bloquearFechamento: false, focoInicial: undefined });
   });
 });
+
+describe("Modal → camada elevada (DS)", () => {
+  const html = (props: Record<string, unknown> = {}, filhos?: string) =>
+    renderToStaticMarkup(createElement(Modal, { titulo: "Cancelar a fatura?", aoFechar: vi.fn(), ...props }, filhos));
+
+  it("modal limita largura e altura", () => {
+    const h = html();
+    expect(h).toContain("max-w-[calc(100vw-24px)]");
+    expect(h).toContain("max-h-[90dvh]");
+    expect(h).toContain("rounded-dialog");
+    expect(h).toContain("shadow-dialog");
+    expect(h).toContain("bg-surface-raised");
+    expect(h).toContain("bg-black/60");
+    expect(h).toContain("sm:w-[460px]");
+    expect(h).toContain("text-xl font-medium");
+  });
+
+  it("variante larga usa 640px", () => {
+    const h = html({ larga: true });
+    expect(h).toContain("sm:w-[640px]");
+    expect(h).not.toContain("sm:w-[460px]");
+  });
+});

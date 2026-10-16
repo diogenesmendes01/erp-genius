@@ -163,3 +163,47 @@ describe("design system: tokens nos dois temas", () => {
     expect(ofensores).toEqual([]);
   });
 });
+
+describe("campos de formulário (base em @layer base)", () => {
+  const base = CSS.slice(CSS.indexOf("@layer base"));
+  const SELETOR = ':where(input:not([type="checkbox"]):not([type="radio"])),\n  select,\n  textarea';
+  const bloco = (seletor: string) => {
+    const i = base.indexOf(seletor + " {");
+    return i < 0 ? "" : base.slice(i, base.indexOf("}", i));
+  };
+
+  it("base de campos usa surface-muted, raio 8 e 44 px no celular", () => {
+    expect(bloco(SELETOR)).toMatch(/background-color:\s*var\(--surface-muted\)/);
+    expect(bloco(SELETOR)).toMatch(/border-radius:\s*8px/);
+    const m = /@media \(max-width: 767px\) \{[^@]*?min-height:\s*44px/.exec(base);
+    expect(m?.[0]).toContain("input:not");
+    expect(m?.[0]).toContain("textarea");
+  });
+
+  it("no celular o textarea não recebe 44 px (mantém os 90 px)", () => {
+    const i = base.indexOf("@media (max-width: 767px)");
+    const media = base.slice(i).replace(/\/\*[\s\S]*?\*\//g, "");
+    const regra44 = /([^{}]*)\{[^}]*min-height:\s*44px/.exec(media);
+    expect(regra44?.[1]).toBeDefined();
+    expect(regra44?.[1]).not.toContain("textarea");
+  });
+
+  it("disabled usa text-disabled e cursor-not-allowed", () => {
+    const i = base.indexOf(":disabled");
+    const trecho = base.slice(i, base.indexOf("}", i));
+    expect(trecho).toMatch(/color:\s*var\(--text-disabled\)/);
+    expect(trecho).toMatch(/cursor:\s*not-allowed/);
+  });
+
+  it("textarea de várias linhas tem 90 px; o de uma linha fica compacto; redimensiona na vertical", () => {
+    expect(bloco(':where(textarea:not([rows="1"]))')).toMatch(/min-height:\s*90px/);
+    const i = base.search(/^ {2}textarea \{\n {4}resize/m);
+    expect(base.slice(i, base.indexOf("}", i))).toMatch(/resize:\s*vertical/);
+  });
+
+  it("seletores de input na base têm especificidade zero (classe utilitária vence)", () => {
+    const semComentario = base.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(semComentario).not.toMatch(/(^|[\s,])input:not\(\[type="checkbox"\]\)/m);
+    expect(semComentario).not.toMatch(/^\s*textarea \{[^}]*min-height/m);
+  });
+});
