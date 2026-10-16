@@ -46,6 +46,7 @@ import {
   ReferenciaCoberturaMensal,
   FinalidadeNumero,
   FinalidadeAtendimentoWhatsApp,
+  StatusAtendimentoWhatsApp,
   FormaAgendaOferta,
   StatusPropostaAcertoTaxaAditivo,
   StatusConjuntoImpactosTaxaAditivo,
@@ -449,6 +450,14 @@ export const SETOR_ATENDIMENTO_LABEL: Readonly<Record<FinalidadeAtendimentoWhats
   FINANCEIRO: "Financeiro",
   SECRETARIA: "Secretaria",
   PEDAGOGICO: "Pedagógico",
+});
+
+/** Status do atendimento do WhatsApp no Inbox. */
+export const STATUS_ATENDIMENTO_LABEL: Readonly<Record<StatusAtendimentoWhatsApp, string>> = Object.freeze({
+  ABERTO_SEM_RESPONSAVEL: "Na fila",
+  EM_ATENDIMENTO: "Em atendimento",
+  AGUARDANDO_CLIENTE: "Aguardando cliente",
+  ENCERRADO: "Encerrado",
 });
 
 export const CATEGORIA_DOCUMENTO_LABEL: Readonly<Record<CategoriaDocumento, string>> = Object.freeze({

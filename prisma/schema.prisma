@@ -397,6 +397,20 @@ enum FinalidadeAtendimentoWhatsApp {
   PEDAGOGICO
 }
 
+enum StatusAtendimentoWhatsApp {
+  ABERTO_SEM_RESPONSAVEL
+  EM_ATENDIMENTO
+  AGUARDANDO_CLIENTE
+  ENCERRADO
+}
+
+// Prazo de primeira resposta por setor, em minutos (valores provisórios, Q3).
+model PrazoRespostaSetor {
+  finalidade FinalidadeAtendimentoWhatsApp @id
+  minutos Int
+  atualizadoEm DateTime @updatedAt
+}
+
 model AtendimentoWhatsApp {
   id String @id @default(cuid())
   conversaId String
@@ -423,10 +437,19 @@ model AtendimentoWhatsApp {
   ultimoInboundEm DateTime?
   inboundTratadoEm DateTime?
   naoLidas Int @default(0)
+  status StatusAtendimentoWhatsApp @default(ABERTO_SEM_RESPONSAVEL)
+  primeiroInboundEm DateTime?
+  primeiraRespostaEm DateTime?
+  prazoRespostaEm DateTime?
+  atendimentoOrigemId String?
+  atendimentoOrigem AtendimentoWhatsApp? @relation("TransferenciaAtendimento", fields: [atendimentoOrigemId], references: [id], onDelete: Restrict)
+  transferidos AtendimentoWhatsApp[] @relation("TransferenciaAtendimento")
   mensagens MensagemWhatsApp[]
   intencoes IntencaoMensagem[]
   participantes ParticipanteAtendimentoWhatsApp[]
   @@unique([conversaId, contextoChave])
+  @@index([status, finalidade])
+  @@index([atendimentoOrigemId])
   @@index([leadId])
   @@index([alunoId])
   @@index([matriculaId])
@@ -438,8 +461,9 @@ model ParticipanteAtendimentoWhatsApp {
   atendimentoId String
   atendimento AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   usuarioId String
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  usuario Usuario @relation("ParticipanteUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
   concedenteId String
+  concedente Usuario @relation("ConcedenteParticipante", fields: [concedenteId], references: [id], onDelete: Restrict)
   inicio DateTime
   fim DateTime
   revogadoEm DateTime?
@@ -749,7 +773,8 @@ model Usuario {
   coberturasSubstituto CoberturaCarteira[] @relation("SubstitutoCobertura")
   coberturasConcedidas CoberturaCarteira[] @relation("ConcedenteCobertura")
   atendimentosResponsavel AtendimentoWhatsApp[] @relation("ResponsavelAtendimentoWhatsApp")
-  participacoesAtendimento ParticipanteAtendimentoWhatsApp[]
+  participacoesAtendimento ParticipanteAtendimentoWhatsApp[] @relation("ParticipanteUsuario")
+  participacoesConcedidas ParticipanteAtendimentoWhatsApp[] @relation("ConcedenteParticipante")
   // dados pessoais (ex.: professores importados — doc 23). Opcionais.
   telefoneE164      String?
   documento         String?
