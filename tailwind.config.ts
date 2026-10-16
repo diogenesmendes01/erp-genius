@@ -55,8 +55,9 @@ const config: Config = {
           // accent-soft: fundo suave de seleção (chip, item de lista, avatar)
           bg: "var(--brand-bg)",
         },
-        // Fundo de botão primário — valor próprio por tema, sempre com texto branco (ver globals.css). Uso:
-        // bg-brand-solid + hover:brightness-95. Distinto de brand-700 (só texto/link).
+        // Fundo de botão primário — valor próprio por tema, sempre com text-on-brand (branco no claro, #0a0a0a
+        // no escuro; ver globals.css). Uso: bg-brand-solid text-on-brand + hover:brightness-95. Distinto de
+        // brand-700 (só texto/link).
         "brand-solid": "var(--brand-solid)",
         // semânticas (bg = tom claro/escuro; texto inverte)
         // green.200 e blue.200 fecham o mesmo idioma de "borda tingida" que amber.200 e
