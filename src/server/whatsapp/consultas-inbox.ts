@@ -1,4 +1,3 @@
-import { sugestoesPendentesDoLead, type SugestaoPendente } from "@/server/ia/consultas";
 import { Papel, type EtapaLead, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
@@ -33,7 +32,6 @@ export interface CobrancaAtivaThread {
 }
 export interface NotaInternaThread { id: string; nota: string; autorNome: string | null; criadoEm: string }
 export interface LeadNaThread {
-  copilotoAtivo?: boolean; sugestoesIA?: SugestaoPendente[];
   id: string; nome: string; etapa: string; temperatura: string; dataExperimental: string | null;
   etapasPermitidas: string[]; notas: NotaInternaThread[];
 }
@@ -163,7 +161,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
     janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
     silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contatoId) : null,
-    lead: verLead && a.lead ? await leadNaThread(usuario, a.lead) : null,
+    lead: verLead && a.lead ? await leadNaThread(a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString() })) };
@@ -195,14 +193,10 @@ export async function listarLinhasDoUsuario(usuario: UsuarioSessao): Promise<Lin
   });
 }
 
-async function leadNaThread(usuario: UsuarioSessao, lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
+async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
   const notas = await prisma.evento.findMany({ where: { agregadoTipo: "Lead", agregadoId: lead.id, tipo: "NotaInterna" },
     orderBy: { criadoEm: "desc" }, take: 20, include: { autor: { select: { nome: true } } } });
-  const config = await prisma.configComercial.findUnique({ where: { id: "comercial" }, select: { copilotoAtivo: true } });
-  const copilotoAtivo = !!config?.copilotoAtivo && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
-    && !!await prisma.lead.count({ where: { AND: [{ id: lead.id }, await escopoComercialAtual(usuario)] } });
-  const sugestoesIA = copilotoAtivo ? await sugestoesPendentesDoLead(lead.id) : [];
-  return { ...lead, copilotoAtivo, sugestoesIA, dataExperimental: lead.dataExperimental?.toISOString() ?? null,
+  return { ...lead, dataExperimental: lead.dataExperimental?.toISOString() ?? null,
     etapasPermitidas: ETAPAS_MANUAIS.filter((d) => d !== lead.etapa && transicaoManualPermitida(lead.etapa, d)),
     notas: notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "",
       autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() })) };

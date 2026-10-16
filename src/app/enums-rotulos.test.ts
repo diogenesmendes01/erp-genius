@@ -1960,7 +1960,6 @@ describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
       ["src/app/(app)/financeiro/FinanceiroPainel.tsx", "TIPO_APROVACAO_LABEL[a.tipo]"],
       ["src/app/(app)/configuracao/catalogo/PrecosPainel.tsx", "TIPO_COBRANCA_LABEL[p.tipoCobranca]"],
       ["src/app/(app)/configuracao/catalogo/ModalidadesPainel.tsx", "SEGMENTO_LABEL[m.segmento]"],
-      ["src/components/CopilotoSugestoes.tsx", "rotular(ETAPA_LABEL, String(p.etapa))"],
       ["src/app/(app)/secretaria/avisos-agenda/page.tsx", "rotular(CANAL_AVISO_ALTERACAO_AGENDA_LABEL, i.canal)"],
       ["src/app/(app)/academico/segundas-chamadas/agendas/page.tsx", "const rotulosReserva = STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL;"],
       ["src/app/(app)/academico/avaliacoes/[alocacaoId]/page.tsx", "HABILIDADE_LABEL[h.habilidade]"],
@@ -2134,7 +2133,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["REFERENCIA_COBERTURA_MENSAL_LABEL", L.REFERENCIA_COBERTURA_MENSAL_LABEL, Object.values(ReferenciaCoberturaMensal)],
   ["FINALIDADE_NUMERO_LABEL", L.FINALIDADE_NUMERO_LABEL, Object.values(FinalidadeNumero)],
   ["FORMA_AGENDA_OFERTA_LABEL", L.FORMA_AGENDA_OFERTA_LABEL, Object.values(FormaAgendaOferta)],
-  // R3 da #138 (B13): o mapa por extenso que vivia em server/whatsapp/cron-gestao.ts (removido na E1).
+  // R3 da #138 (B13): o mapa por extenso que vivia na gestão/SLA do WhatsApp (removido na E1).
   ["ETAPA_EXTENSO_LABEL", L.ETAPA_EXTENSO_LABEL, Object.values(EtapaLead)],
   // Veio de src/lib/roles.ts (R3 da #138, B13; R1 da #150, B4: conferido como os novos); roles.ts só o reexporta.
   ["PAPEL_LABEL", L.PAPEL_LABEL, Object.values(Papel)],

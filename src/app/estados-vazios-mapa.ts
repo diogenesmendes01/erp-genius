@@ -126,12 +126,6 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
     folha: "<p className=\"text-sm\">Confirme o contrato ou aguarde o envio externo confirmado de um original para preparar estas condições.</p>",
     motivo: "aviso ou instrução (o que falta para seguir), não lista sem itens",
   },
-  {
-    arquivo: "src/components/CopilotoSugestoes.tsx",
-    condicao: "sugestoes.length === 0",
-    folha: "<p className=\"mt-1 text-xs text-ai-600/80\">Sem sugestões pendentes.</p>",
-    motivo: "painel do copiloto: paleta própria (ai-*), fora do visual das listas",
-  },
 ];
 
 export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {

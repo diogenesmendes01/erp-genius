@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ buscarVinculosInbox: vi.fn(), criarLeadDaConversa: vi.fn(), editarNomeContatoWhatsApp: vi.fn(), enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn(), marcarConversaLida: vi.fn(), marcarConversaTratada: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn(), vincularContatoWhatsApp: vi.fn() }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
-vi.mock("@/server/comercial/acoes", () => ({ definirTemperatura: vi.fn(), moverEtapa: vi.fn(), registrarNotaInterna: vi.fn() }));
 
 import { InboxCliente, EditarNomePainel } from "./InboxCliente";
 
@@ -32,6 +31,14 @@ describe("InboxCliente", () => {
     expect(render(false)).not.toContain("Editar nome");
   });
 
+  it("thread com lead e copiloto ligado não mostra o copiloto (E1)", () => {
+    const html = renderToStaticMarkup(createElement(InboxCliente, {
+      conversas: [], thread: { ...thread, contato: { ...thread.contato, optOutEm: null }, lead: { ...thread.lead, copilotoAtivo: true, sugestoesIA: [] } }, podeCobranca: false, preferenciaFusoExibicao: null,
+    } as never));
+    expect(html).not.toContain("Copiloto (sugestões");
+    expect(html).toContain('placeholder="Escreva uma mensagem (Enter envia)"');
+  });
+
   it("usa a preferência nos instantes e agrupa mensagens pela mesma data local", () => {
     const html = renderToStaticMarkup(createElement(InboxCliente, {
       conversas: [{ id: "atendimento", numeroId: "numero", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: "contato", contatoNome: "Ana", contatoTelefone: "+506", optOut: true, vinculo: null, naoLidas: 0, ultimaMensagemEm: mensagens[1].criadoEm, preview: "Olá" }],
@@ -40,8 +47,14 @@ describe("InboxCliente", () => {
     expect(html).toContain("30/09/2026");
     expect(html).toMatch(/30\/09\/2026.*20:30/);
     expect(html).toMatch(/30\/09\/2026.*21:30/);
-    expect(html).toContain("experimental 30/09/2026, 20:30");
-    expect(html).toContain("Notas internas");
+    expect(html).not.toContain("Notas internas");
+    expect(html).not.toContain("experimental 30/09/2026");
+    // O fixture está em opt-out (composer desabilitado); o composer só aparece com o contato liberado.
+    const liberado = renderToStaticMarkup(createElement(InboxCliente, {
+      conversas: [], thread: { ...thread, contato: { ...thread.contato, optOutEm: null } }, podeCobranca: false, preferenciaFusoExibicao: "America/Costa_Rica",
+    } as never));
+    expect(liberado).toContain('placeholder="Escreva uma mensagem (Enter envia)"');
+    expect(liberado).not.toContain("Notas internas");
   });
 
   it("não inventa vencimento civil quando a origem exige conferência", () => {
@@ -62,7 +75,12 @@ describe("InboxCliente", () => {
     } as never));
     expect(html).toContain("janela 24h aberta até 30/09/2026, 22:30");
     expect(html).toContain("silêncio até 30/09/2026, 21:30");
-    expect(html).toContain('placeholder="Escreva uma mensagem (Enter envia)"');
+    // O fixture está em opt-out (composer desabilitado); o composer só aparece com o contato liberado.
+    const liberado = renderToStaticMarkup(createElement(InboxCliente, {
+      conversas: [], thread: { ...thread, contato: { ...thread.contato, optOutEm: null } }, podeCobranca: false, preferenciaFusoExibicao: "America/Costa_Rica",
+    } as never));
+    expect(liberado).toContain('placeholder="Escreva uma mensagem (Enter envia)"');
+    expect(liberado).not.toContain("Notas internas");
   });
 });
 

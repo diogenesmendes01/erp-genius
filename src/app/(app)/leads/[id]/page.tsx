@@ -5,8 +5,6 @@ import { listarProfessores } from "@/server/turmas/consultas";
 import { FichaLead, type LeadFicha, type EventoTimeline } from "./FichaLead";
 import { exigirSessaoPagina, numeroOuNull } from "@/server/_shared";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { sugestoesPendentesDoLead } from "@/server/ia/consultas";
-import { carregarConfigComercial } from "@/server/comercial/consultas";
 
 export default async function LeadDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,10 +14,8 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
   const dados = await obterLead(id, usuario);
   if (!dados) notFound();
   const { lead, timeline } = dados;
-  const [professores, sugestoesIA, configComercial, preferencia] = await Promise.all([
+  const [professores, preferencia] = await Promise.all([
     listarProfessores(),
-    sugestoesPendentesDoLead(id),
-    carregarConfigComercial(),
     consultarPreferenciaFusoEquipe(),
   ]);
 
@@ -95,8 +91,6 @@ export default async function LeadDetalhePage({ params }: { params: Promise<{ id
       lead={ficha}
       timeline={eventos}
       professores={professores}
-      sugestoesIA={sugestoesIA}
-      copilotoAtivo={configComercial.copilotoAtivo}
       preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
       />
     </div>
