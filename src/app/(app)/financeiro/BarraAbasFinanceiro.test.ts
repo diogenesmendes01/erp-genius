@@ -35,10 +35,10 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
     expect(render(["cobrancas", "comissoes"], {}, "/financeiro/permuta")).not.toContain('aria-current="page"');
   });
 
-  it("aba ativa: fundo bg-brand-solid com texto branco; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+  it("aba ativa: fundo bg-brand-solid com texto on-brand; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
     const html = render(["comissoes", "descontos"]);
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
-    expect(classeDe("/financeiro/comissoes")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-white"]));
+    expect(classeDe("/financeiro/comissoes")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-on-brand"]));
     expect(classeDe("/financeiro/descontos")).toEqual(expect.arrayContaining(["text-gray-600"]));
     expect(classeDe("/financeiro/descontos")).not.toContain("bg-brand-solid");
     expect(classeDe("/financeiro/descontos")).not.toContain("text-white");
@@ -51,5 +51,16 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
     expect(html).toContain(">Retomadas (0)<");
     expect(html).toContain(">Aprovações (1)<");
     expect(render(["aprovacoes"], { aprovacoes: 0 })).toContain(">Aprovações<");
+  });
+
+  it("abas em pílula como a SubTabs: rounded-full, hover translúcido e 44 px no celular (DS-C)", () => {
+    const html = render(["comissoes", "descontos"]);
+    for (const m of html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)) {
+      const cls = m[1].split(" ");
+      expect(cls).toContain("rounded-full");
+      expect(cls).toContain("max-sm:min-h-11");
+      expect(cls).not.toContain("rounded-md");
+    }
+    expect(html).toContain("hover:bg-highlight");
   });
 });

@@ -21,11 +21,11 @@ describe("SubTabs", () => {
     expect([...html.matchAll(/class="[^"]*bg-brand-solid[^"]*"/g)]).toHaveLength(1);
   });
 
-  it("aba ativa: fundo bg-brand-solid com texto branco; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+  it("aba ativa: fundo bg-brand-solid com texto on-brand; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
     const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
-    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-white"]));
+    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-on-brand"]));
     expect(classeDe("/configuracao")).not.toContain("bg-brand-solid");
     expect(classeDe("/configuracao")).not.toContain("text-white");
     expect(html).not.toMatch(/bg-brand-(?:500|600)/);
@@ -63,5 +63,13 @@ describe("SubTabs", () => {
     expect(semLabel).toContain('aria-label="Sub-navegação"');
     const comLabel = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Sub-navegação de canais" }));
     expect(comLabel).toContain('aria-label="Sub-navegação de canais"');
+  });
+
+  it("sub-aba ativa é pílula sólida com text-on-brand", () => {
+    mocks.pathname.mockReturnValue("/configuracao/whatsapp");
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
+    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["rounded-full", "px-3", "py-1.5", "max-sm:min-h-11", "bg-brand-solid", "text-on-brand", "font-medium"]));
+    expect(classeDe("/configuracao")).toEqual(expect.arrayContaining(["rounded-full", "text-gray-600", "hover:bg-highlight"]));
   });
 });

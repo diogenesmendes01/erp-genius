@@ -103,7 +103,7 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, d
         </label>
       )}
       <FeedbackAcao erro={execucao.erro} className="mt-3" />
-      <div className="mt-4 flex flex-wrap justify-end gap-2">
+      <div className="mt-6 flex flex-wrap justify-end gap-3">
         <Botao ref={voltar} variante="secundario" disabled={ocupado} onClick={cancelar}>
           Voltar
         </Botao>

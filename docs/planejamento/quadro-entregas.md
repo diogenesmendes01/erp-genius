@@ -1700,3 +1700,203 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - As métricas de fluxo da 7.7 continuam sem medição.
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
+
+## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-a-fundacao`)
+- Tokens WDS claro/escuro nos blocos `:root` e `.dark` de `src/app/globals.css` (tabela de tokens do plano
+  `00-fase-design-system.md`), com `--surface-raised`, `--highlight`, `--pressed`, `--border-soft`, `--text-disabled`,
+  `--brand-strong`, `--on-brand-solid`, `--cold-text`, `--entry`, `--entry-accent`, `--composer` e as duas sombras de
+  camada. Spec copiado para `docs/planejamento/design-system-referencia.md`.
+- `src/app/contraste.test.ts` recalcula pelo `globals.css` o texto de cada fundo sólido (par de `TEXTO_SOBRE_SOLIDO`,
+  ≥ 4,5:1), a borda de controle (≥ 3:1) e o `--brand-solid` sobre as superfícies, nos dois temas.
+- `tailwind.config.ts`: cores novas (`on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`,
+  `entry`, `entry-accent`, `composer`, `cold-700`, `brand-800`), raios (`rounded-item`, `rounded-dialog`) e só
+  `shadow-popover`/`shadow-dialog`.
+- Roboto variável (`src/app/fonts/roboto-variable.woff2`, licença Apache 2.0 oficial do `googlefonts/roboto` em
+  `LICENSE-Roboto.txt`) por `next/font/local`; pesos 400, 500 e 600 (`tipografia.test.ts`).
+- Fundo sólido da marca usa `text-on-brand` (branco no claro, preto no escuro); `Botao.primario` e o doc 18 atualizados.
+
+### Verificação
+- Na HEAD `ce4895c` (revisão final): `tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.573 testes;
+  `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
+  effect), que já existia em `f8a9c0e`.
+- Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
+- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
+  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Componentes base (botões em pílula, camadas com sombra, alvos de 44 px) e telas: blocos seguintes da Fase 0.
+- Conferir no navegador (UAT) os dois temas com a Roboto.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-botao`)
+- `src/components/Botao.tsx`: `BASE_BOTAO` em pílula (`rounded-full`, `gap-2`) com 44 px de altura mínima abaixo de
+  `sm` (`max-sm:min-h-11`); desabilitado sem opacidade (`disabled:bg-surface-muted disabled:text-disabled
+  disabled:border-gray-200`) e `aria-busy:cursor-progress`.
+- Variantes: `secundario` com `border-border-soft`, sem fundo, texto `text-brand-700` e hover `bg-highlight`;
+  `fantasma` com hover `bg-highlight`; `primario` e `perigo` sem mudança. Tamanhos `sm px-3 py-1`, `md px-4 py-1.5`,
+  `lg px-[22px] py-2.5`.
+- `<Botao ocupado>` marca `aria-busy="true"` e desabilita o botão.
+- `src/components/Botao.test.ts`: pílula e 44 px, disabled sem opacidade, ocupado com `aria-busy` e `disabled`,
+  secundário sem fundo e com hover `highlight`. Doc 18 (Botão) atualizado.
+
+### Verificação
+- Na HEAD `8d17003`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.576 testes (linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
+- Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-campos`)
+- `src/app/globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo
+  `--surface-muted` e raio 8 px; `:disabled` com `--text-disabled` e `cursor: not-allowed`; `textarea` com
+  `min-height: 90px` e `resize: vertical`; abaixo de 767 px, `input` e `select` com `min-height: 44px` (o `textarea`
+  mantém os 90 px). Classe utilitária explícita (ex.: `bg-surface`) continua vencendo a base.
+- `ROTULO_CAMPO` em `src/components/Campo.tsx`: `text-sm font-medium text-gray-800` (14 px, peso 500); dica e erro
+  seguem em 12 px.
+- Doc 18 com a seção "Campos de formulário". Travas em `src/components/Campo.test.ts` e
+  `src/app/design-system.test.ts`.
+
+### Verificação
+- Na HEAD `c7d98f1` (revisão final): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e
+  4.578 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos preexistentes
+  e em arquivos fora do diff (ex.: `src/server/migracao/planilha-acoes.ts`).
+- Recorte da Task 6: `Campo.test.ts`, `campos.test.ts`, `design-system.test.ts` e `contraste.test.ts`, 71 testes
+  passando.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
+- Demais componentes base e telas: blocos seguintes da Fase 0.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
+
+- Branch `claude/fase0-ds-b-camadas`, empilhada sobre `claude/fase0-ds-a-fundacao` (`9ead958..cb121aa`; Task 7 `9ead958..e0269c3`).
+- Tarefa: Task 7, Modal, ConfirmarAcao e Drawer como camadas elevadas (`bg-surface-raised`, `shadow-dialog`, `rounded-dialog`, bordas lógicas).
+- Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-navegacao`)
+- Sidebar: item `min-h-10 max-sm:min-h-11 rounded-item`, `hover:bg-highlight`; item ativo com seleção suave
+  (`bg-brand-bg text-brand-800 font-medium`); contador de não lidas `bg-brand-solid text-on-brand`.
+- Barra mobile: mesmos estados da sidebar; botões com `max-sm:min-h-11 max-sm:min-w-11`; os itens da gaveta (a mesma
+  `NavLinks`) chegam a 44 px abaixo de `sm`. `BarraMobile.test.ts` trava esses estados.
+- Sub-abas em pílula (`rounded-full`, `max-sm:min-h-11`), ativa `bg-brand-solid text-on-brand`.
+- Seção "Navegação" do `docs/18-design-system.md`. A estrutura de menus (`src/lib/nav.ts`) não muda.
+
+### Verificação
+- Na HEAD `2c181aa`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.577 testes; linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-avisos`)
+- `src/components/Aviso.tsx`: caixa única de aviso (`rounded-md p-3 text-sm` + tom). Tons `info`, `sucesso`, `atencao`
+  e `erro`; os três últimos com borda inicial de 3 px. Papel `alert` no erro e `status` nos demais (`papel="nenhum"`
+  quando a região anunciante é outra).
+- `FeedbackAcao`, `MensagemStatus` (prop `tom` nova), `ErroArea` (via `EstadoRota aviso="erro"`) e
+  `AvisoFusoNaoConfigurado` passam a usar o `Aviso`, sem mudar as props existentes.
+- Esqueleto pulsa (`animate-pulse`). O `@media (prefers-reduced-motion: reduce)` de `src/app/globals.css` desliga
+  animação, transição e rolagem suave (teste em `src/app/design-system.test.ts`).
+- `docs/18-design-system.md`: seção "Avisos e movimento reduzido".
+
+### Verificação
+- Revisão final (diff `9ead958..51e683d`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, sem filtro,
+  648 arquivos e 4.586 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos
+  preexistentes e fora dos arquivos da task.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os avisos nos dois temas e o esqueleto com movimento reduzido.
+- Demais tasks do DS-B (5–8 e 10) e DS-C seguem nos próprios PRs.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — primitivos (Fase 0, Task 10; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-primitivos`)
+- Primitivos novos em `src/components`: `Chip`, `ItemLista` (com `aria-current`), `Avatar` (iniciais da primeira e
+  da última palavra) e `Menu` (painel `shadow-popover`, item de perigo, alvo de 44 px abaixo de `sm`). Documentados no
+  doc 18 ("Primitivos — Chip, ItemLista, Avatar e Menu"); `brand.bg` mapeado no `tailwind.config.ts`.
+- `src/lib/popover.ts` (puro): `posicaoPopover` (lado com mais espaço, limitado à margem), `proximoIndiceMenu` e
+  `acaoTecladoMenu`. Com o foco fora dos itens (gatilho), a seta para baixo vai ao primeiro e a seta para cima ao último.
+- Menu dentro de diálogo: o teclado do menu é ouvido em `document` na fase de captura. O Escape fecha só o menu
+  (`stopPropagation`) e devolve o foco ao gatilho. Um Modal, Drawer ou ConfirmarAcao em volta (`useDialogo`) continua
+  aberto, e o Tab segue para o diálogo, que mantém o foco preso.
+- O painel é `position: fixed`. Scroll (captura, em qualquer lista) e resize fecham o menu, para ele não ficar solto
+  sobre outra linha.
+- Teste de interação sem DOM (`Menu.interacao.test.ts`): `useDialogo` ligado com `document` falso que entrega captura
+  antes da bolha. Cobre Escape com diálogo e menu abertos, ArrowUp a partir do gatilho, Tab, scroll e resize.
+- `src/app/botoes.test.ts`: exceções com motivo para Chip, ItemLista e Menu.
+
+### Verificação
+- Depois das correções da revisão final: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 653 arquivos e
+  4.606 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos (nenhum em arquivo do
+  bloco).
+- O novo teste de Escape falha se o ouvinte do menu voltar à fase de bolha. Isso foi conferido.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Falta conferir no navegador (UAT): o menu dentro do drawer, a posição perto das bordas e os dois temas.
+- O focar após o posicionamento (`visibility` do painel) é ligação de DOM sem teste automatizado, porque não há jsdom.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Verificação do integrador: bloco DS-B (2026-10-15)
+- Branch: `claude/fase0-ds-b-primitivos` (empilhada sobre `claude/fase0-ds-a-fundacao`). Tarefa 10: Chip, ItemLista, Avatar e Menu.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 653 arquivos e 4.606 testes (linha de base da main: 646 e 4.560).
+- `npm run lint`: saída 0.
+- Sem schema nem migração; testes de integração não alterados.
+
+## Design system, bloco DS-C: conferência visual e ajustes finais (Fase 0, Task 11; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-c-conferencia`)
+- Junta DS-A e os seis DS-B (botão, campos, camadas, navegação, avisos, primitivos) com merge sem squash. Conflitos
+  só de documentação (`quadro-entregas.md`, `docs/18-design-system.md`, mantidas todas as seções) e da contagem
+  de exceções em `src/app/botoes.test.ts` (Chip 1, Menu 1, Sidebar 1, combinando navegação e primitivos).
+- 70 capturas (claro e escuro, 1440 e 390 px) de login, home, alunos, matrícula nova, financeiro, secretaria,
+  acadêmico, diário, configuração (turmas e WhatsApp), inbox, modal, drawer, menu do celular e formulário com erro.
+  Achados e correções em `docs/planejamento/ds-capturas.md`: 19 corrigidos, 4 pendências fora do recorte.
+- Correções principais: sombra do drawer fechado vazando na borda; estouro horizontal no celular (sr-only da
+  `ColunaOrdenavel`, selects do inbox); abas do financeiro, chips da fila e dias da turma em pílula; detalhe da
+  cobrança e diálogo de turma como camada elevada (`bg-surface-raised`, `shadow-dialog`, véu 60%); anel de foco
+  duplo (`focus:ring-*`) removido, com trava em `paleta.test.ts`; links da secretaria separados.
+
+### Verificação
+- Na HEAD `9718acf`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 654 arquivos e 4.647 testes
+  (DS-A + 6 DS-B mergeados, antes das correções: 654 e 4.636); `npm run lint` saída 0, 0 erros e 44 avisos
+  preexistentes.
+- Servidor de produção (`npm run build` + `next start`) contra `erp_genius_test_tester`; recaptura sem estouro
+  horizontal em 390 px.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- "Exportar planilha" isolado acima do título em Alunos; links recuados na ficha do aluno; ✕ cru no detalhe da
+  cobrança; `Menu` ainda sem tela que o use.
+- Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.

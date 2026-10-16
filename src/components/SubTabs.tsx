@@ -27,10 +27,10 @@ export function SubTabs({
             href={t.href}
             aria-current={ativo ? "page" : undefined}
             className={
-              "rounded-md px-3 py-1.5 text-sm transition-colors " +
+              "rounded-full px-3 py-1.5 text-sm transition-colors max-sm:min-h-11 max-sm:inline-flex max-sm:items-center " +
               (ativo
-                ? "bg-brand-solid font-medium text-white"
-                : "text-gray-600 hover:bg-gray-100")
+                ? "bg-brand-solid font-medium text-on-brand"
+                : "text-gray-600 hover:bg-highlight")
             }
           >
             {t.label}
