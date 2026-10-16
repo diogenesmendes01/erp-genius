@@ -1,4 +1,8 @@
 import {
+  CorTag,
+  TipoCampoPersonalizado,
+  AlvoCampoPersonalizado,
+  TelaFiltroSalvo,
   EtapaLead,
   OrigemCanal,
   PapelParticipante,
@@ -657,4 +661,36 @@ export const UNIDADE_PERMUTA_SERVICO_LABEL: Readonly<Record<UnidadePermutaServic
   HORA: "Hora",
   AULA: "Aula",
   UNIDADE: "Unidade",
+});
+
+// Fase 2 CRM (2.M3): tags, campos personalizados e filtros salvos.
+export const COR_TAG_LABEL: Readonly<Record<CorTag, string>> = Object.freeze({
+  NEUTRA: "Neutra",
+  MARCA: "Marca",
+  INFO: "Azul",
+  SUCESSO: "Verde",
+  ALERTA: "Âmbar",
+  PERIGO: "Vermelha",
+  IA: "Índigo",
+});
+
+export const TIPO_CAMPO_PERSONALIZADO_LABEL: Readonly<Record<TipoCampoPersonalizado, string>> = Object.freeze({
+  TEXTO: "Texto",
+  NUMERO: "Número",
+  DATA: "Data",
+  SELECAO: "Seleção",
+  BOOLEANO: "Sim ou não",
+});
+
+export const ALVO_CAMPO_PERSONALIZADO_LABEL: Readonly<Record<AlvoCampoPersonalizado, string>> = Object.freeze({
+  PESSOA: "Pessoa",
+  EMPRESA: "Empresa",
+});
+
+export const TELA_FILTRO_SALVO_LABEL: Readonly<Record<TelaFiltroSalvo, string>> = Object.freeze({
+  FUNIL: "Funil",
+  CONTATOS: "Contatos",
+  CARTEIRA: "Carteira",
+  TAREFAS: "Tarefas",
+  COMISSOES: "Comissões",
 });
