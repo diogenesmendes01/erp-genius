@@ -1820,3 +1820,23 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Tarefa: Task 7, Modal, ConfirmarAcao e Drawer como camadas elevadas (`bg-surface-raised`, `shadow-dialog`, `rounded-dialog`, bordas lógicas).
 - Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
 - Sem schema nem migração; `*.int.test.ts` não alterados.
+
+## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-navegacao`)
+- Sidebar: item `min-h-10 max-sm:min-h-11 rounded-item`, `hover:bg-highlight`; item ativo com seleção suave
+  (`bg-brand-bg text-brand-800 font-medium`); contador de não lidas `bg-brand-solid text-on-brand`.
+- Barra mobile: mesmos estados da sidebar; botões com `max-sm:min-h-11 max-sm:min-w-11`; os itens da gaveta (a mesma
+  `NavLinks`) chegam a 44 px abaixo de `sm`. `BarraMobile.test.ts` trava esses estados.
+- Sub-abas em pílula (`rounded-full`, `max-sm:min-h-11`), ativa `bg-brand-solid text-on-brand`.
+- Seção "Navegação" do `docs/18-design-system.md`. A estrutura de menus (`src/lib/nav.ts`) não muda.
+
+### Verificação
+- Na HEAD `2c181aa`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.577 testes; linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
