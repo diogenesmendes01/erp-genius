@@ -969,9 +969,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrar → btnSec",
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
-    "<button> → → btnSec",
-    "<button> Notas internas · → btnSec",
-    "<button> Salvar nota → primario/sm",
   ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",
@@ -1005,11 +1002,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "src/components/ConfirmarAcao.tsx": [
     "<Botao> Voltar → secundario/md",
     "<Botao> Confirmando… · Confirmar → perigo/md",
-  ],
-  "src/components/CopilotoSugestoes.tsx": [
-    "<button> Corrigir → secundario/sm",
-    "<button> Descartar → secundario/sm",
-    "<button> Cancelar → secundario/sm",
   ],
   "src/components/EstadoRota.tsx": [
     "const classe → primario/lg",

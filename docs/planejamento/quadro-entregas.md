@@ -62,12 +62,44 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
   - `vitest run` (suíte unitária completa, sem filtro): saída 0; 4524 testes, 0 falhas. A queda em relação aos 4561 do Bloco B vem dos testes das telas removidas.
   - `npm run lint`: 0 erros, 44 avisos (a mesma contagem do Bloco B).
 - Verificação do PR (16/10/2026, HEAD `bad3803`): `tsc --noEmit` saída 0; `npm test` saída 0 (636 arquivos, 4524 testes); `npm run lint` saída 0. `vitest related --run -c vitest.integration.config.ts` sobre os 27 .ts/.tsx existentes do diff `4472e76...HEAD`: saída 0, "No test files found" (nenhum `*.int.test.ts` depende dos arquivos tocados). Sem falhas novas em relação à linha de base.
+- Reverificação antes do PR (16/10/2026, HEAD `61d19cd`): `tsc --noEmit` saída 0; `npm test` saída 0 (635 arquivos, 4519 testes); `npm run lint` saída 0 (0 erros, 44 avisos); `vitest related --run -c vitest.integration.config.ts` sobre o diff contra `origin/claude/fase1-c-telas`: saída 1, 7 falhas em 165 testes. As mesmas 7 falham em `origin/claude/fase1-c-telas` (rodado em `whatsapp/inbox.int.test.ts` e `academico/visibilidade.int.test.ts`): falhas da linha de base, nenhuma nova.
 - A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
 - **Pendências registradas (Fase 2/4):**
   - Resolvido no `684af0b3` (C2 da R1 da #191): saíram os `revalidatePath` de `/pipeline`, `/carteiras` e `/comissoes` (comercial, matrícula, IA e coberturas) e as consultas órfãs de `src/server/comercial/consultas.ts` (`carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com suas interfaces).
   - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:36,46` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
   - Ainda pendentes, já listados no plano: `salvarConfigComercial` e `salvarReguaComercial` (`src/server/comercial/acoes.ts`) e `carregarSaudacoesSimuladas` (`src/server/comercial/consultas.ts`), que seguem usados por testes de integração. Remover na Fase 2/4.
   - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
+
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
+
+## Fase 1D — aceite do bloco (PR 4, 16/10/2026)
+
+- Branch `claude/fase1-d-inbox-ia`; tarefas 11 a 13 do plano (Inbox, copiloto e `src/server/ia`), commits `1253134` (cockpit do lead da Inbox), `4cc8115` (copiloto da Inbox e da ficha do lead) e `b192710` (`src/server/ia` e importadores) sobre `630841c`, mais o commit de correção da revisão final. Perfil `dev-email` (banco `erp_genius_test_dev_email`), a mesma exceção ao `tester` registrada na linha de base.
+- `git diff --stat main -- prisma/ package.json package-lock.json`: vazio (e também vazio contra `630841c`).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test` (`vitest run --reporter=json`, suíte unitária completa, sem filtro): saída 0; 635 arquivos, `numTotalTests` 4519, `numFailedTests` 0, `success` true. `comm -13 tmp/lb-unit-falhas.txt tmp/d-unit-falhas.txt`: vazio. A queda em relação aos 4524 do Bloco C vem dos testes do cockpit, do copiloto e de `src/server/ia` removidos.
+- `npm run lint`: saída 0; 0 erros, 44 avisos (a mesma contagem dos Blocos B e C).
+- Grep de aceite do Bloco D (e da fase): `grep -rnE "server/ia|cron-comercial|cron-gestao|CopilotoSugestoes|CockpitLead|HomeVendedor|KanbanBoard|CoberturasPainel|ComercialPainel" src --include=*.ts --include=*.tsx | grep -v casca-crm-removida`: nenhuma linha (saída 1 do grep). As duas linhas que restavam eram comentários em `src/app/campos-texto.test.ts` e `src/app/enums-rotulos.test.ts`, reescritos sem os nomes no commit de correção.
+- `npm run test:int` **somente em recorte** (não é a suíte completa):
+  - Recorte do plano (Task 13, Step 4): `whatsapp/acesso-atendimento`, `whatsapp/inbox`, `whatsapp/linha-comercial` e `src/server/comercial`: saída 1; 7 arquivos, 89 testes, 88 passaram, 1 falha. A falha é `src/server/whatsapp/inbox.int.test.ts › cockpit do vendedor na thread (funil sem sair da conversa) lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)`, que está na LB_FALHAS (já registrada pelo Bloco B). `comm -13 tmp/lb-int-falhas.txt tmp/d-int-recorte-falhas.txt`: vazio.
+  - `vitest related --run -c vitest.integration.config.ts` sobre os 15 .ts/.tsx existentes do diff `630841c..HEAD`: saída 1; 17 arquivos, 15 passaram, 2 falharam; 165 testes, 158 passaram, 7 falharam. As 7 falhas (a de `whatsapp/inbox.int.test.ts` acima e 6 em `academico/visibilidade.int.test.ts`) estão todas na LB_FALHAS. `comm -13 tmp/lb-int-falhas.txt tmp/d-int-related-falhas.txt`: vazio. Nenhuma falha nova.
+- A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h, proibida nesta faixa). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com `comm -13 tmp/lb-int-falhas.txt <falhas>` e registrar aqui código de saída e totais.
+- Evidência local não versionada: `tmp/d-tsc.txt`, `tmp/d-unit.json`, `tmp/d-unit-falhas.txt` (vazia), `tmp/d-lint.txt`, `tmp/d-int-recorte.json`, `tmp/d-int-recorte-falhas.txt` (1 linha), `tmp/d-int-related.json` e `tmp/d-int-related-falhas.txt` (7 linhas).
+- **Pendências deixadas para fases seguintes** (tabela do plano):
+
+| Pendência | Onde | Fase |
+|---|---|---|
+| `CoberturaCarteira` sem UI: `concederCobertura`/`revogarCobertura` sem tela; o escopo continua lendo as coberturas gravadas | `src/server/acesso/coberturas.ts` | 2 (Carteira) |
+| VENDEDOR sem "minhas comissões" (`/financeiro` só para FINANCEIRO e GC) | `src/app/(app)/financeiro/papeis.ts:6` | 2 (Comissões) |
+| Inbox sem nota interna (`registrarNotaInterna` sem tela na thread; a ficha do lead ainda tem) e sem etapa/temperatura do lead | `InboxCliente.tsx` | 3 |
+| `ThreadConversa.lead` ainda calculado e não lido pela tela | `consultas-inbox.ts` | 3 |
+| Código órfão sem chamador: `fila.enfileirarIntencaoComercial`, `elegibilidade.reagendamentoPendente`, `comercial/regua-comercial.ts`, `comercial/regua-fabrica.ts` (ainda usada por `prisma/seed-whatsapp.ts:4`), ramos COMERCIAL/GESTAO/reativa do `despachante.ts`, `salvarConfigComercial`, `salvarReguaComercial`, `carregarSaudacoesSimuladas`, `checkinExperimental`, `EsqueletoColunas` | `src/server/**` | 2/4 |
+| ~~`revalidatePath("/pipeline")` e `("/comissoes")` inofensivos~~: resolvido na main pelo `684af0b3` (C2 da R1 da #191), trazido para esta branch no merge da main | `matricula/acoes.ts`, `comercial/acoes.ts` | — |
+| Scripts fora do `tsc`/vitest quebrados: `scripts/auditoria/cenarios.test.mjs:30` (cron-comercial) e `scripts/validacao/http-acesso.mjs:47` (`/carteiras`; entrada já retirada no Bloco C) | `scripts/` | 2 |
+| `@dnd-kit/*` sem uso (remover só com o integrador) e `ANTHROPIC_API_KEY` nos composes | `package.json`, `docker-compose.*.yml` | 5 |
+| Campos de `ConfigComercial` órfãos (`autoLeadAtivo`, `saudacao*`, `copiloto*`, `gestao*`), `SugestaoIA`, `PoliticaComercial`/`DegrauComercial`: schema intocado | `prisma/schema.prisma` | 2 (migration reservada) |
+| Docs que descrevem a casca (08, 27, 32, SPEC-ERP-005, 09) | `docs/` | 2 |
+| Itens 3-4 da E0 do doc 02: decisão React 19 (Q6) e reserva dos IDs de migration pelo integrador | dono e integrador | antes das Fases 2 e 3 |
 
 **Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
 

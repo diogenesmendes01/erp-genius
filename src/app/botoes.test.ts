@@ -43,9 +43,9 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
   // Inbox (chat): item da lista de conversas, contador de não lidas, barra "Conversas" do celular,
-  // pílula de link, 2 botões só de ícone (anexar, gravar), fichas de temperatura, lista de nomes,
+  // pílula de link, 2 botões só de ícone (anexar, gravar), lista de nomes,
   // abas do filtro de canal (Todas / Linha comercial / Institucional — SPEC-ERP-005).
-  "src/app/(app)/inbox/InboxCliente.tsx": 9,
+  "src/app/(app)/inbox/InboxCliente.tsx": 8,
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
@@ -68,14 +68,10 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": ["key d"], // chip de dia da semana
   "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": ["Fechar"], // ícone de fechar
   "src/app/(app)/financeiro/FilaCobranca.tsx": ["(sem nome)", "✕"], // linha da fila, ✕ do detalhe
-  // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, fichas de temperatura, item de nome.
-  "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", 't === temperatura ? "Temperatura atual" : `Marcar como ${TEM', "key i.id"],
+  // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, item de nome.
+  "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
-  // Exceção de PALETA, não de papel: são ações, mas da IA — docs/18 reserva --ai-* (e --ai-solid para
-  // aplicar sugestão) como o único sinal de "gerado por IA"; nenhuma variante do Botao tem essa cor.
-  // Base e tamanho vêm do design system (BASE_BOTAO + TAMANHOS_BOTAO.sm); só a cor é própria.
-  "src/components/CopilotoSugestoes.tsx": ["gerar · Analisando… · Gerar sugestões", "Aceitar", "Aplicar corrigido"],
   "src/components/Chip.tsx": ["(sem nome)"], // primitivo: ficha de filtro (rótulo vem dos children)
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
   "src/components/ItemLista.tsx": ["(sem nome)"], // primitivo: linha de lista (título vem da prop)
@@ -459,11 +455,6 @@ const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
     arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
     rotulo: "Remover opt-out",
     motivo: "o efeito é registrar nova autorização de contato (opt-in com evidência): reabre o canal, não apaga nem recusa nada",
-  },
-  {
-    arquivo: "src/components/CopilotoSugestoes.tsx",
-    rotulo: "Descartar",
-    motivo: "descartar sugestão da IA é de baixo risco (a sugestão é regenerável); vermelho sólido em cada cartão chamaria mais atenção que aceitar",
   },
 ];
 
@@ -1174,7 +1165,7 @@ describe("botões nas áreas migradas", () => {
 
   it("src/components está sob a trava (menos a fonte das classes, Botao.tsx)", () => {
     const componentes = arquivos.filter(({ arquivo }) => arquivo.startsWith(`${COMPONENTES}/`)).map(({ arquivo }) => arquivo);
-    expect(componentes).toEqual(expect.arrayContaining(["src/components/CopilotoSugestoes.tsx", "src/components/PagamentoModal.tsx", "src/components/EstadoRota.tsx", "src/components/ExportarPlanilha.tsx"]));
+    expect(componentes).toEqual(expect.arrayContaining(["src/components/Drawer.tsx", "src/components/PagamentoModal.tsx", "src/components/EstadoRota.tsx", "src/components/ExportarPlanilha.tsx"]));
     expect(componentes).not.toContain(FONTE_DO_BOTAO);
   });
 
@@ -1627,7 +1618,6 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 // usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
-  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "→", vezes: 1, motivo: "link para o cadastro vinculado: o rótulo é o nome do aluno/lead (navegação, não ação)" },
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
   { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo" }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
 ];
@@ -1692,47 +1682,6 @@ describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", 
     expect(achados).toEqual([]);
     expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Excluir país", alvo: 1, variante: "fantasma" }, { label: "Pausar", variante: "fantasma" }];')).toEqual(["Excluir país → fantasma"]);
     expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar", variante: "perigo" }, { rotulo: "Reativar", variante: "fantasma" }];')).toEqual([]);
-  });
-});
-
-describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
-  // Os botões isentos por nome usam a paleta de IA (docs/18), mas base e tamanho vêm do design system:
-  // a constante btnIa é exatamente BASE_BOTAO + TAMANHOS_BOTAO.sm, os isentos usam btnIa, e só somam
-  // cor/borda da paleta ai-* (texto branco no sólido); o conteúdo não traz cor própria (follow-up #140, B5).
-  const fonte = readFileSync("src/components/CopilotoSugestoes.tsx", "utf8");
-  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const classesDosIsentos: { nome: string; expr: string; estilo: boolean; conteudo: string[] }[] = [];
-  const visita = (n: ts.Node) => {
-    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
-      const nome = nomeDoElemento(n, sf) ?? "";
-      if ((CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? []).includes(nome)) {
-        const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
-        const estilo = n.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "style") || n.attributes.properties.some(ts.isJsxSpreadAttribute);
-        const conteudo = ts.isJsxOpeningElement(n) ? coresNosDescendentes(n.parent) : [];
-        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "", estilo, conteudo });
-      }
-    }
-    ts.forEachChild(n, visita);
-  };
-  visita(sf);
-
-  it("btnIa é BASE_BOTAO + TAMANHOS_BOTAO.sm, sem nada a mais", () => {
-    expect(fonte).toMatch(/const btnIa = `\$\{BASE_BOTAO\} \$\{TAMANHOS_BOTAO\.sm\}`;/);
-  });
-
-  it("cada botão isento usa btnIa e só soma classes da paleta ai-* (e texto branco)", () => {
-    expect(classesDosIsentos.map((c) => c.nome).sort()).toEqual([...(CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? [])].sort());
-    for (const { nome, expr, estilo } of classesDosIsentos) {
-      // Sem style inline nem spread: a cor só pode vir das classes ai-* conferidas abaixo (R2 da #135, B5).
-      expect(estilo, `${nome}: style/spread`).toBe(false);
-      expect(expr, nome).toMatch(/^\{btnIa \+ "[^"]*"\}$/);
-      const extras = expr.match(/"([^"]*)"/)![1].trim().split(/\s+/);
-      for (const c of extras) expect(/^(hover:)?(bg|text|border)-ai-[\w-]+$|^border$|^text-white$|^hover:brightness-95$/.test(c), `${nome}: ${c}`).toBe(true);
-    }
-  });
-
-  it("o conteúdo de cada isento não recolore o botão: só texto, ícone e classes neutras ou ai-* (follow-up #140, B5)", () => {
-    expect(classesDosIsentos.flatMap(({ nome, conteudo }) => conteudo.map((p) => `${nome}: ${p}`))).toEqual([]);
   });
 });
 
