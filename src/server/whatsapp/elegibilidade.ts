@@ -28,7 +28,7 @@ export async function motivoCadenciaInvalida(
     prisma.lead.findUnique({ where: { id: it.leadId } }),
     prisma.conversaWhatsApp.findUnique({ where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } }, include: { contato: true } }),
   ]);
-  if (!lead || conversa?.contato.leadId !== lead.id) return "vinculo_comercial_alterado";
+  if (!lead || conversa?.contato?.leadId !== lead.id) return "vinculo_comercial_alterado";
   const chave = it.politicaComercial.chave;
   if (chave === CHAVE_LEAD_NOVO) {
     if (lead.etapa !== "NOVO") return "etapa_comercial_alterada";

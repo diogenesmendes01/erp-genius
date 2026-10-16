@@ -1021,6 +1021,7 @@ enum StatusTurma {
 }
 
 model Turma {
+  gruposWhatsApp GrupoWhatsApp[]
   conferenciasRegraHistorica PropostaConferenciaRegraHistoricaTurma[]
   correspondenciasMigracao CorrespondenciaTurmaMigracao[]
   registrosAvaliacao RegistroAvaliacaoMatricula[]
@@ -2318,6 +2319,7 @@ model NumeroWhatsApp {
 
   setores             NumeroSetorWhatsApp[]
   conversas           ConversaWhatsApp[]
+  grupos              GrupoWhatsApp[]
   mensagens           MensagemWhatsApp[]
   intencoes           IntencaoMensagem[]
   politicas           PoliticaRegua[]
@@ -2365,13 +2367,33 @@ model ContatoWhatsApp {
   intencoes IntencaoMensagem[]
 }
 
+// Grupo do WhatsApp visto por um número (E3.5): conversa de grupo não tem contato individual
+// nem abre atendimento — só leitura e escopo (Divergência 3 do plano).
+model GrupoWhatsApp {
+  id       String         @id @default(cuid())
+  numeroId String
+  numero   NumeroWhatsApp @relation(fields: [numeroId], references: [id])
+  grupoJid String
+  nome     String
+  turmaId  String?
+  turma    Turma?         @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  criadoEm DateTime       @default(now())
+
+  conversas ConversaWhatsApp[]
+
+  @@unique([numeroId, grupoJid])
+}
+
 model ConversaWhatsApp {
   atendimentos AtendimentoWhatsApp[]
   id               String          @id @default(cuid())
   numeroId         String
   numero           NumeroWhatsApp  @relation(fields: [numeroId], references: [id])
-  contatoId        String
-  contato          ContatoWhatsApp @relation(fields: [contatoId], references: [id])
+  // XOR (CHECK "Conversa_contato_xor_grupo"): conversa individual tem contato; de grupo tem grupo.
+  contatoId        String?
+  contato          ContatoWhatsApp? @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  grupoId          String?
+  grupo            GrupoWhatsApp?  @relation(fields: [grupoId], references: [id], onDelete: Restrict)
   ultimaMensagemEm DateTime?
   ultimoInboundEm  DateTime? // alimenta a lei do despachante + silêncio pós-inbound (S4)
   // "Tratar" o inbound (S4/E3): promessa/pagamento pela inbox ou "retomar régua" marcam
@@ -2388,6 +2410,7 @@ model ConversaWhatsApp {
   mensagens MensagemWhatsApp[]
 
   @@unique([numeroId, contatoId]) // um contexto conversa por um número só (doc 26)
+  @@unique([numeroId, grupoId])
 }
 
 enum DirecaoMensagem {
@@ -2442,6 +2465,10 @@ model MensagemWhatsApp {
   autor             Usuario?          @relation("AutorMensagensWhatsApp", fields: [autorId], references: [id])
   templateId        String?
   template          TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+  // Remetente em conversa de GRUPO (E3.5); nulos em conversa individual.
+  participanteJid   String?
+  participanteE164  String?
+  participanteNome  String?
   criadoEm          DateTime          @default(now())
 
   intencao IntencaoMensagem?

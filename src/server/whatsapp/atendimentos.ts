@@ -5,6 +5,7 @@ import { escopoAtendimentos } from "./escopo";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { chaveDeReabertura } from "./status-atendimento";
 import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./linha-comercial";
+import { comContatoIndividual } from "./grupos";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -71,9 +72,11 @@ export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: 
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario, { enviar })] },
     include: { conversa: { include: { numero: true, contato: true } } },
   });
-  if (!a || (enviar && !await destinatarioAtualDoAtendimento(a))) return null;
-  return { ...a, transporteId: a.conversaId, numeroId: a.conversa.numeroId, contatoId: a.conversa.contatoId,
-    numero: a.conversa.numero, contato: a.conversa.contato };
+  if (!a) return null;
+  const i = comContatoIndividual(a);
+  if (enviar && !await destinatarioAtualDoAtendimento(i)) return null;
+  return { ...i, transporteId: i.conversaId, numeroId: i.conversa.numeroId, contatoId: i.conversa.contato.id,
+    numero: i.conversa.numero, contato: i.conversa.contato };
 }
 
 /**
@@ -91,12 +94,12 @@ export async function atendimentoDoInbound(tx: Prisma.TransactionClient, convers
     const aberto = abertos[0];
     // Atendimento financeiro legado continua consultável, mas não recebe inbound automático sem contrato explícito.
     if ((aberto.finalidade === "FINANCEIRO" && !aberto.matriculaId)
-      || !await destinatarioAtualDoAtendimento(aberto, tx)) return null;
+      || !await destinatarioAtualDoAtendimento(comContatoIndividual(aberto), tx)) return null;
     return aberto.id;
   }
   if (abertos.length > 1) return null;
   const c = await tx.conversaWhatsApp.findUnique({ where: { id: conversaId }, include: { numero: true, contato: { include: { lead: true } } } });
-  if (!c?.numero.ativo) return null;
+  if (!c?.numero.ativo || !c.contato || !c.contatoId) return null;
   // VENDAS sem atendimento aberto é linha comercial e já foi roteado acima.
   if (c.numero.finalidade === "COBRANCA" && c.contato.alunoId) {
     // A identidade não escolhe contrato: só roteia quando existe uma única matrícula possível.

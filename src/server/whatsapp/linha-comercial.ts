@@ -93,7 +93,7 @@ export async function atendimentoDaLinhaParaInbound(
     });
     return aberto?.id ?? null;
   }
-  const a = (await atendimentoComercialDaLinha(tx, conversaId, { leadId: c.contato.leadId }))
+  const a = (await atendimentoComercialDaLinha(tx, conversaId, { leadId: c.contato?.leadId ?? null }))
     ?? (await atendimentoComercialDaLinha(tx, conversaId));
   return a && !a.encerradoEm ? a.id : null;
 }

@@ -81,7 +81,7 @@ describe("pagador financeiro do contrato", () => {
     const a = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: r.dado!.id }, include: { conversa: true } });
     const antes = (await snapshotCobranca(c.cobranca.id))!;
     await c.pagador(c.matricula.id, 2, "EMPRESA", { nome: "Pagador novo", telefoneE164: "+50680002222", paisId: c.pais.id });
-    await expect(prisma.$transaction((tx) => enfileirarIntencaoCobranca(tx, entrada(c, a.conversa.contatoId, antes)))).rejects.toBeInstanceOf(ErroCobrancaAlterada);
+    await expect(prisma.$transaction((tx) => enfileirarIntencaoCobranca(tx, entrada(c, a.conversa.contatoId!, antes)))).rejects.toBeInstanceOf(ErroCobrancaAlterada);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
@@ -91,7 +91,7 @@ describe("pagador financeiro do contrato", () => {
     const r = await c.abrir(c.matricula.id); expect(r.ok).toBe(true); if (!r.ok) throw new Error(r.erro);
     const a = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: r.dado!.id }, include: { conversa: true } });
     const antes = (await snapshotCobranca(c.cobranca.id))!;
-    await prisma.$transaction((tx) => enfileirarIntencaoCobranca(tx, entrada(c, a.conversa.contatoId, antes)));
+    await prisma.$transaction((tx) => enfileirarIntencaoCobranca(tx, entrada(c, a.conversa.contatoId!, antes)));
     await c.pagador(c.matricula.id, 2, "EMPRESA", { nome: "Nova versão", telefoneE164: "+50680002222", paisId: c.pais.id });
     await despacharFila();
     expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ status: "CANCELADA", motivoFalha: "cobranca_alterada_revisar" });

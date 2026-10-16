@@ -21,6 +21,7 @@ import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
 import { aplicarResposta } from "./status-atendimento";
+import { comContatoIndividual } from "./grupos";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -612,7 +613,7 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
     finalidadeAtendimento = a.finalidade;
     // Aviso de agenda revalida sua identidade congelada (aluno ou responsável)
     // no helper próprio; a regra genérica prefere responsável quando existe um.
-    if (!it.avisoAlteracaoAgendaId && !await destinatarioAtualDoAtendimento(a)) return "destinatario_alterado";
+    if (!it.avisoAlteracaoAgendaId && !await destinatarioAtualDoAtendimento(comContatoIndividual(a))) return "destinatario_alterado";
   }
   if (it.cobrancaId) {
     const snapshot = await snapshotCobranca(it.cobrancaId);

@@ -38,6 +38,7 @@ import {
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import { nomeConhecidoDoContato } from "./nome-contato";
+import { contatoIndividual } from "./grupos";
 import {
   LoteCobrancaSchema,
   EnviarMidiaInboxSchema,
@@ -385,7 +386,7 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
       });
       if (atual.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (atual.leadId) throw new ErroRegra("Esta conversa já tem lead.");
-      const contato = atual.conversa.contato;
+      const contato = contatoIndividual(atual.conversa);
       let leadId = contato.leadId;
       let criado = false;
       if (!leadId) {

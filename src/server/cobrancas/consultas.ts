@@ -267,7 +267,7 @@ export async function listarFilaCobranca(): Promise<{
   for (const atendimento of atendimentos) {
     if (!atendimento.matriculaId || !atendimento.ultimoInboundEm) continue;
     const destino = destinoPorMatricula.get(atendimento.matriculaId);
-    if (!destino || !contatoCorrespondeDestinoFinanceiro(atendimento.conversa.contato, destino)) continue;
+    if (!destino || !atendimento.conversa.contato || !contatoCorrespondeDestinoFinanceiro(atendimento.conversa.contato, destino)) continue;
     const atual = inboundPorMatricula.get(atendimento.matriculaId);
     if (!atual || atendimento.ultimoInboundEm > atual) inboundPorMatricula.set(atendimento.matriculaId, atendimento.ultimoInboundEm);
   }
