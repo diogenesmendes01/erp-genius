@@ -14,7 +14,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 // 0=Dom … 6=Sáb. Exibição começando na segunda (uso comum no BR).
 const DIAS = [
@@ -185,7 +185,7 @@ export function TurmaFormulario({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-surface p-5">
+    <div className="rounded-dialog border border-gray-200 bg-surface-raised p-5">
       <h3 className="mb-4 text-sm font-medium">{turma ? "Editar turma" : "Nova turma"}</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
@@ -257,10 +257,10 @@ export function TurmaFormulario({
                 aria-pressed={ativo}
                 onClick={() => toggleDia(d.n)}
                 className={
-                  "rounded-md border px-3 py-1.5 text-sm " +
+                  "rounded-full border px-3 py-1.5 text-sm max-sm:min-h-11 " +
                   (ativo
                     ? "border-brand-solid bg-brand-solid text-on-brand"
-                    : "border-gray-300 text-gray-600 hover:bg-gray-50")
+                    : "border-border-soft text-gray-600 hover:bg-highlight")
                 }
               >
                 {d.label}

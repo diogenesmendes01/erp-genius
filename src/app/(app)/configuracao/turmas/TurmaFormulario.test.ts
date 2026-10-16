@@ -23,3 +23,14 @@ it("preserva o caminho de edição e devolve o erro para o diálogo", async () =
   expect(editar).toHaveBeenNthCalledWith(1, "turma-1", input);
   expect(criar).not.toHaveBeenCalled();
 });
+
+it("diálogo de turma é camada elevada do DS e os dias da semana são chips em pílula (DS-C)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const dir = "src/app/(app)/configuracao/turmas/";
+  const formulario = readFileSync(dir + "TurmaFormulario.tsx", "utf8");
+  const painel = readFileSync(dir + "TurmasPainel.tsx", "utf8");
+  expect(formulario).toContain('"rounded-dialog border border-gray-200 bg-surface-raised p-5"');
+  expect(formulario).toContain('"rounded-full border px-3 py-1.5 text-sm max-sm:min-h-11 "');
+  expect(painel).toContain("bg-black/60");
+  expect(painel).toContain('"my-8 w-full max-w-3xl rounded-dialog shadow-dialog"');
+});

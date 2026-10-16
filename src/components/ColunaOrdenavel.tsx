@@ -47,8 +47,10 @@ export function ColunaOrdenavel({
     // aria-sort só na coluna ordenada (WAI-ARIA 1.2: "only one header at a time"; exemplo do APG); nas
     // demais, o texto oculto do link já diz que a coluna ordena e em que direção.
     <th scope="col" aria-sort={atual ? ARIA_SORT[atual] : undefined} className={className}>
-      <Link href={href} onClick={aoClicar?.(href)} className="inline-flex items-center gap-1 hover:text-gray-700 hover:underline">
+      <Link href={href} onClick={aoClicar?.(href)} className="relative inline-flex items-center gap-1 hover:text-gray-700 hover:underline">
         {rotulo}
+        {/* `relative` no link ancora este sr-only (absoluto): sem ele, a tabela larga do celular
+            empurrava a página para 471 px fora do overflow-x-auto (DS-C). */}
         <span className="sr-only">{`: ${ACAO[proxima]}`}</span>
         <Seta aria-hidden="true" data-direcao={atual ?? "nenhuma"} className={"h-3.5 w-3.5 shrink-0 " + (atual ? "text-gray-700" : "text-gray-400")} />
       </Link>
