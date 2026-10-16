@@ -23,11 +23,13 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { PaginacaoFila } from "@/components/PaginacaoFila";
 import { useFiltrosUrl } from "@/lib/filtros-url";
 import {
   ROTA_FILA,
   camposDosFiltrosFila,
   hrefDosCamposFila,
+  hrefFilaNoCursor,
   hrefIndicador,
   hrefSemBusca,
   hrefSemIndicador,
@@ -89,28 +91,39 @@ function valorDevido(item: FilaCobrancaItem): number {
 }
 
 // Filtros na URL (E4): o servidor lê e valida (filtros-fila.ts) e entrega `itens` já filtrados e
-// ordenados. Trocar de filtro navega para a mesma página — o componente não é recriado, então a seleção
-// do lote e os avisos sobrevivem à troca, como quando o filtro era estado local (item selecionado que sai
-// da visão continua no lote).
+// ordenados — e, desde o item 9 (docs/43 §6), só o TRECHO exibido, com cursor nos dois sentidos. Trocar de
+// filtro ou de trecho navega para a mesma rota: o componente não é recriado, então os avisos sobrevivem.
+// O lote, não: ele só leva o que está NA TELA (marcado e visível no trecho atual). Uma cobrança marcada que
+// saiu da tela pelo filtro ou pela navegação não entra na revisão nem no envio — a paginação não pode mandar
+// mensagem para quem o operador não está vendo.
 export function FilaCobranca({
   itens,
   totalFila,
+  totalVisao = itens.length,
   filtros,
   opcoes,
   dashs,
   regua,
+  navegacao = { anterior: null, proxima: null },
+  inicioDaFila = null,
   podeOperar,
   preferenciaFusoExibicao = null,
 }: {
-  /** Cobranças da visão atual (filtradas e ordenadas no servidor). */
+  /** Cobranças do trecho exibido da visão atual (filtradas, ordenadas e recortadas no servidor). */
   itens: FilaCobrancaItem[];
   /** Cobranças da fila inteira, sem filtro. */
   totalFila: number;
+  /** Cobranças da visão filtrada, somando todos os trechos (padrão: as do trecho). */
+  totalVisao?: number;
   filtros: FiltrosFila;
   /** Opções dos selects, da fila inteira. */
   opcoes: { paises: string[]; turmas: string[] };
   dashs: DashsCobranca;
   regua: DegrauFila[];
+  /** Cursores do trecho (chave de ordem do primeiro e do último item), quando há para onde ir. */
+  navegacao?: { anterior: string | null; proxima: string | null };
+  /** Link do início da fila com o mesmo recorte, quando a leitura partiu de um cursor (null no início). */
+  inicioDaFila?: string | null;
   podeOperar: boolean;
   podeBloquear: boolean;
   preferenciaFusoExibicao?: string | null;
@@ -120,7 +133,7 @@ export function FilaCobranca({
   const [pagar, setPagar] = useState<FilaCobrancaItem | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
-  // Seleção do lote: o item inteiro, por id (o item que sai da visão pelo filtro continua no lote e na revisão).
+  // Seleção do lote, por id. A revisão e o envio levam só o que está na tela (loteNaTela, abaixo).
   const [selecao, setSelecao] = useState<Map<string, FilaCobrancaItem>>(new Map());
   // Lote cujo envio espera confirmação: a seleção congelada no clique (docs/42 L2018; docs/43 §7.5 item 1).
   const [confirmarLote, setConfirmarLote] = useState<FilaCobrancaItem[] | null>(null);
@@ -226,9 +239,11 @@ export function FilaCobranca({
     }
   }
 
+  // Marcar ou desmarcar também descarta o que ficou marcado fora da tela (outro trecho, outro filtro).
   function alternarSelecao(item: FilaCobrancaItem) {
+    const naTela = new Set(itens.map((i) => i.id));
     setSelecao((s) => {
-      const n = new Map(s);
+      const n = new Map([...s].filter(([id]) => naTela.has(id)));
       if (n.has(item.id)) n.delete(item.id);
       else n.set(item.id, item);
       return n;
@@ -241,7 +256,7 @@ export function FilaCobranca({
   function pedirEnvioLote() {
     setErro(null);
     setNota(null);
-    setConfirmarLote([...selecao.values()]);
+    setConfirmarLote(loteNaTela);
   }
 
   function loteConcluido(d: LoteResultado | undefined) {
@@ -264,6 +279,8 @@ export function FilaCobranca({
   }
 
   const elegivelLote = (i: FilaCobrancaItem) => i.estado === "acao_devida" && !!i.passo && !!i.destino;
+  // O lote é o que está marcado E na tela, com os dados do trecho atual (o degrau pode ter mudado desde a marcação).
+  const loteNaTela = itens.filter((i) => selecao.has(i.id) && elegivelLote(i));
 
   const DASHS: { chave: IndicadorFila; label: string; valor: string; cls: string }[] = [
     { chave: "aVencer", label: "A vencer", valor: String(dashs.aVencer), cls: "text-green-700" },
@@ -356,13 +373,13 @@ export function FilaCobranca({
           {lista.buscando ? "Buscando…" : "Buscar"}
         </button>
         {temBuscaFila(filtros) && <Link href={semBusca} onClick={lista.aoClicar(semBusca)} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
-        <span className="text-xs text-gray-400" aria-live="polite">{lista.buscando ? "Buscando…" : `${itens.length} de ${totalFila}`}</span>
+        <span className="text-xs text-gray-400" aria-live="polite">{lista.buscando ? "Buscando…" : `${totalVisao} de ${totalFila}`}</span>
       </form>
 
       {/* Barra de lote-com-aprovação (doc 26 §Camada 1): humano seleciona → aprova → a fila dispara */}
-      {podeOperar && selecao.size > 0 && (
+      {podeOperar && loteNaTela.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-brand-200 bg-brand-50 px-3 py-2">
-          <span className="text-sm text-gray-700">{selecao.size} selecionada(s) para envio em lote</span>
+          <span className="text-sm text-gray-700">{loteNaTela.length} selecionada(s) para envio em lote</span>
           <button className={btnPri} disabled={confirmarLote !== null} onClick={pedirEnvioLote}>
             Aprovar e enviar lote
           </button>
@@ -372,7 +389,17 @@ export function FilaCobranca({
 
       {/* Lista magra */}
       {itens.length === 0 ? (
-        <EstadoVazio bloco aria-busy={lista.buscando}>Nada nesta visão.</EstadoVazio>
+        inicioDaFila ? (
+          <EstadoVazio
+            bloco
+            aria-busy={lista.buscando}
+            acao={<Link href={inicioDaFila} onClick={lista.aoClicar(inicioDaFila)} className="text-brand-700 hover:underline">Ir para o início da fila</Link>}
+          >
+            Nenhuma cobrança a partir deste ponto da fila: as seguintes já foram resolvidas ou o link ficou antigo.
+          </EstadoVazio>
+        ) : (
+          <EstadoVazio bloco aria-busy={lista.buscando}>Nada nesta visão.</EstadoVazio>
+        )
       ) : (
         <div aria-busy={lista.buscando} className={"overflow-hidden rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
           {itens.map((item) => (
@@ -433,6 +460,14 @@ export function FilaCobranca({
           ))}
         </div>
       )}
+
+      {/* Trechos da fila por cursor (item 9): sem número de página — pagar ou cobrar um item não desloca o seguinte. */}
+      <PaginacaoFila
+        anterior={navegacao.anterior}
+        proxima={navegacao.proxima}
+        href={(cursor) => hrefFilaNoCursor(filtros, cursor)}
+        rotulo="Navegação da fila de cobrança"
+      />
 
       {podeOperar && <div className="mt-5"><AcessoAulasPainel preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
 
