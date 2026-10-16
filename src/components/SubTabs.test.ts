@@ -64,4 +64,12 @@ describe("SubTabs", () => {
     const comLabel = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Sub-navegação de canais" }));
     expect(comLabel).toContain('aria-label="Sub-navegação de canais"');
   });
+
+  it("sub-aba ativa é pílula sólida com text-on-brand", () => {
+    mocks.pathname.mockReturnValue("/configuracao/whatsapp");
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
+    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["rounded-full", "px-3", "py-1.5", "max-sm:min-h-11", "bg-brand-solid", "text-on-brand", "font-medium"]));
+    expect(classeDe("/configuracao")).toEqual(expect.arrayContaining(["rounded-full", "text-gray-600", "hover:bg-highlight"]));
+  });
 });

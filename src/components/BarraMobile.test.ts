@@ -34,6 +34,22 @@ describe("BarraMobile (shell abaixo de md)", () => {
     expect(cabecalho).not.toMatch(/tabler-icon[^"]*\bh-[45]\b/);
   });
 
+  it("estados da barra seguem os da sidebar e chegam a 44px de toque abaixo de sm", () => {
+    const html = render();
+    const cabecalho = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? "";
+    expect(cabecalho).toMatch(/<header[^>]*class="[^"]*\bbg-surface-muted\b/);
+    const controles = [...cabecalho.matchAll(/<(?:button|a)\b[^>]*>/g)].map((m) => m[0]);
+    expect(controles).toHaveLength(4);
+    for (const c of controles) {
+      expect(c).toMatch(/class="(?=[^"]*\brounded-item\b)(?=[^"]*\bhover:bg-highlight\b)(?=[^"]*\bmax-sm:min-h-11\b)(?=[^"]*\bmax-sm:min-w-11\b)[^"]*"/);
+    }
+    // Itens da gaveta (a mesma NavLinks da Sidebar): 44px abaixo de sm, 40px no desktop.
+    const gaveta = html.match(/<nav[^>]*aria-label="Menu de navegação"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const itens = [...gaveta.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
+    expect(itens.length).toBeGreaterThan(0);
+    for (const i of itens) expect(i).toMatch(/class="(?=[^"]*\bmin-h-10\b)(?=[^"]*\bmax-sm:min-h-11\b)(?=[^"]*\brounded-item\b)[^"]*"/);
+  });
+
   it("título da área = item ativo da navegação (prefixo mais longo)", () => {
     mocks.pathname.mockReturnValueOnce("/alunos/123/financeiro");
     expect(render()).toMatch(/<span[^>]*\btruncate\b[^>]*>Alunos<\/span>/);
