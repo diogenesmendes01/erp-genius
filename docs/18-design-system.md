@@ -24,6 +24,11 @@
 - Raios: `rounded-md` = 8px (campo, cartão pequeno) · `rounded-item` = 10px (item de lista) · `rounded-lg`/`rounded-xl` = 12px (painel) · `rounded-dialog` = 14px · `rounded-full` (botão, chip, avatar).
 - Bordas: 1px na cor `--border` (preto 10% no claro; branco 12% no escuro).
 
+## Campos de formulário
+- Rótulo (`ROTULO_CAMPO` em `src/components/Campo.tsx`): `text-sm font-medium text-gray-800` (14 px, peso 500). Dica e erro seguem em 12 px.
+- Base em `globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo `--surface-muted` e raio 8 px; `:disabled` usa `--text-disabled` e `cursor: not-allowed`; abaixo de 767 px, `min-height: 44px` (exceto `textarea`); `textarea` com `resize: vertical` e `min-height: 90px` quando tem mais de uma linha (o de `rows="1"`, como o compositor do Inbox, fica compacto). Os seletores de `input` e do `textarea` de várias linhas vão em `:where(...)`, com especificidade zero: o Tailwind 3 não emite cascade layers, e é isso que faz a classe utilitária explícita (`bg-surface`, `rounded-*`, `min-h-*`) vencer a base.
+- Trava: `src/components/Campo.test.ts` e `src/app/design-system.test.ts`.
+
 ## Ícones
 - **Tabler** (`@tabler/icons-react`), versão **outline** (componentes `Icon*`, não `Icon*Filled`).
 - Tamanho padrão `h-4 w-4` (16px) na UI densa; `h-5 w-5` em destaques.
@@ -136,6 +141,13 @@ estão no quadro de semânticos acima e no de marca e ações sólidas abaixo.
 ## Tokens — Sombras
 `--shadow-popover` (`0 5px 20px #0002` / `0 6px 24px #0006`) e `--shadow-dialog` (`0 15px 60px #0006`, igual nos
 dois temas) são as únicas sombras do sistema: menu/popover e modal/drawer. Ficam fora da conta de contraste.
+
+## Camadas
+
+Modal, confirmação e drawer são camadas elevadas: fundo `bg-surface-raised`, `shadow-dialog`, véu `bg-black/60`.
+- **Modal** (`Modal.tsx`, e `ConfirmarAcao` sobre ele): `max-h-[90dvh] w-full max-w-[calc(100vw-24px)] overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog`; largura `sm:w-[460px]` e, com a propriedade `larga`, `sm:w-[640px]`. Título `text-xl font-medium`; ações `mt-6 flex flex-wrap justify-end gap-3`.
+- **Drawer**: `bg-surface-raised shadow-dialog` com borda `border-s border-gray-200` (ou `border-e` pela esquerda).
+- Escape, contenção de Tab, devolução do foco e `inert` seguem como antes (`useDialogo`).
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
