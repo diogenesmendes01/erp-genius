@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   IconHome, IconMail,
-  IconLayoutKanban,
   IconUsers,
   IconUserCheck,
   IconWallet,
@@ -28,7 +27,6 @@ const ICONS: Record<string, Icone> = {
   Home: IconHome,
   // Chave "Mail" (antes `IconMail` solto virava a chave "IconMail" e "Envios do portal" caía no ícone de Home).
   Mail: IconMail,
-  KanbanSquare: IconLayoutKanban,
   Users: IconUsers,
   UserCheck: IconUserCheck,
   Wallet: IconWallet,

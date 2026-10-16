@@ -116,7 +116,7 @@ describe("trilha de navegação", () => {
   });
 
   it("seções da configuração do WhatsApp (E8): configuração → WhatsApp → seção", () => {
-    expect(resumo("/configuracao/whatsapp/reguas")).toEqual(["Configuração → /configuracao", "WhatsApp → /configuracao/whatsapp", "Régua comercial"]);
+    expect(resumo("/configuracao/whatsapp/politica")).toEqual(["Configuração → /configuracao", "WhatsApp → /configuracao/whatsapp", "Política da régua"]);
   });
 
   it("query string e barra final são ignoradas; área sozinha tem um item só", () => {

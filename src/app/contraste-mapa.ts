@@ -46,13 +46,7 @@ export const TEXTO_SOBRE_SOLIDO = {
  * Usos aceitos de bg-brand-500|600, todos sem texto: arquivo + classe exata (a alternativa lida pela
  * trava) + motivo. Um uso novo tem de entrar aqui com motivo, ou usar bg-brand-solid.
  */
-export const FUNDOS_DA_MARCA_SEM_TEXTO: readonly { arquivo: string; trecho: string; motivo: string }[] = [
-  {
-    arquivo: "src/app/(app)/home/HomeVendedor.tsx",
-    trecho: "h-full bg-brand-600",
-    motivo: "barra de progresso da meta do mês: preenchimento sem texto, não é fundo de leitura",
-  },
-];
+export const FUNDOS_DA_MARCA_SEM_TEXTO: readonly { arquivo: string; trecho: string; motivo: string }[] = [];
 
 /** Exceções às ofensas da trava: arquivo + trecho exato + motivo. Cada uma casa com exatamente uma ofensa. */
 export const EXCECOES_CONTRASTE: readonly { arquivo: string; trecho: string; motivo: string }[] = [];

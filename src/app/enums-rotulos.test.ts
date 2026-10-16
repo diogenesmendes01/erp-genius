@@ -1001,9 +1001,7 @@ export const codigosEmTexto = (fonte: string, codigos: ReadonlySet<string> | nul
   codigosEmTextoDoProjeto(projetoDeUmArquivo(fonte, arquivo), arquivo, codigos);
 
 /** Código que a tela mostra de propósito (não é enum a rotular). Cada um casa com exatamente um achado. */
-const CODIGOS_EM_TEXTO: { arquivo: string; codigo: string; motivo: string }[] = [
-  { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", codigo: "ANTHROPIC_API_KEY", motivo: "nome da variável de ambiente que a Administração precisa configurar" },
-];
+const CODIGOS_EM_TEXTO: { arquivo: string; codigo: string; motivo: string }[] = [];
 
 /** Campos com nome de enum que já chegam como texto (o servidor rotulou) ou não são enum. Cada um casa com
  * exatamente `vezes` achados (1, se omitido). */

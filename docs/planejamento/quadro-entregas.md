@@ -53,6 +53,24 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (16/10/2026, sem os removidos): saída 1; 17 arquivos, 15 passaram, 2 falharam; 7 testes falharam, 151 passaram. As 7 falhas (1 em `whatsapp/inbox.int.test.ts` e 6 em `academico/visibilidade.int.test.ts`) estão todas na LB_FALHAS; nenhuma falha nova. `tsc` 0, `npm test` 646 arquivos/4561 testes saída 0, `npm run lint` saída 0 (0 erros, 44 avisos).
 - Evidência local não versionada: `tmp/b-tsc.txt`, `tmp/b-unit.json`, `tmp/b-unit-falhas.txt` (vazia), `tmp/b-int-recorte.json`, `tmp/b-int-recorte2.json` e `tmp/b-int-recorte-falhas.txt` (1 linha).
 
+## Fase 1C — aceite do bloco (PR 3, 16/10/2026)
+
+- Branch `claude/fase1-c-telas`; tarefas 6 a 10 do plano (telas da casca), commits `b2a63e3` (/pipeline), `e81f5e5` (/carteiras), `358d17c` (/comissoes), `1f6c1b2` (configuração e régua comercial do WhatsApp) e `25365ac` (HomeVendedor) sobre `4472e76`, mais o commit de correção da revisão final. Perfil `dev-email`, a mesma exceção ao `tester` registrada na linha de base.
+- `git diff 4472e76..HEAD -- prisma package.json package-lock.json`: vazio.
+- Conferido na revisão final no HEAD `25365ac`:
+  - `node_modules/.bin/tsc --noEmit`: saída 0.
+  - `vitest run` (suíte unitária completa, sem filtro): saída 0; 4524 testes, 0 falhas. A queda em relação aos 4561 do Bloco B vem dos testes das telas removidas.
+  - `npm run lint`: 0 erros, 44 avisos (a mesma contagem do Bloco B).
+- Verificação do PR (16/10/2026, HEAD `bad3803`): `tsc --noEmit` saída 0; `npm test` saída 0 (636 arquivos, 4524 testes); `npm run lint` saída 0. `vitest related --run -c vitest.integration.config.ts` sobre os 27 .ts/.tsx existentes do diff `4472e76...HEAD`: saída 0, "No test files found" (nenhum `*.int.test.ts` depende dos arquivos tocados). Sem falhas novas em relação à linha de base.
+- A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
+- **Pendências registradas (Fase 2/4):**
+  - Resolvido no `684af0b3` (C2 da R1 da #191): saíram os `revalidatePath` de `/pipeline`, `/carteiras` e `/comissoes` (comercial, matrícula, IA e coberturas) e as consultas órfãs de `src/server/comercial/consultas.ts` (`carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com suas interfaces).
+  - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:36,46` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
+  - Ainda pendentes, já listados no plano: `salvarConfigComercial` e `salvarReguaComercial` (`src/server/comercial/acoes.ts`) e `carregarSaudacoesSimuladas` (`src/server/comercial/consultas.ts`), que seguem usados por testes de integração. Remover na Fase 2/4.
+  - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
+
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
+
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
 - Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).

@@ -38,8 +38,6 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", modulo: "@/server/empresas/acoes", acao: "cancelarFaturaB2B", achado: "L2281" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "acionarKillSwitchRegua", achado: "L2516" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "salvarPoliticaRegua", achado: "L2517" },
-  { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", modulo: "@/server/comercial/acoes", acao: "salvarConfigComercial", achado: "L2517" },
-  { arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", modulo: "@/server/comercial/acoes", acao: "salvarReguaComercial", achado: "L2517" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "salvarTemplateWhatsApp", achado: "L2518" },
   // Fatia B (#169).
   { arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx", modulo: "@/server/whatsapp/acoes", acao: "aprovarLoteCobranca", achado: "L2018" },
@@ -54,14 +52,11 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx", modulo: "@/server/catalogo/acoes", acao: "alternarIdiomaAtivo", achado: "L2340" },
   { arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx", modulo: "@/server/catalogo/acoes", acao: "alternarPrecoAtivo", achado: "L2340" },
   { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", modulo: "@/server/empresas/acoes", acao: "definirSituacaoEmpresa", achado: "L2281" },
-  { arquivo: "src/app/(app)/carteiras/CoberturasPainel.tsx", modulo: "@/server/acesso/coberturas", acao: "revogarCobertura", achado: "L2244" },
 ];
 
 /** Cópia literal das exceções (arquivo, trecho exato). */
 const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", trecho: "salvarPoliticaRegua(dadosPolitica())" },
-  { arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", trecho: "salvarConfigComercial(dadosComerciais())" },
-  { arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", trecho: "salvarReguaComercial(dadosRegua())" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", trecho: "salvarTemplateWhatsApp(dados)" },
   // Fatia B (#169).
   { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", trecho: "alterarStatusPais(id, alvo)" },

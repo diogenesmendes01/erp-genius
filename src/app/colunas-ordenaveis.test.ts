@@ -6,8 +6,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { StatusAluno, StatusComissao } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
-// E1 / §5.6 A9 (docs/42-auditoria-frontend-ux.md): "0 colunas ordenáveis"; meta "≥ 3 (/comissoes,
-// /alunos, /empresas)". Trava: (1) as tabelas dessas telas têm cabeçalhos ordenáveis, renderizados com
+// E1 / §5.6 A9 (docs/42-auditoria-frontend-ux.md): "0 colunas ordenáveis"; meta "≥ 3 (/alunos, /empresas,
+// /financeiro/comissoes)". Trava: (1) as tabelas dessas telas têm cabeçalhos ordenáveis, renderizados com
 // aria-sort; (2) aria-sort só nasce de <ColunaOrdenavel> — um <th aria-sort> à mão costuma marcar a
 // ordem sem ordenar no servidor (ou ordenar só a página exibida), o que mente para quem usa leitor de tela.
 
@@ -50,7 +50,6 @@ const TELAS = [
   "src/app/(app)/alunos/AlunosLista.tsx",
   "src/app/(app)/empresas/EmpresasCliente.tsx",
   "src/app/(app)/financeiro/FinanceiroPainel.tsx",
-  "src/app/(app)/comissoes/page.tsx",
 ];
 
 // ---------------------------------------------------------------------------------------------------
@@ -1110,7 +1109,7 @@ describe("colunas ordenáveis (E1)", () => {
     expect(exportados).toEqual(["ColunaOrdenavel"]);
   });
 
-  it("as tabelas de /alunos, /empresas e /comissoes (as duas telas) usam <ColunaOrdenavel>", () => {
+  it("as tabelas de /alunos, /empresas e /financeiro/comissoes usam <ColunaOrdenavel>", () => {
     const sem = TELAS.filter((t) => !/<ColunaOrdenavel\b/.test(fontes.find((f) => f.arquivo === t)?.conteudo ?? ""));
     expect(sem).toEqual([]);
   });

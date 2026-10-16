@@ -668,7 +668,6 @@ const NAO_E_PAGINACAO: readonly { arquivo: string; motivo: string }[] = [
   { arquivo: "src/app/(app)/home/HomeProfessor.tsx", motivo: "\"Próxima aula experimental\": título do cartão da aula seguinte, não navegação de lista" },
   { arquivo: "src/app/(app)/matriculas/[id]/continuidade-mensal/PreviaContinuidadeMensal.tsx", motivo: "\"Próxima cobertura\": rótulo do período seguinte da continuidade, não navegação de lista" },
   { arquivo: "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/page.tsx", motivo: "\"Próximas cobranças\": nome do domínio CONDICOES_FUTURAS do aditivo; a navegação das conferências fica em ParticipantesHistorico (<Paginacao>)" },
-  { arquivo: "src/app/(app)/pipeline/KanbanBoard.tsx", motivo: "\"Próxima: {proximaAcao}\": próxima ação do lead no cartão do funil, não navegação de lista" },
 ];
 
 /** O conjunto que a medição conta como "só para frente" depois desta PR (cópia literal). */
@@ -676,7 +675,6 @@ const SO_PARA_FRENTE_MEDIDOS: readonly string[] = [
   "src/app/(app)/home/HomeProfessor.tsx",
   "src/app/(app)/matriculas/[id]/continuidade-mensal/PreviaContinuidadeMensal.tsx",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/page.tsx",
-  "src/app/(app)/pipeline/KanbanBoard.tsx",
 ];
 
 /**
