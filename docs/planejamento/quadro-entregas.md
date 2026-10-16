@@ -1933,3 +1933,34 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   38 testes. São preexistentes (fixtures com datas fixas de 2026 contra o relógio real, mais o `inbox` já listado).
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## CRM, bloco C: Pessoa como hub e empresa B2B (Fase 2, Tasks 6 a 8; 16/10/2026)
+
+### Verificação antes do merge (branch `claude/fase2-c-pessoa-empresa`, HEAD `06aff92`)
+- Perfil de teste: `.erp-test-profile` = `dev-gravacoes`, que está na lista fechada de `scripts/test-profile.mjs`
+  e resolve para o banco descartável `erp_genius_test_dev_gravacoes` (porta 54329). Todas as suítes abaixo rodaram
+  nesse banco. Na Task 6 a migration foi aplicada por engano também num banco chamado `dev-gravacoes` (o nome do
+  perfil, fora da lista); o integrador deve descartá-lo.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: 646 arquivos e 4.632 testes verdes, saída 0 (linha de base: 643 arquivos e 4.607 testes).
+- `npm run lint`: saída 0, 0 erros.
+- Migrations: `20261001000000_crm_pessoa` (2.M1) e `20261002000000_crm_empresa_b2b` (2.M2). Os IDs foram
+  escolhidos pelos agentes e ficam depois de `20260929130000`. Nenhuma outra branch local ou remota tem migration
+  `202610*`. O integrador ainda precisa reservar ou renomear esses IDs antes de aplicá-los num ambiente
+  compartilhado.
+- `prisma migrate status` em `erp_genius_test_dev_gravacoes`: 440 migrations, "Database schema is up to date!".
+- `pg_proc` (F2-C): as funções públicas que citam `"Lead"`, `"Pessoa"`, `"Empresa"`, `"Aluno"` ou `"Responsavel"`
+  não usam as colunas novas (a migration só acrescenta colunas anuláveis, tabelas e FKs). As funções de
+  desistência e segunda chamada foram chamadas pelos `*.int.test.ts` de `src/server/matricula/` e
+  `src/server/contratos/` listados abaixo, todos verdes.
+- Integração no perfil isolado, só um recorte. A suíte completa leva mais de 2 h e o integrador proibiu rodá-la
+  nas faixas. Resultado: 9 arquivos e 120 testes verdes, saída 0:
+  - `src/server/comercial/leads.int.test.ts` (8 testes, com o novo `criarLead` da Task 8);
+  - `src/server/crm/pessoa-schema`, `empresa-schema` e `pessoas` (14 testes);
+  - `src/server/matricula/desistencia-efetivacao`, `desistencia-financeiro-sql` e `desistencia-administrativa`
+    (24 testes);
+  - `src/server/contratos/aditivo-acerto-taxa` e `substituicao` (74 testes).
+- Pendente com o integrador antes do PR: rodar `npm run test:int` completo num banco autorizado e comparar com
+  as 7 falhas preexistentes do main `f8a9c0e`; confirmar ou renomear os IDs 2.M1 e 2.M2.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
