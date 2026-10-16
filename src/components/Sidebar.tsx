@@ -95,7 +95,7 @@ export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Naveg
               <Icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
               {item.href === "/inbox" && naoLidasInbox > 0 && (
-                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">
                   {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
                   <span className="sr-only"> mensagens não lidas</span>
                 </span>

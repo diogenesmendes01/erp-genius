@@ -195,7 +195,7 @@ export function botoesCrus(fonte: string): string[] {
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
       const t = n.text.split(/\s+/);
-      if (!t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && t.includes("text-white")) achados.push(`primário: "${n.text}"`);
+      if (!t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && (t.includes("text-white") || t.includes("text-on-brand"))) achados.push(`primário: "${n.text}"`);
     }
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Link", "a"].includes(n.tagName.getText(sf))) {
       const tag = n.tagName.getText(sf);
