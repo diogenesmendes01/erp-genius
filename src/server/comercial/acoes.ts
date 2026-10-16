@@ -23,6 +23,7 @@ import {
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
+import { garantirPessoaTx } from "@/server/crm/pessoas";
 import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
   professorAtribuido,
@@ -146,11 +147,29 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
 
     const id = await prisma.$transaction(async (tx) => {
       const codigo = await gerarCodigo("lead");
+      const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
+      let pessoaId = dados.pessoaId || null;
+      if (pessoaId) {
+        const existente = await tx.pessoa.findUnique({ where: { id: pessoaId }, select: { mescladaEmId: true } });
+        if (!existente) throw new ErroRegra("Contato não encontrado.");
+        if (existente.mescladaEmId) throw new ErroRegra("Este contato foi mesclado em outro; use o contato atual.");
+      } else {
+        pessoaId = (
+          await garantirPessoaTx(
+            tx,
+            { nome: dados.nome, telefoneE164, email: dados.email || null, origemCanal: dados.origemCanal },
+            autor.id,
+          )
+        ).pessoaId;
+      }
       const lead = await tx.oportunidade.create({
         data: {
           codigo,
           nome: dados.nome,
-          telefoneE164: normalizarTelefoneE164(dados.telefoneE164, ddi),
+          telefoneE164,
+          pessoaId,
+          origemCanal: dados.origemCanal ?? null,
+          empresaId: dados.empresaId || null,
           paisId: dados.paisId || null,
           segmento: dados.segmento,
           temperatura: dados.temperatura,
@@ -170,7 +189,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
         agregadoTipo: "Lead",
         agregadoId: lead.id,
         autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b },
+        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId },
       });
       if (donoId) {
         await registrarEvento(tx, {
