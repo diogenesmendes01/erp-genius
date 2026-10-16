@@ -488,6 +488,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "const btnSec → secundario/lg",
     "<button> Cadastrar por lote → btnSec",
     "<button> Fechar · Cancelar → btnSec",
+    "<button> Importar outra planilha → btnPri",
     "<button> Enviando… · Importar → btnPri",
   ],
   "alunos/[id]/FichaAluno.tsx": [

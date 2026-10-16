@@ -4,14 +4,8 @@ vi.mock("@/server/matricula/reserva-particular-cron", () => ({ rodarVencimentoPa
 vi.mock("@/server/agenda/inicio-turmas", () => ({ iniciarTurmasDaAgenda: m.outras }));
 vi.mock("@/server/cobrancas/acesso-aulas", () => ({ rodarControleAcessoAulas: m.outras }));
 vi.mock("@/server/whatsapp/cron", () => ({ rodarCronRegua: m.outras }));
-vi.mock("@/server/whatsapp/cron-comercial", () => ({
-  rodarLeadNovoSemResposta: m.outras, rodarNoShow: m.outras, rodarPreExperimental: m.outras,
-  rodarContratoSemAssinatura: m.outras, rodarLinkPagamentoSemPagamento: m.outras, rodarCheckInVencido: m.outras,
-}));
 // Todas as rotinas do tick mockadas: o teste da rota não pode tocar banco nenhum (antes, as não
 // mockadas tentavam conectar ao DATABASE_URL do ambiente e estouravam o tempo sem banco).
-vi.mock("@/server/ia/copiloto", () => ({ rodarCopilotoQuietude: m.outras }));
-vi.mock("@/server/whatsapp/cron-gestao", () => ({ rodarGestao: m.outras }));
 vi.mock("@/server/financeiro/cron-financeiro", () => ({ rodarFechamentoComissoes: m.outras }));
 vi.mock("@/server/matricula/cron-fechamento", () => ({ rodarFechamentosPendentes: m.outras }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: m.outras }));
@@ -42,4 +36,16 @@ it("chamada autenticada adota mensagens órfãs das linhas comerciais (SPEC-ERP-
   m.outras.mockResolvedValue({ conversas: 2, mensagens: 5 });
   const resposta = await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }));
   expect(await resposta.json()).toMatchObject({ linhaComercial: { conversas: 2, mensagens: 5 } });
+});
+it("tick só com etapas de base: sem comercial, copiloto e gestão (E1)", async () => {
+  vi.stubEnv("CRON_SECRET", "segredo-fixture");
+  const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
+  expect(Object.keys(corpo).sort()).toEqual(["acessoAulas", "acessoVencimentos", "cobranca", "comissoes", "despacho", "fechamentosPendentes", "inicioTurmas", "linhaComercial", "reservasParticulares"]);
+});
+it("etapa de base que falha fica isolada e as demais rodam (E1)", async () => {
+  vi.stubEnv("CRON_SECRET", "segredo-fixture");
+  m.reservas.mockRejectedValue(new Error("boom"));
+  const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
+  expect(corpo.reservasParticulares).toEqual({ erro: "boom" });
+  expect(corpo.despacho).toEqual({});
 });

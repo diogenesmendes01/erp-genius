@@ -70,9 +70,6 @@
      relance. Mesmo padrão bg/text que os outros semânticos (inverte no dark);
      --ai-solid é o botão primário de aceitar sugestão, não inverte (mesmo valor e texto branco nos
      dois temas) — ao contrário do --brand-solid, que tem um tom próprio no escuro (ver .dark). */
-  --ai-bg: #f3eefc;
-  /* Fase 0: o --ai-bg do design system é o de baixo (a última declaração vale); a linha de cima fica
-     igual à da main só para este trecho não colidir com a #178. */
   --ai-bg: #f2f0f9;
   --ai-text: #6a53bd;
   --ai-border: #ddd0f8;
