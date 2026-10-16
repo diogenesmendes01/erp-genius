@@ -34,3 +34,23 @@ describe("Drawer — inert", () => {
     expect(refs.lista[0].current.inert).toBe(false);
   });
 });
+
+describe("Drawer → camada elevada (DS)", () => {
+  it("drawer usa superfície elevada", () => {
+    const h = renderToStaticMarkup(createElement(Drawer, { open: true, onClose: () => {}, title: "Detalhes" } as Parameters<typeof Drawer>[0], "x"));
+    expect(h).toContain("bg-surface-raised");
+    expect(h).toContain("shadow-dialog");
+    expect(h).toContain("border-gray-200");
+    expect(h).toContain("bg-black/60");
+    // Bordas lógicas (RTL): à direita o painel tem borda no início; nunca a física border-l.
+    expect(h).toContain("border-s");
+    expect(h).not.toMatch(/\bborder-[lr]\b/);
+  });
+
+  it("drawer à esquerda usa borda lógica no fim (border-e)", () => {
+    const h = renderToStaticMarkup(createElement(Drawer, { open: true, onClose: () => {}, title: "Menu", lado: "esquerda" } as Parameters<typeof Drawer>[0], "x"));
+    expect(h).toContain("border-e");
+    expect(h).not.toContain("border-s ");
+    expect(h).not.toMatch(/\bborder-[lr]\b/);
+  });
+});
