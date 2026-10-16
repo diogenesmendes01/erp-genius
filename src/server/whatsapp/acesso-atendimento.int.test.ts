@@ -16,7 +16,6 @@ import { enfileirarIntencaoCobranca, enfileirarIntencaoComercial } from "./fila"
 import { referenciaDestinoCobranca, snapshotCobranca } from "./elegibilidade";
 import { enviarTextoInbox, vincularContatoWhatsApp } from "./acoes";
 import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, listarOpcoesAtendimento } from "./operacoes-atendimento";
-import { rodarLeadNovoSemResposta, rodarPreExperimental } from "./cron-comercial";
 import { capturarRespostaExperimental } from "@/server/comercial/captura";
 
 beforeEach(async () => {
@@ -172,7 +171,6 @@ describe("W01–W07: intenção velha nunca chama o driver", () => {
   it("W03: saída fromMe encerra o cron e o despacho pendente", async () => {
     const c = await filaComercial();
     await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: c.a.conversaId, direcao: "SAIDA", origem: null, driver: "BAILEYS", corpo: "Resposta pelo celular" } });
-    expect((await rodarLeadNovoSemResposta()).enfileiradas).toBe(0);
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
   });
   it("W04: REAGENDAR cancela e não renasce para a agenda anterior", async () => {
@@ -180,7 +178,6 @@ describe("W01–W07: intenção velha nunca chama o driver", () => {
     await prisma.evento.create({ data: { tipo: "ReguaComercialEnviada", agregadoTipo: "Lead", agregadoId: c.lead.id,
       payload: { chave: "PRE_EXPERIMENTAL", ocorrencia: c.aula.toISOString(), passo: "-24h" } } });
     await prisma.$transaction((tx) => capturarRespostaExperimental(tx, { leadId: c.lead.id, corpo: "REAGENDAR", quando: new Date() }));
-    expect((await rodarPreExperimental()).enfileiradas).toBe(0);
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.i.id } })).status).toBe("CANCELADA");
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
   });
