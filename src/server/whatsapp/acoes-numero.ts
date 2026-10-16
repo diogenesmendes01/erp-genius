@@ -6,7 +6,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { setoresDoNumero } from "./numero-setor";
-import { SETORES, type Setor } from "./setor";
+import { SETORES, podeTriarSetores, type Setor } from "./setor";
 
 const SetoresNumeroSchema = z.object({
   numeroId: z.string().trim().min(1),
@@ -38,8 +38,9 @@ export async function salvarSetoresNumero(input: SetoresNumeroInput): Promise<Re
       const numero = await tx.numeroWhatsApp.findUnique({ where: { id: dados.numeroId }, select: { id: true } });
       if (!numero) throw new ErroRegra("Número não encontrado.");
       if (triagemResponsavelId) {
-        const resp = await tx.usuario.findFirst({ where: { id: triagemResponsavelId, ativo: true }, select: { id: true } });
+        const resp = await tx.usuario.findFirst({ where: { id: triagemResponsavelId, ativo: true }, select: { papeis: true } });
         if (!resp) throw new ErroRegra("Responsável pela triagem inválido (usuário inexistente ou inativo).");
+        if (!podeTriarSetores(resp.papeis, para)) throw new ErroRegra("O responsável pela triagem precisa ter papel de um dos setores do número.");
       }
       const de = await setoresDoNumero(tx, numero.id);
       await tx.numeroSetorWhatsApp.deleteMany({ where: { numeroId: numero.id } });

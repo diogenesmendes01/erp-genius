@@ -63,3 +63,18 @@ export function papeisDoSetor(setor: Setor): Papel[] {
   return [...PAPEIS_POR_SETOR[setor]];
 }
 
+/**
+ * Papéis que podem ser responsáveis pela triagem de um número com esses setores: os papéis nativos
+ * dos setores (`papeisDoSetor`), sem repetição, menos o PROFESSOR, que não atende fila (o PEDAGOGICO
+ * dele é só a turma; plano 03-fase-inbox, Tarefa 13). O administrador não entra: ele já é o padrão
+ * (triagemResponsavelId null, Q2).
+ */
+export function papeisDeTriagem(setores: readonly Setor[]): Papel[] {
+  return [...new Set(SETORES.filter((s) => setores.includes(s)).flatMap((s) => PAPEIS_POR_SETOR[s]))].filter((p) => p !== Papel.PROFESSOR);
+}
+
+/** O usuário pode ser responsável pela triagem de um número com esses setores. */
+export function podeTriarSetores(papeis: readonly Papel[], setores: readonly Setor[]): boolean {
+  const aceitos = papeisDeTriagem(setores);
+  return papeis.some((p) => aceitos.includes(p));
+}

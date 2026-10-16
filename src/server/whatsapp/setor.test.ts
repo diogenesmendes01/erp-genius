@@ -3,8 +3,11 @@ import { Papel } from "@prisma/client";
 import { setoresDoUsuario as setoresCrmDoUsuario } from "@/server/crm/setores-papel";
 import {
   SECRETARIA_VE_FIN_PEDAG,
+  SETORES,
   ehGerenteDoSetor,
+  papeisDeTriagem,
   papeisDoSetor,
+  podeTriarSetores,
   setoresVisiveisNoInbox,
 } from "./setor";
 
@@ -48,5 +51,13 @@ describe("setor do atendente", () => {
       else if (p === Papel.SECRETARIA_ACADEMICA) expect(extras).toEqual(["FINANCEIRO", "PEDAGOGICO"]);
       else expect(extras, p).toEqual([]);
     }
+  });
+  it("triagem: papéis dos setores do número, sem PROFESSOR, ALUNO nem ADMINISTRADOR", () => {
+    expect(papeisDeTriagem(["SECRETARIA", "FINANCEIRO"])).toEqual([Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA]);
+    expect(papeisDeTriagem(["COMERCIAL", "PEDAGOGICO"])).toEqual([Papel.GERENTE_COMERCIAL, Papel.VENDEDOR, Papel.GERENTE_PEDAGOGICO]);
+    expect(podeTriarSetores([Papel.SECRETARIA_ACADEMICA], ["SECRETARIA", "FINANCEIRO"])).toBe(true);
+    expect(podeTriarSetores([Papel.SECRETARIA_ACADEMICA], ["COMERCIAL", "FINANCEIRO"])).toBe(false);
+    expect(podeTriarSetores([Papel.PROFESSOR], ["COMERCIAL", "PEDAGOGICO"])).toBe(false);
+    expect(podeTriarSetores([Papel.ALUNO, Papel.ADMINISTRADOR], [...SETORES])).toBe(false);
   });
 });

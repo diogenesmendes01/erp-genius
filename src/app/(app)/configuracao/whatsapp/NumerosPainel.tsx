@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconQrcode, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
-import type { NumeroConfig } from "@/server/whatsapp/consultas";
+import type { NumeroConfig, ResponsavelTriagem } from "@/server/whatsapp/consultas";
 import { salvarSetoresNumero } from "@/server/whatsapp/acoes-numero";
-import { SETORES, type Setor } from "@/server/whatsapp/setor";
+import { SETORES, podeTriarSetores, type Setor } from "@/server/whatsapp/setor";
 import { conectarNumeroQr, consultarSessaoNumero, salvarNumeroWhatsApp } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
@@ -56,7 +56,7 @@ export function NumerosPainel({
 }: {
   numeros: NumeroConfig[];
   vendedores: { id: string; nome: string }[];
-  responsaveis?: { id: string; nome: string }[];
+  responsaveis?: ResponsavelTriagem[];
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormNumero | null>(null);
@@ -271,7 +271,7 @@ export function SetoresNumeroEditor({
   responsaveis,
 }: {
   numero: Pick<NumeroConfig, "id" | "setores" | "triagemResponsavelId">;
-  responsaveis: { id: string; nome: string }[];
+  responsaveis: ResponsavelTriagem[];
 }) {
   const router = useRouter();
   const [setores, setSetores] = useState<Setor[]>(numero.setores);
@@ -283,9 +283,13 @@ export function SetoresNumeroEditor({
     setSetores((atual) => (atual.includes(s) ? atual.filter((x) => x !== s) : SETORES.filter((x) => x === s || atual.includes(x))));
   }
 
+  // Só quem tem papel de um dos setores marcados (mesma regra que salvarSetoresNumero aplica no servidor).
+  const elegiveis = responsaveis.filter((u) => podeTriarSetores(u.papeis, setores));
+  const triagemValida = elegiveis.some((u) => u.id === triagem) ? triagem : "";
+
   async function salvar() {
     const d = await acao.executar(
-      () => salvarSetoresNumero({ numeroId: numero.id, setores, triagemResponsavelId: setores.length >= 2 && triagem ? triagem : null }),
+      () => salvarSetoresNumero({ numeroId: numero.id, setores, triagemResponsavelId: setores.length >= 2 && triagemValida ? triagemValida : null }),
       "Setores salvos.",
     );
     if (d?.tipo === "ok") router.refresh();
@@ -310,9 +314,9 @@ export function SetoresNumeroEditor({
       {setores.length >= 2 && (
         <label className="mt-3 block text-xs text-gray-600">
           Responsável pela triagem
-          <select className={inputCls + " mt-1 sm:max-w-xs"} value={triagem} onChange={(e) => setTriagem(e.target.value)}>
+          <select className={inputCls + " mt-1 sm:max-w-xs"} value={triagemValida} onChange={(e) => setTriagem(e.target.value)}>
             <option value="">— Administrador —</option>
-            {responsaveis.map((u) => (
+            {elegiveis.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.nome}
               </option>
