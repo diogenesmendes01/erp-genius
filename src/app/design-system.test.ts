@@ -166,7 +166,7 @@ describe("design system: tokens nos dois temas", () => {
 
 describe("campos de formulário (base em @layer base)", () => {
   const base = CSS.slice(CSS.indexOf("@layer base"));
-  const SELETOR = 'input:not([type="checkbox"]):not([type="radio"]),\n  select,\n  textarea';
+  const SELETOR = ':where(input:not([type="checkbox"]):not([type="radio"])),\n  select,\n  textarea';
   const bloco = (seletor: string) => {
     const i = base.indexOf(seletor + " {");
     return i < 0 ? "" : base.slice(i, base.indexOf("}", i));
@@ -195,10 +195,15 @@ describe("campos de formulário (base em @layer base)", () => {
     expect(trecho).toMatch(/cursor:\s*not-allowed/);
   });
 
-  it("textarea tem altura mínima de 90 px e redimensiona na vertical", () => {
-    const i = base.search(/^ {2}textarea \{\n {4}min-height/m);
-    const t = base.slice(i, base.indexOf("}", i));
-    expect(t).toMatch(/min-height:\s*90px/);
-    expect(t).toMatch(/resize:\s*vertical/);
+  it("textarea de várias linhas tem 90 px; o de uma linha fica compacto; redimensiona na vertical", () => {
+    expect(bloco(':where(textarea:not([rows="1"]))')).toMatch(/min-height:\s*90px/);
+    const i = base.search(/^ {2}textarea \{\n {4}resize/m);
+    expect(base.slice(i, base.indexOf("}", i))).toMatch(/resize:\s*vertical/);
+  });
+
+  it("seletores de input na base têm especificidade zero (classe utilitária vence)", () => {
+    const semComentario = base.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(semComentario).not.toMatch(/(^|[\s,])input:not\(\[type="checkbox"\]\)/m);
+    expect(semComentario).not.toMatch(/^\s*textarea \{[^}]*min-height/m);
   });
 });
