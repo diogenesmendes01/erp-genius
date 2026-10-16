@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   papeis: { valor: ["GERENTE_COMERCIAL"] as string[] },
   redirect: vi.fn((destino: string) => { throw new Error(`REDIRECT ${destino}`); }),
   preferencia: vi.fn(), numeros: vi.fn(), templates: vi.fn(), politica: vi.fn(),
-  vendedores: vi.fn(), avisos: vi.fn(),
+  vendedores: vi.fn(), avisos: vi.fn(), responsaveis: vi.fn(),
   subtabs: vi.fn((props: { tabs: { href: string }[]; ariaLabel?: string }) => createElement("nav", { "aria-label": props.ariaLabel }, props.tabs.map((t) => t.href).join(","))),
 }));
 vi.mock("@/lib/guards", () => ({
@@ -21,7 +21,7 @@ vi.mock("@/components/SubTabs", () => ({ SubTabs: mocks.subtabs }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/comercial/consultas", () => ({ listarVendedores: mocks.vendedores }));
 vi.mock("@/server/whatsapp/consultas", () => ({
-  listarNumerosConfig: mocks.numeros, listarTemplatesConfig: mocks.templates,
+  listarNumerosConfig: mocks.numeros, listarResponsaveisTriagem: mocks.responsaveis, listarTemplatesConfig: mocks.templates,
   carregarPoliticaConfig: mocks.politica, carregarConfiguracaoAvisosAgenda: mocks.avisos,
 }));
 vi.mock("./NumerosPainel", () => ({ NumerosPainel: () => createElement("p", null, "admin números") }));
@@ -37,7 +37,7 @@ import Politica from "./politica/page";
 import AvisosAgenda from "./avisos-agenda/page";
 
 const html = async (el: Promise<React.ReactElement>) => renderToStaticMarkup(await el);
-const consultasAdmin = () => [mocks.numeros, mocks.templates, mocks.politica, mocks.vendedores, mocks.avisos];
+const consultasAdmin = () => [mocks.numeros, mocks.templates, mocks.politica, mocks.vendedores, mocks.avisos, mocks.responsaveis];
 
 describe("Configuração do WhatsApp por rota (E8)", () => {
   beforeEach(() => {

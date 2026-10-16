@@ -140,6 +140,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Conectar QR → btnSec",
     "<button> Editar → btnSec",
     "<button> Salvando… · Salvar número → btnPri",
+    "<button> Salvando… · Salvar setores → btnPri",
     "<button> Fechar → btnSec",
     "<button> Atualizar QR → btnSec",
   ],
