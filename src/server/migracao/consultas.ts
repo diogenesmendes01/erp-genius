@@ -37,14 +37,25 @@ export async function consultarLotesPreparacaoMigracao(input: { pagina?: number 
   });
 }
 
-export async function consultarLotePreparacaoMigracao(loteId: string) {
+/** Linhas do lote por página (docs/42 L2483; docs/43 §6 item 9): um lote de 95 alunos virava um documento só.
+ * Não exportada: o arquivo é "use server" (só funções assíncronas); a consulta devolve `porPagina`. */
+const LINHAS_LOTE_POR_PAGINA = 25;
+
+/**
+ * Detalhe do lote com as linhas paginadas por número (lista, não fila: a linha não sai do lote quando alguém age
+ * nela). A ordem termina no id (desempate estável); as correspondências de vínculo são lidas só para as linhas da
+ * página. `totalLinhas` dá a faixa "X–Y de N".
+ */
+export async function consultarLotePreparacaoMigracao(loteId: string, input: { pagina?: number } = {}) {
   return executarAcao(async () => {
     const sessao = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const { pagina = 1 } = Entrada.parse(input);
     return prisma.$transaction(async (tx) => {
       await adminFrescoTx(tx, sessao.id);
       const id = z.string().min(1).max(100).parse(loteId);
-      const lote = await tx.lotePreparacaoMigracao.findUnique({ where: { id }, select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, preparadoPor: { select: { nome: true } }, conflitosEntrada: { orderBy: { criadoEm: "asc" }, select: { linhaOrigem: true, codigo: true, entradaHash: true, dadosConflitantes: true, criadoEm: true } }, linhas: { orderBy: { linhaOrigem: "asc" }, select: { id: true, linhaOrigem: true, tipoEntrada: true, alunoOrigemId: true, turmaOrigemId: true, matriculaOrigemId: true, financeiroOrigemId: true, dadosOrigem: true, entradaHash: true, estado: true, aplicacoesCadastro: { orderBy: { criadoEm: "asc" }, select: { situacao: true, alunoId: true, detalhe: true, criadoEm: true, executadoPor: { select: { nome: true } } } }, ensaiosVinculo: { orderBy: { criadoEm: "desc" }, select: { id: true, entradaHash: true, contextoHash: true, correspondenciaProdutoId: true, correspondenciaTurmaId: true, correspondenciaStatusId: true, resultado: true, requisitos: true, criadoEm: true, ensaiadoPor: { select: { nome: true } }, aplicacoes: { orderBy: { aplicadoEm: "desc" }, select: { id: true, matriculaId: true, alocacaoId: true, aplicadoEm: true, aplicadoPor: { select: { nome: true } } } } } }, pendencias: { orderBy: [{ campo: "asc" }, { codigo: "asc" }], select: { campo: true, codigo: true, detalhe: true } }, colisoesComoConflitante: { select: { id: true, tipo: true, identificadorOrigem: true, linhaExistente: { select: { linhaOrigem: true } } } }, colisoesComoExistente: { select: { id: true, tipo: true, identificadorOrigem: true, linhaConflitante: { select: { linhaOrigem: true } } } } } } } });
+      const lote = await tx.lotePreparacaoMigracao.findUnique({ where: { id }, select: { id: true, origem: true, chaveLote: true, estado: true, criadoEm: true, preparadoPor: { select: { nome: true } }, _count: { select: { linhas: true } }, conflitosEntrada: { orderBy: { criadoEm: "asc" }, select: { linhaOrigem: true, codigo: true, entradaHash: true, dadosConflitantes: true, criadoEm: true } }, linhas: { orderBy: [{ linhaOrigem: "asc" }, { id: "asc" }], ...janelaDaPagina(pagina, LINHAS_LOTE_POR_PAGINA), select: { id: true, linhaOrigem: true, tipoEntrada: true, alunoOrigemId: true, turmaOrigemId: true, matriculaOrigemId: true, financeiroOrigemId: true, dadosOrigem: true, entradaHash: true, estado: true, aplicacoesCadastro: { orderBy: { criadoEm: "asc" }, select: { situacao: true, alunoId: true, detalhe: true, criadoEm: true, executadoPor: { select: { nome: true } } } }, ensaiosVinculo: { orderBy: { criadoEm: "desc" }, select: { id: true, entradaHash: true, contextoHash: true, correspondenciaProdutoId: true, correspondenciaTurmaId: true, correspondenciaStatusId: true, resultado: true, requisitos: true, criadoEm: true, ensaiadoPor: { select: { nome: true } }, aplicacoes: { orderBy: { aplicadoEm: "desc" }, select: { id: true, matriculaId: true, alocacaoId: true, aplicadoEm: true, aplicadoPor: { select: { nome: true } } } } } }, pendencias: { orderBy: [{ campo: "asc" }, { codigo: "asc" }], select: { campo: true, codigo: true, detalhe: true } }, colisoesComoConflitante: { select: { id: true, tipo: true, identificadorOrigem: true, linhaExistente: { select: { linhaOrigem: true } } } }, colisoesComoExistente: { select: { id: true, tipo: true, identificadorOrigem: true, linhaConflitante: { select: { linhaOrigem: true } } } } } } } });
       if (!lote) return null;
+      const { registros: linhasDaPagina, temProxima } = recorteDaPagina(lote.linhas, LINHAS_LOTE_POR_PAGINA);
       const eventos = await tx.evento.findMany({ where: { agregadoTipo: "LotePreparacaoMigracao", agregadoId: id, tipo: "ConflitoPreparacaoMigracaoRegistrado" }, select: { criadoEm: true, autor: { select: { nome: true } }, payload: true } });
       const autorPorHash = new Map<string, { nome: string | null; criadoEm: Date }>();
       for (const evento of eventos) {
@@ -56,7 +67,7 @@ export async function consultarLotePreparacaoMigracao(loteId: string) {
         tx.produtoPais.findMany({ where: { oferecido: true }, orderBy: { pais: { nome: "asc" } }, select: { produtoId: true, paisId: true, moeda: true, pais: { select: { nome: true, codigoISO: true } }, produto: { select: { idioma: { select: { nome: true } }, modalidade: { select: { nome: true } } } } } }),
         tx.turma.findMany({ orderBy: { codigo: "asc" }, select: { id: true, codigo: true, nome: true, nivel: { select: { codigo: true, idioma: { select: { nome: true } } } } } }),
       ]);
-      const linhasVinculo = lote.linhas.filter((linha) => linha.tipoEntrada === "VINCULO_MATRICULA");
+      const linhasVinculo = linhasDaPagina.filter((linha) => linha.tipoEntrada === "VINCULO_MATRICULA");
       const produtosOrigem = linhasVinculo.map((linha) => textoDaFotografia(linha.dadosOrigem, ["matricula", "produtoOrigem"])).filter((id): id is string => !!id);
       const turmasOrigem = linhasVinculo.map((linha) => linha.turmaOrigemId).filter((id): id is string => !!id);
       const statusOrigem = linhasVinculo.map((linha) => textoDaFotografia(linha.dadosOrigem, ["matricula", "situacao"])).filter((id): id is string => !!id);
@@ -69,7 +80,8 @@ export async function consultarLotePreparacaoMigracao(loteId: string) {
       const produtoAtual = atual(revisoesProduto, (item) => item.produtoOrigemId);
       const turmaAtual = atual(revisoesTurma, (item) => item.turmaOrigemId);
       const statusAtual = atual(revisoesStatus, (item) => item.statusOrigem);
-      return { ...lote, destinosVinculo: { produtos: ofertasProduto.map((oferta) => ({ produtoId: oferta.produtoId, paisId: oferta.paisId, moeda: oferta.moeda, rotulo: `${oferta.produto.idioma.nome} · ${oferta.produto.modalidade.nome} · ${oferta.pais.nome} (${oferta.pais.codigoISO}, ${oferta.moeda})` })), turmas: turmas.map((turma) => ({ id: turma.id, rotulo: [turma.codigo, turma.nome, `${turma.nivel.idioma.nome} ${turma.nivel.codigo}`].filter(Boolean).join(" · ") })) }, conflitosEntrada: lote.conflitosEntrada.map((conflito) => ({ ...conflito, registradoPorNome: autorPorHash.get(conflito.entradaHash)?.nome ?? null, registradoEm: autorPorHash.get(conflito.entradaHash)?.criadoEm ?? conflito.criadoEm })), linhas: lote.linhas.map((linha) => {
+      const { _count: contagem, ...dadosLote } = lote;
+      return { ...dadosLote, pagina, porPagina: LINHAS_LOTE_POR_PAGINA, temProxima, totalLinhas: contagem.linhas, destinosVinculo: { produtos: ofertasProduto.map((oferta) => ({ produtoId: oferta.produtoId, paisId: oferta.paisId, moeda: oferta.moeda, rotulo: `${oferta.produto.idioma.nome} · ${oferta.produto.modalidade.nome} · ${oferta.pais.nome} (${oferta.pais.codigoISO}, ${oferta.moeda})` })), turmas: turmas.map((turma) => ({ id: turma.id, rotulo: [turma.codigo, turma.nome, `${turma.nivel.idioma.nome} ${turma.nivel.codigo}`].filter(Boolean).join(" · ") })) }, conflitosEntrada: lote.conflitosEntrada.map((conflito) => ({ ...conflito, registradoPorNome: autorPorHash.get(conflito.entradaHash)?.nome ?? null, registradoEm: autorPorHash.get(conflito.entradaHash)?.criadoEm ?? conflito.criadoEm })), linhas: linhasDaPagina.map((linha) => {
         const colisoes = new Map<string, { tipo: string; identificadorOrigem: string; outraLinhaOrigem: string }>();
         for (const colisao of linha.colisoesComoConflitante) colisoes.set(colisao.id, { tipo: colisao.tipo, identificadorOrigem: colisao.identificadorOrigem, outraLinhaOrigem: colisao.linhaExistente.linhaOrigem });
         for (const colisao of linha.colisoesComoExistente) colisoes.set(colisao.id, { tipo: colisao.tipo, identificadorOrigem: colisao.identificadorOrigem, outraLinhaOrigem: colisao.linhaConflitante.linhaOrigem });

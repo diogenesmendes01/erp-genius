@@ -26,7 +26,8 @@ export default async function AutorizacaoEspecialRecuperacao({ params, searchPar
   const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
 
   return <section className="space-y-4">
-    <VoltarPara href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`} para="Tentativa" />
+    {/* O destino é a tela do avaliador (designação), não a tentativa — que é a tela do professor (docs/42 L1617). */}
+    <VoltarPara href={`/academico/recuperacoes/tentativas/${encodeURIComponent(itemReservaId)}/designacao`} para="Avaliador da recuperação" />
     <h1 className="text-2xl font-medium">Autorização especial de realização</h1>
     <IdentificacaoAvaliacao dados={d.identificacao} />
     <p>Habilidade: {rotular(HABILIDADE_LABEL, d.habilidade)} · situação da matrícula: {rotular(STATUS_MATRICULA_LABEL, d.statusMatricula)}.</p>
