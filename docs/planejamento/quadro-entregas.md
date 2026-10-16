@@ -1917,3 +1917,18 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Fase 3, bloco A: modelo do atendimento por setor (16/10/2026)
+
+- Branch `claude/fase3-a-modelo-atendimento`, empilhada sobre `integracao/ate-fase-1` (d4c0f74). Tarefas 1 a 8 do plano
+  `03-fase-inbox.md`: número por setor, status e prazos do atendimento, reabertura, grupos, origem CELULAR/IA com
+  `clientMessageId`, preferências do inbox por usuário. Cinco migrations (`20261016090000` a `20261016130000`).
+- Verificação (banco `tester`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 646 arquivos e 4.627 testes;
+  `npm run lint` saída 0, 0 erros e 44 avisos. Integração relacionada (`vitest related -c vitest.integration.config.ts`
+  sobre os 53 arquivos alterados): 78 arquivos, 876 verdes, 21 falhas, todas preexistentes (ver abaixo).
+- Falhas de integração: as 7 da linha de base (6 em `academico/visibilidade`, 1 em `whatsapp/inbox`) mais 14 em
+  `agenda/substituicao-avisos` (3), `agenda/replanejamento-concorrencia`, `diario/reposicao-agenda` (7),
+  `diario/reposicao-permissoes`, `diario/calendario-reposicao` (1 cada). Essas 14 falham igual rodando o código de
+  `integracao/ate-fase-1` neste banco (sensíveis à data de hoje, 16/10/2026, e ao ambiente); anotadas, não são do bloco.
+  `cobrancas/resposta-contrato` quebrava pelo CHECK `Atendimento_status_encerrado` e foi corrigido no teste (4/4 verdes).
+- Pendência de merge: IDs de migration escolhidos pelo implementador; o integrador deve confirmá-los ou renomeá-los.
