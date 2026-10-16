@@ -133,10 +133,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/whatsapp/AvisosAgendaPainel.tsx": [
     "<button> Salvando… · Salvar canal de agenda → primario/md",
   ],
-  "configuracao/whatsapp/ComercialPainel.tsx": [
-    "const btnPri → primario/md",
-    "<button> Salvando… · Salvar configuração comercial → btnPri",
-  ],
   "configuracao/whatsapp/NumerosPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
@@ -151,10 +147,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "const btnPri → primario/md",
     "<button> Kill switch LIGADO — destravar · Kill switch → perigo|secundario/md",
     "<button> salvar · Salvando… · Salvar política → btnPri",
-  ],
-  "configuracao/whatsapp/ReguaComercialPainel.tsx": [
-    "const btnPri → primario/md",
-    "<button> Salvando… → btnPri",
   ],
   "configuracao/whatsapp/TemplatesPainel.tsx": [
     "const btnPri → primario/md",

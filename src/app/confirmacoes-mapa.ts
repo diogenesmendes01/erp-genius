@@ -92,20 +92,6 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     efeito: "ativa a régua de cobrança (estado ATIVA: mensagens reais aos clientes)",
   },
   {
-    arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx",
-    modulo: "@/server/comercial/acoes",
-    acao: "salvarConfigComercial",
-    achado: "L2517",
-    efeito: "ativa a saudação automática ou os alertas do gestor (mensagens reais)",
-  },
-  {
-    arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx",
-    modulo: "@/server/comercial/acoes",
-    acao: "salvarReguaComercial",
-    achado: "L2517",
-    efeito: "ativa a régua comercial ou desliga o modo piloto (go-live geral)",
-  },
-  {
     arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx",
     modulo: "@/server/whatsapp/acoes",
     acao: "salvarTemplateWhatsApp",
@@ -212,16 +198,6 @@ export const EXCECOES_CONFIRMACAO: ExcecaoConfirmacao[] = [
     arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx",
     trecho: "salvarPoliticaRegua(dadosPolitica())",
     motivo: "salvar sem passar a régua de desligada/ensaio para ATIVA não liga envio novo; a ativação (`ativando`) abre o ConfirmarAcao",
-  },
-  {
-    arquivo: "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx",
-    trecho: "salvarConfigComercial(dadosComerciais())",
-    motivo: "salvar sem ativar a saudação nem os alertas do gestor não liga envio novo; a ativação abre o ConfirmarAcao",
-  },
-  {
-    arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx",
-    trecho: "salvarReguaComercial(dadosRegua())",
-    motivo: "salvar sem ativar a régua e sem desligar o modo piloto não amplia o envio; ativação e go-live abrem o ConfirmarAcao",
   },
   {
     arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx",
