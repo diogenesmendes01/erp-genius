@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   IconHome, IconMail,
-  IconLayoutKanban,
   IconUsers,
   IconUserCheck,
   IconWallet,
@@ -20,6 +19,7 @@ import {
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
+import { acompanharTema, alternarTema, temaEscuroAplicado, temaEscuroNoServidor } from "@/lib/tema";
 
 type Icone = React.ComponentType<IconProps>;
 
@@ -27,7 +27,6 @@ const ICONS: Record<string, Icone> = {
   Home: IconHome,
   // Chave "Mail" (antes `IconMail` solto virava a chave "IconMail" e "Envios do portal" caía no ícone de Home).
   Mail: IconMail,
-  KanbanSquare: IconLayoutKanban,
   Users: IconUsers,
   UserCheck: IconUserCheck,
   Wallet: IconWallet,
@@ -36,27 +35,23 @@ const ICONS: Record<string, Icone> = {
   Building: IconBuilding,
 };
 
-/** Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque. */
+/**
+ * Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque.
+ * O estado é um só (src/lib/tema.ts): as duas instâncias leem a classe `dark` do <html> e são avisadas na
+ * troca, então a Sidebar nunca fica com o ícone velho depois de trocar no celular (C21 da #170).
+ * aria-pressed diz ao leitor de tela se o tema escuro está ligado — o ícone sozinho não dizia.
+ */
 export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700", classeIcone = "h-4 w-4" }: { className?: string; classeIcone?: string }) {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  function alternar() {
-    const novo = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", novo);
-    localStorage.setItem("tema", novo ? "dark" : "light");
-    setDark(novo);
-  }
+  const dark = useSyncExternalStore(acompanharTema, temaEscuroAplicado, temaEscuroNoServidor);
 
   return (
     <button
-      onClick={alternar}
+      onClick={alternarTema}
       type="button"
       className={className}
       title={dark ? "Tema claro" : "Tema escuro"}
       aria-label="Alternar tema"
+      aria-pressed={dark}
     >
       {dark ? <IconSun className={classeIcone} /> : <IconMoon className={classeIcone} />}
     </button>
