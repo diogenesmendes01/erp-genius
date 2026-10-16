@@ -74,6 +74,7 @@ export async function destinatarioAtualDoAtendimento(a: {
     if (aluno.responsaveis.length) return aluno.responsaveis.some((r) => r.responsavelId === contato.responsavelId && r.responsavel.telefoneE164 === contato.telefoneE164);
     return !contato.responsavelId && !!aluno.telefoneE164 && aluno.telefoneE164 === contato.telefoneE164;
   }
-  // Um atendimento comercial de triagem pode existir antes de virar lead.
-  return a.finalidade === "COMERCIAL";
+  // Um atendimento comercial de triagem pode existir antes de virar lead, e o
+  // roteamento por setor abre SECRETARIA para contato ainda não identificado.
+  return a.finalidade === "COMERCIAL" || a.finalidade === "SECRETARIA";
 }

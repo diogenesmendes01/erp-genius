@@ -33,6 +33,9 @@ describe("roteamento do inbound por setor do número", () => {
     const c = await cenario(["SECRETARIA"]);
     const id = await rotear(c.conversa.id);
     expect(await prisma.atendimentoWhatsApp.findUnique({ where: { id: id! } })).toMatchObject({ finalidade: "SECRETARIA", responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
+    // Contato sem aluno: o segundo inbound mantém o atendimento criado (não cai na triagem).
+    expect(await rotear(c.conversa.id)).toBe(id);
+    expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: c.conversa.id } })).toBe(1);
   });
 
   it("2b. setor único FINANCEIRO sem matrícula única ou PEDAGOGICO: triagem", async () => {
