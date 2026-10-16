@@ -488,6 +488,8 @@ enum Papel {
 }
 
 model Usuario {
+  preferenciasConversaInbox PreferenciaConversaUsuario[]
+  favoritosMensagemInbox FavoritoMensagemUsuario[]
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
   vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
   vencimentosAditivoAplicados AplicacaoVencimentoAditivo[] @relation("ExecutorVencimentoAditivo")
@@ -2385,6 +2387,7 @@ model GrupoWhatsApp {
 }
 
 model ConversaWhatsApp {
+  preferenciasUsuarios PreferenciaConversaUsuario[]
   atendimentos AtendimentoWhatsApp[]
   id               String          @id @default(cuid())
   numeroId         String
@@ -2445,6 +2448,7 @@ enum OrigemEnvio {
 }
 
 model MensagemWhatsApp {
+  favoritosUsuarios FavoritoMensagemUsuario[]
   atendimentoId String?
   atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   id         String           @id @default(cuid())
@@ -8639,4 +8643,31 @@ model Certificado {
   // Um certificado por aluno×nível (review PR #60): aprovações concorrentes não geram
   // dois códigos públicos válidos — a ação trata o P2002 como idempotência.
   @@unique([alunoId, nivelId])
+}
+
+/// Preferências pessoais da inbox (fixar, silenciar, não lida). Tabela operacional, sem Evento.
+model PreferenciaConversaUsuario {
+  id String @id @default(cuid())
+  usuarioId String
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  conversaId String
+  conversa ConversaWhatsApp @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  fixadaEm DateTime?
+  silenciadaAte DateTime?
+  marcadaNaoLida Boolean @default(false)
+  lidaAte DateTime?
+  @@unique([usuarioId, conversaId])
+  @@index([conversaId])
+}
+
+/// Mensagens favoritas por usuário. Tabela operacional, sem Evento.
+model FavoritoMensagemUsuario {
+  id String @id @default(cuid())
+  usuarioId String
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mensagemId String
+  mensagem MensagemWhatsApp @relation(fields: [mensagemId], references: [id], onDelete: Cascade)
+  criadoEm DateTime @default(now())
+  @@unique([usuarioId, mensagemId])
+  @@index([mensagemId])
 }
