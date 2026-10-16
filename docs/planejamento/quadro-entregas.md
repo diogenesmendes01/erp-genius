@@ -10,6 +10,18 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - `npm run lint`: saída 0; 0 erros, 44 avisos preexistentes.
 - `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS abaixo; nenhuma falha nova. Duração 7139 s.
 
+## Fase 1B — aceite parcial do bloco (PR 2, 16/10/2026)
+
+- Branch `claude/fase1-b-jobs`; tarefas 2 a 5 do plano (jobs e entrada automática da casca), commits `9e5d7bd`, `53c69b4`, `ea28099` e `ccd3015` sobre `d771ad1`. Perfil `dev-email` (banco `erp_genius_test_dev_email`), a mesma exceção ao `tester` registrada na linha de base.
+- `git diff --stat main -- prisma/ package.json package-lock.json`: vazio.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test` (`vitest run --reporter=json`, suíte completa, sem filtro): saída 0; 646 arquivos, `numTotalTests` 4561, `numFailedTests` 0, `success` true. `comm -13 tmp/lb-unit-falhas.txt tmp/b-unit-falhas.txt`: vazio.
+- `npm run test:int` **somente em recorte** (não é a suíte completa): os 8 `*.int.test.ts` alterados no bloco (`cobrancas/acesso-aulas`, `comercial/captura`, `matricula/fechamento`, `whatsapp/acesso-atendimento`, `whatsapp/confirmacao-experimental`, `whatsapp/fila-comercial`, `whatsapp/linha-comercial`, `whatsapp/piloto-bloqueadores`): saída 0, 8 arquivos, 80 testes, 0 falhas. Os que importam `inbound`, `historico` ou os webhooks (`whatsapp/saude`, `whatsapp/cron`, `whatsapp/inbox`, `whatsapp/despachante-comercial`): saída 1, 4 arquivos, 49 testes, 1 falha, que é `inbox.int.test.ts › cockpit do vendedor na thread … (escopo row-level P1)`, já na LB_FALHAS. `comm -13 tmp/lb-int-falhas.txt tmp/b-int-recorte-falhas.txt`: vazio. As 4 falhas de `whatsapp/cron-gestao.int.test.ts` da LB_FALHAS somem porque o arquivo foi removido na tarefa 4.
+- **Pendente para o integrador antes do merge:** rodar o `npm run test:int` completo (leva mais de 2 h, e a regra desta faixa proíbe rodá-lo), comparar com `comm -13 tmp/lb-int-falhas.txt tmp/b-int-falhas.txt`, registrar aqui código de saída e totais e abrir o PR 2 em rascunho.
+- **Pendência registrada: `scripts/auditoria/cenarios.test.mjs:30`.** O script ainda importa `rodarLeadNovoSemResposta` e `rodarPreExperimental` de `@/server/whatsapp/cron-comercial`, removido na tarefa 3. Como fica fora do `tsc` e do `vitest`, quebra só quando alguém o executa. Ele deve ser ajustado ou retirado no bloco que tratar `scripts/auditoria`, ou antes disso, se alguém precisar rodar o script.
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (16/10/2026, sem os removidos): saída 1; 17 arquivos, 15 passaram, 2 falharam; 7 testes falharam, 151 passaram. As 7 falhas (1 em `whatsapp/inbox.int.test.ts` e 6 em `academico/visibilidade.int.test.ts`) estão todas na LB_FALHAS; nenhuma falha nova. `tsc` 0, `npm test` 646 arquivos/4561 testes saída 0, `npm run lint` saída 0 (0 erros, 44 avisos).
+- Evidência local não versionada: `tmp/b-tsc.txt`, `tmp/b-unit.json`, `tmp/b-unit-falhas.txt` (vazia), `tmp/b-int-recorte.json`, `tmp/b-int-recorte2.json` e `tmp/b-int-recorte-falhas.txt` (1 linha).
+
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
 - Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
