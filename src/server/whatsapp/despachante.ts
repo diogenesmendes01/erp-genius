@@ -20,6 +20,7 @@ import { Papel } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
+import { aplicarResposta } from "./status-atendimento";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -527,7 +528,10 @@ export async function despacharFila(
           },
         });
         await tx.conversaWhatsApp.update({ where: { id: conv.id }, data: { ultimaMensagemEm: agora } });
-        if (it.atendimentoId) await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
+        if (it.atendimentoId) {
+          await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
+          if (it.origem === "HUMANO") await aplicarResposta(tx, it.atendimentoId, agora);
+        }
         if (it.cobrancaId && it.passo) {
           await registrarEventoCobrancaEnviada(tx, {
             cobrancaId: it.cobrancaId,

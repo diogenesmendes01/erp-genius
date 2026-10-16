@@ -3,12 +3,15 @@ import type { FinalidadeAtendimentoWhatsApp, Prisma } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoAtendimentos } from "./escopo";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
+import { chaveDeReabertura } from "./status-atendimento";
 import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./linha-comercial";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
   leadId?: string | null; alunoId?: string | null; matriculaId?: string | null; turmaId?: string | null; responsavelId?: string | null;
   autorizacaoComunicacaoAcademicaId?: string | null;
+  /** Contexto encerrado vira atendimento NOVO (`base#n`) em vez de devolver o encerrado. */
+  reabrir?: boolean;
 }) {
   if (dados.finalidade === "FINANCEIRO") {
     if (!dados.matriculaId || !dados.alunoId) throw new Error("Atendimento financeiro exige matrícula e aluno.");
@@ -31,11 +34,32 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   const contextoChave = [dados.finalidade, dados.leadId ?? "", dados.alunoId ?? "", dados.turmaId ?? "",
     ...(dados.matriculaId ? [dados.matriculaId] : []),
     ...(dados.finalidade === "PEDAGOGICO" && dados.alunoId ? [dados.autorizacaoComunicacaoAcademicaId ?? "ALUNO"] : [])].join(":");
+  const criar = {
+    finalidade: dados.finalidade,
+    leadId: dados.leadId, alunoId: dados.alunoId, matriculaId: dados.matriculaId, turmaId: dados.turmaId, responsavelId: dados.responsavelId,
+    autorizacaoComunicacaoAcademicaId: dados.autorizacaoComunicacaoAcademicaId,
+    ...(dados.responsavelId ? { status: "EM_ATENDIMENTO" as const } : {}),
+  };
+  if (dados.reabrir) {
+    // Serializa reaberturas do mesmo contexto: sem isso, duas transações contariam o mesmo `n`.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${conversa.id}), hashtext(${contextoChave}))`;
+    const doContexto = await tx.atendimentoWhatsApp.findMany({
+      where: { conversaId: conversa.id, OR: [{ contextoChave }, { contextoChave: { startsWith: `${contextoChave}#` } }] },
+      orderBy: { criadoEm: "asc" },
+    });
+    const aberto = doContexto.find((a) => !a.encerradoEm);
+    if (aberto) return aberto;
+    if (doContexto.length) {
+      const chave = chaveDeReabertura(contextoChave, doContexto.length);
+      return tx.atendimentoWhatsApp.upsert({
+        where: { conversaId_contextoChave: { conversaId: conversa.id, contextoChave: chave } },
+        create: { conversaId: conversa.id, contextoChave: chave, ...criar }, update: {},
+      });
+    }
+  }
   return tx.atendimentoWhatsApp.upsert({
     where: { conversaId_contextoChave: { conversaId: conversa.id, contextoChave } },
-    create: { conversaId: conversa.id, contextoChave, finalidade: dados.finalidade,
-      leadId: dados.leadId, alunoId: dados.alunoId, matriculaId: dados.matriculaId, turmaId: dados.turmaId, responsavelId: dados.responsavelId,
-      autorizacaoComunicacaoAcademicaId: dados.autorizacaoComunicacaoAcademicaId },
+    create: { conversaId: conversa.id, contextoChave, ...criar },
     update: {}, // nunca reabre vínculo encerrado nem muda o proprietário por visita/telefone
   });
 }
