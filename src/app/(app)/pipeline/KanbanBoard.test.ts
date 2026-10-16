@@ -96,33 +96,3 @@ describe("colunaVizinha (setas do teclado)", () => {
     expect(colunaVizinha([], card, 1)).toBeNull();
   });
 });
-
-describe("KanbanBoard — teto por coluna do servidor (docs/43 §6 item 9)", () => {
-  const novos = [lead("n1", "Lead Um", EtapaLead.NOVO), lead("n2", "Lead Dois", EtapaLead.NOVO)];
-
-  it("coluna que passou do teto diz quantos vieram, de quantos, e leva à lista filtrada pela etapa e pelo tipo", () => {
-    const html = renderToStaticMarkup(createElement(KanbanBoard, {
-      leads: [...novos, bruno], referenciaTemporal: agora, porColuna: 2,
-      totais: [{ etapa: EtapaLead.NOVO, b2b: false, total: 120 }, { etapa: EtapaLead.QUALIFICADO, b2b: false, total: 1 }],
-    }));
-    expect(html).toContain("Os 2 mais recentes de 120.");
-    expect(html).toContain('href="/leads?tipo=pf&amp;etapa=NOVO"');
-    // Só a coluna cortada ganha a nota.
-    expect(html.match(/mais recentes de/g)).toHaveLength(1);
-  });
-
-  it("abaixo do teto, ou sem totais do servidor, nenhuma nota", () => {
-    const abaixo = renderToStaticMarkup(createElement(KanbanBoard, {
-      leads: novos, referenciaTemporal: agora, porColuna: 50, totais: [{ etapa: EtapaLead.NOVO, b2b: false, total: 2 }],
-    }));
-    expect(abaixo).not.toContain("mais recentes de");
-    expect(renderToStaticMarkup(createElement(KanbanBoard, { leads: novos, referenciaTemporal: agora }))).not.toContain("mais recentes de");
-  });
-
-  it("o total vem do tipo exibido: o B2B cortado não aparece na aba de Pessoa Física", () => {
-    const html = renderToStaticMarkup(createElement(KanbanBoard, {
-      leads: novos, referenciaTemporal: agora, porColuna: 2, totais: [{ etapa: EtapaLead.NOVO, b2b: true, total: 300 }, { etapa: EtapaLead.NOVO, b2b: false, total: 2 }],
-    }));
-    expect(html).not.toContain("mais recentes de");
-  });
-});

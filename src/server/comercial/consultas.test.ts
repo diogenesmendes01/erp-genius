@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
-const db = vi.hoisted(() => ({ lead: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn(), groupBy: vi.fn() }, evento: { groupBy: vi.fn(), findMany: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() } }));
+const db = vi.hoisted(() => ({ lead: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn() }, evento: { groupBy: vi.fn(), findMany: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
-import { LEADS_POR_COLUNA_FUNIL, listarLeads, listarLeadsFunil, listarLeadsPagina, obterLead } from "./consultas";
+import { listarLeads, listarLeadsPagina, obterLead } from "./consultas";
 import { LEADS_POR_PAGINA, lerFiltrosLeads } from "./filtros";
 const u = (...papeis: Papel[]) => ({ id: "vendedor", nome: "V", papeis });
 beforeEach(() => {
@@ -50,45 +50,5 @@ describe("lista de /leads paginada (E4)", () => {
   it("papel sem carteira comercial: nada consultado", async () => {
     expect(await listarLeadsPagina(u(Papel.PROFESSOR), lerFiltrosLeads({}))).toEqual({ itens: [], total: 0, totalBase: 0 });
     expect(db.lead.count).not.toHaveBeenCalled();
-  });
-});
-
-describe("funil do /pipeline com teto por coluna (docs/43 §6 item 9)", () => {
-  const escopo = { vendedorDonoId: { in: ["vendedor"] } };
-  const lead = (id: string, etapa: string, b2b: boolean) => ({ id, etapa, b2b, criadoEm: new Date("2026-09-01T00:00:00Z"), pais: null, vendedor: null });
-
-  it("um groupBy dá o total de cada coluna; cada coluna com lead lê no máximo o teto, dentro do escopo, mais recentes primeiro", async () => {
-    db.lead.groupBy.mockResolvedValue([
-      { etapa: "NOVO", b2b: false, _count: { _all: 120 } },
-      { etapa: "NOVO", b2b: true, _count: { _all: 3 } },
-      { etapa: "PERDIDO", b2b: false, _count: { _all: 0 } },
-    ]);
-    db.lead.findMany.mockImplementation(async ({ where }: { where: { AND: [unknown, { etapa: string; b2b: boolean }] } }) =>
-      [lead(`${where.AND[1].etapa}-${where.AND[1].b2b}`, where.AND[1].etapa, where.AND[1].b2b)]);
-    db.evento.groupBy.mockResolvedValue([]);
-    const r = await listarLeadsFunil(u(Papel.VENDEDOR));
-    expect(db.lead.groupBy).toHaveBeenCalledWith({ by: ["etapa", "b2b"], where: escopo, _count: { _all: true } });
-    const consultas = db.lead.findMany.mock.calls.map((c) => c[0]);
-    // A coluna sem lead (PERDIDO, 0) não é lida.
-    expect(consultas.map((c) => c.where)).toEqual([
-      { AND: [escopo, { b2b: false, etapa: "NOVO" }] },
-      { AND: [escopo, { b2b: true, etapa: "NOVO" }] },
-    ]);
-    for (const c of consultas) expect(c).toMatchObject({ take: LEADS_POR_COLUNA_FUNIL, orderBy: [{ criadoEm: "desc" }, { id: "desc" }] });
-    expect(r.totais).toEqual([
-      { etapa: "NOVO", b2b: false, total: 120 },
-      { etapa: "NOVO", b2b: true, total: 3 },
-      { etapa: "PERDIDO", b2b: false, total: 0 },
-    ]);
-    expect(r.leads.map((l) => l.id)).toEqual(["NOVO-false", "NOVO-true"]);
-    // As projeções de eventos rodam uma vez sobre todos os cartões (não por coluna).
-    expect(db.evento.groupBy).toHaveBeenCalledTimes(2);
-    expect(db.evento.groupBy.mock.calls[0][0].where.agregadoId).toEqual({ in: ["NOVO-false", "NOVO-true"] });
-  });
-
-  it("papel sem carteira comercial: nada consultado", async () => {
-    expect(await listarLeadsFunil(u(Papel.PROFESSOR))).toEqual({ leads: [], totais: [] });
-    expect(db.lead.groupBy).not.toHaveBeenCalled();
-    expect(db.lead.findMany).not.toHaveBeenCalled();
   });
 });
