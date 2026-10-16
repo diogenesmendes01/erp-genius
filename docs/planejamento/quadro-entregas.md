@@ -2029,3 +2029,41 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
   (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## CRM, bloco D: tags, campos personalizados e visualizações salvas (Fase 2, Tasks 9 a 11; 16/10/2026)
+
+### Migration 2.M3 (`20261003000000_crm_tags_campos_filtros`)
+- O ID foi escolhido pelo implementador, e não reservado pelo integrador como a Global Constraint pede. Ele fica
+  depois de `20261002000000_crm_empresa_b2b` (2.M2), e nenhuma outra branch local ou remota tem migration
+  `20261003*`. A Fase 3 (`claude/fase3-a-modelo-atendimento`) usa `20261016*`, que vem depois. Sob delegação do
+  integrador, o ID foi mantido e aplicado só no banco do perfil. O integrador ainda precisa confirmá-lo antes de
+  qualquer ambiente compartilhado.
+- Na correção da revisão final saiu uma linha em branco duplicada antes do comentário do CHECK; o SQL é o mesmo.
+  A migration já estava aplicada no banco descartável `erp_genius_test_dev_gravacoes`, onde só o checksum em
+  `_prisma_migrations` foi trocado para o do arquivo novo
+  (`2470707f74538c034f297fe2cc9b1fc84aaaf5df8742d693e0676d70c9cb2ec2`). Nenhum outro banco tem essa migration.
+- `prisma migrate status` em `erp_genius_test_dev_gravacoes`: 441 migrations, "Database schema is up to date!".
+  `prisma migrate deploy`: "No pending migrations to apply".
+- `pg_proc` (F2-D): a migration só cria tipos, tabelas, índices, FKs com `ON DELETE RESTRICT` e o CHECK
+  `num_nonnulls("pessoaId","empresaId") = 1`, e não altera nenhuma tabela existente. Nenhuma função do schema
+  `public` cita `"Tag"`, `"PessoaTag"`, `"EmpresaTag"`, `"CampoPersonalizado"`, `"ValorCampoPersonalizado"` ou
+  `"FiltroSalvo"`, então nenhuma função existente fica quebrada.
+
+### Exceção registrada: delete físico do vínculo de tag
+- `removerTag` apaga a linha de vínculo (`tx.pessoaTag.delete` e `tx.empresaTag.delete` em
+  `src/server/crm/tags.ts`), e isso contraria a Global Constraint "Não há delete físico de dado de negócio".
+- Por que a exceção foi aceita:
+  - o schema que o plano dá para `PessoaTag`/`EmpresaTag` não tem coluna de lápide;
+  - o vínculo é só a marcação atual, e a própria `Tag` nunca é apagada (é desativada por `ativo`);
+  - o histórico completo fica nos Eventos `TagAtribuida`/`TagRemovida` (agregado `Pessoa` ou `Empresa`, com a tag
+    no payload), gravados na mesma transação;
+  - atribuir de novo cria um vínculo novo e um Evento novo, então nada se perde.
+- Se o dono preferir a lápide (`removidoEm`), é preciso trocá-la antes de a migration 2.M3 ser aplicada num
+  ambiente compartilhado. Depois disso, a troca custa uma migration nova.
+
+### Verificação da correção
+- Integração no perfil `dev-gravacoes`: `src/server/crm/tags.int.test.ts`, `campos.int.test.ts` e
+  `filtros-salvos.int.test.ts` passaram (3 arquivos, 24 testes, saída 0). Só mudaram o SQL, sem alteração de
+  semântica, e os docs, então `tsc` e `npm test` não são afetados.
+- Pendente com o integrador antes do PR: confirmar o ID 2.M3 e a exceção acima, e rodar `npm run test:int` completo.
+**Estado**: Implementado; aguardando o integrador. Não concluído.
