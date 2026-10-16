@@ -2136,7 +2136,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["REFERENCIA_COBERTURA_MENSAL_LABEL", L.REFERENCIA_COBERTURA_MENSAL_LABEL, Object.values(ReferenciaCoberturaMensal)],
   ["FINALIDADE_NUMERO_LABEL", L.FINALIDADE_NUMERO_LABEL, Object.values(FinalidadeNumero)],
   ["FORMA_AGENDA_OFERTA_LABEL", L.FORMA_AGENDA_OFERTA_LABEL, Object.values(FormaAgendaOferta)],
-  // R3 da #138 (B13): o mapa por extenso que vivia em server/whatsapp/cron-gestao.ts.
+  // R3 da #138 (B13): o mapa por extenso que vivia em server/whatsapp/cron-gestao.ts (removido na E1).
   ["ETAPA_EXTENSO_LABEL", L.ETAPA_EXTENSO_LABEL, Object.values(EtapaLead)],
   // Veio de src/lib/roles.ts (R3 da #138, B13; R1 da #150, B4: conferido como os novos); roles.ts só o reexporta.
   ["PAPEL_LABEL", L.PAPEL_LABEL, Object.values(Papel)],
