@@ -56,14 +56,15 @@ export function Drawer({
         aria-label={title}
         tabIndex={-1}
         className={
-          `absolute top-0 flex h-full flex-col border-gray-200 bg-surface-raised shadow-dialog transition-transform duration-200 ${largura} ` +
+          `absolute top-0 flex h-full flex-col border-gray-200 bg-surface-raised transition-transform duration-200 ${largura} ` +
           (lado === "esquerda" ? "left-0 border-e " : "right-0 border-s ") +
-          (open ? "translate-x-0" : lado === "esquerda" ? "-translate-x-full" : "translate-x-full")
+          // Sombra só aberto: fechado, o painel fica fora da tela e a sombra de 60 px vazava na borda (DS-C).
+          (open ? "translate-x-0 shadow-dialog" : lado === "esquerda" ? "-translate-x-full" : "translate-x-full")
         }
       >
         <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
           <h2 className="text-base font-medium">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Fechar" className="-m-2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+          <button type="button" onClick={onClose} aria-label="Fechar" className="-m-2 inline-flex min-h-10 min-w-10 items-center justify-center rounded-full text-gray-500 hover:bg-highlight hover:text-gray-700 max-sm:min-h-11 max-sm:min-w-11">
             <IconX size={20} />
           </button>
         </header>

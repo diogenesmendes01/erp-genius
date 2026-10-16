@@ -66,4 +66,8 @@ describe("ColunaOrdenavel: com JavaScript, o clique vai para o mesmo href do lin
       expect(destinos).toEqual([esperado]);
     });
   }
+
+  it("o link é posicionado: ancora o sr-only absoluto dentro da rolagem da tabela (sem estouro no celular)", () => {
+    expect(render(null)).toMatch(/<a [^>]*class="relative inline-flex/);
+  });
 });

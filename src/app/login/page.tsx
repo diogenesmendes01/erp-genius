@@ -64,7 +64,7 @@ export default function LoginPage() {
               autoComplete="email"
               aria-invalid={errors.email ? true : undefined}
               aria-describedby={errors.email ? "login-email-erro" : undefined}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
             {/* Sempre montado e visível: região aria-live precisa existir antes do texto mudar (display:none a tira da árvore).
                 Vazio, só a margem sai (empty:mt-0) — sem espaço sobrando e sem esconder a região. */}
@@ -80,7 +80,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               aria-invalid={errors.senha ? true : undefined}
               aria-describedby={errors.senha ? "login-senha-erro" : undefined}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
             <p id="login-senha-erro" aria-live="polite" className="mt-1 text-xs text-red-600 empty:mt-0">{errors.senha?.message}</p>
           </div>
