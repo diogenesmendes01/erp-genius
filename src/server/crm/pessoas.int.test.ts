@@ -146,6 +146,29 @@ describe("criarLead com pessoaId informado", () => {
   });
 });
 
+describe("criarLead com empresaId informado", () => {
+  const base = { segmento: "ADULTO", temperatura: "MORNO", b2b: true } as const;
+  it("aceita empresa ativa e liga a oportunidade a ela", async () => {
+    const empresa = await prisma.empresa.create({ data: { nome: "Acme" } });
+    logadoComo(vendedor.id);
+    const r = await criarLead({ nome: "Contato Acme", empresaId: empresa.id, ...base });
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: idDe(r) } })).empresaId).toBe(empresa.id);
+  });
+  it("recusa empresa inexistente ou inativa com erro amigável, sem estourar a FK nem criar nada", async () => {
+    const inativa = await prisma.empresa.create({ data: { nome: "Fechada", ativo: false } });
+    logadoComo(vendedor.id);
+    const antes = { oportunidades: await prisma.oportunidade.count(), pessoas: await prisma.pessoa.count() };
+    for (const empresaId of ["empresa-inexistente", inativa.id]) {
+      const r = await criarLead({ nome: "X", telefoneE164: "+50677776666", empresaId, ...base });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.erro).toBe("Empresa não encontrada.");
+    }
+    expect(await prisma.oportunidade.count()).toBe(antes.oportunidades);
+    expect(await prisma.pessoa.count()).toBe(antes.pessoas);
+    expect(await prisma.contatoWhatsApp.count({ where: { telefoneE164: "+50677776666" } })).toBe(0);
+  });
+});
+
 describe("possiveisDuplicados", () => {
   it("duplicado fora da carteira não revela o nome", async () => {
     await pessoaComOportunidade("Alheia", outro.id, "+50670001111");
