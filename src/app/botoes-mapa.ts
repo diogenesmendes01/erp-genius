@@ -925,7 +925,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Gerenciar documentos do contrato → btnSec",
     "<button> Reenviar link · Registrar link → btnSec",
   ],
-  "leads/[id]/contratacao/AgendaParticularFormulario.tsx": [
+  "oportunidades/[id]/contratacao/AgendaParticularFormulario.tsx": [
     "<button> Buscar professores → secundario/lg",
     "<button> Professores anteriores → secundario/md",
     "<button> Mais professores → secundario/md",
@@ -933,7 +933,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Adicionar encontro → secundario/lg",
     "<button> Conferir disponibilidade → secundario/lg",
   ],
-  "leads/[id]/contratacao/PreparacaoFormulario.tsx": [
+  "oportunidades/[id]/contratacao/PreparacaoFormulario.tsx": [
     "<button> Conferindo e preparando… · Preparar contratação e reservar → secundario/lg",
   ],
   "empresas/EmpresasCliente.tsx": [

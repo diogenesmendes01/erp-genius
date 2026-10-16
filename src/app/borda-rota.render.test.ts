@@ -42,6 +42,7 @@ import ErroEmpresas from "@/app/(app)/empresas/error";
 import ErroFinanceiro from "@/app/(app)/financeiro/error";
 import ErroInbox from "@/app/(app)/inbox/error";
 import ErroLeads from "@/app/(app)/leads/error";
+import ErroOportunidades from "@/app/(app)/oportunidades/error";
 import ErroMatricula from "@/app/(app)/matriculas/[id]/error";
 import ErroSecretaria from "@/app/(app)/secretaria/error";
 import ErroPagar from "@/app/pagar/[token]/error";
@@ -138,6 +139,7 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/(app)/inbox": { Componente: ErroInbox, caminho: "/inbox", titulo: "Não foi possível carregar a inbox", voltar: "/home" },
   "src/app/(app)/leads": { Componente: ErroLeads, caminho: "/leads/l1/contratacao", titulo: "Não foi possível carregar os leads", voltar: "/leads" },
   "src/app/(app)/matriculas/[id]": { Componente: ErroMatricula, caminho: "/matriculas/m1/preparacao", params: { id: "m1" }, titulo: "Não foi possível carregar esta seção da matrícula", voltar: "/matriculas/m1" },
+  "src/app/(app)/oportunidades": { Componente: ErroOportunidades, caminho: "/oportunidades/o1/contratacao", titulo: "Não foi possível carregar a oportunidade", voltar: "/funil" },
   "src/app/(app)/secretaria": { Componente: ErroSecretaria, caminho: "/secretaria/reservas", titulo: "Não foi possível carregar a secretaria", voltar: "/secretaria" },
   "src/app/pagar/[token]": { Componente: ErroPagar, caminho: "/pagar/t1", titulo: "Não foi possível abrir o pagamento", voltar: null },
   "src/app/certificado/[codigo]": { Componente: ErroCertificado, caminho: "/certificado/C1", titulo: "Não foi possível conferir o certificado agora", voltar: null },

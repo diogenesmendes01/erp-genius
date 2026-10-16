@@ -46,6 +46,7 @@ export const ROTAS_COM_ERROR = [
   "src/app/(app)/inbox",
   "src/app/(app)/leads",
   "src/app/(app)/matriculas/[id]",
+  "src/app/(app)/oportunidades",
   "src/app/(app)/secretaria",
   "src/app/pagar/[token]",
   "src/app/certificado/[codigo]",
