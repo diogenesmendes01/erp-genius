@@ -3,6 +3,8 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { prisma } from "@/lib/prisma";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
+import { ehGerenteDoSetor, setoresDoUsuario, type Setor } from "./setor";
+import { whereNumeroServeSetor } from "./numero-setor";
 import { donosDeLinhaVisiveis, whereLinhasDosDonos } from "./linha-comercial";
 
 // Doc 36/37: transporte e acesso são dimensões diferentes. Escopo de número só serve
@@ -31,6 +33,11 @@ export function escopoNumeros(usuario: UsuarioSessao): Prisma.NumeroWhatsAppWher
   if (usuario.papeis.includes(Papel.VENDEDOR)) ors.push({ donoId: usuario.id });
   if (ors.length === 0) return { id: "__sem_acesso__" }; // fail-closed: não casa com nada
   return { OR: ors };
+}
+
+/** Fila do setor: atendimento aberto, sem responsável, em número que serve o setor. */
+export function ramoFilaDoSetor(setor: Setor): Prisma.AtendimentoWhatsAppWhereInput {
+  return { finalidade: setor, responsavelId: null, encerradoEm: null, conversa: { numero: whereNumeroServeSetor(setor) } };
 }
 
 /** O transporte nunca concede leitura das mensagens. Cada finalidade tem seus vínculos. */
@@ -63,13 +70,15 @@ export async function escopoAtendimentos(
     const donos = await donosDeLinhaVisiveis(usuario);
     if (donos.length) ors.push(whereLinhasDosDonos(donos));
   }
-  if (usuario.papeis.includes(Papel.FINANCEIRO) || usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
-    ors.push({ finalidade: "FINANCEIRO", alunoId: { not: null } });
+  // Participante vale para qualquer setor, sem filtrar por finalidade.
+  ors.push(participante);
+  // Setor: gerente vê todo o setor; os demais, o que é seu + a fila. O PEDAGOGICO do professor é
+  // só a turma (ramo abaixo): sem responsável próprio nem fila.
+  const papeisSemProfessor = usuario.papeis.filter((p) => p !== Papel.PROFESSOR);
+  for (const setor of setoresDoUsuario(papeisSemProfessor)) {
+    if (ehGerenteDoSetor(usuario.papeis, setor)) ors.push({ finalidade: setor });
+    else ors.push({ finalidade: setor, responsavelId: usuario.id }, ramoFilaDoSetor(setor));
   }
-  if (usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
-    ors.push({ finalidade: "SECRETARIA" }, { finalidade: "PEDAGOGICO" });
-  }
-  if (usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO)) ors.push({ finalidade: "PEDAGOGICO" });
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     const vinculos = await prisma.alocacaoTurma.findMany({ where: { ativa: true, turma: escopoTurmasDocente(usuario.id, agora) }, select: { alunoId: true, turmaId: true } });
     // Vínculo ATUAL: o diário próprio é outra capacidade, não acesso perpétuo à inbox.
