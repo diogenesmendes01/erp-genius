@@ -107,7 +107,7 @@ describe("atendimentoComercialDaLinha (§5.1)", () => {
     const a = await atendimentoComercialDaLinha(tx as never, "c1");
     expect(tx.atendimentoWhatsApp.upsert).toHaveBeenCalledWith({
       where: { conversaId_contextoChave: { conversaId: "c1", contextoChave: CHAVE_LINHA } },
-      create: { conversaId: "c1", contextoChave: CHAVE_LINHA, finalidade: "COMERCIAL", leadId: null, responsavelId: "dono" },
+      create: { conversaId: "c1", contextoChave: CHAVE_LINHA, finalidade: "COMERCIAL", leadId: null, responsavelId: "dono", status: "EM_ATENDIMENTO" },
       update: {},
     });
     expect(a?.id).toBe("novo");
@@ -178,6 +178,7 @@ describe("adotarMensagensOrfasDaLinha (LC-15)", () => {
     expect(db.conversaWhatsApp.findMany).toHaveBeenCalledWith({
       where: {
         numero: { finalidade: "VENDAS", ativo: true },
+        grupoId: null,
         mensagens: { some: { atendimentoId: null } },
         atendimentos: { none: { encerradoEm: null, finalidade: { not: "COMERCIAL" } } },
       },

@@ -4,7 +4,20 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 
 ## Fase 3 — IDs de migration (16/10/2026)
 
-- M1 (`numero_setor_whatsapp`, Task 2): o integrador não entregou o ID reservado; a pasta usa o ID provisório `20261016090000` (posterior a `20260929130000`, a última existente). O integrador confirma o ID ou renomeia `prisma/migrations/20261016090000_numero_setor_whatsapp` antes do merge. Se renomear, o banco de teste do worktree precisa reaplicar a migration.
+Branch `claude/fase3-a-modelo-atendimento`. As cinco pastas estão aplicadas só no banco do perfil `tester` (`erp_genius_test_tester`, `prisma migrate deploy`). Estado por ID:
+
+| Migration | Task | Pasta | Estado do ID |
+| --- | --- | --- | --- |
+| M1 `numero_setor_whatsapp` | 2 | `20261016090000_numero_setor_whatsapp` | Provisório (posterior a `20260929130000`, a última da base) |
+| M2 `atendimento_status_prazos` | 4 | `20261016100000_atendimento_status_prazos` | Provisório |
+| M3 `grupos_whatsapp` | 6 | `20261016110000_grupos_whatsapp` | Confirmado no ledger da Task 6 (fechamento pós-revisão: "ID confirmado; próximas migrations da Fase 3 a partir de `20261016120000`"); o integrador ratifica no merge |
+| M4 `origem_celular_client_message_id` | 7 | `20261016120000_origem_celular_client_message_id` | Provisório (primeiro ID da faixa indicada no ledger da Task 6; sem confirmação explícita) |
+| M5 `preferencias_inbox_usuario` | 8 | `20261016130000_preferencias_inbox_usuario` | Provisório (sequência de M4; sem confirmação explícita) |
+
+- Antes do merge, o integrador confirma cada ID provisório ou informa o oficial. Se renomear: (a) recriar o banco do perfil `tester` e reaplicar (`migrate deploy`), porque o nome fica em `_prisma_migrations`; (b) nenhum teste depende do ID: `atendimento-status.int.test.ts` localiza a pasta pelo sufixo `_atendimento_status_prazos`.
+- Regra de status (revisão final do bloco A): responsável preenchido conta como assumido. Backfill da M2, `garantirAtendimento`, `atendimentoComercialDaLinha` (linha VENDAS nasce `EM_ATENDIMENTO` quando há dono) e `atribuirDono` (reatribuição tira de `ABERTO_SEM_RESPONSAVEL`; `AGUARDANDO_CLIENTE` se mantém) seguem a mesma regra.
+- Evidências da correção: `tsc --noEmit` saída 0; integração (recorte, não suíte completa) `linha-comercial`, `acesso/politica`, `atendimento-status` e `reabertura` `.int.test.ts`: 4 arquivos, 48 testes verdes; unitários `vitest related` de `linha-comercial.ts` e `comercial/acoes.ts`: 82 arquivos, 717 testes verdes (inclui o ajuste de `linha-comercial.test.ts` ao filtro `grupoId: null` de `baa2e7ed`); eslint 0 nos arquivos tocados.
+- **Estado**: Implementado; IDs M1, M2, M4 e M5 aguardando o integrador. Não concluído.
 
 ## Fase 1A — verificação do bloco (15/10/2026)
 
@@ -1904,4 +1917,3 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
-- M3 (`grupos_whatsapp`, Task 6): o integrador não entregou o ID reservado; a pasta usa o ID provisório `20261016110000` (posterior a M2 `20261016100000`). O integrador confirma o ID ou renomeia `prisma/migrations/20261016110000_grupos_whatsapp` antes do merge; se renomear, o banco de teste do worktree precisa reaplicar a migration.

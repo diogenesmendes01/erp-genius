@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -28,7 +28,10 @@ describe("status, prazos e origem do atendimento (M2)", () => {
     const { a } = await cenario();
     expect(a.status).toBe("ABERTO_SEM_RESPONSAVEL");
     // truncarBanco apaga o seed; a migration é a fonte dos prazos provisórios (Q3).
-    const sql = readFileSync("prisma/migrations/20261016100000_atendimento_status_prazos/migration.sql", "utf8");
+    // Localiza pela parte fixa do nome: o integrador pode renomear o ID da pasta (Global Constraints).
+    const pasta = readdirSync("prisma/migrations").find((d) => d.endsWith("_atendimento_status_prazos"));
+    expect(pasta).toBeDefined();
+    const sql = readFileSync(`prisma/migrations/${pasta}/migration.sql`, "utf8");
     for (const [setor, min] of [["COMERCIAL", 15], ["FINANCEIRO", 240], ["SECRETARIA", 240], ["PEDAGOGICO", 1440]]) {
       expect(sql).toContain(`('${setor}', ${min}, CURRENT_TIMESTAMP)`);
     }

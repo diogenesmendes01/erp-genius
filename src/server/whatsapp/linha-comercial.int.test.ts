@@ -81,7 +81,8 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(thread).toMatchObject({ linhaComercial: true, podeCriarLead: true, lead: null, podeEnviar: true });
 
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: lista[0].id } });
-    expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", contextoChave: CHAVE_LINHA, leadId: null, responsavelId: vendedorA.id });
+    // Dono da linha como responsável conta como assumido (mesma regra do backfill da M2).
+    expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", contextoChave: CHAVE_LINHA, leadId: null, responsavelId: vendedorA.id, status: "EM_ATENDIMENTO" });
     expect(await prisma.lead.count()).toBe(0);
     entrar(admin);
     expect(await listarTriagemWhatsApp()).toHaveLength(0);
@@ -100,6 +101,15 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: atendimentos[0].id } })).toBe(2);
     const thread = await carregarThread(sessao(vendedorA), atendimentos[0].id);
     expect(thread?.podeCriarLead).toBe(true);
+  });
+});
+
+describe("status do atendimento da linha", () => {
+  it("linha sem dono nasce ABERTO_SEM_RESPONSAVEL", async () => {
+    await linhaDe(null);
+    await mensagem("linha-a");
+    const [a] = await prisma.atendimentoWhatsApp.findMany();
+    expect(a).toMatchObject({ contextoChave: CHAVE_LINHA, responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
   });
 });
 
