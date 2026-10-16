@@ -2,6 +2,14 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 1A — verificação do bloco (15/10/2026)
+
+- Branch `claude/fase1-a-linha-de-base`; tarefa 1 do plano (E0: fontes da fase 1 e linha de base de testes). Só `docs/` mudou em relação à `main`; `src/`, `prisma/` e `package*.json` sem diferença.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 646 arquivos, 4560 testes, 0 falhas (igual à linha de base).
+- `npm run lint`: saída 0; 0 erros, 44 avisos preexistentes.
+- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS acima; nenhuma falha nova. Duração 7139 s.
+
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
 - Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
