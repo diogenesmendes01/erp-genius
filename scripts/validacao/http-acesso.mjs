@@ -44,7 +44,7 @@ try {
   }
   const pais = await db.pais.upsert({ where: { codigoISO: "ZZ" }, create: { nome: marcador, codigoISO: "ZZ", moedaLocal: "BRL", ddi: "+55", status: "ATIVO" }, update: { nome: marcador } });
   await entrar("ADMINISTRADOR");
-  for (const [route, titulo] of [["/configuracao/operacao", "Matrícula e conferência"], ["/secretaria", "Matrículas e correções"], ["/carteiras", "Carteiras e coberturas"], ["/diario", "Diário"], ["/comissoes", "Comiss"], ["/financeiro", "Financeiro"], ["/inbox", "Inbox"]]) await pagina(route, titulo);
+  for (const [route, titulo] of [["/configuracao/operacao", "Matrícula e conferência"], ["/secretaria", "Matrículas e correções"], ["/diario", "Diário"], ["/financeiro", "Financeiro"], ["/inbox", "Inbox"]]) await pagina(route, titulo);
   await pagina("/academico", "Mudanças acadêmicas");
   const gp = await entrar("GERENTE_PEDAGOGICO");
   await pagina("/academico", "Mudanças acadêmicas");

@@ -22,6 +22,21 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (16/10/2026, sem os removidos): saída 1; 17 arquivos, 15 passaram, 2 falharam; 7 testes falharam, 151 passaram. As 7 falhas (1 em `whatsapp/inbox.int.test.ts` e 6 em `academico/visibilidade.int.test.ts`) estão todas na LB_FALHAS; nenhuma falha nova. `tsc` 0, `npm test` 646 arquivos/4561 testes saída 0, `npm run lint` saída 0 (0 erros, 44 avisos).
 - Evidência local não versionada: `tmp/b-tsc.txt`, `tmp/b-unit.json`, `tmp/b-unit-falhas.txt` (vazia), `tmp/b-int-recorte.json`, `tmp/b-int-recorte2.json` e `tmp/b-int-recorte-falhas.txt` (1 linha).
 
+## Fase 1C — aceite do bloco (PR 3, 16/10/2026)
+
+- Branch `claude/fase1-c-telas`; tarefas 6 a 10 do plano (telas da casca), commits `b2a63e3` (/pipeline), `e81f5e5` (/carteiras), `358d17c` (/comissoes), `1f6c1b2` (configuração e régua comercial do WhatsApp) e `25365ac` (HomeVendedor) sobre `4472e76`, mais o commit de correção da revisão final. Perfil `dev-email`, a mesma exceção ao `tester` registrada na linha de base.
+- `git diff 4472e76..HEAD -- prisma package.json package-lock.json`: vazio.
+- Conferido na revisão final no HEAD `25365ac`:
+  - `node_modules/.bin/tsc --noEmit`: saída 0.
+  - `vitest run` (suíte unitária completa, sem filtro): saída 0; 4524 testes, 0 falhas. A queda em relação aos 4561 do Bloco B vem dos testes das telas removidas.
+  - `npm run lint`: 0 erros, 44 avisos (a mesma contagem do Bloco B).
+- `npm run test:int` **não foi rodado** neste bloco, nem completo nem em recorte, na revisão final. **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
+- **Pendências registradas (Fase 2/4):**
+  - `revalidatePath` para rotas removidas, inofensivos mas mortos: `/pipeline` em `src/server/comercial/acoes.ts` (linhas 90 e 631), `src/server/matricula/acoes.ts:70` e `src/server/ia/acoes.ts:37` (sai com o Bloco D); `/carteiras` em `src/server/acesso/coberturas.ts:24,39`; `/comissoes` em `src/server/matricula/acoes.ts:74`.
+  - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:25,35` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
+  - **Código órfão em `src/server/comercial/consultas.ts`** (sem uso fora do próprio módulo desde a tarefa 9; o `page.test` do WhatsApp deixou de mocká-lo): `carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com as interfaces `ReguaComercialConfig`, `DegrauComercialConfig`, `NumeroResumo`, `TemplateResumo` e `EnsaioComercial`. Somam-se a `salvarConfigComercial`, `salvarReguaComercial` e `carregarSaudacoesSimuladas`, já listados no plano. Remover na Fase 2/4.
+  - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
+
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
 - Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
