@@ -26,7 +26,7 @@
 
 ## Campos de formulário
 - Rótulo (`ROTULO_CAMPO` em `src/components/Campo.tsx`): `text-sm font-medium text-gray-800` (14 px, peso 500). Dica e erro seguem em 12 px.
-- Base em `globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo `--surface-muted` e raio 8 px; `:disabled` usa `--text-disabled` e `cursor: not-allowed`; abaixo de 767 px, `min-height: 44px`; `textarea` com `min-height: 90px` e `resize: vertical`. Classe utilitária explícita (ex.: `bg-surface`) continua vencendo a base.
+- Base em `globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo `--surface-muted` e raio 8 px; `:disabled` usa `--text-disabled` e `cursor: not-allowed`; abaixo de 767 px, `min-height: 44px` (exceto `textarea`); `textarea` com `resize: vertical` e `min-height: 90px` quando tem mais de uma linha (o de `rows="1"`, como o compositor do Inbox, fica compacto). Os seletores de `input` e do `textarea` de várias linhas vão em `:where(...)`, com especificidade zero: o Tailwind 3 não emite cascade layers, e é isso que faz a classe utilitária explícita (`bg-surface`, `rounded-*`, `min-h-*`) vencer a base.
 - Trava: `src/components/Campo.test.ts` e `src/app/design-system.test.ts`.
 
 ## Ícones
