@@ -87,7 +87,6 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
 
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
-  revalidatePath("/pipeline");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
   if (id) revalidatePath(`/leads/${id}`);
@@ -628,7 +627,6 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     });
     revalidatePath("/home");
     revalidatePath("/leads");
-    revalidatePath("/pipeline");
   });
 }
 
