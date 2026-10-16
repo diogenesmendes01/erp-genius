@@ -6,7 +6,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { garantirAtendimento } from "./atendimentos";
-import { alternarFavorita, alternarFixada, marcarLida, marcarNaoLida, preferenciasDoUsuario, silenciarConversa } from "./preferencias";
+import { alternarFavorita, alternarFixada, marcarLida, marcarNaoLida, silenciarConversa } from "./preferencias";
+import { preferenciasDoUsuario } from "./preferencias-consulta";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 const comoUsuario = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
