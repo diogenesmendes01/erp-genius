@@ -13,7 +13,7 @@ async function leadAutorizado(tx: Prisma.TransactionClient, autorId: string, lea
   const autor = await tx.usuario.findUnique({ where: { id: autorId }, select: { id: true, nome: true, ativo: true, papeis: true } });
   if (!autor?.ativo || !autor.papeis.some((p) => papeis.includes(p))) throw new ErroPermissao();
   const operacional = autor.papeis.includes(Papel.ADMINISTRADOR) || autor.papeis.includes(Papel.SECRETARIA_ACADEMICA);
-  const lead = await tx.lead.findFirst({ where: { AND: [{ id: leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, nome: true, telefoneE164: true, matricula: { select: { id: true } } } });
+  const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id: leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, nome: true, telefoneE164: true, matricula: { select: { id: true } } } });
   if (!lead) throw new ErroPermissao();
   return lead;
 }

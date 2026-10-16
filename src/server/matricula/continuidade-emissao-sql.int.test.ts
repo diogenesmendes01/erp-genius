@@ -35,7 +35,7 @@ async function prepararFonte() {
   const grade = await prisma.propostaGradeTurma.create({ data: { turmaId: turma.id, calendarioId: calendario.id, preparadorId: secretaria.id, versao: 1, fusoOrigem: "UTC", motivo: "Grade da emissão", chaveIdempotencia: "emissao-sql-grade", entradaHash: "fixture", snapshot: {} } });
   await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: admin.id, aprovada: true, motivo: "Grade aprovada" } });
   await prisma.encontroAgenda.create({ data: { turmaId: turma.id, propostaGradeId: grade.id, professorId: professor.id, preparadorId: secretaria.id, inicio: new Date("2099-10-01T12:00:00.000Z"), fim: new Date("2099-10-01T13:00:00.000Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Encontro da emissão", chaveIdempotencia: "emissao-sql-encontro", entradaHash: "fixture" } });
-  const lead = await prisma.lead.create({ data: { nome: "Contratação da emissão", vendedorDonoId: secretaria.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Contratação da emissão", vendedorDonoId: secretaria.id } });
   const preparada = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId: secretaria.id, leadId: lead.id, alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, turmaId: turma.id, regime: "MENSALIDADE", taxaProposta: "100", valorServicoProposto: "100", motivo: "Preparação mensal para guarda SQL", chaveIdempotencia: "emissao-sql-preparacao" }));
   const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: preparada.matriculaId } });
   const documento = await prisma.documento.create({ data: {

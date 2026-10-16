@@ -174,7 +174,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
 async function podeVerLeadNaThread(usuario: UsuarioSessao, atendimentoId: string, leadId: string, agora: number): Promise<boolean> {
   if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
   if (temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
-    && await prisma.lead.count({ where: { AND: [{ id: leadId }, await escopoComercialAtual(usuario)] } })) return true;
+    && await prisma.oportunidade.count({ where: { AND: [{ id: leadId }, await escopoComercialAtual(usuario)] } })) return true;
   const instante = new Date(agora);
   return !!await prisma.participanteAtendimentoWhatsApp.count({ where: {
     atendimentoId, usuarioId: usuario.id, inicio: { lte: instante }, fim: { gt: instante }, revogadoEm: null,
@@ -224,7 +224,7 @@ export async function buscarPessoasVinculo(usuario: UsuarioSessao, q: string, at
   if (!a || q.trim().length < 2 || a.finalidade === "PEDAGOGICO") return vazio;
   const contem = { contains: q.trim(), mode: "insensitive" as const };
   if (a.finalidade === "COMERCIAL" && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) {
-    vazio.leads = await prisma.lead.findMany({ where: { AND: [await escopoComercialAtual(usuario), { nome: contem }] }, take: 5, select: { id: true, nome: true, codigo: true } });
+    vazio.leads = await prisma.oportunidade.findMany({ where: { AND: [await escopoComercialAtual(usuario), { nome: contem }] }, take: 5, select: { id: true, nome: true, codigo: true } });
   }
   if (temPapel(usuario, Papel.SECRETARIA_ACADEMICA) && (a.finalidade === "SECRETARIA" || a.finalidade === "FINANCEIRO")) {
     const alunos = await prisma.aluno.findMany({ where: { OR: [{ primeiroNome: contem }, { sobrenome: contem }] }, take: 5, select: { id: true, primeiroNome: true, sobrenome: true } });

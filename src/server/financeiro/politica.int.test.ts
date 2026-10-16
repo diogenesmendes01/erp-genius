@@ -44,7 +44,7 @@ beforeEach(async () => {
   ]);
   cat = await seedCatalogoMinimo();
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Teste", paisId: cat.pais.id } }); alunoId = aluno.id;
-  const lead = await prisma.lead.create({ data: { nome: "Lead", vendedorDonoId: ven.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: ven.id } });
   const m = await prisma.matricula.create({ data: {
     alunoId, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "AGUARDANDO", mesesPlano: 2,
     referenciaCobertura: "MES_CIVIL",
@@ -148,7 +148,7 @@ describe("alçadas, aprovação vinculada e histórico", () => {
     const pedido = await prisma.aprovacao.findFirstOrThrow();
     entrar(gerente.id); expect((await listarAprovacoesPendentes()).map((p) => p.id)).toContain(pedido.id);
     const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
-    await prisma.lead.update({ where: { id: matricula.leadId! }, data: { vendedorDonoId: outroVendedor.id } });
+    await prisma.oportunidade.update({ where: { id: matricula.leadId! }, data: { vendedorDonoId: outroVendedor.id } });
     expect(await listarAprovacoesPendentes()).toEqual([]);
     expect((await decidirAprovacao(pedido.id, { aprovar: true })).ok).toBe(false);
     expect(Number((await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).valorNegociado)).toBe(100);

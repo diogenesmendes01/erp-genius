@@ -6,7 +6,7 @@ import { CHAVE_PRE_EXPERIMENTAL } from "./regua-fabrica";
 // CAPTURA AUTOMÁTICA DE LEAD (doc 27 C1 · doc 29 §fluxo F5, regra 6).
 // O 1º inbound de um número de VENDAS sem vínculo vira um Lead — MAS pelo MESMO caminho
 // que o formulário usa (gerarCodigo "lead" + LeadCriado/LeadAtribuido), nunca um
-// `tx.lead.create` solto no webhook (regra 6: pular o Contador/normalização/auditoria).
+// `tx.oportunidade.create` solto no webhook (regra 6: pular o Contador/normalização/auditoria).
 // Sem sessão: autorId = null (sistema). Dono = dono do NumeroWhatsApp de vendas.
 //
 // DEDUPE (gap 17): telefone que JÁ é aluno/responsável/lead não vira lead novo — a régua
@@ -40,7 +40,7 @@ export async function resolverPessoaPorTelefone(
   const [aluno, responsavel, lead] = await Promise.all([
     tx.aluno.findFirst({ where: { telefoneE164 }, select: { id: true } }),
     tx.responsavel.findFirst({ where: { telefoneE164 }, select: { id: true } }),
-    tx.lead.findFirst({ where: { telefoneE164 }, orderBy: { criadoEm: "desc" }, select: { id: true } }),
+    tx.oportunidade.findFirst({ where: { telefoneE164 }, orderBy: { criadoEm: "desc" }, select: { id: true } }),
   ]);
   return { alunoId: aluno?.id ?? null, responsavelId: responsavel?.id ?? null, leadId: lead?.id ?? null };
 }
@@ -69,7 +69,7 @@ export async function criarLeadDeInboundWhatsApp(
   dados: LeadDeInbound,
 ): Promise<string> {
   const codigo = await gerarCodigo("lead", tx);
-  const lead = await tx.lead.create({
+  const lead = await tx.oportunidade.create({
     data: {
       codigo,
       nome: dados.nomeExibicao?.trim() || "Contato WhatsApp",
@@ -153,7 +153,7 @@ export async function capturarRespostaExperimental(
   const resposta = classificarRespostaExperimental(ctx.corpo);
   if (!resposta) return null;
 
-  const lead = await tx.lead.findUnique({
+  const lead = await tx.oportunidade.findUnique({
     where: { id: ctx.leadId },
     select: { id: true, etapa: true, dataExperimental: true, experimentalConfirmadaEm: true },
   });
@@ -179,7 +179,7 @@ export async function capturarRespostaExperimental(
 
   if (resposta === "confirmada") {
     if (lead.experimentalConfirmadaEm) return null; // já confirmada — não duplica evento
-    await tx.lead.update({ where: { id: lead.id }, data: { experimentalConfirmadaEm: ctx.quando } });
+    await tx.oportunidade.update({ where: { id: lead.id }, data: { experimentalConfirmadaEm: ctx.quando } });
     await registrarEvento(tx, {
       tipo: "ExperimentalConfirmada",
       agregadoTipo: "Lead",
@@ -194,7 +194,7 @@ export async function capturarRespostaExperimental(
   // persistido que o cron e o despachante honram até a ação humana (remarcar limpa o campo
   // em `agendarExperimental` e abre uma ocorrência nova). Sem isso, o inbound cancelava as
   // intenções existentes mas o tick seguinte enfileirava o próximo degrau por cima do pedido.
-  await tx.lead.update({ where: { id: lead.id }, data: { aguardandoReagendamentoEm: ctx.quando } });
+  await tx.oportunidade.update({ where: { id: lead.id }, data: { aguardandoReagendamentoEm: ctx.quando } });
   await registrarEvento(tx, {
     tipo: "ExperimentalReagendamentoSolicitado",
     agregadoTipo: "Lead",

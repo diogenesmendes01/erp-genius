@@ -7,7 +7,7 @@ import { congelar, memoPorRequisicao } from "./memo-requisicao";
 export async function escopoComercialAtual(
   usuario: UsuarioSessao,
   tx: Prisma.TransactionClient | typeof prisma = prisma,
-): Promise<Prisma.LeadWhereInput> {
+): Promise<Prisma.OportunidadeWhereInput> {
   if (!usuario?.id) return { id: "__sem_acesso__" };
   // Memo por requisição só fora de transação (ganho rápido 15): dentro de uma tx, o escopo tem de
   // ser lido NELA (isolamento), então nunca vem do memo. A chave é primitiva (id + papéis) — o objeto
@@ -24,7 +24,7 @@ const escopoMemo = memoPorRequisicao((id: string, papeisJson: string) =>
 async function calcularEscopo(
   usuario: UsuarioSessao,
   tx: Prisma.TransactionClient | typeof prisma,
-): Promise<Prisma.LeadWhereInput> {
+): Promise<Prisma.OportunidadeWhereInput> {
   if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return {};
   const vendedor = usuario.papeis.includes(Papel.VENDEDOR);
   const gerente = usuario.papeis.includes(Papel.GERENTE_COMERCIAL);

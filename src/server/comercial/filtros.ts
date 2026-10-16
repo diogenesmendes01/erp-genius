@@ -92,7 +92,7 @@ export const palavrasDaBuscaLeads = (busca: string) => busca.split(/\s+/).filter
  * lugar dele. Busca por palavras: cada uma precisa aparecer no nome, no código ou no telefone
  * ("Ana Silva" acha "Ana Maria Silva"; "8888" acha pelo telefone).
  */
-export function whereFiltrosLead(filtros: FiltrosLead): Prisma.LeadWhereInput {
+export function whereFiltrosLead(filtros: FiltrosLead): Prisma.OportunidadeWhereInput {
   const palavras = palavrasDaBuscaLeads(filtros.busca ?? "");
   return {
     ...(filtros.b2b !== undefined ? { b2b: filtros.b2b } : {}),

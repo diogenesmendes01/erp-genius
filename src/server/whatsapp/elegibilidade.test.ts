@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const db = vi.hoisted(() => ({
-  lead: { findUnique: vi.fn() }, conversaWhatsApp: { findUnique: vi.fn() },
+  oportunidade: { findUnique: vi.fn() }, conversaWhatsApp: { findUnique: vi.fn() },
   mensagemWhatsApp: { count: vi.fn() }, evento: { count: vi.fn() },
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
@@ -11,7 +11,7 @@ const futuro = new Date("2026-09-08T13:00:00Z");
 const intencao = { leadId: "lead", numeroId: "canal", contatoId: "contato", ocorrenciaComercial: ancora.toISOString(), politicaComercial: { chave: "LEAD_NOVO_SEM_RESPOSTA" } };
 beforeEach(() => {
   vi.resetAllMocks();
-  db.lead.findUnique.mockResolvedValue({ id: "lead", etapa: "NOVO", dataExperimental: futuro });
+  db.oportunidade.findUnique.mockResolvedValue({ id: "lead", etapa: "NOVO", dataExperimental: futuro });
   db.conversaWhatsApp.findUnique.mockResolvedValue({ id: "conversa", capturadaEm: ancora, contato: { leadId: "lead" } });
   db.mensagemWhatsApp.count.mockResolvedValue(0); db.evento.count.mockResolvedValue(0);
 });
@@ -19,7 +19,7 @@ beforeEach(() => {
 describe("validade do domínio no despacho (W01–W05)", () => {
   it("lead novo elegível passa; assumir o atendimento cancela a intenção já criada", async () => {
     expect(await motivoCadenciaInvalida(intencao, futuro)).toBeNull();
-    db.lead.findUnique.mockResolvedValue({ id: "lead", etapa: "EM_ATENDIMENTO", dataExperimental: null });
+    db.oportunidade.findUnique.mockResolvedValue({ id: "lead", etapa: "EM_ATENDIMENTO", dataExperimental: null });
     expect(await motivoCadenciaInvalida(intencao, futuro)).toBe("etapa_comercial_alterada");
   });
   it("fromMe e resposta humana entram na consulta de encerramento", async () => {
@@ -28,7 +28,7 @@ describe("validade do domínio no despacho (W01–W05)", () => {
     expect(JSON.stringify(db.mensagemWhatsApp.count.mock.calls[0])).toContain('"origem":null');
   });
   it("experimental vencida, reagendada ou com pedido de reagendamento não recebe lembrete antigo", async () => {
-    db.lead.findUnique.mockResolvedValue({ id: "lead", etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: futuro });
+    db.oportunidade.findUnique.mockResolvedValue({ id: "lead", etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: futuro });
     const i = { ...intencao, ocorrenciaComercial: futuro.toISOString(), politicaComercial: { chave: "PRE_EXPERIMENTAL" } };
     expect(await motivoCadenciaInvalida(i, ancora)).toBeNull();
     expect(await motivoCadenciaInvalida(i, futuro)).toBe("experimental_iniciada");

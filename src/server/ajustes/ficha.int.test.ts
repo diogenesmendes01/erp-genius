@@ -30,7 +30,7 @@ beforeAll(async () => {
   financeiro = await criarUsuario([Papel.FINANCEIRO], "Financeiro");
   const cat = await seedCatalogoMinimo();
 
-  const lead = await prisma.lead.create({ data: { nome: "Lead", vendedorDonoId: dono.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: dono.id } });
   const aluno = await prisma.aluno.create({
     data: { primeiroNome: "Carlos", paisId: cat.pais.id },
   });

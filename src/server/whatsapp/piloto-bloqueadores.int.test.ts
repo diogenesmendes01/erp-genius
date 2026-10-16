@@ -61,7 +61,7 @@ async function seedPolitica(
 /** Lead frio: 1º inbound há `haMin` minutos (âncora da cadência C1). */
 async function seedLeadFrio(numeroId: string, haMin: number, sufixo = "") {
   const capturadaEm = new Date(Date.now() - haMin * 60_000);
-  const lead = await prisma.lead.create({
+  const lead = await prisma.oportunidade.create({
     data: { codigo: `L-${Math.floor(Math.random() * 1e6)}`, nome: `Ana${sufixo}`, etapa: EtapaLead.NOVO, vendedorDonoId: dono.id },
   });
   const contato = await prisma.contatoWhatsApp.create({
@@ -75,7 +75,7 @@ async function seedLeadFrio(numeroId: string, haMin: number, sufixo = "") {
 
 /** Lead com experimental marcada para daqui a `emMin` minutos (negativo = já passou). */
 async function seedLeadExperimental(numeroId: string, emMin: number, etapa: EtapaLead = EtapaLead.EXPERIMENTAL_AGENDADA) {
-  const lead = await prisma.lead.create({
+  const lead = await prisma.oportunidade.create({
     data: {
       codigo: `L-${Math.floor(Math.random() * 1e6)}`,
       nome: "Bia",
@@ -144,7 +144,7 @@ describe("B7 — revalidação de estado no DESPACHO (não só no enqueue)", () 
       },
     });
     // DEPOIS do enqueue: vendedor moveu o lead no funil.
-    await prisma.lead.update({ where: { id: lead.id }, data: { etapa: EtapaLead.EM_ATENDIMENTO } });
+    await prisma.oportunidade.update({ where: { id: lead.id }, data: { etapa: EtapaLead.EM_ATENDIMENTO } });
 
     const r = await despacharFila();
 
@@ -212,7 +212,7 @@ describe("B7 — revalidação de estado no DESPACHO (não só no enqueue)", () 
       },
     });
     // Remarcou para outro dia (etapa continua EXPERIMENTAL_AGENDADA).
-    await prisma.lead.update({
+    await prisma.oportunidade.update({
       where: { id: lead.id },
       data: { dataExperimental: new Date(Date.now() + 72 * 3600_000) },
     });
