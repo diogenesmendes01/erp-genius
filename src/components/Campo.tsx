@@ -32,7 +32,7 @@ export type LigacaoCampo = {
 /** Erros por campo de um formulário: só os campos com problema têm chave. */
 export type ErrosDeCampos<K extends string> = Partial<Record<K, string>>;
 
-export const ROTULO_CAMPO = "mb-1 block text-xs text-gray-600";
+export const ROTULO_CAMPO = "mb-1 block text-sm font-medium text-gray-800";
 export const DICA_CAMPO = "mt-1 block text-xs text-gray-500";
 export const ERRO_CAMPO = "mt-1 block text-xs text-red-700";
 /** Borda do controle marcado como inválido — acrescentar à classe do controle (só tokens: red-500 = --danger-text). */

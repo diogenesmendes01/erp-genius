@@ -1766,6 +1766,30 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
 - Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
 
+## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-campos`)
+- `src/app/globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo
+  `--surface-muted` e raio 8 px; `:disabled` com `--text-disabled` e `cursor: not-allowed`; `textarea` com
+  `min-height: 90px` e `resize: vertical`; abaixo de 767 px, `input` e `select` com `min-height: 44px` (o `textarea`
+  mantém os 90 px). Classe utilitária explícita (ex.: `bg-surface`) continua vencendo a base.
+- `ROTULO_CAMPO` em `src/components/Campo.tsx`: `text-sm font-medium text-gray-800` (14 px, peso 500); dica e erro
+  seguem em 12 px.
+- Doc 18 com a seção "Campos de formulário". Travas em `src/components/Campo.test.ts` e
+  `src/app/design-system.test.ts`.
+
+### Verificação
+- Na HEAD `c7d98f1` (revisão final): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e
+  4.578 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos preexistentes
+  e em arquivos fora do diff (ex.: `src/server/migracao/planilha-acoes.ts`).
+- Recorte da Task 6: `Campo.test.ts`, `campos.test.ts`, `design-system.test.ts` e `contraste.test.ts`, 71 testes
+  passando.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
+- Demais componentes base e telas: blocos seguintes da Fase 0.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
