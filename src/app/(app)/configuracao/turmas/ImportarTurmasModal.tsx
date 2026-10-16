@@ -65,7 +65,7 @@ export function ImportarTurmasModal() {
       </button>
 
       {aberto && (
-        <Modal titulo="Importar turmas por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} largura="max-w-lg">
+        <Modal titulo="Importar turmas por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} larga>
           <p className="mb-4 text-sm text-gray-500">
             Envie uma planilha <strong>.xlsx</strong>. <strong>Modalidade</strong> e{" "}
             <strong>Nível</strong> são obrigatórios; o nº de dias deve casar com a frequência da
