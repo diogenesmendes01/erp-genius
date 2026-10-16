@@ -23,7 +23,7 @@ import {
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
-import { garantirPessoaTx } from "@/server/crm/pessoas";
+import { escopoPessoas, garantirPessoaTx } from "@/server/crm/pessoas";
 import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
   professorAtribuido,
@@ -150,9 +150,12 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
       const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
       let pessoaId = dados.pessoaId || null;
       if (pessoaId) {
-        const existente = await tx.pessoa.findUnique({ where: { id: pessoaId }, select: { mescladaEmId: true } });
+        // Fora do escopo do autor (ou lápide) é indistinguível de inexistente: não vaza o contato.
+        const existente = await tx.pessoa.findFirst({
+          where: { AND: [{ id: pessoaId }, await escopoPessoas(autor, tx)] },
+          select: { id: true },
+        });
         if (!existente) throw new ErroRegra("Contato não encontrado.");
-        if (existente.mescladaEmId) throw new ErroRegra("Este contato foi mesclado em outro; use o contato atual.");
       } else {
         pessoaId = (
           await garantirPessoaTx(
