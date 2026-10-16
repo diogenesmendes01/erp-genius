@@ -46,9 +46,12 @@ describe("escopoAtendimentos por setor", () => {
     const r = await ramos("v1", Papel.VENDEDOR);
     expect(r).toContainEqual(LINHA(["v1"]));
     expect(r).toContainEqual(ramoFilaDoSetor("COMERCIAL"));
-    expect(r).toContainEqual({ finalidade: "COMERCIAL", responsavelId: "v1" });
   });
-  it("professor mantém só turma atual / experimental própria (regra 4) e não ganha fila", async () => {
+  it("vendedor: responsável gravado não vira acesso genérico em COMERCIAL (LC-D02)", async () => {
+  const r = await ramos("v1", Papel.VENDEDOR);
+  expect(r).not.toContainEqual({ finalidade: "COMERCIAL", responsavelId: "v1" });
+});
+it("professor mantém só turma atual / experimental própria (regra 4) e não ganha fila", async () => {
     expect((await ramos("p", Papel.PROFESSOR)).some((x) => x.responsavelId === null)).toBe(false);
   });
   it("secretaria: fila e próprio em SECRETARIA, FINANCEIRO e PEDAGOGICO; sem ver tudo", async () => {
