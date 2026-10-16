@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // E1 (docs/planejamento/levantamento-troca-whatsapp-crm-novo.md, Parte 6): a casca do CRM antigo não volta.
-const REMOVIDOS: string[] = ["src/server/whatsapp/cron-comercial.ts"];
-const IMPORTS_PROIBIDOS: string[] = ["@/server/whatsapp/cron-comercial", "./cron-comercial"];
+const REMOVIDOS: string[] = ["src/server/whatsapp/cron-comercial.ts", "src/server/whatsapp/cron-gestao.ts"];
+const IMPORTS_PROIBIDOS: string[] = ["@/server/whatsapp/cron-comercial", "./cron-comercial", "./cron-gestao", "@/server/whatsapp/cron-gestao"];
 
 const fontes = (readdirSync("src", { recursive: true }) as string[])
   .filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => join("src", f).split("\\").join("/"))
