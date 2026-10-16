@@ -8,7 +8,6 @@ vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 // O endpoint real executa o controle de acesso; os braços de mensagens ficam isolados.
 vi.mock("@/server/whatsapp/cron", () => ({ rodarCronRegua: cronMensagem }));
-vi.mock("@/server/whatsapp/cron-comercial", () => ({ rodarLeadNovoSemResposta: async () => ({}), rodarNoShow: async () => ({}), rodarPreExperimental: async () => ({}) }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: despacho }));
 
 import { prisma } from "@/lib/prisma";
