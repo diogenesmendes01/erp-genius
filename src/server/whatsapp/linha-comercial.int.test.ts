@@ -385,6 +385,20 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
     expect((await listarConversas(sessao(vendedorA)))[0].naoLidas).toBe(1);
   });
 
+  it("conversa de grupo numa linha VENDAS não derruba o sweep nem ganha atendimento", async () => {
+    const linha = await linhaDe(vendedorA);
+    const grupo = await prisma.grupoWhatsApp.create({ data: { numeroId: linha.id, grupoJid: "120363000000000009@g.us", nome: "Grupo" } });
+    const cg = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, grupoId: grupo.id } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: cg.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "no grupo", providerMessageId: "G-1" } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50670002222" } });
+    const ci = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, contatoId: contato.id } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: ci.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "individual", providerMessageId: "G-2" } });
+
+    expect(await adotarMensagensOrfasDaLinha()).toEqual({ conversas: 1, mensagens: 1 });
+    expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: cg.id } })).toBe(0);
+    expect((await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { conversaId: cg.id } })).atendimentoId).toBeNull();
+  });
+
   it("salvar a linha já adota as conversas dela", async () => {
     const linha = await linhaDe(null);
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50670001111" } });
