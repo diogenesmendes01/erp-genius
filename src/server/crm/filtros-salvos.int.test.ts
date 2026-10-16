@@ -69,6 +69,22 @@ describe("salvarFiltro", () => {
   });
 });
 
+describe("salvar depois de arquivar", () => {
+  it("reativa o filtro arquivado com o mesmo nome e os novos filtros", async () => {
+    logadoComo(vendedor.id);
+    const a = await salvarFiltro({ tela: "FUNIL", nome: "Meu", filtros: { temperatura: "QUENTE" } });
+    await arquivarFiltro(idDe(a));
+    const b = await salvarFiltro({ tela: "FUNIL", nome: "Meu", filtros: { temperatura: "FRIO" } });
+    expect(b.ok).toBe(true);
+    const lista = await listarFiltros(sessaoDe(vendedor), "FUNIL");
+    expect(lista).toHaveLength(1);
+    expect(lista[0].filtros).toEqual({ temperatura: "FRIO" });
+    const row = await prisma.filtroSalvo.findUniqueOrThrow({ where: { id: idDe(b) } });
+    expect(row.arquivadoEm).toBeNull();
+    expect((await salvarFiltro({ tela: "FUNIL", nome: "Meu", filtros: {} })).ok).toBe(false);
+  });
+});
+
 describe("arquivarFiltro", () => {
   it("só o autor arquiva; some da lista e grava Evento", async () => {
     logadoComo(vendedor.id);

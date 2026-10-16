@@ -44,14 +44,21 @@ export async function salvarFiltro(input: {
 
     const existente = await prisma.filtroSalvo.findUnique({
       where: { usuarioId_tela_nome: { usuarioId: autor.id, tela: dados.tela, nome: dados.nome } },
-      select: { id: true },
+      select: { id: true, arquivadoEm: true },
     });
-    if (existente) throw new ErroRegra("Já existe uma visualização com este nome.");
+    if (existente && !existente.arquivadoEm) throw new ErroRegra("Já existe uma visualização com este nome.");
 
     return prisma.$transaction(async (tx) => {
-      const f = await tx.filtroSalvo.create({
-        data: { usuarioId: autor.id, tela: dados.tela, nome: dados.nome, filtros, compartilhado },
-      });
+      // A unicidade (usuário, tela, nome) inclui arquivados e não há delete físico:
+      // salvar com o nome de um arquivado o reativa com os novos filtros.
+      const f = existente
+        ? await tx.filtroSalvo.update({
+            where: { id: existente.id },
+            data: { filtros, compartilhado, arquivadoEm: null },
+          })
+        : await tx.filtroSalvo.create({
+            data: { usuarioId: autor.id, tela: dados.tela, nome: dados.nome, filtros, compartilhado },
+          });
       await registrarEvento(tx, {
         tipo: "FiltroSalvoCriado",
         agregadoTipo: "FiltroSalvo",
