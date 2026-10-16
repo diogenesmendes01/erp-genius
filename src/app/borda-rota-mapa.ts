@@ -13,6 +13,7 @@ export const ROTAS_COM_LOADING = [
   // Formato da tela (#81 e anteriores).
   "src/app/(app)/alunos/(lista)",
   "src/app/(app)/leads/(lista)",
+  "src/app/(app)/funil",
   "src/app/(app)/inbox",
   "src/app/(app)/financeiro/(painel)",
   "src/app/(app)/financeiro/continuidade",
@@ -43,6 +44,7 @@ export const ROTAS_COM_ERROR = [
   "src/app/(app)/diario",
   "src/app/(app)/empresas",
   "src/app/(app)/financeiro",
+  "src/app/(app)/funil",
   "src/app/(app)/inbox",
   "src/app/(app)/leads",
   "src/app/(app)/matriculas/[id]",
