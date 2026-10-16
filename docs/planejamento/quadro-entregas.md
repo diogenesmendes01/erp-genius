@@ -30,7 +30,8 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
   - `node_modules/.bin/tsc --noEmit`: saída 0.
   - `vitest run` (suíte unitária completa, sem filtro): saída 0; 4524 testes, 0 falhas. A queda em relação aos 4561 do Bloco B vem dos testes das telas removidas.
   - `npm run lint`: 0 erros, 44 avisos (a mesma contagem do Bloco B).
-- `npm run test:int` **não foi rodado** neste bloco, nem completo nem em recorte, na revisão final. **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
+- Verificação do PR (16/10/2026, HEAD `bad3803`): `tsc --noEmit` saída 0; `npm test` saída 0 (636 arquivos, 4524 testes); `npm run lint` saída 0. `vitest related --run -c vitest.integration.config.ts` sobre os 27 .ts/.tsx existentes do diff `4472e76...HEAD`: saída 0, "No test files found" (nenhum `*.int.test.ts` depende dos arquivos tocados). Sem falhas novas em relação à linha de base.
+- A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
 - **Pendências registradas (Fase 2/4):**
   - `revalidatePath` para rotas removidas, inofensivos mas mortos: `/pipeline` em `src/server/comercial/acoes.ts` (linhas 90 e 631), `src/server/matricula/acoes.ts:70` e `src/server/ia/acoes.ts:37` (sai com o Bloco D); `/carteiras` em `src/server/acesso/coberturas.ts:24,39`; `/comissoes` em `src/server/matricula/acoes.ts:74`.
   - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:25,35` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
