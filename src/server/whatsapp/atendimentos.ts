@@ -10,7 +10,9 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
   leadId?: string | null; alunoId?: string | null; matriculaId?: string | null; turmaId?: string | null; responsavelId?: string | null;
   autorizacaoComunicacaoAcademicaId?: string | null;
-  /** Contexto encerrado vira atendimento NOVO (`base#n`) em vez de devolver o encerrado. */
+  /** Contexto encerrado vira atendimento NOVO (`base#n`) em vez de devolver o encerrado.
+   *  COMERCIAL em linha VENDAS já se comporta assim sempre (atendimentoComercialDaLinha só considera abertos e
+   *  cria `COMERCIAL:LINHA:<n>`), portanto `reabrir` é redundante ali. */
   reabrir?: boolean;
 }) {
   if (dados.finalidade === "FINANCEIRO") {

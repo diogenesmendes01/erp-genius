@@ -72,6 +72,23 @@ describe("status, prazo e reabertura (E3.3)", () => {
     expect(terceiro.contextoChave).toBe(`${encerrado.contextoChave}#3`);
   });
 
+  it("linha VENDAS: COMERCIAL encerrado abre #2 com ou sem reabrir (atendimentoComercialDaLinha já separa)", async () => {
+    const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { finalidade: "VENDAS" } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
+    const dados = { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" as const };
+    const primeiro = await prisma.$transaction((tx) => garantirAtendimento(tx, dados));
+    await prisma.atendimentoWhatsApp.update({ where: { id: primeiro.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    const segundo = await prisma.$transaction((tx) => garantirAtendimento(tx, { ...dados, reabrir: true }));
+    expect(segundo.id).not.toBe(primeiro.id);
+    expect(segundo.encerradoEm).toBeNull();
+    expect(segundo.contextoChave).toBe(`${primeiro.contextoChave}:2`);
+    await prisma.atendimentoWhatsApp.update({ where: { id: segundo.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    const terceiro = await prisma.$transaction((tx) => garantirAtendimento(tx, dados));
+    expect(terceiro.encerradoEm).toBeNull();
+    expect(terceiro.contextoChave).toBe(`${primeiro.contextoChave}:3`);
+  });
+
   it("reabertura concorrente abre um só atendimento", async () => {
     const { dados, primeiro } = await cenario();
     await prisma.atendimentoWhatsApp.update({ where: { id: primeiro.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
