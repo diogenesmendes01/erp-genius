@@ -275,13 +275,13 @@ export async function despacharFila(
       if (chave === CHAVE_LEAD_NOVO) {
         if (lead.etapa !== "NOVO") motivoObsoleta = "etapa_mudou";
         else if (conversa && it.ocorrenciaComercial) {
-          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox) e
+          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox), CELULAR (eco) e
           // origem null (fromMe: app do celular) — significa "vendedor assumiu".
           const manuais = await prisma.mensagemWhatsApp.count({
             where: {
               conversaId: conversa.id,
               direcao: "SAIDA",
-              OR: [{ origem: "HUMANO" }, { origem: null }],
+              OR: [{ origem: "HUMANO" }, { origem: "CELULAR" }, { origem: null }],
               criadoEm: { gt: new Date(it.ocorrenciaComercial) },
             },
           });

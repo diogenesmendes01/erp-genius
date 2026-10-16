@@ -36,7 +36,7 @@ export async function motivoCadenciaInvalida(
     const respostas = await prisma.mensagemWhatsApp.count({
       where: { conversaId: conversa.id, OR: [
         { direcao: "ENTRADA", criadoEm: { gt: conversa.capturadaEm } },
-        { direcao: "SAIDA", OR: [{ origem: "HUMANO" }, { origem: null }] },
+        { direcao: "SAIDA", OR: [{ origem: "HUMANO" }, { origem: "CELULAR" }, { origem: null }] },
       ] },
     });
     return respostas > 0 ? "atendimento_comercial_iniciado" : null;
