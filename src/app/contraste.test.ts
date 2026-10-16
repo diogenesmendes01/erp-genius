@@ -55,7 +55,7 @@ const COPIA_SHADES = ["500", "600"];
 const COPIA_SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
 const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"];
 const COPIA_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"];
-const COPIA_FUNDOS_SEM_TEXTO = [{ arquivo: "src/app/(app)/home/HomeVendedor.tsx", trecho: "h-full bg-brand-600" }];
+const COPIA_FUNDOS_SEM_TEXTO: { arquivo: string; trecho: string }[] = [];
 const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [];
 
 // ---------------------------------------------------------------------------------------------------
@@ -926,7 +926,7 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
     const arquivos = (readdirSync("src", { recursive: true }) as string[]).map((f) => join("src", f).split("\\").join("/"));
     const fontes = arquivos.filter((f) => EXTENSOES.test(f) && !TESTE.test(f) && !DADOS_DA_TRAVA.has(f));
     expect(fontes.length).toBeGreaterThan(1000);
-    for (const f of ["src/components/SubTabs.tsx", "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx", "src/app/(app)/home/HomeVendedor.tsx"]) expect(fontes).toContain(f);
+    for (const f of ["src/components/SubTabs.tsx", "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx", "src/app/(app)/home/HomeGerente.tsx"]) expect(fontes).toContain(f);
 
     const resultados = fontes.map((arquivo) => ({ arquivo, ...contrasteNoFonte(readFileSync(arquivo, "utf-8"), arquivo) }));
     const achadas = resultados.flatMap(({ arquivo, ofensas }) => ofensas.map((o) => ({ arquivo, ...o })));

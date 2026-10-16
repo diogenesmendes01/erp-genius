@@ -79,12 +79,6 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
     motivo: "dica curta dentro de uma linha de checkboxes do formulário",
   },
   {
-    arquivo: "src/app/(app)/home/HomeVendedor.tsx",
-    condicao: "fila.length === 0",
-    folha: "<p className=\"flex items-center gap-1.5 text-sm text-gray-400\"> <IconCircleCheck className=\"h-4 w-4 text-green-600\" /> Tudo em dia </p>",
-    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
-  },
-  {
     arquivo: "src/app/(app)/leads/[id]/contratacao/AgendaParticularFormulario.tsx",
     condicao: "revisao.impedimentos.length",
     folha: "<label className=\"block\"><input type=\"checkbox\" checked={confirmado} onChange={(e) => { setConfirmado(e.target.checked); onChange(e.target.checked ? { ...agenda(), estadoHash: revisao.estadoHash, horariosAcordadosConferidos: true } : null); }} /> Conferi os horários acordados e apresentados acima.</label>",
@@ -557,9 +551,6 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/home/HomeProfessor.tsx": [
     "compacto · Nenhuma experimental agendada.",
     "compacto · Você não tem turmas atribuídas.",
-  ],
-  "src/app/(app)/home/HomeVendedor.tsx": [
-    "compacto · Sem experimentais hoje.",
   ],
   "src/app/(app)/inbox/AtendimentosPainel.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",

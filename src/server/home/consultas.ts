@@ -1,6 +1,5 @@
 import {
   EtapaLead,
-  StatusComissao,
   StatusMatricula,
   Papel,
 } from "@prisma/client";
@@ -11,7 +10,6 @@ import { exigirPapel, ErroAutenticacao, type UsuarioSessao } from "@/server/_sha
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 
-const DIAS_PROPOSTA_PARADA = 5; // doc 09: "proposta parada há X dias" (default; tunável — P10)
 const SLA_MINUTOS = 60; // SLA do 1º contato (default; tunável — P10, doc 10 §10)
 
 function hojeIntervalo() {
@@ -25,94 +23,6 @@ function hojeIntervalo() {
 function inicioDoMes() {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-export type Prioridade = "quente" | "atencao" | "agenda" | "proposta";
-
-export interface ItemFila {
-  id: string;
-  nome: string;
-  prioridade: Prioridade;
-  motivo: string;
-}
-
-export async function dadosHomeVendedor(usuario: UsuarioSessao) {
-  if (!usuario?.id) throw new ErroAutenticacao();
-  exigirPapel(usuario, Papel.VENDEDOR);
-  const escopo = await escopoComercialAtual(usuario);
-  const { ini, fim } = hojeIntervalo();
-  const agora = new Date();
-  const limiteProposta = new Date(agora.getTime() - DIAS_PROPOSTA_PARADA * 86400000);
-
-  const leads = await prisma.lead.findMany({
-    where: {
-      AND: [escopo],
-      etapa: { notIn: [EtapaLead.PERDIDO, EtapaLead.MATRICULADO] },
-    },
-    orderBy: { criadoEm: "desc" },
-  });
-
-  const fila: ItemFila[] = [];
-  for (const l of leads) {
-    if (l.etapa === EtapaLead.NOVO) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "quente", motivo: "Lead novo sem 1º contato" });
-    } else if (l.proximoFollowUp && l.proximoFollowUp < agora) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "atencao", motivo: "Follow-up vencido" });
-    } else if (l.dataExperimental && l.dataExperimental >= ini && l.dataExperimental <= fim) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "agenda", motivo: "Experimental hoje" });
-    } else if (l.etapa === EtapaLead.PROPOSTA && l.dataProposta && l.dataProposta < limiteProposta) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "proposta", motivo: "Proposta parada" });
-    }
-  }
-  const ordem: Record<Prioridade, number> = { quente: 0, atencao: 1, agenda: 2, proposta: 3 };
-  fila.sort((a, b) => ordem[a.prioridade] - ordem[b.prioridade]);
-
-  const leadsNovos = leads.filter((l) => l.etapa === EtapaLead.NOVO).length;
-  const followVencidos = leads.filter((l) => l.proximoFollowUp && l.proximoFollowUp < agora).length;
-  const experimentaisHoje = leads.filter(
-    (l) => l.dataExperimental && l.dataExperimental >= ini && l.dataExperimental <= fim,
-  ).length;
-
-  const comissoes = await prisma.comissao.findMany({
-    where: { vendedorId: usuario.id, status: { in: [StatusComissao.PENDENTE, StatusComissao.APROVADA] } },
-    select: { valor: true, moeda: true },
-  });
-  // Por moeda — antes somava CRC+USD e rotulava com a moeda da PRIMEIRA comissão (errado).
-  const comissaoPrevista = somarPorMoeda(comissoes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })));
-
-  // kanban resumido
-  const agrup = await prisma.lead.groupBy({
-    by: ["etapa"],
-    where: escopo,
-    _count: { _all: true },
-  });
-  const kanban = agrup.map((g) => ({ etapa: g.etapa, total: g._count._all }));
-
-  // meta do mês (matrículas via comissões aprovadas/pagas neste mês)
-  const matriculasMes = await prisma.comissao.count({
-    where: { vendedorId: usuario.id, criadoEm: { gte: inicioDoMes() } },
-  });
-
-  // agenda de hoje (experimentais)
-  const agenda = leads
-    .filter((l) => l.dataExperimental && l.dataExperimental >= ini && l.dataExperimental <= fim)
-    .map((l) => ({ id: l.id, nome: l.nome, hora: l.dataExperimental!.toISOString() }))
-    .sort((a, b) => a.hora.localeCompare(b.hora));
-
-  // SLA do dia (1º contato): leads que saíram de NOVO ÷ total; atrasados = NOVO além do limite
-  const limiteSla = new Date(agora.getTime() - SLA_MINUTOS * 60000);
-  const atrasadosSla = leads.filter((l) => l.etapa === EtapaLead.NOVO && l.criadoEm < limiteSla).length;
-  const respondidos = leads.filter((l) => l.etapa !== EtapaLead.NOVO).length;
-  const slaPct = leads.length > 0 ? Math.round((respondidos / leads.length) * 100) : 100;
-
-  return {
-    cards: { leadsNovos, followVencidos, experimentaisHoje, comissaoPrevista },
-    sla: { pct: slaPct, atrasados: atrasadosSla },
-    fila,
-    agenda,
-    kanban,
-    metaMes: { feitas: matriculasMes, meta: 20 },
-  };
 }
 
 /**
