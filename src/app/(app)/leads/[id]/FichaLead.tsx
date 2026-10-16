@@ -98,7 +98,7 @@ export interface EventoTimeline {
 }
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario" });
 
@@ -173,7 +173,7 @@ export function FichaLead({
               className={
                 "rounded px-2 py-0.5 text-xs " +
                 (e === lead.etapa
-                  ? "bg-brand-solid font-medium text-white"
+                  ? "bg-brand-solid font-medium text-on-brand"
                   : "bg-gray-100 text-gray-500")
               }
             >

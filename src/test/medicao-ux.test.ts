@@ -101,6 +101,12 @@ describe("nucleo: contraste e famílias", () => {
     // #767676 sobre branco = 4,54 → passa
     expect(paresReprovados(css.replace("#777777", "#767676")).familias).toEqual(["#fff/--brand", "--border"]);
   });
+  it("--brand-solid é medido com o texto do par (--on-brand-solid) quando o tema o define", () => {
+    const css = ":root {\n  --surface: #ffffff;\n  --brand-solid: #1b8755;\n  --on-brand-solid: #ffffff;\n}\n.dark {\n  --brand-solid: #21c063;\n  --on-brand-solid: #0a0a0a;\n}";
+    expect(paresReprovados(css).familias).toEqual([]);
+    const errado = css.replace("#0a0a0a", "#ffffff");
+    expect(paresReprovados(errado).familias).toEqual(["--on-brand-solid/--brand-solid"]);
+  });
   it("globals.css atual: 3 famílias, sem --text-terciary e sem --border-control (docs/43 §6 item 5)", () => {
     const r = paresReprovados(readFileSync("src/app/globals.css", "utf-8"));
     // O docs/43 mediu 4 famílias em 6b105093; o item 5 da §6 tirou --border-control (.42/.34 → .44/.36).
@@ -109,8 +115,10 @@ describe("nucleo: contraste e famílias", () => {
     expect(r.familias).toEqual(["#fff/--brand", "--border", "--brand-border"]);
     expect(r.reprovados.filter((p) => p.familia === "#fff/--brand-solid")).toEqual([]);
     const brand = r.reprovados.find((p) => p.familia === "#fff/--brand");
-    expect(brand?.tema).toBe("escuro");
-    expect(brand?.valor).toBeCloseTo(4.06, 2);
+    // Com o verde do design system, o --brand reprova com branco nos dois temas (#1daa61: 3,06; #21c063: 2,32).
+    expect(r.reprovados.filter((p) => p.familia === "#fff/--brand").map((p) => p.tema)).toEqual(["claro", "escuro"]);
+    expect(brand?.tema).toBe("claro");
+    expect(brand?.valor).toBeCloseTo(3.06, 1);
   });
 });
 

@@ -217,7 +217,7 @@ export function InboxCliente({
                         <span className="text-[10px] text-gray-400">{horaCurta(c.ultimaMensagemEm, preferenciaFusoExibicao)}</span>
                       )}
                       {c.naoLidas > 0 && (
-                        <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+                        <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">
                           {c.naoLidas}
                         </span>
                       )}

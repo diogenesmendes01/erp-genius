@@ -30,19 +30,19 @@ export function AtendimentosPainel({ opcoes, triagem, revisoes, preferenciaFusoE
       const d = await acao.executar(() => abrirAtendimentoInstitucional({ destinoChave: destino, numeroId: numero }));
       if (d?.tipo === "ok") { router.push(`/inbox?c=${d.dado!.id}`); router.refresh(); }
     }}>
-      <label className="grid gap-1 text-sm">Finalidade e destinatário
+      <label className="grid min-w-0 max-w-full gap-1 text-sm">Finalidade e destinatário
         <select required value={destino} onChange={(e) => {
           const novo = opcoes.destinos.find((item) => item.chave === e.target.value);
           setDestino(e.target.value);
           // Canal escolhido que não serve ao novo assunto (ex.: cobrança para um lead) é limpo.
           if (novo?.finalidade === "COMERCIAL" && !opcoes.numeros.some((n) => n.id === numero && n.comercial)) setNumero("");
-        }} aria-describedby={destinoSelecionado?.impedimento ? "impedimento-destino" : undefined} className="max-w-sm rounded border p-2">
+        }} aria-describedby={destinoSelecionado?.impedimento ? "impedimento-destino" : undefined} className="w-full max-w-sm rounded-md border border-gray-300 px-3 py-2">
           <option value="">Selecione o atendimento</option>
           {opcoes.destinos.map((d) => <option key={d.chave} value={d.chave} disabled={d.disponivel === false}>{d.nome}{d.disponivel === false ? " · indisponível" : ""}</option>)}
         </select>
       </label>
-      <label className="grid gap-1 text-sm">Canal da escola
-        <select required value={numero} onChange={(e) => setNumero(e.target.value)} className="rounded border p-2">
+      <label className="grid min-w-0 max-w-full gap-1 text-sm">Canal da escola
+        <select required value={numero} onChange={(e) => setNumero(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2">
           <option value="">Selecione o canal</option>
           {numeros.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
         </select>

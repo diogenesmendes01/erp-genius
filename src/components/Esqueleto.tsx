@@ -6,7 +6,8 @@
 // os desenha de novo — sairiam em dobro (C3 da issue #170). As barras de título e de abas levam
 // `data-esqueleto` para a trava contar (src/app/borda-rota.render.test.ts).
 
-const bloco = "rounded-md bg-surface-muted";
+// animate-pulse: o movimento é desligado em prefers-reduced-motion (globals.css).
+const bloco = "animate-pulse rounded-md bg-surface-muted";
 
 function Carregando({ rotulo, className, children }: { rotulo: string; className?: string; children: React.ReactNode }) {
   return (
@@ -135,24 +136,6 @@ export function EsqueletoConversas({ rotulo }: { rotulo: string }) {
           <div className={`${bloco} ml-auto h-10 w-1/2`} />
           <div className={`${bloco} mt-auto h-10`} />
         </div>
-      </div>
-    </Carregando>
-  );
-}
-
-/** Colunas do funil (pipeline). */
-export function EsqueletoColunas({ rotulo, colunas = 5 }: { rotulo: string; colunas?: number }) {
-  return (
-    <Carregando rotulo={rotulo} className="space-y-4">
-      <BarraTitulo />
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {Array.from({ length: colunas }, (_, i) => (
-          <div key={i} className="w-64 shrink-0 space-y-2">
-            <div className={`${bloco} h-6 w-32`} />
-            <div className={`${bloco} h-20`} />
-            <div className={`${bloco} h-20`} />
-          </div>
-        ))}
       </div>
     </Carregando>
   );

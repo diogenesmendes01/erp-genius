@@ -155,6 +155,20 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
     expect(html).toContain(`<h2 id="${id}" class="text-sm font-medium">Detalhe da cobrança</h2>`);
     expect(html).toContain('aria-label="Fechar detalhe da cobrança"');
   });
+
+  it("o detalhe é camada elevada do DS: véu bg-black/60, superfície elevada e shadow-dialog", () => {
+    const html = detalhe(item, null);
+    expect(html).toContain("bg-black/60");
+    expect(html).toMatch(/role="dialog"[^>]*class="[^"]*bg-surface-raised[^"]*shadow-dialog/);
+    // O valor não se parte (o símbolo ₡ ficava numa linha e o número em outra).
+    expect(html).toContain('class="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800"');
+  });
+
+  it("a linha quebra no celular (flex-wrap) e os chips de estado são pílulas", () => {
+    const html = fila(true);
+    expect(html).toContain("flex flex-wrap items-center justify-between");
+    expect(html).not.toMatch(/<span class="rounded-md px-2 py-0\.5 text-\[11px\]/);
+  });
 });
 
 describe("FilaCobranca — filtros na URL (E4)", () => {
@@ -273,5 +287,62 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     expect(vazia).toContain("Nada nesta visão.");
     expect(vazia).toContain("0 de 5");
     expect(link("Limpar filtros").href).toBe(ROTA);
+  });
+});
+
+describe("FilaCobranca — trechos por cursor nos dois sentidos (docs/43 §6 item 9)", () => {
+  const ROTA = "/financeiro/cobrancas";
+  const dashs = { aVencer: 0, emAtraso: 60, bloquear: 0, promessas: 0, recebidoHoje: [] };
+  type Props = Parameters<typeof FilaCobranca>[0];
+  const fila = (o: Partial<Props> = {}) => {
+    links.lista = [];
+    const filtros = lerFiltrosFila({ indicador: "emAtraso", pais: "Brasil" });
+    return renderToStaticMarkup(createElement(FilaCobranca, {
+      itens: [item], totalFila: 120, totalVisao: 60, filtros, opcoes: opcoesDaFila([item], filtros),
+      dashs, regua: [], podeOperar: true, podeBloquear: false, ...o,
+    }));
+  };
+  const link = (texto: string) => {
+    const achados = links.lista.filter((l) => l.texto === texto);
+    expect(achados, texto).toHaveLength(1);
+    return achados[0];
+  };
+
+  it("no meio: Anterior e Próxima com a chave de ordem do cursor, mantendo indicador e país; sem número de página", () => {
+    const html = fila({ navegacao: { anterior: "1_9_cobranca", proxima: "1_3_outra" } });
+    expect(html).toContain('aria-label="Navegação da fila de cobrança"');
+    expect(link("← Anterior").href).toBe(`${ROTA}?indicador=emAtraso&pais=Brasil&antes=1_9_cobranca`);
+    expect(link("Próxima →").href).toBe(`${ROTA}?indicador=emAtraso&pais=Brasil&depois=1_3_outra`);
+    expect(links.lista.filter((l) => /[?&]pagina=/.test(l.href))).toEqual([]);
+    expect(html).not.toContain("Página ");
+  });
+
+  it("início sem Anterior; fim sem Próxima; um trecho só, sem navegação", () => {
+    fila({ navegacao: { anterior: null, proxima: "1_3_outra" } });
+    expect(links.lista.filter((l) => l.texto === "← Anterior")).toEqual([]);
+    expect(link("Próxima →").href).toContain("depois=1_3_outra");
+    fila({ navegacao: { anterior: "1_9_cobranca", proxima: null } });
+    expect(links.lista.filter((l) => l.texto === "Próxima →")).toEqual([]);
+    expect(fila()).not.toContain("Navegação da fila de cobrança");
+  });
+
+  it("o contador é da visão inteira (todos os trechos), não do trecho exibido", () => {
+    expect(fila()).toContain("60 de 120");
+  });
+
+  it("trecho vazio depois de um cursor: diz que daqui em diante não há cobrança e volta ao início com o recorte", () => {
+    const html = fila({ itens: [], totalVisao: 0, inicioDaFila: `${ROTA}?indicador=emAtraso&pais=Brasil` });
+    expect(html).toContain("Nenhuma cobrança a partir deste ponto da fila");
+    expect(html).not.toContain("Nada nesta visão.");
+    expect(html).not.toContain("nesta página");
+    const inicio = link("Ir para o início da fila");
+    expect(inicio.href).toBe(`${ROTA}?indicador=emAtraso&pais=Brasil`);
+    expect(inicio.onClick?.navegaPara).toBe(inicio.href);
+  });
+
+  it("visão vazia no início da fila: o estado vazio de sempre, sem volta ao início", () => {
+    const html = fila({ itens: [], totalVisao: 0 });
+    expect(html).toContain("Nada nesta visão.");
+    expect(links.lista.filter((l) => l.texto === "Ir para o início da fila")).toEqual([]);
   });
 });

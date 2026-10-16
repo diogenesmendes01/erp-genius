@@ -5,21 +5,41 @@ import { describe, expect, it } from "vitest";
 import { BASE_BOTAO, Botao, TAMANHOS_BOTAO, VARIANTES_BOTAO, botaoClasses } from "./Botao";
 
 describe("Botao (E1)", () => {
-  it("base: alinhamento do ícone, alvo de toque no celular e estado desabilitado — cada classe prometida", () => {
-    expect(BASE_BOTAO.split(" ")).toEqual([
-      "inline-flex", "items-center", "justify-center", "gap-1.5", "rounded-md", "font-medium", "transition", "max-sm:min-h-10",
-      "disabled:cursor-not-allowed", "disabled:opacity-60",
-    ]);
+  it("base é pílula com 44 px no celular", () => {
+    expect(BASE_BOTAO).toContain("rounded-full");
+    expect(BASE_BOTAO).toContain("max-sm:min-h-11");
+    expect(BASE_BOTAO).not.toContain("rounded-md");
+    expect(BASE_BOTAO).toBe(
+      "inline-flex items-center justify-center gap-2 rounded-full font-medium transition max-sm:min-h-11 " +
+        "aria-busy:cursor-progress disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-disabled disabled:border-gray-200",
+    );
+  });
+
+  it("disabled não usa opacidade", () => {
+    expect(BASE_BOTAO).toContain("disabled:text-disabled");
+    expect(BASE_BOTAO).not.toContain("opacity-60");
+  });
+
+  it("ocupado marca aria-busy e desabilita", () => {
+    const html = renderToStaticMarkup(createElement(Botao, { ocupado: true }, "Salvar"));
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('disabled=""');
+    expect(renderToStaticMarkup(createElement(Botao, null, "Salvar"))).not.toContain('aria-busy="');
+  });
+
+  it("secundário sem fundo e com hover highlight", () => {
+    expect(VARIANTES_BOTAO.secundario).toBe("border border-border-soft bg-transparent text-brand-700 hover:bg-highlight");
+    expect(VARIANTES_BOTAO.secundario).not.toContain("bg-surface");
   });
 
   it("variantes e tamanhos exatos (só tokens, sem sombra nem cor crua)", () => {
     expect(VARIANTES_BOTAO).toEqual({
-      primario: "bg-brand-solid text-white hover:brightness-95",
-      secundario: "border border-gray-300 bg-surface text-gray-700 hover:bg-gray-50",
+      primario: "bg-brand-solid text-on-brand hover:brightness-95",
+      secundario: "border border-border-soft bg-transparent text-brand-700 hover:bg-highlight",
       perigo: "bg-danger text-white hover:brightness-95",
-      fantasma: "text-brand-700 hover:bg-gray-100",
+      fantasma: "text-brand-700 hover:bg-highlight",
     });
-    expect(TAMANHOS_BOTAO).toEqual({ sm: "px-2.5 py-1 text-xs", md: "px-3 py-1.5 text-sm", lg: "px-4 py-2 text-sm" });
+    expect(TAMANHOS_BOTAO).toEqual({ sm: "px-3 py-1 text-xs", md: "px-4 py-1.5 text-sm", lg: "px-[22px] py-2.5 text-sm" });
   });
 
   it("padrão = primário md; a combinação é base + variante + tamanho", () => {

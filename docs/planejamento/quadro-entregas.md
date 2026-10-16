@@ -2,6 +2,37 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-a-fundacao`)
+- Tokens WDS claro/escuro nos blocos `:root` e `.dark` de `src/app/globals.css` (tabela de tokens do plano
+  `00-fase-design-system.md`), com `--surface-raised`, `--highlight`, `--pressed`, `--border-soft`, `--text-disabled`,
+  `--brand-strong`, `--on-brand-solid`, `--cold-text`, `--entry`, `--entry-accent`, `--composer` e as duas sombras de
+  camada. Spec copiado para `docs/planejamento/design-system-referencia.md`.
+- `src/app/contraste.test.ts` recalcula pelo `globals.css` o texto de cada fundo sólido (par de `TEXTO_SOBRE_SOLIDO`,
+  ≥ 4,5:1), a borda de controle (≥ 3:1) e o `--brand-solid` sobre as superfícies, nos dois temas.
+- `tailwind.config.ts`: cores novas (`on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`,
+  `entry`, `entry-accent`, `composer`, `cold-700`, `brand-800`), raios (`rounded-item`, `rounded-dialog`) e só
+  `shadow-popover`/`shadow-dialog`.
+- Roboto variável (`src/app/fonts/roboto-variable.woff2`, licença Apache 2.0 oficial do `googlefonts/roboto` em
+  `LICENSE-Roboto.txt`) por `next/font/local`; pesos 400, 500 e 600 (`tipografia.test.ts`).
+- Fundo sólido da marca usa `text-on-brand` (branco no claro, preto no escuro); `Botao.primario` e o doc 18 atualizados.
+
+### Verificação
+- Na HEAD `ce4895c` (revisão final): `tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.573 testes;
+  `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
+  effect), que já existia em `f8a9c0e`.
+- Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
+- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
+  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Componentes base (botões em pílula, camadas com sombra, alvos de 44 px) e telas: blocos seguintes da Fase 0.
+- Conferir no navegador (UAT) os dois temas com a Roboto.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## Fase 1A — verificação do bloco (15/10/2026)
 
 - Branch `claude/fase1-a-linha-de-base`; tarefa 1 do plano (E0: fontes da fase 1 e linha de base de testes). Só `docs/` mudou em relação à `main`; `src/`, `prisma/` e `package*.json` sem diferença.
@@ -34,10 +65,12 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - Reverificação antes do PR (16/10/2026, HEAD `61d19cd`): `tsc --noEmit` saída 0; `npm test` saída 0 (635 arquivos, 4519 testes); `npm run lint` saída 0 (0 erros, 44 avisos); `vitest related --run -c vitest.integration.config.ts` sobre o diff contra `origin/claude/fase1-c-telas`: saída 1, 7 falhas em 165 testes. As mesmas 7 falham em `origin/claude/fase1-c-telas` (rodado em `whatsapp/inbox.int.test.ts` e `academico/visibilidade.int.test.ts`): falhas da linha de base, nenhuma nova.
 - A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
 - **Pendências registradas (Fase 2/4):**
-  - `revalidatePath` para rotas removidas, inofensivos mas mortos: `/pipeline` em `src/server/comercial/acoes.ts` (linhas 90 e 631), `src/server/matricula/acoes.ts:70` e `src/server/ia/acoes.ts:37` (sai com o Bloco D); `/carteiras` em `src/server/acesso/coberturas.ts:24,39`; `/comissoes` em `src/server/matricula/acoes.ts:74`.
-  - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:25,35` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
-  - **Código órfão em `src/server/comercial/consultas.ts`** (sem uso fora do próprio módulo desde a tarefa 9; o `page.test` do WhatsApp deixou de mocká-lo): `carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com as interfaces `ReguaComercialConfig`, `DegrauComercialConfig`, `NumeroResumo`, `TemplateResumo` e `EnsaioComercial`. Somam-se a `salvarConfigComercial`, `salvarReguaComercial` e `carregarSaudacoesSimuladas`, já listados no plano. Remover na Fase 2/4.
+  - Resolvido no `684af0b3` (C2 da R1 da #191): saíram os `revalidatePath` de `/pipeline`, `/carteiras` e `/comissoes` (comercial, matrícula, IA e coberturas) e as consultas órfãs de `src/server/comercial/consultas.ts` (`carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com suas interfaces).
+  - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:36,46` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
+  - Ainda pendentes, já listados no plano: `salvarConfigComercial` e `salvarReguaComercial` (`src/server/comercial/acoes.ts`) e `carregarSaudacoesSimuladas` (`src/server/comercial/consultas.ts`), que seguem usados por testes de integração. Remover na Fase 2/4.
   - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
+
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
 
 ## Fase 1D — aceite do bloco (PR 4, 16/10/2026)
 
@@ -61,12 +94,14 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 | Inbox sem nota interna (`registrarNotaInterna` sem tela na thread; a ficha do lead ainda tem) e sem etapa/temperatura do lead | `InboxCliente.tsx` | 3 |
 | `ThreadConversa.lead` ainda calculado e não lido pela tela | `consultas-inbox.ts` | 3 |
 | Código órfão sem chamador: `fila.enfileirarIntencaoComercial`, `elegibilidade.reagendamentoPendente`, `comercial/regua-comercial.ts`, `comercial/regua-fabrica.ts` (ainda usada por `prisma/seed-whatsapp.ts:4`), ramos COMERCIAL/GESTAO/reativa do `despachante.ts`, `salvarConfigComercial`, `salvarReguaComercial`, `carregarSaudacoesSimuladas`, `checkinExperimental`, `EsqueletoColunas` | `src/server/**` | 2/4 |
-| `revalidatePath("/pipeline")` e `("/comissoes")` inofensivos | `matricula/acoes.ts:70,74`, `comercial/acoes.ts:90,631` | 2 |
+| ~~`revalidatePath("/pipeline")` e `("/comissoes")` inofensivos~~: resolvido na main pelo `684af0b3` (C2 da R1 da #191), trazido para esta branch no merge da main | `matricula/acoes.ts`, `comercial/acoes.ts` | — |
 | Scripts fora do `tsc`/vitest quebrados: `scripts/auditoria/cenarios.test.mjs:30` (cron-comercial) e `scripts/validacao/http-acesso.mjs:47` (`/carteiras`; entrada já retirada no Bloco C) | `scripts/` | 2 |
 | `@dnd-kit/*` sem uso (remover só com o integrador) e `ANTHROPIC_API_KEY` nos composes | `package.json`, `docker-compose.*.yml` | 5 |
 | Campos de `ConfigComercial` órfãos (`autoLeadAtivo`, `saudacao*`, `copiloto*`, `gestao*`), `SugestaoIA`, `PoliticaComercial`/`DegrauComercial`: schema intocado | `prisma/schema.prisma` | 2 (migration reservada) |
 | Docs que descrevem a casca (08, 27, 32, SPEC-ERP-005, 09) | `docs/` | 2 |
 | Itens 3-4 da E0 do doc 02: decisão React 19 (Q6) e reserva dos IDs de migration pelo integrador | dono e integrador | antes das Fases 2 e 3 |
+
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
 
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
@@ -185,6 +220,13 @@ Uma linha por PR, de #133 a #161. Os números #139–#142, #152 e #162 são issu
 | #159 | Fuso e instante: 20 campos pelo `CampoFuso`; `PaisSchema` valida fuso IANA; `AvisoFusoNaoConfigurado`; `PreviaConversao`; item 6 | `b59744b9`, 10/10/2026 15:44 | Integrador em `c406fff7`, suíte sem banco configurado: 593/593 arquivos, 4.062 testes; 11/11 KILLED. **APPROVE** escrito na R1, em modo leve | L1566, L1747, L406 e L1256 parciais; `fusoIanaValido` recusa `EST5EDT` (`src/server/operacao/fuso.ts:9`); ramo `fuso === ""` sem efeito (`src/server/paises/schema.ts:29`); validade só no `onChange` |
 | #160 | Becos sem saída e identificação do registro (`IdentificacaoRegistro`) fora de `/matriculas/[id]`; item 7 | `19be34de`, 10/10/2026 17:10 | Integrador em `a51d4e1e`: 591/591 arquivos, 4.057 testes; 12/12 KILLED. **APPROVE** escrito na R2. O último commit (`f50608f5`, merge com a #158) teve só a verificação do integrador: 609/609 arquivos, 4.208 testes | 66 IDs crus e 12 telas de detalhe sem identificação (tetos em `identificacao-registro.test.ts:378` e `:421`); link para `/financeiro` sem `abreFinanceiro` em `matriculas/[id]/emissao/page.tsx:23`; L934 e L1709 |
 | #161 | Filas de trabalho por cursor nos dois sentidos: 12 filas e 11 consultas, `PaginacaoFila` e `cursor-fila.ts` | `e5418550`, 10/10/2026 17:18 | Integrador em `8c697968`, suíte sem banco configurado: 604/604 arquivos, 4.194 testes; 15/15 KILLED. **APPROVE** escrito na R1 e na R2 (review leve). Os 8 `*.int.test.ts` alterados **não foram executados** | **#162 aberta**; C1, subselect da âncora sem escopo em `segunda-chamada-fila-agenda.ts`; decisões de produto em aberto (`autorizacoes-preparacao` como histórico; link no vazio em vez de redirect) |
+| #163 | Docs de 13/10: o que está e o que não está publicado no UAT, remedição da auditoria de UX (doc 43 §7) e análise das PRs #63–#161 (doc 44) | `e864ef4d`, 13/10/2026 15:47 | Só documentação. **APPROVE** escrito na R1 | As pendências do doc 44 §5 viraram as issues #164–#170 |
+| #171 | Trava `guard-pagina`: B7, B8 e B9 da R3 da #143 (carga dinâmica do módulo do guard, contaminação por chave e desestruturação, recusa branda sob laço, `switch` e operador lógico); fecha a #152 | `4cb396b7`, 13/10/2026 16:13 | Integrador em `824ab622`, com o TS2345 corrigido: `tsc` 0; 612/612 arquivos, 4.271/4.271 testes; 10/10 KILLED e controle. **APPROVE** escrito na R1 | #170: atribuição a membro (`obj.p = sessao.papeis`) e chave não literal ainda escapam |
+| #172 | Item 8 (portal público): `/portal-aluno/ativar` (token na aba, regra e confirmação da senha), `/recuperar` sem falso "enviado", `/pagar/[token]` com os 6 casos e `noindex`, `/login` com `callbackUrl` só interno (`src/proxy.ts` novo) | `77fe6f1e`, 13/10/2026 16:42 | Integrador em `5e870be9`: `tsc` 0; 626/626 arquivos, 4.366/4.366 testes; 17/17 KILLED (X3 equivalente) e controle; R1 C1 (`router.refresh()` depois de pagar) aplicado. **APPROVE** escrito na R2 | #170: `maxLength` em caracteres; aviso `set-state-in-effect`; troca de e-mail em "link indisponível"; 422 genérico; `/login` #1, #3, #5 e #6 |
+| #173 | Moeda: `parseMoeda` recusa ponto ambíguo (`1.23`); CRC/CLP sem arredondamento, com aviso neutro; dica do ponto no `CampoMoeda`; permuta sem moeda mostra "moeda não definida"; fecha a #167 | `02444a1d`, 13/10/2026 16:53 | Integrador em `28a8a55a`: `tsc` 0; 630/630 arquivos, 4.405/4.405 testes; 13/13 + 9/9 KILLED e controles. **APPROVE** escrito na R2 | #170: a dica do ponto é anunciada (`role="alert"`) durante a digitação |
+| #174 | Item 10 (borda de rota): `loading.tsx` com o formato da tela em 8 rotas, `error.tsx` em 15 áreas (`ErroArea`), `<Suspense>` em `/academico/reposicoes` e na preparação da matrícula, trava `borda-rota.test.ts`; C3 da #170 (esqueleto do financeiro em dobro) | `4c4f526a`, 13/10/2026 17:27 | Integrador em `c5e17404`, com o `key` do `<Suspense>` só pela matrícula e a trava aceitando segmento com páginas filhas: `tsc` 0; 633/633 arquivos, 4.478/4.478 testes; 20/20 KILLED e controle. **APPROVE** escrito na R1 | Conferir no UAT o esqueleto do financeiro e os `<Suspense>`; #170: volta do erro do hub da matrícula; `matriculas/nova`, `configuracao/whatsapp` e `/portal` sem `loading.tsx` |
+| #175 | Fatia B do `ConfirmarAcao` (13 ações, digitação do nome ao encerrar país, alcance numérico ao ativar a régua com `estimarAlcanceRegua`, `definirSituacaoEmpresa` com estado-alvo); regra do cron extraída para `decidirEnvioCron`; fecha a #169 | `f8a9c0e7`, 13/10/2026 18:09 | Integrador em `5009916b`, com travas de enum e de estado vazio, TS2345 e `cron.test.ts` novo: `tsc` 0; 646/646 arquivos, 4.560/4.560 testes; 19/19 KILLED e 2 controles. `cron.int.test.ts` **não executado** (#162). **APPROVE** escrito na R2 | #170: botão da ativação habilitado durante a estimativa; alternadores de usuário, idioma e preço invertem o estado; "Desvincular" na inbox; L325, L1479, L2019 e L2142 sem confirmação |
+| #176 | Item 11: amostra Média/Baixa com a semente 20261013 na `main` `4c4f526a` (doc 43 §7.6) | `d1f2c03f`, 13/10/2026 17:59 | Só documentação. Integrador: sorteio reproduzido (126 achados = as 126 linhas da tabela), contagens por estrato conferidas e estimativa recalculada (66,8% abertos, IC 58,7–74,9%). **APPROVE** escrito na R1 | Os padrões com mais abertos: layout e hierarquia, texto e validação de campo |
 
 ### Tarefas operacionais pendentes
 
@@ -213,6 +255,13 @@ Próximos itens do doc 43, não iniciados (ver doc 43 §7.5):
 - **Item 9:** consultas e dados no servidor.
 - **Item 10:** borda de rota restante (`<Suspense>` e `loading.tsx`).
 - **Item 11:** Média e Baixa, repetir a amostra com outra semente.
+
+**Atualização de 13/10/2026, fim do dia (integrador):**
+- **Itens 8, 10 e 11:** entregues (#172, #174 e #176). O item 9 está em andamento (`claude/e9-consultas-servidor`).
+- **Issues fechadas:** #152 (pela #171), #167 (#173) e #169 (#175).
+- **#170:** em andamento por grupos (`claude/fu170-grupo-a`); o C3 foi resolvido pela #174.
+- **Abertas sem frente:** #141 (collation, depende do integrador), #162 (testes de integração, depende do banco de teste isolado), #164 (portar a #62), #165 (operação no UAT), #166 (idempotência, exige migração) e #168 (inbox).
+- **Média e Baixa na semente 20261013:** 66,8% abertos (IC 58,7–74,9%, ≈ 486), contra 58,9% na semente 42. Os intervalos se sobrepõem (doc 43 §7.6).
 
 ## Integração da main na PR #61 — 21/09/2026
 
@@ -1652,6 +1701,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `/portal`. Sem error.tsx próprio: `home`, `preferencias` e `acesso-negado` (o de `(app)` basta) e `/login`.
 - Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
 
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+**Atualização de 13/10/2026 (integrador):** mergeada pela #174 (`4c4f526a`). Ver "Entregas desde a #133". Falta conferir no UAT o esqueleto do financeiro e os dois `<Suspense>`.
+
 ## ConfirmarAcao, fatia B (issue #169; 13/10/2026)
 
 ### Solução implementada (branch `claude/fu169-confirmacoes-b`)
@@ -1700,3 +1753,214 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - As métricas de fluxo da 7.7 continuam sem medição.
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
+
+## FU170 grupo A — pendências menores da issue #170 (13/10/2026)
+
+### Entrega (branch `claude/fu170-grupo-a`)
+- C10: a conferência de reserva sem resultado usa `MSG_RESULTADO_INCERTO_SEM_CHAVE`; trava nova em `mensagens.test.ts` (nenhuma tela escreve "Resultado não confirmado" à mão).
+- C17: célula e planilha de alunos com o rótulo do filtro (`rotuloTurmaAcademica`: código · nome · modalidade · idioma nível).
+- C21: `ThemeToggle` com uma fonte só (`src/lib/tema.ts`, `useSyncExternalStore` sobre a classe `dark`) e `aria-pressed`. A trava de `botoes.test.ts` passa a exigir grupo rotulado só para conjunto de seleção.
+- C22/C23: 57 páginas entraram no mapa da trilha (eram 60 de 181 fora); 3 ficam em `FORA_DA_TRILHA`, com motivo e teto, em `trilha.test.ts`. A volta de `tentativas/*/autorizacao` diz "Avaliador da recuperação" (L1617).
+- C36: "Abrir Financeiro" na emissão só para quem abre `/financeiro` (`abreFinanceiro`).
+- C52 (parte): `TurmasPainel` com `formatarDataCivil`; o `PagarCliente` já não formatava data. Trava nova em `datas-civis.test.ts` para `new Date(campo civil).toLocaleDateString`, com 2 usos contados (FichaEmpresa e InformesPagamento).
+- C1 da R1 da #174: o erro do hub da matrícula volta para `/home`.
+- D4 e D6: `docs/18` (e o comentário de `globals.css`) sobre `--ai-solid`/`--brand-solid`; cabeçalho da SPEC-ERP-005 e linha do índice.
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Verificação: pelo integrador (suíte unitária, `tsc --noEmit`, eslint e mutação).
+
+### Pendências
+- C52: `FichaEmpresa.tsx:190` (fora deste grupo, PR #175) e `InformesPagamento.tsx:38` (conferir se `dataPagamento` é dia ou instante).
+- C23: os `VoltarPara` com href dinâmico continuam sem trava.
+
+## E9 — consultas e dados no servidor (docs/43 §6 item 9; 13/10/2026)
+
+### Entrega (branch `claude/e9-consultas-servidor`)
+- Fila de cobrança (`/financeiro/cobrancas`) em trechos de 50 por cursor nos dois sentidos (`depois`/`antes`), com o filtro da URL da #144 mantido. O cursor leva a chave de ordem da fila (`prioridade_atraso_id`), e por isso pagar o item do cursor não faz a próxima pular ninguém. A consulta lê a fila inteira só com o que ordena, filtra e conta. O detalhe pesado (vencimento civil, destino, envios, respostas, mensagem) é lido só para o trecho, com `take`. O lote só leva o que está na tela.
+- Informes a conferir (`/financeiro/informes`) viraram fila por cursor (30 por vez). O número da aba vem de um `count`.
+- Lote de migração (`/configuracao/migracao/[loteId]`): linhas paginadas (25 por página, `Paginacao`) e o JSON de cada linha e de cada tentativa divergente dentro de `<details>` fechado.
+- Importação de alunos: a linha que repete um aluno já cadastrado, ou uma linha anterior da mesma planilha, é ignorada e volta com o motivo. Critérios: documento no mesmo país, ou nome + e-mail, nome + telefone ou nome + nascimento. No modal, depois do resultado, o botão passa a ser "Importar outra planilha" (docs/42 L224).
+- Envios do portal: abas "Incertos" (padrão), "Falhas" e "Todos" na URL (`?situacao=`), mantidas no cursor (docs/42 L431).
+- `/pipeline`: **retirado desta PR na integração (16/10)**. A Fase 1C (#191) remove a tela `/pipeline` com o resto da casca do CRM antigo; alterar arquivos que ela apaga só criaria conflito. O funil volta a ser tratado no CRM novo.
+- Travas atualizadas: `paginacao-dois-sentidos` (2 filas novas), `estados-vazios-mapa` e `botoes-mapa`.
+
+### Verificação
+- Testes novos ou atualizados: `fila-cursor`, `fila-contadores`, `filtros-fila`, `fila-informes`, `fila-envios`, `consultas-lote`, `importacao-duplicidade`, `route.test` da importação e os de tela (cobranças, informes no painel, envios, lote, modal de importação, FilaCobranca).
+- Integrador (16/10, com a `main` depois das #177, #178, #189 e #190): `tsc` 0; suíte unitária completa 655/655 arquivos, 4.644/4.644 testes; eslint 0; 22/22 mutações da PR KILLED com controle, e C1 da R1 (o detalhe repete o recorte de situação) KILLED com controle. Testes de integração não rodados (#162).
+
+### Pendências
+- A fila de cobrança ainda lê todas as cobranças abertas na passada leve, porque a ordem e os cartões dependem da régua calculada em memória. Um `take` real nessa leitura exigiria gravar o estado da régua no banco, o que pede migração e não foi feito.
+- A deduplicação não tem índice único: duas importações simultâneas ainda podem duplicar. Um documento só é achado no cadastro quando lá está igual ao da planilha ou sem pontuação: "8822-1381" no cadastro e "88221381" na planilha não casam. Resolver isso pede uma coluna normalizada com índice único, ou seja, migração.
+- `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
+- A thread da inbox cortada em 300 mensagens é da issue #168.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-botao`)
+- `src/components/Botao.tsx`: `BASE_BOTAO` em pílula (`rounded-full`, `gap-2`) com 44 px de altura mínima abaixo de
+  `sm` (`max-sm:min-h-11`); desabilitado sem opacidade (`disabled:bg-surface-muted disabled:text-disabled
+  disabled:border-gray-200`) e `aria-busy:cursor-progress`.
+- Variantes: `secundario` com `border-border-soft`, sem fundo, texto `text-brand-700` e hover `bg-highlight`;
+  `fantasma` com hover `bg-highlight`; `primario` e `perigo` sem mudança. Tamanhos `sm px-3 py-1`, `md px-4 py-1.5`,
+  `lg px-[22px] py-2.5`.
+- `<Botao ocupado>` marca `aria-busy="true"` e desabilita o botão.
+- `src/components/Botao.test.ts`: pílula e 44 px, disabled sem opacidade, ocupado com `aria-busy` e `disabled`,
+  secundário sem fundo e com hover `highlight`. Doc 18 (Botão) atualizado.
+
+### Verificação
+- Na HEAD `8d17003`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.576 testes (linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
+- Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-campos`)
+- `src/app/globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo
+  `--surface-muted` e raio 8 px; `:disabled` com `--text-disabled` e `cursor: not-allowed`; `textarea` com
+  `min-height: 90px` e `resize: vertical`; abaixo de 767 px, `input` e `select` com `min-height: 44px` (o `textarea`
+  mantém os 90 px). Classe utilitária explícita (ex.: `bg-surface`) continua vencendo a base.
+- `ROTULO_CAMPO` em `src/components/Campo.tsx`: `text-sm font-medium text-gray-800` (14 px, peso 500); dica e erro
+  seguem em 12 px.
+- Doc 18 com a seção "Campos de formulário". Travas em `src/components/Campo.test.ts` e
+  `src/app/design-system.test.ts`.
+
+### Verificação
+- Na HEAD `c7d98f1` (revisão final): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e
+  4.578 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos preexistentes
+  e em arquivos fora do diff (ex.: `src/server/migracao/planilha-acoes.ts`).
+- Recorte da Task 6: `Campo.test.ts`, `campos.test.ts`, `design-system.test.ts` e `contraste.test.ts`, 71 testes
+  passando.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
+- Demais componentes base e telas: blocos seguintes da Fase 0.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-avisos`)
+- `src/components/Aviso.tsx`: caixa única de aviso (`rounded-md p-3 text-sm` + tom). Tons `info`, `sucesso`, `atencao`
+  e `erro`; os três últimos com borda inicial de 3 px. Papel `alert` no erro e `status` nos demais (`papel="nenhum"`
+  quando a região anunciante é outra).
+- `FeedbackAcao`, `MensagemStatus` (prop `tom` nova), `ErroArea` (via `EstadoRota aviso="erro"`) e
+  `AvisoFusoNaoConfigurado` passam a usar o `Aviso`, sem mudar as props existentes.
+- Esqueleto pulsa (`animate-pulse`). O `@media (prefers-reduced-motion: reduce)` de `src/app/globals.css` desliga
+  animação, transição e rolagem suave (teste em `src/app/design-system.test.ts`).
+- `docs/18-design-system.md`: seção "Avisos e movimento reduzido".
+
+### Verificação
+- Revisão final (diff `9ead958..51e683d`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, sem filtro,
+  648 arquivos e 4.586 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos
+  preexistentes e fora dos arquivos da task.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os avisos nos dois temas e o esqueleto com movimento reduzido.
+- Demais tasks do DS-B (5–8 e 10) e DS-C seguem nos próprios PRs.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
+
+- Branch `claude/fase0-ds-b-camadas`, empilhada sobre `claude/fase0-ds-a-fundacao` (`9ead958..cb121aa`; Task 7 `9ead958..e0269c3`).
+- Tarefa: Task 7, Modal, ConfirmarAcao e Drawer como camadas elevadas (`bg-surface-raised`, `shadow-dialog`, `rounded-dialog`, bordas lógicas).
+- Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-navegacao`)
+- Sidebar: item `min-h-10 max-sm:min-h-11 rounded-item`, `hover:bg-highlight`; item ativo com seleção suave
+  (`bg-brand-bg text-brand-800 font-medium`); contador de não lidas `bg-brand-solid text-on-brand`.
+- Barra mobile: mesmos estados da sidebar; botões com `max-sm:min-h-11 max-sm:min-w-11`; os itens da gaveta (a mesma
+  `NavLinks`) chegam a 44 px abaixo de `sm`. `BarraMobile.test.ts` trava esses estados.
+- Sub-abas em pílula (`rounded-full`, `max-sm:min-h-11`), ativa `bg-brand-solid text-on-brand`.
+- Seção "Navegação" do `docs/18-design-system.md`. A estrutura de menus (`src/lib/nav.ts`) não muda.
+
+### Verificação
+- Na HEAD `2c181aa`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.577 testes; linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Design system, bloco DS-B — primitivos (Fase 0, Task 10; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-primitivos`)
+- Primitivos novos em `src/components`: `Chip`, `ItemLista` (com `aria-current`), `Avatar` (iniciais da primeira e
+  da última palavra) e `Menu` (painel `shadow-popover`, item de perigo, alvo de 44 px abaixo de `sm`). Documentados no
+  doc 18 ("Primitivos — Chip, ItemLista, Avatar e Menu"); `brand.bg` mapeado no `tailwind.config.ts`.
+- `src/lib/popover.ts` (puro): `posicaoPopover` (lado com mais espaço, limitado à margem), `proximoIndiceMenu` e
+  `acaoTecladoMenu`. Com o foco fora dos itens (gatilho), a seta para baixo vai ao primeiro e a seta para cima ao último.
+- Menu dentro de diálogo: o teclado do menu é ouvido em `document` na fase de captura. O Escape fecha só o menu
+  (`stopPropagation`) e devolve o foco ao gatilho. Um Modal, Drawer ou ConfirmarAcao em volta (`useDialogo`) continua
+  aberto, e o Tab segue para o diálogo, que mantém o foco preso.
+- O painel é `position: fixed`. Scroll (captura, em qualquer lista) e resize fecham o menu, para ele não ficar solto
+  sobre outra linha.
+- Teste de interação sem DOM (`Menu.interacao.test.ts`): `useDialogo` ligado com `document` falso que entrega captura
+  antes da bolha. Cobre Escape com diálogo e menu abertos, ArrowUp a partir do gatilho, Tab, scroll e resize.
+- `src/app/botoes.test.ts`: exceções com motivo para Chip, ItemLista e Menu.
+
+### Verificação
+- Depois das correções da revisão final: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 653 arquivos e
+  4.606 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos (nenhum em arquivo do
+  bloco).
+- O novo teste de Escape falha se o ouvinte do menu voltar à fase de bolha. Isso foi conferido.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Falta conferir no navegador (UAT): o menu dentro do drawer, a posição perto das bordas e os dois temas.
+- O focar após o posicionamento (`visibility` do painel) é ligação de DOM sem teste automatizado, porque não há jsdom.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Verificação do integrador: bloco DS-B (2026-10-15)
+- Branch: `claude/fase0-ds-b-primitivos` (empilhada sobre `claude/fase0-ds-a-fundacao`). Tarefa 10: Chip, ItemLista, Avatar e Menu.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 653 arquivos e 4.606 testes (linha de base da main: 646 e 4.560).
+- `npm run lint`: saída 0.
+- Sem schema nem migração; testes de integração não alterados.
+
+## Design system, bloco DS-C: conferência visual e ajustes finais (Fase 0, Task 11; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-c-conferencia`)
+- Junta DS-A e os seis DS-B (botão, campos, camadas, navegação, avisos, primitivos) com merge sem squash. Conflitos
+  só de documentação (`quadro-entregas.md`, `docs/18-design-system.md`, mantidas todas as seções) e da contagem
+  de exceções em `src/app/botoes.test.ts` (Chip 1, Menu 1, Sidebar 1, combinando navegação e primitivos).
+- 70 capturas (claro e escuro, 1440 e 390 px) de login, home, alunos, matrícula nova, financeiro, secretaria,
+  acadêmico, diário, configuração (turmas e WhatsApp), inbox, modal, drawer, menu do celular e formulário com erro.
+  Achados e correções em `docs/planejamento/ds-capturas.md`: 19 corrigidos, 4 pendências fora do recorte.
+- Correções principais: sombra do drawer fechado vazando na borda; estouro horizontal no celular (sr-only da
+  `ColunaOrdenavel`, selects do inbox); abas do financeiro, chips da fila e dias da turma em pílula; detalhe da
+  cobrança e diálogo de turma como camada elevada (`bg-surface-raised`, `shadow-dialog`, véu 60%); anel de foco
+  duplo (`focus:ring-*`) removido, com trava em `paleta.test.ts`; links da secretaria separados.
+
+### Verificação
+- Na HEAD `9718acf`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 654 arquivos e 4.647 testes
+  (DS-A + 6 DS-B mergeados, antes das correções: 654 e 4.636); `npm run lint` saída 0, 0 erros e 44 avisos
+  preexistentes.
+- Servidor de produção (`npm run build` + `next start`) contra `erp_genius_test_tester`; recaptura sem estouro
+  horizontal em 390 px.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- "Exportar planilha" isolado acima do título em Alunos; links recuados na ficha do aluno; ✕ cru no detalhe da
+  cobrança; `Menu` ainda sem tela que o use.
+- Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.

@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   IconHome, IconMail,
-  IconLayoutKanban,
   IconUsers,
   IconUserCheck,
   IconWallet,
@@ -20,6 +19,7 @@ import {
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
+import { acompanharTema, alternarTema, temaEscuroAplicado, temaEscuroNoServidor } from "@/lib/tema";
 
 type Icone = React.ComponentType<IconProps>;
 
@@ -27,7 +27,6 @@ const ICONS: Record<string, Icone> = {
   Home: IconHome,
   // Chave "Mail" (antes `IconMail` solto virava a chave "IconMail" e "Envios do portal" caía no ícone de Home).
   Mail: IconMail,
-  KanbanSquare: IconLayoutKanban,
   Users: IconUsers,
   UserCheck: IconUserCheck,
   Wallet: IconWallet,
@@ -36,27 +35,23 @@ const ICONS: Record<string, Icone> = {
   Building: IconBuilding,
 };
 
-/** Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque. */
+/**
+ * Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque.
+ * O estado é um só (src/lib/tema.ts): as duas instâncias leem a classe `dark` do <html> e são avisadas na
+ * troca, então a Sidebar nunca fica com o ícone velho depois de trocar no celular (C21 da #170).
+ * aria-pressed diz ao leitor de tela se o tema escuro está ligado — o ícone sozinho não dizia.
+ */
 export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700", classeIcone = "h-4 w-4" }: { className?: string; classeIcone?: string }) {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  function alternar() {
-    const novo = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", novo);
-    localStorage.setItem("tema", novo ? "dark" : "light");
-    setDark(novo);
-  }
+  const dark = useSyncExternalStore(acompanharTema, temaEscuroAplicado, temaEscuroNoServidor);
 
   return (
     <button
-      onClick={alternar}
+      onClick={alternarTema}
       type="button"
       className={className}
       title={dark ? "Tema claro" : "Tema escuro"}
       aria-label="Alternar tema"
+      aria-pressed={dark}
     >
       {dark ? <IconSun className={classeIcone} /> : <IconMoon className={classeIcone} />}
     </button>
@@ -89,16 +84,16 @@ export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Naveg
               onClick={aoNavegar}
               aria-current={ativo ? "page" : undefined}
               className={
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors " +
+                "flex min-h-10 items-center gap-3 rounded-item px-3 text-sm transition-colors max-sm:min-h-11 " +
                 (ativo
-                  ? "bg-brand-50 font-medium text-brand-700"
-                  : "text-gray-600 hover:bg-gray-50")
+                  ? "bg-brand-bg text-brand-800 font-medium"
+                  : "text-gray-800 hover:bg-highlight")
               }
             >
               <Icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
               {item.href === "/inbox" && naoLidasInbox > 0 && (
-                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">
                   {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
                   <span className="sr-only"> mensagens não lidas</span>
                 </span>
@@ -123,7 +118,7 @@ export function Sidebar({
   // Só a partir de md; abaixo disso a navegação fica na barra mobile (BarraMobile), que abre a
   // mesma lista numa gaveta — antes a Sidebar de 224px fixos deixava ~87px de conteúdo em 375px.
   return (
-    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-surface p-3 md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col overflow-y-auto border-e border-gray-200 bg-surface-muted p-3 md:flex">
       <div className="mb-4 flex items-center gap-2 px-2 py-1 font-medium">
         <IconSchool className="h-5 w-5 text-brand-600" />
         Genius
@@ -132,7 +127,7 @@ export function Sidebar({
       <NavLinks papeis={papeis} naoLidasInbox={naoLidasInbox} />
 
       <div className="mt-auto flex items-center gap-2 border-t border-gray-100 pt-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-xs font-medium text-brand-700">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-bg text-xs font-medium text-brand-800">
           {nome.slice(0, 2).toUpperCase()}
         </div>
         <span className="flex-1 truncate text-sm text-gray-600">{nome}</span>

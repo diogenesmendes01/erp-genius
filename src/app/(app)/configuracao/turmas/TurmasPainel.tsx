@@ -15,6 +15,7 @@ import { ImportarTurmasModal } from "./ImportarTurmasModal";
 import { useDialogo } from "@/lib/dialogo";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 export interface TurmaRow {
   id: string;
@@ -64,7 +65,7 @@ function DialogoFormularioTurma({ titulo, aoFechar, bloquearFechamento, children
   useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento });
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4"
       onClick={() => { if (!bloquearFechamento) aoFechar(); }}
     >
       <div
@@ -73,7 +74,7 @@ function DialogoFormularioTurma({ titulo, aoFechar, bloquearFechamento, children
         aria-modal="true"
         aria-label={titulo}
         tabIndex={-1}
-        className="my-8 w-full max-w-3xl"
+        className="my-8 w-full max-w-3xl rounded-dialog shadow-dialog"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
@@ -105,13 +106,13 @@ export function TurmasPainel({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="min-w-0 flex-1 basis-80 text-sm text-gray-500">
           Crie a turma e publique a agenda para definir seu período. O status canônico, a agenda e as regras de admissão
           determinam os próximos passos.
         </p>
         {form === "none" && (
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {podeImportar && <ImportarTurmasModal />}
             <button
               onClick={() => setForm("nova")}
@@ -192,8 +193,10 @@ export function TurmasPainel({
                       {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {t.dataInicio ? new Date(t.dataInicio).toLocaleDateString("pt-BR") : "—"}
-                      {t.dataFim ? ` → ${new Date(t.dataFim).toLocaleDateString("pt-BR")}` : ""}
+                      {/* Início e término são dias (gravados à meia-noite UTC): o dia sai do ISO, sem passar pelo fuso do
+                          navegador — em UTC−3 o toLocaleDateString mostrava o dia anterior (C52 da #170). */}
+                      {t.dataInicio ? formatarDataCivil(t.dataInicio.slice(0, 10)) : "—"}
+                      {t.dataFim ? ` → ${formatarDataCivil(t.dataFim.slice(0, 10))}` : ""}
                       {t.status === "PLANEJADA" && !t.dataFim && (
                         <span className="block text-xs text-gray-500">Previsão de término pendente da grade.</span>
                       )}
@@ -203,7 +206,7 @@ export function TurmasPainel({
                       {t._count.alocacoes} matriculados · {t._count.reservasMatricula} reservas · {vagas} vagas
                     </td>
                     <td className="px-4 py-3">
-                      <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + sit.cls}>
+                      <span className={"whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium " + sit.cls}>
                         {sit.label}
                       </span>
                     </td>

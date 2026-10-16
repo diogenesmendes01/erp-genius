@@ -50,7 +50,9 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
   "src/components/BarraMobile.tsx": 2, // botões só de ícone da barra do celular (menu, sair)
-  "src/components/Sidebar.tsx": 2, // item da navegação principal (ativo = fundo da marca) e contador de não lidas
+  "src/components/Chip.tsx": 1, // primitivo de filtro em pílula (selecionado = accent-soft): seleção, não ação
+  "src/components/Menu.tsx": 1, // item do menu de ações (role=menuitem, hover translúcido): o papel é do menu, não do Botao
+  "src/components/Sidebar.tsx": 1, // contador de não lidas (o item ativo agora é seleção suave, bg-brand-bg)
   "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: seleção, não ação; fundo bg-brand-solid): o literal e o <Link>
 };
 
@@ -70,7 +72,10 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
+  "src/components/Chip.tsx": ["(sem nome)"], // primitivo: ficha de filtro (rótulo vem dos children)
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
+  "src/components/ItemLista.tsx": ["(sem nome)"], // primitivo: linha de lista (título vem da prop)
+  "src/components/Menu.tsx": ["rotulo", "key indice"], // gatilho só de ícone e item do menu de ações
   "src/components/Sidebar.tsx": ["Alternar tema", "Sair"], // ícones do rodapé da Sidebar (tema, sair)
 };
 
@@ -187,7 +192,7 @@ export function botoesCrus(fonte: string): string[] {
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
       const t = n.text.split(/\s+/);
-      if (!t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && t.includes("text-white")) achados.push(`primário: "${n.text}"`);
+      if (!t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && (t.includes("text-white") || t.includes("text-on-brand"))) achados.push(`primário: "${n.text}"`);
     }
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Link", "a"].includes(n.tagName.getText(sf))) {
       const tag = n.tagName.getText(sf);
@@ -1106,7 +1111,9 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
         else if (daClasse.length && !daClasse.some((c) => mesma(c, cond((ini as ts.JsxExpression).expression!)))) achados.push(`${nome} — aria-pressed não é a condição da classe`);
         // Rótulo que muda PELA MESMA condição da seleção (o nome escolhido pelo item da lista não conta).
         if (doNome.some((c) => daClasse.some((d) => d.chave === c.chave))) achados.push(`${nome} — aria-pressed com rótulo que muda`);
-        if (!emGrupoRotulado(n)) achados.push(`${nome} — aria-pressed fora de grupo rotulado`);
+        // O grupo rotulado vale para o CONJUNTO de seleção (a classe marca o item escolhido). Uma alternância
+        // avulsa, de nome fixo e sem classe que dependa do estado (o tema, C21 da #170), não tem grupo a que pertencer.
+        if (daClasse.length && !emGrupoRotulado(n)) achados.push(`${nome} — aria-pressed fora de grupo rotulado`);
       } else if (daClasse.length) {
         const isentoPorEstado = ["aria-current", "aria-expanded"].some((a) => {
           const c = anuncio(attrs.get(a));
@@ -1124,7 +1131,11 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 
 
 /** Alternância que de propósito não leva aria-pressed: arquivo + nome exato (nomeDoElemento) + motivo. */
-const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [];
+const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
+  { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
+  { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
+  { arquivo: "src/components/Menu.tsx", rotulo: "key indice", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
+];
 
 const arquivos = [
   ...[...AREAS_MIGRADAS, ...TELAS_PUBLICAS_MIGRADAS].flatMap((raiz) =>
@@ -1389,6 +1400,9 @@ describe("alternâncias anunciam o estado (aria-pressed)", () => {
     expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={outra} className={ativo ? "bg-brand-600" : ""}>Seg</button>'))).toEqual(["Seg — aria-pressed não é a condição da classe"]);
     expect(alternanciasSemAriaPressed('<div role="group"><button aria-pressed={ativo} className={ativo ? "bg-brand-600" : ""}>Seg</button></div>')).toEqual(["Seg — aria-pressed fora de grupo rotulado"]);
     expect(alternanciasSemAriaPressed('<div><button aria-pressed={ativo} className={ativo ? "bg-brand-600" : ""}>Seg</button></div>')).toEqual(["Seg — aria-pressed fora de grupo rotulado"]);
+    // Alternância avulsa (C21 da #170): sem classe pelo estado, não precisa de grupo — mas o estado continua obrigatório.
+    expect(alternanciasSemAriaPressed('<button aria-label="Alternar tema" aria-pressed={escuro} className={classe}>{escuro ? <Sol /> : <Lua />}</button>')).toEqual([]);
+    expect(alternanciasSemAriaPressed('<button aria-label="Alternar tema" aria-pressed={false} className={classe}><Lua /></button>')).toEqual(["Alternar tema — aria-pressed constante"]);
     expect(alternanciasSemAriaPressed(grupo('<button aria-pressed={ativo} className={botaoClasses({ variante: ativo ? "perigo" : "fantasma" })}>{ativo ? "Desativar" : "Ativar"}</button>'))).toEqual(["Desativar · Ativar — aria-pressed com rótulo que muda"]);
     // Seleção por tabela indexada ou função importada, sem aria-pressed.
     expect(alternanciasSemAriaPressed('<button className={ESTILO[String(tipo === t)]}>PF</button>')).toEqual(["PF"]);
