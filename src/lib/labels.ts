@@ -3,6 +3,7 @@ import {
   Temperatura,
   Segmento,
   MotivoPerda,
+  OrigemEnvio,
   StatusMatricula,
   StatusCobranca,
   StatusComissao,
@@ -120,6 +121,15 @@ export const ETAPA_EXTENSO_LABEL: Readonly<Record<EtapaLead, string>> = Object.f
   MATRICULADO: "Matriculado",
   NO_SHOW: "No-show",
   PERDIDO: "Perdido",
+});
+
+export const ORIGEM_ENVIO_LABEL: Readonly<Record<OrigemEnvio, string>> = Object.freeze({
+  GESTAO: "Gestão",
+  HUMANO: "Atendente",
+  CRON: "Régua automática",
+  LOTE: "Envio em lote",
+  CELULAR: "Enviada pelo celular",
+  IA: "Aria",
 });
 
 export const TEMPERATURA_LABEL: Record<Temperatura, string> = {

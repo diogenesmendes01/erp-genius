@@ -2440,6 +2440,8 @@ enum OrigemEnvio {
   HUMANO
   CRON
   LOTE
+  CELULAR // eco fromMe: enviada pelo app do celular, fora do ERP (E3.6)
+  IA // resposta do agente Aria (motor, Fase 4)
 }
 
 model MensagemWhatsApp {
@@ -2461,6 +2463,7 @@ model MensagemWhatsApp {
   driver            DriverWhatsApp
   origem            OrigemEnvio? // só SAIDA
   providerMessageId String? // wamid/key.id do driver
+  clientMessageId   String?           @unique // UUID por tentativa de envio do motor (Fase 4); nulo com Meta/Evolution
   autorId           String?
   autor             Usuario?          @relation("AutorMensagensWhatsApp", fields: [autorId], references: [id])
   templateId        String?
