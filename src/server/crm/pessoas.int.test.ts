@@ -121,6 +121,31 @@ describe("garantirPessoaTx e criarLead", () => {
   });
 });
 
+describe("criarLead com pessoaId informado", () => {
+  const base = { segmento: "ADULTO", temperatura: "MORNO", b2b: false } as const;
+  it("aceita pessoa da própria carteira", async () => {
+    const p = await pessoaComOportunidade("Minha", vendedor.id);
+    logadoComo(vendedor.id);
+    const r = await criarLead({ nome: "Minha 2", pessoaId: p.id, ...base });
+    const op = await prisma.oportunidade.findUniqueOrThrow({ where: { id: idDe(r) } });
+    expect(op.pessoaId).toBe(p.id);
+  });
+  it("recusa pessoa de outra carteira, aluno, inexistente e lápide sem criar oportunidade", async () => {
+    const alheia = await pessoaComOportunidade("Alheia", outro.id);
+    const aluna = await prisma.pessoa.create({ data: { nome: "Aluna" } });
+    await criarAlunoMinimo({ pessoaId: aluna.id });
+    const lapide = await prisma.pessoa.create({ data: { nome: "Lápide", mescladaEmId: alheia.id } });
+    logadoComo(vendedor.id);
+    const antes = await prisma.oportunidade.count();
+    for (const pessoaId of [alheia.id, aluna.id, "inexistente-id", lapide.id]) {
+      const r = await criarLead({ nome: "X", pessoaId, ...base });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.erro).toBe("Contato não encontrado.");
+    }
+    expect(await prisma.oportunidade.count()).toBe(antes);
+  });
+});
+
 describe("possiveisDuplicados", () => {
   it("duplicado fora da carteira não revela o nome", async () => {
     await pessoaComOportunidade("Alheia", outro.id, "+50670001111");
