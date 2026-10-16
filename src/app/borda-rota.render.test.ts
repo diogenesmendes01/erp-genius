@@ -36,7 +36,6 @@ import ErroApp from "@/app/(app)/error";
 import ErroPortalAluno from "@/app/portal-aluno/error";
 import ErroAcademico from "@/app/(app)/academico/error";
 import ErroAlunos from "@/app/(app)/alunos/error";
-import ErroCarteiras from "@/app/(app)/carteiras/error";
 import ErroComissoes from "@/app/(app)/comissoes/error";
 import ErroConfiguracao from "@/app/(app)/configuracao/error";
 import ErroDiario from "@/app/(app)/diario/error";
@@ -133,7 +132,6 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/portal-aluno": { Componente: ErroPortalAluno, caminho: "/portal-aluno", titulo: "Não foi possível abrir esta página", voltar: null },
   "src/app/(app)/academico": { Componente: ErroAcademico, caminho: "/academico/avaliacoes", titulo: "Não foi possível carregar o acadêmico", voltar: "/academico" },
   "src/app/(app)/alunos": { Componente: ErroAlunos, caminho: "/alunos/a1", titulo: "Não foi possível carregar os alunos", voltar: "/alunos" },
-  "src/app/(app)/carteiras": { Componente: ErroCarteiras, caminho: "/carteiras", titulo: "Não foi possível carregar as carteiras", voltar: "/home" },
   "src/app/(app)/comissoes": { Componente: ErroComissoes, caminho: "/comissoes", titulo: "Não foi possível carregar as comissões", voltar: "/home" },
   "src/app/(app)/configuracao": { Componente: ErroConfiguracao, caminho: "/configuracao/migracao/l1", titulo: "Não foi possível carregar esta configuração", voltar: "/configuracao" },
   "src/app/(app)/diario": { Componente: ErroDiario, caminho: "/diario/reposicoes/r1/troca-fonte", titulo: "Não foi possível carregar o diário de aulas", voltar: "/diario" },
