@@ -988,10 +988,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Atender → primario/sm",
     "<Link> Próximo lead → → secundario/sm",
   ],
-  "carteiras/CoberturasPainel.tsx": [
-    "<button> Conceder cobertura → primario/lg",
-    "<button> Revogar → perigo/sm",
-  ],
   "comissoes/page.tsx": [
     "<button> Filtrar → secundario/md",
   ],
