@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Aviso } from "@/components/Aviso";
 import { MensagemStatus } from "@/components/MensagemStatus";
 
 // Resultado de uma ação, renderizado junto do grupo de botões que a disparou — nunca no topo da
@@ -15,7 +16,7 @@ export function FeedbackAcao({ erro, sucesso, progresso, className = "" }: {
   /** Espaçamento no contexto (ex.: "mb-3"); aplicado às caixas visíveis. */
   className?: string;
 }) {
-  const ref = useRef<HTMLParagraphElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!erro || !ref.current) return;
@@ -26,14 +27,12 @@ export function FeedbackAcao({ erro, sucesso, progresso, className = "" }: {
   return (
     <>
       {erro && (
-        <p ref={ref} tabIndex={-1} role="alert" className={`rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 ${className}`.trim()}>
-          {erro}
-        </p>
+        <Aviso ref={ref} tom="erro" tabIndex={-1} className={className || undefined}>{erro}</Aviso>
       )}
       {/* A região polite só existe onde a tela anuncia sucesso/progresso (prop passada, mesmo que null):
           quem mostra apenas erro não ganha uma região vazia a mais por linha. */}
       {(sucesso !== undefined || progresso !== undefined) && (
-        <MensagemStatus texto={sucesso} progresso={progresso} className={`rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 ${className}`.trim()} />
+        <MensagemStatus texto={sucesso} progresso={progresso} tom="sucesso" className={className || undefined} />
       )}
     </>
   );

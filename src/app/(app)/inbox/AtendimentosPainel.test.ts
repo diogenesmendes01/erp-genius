@@ -24,6 +24,13 @@ describe("AtendimentosPainel", () => {
   } as never));
   const FALTA_CANAL = "A administração precisa disponibilizar um canal ativo";
 
+  it("selects cabem no celular (w-full, min-w-0) e usam o raio de campo do DS, não `rounded` (DS-C)", () => {
+    const html = painel({ destinos: [], numeros: [] });
+    expect(html).toContain('class="w-full max-w-sm rounded-md border border-gray-300 px-3 py-2"');
+    expect(html).toContain('class="w-full rounded-md border border-gray-300 px-3 py-2"');
+    expect(html.match(/<label class="grid min-w-0 max-w-full gap-1 text-sm">/g)).toHaveLength(2);
+  });
+
   it("vendedor sem lead na carteira: orienta a cadastrar o lead — não culpa a falta de canal", () => {
     const html = painel({ destinos: [], numeros: [], comercial: true });
     expect(html).toContain("Nenhum lead na sua carteira para iniciar uma conversa");

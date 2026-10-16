@@ -285,7 +285,7 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
   const badge = SESSAO_BADGE[estado] ?? SESSAO_BADGE.DESCONECTADO;
 
   return (
-    <Modal titulo={`Conectar ${numero.rotulo}`} aoFechar={onClose} bloquearFechamento={acao.ocupado} largura="max-w-sm">
+    <Modal titulo={`Conectar ${numero.rotulo}`} aoFechar={onClose} bloquearFechamento={acao.ocupado}>
       <p className="text-xs text-gray-500">
         No celular do número: WhatsApp → aparelhos conectados → conectar aparelho.
       </p>

@@ -17,7 +17,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 " +
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
   CONTROLE_INVALIDO;
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -861,7 +861,7 @@ function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => void }) {
               <span
                 className={
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium " +
-                  (ativo || concluido ? "bg-brand-solid text-white" : "bg-gray-100 text-gray-500")
+                  (ativo || concluido ? "bg-brand-solid text-on-brand" : "bg-gray-100 text-gray-500")
                 }
               >
                 {concluido ? "✓" : s.n}

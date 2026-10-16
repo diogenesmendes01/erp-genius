@@ -65,7 +65,7 @@ export function ImportarAlunosModal() {
       </button>
 
       {aberto && (
-        <Modal titulo="Cadastrar alunos por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} largura="max-w-lg">
+        <Modal titulo="Cadastrar alunos por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} larga>
           <p className="mb-4 text-sm text-gray-500">
             Envie uma planilha <strong>.xlsx</strong>. Apenas <strong>Nome</strong> e{" "}
             <strong>País</strong> são obrigatórios; os demais campos são opcionais. Baixe o modelo
@@ -86,7 +86,7 @@ export function ImportarAlunosModal() {
               ref={fileRef}
               type="file"
               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-on-brand hover:file:brightness-95"
             />
           </div>
 
