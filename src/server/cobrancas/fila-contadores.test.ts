@@ -90,10 +90,12 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
     });
   });
 
-  it("a fila chega com o estado e o atraso da régua (a fixture é a que os contadores veem)", async () => {
+  it("a fila chega com o estado e o atraso da régua (a fixture é a que os contadores veem), na ordem da fila", async () => {
     const { itens } = await listarFilaCobranca();
+    // Item 9: a fila chega ordenada pelo servidor — mesma prioridade, maior atraso primeiro, desempate pelo id.
+    const naOrdem = [...CASOS].sort((a, b) => b.diasAtraso - a.diasAtraso || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     expect(itens.map((i) => [i.id, i.estado, i.diasAtraso, i.precisaBloqueio])).toEqual(
-      CASOS.map((c) => [c.id, c.estado, c.diasAtraso, c.id === "bloqueio" || c.id === "promessa-antiga"]),
+      naOrdem.map((c) => [c.id, c.estado, c.diasAtraso, c.id === "bloqueio" || c.id === "promessa-antiga"]),
     );
   });
 
