@@ -2,6 +2,10 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 3 — IDs de migration (16/10/2026)
+
+- M1 (`numero_setor_whatsapp`, Task 2): o integrador não entregou o ID reservado; a pasta usa o ID provisório `20261016090000` (posterior a `20260929130000`, a última existente). O integrador confirma o ID ou renomeia `prisma/migrations/20261016090000_numero_setor_whatsapp` antes do merge. Se renomear, o banco de teste do worktree precisa reaplicar a migration.
+
 ## Fase 1A — verificação do bloco (15/10/2026)
 
 - Branch `claude/fase1-a-linha-de-base`; tarefa 1 do plano (E0: fontes da fase 1 e linha de base de testes). Só `docs/` mudou em relação à `main`; `src/`, `prisma/` e `package*.json` sem diferença.
