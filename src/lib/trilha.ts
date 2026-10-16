@@ -103,7 +103,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Empresas, leads
   "/empresas/*": "Empresa",
   "/leads/*": "Ficha do lead",
-  "/leads/*/contratacao": "Contratação",
+  "/oportunidades/*/contratacao": "Contratação",
 
   // Financeiro
   "/financeiro/cobrancas": "Cobranças",

@@ -2,6 +2,7 @@
 import { AgendaParticularSchema, conferirAgendaParticularTx } from "./agenda-particular-estado";
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
@@ -14,7 +15,7 @@ async function leadAutorizado(tx: Prisma.TransactionClient, autorId: string, lea
   if (!autor?.ativo || !autor.papeis.some((p) => papeis.includes(p))) throw new ErroPermissao();
   const operacional = autor.papeis.includes(Papel.ADMINISTRADOR) || autor.papeis.includes(Papel.SECRETARIA_ACADEMICA);
   const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id: leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, nome: true, telefoneE164: true, matricula: { select: { id: true } } } });
-  if (!lead) throw new ErroPermissao();
+  if (!lead) throw new ErroPermissao("Oportunidade fora da sua carteira.");
   return lead;
 }
 function contatoValido(contato: string | null): contato is string { return !!contato && /^\+[1-9]\d{7,14}$/.test(contato); }
@@ -41,7 +42,7 @@ export async function prepararContratacao(input: z.input<typeof Entrada>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
     const { identidadeConferida, ...d } = Entrada.parse(input);
-    return prisma.$transaction(async (tx) => {
+    const preparado = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${d.leadId} FOR UPDATE`;
       const lead = await leadAutorizado(tx, autor.id, d.leadId);
@@ -56,6 +57,8 @@ export async function prepararContratacao(input: z.input<typeof Entrada>) {
         payload: { leadId: lead.id, alunoId: aluno.id, preparacaoId: resultado.id, identidadeConferida, metodo: "CONTATO_EXATO_SELECAO_EXPLICITA" } });
       return resultado;
     }, { timeout: 20000 });
+    revalidatePath("/funil");
+    return preparado;
   });
 }
 
@@ -88,7 +91,7 @@ export async function prepararContratacaoNovaPessoa(input: z.input<typeof Entrad
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
     const { cadastroNovoConferido, ...d } = EntradaNovaPessoa.parse(input);
-    return prisma.$transaction(async (tx) => {
+    const preparado = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${d.leadId} FOR UPDATE`;
       await leadAutorizado(tx, autor.id, d.leadId);
@@ -97,6 +100,8 @@ export async function prepararContratacaoNovaPessoa(input: z.input<typeof Entrad
       if (!existente) await registrarEvento(tx, { tipo: "CadastroInicialContratacaoCriado", agregadoTipo: "Matricula", agregadoId: resultado.matriculaId, autorId: autor.id, payload: { preparacaoId: resultado.id, cadastroNovoConferido } });
       return resultado;
     }, { timeout: 20000 });
+    revalidatePath("/funil");
+    return preparado;
   });
 }
 

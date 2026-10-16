@@ -174,6 +174,7 @@ describe("borda de rota: listas fechadas (E10)", () => {
       "src/app/(app)/inbox",
       "src/app/(app)/leads",
       "src/app/(app)/matriculas/[id]",
+      "src/app/(app)/oportunidades",
       "src/app/(app)/secretaria",
       "src/app/certificado/[codigo]",
       "src/app/pagar/[token]",
