@@ -6,7 +6,8 @@
 // os desenha de novo — sairiam em dobro (C3 da issue #170). As barras de título e de abas levam
 // `data-esqueleto` para a trava contar (src/app/borda-rota.render.test.ts).
 
-const bloco = "rounded-md bg-surface-muted";
+// animate-pulse: o movimento é desligado em prefers-reduced-motion (globals.css).
+const bloco = "animate-pulse rounded-md bg-surface-muted";
 
 function Carregando({ rotulo, className, children }: { rotulo: string; className?: string; children: React.ReactNode }) {
   return (
