@@ -155,6 +155,20 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
     expect(html).toContain(`<h2 id="${id}" class="text-sm font-medium">Detalhe da cobrança</h2>`);
     expect(html).toContain('aria-label="Fechar detalhe da cobrança"');
   });
+
+  it("o detalhe é camada elevada do DS: véu bg-black/60, superfície elevada e shadow-dialog", () => {
+    const html = detalhe(item, null);
+    expect(html).toContain("bg-black/60");
+    expect(html).toMatch(/role="dialog"[^>]*class="[^"]*bg-surface-raised[^"]*shadow-dialog/);
+    // O valor não se parte (o símbolo ₡ ficava numa linha e o número em outra).
+    expect(html).toContain('class="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800"');
+  });
+
+  it("a linha quebra no celular (flex-wrap) e os chips de estado são pílulas", () => {
+    const html = fila(true);
+    expect(html).toContain("flex flex-wrap items-center justify-between");
+    expect(html).not.toMatch(/<span class="rounded-md px-2 py-0\.5 text-\[11px\]/);
+  });
 });
 
 describe("FilaCobranca — filtros na URL (E4)", () => {

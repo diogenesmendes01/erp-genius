@@ -47,6 +47,17 @@ describe("Drawer → camada elevada (DS)", () => {
     expect(h).not.toMatch(/\bborder-[lr]\b/);
   });
 
+  it("botão de fechar é pílula com hover translúcido e 44 px no celular", () => {
+    const h = renderToStaticMarkup(createElement(Drawer, { open: true, onClose: () => {}, title: "Menu" } as Parameters<typeof Drawer>[0], "x"));
+    expect(h).toMatch(/<button type="button" aria-label="Fechar" class="[^"]*rounded-full[^"]*hover:bg-highlight[^"]*max-sm:min-h-11/);
+  });
+
+  it("drawer fechado não projeta sombra (vazava na borda da tela)", () => {
+    const h = renderToStaticMarkup(createElement(Drawer, { open: false, onClose: () => {}, title: "Menu", lado: "esquerda" } as Parameters<typeof Drawer>[0], "x"));
+    expect(h).not.toContain("shadow-dialog");
+    expect(h).toContain("-translate-x-full");
+  });
+
   it("drawer à esquerda usa borda lógica no fim (border-e)", () => {
     const h = renderToStaticMarkup(createElement(Drawer, { open: true, onClose: () => {}, title: "Menu", lado: "esquerda" } as Parameters<typeof Drawer>[0], "x"));
     expect(h).toContain("border-e");

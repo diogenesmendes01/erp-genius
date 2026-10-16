@@ -64,4 +64,11 @@ describe("paleta do design system", () => {
     );
     expect(ofensores).toEqual([]);
   });
+
+  it("foco tem uma regra só (globals.css): nenhum focus:ring nas telas, que somava um anel ao contorno global (DS-C)", () => {
+    const ofensores = fontes.flatMap(({ arquivo, linhas }) =>
+      linhas.flatMap((linha, i) => (/(?:^|[\s"'`:])focus:ring(?:-[a-z0-9-]+)?(?=[\s"'`]|$)/.test(linha) ? [`${arquivo}:${i + 1}`] : [])),
+    );
+    expect(ofensores).toEqual([]);
+  });
 });

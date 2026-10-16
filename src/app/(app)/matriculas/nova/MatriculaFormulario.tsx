@@ -17,7 +17,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 " +
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
   CONTROLE_INVALIDO;
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;

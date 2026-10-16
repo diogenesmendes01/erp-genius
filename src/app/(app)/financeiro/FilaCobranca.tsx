@@ -432,21 +432,22 @@ export function FilaCobranca({
                   </span>
                 </button>
               </div>
-              <div className="mt-1 flex items-center justify-between gap-3">
-                <span className="truncate text-xs text-gray-500">
+              {/* Quebra no celular: com o chip e a ação ao lado, turma · país sobrava em "Re…" (DS-C). */}
+              <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <span className="min-w-0 truncate text-xs text-gray-500">
                   {item.turma ?? "sem turma"} · {item.pais}
                   {item.acessoBloqueado && <span className="ml-1 text-red-600">· acesso bloqueado</span>}
                   {item.tentativas > 1 && <span className="ml-1 text-amber-600">· {item.tentativas}ª cobrança</span>}
                   {!item.destino && <span className="ml-1 text-red-600">· sem destino</span>}
                 </span>
-                <div className="relative z-10 flex shrink-0 items-center gap-2">
+                <div className="relative z-10 ms-auto flex shrink-0 items-center gap-2">
                   {item.respondeuEm && (
-                    <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">respondeu</span>
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">respondeu</span>
                   )}
                   {item.envio?.status === "FALHOU" && (
-                    <span className="rounded-md bg-red-100 px-2 py-0.5 text-[11px] text-red-700">envio falhou</span>
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-700">envio falhou</span>
                   )}
-                  <span className={"rounded-md px-2 py-0.5 text-[11px] " + chipCls(item)}>{rotuloAcaoCurto(item)}</span>
+                  <span className={"rounded-full px-2 py-0.5 text-[11px] " + chipCls(item)}>{rotuloAcaoCurto(item)}</span>
                   <AcaoRapida
                     item={item}
                     podeOperar={podeOperar}
@@ -669,14 +670,14 @@ export function DetalheCobranca({
   useDialogo(painel, { aberto: true, aoFechar: onClose, bloquearFechamento: manualOcupado });
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => { if (!manualOcupado) onClose(); }}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={() => { if (!manualOcupado) onClose(); }}>
       <div
         ref={painel}
         role="dialog"
         aria-modal="true"
         aria-labelledby={tituloId}
         tabIndex={-1}
-        className="h-full w-full max-w-md overflow-y-auto bg-surface"
+        className="h-full w-full max-w-md overflow-y-auto border-s border-gray-200 bg-surface-raised shadow-dialog"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
@@ -695,7 +696,7 @@ export function DetalheCobranca({
             {item.turma ?? "sem turma"} · {item.pais} · {item.codigo}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
+            <span className="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800">{formatarMoeda(valorDevido(item), item.moeda)}</span>
             <span className="text-xs text-gray-500">
               {rotular(TIPO_COBRANCA_LABEL, item.tipo)}
               {item.competencia ? ` ${formatarCompetencia(item.competencia)}` : ""} · {rotuloVencimento(item.vencimento)}

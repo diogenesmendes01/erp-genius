@@ -1768,6 +1768,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
 - Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
 
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
 
 ### Solução implementada (branch `claude/fase0-ds-b-campos`)
@@ -1825,6 +1827,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
 - Sem schema nem migração; `*.int.test.ts` não alterados.
 
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
 
 ### Solução implementada (branch `claude/fase0-ds-b-navegacao`)
@@ -1881,3 +1885,32 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `npm test`: saída 0, 653 arquivos e 4.606 testes (linha de base da main: 646 e 4.560).
 - `npm run lint`: saída 0.
 - Sem schema nem migração; testes de integração não alterados.
+
+## Design system, bloco DS-C: conferência visual e ajustes finais (Fase 0, Task 11; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-c-conferencia`)
+- Junta DS-A e os seis DS-B (botão, campos, camadas, navegação, avisos, primitivos) com merge sem squash. Conflitos
+  só de documentação (`quadro-entregas.md`, `docs/18-design-system.md`, mantidas todas as seções) e da contagem
+  de exceções em `src/app/botoes.test.ts` (Chip 1, Menu 1, Sidebar 1, combinando navegação e primitivos).
+- 70 capturas (claro e escuro, 1440 e 390 px) de login, home, alunos, matrícula nova, financeiro, secretaria,
+  acadêmico, diário, configuração (turmas e WhatsApp), inbox, modal, drawer, menu do celular e formulário com erro.
+  Achados e correções em `docs/planejamento/ds-capturas.md`: 19 corrigidos, 4 pendências fora do recorte.
+- Correções principais: sombra do drawer fechado vazando na borda; estouro horizontal no celular (sr-only da
+  `ColunaOrdenavel`, selects do inbox); abas do financeiro, chips da fila e dias da turma em pílula; detalhe da
+  cobrança e diálogo de turma como camada elevada (`bg-surface-raised`, `shadow-dialog`, véu 60%); anel de foco
+  duplo (`focus:ring-*`) removido, com trava em `paleta.test.ts`; links da secretaria separados.
+
+### Verificação
+- Na HEAD `9718acf`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 654 arquivos e 4.647 testes
+  (DS-A + 6 DS-B mergeados, antes das correções: 654 e 4.636); `npm run lint` saída 0, 0 erros e 44 avisos
+  preexistentes.
+- Servidor de produção (`npm run build` + `next start`) contra `erp_genius_test_tester`; recaptura sem estouro
+  horizontal em 390 px.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- "Exportar planilha" isolado acima do título em Alunos; links recuados na ficha do aluno; ✕ cru no detalhe da
+  cobrança; `Menu` ainda sem tela que o use.
+- Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
