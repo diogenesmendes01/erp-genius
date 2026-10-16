@@ -31,6 +31,14 @@ describe("InboxCliente", () => {
     expect(render(false)).not.toContain("Editar nome");
   });
 
+  it("thread com lead e copiloto ligado não mostra o copiloto (E1)", () => {
+    const html = renderToStaticMarkup(createElement(InboxCliente, {
+      conversas: [], thread: { ...thread, contato: { ...thread.contato, optOutEm: null }, lead: { ...thread.lead, copilotoAtivo: true, sugestoesIA: [] } }, podeCobranca: false, preferenciaFusoExibicao: null,
+    } as never));
+    expect(html).not.toContain("Copiloto (sugestões");
+    expect(html).toContain('placeholder="Escreva uma mensagem (Enter envia)"');
+  });
+
   it("usa a preferência nos instantes e agrupa mensagens pela mesma data local", () => {
     const html = renderToStaticMarkup(createElement(InboxCliente, {
       conversas: [{ id: "atendimento", numeroId: "numero", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: "contato", contatoNome: "Ana", contatoTelefone: "+506", optOut: true, vinculo: null, naoLidas: 0, ultimaMensagemEm: mensagens[1].criadoEm, preview: "Olá" }],

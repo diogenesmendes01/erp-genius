@@ -73,7 +73,6 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   // Exceção de PALETA, não de papel: são ações, mas da IA — docs/18 reserva --ai-* (e --ai-solid para
   // aplicar sugestão) como o único sinal de "gerado por IA"; nenhuma variante do Botao tem essa cor.
   // Base e tamanho vêm do design system (BASE_BOTAO + TAMANHOS_BOTAO.sm); só a cor é própria.
-  "src/components/CopilotoSugestoes.tsx": ["gerar · Analisando… · Gerar sugestões", "Aceitar", "Aplicar corrigido"],
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
   "src/components/Sidebar.tsx": ["Alternar tema", "Sair"], // ícones do rodapé da Sidebar (tema, sair)
 };
@@ -454,11 +453,6 @@ const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
     arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
     rotulo: "Remover opt-out",
     motivo: "o efeito é registrar nova autorização de contato (opt-in com evidência): reabre o canal, não apaga nem recusa nada",
-  },
-  {
-    arquivo: "src/components/CopilotoSugestoes.tsx",
-    rotulo: "Descartar",
-    motivo: "descartar sugestão da IA é de baixo risco (a sugestão é regenerável); vermelho sólido em cada cartão chamaria mais atenção que aceitar",
   },
 ];
 
@@ -1163,7 +1157,7 @@ describe("botões nas áreas migradas", () => {
 
   it("src/components está sob a trava (menos a fonte das classes, Botao.tsx)", () => {
     const componentes = arquivos.filter(({ arquivo }) => arquivo.startsWith(`${COMPONENTES}/`)).map(({ arquivo }) => arquivo);
-    expect(componentes).toEqual(expect.arrayContaining(["src/components/CopilotoSugestoes.tsx", "src/components/PagamentoModal.tsx", "src/components/EstadoRota.tsx", "src/components/ExportarPlanilha.tsx"]));
+    expect(componentes).toEqual(expect.arrayContaining(["src/components/Drawer.tsx", "src/components/PagamentoModal.tsx", "src/components/EstadoRota.tsx", "src/components/ExportarPlanilha.tsx"]));
     expect(componentes).not.toContain(FONTE_DO_BOTAO);
   });
 
@@ -1677,47 +1671,6 @@ describe("hierarquia: rótulo resolvido, tabelas e falha fechada (R1 da #135)", 
     expect(achados).toEqual([]);
     expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Excluir país", alvo: 1, variante: "fantasma" }, { label: "Pausar", variante: "fantasma" }];')).toEqual(["Excluir país → fantasma"]);
     expect(tabelasDeBotaoSemPerigo('const A = [{ label: "Encerrar", variante: "perigo" }, { rotulo: "Reativar", variante: "fantasma" }];')).toEqual([]);
-  });
-});
-
-describe("exceções ai-* do copiloto (R1 da #135, B6)", () => {
-  // Os botões isentos por nome usam a paleta de IA (docs/18), mas base e tamanho vêm do design system:
-  // a constante btnIa é exatamente BASE_BOTAO + TAMANHOS_BOTAO.sm, os isentos usam btnIa, e só somam
-  // cor/borda da paleta ai-* (texto branco no sólido); o conteúdo não traz cor própria (follow-up #140, B5).
-  const fonte = readFileSync("src/components/CopilotoSugestoes.tsx", "utf8");
-  const sf = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const classesDosIsentos: { nome: string; expr: string; estilo: boolean; conteudo: string[] }[] = [];
-  const visita = (n: ts.Node) => {
-    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && n.tagName.getText(sf) === "button") {
-      const nome = nomeDoElemento(n, sf) ?? "";
-      if ((CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? []).includes(nome)) {
-        const cls = n.attributes.properties.find((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "className") as ts.JsxAttribute | undefined;
-        const estilo = n.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === "style") || n.attributes.properties.some(ts.isJsxSpreadAttribute);
-        const conteudo = ts.isJsxOpeningElement(n) ? coresNosDescendentes(n.parent) : [];
-        classesDosIsentos.push({ nome, expr: cls?.initializer?.getText(sf) ?? "", estilo, conteudo });
-      }
-    }
-    ts.forEachChild(n, visita);
-  };
-  visita(sf);
-
-  it("btnIa é BASE_BOTAO + TAMANHOS_BOTAO.sm, sem nada a mais", () => {
-    expect(fonte).toMatch(/const btnIa = `\$\{BASE_BOTAO\} \$\{TAMANHOS_BOTAO\.sm\}`;/);
-  });
-
-  it("cada botão isento usa btnIa e só soma classes da paleta ai-* (e texto branco)", () => {
-    expect(classesDosIsentos.map((c) => c.nome).sort()).toEqual([...(CONTROLES_QUE_NAO_SAO_BOTAO["src/components/CopilotoSugestoes.tsx"] ?? [])].sort());
-    for (const { nome, expr, estilo } of classesDosIsentos) {
-      // Sem style inline nem spread: a cor só pode vir das classes ai-* conferidas abaixo (R2 da #135, B5).
-      expect(estilo, `${nome}: style/spread`).toBe(false);
-      expect(expr, nome).toMatch(/^\{btnIa \+ "[^"]*"\}$/);
-      const extras = expr.match(/"([^"]*)"/)![1].trim().split(/\s+/);
-      for (const c of extras) expect(/^(hover:)?(bg|text|border)-ai-[\w-]+$|^border$|^text-white$|^hover:brightness-95$/.test(c), `${nome}: ${c}`).toBe(true);
-    }
-  });
-
-  it("o conteúdo de cada isento não recolore o botão: só texto, ícone e classes neutras ou ai-* (follow-up #140, B5)", () => {
-    expect(classesDosIsentos.flatMap(({ nome, conteudo }) => conteudo.map((p) => `${nome}: ${p}`))).toEqual([]);
   });
 });
 

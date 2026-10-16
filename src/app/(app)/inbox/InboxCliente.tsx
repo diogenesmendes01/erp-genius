@@ -34,7 +34,6 @@ import {
   vincularContatoWhatsApp,
 } from "@/server/whatsapp/acoes";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
-import { CopilotoSugestoes } from "@/components/CopilotoSugestoes";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
@@ -554,16 +553,6 @@ export function Thread({
             </span>
           )}
         </div>
-      )}
-
-      {/* C3 (doc 27): sugestões do copiloto sobre os controles que já existem no cockpit. */}
-      {thread.lead && (thread.lead.copilotoAtivo || (thread.lead.sugestoesIA?.length ?? 0) > 0) && (
-        <CopilotoSugestoes
-          leadId={thread.lead.id}
-          sugestoes={thread.lead.sugestoesIA ?? []}
-          copilotoAtivo={thread.lead.copilotoAtivo ?? false}
-          compacto
-        />
       )}
 
       {/* Mensagens */}
