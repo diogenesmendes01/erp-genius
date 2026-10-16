@@ -183,8 +183,12 @@ export function paresReprovados(css) {
     }
     for (const k of ["--brand", "--brand-solid"]) {
       if (!T[k]) continue;
-      const valor = contraste([255, 255, 255], hexParaRgb(T[k]));
-      if (valor < 4.5) reprovados.push({ tema, familia: `#fff/${k}`, par: `#fff/${k}`, valor });
+      // O texto sobre --brand-solid é --on-brand-solid quando o tema o define (o verde do escuro leva texto escuro);
+      // sem ele, branco. --brand segue medido com branco.
+      const usaPar = k === "--brand-solid" && T["--on-brand-solid"];
+      const nome = usaPar ? "--on-brand-solid" : "#fff";
+      const valor = contraste(usaPar ? hexParaRgb(T["--on-brand-solid"]) : [255, 255, 255], hexParaRgb(T[k]));
+      if (valor < 4.5) reprovados.push({ tema, familia: `${nome}/${k}`, par: `${nome}/${k}`, valor });
     }
   }
   return { reprovados, familias: [...new Set(reprovados.map((r) => r.familia))].sort() };

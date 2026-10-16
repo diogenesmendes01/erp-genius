@@ -22,7 +22,7 @@ export const BASE_BOTAO =
   "disabled:cursor-not-allowed disabled:opacity-60";
 
 export const VARIANTES_BOTAO: Record<VarianteBotao, string> = {
-  primario: "bg-brand-solid text-white hover:brightness-95",
+  primario: "bg-brand-solid text-on-brand hover:brightness-95",
   secundario: "border border-gray-300 bg-surface text-gray-700 hover:bg-gray-50",
   perigo: "bg-danger text-white hover:brightness-95",
   fantasma: "text-brand-700 hover:bg-gray-100",

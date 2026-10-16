@@ -21,11 +21,11 @@ describe("SubTabs", () => {
     expect([...html.matchAll(/class="[^"]*bg-brand-solid[^"]*"/g)]).toHaveLength(1);
   });
 
-  it("aba ativa: fundo bg-brand-solid com texto branco; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+  it("aba ativa: fundo bg-brand-solid com texto on-brand; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
     const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
-    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-white"]));
+    expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-on-brand"]));
     expect(classeDe("/configuracao")).not.toContain("bg-brand-solid");
     expect(classeDe("/configuracao")).not.toContain("text-white");
     expect(html).not.toMatch(/bg-brand-(?:500|600)/);

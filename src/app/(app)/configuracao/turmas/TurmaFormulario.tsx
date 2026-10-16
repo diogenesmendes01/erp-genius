@@ -259,7 +259,7 @@ export function TurmaFormulario({
                 className={
                   "rounded-md border px-3 py-1.5 text-sm " +
                   (ativo
-                    ? "border-brand-solid bg-brand-solid text-white"
+                    ? "border-brand-solid bg-brand-solid text-on-brand"
                     : "border-gray-300 text-gray-600 hover:bg-gray-50")
                 }
               >

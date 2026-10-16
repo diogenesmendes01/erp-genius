@@ -1,13 +1,36 @@
+import Link from "next/link";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { listarFilaInformesPagamento } from "@/server/financeiro/consultas";
+import { cursorDaLeitura, lerNavegacao, validarNavegacao } from "@/lib/cursor-fila";
+import type { ParametrosUrl } from "@/lib/pagina-url";
 import { InformesPagamento } from "../../InformesPagamento";
 import { AcessoNegado } from "@/components/AcessoNegado";
-import { carregarFilasPendentes, contextoDaAba } from "../../contexto";
+import { contextoDaAba } from "../../contexto";
+
+const ROTA = "/financeiro/informes";
 
 // Aba "informes" do /financeiro (E8: uma rota por aba). Guard da própria aba ANTES das consultas — o
 // layout só decide a barra; uma rota pedida direto por quem não enxerga a aba não consulta nada.
-export default async function InformesFinanceiroPage() {
+// Item 9 (docs/43 §6): os informes a conferir são uma fila de trabalho — lida por cursor nos dois sentidos
+// (`depois`/`antes`), em trechos, em vez de todos de uma vez. O número da aba vem de um count no layout.
+export default async function InformesFinanceiroPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   const ctx = await contextoDaAba("informes");
   if (!ctx) return <AcessoNegado recurso="esta seção do financeiro" />;
-  const [filas, preferencia] = await Promise.all([carregarFilasPendentes(ctx.permissoes), consultarPreferenciaFusoEquipe()]);
-  return <InformesPagamento informes={filas.informes} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />;
+  const nav = lerNavegacao(await searchParams);
+  const validacao = validarNavegacao(nav);
+  if (!validacao.ok) {
+    return (
+      <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        {validacao.erro} <Link href={ROTA} className="underline">Ir para o início da fila</Link>
+      </p>
+    );
+  }
+  const [fila, preferencia] = await Promise.all([listarFilaInformesPagamento(validacao.nav), consultarPreferenciaFusoEquipe()]);
+  return (
+    <InformesPagamento
+      informes={fila.itens}
+      fila={{ anterior: fila.anterior, proxima: fila.proxima, rota: ROTA, inicioDaFila: cursorDaLeitura(nav) !== null ? ROTA : null }}
+      preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
+    />
+  );
 }

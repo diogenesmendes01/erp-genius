@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -19,6 +19,7 @@ import {
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
+import { acompanharTema, alternarTema, temaEscuroAplicado, temaEscuroNoServidor } from "@/lib/tema";
 
 type Icone = React.ComponentType<IconProps>;
 
@@ -34,27 +35,23 @@ const ICONS: Record<string, Icone> = {
   Building: IconBuilding,
 };
 
-/** Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque. */
+/**
+ * Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque.
+ * O estado é um só (src/lib/tema.ts): as duas instâncias leem a classe `dark` do <html> e são avisadas na
+ * troca, então a Sidebar nunca fica com o ícone velho depois de trocar no celular (C21 da #170).
+ * aria-pressed diz ao leitor de tela se o tema escuro está ligado — o ícone sozinho não dizia.
+ */
 export function ThemeToggle({ className = "text-gray-400 hover:text-gray-700", classeIcone = "h-4 w-4" }: { className?: string; classeIcone?: string }) {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  function alternar() {
-    const novo = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", novo);
-    localStorage.setItem("tema", novo ? "dark" : "light");
-    setDark(novo);
-  }
+  const dark = useSyncExternalStore(acompanharTema, temaEscuroAplicado, temaEscuroNoServidor);
 
   return (
     <button
-      onClick={alternar}
+      onClick={alternarTema}
       type="button"
       className={className}
       title={dark ? "Tema claro" : "Tema escuro"}
       aria-label="Alternar tema"
+      aria-pressed={dark}
     >
       {dark ? <IconSun className={classeIcone} /> : <IconMoon className={classeIcone} />}
     </button>
@@ -96,7 +93,7 @@ export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Naveg
               <Icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
               {item.href === "/inbox" && naoLidasInbox > 0 && (
-                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">
                   {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
                   <span className="sr-only"> mensagens não lidas</span>
                 </span>
