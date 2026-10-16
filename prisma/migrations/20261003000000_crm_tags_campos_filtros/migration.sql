@@ -139,6 +139,5 @@ ALTER TABLE "ValorCampoPersonalizado" ADD CONSTRAINT "ValorCampoPersonalizado_em
 -- AddForeignKey
 ALTER TABLE "FiltroSalvo" ADD CONSTRAINT "FiltroSalvo_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-
 -- Exatamente um dono por valor: pessoa ou empresa.
 ALTER TABLE "ValorCampoPersonalizado" ADD CONSTRAINT "ValorCampoPersonalizado_um_dono_check" CHECK (num_nonnulls("pessoaId","empresaId") = 1);
