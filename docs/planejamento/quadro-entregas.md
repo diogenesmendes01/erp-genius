@@ -1672,3 +1672,24 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - As métricas de fluxo da 7.7 continuam sem medição.
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
+
+## FU170 grupo A — pendências menores da issue #170 (13/10/2026)
+
+### Entrega (branch `claude/fu170-grupo-a`)
+- C10: a conferência de reserva sem resultado usa `MSG_RESULTADO_INCERTO_SEM_CHAVE`; trava nova em `mensagens.test.ts` (nenhuma tela escreve "Resultado não confirmado" à mão).
+- C17: célula e planilha de alunos com o rótulo do filtro (`rotuloTurmaAcademica`: código · nome · modalidade · idioma nível).
+- C21: `ThemeToggle` com uma fonte só (`src/lib/tema.ts`, `useSyncExternalStore` sobre a classe `dark`) e `aria-pressed`. A trava de `botoes.test.ts` passa a exigir grupo rotulado só para conjunto de seleção.
+- C22/C23: 57 páginas entraram no mapa da trilha (eram 60 de 181 fora); 3 ficam em `FORA_DA_TRILHA`, com motivo e teto, em `trilha.test.ts`. A volta de `tentativas/*/autorizacao` diz "Avaliador da recuperação" (L1617).
+- C36: "Abrir Financeiro" na emissão só para quem abre `/financeiro` (`abreFinanceiro`).
+- C52 (parte): `TurmasPainel` com `formatarDataCivil`; o `PagarCliente` já não formatava data. Trava nova em `datas-civis.test.ts` para `new Date(campo civil).toLocaleDateString`, com 2 usos contados (FichaEmpresa e InformesPagamento).
+- C1 da R1 da #174: o erro do hub da matrícula volta para `/home`.
+- D4 e D6: `docs/18` (e o comentário de `globals.css`) sobre `--ai-solid`/`--brand-solid`; cabeçalho da SPEC-ERP-005 e linha do índice.
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Verificação: pelo integrador (suíte unitária, `tsc --noEmit`, eslint e mutação).
+
+### Pendências
+- C52: `FichaEmpresa.tsx:190` (fora deste grupo, PR #175) e `InformesPagamento.tsx:38` (conferir se `dataPagamento` é dia ou instante).
+- C23: os `VoltarPara` com href dinâmico continuam sem trava.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.

@@ -90,6 +90,34 @@ describe("lista de alunos: escopo sempre junto dos filtros", () => {
   });
 });
 
+describe("turma do aluno na célula e na planilha (C17, #170)", () => {
+  const turma = (id: string, codigo: string | null, nome: string | null) => ({
+    id, codigo, nome, modalidade: { nome: "Regular" }, nivel: { codigo: "B1", idioma: { nome: "Inglês" } }, vinculosDocentes: [],
+  });
+  const aluno = (id: string, t: ReturnType<typeof turma>) => ({
+    id, codigo: null, primeiroNome: "Ana", sobrenome: id, status: "ATIVO", pais: { nome: "Brasil" },
+    criadoEm: new Date("2026-09-01T12:00:00Z"), alocacoes: [{ turma: t }], matriculas: [],
+  });
+
+  it("duas turmas \"Regular B1\" saem distintas, com o mesmo rótulo do filtro (código · nome · modalidade · idioma nível)", async () => {
+    mocks.alunos.mockResolvedValueOnce([aluno("a1", turma("t1", "T-01", "Manhã")), aluno("a2", turma("t2", "T-02", "Noite"))]);
+    const linhas = await listarAlunos(secretaria);
+    expect(linhas.map((l) => l.turmas)).toEqual([
+      [{ id: "t1", label: "T-01 · Manhã · Regular · Inglês B1" }],
+      [{ id: "t2", label: "T-02 · Noite · Regular · Inglês B1" }],
+    ]);
+    // O idioma do nível vem junto da turma: sem ele o rótulo perderia "Inglês".
+    const args = (mocks.alunos.mock.calls[mocks.alunos.mock.calls.length - 1] as unknown[])[0] as { include: { alocacoes: { include: { turma: { include: { nivel: unknown } } } } } };
+    expect(args.include.alocacoes.include.turma.include.nivel).toEqual({ include: { idioma: true } });
+  });
+
+  it("turma sem código nem nome: o rótulo não inventa separadores", async () => {
+    mocks.alunos.mockResolvedValueOnce([aluno("a1", turma("t1", null, null))]);
+    const [linha] = await listarAlunos(secretaria);
+    expect(linha.turmas).toEqual([{ id: "t1", label: "Regular · Inglês B1" }]);
+  });
+});
+
 describe("opções de turma distinguíveis", () => {
   it("rótulo com código e nome da turma — duas \"Inglês B1\" não saem iguais", async () => {
     mocks.turmas.mockResolvedValueOnce([
