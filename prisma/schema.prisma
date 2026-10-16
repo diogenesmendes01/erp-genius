@@ -1318,6 +1318,9 @@ model Oportunidade {
   pessoaId     String?
   pessoa       Pessoa?      @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   origemCanal  OrigemCanal?
+  empresaId    String?
+  empresa      Empresa?     @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  participantes ParticipanteOportunidade[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id             String      @id @default(cuid())
   codigo         String?     @unique // L-000001
@@ -1396,6 +1399,7 @@ model Oportunidade {
 
   @@index([telefoneE164])
   @@index([pessoaId])
+  @@index([empresaId])
   @@map("Lead")
 }
 
@@ -8459,9 +8463,41 @@ model Empresa {
   ativo           Boolean  @default(true)
   criadoEm        DateTime @default(now())
 
-  matriculas Matricula[]
-  faturas    FaturaB2B[]
-  pessoas    Pessoa[]
+  // CRM B2B (2.M2): ficha de prospect/cliente corporativo.
+  site            String?
+  segmentoMercado String?
+  porte           String?
+  origemCanal     OrigemCanal?
+
+  matriculas    Matricula[]
+  faturas       FaturaB2B[]
+  pessoas       Pessoa[]
+  oportunidades Oportunidade[]
+
+  @@index([origemCanal])
+}
+
+enum PapelParticipante {
+  DECISOR
+  INFLUENCIADOR
+  RH_OPERACIONAL
+  FINANCEIRO
+  USUARIO_FINAL
+  OUTRO
+}
+
+// Pessoas envolvidas em uma oportunidade B2B, cada uma com seu papel (uma vez por oportunidade).
+model ParticipanteOportunidade {
+  id             String            @id @default(cuid())
+  oportunidadeId String
+  oportunidade   Oportunidade      @relation(fields: [oportunidadeId], references: [id], onDelete: Restrict)
+  pessoaId       String
+  pessoa         Pessoa            @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  papel          PapelParticipante
+  criadoEm       DateTime          @default(now())
+
+  @@unique([oportunidadeId, pessoaId])
+  @@index([pessoaId])
 }
 
 enum StatusFaturaB2B {
@@ -8622,6 +8658,7 @@ model Pessoa {
   aluno            Aluno?
   responsavel      Responsavel?
   oportunidades    Oportunidade[]
+  participacoes    ParticipanteOportunidade[]
 
   @@index([empresaId])
   @@index([mescladaEmId])

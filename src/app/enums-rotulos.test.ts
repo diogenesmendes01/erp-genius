@@ -14,7 +14,7 @@ import {
   StatusPropostaPresencaHistoricaMigracao, StatusReservaSegundaChamada, StatusReservaVaga, StatusSolicitacaoEncerramento,
   StatusTemplate, StatusTurma, TipoAjuste, TipoAprovacao, TipoDestinacaoRecebimento, TipoMensagem, TipoMovimentacao,
   TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
-  FinalidadeNumero, FormaAgendaOferta, EtapaLead, Papel, OrigemCanal,
+  FinalidadeNumero, FormaAgendaOferta, EtapaLead, Papel, OrigemCanal, PapelParticipante,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as L from "@/lib/labels";
@@ -2139,6 +2139,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["PAPEL_LABEL", L.PAPEL_LABEL, Object.values(Papel)],
   // Fase 2 CRM (2.M1): origem do canal da Pessoa/Oportunidade.
   ["ORIGEM_CANAL_LABEL", L.ORIGEM_CANAL_LABEL, Object.values(OrigemCanal)],
+  ["PAPEL_PARTICIPANTE_LABEL", L.PAPEL_PARTICIPANTE_LABEL, Object.values(PapelParticipante)],
 ];
 /** Lista fechada do que labels.ts exporta em tempo de execução (R3 da #138, B14): `rotular`, as classes de temperatura,
  * os mapas antigos e os mapas novos. Função exportada (`rotuloTurma` com ternário) ou mapa novo fora da lista falha. */
