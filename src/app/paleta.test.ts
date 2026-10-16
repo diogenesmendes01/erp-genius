@@ -18,9 +18,10 @@ const PADRAO_TAILWIND = new Set(
 
 const UTILITARIO_COR =
   /(?<![\w-])(?:[a-z0-9-]+:)*!?(?:bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+)-(\d{2,3})(?:\/\d+)?(?![\w-])/g;
-// Sombra/elevação como classe (docs/18: sem sombras): shadow-*, drop-shadow-* e valores arbitrários shadow-[…].
+// Sombra como classe: só `shadow-popover` (menu/popover) e `shadow-dialog` (modal/drawer) são permitidas, com variantes
+// (`hover:`/`dark:`). Qualquer outra — shadow, shadow-md, drop-shadow-*, shadow-popover-lg, shadow-[…] — é violação.
 // Precedida de início/espaço/aspas e seguida de espaço/aspas — não pega o texto "ensaio (shadow)".
-const UTILITARIO_SOMBRA = /(?:^|[\s"'`])((?:[a-z0-9-]+:)*(?:drop-)?shadow(?:-(?:sm|md|lg|xl|2xl|inner)|-\[[^\]\s]+\])?)(?=[\s"'`]|$)/g;
+const UTILITARIO_SOMBRA = /(?:^|[\s"'`])((?:[a-z0-9-]+:)*(?:drop-)?shadow(?:-(?:sm|md|lg|xl|2xl|inner|(?:popover|dialog)-[a-z0-9-]+)|-\[[^\]\s]+\])?)(?=[\s"'`]|$)/g;
 // Cor solta em valor arbitrário: hex, rgb()/rgba(), hsl()/hsla(). Nomes de cor CSS (bg-[red]) não entram.
 const COR_ARBITRARIA = /(?<![\w-])(?:[a-z0-9-]+:)*[a-z-]+-\[(?:#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?)\([^\]]*\))\]/g;
 
@@ -50,6 +51,8 @@ describe("paleta do design system", () => {
       .toEqual(["bg-rose-500", "dark:text-emerald-700", "hover:border-gray-950", "md:dark:ring-sky-300", "!text-slate-400", "text-brand-900", "border-t-red-300"]);
     expect(violacoesDePaleta(`"rounded shadow-md focus:shadow drop-shadow-lg shadow-[0_4px_8px_#0003]" "bg-[#fff]"`))
       .toEqual(["shadow-md", "focus:shadow", "drop-shadow-lg", "shadow-[0_4px_8px_#0003]", "bg-[#fff]"]);
+    expect(violacoesDePaleta(`"shadow-popover shadow-dialog"`)).toEqual([]);
+    expect(violacoesDePaleta(`"shadow-md shadow-popover-lg hover:shadow-dialog"`)).toEqual(["shadow-md", "shadow-popover-lg"]);
     expect(violacoesDePaleta(`"bg-[rgb(0,0,0)] dark:text-[hsla(0,0%,100%,.8)]"`)).toEqual(["bg-[rgb(0,0,0)]", "dark:text-[hsla(0,0%,100%,.8)]"]);
     expect(violacoesDePaleta(`"text-red-500 bg-gray-100/50 border-ai-200 bg-brand-solid bg-surface -mt-2 shadow-none drop-shadow-none w-[640px]"`)).toEqual([]);
     expect(violacoesDePaleta(`<option value="SHADOW">Ensaio (shadow) — não envia</option> "desligada/shadow/ativa"`)).toEqual([]);

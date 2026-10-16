@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
 import { BASE_BOTAO, TAMANHOS_BOTAO, VARIANTES_BOTAO, type TamanhoBotao, type VarianteBotao } from "@/components/Botao";
 import { contraste, corSobre, hexParaRgb } from "../../scripts/medicao-ux/nucleo.mjs";
+import { contraste as contrasteLocal, corSobre as corSobreLocal, hexParaRgb as hexLocal, paresDeContraste, razao, reprovados, reprovadosSolidos, selecaoImpossivelSobre, semComentarios, temasDoCss, token } from "./contraste-nucleo";
 import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_FUNDO_DA_MARCA, SUPERFICIES, SUPERFICIES_DA_SELECAO } from "./contraste-mapa";
 
 // Trava de contraste (docs/43-medicao-auditoria-ux.md §6 item 5; docs/42 §7.4 "pares de token reprovando AA").
@@ -52,8 +53,13 @@ import { EXCECOES_CONTRASTE, FUNDOS_DA_MARCA_SEM_TEXTO, FUNDOS_SOLIDOS, SHADES_F
 
 /** Cópias literais das listas fechadas de src/app/contraste-mapa.ts. */
 const COPIA_SHADES = ["500", "600"];
+/** Fundos verdes que invertem no escuro, na ordem do mapa: as shades do --brand e os dois sólidos (texto: text-on-brand). */
+const COPIA_FUNDOS_QUE_INVERTEM = ["brand-500", "brand-600", "brand-solid", "success"];
+const SOLIDOS_DA_MARCA = ["brand-solid", "success"];
 const COPIA_SUPERFICIES = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
-const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--surface", "--surface-muted"];
+const COPIA_SUPERFICIES_DA_SELECAO = ["--bg-page", "--neutral-muted", "--surface", "--surface-muted"];
+/** As três superfícies da seleção antes do design system (o neutro não cabia); usadas pelos autotestes com CSS virtual. */
+const SELECAO_ANTIGA = ["--bg-page", "--surface", "--surface-muted"];
 const COPIA_SOLIDOS = ["--ai-solid", "--brand-solid", "--danger-solid", "--success-solid"];
 const COPIA_FUNDOS_SEM_TEXTO = [{ arquivo: "src/app/(app)/home/HomeVendedor.tsx", trecho: "h-full bg-brand-600" }];
 const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [];
@@ -61,107 +67,6 @@ const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [];
 // ---------------------------------------------------------------------------------------------------
 // 1. Tokens
 // ---------------------------------------------------------------------------------------------------
-
-type Tema = "claro" | "escuro";
-type Rgb = number[];
-
-const semComentarios = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
-
-/**
- * Tokens de `:root` (claro) e `.dark` (escuro, herdando o claro), lidos bloco a bloco. Falha fechada: uma
- * declaração `--x:` em qualquer outro contexto (aninhada num @media, seletor composto, `html.dark`) é erro.
- */
-export function temasDoCss(css: string): Record<Tema, Record<string, string>> {
-  const texto = semComentarios(css);
-  const claro: Record<string, string> = {};
-  const escuro: Record<string, string> = {};
-  const fora: string[] = [];
-  const pilha: string[] = [];
-  let inicio = 0;
-  const declaracao = (fim: number) => {
-    const m = texto.slice(inicio, fim).trim().match(/^(--[\w-]+)\s*:\s*([\s\S]*\S)$/);
-    if (!m) return;
-    const contexto = pilha.join(" > ");
-    if (contexto === ":root") claro[m[1]] = m[2];
-    else if (contexto === ".dark") escuro[m[1]] = m[2];
-    else fora.push(`${m[1]} em "${contexto || "(fora de bloco)"}"`);
-  };
-  for (let i = 0; i < texto.length; i++) {
-    const c = texto[i];
-    if (c === "{") {
-      pilha.push(texto.slice(inicio, i).trim().replace(/\s+/g, " "));
-      inicio = i + 1;
-    } else if (c === "}") {
-      declaracao(i);
-      pilha.pop();
-      inicio = i + 1;
-    } else if (c === ";") {
-      declaracao(i);
-      inicio = i + 1;
-    }
-  }
-  if (fora.length) throw new Error(`token declarado fora de :root/.dark: ${fora.join("; ")}`);
-  return { claro, escuro: { ...claro, ...escuro } };
-}
-
-const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-const RGB = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+|1\.0*)\s*)?\)$/;
-
-/** Razão WCAG de uma cor (hex ou rgb/rgba, composta sobre o fundo) sobre um fundo opaco em hex. */
-export function razao(frente: string, fundo: string): number {
-  if (!HEX.test(fundo)) throw new Error(`fundo não é cor opaca em hex: ${fundo}`);
-  const f: Rgb = hexParaRgb(fundo);
-  if (HEX.test(frente)) return contraste(hexParaRgb(frente), f);
-  if (!RGB.test(frente)) throw new Error(`valor de cor não suportado: ${frente}`);
-  const composta = corSobre(frente, f);
-  return Math.min(contraste(composta, f), contraste(composta.map(Math.round), f));
-}
-
-const token = (T: Record<string, string>, nome: string): string => {
-  const v = T[nome];
-  if (v === undefined) throw new Error(`token ausente: ${nome}`);
-  return v;
-};
-
-type Par = { tema: Tema; par: string; valor: number; minimo: number };
-
-/**
- * Texto branco sobre cada fundo sólido (≥ 4,5), --border-control sobre cada superfície (≥ 3) e --brand-solid
- * sobre cada superfície que fica sob a seleção (≥ 3), nos dois temas.
- */
-export function paresDeContraste(
-  css: string,
-  superficies: readonly string[],
-  solidos: readonly string[],
-  branco: string,
-  superficiesDaSelecao: readonly string[] = [],
-): Par[] {
-  const temas = temasDoCss(css);
-  const pares: Par[] = [];
-  for (const tema of ["claro", "escuro"] as const) {
-    const T = temas[tema];
-    for (const s of solidos) pares.push({ tema, par: `${branco}/${s}`, valor: razao(branco, token(T, s)), minimo: 4.5 });
-    for (const s of superficies) pares.push({ tema, par: `--border-control/${s}`, valor: razao(token(T, "--border-control"), token(T, s)), minimo: 3 });
-    for (const s of superficiesDaSelecao) pares.push({ tema, par: `--brand-solid/${s}`, valor: razao(token(T, "--brand-solid"), token(T, s)), minimo: 3 });
-  }
-  return pares;
-}
-
-/**
- * Verdadeiro quando nenhuma cor opaca tem, ao mesmo tempo, ≥ 4,5:1 com o branco (luminância ≤ 1,05/4,5 − 0,05)
- * e ≥ 3:1 sobre o fundo de luminância L — mais clara (≥ 3(L + 0,05) − 0,05) ou mais escura ((L + 0,05)/3 − 0,05).
- */
-export function selecaoImpossivelSobre(superficie: string): boolean {
-  if (!HEX.test(superficie)) throw new Error(`fundo não é cor opaca em hex: ${superficie}`);
-  // Luminância pela própria razão: contra o branco (luminância 1), razão = 1,05 / (L + 0,05).
-  const L = 1.05 / contraste([255, 255, 255], hexParaRgb(superficie)) - 0.05;
-  const maximoComBranco = 1.05 / 4.5 - 0.05;
-  const cabeMaisClara = 3 * (L + 0.05) - 0.05 <= maximoComBranco;
-  const cabeMaisEscura = (L + 0.05) / 3 - 0.05 >= 0;
-  return !cabeMaisClara && !cabeMaisEscura;
-}
-const reprovados = (pares: Par[]) =>
-  pares.filter((p) => !(p.valor >= p.minimo)).map((p) => `${p.tema} ${p.par} ${p.valor.toFixed(3)}:1 < ${p.minimo}:1`);
 
 const CSS = readFileSync("src/app/globals.css", "utf-8");
 const CORES = (config.theme?.extend?.colors ?? {}) as Record<string, string | Record<string, string>>;
@@ -179,7 +84,7 @@ const varDe = (v: string | Record<string, string> | undefined): string => {
 
 describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)", () => {
   it("listas fechadas: mapa = cópia literal = o que o tailwind.config.ts e o globals.css dizem", () => {
-    expect([...SHADES_FUNDO_DA_MARCA]).toEqual(COPIA_SHADES);
+    expect([...SHADES_FUNDO_DA_MARCA]).toEqual(COPIA_FUNDOS_QUE_INVERTEM);
     expect([...SUPERFICIES]).toEqual(COPIA_SUPERFICIES);
     expect([...SUPERFICIES_DA_SELECAO]).toEqual(COPIA_SUPERFICIES_DA_SELECAO);
     expect([...FUNDOS_SOLIDOS]).toEqual(COPIA_SOLIDOS);
@@ -189,20 +94,24 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
 
     // Toda cor do config que aponta para --brand (em qualquer nome) é uma das shades proibidas com text-white.
     expect(entradasCom("var(--brand)")).toEqual(COPIA_SHADES.map((s) => `brand.${s}`));
+    // E os dois sólidos verdes (que inverteram para o texto escuro no escuro) são as outras duas entradas da lista.
+    expect(entradasCom("var(--brand-solid)")).toEqual(["brand-solid"]);
+    expect(entradasCom("var(--success-solid)")).toEqual(["success"]);
     // A borda de controle é só o gray-300.
     expect(entradasCom("var(--border-control)")).toEqual(["gray.300"]);
     // Superfícies: cartão, sutil, gray-50/100 do config e o fundo do body no globals.css.
     const cinzas = CORES.gray as Record<string, string>;
     const body = semComentarios(CSS).match(/\bbody\s*\{[^}]*background-color:\s*var\((--[\w-]+)\)/)?.[1];
     expect([...new Set([varDe(CORES.surface), varDe(CORES["surface-muted"]), varDe(cinzas["50"]), varDe(cinzas["100"]), body])].sort()).toEqual(COPIA_SUPERFICIES);
-    // Superfícies sob a seleção: as superfícies menos o neutro (gray-100), e só ele, porque no escuro nenhuma
-    // cor passa nele junto com o branco. Se o neutro mudar e a conta ficar possível, ele volta para a lista.
+    // Superfícies sob a seleção: todas as superfícies. Com o design system o --neutral-muted (#ededed / #2a2c2c)
+    // aceita a seleção nos dois temas (3,86 e 5,88:1), então nada fica de fora. Se uma superfície voltar a tornar a
+    // conta impossível, ela sai da lista e este teste confere a impossibilidade.
     const foraDaSelecao = COPIA_SUPERFICIES.filter((s) => !COPIA_SUPERFICIES_DA_SELECAO.includes(s));
     expect(COPIA_SUPERFICIES_DA_SELECAO.every((s) => COPIA_SUPERFICIES.includes(s))).toBe(true);
-    expect(foraDaSelecao).toEqual([varDe(cinzas["100"])]);
+    expect(foraDaSelecao).toEqual([]);
     for (const s of foraDaSelecao) expect(selecaoImpossivelSobre(token(temasDoCss(CSS).escuro, s)), s).toBe(true);
     // Fundos sólidos: todo token *-solid do globals.css, cada um com uma cor no config.
-    const solidos = Object.keys(temasDoCss(CSS).claro).filter((t) => t.endsWith("-solid")).sort();
+    const solidos = Object.keys(temasDoCss(CSS).claro).filter((t) => t.endsWith("-solid") && !t.startsWith("--on-")).sort();
     expect(solidos).toEqual(COPIA_SOLIDOS);
     for (const s of COPIA_SOLIDOS) expect(entradasCom(`var(${s})`), s).toHaveLength(1);
     expect(entradasCom("var(--brand-solid)")).toEqual(["brand-solid"]);
@@ -210,9 +119,11 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(CORES.white).toBe("#ffffff");
   });
 
-  it("texto branco ≥ 4,5:1 sobre cada fundo sólido; --border-control e --brand-solid ≥ 3:1 sobre as superfícies, nos dois temas", () => {
-    const pares = paresDeContraste(CSS, COPIA_SUPERFICIES, COPIA_SOLIDOS, CORES.white as string, COPIA_SUPERFICIES_DA_SELECAO);
-    expect(pares).toHaveLength(2 * (COPIA_SOLIDOS.length + COPIA_SUPERFICIES.length + COPIA_SUPERFICIES_DA_SELECAO.length));
+  it("texto de cada fundo sólido ≥ 4,5:1 (par do mapa); --border-control e --brand-solid ≥ 3:1 sobre as superfícies, nos dois temas", () => {
+    // O texto sobre cada sólido não é mais sempre branco (--on-brand-solid): vale o par de TEXTO_SOBRE_SOLIDO.
+    expect(reprovadosSolidos()).toEqual([]);
+    const pares = paresDeContraste(CSS, COPIA_SUPERFICIES, [], CORES.white as string, COPIA_SUPERFICIES_DA_SELECAO);
+    expect(pares).toHaveLength(2 * (COPIA_SUPERFICIES.length + COPIA_SUPERFICIES_DA_SELECAO.length));
     expect(pares.filter((p) => p.par.startsWith("--brand-solid/")).map((p) => `${p.tema} ${p.par}`)).toEqual(
       (["claro", "escuro"] as const).flatMap((tema) => COPIA_SUPERFICIES_DA_SELECAO.map((s) => `${tema} --brand-solid/${s}`)),
     );
@@ -232,7 +143,7 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
   --surface-muted: #2b2b29;
   --brand-solid: ${escuro};
 }`;
-    const conta = (escuro: string) => reprovados(paresDeContraste(virtual(escuro), [], ["--brand-solid"], "#ffffff", COPIA_SUPERFICIES_DA_SELECAO));
+    const conta = (escuro: string) => reprovados(paresDeContraste(virtual(escuro), [], ["--brand-solid"], "#ffffff", SELECAO_ANTIGA));
     // O escuro de antes (o hex do claro): 7,90:1 com branco passa, mas o fundo some nas três superfícies.
     expect(conta("#4338ca")).toEqual([
       "escuro --brand-solid/--bg-page 2.181:1 < 3:1",
@@ -247,7 +158,7 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(conta("#6566ef")).toEqual(["escuro #ffffff/--brand-solid 4.468:1 < 4.5:1"]);
     expect(conta("#6264ec")).toEqual([]);
     // O claro passa com folga: 7,56 / 7,90 / 7,17:1.
-    const claro = paresDeContraste(virtual("#6264ec"), [], [], "#ffffff", COPIA_SUPERFICIES_DA_SELECAO).filter((p) => p.tema === "claro");
+    const claro = paresDeContraste(virtual("#6264ec"), [], [], "#ffffff", SELECAO_ANTIGA).filter((p) => p.tema === "claro");
     expect(claro.map((p) => p.valor.toFixed(2))).toEqual(["7.56", "7.90", "7.17"]);
     // Sem --brand-solid no tema, erro (não aprovação).
     expect(() => paresDeContraste(":root {\n  --surface: #ffffff;\n}", [], [], "#ffffff", ["--surface"])).toThrow(/token ausente: --brand-solid/);
@@ -256,6 +167,14 @@ describe("contraste: tokens do globals.css nos dois temas (docs/43 §6 item 5)",
     expect(selecaoImpossivelSobre("#2b2b29")).toBe(false);
     expect(selecaoImpossivelSobre("#efeee9")).toBe(false);
     expect(() => selecaoImpossivelSobre("var(--x)")).toThrow(/fundo não é cor opaca/);
+  });
+
+  it("a conta copiada em contraste-nucleo.ts dá o mesmo resultado que scripts/medicao-ux/nucleo.mjs", () => {
+    for (const [a, b] of [["#ffffff", "#1b8755"], ["#0a0a0a", "#21c063"], ["#858383", "#f7f5f3"], ["#abc", "#161717"]]) {
+      expect(hexLocal(a)).toEqual(hexParaRgb(a));
+      expect(contrasteLocal(hexLocal(a), hexLocal(b))).toBe(contraste(hexParaRgb(a), hexParaRgb(b)));
+    }
+    for (const v of ["rgba(0, 0, 0, 0.6)", "rgba(255, 255, 255, .1)", "#123456"]) expect(corSobreLocal(v, hexParaRgb("#f7f5f3"))).toEqual(corSobre(v, hexParaRgb("#f7f5f3")));
   });
 
   it("autoteste da conta: os valores antigos reprovam com os números do docs/43; formas que a conta não lê são erro", () => {
@@ -309,14 +228,18 @@ const MARCA = "\u0000";
 /** Acima disso as alternativas viram uma só, com todas as classes juntas (mais estrito, nunca mais frouxo). */
 const LIMITE = 512;
 
-const M_BRANCO = "fundo da marca (clareia no escuro) com texto branco";
+const M_BRANCO = "fundo que inverte no escuro com texto branco";
 const M_DESCONHECIDO = "fundo da marca com classe que não se sabe daqui (pode trazer texto branco)";
 const M_COMPONENTE = "fundo da marca passado a componente (ele pode pôr texto branco)";
 const M_FORA = "fundo da marca fora de className analisável";
 
 const FUNDO = new RegExp(`^bg-(?:brand-(?:${COPIA_SHADES.join("|")})|\\[(?:var\\(\\s*)?--brand\\s*\\)?\\])(?:/\\S+)?$`);
+// brand-solid e success: o verde clareia no escuro e o texto sobre ele é text-on-brand (preto). Só o branco é ofensa; o
+// fundo sem texto é permitido (não entra na lista fechada de fundos sem texto, que cobre só as shades do --brand).
+const SOLIDO = /^bg-(?:brand-solid|success|\[(?:var\(\s*)?--(?:brand|success)-solid\s*\)?\])(?:\/\S+)?$/;
 const BRANCO = /^text-(?:white|\[(?:#fff(?:fff)?|white)\])(?:\/\S+)?$/i;
 const AMOSTRAS_FUNDO = [...COPIA_SHADES.map((s) => `bg-brand-${s}`), "bg-[var(--brand)]", "bg-[--brand]"];
+const AMOSTRAS_SOLIDO = [...SOLIDOS_DA_MARCA.map((s) => `bg-${s}`), "bg-[var(--brand-solid)]", "bg-[var(--success-solid)]", "bg-[--brand-solid]"];
 const AMOSTRAS_BRANCO = ["text-white", "text-[#fff]", "text-[white]"];
 const JUNTORES = new Set(["cn", "clsx", "classNames", "cx", "twMerge", "twJoin"]);
 const REPASSAM_CLASSE = new Set(["Link"]);
@@ -342,7 +265,7 @@ function utilitario(classe: string): string {
   return classe.slice(inicio).replace(/^!|!$/g, "");
 }
 
-type Papel = "fundo" | "branco" | "desconhecido";
+type Papel = "fundo" | "solido" | "branco" | "desconhecido";
 
 /** O que uma classe pode ser. Pedaço desconhecido colado (`bg-brand-${x}`) vale por tudo que poderia formar. */
 function papeisDa(classe: string): Papel[] {
@@ -350,12 +273,14 @@ function papeisDa(classe: string): Papel[] {
   const papeis: Papel[] = classe.includes(MARCA) ? ["desconhecido"] : [];
   if (!u.includes(MARCA)) {
     if (FUNDO.test(u)) papeis.push("fundo");
+    if (SOLIDO.test(u)) papeis.push("solido");
     if (BRANCO.test(u)) papeis.push("branco");
     return papeis;
   }
   if (!u.split(MARCA).join("")) return papeis;
   const re = new RegExp(`^${u.split(MARCA).map(escapar).join("[\\s\\S]*")}$`);
   if (AMOSTRAS_FUNDO.some((a) => re.test(a))) papeis.push("fundo");
+  if (AMOSTRAS_SOLIDO.some((a) => re.test(a))) papeis.push("solido");
   if (AMOSTRAS_BRANCO.some((a) => re.test(a))) papeis.push("branco");
   return papeis;
 }
@@ -363,7 +288,7 @@ function papeisDa(classe: string): Papel[] {
 const classesDe = (alternativa: string) => alternativa.split(/\s+/).filter(Boolean);
 function motivoDa(alternativa: string): string | null {
   const p = new Set(classesDe(alternativa).flatMap(papeisDa));
-  if (p.has("fundo") && p.has("branco")) return M_BRANCO;
+  if ((p.has("fundo") || p.has("solido")) && p.has("branco")) return M_BRANCO;
   if (p.has("fundo") && p.has("desconhecido")) return M_DESCONHECIDO;
   return null;
 }
@@ -740,6 +665,7 @@ export function contrasteNoFonte(fonte: string, arquivo = "x.tsx"): { ofensas: O
       if (/--brand(?![\w-])/.test(t)) return true;
       const u = utilitario(t);
       if (FUNDO.test(u)) return true;
+      if (SOLIDO.test(u) && partes.some((x) => BRANCO.test(utilitario(x)))) return true;
       const ponta = (i === 0 && coladoInicio) || (i === partes.length - 1 && coladoFim) || /[-[(:]$/.test(t);
       return ponta && /bg-|brand/.test(t) && AMOSTRAS_FUNDO.some((a) => a.includes(u));
     });
@@ -760,7 +686,7 @@ export function contrasteNoCss(css: string): string[] {
   const texto = semComentarios(css);
   const achados: string[] = [];
   for (const m of texto.matchAll(/@apply\s+([^;{}]+)/g)) {
-    if (temFundo(m[1])) achados.push(`@apply ${m[1].trim()}: ${motivoDa(m[1]) ?? "fundo da marca"}`);
+    if (temFundo(m[1]) || motivoDa(m[1])) achados.push(`@apply ${m[1].trim()}: ${motivoDa(m[1]) ?? "fundo da marca"}`);
   }
   for (const m of texto.matchAll(/(?:^|[;{\s])(background(?:-color)?|--[\w-]+)\s*:\s*([^;{}]*var\(\s*--brand\s*\)[^;{}]*)/g)) {
     achados.push(`${m[1]}: ${m[2].trim()}`);
@@ -784,11 +710,13 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
   it("o detector de classe: variantes, opacidade, valor arbitrário e pedaço desconhecido", () => {
     for (const a of AMOSTRAS_FUNDO) expect(FUNDO.test(a), a).toBe(true);
     for (const a of AMOSTRAS_BRANCO) expect(BRANCO.test(a), a).toBe(true);
-    for (const c of ["bg-brand-solid", "bg-brand-50", "bg-brand-700", "bg-[var(--brand-solid)]", "border-brand-600", "text-brand-600"]) expect(FUNDO.test(c), c).toBe(false);
+    for (const c of ["bg-brand-solid", "bg-brand-50", "bg-brand-700", "bg-[var(--brand-solid)]", "bg-success", "border-brand-600", "text-brand-600"]) expect(FUNDO.test(c), c).toBe(false);
+    for (const a of AMOSTRAS_SOLIDO) expect(SOLIDO.test(a), a).toBe(true);
+    for (const c of ["bg-brand-600", "bg-success-bg", "bg-danger", "bg-ai-solid", "border-success", "text-success"]) expect(SOLIDO.test(c), c).toBe(false);
     expect(utilitario("data-[on=1]:hover:!bg-brand-600")).toBe("bg-brand-600");
     expect(utilitario("[&>span]:bg-brand-600")).toBe("bg-brand-600");
     expect(utilitario("bg-[url(http://x)]")).toBe("bg-[url(http://x)]");
-    expect(papeisDa(`bg-brand-${MARCA}`)).toEqual(["desconhecido", "fundo"]);
+    expect(papeisDa(`bg-brand-${MARCA}`)).toEqual(["desconhecido", "fundo", "solido"]);
     expect(papeisDa(`text-${MARCA}`)).toEqual(["desconhecido", "branco"]);
     expect(papeisDa(`${MARCA}:bg-brand-600`)).toEqual(["desconhecido", "fundo"]);
     expect(papeisDa(MARCA)).toEqual(["desconhecido"]);
@@ -839,17 +767,20 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
   });
 
   it("acusa por botaoClasses e <Botao>, também com outro nome ou por namespace", () => {
-    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={\`\${botaoClasses()} bg-brand-600\`}>x</button>;`)).toEqual([M_BRANCO]);
-    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO]);
-    // Variante que não se sabe: vale por todas — primário e perigo têm text-white.
-    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={botaoClasses({ variante: v }) + " bg-brand-600"}>x</button>;`)).toEqual([M_BRANCO, M_BRANCO]);
-    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao variante={v} className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO, M_BRANCO]);
-    // Spread: variante e tamanho valem por todos (primário e perigo × 3 tamanhos).
-    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao {...props} className="bg-brand-600">x</Botao>;`)).toEqual(new Array<string>(6).fill(M_BRANCO));
-    expect(motivos('import { botaoClasses as bc } from "@/components/Botao";\nconst r = <a className={bc() + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
-    expect(motivos('import { Botao as B } from "@/components/Botao";\nconst r = <B className="bg-brand-600">x</B>;')).toEqual([M_BRANCO]);
-    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <UI.Botao className="bg-brand-600">x</UI.Botao>;')).toEqual([M_BRANCO]);
-    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <a className={UI.botaoClasses() + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
+    // O primário (padrão) agora leva text-on-brand: sozinho, com bg-brand-600, não tem texto branco. O perigo ainda tem.
+    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={\`\${botaoClasses({ variante: "perigo" })} bg-brand-600\`}>x</button>;`)).toEqual([M_BRANCO]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao variante="perigo" className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao className="bg-brand-600">x</Botao>;`)).toEqual([]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao className="bg-brand-solid">x</Botao>;`)).toEqual([]);
+    // Variante que não se sabe: vale por todas — só o perigo tem text-white.
+    expect(motivos(`${IMPORTA_BOTAO}const r = <button className={botaoClasses({ variante: v }) + " bg-brand-600"}>x</button>;`)).toEqual([M_BRANCO]);
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao variante={v} className="bg-brand-600">x</Botao>;`)).toEqual([M_BRANCO]);
+    // Spread: variante e tamanho valem por todos (perigo × 3 tamanhos).
+    expect(motivos(`${IMPORTA_BOTAO}const r = <Botao {...props} className="bg-brand-600">x</Botao>;`)).toEqual(new Array<string>(3).fill(M_BRANCO));
+    expect(motivos('import { botaoClasses as bc } from "@/components/Botao";\nconst r = <a className={bc({ variante: "perigo" }) + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
+    expect(motivos('import { Botao as B } from "@/components/Botao";\nconst r = <B variante="perigo" className="bg-brand-600">x</B>;')).toEqual([M_BRANCO]);
+    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <UI.Botao variante="perigo" className="bg-brand-600">x</UI.Botao>;')).toEqual([M_BRANCO]);
+    expect(motivos('import * as UI from "@/components/Botao";\nconst r = <a className={UI.botaoClasses({ variante: "perigo" }) + " bg-brand-600"}>x</a>;')).toEqual([M_BRANCO]);
     // Fantasma não tem texto branco: sobra como fundo (e cai na lista fechada).
     expect(contrasteNoFonte(`${IMPORTA_BOTAO}const r = <Botao variante="fantasma" className="bg-brand-600">x</Botao>;`).ofensas).toEqual([]);
   });
@@ -862,6 +793,24 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
     expect(motivos('import { EXTRA } from "./x";\nconst r = <i className={`bg-brand-600 ${EXTRA}`} />;')).toEqual([M_DESCONHECIDO]);
     expect(motivos('const r = <i className={"bg-brand-600 " + VARIANTES_BOTAO.primario} />;')).toEqual([M_DESCONHECIDO]);
     expect(motivos('const r = <i className={tw`bg-brand-600 text-white`} />;')).toEqual([M_FORA]);
+  });
+
+  it("fundo sólido da marca com text-white é ofensa", () => {
+    expect(motivos(`<span className="bg-brand-solid text-white">x</span>`)).toEqual([M_BRANCO]);
+    expect(motivos(`<Link className="bg-success text-white" href="/">x</Link>`)).toEqual([M_BRANCO]);
+    expect(motivos(`<span className="bg-brand-solid text-on-brand">x</span>`)).toEqual([]);
+    expect(motivos('<i className="hover:bg-success/90 text-white/80" />')).toEqual([M_BRANCO]);
+    expect(motivos('<i className="bg-[var(--success-solid)] text-white" />')).toEqual([M_BRANCO]);
+    expect(motivos('const C = "bg-brand-solid text-white";\nconst r = <i className={C} />;')).toEqual([M_BRANCO]);
+    expect(motivos('export const ATIVA = "bg-brand-solid text-white";')).toEqual([M_FORA]);
+    // Os que não invertem no escuro continuam com branco.
+    expect(motivos('<i className="bg-danger text-white" />')).toEqual([]);
+    expect(motivos('<i className="bg-ai-solid text-white" />')).toEqual([]);
+  });
+
+  it("Botao primário usa text-on-brand", () => {
+    expect(VARIANTES_BOTAO.primario).toContain("text-on-brand");
+    expect(VARIANTES_BOTAO.primario).not.toContain("text-white");
   });
 
   it("acusa fundo passado a componente e fundo fora de className analisável", () => {
@@ -882,8 +831,12 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
 
   it("deixa passar: bg-brand-solid, fundo sem texto, estados diferentes, outras shades e classes sem fundo", () => {
     for (const fonte of [
-      '<i className="rounded bg-brand-solid px-2 text-white" />',
-      '<i className={ativo ? "bg-brand-solid font-medium text-white" : "text-gray-600 hover:bg-gray-100"} />',
+      '<i className="rounded bg-brand-solid px-2 text-on-brand" />',
+      '<i className="rounded bg-success px-2 text-on-brand" />',
+      '<i className="rounded bg-danger px-2 text-white" />',
+      '<i className="rounded bg-ai-solid px-2 text-white" />',
+      '<i className="h-1 bg-brand-solid" />',
+      '<i className={ativo ? "bg-brand-solid font-medium text-on-brand" : "text-gray-600 hover:bg-gray-100"} />',
       '<i className={ativo ? "bg-brand-600" : "text-white"} />',
       '<i className="bg-brand-50 text-brand-700 focus:border-brand-500 focus:ring-brand-500" />',
       'export const MAPA = { a: "bg-brand-50 text-brand-700" };',
@@ -903,7 +856,8 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
     expect(contrasteNoCss(".x { @apply h-1 bg-brand-500; }")).toEqual(["@apply h-1 bg-brand-500: fundo da marca"]);
     expect(contrasteNoCss(".x { background-color: var(--brand); color: #fff; }")).toEqual(["background-color: var(--brand)"]);
     expect(contrasteNoCss(".x { --fundo: var( --brand ); }")).toEqual(["--fundo: var( --brand )"]);
-    expect(contrasteNoCss(".x { outline: 2px solid var(--brand); accent-color: var(--brand); background: var(--brand-solid); @apply bg-brand-solid text-white; }")).toEqual([]);
+    expect(contrasteNoCss(".x { outline: 2px solid var(--brand); accent-color: var(--brand); background: var(--brand-solid); @apply bg-brand-solid text-on-brand; }")).toEqual([]);
+    expect(contrasteNoCss(".x { @apply bg-brand-solid text-white; }")).toEqual([`@apply bg-brand-solid text-white: ${M_BRANCO}`]);
     expect(contrasteNoCss(".x { /* background: var(--brand); */ }")).toEqual([]);
   });
 
