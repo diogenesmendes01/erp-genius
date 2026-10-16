@@ -2067,3 +2067,12 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   semântica, e os docs, então `tsc` e `npm test` não são afetados.
 - Pendente com o integrador antes do PR: confirmar o ID 2.M3 e a exceção acima, e rodar `npm run test:int` completo.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+### Verificação para o PR (bloco D, branch `claude/fase2-d-tags-campos-filtros`, 16/10/2026)
+- Tarefas: 9 (tags), 10 (campos personalizados) e 11 (visualizações salvas).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 647 arquivos e 4650 testes verdes (linha de base: 643 arquivos e 4607 testes).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (`no-unused-vars` já existentes).
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco: saída 0, 4 arquivos e 37 testes verdes.
+  `prisma migrate deploy` no banco `dev-gravacoes`: sem pendências. Nenhuma das 7 falhas preexistentes da linha de base
+  foi tocada; a suíte de integração completa fica com o integrador.
