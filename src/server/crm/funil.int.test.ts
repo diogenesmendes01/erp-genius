@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { carregarFunil, lerFiltrosFunil } from "./funil";
+import { TIPOS_MUDAM_ETAPA } from "@/server/comercial/schema";
 import { COLUNAS_FUNIL } from "./etapas";
 
 let vendedor: Awaited<ReturnType<typeof criarUsuario>>;
@@ -47,6 +48,20 @@ describe("carregarFunil", () => {
     const c = await carregarFunil(sessaoDe(gerente), lerFiltrosFunil({ perdidosDias: "30" }));
     expect(c.find((x) => x.etapa === "PERDIDO")!.cartoes.map((x) => x.nome)).toEqual(["Perdido há 10 dias"]);
     expect(c.find((x) => x.etapa === "PERDIDO")!.total).toBe(1);
+  });
+  it("ordem tempo usa a data da última mudança de etapa, não a criação", async () => {
+    const a = await prisma.oportunidade.findFirstOrThrow({ where: { nome: "Novo BR 1" } });
+    const b = await prisma.oportunidade.findFirstOrThrow({ where: { nome: "Novo BR 2" } });
+    await prisma.oportunidade.update({ where: { id: a.id }, data: { criadoEm: new Date(Date.now() - 50 * 86_400_000) } });
+    await prisma.oportunidade.update({ where: { id: b.id }, data: { criadoEm: new Date(Date.now() - 40 * 86_400_000) } });
+    // A é mais antiga, mas entrou na etapa agora; B entrou há 30 dias.
+    const tipo = TIPOS_MUDAM_ETAPA[0];
+    await prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: a.id, payload: {}, criadoEm: new Date() } });
+    await prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: b.id, payload: {}, criadoEm: new Date(Date.now() - 30 * 86_400_000) } });
+    const c = await carregarFunil(sessaoDe(vendedor), lerFiltrosFunil({ ordem: "tempo" }));
+    const nomes = c.find((x) => x.etapa === "NOVO")!.cartoes.map((x) => x.nome);
+    expect(nomes.indexOf("Novo BR 2")).toBeLessThan(nomes.indexOf("Novo BR 1"));
+    expect(nomes[nomes.length - 1]).toBe("Novo BR 1");
   });
   it("busca por palavras e filtro de tag pela pessoa titular", async () => {
     const tag = await prisma.tag.create({ data: { nome: "VIP", cor: "MARCA" } });
