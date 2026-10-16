@@ -4,8 +4,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import * as Esqueletos from "./Esqueleto";
 import { EsqueletoAcesso, EsqueletoCartoes, EsqueletoColunas, EsqueletoConversas, EsqueletoLista, EsqueletoPublico, EsqueletoSecao, EsqueletoTabela } from "./Esqueleto";
-import LoadingPipeline from "@/app/(app)/pipeline/loading";
-import { COLUNAS } from "@/app/(app)/pipeline/colunas";
 
 const titulos = (html: string) => html.split('data-esqueleto="titulo"').length - 1;
 
@@ -56,12 +54,6 @@ describe("Esqueleto", () => {
     expect(renderToStaticMarkup(createElement(EsqueletoTabela, { rotulo: "x" }))).not.toContain("h-20");
     const acesso = renderToStaticMarkup(createElement(EsqueletoAcesso, { rotulo: "x" }));
     expect([...acesso.matchAll(/class="rounded-md bg-surface-muted h-9"/g)]).toHaveLength(3); // 2 campos + botão
-  });
-
-  it("o esqueleto do pipeline tem tantas colunas quanto o funil real", () => {
-    const html = renderToStaticMarkup(createElement(LoadingPipeline));
-    expect([...html.matchAll(/class="w-64 shrink-0/g)]).toHaveLength(COLUNAS.length);
-    expect(COLUNAS.length).toBe(9);
   });
 
   it("esqueleto de formato específico fica no grupo da página-índice, não na raiz — senão as rotas filhas herdariam o formato errado", () => {

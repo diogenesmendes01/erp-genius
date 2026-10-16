@@ -980,10 +980,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Notas internas · → btnSec",
     "<button> Salvar nota → primario/sm",
   ],
-  "pipeline/KanbanBoard.tsx": [
-    "<button> Confirmar perda → perigo/lg",
-    "<button> Cancelar → secundario/lg",
-  ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",
     "<button> Faltou → secundario/sm",

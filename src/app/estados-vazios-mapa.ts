@@ -729,9 +729,6 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma turma nesta página.",
     "compacto · Nenhuma turma compatível com a contratação.",
   ],
-  "src/app/(app)/pipeline/KanbanBoard.tsx": [
-    "compacto · Nenhum lead nesta etapa.",
-  ],
   "src/app/(app)/secretaria/SecretariaPainel.tsx": [
     "compacto · Nenhuma matrícula no seu escopo.",
     "compacto · Nenhuma mensalidade registrada.",
