@@ -137,6 +137,13 @@ estão no quadro de semânticos acima e no de marca e ações sólidas abaixo.
 `--shadow-popover` (`0 5px 20px #0002` / `0 6px 24px #0006`) e `--shadow-dialog` (`0 15px 60px #0006`, igual nos
 dois temas) são as únicas sombras do sistema: menu/popover e modal/drawer. Ficam fora da conta de contraste.
 
+## Camadas
+
+Modal, confirmação e drawer são camadas elevadas: fundo `bg-surface-raised`, `shadow-dialog`, véu `bg-black/60`.
+- **Modal** (`Modal.tsx`, e `ConfirmarAcao` sobre ele): `max-h-[90dvh] w-full max-w-[calc(100vw-24px)] overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog`; largura `sm:w-[460px]` e, com a propriedade `larga`, `sm:w-[640px]`. Título `text-xl font-medium`; ações `mt-6 flex flex-wrap justify-end gap-3`.
+- **Drawer**: `bg-surface-raised shadow-dialog` com borda `border-s border-gray-200` (ou `border-e` pela esquerda).
+- Escape, contenção de Tab, devolução do foco e `inert` seguem como antes (`useDialogo`).
+
 ## Avisos e movimento reduzido
 `src/components/Aviso.tsx` é a caixa única de aviso: `rounded-md p-3 text-sm` + tom. `info` = `bg-surface-muted`;
 `sucesso` = `bg-green-100 text-green-700 border-s-[3px] border-green-700`; `atencao` = `bg-amber-100 text-amber-800

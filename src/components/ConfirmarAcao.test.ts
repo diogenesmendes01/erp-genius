@@ -32,7 +32,7 @@ describe("ConfirmarAcao \u2014 marcação", () => {
     expect(caixa).toContain('aria-modal="true"');
     const titulo = caixa!.match(/aria-labelledby="([^"]+)"/)![1];
     const descricao = caixa!.match(/aria-describedby="([^"]+)"/)![1];
-    expect(h).toContain(`<h3 id="${titulo}" class="mb-3 text-sm font-medium">Cancelar a fatura FAT-0031?</h3>`);
+    expect(h).toContain(`<h3 id="${titulo}" class="mb-3 text-xl font-medium">Cancelar a fatura FAT-0031?</h3>`);
     expect(h).toMatch(new RegExp(`<div id="${descricao.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*><p>As 14 cobranças da fatura deixam de valer. Não há desfazer.</p></div>`));
     expect(h).not.toContain('role="dialog"');
   });
@@ -71,5 +71,11 @@ describe("ConfirmarAcao \u2014 marcação", () => {
     expect(voltar.atributos).not.toMatch(/(^|\s)disabled(=|\s|$)/);
     expect(confirmar.atributos).toContain('disabled=""');
     expect(html()).not.toContain('type="text"');
+  });
+});
+
+describe("ConfirmarAcao — camada (DS)", () => {
+  it("ações quebram linha", () => {
+    expect(html()).toContain('class="mt-6 flex flex-wrap justify-end gap-3"');
   });
 });
