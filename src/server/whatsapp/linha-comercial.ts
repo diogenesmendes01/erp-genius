@@ -30,9 +30,10 @@ export async function atendimentoComercialDaLinha(
 ): Promise<AtendimentoWhatsApp | null> {
   const conversa = await tx.conversaWhatsApp.findUnique({
     where: { id: conversaId },
-    select: { numero: { select: { finalidade: true, donoId: true } } },
+    select: { grupoId: true, numero: { select: { finalidade: true, donoId: true } } },
   });
-  if (!conversa || !ehLinhaComercial(conversa.numero)) return null;
+  // Conversa de grupo não abre atendimento (trigger impedir_atendimento_em_grupo).
+  if (!conversa || conversa.grupoId || !ehLinhaComercial(conversa.numero)) return null;
 
   const abertos = await tx.atendimentoWhatsApp.findMany({
     where: { conversaId, finalidade: "COMERCIAL", encerradoEm: null },
@@ -77,9 +78,9 @@ export async function atendimentoDaLinhaParaInbound(
 ): Promise<string | null | undefined> {
   const c = await tx.conversaWhatsApp.findUnique({
     where: { id: conversaId },
-    select: { numero: { select: { finalidade: true, ativo: true } }, contato: { select: { leadId: true } } },
+    select: { grupoId: true, numero: { select: { finalidade: true, ativo: true } }, contato: { select: { leadId: true } } },
   });
-  if (!c || !ehLinhaComercial(c.numero)) return undefined;
+  if (!c || c.grupoId || !ehLinhaComercial(c.numero)) return undefined;
   const institucional = await tx.atendimentoWhatsApp.count({
     where: { conversaId, encerradoEm: null, finalidade: { not: "COMERCIAL" } },
   });
@@ -111,6 +112,7 @@ export async function adotarMensagensOrfasDaLinha(
     where: {
       ...(opcoes.numeroId ? { numeroId: opcoes.numeroId } : {}),
       numero: { finalidade: "VENDAS", ativo: true },
+      grupoId: null,
       mensagens: { some: { atendimentoId: null } },
       // Sem isso, conversas que ficam na triagem ocupariam o lote de todo tick para sempre.
       atendimentos: { none: { encerradoEm: null, finalidade: { not: "COMERCIAL" } } },
