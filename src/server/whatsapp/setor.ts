@@ -33,11 +33,15 @@ function setoresDoPapel(papel: Papel): Setor[] {
   return SETORES.filter((s) => PAPEIS_POR_SETOR[s].includes(papel));
 }
 
-/** Setores do usuário: união sem repetição, na ordem em que os papéis aparecem. */
+/** Ordem fixa de saída: SECRETARIA primeiro, depois a ordem de SETORES. */
+const ORDEM_SAIDA: readonly Setor[] = ["SECRETARIA", ...SETORES.filter((s) => s !== "SECRETARIA")];
+
+/** Setores do usuário: união sem repetição, em ordem fixa (independe da ordem dos papéis). */
 export function setoresDoUsuario(papeis: Papel[]): Setor[] {
-  const out: Setor[] = [];
-  for (const p of papeis) for (const s of setoresDoPapel(p)) if (!out.includes(s)) out.push(s);
-  return out;
+  if (papeis.includes(Papel.ADMINISTRADOR)) return [...SETORES]; // teste do brief: ordem de SETORES
+  const uniao = new Set<Setor>();
+  for (const p of papeis) for (const s of setoresDoPapel(p)) uniao.add(s);
+  return ORDEM_SAIDA.filter((s) => uniao.has(s));
 }
 
 export function ehGerenteDoSetor(papeis: Papel[], setor: Setor): boolean {
