@@ -18,12 +18,16 @@ export const COLUNAS_FUNIL: readonly EtapaLead[] = [
 
 export const COLUNAS_RECOLHIDAS: readonly EtapaLead[] = [EtapaLead.MATRICULADO, EtapaLead.PERDIDO];
 
+// "nenhum": o card voltou para a própria coluna. A UI não abre diálogo nem
+// chama o servidor, e o servidor não grava Evento de etapa sem mudança.
 export type DestinoArraste =
+  | { tipo: "nenhum" }
   | { tipo: "mover" }
   | { tipo: "acao"; acao: "agendarExperimental" | "marcarPerdido" | "prepararContratacao" | "enviarProposta" }
   | { tipo: "recusar"; motivo: string };
 
 export function destinoDoArraste(origem: EtapaLead, destino: EtapaLead): DestinoArraste {
+  if (origem === destino) return { tipo: "nenhum" };
   if (origem === EtapaLead.MATRICULADO || origem === EtapaLead.PERDIDO) {
     return { tipo: "recusar", motivo: "Oportunidade encerrada não volta ao funil." };
   }
