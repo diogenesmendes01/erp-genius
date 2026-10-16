@@ -69,7 +69,21 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
   - Ainda pendentes, já listados no plano: `salvarConfigComercial` e `salvarReguaComercial` (`src/server/comercial/acoes.ts`) e `carregarSaudacoesSimuladas` (`src/server/comercial/consultas.ts`), que seguem usados por testes de integração. Remover na Fase 2/4.
   - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
 
-**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
+- **Integração completa (integrador, 16/10, C3 da R1 da #191):** os 192 arquivos de `vitest.integration.config.ts` rodaram sem filtro, em três partes por causa do tempo, nos bancos descartáveis `integracao` e `dev-email`. A metade B rodou no head `34d8a6b9`; os dois quartos da metade A, no `b772927b`. Resultado: 41 testes falharam em 16 arquivos, e nenhuma falha é nova. Cada arquivo que falhou foi rodado de novo na `main` `ab2bb7d6`, no mesmo banco, e deu as mesmas falhas:
+  - academico/visibilidade (6);
+  - academico/progressao-fechamento;
+  - agenda/replanejamento-concorrencia e agenda/substituicao-avisos;
+  - avaliacoes/aproveitamento-aplicado e avaliacoes/impactos-progressao-tx;
+  - api/exportacoes;
+  - diario/calendario-reposicao, diario/reposicao-agenda e diario/reposicao-permissoes;
+  - matricula/consumo-ocorrencia;
+  - portal-aluno/fechamentos-transferencia, portal-aluno/resultados e portal-aluno/sessao-capturada;
+  - preferencias/fuso-exibicao;
+  - whatsapp/inbox (cockpit).
+
+  Boa parte parece depender da data, como turma indisponível para transferência e sessão expirada. Isso fica para investigar fora desta PR.
+
+**Estado**: Implementado; integração completa sem regressão (falhas preexistentes acima). Aguardando merge.
 
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
