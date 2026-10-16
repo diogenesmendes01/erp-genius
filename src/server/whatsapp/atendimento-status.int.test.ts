@@ -42,7 +42,7 @@ describe("status, prazos e origem do atendimento (M2)", () => {
   it("CHECK: origem não aponta para si mesmo; prazo > 0", async () => {
     const { a } = await cenario();
     await expect(prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { atendimentoOrigemId: a.id } })).rejects.toThrow(/Atendimento_origem_distinta/);
-    await expect(prisma.prazoRespostaSetor.create({ data: { finalidade: "COMERCIAL", minutos: 0 } })).rejects.toThrow(/PrazoRespostaSetor_minutos_positivo|Unique|minutos/);
+    await expect(prisma.prazoRespostaSetor.create({ data: { finalidade: "SECRETARIA", minutos: 0 } })).rejects.toThrow(/PrazoRespostaSetor_minutos_positivo/);
   });
   it("mudar status de atendimento FINANCEIRO não esbarra na imutabilidade do contexto", async () => {
     const { financeiro, fin } = await cenario();
