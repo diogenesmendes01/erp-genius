@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { type EtapaLead } from "@prisma/client";
+import { Papel, type EtapaLead } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { exigirSessao, executarAcao, ErroPermissao, ErroRegra, type Resultado } from "@/server/_shared";
+import { exigirSessao, exigirPapel, executarAcao, normalizarTelefoneE164, ErroPermissao, ErroRegra, type Resultado } from "@/server/_shared";
 import { moverEtapaTx } from "./mover-etapa";
+import { possiveisDuplicados, type PossivelDuplicado } from "./pessoas";
 
 const MAX_LOTE = 50;
 
@@ -34,5 +35,23 @@ export async function moverEtapaEmLote(
       revalidatePath("/inbox");
     }
     return { movidas, recusadas };
+  });
+}
+
+/** Aviso de cadastro existente ao criar oportunidade: roda no escopo de quem digita e não grava nada. */
+export async function buscarPossiveisDuplicados(entrada: {
+  nome?: string;
+  telefone?: string;
+  email?: string;
+  paisId?: string;
+}): Promise<Resultado<PossivelDuplicado[]>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
+    const ddi = entrada.paisId ? ((await prisma.pais.findUnique({ where: { id: entrada.paisId }, select: { ddi: true } }))?.ddi ?? "") : "";
+    return possiveisDuplicados(
+      { nome: entrada.nome?.trim() || undefined, telefoneE164: normalizarTelefoneE164(entrada.telefone, ddi), email: entrada.email?.trim() || null },
+      autor,
+    );
   });
 }
