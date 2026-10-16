@@ -43,9 +43,9 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
   // Inbox (chat): item da lista de conversas, contador de não lidas, barra "Conversas" do celular,
-  // pílula de link, 2 botões só de ícone (anexar, gravar), fichas de temperatura, lista de nomes,
+  // pílula de link, 2 botões só de ícone (anexar, gravar), lista de nomes,
   // abas do filtro de canal (Todas / Linha comercial / Institucional — SPEC-ERP-005).
-  "src/app/(app)/inbox/InboxCliente.tsx": 9,
+  "src/app/(app)/inbox/InboxCliente.tsx": 8,
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
@@ -66,8 +66,8 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": ["key d"], // chip de dia da semana
   "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": ["Fechar"], // ícone de fechar
   "src/app/(app)/financeiro/FilaCobranca.tsx": ["(sem nome)", "✕"], // linha da fila, ✕ do detalhe
-  // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, fichas de temperatura, item de nome.
-  "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", 't === temperatura ? "Temperatura atual" : `Marcar como ${TEM', "key i.id"],
+  // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, item de nome.
+  "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
   // Exceção de PALETA, não de papel: são ações, mas da IA — docs/18 reserva --ai-* (e --ai-solid para
@@ -1613,7 +1613,6 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 // usos dele em src/app e src/components são conferidos (follow-up #140, B6 — sem lista fixa de arquivos).
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
-  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "→", vezes: 1, motivo: "link para o cadastro vinculado: o rótulo é o nome do aluno/lead (navegação, não ação)" },
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
   { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo" }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
 ];
