@@ -2,6 +2,108 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-a-fundacao`)
+- Tokens WDS claro/escuro nos blocos `:root` e `.dark` de `src/app/globals.css` (tabela de tokens do plano
+  `00-fase-design-system.md`), com `--surface-raised`, `--highlight`, `--pressed`, `--border-soft`, `--text-disabled`,
+  `--brand-strong`, `--on-brand-solid`, `--cold-text`, `--entry`, `--entry-accent`, `--composer` e as duas sombras de
+  camada. Spec copiado para `docs/planejamento/design-system-referencia.md`.
+- `src/app/contraste.test.ts` recalcula pelo `globals.css` o texto de cada fundo sólido (par de `TEXTO_SOBRE_SOLIDO`,
+  ≥ 4,5:1), a borda de controle (≥ 3:1) e o `--brand-solid` sobre as superfícies, nos dois temas.
+- `tailwind.config.ts`: cores novas (`on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`,
+  `entry`, `entry-accent`, `composer`, `cold-700`, `brand-800`), raios (`rounded-item`, `rounded-dialog`) e só
+  `shadow-popover`/`shadow-dialog`.
+- Roboto variável (`src/app/fonts/roboto-variable.woff2`, licença Apache 2.0 oficial do `googlefonts/roboto` em
+  `LICENSE-Roboto.txt`) por `next/font/local`; pesos 400, 500 e 600 (`tipografia.test.ts`).
+- Fundo sólido da marca usa `text-on-brand` (branco no claro, preto no escuro); `Botao.primario` e o doc 18 atualizados.
+
+### Verificação
+- Na HEAD `ce4895c` (revisão final): `tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.573 testes;
+  `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
+  effect), que já existia em `f8a9c0e`.
+- Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
+- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
+  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Componentes base (botões em pílula, camadas com sombra, alvos de 44 px) e telas: blocos seguintes da Fase 0.
+- Conferir no navegador (UAT) os dois temas com a Roboto.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Fase 1A — verificação do bloco (15/10/2026)
+
+- Branch `claude/fase1-a-linha-de-base`; tarefa 1 do plano (E0: fontes da fase 1 e linha de base de testes). Só `docs/` mudou em relação à `main`; `src/`, `prisma/` e `package*.json` sem diferença.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 646 arquivos, 4560 testes, 0 falhas (igual à linha de base).
+- `npm run lint`: saída 0; 0 erros, 44 avisos preexistentes.
+- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS abaixo; nenhuma falha nova. Duração 7139 s.
+
+## Fase 1 (E0) — linha de base em 15/10/2026
+
+- Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
+- Perfil de teste: `dev-email` (banco `erp_genius_test_dev_email`, `localhost:54329`). **Exceção registrada ao `tester` da Global Constraint:** em 15/10/2026, seis worktrees da fase 0 usavam `tester` ao mesmo tempo, e a suíte de integração trunca tabelas (`fileParallelism: false`); por isso o integrador atribuiu `dev-email` a este worktree. O banco é descartável, está na lista fechada de `scripts/test-profile.mjs`, não é `erp_genius_test` nem produção, e tem as 438 migrations aplicadas (`prisma migrate status` em dia). Os Blocos B, C e D usam o mesmo perfil e o mesmo banco. O texto da constraint no plano, a cargo do integrador, precisa ser atualizado com a aprovação do dono antes do merge.
+- Todas as medições foram feitas neste worktree, no commit `a51d07b` sobre `f8a9c0e`; só `docs/` mudou em relação à `main`.
+- Suíte completa, sem filtro.
+- `tsc --noEmit`: saída 0.
+- `npm test` (`vitest run`): saída 0; 646 arquivos, 4560 testes, 0 falhas (`--reporter=json`: `numTotalTests` 4560, `numFailedTests` 0, `success` true).
+- `test:int` (`vitest run -c vitest.integration.config.ts`, perfil `dev-email`): **saída 1**. 193 arquivos (16 com falha, 174 passaram, 3 pulados); `numTotalTests` 1760, `numFailedTests` 44, `numPassedTests` 1712, `numPendingTests` 4; `success` false. Executado de 20:38 a 22:27 UTC de 15/10/2026, 6520 s, com outras suítes rodando na máquina ao mesmo tempo. A medição anterior no checkout do integrador (banco `erp_genius_test`) não vale como linha de base.
+- Evidência local não versionada: `tmp/lb-unit.json`, `tmp/lb-int.json`, `tmp/lb-int.txt`, `tmp/lb-unit-falhas.txt` (vazia) e `tmp/lb-int-falhas.txt` (44 linhas, igual à lista abaixo). Os blocos seguintes comparam com `comm -13 tmp/lb-int-falhas.txt <novas>`.
+
+### LB_FALHAS
+
+- Unitários: nenhuma.
+- Integração (44, preexistentes, formato `arquivo › nome completo do teste`):
+
+```
+src/server/academico/progressao-fechamento.int.test.ts › autoriza a exceção de nível somente com fechamento suficiente atual, parecer dispensado de forma justificada e execução da Secretaria
+src/server/academico/progressao-fechamento.int.test.ts › mantém a solicitação aprovada sem execução quando uma correção oficial torna o fechamento anterior obsoleto
+src/server/academico/progressao-fechamento.int.test.ts › não troca o fechamento aprovado por uma versão final posterior durante a execução
+src/server/academico/progressao-fechamento.int.test.ts › registra o pedido, mas nega sua aprovação sem uma versão suficiente de fechamento
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário diário relê a atribuição docente alterada enquanto aguardava o aluno
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário diário revalida desativação revogado enquanto aguardava o aluno
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário diário revalida papel revogado enquanto aguardava o aluno
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário mensagem humana pendente do professor anterior é cancelada no despacho após a execução
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário solicitar/aprovar preserva acesso; executar revoga ficha, conversa e mídia do professor anterior
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário transferência concorrente preserva chamada anterior e recusa aula ocorrida após a saída
+src/server/agenda/replanejamento-concorrencia.int.test.ts › serializa duas aprovações da mesma revisão sem duplicar os fatos aplicados
+src/server/agenda/substituicao-avisos.int.test.ts › enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o aceite Meta
+src/server/agenda/substituicao-avisos.int.test.ts › não troca responsável autorizado por outra pessoa com o mesmo telefone antes do driver
+src/server/agenda/substituicao-avisos.int.test.ts › resultado incerto do driver preserva INCERTO e não reenvia automaticamente
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isoladas duas matrículas da mesma aluna no portal
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › correção oficial na origem torna o requisito de destino pendente, sem atualizar a nota aplicada
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › executa a cadeia aprovada e usa a nota de origem no consolidado sem lançamento no destino
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › preserva a cadeia A→B→C e não duplica a fonte aproveitada no consolidado BASE_PLANO
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › usa fontes aproveitadas na base de recuperação e conserva a melhor tentativa oficial posterior
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › correção publicada abre revisão da progressão executada e exige novo fechamento para reconfirmar
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › não executa aprovação antiga com revisão pendente mesmo após restaurar a presença
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › persiste a revisão da progressão em C quando uma correção aprovada alcança A→B→C
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › preserva o formato e localiza a mesma progressão depois de EXECUTADA
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › reconfirma progressão real após corrigir a fonte da reposição, exigindo novo fechamento
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › segue A→B→C por aplicações reais e retorna a progressão APROVADA, sem proposta não aplicada ou outra matrícula
+src/server/diario/calendario-reposicao.int.test.ts › usa apenas calendário aprovado vigente; feriado removido=true
+src/server/diario/reposicao-agenda.int.test.ts › a prévia autenticada informa período, saldo e conflitos antes de confirmar a agenda
+src/server/diario/reposicao-agenda.int.test.ts › a última cota é reservável uma vez e bloqueia outra origem no mesmo período
+src/server/diario/reposicao-agenda.int.test.ts › dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir benefício
+src/server/diario/reposicao-agenda.int.test.ts › rejeição Q19 permanece possível e idempotente quando a proposta fica indisponível ou passada
+src/server/diario/reposicao-agenda.int.test.ts › remarcação normal consome benefício ao registrar diário, conclui uma única fonte e não usa o encontro cancelado
+src/server/diario/reposicao-agenda.int.test.ts › reserva benefício de oferta aprovada e cria encontro REPOSICAO ligado ao pedido exato
+src/server/diario/reposicao-agenda.int.test.ts › serializa duas agendas distintas na última cota e preserva o replay vencedor
+src/server/diario/reposicao-permissoes.int.test.ts › fila Q19 expõe a exceção exata à gestão e a aprovação não cria agenda
+src/server/matricula/consumo-ocorrencia.int.test.ts › consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita SQL
+src/server/portal-aluno/fechamentos-transferencia.int.test.ts › agrega frequência A→B no mesmo nível e exige nova versão de fechamento após a transferência
+src/server/portal-aluno/resultados.int.test.ts › conferência da transferência liga fontes oficiais e requisitos da regra de destino
+src/server/portal-aluno/sessao-capturada.int.test.ts › recusa a sessão expirada depois da captura
+src/server/preferencias/fuso-exibicao.int.test.ts › recusa IANA inválido, usuário desativado e Factory no backstop SQL
+src/server/whatsapp/cron-gestao.int.test.ts › alerta de SLA leads estourados viram UMA mensagem agregada + evento por lead (idempotente)
+src/server/whatsapp/cron-gestao.int.test.ts › despachante × origem GESTAO SHADOW da gestão simula; ATIVA sem WHATSAPP_LIVE também simula (ambiente)
+src/server/whatsapp/cron-gestao.int.test.ts › despachante × origem GESTAO alteração do destino/configuração após enfileirar cancela a intenção
+src/server/whatsapp/cron-gestao.int.test.ts › despachante × origem GESTAO mensagem de gestão é isenta da janela de horário (madrugada despacha mesmo assim)
+src/server/whatsapp/inbox.int.test.ts › cockpit do vendedor na thread (funil sem sair da conversa) lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)
+```
+
 ## Situação em 13/10/2026 — publicação no UAT e auditoria de UX
 
 Base conferida: `main` em `e5418550` (merge da #161, 10/10/2026). Esta seção é a fotografia de 13/10; as seções abaixo continuam sendo os registros de 21/09 e anteriores. Análise PR a PR no doc 44 (§3 para publicação, §7 para as PRs) e remedição da auditoria de UX no doc 43 §7.
@@ -1571,37 +1673,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - As métricas de fluxo da 7.7 continuam sem medição.
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
-
-## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
-
-### Solução implementada (branch `claude/fase0-ds-a-fundacao`)
-- Tokens WDS claro/escuro nos blocos `:root` e `.dark` de `src/app/globals.css` (tabela de tokens do plano
-  `00-fase-design-system.md`), com `--surface-raised`, `--highlight`, `--pressed`, `--border-soft`, `--text-disabled`,
-  `--brand-strong`, `--on-brand-solid`, `--cold-text`, `--entry`, `--entry-accent`, `--composer` e as duas sombras de
-  camada. Spec copiado para `docs/planejamento/design-system-referencia.md`.
-- `src/app/contraste.test.ts` recalcula pelo `globals.css` o texto de cada fundo sólido (par de `TEXTO_SOBRE_SOLIDO`,
-  ≥ 4,5:1), a borda de controle (≥ 3:1) e o `--brand-solid` sobre as superfícies, nos dois temas.
-- `tailwind.config.ts`: cores novas (`on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`,
-  `entry`, `entry-accent`, `composer`, `cold-700`, `brand-800`), raios (`rounded-item`, `rounded-dialog`) e só
-  `shadow-popover`/`shadow-dialog`.
-- Roboto variável (`src/app/fonts/roboto-variable.woff2`, licença Apache 2.0 oficial do `googlefonts/roboto` em
-  `LICENSE-Roboto.txt`) por `next/font/local`; pesos 400, 500 e 600 (`tipografia.test.ts`).
-- Fundo sólido da marca usa `text-on-brand` (branco no claro, preto no escuro); `Botao.primario` e o doc 18 atualizados.
-
-### Verificação
-- Na HEAD `ce4895c` (revisão final): `tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.573 testes;
-  `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
-  effect), que já existia em `f8a9c0e`.
-- Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
-- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
-  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
-- Sem schema nem migração; `*.int.test.ts` não alterados.
-
-### Pendências
-- Componentes base (botões em pílula, camadas com sombra, alvos de 44 px) e telas: blocos seguintes da Fase 0.
-- Conferir no navegador (UAT) os dois temas com a Roboto.
-
-**Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
 
