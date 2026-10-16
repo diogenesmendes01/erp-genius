@@ -71,7 +71,7 @@ function semear(n: number, pais: (i: number) => string = () => "Brasil") {
 }
 const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
 /** A chamada leve (a fila inteira) e as do detalhe (só o trecho), separadas pelo `where`. */
-const chamadas = () => m.cobrancas.mock.calls.map((c) => c[0] as { where: { id?: { in: string[] } }; take?: number; select?: unknown; include?: unknown });
+const chamadas = () => m.cobrancas.mock.calls.map((c) => c[0] as { where: { id?: { in: string[] }; status?: { in: string[] } }; take?: number; select?: unknown; include?: unknown });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -101,6 +101,8 @@ describe("listarFilaCobranca — trechos por cursor (docs/43 §6 item 9)", () =>
     expect(detalhe[0].take).toBe(FILA_COBRANCA_POR_TRECHO);
     expect(detalhe[0].where.id!.in).toEqual(ids(abertas.slice(0, 50)));
     expect(detalhe[0].include).toBeDefined();
+    // A cobrança paga entre as duas leituras sai do trecho: o detalhe repete o recorte de situação (C1 da R1 da #180).
+    expect(detalhe[0].where.status).toEqual({ in: ["PENDENTE", "ATRASADO"] });
     expect(ids(fila.itens)).toEqual(ids(abertas.slice(0, 50)));
     expect(fila).toMatchObject({ totalFila: 120, totalVisao: 120, temAnterior: false, temProxima: true, anterior: null });
     expect(fila.proxima).toBe(cursorDoItemFila({ prioridade: 1, diasAtraso: 500 - 49, id: "c049" }));
