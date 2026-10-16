@@ -768,6 +768,7 @@ model Usuario {
   ajustes           AjusteFinanceiro[]  @relation("AutorAjustes")
   movimentacoes     MovimentacaoAluno[] @relation("AutorMovimentacoes")
   numerosWhatsApp   NumeroWhatsApp[]    @relation("DonoNumerosWhatsApp")
+  numerosTriagemWhatsApp NumeroWhatsApp[] @relation("TriagemNumeroWhatsApp")
   autorizacoesComunicacaoAcademicaAutorizadas AutorizacaoComunicacaoAcademica[] @relation("AutorizadorComunicacaoAcademica")
   autorizacoesComunicacaoAcademicaRevogadas AutorizacaoComunicacaoAcademica[] @relation("RevogadorComunicacaoAcademica")
   mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
@@ -2285,9 +2286,12 @@ model NumeroWhatsApp {
   sessao       SessaoNumero     @default(DESCONECTADO) // relevante só p/ BAILEYS
   donoId       String? // dono da conversa = dono do número (doc 26 §Camada 3)
   dono         Usuario?         @relation("DonoNumerosWhatsApp", fields: [donoId], references: [id])
+  triagemResponsavelId String? // responsável pela triagem do número (null = ADMINISTRADOR, Q2 provisória)
+  triagemResponsavel   Usuario?         @relation("TriagemNumeroWhatsApp", fields: [triagemResponsavelId], references: [id], onDelete: SetNull)
   ativo        Boolean          @default(true)
   criadoEm     DateTime         @default(now())
 
+  setores             NumeroSetorWhatsApp[]
   conversas           ConversaWhatsApp[]
   mensagens           MensagemWhatsApp[]
   intencoes           IntencaoMensagem[]
@@ -2300,6 +2304,17 @@ model NumeroWhatsApp {
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
   // mensagem cairia na conversa/dono errados (review PR #51 P2-6).
   @@unique([driver, providerRef])
+}
+
+/// Setores que um número atende (um número serve vários setores; sem repetir).
+model NumeroSetorWhatsApp {
+  id         String                        @id @default(cuid())
+  numeroId   String
+  numero     NumeroWhatsApp                @relation(fields: [numeroId], references: [id], onDelete: Cascade)
+  finalidade FinalidadeAtendimentoWhatsApp
+  criadoEm   DateTime                      @default(now())
+
+  @@unique([numeroId, finalidade])
 }
 
 model ContatoWhatsApp {
