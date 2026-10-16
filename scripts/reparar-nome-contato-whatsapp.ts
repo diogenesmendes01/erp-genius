@@ -63,7 +63,7 @@ async function main() {
     }
 
     // Lead com o nome do perfil da linha: não é reparado aqui (o nome do lead é cadastro) — só listado.
-    const leads = await prisma.lead.findMany({
+    const leads = await prisma.oportunidade.findMany({
       where: { OR: nomes.map((nome) => ({ nome: { equals: nome, mode: "insensitive" as const } })) },
       select: { id: true, codigo: true, nome: true, telefoneE164: true },
     });

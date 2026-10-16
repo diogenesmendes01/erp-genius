@@ -468,7 +468,7 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
       data = { responsavelId: resp.id };
     } else {
       if (alcance.finalidade !== "COMERCIAL" || !temPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) throw new ErroRegra("Vínculo de lead exige atendimento comercial.");
-      const lead = await prisma.lead.findFirst({
+      const lead = await prisma.oportunidade.findFirst({
         where: { AND: [{ id: alvo.id, telefoneE164: contato.telefoneE164 }, await escopoComercialAtual(autor)] },
         select: { id: true },
       });

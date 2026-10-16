@@ -25,7 +25,7 @@ export async function motivoCadenciaInvalida(
 ): Promise<string | null> {
   if (!it.leadId || !it.politicaComercial || !it.ocorrenciaComercial) return "cadencia_sem_contexto";
   const [lead, conversa] = await Promise.all([
-    prisma.lead.findUnique({ where: { id: it.leadId } }),
+    prisma.oportunidade.findUnique({ where: { id: it.leadId } }),
     prisma.conversaWhatsApp.findUnique({ where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } }, include: { contato: true } }),
   ]);
   if (!lead || conversa?.contato.leadId !== lead.id) return "vinculo_comercial_alterado";

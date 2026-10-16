@@ -34,7 +34,7 @@ export async function destinatarioAtualDoAtendimento(a: {
     return !!destino && contatoCorrespondeDestinoFinanceiro(contato, destino);
   }
   if (a.leadId) {
-    const lead = await db.lead.findUnique({ where: { id: a.leadId }, select: { telefoneE164: true } });
+    const lead = await db.oportunidade.findUnique({ where: { id: a.leadId }, select: { telefoneE164: true } });
     return !!lead?.telefoneE164 && lead.telefoneE164 === contato.telefoneE164;
   }
   if (a.finalidade === "PEDAGOGICO" && a.alunoId) {

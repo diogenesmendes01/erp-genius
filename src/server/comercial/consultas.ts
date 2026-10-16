@@ -91,7 +91,7 @@ export async function carregarReguasComerciaisConfig(): Promise<ReguaComercialCo
   // Resolve nome/código dos leads das allowlists (B1) numa consulta só.
   const todosIds = [...new Set(registros.flatMap((p) => p.pilotoLeadIds))];
   const leadsAllow = todosIds.length
-    ? await prisma.lead.findMany({ where: { id: { in: todosIds } }, select: { id: true, codigo: true, nome: true } })
+    ? await prisma.oportunidade.findMany({ where: { id: { in: todosIds } }, select: { id: true, codigo: true, nome: true } })
     : [];
   const leadsPorId = new Map(leadsAllow.map((l) => [l.id, { id: l.id, codigo: l.codigo, nome: l.nome }]));
 
@@ -222,7 +222,7 @@ export async function carregarSaudacoesSimuladas(limite = 10): Promise<SaudacaoS
 }
 
 /** Compatibilidade para consumidores antigos; equipe e cobertura são relidas no servidor. */
-export async function escopoLeads(usuario: UsuarioSessao): Promise<Prisma.LeadWhereInput> {
+export async function escopoLeads(usuario: UsuarioSessao): Promise<Prisma.OportunidadeWhereInput> {
   return escopoComercialAtual(usuario);
 }
 
@@ -232,13 +232,13 @@ const podeListarLeads = (usuario: UsuarioSessao) =>
   !!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR);
 
 /** Escopo comercial do usuário E os filtros (interseção — um filtro nunca amplia a carteira). */
-async function whereListaLeads(usuario: UsuarioSessao, filtros: FiltrosLead): Promise<Prisma.LeadWhereInput> {
+async function whereListaLeads(usuario: UsuarioSessao, filtros: FiltrosLead): Promise<Prisma.OportunidadeWhereInput> {
   return { AND: [await escopoComercialAtual(usuario), whereFiltrosLead(filtros)] };
 }
 
 export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead = {}, pagina?: { skip: number; take: number }) {
   if (!podeListarLeads(usuario)) return [];
-  const leads = await prisma.lead.findMany({
+  const leads = await prisma.oportunidade.findMany({
     where: await whereListaLeads(usuario, filtros),
     // id como desempate: sem ele, leads criados no mesmo instante podiam trocar de página entre consultas.
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
@@ -281,7 +281,7 @@ export async function listarLeads(usuario: UsuarioSessao, filtros: FiltrosLead =
 
 export async function obterLead(id: string, usuario: UsuarioSessao) {
   if (!usuario?.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR)) return null;
-  const lead = await prisma.lead.findFirst({
+  const lead = await prisma.oportunidade.findFirst({
     where: { AND: [{ id }, await escopoComercialAtual(usuario)] },
     include: {
       pais: { select: { id: true, nome: true } },
@@ -330,8 +330,8 @@ export async function listarLeadsPagina(usuario: UsuarioSessao, filtros: Filtros
   const consulta = filtrosDaConsultaLeads(filtros);
   const [itens, total, totalBase] = await Promise.all([
     listarLeads(usuario, consulta, { skip: (filtros.pagina - 1) * LEADS_POR_PAGINA, take: LEADS_POR_PAGINA }),
-    whereListaLeads(usuario, consulta).then((where) => prisma.lead.count({ where })),
-    escopoComercialAtual(usuario).then((where) => prisma.lead.count({ where })),
+    whereListaLeads(usuario, consulta).then((where) => prisma.oportunidade.count({ where })),
+    escopoComercialAtual(usuario).then((where) => prisma.oportunidade.count({ where })),
   ]);
   return { itens, total, totalBase };
 }

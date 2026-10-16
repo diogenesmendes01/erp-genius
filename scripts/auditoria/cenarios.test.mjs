@@ -71,7 +71,7 @@ async function contrato(extra = {}) {
     primeiroNome: "Aluno Auditoria", paisId: cat.pais.id, tipoDocumentoId: cat.pais.tiposDocumento[0].id,
     nascimento: new Date("1990-01-01"), telefoneE164: "+50688887777", ...extra,
   } });
-  const lead = await prisma.lead.create({ data: { nome: "Lead auditoria", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Lead auditoria", vendedorDonoId: vendedor.id } });
   const matricula = await prisma.matricula.create({ data: {
     alunoId: aluno.id, leadId: lead.id, paisId: cat.pais.id, produtoId: cat.produto.id,
     moeda: "CRC", status: "AGUARDANDO", mesesPlano: 3,
@@ -271,7 +271,7 @@ async function canalComercial(chave = CHAVE_LEAD_NOVO, etapa = "NOVO", ancora = 
       passo: d.passo, offsetMinutos: d.offsetMinutos, rotulo: d.rotulo, ativo: true,
     })) },
   } });
-  const lead = await prisma.lead.create({ data: {
+  const lead = await prisma.oportunidade.create({ data: {
     nome: "Lead auditoria", etapa, vendedorDonoId: vendedor.id, paisId: cat.pais.id,
     dataExperimental: chave === CHAVE_PRE_EXPERIMENTAL ? ancora : null,
   } });
@@ -293,7 +293,7 @@ async function intencao(c, extra = {}) {
 describe("WhatsApp com drivers falsos e banco real", () => {
   it("W01 item adiado nao sai depois de avancar o lead", async () => {
     const c = await canalComercial(); const i = await intencao(c);
-    await prisma.lead.update({ where: { id: c.lead.id }, data: { etapa: "EM_ATENDIMENTO" } });
+    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { etapa: "EM_ATENDIMENTO" } });
     await despacharFila();
     expect({ envios: sendMock.mock.calls.length, status: (await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } })).status })
       .toEqual({ envios: 0, status: "CANCELADA" });

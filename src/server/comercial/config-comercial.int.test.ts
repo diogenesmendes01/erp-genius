@@ -86,7 +86,7 @@ describe("carregarSaudacoesSimuladas (ensaio observável — review PR #53)", ()
     const gerente = await criarUsuario([Papel.GERENTE_COMERCIAL]);
     const vendedor = await criarUsuario([Papel.VENDEDOR]);
     await prisma.usuario.update({ where: { id: vendedor.id }, data: { gerenteComercialId: gerente.id } });
-    const lead = await prisma.lead.create({ data: { nome: "Ana", vendedorDonoId: vendedor.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Ana", vendedorDonoId: vendedor.id } });
     authMock.mockResolvedValue({ user: { id: gerente.id } });
     const numero = await prisma.numeroWhatsApp.create({
       data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-s" },

@@ -56,7 +56,7 @@ async function cenario() {
   const pedagogico = await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gestão pedagógica");
   const vendedor = await criarUsuario([Papel.VENDEDOR], "Vendedor");
   const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
-  const lead = await prisma.lead.create({ data: { nome: "Lead", vendedorDonoId: vendedor.id, professorExperimentalId: professor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: vendedor.id, professorExperimentalId: professor.id } });
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", sobrenome: "Santos", paisId: cat.pais.id } });
   const matricula = await prisma.matricula.create({ data: {
     alunoId: aluno.id, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC",
@@ -134,9 +134,9 @@ describe("arquivos privados persistidos — identidade, objeto, finalidade e con
       await tx.documento.create({ data: { leadId: c.lead.id, categoria: CategoriaDocumento.TESTE_NIVEL, url, nome: "Teste pedagógico" } });
     });
     expect((await download(url)).status).toBe(200);
-    await prisma.lead.update({ where: { id: c.lead.id }, data: { professorExperimentalId: null } });
+    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { professorExperimentalId: null } });
     expect((await download(url)).status).toBe(403);
-    await prisma.lead.update({ where: { id: c.lead.id }, data: { professorExperimentalId: c.professor.id } });
+    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { professorExperimentalId: c.professor.id } });
     await prisma.usuario.update({ where: { id: c.professor.id }, data: { papeis: [] } });
     expect((await download(url)).status).toBe(403);
     expect((await enviarArquivo(requisicaoUpload({ leadId: c.lead.id, categoriaDocumento: CategoriaDocumento.TESTE_NIVEL }))).status).toBe(403);
@@ -174,7 +174,7 @@ describe("arquivos privados persistidos — identidade, objeto, finalidade e con
     for (const categoriaDocumento of [CategoriaDocumento.TESTE_NIVEL, CategoriaDocumento.PROPOSTA]) {
       await expect(exigirArquivoVinculavel(usuario, url, { leadId: c.lead.id, categoriaDocumento })).rejects.toThrow("Envie o arquivo novamente");
     }
-    const outroLead = await prisma.lead.create({ data: { nome: "Outro lead", vendedorDonoId: c.vendedor.id } });
+    const outroLead = await prisma.oportunidade.create({ data: { nome: "Outro lead", vendedorDonoId: c.vendedor.id } });
     como(c.admin);
     await expect(exigirArquivoVinculavel(await exigirSessao(), url, { leadId: outroLead.id, categoriaDocumento: CategoriaDocumento.CONTRATO })).rejects.toThrow("Envie o arquivo novamente");
     expect(await prisma.documento.findUnique({ where: { id: documento.id } })).toEqual(documento);
