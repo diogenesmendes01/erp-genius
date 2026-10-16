@@ -861,7 +861,7 @@ function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => void }) {
               <span
                 className={
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium " +
-                  (ativo || concluido ? "bg-brand-solid text-white" : "bg-gray-100 text-gray-500")
+                  (ativo || concluido ? "bg-brand-solid text-on-brand" : "bg-gray-100 text-gray-500")
                 }
               >
                 {concluido ? "✓" : s.n}
