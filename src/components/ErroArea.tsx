@@ -24,7 +24,7 @@ export function ErroArea({ titulo, reset, voltar, nivel }: Props) {
   return (
     <div>
       <VoltarPara href={voltar.href} para={voltar.para} />
-      <EstadoRota icone={IconAlertTriangle} titulo={titulo} texto={TEXTO_ERRO_AREA} acao={{ onClick: reset, rotulo: "Tentar de novo" }} nivel={nivel} />
+      <EstadoRota icone={IconAlertTriangle} titulo={titulo} texto={TEXTO_ERRO_AREA} acao={{ onClick: reset, rotulo: "Tentar de novo" }} nivel={nivel} aviso="erro" />
     </div>
   );
 }
