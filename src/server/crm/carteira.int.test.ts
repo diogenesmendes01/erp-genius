@@ -6,7 +6,7 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
-import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
+import { truncarBanco, criarUsuario, eventosDo, seedCatalogoMinimo } from "@/test/integracao";
 import { carregarCarteira, reatribuirEmLote, type FiltrosCarteira } from "./carteira";
 
 const logadoComo = (id: string) => authMock.mockResolvedValue({ user: { id } });
@@ -61,6 +61,33 @@ describe("carregarCarteira", () => {
     expect((await carregarCarteira(sessaoDe(gerente), { ...base, busca: "bia" })).linhas.map((l) => l.nome)).toEqual(["Bia"]);
     expect((await carregarCarteira(sessaoDe(gerente), { ...base, tipo: "pj" })).linhas).toEqual([]);
     expect((await carregarCarteira(sessaoDe(gerente), { ...base, emTurma: true })).linhas).toEqual([]);
+  });
+  it("caminho positivo: b2b, turma ativa e tags aparecem nas linhas e nos filtros", async () => {
+    const b2b = (await prisma.oportunidade.create({ data: { nome: "Empresa Alfa", vendedorDonoId: v1.id, b2b: true } as never })).id;
+    const pessoa = await prisma.pessoa.create({ data: { nome: "Ana Pessoa" } });
+    const tag = await prisma.tag.create({ data: { nome: "VIP", cor: "MARCA" } });
+    await prisma.pessoaTag.create({ data: { pessoaId: pessoa.id, tagId: tag.id } });
+    await prisma.oportunidade.update({ where: { id: op1 }, data: { pessoaId: pessoa.id } });
+    const cat = await seedCatalogoMinimo();
+    const nivel = await prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo: "A1", ordem: 1 } });
+    const turma = await prisma.turma.create({ data: { nome: "Turma Salvador", modalidadeId: cat.modalidade.id, nivelId: nivel.id } });
+    const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", paisId: cat.pais.id, status: "ATIVO" } });
+    const matricula = await prisma.matricula.create({
+      data: { alunoId: aluno.id, leadId: op1, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "ATIVA", ativadaEm: new Date() },
+    });
+    await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, matriculaId: matricula.id, turmaId: turma.id } });
+
+    const pj = await carregarCarteira(sessaoDe(gerente), { ...base, tipo: "pj" });
+    expect(pj.linhas.map((l) => [l.oportunidadeId, l.tipo])).toEqual([[b2b, "pj"]]);
+    const pf = await carregarCarteira(sessaoDe(gerente), { ...base, tipo: "pf" });
+    expect(pf.linhas.map((l) => l.oportunidadeId).sort()).toEqual([op1, op2].sort());
+
+    const emTurma = await carregarCarteira(sessaoDe(gerente), { ...base, emTurma: true });
+    expect(emTurma.linhas.map((l) => [l.oportunidadeId, l.turmaAtiva])).toEqual([[op1, "Turma Salvador"]]);
+    expect(emTurma.linhas[0].tags).toEqual([{ id: tag.id, nome: "VIP", cor: "MARCA" }]);
+
+    const todas = await carregarCarteira(sessaoDe(gerente), base);
+    expect(todas.linhas.find((l) => l.oportunidadeId === op2)).toMatchObject({ turmaAtiva: null, tags: [] });
   });
 });
 
