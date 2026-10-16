@@ -76,3 +76,11 @@ describe("SecretariaPainel — datas civis da tela inteira", () => {
     expect(foraDosCamposDeData(html)).not.toMatch(ISO);
   });
 });
+
+describe("SecretariaPainel — conferência visual (DS-C)", () => {
+  it("links de ação da matrícula ficam numa linha que quebra, com espaço entre eles; cartão com superfície e borda de token", () => {
+    const html = render([]);
+    expect(html).toMatch(/<nav aria-label="Ações da matrícula MAT-1" class="flex flex-wrap gap-x-4 gap-y-1">(?:(?!<\/nav>).)*Revisar proposta comercial(?:(?!<\/nav>).)*Consultar ou reservar vaga<\/a><\/nav>/);
+    expect(html).toContain('class="space-y-3 rounded-lg border border-gray-200 bg-surface p-4"');
+  });
+});
