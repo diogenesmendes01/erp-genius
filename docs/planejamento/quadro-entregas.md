@@ -69,6 +69,8 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
   - **Código órfão em `src/server/comercial/consultas.ts`** (sem uso fora do próprio módulo desde a tarefa 9; o `page.test` do WhatsApp deixou de mocká-lo): `carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com as interfaces `ReguaComercialConfig`, `DegrauComercialConfig`, `NumeroResumo`, `TemplateResumo` e `EnsaioComercial`. Somam-se a `salvarConfigComercial`, `salvarReguaComercial` e `carregarSaudacoesSimuladas`, já listados no plano. Remover na Fase 2/4.
   - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
 
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
+
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
 - Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
@@ -1759,5 +1761,78 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - A deduplicação não tem índice único: duas importações simultâneas ainda podem duplicar. Um documento só é achado no cadastro quando lá está igual ao da planilha ou sem pontuação: "8822-1381" no cadastro e "88221381" na planilha não casam. Resolver isso pede uma coluna normalizada com índice único, ou seja, migração.
 - `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
 - A thread da inbox cortada em 300 mensagens é da issue #168.
+
+## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-botao`)
+- `src/components/Botao.tsx`: `BASE_BOTAO` em pílula (`rounded-full`, `gap-2`) com 44 px de altura mínima abaixo de
+  `sm` (`max-sm:min-h-11`); desabilitado sem opacidade (`disabled:bg-surface-muted disabled:text-disabled
+  disabled:border-gray-200`) e `aria-busy:cursor-progress`.
+- Variantes: `secundario` com `border-border-soft`, sem fundo, texto `text-brand-700` e hover `bg-highlight`;
+  `fantasma` com hover `bg-highlight`; `primario` e `perigo` sem mudança. Tamanhos `sm px-3 py-1`, `md px-4 py-1.5`,
+  `lg px-[22px] py-2.5`.
+- `<Botao ocupado>` marca `aria-busy="true"` e desabilita o botão.
+- `src/components/Botao.test.ts`: pílula e 44 px, disabled sem opacidade, ocupado com `aria-busy` e `disabled`,
+  secundário sem fundo e com hover `highlight`. Doc 18 (Botão) atualizado.
+
+### Verificação
+- Na HEAD `8d17003`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.576 testes (linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
+- Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
+
+## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-campos`)
+- `src/app/globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo
+  `--surface-muted` e raio 8 px; `:disabled` com `--text-disabled` e `cursor: not-allowed`; `textarea` com
+  `min-height: 90px` e `resize: vertical`; abaixo de 767 px, `input` e `select` com `min-height: 44px` (o `textarea`
+  mantém os 90 px). Classe utilitária explícita (ex.: `bg-surface`) continua vencendo a base.
+- `ROTULO_CAMPO` em `src/components/Campo.tsx`: `text-sm font-medium text-gray-800` (14 px, peso 500); dica e erro
+  seguem em 12 px.
+- Doc 18 com a seção "Campos de formulário". Travas em `src/components/Campo.test.ts` e
+  `src/app/design-system.test.ts`.
+
+### Verificação
+- Na HEAD `c7d98f1` (revisão final): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e
+  4.578 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos preexistentes
+  e em arquivos fora do diff (ex.: `src/server/migracao/planilha-acoes.ts`).
+- Recorte da Task 6: `Campo.test.ts`, `campos.test.ts`, `design-system.test.ts` e `contraste.test.ts`, 71 testes
+  passando.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
+- Demais componentes base e telas: blocos seguintes da Fase 0.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
+
+- Branch `claude/fase0-ds-b-camadas`, empilhada sobre `claude/fase0-ds-a-fundacao` (`9ead958..cb121aa`; Task 7 `9ead958..e0269c3`).
+- Tarefa: Task 7, Modal, ConfirmarAcao e Drawer como camadas elevadas (`bg-surface-raised`, `shadow-dialog`, `rounded-dialog`, bordas lógicas).
+- Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-navegacao`)
+- Sidebar: item `min-h-10 max-sm:min-h-11 rounded-item`, `hover:bg-highlight`; item ativo com seleção suave
+  (`bg-brand-bg text-brand-800 font-medium`); contador de não lidas `bg-brand-solid text-on-brand`.
+- Barra mobile: mesmos estados da sidebar; botões com `max-sm:min-h-11 max-sm:min-w-11`; os itens da gaveta (a mesma
+  `NavLinks`) chegam a 44 px abaixo de `sm`. `BarraMobile.test.ts` trava esses estados.
+- Sub-abas em pílula (`rounded-full`, `max-sm:min-h-11`), ativa `bg-brand-solid text-on-brand`.
+- Seção "Navegação" do `docs/18-design-system.md`. A estrutura de menus (`src/lib/nav.ts`) não muda.
+
+### Verificação
+- Na HEAD `2c181aa`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.577 testes; linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.

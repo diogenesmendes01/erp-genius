@@ -24,6 +24,11 @@
 - Raios: `rounded-md` = 8px (campo, cartão pequeno) · `rounded-item` = 10px (item de lista) · `rounded-lg`/`rounded-xl` = 12px (painel) · `rounded-dialog` = 14px · `rounded-full` (botão, chip, avatar).
 - Bordas: 1px na cor `--border` (preto 10% no claro; branco 12% no escuro).
 
+## Campos de formulário
+- Rótulo (`ROTULO_CAMPO` em `src/components/Campo.tsx`): `text-sm font-medium text-gray-800` (14 px, peso 500). Dica e erro seguem em 12 px.
+- Base em `globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo `--surface-muted` e raio 8 px; `:disabled` usa `--text-disabled` e `cursor: not-allowed`; abaixo de 767 px, `min-height: 44px` (exceto `textarea`); `textarea` com `resize: vertical` e `min-height: 90px` quando tem mais de uma linha (o de `rows="1"`, como o compositor do Inbox, fica compacto). Os seletores de `input` e do `textarea` de várias linhas vão em `:where(...)`, com especificidade zero: o Tailwind 3 não emite cascade layers, e é isso que faz a classe utilitária explícita (`bg-surface`, `rounded-*`, `min-h-*`) vencer a base.
+- Trava: `src/components/Campo.test.ts` e `src/app/design-system.test.ts`.
+
 ## Ícones
 - **Tabler** (`@tabler/icons-react`), versão **outline** (componentes `Icon*`, não `Icon*Filled`).
 - Tamanho padrão `h-4 w-4` (16px) na UI densa; `h-5 w-5` em destaques.
@@ -137,12 +142,19 @@ estão no quadro de semânticos acima e no de marca e ações sólidas abaixo.
 `--shadow-popover` (`0 5px 20px #0002` / `0 6px 24px #0006`) e `--shadow-dialog` (`0 15px 60px #0006`, igual nos
 dois temas) são as únicas sombras do sistema: menu/popover e modal/drawer. Ficam fora da conta de contraste.
 
+## Camadas
+
+Modal, confirmação e drawer são camadas elevadas: fundo `bg-surface-raised`, `shadow-dialog`, véu `bg-black/60`.
+- **Modal** (`Modal.tsx`, e `ConfirmarAcao` sobre ele): `max-h-[90dvh] w-full max-w-[calc(100vw-24px)] overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog`; largura `sm:w-[460px]` e, com a propriedade `larga`, `sm:w-[640px]`. Título `text-xl font-medium`; ações `mt-6 flex flex-wrap justify-end gap-3`.
+- **Drawer**: `bg-surface-raised shadow-dialog` com borda `border-s border-gray-200` (ou `border-e` pela esquerda).
+- Escape, contenção de Tab, devolução do foco e `inert` seguem como antes (`useDialogo`).
+
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
+- **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`. Todo botão é pílula (`rounded-full`), com 44 px de altura mínima abaixo de `sm`. Secundário: `border-border-soft`, sem fundo, hover `bg-highlight`. Tamanhos: `sm px-3 py-1`, `md px-4 py-1.5`, `lg px-[22px] py-2.5`. Desabilitado não usa opacidade: `bg-surface-muted text-disabled border-gray-200`. `<Botao ocupado>` marca `aria-busy` e desabilita (cursor `progress`).
 - **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-solid text-on-brand`.
   `bg-brand-500`/`bg-brand-600` (que clareiam no escuro) **nunca** levam `text-white`, em nenhuma
   forma de `className`; ficam para fundo sem texto (barra de progresso). A trava é
@@ -164,3 +176,10 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
   falha com cor fora do mapa, shade não listada (inclusive sob `dark:`/`hover:`), sombra
   (`shadow-*`, `drop-shadow-*`, `shadow-[…]`) ou cor arbitrária (`bg-[#…]`, `rgb()`, `hsl()`). Ele lê o mapa direto do `tailwind.config.ts` — mapear uma shade
   nova no config já a libera.
+
+## Navegação
+
+- **Sidebar:** `bg-surface-muted border-e border-gray-200`, largura `w-56`. Item `min-h-10 max-sm:min-h-11 rounded-item px-3 text-sm text-gray-800 hover:bg-highlight`; item ativo (`aria-current="page"`) `bg-brand-bg text-brand-800 font-medium` (seleção suave). Contador de não lidas `rounded-full bg-brand-solid text-on-brand`; avatar `bg-brand-bg text-brand-800`.
+- **Barra mobile:** mesmos estados da sidebar (`rounded-item`, `hover:bg-highlight`, `bg-surface-muted`); botões com `max-sm:min-h-11 max-sm:min-w-11`; itens da gaveta (a mesma `NavLinks`) com `max-sm:min-h-11`.
+- **Sub-abas:** pílula `rounded-full px-3 py-1.5 text-sm max-sm:min-h-11`; ativa `bg-brand-solid text-on-brand font-medium`, inativa `text-gray-600 hover:bg-highlight`.
+- A estrutura de menus (`src/lib/nav.ts`) não muda. A trilha (`Trilha.tsx`) não precisou de ajuste: já usa só tokens.
