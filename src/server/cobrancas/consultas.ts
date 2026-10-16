@@ -305,7 +305,8 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   const idsDoTrecho = trecho.map((t) => t.id);
   const detalhes = idsDoTrecho.length
     ? await prisma.cobranca.findMany({
-        where: { id: { in: idsDoTrecho } },
+        // Mesmo recorte da leitura leve: a cobrança paga entre as duas leituras sai do trecho (C1 da R1 da #180).
+        where: { id: { in: idsDoTrecho }, status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
         take: FILA_COBRANCA_POR_TRECHO,
         include: {
           ...incluirFonteVencimentoCivil,
