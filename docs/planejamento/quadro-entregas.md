@@ -1900,3 +1900,31 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## CRM, bloco B: Oportunidade, capacidades e etapas do funil (Fase 2, Tasks 3 a 5; 16/10/2026)
+
+### Verificação antes do merge (branch `claude/fase2-b-oportunidade`, HEAD `435b10e`)
+- `node_modules/.bin/tsc --noEmit` saída 0.
+- `npm test`: 646 arquivos e 4.630 testes; 4.629 passaram. A única falha foi um timeout de 30 s em
+  `src/app/confirmacoes.test.ts`, com a suíte de integração rodando em paralelo no mesmo container. Rodado
+  sozinho, o arquivo passa: 59 de 59.
+- `prisma migrate status` no perfil `dev-gravacoes`: 438 migrations, banco atualizado.
+- `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma
+  --exit-code` no perfil `dev-gravacoes`: saída 2. O script de diferença tem 1.232 linhas: FKs recriadas,
+  índices renomeados por truncamento e defaults de `CURRENT_TIMESTAMP AT TIME ZONE 'UTC'`. O mesmo diff contra o
+  `schema.prisma` do main `d4c0f74` sai byte a byte igual, e nenhuma linha cita `"Lead"`. A deriva já existe
+  no main; o `@@map("Lead")` não acrescenta nenhuma diferença.
+- Integração no perfil isolado, só os 30 `*.int.test.ts` tocados pelo bloco ou que citam `oportunidade`. A
+  suíte completa leva mais de 2 h, e o integrador proibiu rodá-la nas faixas. Resultado: 30 arquivos e 496
+  testes; 490 passaram e 6 falharam, todos preexistentes:
+  - `src/server/whatsapp/inbox.int.test.ts`, "lead de OUTRO vendedor ... não vaza o cockpit". Já está na lista
+    de falhas do main `f8a9c0e`.
+  - `src/server/avaliacoes/aproveitamento-aplicado.int.test.ts`, 5 testes que falham com "Turma de destino não
+    está disponível para transferência.". As fixtures têm datas fixas de 01/2026, e a disponibilidade da oferta
+    é calculada com o relógio real. O arquivo não foi alterado pelo bloco. Rodado num worktree temporário em
+    `d4c0f74`, no mesmo banco, falha igual (5 de 5).
+- Correção da revisão final: `destinoDoArraste` devolve `{ tipo: "nenhum" }` quando a origem e o destino são a
+  mesma etapa. Assim as Tasks 13 e 14 não abrem diálogo, não mostram recusa falsa e não gravam `Evento` sem
+  mudança.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
