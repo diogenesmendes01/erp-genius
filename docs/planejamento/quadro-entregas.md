@@ -1744,6 +1744,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
 - A thread da inbox cortada em 300 mensagens é da issue #168.
 
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
 
 ### Solução implementada (branch `claude/fase0-ds-b-botao`)
@@ -1789,6 +1791,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 ### Pendências
 - Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
 - Demais componentes base e telas: blocos seguintes da Fase 0.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
 
