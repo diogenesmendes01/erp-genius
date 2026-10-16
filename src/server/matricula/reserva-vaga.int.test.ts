@@ -256,7 +256,7 @@ it("exige prazo configurado e conserva o prazo original em reenvio após altera�
 
 it("reserva pública usa carteira atual e recusa papel, contrato ou parâmetros indevidos", async () => {
   const titular = await criarUsuario(["VENDEDOR"]), outro = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Negociação fictícia", vendedorDonoId: titular.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Negociação fictícia", vendedorDonoId: titular.id } });
   await prisma.matricula.update({ where: { id: matriculas[0] }, data: { leadId: lead.id } });
   const entrada = { matriculaId: matriculas[0], turmaId, motivo: "Reservar contratação conferida", chaveIdempotencia: "reserva-publica" };
   authMock.mockResolvedValue({ user: { id: outro.id } });
@@ -269,7 +269,7 @@ it("reserva pública usa carteira atual e recusa papel, contrato ou parâmetros 
   expect(await reservarVagaContratacao(entrada)).toEqual(r);
   expect(await prisma.cobranca.count()).toBe(0); expect(await prisma.alocacaoTurma.count()).toBe(0);
   expect(await prisma.matricula.count({ where: { status: "RASCUNHO" } })).toBe(2);
-  await prisma.lead.update({ where: { id: lead.id }, data: { vendedorDonoId: outro.id } });
+  await prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: outro.id } });
   expect((await reservarVagaContratacao(entrada)).ok).toBe(false);
   await prisma.usuario.update({ where: { id: titular.id }, data: { papeis: ["PROFESSOR"] } });
   expect((await reservarVagaContratacao(entrada)).ok).toBe(false);
@@ -289,12 +289,12 @@ it.each(["cobertura", "gerencia"] as const)("autoriza reserva pelo vínculo vige
   let coberturaId: string | undefined;
   if (tipo === "gerencia") await prisma.usuario.update({ where: { id: titular.id }, data: { gerenteComercialId: atendente.id } });
   else coberturaId = (await prisma.coberturaCarteira.create({ data: { titularId: titular.id, substitutoId: atendente.id, concedenteId: admin.id, inicio: new Date(Date.now() - 60000), fim: new Date(Date.now() + 600000), motivo: "Cobertura de teste" } })).id;
-  const lead = await prisma.lead.create({ data: { nome: "Negociação da equipe", vendedorDonoId: titular.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Negociação da equipe", vendedorDonoId: titular.id } });
   await prisma.matricula.update({ where: { id: matriculas[0] }, data: { leadId: lead.id } });
   authMock.mockResolvedValue({ user: { id: atendente.id } });
   const entrada = { matriculaId: matriculas[0], turmaId, motivo: "Reserva pela equipe autorizada", chaveIdempotencia: "reserva-vinculo" };
   expect((await reservarVagaContratacao(entrada)).ok).toBe(true);
-  expect((await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } })).vendedorDonoId).toBe(titular.id);
+  expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } })).vendedorDonoId).toBe(titular.id);
   if (coberturaId) await prisma.coberturaCarteira.update({ where: { id: coberturaId }, data: { revogadaEm: new Date() } });
   else await prisma.usuario.update({ where: { id: titular.id }, data: { gerenteComercialId: null } });
   expect((await reservarVagaContratacao(entrada)).ok).toBe(false);
@@ -302,7 +302,7 @@ it.each(["cobertura", "gerencia"] as const)("autoriza reserva pelo vínculo vige
 
 it("consulta comercial mostra disponibilidade atual sem expor outros contratos ou dados financeiros", async () => {
   const titular = await criarUsuario(["VENDEDOR"]), outro = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Negociação para consulta", vendedorDonoId: titular.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Negociação para consulta", vendedorDonoId: titular.id } });
   await prisma.matricula.update({ where: { id: matriculas[0] }, data: { leadId: lead.id } });
   authMock.mockResolvedValue({ user: { id: outro.id } });
   expect((await consultarTurmasParaReserva({ matriculaId: matriculas[0] })).ok).toBe(false);
@@ -322,7 +322,7 @@ it("consulta comercial mostra disponibilidade atual sem expor outros contratos o
 it.each(["MENSALIDADE", "HORA_PARTICULAR"] as const)("prepara %s e reserva atomicamente reutilizando aluno sem cobrança", async (regime) => {
   const anterior = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Nova contratação", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Nova contratação", vendedorDonoId: vendedor.id } });
   const entrada = { autorId, leadId: lead.id, alunoId: anterior.alunoId, produtoId: anterior.produtoId, paisId: anterior.paisId, turmaId, regime, taxaProposta: "100.00", valorServicoProposto: "200.00", motivo: "Proposta comercial para conferência", chaveIdempotencia: "preparacao-atomica" };
   const alunos = await prisma.aluno.count();
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, entrada));
@@ -340,7 +340,7 @@ it("falha da reserva desfaz também a nova matrícula e a preparação", async (
   await prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, dados(0)));
   const anterior = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[1] } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Contratação sem vaga", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Contratação sem vaga", vendedorDonoId: vendedor.id } });
   const entrada = { autorId, leadId: lead.id, alunoId: anterior.alunoId, produtoId: anterior.produtoId, paisId: anterior.paisId, turmaId, regime: "MENSALIDADE" as const, taxaProposta: "100", valorServicoProposto: "200", motivo: "Proposta sem vaga disponível", chaveIdempotencia: "preparacao-sem-vaga" };
   await expect(prisma.$transaction((tx) => prepararContratacaoTx(tx, entrada))).rejects.toThrow("SEM_VAGA");
   expect(await prisma.matricula.count()).toBe(2); expect(await prisma.preparacaoComercialMatricula.count()).toBe(0);
@@ -354,7 +354,7 @@ it("preparação pública exige seleção explícita entre candidatos do contato
   const telefoneE164 = "+50688887777";
   await prisma.aluno.update({ where: { id: m.alunoId }, data: { telefoneE164 } });
   const familiar = await prisma.aluno.create({ data: { primeiroNome: "Familiar", paisId: m.paisId, telefoneE164 } });
-  const lead = await prisma.lead.create({ data: { nome: "Nova negociação", telefoneE164, vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Nova negociação", telefoneE164, vendedorDonoId: vendedor.id } });
   authMock.mockResolvedValue({ user: { id: outro.id } });
   expect((await consultarCadastrosPreparacao({ leadId: lead.id })).ok).toBe(false);
   authMock.mockResolvedValue({ user: { id: vendedor.id } });
@@ -369,7 +369,7 @@ it("preparação pública exige seleção explícita entre candidatos do contato
   expect(await prisma.preparacaoComercialMatricula.count()).toBe(0);
   const resultado = await prepararContratacao(entrada); expect(resultado.ok).toBe(true);
   expect(await prepararContratacao(entrada)).toEqual(resultado);
-  await prisma.lead.update({ where: { id: lead.id }, data: { telefoneE164: null } });
+  await prisma.oportunidade.update({ where: { id: lead.id }, data: { telefoneE164: null } });
   expect(await prepararContratacao(entrada)).toEqual(resultado);
   expect(await prisma.evento.count({ where: { tipo: "IdentidadeContratacaoSelecionada" } })).toBe(1);
   expect(await prisma.matricula.count({ where: { alunoId: m.alunoId } })).toBe(2);
@@ -377,7 +377,7 @@ it("preparação pública exige seleção explícita entre candidatos do contato
   expect(await prisma.cobranca.count()).toBe(0);
 });
 it("contato ausente não produz candidatos nem associação implícita", async () => {
-  const lead = await prisma.lead.create({ data: { nome: "Sem contato" } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Sem contato" } });
   expect(await consultarCadastrosPreparacao({ leadId: lead.id })).toMatchObject({ ok: true, dado: { contatoConferivel: false, candidatos: [], matriculaId: null } });
   expect(await prisma.preparacaoComercialMatricula.count()).toBe(0);
 });
@@ -385,7 +385,7 @@ it("contato ausente não produz candidatos nem associação implícita", async (
 it("ofertas da preparação respeitam acesso, paginação e disponibilidade", async () => {
   const m = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]), outro = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Consultar oferta", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Consultar oferta", vendedorDonoId: vendedor.id } });
   const oferta = await prisma.produtoPais.findUniqueOrThrow({ where: { produtoId_paisId: { produtoId: m.produtoId, paisId: m.paisId } } });
   authMock.mockResolvedValue({ user: { id: outro.id } });
   expect((await consultarOfertasPreparacao({ leadId: lead.id })).ok).toBe(false);
@@ -399,7 +399,7 @@ it("ofertas da preparação respeitam acesso, paginação e disponibilidade", as
 it("pessoa nova é criada junto da preparação, sem duplicar no reenvio", async () => {
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Pessoa nova", telefoneE164: "+50688886666", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Pessoa nova", telefoneE164: "+50688886666", vendedorDonoId: vendedor.id } });
   authMock.mockResolvedValue({ user: { id: vendedor.id } });
   expect(await consultarCadastrosPreparacao({ leadId: lead.id })).toMatchObject({ ok: true, dado: { podeCadastrarNovo: true, candidatos: [] } });
   const entrada = { leadId: lead.id, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE" as const, taxaProposta: "100", valorServicoProposto: "200", motivo: "Cadastro básico conferido", chaveIdempotencia: "nova-pessoa", cadastroNovoConferido: true as const, novoCadastro: { primeiroNome: "Nova", sobrenome: "Pessoa", paisId: base.paisId, email: "nova@example.test" } };
@@ -410,9 +410,9 @@ it("pessoa nova é criada junto da preparação, sem duplicar no reenvio", async
   expect(await prisma.aluno.findFirst({ where: { email: "nova@example.test" } })).toMatchObject({ telefoneE164: lead.telefoneE164, primeiroNome: "Nova" });
   expect(await prisma.cobranca.count()).toBe(0);
   expect(await prisma.evento.count({ where: { tipo: "CadastroInicialContratacaoCriado" } })).toBe(1);
-  const outro = await prisma.lead.create({ data: { nome: "Repetida", telefoneE164: lead.telefoneE164, vendedorDonoId: vendedor.id } });
+  const outro = await prisma.oportunidade.create({ data: { nome: "Repetida", telefoneE164: lead.telefoneE164, vendedorDonoId: vendedor.id } });
   expect((await prepararContratacaoNovaPessoa({ ...entrada, leadId: outro.id, chaveIdempotencia: "outra-pessoa" })).ok).toBe(false);
-  const email = await prisma.lead.create({ data: { nome: "Outro contato", telefoneE164: "+50688885555", vendedorDonoId: vendedor.id } });
+  const email = await prisma.oportunidade.create({ data: { nome: "Outro contato", telefoneE164: "+50688885555", vendedorDonoId: vendedor.id } });
   expect((await prepararContratacaoNovaPessoa({ ...entrada, leadId: email.id, chaveIdempotencia: "email-existente", novoCadastro: { ...entrada.novoCadastro, email: "NOVA@example.test" } })).ok).toBe(false);
   expect(await prisma.aluno.count()).toBe(3);
 });
@@ -420,7 +420,7 @@ it("falha na vaga não deixa cadastro inicial órfão", async () => {
   await prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, dados(0)));
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Sem vaga", telefoneE164: "+50688883333", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Sem vaga", telefoneE164: "+50688883333", vendedorDonoId: vendedor.id } });
   const r = await prepararContratacaoNovaPessoa({ leadId: lead.id, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "100", valorServicoProposto: "200", motivo: "Cadastro sem vaga", chaveIdempotencia: "nova-sem-vaga", cadastroNovoConferido: true, novoCadastro: { primeiroNome: "Sem vaga", paisId: base.paisId } });
   expect(r.ok).toBe(false);
   expect(await prisma.aluno.count()).toBe(2); expect(await prisma.matricula.count()).toBe(2); expect(await prisma.preparacaoComercialMatricula.count()).toBe(0);
@@ -429,7 +429,7 @@ it("falha na vaga não deixa cadastro inicial órfão", async () => {
 it("revisão projeta proposta e referências históricas sem abrir outros contratos", async () => {
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]), outro = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Revisar proposta", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Revisar proposta", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "123.45", valorServicoProposto: "300", motivo: "Proposta para revisão", chaveIdempotencia: "revisao-preparacao" }));
   authMock.mockResolvedValue({ user: { id: vendedor.id } });
   const antes = await consultarPreparacaoContratacao({ matriculaId: r.matriculaId });
@@ -455,7 +455,7 @@ it.each(["ADMINISTRADOR", "GERENTE_COMERCIAL"] as const)("%s decide exceção de
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const decisor = await criarUsuario([papel]), titular = await criarUsuario(["VENDEDOR"]);
   await prisma.usuario.update({ where: { id: titular.id }, data: { gerenteComercialId: decisor.id } });
-  const lead = await prisma.lead.create({ data: { nome: "Exceção comercial", vendedorDonoId: titular.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Exceção comercial", vendedorDonoId: titular.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "1", valorServicoProposto: "1", motivo: "Exceção de desconto solicitada", chaveIdempotencia: "preco-excecao" }));
   const d = { preparacaoId: r.id, aprovar: true, motivo: "Conferência independente do preço" };
   expect(await consultarPreparacaoContratacao({ matriculaId: r.matriculaId })).toMatchObject({ ok: true, dado: { preparacao: { decisaoDisponivel: { podeAprovar: false, podeRejeitar: false } } } });
@@ -484,7 +484,7 @@ it.each(["ADMINISTRADOR", "GERENTE_COMERCIAL"] as const)("%s decide exceção de
 it.each([true, false])("confirmação e ativação respeitam decisão de preço aprovada=%s", async (aprovar) => {
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const admin = await criarUsuario(["ADMINISTRADOR"]), vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Conferir preço", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Conferir preço", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "1", valorServicoProposto: "1", motivo: "Preço exige decisão independente", chaveIdempotencia: "preco-conferencia" }));
   await prisma.matricula.update({ where: { id: r.matriculaId }, data: { secretariaAssumiuEm: new Date(), secretariaResponsavelId: autorId } });
   const conferir = () => prisma.$transaction((tx) => exigirPrecoPreparacaoAutorizado(tx, r.matriculaId));
@@ -509,7 +509,7 @@ it.each([true, false])("confirmação e ativação respeitam decisão de preço 
 it("preço dentro da alçada dispensa exceção sem alterar fluxo legado", async () => {
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Preço integral", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Preço integral", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "999999", valorServicoProposto: "999999", motivo: "Condições sem desconto proposto", chaveIdempotencia: "preco-sem-excecao" }));
   await expect(prisma.$transaction((tx) => exigirPrecoPreparacaoAutorizado(tx, r.matriculaId))).resolves.toBeUndefined();
   await expect(prisma.$transaction((tx) => exigirPrecoPreparacaoAutorizado(tx, base.id))).resolves.toBeUndefined();
@@ -527,7 +527,7 @@ it("regras da oferta exigem Administração, evitam edição perdida e preservam
   authMock.mockResolvedValue({ user: { id: admin.id } });
   expect((await configurarEntradaOferta(entrada)).ok).toBe(true);
   expect((await configurarEntradaOferta({ ...entrada, taxaPreviaAssinatura: false })).ok).toBe(false);
-  const lead = await prisma.lead.create({ data: { nome: "Política histórica", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Política histórica", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparar com regra vigente", chaveIdempotencia: "politica-entrada" }));
   expect((await configurarEntradaOferta({ ...entrada, versaoEsperada: 1, formaAgenda: "PARTICULAR_FLEXIVEL", taxaPreviaAssinatura: false, adiantamentoHoraExigido: true })).ok).toBe(true);
   expect(await consultarPreparacaoContratacao({ matriculaId: r.matriculaId })).toMatchObject({ ok: true, dado: { preparacao: { politicaEntrada: { formaAgenda: "TURMA", versao: 1, taxaPreviaAssinatura: true, adiantamentoHoraExigido: false } } } });
@@ -543,7 +543,7 @@ it.each([true, false])("ativação conserva exigência inicial mensal=%s após m
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { exigirPrimeiraMensalidade: exigir } });
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Entrada mensal", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Entrada mensal", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "100", valorServicoProposto: "200", motivo: "Regra inicial registrada", chaveIdempotencia: "entrada-mensal" }));
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { exigirPrimeiraMensalidade: !exigir } });
   await expect(prisma.$transaction((tx) => exigirEntradaMensalRegistrada(tx, r.matriculaId))).resolves.toBe(exigir);
@@ -554,7 +554,7 @@ it.each([true, false])("ativação conserva exigência inicial mensal=%s após m
 it.each(["MENSALIDADE", "HORA_PARTICULAR"] as const)("ativação não inventa condições de entrada para %s", async (regime) => {
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Entrada incompleta", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Entrada incompleta", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime, taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparação ainda pendente", chaveIdempotencia: "entrada-pendente" }));
   // Editar a oferta depois não completa o snapshot da negociação.
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
@@ -570,7 +570,7 @@ it("preparação por hora registra adiantamento explícito e não cobra no reenv
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   await prisma.produtoPais.updateMany({ data: { adiantamentoHoraExigido: true } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Adiantamento", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Adiantamento", vendedorDonoId: vendedor.id } });
   const entrada = { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "HORA_PARTICULAR" as const, taxaProposta: "100", valorServicoProposto: "120", motivo: "Antecipação de tempo identificado", chaveIdempotencia: "adiantamento-horas" };
   await expect(prisma.$transaction((tx) => prepararContratacaoTx(tx, entrada))).rejects.toThrow("Informe os minutos");
   expect(await prisma.preparacaoComercialMatricula.count()).toBe(0);
@@ -586,7 +586,7 @@ it("pagador pertence à preparação da matrícula, com versões e acesso admini
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   const alunoAntes = await prisma.aluno.findUniqueOrThrow({ where: { id: base.alunoId } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Empresa pagadora", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Empresa pagadora", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparação individual corporativa", chaveIdempotencia: "preparacao-pagador" }));
   const d = { matriculaId: r.matriculaId, versaoEsperada: 0, pagador: { tipo: "EMPRESA" as const, dados: { nome: "Empresa de teste", paisId: base.paisId, documento: "DOC-EMPRESA", email: "financeiro@example.test" } }, motivo: "Empresa pagará este contrato", chaveIdempotencia: "pagador-empresa" };
   expect((await registrarPagadorPreparacao(d)).ok).toBe(false);
@@ -653,7 +653,7 @@ it.each(["MENSALIDADE", "HORA_PARTICULAR"] as const)("condições de entrada de 
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]), admin = await criarUsuario(["ADMINISTRADOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Condições explícitas", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Condições explícitas", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime, taxaProposta: "999999", valorServicoProposto: "999999", motivo: "Condições propostas para conferência", chaveIdempotencia: "condicoes-preparacao" }));
   if (regime === "HORA_PARTICULAR") {
     authMock.mockResolvedValue({ user: { id: admin.id } });
@@ -690,7 +690,7 @@ it.each([true, false])("emissão inicial mensal exigida=%s é atômica e não du
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { exigirPrimeiraMensalidade: exigir, fusoInstitucional: "America/Costa_Rica" } });
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Emitir entrada", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Emitir entrada", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "999999", valorServicoProposto: "999999", motivo: "Proposta de emissão inicial", chaveIdempotencia: "emitir-preparacao" }));
   await prisma.matricula.update({ where: { id: r.matriculaId }, data: { secretariaAssumiuEm: new Date() } });
   const p = await registrarPagadorPreparacao({ matriculaId: r.matriculaId, versaoEsperada: 0, pagador: { tipo: "ALUNO" }, motivo: "Pagador deste contrato", chaveIdempotencia: "emitir-pagador" });
@@ -723,7 +723,7 @@ it("conferência pública revalida dados revisados e registra emissão sem dupli
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "UTC" } });
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Conferência pública", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Conferência pública", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "999999", valorServicoProposto: "999999", motivo: "Contratação para conferência", chaveIdempotencia: "conferencia-preparacao" }));
   await prisma.matricula.update({ where: { id: r.matriculaId }, data: { secretariaAssumiuEm: new Date() } });
   const p = await registrarPagadorPreparacao({ matriculaId: r.matriculaId, versaoEsperada: 0, pagador: { tipo: "ALUNO" }, motivo: "Conferir próprio aluno pagador", chaveIdempotencia: "conferencia-pagador" });
@@ -764,7 +764,7 @@ it.each([
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "UTC" } });
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura, adiantamentoHoraExigido: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Conferência pública", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Conferência pública", vendedorDonoId: vendedor.id } });
   const r = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "999999", valorServicoProposto: "999999", motivo: "Contratação para conferência", chaveIdempotencia: "conferencia-preparacao" }));
   await prisma.matricula.update({ where: { id: r.matriculaId }, data: { secretariaAssumiuEm: new Date() } });
   const p = await registrarPagadorPreparacao({ matriculaId: r.matriculaId, versaoEsperada: 0, pagador: { tipo: "ALUNO" }, motivo: "Conferir próprio aluno pagador", chaveIdempotencia: "conferencia-pagador" });
@@ -1158,7 +1158,7 @@ it.each(["PARTICULAR_GRADE_FIXA", "PARTICULAR_FLEXIVEL"] as const)("agenda %s n�
   await prisma.produtoPais.updateMany({ data: { formaAgenda, adiantamentoHoraExigido: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
   for (const regime of ["MENSALIDADE", "HORA_PARTICULAR"] as const) {
-    const lead = await prisma.lead.create({ data: { nome: "Agenda individual", vendedorDonoId: vendedor.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Agenda individual", vendedorDonoId: vendedor.id } });
     await expect(prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime, taxaProposta: "100", valorServicoProposto: "200", motivo: "Conferir reserva de horários", chaveIdempotencia: `agenda-${regime}` }))).rejects.toThrow("reserva de horários particulares");
     expect(await prisma.matricula.count({ where: { leadId: lead.id } })).toBe(0);
   }
@@ -1170,7 +1170,7 @@ it("oferta de turma não contrata hora particular por reserva comum", async () =
   const base = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
   await prisma.produtoPais.updateMany({ data: { formaAgenda: "TURMA", adiantamentoHoraExigido: false } });
   const vendedor = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Oferta incompatível", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Oferta incompatível", vendedorDonoId: vendedor.id } });
   await expect(prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId, leadId: lead.id, alunoId: base.alunoId, produtoId: base.produtoId, paisId: base.paisId, turmaId, regime: "HORA_PARTICULAR", taxaProposta: "100", valorServicoProposto: "200", motivo: "Conferir oferta de horários", chaveIdempotencia: "agenda-incompativel" }))).rejects.toThrow("configurada para turma");
   expect(await prisma.matricula.count({ where: { leadId: lead.id } })).toBe(0);
   expect(await prisma.reservaVagaMatricula.count()).toBe(0);
@@ -1342,7 +1342,7 @@ it.each([
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "UTC", exigirPrimeiraMensalidade: exigirPagamentoAulas } });
   if (regime === "HORA_PARTICULAR" && !await prisma.precoReferencia.count({ where: { produtoId: base.produtoId, paisId: base.paisId, tipoCobranca: "HORA_PARTICULAR", ativo: true } })) await prisma.precoReferencia.create({ data: { produtoId: base.produtoId, paisId: base.paisId, modalidadeId: t.modalidadeId, tipoCobranca: "HORA_PARTICULAR", valor: "200", moeda: base.moeda, ativo: true } });
   const vendedor = await criarUsuario(["VENDEDOR"]), outro = await criarUsuario(["VENDEDOR"]);
-  const lead = await prisma.lead.create({ data: { nome: "Particular comercial", telefoneE164: "+50688881234", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Particular comercial", telefoneE164: "+50688881234", vendedorDonoId: vendedor.id } });
   await prisma.aluno.update({ where: { id: base.alunoId }, data: { telefoneE164: "+50688881234" } });
   const agenda = { ofertaId: oferta.id, versaoOferta: 0, professorId: t.professorId!, fusoOrigem: "UTC", encontros: [{ data: "2099-10-01", horario: "13:00", duracaoMinutos: 60 }, ...(formaAgenda === "PARTICULAR_GRADE_FIXA" ? [{ data: "2099-10-08", horario: "13:00", duracaoMinutos: 60 }] : [])] };
   const revisao = await prisma.$transaction((tx) => conferirAgendaParticularTx(tx, agenda));

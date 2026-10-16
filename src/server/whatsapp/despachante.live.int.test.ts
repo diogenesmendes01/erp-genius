@@ -156,7 +156,7 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
       data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: over.driver ?? "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
     });
     const contato = await seedContato();
-    const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana", telefoneE164: contato.telefoneE164 } });
+    const lead = await prisma.oportunidade.create({ data: { codigo: "L-000123", nome: "Ana", telefoneE164: contato.telefoneE164 } });
     const ancora = new Date(Date.now() - 3600_000);
     await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { leadId: lead.id } });
     await prisma.atendimentoWhatsApp.update({ where: { id: contato.atendimentoId }, data: { leadId: lead.id } });

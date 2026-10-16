@@ -35,7 +35,7 @@ beforeEach(async () => {
 });
 
 async function seedMatriculaAguardando() {
-  const lead = await prisma.lead.create({
+  const lead = await prisma.oportunidade.create({
     data: { nome: "Lead Fechamento", vendedorDonoId: vendedor.id, etapa: EtapaLead.AGUARDANDO_MATRICULA },
   });
   // Fixture de estado legado explícita: este arquivo verifica que o fechamento
@@ -112,7 +112,7 @@ describe("fechamento comercial sem bypass da preparação", () => {
     expect(matricula.contratoOk).toBe(false);
     expect(matricula.cobrancas.filter((c) => c.tipo === TipoCobranca.MENSALIDADE)).toHaveLength(1);
     expect(matricula.comissoes[0].status).toBe("PENDENTE");
-    expect((await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } })).etapa).toBe(EtapaLead.AGUARDANDO_MATRICULA);
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } })).etapa).toBe(EtapaLead.AGUARDANDO_MATRICULA);
 
     const ativacao = (await eventosDo("Matricula", matriculaId)).find((e) => e.tipo === "MatriculaAtivada");
     expect(ativacao).toBeUndefined();

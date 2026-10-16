@@ -20,7 +20,7 @@ export async function professorAtribuido(
   client: Prisma.TransactionClient | typeof prisma,
   leadId: string,
 ): Promise<string | null> {
-  const lead = await client.lead.findUnique({
+  const lead = await client.oportunidade.findUnique({
     where: { id: leadId },
     select: { professorExperimentalId: true },
   });
@@ -32,7 +32,7 @@ export async function professorAtribuido(
  * Usado pela Home do professor para listar só as experimentais dele.
  */
 export async function leadsAtribuidosAoProfessor(professorId: string): Promise<string[]> {
-  const leads = await prisma.lead.findMany({
+  const leads = await prisma.oportunidade.findMany({
     where: { professorExperimentalId: professorId },
     select: { id: true },
   });

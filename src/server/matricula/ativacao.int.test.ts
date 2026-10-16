@@ -84,7 +84,7 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
   });
 
   it("contrato aceito e taxa confirmada geram cronograma, comissão e lead matriculado", async () => {
-    const lead = await prisma.lead.create({
+    const lead = await prisma.oportunidade.create({
       data: { nome: "Lead Maria", vendedorDonoId: vendedor.id, etapa: EtapaLead.AGUARDANDO_MATRICULA },
     });
 
@@ -146,7 +146,7 @@ describe("ativação com contrato aceito — decisão de 08/09/2026", () => {
     expect(Number(matricula.comissoes[0].valor)).toBe((TAXA * COMISSAO_PCT) / 100);
 
     // Lead avançou para MATRICULADO (etapa terminal).
-    const leadDepois = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const leadDepois = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(leadDepois.etapa).toBe(EtapaLead.MATRICULADO);
 
     // Auditoria: eventos da matrícula na MESMA transação.

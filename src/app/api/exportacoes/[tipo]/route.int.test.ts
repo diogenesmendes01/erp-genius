@@ -26,7 +26,7 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import { GET } from "./route";
 
 let ven: Awaited<ReturnType<typeof criarUsuario>>, outro: typeof ven;
-let lead: Awaited<ReturnType<typeof prisma.lead.create>>;
+let lead: Awaited<ReturnType<typeof prisma.oportunidade.create>>;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const exportar = (tipo = "leads", busca = "") => GET(new Request(`http://localhost/api/exportacoes/${tipo}${busca}`), { params: Promise.resolve({ tipo }) });
 async function linhas(resposta: Response) {
@@ -52,8 +52,8 @@ beforeEach(async () => {
   ordenarAlunosMock.mockReset();
   ordenarAlunosMock.mockImplementation((alunos: unknown) => alunos);
   [ven, outro] = await Promise.all([criarUsuario([Papel.VENDEDOR]), criarUsuario([Papel.VENDEDOR])]);
-  lead = await prisma.lead.create({ data: { codigo: "L-000001", nome: "Carteira autorizada", vendedorDonoId: ven.id, telefoneE164: "+5511999999999", orcamento: "Informação privada", valorPrevisto: 98765 } });
-  await prisma.lead.create({ data: { codigo: "L-000002", nome: "Carteira alheia", vendedorDonoId: outro.id } });
+  lead = await prisma.oportunidade.create({ data: { codigo: "L-000001", nome: "Carteira autorizada", vendedorDonoId: ven.id, telefoneE164: "+5511999999999", orcamento: "Informação privada", valorPrevisto: 98765 } });
+  await prisma.oportunidade.create({ data: { codigo: "L-000002", nome: "Carteira alheia", vendedorDonoId: outro.id } });
   entrar(ven.id);
 });
 afterEach(() => vi.restoreAllMocks());
@@ -118,7 +118,7 @@ describe("D09: geração/download de XLSX com escopo e campos autorizados", () =
 
   it("nomes iniciados com igual são texto no XLSX, sem fórmula executável", async () => {
     await prisma.usuario.update({ where: { id: ven.id }, data: { permissoes: ["dados.exportar_leads"] } });
-    await prisma.lead.update({ where: { id: lead.id }, data: { nome: "=1+1" } });
+    await prisma.oportunidade.update({ where: { id: lead.id }, data: { nome: "=1+1" } });
     const res = await exportar();
     const livro = new ExcelJS.Workbook(); await livro.xlsx.load(await res.arrayBuffer());
     const celula = livro.worksheets[0].getCell("B2");
@@ -138,7 +138,7 @@ describe("D09: revalidação depois da geração e antes da resposta", () => {
   });
 
   it("transferir carteira durante geração impede download dos registros antigos", async () => {
-    duranteGeracao(() => prisma.lead.update({ where: { id: lead.id }, data: { vendedorDonoId: outro.id } }));
+    duranteGeracao(() => prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: outro.id } }));
     const res = await exportar();
     expect(res.status).toBe(403); expect(await res.json()).toMatchObject({ erro: expect.stringContaining("acesso aos registros mudou") });
     expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
