@@ -968,9 +968,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrar → btnSec",
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
-    "<button> → → btnSec",
-    "<button> Notas internas · → btnSec",
-    "<button> Salvar nota → primario/sm",
   ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",

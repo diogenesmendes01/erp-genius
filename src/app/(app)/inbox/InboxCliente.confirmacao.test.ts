@@ -30,7 +30,6 @@ vi.mock("@/server/whatsapp/acoes", () => ({
   marcarConversaLida: vi.fn(), marcarConversaTratada: vi.fn(), registrarOptOutContato: m.optOut, removerOptOutContato: vi.fn(), vincularContatoWhatsApp: m.vincular,
 }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
-vi.mock("@/server/comercial/acoes", () => ({ definirTemperatura: vi.fn(), moverEtapa: vi.fn(), registrarNotaInterna: vi.fn() }));
 
 import { Thread, VincularPainel } from "./InboxCliente";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
