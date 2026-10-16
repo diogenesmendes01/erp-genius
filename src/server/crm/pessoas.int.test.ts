@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { criarLead } from "@/server/comercial/acoes";
 import { truncarBanco, criarUsuario, criarAlunoMinimo, eventosDo } from "@/test/integracao";
 import type { UsuarioSessao } from "@/server/_shared";
-import { escopoPessoas, garantirPessoaTx, possiveisDuplicados } from "./pessoas";
+import { chaveLockPessoaTelefone, escopoPessoas, garantirPessoaTx, possiveisDuplicados } from "./pessoas";
 
 function logadoComo(id: string) {
   authMock.mockResolvedValue({ user: { id } });
@@ -111,6 +111,56 @@ describe("garantirPessoaTx e criarLead", () => {
     expect((await prisma.aluno.findUniqueOrThrow({ where: { id: a2.id } })).pessoaId).toBeNull();
     const contato = await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { telefoneE164: "+50699990000" } });
     expect(contato.pessoaId).toBe(r.pessoaId);
+  });
+
+  it("criações simultâneas do mesmo telefone novo resultam numa só Pessoa (advisory lock)", async () => {
+    const telefone = "+50633332222";
+    const resultados = await Promise.all(
+      Array.from({ length: 5 }, (_, i) =>
+        prisma.$transaction((tx) => garantirPessoaTx(tx, { nome: `Corrida ${i}`, telefoneE164: telefone }, null)),
+      ),
+    );
+    const ids = new Set(resultados.map((r) => r.pessoaId));
+    expect(ids.size).toBe(1);
+    expect(resultados.filter((r) => r.criada)).toHaveLength(1);
+    expect(await prisma.pessoa.count()).toBe(1);
+    const contato = await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { telefoneE164: telefone } });
+    expect(contato.pessoaId).toBe([...ids][0]);
+  });
+
+  it("garantirPessoaTx espera o lock do telefone antes de buscar o contato", async () => {
+    const telefone = "+50644443333";
+    let liberar!: () => void;
+    const segurando = new Promise<void>((r) => (liberar = r));
+    let travado!: () => void;
+    const lockPego = new Promise<void>((r) => (travado = r));
+    const dono = prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chaveLockPessoaTelefone(telefone)}, 0))`;
+        travado();
+        await segurando;
+        // Grava a pessoa e o contato enquanto segura o lock: quem esperava tem de enxergá-los.
+        const p = await tx.pessoa.create({ data: { nome: "Primeira" } });
+        await tx.contatoWhatsApp.create({ data: { telefoneE164: telefone, pessoaId: p.id } });
+        return p.id;
+      },
+      { timeout: 20_000 },
+    );
+    await lockPego;
+    let terminou = false;
+    const esperando = prisma
+      .$transaction((tx) => garantirPessoaTx(tx, { nome: "Segunda", telefoneE164: telefone }, null), { timeout: 20_000 })
+      .then((r) => {
+        terminou = true;
+        return r;
+      });
+    await new Promise((r) => setTimeout(r, 500));
+    expect(terminou).toBe(false);
+    liberar();
+    const primeiraId = await dono;
+    const segunda = await esperando;
+    expect(segunda).toEqual({ pessoaId: primeiraId, criada: false });
+    expect(await prisma.pessoa.count()).toBe(1);
   });
 
   it("PessoaCriada não leva telefone no payload", async () => {
