@@ -27,7 +27,6 @@ import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
   professorAtribuido,
 } from "./experimental";
-import { dispararCopilotoMudancaEtapa } from "@/server/ia/copiloto";
 
 /** DDI do país do lead (para normalizar o telefone); "" se sem país. */
 async function ddiDoPais(paisId?: string | null): Promise<string> {
@@ -393,9 +392,6 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
         payload: { de: lead.etapa, para: etapa, origem: "manual" },
       });
     });
-    // C3 (doc 27): mudança de etapa é gatilho do copiloto — pós-commit, nunca derruba a
-    // ação (erro só loga) e é no-op com o copiloto desligado.
-    await dispararCopilotoMudancaEtapa(id);
     revalidarLead(id);
   });
 }
