@@ -63,7 +63,9 @@ describe("grupos no modelo (E3.5)", () => {
   it("segunda mensagem reaproveita grupo e conversa; nome do grupo é atualizado", async () => {
     const { dadosGrupo } = await cenario();
     const a = await prisma.$transaction((tx) => gravarMensagemGrupo(tx, dadosGrupo));
+    await prisma.conversaWhatsApp.update({ where: { id: a.conversaId }, data: { naoLidas: 3 } });
     const b = await prisma.$transaction((tx) => gravarMensagemGrupo(tx, { ...dadosGrupo, providerMessageId: "g-2", nomeGrupo: "Turma A 2026" }));
+    expect((await prisma.conversaWhatsApp.findUniqueOrThrow({ where: { id: a.conversaId } })).naoLidas).toBe(3);
     expect(b.conversaId).toBe(a.conversaId);
     expect(await prisma.grupoWhatsApp.count()).toBe(1);
     expect((await prisma.grupoWhatsApp.findFirstOrThrow()).nome).toBe("Turma A 2026");
