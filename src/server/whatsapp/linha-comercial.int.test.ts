@@ -87,21 +87,19 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(await listarTriagemWhatsApp()).toHaveLength(0);
   });
 
-  it("LC-02: auto-lead ligado → lead do dono da linha gravado no MESMO atendimento", async () => {
+  it("LC-02: auto-lead ligado não cria lead (casca removida) — conversa fica sem lead, com 'Criar lead'", async () => {
     await linhaDe(vendedorA);
     await ligarAutoLead();
     await mensagem("linha-a");
     await mensagem("linha-a");
 
-    const lead = await prisma.lead.findFirstOrThrow();
-    expect(lead.vendedorDonoId).toBe(vendedorA.id);
+    expect(await prisma.lead.count()).toBe(0);
     const atendimentos = await prisma.atendimentoWhatsApp.findMany();
     expect(atendimentos).toHaveLength(1);
-    expect(atendimentos[0].leadId).toBe(lead.id);
+    expect(atendimentos[0].leadId).toBeNull();
     expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: atendimentos[0].id } })).toBe(2);
     const thread = await carregarThread(sessao(vendedorA), atendimentos[0].id);
-    expect(thread?.lead?.id).toBe(lead.id);
-    expect(thread?.podeCriarLead).toBe(false);
+    expect(thread?.podeCriarLead).toBe(true);
   });
 });
 

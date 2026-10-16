@@ -64,7 +64,9 @@
 
 > **IA** tem cor própria de propósito — é o único sinal visual que diz "isto foi gerado por
 > IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6D28D9`, não
-> inverte) é o botão de aceitar/aplicar sugestão — mesma lógica de `--brand-solid`.
+> inverte: o mesmo valor nos dois temas) é o botão de aceitar/aplicar sugestão, sempre com texto
+> branco. Nisso ele difere do `--brand-solid`, que desde a #157 tem um valor por tema (`#4338CA` no
+> claro, `#6264EC` no escuro; ver o quadro abaixo).
 
 > **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
 > (texto branco nos dois modos) — distintas dos badges. Marca: `--brand-solid` (fundo do botão

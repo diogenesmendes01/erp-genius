@@ -2,6 +2,89 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 1A — verificação do bloco (15/10/2026)
+
+- Branch `claude/fase1-a-linha-de-base`; tarefa 1 do plano (E0: fontes da fase 1 e linha de base de testes). Só `docs/` mudou em relação à `main`; `src/`, `prisma/` e `package*.json` sem diferença.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 646 arquivos, 4560 testes, 0 falhas (igual à linha de base).
+- `npm run lint`: saída 0; 0 erros, 44 avisos preexistentes.
+- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS abaixo; nenhuma falha nova. Duração 7139 s.
+
+## Fase 1B — aceite parcial do bloco (PR 2, 16/10/2026)
+
+- Branch `claude/fase1-b-jobs`; tarefas 2 a 5 do plano (jobs e entrada automática da casca), commits `9e5d7bd`, `53c69b4`, `ea28099` e `ccd3015` sobre `d771ad1`. Perfil `dev-email` (banco `erp_genius_test_dev_email`), a mesma exceção ao `tester` registrada na linha de base.
+- `git diff --stat main -- prisma/ package.json package-lock.json`: vazio.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test` (`vitest run --reporter=json`, suíte completa, sem filtro): saída 0; 646 arquivos, `numTotalTests` 4561, `numFailedTests` 0, `success` true. `comm -13 tmp/lb-unit-falhas.txt tmp/b-unit-falhas.txt`: vazio.
+- `npm run test:int` **somente em recorte** (não é a suíte completa): os 8 `*.int.test.ts` alterados no bloco (`cobrancas/acesso-aulas`, `comercial/captura`, `matricula/fechamento`, `whatsapp/acesso-atendimento`, `whatsapp/confirmacao-experimental`, `whatsapp/fila-comercial`, `whatsapp/linha-comercial`, `whatsapp/piloto-bloqueadores`): saída 0, 8 arquivos, 80 testes, 0 falhas. Os que importam `inbound`, `historico` ou os webhooks (`whatsapp/saude`, `whatsapp/cron`, `whatsapp/inbox`, `whatsapp/despachante-comercial`): saída 1, 4 arquivos, 49 testes, 1 falha, que é `inbox.int.test.ts › cockpit do vendedor na thread … (escopo row-level P1)`, já na LB_FALHAS. `comm -13 tmp/lb-int-falhas.txt tmp/b-int-recorte-falhas.txt`: vazio. As 4 falhas de `whatsapp/cron-gestao.int.test.ts` da LB_FALHAS somem porque o arquivo foi removido na tarefa 4.
+- **Pendente para o integrador antes do merge:** rodar o `npm run test:int` completo (leva mais de 2 h, e a regra desta faixa proíbe rodá-lo), comparar com `comm -13 tmp/lb-int-falhas.txt tmp/b-int-falhas.txt`, registrar aqui código de saída e totais e abrir o PR 2 em rascunho.
+- **Pendência registrada: `scripts/auditoria/cenarios.test.mjs:30`.** O script ainda importa `rodarLeadNovoSemResposta` e `rodarPreExperimental` de `@/server/whatsapp/cron-comercial`, removido na tarefa 3. Como fica fora do `tsc` e do `vitest`, quebra só quando alguém o executa. Ele deve ser ajustado ou retirado no bloco que tratar `scripts/auditoria`, ou antes disso, se alguém precisar rodar o script.
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (16/10/2026, sem os removidos): saída 1; 17 arquivos, 15 passaram, 2 falharam; 7 testes falharam, 151 passaram. As 7 falhas (1 em `whatsapp/inbox.int.test.ts` e 6 em `academico/visibilidade.int.test.ts`) estão todas na LB_FALHAS; nenhuma falha nova. `tsc` 0, `npm test` 646 arquivos/4561 testes saída 0, `npm run lint` saída 0 (0 erros, 44 avisos).
+- Evidência local não versionada: `tmp/b-tsc.txt`, `tmp/b-unit.json`, `tmp/b-unit-falhas.txt` (vazia), `tmp/b-int-recorte.json`, `tmp/b-int-recorte2.json` e `tmp/b-int-recorte-falhas.txt` (1 linha).
+
+## Fase 1 (E0) — linha de base em 15/10/2026
+
+- Commit medido: `f8a9c0e7b95f2d60e60952f8dac8e6b0ceaf3305` (`main`).
+- Perfil de teste: `dev-email` (banco `erp_genius_test_dev_email`, `localhost:54329`). **Exceção registrada ao `tester` da Global Constraint:** em 15/10/2026, seis worktrees da fase 0 usavam `tester` ao mesmo tempo, e a suíte de integração trunca tabelas (`fileParallelism: false`); por isso o integrador atribuiu `dev-email` a este worktree. O banco é descartável, está na lista fechada de `scripts/test-profile.mjs`, não é `erp_genius_test` nem produção, e tem as 438 migrations aplicadas (`prisma migrate status` em dia). Os Blocos B, C e D usam o mesmo perfil e o mesmo banco. O texto da constraint no plano, a cargo do integrador, precisa ser atualizado com a aprovação do dono antes do merge.
+- Todas as medições foram feitas neste worktree, no commit `a51d07b` sobre `f8a9c0e`; só `docs/` mudou em relação à `main`.
+- Suíte completa, sem filtro.
+- `tsc --noEmit`: saída 0.
+- `npm test` (`vitest run`): saída 0; 646 arquivos, 4560 testes, 0 falhas (`--reporter=json`: `numTotalTests` 4560, `numFailedTests` 0, `success` true).
+- `test:int` (`vitest run -c vitest.integration.config.ts`, perfil `dev-email`): **saída 1**. 193 arquivos (16 com falha, 174 passaram, 3 pulados); `numTotalTests` 1760, `numFailedTests` 44, `numPassedTests` 1712, `numPendingTests` 4; `success` false. Executado de 20:38 a 22:27 UTC de 15/10/2026, 6520 s, com outras suítes rodando na máquina ao mesmo tempo. A medição anterior no checkout do integrador (banco `erp_genius_test`) não vale como linha de base.
+- Evidência local não versionada: `tmp/lb-unit.json`, `tmp/lb-int.json`, `tmp/lb-int.txt`, `tmp/lb-unit-falhas.txt` (vazia) e `tmp/lb-int-falhas.txt` (44 linhas, igual à lista abaixo). Os blocos seguintes comparam com `comm -13 tmp/lb-int-falhas.txt <novas>`.
+
+### LB_FALHAS
+
+- Unitários: nenhuma.
+- Integração (44, preexistentes, formato `arquivo › nome completo do teste`):
+
+```
+src/server/academico/progressao-fechamento.int.test.ts › autoriza a exceção de nível somente com fechamento suficiente atual, parecer dispensado de forma justificada e execução da Secretaria
+src/server/academico/progressao-fechamento.int.test.ts › mantém a solicitação aprovada sem execução quando uma correção oficial torna o fechamento anterior obsoleto
+src/server/academico/progressao-fechamento.int.test.ts › não troca o fechamento aprovado por uma versão final posterior durante a execução
+src/server/academico/progressao-fechamento.int.test.ts › registra o pedido, mas nega sua aprovação sem uma versão suficiente de fechamento
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário diário relê a atribuição docente alterada enquanto aguardava o aluno
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário diário revalida desativação revogado enquanto aguardava o aluno
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário diário revalida papel revogado enquanto aguardava o aluno
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário mensagem humana pendente do professor anterior é cancelada no despacho após a execução
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário solicitar/aprovar preserva acesso; executar revoga ficha, conversa e mídia do professor anterior
+src/server/academico/visibilidade.int.test.ts › mudança acadêmica revoga vínculos atuais e preserva o diário transferência concorrente preserva chamada anterior e recusa aula ocorrida após a saída
+src/server/agenda/replanejamento-concorrencia.int.test.ts › serializa duas aprovações da mesma revisão sem duplicar os fatos aplicados
+src/server/agenda/substituicao-avisos.int.test.ts › enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o aceite Meta
+src/server/agenda/substituicao-avisos.int.test.ts › não troca responsável autorizado por outra pessoa com o mesmo telefone antes do driver
+src/server/agenda/substituicao-avisos.int.test.ts › resultado incerto do driver preserva INCERTO e não reenvia automaticamente
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isoladas duas matrículas da mesma aluna no portal
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › correção oficial na origem torna o requisito de destino pendente, sem atualizar a nota aplicada
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › executa a cadeia aprovada e usa a nota de origem no consolidado sem lançamento no destino
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › preserva a cadeia A→B→C e não duplica a fonte aproveitada no consolidado BASE_PLANO
+src/server/avaliacoes/aproveitamento-aplicado.int.test.ts › usa fontes aproveitadas na base de recuperação e conserva a melhor tentativa oficial posterior
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › correção publicada abre revisão da progressão executada e exige novo fechamento para reconfirmar
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › não executa aprovação antiga com revisão pendente mesmo após restaurar a presença
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › persiste a revisão da progressão em C quando uma correção aprovada alcança A→B→C
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › preserva o formato e localiza a mesma progressão depois de EXECUTADA
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › reconfirma progressão real após corrigir a fonte da reposição, exigindo novo fechamento
+src/server/avaliacoes/impactos-progressao-tx.int.test.ts › segue A→B→C por aplicações reais e retorna a progressão APROVADA, sem proposta não aplicada ou outra matrícula
+src/server/diario/calendario-reposicao.int.test.ts › usa apenas calendário aprovado vigente; feriado removido=true
+src/server/diario/reposicao-agenda.int.test.ts › a prévia autenticada informa período, saldo e conflitos antes de confirmar a agenda
+src/server/diario/reposicao-agenda.int.test.ts › a última cota é reservável uma vez e bloqueia outra origem no mesmo período
+src/server/diario/reposicao-agenda.int.test.ts › dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir benefício
+src/server/diario/reposicao-agenda.int.test.ts › rejeição Q19 permanece possível e idempotente quando a proposta fica indisponível ou passada
+src/server/diario/reposicao-agenda.int.test.ts › remarcação normal consome benefício ao registrar diário, conclui uma única fonte e não usa o encontro cancelado
+src/server/diario/reposicao-agenda.int.test.ts › reserva benefício de oferta aprovada e cria encontro REPOSICAO ligado ao pedido exato
+src/server/diario/reposicao-agenda.int.test.ts › serializa duas agendas distintas na última cota e preserva o replay vencedor
+src/server/diario/reposicao-permissoes.int.test.ts › fila Q19 expõe a exceção exata à gestão e a aprovação não cria agenda
+src/server/matricula/consumo-ocorrencia.int.test.ts › consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita SQL
+src/server/portal-aluno/fechamentos-transferencia.int.test.ts › agrega frequência A→B no mesmo nível e exige nova versão de fechamento após a transferência
+src/server/portal-aluno/resultados.int.test.ts › conferência da transferência liga fontes oficiais e requisitos da regra de destino
+src/server/portal-aluno/sessao-capturada.int.test.ts › recusa a sessão expirada depois da captura
+src/server/preferencias/fuso-exibicao.int.test.ts › recusa IANA inválido, usuário desativado e Factory no backstop SQL
+src/server/whatsapp/cron-gestao.int.test.ts › alerta de SLA leads estourados viram UMA mensagem agregada + evento por lead (idempotente)
+src/server/whatsapp/cron-gestao.int.test.ts › despachante × origem GESTAO SHADOW da gestão simula; ATIVA sem WHATSAPP_LIVE também simula (ambiente)
+src/server/whatsapp/cron-gestao.int.test.ts › despachante × origem GESTAO alteração do destino/configuração após enfileirar cancela a intenção
+src/server/whatsapp/cron-gestao.int.test.ts › despachante × origem GESTAO mensagem de gestão é isenta da janela de horário (madrugada despacha mesmo assim)
+src/server/whatsapp/inbox.int.test.ts › cockpit do vendedor na thread (funil sem sair da conversa) lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)
+```
+
 ## Situação em 13/10/2026 — publicação no UAT e auditoria de UX
 
 Base conferida: `main` em `e5418550` (merge da #161, 10/10/2026). Esta seção é a fotografia de 13/10; as seções abaixo continuam sendo os registros de 21/09 e anteriores. Análise PR a PR no doc 44 (§3 para publicação, §7 para as PRs) e remedição da auditoria de UX no doc 43 §7.
@@ -56,6 +139,13 @@ Uma linha por PR, de #133 a #161. Os números #139–#142, #152 e #162 são issu
 | #159 | Fuso e instante: 20 campos pelo `CampoFuso`; `PaisSchema` valida fuso IANA; `AvisoFusoNaoConfigurado`; `PreviaConversao`; item 6 | `b59744b9`, 10/10/2026 15:44 | Integrador em `c406fff7`, suíte sem banco configurado: 593/593 arquivos, 4.062 testes; 11/11 KILLED. **APPROVE** escrito na R1, em modo leve | L1566, L1747, L406 e L1256 parciais; `fusoIanaValido` recusa `EST5EDT` (`src/server/operacao/fuso.ts:9`); ramo `fuso === ""` sem efeito (`src/server/paises/schema.ts:29`); validade só no `onChange` |
 | #160 | Becos sem saída e identificação do registro (`IdentificacaoRegistro`) fora de `/matriculas/[id]`; item 7 | `19be34de`, 10/10/2026 17:10 | Integrador em `a51d4e1e`: 591/591 arquivos, 4.057 testes; 12/12 KILLED. **APPROVE** escrito na R2. O último commit (`f50608f5`, merge com a #158) teve só a verificação do integrador: 609/609 arquivos, 4.208 testes | 66 IDs crus e 12 telas de detalhe sem identificação (tetos em `identificacao-registro.test.ts:378` e `:421`); link para `/financeiro` sem `abreFinanceiro` em `matriculas/[id]/emissao/page.tsx:23`; L934 e L1709 |
 | #161 | Filas de trabalho por cursor nos dois sentidos: 12 filas e 11 consultas, `PaginacaoFila` e `cursor-fila.ts` | `e5418550`, 10/10/2026 17:18 | Integrador em `8c697968`, suíte sem banco configurado: 604/604 arquivos, 4.194 testes; 15/15 KILLED. **APPROVE** escrito na R1 e na R2 (review leve). Os 8 `*.int.test.ts` alterados **não foram executados** | **#162 aberta**; C1, subselect da âncora sem escopo em `segunda-chamada-fila-agenda.ts`; decisões de produto em aberto (`autorizacoes-preparacao` como histórico; link no vazio em vez de redirect) |
+| #163 | Docs de 13/10: o que está e o que não está publicado no UAT, remedição da auditoria de UX (doc 43 §7) e análise das PRs #63–#161 (doc 44) | `e864ef4d`, 13/10/2026 15:47 | Só documentação. **APPROVE** escrito na R1 | As pendências do doc 44 §5 viraram as issues #164–#170 |
+| #171 | Trava `guard-pagina`: B7, B8 e B9 da R3 da #143 (carga dinâmica do módulo do guard, contaminação por chave e desestruturação, recusa branda sob laço, `switch` e operador lógico); fecha a #152 | `4cb396b7`, 13/10/2026 16:13 | Integrador em `824ab622`, com o TS2345 corrigido: `tsc` 0; 612/612 arquivos, 4.271/4.271 testes; 10/10 KILLED e controle. **APPROVE** escrito na R1 | #170: atribuição a membro (`obj.p = sessao.papeis`) e chave não literal ainda escapam |
+| #172 | Item 8 (portal público): `/portal-aluno/ativar` (token na aba, regra e confirmação da senha), `/recuperar` sem falso "enviado", `/pagar/[token]` com os 6 casos e `noindex`, `/login` com `callbackUrl` só interno (`src/proxy.ts` novo) | `77fe6f1e`, 13/10/2026 16:42 | Integrador em `5e870be9`: `tsc` 0; 626/626 arquivos, 4.366/4.366 testes; 17/17 KILLED (X3 equivalente) e controle; R1 C1 (`router.refresh()` depois de pagar) aplicado. **APPROVE** escrito na R2 | #170: `maxLength` em caracteres; aviso `set-state-in-effect`; troca de e-mail em "link indisponível"; 422 genérico; `/login` #1, #3, #5 e #6 |
+| #173 | Moeda: `parseMoeda` recusa ponto ambíguo (`1.23`); CRC/CLP sem arredondamento, com aviso neutro; dica do ponto no `CampoMoeda`; permuta sem moeda mostra "moeda não definida"; fecha a #167 | `02444a1d`, 13/10/2026 16:53 | Integrador em `28a8a55a`: `tsc` 0; 630/630 arquivos, 4.405/4.405 testes; 13/13 + 9/9 KILLED e controles. **APPROVE** escrito na R2 | #170: a dica do ponto é anunciada (`role="alert"`) durante a digitação |
+| #174 | Item 10 (borda de rota): `loading.tsx` com o formato da tela em 8 rotas, `error.tsx` em 15 áreas (`ErroArea`), `<Suspense>` em `/academico/reposicoes` e na preparação da matrícula, trava `borda-rota.test.ts`; C3 da #170 (esqueleto do financeiro em dobro) | `4c4f526a`, 13/10/2026 17:27 | Integrador em `c5e17404`, com o `key` do `<Suspense>` só pela matrícula e a trava aceitando segmento com páginas filhas: `tsc` 0; 633/633 arquivos, 4.478/4.478 testes; 20/20 KILLED e controle. **APPROVE** escrito na R1 | Conferir no UAT o esqueleto do financeiro e os `<Suspense>`; #170: volta do erro do hub da matrícula; `matriculas/nova`, `configuracao/whatsapp` e `/portal` sem `loading.tsx` |
+| #175 | Fatia B do `ConfirmarAcao` (13 ações, digitação do nome ao encerrar país, alcance numérico ao ativar a régua com `estimarAlcanceRegua`, `definirSituacaoEmpresa` com estado-alvo); regra do cron extraída para `decidirEnvioCron`; fecha a #169 | `f8a9c0e7`, 13/10/2026 18:09 | Integrador em `5009916b`, com travas de enum e de estado vazio, TS2345 e `cron.test.ts` novo: `tsc` 0; 646/646 arquivos, 4.560/4.560 testes; 19/19 KILLED e 2 controles. `cron.int.test.ts` **não executado** (#162). **APPROVE** escrito na R2 | #170: botão da ativação habilitado durante a estimativa; alternadores de usuário, idioma e preço invertem o estado; "Desvincular" na inbox; L325, L1479, L2019 e L2142 sem confirmação |
+| #176 | Item 11: amostra Média/Baixa com a semente 20261013 na `main` `4c4f526a` (doc 43 §7.6) | `d1f2c03f`, 13/10/2026 17:59 | Só documentação. Integrador: sorteio reproduzido (126 achados = as 126 linhas da tabela), contagens por estrato conferidas e estimativa recalculada (66,8% abertos, IC 58,7–74,9%). **APPROVE** escrito na R1 | Os padrões com mais abertos: layout e hierarquia, texto e validação de campo |
 
 ### Tarefas operacionais pendentes
 
@@ -84,6 +174,13 @@ Próximos itens do doc 43, não iniciados (ver doc 43 §7.5):
 - **Item 9:** consultas e dados no servidor.
 - **Item 10:** borda de rota restante (`<Suspense>` e `loading.tsx`).
 - **Item 11:** Média e Baixa, repetir a amostra com outra semente.
+
+**Atualização de 13/10/2026, fim do dia (integrador):**
+- **Itens 8, 10 e 11:** entregues (#172, #174 e #176). O item 9 está em andamento (`claude/e9-consultas-servidor`).
+- **Issues fechadas:** #152 (pela #171), #167 (#173) e #169 (#175).
+- **#170:** em andamento por grupos (`claude/fu170-grupo-a`); o C3 foi resolvido pela #174.
+- **Abertas sem frente:** #141 (collation, depende do integrador), #162 (testes de integração, depende do banco de teste isolado), #164 (portar a #62), #165 (operação no UAT), #166 (idempotência, exige migração) e #168 (inbox).
+- **Média e Baixa na semente 20261013:** 66,8% abertos (IC 58,7–74,9%, ≈ 486), contra 58,9% na semente 42. Os intervalos se sobrepõem (doc 43 §7.6).
 
 ## Integração da main na PR #61 — 21/09/2026
 
@@ -1523,6 +1620,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `/portal`. Sem error.tsx próprio: `home`, `preferencias` e `acesso-negado` (o de `(app)` basta) e `/login`.
 - Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
 
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+**Atualização de 13/10/2026 (integrador):** mergeada pela #174 (`4c4f526a`). Ver "Entregas desde a #133". Falta conferir no UAT o esqueleto do financeiro e os dois `<Suspense>`.
+
 ## ConfirmarAcao, fatia B (issue #169; 13/10/2026)
 
 ### Solução implementada (branch `claude/fu169-confirmacoes-b`)
@@ -1571,6 +1672,25 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - As métricas de fluxo da 7.7 continuam sem medição.
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
+
+## FU170 grupo A — pendências menores da issue #170 (13/10/2026)
+
+### Entrega (branch `claude/fu170-grupo-a`)
+- C10: a conferência de reserva sem resultado usa `MSG_RESULTADO_INCERTO_SEM_CHAVE`; trava nova em `mensagens.test.ts` (nenhuma tela escreve "Resultado não confirmado" à mão).
+- C17: célula e planilha de alunos com o rótulo do filtro (`rotuloTurmaAcademica`: código · nome · modalidade · idioma nível).
+- C21: `ThemeToggle` com uma fonte só (`src/lib/tema.ts`, `useSyncExternalStore` sobre a classe `dark`) e `aria-pressed`. A trava de `botoes.test.ts` passa a exigir grupo rotulado só para conjunto de seleção.
+- C22/C23: 57 páginas entraram no mapa da trilha (eram 60 de 181 fora); 3 ficam em `FORA_DA_TRILHA`, com motivo e teto, em `trilha.test.ts`. A volta de `tentativas/*/autorizacao` diz "Avaliador da recuperação" (L1617).
+- C36: "Abrir Financeiro" na emissão só para quem abre `/financeiro` (`abreFinanceiro`).
+- C52 (parte): `TurmasPainel` com `formatarDataCivil`; o `PagarCliente` já não formatava data. Trava nova em `datas-civis.test.ts` para `new Date(campo civil).toLocaleDateString`, com 2 usos contados (FichaEmpresa e InformesPagamento).
+- C1 da R1 da #174: o erro do hub da matrícula volta para `/home`.
+- D4 e D6: `docs/18` (e o comentário de `globals.css`) sobre `--ai-solid`/`--brand-solid`; cabeçalho da SPEC-ERP-005 e linha do índice.
+
+### Verificação
+- Não executada neste worktree (sem node_modules). Verificação: pelo integrador (suíte unitária, `tsc --noEmit`, eslint e mutação).
+
+### Pendências
+- C52: `FichaEmpresa.tsx:190` (fora deste grupo, PR #175) e `InformesPagamento.tsx:38` (conferir se `dataPagamento` é dia ou instante).
+- C23: os `VoltarPara` com href dinâmico continuam sem trava.
 
 ## E9 — consultas e dados no servidor (docs/43 §6 item 9; 13/10/2026)
 

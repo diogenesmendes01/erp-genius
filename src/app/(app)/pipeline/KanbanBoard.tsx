@@ -211,17 +211,12 @@ function Card({ lead, agora, bloqueado, aoMover }: {
   );
 }
 
-/** Total de leads de uma coluna (etapa × tipo) no escopo de quem vê, lido no servidor (o quadro mostra só um teto). */
-export type TotalColunaKanban = { etapa: EtapaLead; b2b: boolean; total: number };
-
-function Coluna({ etapa, leads, agora, bloqueado, aoMover, corte }: {
+function Coluna({ etapa, leads, agora, bloqueado, aoMover }: {
   etapa: EtapaLead;
   leads: KanbanLead[];
   agora: number;
   bloqueado: boolean;
   aoMover: (lead: KanbanLead, destino: EtapaLead) => void;
-  /** A coluna passou do teto do servidor: quantos vieram, de quantos, e o link da lista filtrada. */
-  corte: { carregados: number; total: number; href: string } | null;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa });
   const total = leads.reduce((s, l) => s + (l.valorPrevisto ?? 0), 0);
@@ -251,23 +246,11 @@ function Coluna({ etapa, leads, agora, bloqueado, aoMover, corte }: {
         ))}
         {leads.length === 0 && <EstadoVazio>Nenhum lead nesta etapa.</EstadoVazio>}
       </div>
-      {corte && (
-        <p className="mt-1 px-1 text-[11px] text-gray-500">
-          Os {corte.carregados} mais recentes de {corte.total}.{" "}
-          <Link href={corte.href} className="text-brand-700 hover:underline">Ver todos em Leads</Link>
-        </p>
-      )}
     </div>
   );
 }
 
-export function KanbanBoard({ leads, referenciaTemporal, totais = [], porColuna = Infinity }: {
-  leads: KanbanLead[];
-  referenciaTemporal: number;
-  /** Total de cada coluna (item 9 de docs/43 §6): o servidor manda no máximo `porColuna` cartões por coluna. */
-  totais?: TotalColunaKanban[];
-  porColuna?: number;
-}) {
+export function KanbanBoard({ leads, referenciaTemporal }: { leads: KanbanLead[]; referenciaTemporal: number }) {
   const [agora, setAgora] = useState(referenciaTemporal);
   useEffect(() => {
     const timer = window.setInterval(() => setAgora(Date.now()), 60_000);
@@ -404,10 +387,7 @@ export function KanbanBoard({ leads, referenciaTemporal, totais = [], porColuna 
               const limite = agora - periodoPerdido * 86400000;
               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);
             }
-            const carregados = porEtapa.get(col)?.length ?? 0;
-            const total = totais.find((t) => t.etapa === col && t.b2b === (tipo === "b2b"))?.total ?? carregados;
-            const corte = total > carregados && carregados >= porColuna ? { carregados, total, href: `/leads?tipo=${tipo}&etapa=${col}` } : null;
-            return <Coluna key={col} etapa={col} leads={itens} agora={agora} bloqueado={acaoMover.ocupado} aoMover={moverPara} corte={corte} />;
+            return <Coluna key={col} etapa={col} leads={itens} agora={agora} bloqueado={acaoMover.ocupado} aoMover={moverPara} />;
           })}
         </div>
       </DndContext>
