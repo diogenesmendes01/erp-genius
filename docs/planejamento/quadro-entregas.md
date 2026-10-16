@@ -1904,3 +1904,4 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+- M3 (`grupos_whatsapp`, Task 6): o integrador não entregou o ID reservado; a pasta usa o ID provisório `20261016110000` (posterior a M2 `20261016100000`). O integrador confirma o ID ou renomeia `prisma/migrations/20261016110000_grupos_whatsapp` antes do merge; se renomear, o banco de teste do worktree precisa reaplicar a migration.

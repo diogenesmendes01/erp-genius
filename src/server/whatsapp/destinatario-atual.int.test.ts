@@ -29,6 +29,7 @@ import { carregarThread } from "./consultas";
 import { enviarTextoInbox } from "./acoes";
 import { abrirAtendimentoInstitucional, encerrarAtendimentoWhatsApp, listarTriagemWhatsApp } from "./operacoes-atendimento";
 import { despacharFila } from "./despachante";
+import { comContatoIndividual } from "./grupos";
 import { processarMensagemNormalizada } from "./inbound";
 
 let ven: Awaited<ReturnType<typeof criarUsuario>>, fin: typeof ven, sec: typeof ven, adm: typeof ven, proFin: typeof ven;
@@ -60,7 +61,7 @@ async function financeiro(responsavel = false) {
 }
 async function destinatarioAtual(id: string) {
   const a = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id }, include: { conversa: { include: { contato: true } } } });
-  return destinatarioAtualDoAtendimento(a);
+  return destinatarioAtualDoAtendimento(comContatoIndividual(a));
 }
 
 beforeEach(async () => {

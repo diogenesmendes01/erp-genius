@@ -15,6 +15,7 @@ import { escopoTurmasDocente } from "@/server/diario/permissoes";
 import { snapshotCobranca } from "./elegibilidade";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { nomeDoContato } from "./nome-contato";
+import { comContatoIndividual, contatoIndividual } from "./grupos";
 
 export interface OpcaoAtendimento {
   chave: string; nome: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -190,11 +191,11 @@ export interface ItemTriagem {
 /** Legado e inbound ambíguo são lidos exclusivamente na triagem administrativa. */
 export async function listarTriagemWhatsApp(): Promise<ItemTriagem[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-  const mensagens = await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: null }, take: 100, orderBy: { criadoEm: "desc" },
+  const mensagens = await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: null, conversa: { grupoId: null } }, take: 100, orderBy: { criadoEm: "desc" },
     include: { conversa: { include: { contato: true, atendimentos: { include: {
       aluno: true, lead: true, matricula: { select: { id: true, codigo: true } },
     } } } } } });
-  return mensagens.map((m) => ({ id: m.id, conversaId: m.conversaId, nome: nomeDoContato(m.conversa.contato),
+  return mensagens.map((m) => ({ id: m.id, conversaId: m.conversaId, nome: nomeDoContato(contatoIndividual(m.conversa)),
     corpo: m.corpo, tipo: m.tipo, midiaPath: m.midiaPath, criadoEm: m.criadoEm.toISOString(), atendimentos: m.conversa.atendimentos
       // Um contexto financeiro legado/encerrado é histórico consultável, mas
       // não é destino de uma nova classificação manual.
@@ -220,7 +221,7 @@ export async function classificarMensagemWhatsApp(input: { mensagemId: string; a
       if (a.finalidade === "FINANCEIRO" && (!a.matriculaId || a.encerradoEm)) {
         throw new ErroRegra("Atendimento financeiro sem matrícula atual ou encerrado não recebe nova classificação.");
       }
-      if (a.finalidade === "PEDAGOGICO" && !await destinatarioAtualDoAtendimento(a, tx)) {
+      if (a.finalidade === "PEDAGOGICO" && !await destinatarioAtualDoAtendimento(comContatoIndividual(a), tx)) {
         throw new ErroRegra("Atendimento pedagógico sem autorização vigente não recebe nova classificação.");
       }
       const r = await tx.mensagemWhatsApp.updateMany({ where: { id: m.id, atendimentoId: null }, data: { atendimentoId: a.id } });
