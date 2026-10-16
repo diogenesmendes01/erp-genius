@@ -142,9 +142,9 @@ export function Menu({ rotulo, gatilho, itens }: { rotulo: string; gatilho: Reac
           style={{ position: "fixed", top: pos?.topo ?? 0, left: pos?.esquerda ?? 0, visibility: pos ? "visible" : "hidden", zIndex: 50 }}
           className={CLASSE_PAINEL_MENU}
         >
-          {itens.map((item) => (
+          {itens.map((item, indice) => (
             <button
-              key={item.rotulo}
+              key={indice}
               type="button"
               role="menuitem"
               disabled={item.desabilitado}
