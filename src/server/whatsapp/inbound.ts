@@ -5,6 +5,7 @@ import { registrarEvento } from "@/server/_shared/evento";
 import { capturarRespostaExperimental, type ReferralInbound } from "@/server/comercial/captura";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 import { atendimentoDoInbound } from "./atendimentos";
+import { aplicarInbound } from "./status-atendimento";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
@@ -143,6 +144,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: {
           ultimaMensagemEm: m.quando, ...(m.fromMe ? {} : { ultimoInboundEm: m.quando, naoLidas: { increment: 1 } }),
         } });
+        if (!m.fromMe) await aplicarInbound(tx, atendimentoId, m.quando);
       }
     });
     return "gravada";
