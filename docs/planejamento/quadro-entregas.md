@@ -1996,4 +1996,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   falharam (38 testes). Os mesmos 13 arquivos, rodados em worktree de `origin/integracao/ate-fase-1`, falham igual:
   38 testes. São preexistentes (fixtures com datas fixas de 2026 contra o relógio real, mais o `inbox` já listado).
 
+### Pendências (revisão R1 do PR #193)
+- **C3, para quando `exigirCapacidadeCrm` for ligada nas telas e ações:** a troca não pode ampliar o que hoje é
+  negado. A `MATRIZ` de `src/server/crm/permissoes.ts` concede `contatos.ver` à `SECRETARIA_ACADEMICA` e
+  `comissoes.ver` ao `VENDEDOR`, mas os guards atuais negam esses acessos. Antes de ligar, ou a matriz é ajustada,
+  ou o guard atual continua valendo junto. Em qualquer caso, precisa de um teste que prove que esses dois acessos
+  seguem negados.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
