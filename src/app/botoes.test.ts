@@ -83,7 +83,7 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/components/Chip.tsx": ["(sem nome)"], // primitivo: ficha de filtro (rótulo vem dos children)
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
   "src/components/ItemLista.tsx": ["(sem nome)"], // primitivo: linha de lista (título vem da prop)
-  "src/components/Menu.tsx": ["rotulo", "key item.rotulo"], // gatilho só de ícone e item do menu de ações
+  "src/components/Menu.tsx": ["rotulo", "key indice"], // gatilho só de ícone e item do menu de ações
   "src/components/Sidebar.tsx": ["Alternar tema", "Sair"], // ícones do rodapé da Sidebar (tema, sair)
 };
 
@@ -1145,7 +1145,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
-  { arquivo: "src/components/Menu.tsx", rotulo: "key item.rotulo", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
+  { arquivo: "src/components/Menu.tsx", rotulo: "key indice", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
 ];
 
 const arquivos = [
