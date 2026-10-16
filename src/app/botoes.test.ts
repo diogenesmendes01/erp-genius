@@ -70,9 +70,6 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
-  // Exceção de PALETA, não de papel: são ações, mas da IA — docs/18 reserva --ai-* (e --ai-solid para
-  // aplicar sugestão) como o único sinal de "gerado por IA"; nenhuma variante do Botao tem essa cor.
-  // Base e tamanho vêm do design system (BASE_BOTAO + TAMANHOS_BOTAO.sm); só a cor é própria.
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
   "src/components/Sidebar.tsx": ["Alternar tema", "Sair"], // ícones do rodapé da Sidebar (tema, sair)
 };

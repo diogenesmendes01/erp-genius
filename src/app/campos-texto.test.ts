@@ -183,7 +183,7 @@ describe("campo de texto longo só pelo CampoTexto", () => {
 
   it("todos os campos de texto longo estão no CampoTexto (a migração não perdeu nenhum)", () => {
     const usos = fontes.reduce((s, { conteudo }) => s + (conteudo.match(/<CampoTexto\b/g)?.length ?? 0), 0);
-    expect(usos).toBeGreaterThanOrEqual(318); // era 319 (266 com mínimo + 53 sem); -1 com a remoção do CopilotoSugestoes (E1)
+    expect(usos).toBeGreaterThanOrEqual(318); // era 319 (266 com mínimo + 53 sem); -1 com a remoção do copiloto (E1)
   });
 
   it("o detector pega JSX, createElement, tag em variável, membro e atributo minúsculo; aceita o tipo", () => {
