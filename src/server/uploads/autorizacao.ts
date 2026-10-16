@@ -38,10 +38,10 @@ export async function validarContextoArquivo(usuario: UsuarioArquivo, contexto: 
     return { matriculaId: contexto.matriculaId, alunoId: matricula.alunoId, leadId: null, cobrancaId: null, categoriaDocumento: contexto.categoriaDocumento ?? null };
   }
   if (contexto.leadId) {
-    const concessoes: Prisma.LeadWhereInput[] = [await escopoComercialAtual(sessao(usuario), tx)];
+    const concessoes: Prisma.OportunidadeWhereInput[] = [await escopoComercialAtual(sessao(usuario), tx)];
     if (tem(usuario, Papel.SECRETARIA_ACADEMICA)) concessoes.push({ matricula: { is: { secretariaAssumiuEm: { not: null } } } });
     if (contexto.categoriaDocumento === CategoriaDocumento.TESTE_NIVEL && tem(usuario, Papel.PROFESSOR)) concessoes.push({ professorExperimentalId: usuario.id });
-    const lead = await tx.lead.findFirst({
+    const lead = await tx.oportunidade.findFirst({
       where: { AND: [{ id: contexto.leadId }, { OR: concessoes }] },
       select: { matricula: { select: { alunoId: true, secretariaAssumiuEm: true } } },
     });
@@ -127,7 +127,7 @@ export async function podeLerArquivo(usuario: UsuarioArquivo, segmentos: string[
     if (tem(usuario, Papel.FINANCEIRO) && documento.categoria === "COMPROVANTE") return true;
     if (!tem(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) return false;
     if (documento.lead.matricula?.secretariaAssumiuEm && documento.categoria !== "PROPOSTA") return false;
-    return !!await prisma.lead.findFirst({ where: { AND: [{ id: documento.leadId }, await escopoComercialAtual(sessao(usuario))] }, select: { id: true } });
+    return !!await prisma.oportunidade.findFirst({ where: { AND: [{ id: documento.leadId }, await escopoComercialAtual(sessao(usuario))] }, select: { id: true } });
   }
   // Antecipações podem ter prova vinculada ao contrato antes de existir cobrança.
   // Esse alcance é exclusivamente financeiro: não libera os demais documentos.

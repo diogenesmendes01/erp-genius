@@ -20,7 +20,7 @@ export async function decidirPrecoPreparacao(input: { preparacaoId: string; apro
       const autor = await tx.usuario.findUnique({ where: { id: sessao.id }, select: { id: true, nome: true, ativo: true, papeis: true } });
       if (!autor?.ativo || !autor.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL)) throw new ErroPermissao();
       const admin = autor.papeis.includes(Papel.ADMINISTRADOR);
-      if (!admin && (!m.leadId || !await tx.lead.findFirst({ where: { AND: [{ id: m.leadId }, await escopoComercialAtual(autor, tx)] }, select: { id: true } }))) throw new ErroPermissao();
+      if (!admin && (!m.leadId || !await tx.oportunidade.findFirst({ where: { AND: [{ id: m.leadId }, await escopoComercialAtual(autor, tx)] }, select: { id: true } }))) throw new ErroPermissao();
       if (p.preparadorId === autor.id) throw new ErroPermissao("Outra pessoa autorizada deve decidir a proposta.");
       const memoria = Memoria.safeParse(p.referencias);
       if (!memoria.success) throw new ErroRegra("A preparação precisa de conferência da referência e alçada antes desta decisão.");

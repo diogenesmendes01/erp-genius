@@ -24,7 +24,7 @@ export async function reservarVagaContratacao(input: z.input<typeof Entrada>) {
       const autor = await tx.usuario.findUnique({ where: { id: sessao.id }, select: { id: true, nome: true, ativo: true, papeis: true } });
       if (!autor?.ativo || !autor.papeis.some((p) => permitidos.includes(p))) throw new ErroPermissao();
       if (!autor.papeis.includes(Papel.ADMINISTRADOR) && !autor.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
-        const autorizado = matricula.leadId && await tx.lead.findFirst({ where: { AND: [{ id: matricula.leadId }, await escopoComercialAtual(autor, tx)] }, select: { id: true } });
+        const autorizado = matricula.leadId && await tx.oportunidade.findFirst({ where: { AND: [{ id: matricula.leadId }, await escopoComercialAtual(autor, tx)] }, select: { id: true } });
         if (!autorizado) throw new ErroPermissao();
       }
       return reservarVagaMatriculaTx(tx, { ...dados, autorId: autor.id });

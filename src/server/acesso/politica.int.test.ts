@@ -27,7 +27,7 @@ import { atribuirDono } from "@/server/comercial/acoes";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 
 let adm: Awaited<ReturnType<typeof usuarioTeste>>, gerente: typeof adm, outraEquipe: typeof adm, titular: typeof adm, substituto: typeof adm, alheio: typeof adm;
-let lead: Awaited<ReturnType<typeof prisma.lead.create>>;
+let lead: Awaited<ReturnType<typeof prisma.oportunidade.create>>;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const formulario = (u: typeof adm) => ({ nome: u.nome, email: u.email, papeis: u.papeis, limiteDescontoTaxaPct: Number(u.limiteDescontoTaxaPct ?? 0), limiteDescontoMensalidadePct: Number(u.limiteDescontoMensalidadePct ?? 0), permissoes: [], gerenteComercialId: u.gerenteComercialId });
 
@@ -39,8 +39,8 @@ beforeEach(async () => {
   ]);
   await prisma.usuario.updateMany({ where: { id: { in: [titular.id, substituto.id] } }, data: { gerenteComercialId: gerente.id } });
   await prisma.usuario.update({ where: { id: alheio.id }, data: { gerenteComercialId: outraEquipe.id } });
-  lead = await prisma.lead.create({ data: { nome: "Carteira titular", vendedorDonoId: titular.id } });
-  await prisma.lead.create({ data: { nome: "Outra equipe", vendedorDonoId: alheio.id } });
+  lead = await prisma.oportunidade.create({ data: { nome: "Carteira titular", vendedorDonoId: titular.id } });
+  await prisma.oportunidade.create({ data: { nome: "Outra equipe", vendedorDonoId: alheio.id } });
 });
 
 describe("administração de capacidades e alçadas (AC06/AC20)", () => {

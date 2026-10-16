@@ -30,7 +30,7 @@ const PAPEIS_LEAD: Papel[] = [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Pape
 export async function tituloLead(id: string): Promise<string> {
   const usuario = await usuarioOuNull();
   if (!usuario || !usuario.papeis.some((p) => PAPEIS_LEAD.includes(p))) return "Lead";
-  const lead = await prisma.lead.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario)] }, select: { nome: true } });
+  const lead = await prisma.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario)] }, select: { nome: true } });
   return lead ? `${lead.nome} · Lead` : "Lead";
 }
 

@@ -5,7 +5,7 @@ const db = vi.hoisted(() => ({
   conversaWhatsApp: { findUnique: vi.fn(), upsert: vi.fn() },
   matricula: { findFirst: vi.fn(), findMany: vi.fn() },
   aluno: { findUnique: vi.fn() },
-  lead: { findUnique: vi.fn() },
+  oportunidade: { findUnique: vi.fn() },
 }));
 const escopo = vi.hoisted(() => vi.fn());
 
@@ -56,13 +56,13 @@ describe("atendimento financeiro legado", () => {
         telefoneE164: contato.telefoneE164, responsaveis: [], _count: { matriculas: 1 } },
     });
     db.aluno.findUnique.mockResolvedValue({ telefoneE164: contato.telefoneE164, responsaveis: [] });
-    db.lead.findUnique.mockResolvedValue({ telefoneE164: "+5511888880000" });
+    db.oportunidade.findUnique.mockResolvedValue({ telefoneE164: "+5511888880000" });
 
     await expect(destinatarioAtualDoAtendimento({
       finalidade: "FINANCEIRO", leadId: "lead-de-outro-telefone", alunoId: "aluno-1", matriculaId: "matricula-1",
       conversa: { contato },
     })).resolves.toBe(true);
-    expect(db.lead.findUnique).not.toHaveBeenCalled();
+    expect(db.oportunidade.findUnique).not.toHaveBeenCalled();
     expect(db.matricula.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "matricula-1", alunoId: "aluno-1" } }));
   });
 });

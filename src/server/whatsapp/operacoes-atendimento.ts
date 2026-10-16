@@ -35,12 +35,12 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
   const comercial = temPapel(u, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   const academico = temPapel(u, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA);
   if (comercial || academico) {
-    const leads = await prisma.lead.findMany({ where: { OR: [
+    const leads = await prisma.oportunidade.findMany({ where: { OR: [
       ...(comercial ? [await escopoComercialAtual(u)] : []),
       ...(academico ? [{ professorExperimentalId: u.id, etapa: "EXPERIMENTAL_AGENDADA" as const }] : []),
     ] }, take: 200, select: { id: true, nome: true, professorExperimentalId: true, etapa: true } });
     for (const l of leads) {
-      if (comercial && await prisma.lead.count({ where: { AND: [{ id: l.id }, await escopoComercialAtual(u)] } })) destinos.push({ chave: `COMERCIAL:${l.id}`, nome: `Comercial · ${l.nome}`, finalidade: "COMERCIAL", leadId: l.id });
+      if (comercial && await prisma.oportunidade.count({ where: { AND: [{ id: l.id }, await escopoComercialAtual(u)] } })) destinos.push({ chave: `COMERCIAL:${l.id}`, nome: `Comercial · ${l.nome}`, finalidade: "COMERCIAL", leadId: l.id });
       if (academico && l.professorExperimentalId === u.id && l.etapa === "EXPERIMENTAL_AGENDADA") destinos.push({ chave: `PEDAGOGICO:${l.id}`, nome: `Experimental · ${l.nome}`, finalidade: "PEDAGOGICO", leadId: l.id });
     }
   }
@@ -126,7 +126,7 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
     let contatoAlunoId: string | null | undefined = destino.alunoId;
     let alunoAtendimentoId: string | null | undefined = destino.alunoId;
     if (destino.leadId) {
-      const lead = await prisma.lead.findUnique({ where: { id: destino.leadId } });
+      const lead = await prisma.oportunidade.findUnique({ where: { id: destino.leadId } });
       telefone = lead?.telefoneE164 ?? null; nome = lead?.nome ?? nome;
     } else if (destino.alunoId) {
       if (destino.finalidade === "FINANCEIRO") {
