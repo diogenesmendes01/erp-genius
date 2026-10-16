@@ -14,10 +14,19 @@ import {
   resolverISO,
   resolverData,
 } from "@/server/alunos/importacao";
+import {
+  carregarCadastradosParaDuplicidade,
+  chavesDeIdentidade,
+  motivoDuplicidade,
+  type IdentidadeAluno,
+} from "@/server/alunos/importacao-duplicidade";
 
 // Importação de alunos por planilha XLSX (recurso ADMIN — doc 22, evento `AlunoImportado`).
 // Lenient: só Nome + País obrigatórios; documento avisa-não-bloqueia. Cada aluno é criado
 // em sua própria transação → uma linha ruim não derruba as demais (relatório por linha).
+// Deduplicação (docs/42 L224; docs/43 §6 item 9): a linha que repete um aluno já cadastrado, ou uma linha
+// anterior da mesma planilha, é IGNORADA e volta em `ignorados` com o motivo — reenviar a planilha não
+// recadastra ninguém. Critérios em src/server/alunos/importacao-duplicidade.ts.
 export const runtime = "nodejs";
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_LINHAS = 1000; // teto de linhas por importação (evita criação em massa acidental)
@@ -113,9 +122,21 @@ export async function POST(req: Request) {
   const paises = await prisma.pais.findMany({ include: { tiposDocumento: true } });
 
   const erros: { linha: number; motivo: string }[] = [];
+  const ignorados: { linha: number; motivo: string }[] = [];
   let total = 0;
   let criados = 0;
 
+  // 1ª passada: lê e valida cada linha (nada é gravado ainda), para conhecer as identidades da planilha.
+  type LinhaPreparada = {
+    linha: number;
+    raw: Record<string, string>;
+    primeiroNome: string;
+    pais: PaisComDocs;
+    tipoDoc: PaisComDocs["tiposDocumento"][number] | undefined;
+    documentoValido: boolean;
+    identidade: IdentidadeAluno;
+  };
+  const preparadas: LinhaPreparada[] = [];
   for (let r = 2; r <= ws.rowCount; r++) {
     const row = ws.getRow(r);
     const raw: Record<string, string> = {};
@@ -144,7 +165,31 @@ export async function POST(req: Request) {
       : undefined;
     const documento = raw.documento?.trim() || null;
     const documentoValido = documento && tipoDoc ? validarDocumento(tipoDoc.validador, documento) : false;
+    preparadas.push({
+      linha: r, raw, primeiroNome, pais, tipoDoc, documentoValido,
+      identidade: {
+        paisId: pais.id,
+        primeiroNome,
+        sobrenome: raw.sobrenome?.trim() || null,
+        documento,
+        email: raw.email?.trim() || null,
+        telefoneE164: normalizarTelefoneE164(raw.telefone, pais.ddi),
+        nascimento: resolverData(raw.nascimento),
+      },
+    });
+  }
 
+  // Os já cadastrados que podem repetir alguma linha (uma consulta, com teto).
+  const indice = await carregarCadastradosParaDuplicidade(preparadas.map((p) => p.identidade));
+
+  // 2ª passada: ignora a repetida (cadastro ou linha anterior desta planilha) e cria as demais.
+  for (const { linha: r, raw, primeiroNome, pais, tipoDoc, documentoValido, identidade } of preparadas) {
+    const chaves = chavesDeIdentidade(identidade);
+    const repetida = indice.procurar(chaves);
+    if (repetida) {
+      ignorados.push({ linha: r, motivo: motivoDuplicidade(repetida.origem, repetida.criterio) });
+      continue;
+    }
     try {
       const codigo = await gerarCodigo("aluno");
       await prisma.$transaction(async (tx) => {
@@ -152,19 +197,19 @@ export async function POST(req: Request) {
           data: {
             codigo,
             primeiroNome,
-            sobrenome: raw.sobrenome?.trim() || null,
+            sobrenome: identidade.sobrenome,
             nomePreferido: raw.nomePreferido?.trim() || null,
-            nascimento: resolverData(raw.nascimento),
+            nascimento: identidade.nascimento,
             genero: resolverGenero(raw.genero),
             paisId: pais.id,
             tipoDocumentoId: tipoDoc?.id ?? null,
-            documento,
+            documento: identidade.documento,
             documentoValido,
             documentoPaisEmissor: resolverISO(raw.documentoPaisEmissor),
             nacionalidade: resolverISO(raw.nacionalidade),
             segundaNacionalidade: resolverISO(raw.segundaNacionalidade),
-            email: raw.email?.trim() || null,
-            telefoneE164: normalizarTelefoneE164(raw.telefone, pais.ddi),
+            email: identidade.email,
+            telefoneE164: identidade.telefoneE164,
             whatsapp: resolverBool(raw.whatsapp) ?? false,
             aceitaComunicacoes: resolverBool(raw.aceitaComunicacoes) ?? true,
             paisResidencia: resolverISO(raw.paisResidencia),
@@ -191,10 +236,13 @@ export async function POST(req: Request) {
         });
       });
       criados++;
+      // Só a linha criada vira referência para as seguintes (a que falhou não existe no cadastro).
+      indice.registrar(chaves, { tipo: "planilha", linha: r });
     } catch {
       erros.push({ linha: r, motivo: "Falha ao gravar a linha no banco." });
     }
   }
+  erros.sort((a, b) => a.linha - b.linha);
 
-  return NextResponse.json({ total, criados, erros });
+  return NextResponse.json({ total, criados, erros, ignorados });
 }

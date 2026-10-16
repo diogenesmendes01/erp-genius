@@ -3,10 +3,21 @@ import type { FilaCobrancaItem } from "./consultas";
 // Filtros da fila de cobrança na URL (docs/42-auditoria-frontend-ux.md, E4): o cartão-indicador, a
 // busca, o país e a turma viviam em useState — F5, voltar do navegador, nova aba e link compartilhado
 // perdiam o recorte. Mesmo desenho das listas de alunos, leads e empresas: um leitor único valida a
-// URL no servidor, que já entrega a fila filtrada e ordenada. A fila não é paginada (a régua é
-// calculada em memória para cada cobrança aberta). Módulo puro: sem Prisma client, testável.
+// URL no servidor, que já entrega a fila filtrada e ordenada. Módulo puro: sem Prisma client, testável.
+//
+// Paginação (docs/43 §6 item 9, decisão de 10/10/2026 para filas de trabalho): cursor nos dois sentidos,
+// nunca página numerada — quem paga ou cobra itens da primeira página não faz a seguinte pular ninguém.
+// A ordem da fila é calculada (prioridade da régua, atraso), não é coluna do banco; por isso o cursor
+// leva a CHAVE DE ORDEM do item de fronteira (`prioridade_diasAtraso_id`), não só o id: se o próprio
+// item do cursor for pago e sair da fila, a leitura continua do mesmo ponto da ordem.
+
+import type { NavegacaoFila } from "@/lib/cursor-fila";
+import type { CursorDoLink } from "@/components/PaginacaoFila";
 
 export const ROTA_FILA = "/financeiro/cobrancas";
+
+/** Cobranças por trecho da fila (o que a tela mostra de cada vez). */
+export const FILA_COBRANCA_POR_TRECHO = 50;
 
 /** Cartões-indicadores que filtram a fila (lista fechada; as mesmas chaves dos contadores). */
 export const INDICADORES_FILA = ["aVencer", "emAtraso", "bloquear", "promessas"] as const;
@@ -103,18 +114,65 @@ export function contarIndicadoresFila(itens: ItemIndicador[]): Record<IndicadorF
   return { aVencer: conta("aVencer"), emAtraso: conta("emAtraso"), bloquear: conta("bloquear"), promessas: conta("promessas") };
 }
 
+/** Chave de ordem da fila: prioridade da régua (menor primeiro), maior atraso e, no empate, o id (ordem estável). */
+export type ChaveOrdemFila = { prioridade: number; diasAtraso: number; id: string };
+
+/** Compara duas chaves na ordem da fila (negativo: `a` vem antes). Termina no id: dois itens nunca empatam. */
+export function compararFila(a: ChaveOrdemFila, b: ChaveOrdemFila): number {
+  return a.prioridade - b.prioridade || b.diasAtraso - a.diasAtraso || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+}
+
 /**
  * A fila exibida: indicador, busca por palavras (cada uma no nome do aluno ou no código da cobrança),
- * país e turma; ordenada por prioridade da régua e, no empate, pelo maior atraso.
+ * país e turma; ordenada por prioridade da régua, no empate pelo maior atraso e, por fim, pelo id.
  */
-export function filtrarFila<T extends ItemFiltravel>(itens: T[], f: FiltrosFila): T[] {
+export function filtrarFila<T extends ItemFiltravel & { id: string }>(itens: T[], f: FiltrosFila): T[] {
   const palavras = palavrasDaBuscaFila(f.busca);
   return itens
     .filter((i) => !f.indicador || DO_INDICADOR[f.indicador](i))
     .filter((i) => palavras.every((p) => i.aluno.nome.toLowerCase().includes(p) || (i.codigo ?? "").toLowerCase().includes(p)))
     .filter((i) => !f.pais || i.pais === f.pais)
     .filter((i) => !f.turma || i.turma === f.turma)
-    .sort((a, b) => a.prioridade - b.prioridade || b.diasAtraso - a.diasAtraso);
+    .sort(compararFila);
+}
+
+/** Cursor de um item da fila: a chave de ordem dele, em texto que passa em CURSOR_FILA (`3_-5_cobrancaId`). */
+export const cursorDoItemFila = (i: ChaveOrdemFila): string => `${i.prioridade}_${i.diasAtraso}_${i.id}`;
+
+/** Chave de ordem lida de um cursor da fila; null quando o texto não tem esse formato. */
+export function lerCursorFila(cursor: string): ChaveOrdemFila | null {
+  const m = /^(-?\d{1,6})_(-?\d{1,6})_([A-Za-z0-9-]{1,80})$/.exec(cursor);
+  return m ? { prioridade: Number(m[1]), diasAtraso: Number(m[2]), id: m[3] } : null;
+}
+
+/** O cursor da navegação (o de `depois` ou o de `antes`) tem o formato da fila de cobrança? Sem cursor: sim. */
+export function navegacaoDaFilaValida(nav: NavegacaoFila): boolean {
+  const cursor = nav.depois ?? nav.antes;
+  return cursor === undefined || lerCursorFila(cursor) !== null;
+}
+
+/**
+ * Um trecho da fila já ordenada, na ordem de LEITURA (o contrato de `lerPaginaDaFila`, src/lib/cursor-fila.ts):
+ * - sem cursor: os primeiros `take`;
+ * - `depois`: os que vêm depois da chave do cursor, em ordem;
+ * - `antes`: os que vêm antes dela, do mais próximo para o mais distante (o recorte desvira).
+ * O item do cursor não precisa estar na fila: a chave é só a fronteira. Cursor fora do formato: nada.
+ */
+export function trechoDaFila<T extends ChaveOrdemFila>(ordenados: readonly T[], nav: NavegacaoFila, take: number): T[] {
+  const cursor = nav.depois ?? nav.antes;
+  if (cursor === undefined) return ordenados.slice(0, take);
+  const chave = lerCursorFila(cursor);
+  if (!chave) return [];
+  if (nav.antes !== undefined) return ordenados.filter((i) => compararFila(i, chave) < 0).reverse().slice(0, take);
+  return ordenados.filter((i) => compararFila(i, chave) > 0).slice(0, take);
+}
+
+/** Link da fila com estes filtros, no cursor indicado (o PaginacaoFila monta os dois sentidos). */
+export function hrefFilaNoCursor(f: FiltrosFila, cursor: CursorDoLink): string {
+  const q = new URLSearchParams(filtrosFilaParaQuery(f));
+  if ("antes" in cursor) q.set("antes", cursor.antes);
+  else q.set("depois", cursor.depois);
+  return `${ROTA_FILA}?${q.toString()}`;
 }
 
 /**
