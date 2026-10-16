@@ -110,7 +110,7 @@ describe("loading.tsx: anúncio e formato (E10)", () => {
     const html = renderToStaticMarkup(createElement(LoadingFinanceiro));
     expect(titulos(html)).toBe(0);
     expect(html).not.toMatch(/h-8 w-24/); // a fileira de 5 abas do antigo EsqueletoAbas
-    expect([...html.matchAll(/class="rounded-md bg-surface-muted h-20"/g)]).toHaveLength(4);
+    expect([...html.matchAll(/class="animate-pulse rounded-md bg-surface-muted h-20"/g)]).toHaveLength(4);
     expect(html).toContain("overflow-hidden rounded-lg border border-gray-200");
   });
 
