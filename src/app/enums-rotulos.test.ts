@@ -14,7 +14,7 @@ import {
   StatusPropostaPresencaHistoricaMigracao, StatusReservaSegundaChamada, StatusReservaVaga, StatusSolicitacaoEncerramento,
   StatusTemplate, StatusTurma, TipoAjuste, TipoAprovacao, TipoDestinacaoRecebimento, TipoMensagem, TipoMovimentacao,
   TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
-  FinalidadeNumero, FinalidadeAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel,
+  FinalidadeNumero, FinalidadeAtendimentoWhatsApp, StatusAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as L from "@/lib/labels";
@@ -2133,6 +2133,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["REFERENCIA_COBERTURA_MENSAL_LABEL", L.REFERENCIA_COBERTURA_MENSAL_LABEL, Object.values(ReferenciaCoberturaMensal)],
   ["FINALIDADE_NUMERO_LABEL", L.FINALIDADE_NUMERO_LABEL, Object.values(FinalidadeNumero)],
   ["SETOR_ATENDIMENTO_LABEL", L.SETOR_ATENDIMENTO_LABEL, Object.values(FinalidadeAtendimentoWhatsApp)],
+  ["STATUS_ATENDIMENTO_LABEL", L.STATUS_ATENDIMENTO_LABEL, Object.values(StatusAtendimentoWhatsApp)],
   ["FORMA_AGENDA_OFERTA_LABEL", L.FORMA_AGENDA_OFERTA_LABEL, Object.values(FormaAgendaOferta)],
   // R3 da #138 (B13): o mapa por extenso que vivia na gestão/SLA do WhatsApp (removido na E1).
   ["ETAPA_EXTENSO_LABEL", L.ETAPA_EXTENSO_LABEL, Object.values(EtapaLead)],
