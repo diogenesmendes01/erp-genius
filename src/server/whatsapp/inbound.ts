@@ -5,7 +5,7 @@ import { registrarEvento } from "@/server/_shared/evento";
 import { capturarRespostaExperimental, type ReferralInbound } from "@/server/comercial/captura";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 import { atendimentoDoInbound } from "./atendimentos";
-import { aplicarInbound } from "./status-atendimento";
+import { aplicarInbound, aplicarResposta } from "./status-atendimento";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
@@ -84,7 +84,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           status: m.fromMe ? "ENVIADA" : "ENTREGUE",
           statusEm: m.quando,
           driver: m.driver,
-          origem: null, // fromMe fora do ERP não tem origem HUMANO/CRON/LOTE (gap 16)
+          origem: m.fromMe ? "CELULAR" : null, // fromMe fora do ERP: enviada pelo celular (E3.6)
           providerMessageId: m.providerMessageId,
           criadoEm: m.quando,
         },
@@ -144,7 +144,8 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: {
           ultimaMensagemEm: m.quando, ...(m.fromMe ? {} : { ultimoInboundEm: m.quando, naoLidas: { increment: 1 } }),
         } });
-        if (!m.fromMe) await aplicarInbound(tx, atendimentoId, m.quando);
+        if (m.fromMe) await aplicarResposta(tx, atendimentoId, m.quando);
+        else await aplicarInbound(tx, atendimentoId, m.quando);
       }
     });
     return "gravada";
