@@ -115,3 +115,28 @@ export function usuarioVeNumero(
   if (usuario.papeis.includes(Papel.VENDEDOR) && numero.donoId === usuario.id) return true;
   return false;
 }
+
+/**
+ * Ponto único da Q4 (provisória): grupo SEM turma é visto por quem atende algum setor do número
+ * do grupo. Se o produto decidir outra regra, trocar aqui e ajustar o teste.
+ */
+export const GRUPO_SEM_TURMA_PARA_SETORES_DO_NUMERO = true;
+
+/** Escopo de grupos: com turma, docente alocado ou setor PEDAGOGICO; sem turma, setores do número. */
+export async function escopoGrupos(
+  usuario: Pick<UsuarioSessao, "id" | "papeis">,
+  agora: Date = new Date(),
+): Promise<Prisma.GrupoWhatsAppWhereInput> {
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return {};
+  const ors: Prisma.GrupoWhatsAppWhereInput[] = [];
+  if (usuario.papeis.includes(Papel.PROFESSOR)) {
+    ors.push({ turma: { is: escopoTurmasDocente(usuario.id, agora) } });
+  }
+  // O PEDAGOGICO do professor é só a turma dele (acima); os demais papéis do setor veem toda turma.
+  const setores = setoresDoUsuario(usuario.papeis.filter((p) => p !== Papel.PROFESSOR));
+  if (setores.includes("PEDAGOGICO")) ors.push({ turmaId: { not: null } });
+  if (GRUPO_SEM_TURMA_PARA_SETORES_DO_NUMERO && setores.length) {
+    ors.push({ turmaId: null, numero: { OR: setores.map(whereNumeroServeSetor) } });
+  }
+  return ors.length ? { OR: ors } : { id: "__sem_acesso__" };
+}
