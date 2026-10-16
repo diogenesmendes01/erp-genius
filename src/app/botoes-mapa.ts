@@ -969,6 +969,14 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
   ],
+  "funil/FunilCliente.tsx": [
+    "<Link> Quadro → primario|secundario/md",
+    "<Link> Lista → primario|secundario/md",
+    "<Botao> Nova oportunidade → primario/md",
+    "<Botao> Filtrar → secundario/md",
+    "<Link> Limpar → fantasma/md",
+    "<Botao> Mover selecionadas → secundario/md",
+  ],
   "funil/ModalPerda.tsx": [
     "<Botao> Voltar → secundario/md",
     "<Botao> Salvando… · Marcar como perdida → perigo/md",
@@ -992,6 +1000,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "funil/QuadroFunil.tsx": [
     "<Botao> Recolher · Mostrar cartões → fantasma/sm",
+  ],
+  "funil/page.tsx": [
+    "<Link> Limpar filtros → secundario/md",
+    "<a> Exportar → secundario/lg",
   ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",

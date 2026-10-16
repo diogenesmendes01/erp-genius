@@ -541,6 +541,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/funil/PainelOportunidade.tsx": [
     "compacto · Nenhuma atividade registrada.",
   ],
+  "src/app/(app)/funil/page.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na sua carteira.\"}",
+  ],
   "src/app/(app)/home/HomeGerente.tsx": [
     "compacto · Sem vendedores.",
     "compacto · Sem vendedores ativos.",
