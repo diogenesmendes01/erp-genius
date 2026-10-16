@@ -56,7 +56,7 @@ Base: levantamento WhatsApp, Parte 6 (corrige a lista original).
 
 ## E2 — Driver do motor
 
-Depende do motor pronto até M5 (`01-roteiro-adaptacao-motor.md`).
+Depende do motor pronto até M5 (roteiro de adaptação do motor, no repositório `whatsapp-web-baileys`).
 
 1. **Enum:** `DriverWhatsApp` ganha `MOTOR` (com rótulo, por causa de `enums-rotulos.test.ts`).
 2. **`drivers/motor.ts`** implementando `CanalWhatsApp` (`canal.ts:50-54`): `enviarTexto`, `enviarMidia`, `enviarTemplate` (no motor vira texto renderizado). Erros do motor mapeados para `ErroDriver`: `NAO_ENVIADO` → falha reprocessável; `RESULTADO_INCERTO` → revisão humana (fluxo atual).
@@ -178,7 +178,7 @@ Todas as regras do levantamento WhatsApp §4.4 continuam valendo e viram a espec
 
 ## E7 — Inbox novo (frontend)
 
-- **Funções e permissões:** seguir a lista oficial `03-funcoes-do-inbox.md` (aprovada).
+- **Funções e permissões:** seguir a lista oficial `funcoes-do-inbox.md` (aprovada).
 - Portar do motor os componentes de conversa: lista virtualizada (`VirtualList`), thread (`ChatView`), mensagem (`Message`, inclusive cartão Pix e botões comerciais), compositor com voz e anexos (`Composer`), seletor de emoji, GIF e figurinha (`ContentPicker`, `StickerEditor`), visualizador de mídia (`Media`), enquetes (`Poll`), diálogos de encaminhar, contato e localização (`Dialogs`) e as regras de paginação e âncora. `PhotoEditor` vai para Configurações › Números (foto do número, só Admin).
 - **Não portar:** Status (2ª versão), Canais, Comunidades, conversas trancadas, listas pessoais, e **nenhum** asset visual derivado do WhatsApp Desktop.
 - **Ações pessoais:** fixar, não lida, silenciar e favoritos ficam **por usuário** no ERP (tabela nova), sem sincronizar com o WhatsApp. "Arquivar" vira encerrar atendimento.
