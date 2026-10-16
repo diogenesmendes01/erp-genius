@@ -87,7 +87,19 @@ Razões medidas pela trava (`src/app/contraste-nucleo.ts`):
 >
 > **IA** tem cor própria de propósito — é o único sinal visual que diz "isto foi gerado por
 > IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6A53BD`, não
-> inverte, 5,86:1 com branco) é o botão de aceitar/aplicar sugestão.
+> inverte: o mesmo valor nos dois temas, 5,86:1 com branco) é o botão de aceitar/aplicar sugestão,
+> sempre com texto branco. Nisso ele difere do `--brand-solid`, que tem um valor por tema (`#1B8755`
+> no claro, `#21C063` no escuro) e leva `text-on-brand` (ver o quadro abaixo).
+
+<!-- Redação anterior à Fase 0, com valores que não valem mais (#6D28D9, #4338CA, #6264EC). Fica comentada
+só para este trecho não colidir com a #178, que reescreveu as linhas abaixo; o texto válido é o parágrafo acima.
+> **IA** tem cor própria de propósito — é o único sinal visual que diz "isto foi gerado por
+> IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6D28D9`, não
+> inverte: o mesmo valor nos dois temas) é o botão de aceitar/aplicar sugestão, sempre com texto
+> branco. Nisso ele difere do `--brand-solid`, que desde a #157 tem um valor por tema (`#4338CA` no
+> claro, `#6264EC` no escuro; ver o quadro abaixo).
+
+-->
 
 ## Tokens — Marca e ações sólidas
 | Papel | Token | Claro | Escuro |
