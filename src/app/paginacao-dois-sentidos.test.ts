@@ -706,7 +706,8 @@ type Fila = { tela: string; consulta: { arquivo: string; funcao: string } };
 
 /**
  * Filas de trabalho (decisão de 10/10/2026): cursor nos dois sentidos, nunca página numerada. Cada tela com a função
- * do servidor que lê a fila (na de grades, a própria page consulta o banco).
+ * do servidor que lê a fila (na de grades, a própria page consulta o banco). As 12 da #158 e, do item 9 de docs/43 §6,
+ * a fila de cobrança e a dos informes a conferir do /financeiro (antes sem `take`).
  */
 const FILAS: readonly Fila[] = [
   { tela: "src/app/(app)/academico/grades/page.tsx", consulta: { arquivo: "src/app/(app)/academico/grades/page.tsx", funcao: "GradesPage" } },
@@ -718,6 +719,8 @@ const FILAS: readonly Fila[] = [
   { tela: "src/app/(app)/diario/regularizacoes/page.tsx", consulta: { arquivo: "src/server/diario/regularizacao-consultas.ts", funcao: "listarRegularizacoesAula" } },
   { tela: "src/app/(app)/financeiro/continuidade/page.tsx", consulta: { arquivo: "src/server/matricula/continuidade-fila.ts", funcao: "consultarFilaContinuidadeMensal" } },
   { tela: "src/app/(app)/financeiro/desistencias/page.tsx", consulta: { arquivo: "src/server/matricula/desistencia-financeiro-consulta.ts", funcao: "listarDesistenciasFinanceiras" } },
+  { tela: "src/app/(app)/financeiro/(painel)/cobrancas/page.tsx", consulta: { arquivo: "src/server/cobrancas/consultas.ts", funcao: "listarFilaCobranca" } },
+  { tela: "src/app/(app)/financeiro/(painel)/informes/page.tsx", consulta: { arquivo: "src/server/financeiro/consultas.ts", funcao: "listarFilaInformesPagamento" } },
   { tela: "src/app/(app)/secretaria/avisos-agenda/page.tsx", consulta: { arquivo: "src/server/comunicacoes-agenda/consultas.ts", funcao: "consultarAvisosAlteracaoAgenda" } },
   { tela: "src/app/(app)/secretaria/desistencias/page.tsx", consulta: { arquivo: "src/server/matricula/desistencia-administrativa-fila.ts", funcao: "listarPendenciasAdministrativasDesistencia" } },
   { tela: "src/app/(app)/secretaria/envios-portal/page.tsx", consulta: { arquivo: "src/server/portal-aluno/fila-envios.ts", funcao: "consultarFilaEnviosPortalAluno" } },
@@ -734,6 +737,8 @@ const FILAS_LITERAL: readonly string[] = [
   "src/app/(app)/diario/regularizacoes/page.tsx | src/server/diario/regularizacao-consultas.ts | listarRegularizacoesAula",
   "src/app/(app)/financeiro/continuidade/page.tsx | src/server/matricula/continuidade-fila.ts | consultarFilaContinuidadeMensal",
   "src/app/(app)/financeiro/desistencias/page.tsx | src/server/matricula/desistencia-financeiro-consulta.ts | listarDesistenciasFinanceiras",
+  "src/app/(app)/financeiro/(painel)/cobrancas/page.tsx | src/server/cobrancas/consultas.ts | listarFilaCobranca",
+  "src/app/(app)/financeiro/(painel)/informes/page.tsx | src/server/financeiro/consultas.ts | listarFilaInformesPagamento",
   "src/app/(app)/secretaria/avisos-agenda/page.tsx | src/server/comunicacoes-agenda/consultas.ts | consultarAvisosAlteracaoAgenda",
   "src/app/(app)/secretaria/desistencias/page.tsx | src/server/matricula/desistencia-administrativa-fila.ts | listarPendenciasAdministrativasDesistencia",
   "src/app/(app)/secretaria/envios-portal/page.tsx | src/server/portal-aluno/fila-envios.ts | consultarFilaEnviosPortalAluno",
@@ -967,9 +972,9 @@ describe("paginação nos dois sentidos — telas", () => {
 
   it("filas de trabalho: cursor nos dois sentidos na tela e na consulta, nunca página numerada (ou exceção ancorada)", () => {
     expect(FILAS.map((f) => `${f.tela} | ${f.consulta.arquivo} | ${f.consulta.funcao}`)).toEqual([...FILAS_LITERAL]);
-    // Fila e lista são classificações exclusivas; as 28 telas da #158 estão numa das duas.
+    // Fila e lista são classificações exclusivas; as 28 telas da #158 estão numa das duas, e o item 9 somou 2 filas.
     expect(FILAS.filter((f) => MIGRADAS.includes(f.tela))).toEqual([]);
-    expect(FILAS.length + MIGRADAS.length).toBe(28);
+    expect(FILAS.length + MIGRADAS.length).toBe(28 + 2);
     const todos = FILAS.flatMap((f) => [...casosDaFila(f.tela, lerDoDisco), ...casosDaConsulta(f.consulta.arquivo, f.consulta.funcao, lerDoDisco)]);
     const casadas = new Map<number, number>();
     const soltos: string[] = [];
