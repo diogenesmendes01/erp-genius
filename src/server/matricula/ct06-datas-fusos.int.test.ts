@@ -75,7 +75,7 @@ describe("CT-06: cobertura, vencimento e agenda preservam seus fusos próprios",
   });
 
   it("emite uma vez a cobertura curta do ciclo, sem alterar a aula no fuso da grade", async () => {
-    const lead = await prisma.lead.create({ data: { nome: "Negociação CT-06", telefoneE164: "+50689990001", vendedorDonoId: secretariaId } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Negociação CT-06", telefoneE164: "+50689990001", vendedorDonoId: secretariaId } });
     const preparada = await prepararContratacao({ leadId: lead.id, alunoId, produtoId, paisId, turmaId, regime: "MENSALIDADE", taxaProposta: "20000", valorServicoProposto: "85000", motivo: "Identidade e oferta conferidas para CT-06", chaveIdempotencia: "ct06-preparacao", identidadeConferida: true });
     if (!preparada.ok || !preparada.dado) throw new Error(preparada.ok ? "Preparação CT-06 sem retorno." : preparada.erro);
     const matriculaId = preparada.dado.matriculaId;

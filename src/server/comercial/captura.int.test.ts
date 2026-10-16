@@ -60,7 +60,7 @@ describe("casca removida (E1): o 1º inbound não captura lead nem saúda", () =
     const numero = await seedNumeroVendas();
     await ligarConfig({ autoLeadAtivo: true, saudacaoEstado: "ATIVA" });
     expect(await inbound(numero, { referral: { sourceType: "ad", sourceId: "ad-1" } })).toBe("gravada");
-    expect(await prisma.lead.count()).toBe(0);
+    expect(await prisma.oportunidade.count()).toBe(0);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect((await prisma.contatoWhatsApp.findFirstOrThrow()).leadId).toBeNull();
     expect((await prisma.conversaWhatsApp.findFirstOrThrow()).capturadaEm).not.toBeNull();
@@ -68,7 +68,7 @@ describe("casca removida (E1): o 1º inbound não captura lead nem saúda", () =
   it("telefone que já é lead: o contato não é vinculado automaticamente", async () => {
     const numero = await seedNumeroVendas();
     await ligarConfig({ autoLeadAtivo: true });
-    await prisma.lead.create({ data: { nome: "Já lead", telefoneE164: "+5511970001111" } });
+    await prisma.oportunidade.create({ data: { nome: "Já lead", telefoneE164: "+5511970001111" } });
     await inbound(numero);
     expect((await prisma.contatoWhatsApp.findFirstOrThrow()).leadId).toBeNull();
   });

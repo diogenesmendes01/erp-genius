@@ -112,13 +112,13 @@ async function criarMatriculaTx(
   let etapaLeadAtual: EtapaLead | null = null;
   if (dados.leadId) {
     await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${dados.leadId} FOR UPDATE`;
-    const lead = await tx.lead.findUnique({
+    const lead = await tx.oportunidade.findUnique({
       where: { id: dados.leadId },
       include: { matricula: { select: { id: true } } },
     });
     if (!lead) throw new ErroRegra("Lead não encontrado.");
     // Ownership/escopo: vendedor só converte lead do próprio escopo (doc 07).
-    if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) && !await tx.lead.findFirst({ where: { AND: [{ id: lead.id }, await escopoComercialAtual(autor, tx)] }, select: { id: true } })) throw new ErroPermissao();
+    if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) && !await tx.oportunidade.findFirst({ where: { AND: [{ id: lead.id }, await escopoComercialAtual(autor, tx)] }, select: { id: true } })) throw new ErroPermissao();
     if (lead.matricula) throw new ErroRegra("Lead já possui matrícula.");
     leadId = lead.id;
     etapaLeadAtual = lead.etapa;
@@ -387,7 +387,7 @@ async function criarMatriculaTx(
   }
 
   if (leadId && etapaLeadAtual !== EtapaLead.AGUARDANDO_MATRICULA) {
-    await tx.lead.update({ where: { id: leadId }, data: { etapa: EtapaLead.AGUARDANDO_MATRICULA } });
+    await tx.oportunidade.update({ where: { id: leadId }, data: { etapa: EtapaLead.AGUARDANDO_MATRICULA } });
     // Etapa do lead muda no fluxo de matrícula: registra no agregado Lead para
     // alimentar a timeline e o `etapaDesde` confiável (issue #15).
     await registrarEvento(tx, {
@@ -573,7 +573,7 @@ async function ativarMatriculaTx(
   }
 
   if (matricula.leadId && matricula.lead?.etapa !== EtapaLead.MATRICULADO) {
-    await tx.lead.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
+    await tx.oportunidade.update({ where: { id: matricula.leadId }, data: { etapa: EtapaLead.MATRICULADO } });
     // Etapa do lead muda na ativação: registra no agregado Lead p/ timeline e
     // `etapaDesde` confiável (issue #15).
     await registrarEvento(tx, {
@@ -741,7 +741,7 @@ async function exigirMatriculaNoEscopoTx(
     if (!matricula.lead) {
       throw new ErroPermissao("Matrícula sem lead deve ser operada pela Secretaria ou Financeiro.");
     }
-    const noEscopo = await tx.lead.findFirst({
+    const noEscopo = await tx.oportunidade.findFirst({
       where: { AND: [{ id: matricula.leadId! }, await escopoComercialAtual(autor, tx)] },
       select: { id: true },
     });

@@ -25,7 +25,7 @@ async function seedNumero() {
 
 /** Lead com experimental marcada para daqui a `emMin` minutos (negativo = já passou). */
 async function seedLeadExperimental(numeroId: string, emMin: number, etapa: EtapaLead) {
-  const lead = await prisma.lead.create({
+  const lead = await prisma.oportunidade.create({
     data: {
       codigo: `L-${Math.floor(Math.random() * 1e6)}`,
       nome: "Ana",
@@ -67,7 +67,7 @@ async function marcarPassoFeito(leadId: string, chave: string, passo: string, an
 /** Move a experimental do lead para um horário novo (o que `agendarExperimental` faz no banco). */
 async function reagendarPara(leadId: string, emMin: number, etapa: EtapaLead = EtapaLead.EXPERIMENTAL_AGENDADA) {
   const dataExperimental = new Date(Date.now() + emMin * 60_000);
-  await prisma.lead.update({
+  await prisma.oportunidade.update({
     where: { id: leadId },
     data: { dataExperimental, etapa, experimentalConfirmadaEm: null },
   });
@@ -100,7 +100,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "SIM");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).not.toBeNull();
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("ExperimentalConfirmada");
   });
@@ -112,7 +112,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "reagendar");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).toBeNull(); // não confirma
     expect(atualizado.etapa).toBe(EtapaLead.EXPERIMENTAL_AGENDADA); // não mexe no funil
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("ExperimentalReagendamentoSolicitado");
@@ -125,7 +125,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim, mas preciso ver o horário");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).toBeNull();
   });
 
@@ -135,7 +135,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).toBeNull();
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).not.toContain("ExperimentalConfirmada");
   });
@@ -151,7 +151,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).toBeNull();
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).not.toContain("ExperimentalConfirmada");
   });
@@ -163,7 +163,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).not.toBeNull();
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("ExperimentalConfirmada");
   });
@@ -177,7 +177,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
 
     await inbound(numero, contato.telefoneE164.replace("+", ""), "sim");
 
-    const atualizado = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    const atualizado = await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } });
     expect(atualizado.experimentalConfirmadaEm).toBeNull();
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).not.toContain("ExperimentalConfirmada");
   });

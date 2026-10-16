@@ -459,7 +459,7 @@ describe("roteamento de webhook por driver (P2-6)", () => {
 describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
   async function seedLeadNaConversa(donoId: string | null) {
     const seed = await seedConversaVendas(vendedor.id);
-    const lead = await prisma.lead.create({
+    const lead = await prisma.oportunidade.create({
       data: { nome: "Lead Cockpit", vendedorDonoId: donoId, etapa: EtapaLead.NOVO },
     });
     await prisma.contatoWhatsApp.update({ where: { id: seed.contato.id }, data: { leadId: lead.id } });
@@ -482,7 +482,7 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
 
   it("papel sem alçada comercial não recebe o lead na thread (gate no servidor, não no botão)", async () => {
     const { numero } = await seedCanal({ estado: "SHADOW" });
-    const lead = await prisma.lead.create({ data: { nome: "Lead alheio ao financeiro" } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead alheio ao financeiro" } });
     const contato = await prisma.contatoWhatsApp.create({
       data: { telefoneE164: "+50699990001", leadId: lead.id },
     });
@@ -505,7 +505,7 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     expect(thread).toBeNull(); // doc 36: o dono do número não recebe histórico de outro vendedor.
 
     // Caminho feliz intacto: se o lead for do PRÓPRIO A, o cockpit volta a aparecer.
-    await prisma.lead.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });
+    await prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });
     const propria = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
     expect(propria?.lead?.id).toBe(lead.id);
   });
@@ -536,11 +536,11 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
 
     const ok = await definirTemperatura(lead.id, Temperatura.QUENTE);
     expect(ok.ok, ok.ok ? "" : `falhou: ${(ok as { erro?: string }).erro}`).toBe(true);
-    expect((await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } })).temperatura).toBe(Temperatura.QUENTE);
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } })).temperatura).toBe(Temperatura.QUENTE);
     expect((await eventosDo("Lead", lead.id)).map((e) => e.tipo)).toContain("LeadEditado");
 
     const outro = await criarUsuario([Papel.VENDEDOR]);
-    const leadAlheio = await prisma.lead.create({ data: { nome: "Alheio", vendedorDonoId: outro.id } });
+    const leadAlheio = await prisma.oportunidade.create({ data: { nome: "Alheio", vendedorDonoId: outro.id } });
     const negado = await definirTemperatura(leadAlheio.id, Temperatura.QUENTE);
     expect(negado.ok).toBe(false);
   });
@@ -550,8 +550,8 @@ describe("vincularContatoWhatsApp", () => {
   it("vendedor vincula ao PRÓPRIO lead; lead alheio é negado; evento auditável", async () => {
     const { contato, conversa } = await seedConversaVendas(vendedor.id);
     const outro = await criarUsuario([Papel.VENDEDOR]);
-    const meuLead = await prisma.lead.create({ data: { nome: "Lead Meu", vendedorDonoId: vendedor.id, telefoneE164: contato.telefoneE164 } });
-    const leadAlheio = await prisma.lead.create({ data: { nome: "Lead Alheio", vendedorDonoId: outro.id } });
+    const meuLead = await prisma.oportunidade.create({ data: { nome: "Lead Meu", vendedorDonoId: vendedor.id, telefoneE164: contato.telefoneE164 } });
+    const leadAlheio = await prisma.oportunidade.create({ data: { nome: "Lead Alheio", vendedorDonoId: outro.id } });
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
 
     const negado = await vincularContatoWhatsApp({ contatoId: contato.id, atendimentoId: conversa.id, alvo: { tipo: "lead", id: leadAlheio.id } });

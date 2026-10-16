@@ -39,7 +39,7 @@ beforeEach(async () => {
   const grade = await prisma.propostaGradeTurma.create({ data: { turmaId: turma.id, calendarioId: calendario.id, preparadorId: secretariaId, versao: 1, fusoOrigem: "UTC", motivo: "Grade da preparação mensal", chaveIdempotencia: "condicoes-grade", entradaHash: "fixture", snapshot: {} } });
   await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: adminId, aprovada: true, motivo: "Grade conferida" } });
   await prisma.encontroAgenda.create({ data: { turmaId: turma.id, propostaGradeId: grade.id, professorId: professor.id, preparadorId: secretariaId, inicio: new Date("2099-10-01T12:00:00Z"), fim: new Date("2099-10-01T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula da preparação mensal", chaveIdempotencia: "condicoes-encontro", entradaHash: "fixture" } });
-  const lead = await prisma.lead.create({ data: { nome: "Contratação mensal das condições", vendedorDonoId: secretariaId } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Contratação mensal das condições", vendedorDonoId: secretariaId } });
   const preparacao = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId: secretariaId, leadId: lead.id, alunoId: a.id, produtoId: c.produto.id, paisId: c.pais.id, turmaId: turma.id, regime: "MENSALIDADE", taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparação mensal real para condições", chaveIdempotencia: "condicoes-preparacao-mensal" }));
   matriculaId = preparacao.matriculaId;
   documentoId = (await prisma.documento.create({ data: { matriculaId, categoria: "CONTRATO", nome: "Contrato", url: "/api/files/contrato-mensal.pdf" } })).id;
@@ -115,7 +115,7 @@ it("recusa ausência ou preparação por hora, sem tratar contrato confirmado co
   await prisma.matricula.update({ where: { id: semPreparacao.id }, data: { contratoOk: true, contratoDocumentoId: documentoSemPreparacao.id, confirmacaoContratoPorId: secretariaId, confirmacaoContratoEm: new Date() } });
   await expect(prepararCondicoesContinuidadeMensal({ ...input(), matriculaId: semPreparacao.id, documentoId: documentoSemPreparacao.id, regras: { ...regras, continuidadeContratada: { ...regras.continuidadeContratada, evidenciaId: documentoSemPreparacao.id } } })).resolves.toMatchObject({ ok: false });
 
-  const lead = await prisma.lead.create({ data: { nome: "Contratação por hora", vendedorDonoId: secretariaId } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Contratação por hora", vendedorDonoId: secretariaId } });
   const porHora = await prisma.$transaction((tx) => prepararContratacaoTx(tx, { autorId: secretariaId, leadId: lead.id, alunoId: atual.alunoId, produtoId: atual.produtoId, paisId: atual.paisId, turmaId, regime: "HORA_PARTICULAR", taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparação por hora real para recusa", chaveIdempotencia: "condicoes-preparacao-hora" }));
   const documentoHora = await prisma.documento.create({ data: { matriculaId: porHora.matriculaId, categoria: "CONTRATO", nome: "Contrato por hora", url: "/api/files/contrato-hora.pdf" } });
   await prisma.matricula.update({ where: { id: porHora.matriculaId }, data: { contratoOk: true, contratoDocumentoId: documentoHora.id, confirmacaoContratoPorId: secretariaId, confirmacaoContratoEm: new Date() } });

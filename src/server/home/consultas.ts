@@ -47,7 +47,7 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Dat
   // Experimentais para check-in (agendadas) — só as ATRIBUÍDAS a este professor
   // (escopo, Issue #13). O vínculo é a FK `professorExperimentalId` (fonte de
   // verdade). Sem atribuição = nada aparece, e o check-in também é bloqueado.
-  const experimentais = await prisma.lead.findMany({
+  const experimentais = await prisma.oportunidade.findMany({
     where: {
       professorExperimentalId: usuario.id,
       etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
@@ -99,16 +99,16 @@ export async function dadosHomeGerente(usuario: UsuarioSessao) {
   const { ini, fim } = hojeIntervalo();
 
   const [leadsHoje, totalLeads, matriculados, matriculasMes] = await Promise.all([
-    prisma.lead.count({ where: { AND: [escopo], criadoEm: { gte: ini, lte: fim } } }),
-    prisma.lead.count({ where: escopo }),
-    prisma.lead.count({ where: { AND: [escopo], etapa: EtapaLead.MATRICULADO } }),
+    prisma.oportunidade.count({ where: { AND: [escopo], criadoEm: { gte: ini, lte: fim } } }),
+    prisma.oportunidade.count({ where: escopo }),
+    prisma.oportunidade.count({ where: { AND: [escopo], etapa: EtapaLead.MATRICULADO } }),
     prisma.matricula.count({ where: { ...escopoMatriculas, status: StatusMatricula.ATIVA, ativadaEm: { gte: inicioDoMes() } } }),
   ]);
 
   const conversao = totalLeads > 0 ? Math.round((matriculados / totalLeads) * 100) : 0;
 
   const limiteSla = new Date(Date.now() - SLA_MINUTOS * 60000);
-  const alertasSla = await prisma.lead.count({
+  const alertasSla = await prisma.oportunidade.count({
     where: { AND: [escopo], etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
   });
 
@@ -121,7 +121,7 @@ export async function dadosHomeGerente(usuario: UsuarioSessao) {
   // — o gerente cobra; sem o check-in a recuperação de no-show (C2) não dispara.
   const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
   const limiteCheckIn = new Date(Date.now() - (configComercial?.checkInToleranciaMinutos ?? 30) * 60_000);
-  const checkInsVencidos = await prisma.lead.count({
+  const checkInsVencidos = await prisma.oportunidade.count({
     where: { AND: [escopo], etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: { not: null, lt: limiteCheckIn } },
   });
 
@@ -137,14 +137,14 @@ export async function dadosHomeGerente(usuario: UsuarioSessao) {
   const ranking = await Promise.all(
     vendedores.map(async (v) => ({
       nome: v.nome,
-      matriculados: await prisma.lead.count({
+      matriculados: await prisma.oportunidade.count({
         where: { vendedorDonoId: v.id, etapa: EtapaLead.MATRICULADO },
       }),
     })),
   );
   ranking.sort((a, b) => b.matriculados - a.matriculados);
 
-  const funil = await prisma.lead.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
+  const funil = await prisma.oportunidade.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
 
   return {
     kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla, checkInsVencidos },

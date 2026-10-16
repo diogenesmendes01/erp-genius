@@ -62,7 +62,7 @@ describe("row-level de leitura (doc 07)", () => {
 
   it("gerente comercial enxerga a equipe atribuída e nega outra carteira", async () => {
     const terceiro = await criarUsuario([Papel.VENDEDOR], "Fora da equipe");
-    const alheio = await prisma.lead.create({ data: { nome: "Outra carteira", vendedorDonoId: terceiro.id } });
+    const alheio = await prisma.oportunidade.create({ data: { nome: "Outra carteira", vendedorDonoId: terceiro.id } });
     const todos = await listarLeads(sessaoDe(gerente));
     expect(new Set(todos.map((l) => l.id))).toEqual(new Set([leadV1, leadV2]));
     expect(await obterLead(alheio.id, sessaoDe(gerente))).toBeNull();

@@ -27,7 +27,7 @@ import { conferirCoberturaInicial } from "./cobertura";
 
 let sec: Awaited<ReturnType<typeof criarUsuario>>, outraSec: typeof sec, ven: typeof sec, alheio: typeof sec;
 let cat: Awaited<ReturnType<typeof seedCatalogoMinimo>>;
-let matricula: Awaited<ReturnType<typeof prisma.matricula.create>>, lead: Awaited<ReturnType<typeof prisma.lead.create>>;
+let matricula: Awaited<ReturnType<typeof prisma.matricula.create>>, lead: Awaited<ReturnType<typeof prisma.oportunidade.create>>;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const pedido = (campo: "primeiroNome" | "email" | "telefoneE164" | "documentos", valorProposto: string) => ({ matriculaId: matricula.id, campo, valorProposto, motivo: "Correção pedida pelo aluno" });
 async function upload(autorId: string) {
@@ -45,7 +45,7 @@ beforeEach(async () => {
   [sec, outraSec, ven, alheio] = await Promise.all([criarUsuario([Papel.SECRETARIA_ACADEMICA]), criarUsuario([Papel.SECRETARIA_ACADEMICA]), criarUsuario([Papel.VENDEDOR]), criarUsuario([Papel.VENDEDOR])]);
   cat = await seedCatalogoMinimo();
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Ana", sobrenome: "Silva", paisId: cat.pais.id, email: "ana@genius.test" } });
-  lead = await prisma.lead.create({ data: { nome: "Ana Silva", paisId: cat.pais.id, vendedorDonoId: ven.id } });
+  lead = await prisma.oportunidade.create({ data: { nome: "Ana Silva", paisId: cat.pais.id, vendedorDonoId: ven.id } });
   matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "AGUARDANDO" } });
 });
 
@@ -106,7 +106,7 @@ describe("D05: assunção e solicitação de correção", () => {
     entrar(outraSec.id); expect((await assumirMatricula(matricula.id)).ok).toBe(true);
     const atual = await prisma.matricula.findUniqueOrThrow({ where: { id: matricula.id } });
     expect(atual.secretariaResponsavelId).toBe(sec.id); expect(atual.secretariaAssumiuEm).toEqual(primeira.secretariaAssumiuEm);
-    expect((await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } })).vendedorDonoId).toBe(ven.id);
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: lead.id } })).vendedorDonoId).toBe(ven.id);
     expect((await prisma.comissao.findFirstOrThrow()).vendedorId).toBe(ven.id);
     expect((await eventosDo("Matricula", matricula.id)).filter((e) => e.tipo === "MatriculaAssumida")).toHaveLength(1);
   });
@@ -137,7 +137,7 @@ describe("D05: assunção e solicitação de correção", () => {
     await prisma.usuario.update({ where: { id: ven.id }, data: { papeis: [Papel.VENDEDOR, Papel.SECRETARIA_ACADEMICA] } });
     entrar(ven.id);
     expect((await anexarDocumentoLead(lead.id, { ...await upload(ven.id), categoria: CategoriaDocumento.CONTRATO })).ok).toBe(true);
-    const fora = await prisma.lead.create({ data: { nome: "Fora da carteira", vendedorDonoId: alheio.id } });
+    const fora = await prisma.oportunidade.create({ data: { nome: "Fora da carteira", vendedorDonoId: alheio.id } });
     expect((await anexarDocumentoLead(fora.id, { ...await upload(ven.id), categoria: CategoriaDocumento.CONTRATO })).ok).toBe(false);
   });
 
@@ -161,7 +161,7 @@ describe("D05: assunção e solicitação de correção", () => {
     const solicitacao = await prisma.solicitacaoCorrecaoCadastro.findFirstOrThrow();
     entrar(sec.id);
     for (const documentoId of [undefined, anterior.id]) expect((await resolverCorrecaoCadastro(solicitacao.id, { aprovar: true, motivo: "Documento conferido", documentoId })).ok).toBe(false);
-    const outroLead = await prisma.lead.create({ data: { nome: "Outra pessoa", vendedorDonoId: alheio.id } });
+    const outroLead = await prisma.oportunidade.create({ data: { nome: "Outra pessoa", vendedorDonoId: alheio.id } });
     const outroDoc = await documentoLead(CategoriaDocumento.CONTRATO, outroLead.id);
     expect((await resolverCorrecaoCadastro(solicitacao.id, { aprovar: true, motivo: "Documento conferido", documentoId: outroDoc.id })).ok).toBe(false);
     const corrigido = await upload(sec.id);

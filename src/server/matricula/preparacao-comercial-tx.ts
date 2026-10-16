@@ -27,7 +27,7 @@ export async function prepararContratacaoTx(tx: Prisma.TransactionClient, input:
   const papeis: Papel[] = [Papel.ADMINISTRADOR, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA];
   if (!autor?.ativo || !autor.papeis.some((p) => papeis.includes(p))) throw new ErroPermissao();
   const operacional = autor.papeis.includes(Papel.ADMINISTRADOR) || autor.papeis.includes(Papel.SECRETARIA_ACADEMICA);
-  const lead = await tx.lead.findFirst({ where: { AND: [{ id: d.leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, telefoneE164: true, vendedorDonoId: true, matricula: { select: { id: true } } } });
+  const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id: d.leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, telefoneE164: true, vendedorDonoId: true, matricula: { select: { id: true } } } });
   if (!lead) throw new ErroPermissao();
   const repetida = await tx.preparacaoComercialMatricula.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } } });
   if (repetida) {
