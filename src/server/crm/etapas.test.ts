@@ -18,6 +18,19 @@ describe("etapas do funil", () => {
     "NOVO","EM_ATENDIMENTO","QUALIFICADO","EXPERIMENTAL_AGENDADA","EXPERIMENTAL_REALIZADA","NO_SHOW","PROPOSTA","AGUARDANDO_MATRICULA","MATRICULADO","PERDIDO",
   ])("soltar na mesma coluna (%s) não faz nada", (e) =>
     expect(destinoDoArraste(e as EtapaLead, e as EtapaLead)).toEqual({ tipo: "nenhum" }));
+  // Proposta e contratação aceitam arraste de QUALQUER etapa aberta: a ação só
+  // abre o diálogo; quem valida a transição é o servidor ao confirmar.
+  const ABERTAS = ["NOVO","EM_ATENDIMENTO","QUALIFICADO","EXPERIMENTAL_AGENDADA","EXPERIMENTAL_REALIZADA","NO_SHOW","PROPOSTA","AGUARDANDO_MATRICULA"] as const;
+  it("NOVO → PROPOSTA e AGUARDANDO_MATRICULA → PROPOSTA abrem enviarProposta", () => {
+    expect(destinoDoArraste("NOVO", "PROPOSTA")).toEqual({ tipo: "acao", acao: "enviarProposta" });
+    expect(destinoDoArraste("AGUARDANDO_MATRICULA", "PROPOSTA")).toEqual({ tipo: "acao", acao: "enviarProposta" });
+  });
+  it.each(ABERTAS.filter((o) => o !== "PROPOSTA"))("%s → PROPOSTA devolve enviarProposta", (o) =>
+    expect(destinoDoArraste(o as EtapaLead, "PROPOSTA")).toEqual({ tipo: "acao", acao: "enviarProposta" }));
+  it.each(
+    ABERTAS.flatMap((o) => (["AGUARDANDO_MATRICULA", "MATRICULADO"] as const).filter((d) => d !== o).map((d) => [o, d] as const)),
+  )("%s → %s devolve prepararContratacao", (o, d) =>
+    expect(destinoDoArraste(o as EtapaLead, d as EtapaLead)).toEqual({ tipo: "acao", acao: "prepararContratacao" }));
   it("recusa salto, etapa de evento e saída de etapa final", () => {
     expect(destinoDoArraste("NOVO", "QUALIFICADO")).toEqual({ tipo: "recusar", motivo: "Avance uma etapa por vez." });
     expect(destinoDoArraste("NOVO", "EXPERIMENTAL_REALIZADA")).toEqual({ tipo: "recusar", motivo: "Esta etapa é registrada pelo check-in do professor." });
