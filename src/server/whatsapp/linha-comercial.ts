@@ -56,12 +56,14 @@ export async function atendimentoComercialDaLinha(
   // Nenhum aberto: nasce o da linha. Encerrado não reabre — ganha uma chave nova (1 aberto por vez).
   const anteriores = await tx.atendimentoWhatsApp.count({ where: { conversaId, contextoChave: { startsWith: CHAVE_LINHA } } });
   const contextoChave = anteriores ? `${CHAVE_LINHA}:${anteriores + 1}` : CHAVE_LINHA;
+  // O ACESSO vem da linha (LC-D02), não deste campo. Mas responsável preenchido conta como assumido
+  // (mesma regra do backfill da M2 e de garantirAtendimento): nasce EM_ATENDIMENTO, não "Na fila".
+  const responsavelId = dados.responsavelId ?? conversa.numero.donoId;
   return tx.atendimentoWhatsApp.upsert({
     where: { conversaId_contextoChave: { conversaId, contextoChave } },
     create: {
-      conversaId, contextoChave, finalidade: "COMERCIAL", leadId,
-      // Auditoria: quem era o dono quando nasceu. O ACESSO vem da linha (LC-D02), não deste campo.
-      responsavelId: dados.responsavelId ?? conversa.numero.donoId,
+      conversaId, contextoChave, finalidade: "COMERCIAL", leadId, responsavelId,
+      ...(responsavelId ? { status: "EM_ATENDIMENTO" as const } : {}),
     },
     update: {},
   });

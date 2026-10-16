@@ -855,6 +855,9 @@ export async function atribuirDono(
       await exigirDestinoComercial(autor, vendedorId, tx);
       if (lead.vendedorDonoId === vendedorId) return;
       await tx.lead.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
+      // Responsável preenchido conta como assumido (regra do backfill da M2): quem estava "Na fila" passa a
+      // EM_ATENDIMENTO; AGUARDANDO_CLIENTE e EM_ATENDIMENTO mantêm o status.
+      await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null, status: "ABERTO_SEM_RESPONSAVEL" }, data: { responsavelId: vendedorId, status: "EM_ATENDIMENTO" } });
       await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null }, data: { responsavelId: vendedorId } });
       if (lead.vendedorDonoId) await tx.intencaoMensagem.updateMany({ where: { OR: [{ leadId: id }, { atendimento: { is: { leadId: id, finalidade: "COMERCIAL" } } }], origem: "HUMANO", autorId: lead.vendedorDonoId, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "Carteira transferida; revisar responsável antes de enviar." } });
       await registrarEvento(tx, {
