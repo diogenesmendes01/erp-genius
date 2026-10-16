@@ -20,7 +20,6 @@ import LoadingPortalAluno from "@/app/portal-aluno/loading";
 import LoadingAlunos from "@/app/(app)/alunos/(lista)/loading";
 import LoadingLeads from "@/app/(app)/leads/(lista)/loading";
 import LoadingInbox from "@/app/(app)/inbox/loading";
-import LoadingPipeline from "@/app/(app)/pipeline/loading";
 import LoadingFinanceiro from "@/app/(app)/financeiro/(painel)/loading";
 import LoadingContinuidade from "@/app/(app)/financeiro/continuidade/loading";
 import LoadingMinhas from "@/app/(app)/academico/segundas-chamadas/minhas/loading";
@@ -37,8 +36,6 @@ import ErroApp from "@/app/(app)/error";
 import ErroPortalAluno from "@/app/portal-aluno/error";
 import ErroAcademico from "@/app/(app)/academico/error";
 import ErroAlunos from "@/app/(app)/alunos/error";
-import ErroCarteiras from "@/app/(app)/carteiras/error";
-import ErroComissoes from "@/app/(app)/comissoes/error";
 import ErroConfiguracao from "@/app/(app)/configuracao/error";
 import ErroDiario from "@/app/(app)/diario/error";
 import ErroEmpresas from "@/app/(app)/empresas/error";
@@ -46,7 +43,6 @@ import ErroFinanceiro from "@/app/(app)/financeiro/error";
 import ErroInbox from "@/app/(app)/inbox/error";
 import ErroLeads from "@/app/(app)/leads/error";
 import ErroMatricula from "@/app/(app)/matriculas/[id]/error";
-import ErroPipeline from "@/app/(app)/pipeline/error";
 import ErroSecretaria from "@/app/(app)/secretaria/error";
 import ErroPagar from "@/app/pagar/[token]/error";
 import ErroCertificado from "@/app/certificado/[codigo]/error";
@@ -60,7 +56,6 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/alunos/(lista)": { Componente: LoadingAlunos, titulos: 1, rotulo: "Carregando alunos" },
   "src/app/(app)/leads/(lista)": { Componente: LoadingLeads, titulos: 1, rotulo: "Carregando leads" },
   "src/app/(app)/inbox": { Componente: LoadingInbox, titulos: 1, rotulo: "Carregando conversas" },
-  "src/app/(app)/pipeline": { Componente: LoadingPipeline, titulos: 1, rotulo: "Carregando funil de leads" },
   "src/app/(app)/financeiro/(painel)": { Componente: LoadingFinanceiro, titulos: 0, rotulo: "Carregando financeiro" },
   "src/app/(app)/financeiro/continuidade": { Componente: LoadingContinuidade, titulos: 0, rotulo: "Carregando fila de continuidade mensal…" },
   "src/app/(app)/academico/segundas-chamadas/minhas": { Componente: LoadingMinhas, titulos: 0, rotulo: "Carregando suas segundas chamadas designadas…" },
@@ -136,8 +131,6 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/portal-aluno": { Componente: ErroPortalAluno, caminho: "/portal-aluno", titulo: "Não foi possível abrir esta página", voltar: null },
   "src/app/(app)/academico": { Componente: ErroAcademico, caminho: "/academico/avaliacoes", titulo: "Não foi possível carregar o acadêmico", voltar: "/academico" },
   "src/app/(app)/alunos": { Componente: ErroAlunos, caminho: "/alunos/a1", titulo: "Não foi possível carregar os alunos", voltar: "/alunos" },
-  "src/app/(app)/carteiras": { Componente: ErroCarteiras, caminho: "/carteiras", titulo: "Não foi possível carregar as carteiras", voltar: "/home" },
-  "src/app/(app)/comissoes": { Componente: ErroComissoes, caminho: "/comissoes", titulo: "Não foi possível carregar as comissões", voltar: "/home" },
   "src/app/(app)/configuracao": { Componente: ErroConfiguracao, caminho: "/configuracao/migracao/l1", titulo: "Não foi possível carregar esta configuração", voltar: "/configuracao" },
   "src/app/(app)/diario": { Componente: ErroDiario, caminho: "/diario/reposicoes/r1/troca-fonte", titulo: "Não foi possível carregar o diário de aulas", voltar: "/diario" },
   "src/app/(app)/empresas": { Componente: ErroEmpresas, caminho: "/empresas/e1", titulo: "Não foi possível carregar as empresas", voltar: "/empresas" },
@@ -145,7 +138,6 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/(app)/inbox": { Componente: ErroInbox, caminho: "/inbox", titulo: "Não foi possível carregar a inbox", voltar: "/home" },
   "src/app/(app)/leads": { Componente: ErroLeads, caminho: "/leads/l1/contratacao", titulo: "Não foi possível carregar os leads", voltar: "/leads" },
   "src/app/(app)/matriculas/[id]": { Componente: ErroMatricula, caminho: "/matriculas/m1/preparacao", params: { id: "m1" }, titulo: "Não foi possível carregar esta seção da matrícula", voltar: "/matriculas/m1" },
-  "src/app/(app)/pipeline": { Componente: ErroPipeline, caminho: "/pipeline", titulo: "Não foi possível carregar o funil de leads", voltar: "/home" },
   "src/app/(app)/secretaria": { Componente: ErroSecretaria, caminho: "/secretaria/reservas", titulo: "Não foi possível carregar a secretaria", voltar: "/secretaria" },
   "src/app/pagar/[token]": { Componente: ErroPagar, caminho: "/pagar/t1", titulo: "Não foi possível abrir o pagamento", voltar: null },
   "src/app/certificado/[codigo]": { Componente: ErroCertificado, caminho: "/certificado/C1", titulo: "Não foi possível conferir o certificado agora", voltar: null },

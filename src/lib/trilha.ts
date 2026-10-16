@@ -10,8 +10,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Áreas
   "/academico": "Acadêmico",
   "/alunos": "Alunos",
-  "/carteiras": "Carteiras",
-  "/comissoes": "Comissões",
   "/configuracao": "Configuração",
   "/diario": "Diário de aulas",
   "/empresas": "Empresas",
@@ -19,7 +17,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/home": "Home",
   "/inbox": "Inbox",
   "/leads": "Leads",
-  "/pipeline": "Pipeline",
   "/preferencias": "Preferências",
   "/secretaria": "Secretaria",
 
@@ -116,8 +113,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/configuracao/whatsapp/templates": "Templates",
   "/configuracao/whatsapp/politica": "Política da régua",
   "/configuracao/whatsapp/avisos-agenda": "Avisos da agenda",
-  "/configuracao/whatsapp/comercial": "Comercial",
-  "/configuracao/whatsapp/reguas": "Régua comercial",
 
   // Diário
   "/diario/encontros": "Encontros",

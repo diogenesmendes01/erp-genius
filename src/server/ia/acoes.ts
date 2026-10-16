@@ -34,7 +34,6 @@ async function exigirLeadVisivel(leadId: string, usuario: UsuarioSessao, tx: Pri
 function revalidar(leadId: string) {
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/inbox");
-  revalidatePath("/pipeline");
 }
 
 /** Sob demanda ("Gerar sugestões" na ficha/inbox). Exige o copiloto LIGADO na config. */
