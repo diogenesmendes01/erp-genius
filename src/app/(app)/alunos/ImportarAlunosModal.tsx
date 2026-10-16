@@ -9,12 +9,19 @@ interface ResultadoImport {
   total: number;
   criados: number;
   erros: { linha: number; motivo: string }[];
+  /** Linhas não importadas por repetirem um aluno cadastrado ou uma linha anterior (docs/42 L224). */
+  ignorados?: { linha: number; motivo: string }[];
 }
 
 const btnPri = botaoClasses({ tamanho: "lg" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "lg" });
 
-/** Modal de cadastro de alunos em lote (XLSX) — exibido só para administrador (doc 22). */
+/**
+ * Modal de cadastro de alunos em lote (XLSX) — exibido só para administrador (doc 22).
+ * docs/42 L224: depois do resultado, o botão vira "Importar outra planilha" — limpa o arquivo e o resultado — e
+ * "Importar" só habilita com um arquivo escolhido; o mesmo arquivo não é reenviado por um segundo clique. O
+ * servidor também ignora a linha repetida (cadastro ou linha anterior) e devolve o motivo, listado aqui.
+ */
 export function ImportarAlunosModal() {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
@@ -22,14 +29,27 @@ export function ImportarAlunosModal() {
   const planilhaId = useId();
   const [erro, setErro] = useState<string | null>(null);
   const [res, setRes] = useState<ResultadoImport | null>(null);
+  const [comArquivo, setComArquivo] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function limparArquivo() {
+    if (fileRef.current) fileRef.current.value = "";
+    setComArquivo(false);
+  }
 
   function fechar() {
     setAberto(false);
     setRes(null);
     setErro(null);
     setEnviando(false);
-    if (fileRef.current) fileRef.current.value = "";
+    limparArquivo();
+  }
+
+  /** Volta ao começo do modal para outra planilha: sem resultado, sem arquivo, "Importar" travado até escolher. */
+  function outraPlanilha() {
+    setRes(null);
+    setErro(null);
+    limparArquivo();
   }
 
   async function enviar() {
@@ -50,6 +70,8 @@ export function ImportarAlunosModal() {
         setErro(data?.erro ?? "Falha na importação.");
       } else {
         setRes(data as ResultadoImport);
+        // O arquivo enviado sai do campo: um segundo clique não manda a mesma planilha de novo.
+        limparArquivo();
         if (data.criados > 0) router.refresh();
       }
     } catch {
@@ -65,7 +87,7 @@ export function ImportarAlunosModal() {
       </button>
 
       {aberto && (
-        <Modal titulo="Cadastrar alunos por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} largura="max-w-lg">
+        <Modal titulo="Cadastrar alunos por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} larga>
           <p className="mb-4 text-sm text-gray-500">
             Envie uma planilha <strong>.xlsx</strong>. Apenas <strong>Nome</strong> e{" "}
             <strong>País</strong> são obrigatórios; os demais campos são opcionais. Baixe o modelo
@@ -86,7 +108,9 @@ export function ImportarAlunosModal() {
               ref={fileRef}
               type="file"
               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
+              disabled={enviando || !!res}
+              onChange={(e) => setComArquivo(!!e.target.files?.length)}
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-on-brand hover:file:brightness-95"
             />
           </div>
 
@@ -97,6 +121,20 @@ export function ImportarAlunosModal() {
               <p className="font-medium text-gray-800">
                 {res.criados} de {res.total} aluno(s) cadastrado(s).
               </p>
+              {(res.ignorados?.length ?? 0) > 0 && (
+                <div className="mt-2">
+                  <p className="mb-1 text-xs font-medium text-gray-700">
+                    {res.ignorados!.length} linha(s) ignorada(s) por já existir o aluno:
+                  </p>
+                  <ul className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
+                    {res.ignorados!.map((i) => (
+                      <li key={i.linha}>
+                        Linha {i.linha}: {i.motivo}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {res.erros.length > 0 && (
                 <div className="mt-2">
                   <p className="mb-1 text-xs font-medium text-amber-700">
@@ -119,9 +157,15 @@ export function ImportarAlunosModal() {
             <button type="button" className={btnSec} onClick={fechar} disabled={enviando}>
               {res ? "Fechar" : "Cancelar"}
             </button>
-            <button type="button" className={btnPri} onClick={enviar} disabled={enviando}>
-              {enviando ? "Enviando…" : "Importar"}
-            </button>
+            {res ? (
+              <button type="button" className={btnPri} onClick={outraPlanilha}>
+                Importar outra planilha
+              </button>
+            ) : (
+              <button type="button" className={btnPri} onClick={enviar} disabled={enviando || !comArquivo}>
+                {enviando ? "Enviando…" : "Importar"}
+              </button>
+            )}
           </div>
         </Modal>
       )}

@@ -33,7 +33,9 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
   return <div className="space-y-4">
     {erro && <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
     {!matriculas.length && <EstadoVazio>Nenhuma matrícula no seu escopo.</EstadoVazio>}
-    {matriculas.map((m) => <article key={m.id} className="space-y-3 rounded-lg border p-4">
+    {matriculas.map((m) => <article key={m.id} className="space-y-3 rounded-lg border border-gray-200 bg-surface p-4">
+      {/* Links lado a lado sem espaço viravam um texto só ("comercialConferir…"); em linha que quebra (DS-C). */}
+      <nav aria-label={`Ações da matrícula ${m.codigo ?? ""}`.trim()} className="flex flex-wrap gap-x-4 gap-y-1">
       <Link className="text-sm underline" href={`/matriculas/${m.id}/preparacao`}>Revisar proposta comercial</Link>
       {secretaria && <>
       <Link className="text-sm underline" href={`/matriculas/${m.id}/pagador`}>Conferir pagador desta matrícula</Link>
@@ -43,6 +45,7 @@ export function SecretariaPainel({ secretaria, matriculas }: { secretaria: boole
       <Link className="text-sm underline" href={`/matriculas/${m.id}/autorizacoes-comunicacao`}>Gerir destinatários acadêmicos</Link>
       </>}
       <Link className="text-sm underline" href={`/matriculas/${m.id}/reserva`}>Consultar ou reservar vaga</Link>
+      </nav>
       <div className="flex flex-wrap justify-between gap-2"><h2 className="font-medium">{m.codigo ?? "Matrícula"} · {m.nome}</h2>{m.alunoId && <a className="text-sm text-brand-700" href={`/alunos/${m.alunoId}`}>Abrir cadastro do aluno</a>}</div>
       {secretaria && <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">

@@ -65,7 +65,7 @@ export function ImportarTurmasModal() {
       </button>
 
       {aberto && (
-        <Modal titulo="Importar turmas por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} largura="max-w-lg">
+        <Modal titulo="Importar turmas por lote" aoFechar={fechar} bloquearFechamento={enviando || !!res} larga>
           <p className="mb-4 text-sm text-gray-500">
             Envie uma planilha <strong>.xlsx</strong>. <strong>Modalidade</strong> e{" "}
             <strong>Nível</strong> são obrigatórios; o nº de dias deve casar com a frequência da
@@ -86,7 +86,7 @@ export function ImportarTurmasModal() {
               ref={fileRef}
               type="file"
               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:brightness-95"
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-solid file:px-3 file:py-2 file:text-sm file:font-medium file:text-on-brand hover:file:brightness-95"
             />
           </div>
 

@@ -45,6 +45,11 @@ const render = (props: Partial<Parameters<typeof AlunosLista>[0]>) =>
   renderToStaticMarkup(createElement(AlunosLista, { alunos: [], total: 0, totalBase: 0, filtros: lerFiltrosAlunos({}), opcoes, exibirFinanceiro: false, ...props }));
 
 describe("AlunosLista (filtros na URL)", () => {
+  it("cabeçalho quebra linha no celular: botões em pílula não espremem o texto em duas linhas (DS-C)", () => {
+    const html = render({ podeCadastrar: true });
+    expect(html).toContain('<div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h1');
+  });
+
   it("formulário de busca com os filtros atuais preenchidos e opções do servidor (por id)", () => {
     const html = render({ alunos: [aluno(1)], total: 1, totalBase: 1, filtros: lerFiltrosAlunos({ busca: "ana", pais: "p1", turma: "t1" }) });
     expect(html).toMatch(/<form[^>]*action="\/alunos"/);

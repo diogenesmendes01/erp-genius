@@ -10,12 +10,12 @@ import { useDialogo } from "@/lib/dialogo";
 // precisa aparecer dentro do modal.
 // A confirmação de ação irreversível (ConfirmarAcao) usa o mesmo casco como `alertdialog`, descrito
 // pelo texto da consequência (aria-describedby) e com o foco inicial no botão seguro.
-export function Modal({ titulo, aoFechar, bloquearFechamento = false, largura = "max-w-md", papel = "dialog", descricaoId, focoInicial, children }: {
+export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = false, papel = "dialog", descricaoId, focoInicial, children }: {
   titulo: React.ReactNode;
   aoFechar: () => void;
   bloquearFechamento?: boolean;
-  /** Classe de largura máxima do cartão. */
-  largura?: string;
+  /** Variante larga (640 px a partir de `sm`); o padrão é 460 px. Em tela estreita ocupa a largura menos 24 px. */
+  larga?: boolean;
   /** "alertdialog": pede uma decisão sobre algo que não se desfaz (o leitor de tela anuncia título e descrição). */
   papel?: "dialog" | "alertdialog";
   /** id do elemento que descreve o diálogo (aria-describedby). */
@@ -28,7 +28,7 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, largura = 
   const tituloId = useId();
   useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento, focoInicial });
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
       <div
         ref={ref}
         role={papel === "alertdialog" ? "alertdialog" : "dialog"}
@@ -36,10 +36,10 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, largura = 
         aria-labelledby={tituloId}
         aria-describedby={descricaoId}
         tabIndex={-1}
-        className={`max-h-[90dvh] w-full overflow-y-auto rounded-lg bg-surface p-5 ${largura}`}
+        className={`max-h-[90dvh] w-full max-w-[calc(100vw-24px)] overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog ${larga ? "sm:w-[640px]" : "sm:w-[460px]"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 id={tituloId} className="mb-3 text-sm font-medium">{titulo}</h3>
+        <h3 id={tituloId} className="mb-3 text-xl font-medium">{titulo}</h3>
         {children}
       </div>
     </div>

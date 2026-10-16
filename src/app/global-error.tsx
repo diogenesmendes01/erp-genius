@@ -22,7 +22,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
           <button
             type="button"
             onClick={reset}
-            className="mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+            className="mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-on-brand hover:brightness-95"
           >
             Tentar de novo
           </button>
