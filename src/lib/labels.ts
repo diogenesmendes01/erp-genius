@@ -45,6 +45,7 @@ import {
   StatusPagamentoInformado,
   ReferenciaCoberturaMensal,
   FinalidadeNumero,
+  FinalidadeAtendimentoWhatsApp,
   FormaAgendaOferta,
   StatusPropostaAcertoTaxaAditivo,
   StatusConjuntoImpactosTaxaAditivo,
@@ -440,6 +441,14 @@ export const FINALIDADE_NUMERO_LABEL: Readonly<Record<FinalidadeNumero, string>>
   COBRANCA: "Cobrança",
   VENDAS: "Vendas",
   AGENDA: "Agenda",
+});
+
+/** Setor de atendimento do WhatsApp (finalidade do atendimento). */
+export const SETOR_ATENDIMENTO_LABEL: Readonly<Record<FinalidadeAtendimentoWhatsApp, string>> = Object.freeze({
+  COMERCIAL: "Comercial",
+  FINANCEIRO: "Financeiro",
+  SECRETARIA: "Secretaria",
+  PEDAGOGICO: "Pedagógico",
 });
 
 export const CATEGORIA_DOCUMENTO_LABEL: Readonly<Record<CategoriaDocumento, string>> = Object.freeze({
