@@ -1926,5 +1926,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Correção da revisão final: `destinoDoArraste` devolve `{ tipo: "nenhum" }` quando a origem e o destino são a
   mesma etapa. Assim as Tasks 13 e 14 não abrem diálogo, não mostram recusa falsa e não gravam `Evento` sem
   mudança.
+- Reverificação antes do PR (16/10/2026): `tsc --noEmit` saída 0; `npm test` 646 arquivos e 4.630 testes verdes,
+  saída 0; `npm run lint` 0 erros (44 avisos); `vitest related` no perfil `dev-gravacoes` ficou grande demais
+  (alcança módulos acadêmicos pelos imports) e foi interrompido pelo limite de tempo. Até a interrupção, 13 arquivos
+  falharam (38 testes). Os mesmos 13 arquivos, rodados em worktree de `origin/integracao/ate-fase-1`, falham igual:
+  38 testes. São preexistentes (fixtures com datas fixas de 2026 contra o relógio real, mais o `inbox` já listado).
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
