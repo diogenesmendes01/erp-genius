@@ -988,9 +988,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Atender → primario/sm",
     "<Link> Próximo lead → → secundario/sm",
   ],
-  "comissoes/page.tsx": [
-    "<button> Filtrar → secundario/md",
-  ],
   "preferencias/FusoExibicaoFormulario.tsx": [
     "<button> Salvando… · Salvar preferência → secundario/lg",
   ],
