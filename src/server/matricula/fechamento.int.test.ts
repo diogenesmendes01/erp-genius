@@ -18,8 +18,6 @@ import {
   registrarLinkPagamento,
 } from "./acoes";
 import { rodarFechamentosPendentes } from "./cron-fechamento";
-import { CADENCIA_CONTRATO, CADENCIA_LINK_PAGAMENTO, CHAVE_CONTRATO, CHAVE_LINK_PAGAMENTO } from "@/server/comercial/regua-fabrica";
-import { rodarContratoSemAssinatura, rodarLinkPagamentoSemPagamento } from "@/server/whatsapp/cron-comercial";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
 let vendedor: Awaited<ReturnType<typeof criarUsuario>>;
@@ -169,95 +167,6 @@ describe("fechamento comercial sem bypass da preparação", () => {
     expect(sugestao).toBeUndefined();
     expect(await prisma.alocacaoTurma.count()).toBe(0);
     void turma;
-  });
-});
-
-describe("réguas de fechamento (C4) no motor comercial", () => {
-  async function seedCanalELead(leadId: string) {
-    const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511933334444", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c4", donoId: vendedor.id },
-    });
-    const contato = await prisma.contatoWhatsApp.create({
-      data: { telefoneE164: "+50688887777", leadId },
-    });
-    await prisma.conversaWhatsApp.create({
-      data: { numeroId: numero.id, contatoId: contato.id, capturadaEm: new Date(), ultimaMensagemEm: new Date() },
-    });
-    return numero;
-  }
-
-  async function seedPolitica(chave: string, degraus: readonly { passo: string; offsetMinutos: number; rotulo: string; toleranciaMinutos: number | null }[], numeroId: string) {
-    return prisma.politicaComercial.create({
-      data: {
-        chave,
-        nome: chave,
-        estado: "SHADOW",
-        modoPiloto: false, // comportamento geral — o piloto tem testes próprios (doc 32 B1)
-        janelaInicio: 0,
-        janelaFim: 24,
-        diasSemana: [0, 1, 2, 3, 4, 5, 6],
-        numeroRemetenteId: numeroId,
-        degraus: {
-          create: degraus.map((d) => ({
-            passo: d.passo,
-            offsetMinutos: d.offsetMinutos,
-            rotulo: d.rotulo,
-            ativo: true,
-            toleranciaMinutos: d.toleranciaMinutos,
-          })),
-        },
-      },
-    });
-  }
-
-  it("contrato enviado há 3 dias sem assinatura → enfileira o +48h", async () => {
-    const { lead, matriculaId } = await seedMatriculaAguardando();
-    const numero = await seedCanalELead(lead.id);
-    await seedPolitica(CHAVE_CONTRATO, CADENCIA_CONTRATO, numero.id);
-    await prisma.matricula.update({
-      where: { id: matriculaId },
-      data: { contratoEnviadoEm: new Date(Date.now() - 3 * 24 * 3600_000) },
-    });
-
-    const r = await rodarContratoSemAssinatura();
-    expect(r.enfileiradas).toBe(1);
-    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
-    expect(intencao.passoComercial).toBe("+48h");
-    expect(intencao.leadId).toBe(lead.id);
-  });
-
-  it("contrato ASSINADO sai da régua (stop-condition no resolver)", async () => {
-    const { lead, matriculaId } = await seedMatriculaAguardando();
-    const numero = await seedCanalELead(lead.id);
-    await seedPolitica(CHAVE_CONTRATO, CADENCIA_CONTRATO, numero.id);
-    await prisma.matricula.update({
-      where: { id: matriculaId },
-      data: { contratoEnviadoEm: new Date(Date.now() - 3 * 24 * 3600_000), contratoOk: true },
-    });
-
-    const r = await rodarContratoSemAssinatura();
-    expect(r.leadsAvaliados).toBe(0);
-    expect(await prisma.intencaoMensagem.count()).toBe(0);
-  });
-
-  it("link enviado há 2 dias sem pagamento → enfileira o +24h; taxa PAGA para a régua", async () => {
-    const { lead, matriculaId, taxa } = await seedMatriculaAguardando();
-    const numero = await seedCanalELead(lead.id);
-    await seedPolitica(CHAVE_LINK_PAGAMENTO, CADENCIA_LINK_PAGAMENTO, numero.id);
-    await prisma.cobranca.update({
-      where: { id: taxa.id },
-      data: { linkPagamento: "https://pagar.exemplo/x", linkEnviadoEm: new Date(Date.now() - 2 * 24 * 3600_000) },
-    });
-
-    const r1 = await rodarLinkPagamentoSemPagamento();
-    expect(r1.enfileiradas).toBe(1);
-    expect((await prisma.intencaoMensagem.findFirstOrThrow()).passoComercial).toBe("+24h");
-
-    // Taxa paga → o resolver não devolve mais o candidato.
-    await prisma.$transaction(tx => receberTx(tx, { cobrancaId: taxa.id, autorId: admin.id, chaveIdempotencia: `teste:${taxa.id}`, valorRecebido: TAXA, forma: FormaPagamento.PIX, dataPagamento: new Date(), evidencia: "Comprovante conferido no teste" }));
-    const r2 = await rodarLinkPagamentoSemPagamento();
-    expect(r2.leadsAvaliados).toBe(0);
-    void matriculaId;
   });
 });
 

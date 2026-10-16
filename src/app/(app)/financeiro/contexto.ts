@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { Papel } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
-import { listarInformesPagamento, podeConfigurarComissoes } from "@/server/financeiro/consultas";
+import { contarInformesAConferir, podeConfigurarComissoes } from "@/server/financeiro/consultas";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { abasVisiveis, type AbaFinanceiro, type PermissoesFinanceiro } from "./abas";
@@ -42,10 +42,14 @@ export async function contextoDaAba(aba: AbaFinanceiro): Promise<ContextoFinance
   return ctx && abasVisiveis(ctx.permissoes).includes(aba) ? ctx : null;
 }
 
-/** As três filas pendentes: dão a contagem da barra e são o conteúdo das abas respectivas. */
+/**
+ * As três filas pendentes: dão a contagem da barra e são o conteúdo das abas de retomadas e aprovações. Os
+ * informes a conferir entram só pelo número (count): a aba "A conferir" lê a própria fila por cursor
+ * (listarFilaInformesPagamento, docs/43 §6 item 9), em vez de todos os informes de uma vez.
+ */
 export const carregarFilasPendentes = memo(async (p: PermissoesFinanceiro) => {
-  const [informes, retomadas, aprovacoesRaw] = await Promise.all([
-    p.podeOperarCobranca ? listarInformesPagamento() : Promise.resolve([]),
+  const [informesAConferir, retomadas, aprovacoesRaw] = await Promise.all([
+    p.podeOperarCobranca ? contarInformesAConferir() : Promise.resolve(0),
     p.podeOperarCobranca ? listarPropostasRetomada() : Promise.resolve({ ok: true as const, dado: [] }),
     p.podeAprovar ? listarAprovacoesPendentes() : Promise.resolve([]),
   ]);
@@ -66,7 +70,7 @@ export const carregarFilasPendentes = memo(async (p: PermissoesFinanceiro) => {
     };
   });
   return {
-    informes,
+    informesAConferir,
     retomadas: retomadas.ok ? retomadas.dado ?? [] : [],
     erroRetomadas: retomadas.ok ? null : retomadas.erro,
     aprovacoes,

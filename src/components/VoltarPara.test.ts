@@ -21,14 +21,19 @@ describe("VoltarPara (E2)", () => {
   });
 
   it("destino fora do mapa usa `para`; sem nenhum, \"página anterior\"", () => {
-    expect(render({ href: "/matriculas/cm0xyz9/preparacao", para: "Preparação" })).toContain('aria-label="Voltar para Preparação"');
+    // A tentativa da recuperação (tela do professor) fica fora do mapa de propósito (FORA_DA_TRILHA).
+    expect(render({ href: "/academico/recuperacoes/tentativas/ct1x2y3", para: "Tentativa" })).toContain('aria-label="Voltar para Tentativa"');
     expect(render({ href: "/rota-desconhecida" })).toContain('aria-label="Voltar para página anterior"');
+  });
+
+  it("seção da matrícula entrou no mapa (C22 da #170): o nome vem dele, igual à aba", () => {
+    expect(render({ href: "/matriculas/cm0xyz9/preparacao", para: "Proposta" })).toContain('aria-label="Voltar para Preparação"');
   });
 
   it("rotuloDoDestino: só quando o caminho É uma página do mapa (query ignorada)", () => {
     expect(rotuloDoDestino("/financeiro")).toBe("Financeiro");
     expect(rotuloDoDestino("/secretaria/reservas?tipo=particular")).toBe("Reservas");
-    expect(rotuloDoDestino("/matriculas/cm0xyz9/preparacao")).toBeNull(); // não pega o ancestral "Matrícula"
+    expect(rotuloDoDestino("/academico/recuperacoes/tentativas/ct1x2y3")).toBeNull(); // não pega o ancestral "Recuperações"
     expect(rotuloDoDestino("/")).toBeNull();
   });
 });
