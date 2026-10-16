@@ -2076,3 +2076,12 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco: saída 0, 4 arquivos e 37 testes verdes.
   `prisma migrate deploy` no banco `dev-gravacoes`: sem pendências. Nenhuma das 7 falhas preexistentes da linha de base
   foi tocada; a suíte de integração completa fica com o integrador.
+
+### Verificação para o PR (bloco E, branch `claude/fase2-e-funil`, 16/10/2026)
+- Tarefas: 12 a 18 (funil: Kanban, lista, perda, ganho e contratação).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 653 arquivos e 4680 testes verdes (linha de base: 643 arquivos e 4607 testes).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco D): 13 arquivos,
+  153 testes verdes e 1 falha, a preexistente da linha de base (`src/server/whatsapp/inbox.int.test.ts`, "lead de OUTRO
+  vendedor ... não vaza o cockpit"), que este bloco não toca. Nenhuma falha nova. Suíte completa fica com o integrador.
