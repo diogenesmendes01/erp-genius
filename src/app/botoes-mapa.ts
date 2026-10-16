@@ -1002,11 +1002,6 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Voltar → secundario/md",
     "<Botao> Confirmando… · Confirmar → perigo/md",
   ],
-  "src/components/CopilotoSugestoes.tsx": [
-    "<button> Corrigir → secundario/sm",
-    "<button> Descartar → secundario/sm",
-    "<button> Cancelar → secundario/sm",
-  ],
   "src/components/EstadoRota.tsx": [
     "const classe → primario/lg",
     "<Link> → classe",
