@@ -16,6 +16,7 @@ import {
   TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
   FinalidadeNumero, FormaAgendaOferta, EtapaLead, Papel, OrigemCanal, PapelParticipante,
   CorTag, TipoCampoPersonalizado, AlvoCampoPersonalizado, TelaFiltroSalvo,
+  TipoTarefa, StatusTarefa, PrioridadeTarefa, OrigemTarefa, TipoNotificacao,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as L from "@/lib/labels";
@@ -2147,6 +2148,12 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["TIPO_CAMPO_PERSONALIZADO_LABEL", L.TIPO_CAMPO_PERSONALIZADO_LABEL, Object.values(TipoCampoPersonalizado)],
   ["ALVO_CAMPO_PERSONALIZADO_LABEL", L.ALVO_CAMPO_PERSONALIZADO_LABEL, Object.values(AlvoCampoPersonalizado)],
   ["TELA_FILTRO_SALVO_LABEL", L.TELA_FILTRO_SALVO_LABEL, Object.values(TelaFiltroSalvo)],
+  // Fase 2 CRM (2.M4): tarefas e notificações.
+  ["TIPO_TAREFA_LABEL", L.TIPO_TAREFA_LABEL, Object.values(TipoTarefa)],
+  ["STATUS_TAREFA_LABEL", L.STATUS_TAREFA_LABEL, Object.values(StatusTarefa)],
+  ["PRIORIDADE_TAREFA_LABEL", L.PRIORIDADE_TAREFA_LABEL, Object.values(PrioridadeTarefa)],
+  ["ORIGEM_TAREFA_LABEL", L.ORIGEM_TAREFA_LABEL, Object.values(OrigemTarefa)],
+  ["TIPO_NOTIFICACAO_LABEL", L.TIPO_NOTIFICACAO_LABEL, Object.values(TipoNotificacao)],
 ];
 /** Lista fechada do que labels.ts exporta em tempo de execução (R3 da #138, B14): `rotular`, as classes de temperatura,
  * os mapas antigos e os mapas novos. Função exportada (`rotuloTurma` com ternário) ou mapa novo fora da lista falha. */
