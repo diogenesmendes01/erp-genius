@@ -1,4 +1,9 @@
 import {
+  TipoTarefa,
+  StatusTarefa,
+  PrioridadeTarefa,
+  OrigemTarefa,
+  TipoNotificacao,
   CorTag,
   TipoCampoPersonalizado,
   AlvoCampoPersonalizado,
@@ -693,4 +698,35 @@ export const TELA_FILTRO_SALVO_LABEL: Readonly<Record<TelaFiltroSalvo, string>> 
   CARTEIRA: "Carteira",
   TAREFAS: "Tarefas",
   COMISSOES: "Comissões",
+});
+
+// Fase 2 CRM (2.M4): tarefas e notificações.
+export const TIPO_TAREFA_LABEL: Readonly<Record<TipoTarefa, string>> = Object.freeze({
+  WHATSAPP: "WhatsApp",
+  LIGACAO: "Ligação",
+  EMAIL: "E-mail",
+  REUNIAO: "Reunião",
+  OUTRO: "Outro",
+});
+
+export const STATUS_TAREFA_LABEL: Readonly<Record<StatusTarefa, string>> = Object.freeze({
+  ABERTA: "Aberta",
+  CONCLUIDA: "Concluída",
+  CANCELADA: "Cancelada",
+});
+
+export const PRIORIDADE_TAREFA_LABEL: Readonly<Record<PrioridadeTarefa, string>> = Object.freeze({
+  NORMAL: "Normal",
+  ALTA: "Alta",
+});
+
+export const ORIGEM_TAREFA_LABEL: Readonly<Record<OrigemTarefa, string>> = Object.freeze({
+  HUMANO: "Criada por pessoa",
+  IA: "Criada pela IA",
+  IA_SUGERIDA: "Sugestão da IA aprovada",
+  AUTOMACAO: "Automação do funil",
+});
+
+export const TIPO_NOTIFICACAO_LABEL: Readonly<Record<TipoNotificacao, string>> = Object.freeze({
+  LEMBRETE_TAREFA: "Lembrete de tarefa",
 });
