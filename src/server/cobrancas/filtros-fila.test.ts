@@ -2,18 +2,25 @@ import { describe, expect, it } from "vitest";
 import {
   INDICADORES_FILA,
   ROTA_FILA,
+  compararFila,
   contarIndicadoresFila,
+  cursorDoItemFila,
   filtrarFila,
   filtrosFilaParaQuery,
   hrefDosCamposFila,
   hrefFila,
+  hrefFilaNoCursor,
   hrefIndicador,
   hrefSemBusca,
   hrefSemIndicador,
+  lerCursorFila,
   lerFiltrosFila,
+  navegacaoDaFilaValida,
   opcoesDaFila,
   temBuscaFila,
+  trechoDaFila,
 } from "./filtros-fila";
+import { CURSOR_FILA } from "@/lib/cursor-fila";
 
 type Item = Parameters<typeof filtrarFila>[0][number];
 const item = (id: string, o: Partial<Item> = {}): Item & { id: string } => ({
@@ -137,5 +144,52 @@ describe("opcoesDaFila", () => {
 
   it("país/turma da URL que saiu da fila continua como opção (o select mostra o filtro aplicado)", () => {
     expect(opcoesDaFila([item("1")], lerFiltrosFila({ pais: "Panamá", turma: "Francês A2" }))).toEqual({ paises: ["Brasil", "Panamá"], turmas: ["Francês A2"] });
+  });
+});
+
+describe("cursor da fila de cobrança (docs/43 §6 item 9)", () => {
+  type Chave = { id: string; prioridade: number; diasAtraso: number };
+  const k = (id: string, prioridade: number, diasAtraso: number): Chave => ({ id, prioridade, diasAtraso });
+
+  it("ordem da fila: prioridade, maior atraso e, no empate dos dois, o id — dois itens nunca empatam", () => {
+    const xs = [k("b", 2, 5), k("a", 2, 5), k("c", 1, 0), k("d", 2, 9)];
+    expect([...xs].sort(compararFila).map((x) => x.id)).toEqual(["c", "d", "a", "b"]);
+    expect(compararFila(k("a", 2, 5), k("a", 2, 5))).toBe(0);
+    // Na fila filtrada, o empate de prioridade e atraso também termina no id (ordem estável entre leituras).
+    expect(filtrarFila([item("z", { prioridade: 1, diasAtraso: 3 }), item("y", { prioridade: 1, diasAtraso: 3 })], lerFiltrosFila({})).map((x) => x.id)).toEqual(["y", "z"]);
+  });
+
+  it("o cursor é a chave de ordem, passa no formato dos cursores e volta igual", () => {
+    for (const c of [k("cm1abc", 3, -5), k("x-1", 900, 0), k("abc", 1, 400)]) {
+      const texto = cursorDoItemFila(c);
+      expect(CURSOR_FILA.test(texto), texto).toBe(true);
+      expect(lerCursorFila(texto)).toEqual(c);
+    }
+    expect(cursorDoItemFila(k("cm1abc", 3, -5))).toBe("3_-5_cm1abc");
+    for (const ruim of ["cm1abc", "3_cm1abc", "a_b_c", "3_-5_", "3_-5_x_y", "1.5_2_x"]) expect(lerCursorFila(ruim), ruim).toBeNull();
+    expect(navegacaoDaFilaValida({})).toBe(true);
+    expect(navegacaoDaFilaValida({ depois: "1_2_x" })).toBe(true);
+    expect(navegacaoDaFilaValida({ antes: "x" })).toBe(false);
+  });
+
+  it("trecho: sem cursor os primeiros; depois os seguintes; antes os anteriores, do mais próximo ao mais distante", () => {
+    const fila = [k("a", 1, 9), k("b", 1, 5), k("c", 2, 7), k("d", 3, 0), k("e", 3, -2)];
+    const ids = (xs: Chave[]) => xs.map((x) => x.id);
+    expect(ids(trechoDaFila(fila, {}, 2))).toEqual(["a", "b"]);
+    expect(ids(trechoDaFila(fila, { depois: cursorDoItemFila(fila[1]) }, 2))).toEqual(["c", "d"]);
+    expect(ids(trechoDaFila(fila, { antes: cursorDoItemFila(fila[3]) }, 2))).toEqual(["c", "b"]);
+    // O item do cursor saiu da fila (pago): a chave continua sendo a fronteira, ninguém é pulado.
+    const semB = fila.filter((x) => x.id !== "b");
+    expect(ids(trechoDaFila(semB, { depois: cursorDoItemFila(fila[1]) }, 2))).toEqual(["c", "d"]);
+    // Cursor fora do formato: nada.
+    expect(trechoDaFila(fila, { depois: "b" }, 2)).toEqual([]);
+  });
+
+  it("link no cursor mantém os filtros; um sentido de cada vez", () => {
+    const f = lerFiltrosFila({ indicador: "emAtraso", busca: "ana" });
+    expect(hrefFilaNoCursor(f, { depois: "1_2_x" })).toBe(`${ROTA_FILA}?indicador=emAtraso&busca=ana&depois=1_2_x`);
+    expect(hrefFilaNoCursor(lerFiltrosFila({}), { antes: "1_2_x" })).toBe(`${ROTA_FILA}?antes=1_2_x`);
+    // Os links de filtro voltam ao início (sem cursor): trocar o recorte reinicia a leitura.
+    expect(hrefIndicador(f, "bloquear")).not.toMatch(/antes=|depois=/);
   });
 });
