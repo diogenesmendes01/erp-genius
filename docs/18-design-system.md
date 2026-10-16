@@ -150,7 +150,7 @@ As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` �
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-bg` = `--brand-bg`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`.
+- **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`. Todo botão é pílula (`rounded-full`), com 44 px de altura mínima abaixo de `sm`. Secundário: `border-border-soft`, sem fundo, hover `bg-highlight`. Tamanhos: `sm px-3 py-1`, `md px-4 py-1.5`, `lg px-[22px] py-2.5`. Desabilitado não usa opacidade: `bg-surface-muted text-disabled border-gray-200`. `<Botao ocupado>` marca `aria-busy` e desabilita (cursor `progress`).
 - **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-solid text-on-brand`.
   `bg-brand-500`/`bg-brand-600` (que clareiam no escuro) **nunca** levam `text-white`, em nenhuma
   forma de `className`; ficam para fundo sem texto (barra de progresso). A trava é

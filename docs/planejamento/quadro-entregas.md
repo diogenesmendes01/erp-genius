@@ -1744,6 +1744,28 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
 - A thread da inbox cortada em 300 mensagens é da issue #168.
 
+## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-botao`)
+- `src/components/Botao.tsx`: `BASE_BOTAO` em pílula (`rounded-full`, `gap-2`) com 44 px de altura mínima abaixo de
+  `sm` (`max-sm:min-h-11`); desabilitado sem opacidade (`disabled:bg-surface-muted disabled:text-disabled
+  disabled:border-gray-200`) e `aria-busy:cursor-progress`.
+- Variantes: `secundario` com `border-border-soft`, sem fundo, texto `text-brand-700` e hover `bg-highlight`;
+  `fantasma` com hover `bg-highlight`; `primario` e `perigo` sem mudança. Tamanhos `sm px-3 py-1`, `md px-4 py-1.5`,
+  `lg px-[22px] py-2.5`.
+- `<Botao ocupado>` marca `aria-busy="true"` e desabilita o botão.
+- `src/components/Botao.test.ts`: pílula e 44 px, disabled sem opacidade, ocupado com `aria-busy` e `disabled`,
+  secundário sem fundo e com hover `highlight`. Doc 18 (Botão) atualizado.
+
+### Verificação
+- Na HEAD `8d17003`: `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.576 testes (linha
+  de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
+- Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — primitivos (Fase 0, Task 10; 15/10/2026)
