@@ -83,7 +83,7 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: lista[0].id } });
     // Dono da linha como responsável conta como assumido (mesma regra do backfill da M2).
     expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", contextoChave: CHAVE_LINHA, leadId: null, responsavelId: vendedorA.id, status: "EM_ATENDIMENTO" });
-    expect(await prisma.lead.count()).toBe(0);
+    expect(await prisma.oportunidade.count()).toBe(0);
     entrar(admin);
     expect(await listarTriagemWhatsApp()).toHaveLength(0);
   });
@@ -94,7 +94,7 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     await mensagem("linha-a");
     await mensagem("linha-a");
 
-    expect(await prisma.lead.count()).toBe(0);
+    expect(await prisma.oportunidade.count()).toBe(0);
     const atendimentos = await prisma.atendimentoWhatsApp.findMany();
     expect(atendimentos).toHaveLength(1);
     expect(atendimentos[0].leadId).toBeNull();
@@ -150,7 +150,7 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
   it("LC-D02: cobertura de carteira não dá a linha do titular; o substituto vê só os leads cobertos", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a"); // conversa sem lead
-    const lead = await prisma.lead.create({ data: { nome: "Lead coberto", telefoneE164: "+50670009999", vendedorDonoId: vendedorA.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead coberto", telefoneE164: "+50670009999", vendedorDonoId: vendedorA.id } });
     await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
     await mensagem("linha-a", { contatoWaId: "50670009999", nomeExibicao: "Lead coberto" });
     await prisma.coberturaCarteira.create({ data: { titularId: vendedorA.id, substitutoId: vendedorB.id, concedenteId: gerenteA.id,
@@ -201,7 +201,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
     expect(r.ok && r.dado?.criado).toBe(true);
 
-    const lead = await prisma.lead.findFirstOrThrow();
+    const lead = await prisma.oportunidade.findFirstOrThrow();
     expect(lead).toMatchObject({ vendedorDonoId: vendedorA.id, telefoneE164: "+50670001111", nome: "Desconhecido" });
     const atendimentos = await prisma.atendimentoWhatsApp.findMany();
     expect(atendimentos).toHaveLength(1);
@@ -212,13 +212,13 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     expect(criado?.payload).toMatchObject({ origem: "whatsapp_linha" });
 
     expect((await criarLeadDaConversa(conversa.id)).ok).toBe(false);
-    expect(await prisma.lead.count()).toBe(1);
+    expect(await prisma.oportunidade.count()).toBe(1);
   });
 
   it("vincular um lead da carteira também não abre outro atendimento", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
-    const lead = await prisma.lead.create({ data: { nome: "Lead já cadastrado", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead já cadastrado", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
     const [conversa] = await listarConversas(sessao(vendedorA));
     entrar(vendedorA);
     const r = await vincularContatoWhatsApp({ contatoId: conversa.contatoId, atendimentoId: conversa.id, alvo: { tipo: "lead", id: lead.id } });
@@ -231,12 +231,12 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
   it("'Criar lead' com telefone que já é lead vincula o existente em vez de duplicar", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
-    const existente = await prisma.lead.create({ data: { nome: "Antigo", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
+    const existente = await prisma.oportunidade.create({ data: { nome: "Antigo", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
     const [conversa] = await listarConversas(sessao(vendedorA));
     entrar(vendedorA);
     const r = await criarLeadDaConversa(conversa.id);
     expect(r.ok && r.dado).toEqual({ leadId: existente.id, criado: false });
-    expect(await prisma.lead.count()).toBe(1);
+    expect(await prisma.oportunidade.count()).toBe(1);
   });
 });
 
@@ -258,12 +258,12 @@ describe("LC-07/LC-08: ver a conversa não abre outros dados", () => {
     entrar(vendedorA);
     const r = await criarLeadDaConversa(conversa.id);
     expect(r.ok).toBe(false);
-    expect(await prisma.lead.count()).toBe(0);
+    expect(await prisma.oportunidade.count()).toBe(0);
   });
 
   it("LC-08: lead da carteira de outro vendedor — dono da linha vê a conversa, não o painel do lead", async () => {
     const vendedorC = await criarUsuario([Papel.VENDEDOR], "Vendedor C");
-    const lead = await prisma.lead.create({ data: { nome: "Lead do C", telefoneE164: "+50670001111", vendedorDonoId: vendedorC.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead do C", telefoneE164: "+50670001111", vendedorDonoId: vendedorC.id } });
     await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
     await linhaDe(vendedorA);
     await mensagem("linha-a");
@@ -314,7 +314,7 @@ describe("LC-10/LC-11: histórico do aparelho", () => {
 
     expect(await prisma.mensagemWhatsApp.count()).toBe(3);
     expect(await prisma.mensagemWhatsApp.count({ where: { providerMessageId: "H-90" } })).toBe(0);
-    expect(await prisma.lead.count()).toBe(0);
+    expect(await prisma.oportunidade.count()).toBe(0);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect(await prisma.contatoWhatsApp.count({ where: { optOutEm: { not: null } } })).toBe(0);
     const lista = await listarConversas(sessao(vendedorA));
@@ -426,7 +426,7 @@ describe("abrir atendimento comercial e estado da linha (§5.5)", () => {
   it("comercial só sai pelas linhas acessíveis; o atendimento aberto é o da linha", async () => {
     const linha = await linhaDe(vendedorA);
     const cobranca = await numeroCobranca();
-    const lead = await prisma.lead.create({ data: { nome: "Lead A", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead A", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
     await mensagem("linha-a");
     entrar(vendedorA);
     const opcoes = await listarOpcoesAtendimento();
@@ -445,7 +445,7 @@ describe("abrir atendimento comercial e estado da linha (§5.5)", () => {
 
   it("vendedor de outra linha não abre atendimento comercial na linha alheia", async () => {
     const linha = await linhaDe(vendedorA);
-    const lead = await prisma.lead.create({ data: { nome: "Lead B", telefoneE164: "+50670003333", vendedorDonoId: vendedorB.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead B", telefoneE164: "+50670003333", vendedorDonoId: vendedorB.id } });
     entrar(vendedorB);
     expect((await listarOpcoesAtendimento()).numeros.find((n) => n.id === linha.id)?.comercial).toBe(false);
     expect((await abrirAtendimentoInstitucional({ numeroId: linha.id, destinoChave: `COMERCIAL:${lead.id}` })).ok).toBe(false);

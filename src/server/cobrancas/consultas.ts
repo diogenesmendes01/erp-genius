@@ -11,7 +11,17 @@ import { renderizarTemplate } from "@/server/whatsapp/render";
 import { resolverDestinoCobranca, INCLUDE_MATRICULA_DESTINO } from "@/server/whatsapp/identidade";
 import { contatoCorrespondeDestinoFinanceiro } from "@/server/whatsapp/destinatario-atual";
 import { suspensoesPorConferencia } from "./conferencia";
-import { contarIndicadoresFila } from "./filtros-fila";
+import {
+  FILA_COBRANCA_POR_TRECHO,
+  contarIndicadoresFila,
+  cursorDoItemFila,
+  filtrarFila,
+  lerFiltrosFila,
+  opcoesDaFila,
+  trechoDaFila,
+  type FiltrosFila,
+} from "./filtros-fila";
+import { lerPaginaDaFila, type NavegacaoDaPagina, type NavegacaoFila } from "@/lib/cursor-fila";
 import { cicloDoEventoCobranca } from "./eventos";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 
@@ -199,38 +209,124 @@ export interface DegrauFila {
   rotulo: string;
 }
 
-export async function listarFilaCobranca(): Promise<{
+/** Rótulo da turma na fila ("Modalidade Nível"): só quando a matrícula tem exatamente uma alocação ativa. */
+function turmaDaFila(alocacoes: readonly { turma: { modalidade: { nome: string }; nivel: { codigo: string } } }[]): string | null {
+  return alocacoes.length === 1 ? `${alocacoes[0].turma.modalidade.nome} ${alocacoes[0].turma.nivel.codigo}` : null;
+}
+
+export interface EntradaFilaCobranca {
+  /** Recorte da URL (cartão-indicador, busca, país, turma); sem ele, a fila inteira. */
+  filtros?: FiltrosFila;
+  /** Cursor da URL (`depois`/`antes`), já validado pela página; sem ele, o início da fila. */
+  navegacao?: NavegacaoFila;
+}
+
+export interface FilaCobrancaConsulta extends NavegacaoDaPagina {
+  /** O trecho da visão que a tela mostra (no máximo FILA_COBRANCA_POR_TRECHO), na ordem da fila. */
   itens: FilaCobrancaItem[];
+  /** Contadores dos cartões, sobre a fila inteira (sem filtro). */
   dashs: DashsCobranca;
   /** Degraus da POLÍTICA vigente — a timeline do drawer desenha isto, nunca a const REGUA
    *  do client (doc 29: a régua exibida deve ser a mesma que o cron executa). */
   regua: DegrauFila[];
-}> {
+  /** Cobranças abertas na fila inteira. */
+  totalFila: number;
+  /** Cobranças na visão filtrada (todos os trechos dela). */
+  totalVisao: number;
+  /** Opções dos selects, da fila inteira (com o país/turma da URL mesmo que tenham saído). */
+  opcoes: { paises: string[]; turmas: string[] };
+}
+
+/**
+ * Fila de cobrança (doc 24) por cursor nos dois sentidos (docs/43 §6 item 9; decisão de 10/10/2026).
+ *
+ * Em dois tempos. (1) A fila inteira, só com o que ordena, filtra e conta (id, código, vencimento, nome,
+ * país, turma e a régua): a ordem e os cartões dependem da régua calculada em memória, então não há
+ * `take` possível aqui sem gravar o estado da régua (pendência anotada na PR). (2) O detalhe pesado —
+ * fontes do vencimento civil, destinatário financeiro, intenções de envio, respostas e a mensagem
+ * sugerida renderizada — só das cobranças do trecho exibido, com `take`.
+ */
+export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Promise<FilaCobrancaConsulta> {
+  const filtros = entrada.filtros ?? lerFiltrosFila({});
   const hoje = new Date();
   const politica = await carregarPoliticaRegua();
 
-  const cobrancas = await prisma.cobranca.findMany({
+  const abertas = await prisma.cobranca.findMany({
     where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
-    orderBy: { vencimento: "asc" },
-    include: {
-      ...incluirFonteVencimentoCivil,
+    orderBy: [{ vencimento: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      codigo: true,
+      vencimento: true,
+      cicloRegua: true,
       matricula: {
-        include: {
-          ...INCLUDE_MATRICULA_DESTINO,
-          alocacoes: { where: { ativa: true }, include: { turma: { include: { modalidade: true, nivel: true } } } },
+        select: {
+          acessoBloqueado: true,
+          aluno: { select: { primeiroNome: true, sobrenome: true } },
+          pais: { select: { nome: true } },
+          alocacoes: { where: { ativa: true }, select: { turma: { select: { modalidade: { select: { nome: true } }, nivel: { select: { codigo: true } } } } } },
         },
       },
     },
   });
 
-  const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), [...new Set(cobrancas.map((c) => c.matriculaId))]);
-
   // Régua de cada cobrança via o cérebro compartilhado (mesma fonte da ficha do aluno).
   const regua = await montarReguaPorCobranca(
-    cobrancas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
+    abertas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
     hoje,
     politica.degraus,
   );
+
+  // O que ordena, filtra e conta, para a fila inteira (os mesmos campos que o item exibido mostra).
+  const resumo = abertas.map((c) => {
+    const r = regua.get(c.id)!;
+    return {
+      id: c.id,
+      codigo: c.codigo,
+      estado: r.estado,
+      diasAtraso: r.diasAtraso,
+      precisaBloqueio: r.precisaBloqueio,
+      prioridade: r.prioridade,
+      pais: c.matricula.pais.nome,
+      turma: turmaDaFila(c.matricula.alocacoes),
+      aluno: { nome: nomeCompleto(c.matricula.aluno) },
+    };
+  });
+  const visao = filtrarFila(resumo, filtros);
+
+  // O trecho exibido: lido a partir da chave de ordem do cursor, nos dois sentidos (filtros-fila.ts).
+  const { registros: trecho, ...navegacaoDoTrecho } = await lerPaginaDaFila(
+    entrada.navegacao ?? {},
+    FILA_COBRANCA_POR_TRECHO,
+    async (leitura, take) => trechoDaFila(visao, leitura, take),
+    cursorDoItemFila,
+  );
+
+  const idsDoTrecho = trecho.map((t) => t.id);
+  const detalhes = idsDoTrecho.length
+    ? await prisma.cobranca.findMany({
+        // Mesmo recorte da leitura leve: a cobrança paga entre as duas leituras sai do trecho (C1 da R1 da #180).
+        where: { id: { in: idsDoTrecho }, status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } },
+        take: FILA_COBRANCA_POR_TRECHO,
+        include: {
+          ...incluirFonteVencimentoCivil,
+          matricula: {
+            include: {
+              ...INCLUDE_MATRICULA_DESTINO,
+              alocacoes: { where: { ativa: true }, include: { turma: { include: { modalidade: true, nivel: true } } } },
+            },
+          },
+        },
+      })
+    : [];
+  // Na ordem da fila; a cobrança paga entre as duas leituras sai do trecho.
+  const detalhePorId = new Map(detalhes.map((c) => [c.id, c]));
+  const cobrancas = idsDoTrecho.flatMap((id) => {
+    const c = detalhePorId.get(id);
+    return c ? [c] : [];
+  });
+
+  const trilhasVencimento = await carregarTrilhasVencimentoCivil(prisma, cobrancas.map((c) => c.id), [...new Set(cobrancas.map((c) => c.matriculaId))]);
 
   // Canal WhatsApp (E2): templates p/ renderizar a mensagem sugerida no servidor,
   // última intenção por cobrança (estado do braço) e inbound por destino ("respondeu").
@@ -275,7 +371,6 @@ export async function listarFilaCobranca(): Promise<{
   const itens: FilaCobrancaItem[] = cobrancas.map((c, idx) => {
     const r = regua.get(c.id)!;
     const aluno = c.matricula.aluno;
-    const turma = c.matricula.alocacoes.length === 1 ? c.matricula.alocacoes[0].turma : null;
     const valorNegociado = numero(c.valorNegociado);
     const valorRecebido = numeroOuNull(c.valorRecebido) ?? 0;
     const saldo = numeroOuNull(c.saldo) ?? valorNegociado - valorRecebido;
@@ -336,7 +431,7 @@ export async function listarFilaCobranca(): Promise<{
       acessoBloqueado: c.matricula.acessoBloqueado,
       aluno: { id: aluno.id, nome: nomeCompleto(aluno), telefone: aluno.telefoneE164 },
       pais: c.matricula.pais.nome,
-      turma: turma ? `${turma.modalidade.nome} ${turma.nivel.codigo}` : null,
+      turma: turmaDaFila(c.matricula.alocacoes),
       destino,
       respondeuEm,
       envio,
@@ -344,11 +439,12 @@ export async function listarFilaCobranca(): Promise<{
     };
   });
 
-  // Contadores dos mini-dashs (filtros). "Bloquear" é o subconjunto urgente de "Em atraso", mais a promessa com atraso ≥ 30.
+  // Contadores dos mini-dashs (filtros), sobre a fila INTEIRA — não sobre o trecho exibido. "Bloquear" é o
+  // subconjunto urgente de "Em atraso", mais a promessa com atraso ≥ 30.
   // "Bloquear" usa `precisaBloqueio` (atraso ≥ 30 e não bloqueado), NÃO o passo da régua: o
   // bloqueio pendente não pode sumir só porque a mensagem D+15 foi enviada (review §1).
   // Mesmo critério do filtro da fila na URL (filtros-fila.ts): o número do cartão bate com a lista filtrada.
-  const { aVencer, emAtraso, bloquear, promessas } = contarIndicadoresFila(itens);
+  const { aVencer, emAtraso, bloquear, promessas } = contarIndicadoresFila(resumo);
 
   // Recebido hoje = soma das BAIXAS de hoje (eventos PagamentoRegistrado), não o status PAGO:
   // captura parciais (que ficam PENDENTE) e usa o valor DESTA baixa, não o acumulado (review §2).
@@ -379,6 +475,10 @@ export async function listarFilaCobranca(): Promise<{
     itens,
     dashs: { aVencer, emAtraso, bloquear, promessas, recebidoHoje },
     regua: politica.degraus.map((d) => ({ passo: d.passo, offsetDias: d.offsetDias, tipo: d.tipo, rotulo: d.rotulo })),
+    totalFila: abertas.length,
+    totalVisao: visao.length,
+    opcoes: opcoesDaFila(resumo, filtros),
+    ...navegacaoDoTrecho,
   };
 }
 

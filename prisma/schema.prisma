@@ -420,7 +420,7 @@ model AtendimentoWhatsApp {
   responsavelId String?
   responsavel Usuario? @relation("ResponsavelAtendimentoWhatsApp", fields: [responsavelId], references: [id], onDelete: SetNull)
   leadId String?
-  lead Lead? @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  lead Oportunidade? @relation(fields: [leadId], references: [id], onDelete: Restrict)
   alunoId String?
   aluno Aluno? @relation(fields: [alunoId], references: [id], onDelete: Restrict)
   matriculaId String?
@@ -785,8 +785,8 @@ model Usuario {
   ultimoAcesso      DateTime?
   criadoEm          DateTime  @default(now())
 
-  leads             Lead[]              @relation("VendedorLeads")
-  experimentais     Lead[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
+  leads             Oportunidade[]              @relation("VendedorLeads")
+  experimentais     Oportunidade[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
   turmas            Turma[]             @relation("ProfessorTurmas")
   comissoes         Comissao[]
   eventos           Evento[]            @relation("AutorEventos")
@@ -865,7 +865,7 @@ model Pais {
   produtosPais   ProdutoPais[]
   precos         PrecoReferencia[]
   alunos         Aluno[]
-  leads          Lead[]
+  leads          Oportunidade[]
   matriculas     Matricula[]
   politicasComissao PoliticaComissao[]
 }
@@ -1339,7 +1339,7 @@ enum MotivoPerda {
   OUTRO
 }
 
-model Lead {
+model Oportunidade {
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id             String      @id @default(cuid())
   codigo         String?     @unique // L-000001
@@ -1417,6 +1417,7 @@ model Lead {
   sugestoesIA      SugestaoIA[]
 
   @@index([telefoneE164])
+  @@map("Lead")
 }
 
 enum CategoriaDocumento {
@@ -1439,7 +1440,7 @@ model Documento {
   condicoesEncerramento CondicoesEncerramentoMatricula[]
   id        String             @id @default(cuid())
   leadId    String?
-  lead      Lead?              @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  lead      Oportunidade?              @relation(fields: [leadId], references: [id], onDelete: Restrict)
   matriculaId String?
   matricula Matricula?         @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
   categoria CategoriaDocumento
@@ -1832,7 +1833,7 @@ model Matricula {
   alunoId                String
   aluno                  Aluno           @relation(fields: [alunoId], references: [id])
   leadId                 String?         @unique
-  lead                   Lead?           @relation(fields: [leadId], references: [id])
+  lead                   Oportunidade?           @relation(fields: [leadId], references: [id])
   produtoId              String
   produto                Produto         @relation(fields: [produtoId], references: [id])
   paisId                 String
@@ -2360,7 +2361,7 @@ model ContatoWhatsApp {
   responsavelId String?
   responsavel   Responsavel? @relation(fields: [responsavelId], references: [id])
   leadId        String?
-  lead          Lead?        @relation(fields: [leadId], references: [id])
+  lead          Oportunidade?        @relation(fields: [leadId], references: [id])
 
   optOutEm DateTime? // LEI: opt-out sempre respeitado pelo despachante (doc 26/30 S10)
   criadoEm DateTime  @default(now())
@@ -2528,7 +2529,7 @@ model IntencaoMensagem {
   // Régua COMERCIAL (doc 27 C1 §Tese): lead-novo e demais cadências. Mesmo outbox/
   // despachante da cobrança; o vínculo de domínio é o Lead + o passo da cadência.
   leadId             String?
-  lead               Lead?             @relation(fields: [leadId], references: [id])
+  lead               Oportunidade?             @relation(fields: [leadId], references: [id])
   passoComercial     String? // passo da cadência comercial ("+30min"...) — idempotência
   // OCORRÊNCIA da cadência (review PR #56): a âncora em ISO. É o que separa um CICLO do
   // outro — experimental reagendada, segundo no-show. Sem ela a idempotência é eterna por
@@ -8477,7 +8478,7 @@ enum GatilhoSugestaoIA {
 model SugestaoIA {
   id      String            @id @default(cuid())
   leadId  String
-  lead    Lead              @relation(fields: [leadId], references: [id])
+  lead    Oportunidade              @relation(fields: [leadId], references: [id])
   loteId  String // agrupa as sugestões geradas numa MESMA análise
   tipo    TipoSugestaoIA
   status  StatusSugestaoIA  @default(PENDENTE)

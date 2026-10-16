@@ -86,7 +86,6 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
 
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
-  revalidatePath("/pipeline");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
   if (id) revalidatePath(`/leads/${id}`);
@@ -95,7 +94,7 @@ function revalidarLead(id?: string) {
 /** Carrega o lead garantindo que o usuário pode vê-lo (vendedor só os próprios). */
 async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   exigirPapel(usuario, ...PAPEIS_COMERCIAL);
-  const lead = await tx.lead.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
+  const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
   if (!lead) throw new ErroPermissao("Lead fora da sua carteira autorizada.");
   return lead;
 }
@@ -124,7 +123,7 @@ async function exigirDocumentoPermitido(leadId: string, categoria: CategoriaDocu
     if (!usuario.papeis.some((p) => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL || p === Papel.PROFESSOR)) throw new ErroPermissao("Assuma a matrícula antes de alterar os documentos administrativos.");
   }
   if (categoria === CategoriaDocumento.TESTE_NIVEL && usuario.papeis.includes(Papel.PROFESSOR)) {
-    const experimental = await tx.lead.findFirst({ where: { id: leadId, professorExperimentalId: usuario.id }, select: { id: true } });
+    const experimental = await tx.oportunidade.findFirst({ where: { id: leadId, professorExperimentalId: usuario.id }, select: { id: true } });
     if (experimental) return;
   }
   await exigirLeadVisivel(leadId, usuario, tx);
@@ -146,7 +145,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
 
     const id = await prisma.$transaction(async (tx) => {
       const codigo = await gerarCodigo("lead");
-      const lead = await tx.lead.create({
+      const lead = await tx.oportunidade.create({
         data: {
           codigo,
           nome: dados.nome,
@@ -227,7 +226,7 @@ export async function definirTemperatura(leadId: string, temperatura: Temperatur
     if (lead.temperatura === temperatura) return;
 
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id: leadId }, data: { temperatura } });
+      await tx.oportunidade.update({ where: { id: leadId }, data: { temperatura } });
       await registrarEvento(tx, {
         tipo: "LeadEditado",
         agregadoTipo: "Lead",
@@ -254,7 +253,7 @@ export async function editarLead(id: string, input: LeadInput): Promise<Resultad
       const matricula = await tx.matricula.findUnique({ where: { leadId: id }, select: { secretariaAssumiuEm: true } });
       const alteraCadastro = dados.nome !== leadAtual.nome || normalizarTelefoneE164(dados.telefoneE164, ddi) !== leadAtual.telefoneE164 || (dados.paisId || null) !== leadAtual.paisId;
       if (matricula?.secretariaAssumiuEm && alteraCadastro && !autor.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA)) throw new ErroPermissao("A secretaria assumiu a matrícula. Solicite a correção cadastral.");
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           nome: dados.nome,
@@ -294,7 +293,7 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
     // Tipo específico ResumoAtualizado com payload completo, consumido pela linha
     // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           interesse: dados.interesse || null,
@@ -334,7 +333,7 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     // Tipo específico DatasAtualizadas com payload completo, consumido pela linha
     // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           proximoFollowUp: dados.proximoFollowUp ?? null,
@@ -383,7 +382,7 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
       );
     }
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id }, data: { etapa } });
+      await tx.oportunidade.update({ where: { id }, data: { etapa } });
       await registrarEvento(tx, {
         tipo: "EtapaAlterada",
         agregadoTipo: "Lead",
@@ -439,7 +438,7 @@ export async function agendarExperimental(
     const anterior = await professorAtribuido(prisma, id);
     const mudouProfessor = professorId !== anterior;
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
@@ -485,7 +484,7 @@ export async function enviarProposta(id: string): Promise<Resultado> {
     await exigirLeadVisivel(id, autor);
     await prisma.$transaction(async (tx) => {
       const agora = new Date();
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: { etapa: EtapaLead.PROPOSTA, dataProposta: agora },
       });
@@ -508,7 +507,7 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu
     await exigirLeadVisivel(id, autor);
     const dados = PerdaSchema.parse(input);
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: { etapa: EtapaLead.PERDIDO, motivoPerda: dados.motivoPerda },
       });
@@ -592,7 +591,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     const autor = await exigirSessao();
     exigirPapel(autor, Papel.PROFESSOR);
 
-    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.oportunidade.findUnique({ where: { id: leadId } });
     if (!lead) throw new ErroRegra("Lead não encontrado.");
 
     // 2) etapa/agendamento: só vale enquanto há uma experimental agendada
@@ -613,7 +612,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     const proximaAcao = compareceu ? "Comercial: apresentar proposta" : "Remarcar experimental";
 
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id: leadId }, data: { etapa, proximaAcao } });
+      await tx.oportunidade.update({ where: { id: leadId }, data: { etapa, proximaAcao } });
       await registrarEvento(tx, {
         tipo: compareceu ? "ExperimentalRealizada" : "NoShow",
         agregadoTipo: "Lead",
@@ -624,7 +623,6 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     });
     revalidatePath("/home");
     revalidatePath("/leads");
-    revalidatePath("/pipeline");
   });
 }
 
@@ -643,7 +641,7 @@ export async function atribuirProfessorExperimental(
 
     const anterior = await professorAtribuido(prisma, leadId);
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id: leadId },
         data: { professorExperimentalId: professorId },
       });
@@ -781,7 +779,7 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
     // "some" do piloto em silêncio) — e sem duplicatas.
     const idsUnicos = [...new Set(dados.pilotoLeadIds)];
     const leadsExistentes = idsUnicos.length
-      ? await prisma.lead.findMany({ where: { id: { in: idsUnicos } }, select: { id: true } })
+      ? await prisma.oportunidade.findMany({ where: { id: { in: idsUnicos } }, select: { id: true } })
       : [];
     if (leadsExistentes.length !== idsUnicos.length) {
       throw new ErroRegra("A allowlist do piloto contém leads inexistentes.");
@@ -854,7 +852,7 @@ export async function atribuirDono(
       const lead = await exigirLeadVisivel(id, autor, tx);
       await exigirDestinoComercial(autor, vendedorId, tx);
       if (lead.vendedorDonoId === vendedorId) return;
-      await tx.lead.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
+      await tx.oportunidade.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
       // Responsável preenchido conta como assumido (regra do backfill da M2): quem estava "Na fila" passa a
       // EM_ATENDIMENTO; AGUARDANDO_CLIENTE e EM_ATENDIMENTO mantêm o status.
       await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null, status: "ABERTO_SEM_RESPONSAVEL" }, data: { responsavelId: vendedorId, status: "EM_ATENDIMENTO" } });

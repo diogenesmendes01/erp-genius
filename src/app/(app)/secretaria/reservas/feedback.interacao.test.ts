@@ -38,10 +38,11 @@ describe("ConferirReserva", () => {
     sucesso: "O prazo da reserva ainda está vigente.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE, ocupado: ocupadoEm(tela),
   });
 
-  it("resposta sem resultado: a incerteza sai em alerta e a página não é atualizada", async () => {
+  it("resposta sem resultado: a incerteza sai em alerta, com a constante de ação sem chave, e a página não é atualizada", async () => {
+    // C10 (#170): antes era uma frase avulsa; agora a mesma instrução da falha de transporte desta ação.
     m.conferir.mockResolvedValueOnce({ ok: true });
     await clicar(tela(), "Conferir vencimento");
-    expect(anuncios(tela())).toEqual({ alerta: ["Resultado não confirmado. Atualize a página para ver o estado atual da reserva."], status: [] });
+    expect(anuncios(tela())).toEqual({ alerta: [MSG_RESULTADO_INCERTO_SEM_CHAVE], status: [] });
     expect(m.refresh).not.toHaveBeenCalled();
   });
 });

@@ -69,7 +69,7 @@ export interface EntradaEvento {
  *
  * @example
  * await prisma.$transaction(async (tx) => {
- *   await tx.lead.update({ ... });
+ *   await tx.oportunidade.update({ ... });
  *   await registrarEvento(tx, {
  *     tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId, autorId,
  *     payload: { de, para },

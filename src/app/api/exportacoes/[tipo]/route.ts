@@ -79,7 +79,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
         throw new ErroPermissao("O acesso aos registros mudou durante a exportação. Gere uma nova planilha.");
       }
     } else {
-      const permitidos = await prisma.lead.count({ where: { AND: [{ id: { in: ids } }, await escopoComercialAtual(atual)] } });
+      const permitidos = await prisma.oportunidade.count({ where: { AND: [{ id: { in: ids } }, await escopoComercialAtual(atual)] } });
       if (permitidos !== ids.length) throw new ErroPermissao("O acesso aos registros mudou durante a exportação. Gere uma nova planilha.");
     }
     await prisma.$transaction(async (tx) => registrarEvento(tx, { tipo: "DadosExportados", agregadoTipo: "Exportacao", agregadoId: randomUUID(), autorId: atual.id, payload: { conjunto: tipo, quantidade: folha.rowCount - 1, colunas: folha.columns.map((c) => String(c.header)), filtros: filtrosRegistrados(filtrosAlunos ?? filtrosLeads), finalidade: "exportacao_da_listagem" } }));

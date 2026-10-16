@@ -252,6 +252,53 @@ describe("FilaCobranca — \"Aprovar e enviar lote\" passa pela confirmação (d
   });
 });
 
+describe("FilaCobranca — o lote só leva o que está na tela (docs/43 §6 item 9)", () => {
+  const outra: FilaCobrancaItem = { ...item, id: "cobranca-2", aluno: { id: "aluno-2", nome: "Bruno Costa", telefone: null } };
+  /** A tela com o trecho `itens` (o componente não é recriado ao navegar: o estado continua). */
+  const noTrecho = (itens: FilaCobrancaItem[]) => m.ganchos!.renderizar(FilaCobranca, { ...props, itens, totalFila: 2 });
+  const caixas = (t: ReactNode) => elementos(t).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
+  const temBarra = (t: ReactNode) => elementos(t).some((n: No) => n.type === "button" && texto(n.props.children).trim() === "Aprovar e enviar lote");
+  const barra = (t: ReactNode) => texto(elementos(t).find((n: No) => n.type === "span" && texto(n.props.children).includes("selecionada(s)"))!.props.children);
+
+  it("marcada num trecho e fora da tela no seguinte: some da barra, não vai na revisão nem no envio", async () => {
+    (caixas(noTrecho([item]))[0].props.onChange as () => void)();
+    expect(temBarra(noTrecho([item]))).toBe(true);
+    // Próxima: o trecho seguinte não tem a cobrança marcada.
+    expect(temBarra(noTrecho([outra]))).toBe(false);
+    (caixas(noTrecho([outra]))[0].props.onChange as () => void)();
+    const t = noTrecho([outra]);
+    expect(barra(t)).toBe("1 selecionada(s) para envio em lote");
+    (botao(t, "Aprovar e enviar lote").props.onClick as () => void)();
+    const [c] = doTipo(noTrecho([outra]), ConfirmarAcao);
+    expect(c.props.titulo).toBe("Enviar 1 mensagem de cobrança pelo WhatsApp?");
+    const resumo = c.props.children as No;
+    const consequencia = texto((resumo.type as (p: unknown) => ReactNode)(resumo.props)).replace(/\s+/g, " ");
+    expect(consequencia).toContain("Bruno Costa");
+    expect(consequencia).not.toContain("Ana Silva");
+    await (c.props.acao as () => Promise<unknown>)();
+    expect(m.lote).toHaveBeenCalledWith({ cobrancaIds: ["cobranca-2"] });
+  });
+
+  it("marcar no trecho atual descarta o que ficou marcado fora da tela: voltar não ressuscita a marcação", () => {
+    (caixas(noTrecho([item]))[0].props.onChange as () => void)();
+    (caixas(noTrecho([outra]))[0].props.onChange as () => void)();
+    const deVolta = caixas(noTrecho([item, outra]));
+    expect(deVolta.map((n) => n.props.checked)).toEqual([false, true]);
+  });
+
+  it("as duas marcadas e uma sai do trecho (paga, ou outro filtro): a barra e o envio contam só a que ficou", async () => {
+    const t0 = noTrecho([item, outra]);
+    (caixas(t0)[0].props.onChange as () => void)();
+    (caixas(noTrecho([item, outra]))[1].props.onChange as () => void)();
+    expect(barra(noTrecho([item, outra]))).toBe("2 selecionada(s) para envio em lote");
+    const t = noTrecho([outra]);
+    expect(barra(t)).toBe("1 selecionada(s) para envio em lote");
+    (botao(t, "Aprovar e enviar lote").props.onClick as () => void)();
+    await (doTipo(noTrecho([outra]), ConfirmarAcao)[0].props.acao as () => Promise<unknown>)();
+    expect(m.lote).toHaveBeenCalledWith({ cobrancaIds: ["cobranca-2"] });
+  });
+});
+
 describe("FilaCobranca — lote: falha parcial em role=\"alert\", resumo em role=\"status\" (#153)", () => {
   /** Seleciona a cobrança para o lote, confirma e conclui; devolve o que a tela anuncia depois. */
   async function aprovarLote(dado: { enfileiradas: number; despachadas: number; simuladas: number; falhas: number; puladas: { motivo: string }[] }) {

@@ -15,7 +15,7 @@ export async function obterLeadParaMatricula(id: string, usuario: UsuarioSessao)
   const atual = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   if (atual.id !== usuario.id) return null;
   const escopo = atual.papeis.includes(Papel.SECRETARIA_ACADEMICA) ? {} : await escopoComercialAtual(atual);
-  return prisma.lead.findFirst({
+  return prisma.oportunidade.findFirst({
     where: { AND: [{ id }, escopo] },
     select: {
       id: true,
