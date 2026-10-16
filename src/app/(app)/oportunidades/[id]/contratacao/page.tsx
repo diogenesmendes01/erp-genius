@@ -6,15 +6,17 @@ import { PreparacaoFormulario } from "./PreparacaoFormulario";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 export default async function PreparacaoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ofertaId?: string; ofertas?: string; cadastros?: string; turmas?: string }> }) {
-  await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
+  const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const { id } = await params, f = await searchParams;
+  // /funil só aceita ADMINISTRADOR, GERENTE_COMERCIAL e VENDEDOR; a Secretaria volta pela ficha antiga até a Tarefa 37.
+  const temFunil = usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.GERENTE_COMERCIAL || p === Papel.VENDEDOR);
   const [identidades, ofertas] = await Promise.all([consultarCadastrosPreparacao({ leadId: id, pagina: Number(f.cadastros ?? 1) }), consultarOfertasPreparacao({ leadId: id, ofertaId: f.ofertaId, pagina: Number(f.ofertas ?? 1), paginaTurmas: Number(f.turmas ?? 1) })]);
   if (!identidades.ok || !identidades.dado) return <p role="alert">{identidades.ok ? "Consulta indisponível." : identidades.erro}</p>;
   if (!ofertas.ok || !ofertas.dado) return <p role="alert">{ofertas.ok ? "Ofertas indisponíveis." : ofertas.erro}</p>;
   const c = identidades.dado, o = ofertas.dado;
   const url = (chave: string, valor: string) => { const p = new URLSearchParams(); for (const [k, v] of Object.entries(f)) if (v) p.set(k, v); p.set(chave, valor); if (chave === "ofertaId") p.delete("turmas"); return `?${p}`; };
   if (c.matriculaId) return <div className="space-y-3"><p>Esta negociação já possui contratação.</p><Link className="underline" href={`/matriculas/${c.matriculaId}/preparacao`}>Consultar contratação e reserva</Link></div>;
-  return <div className="space-y-4"><VoltarPara href={`/funil?o=${id}`} para="Funil" /><h1 className="text-2xl font-medium">Preparar contratação · {c.lead.nome}</h1>
+  return <div className="space-y-4">{temFunil ? <VoltarPara href={`/funil?o=${id}`} para="Funil" /> : <VoltarPara href={`/leads/${id}`} para="Negociação" />}<h1 className="text-2xl font-medium">Preparar contratação · {c.lead.nome}</h1>
     <p>Confira a identidade antes de selecionar. Um telefone compartilhado pode corresponder a mais de uma pessoa.</p>
     {!c.contatoConferivel && <p role="alert">Confira o contato com a Secretaria antes de continuar.</p>}
     {!c.candidatos.length && <EstadoVazio bloco acao={c.pagina > 1 ? <Link href={url("cadastros", "1")}>Ir para a primeira página</Link> : undefined}>{c.podeCadastrarNovo ? "Não há cadastro com o contato da negociação. Você poderá preencher os dados básicos de pessoa nova após conferir a identidade." : c.pagina > 1 ? "Nenhum cadastro nesta página. Consulte as demais páginas ou confira a identidade com a Secretaria." : "Nenhum cadastro disponível para conferir com o contato da negociação. Confira a identidade com a Secretaria."}</EstadoVazio>}

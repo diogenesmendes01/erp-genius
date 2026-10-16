@@ -28,7 +28,7 @@ const renderizar = (sp: Record<string, string>) => Page({ params: Promise.resolv
 describe("preparar contratação — o formulário não remonta", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.sessao.mockResolvedValue({ id: "vendedor" });
+    mocks.sessao.mockResolvedValue({ id: "vendedor", papeis: ["VENDEDOR"] });
   });
 
   it("mesma identidade no React ao mudar a página de cadastros, a de turmas e a versão da oferta", async () => {
@@ -64,7 +64,7 @@ describe("preparar contratação — o formulário não remonta", () => {
 describe("preparar contratação — a partir da oportunidade", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.sessao.mockResolvedValue({ id: "vendedor" });
+    mocks.sessao.mockResolvedValue({ id: "vendedor", papeis: ["VENDEDOR"] });
   });
 
   it("guard aceita VENDEDOR, GERENTE_COMERCIAL e SECRETARIA_ACADEMICA", () => {
@@ -76,5 +76,14 @@ describe("preparar contratação — a partir da oportunidade", () => {
     mocks.ofertas.mockResolvedValue({ ok: true, dado: ofertas(1) });
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "op1" }), searchParams: Promise.resolve({}) }));
     expect(html).toContain('href="/funil?o=op1"');
+  });
+
+  it("Secretaria (sem acesso ao funil) volta para a ficha da negociação", async () => {
+    mocks.sessao.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
+    mocks.cadastros.mockResolvedValue({ ok: true, dado: cadastros(1) });
+    mocks.ofertas.mockResolvedValue({ ok: true, dado: ofertas(1) });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "op1" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain('href="/leads/op1"');
+    expect(html).not.toContain("/funil");
   });
 });
