@@ -19,7 +19,7 @@ vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => 
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/home", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/home", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado", "src/app/(app)/funil"];
 
 /**
  * Telas públicas fora do shell (docs/43 §6 item 8): login da equipe, pagamento por link e o acesso ao portal do
@@ -69,6 +69,8 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": ["Fechar"], // ícone de fechar
   "src/app/(app)/financeiro/FilaCobranca.tsx": ["(sem nome)", "✕"], // linha da fila, ✕ do detalhe
   // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, item de nome.
+  "src/app/(app)/funil/CartaoOportunidade.tsx": ["Sem código", "`Arrastar cartão de ${cartao.nome}`"], // abrir o cartão e alça de arraste (ícone)
+  "src/app/(app)/funil/ListaFunil.tsx": ["Sem código"], // abrir a oportunidade (nome na linha)
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
