@@ -77,7 +77,12 @@ export async function escopoAtendimentos(
   const papeisSemProfessor = usuario.papeis.filter((p) => p !== Papel.PROFESSOR);
   for (const setor of setoresDoUsuario(papeisSemProfessor)) {
     if (ehGerenteDoSetor(usuario.papeis, setor)) ors.push({ finalidade: setor });
-    else ors.push({ finalidade: setor, responsavelId: usuario.id }, ramoFilaDoSetor(setor));
+    else {
+      // COMERCIAL: o responsável gravado NÃO concede acesso (LC-D02) — vale só o ramo comercial
+      // acima (carteira / sem lead fora da linha VENDAS) e a posse atual da linha; aqui só a fila.
+      if (setor !== "COMERCIAL") ors.push({ finalidade: setor, responsavelId: usuario.id });
+      ors.push(ramoFilaDoSetor(setor));
+    }
   }
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     const vinculos = await prisma.alocacaoTurma.findMany({ where: { ativa: true, turma: escopoTurmasDocente(usuario.id, agora) }, select: { alunoId: true, turmaId: true } });
