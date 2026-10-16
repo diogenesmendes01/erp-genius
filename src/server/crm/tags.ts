@@ -62,7 +62,7 @@ const AlvoSchema = z.object({
 });
 
 /** Empresa visível: tem oportunidade no escopo comercial do usuário ou uma pessoa dentro de `escopoPessoas`. */
-async function escopoEmpresas(usuario: UsuarioSessao, tx: Prisma.TransactionClient): Promise<Prisma.EmpresaWhereInput> {
+export async function escopoEmpresas(usuario: UsuarioSessao, tx: Prisma.TransactionClient): Promise<Prisma.EmpresaWhereInput> {
   return {
     OR: [
       { oportunidades: { some: await escopoComercialAtual(usuario, tx) } },
