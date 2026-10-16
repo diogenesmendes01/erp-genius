@@ -79,12 +79,6 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
     motivo: "dica curta dentro de uma linha de checkboxes do formulário",
   },
   {
-    arquivo: "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx",
-    condicao: "pilotoLeads.length === 0",
-    folha: "<p className=\"text-xs text-amber-700\"> Lista vazia = ninguém recebe. Adicione os leads do piloto abaixo. </p>",
-    motivo: "aviso ou instrução (o que falta para seguir), não lista sem itens",
-  },
-  {
     arquivo: "src/app/(app)/home/HomeVendedor.tsx",
     condicao: "fila.length === 0",
     folha: "<p className=\"flex items-center gap-1.5 text-sm text-gray-400\"> <IconCircleCheck className=\"h-4 w-4 text-green-600\" /> Tudo em dia </p>",
@@ -433,14 +427,8 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/configuracao/turmas/TurmasPainel.tsx": [
     "bloco · Nenhuma turma cadastrada.",
   ],
-  "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx": [
-    "compacto · Nada simulado ainda. Em ensaio (shadow), cada 1º inbound registra aqui a saudação que teria sido env",
-  ],
   "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx": [
     "bloco · Nenhum número cadastrado — o canal começa aqui.",
-  ],
-  "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx": [
-    "compacto · Nada simulado ainda. Em ensaio, cada degrau devido registra aqui o que teria sido enviado.",
   ],
   "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": [
     "bloco · Nenhum template — rode o seed ou crie o primeiro.",

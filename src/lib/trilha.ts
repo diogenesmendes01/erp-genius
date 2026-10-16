@@ -86,8 +86,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/configuracao/whatsapp/templates": "Templates",
   "/configuracao/whatsapp/politica": "Política da régua",
   "/configuracao/whatsapp/avisos-agenda": "Avisos da agenda",
-  "/configuracao/whatsapp/comercial": "Comercial",
-  "/configuracao/whatsapp/reguas": "Régua comercial",
 
   // Diário
   "/diario/encontros": "Encontros",
