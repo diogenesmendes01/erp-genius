@@ -157,6 +157,15 @@ Base das Fases 2 e 3 (`src/components`). Todos usam só tokens; `bg-brand-bg` é
 - **`Menu`** (`{ rotulo, gatilho, itens }`, cliente): `role="menu"`/`menuitem`, painel `min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover`, item `px-5 py-3 hover:bg-highlight`. Setas/Home/End circulam; Escape fecha e devolve o foco ao gatilho.
 - **`src/lib/popover.ts`**: `posicaoPopover` (abaixo por padrão, acima se não couber; 6 px da âncora e 8 px das bordas) e `proximoIndiceMenu`, funções puras testadas.
 
+## Avisos e movimento reduzido
+`src/components/Aviso.tsx` é a caixa única de aviso: `rounded-md p-3 text-sm` + tom. `info` = `bg-surface-muted`;
+`sucesso` = `bg-green-100 text-green-700 border-s-[3px] border-green-700`; `atencao` = `bg-amber-100 text-amber-800
+border-s-[3px] border-amber-600`; `erro` = `bg-red-100 text-red-700 border-s-[3px] border-red-600`. Papel: `alert`
+no erro, `status` nos outros (`papel="nenhum"` quando a região anunciante é outra, como a sr-only do
+`MensagemStatus`). `FeedbackAcao`, `MensagemStatus` (com `tom`), `ErroArea` (via `EstadoRota aviso="erro"`) e
+`AvisoFusoNaoConfigurado` usam o `Aviso` sem mudar suas props. O esqueleto pulsa (`animate-pulse`); o
+`@media (prefers-reduced-motion: reduce)` de `globals.css` desliga animação, transição e rolagem suave.
+
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
 `bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-bg` = `--brand-bg`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
