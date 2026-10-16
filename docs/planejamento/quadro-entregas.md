@@ -8,7 +8,7 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - `node_modules/.bin/tsc --noEmit`: saída 0.
 - `npm test`: saída 0; 646 arquivos, 4560 testes, 0 falhas (igual à linha de base).
 - `npm run lint`: saída 0; 0 erros, 44 avisos preexistentes.
-- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS acima; nenhuma falha nova. Duração 7139 s.
+- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS abaixo; nenhuma falha nova. Duração 7139 s.
 
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
