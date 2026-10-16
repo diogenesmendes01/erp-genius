@@ -140,24 +140,6 @@ export function EsqueletoConversas({ rotulo }: { rotulo: string }) {
   );
 }
 
-/** Colunas do funil (pipeline). */
-export function EsqueletoColunas({ rotulo, colunas = 5 }: { rotulo: string; colunas?: number }) {
-  return (
-    <Carregando rotulo={rotulo} className="space-y-4">
-      <BarraTitulo />
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {Array.from({ length: colunas }, (_, i) => (
-          <div key={i} className="w-64 shrink-0 space-y-2">
-            <div className={`${bloco} h-6 w-32`} />
-            <div className={`${bloco} h-20`} />
-            <div className={`${bloco} h-20`} />
-          </div>
-        ))}
-      </div>
-    </Carregando>
-  );
-}
-
 /** Acesso da equipe (/login), fora do shell: cartão estreito no centro com a marca, os campos e o botão. */
 export function EsqueletoAcesso({ rotulo, campos = 2 }: { rotulo: string; campos?: number }) {
   return (
