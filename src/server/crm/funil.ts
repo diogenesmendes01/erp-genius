@@ -94,7 +94,7 @@ function whereDosFiltros(f: FiltrosFunil): Prisma.OportunidadeWhereInput {
 }
 
 // "tempo": a coluna não guarda desde quando a oportunidade está na etapa (isso vem de Evento);
-// a ordenação usa a criação (mais antiga primeiro) como aproximação.
+// carregarFunil resolve essa ordem em memória por etapaDesde; aqui só o desempate estável.
 function ordenacao(ordem: FiltrosFunil["ordem"]): Prisma.OportunidadeOrderByWithRelationInput[] {
   switch (ordem) {
     case "valor":
@@ -135,7 +135,25 @@ export async function carregarFunil(usuario: UsuarioSessao, f: FiltrosFunil): Pr
   return Promise.all(
     COLUNAS_FUNIL.map(async (etapa): Promise<ColunaFunil> => {
       const where = whereDa(etapa);
-      const [grupos, linhas] = await Promise.all([
+      // "tempo": ordena pela data do último evento de mudança de etapa (etapaDesde), a mais antiga primeiro.
+      let idsTempo: string[] | null = null;
+      if (f.ordem === "tempo") {
+        const todas = await prisma.oportunidade.findMany({ where, select: { id: true, criadoEm: true } });
+        const mud = todas.length
+          ? await prisma.evento.groupBy({
+              by: ["agregadoId"],
+              where: { agregadoTipo: "Lead", tipo: { in: TIPOS_MUDAM_ETAPA }, agregadoId: { in: todas.map((t) => t.id) } },
+              _max: { criadoEm: true },
+            })
+          : [];
+        const desde = new Map(mud.map((m) => [m.agregadoId, m._max.criadoEm]));
+        idsTempo = todas
+          .map((t) => ({ id: t.id, em: (desde.get(t.id) ?? t.criadoEm).getTime() }))
+          .sort((a, b) => a.em - b.em || (a.id < b.id ? -1 : 1))
+          .slice(0, CARTOES_POR_COLUNA)
+          .map((t) => t.id);
+      }
+      const [grupos, linhasBrutas] = await Promise.all([
         prisma.oportunidade.groupBy({
           by: ["paisId"],
           where,
@@ -143,7 +161,7 @@ export async function carregarFunil(usuario: UsuarioSessao, f: FiltrosFunil): Pr
           _sum: { valorPrevisto: true },
         }),
         prisma.oportunidade.findMany({
-          where,
+          where: idsTempo ? { AND: [where, { id: { in: idsTempo } }] } : where,
           orderBy: ordenacao(f.ordem),
           take: CARTOES_POR_COLUNA,
           include: {
@@ -154,6 +172,9 @@ export async function carregarFunil(usuario: UsuarioSessao, f: FiltrosFunil): Pr
         }),
       ]);
 
+      const linhas = idsTempo
+        ? [...linhasBrutas].sort((a, b) => idsTempo!.indexOf(a.id) - idsTempo!.indexOf(b.id))
+        : linhasBrutas;
       const total = grupos.reduce((s, g) => s + g._count._all, 0);
       const paisesIds = grupos.map((g) => g.paisId).filter((x): x is string => !!x);
       const paises = paisesIds.length
