@@ -969,6 +969,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
   ],
+  "funil/QuadroFunil.tsx": [
+    "<Botao> Recolher · Mostrar cartões → fantasma/sm",
+  ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",
     "<button> Faltou → secundario/sm",
