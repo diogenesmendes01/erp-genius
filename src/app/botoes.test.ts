@@ -46,6 +46,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   // pílula de link, 2 botões só de ícone (anexar, gravar), lista de nomes,
   // abas do filtro de canal (Todas / Linha comercial / Institucional — SPEC-ERP-005).
   "src/app/(app)/inbox/InboxCliente.tsx": 8,
+  "src/app/(app)/funil/PainelOportunidade.tsx": 1, // aba do painel da oportunidade (role=tab, selecionada = marca)
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
@@ -71,6 +72,7 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, item de nome.
   "src/app/(app)/funil/CartaoOportunidade.tsx": ["Sem código", "`Arrastar cartão de ${cartao.nome}`"], // abrir o cartão e alça de arraste (ícone)
   "src/app/(app)/funil/ListaFunil.tsx": ["Sem código"], // abrir a oportunidade (nome na linha)
+  "src/app/(app)/funil/PainelOportunidade.tsx": ["key a.id"], // aba do painel (role=tab)
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
@@ -1134,6 +1136,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
+  { arquivo: "src/app/(app)/funil/PainelOportunidade.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected, que é o atributo próprio da aba; aria-pressed não vale para tab" },
   { arquivo: "src/components/Menu.tsx", rotulo: "key indice", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
 ];
 

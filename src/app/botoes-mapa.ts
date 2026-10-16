@@ -969,6 +969,19 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
   ],
+  "funil/ModalPerda.tsx": [
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Salvando… · Marcar como perdida → perigo/md",
+  ],
+  "funil/PainelOportunidade.tsx": [
+    "<Botao> Atribuir responsável → secundario/md",
+    "<Botao> Agendar experimental → secundario/md",
+    "<Botao> Registrar link de pagamento → secundario/md",
+    "<Botao> Enviar proposta → primario/md",
+    "<Link> Preparar contratação → primario/md",
+    "<Botao> Marcar como perdida → perigo/md",
+    "<Botao> Registrar nota → secundario/md",
+  ],
   "funil/QuadroFunil.tsx": [
     "<Botao> Recolher · Mostrar cartões → fantasma/sm",
   ],

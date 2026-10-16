@@ -538,6 +538,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum recebimento nesta página.",
     "compacto · Nenhum recebimento registrado.",
   ],
+  "src/app/(app)/funil/PainelOportunidade.tsx": [
+    "compacto · Nenhuma atividade registrada.",
+  ],
   "src/app/(app)/home/HomeGerente.tsx": [
     "compacto · Sem vendedores.",
     "compacto · Sem vendedores ativos.",
