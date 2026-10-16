@@ -12,7 +12,6 @@ const KPIS_DUAS_COLUNAS: Record<string, number> = {
   "src/app/(app)/financeiro/FilaCobranca.tsx": 1,
   "src/app/(app)/financeiro/FinanceiroPainel.tsx": 1,
   "src/app/(app)/home/HomeGerente.tsx": 1,
-  "src/app/(app)/home/HomeVendedor.tsx": 1,
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1,
 };
 
