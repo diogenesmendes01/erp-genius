@@ -14,8 +14,6 @@ import {
   executarAcao,
   ErroRegra,
   ErroPermissao,
-  ehEtapaManual,
-  transicaoManualPermitida,
   resolverDonoLead,
   normalizarTelefoneE164,
   podeCheckinExperimental,
@@ -23,6 +21,7 @@ import {
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
+import { moverEtapaTx } from "@/server/crm/mover-etapa";
 import { escopoPessoas, garantirPessoaTx } from "@/server/crm/pessoas";
 import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
@@ -88,6 +87,7 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
   revalidatePath("/pipeline");
+  revalidatePath("/funil");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
   if (id) revalidatePath(`/leads/${id}`);
@@ -97,7 +97,7 @@ function revalidarLead(id?: string) {
 async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   exigirPapel(usuario, ...PAPEIS_COMERCIAL);
   const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
-  if (!lead) throw new ErroPermissao("Lead fora da sua carteira autorizada.");
+  if (!lead) throw new ErroPermissao("Oportunidade fora da sua carteira.");
   return lead;
 }
 
@@ -386,34 +386,8 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const lead = await exigirLeadVisivel(id, autor);
-    if (lead.etapa === etapa) return;
-
-    // Etapas geradas por evento (Exp. Realizada, Proposta, Aguardando Matrícula…)
-    // e saídas paralelas (Perdido/Matriculado) NÃO se movem por arraste.
-    if (!ehEtapaManual(etapa)) {
-      throw new ErroRegra(
-        "Esta etapa é definida por uma ação específica (agendar/realizar experimental, " +
-          "enviar proposta, marcar perdido ou converter em matrícula), não pelo arraste.",
-      );
-    }
-    // Valida a máquina de estados origem→destino — bloqueia saltos inválidos no
-    // backend mesmo que o client envie um destino fora da sequência (doc 10 §1).
-    if (!transicaoManualPermitida(lead.etapa, etapa)) {
-      throw new ErroRegra(
-        `Transição inválida: não é possível mover de "${lead.etapa}" para "${etapa}".`,
-      );
-    }
-    await prisma.$transaction(async (tx) => {
-      await tx.oportunidade.update({ where: { id }, data: { etapa } });
-      await registrarEvento(tx, {
-        tipo: "EtapaAlterada",
-        agregadoTipo: "Lead",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { de: lead.etapa, para: etapa, origem: "manual" },
-      });
-    });
+    // Máquina de estados, trava da linha e Evento na mesma transação: ver crm/mover-etapa.ts.
+    await prisma.$transaction((tx) => moverEtapaTx(tx, autor, id, etapa));
     revalidarLead(id);
   });
 }
