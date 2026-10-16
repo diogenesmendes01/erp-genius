@@ -186,7 +186,7 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     expect(enviarMock).not.toHaveBeenCalled();
   });
 
-  it("inbound não reabre contexto FINANCEIRO encerrado e fica na triagem administrativa", async () => {
+  it("inbound não reabre contexto FINANCEIRO encerrado: o roteamento do setor abre um novo (matrícula única)", async () => {
     const c = await financeiro();
     const historica = await mensagemHistorica(c.atendimento);
     entrar(adm.id);
@@ -194,11 +194,12 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     const antes = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.atendimento.id } });
     expect(await processarMensagemNormalizada({ numeroProviderRef: canal.numero.providerRef, contatoWaId: c.contato.telefoneE164.replace(/\D/g, ""), providerMessageId: "inbound-apos-encerramento", corpo: "Uma nova solicitação após o encerramento", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() })).toBe("gravada");
     const inbound = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "inbound-apos-encerramento" } });
-    expect(inbound.atendimentoId).toBeNull();
+    expect(inbound.atendimentoId).not.toBeNull();
+    expect(inbound.atendimentoId).not.toBe(c.atendimento.id);
     const depois = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.atendimento.id } });
     expect(depois.encerradoEm).toEqual(antes.encerradoEm); expect(depois.naoLidas).toBe(antes.naoLidas);
-    expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: c.atendimento.conversaId } })).toBe(1);
-    expect((await listarTriagemWhatsApp()).map((m) => m.id)).toContain(inbound.id);
+    expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: inbound.atendimentoId! } })).toMatchObject({ finalidade: "FINANCEIRO", encerradoEm: null, matriculaId: c.atendimento.matriculaId });
+    expect((await listarTriagemWhatsApp()).map((m) => m.id)).not.toContain(inbound.id);
     expect((await carregarThread(adm, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([historica.id]);
     expect(enviarMock).not.toHaveBeenCalled();
   });
