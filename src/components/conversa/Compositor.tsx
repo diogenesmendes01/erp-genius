@@ -61,11 +61,17 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
   const descartar = useRef(false);
   const nota = modo === "nota";
 
-  useEffect(() => {
+  // Troca de atendimento ou de modo: o estado é ajustado no próprio render (estado derivado da prop, com a chave
+  // anterior guardada), sem setState dentro de effect (react-hooks/set-state-in-effect). O React descarta este render
+  // e refaz com o rascunho da conversa nova; o anexo e o erro da anterior não passam para ela.
+  const chave = chaveRascunho(atendimentoId, modo);
+  const [chaveAnterior, setChaveAnterior] = useState(chave);
+  if (chaveAnterior !== chave) {
+    setChaveAnterior(chave);
     setTexto(lerRascunho(atendimentoId, modo));
     setArquivo(null);
     setErro("");
-  }, [atendimentoId, modo]);
+  }
   useEffect(() => () => {
     descartar.current = true;
     if (gravador.current?.state === "recording") gravador.current.stop();

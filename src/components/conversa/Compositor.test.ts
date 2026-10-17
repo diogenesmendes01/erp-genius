@@ -20,7 +20,7 @@ import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, type PropsCompositor } from "
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
 import { CampoTexto } from "@/components/CampoTexto";
-import { criarGanchos, clicar, clicarBotao, elementos } from "@/test/tela-sem-dom";
+import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
 
 function props(p: Partial<PropsCompositor> = {}): PropsCompositor {
   return {
@@ -100,6 +100,32 @@ describe("Compositor", () => {
     armazenamento.set("conversa-rascunho:at1:responder", "meio da frase");
     expect(html()).toContain("meio da frase");
     expect(html({ atendimentoId: "at2" })).not.toContain("meio da frase");
+  });
+
+  it("trocar de atendimento ou de modo carrega o rascunho certo e limpa o erro da conversa anterior", async () => {
+    armazenamento.set("conversa-rascunho:at2:responder", "rascunho do at2");
+    armazenamento.set("conversa-rascunho:at2:nota", "nota do at2");
+    m.g = criarGanchos();
+    let p = props({ aoEnviarTexto: vi.fn(async () => ({ ok: false as const, erro: "Janela de 24h fechada." })) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    const texto = () => elementos(tela()).find((n) => n.type === CampoTexto)!.props.value;
+    digitar(tela(), "Oi");
+    clicarBotao(tela(), "Enviar");
+    await esvaziar();
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("Janela de 24h fechada.");
+
+    p = { ...p, atendimentoId: "at2" };
+    tela(); // render da troca: ajusta o estado (o React refaria o render na hora)
+    expect(texto()).toBe("rascunho do at2");
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).not.toContain("Janela de 24h fechada.");
+
+    p = { ...p, modo: "nota" };
+    tela();
+    expect(texto()).toBe("nota do at2");
+
+    p = { ...p, atendimentoId: "at1", modo: "responder" };
+    tela();
+    expect(texto()).toBe("Oi");
   });
 
   it("contato, enquete e localização ficam visíveis e desabilitados com o aviso do motor", () => {
