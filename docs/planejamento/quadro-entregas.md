@@ -2520,4 +2520,19 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `npm run lint` saída 0 (0 erros, 45 avisos); `vitest related --run -c vitest.integration.config.ts` sobre os 29
   arquivos .ts/.tsx do diff, saída 0 (3 arquivos, 28 testes), no banco `tester`. Suíte de integração completa não rodada
   (fica com o integrador). Nenhuma falha nova em relação à linha de base.
+- **Índice do cursor da lista (atenção para migrations futuras):** o `NULLS LAST` de
+  `AtendimentoWhatsApp_ultimaMensagemEm_id_idx` (`ultimaMensagemEm DESC NULLS LAST, id DESC`) só existe na migration
+  `20261017110000_inbox_indice_cursor_lista`. O Prisma não expressa a ordem de nulos no schema, que declara só
+  `sort: Desc`. Um `prisma migrate dev` futuro pode enxergar diferença nesse índice e propor recriá-lo sem o
+  `NULLS LAST`. Se propuser, a migration gerada deve ser editada para manter `DESC NULLS LAST`, porque é essa ordem que
+  casa com a consulta da lista. No `prisma migrate diff` desta revisão, o índice não apareceu.
+- **Correções da R1 (17/10/2026):** merge da `main` (`1c02c4c5`) com conflito em `src/app/botoes.test.ts` (entradas dos
+  dois lados mantidas, sem afrouxar a trava) e neste quadro (bloco H e bloco 3E, cada um com o próprio Estado).
+  `LIBERADOS` de `recursos-canal.ts` virou `Partial<Record<DriverWhatsApp, …>>`, para compilar com o `MOTOR` da #205 em
+  qualquer ordem de merge, com teste de driver ausente do mapa. O `Compositor` ajusta rascunho, anexo e erro no render
+  quando muda o atendimento ou o modo, sem setState em effect, com teste da troca.
+- **Verificação com a `main` mesclada:** `prisma generate`; `tsc --noEmit` saída 0; `npm run lint` com 0 erros e 43
+  avisos (nenhum nos arquivos da PR); `vitest run` com 687 arquivos e 4956 testes verdes. Num banco descartável próprio,
+  `erp_genius_test_fix206` (localhost:54329), `prisma migrate deploy` aplicou tudo e passaram
+  `inbox/barramento`, `inbox/consultas-pagina` e `inbox/eventos-sse` (3 arquivos, 28 testes). O banco foi apagado no fim.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
