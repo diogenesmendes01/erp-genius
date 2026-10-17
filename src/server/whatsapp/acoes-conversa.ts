@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { agendarMensagem } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
+import { despacharFila } from "./despachante";
 
 const NotaSchema = z.object({ atendimentoId: z.string().min(1), nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres.") });
 
@@ -46,5 +47,55 @@ export async function agendarMensagemNoAtendimento(input: { atendimentoId: strin
     if (!r.ok) throw new ErroRegra(r.erro);
     revalidatePath("/inbox");
     return r.dado!;
+  });
+}
+
+const MAX_DESTINOS_ENCAMINHAR = 5;
+const EncaminharSchema = z.object({
+  mensagemId: z.string().min(1),
+  destinoAtendimentoIds: z.array(z.string().min(1)).min(1, "Escolha ao menos um destino.").max(MAX_DESTINOS_ENCAMINHAR, `Escolha no máximo ${MAX_DESTINOS_ENCAMINHAR} destinos.`),
+});
+
+/**
+ * Encaminha uma mensagem como cópia (nova intenção HUMANO por destino). A autorização vem de a origem ser visível
+ * (não passa por `midiaSaidaDoAutor`: o `midiaPath` é o da própria origem). Cada destino exige envio no escopo e
+ * contato sem opt-out; qualquer recusa cancela tudo antes de criar intenção.
+ */
+export async function encaminharMensagem(input: { mensagemId: string; destinoAtendimentoIds: string[] }): Promise<Resultado<{ intencaoIds: string[] }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const { mensagemId } = EncaminharSchema.parse(input);
+    const destinoIds = [...new Set(EncaminharSchema.parse(input).destinoAtendimentoIds)];
+    const origem = await prisma.mensagemWhatsApp.findUnique({ where: { id: mensagemId }, select: { id: true, atendimentoId: true, tipo: true, corpo: true, midiaPath: true } });
+    if (!origem?.atendimentoId || !(await atendimentoVisivel(u, origem.atendimentoId))) throw new ErroRegra("Mensagem de origem fora do seu escopo.");
+    if (origem.tipo !== "TEXTO" && !origem.midiaPath) throw new ErroRegra("Esta mensagem não pode ser encaminhada.");
+    if (origem.tipo === "TEXTO" && !origem.corpo?.trim()) throw new ErroRegra("Esta mensagem não pode ser encaminhada.");
+
+    const destinos: NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>[] = [];
+    for (const id of destinoIds) {
+      const d = await atendimentoVisivel(u, id, true);
+      if (!d || d.encerradoEm) throw new ErroRegra("Destino fora do seu escopo.");
+      if (!d.numero.ativo) throw new ErroRegra("Um dos destinos está em número inativo.");
+      if (d.contato.optOutEm) throw new ErroRegra("Um dos destinos pediu para não receber mensagens (opt-out).");
+      destinos.push(d);
+    }
+
+    const intencaoIds = await prisma.$transaction(async (tx) => {
+      const ids: string[] = [];
+      for (const d of destinos) {
+        const i = await tx.intencaoMensagem.create({
+          data: {
+            numeroId: d.numeroId, atendimentoId: d.id, contatoId: d.contatoId, origem: "HUMANO",
+            tipo: origem.tipo, midiaPath: origem.midiaPath, corpoRenderizado: origem.corpo ?? "", autorId: u.id,
+          },
+        });
+        ids.push(i.id);
+      }
+      await registrarEvento(tx, { tipo: "MensagemEncaminhada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: origem.atendimentoId!, autorId: u.id, payload: { mensagemId, destinoAtendimentoIds: destinoIds, intencaoIds: ids } });
+      return ids;
+    });
+    for (const intencaoId of intencaoIds) await despacharFila(new Date(), { intencaoId });
+    revalidatePath("/inbox");
+    return { intencaoIds };
   });
 }
