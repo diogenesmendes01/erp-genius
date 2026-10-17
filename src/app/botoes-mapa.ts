@@ -158,6 +158,38 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Editar → btnSec",
     "<button> Salvando… · Salvar template → btnPri",
   ],
+  "contatos/FichaContato.tsx": [
+    "const classeFiltro → primario|fantasma/sm",
+    "<Botao> Nova oportunidade → primario/md",
+    "<Botao> × → fantasma/sm",
+    "<Botao> Adicionar → secundario/lg",
+    "<Botao> Salvar dados → primario/lg",
+    "<Botao> Registrar opt-out → perigo/lg",
+    "<Link> Tudo → classeFiltro",
+    "<Link> Notas → classeFiltro",
+    "<Link> Etapas → classeFiltro",
+    "<Link> Alterações → classeFiltro",
+    "<Botao> Registrar nota → primario/md",
+    "<Botao> Salvar campos → primario/lg",
+  ],
+  "contatos/ImportarContatos.tsx": [
+    "<Botao> Importar → secundario/lg",
+    "<Botao> Fechar · Cancelar → fantasma/lg",
+    "<Botao> Lendo… · Ver prévia → primario/lg",
+    "<Botao> Importando… → primario/lg",
+  ],
+  "contatos/ListaContatos.tsx": [
+    "<a> Exportar → secundario/lg",
+    "<button> Filtrar → secundario/lg",
+    "<Botao> Limpar seleção → fantasma/md",
+    "<Link> Limpar filtros → secundario/md",
+  ],
+  "contatos/MesclarContatos.tsx": [
+    "<Botao> Revisar mesclagem → primario/lg",
+    "<Botao> Cancelar → fantasma/lg",
+    "<Botao> Mesclar selecionados → secundario/lg",
+    "<Botao> Mesclar → secundario/md",
+  ],
   "diario/DiarioAulas.tsx": [
     "const botao → primario/lg",
     "<button> Registrar aula → botao",
@@ -1021,6 +1053,31 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Limpar filtros → secundario/md",
     "<a> Exportar → secundario/lg",
   ],
+  "tarefas/AgendaTarefas.tsx": [
+    "<Link> Anterior → secundario/md",
+    "<Link> Hoje → secundario/md",
+    "<Link> Próximo → secundario/md",
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Salvando… · Reagendar → primario/md",
+  ],
+  "tarefas/CalendarioTarefas.tsx": [
+    "<Link> Anterior → secundario/md",
+    "<Link> Hoje → secundario/md",
+    "<Link> Próximo → secundario/md",
+  ],
+  "tarefas/ListaTarefas.tsx": [
+    "<Botao> Concluir selecionadas → primario/sm",
+  ],
+  "tarefas/PainelTarefa.tsx": [
+    "<Botao> Salvando… · Salvar → primario/md",
+    "<Botao> Assumir → secundario/md",
+    "<Botao> Reabrir → secundario/md",
+    "<Botao> Concluir → secundario/md",
+    "<Botao> Cancelar tarefa → perigo/md",
+  ],
+  "tarefas/page.tsx": [
+    "<Link> Nova tarefa → primario/lg",
+  ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",
     "<button> Faltou → secundario/sm",
@@ -1057,6 +1114,16 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Solicitando… · Solicitar recuperação → primario/lg",
   ],
   // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
+  "src/components/conversa/CartaoPix.tsx": [
+    "<Botao> Copiar código Pix → secundario/sm",
+  ],
+  "src/components/conversa/Compositor.tsx": [
+    "<Botao> Enviar → primario/md",
+  ],
+  "src/components/conversa/SeletorEmoji.tsx": [
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Mostrar mais emojis → secundario/sm",
+  ],
   "src/components/ConfirmarAcao.tsx": [
     "<Botao> Voltar → secundario/md",
     "<Botao> Confirmando… · Confirmar → perigo/md",

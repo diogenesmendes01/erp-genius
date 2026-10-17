@@ -128,10 +128,10 @@ it("projeção do agendamento inicial é exclusiva da Secretaria ou Administraç
 it("fila Q19 expõe a exceção exata à gestão e a aprovação não cria agenda", async () => {
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
-  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-q19", nome: "Recesso Q19", tipo: "RECESSO", inicio: "2026-10-12", fim: "2026-10-12" }], motivo: "Calendário com recesso pontual", chaveIdempotencia: "calendario-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
+  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-q19", nome: "Recesso Q19", tipo: "RECESSO", inicio: "2099-10-12", fim: "2099-10-12" }], motivo: "Calendário com recesso pontual", chaveIdempotencia: "calendario-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
   await inserirReposicao("excecao-projetada"); await autorizarReposicao("excecao-projetada", adminId);
   entrar(secretaria.id);
-  const proposta = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "excecao-projetada", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Aluno disponível somente no recesso", evidencia: "Atendimento acadêmico registrado", chaveIdempotencia: "excecao-q19" });
+  const proposta = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "excecao-projetada", professorId, inicioLocal: "2099-10-12T10:00", fimLocal: "2099-10-12T11:00", fuso: "UTC", motivo: "Aluno disponível somente no recesso", evidencia: "Atendimento acadêmico registrado", chaveIdempotencia: "excecao-q19" });
   expect(proposta, JSON.stringify(proposta)).toMatchObject({ ok: true });
   expect(await consultarReposicoesEquipe({ matriculaId })).toMatchObject({ ok: true, dado: { reposicoes: [{ id: "excecao-projetada", excecoesAgenda: [{ professor: expect.any(String), fuso: "UTC", decisao: null, podeDecidir: false }] }] } });
   entrar(gestorId);

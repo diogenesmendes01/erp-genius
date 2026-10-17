@@ -52,6 +52,8 @@ describe("medirSaudeCanal — fila por estado", () => {
       falhas24h: 0,
       eventosMotorPendentes: 0,
       eventosMotorFalhos: null,
+      retidasAgendaDesligada: 0,
+      envioAgendaHabilitado: process.env.COMUNICACOES_AGENDA_ENVIO_ENABLED === "true",
     });
     expect(s.ultimoInboundEm).toBeNull();
   });
@@ -64,6 +66,33 @@ describe("medirSaudeCanal — fila por estado", () => {
     expect(s.ok).toBe(false);
     expect(s.alertas.some((a) => a.includes("PENDENTE há"))).toBe(true);
     expect(s.fila.pendenteHaMin).toBeGreaterThanOrEqual(8 * 60);
+  });
+
+  it("mensagem AGENDADA para o futuro fica PENDENTE desde a criação e não alerta (C1 · R1 do #202)", async () => {
+    const agora = new Date();
+    await seedIntencao({
+      origem: "HUMANO",
+      criadaEm: new Date(agora.getTime() - 72 * 3600_000), // agendada há 3 dias...
+      agendadaPara: new Date(agora.getTime() + 48 * 3600_000), // ...para daqui a 2 dias
+    });
+
+    const s = await medirSaudeCanal(agora);
+    expect(s.ok).toBe(true);
+    expect(s.fila.pendentes).toBe(1); // estoque da fila conta a agendada
+    expect(s.fila.pendenteHaMin).toBeNull();
+  });
+
+  it("mensagem AGENDADA que venceu há horas e segue PENDENTE → alerta, medido desde o agendadaPara", async () => {
+    const agora = new Date();
+    await seedIntencao({
+      origem: "HUMANO",
+      criadaEm: new Date(agora.getTime() - 72 * 3600_000),
+      agendadaPara: new Date(agora.getTime() - 5 * 3600_000),
+    });
+
+    const s = await medirSaudeCanal(agora);
+    expect(s.ok).toBe(false);
+    expect(s.alertas.some((a) => a.includes("PENDENTE há 5h"))).toBe(true);
   });
 
   it("ADIADA com despacho no FUTURO é saudável (noite/teto — não é incidente)", async () => {

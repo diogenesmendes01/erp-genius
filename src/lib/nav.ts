@@ -18,6 +18,13 @@ export const NAV: NavItem[] = [
   { href: "/home", label: "Home", icon: "Home", papeis: "all" },
   { href: "/funil", label: "Funil", icon: "KanbanSquare", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
   { href: "/carteira", label: "Carteira", icon: "Briefcase", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
+  { href: "/contatos", label: "Contatos", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR, Papel.SECRETARIA_ACADEMICA] },
+  {
+    href: "/tarefas",
+    label: "Tarefas",
+    icon: "Checklist",
+    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA],
+  },
   {
     href: "/leads",
     label: "Leads",

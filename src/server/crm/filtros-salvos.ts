@@ -4,12 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
+import type { FiltrosFunil } from "./funil";
 import { exigirCapacidadeCrm } from "./permissoes";
 import { comUnicidade } from "./unicidade";
 
+/** As chaves do funil são as de FiltrosFunil (lerFiltrosFunil lê a URL com esses nomes). */
+const CHAVES_FUNIL = [
+  "busca", "tipo", "donoId", "temperatura", "origem", "tagId", "perdidosDias", "ordem",
+] as const satisfies readonly (keyof FiltrosFunil)[];
+
 /** Chaves de filtro aceitas por tela; qualquer outra é descartada ao salvar. */
 export const CHAVES_FILTRO: Record<TelaFiltroSalvo, readonly string[]> = {
-  FUNIL: ["busca", "etapa", "temperatura", "vendedor", "origem", "idioma", "pais", "produto", "tag", "periodo"],
+  FUNIL: CHAVES_FUNIL,
   CONTATOS: ["busca", "tag", "origem", "pais", "empresa", "vendedor", "situacao"],
   CARTEIRA: ["busca", "vendedor", "etapa", "temperatura", "situacao"],
   TAREFAS: ["busca", "responsavel", "tipo", "situacao", "periodo", "prioridade"],
