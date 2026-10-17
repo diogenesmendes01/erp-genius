@@ -8,6 +8,7 @@ import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./li
 import { comContatoIndividual } from "./grupos";
 import { setoresDoNumero } from "./numero-setor";
 import { registrarEvento } from "@/server/_shared";
+import { MSG_FINANCEIRO_EXIGE_MATRICULA, MSG_MATRICULA_DE_OUTRO_ALUNO, MSG_MATRICULA_EXIGE_ALUNO } from "./erro-regra-atendimento";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -21,12 +22,12 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   atendimentoOrigemId?: string | null;
 }) {
   if (dados.finalidade === "FINANCEIRO") {
-    if (!dados.matriculaId || !dados.alunoId) throw new Error("Atendimento financeiro exige matrícula e aluno.");
+    if (!dados.matriculaId || !dados.alunoId) throw new Error(MSG_FINANCEIRO_EXIGE_MATRICULA);
   }
   if (dados.matriculaId) {
-    if (!dados.alunoId) throw new Error("Atendimento com matrícula exige aluno.");
+    if (!dados.alunoId) throw new Error(MSG_MATRICULA_EXIGE_ALUNO);
     const matricula = await tx.matricula.findFirst({ where: { id: dados.matriculaId, alunoId: dados.alunoId }, select: { id: true } });
-    if (!matricula) throw new Error("Matrícula não pertence ao aluno do atendimento.");
+    if (!matricula) throw new Error(MSG_MATRICULA_DE_OUTRO_ALUNO);
   }
   const conversa = await tx.conversaWhatsApp.upsert({
     where: { numeroId_contatoId: { numeroId: dados.numeroId, contatoId: dados.contatoId } },
