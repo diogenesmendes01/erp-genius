@@ -125,10 +125,10 @@ export function sanearFiltrosLeads(f: FiltrosLeads, opcoes: { donos: { id: strin
   return { ...f, donoId: opcoes.donos.some((d) => d.id === f.donoId) ? f.donoId : null };
 }
 
-/** Link da lista com estes filtros ("/leads" quando não há nenhum). */
+/** Link da lista com estes filtros ("/funil" quando não há nenhum). */
 export const hrefLeads = (f: FiltrosLeads) => {
   const q = filtrosLeadsParaQuery(f);
-  return q ? `/leads?${q}` : "/leads";
+  return q ? `/funil?${q}` : "/funil";
 };
 
 /** Página além do fim (link antigo, filtro que encolheu): destino da última página que existe; null se a página é válida. */
