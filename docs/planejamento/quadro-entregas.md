@@ -2734,3 +2734,36 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   testes; integração em banco descartável (`saude`, `agenda/substituicao-avisos`, `despachante-motor`): 3 arquivos e
   45 testes verdes.
 **Estado**: Implementado; aguardando revisão e merge.
+
+## Fase 4C — verificação final do bloco (17/10/2026)
+
+- Branch `claude/fase4-c-webhook`, tarefas 9 a 17 do plano `04-fase-motor.md`, partindo da `claude/fase4-b-despachante` (base trocada para o `main` após o merge da #213).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 681 arquivos e 4928 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` foi interrompido por varredura ampla (`evento.ts` alcança quase toda a suíte);
+  rodados os 10 arquivos `*.int.test.ts` do diff e de `whatsapp/motor/` + `inbox` + `saude`: saída 0, 88 testes verdes.
+- **Merge do `main` após a #213 (17/10/2026):** base do #215 trocada para o `main`; mesclados o merge final da 4B
+  (B1/C1/C2), #207, #209, #210, #211 e #212; depois a #214 (retidas só contadas com o envio de agenda desligado). Conflitos, todos aditivos: `api/whatsapp/cron/route.ts` (+teste)
+  roda `eventosMotor` e `lembretesTarefas`; `saude.ts` (+`saude.int.test.ts`) soma os campos do motor
+  (`eventosMotorPendentes`/`eventosMotorFalhos`) aos da retenção de agenda (`retidasAgendaDesligada`/
+  `envioAgendaHabilitado`) e ao relógio da agendada vencida; este quadro. `saude.test.ts` (vindo do `main`) ganhou o
+  mock de `eventoMotorRecebido`. Mantidos o `testTimeout` de 30 s e `driverAceitaAutomacao` só com MOTOR. A 4C não
+  tem migrations próprias (usa as `20261017120000`/`20261017130000` da 4B).
+- Verificação pós-merge: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos); `npm test` verde; integração
+  (`whatsapp/motor/*`, `inbox`, `saude`, `despachante-*`): 14 arquivos, 126 testes verdes.
+
+### Correções da R1 do #215 (17/10/2026)
+- **B1:** merges do `main` acima (até a #214), preservando as duas etapas do cron e os campos de saúde dos dois lados.
+- **B2:** a saúde mede os eventos do motor por estado. `eventosMotorPendentes` conta só o que o dreno já deveria
+  pegar (sem backoff ou com a próxima tentativa vencida); `eventosMotorAdiados` (novo) conta os em backoff, sem
+  alerta. O alerta "Evento do motor parado" só olha evento sem backoff recebido há mais de 15 min ou com a próxima
+  tentativa vencida há mais de 15 min (minutos medidos desde a próxima tentativa). Testes em `saude.int.test.ts`.
+- **C1:** `sessao.estado` ignora (`ignorado:estado_antigo`) o estado com `ocorridoEm` anterior ao de outro
+  `sessao.estado` do mesmo número já aplicado (`resultado = ok`) na tabela de entrada; sem migration. Testes em
+  `processar-sessao.int.test.ts` (direto e pelo dreno).
+- **C3:** `POST /api/whatsapp/webhook/motor` recusa com 413, antes do HMAC e sem gravar, corpo acima de 1 MB
+  (`TETO_CORPO_WEBHOOK_MOTOR`): pelo `content-length` declarado e pelo tamanho lido em streaming. Maior evento do
+  contrato: `mensagem.recebida` com texto longo (~260 KB no pior caso UTF-8). Testes em `route.test.ts`.
+- **C2:** segue em aberto (os `*.int.test.ts` não rodam no CI).
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
