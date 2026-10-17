@@ -18,6 +18,7 @@ import {
   IconBriefcase,
   IconLayoutKanban,
   IconBuilding,
+  IconChecklist,
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
@@ -37,6 +38,7 @@ const ICONS: Record<string, Icone> = {
   Settings: IconSettings,
   MessageCircle: IconMessageCircle,
   Building: IconBuilding,
+  Checklist: IconChecklist,
 };
 
 /**
