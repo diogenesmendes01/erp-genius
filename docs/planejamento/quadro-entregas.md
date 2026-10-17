@@ -2489,3 +2489,13 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   deploy` aplicou tudo e passaram `comissoes-estorno`, `comissoes-painel` e `comissao-aprovada-em` (3 arquivos, 11
   testes) e `reserva-vaga` (68). O banco foi apagado no fim.
 **Estado**: Implementado; aguardando o integrador e a confirmação da Q7. Não concluído.
+
+## Fase 3E: React e porte dos componentes do motor (17/10/2026)
+
+- **Branch:** `claude/fase3-e-componentes` (base `main` 08e2b4b7). **Tarefas:** 24 a 28 (React, lista virtual, histórico,
+  balão e compositor em `src/components/conversa/`).
+- **Verificação:** `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (679 arquivos, 4905 testes verdes);
+  `npm run lint` saída 0 (0 erros, 45 avisos); `vitest related --run -c vitest.integration.config.ts` sobre os 29
+  arquivos .ts/.tsx do diff, saída 0 (3 arquivos, 28 testes), no banco `tester`. Suíte de integração completa não rodada
+  (fica com o integrador). Nenhuma falha nova em relação à linha de base.
+**Estado**: Implementado; aguardando o integrador. Não concluído.
