@@ -13,6 +13,7 @@ import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from 
 import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
 import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { comContatoIndividual } from "./grupos";
 
 export interface ConversaResumo {
   /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
@@ -102,12 +103,13 @@ export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "",
 
 type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;
 
-function resumirConversa(a: AtendimentoDaLista): ConversaResumo {
+function resumirConversa(atendimento: AtendimentoDaLista): ConversaResumo {
+  const a = comContatoIndividual(atendimento);
   const pedag = a.finalidade === "PEDAGOGICO";
   const nome = nomeDoAtendimento(a);
   const m = a.mensagens[0];
   return { id: a.id, numeroId: a.conversa.numeroId, numeroRotulo: pedag ? "Canal institucional" : a.conversa.numero.rotulo,
-    finalidade: a.finalidade, driver: a.conversa.numero.driver, contatoId: a.conversa.contatoId,
+    finalidade: a.finalidade, driver: a.conversa.numero.driver, contatoId: a.conversa.contato.id,
     contatoNome: nome, contatoTelefone: pedag ? "" : a.conversa.contato.telefoneE164,
     optOut: !!a.conversa.contato.optOutEm, vinculo: a.finalidade === "FINANCEIRO" ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Financeiro legado · matrícula não identificada")
       : pedag ? (a.matricula ? `matrícula · ${a.matricula.codigo ?? a.matricula.id}` : "Pedagógico legado · matrícula não identificada")
@@ -123,12 +125,13 @@ export async function contarNaoLidas(usuario: UsuarioSessao): Promise<number> {
 }
 
 export async function carregarThread(usuario: UsuarioSessao, atendimentoId: string): Promise<ThreadConversa | null> {
-  const a = await prisma.atendimentoWhatsApp.findFirst({
+  const achado = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
     include: { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" }, take: 300,
       include: { autor: { select: { nome: true } }, template: { select: { nome: true } } } } },
   });
-  if (!a) return null;
+  if (!achado) return null;
+  const a = comContatoIndividual(achado);
   const pedag = a.finalidade === "PEDAGOGICO";
   const comercial = a.finalidade === "COMERCIAL";
   const financeiro = a.finalidade === "FINANCEIRO" && temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
@@ -149,18 +152,18 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR),
     podeVincular: !pedag && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
     podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
-    podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contatoId),
+    podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contato.id),
     pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
     numero: { id: c.numeroId, rotulo: pedag ? "Canal institucional" : c.numero.rotulo, driver: c.numero.driver,
       finalidade: a.finalidade, sessao: c.numero.sessao, ativo: c.numero.ativo },
-    contato: { id: c.contatoId, nome, telefone: pedag ? "" : c.contato.telefoneE164,
+    contato: { id: c.contato.id, nome, telefone: pedag ? "" : c.contato.telefoneE164,
       nomeSalvo: pedag ? null : c.contato.nomeExibicao, nomePerfil: pedag ? null : c.contato.nomePerfil, fonteNome,
       optOutEm: c.contato.optOutEm?.toISOString() ?? null, alunoId: a.alunoId,
       alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
       leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
     janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
     silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
-    cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contatoId) : null,
+    cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
     lead: verLead && a.lead ? await leadNaThread(a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,

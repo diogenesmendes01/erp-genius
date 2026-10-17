@@ -13,6 +13,7 @@ import { validarFonteQuantidadeAulasTx } from "@/server/agenda/quantidade-fonte"
 import { envioQuantidadeAulasHabilitado } from "./quantidade-gate";
 import { validarFonteAditivoAgendaTx } from "./avisos";
 import { formatarIntervaloAvisoAgenda } from "./formato-horario";
+import { comContatoIndividual } from "@/server/whatsapp/grupos";
 
 const VARIAVEIS_AGENDA = /\{(nome|horarios)\}/g;
 const hashContato = (valor: string) => createHash("sha256").update(valor).digest("hex");
@@ -139,7 +140,8 @@ export async function enfileirarAvisoAgendaWhatsAppTx(tx: Prisma.TransactionClie
     autorizacaoComunicacaoAcademicaId: "autorizacaoComunicacaoAcademicaId" in destino! ? destino!.autorizacaoComunicacaoAcademicaId : null,
   });
   const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id: atendimento.id }, include: { conversa: { include: { contato: true } } } });
-  if (!atual || atual.conversa.contato.telefoneE164 !== telefone || (destino!.responsavelId ? !await destinatarioAtualDoAtendimento(atual, tx) : atual.conversa.contato.alunoId !== aviso.alunoId)) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONTATO_INDISPONIVEL); return "pendente" as const; }
+  const atualIndividual = atual?.conversa.contato ? comContatoIndividual(atual) : null;
+  if (!atualIndividual || atualIndividual.conversa.contato.telefoneE164 !== telefone || (destino!.responsavelId ? !await destinatarioAtualDoAtendimento(atualIndividual, tx) : atualIndividual.conversa.contato.alunoId !== aviso.alunoId)) { await registrarPendencia(MotivoPendenciaAvisoAgenda.CONTATO_INDISPONIVEL); return "pendente" as const; }
   const existente = aviso.intencaoWhatsApp;
   if (existente?.status && existente.status !== "SIMULADA") return "ja_existente" as const;
   const dados = {
@@ -189,7 +191,8 @@ export async function motivoAvisoAgendaInvalido(it: { avisoAlteracaoAgendaId: st
   const renderizado = renderizarTemplateAgenda(config!.templateAvisosAgenda!.corpo, { nome: aviso.aluno.primeiroNome, horarios });
   if (!renderizado || renderizado.texto !== it.corpoRenderizado || JSON.stringify(renderizado.variaveis) !== JSON.stringify(it.variaveis ?? [])) return "template_agenda_alterado";
   const atendimento = it.atendimentoId ? await prisma.atendimentoWhatsApp.findUnique({ where: { id: it.atendimentoId }, include: { conversa: { include: { contato: true } } } }) : null;
-  if (!atendimento || atendimento.conversa.contato.telefoneE164 !== destino.telefone || (aviso.destinatarioResponsavelId ? !await destinatarioAtualDoAtendimento(atendimento) : destino.responsavelId !== null)) return "destinatario_alterado";
+  const individual = atendimento?.conversa.contato ? comContatoIndividual(atendimento) : null;
+  if (!individual || individual.conversa.contato.telefoneE164 !== destino.telefone || (aviso.destinatarioResponsavelId ? !await destinatarioAtualDoAtendimento(individual) : destino.responsavelId !== null)) return "destinatario_alterado";
   return null;
 }
 

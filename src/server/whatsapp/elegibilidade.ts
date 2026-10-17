@@ -28,7 +28,7 @@ export async function motivoCadenciaInvalida(
     prisma.oportunidade.findUnique({ where: { id: it.leadId } }),
     prisma.conversaWhatsApp.findUnique({ where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } }, include: { contato: true } }),
   ]);
-  if (!lead || conversa?.contato.leadId !== lead.id) return "vinculo_comercial_alterado";
+  if (!lead || conversa?.contato?.leadId !== lead.id) return "vinculo_comercial_alterado";
   const chave = it.politicaComercial.chave;
   if (chave === CHAVE_LEAD_NOVO) {
     if (lead.etapa !== "NOVO") return "etapa_comercial_alterada";
@@ -36,7 +36,7 @@ export async function motivoCadenciaInvalida(
     const respostas = await prisma.mensagemWhatsApp.count({
       where: { conversaId: conversa.id, OR: [
         { direcao: "ENTRADA", criadoEm: { gt: conversa.capturadaEm } },
-        { direcao: "SAIDA", OR: [{ origem: "HUMANO" }, { origem: null }] },
+        { direcao: "SAIDA", OR: [{ origem: "HUMANO" }, { origem: "CELULAR" }, { origem: null }] },
       ] },
     });
     return respostas > 0 ? "atendimento_comercial_iniciado" : null;

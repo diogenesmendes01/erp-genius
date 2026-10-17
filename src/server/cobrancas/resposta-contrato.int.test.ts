@@ -42,7 +42,7 @@ describe("resposta de cobrança pelo atendimento da matrícula", () => {
 
   it("preserva resposta histórica do contexto encerrado, sem projetá-la em outro contrato", async () => {
     const c = await preparar();
-    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { ultimoInboundEm: resposta, encerradoEm: new Date("2026-09-15T12:00:00Z") } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { ultimoInboundEm: resposta, status: "ENCERRADO", encerradoEm: new Date("2026-09-15T12:00:00Z") } });
     const fila = await itens();
     expect(fila.find((i) => i.id === c.cobranca.id)?.respondeuEm).toBe(resposta.toISOString());
     expect(fila.find((i) => i.id === c.b.id)?.respondeuEm).toBeNull();

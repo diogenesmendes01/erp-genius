@@ -30,9 +30,10 @@ export async function atendimentoComercialDaLinha(
 ): Promise<AtendimentoWhatsApp | null> {
   const conversa = await tx.conversaWhatsApp.findUnique({
     where: { id: conversaId },
-    select: { numero: { select: { finalidade: true, donoId: true } } },
+    select: { grupoId: true, numero: { select: { finalidade: true, donoId: true } } },
   });
-  if (!conversa || !ehLinhaComercial(conversa.numero)) return null;
+  // Conversa de grupo não abre atendimento (trigger impedir_atendimento_em_grupo).
+  if (!conversa || conversa.grupoId || !ehLinhaComercial(conversa.numero)) return null;
 
   const abertos = await tx.atendimentoWhatsApp.findMany({
     where: { conversaId, finalidade: "COMERCIAL", encerradoEm: null },
@@ -55,12 +56,14 @@ export async function atendimentoComercialDaLinha(
   // Nenhum aberto: nasce o da linha. Encerrado não reabre — ganha uma chave nova (1 aberto por vez).
   const anteriores = await tx.atendimentoWhatsApp.count({ where: { conversaId, contextoChave: { startsWith: CHAVE_LINHA } } });
   const contextoChave = anteriores ? `${CHAVE_LINHA}:${anteriores + 1}` : CHAVE_LINHA;
+  // O ACESSO vem da linha (LC-D02), não deste campo. Mas responsável preenchido conta como assumido
+  // (mesma regra do backfill da M2 e de garantirAtendimento): nasce EM_ATENDIMENTO, não "Na fila".
+  const responsavelId = dados.responsavelId ?? conversa.numero.donoId;
   return tx.atendimentoWhatsApp.upsert({
     where: { conversaId_contextoChave: { conversaId, contextoChave } },
     create: {
-      conversaId, contextoChave, finalidade: "COMERCIAL", leadId,
-      // Auditoria: quem era o dono quando nasceu. O ACESSO vem da linha (LC-D02), não deste campo.
-      responsavelId: dados.responsavelId ?? conversa.numero.donoId,
+      conversaId, contextoChave, finalidade: "COMERCIAL", leadId, responsavelId,
+      ...(responsavelId ? { status: "EM_ATENDIMENTO" as const } : {}),
     },
     update: {},
   });
@@ -77,9 +80,9 @@ export async function atendimentoDaLinhaParaInbound(
 ): Promise<string | null | undefined> {
   const c = await tx.conversaWhatsApp.findUnique({
     where: { id: conversaId },
-    select: { numero: { select: { finalidade: true, ativo: true } }, contato: { select: { leadId: true } } },
+    select: { grupoId: true, numero: { select: { finalidade: true, ativo: true } }, contato: { select: { leadId: true } } },
   });
-  if (!c || !ehLinhaComercial(c.numero)) return undefined;
+  if (!c || c.grupoId || !ehLinhaComercial(c.numero)) return undefined;
   const institucional = await tx.atendimentoWhatsApp.count({
     where: { conversaId, encerradoEm: null, finalidade: { not: "COMERCIAL" } },
   });
@@ -93,7 +96,7 @@ export async function atendimentoDaLinhaParaInbound(
     });
     return aberto?.id ?? null;
   }
-  const a = (await atendimentoComercialDaLinha(tx, conversaId, { leadId: c.contato.leadId }))
+  const a = (await atendimentoComercialDaLinha(tx, conversaId, { leadId: c.contato?.leadId ?? null }))
     ?? (await atendimentoComercialDaLinha(tx, conversaId));
   return a && !a.encerradoEm ? a.id : null;
 }
@@ -111,6 +114,7 @@ export async function adotarMensagensOrfasDaLinha(
     where: {
       ...(opcoes.numeroId ? { numeroId: opcoes.numeroId } : {}),
       numero: { finalidade: "VENDAS", ativo: true },
+      grupoId: null,
       mensagens: { some: { atendimentoId: null } },
       // Sem isso, conversas que ficam na triagem ocupariam o lote de todo tick para sempre.
       atendimentos: { none: { encerradoEm: null, finalidade: { not: "COMERCIAL" } } },

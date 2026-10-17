@@ -81,7 +81,8 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(thread).toMatchObject({ linhaComercial: true, podeCriarLead: true, lead: null, podeEnviar: true });
 
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: lista[0].id } });
-    expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", contextoChave: CHAVE_LINHA, leadId: null, responsavelId: vendedorA.id });
+    // Dono da linha como responsável conta como assumido (mesma regra do backfill da M2).
+    expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", contextoChave: CHAVE_LINHA, leadId: null, responsavelId: vendedorA.id, status: "EM_ATENDIMENTO" });
     expect(await prisma.oportunidade.count()).toBe(0);
     entrar(admin);
     expect(await listarTriagemWhatsApp()).toHaveLength(0);
@@ -100,6 +101,15 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: atendimentos[0].id } })).toBe(2);
     const thread = await carregarThread(sessao(vendedorA), atendimentos[0].id);
     expect(thread?.podeCriarLead).toBe(true);
+  });
+});
+
+describe("status do atendimento da linha", () => {
+  it("linha sem dono nasce ABERTO_SEM_RESPONSAVEL", async () => {
+    await linhaDe(null);
+    await mensagem("linha-a");
+    const [a] = await prisma.atendimentoWhatsApp.findMany();
+    expect(a).toMatchObject({ contextoChave: CHAVE_LINHA, responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
   });
 });
 
@@ -383,6 +393,20 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
 
     expect(await adotarMensagensOrfasDaLinha()).toEqual({ conversas: 0, mensagens: 0 });
     expect((await listarConversas(sessao(vendedorA)))[0].naoLidas).toBe(1);
+  });
+
+  it("conversa de grupo numa linha VENDAS não derruba o sweep nem ganha atendimento", async () => {
+    const linha = await linhaDe(vendedorA);
+    const grupo = await prisma.grupoWhatsApp.create({ data: { numeroId: linha.id, grupoJid: "120363000000000009@g.us", nome: "Grupo" } });
+    const cg = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, grupoId: grupo.id } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: cg.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "no grupo", providerMessageId: "G-1" } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50670002222" } });
+    const ci = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, contatoId: contato.id } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: ci.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "individual", providerMessageId: "G-2" } });
+
+    expect(await adotarMensagensOrfasDaLinha()).toEqual({ conversas: 1, mensagens: 1 });
+    expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: cg.id } })).toBe(0);
+    expect((await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { conversaId: cg.id } })).atendimentoId).toBeNull();
   });
 
   it("salvar a linha já adota as conversas dela", async () => {
