@@ -8,9 +8,15 @@ const { enviarTexto, enviarTemplate, enviarMidia } = vi.hoisted(() => ({
   enviarMidia: vi.fn(),
 }));
 vi.mock("./drivers/motor", () => ({ driverMotor: { enviarTexto, enviarTemplate, enviarMidia } }));
+// A revalidação do aviso de agenda (config, template, fonte) é coberta em agenda/*; aqui só
+// interessa o comportamento do catch pós-claim, então ela é neutralizada (claim e resultado reais).
+vi.mock("@/server/comunicacoes-agenda/whatsapp", async (orig) => ({
+  ...(await orig<typeof import("@/server/comunicacoes-agenda/whatsapp")>()),
+  motivoAvisoAgendaInvalido: async () => null,
+}));
 
 import { prisma } from "@/lib/prisma";
-import { truncarBanco, criarUsuario } from "@/test/integracao";
+import { truncarBanco, criarUsuario, seedCatalogoMinimo } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { despacharFila } from "./despachante";
 import { garantirAtendimento } from "./atendimentos";
@@ -123,6 +129,24 @@ describe("despachante × motor", () => {
       enviarTexto.mockRejectedValue(falhaMotor());
       await despacharFila(agora, { intencaoId });
       expect((await intencao(intencaoId)).status).toBe("ADIADA");
+    });
+
+    it("aviso de agenda não adia: segue o fluxo FALHOU atual", async () => {
+      const { intencaoId } = await seed({}, { criadaEm: agora });
+      const { pais, produto } = await seedCatalogoMinimo();
+      const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno aviso", paisId: pais.id } });
+      const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: produto.id, paisId: pais.id, moeda: "CRC", status: "ATIVA" } });
+      const evento = await prisma.evento.create({ data: {
+        tipo: "RemarcacaoParticularDecidida", agregadoTipo: "Matricula", agregadoId: matricula.id, payload: { aprovada: true },
+      } });
+      const aviso = await prisma.avisoAlteracaoAgenda.create({
+        data: { mudancaId: evento.id, eventoId: evento.id, matriculaId: matricula.id, alunoId: aluno.id, canal: "WHATSAPP", destinatarioAlunoId: aluno.id, contatoHash: "h", chave: "chave-aviso-nao-adia" },
+      });
+      await prisma.intencaoMensagem.update({ where: { id: intencaoId }, data: { avisoAlteracaoAgendaId: aviso.id } });
+      enviarTexto.mockRejectedValue(falhaMotor());
+      const r = await despacharFila(agora, { intencaoId });
+      expect(r).toMatchObject({ adiadas: 0, falhas: 1 });
+      expect(await intencao(intencaoId)).toMatchObject({ status: "FALHOU", motivoFalha: "motor_indisponivel" });
     });
 
     it("resultado_incerto continua FALHOU (revisão humana)", async () => {
