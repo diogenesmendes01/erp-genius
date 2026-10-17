@@ -178,8 +178,10 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
       // Ruling B2 do #199 (E3.4): o upsert devolve o atendimento já aberto no mesmo contexto. Se ele
       // está com outro responsável e fora do escopo de quem abriu, recusa antes do evento: entrar
       // como participante é convite explícito (Task 17), nunca efeito colateral de "abrir".
-      if (a.responsavelId && a.responsavelId !== u.id
+      // C6 da revisão do #199: sem responsável também vale, quando o atendimento (fila) está fora do escopo.
+      if (a.responsavelId !== u.id
         && !await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: a.id }, escopo] } })) {
+        if (!a.responsavelId) throw new ErroRegra("Este atendimento está fora do seu escopo; peça para ser incluído como participante.");
         const dono = await tx.usuario.findUnique({ where: { id: a.responsavelId }, select: { nome: true } });
         throw new ErroRegra(`Este atendimento já está com ${dono?.nome ?? "outro atendente"}; peça para ser incluído como participante.`);
       }
