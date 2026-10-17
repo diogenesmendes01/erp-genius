@@ -105,8 +105,9 @@ export async function despacharFila(
       ...(opts.intencaoId ? { id: opts.intencaoId } : {}),
       ...(opts.somenteAvisosAgenda ? { avisoAlteracaoAgendaId: { not: null } } : {}),
       OR: [
-        { status: "PENDENTE" },
-        { status: "ADIADA", despacharAposEm: { lte: agora } },
+        // Mensagem agendada pelo atendente (Tarefas): só entra na fila a partir de `agendadaPara`.
+        { status: "PENDENTE", OR: [{ agendadaPara: null }, { agendadaPara: { lte: agora } }] },
+        { status: "ADIADA", despacharAposEm: { lte: agora }, OR: [{ agendadaPara: null }, { agendadaPara: { lte: agora } }] },
         // Conferência pode terminar antes do prazo: revalidar a cada execução.
         { status: "ADIADA", motivoFalha: "comprovante_em_conferencia" },
       ],
