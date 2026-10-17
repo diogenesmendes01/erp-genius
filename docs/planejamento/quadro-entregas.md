@@ -2489,3 +2489,17 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   deploy` aplicou tudo e passaram `comissoes-estorno`, `comissoes-painel` e `comissao-aprovada-em` (3 arquivos, 11
   testes) e `reserva-vaga` (68). O banco foi apagado no fim.
 **Estado**: Implementado; aguardando o integrador e a confirmação da Q7. Não concluído.
+
+## Fase 4A — driver MOTOR e cliente do motor (17/10/2026)
+
+- Branch `claude/fase4-a-driver-motor`, base `main` 08e2b4b7. Tarefas 1 a 4 do plano `04-fase-motor.md`: enum `MOTOR` e
+  tipos de mensagem, tabelas de eventos e reações (migrations `20261017120000_whatsapp_motor_enums` e
+  `20261017130000_whatsapp_motor_dados`), configuração e cliente HTTP do motor, porta v2 e `drivers/motor.ts`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 676 arquivos e 4898 testes verdes (linha de base: ~671 e ~4850).
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração no perfil `integracao` (banco `erp_genius_test`, migrations em dia): `vitest related` sobre os 15 .ts do diff
+  se espalha por quase toda a suíte (`labels.ts` é importado em todo lugar) e foi interrompido por tempo. Rodados os
+  arquivos que o bloco toca: `motor/schema-motor`, `despachante.live`, `despachante-comercial`, `destinatario-atual`,
+  `cron` e `acoes` (whatsapp): saída 0, 6 arquivos e 53 testes verdes. A suíte completa fica com o integrador.
+**Estado**: Implementado; aguardando o integrador.
