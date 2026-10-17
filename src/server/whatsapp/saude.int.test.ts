@@ -209,4 +209,22 @@ describe("medirSaudeCanal — motor", () => {
     expect(s2.fila.eventosMotorPendentes).toBe(1);
     expect(s2.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(false);
   });
+
+  it("motor inalcançável com número MOTOR ativo → eventosMotorFalhos null e alerta", async () => {
+    const { numero } = await seedCanal();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR", sessao: "CONECTADO" } });
+    motor.chamar.mockRejectedValue(new Error("motor_indisponivel"));
+    const s = await medirSaudeCanal();
+    expect(s.fila.eventosMotorFalhos).toBeNull();
+    expect(s.ok).toBe(false);
+    expect(s.alertas.some((a) => a.includes("Motor WhatsApp inalcançável") && a.includes("motor_indisponivel"))).toBe(true);
+  });
+
+  it("sem número MOTOR ativo o motor nem é consultado e não há alerta de inalcançável", async () => {
+    await seedCanal({ driver: "BAILEYS" });
+    motor.chamar.mockRejectedValue(new Error("motor_indisponivel"));
+    const s = await medirSaudeCanal();
+    expect(motor.chamar).not.toHaveBeenCalled();
+    expect(s.alertas.some((a) => a.includes("inalcançável"))).toBe(false);
+  });
 });

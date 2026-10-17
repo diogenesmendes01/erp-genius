@@ -41,7 +41,7 @@ export interface SaudeCanal {
     falhas24h: number;
     /** Eventos do motor recebidos e ainda não processados (processadoEm nulo). */
     eventosMotorPendentes: number;
-    /** Eventos que o motor deu por esgotados (`GET /v1/eventos/falhos`); null = não consultado/indisponível. */
+    /** Eventos que o motor deu por esgotados (`GET /v1/eventos/falhos`); null = sem número MOTOR ativo ou motor inalcançável (este último gera alerta). */
     eventosMotorFalhos: number | null;
   };
   sessoes: { rotulo: string; driver: string; sessao: string }[];
@@ -50,13 +50,18 @@ export interface SaudeCanal {
   ultimoInboundEm: string | null;
 }
 
-/** Quantos eventos esgotaram as tentativas no motor. null = sem número MOTOR ativo ou motor inalcançável. */
-async function contarEventosFalhosDoMotor(): Promise<number | null> {
+/**
+ * Quantos eventos esgotaram as tentativas no motor. `inalcancavel` = a consulta falhou: com o
+ * motor fora do ar nenhum webhook `sessao.estado CAIU` chega (quem o emitiria é o próprio motor),
+ * então esta consulta é o único sinal de que o inbound parou.
+ */
+async function contarEventosFalhosDoMotor(): Promise<{ falhos: number | null; inalcancavel: string | null }> {
   try {
     const r = await chamarMotor<{ eventos?: unknown[] }>("/v1/eventos/falhos", { metodo: "GET" });
-    return Array.isArray(r?.eventos) ? r.eventos.length : 0;
-  } catch {
-    return null;
+    return { falhos: Array.isArray(r?.eventos) ? r.eventos.length : 0, inalcancavel: null };
+  } catch (e) {
+    const motivo = e instanceof Error ? e.message : String(e);
+    return { falhos: null, inalcancavel: motivo.slice(0, 200) };
   }
 }
 
@@ -110,7 +115,8 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
         select: { recebidoEm: true },
       }),
     ]);
-  const eventosMotorFalhos = numeros.some((n) => n.driver === "MOTOR") ? await contarEventosFalhosDoMotor() : null;
+  const consultaMotor = numeros.some((n) => n.driver === "MOTOR") ? await contarEventosFalhosDoMotor() : null;
+  const eventosMotorFalhos = consultaMotor?.falhos ?? null;
 
   const contagem = new Map(porStatus.map((s) => [s.status, s._count._all]));
   const pendenteHaMin = minutosDesde(agora, pendenteMaisVelha?.criadaEm);
@@ -153,6 +159,14 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
     if (n.driver === "MOTOR" && n.sessao === "CAIU") {
       alertas.push(`Sessão do número "${n.rotulo}" caiu — reconectar via QR na tela do canal.`);
     }
+  }
+
+  // 4b'. Motor inalcançável com número MOTOR ativo: o inbound para em silêncio (o número
+  //      segue CONECTADO no ERP porque o aviso de queda viria do próprio motor).
+  if (consultaMotor?.inalcancavel) {
+    alertas.push(
+      `Motor WhatsApp inalcançável (${consultaMotor.inalcancavel}) — mensagens recebidas não estão chegando.`,
+    );
   }
 
   // 4c. Eventos do motor parados na tabela de entrada / esgotados no motor.
