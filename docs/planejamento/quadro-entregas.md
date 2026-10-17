@@ -4,7 +4,7 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 
 ## Fase 3 — IDs de migration (16/10/2026)
 
-Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs foram **confirmados pelo integrador** na revisão R1 do PR #197 (16/10/2026), sem renomear. Estado por ID:
+Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs foram **confirmados pelo integrador** (o controlador da sessão) em 16/10/2026, com registro no ledger de execução, sem renomear (ordem coerente: depois de 20261001/20261002 da #194). Estado por ID:
 
 | Migration | Task | Pasta | Estado do ID |
 | --- | --- | --- | --- |
@@ -17,7 +17,7 @@ Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs 
 - Os cinco IDs são posteriores à última migration do `main` mesclado e foram aplicados com `prisma migrate deploy` num banco descartável próprio (`erp_genius_test_fix197`, apagado depois). As próximas migrations da Fase 3 partem de um ID posterior a `20261016130000`, reservado pelo integrador.
 - Regra de status (revisão final do bloco A): responsável preenchido conta como assumido. Backfill da M2, `garantirAtendimento`, `atendimentoComercialDaLinha` (linha VENDAS nasce `EM_ATENDIMENTO` quando há dono) e `atribuirDono` (reatribuição tira de `ABERTO_SEM_RESPONSAVEL`; `AGUARDANDO_CLIENTE` se mantém) seguem a mesma regra.
 - Evidências da correção: `tsc --noEmit` saída 0; integração (recorte, não suíte completa) `linha-comercial`, `acesso/politica`, `atendimento-status` e `reabertura` `.int.test.ts`: 4 arquivos, 48 testes verdes; unitários `vitest related` de `linha-comercial.ts` e `comercial/acoes.ts`: 82 arquivos, 717 testes verdes (inclui o ajuste de `linha-comercial.test.ts` ao filtro `grupoId: null` de `baa2e7ed`); eslint 0 nos arquivos tocados.
-- **Estado**: IDs confirmados pelo integrador (C4 do PR #197). Não concluído: o bloco aguarda o merge.
+- **Estado**: IDs confirmados pelo integrador em 16/10/2026 (ordem coerente: depois de 20261001/20261002 da #194). Não concluído: o bloco aguarda o merge.
 
 ## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
 
@@ -1659,6 +1659,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Integrador: confirmar o ID de migração `20260929130000`, regenerar o client, rodar `tsc --noEmit`,
   `quantidade-transporte` e as integrações WhatsApp num perfil isolado.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E8 — portal público (docs/43 §6 item 8; 13/10/2026)
@@ -1685,6 +1690,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `/api/portal-aluno/token` devolve 422 também para a senha que o Zod recusa; a tela evita o caso validando antes.
 - Link de troca de e-mail (`VALIDAR_TROCA_EMAIL`) cai na mesma tela, que sempre manda senha; a rota recusa esse caso.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E10 — borda de rota (docs/43 §6 item 10; 13/10/2026)
@@ -1748,6 +1758,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Desvincular contato pela inbox (L2298) precisa de action nova e regra de permissão: fora desta fatia.
 - Alternadores de usuário, idioma e preço continuam invertendo o estado atual no servidor (contrato existente).
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E11 — amostra Média/Baixa com nova semente (docs/43 §6 item 11; 13/10/2026)
@@ -1811,6 +1826,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
 - A thread da inbox cortada em 300 mensagens é da issue #168.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
@@ -1835,6 +1855,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
 - Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
@@ -1861,6 +1886,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
 - Demais componentes base e telas: blocos seguintes da Fase 0.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
@@ -1894,6 +1924,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
 - Sem schema nem migração; `*.int.test.ts` não alterados.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
@@ -1914,6 +1949,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 ### Pendências
 - Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — primitivos (Fase 0, Task 10; 15/10/2026)
@@ -1944,6 +1984,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Falta conferir no navegador (UAT): o menu dentro do drawer, a posição perto das bordas e os dois temas.
 - O focar após o posicionamento (`visibility` do painel) é ligação de DOM sem teste automatizado, porque não há jsdom.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Verificação do integrador: bloco DS-B (2026-10-15)
@@ -1980,6 +2025,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   cobrança; `Menu` ainda sem tela que o use.
 - Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Fase 3, bloco A: modelo do atendimento por setor (16/10/2026)
@@ -1996,13 +2046,13 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `diario/reposicao-permissoes`, `diario/calendario-reposicao` (1 cada). Essas 14 falham igual rodando o código de
   `integracao/ate-fase-1` neste banco (sensíveis à data de hoje, 16/10/2026, e ao ambiente); anotadas, não são do bloco.
   `cobrancas/resposta-contrato` quebrava pelo CHECK `Atendimento_status_encerrado` e foi corrigido no teste (4/4 verdes).
-- IDs de migration: confirmados pelo integrador (C4 da R1 do PR #197; ver "Fase 3 — IDs de migration").
+- IDs de migration: confirmados pelo integrador em 16/10/2026, registrados no ledger de execução (ver "Fase 3 — IDs de migration").
 
 ### Revisão R1 do PR #197 (16/10/2026)
 - **B1**: `main` mesclado; `atribuirDono` usa `tx.oportunidade.update` e mantém o `updateMany` de status; três
   `*.int.test.ts` passaram a `prisma.oportunidade`.
 - **B2**: conflito aditivo com a #194 (`schema.prisma`, `labels.ts`, `enums-rotulos.test.ts`); quem integrar em segundo
-  lugar mantém os dois lados.
+  lugar mantém os dois lados. Resolvido em 17/10/2026 no merge do `main` (`683bf3e5`, após o merge da #194): os dois lados mantidos.
 - **C1**: o mapeamento papel → setor tem uma fonte só (`src/server/crm/setores-papel.ts`, reexportado por
   `crm/permissoes.ts`). O inbox usa `setoresVisiveisNoInbox` (`whatsapp/setor.ts`), que acrescenta só as extensões do
   plano 03, Tarefa 1: PROFESSOR → PEDAGOGICO e a Q1 (`SECRETARIA_VE_FIN_PEDAG`, provisória "mantém"). A branch da
@@ -2013,7 +2063,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   **bloco C** do plano 03 (PR C, ações de atendimento), não no bloco B (escopo e roteamento): Task 15 (`assumirAtendimento`
   → `EM_ATENDIMENTO`, `devolverParaFila`, `atribuirAtendimento`, com `proximoStatus` da Task 5) e Task 16
   (`transferirAtendimento` encerra a origem com `ENCERRADO` e abre outro). Até lá, só `atribuirDono` e a criação mexem no status.
-- **C4**: IDs `20261016090000` a `20261016130000` confirmados pelo integrador.
+- **C4**: IDs `20261016090000` a `20261016130000` confirmados pelo integrador em 16/10/2026 (ordem coerente: depois de
+  20261001/20261002 da #194). A confirmação é do integrador, registrada no ledger de execução, e não da revisão R1.
 - Verificação (HEAD de código `a2120aa4`, 17/10/2026): `node_modules/.bin/tsc --noEmit` saída 0; `npm run lint` saída 0,
   0 erros e 43 avisos; `node_modules/.bin/vitest run` saída 0, 658 arquivos e 4.759 testes. Integração (recorte, não
   suíte completa) no banco descartável `erp_genius_test_fix197` (`prisma migrate deploy` limpo, apagado depois): os 14
@@ -2055,11 +2106,89 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   falharam (38 testes). Os mesmos 13 arquivos, rodados em worktree de `origin/integracao/ate-fase-1`, falham igual:
   38 testes. São preexistentes (fixtures com datas fixas de 2026 contra o relógio real, mais o `inbox` já listado).
 
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
+
 ### Pendências (revisão R1 do PR #193)
 - **C3, para quando `exigirCapacidadeCrm` for ligada nas telas e ações:** a troca não pode ampliar o que hoje é
   negado. A `MATRIZ` de `src/server/crm/permissoes.ts` concede `contatos.ver` à `SECRETARIA_ACADEMICA` e
   `comissoes.ver` ao `VENDEDOR`, mas os guards atuais negam esses acessos. Antes de ligar, ou a matriz é ajustada,
   ou o guard atual continua valendo junto. Em qualquer caso, precisa de um teste que prove que esses dois acessos
   seguem negados.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## CRM, bloco C: Pessoa como hub e empresa B2B (Fase 2, Tasks 6 a 8; 16/10/2026)
+
+### Verificação antes do merge (branch `claude/fase2-c-pessoa-empresa`, HEAD `06aff92`)
+- Perfil de teste: `.erp-test-profile` = `dev-gravacoes`, que está na lista fechada de `scripts/test-profile.mjs`
+  e resolve para o banco descartável `erp_genius_test_dev_gravacoes` (porta 54329). Todas as suítes abaixo rodaram
+  nesse banco. Na Task 6 a migration foi aplicada por engano também num banco chamado `dev-gravacoes` (o nome do
+  perfil, fora da lista); o integrador deve descartá-lo.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: 646 arquivos e 4.632 testes verdes, saída 0 (linha de base: 643 arquivos e 4.607 testes).
+- `npm run lint`: saída 0, 0 erros.
+- Migrations: `20261001000000_crm_pessoa` (2.M1) e `20261002000000_crm_empresa_b2b` (2.M2). Os IDs foram
+  escolhidos pelos agentes e ficam depois de `20260929130000`. Nenhuma outra branch local ou remota tem migration
+  `202610*`. O integrador ainda precisa reservar ou renomear esses IDs antes de aplicá-los num ambiente
+  compartilhado.
+- `prisma migrate status` em `erp_genius_test_dev_gravacoes`: 440 migrations, "Database schema is up to date!".
+- `pg_proc` (F2-C): as funções públicas que citam `"Lead"`, `"Pessoa"`, `"Empresa"`, `"Aluno"` ou `"Responsavel"`
+  não usam as colunas novas (a migration só acrescenta colunas anuláveis, tabelas e FKs). As funções de
+  desistência e segunda chamada foram chamadas pelos `*.int.test.ts` de `src/server/matricula/` e
+  `src/server/contratos/` listados abaixo, todos verdes.
+- Integração no perfil isolado, só um recorte. A suíte completa leva mais de 2 h e o integrador proibiu rodá-la
+  nas faixas. Resultado: 9 arquivos e 120 testes verdes, saída 0:
+  - `src/server/comercial/leads.int.test.ts` (8 testes, com o novo `criarLead` da Task 8);
+  - `src/server/crm/pessoa-schema`, `empresa-schema` e `pessoas` (14 testes);
+  - `src/server/matricula/desistencia-efetivacao`, `desistencia-financeiro-sql` e `desistencia-administrativa`
+    (24 testes);
+  - `src/server/contratos/aditivo-acerto-taxa` e `substituicao` (74 testes).
+- Pendente com o integrador antes do PR: rodar `npm run test:int` completo num banco autorizado e comparar com
+  as 7 falhas preexistentes do main `f8a9c0e`; confirmar ou renomear os IDs 2.M1 e 2.M2.
+
+- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
+  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
+  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
+  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
+  (3 arquivos, 20 testes), todos verdes, saída 0.
+
+### Correções da revisão R1 do PR #194 (17/10/2026)
+- **B1, conflito com o main:** `origin/main` (`097f5df5`, com a #193) mesclado sem squash. O único conflito foi este
+  quadro: a seção "DS-B — avisos" fica só na posição para onde o main a moveu, e no fim os blocos B (com as
+  pendências da R1 do #193) e C ficam ambos, cada um com a própria linha **Estado**. Nenhum `\w+.lead.<método>`
+  em `src` fora da string do próprio teste de trava (`oportunidade-map.test.ts`).
+- **C1, `empresaId` em `criarLead`:** validado na transação antes do `create`. Inexistente ou de empresa inativa
+  devolve "Empresa não encontrada." em vez de estourar a FK (P2003). `Empresa` não tem dono nem carteira; o escopo
+  disponível hoje é `ativo`. Quando houver escopo de empresa, ele entra no mesmo `findFirst`.
+- **C2, telefone e e-mail com Pessoa existente — intencional nesta fase, documentado no código (`criarLead` e
+  `garantirPessoaTx`):** com `pessoaId` informado, o telefone não entra em `ContatoWhatsApp`; e o `email`
+  digitado só vai para a Pessoa quando ela é criada por `garantirPessoaTx`. Pessoa já existente (informada, achada
+  pelo contato ou pelo aluno/responsável) não tem telefone nem e-mail atualizados por `criarLead`.
+- **C3, corrida em `garantirPessoaTx`:** `pg_advisory_xact_lock(hashtextextended('pessoa:'||telefone, 0))` antes
+  da busca do contato, com o telefone já normalizado em E.164. Duas criações simultâneas do mesmo telefone novo
+  passam a dar uma só Pessoa.
+- **C4, vendedor e `pessoaId` sem oportunidade — comportamento esperado:** o vendedor só vê pessoas da própria
+  carteira (com oportunidade em `escopoComercialAtual`). Uma pessoa sem oportunidade (por exemplo, vinda de
+  aluno) é recusada como "Contato não encontrado." quando o vendedor informa o `pessoaId`. **Ponto para a tela de
+  nova oportunidade (#196):** a busca de contato do vendedor não deve oferecer essas pessoas; ele cria a
+  oportunidade pelo telefone, e `garantirPessoaTx` liga à pessoa certa pelo contato ou pelo aluno/responsável.
+- **C5, IDs das migrations — confirmados pelo integrador em 17/10/2026:** `20261001000000_crm_pessoa` (2.M1) e
+  `20261002000000_crm_empresa_b2b` (2.M2). A pendência "confirmar ou renomear os IDs" acima fica resolvida.
+
+### Verificação da R1 (HEAD dos commits de correção)
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros (43 avisos, nenhum nos arquivos tocados).
+- `node_modules/.bin/vitest run` completo: 655 arquivos e 4.738 testes verdes, saída 0.
+- Integração: o banco do perfil `tester` estava em uso por outra suíte e já tinha migrations da Fase 3
+  (`20261016*`), então rodou num banco descartável próprio, `erp_genius_test_fix194` (mesmo Postgres,
+  porta 54329), criado do zero com `prisma migrate deploy` das migrations desta branch e apagado no fim.
+  `src/server/crm/*.int.test.ts` e `src/server/comercial/*.int.test.ts`: 7 arquivos e 46 testes verdes,
+  saída 0 (inclui `pessoas`, `empresa-schema`, `pessoa-schema` e `leads`, que exercita o `criarLead` alterado).
+- Os dois testes do C3 (concorrência com 5 chamadas paralelas e espera pelo lock) falham com o lock removido
+  (conferido localmente) e passam com ele.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
