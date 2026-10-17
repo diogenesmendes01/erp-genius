@@ -75,6 +75,9 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/funil/PainelOportunidade.tsx": ["key a.id"], // aba do painel (role=tab)
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
+  // Conversa: gatilho e itens do menu da mensagem; abrir imagem, vídeo e documento no visualizador.
+  "src/components/conversa/BalaoMensagem.tsx": ["Opções da mensagem", "i.rotulo"],
+  "src/components/conversa/VisualizadorMidia.tsx": ["Abrir imagem", "Reproduzir vídeo", "Abrir"],
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
   "src/components/Chip.tsx": ["(sem nome)"], // primitivo: ficha de filtro (rótulo vem dos children)
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
@@ -1139,6 +1142,7 @@ const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
   { arquivo: "src/app/(app)/funil/PainelOportunidade.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected, que é o atributo próprio da aba; aria-pressed não vale para tab" },
+  { arquivo: "src/components/conversa/BalaoMensagem.tsx", rotulo: "i.rotulo", motivo: "item do menu da mensagem: a aparência muda por perigo (Apagar), não por estado alternável" },
   { arquivo: "src/components/Menu.tsx", rotulo: "key indice", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
 ];
 
