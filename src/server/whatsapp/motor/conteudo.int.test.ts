@@ -11,6 +11,7 @@ vi.mock("../midia", async (orig) => ({ ...(await orig<typeof import("../midia")>
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
+import { driverMotor } from "../drivers/motor";
 import { garantirAtendimento } from "../atendimentos";
 import { despacharFila } from "../despachante";
 import { enviarConteudoInbox } from "./acoes-mensagem";
@@ -104,6 +105,23 @@ describe("conteúdo especial pelo motor", () => {
     await despacharFila(new Date(), { intencaoId: i.id });
     const f = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } });
     expect(f).toMatchObject({ status: "CANCELADA", motivoFalha: "ia_conteudo_nao_permitido" });
+    expect(enviarConteudo).not.toHaveBeenCalled();
+  });
+  it("driver sem enviarConteudo -> FALHOU conteudo_nao_suportado", async () => {
+    const { at, numero, contato, autor } = await cenario();
+    const i = await prisma.intencaoMensagem.create({ data: {
+      numeroId: numero.id, atendimentoId: at.id, contatoId: contato.id, origem: "HUMANO", tipo: "ENQUETE", autorId: autor.id,
+      conteudo: { tipo: "ENQUETE", nome: "x", opcoes: ["a", "b"], maxEscolhas: 1 }, corpoRenderizado: "x",
+    } });
+    const d = driverMotor as unknown as { enviarConteudo?: typeof enviarConteudo };
+    const original = d.enviarConteudo;
+    delete d.enviarConteudo;
+    try {
+      await despacharFila(new Date(), { intencaoId: i.id });
+    } finally {
+      d.enviarConteudo = original;
+    }
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } })).toMatchObject({ status: "FALHOU", motivoFalha: "conteudo_nao_suportado" });
     expect(enviarConteudo).not.toHaveBeenCalled();
   });
 });
