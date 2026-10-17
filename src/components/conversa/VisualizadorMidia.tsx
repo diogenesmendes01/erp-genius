@@ -45,6 +45,23 @@ export function MidiaMensagem({ m, aoAbrir }: { m: Pick<MensagemThread, "tipo" |
   );
 }
 
+const ehPdf = (url: string) => /\.pdf$/i.test(url.split("?")[0]);
+
+/**
+ * Documento no visualizador. PDF vai num iframe SEM `sandbox`: o visualizador de PDF embutido do Chrome e do Firefox
+ * não roda em iframe com sandbox sem `allow-scripts`, e o quadro sairia em branco. Sem sandbox é seguro aqui: a origem
+ * é a mesma, `/api/files` já autoriza o arquivo e só serve tipos da lista fechada (`contentTypePorExtensao`: como
+ * documento, só `application/pdf`; nada de HTML/SVG). Sempre há "Abrir em nova aba" para quando o navegador não embute PDF.
+ */
+export function QuadroDocumento({ url, nome }: { url: string; nome: string }) {
+  return (
+    <>
+      {ehPdf(url) && <iframe src={url} title={nome} className="h-[60dvh] w-full" />}
+      <a href={url} target="_blank" rel="noopener noreferrer" className="underline">Abrir em nova aba</a>
+    </>
+  );
+}
+
 /** Visualizador em diálogo (imagem, vídeo, documento): Escape/fundo fecham e o foco volta (Modal/useDialogo). */
 export function VisualizadorMidia({ m, aoFechar }: { m: Pick<MensagemThread, "tipo" | "midiaPath" | "corpo" | "criadoEm" | "autorNome">; aoFechar: () => void }) {
   const url = m.midiaPath;
@@ -54,7 +71,7 @@ export function VisualizadorMidia({ m, aoFechar }: { m: Pick<MensagemThread, "ti
     <Modal titulo={m.autorNome || "Mídia da conversa"} aoFechar={aoFechar} larga>
       <div className="flex flex-col gap-3">
         {m.tipo === "VIDEO" ? <video src={url} controls playsInline className="max-h-[60dvh] max-w-full" />
-          : m.tipo === "DOCUMENTO" ? <iframe src={url} title={nome} sandbox="allow-same-origin" className="h-[60dvh] w-full" />
+          : m.tipo === "DOCUMENTO" ? <QuadroDocumento url={url} nome={nome} />
           // eslint-disable-next-line @next/next/no-img-element
           : <img src={url} alt={m.corpo || "Imagem da conversa"} className="max-h-[60dvh] max-w-full object-contain" />}
         {m.corpo && <p>{m.corpo}</p>}

@@ -5,6 +5,7 @@ import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { BalaoMensagem } from "./BalaoMensagem";
 import { CartaoPix } from "./CartaoPix";
 import { EnqueteLeitura } from "./EnqueteLeitura";
+import { QuadroDocumento } from "./VisualizadorMidia";
 import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
 
 const base: MensagemThread = {
@@ -63,5 +64,20 @@ describe("EnqueteLeitura e CartaoPix", () => {
     const h = renderToStaticMarkup(createElement(CartaoPix, { pix: { quantia: "R$ 150,00", solicitante: "Escola", codigoCopiaCola: "000201" } }));
     expect(h).toContain("R$ 150,00");
     expect(h).toContain("Copiar código Pix");
+  });
+});
+
+describe("QuadroDocumento", () => {
+  const quadro = (url: string) => renderToStaticMarkup(createElement(QuadroDocumento, { url, nome: "boleto.pdf" }));
+  it("PDF embutido sem sandbox (o visualizador de PDF do navegador não roda em iframe com sandbox) e com link para nova aba", () => {
+    const h = quadro("/api/files/a/boleto.pdf");
+    expect(h).toMatch(/<iframe[^>]* src="\/api\/files\/a\/boleto.pdf"/);
+    expect(h).not.toContain("sandbox");
+    expect(h).toMatch(/<a[^>]* target="_blank"[^>]* rel="noopener noreferrer"[^>]*>Abrir em nova aba<\/a>/);
+  });
+  it("documento que não é PDF não vai para iframe: só o link", () => {
+    const h = quadro("/api/files/a/planilha.xlsx");
+    expect(h).not.toContain("<iframe");
+    expect(h).toContain("Abrir em nova aba");
   });
 });
