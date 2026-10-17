@@ -6,6 +6,8 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 vi.mock("@/server/whatsapp/drivers/evolution", () => ({ driverEvolution: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
+// Fase 4B: o despachante só envia pelo motor (META_CLOUD e BAILEYS não têm driver); o motor fica simulado.
+vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
@@ -224,7 +226,8 @@ describe("§4.4 — regras do Inbox", () => {
   });
 
   it("11 envio = intenção HUMANO + despachante único", async () => {
-    const { a } = await comercial();
+    const { numero, a } = await comercial();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR" } }); // o despachante só envia pelo motor (Fase 4B)
     como(vend);
     const r = await enviarTextoInbox({ conversaId: a.id, texto: "Olá! Podemos falar?" });
     expect(r.ok && r.dado!.status).toBe("DESPACHADA");
@@ -239,7 +242,7 @@ describe("§4.4 — regras do Inbox", () => {
 
   it("12 silêncio pós-inbound e tratar, com alçada FIN ou SEC", async () => {
     const c = await turma();
-    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { driver: "META_CLOUD" } }); // a automação só sai por driver oficial
+    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { driver: "MOTOR" } }); // a automação só sai pelo motor (Fase 4B, D38)
     await prisma.conversaWhatsApp.update({ where: { id: c.financeiro.conversaId }, data: { ultimoInboundEm: new Date(Date.now() - 3600_000) } });
     await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: c.contato.id, atendimentoId: c.financeiro.id, origem: "CRON", corpoRenderizado: "degrau" } });
     expect((await despacharFila()).adiadas).toBe(1);
