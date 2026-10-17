@@ -427,6 +427,16 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": [
     "bloco · Nenhum template — rode o seed ou crie o primeiro.",
   ],
+  "src/app/(app)/contatos/FichaContato.tsx": [
+    "compacto · Nenhum telefone cadastrado.",
+    "compacto · Nenhuma tag neste contato.",
+    "compacto · Nenhuma atividade registrada.",
+    "compacto · Nenhuma oportunidade deste contato na sua carteira.",
+    "compacto · Nenhum campo personalizado de pessoa foi criado.",
+  ],
+  "src/app/(app)/contatos/ListaContatos.tsx": [
+    "bloco · {filtrando ? \"Nenhum contato com esses filtros.\" : \"Nenhum contato na sua carteira.\"}",
+  ],
   "src/app/(app)/diario/DiarioAulas.tsx": [
     "compacto · Nenhum aluno elegível na data selecionada.",
     "bloco · {mensagemVazio ?? \"Nenhuma aula registrada neste histórico.\"}",
