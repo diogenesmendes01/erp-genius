@@ -65,13 +65,12 @@ import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
 // Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
 const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
 
-function revalidar(leadId?: string | null) {
-  revalidatePath("/leads");
+function revalidar(_leadId?: string | null) {
+  revalidatePath("/funil");
   revalidatePath("/alunos");
   revalidatePath("/financeiro", "layout");
   revalidatePath("/secretaria");
   revalidatePath("/comissoes");
-  if (leadId) revalidatePath(`/leads/${leadId}`);
 }
 
 // vencimento/comissão: regras puras em @/server/_shared/regras (testáveis).

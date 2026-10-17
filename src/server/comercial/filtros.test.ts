@@ -65,8 +65,8 @@ describe("filtros de leads na URL", () => {
 
   it("página além do fim leva à última existente, preservando os filtros", () => {
     const f = lerFiltrosLeads({ etapa: "NOVO", pagina: "9" });
-    expect(destinoPaginaLeads(f, LEADS_POR_PAGINA * 2 + 1)).toBe("/leads?etapa=NOVO&pagina=3");
-    expect(destinoPaginaLeads(f, 0)).toBe("/leads?etapa=NOVO");
+    expect(destinoPaginaLeads(f, LEADS_POR_PAGINA * 2 + 1)).toBe("/funil?etapa=NOVO&pagina=3");
+    expect(destinoPaginaLeads(f, 0)).toBe("/funil?etapa=NOVO");
     expect(destinoPaginaLeads(lerFiltrosLeads({ pagina: "2" }), LEADS_POR_PAGINA + 1)).toBeNull();
   });
 
@@ -79,7 +79,7 @@ describe("filtros de leads na URL", () => {
   });
 
   it("link a partir dos campos volta à página 1 e descarta valor inválido", () => {
-    expect(hrefDosCamposLeads({ busca: " ana ", tipo: "b2b", etapa: "X", segmento: "", temperatura: "", dono: "" })).toBe("/leads?busca=ana&tipo=b2b");
+    expect(hrefDosCamposLeads({ busca: " ana ", tipo: "b2b", etapa: "X", segmento: "", temperatura: "", dono: "" })).toBe("/funil?busca=ana&tipo=b2b");
   });
 });
 

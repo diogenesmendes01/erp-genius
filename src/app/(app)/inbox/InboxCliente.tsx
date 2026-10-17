@@ -857,7 +857,7 @@ function Composer({
 
 /** Ficha de cada cadastro que pode dar nome ao contato (chip de vínculo e painel de nome). */
 function hrefCadastro(tipo: "aluno" | "lead", id: string): string {
-  return tipo === "aluno" ? `/alunos/${id}` : `/leads/${id}`;
+  return tipo === "aluno" ? `/alunos/${id}` : `/funil?o=${id}`;
 }
 
 // Nome salvo do contato (o que a escola chama a pessoa). O cadastro de aluno/lead/responsável, quando
