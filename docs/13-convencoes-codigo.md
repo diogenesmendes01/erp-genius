@@ -63,8 +63,8 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
     exigirPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL); // Admin passa sempre
     // ...validação Zod conforme a ação...
     await prisma.$transaction(async (tx) => {
-      const antes = await tx.lead.findUniqueOrThrow({ where: { id } });
-      await tx.lead.update({ where: { id }, data: { etapa } });
+      const antes = await tx.oportunidade.findUniqueOrThrow({ where: { id } });
+      await tx.oportunidade.update({ where: { id }, data: { etapa } });
       await registrarEvento(tx, {
         tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId: id,
         autorId: autor.id, payload: { de: antes.etapa, para: etapa },

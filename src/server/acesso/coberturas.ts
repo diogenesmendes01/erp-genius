@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { Papel } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 
@@ -21,7 +20,6 @@ export async function concederCobertura(input: { titularId: string; substitutoId
       const cobertura = await tx.coberturaCarteira.create({ data: { ...dados, concedenteId: autor.id } });
       await registrarEvento(tx, { tipo: "CoberturaConcedida", agregadoTipo: "CoberturaCarteira", agregadoId: cobertura.id, autorId: autor.id, payload: { ...dados, inicio: dados.inicio.toISOString(), fim: dados.fim.toISOString() } });
     });
-    revalidatePath("/carteiras");
   });
 }
 
@@ -36,6 +34,5 @@ export async function revogarCobertura(id: string) {
       await tx.coberturaCarteira.update({ where: { id }, data: { revogadaEm: new Date() } });
       await registrarEvento(tx, { tipo: "CoberturaRevogada", agregadoTipo: "CoberturaCarteira", agregadoId: id, autorId: autor.id });
     });
-    revalidatePath("/carteiras");
   });
 }

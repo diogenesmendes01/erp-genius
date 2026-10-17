@@ -34,6 +34,25 @@ function textoDasStrings(trecho: string): string {
     .replace(/\s+/g, " ");
 }
 
+/**
+ * Textos literais de um fonte: strings, partes fixas de template e texto JSX (comentários e
+ * identificadores ficam de fora). `.ts` é lido como TS, para `<T>x` não virar JSX.
+ */
+function literais(fonte: string, arquivo = "x.tsx"): string[] {
+  const tipo = arquivo.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, tipo);
+  const textos: string[] = [];
+  const visitar = (n: ts.Node) => {
+    if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n) || ts.isJsxText(n)) textos.push(n.text);
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return textos;
+}
+
+// Abertura comum das constantes de resultado incerto: escrita à mão numa tela, foge da instrução única.
+const ABERTURA_INCERTA = /resultado não confirmado/i;
+
 // Num catch o resultado é desconhecido: não pode afirmar falha, nem convidar a alterar a entrada.
 const PROIBIDO = [
   /confira (?:os dados|e tente)/i,
@@ -53,6 +72,18 @@ describe("mensagens de resultado incerto", () => {
       "registrada."); } g(\`Confira os dados e tente novamente\`); }`;
     const texto = corposCatch(fonte).map(textoDasStrings).join(" ");
     expect(PROIBIDO.every((re) => re.test(texto))).toBe(true);
+  });
+
+  it("o detector de texto avulso lê string, template e texto JSX, e ignora comentário e identificador", () => {
+    const fonte = `// Resultado não confirmado (comentário)
+      const a = "Resultado não confirmado. A"; const b = \`Resultado não confirmado \${x} B\`;
+      const c = <p>Resultado não confirmado C</p>; const d = MSG_RESULTADO_INCERTO;`;
+    expect(literais(fonte).filter((t) => ABERTURA_INCERTA.test(t))).toEqual(["Resultado não confirmado. A", "Resultado não confirmado ", "Resultado não confirmado C"]);
+  });
+
+  it("\"Resultado não confirmado\" só sai das constantes: nenhuma tela escreve a frase à mão, nem fora de catch (C10 da #170)", () => {
+    const avulsas = fontes.flatMap(({ arquivo, conteudo }) => literais(conteudo, arquivo).filter((t) => ABERTURA_INCERTA.test(t)).map((t) => `${arquivo}: ${t}`));
+    expect(avulsas).toEqual([]);
   });
 
   it("nenhum catch em telas/componentes afirma falha ou convida a alterar os dados", () => {

@@ -234,13 +234,18 @@ describe("error.tsx: área, volta e \"Tentar de novo\" (E10)", () => {
     // Configuração: uma sub-aba já é o índice (as outras seguem no layout).
     expect(voltaEm("src/app/(app)/configuracao", "/configuracao/usuarios")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/configuracao", "/configuracao")).toEqual(["/home"]);
-    // Matrícula: da seção ao hub; do hub à Secretaria.
-    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1")).toEqual(["/secretaria"]);
+    // Matrícula: da seção ao hub; do hub ao início — Financeiro e Gerência pedagógica abrem o hub, mas não
+    // a Secretaria (C1 da R1 da #174).
+    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1")).toEqual(["/home"]);
+    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1/")).toEqual(["/home"]);
+    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1/emissao")).toEqual(["/matriculas/m1"]);
   });
 
   it("o link de volta da matrícula tem o nome do destino (mapa da trilha)", () => {
     expect(abrir(ERROS["src/app/(app)/matriculas/[id]"]).html).toContain('aria-label="Voltar para Matrícula"');
-    expect(abrir(ERROS["src/app/(app)/matriculas/[id]"], "/matriculas/m1").html).toContain('aria-label="Voltar para Secretaria"');
+    const hub = abrir(ERROS["src/app/(app)/matriculas/[id]"], "/matriculas/m1").html;
+    expect(hub).toContain('aria-label="Voltar para Home"');
+    expect(hub).not.toContain('href="/secretaria"');
   });
 
   it("destinoDoErro ignora query string e barra final, e aceita outro destino acima do índice", () => {

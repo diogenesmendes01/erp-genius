@@ -87,7 +87,19 @@ Razões medidas pela trava (`src/app/contraste-nucleo.ts`):
 >
 > **IA** tem cor própria de propósito — é o único sinal visual que diz "isto foi gerado por
 > IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6A53BD`, não
-> inverte, 5,86:1 com branco) é o botão de aceitar/aplicar sugestão.
+> inverte: o mesmo valor nos dois temas, 5,86:1 com branco) é o botão de aceitar/aplicar sugestão,
+> sempre com texto branco. Nisso ele difere do `--brand-solid`, que tem um valor por tema (`#1B8755`
+> no claro, `#21C063` no escuro) e leva `text-on-brand` (ver o quadro abaixo).
+
+### Registro: o texto de antes da Fase 0
+Os valores citados abaixo (`#6D28D9`, `#4338CA`, `#6264EC`) são os anteriores à Fase 0 e não valem mais; os atuais
+estão no quadro de semânticos acima e no de marca e ações sólidas abaixo.
+
+> Antes da Fase 0: a **IA** tinha cor própria de propósito — o único sinal visual que diz "isto foi gerado por
+> IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6D28D9`, não
+> inverte: o mesmo valor nos dois temas) é o botão de aceitar/aplicar sugestão, sempre com texto
+> branco. Nisso ele difere do `--brand-solid`, que desde a #157 tem um valor por tema (`#4338CA` no
+> claro, `#6264EC` no escuro; ver o quadro abaixo).
 
 ## Tokens — Marca e ações sólidas
 | Papel | Token | Claro | Escuro |
@@ -137,6 +149,14 @@ Modal, confirmação e drawer são camadas elevadas: fundo `bg-surface-raised`, 
 - **Drawer**: `bg-surface-raised shadow-dialog` com borda `border-s border-gray-200` (ou `border-e` pela esquerda).
 - Escape, contenção de Tab, devolução do foco e `inert` seguem como antes (`useDialogo`).
 
+## Primitivos — Chip, ItemLista, Avatar e Menu
+Base das Fases 2 e 3 (`src/components`). Todos usam só tokens; `bg-brand-bg` é o `--brand-bg` (accent-soft) e `text-brand-800` o `--brand-strong`.
+- **`Chip`** (`{ selecionado, onClick, children, contagem? }`): `<button type="button" aria-pressed>` em pílula, `border-border-soft`, `max-sm:min-h-11 min-h-8`. Selecionado `bg-brand-bg text-brand-800 border-transparent`; normal `text-gray-600 hover:bg-highlight`.
+- **`ItemLista`** (`{ titulo, resumo?, meta?, inicio?, selecionado?, href?, onClick? }`): `min-h-[76px] rounded-item p-3 gap-3 hover:bg-highlight`; título e resumo com `truncate`. Selecionado: `aria-current="true"` e `bg-brand-bg text-brand-800`. Com `href` vira link; sem, botão.
+- **`Avatar`** (`{ nome, tamanho?: 32 | 40 | 48, quadrado? }`): até 2 iniciais em `bg-brand-bg text-brand-800`; sem nome mostra `#`; `quadrado` (B2B) usa `rounded-md`, senão `rounded-full`.
+- **`Menu`** (`{ rotulo, gatilho, itens }`, cliente): `role="menu"`/`menuitem`, painel `min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover`, item `px-5 py-3 hover:bg-highlight`. Setas/Home/End circulam; Escape fecha e devolve o foco ao gatilho.
+- **`src/lib/popover.ts`**: `posicaoPopover` (abaixo por padrão, acima se não couber; 6 px da âncora e 8 px das bordas) e `proximoIndiceMenu`, funções puras testadas.
+
 ## Avisos e movimento reduzido
 `src/components/Aviso.tsx` é a caixa única de aviso: `rounded-md p-3 text-sm` + tom. `info` = `bg-surface-muted`;
 `sucesso` = `bg-green-100 text-green-700 border-s-[3px] border-green-700`; `atencao` = `bg-amber-100 text-amber-800
@@ -145,14 +165,6 @@ no erro, `status` nos outros (`papel="nenhum"` quando a região anunciante é ou
 `MensagemStatus`). `FeedbackAcao`, `MensagemStatus` (com `tom`), `ErroArea` (via `EstadoRota aviso="erro"`) e
 `AvisoFusoNaoConfigurado` usam o `Aviso` sem mudar suas props. O esqueleto pulsa (`animate-pulse`); o
 `@media (prefers-reduced-motion: reduce)` de `globals.css` desliga animação, transição e rolagem suave.
-
-## Primitivos — Chip, ItemLista, Avatar e Menu
-Base das Fases 2 e 3 (`src/components`). Todos usam só tokens; `bg-brand-bg` é o `--brand-bg` (accent-soft) e `text-brand-800` o `--brand-strong`.
-- **`Chip`** (`{ selecionado, onClick, children, contagem? }`): `<button type="button" aria-pressed>` em pílula, `border-border-soft`, `max-sm:min-h-11 min-h-8`. Selecionado `bg-brand-bg text-brand-800 border-transparent`; normal `text-gray-600 hover:bg-highlight`.
-- **`ItemLista`** (`{ titulo, resumo?, meta?, inicio?, selecionado?, href?, onClick? }`): `min-h-[76px] rounded-item p-3 gap-3 hover:bg-highlight`; título e resumo com `truncate`. Selecionado: `aria-current="true"` e `bg-brand-bg text-brand-800`. Com `href` vira link; sem, botão.
-- **`Avatar`** (`{ nome, tamanho?: 32 | 40 | 48, quadrado? }`): até 2 iniciais em `bg-brand-bg text-brand-800`; sem nome mostra `#`; `quadrado` (B2B) usa `rounded-md`, senão `rounded-full`.
-- **`Menu`** (`{ rotulo, gatilho, itens }`, cliente): `role="menu"`/`menuitem`, painel `min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover`, item `px-5 py-3 hover:bg-highlight`. Setas/Home/End circulam; Escape fecha e devolve o foco ao gatilho.
-- **`src/lib/popover.ts`**: `posicaoPopover` (abaixo por padrão, acima se não couber; 6 px da âncora e 8 px das bordas) e `proximoIndiceMenu`, funções puras testadas.
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
