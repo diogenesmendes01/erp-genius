@@ -9,7 +9,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 
 type Falha = { linha: number; motivo: string };
 type Previa = { modo: "previa"; novos: number; existentes: number; validas: number; invalidas: Falha[]; repetidasNaPlanilha: number };
-type Aplicada = { modo: "aplicar"; novos: number; atualizados: number; invalidos: number; comOportunidade: number; repetidasNaPlanilha: number; erros: Falha[] };
+type Aplicada = { modo: "aplicar"; novos: number; atualizados: number; foraDaCarteira: number; invalidos: number; comOportunidade: number; repetidasNaPlanilha: number; erros: Falha[] };
 
 const CONTROLE = "w-full rounded-md border border-border-soft bg-surface-raised px-2 py-1.5 text-sm max-sm:min-h-11";
 
@@ -114,7 +114,7 @@ export function ImportarContatos({ vendedores }: { vendedores: { id: string; nom
           {resultado && (
             <>
               <p className="mt-3 rounded-md border border-border-soft p-3 text-sm font-medium" role="status">
-                {resultado.novos} novo(s), {resultado.atualizados} atualizado(s), {resultado.comOportunidade} com oportunidade, {resultado.invalidos} com problema.
+                {resultado.novos} novo(s), {resultado.atualizados} atualizado(s), {resultado.foraDaCarteira > 0 && <>{resultado.foraDaCarteira} já cadastrado(s) fora da sua carteira (não alterados), </>}{resultado.comOportunidade} com oportunidade, {resultado.invalidos} com problema.
               </p>
               {resultado.erros.length > 0 && (
                 <ul className="mt-2 max-h-40 overflow-auto text-xs text-gray-600" aria-label="Linhas com problema">

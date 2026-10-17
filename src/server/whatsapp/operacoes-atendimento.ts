@@ -8,7 +8,7 @@ import { nomeCompleto } from "@/lib/nome";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { garantirContato } from "./identidade";
-import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
+import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
 import { donosDeLinhaVisiveis, ehLinhaComercial } from "./linha-comercial";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
@@ -178,8 +178,10 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
       // Ruling B2 do #199 (E3.4): o upsert devolve o atendimento já aberto no mesmo contexto. Se ele
       // está com outro responsável e fora do escopo de quem abriu, recusa antes do evento: entrar
       // como participante é convite explícito (Task 17), nunca efeito colateral de "abrir".
-      if (a.responsavelId && a.responsavelId !== u.id
+      // C6 da revisão do #199: sem responsável também vale, quando o atendimento (fila) está fora do escopo.
+      if (a.responsavelId !== u.id
         && !await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: a.id }, escopo] } })) {
+        if (!a.responsavelId) throw new ErroRegra("Este atendimento está fora do seu escopo; peça para ser incluído como participante.");
         const dono = await tx.usuario.findUnique({ where: { id: a.responsavelId }, select: { nome: true } });
         throw new ErroRegra(`Este atendimento já está com ${dono?.nome ?? "outro atendente"}; peça para ser incluído como participante.`);
       }
@@ -299,7 +301,7 @@ export async function revisarFalhaEnvio(input: { id: string; decisao: "CANCELAR"
       }
       const r = await tx.intencaoMensagem.updateMany({ where: { id: i.id, status: "FALHOU" }, data: {
         status: novoStatus, motivoFalha: motivo, despacharAposEm: null,
-        ...(novoStatus === "PENDENTE" ? { origem: "HUMANO", autorId: u.id, criadaEm: new Date() } : {}),
+        ...(novoStatus === "PENDENTE" ? { origem: "HUMANO", autorId: u.id, criadaEm: new Date(), clientMessageId: null } : {}),
       } });
       if (r.count !== 1) throw new ErroRegra("Envio revisado por outra operação.");
       await registrarEvento(tx, { tipo: "FalhaWhatsAppRevisada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: i.atendimentoId ?? i.id,
@@ -322,9 +324,7 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
           : [Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA];
     if (!temPapel(u, ...papeisDaFinalidade)) throw new ErroRegra("Sua função não autoriza encerrar atendimentos desta finalidade.");
     await prisma.$transaction(async (tx) => {
-      await tx.atendimentoWhatsApp.update({ where: { id: a.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
-      await tx.intencaoMensagem.updateMany({ where: { atendimentoId: a.id, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "atendimento_encerrado" } });
-      await registrarEvento(tx, { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: u.id, payload: {} });
+      await encerrarAtendimentoNaTransacao(tx, a.id, u.id);
     });
     revalidatePath("/inbox");
   });

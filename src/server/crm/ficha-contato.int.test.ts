@@ -79,6 +79,21 @@ describe("editarPessoa", () => {
     logadoComo(secretaria.id);
     expect((await editarPessoa(pessoaAluna, { cidade: "X" })).ok).toBe(false);
   });
+
+  it("só liga a pessoa a empresa no escopo do autor (R1 do PR #211, C2)", async () => {
+    const alheia = (await prisma.empresa.create({ data: { nome: "Alheia", contatoTelefone: "+5511911111111" } })).id;
+    await prisma.oportunidade.create({ data: { nome: "Alheia", vendedorDonoId: outro.id, empresaId: alheia } });
+    const minha = (await prisma.empresa.create({ data: { nome: "Minha" } })).id;
+    await prisma.oportunidade.create({ data: { nome: "Minha", vendedorDonoId: vendedor.id, empresaId: minha } });
+
+    logadoComo(vendedor.id);
+    expect(await editarPessoa(p, { empresaId: alheia })).toEqual({ ok: false, erro: "Empresa não encontrada." });
+    expect((await prisma.pessoa.findUnique({ where: { id: p } }))!.empresaId).toBeNull();
+    expect(await eventosDo("Pessoa", p)).toHaveLength(0);
+
+    expect((await editarPessoa(p, { empresaId: minha })).ok).toBe(true);
+    expect((await prisma.pessoa.findUnique({ where: { id: p } }))!.empresaId).toBe(minha);
+  });
 });
 
 describe("nota e opt-out", () => {

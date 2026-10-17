@@ -72,7 +72,7 @@ describe("POST /api/contatos/importar", () => {
     expect(carlos).toMatchObject({ email: "carlos@x.test", cidade: "Olinda", origemCanal: "SITE" });
     expect(await prisma.oportunidade.count({ where: { vendedorDonoId: vendedor.id, etapa: "NOVO" } })).toBe(2);
     const ev = await prisma.evento.findFirstOrThrow({ where: { tipo: "ContatosImportados" } });
-    expect(ev.payload).toEqual({ novos: 2, atualizados: 1, invalidos: 1, comOportunidade: 2 });
+    expect(ev.payload).toEqual({ novos: 2, atualizados: 1, foraDaCarteira: 0, invalidos: 1, comOportunidade: 2 });
     expect(JSON.stringify(ev.payload)).not.toMatch(/Ana|\+55|@/);
     const ana = await prisma.pessoa.findFirstOrThrow({ where: { nome: "Ana Nova" }, include: { tags: { include: { tag: true } } } });
     expect(ana.origemCanal).toBe("INDICACAO");
@@ -93,6 +93,33 @@ describe("POST /api/contatos/importar", () => {
     expect((await prisma.pessoa.findFirstOrThrow({ orderBy: { criadoEm: "desc" } })).nome).toBe("=HYPERLINK(1)");
   });
 
+  it("telefone de aluno sem Pessoa: a Pessoa nasce ligada ao aluno, sem oportunidade na carteira (R1 do PR #211, C3)", async () => {
+    const aluno = await criarAlunoMinimo({ telefoneE164: "+5511933332222" });
+    logadoComo(gerente.id);
+    const res = await POST(form(await xlsx([["Lead da Lista", "11 93333-2222", "", "", "", ""]]), "aplicar", { donoId: vendedor.id }));
+    expect(await res.json()).toMatchObject({ novos: 1, comOportunidade: 0, invalidos: 0 });
+    const pessoaId = (await prisma.aluno.findUniqueOrThrow({ where: { id: aluno.id } })).pessoaId;
+    expect(pessoaId).not.toBeNull();
+    expect(await prisma.oportunidade.count({ where: { pessoaId } })).toBe(0);
+    expect(await prisma.oportunidade.count({ where: { vendedorDonoId: vendedor.id } })).toBe(0);
+  });
+
+  it("pessoa fora da carteira achada pelo aluno não ganha ContatoWhatsApp nem conta como atualizada (R1 do PR #211, C3)", async () => {
+    const outroGerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "Outro gerente");
+    const outroVendedor = await criarUsuario([Papel.VENDEDOR], "Outro vendedor");
+    await prisma.usuario.update({ where: { id: outroVendedor.id }, data: { gerenteComercialId: outroGerente.id } });
+    const alheia = await prisma.pessoa.create({ data: { nome: "Eva Alheia" } });
+    await prisma.oportunidade.create({ data: { nome: "Eva Alheia", pessoaId: alheia.id, vendedorDonoId: outroVendedor.id } });
+    await criarAlunoMinimo({ telefoneE164: "+5511922221111", pessoaId: alheia.id });
+
+    logadoComo(gerente.id);
+    const res = await POST(form(await xlsx([["Eva", "11 92222-1111", "eva@x.test", "", "", "Feira"]]), "aplicar"));
+    expect(await res.json()).toMatchObject({ novos: 0, atualizados: 0, foraDaCarteira: 1, invalidos: 0 });
+    expect(await prisma.contatoWhatsApp.count({ where: { telefoneE164: "+5511922221111" } })).toBe(0);
+    expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: alheia.id } })).toMatchObject({ email: null });
+    expect(await prisma.tag.count({ where: { nome: "Feira" } })).toBe(0);
+  });
+
   it("pessoa de outra equipe conta como existente e não é tocada", async () => {
     const outroGerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "Outro gerente");
     const outroVendedor = await criarUsuario([Papel.VENDEDOR], "Outro vendedor");
@@ -103,7 +130,7 @@ describe("POST /api/contatos/importar", () => {
 
     logadoComo(gerente.id);
     const res = await POST(form(await xlsx([["Dora", "11 94444-3333", "dora@x.test", "Natal", "Site", "Feira"]]), "aplicar"));
-    expect(await res.json()).toMatchObject({ novos: 0, atualizados: 1, invalidos: 0 });
+    expect(await res.json()).toMatchObject({ novos: 0, atualizados: 0, foraDaCarteira: 1, invalidos: 0 });
     expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: alheia.id } }))
       .toMatchObject({ nome: "Dora Alheia", email: null, cidade: null, origemCanal: null });
     expect(await prisma.pessoaTag.count({ where: { pessoaId: alheia.id } })).toBe(0);
