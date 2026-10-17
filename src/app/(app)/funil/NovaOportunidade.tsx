@@ -68,7 +68,8 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   function agendarBusca(n: string, t: string, e: string, p: string) {
     if (espera.current) clearTimeout(espera.current);
     const rodada = ++busca.current;
-    if (pessoaId || !buscaLiberada(n, t)) {
+    // No modo Empresa não há Pessoa a reaproveitar: a busca de duplicados (de pessoas) não roda.
+    if (empresa || pessoaId || !buscaLiberada(n, t)) {
       setDuplicados([]);
       return;
     }
@@ -83,6 +84,16 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   }
 
   const usado = pessoaId ? duplicados.find((d) => d.pessoaId === pessoaId) : undefined;
+
+  function trocarTipo(paraEmpresa: boolean) {
+    setEmpresa(paraEmpresa);
+    if (!paraEmpresa) return;
+    // Ruling (C2 da R1 do #196): a oportunidade de empresa cria a `Empresa` e não liga nem cria Pessoa.
+    if (espera.current) clearTimeout(espera.current);
+    busca.current++;
+    setPessoaId("");
+    setDuplicados([]);
+  }
 
   function usarCadastro(d: PossivelDuplicado) {
     if (!d.pessoaId) return;
@@ -106,8 +117,9 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
         paisId: paisId || undefined,
         origemCanal: origem || undefined,
         b2b: empresa,
+        criarEmpresa: empresa || undefined,
         vendedorDonoId: podeAtribuir && donoId ? donoId : undefined,
-        pessoaId: pessoaId || undefined,
+        pessoaId: !empresa && pessoaId ? pessoaId : undefined,
       }));
       if (d?.tipo !== "ok" || !d.dado) return;
       id = d.dado.id;
@@ -129,8 +141,8 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   return (
     <Modal titulo="Nova oportunidade" aoFechar={fechar} bloquearFechamento={acao.ocupado}>
       <div role="group" aria-label="Tipo" className="mb-3 flex gap-2">
-        <Botao variante={!empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={!empresa} disabled={acao.ocupado || !!criadaId} onClick={() => setEmpresa(false)}>Pessoa</Botao>
-        <Botao variante={empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={empresa} disabled={acao.ocupado || !!criadaId} onClick={() => setEmpresa(true)}>Empresa</Botao>
+        <Botao variante={!empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={!empresa} disabled={acao.ocupado || !!criadaId} onClick={() => trocarTipo(false)}>Pessoa</Botao>
+        <Botao variante={empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={empresa} disabled={acao.ocupado || !!criadaId} onClick={() => trocarTipo(true)}>Empresa</Botao>
       </div>
       <div className="grid grid-cols-1 gap-3">
         <Campo rotulo={empresa ? "Nome da empresa" : "Nome"} obrigatorio erro={erroLocal}>
@@ -181,7 +193,7 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
             ))}
           </ul>
         )}
-        {pessoaId && (
+        {pessoaId && !empresa && (
           <p className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-highlight p-3 text-sm">
             <span>{`Usando o cadastro de ${usado?.nome ?? nome}`}</span>
             {!criadaId && <Botao variante="fantasma" tamanho="sm" disabled={acao.ocupado} onClick={() => setPessoaId("")}>Não usar</Botao>}
