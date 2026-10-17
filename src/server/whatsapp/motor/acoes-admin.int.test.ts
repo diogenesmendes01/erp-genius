@@ -12,6 +12,7 @@ import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "../atendimentos";
 import { alterarParticipantesGrupo, bloquearContatoWhatsApp, criarGrupoWhatsApp } from "./acoes-mensagem";
 import { ErroMotor } from "./cliente";
+import { MSG_MOTOR_DESCONECTADO } from "./capacidades";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); acao.mockReset(); acao.mockResolvedValue({}); });
 const comoUsuario = async <T,>(u: { id: string }, f: () => Promise<T>) => { authMock.mockResolvedValue({ user: { id: u.id } }); return f(); };
@@ -110,5 +111,21 @@ describe("gerir grupo pelo motor", () => {
     expect(r1.ok).toBe(false);
     expect(r2.ok).toBe(false);
     expect(acao).not.toHaveBeenCalled();
+  });
+});
+
+describe("trava de sessão do motor", () => {
+  it("sessão CAIU: bloquear, criar grupo e alterar participantes recusam sem chamar o motor", async () => {
+    const c = await cenario();
+    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { sessao: "CAIU" } });
+    const g = await prisma.grupoWhatsApp.create({ data: { numeroId: c.numero.id, grupoJid: "120363000000000003@g.us", nome: "G" } });
+    const recusa = { ok: false, erro: MSG_MOTOR_DESCONECTADO };
+    await comoUsuario(c.gerente, async () => {
+      expect(await bloquearContatoWhatsApp({ atendimentoId: c.at.id, motivo: "Mensagens ofensivas repetidas" })).toEqual(recusa);
+      expect(await criarGrupoWhatsApp({ numeroId: c.numero.id, nome: "Grupo novo", participantesE164: ["+50688887777"] })).toEqual(recusa);
+      expect(await alterarParticipantesGrupo({ grupoId: g.id, acao: "adicionar", participantesE164: ["+50688887777"] })).toEqual(recusa);
+    });
+    expect(acao).not.toHaveBeenCalled();
+    expect(await prisma.evento.count({ where: { tipo: { in: ["ContatoWhatsAppBloqueado", "GrupoWhatsAppCriado", "ParticipantesGrupoAlterados"] } } })).toBe(0);
   });
 });
