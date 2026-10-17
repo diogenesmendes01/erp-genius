@@ -76,3 +76,10 @@ describe("ConversaAberta: o compositor respeita a alçada e o status (C4 da R1 d
     expect(fonte).toMatch(/podeEnviar=\{podeEnviarNaConversa\(usuario, item\)\}/);
   });
 });
+
+describe("ConversaAberta: anexo e áudio do compositor saem pelo envio de mídia da inbox (C2 da R1 do #217)", () => {
+  it("aoEnviarMidia chama enviarMidiaInbox com o atendimento, a URL do upload e a legenda (fonte)", () => {
+    const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
+    expect(fonte).toMatch(/aoEnviarMidia=\{\(url, legenda\) => enviarMidiaInbox\(\{ conversaId: item\.id, url, legenda \}\)\}/);
+  });
+});

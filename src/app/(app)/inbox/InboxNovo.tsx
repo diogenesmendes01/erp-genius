@@ -14,6 +14,7 @@ import { ConversaAberta } from "./ConversaAberta";
 import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
 import { ListaAtendimentos } from "./ListaAtendimentos";
+import { AcoesContato } from "./AcoesContato";
 import { OptOutContato } from "./OptOutContato";
 import { PainelFiltros } from "./PainelFiltros";
 import { PainelSetor } from "./PainelSetor";
@@ -169,6 +170,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       {painelSetor?.id === atual.id
         ? <PainelSetor painel={painelSetor.dado} />
         : <p className="p-4 text-sm text-gray-600">Carregando detalhes…</p>}
+      {painelSetor?.id === atual.id && painelSetor.dado?.acoes && (
+        <AcoesContato key={atual.id} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} fuso={fuso} aoMudar={recarregarLista} />
+      )}
       {!atual.grupo && (
         <OptOutContato key={atual.contatoId} contatoId={atual.contatoId} nome={atual.contatoNome} optOut={atual.optOut}
           podeReautorizar={usuario.papeis.includes("ADMINISTRADOR")} aoMudar={recarregarLista} />

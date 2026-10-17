@@ -2876,3 +2876,24 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 - `npm run lint`: saída 0; 0 erros e 43 avisos.
 - Integração relacionada (`vitest list --filesOnly --changed origin/main` com `vitest run -c vitest.integration.config.ts` sobre os 97 arquivos `*.int.test.ts` apontados): saída 0; 96 arquivos passaram, 1 ignorado; 1041 testes passaram, 1 ignorado. O `vitest related` direto passou de 30 min sem terminar, por isso a lista foi resolvida antes e rodada em seguida.
 - A suíte de integração completa (`npm run test:int`) não foi rodada; fica para o integrador.
+
+**Correção da R1 do #217 (17/10/2026)**
+
+- **B1 (merge do main até 2d53a7c9, #208 a #216):** `InboxCliente.tsx` continua removido (o #216 só trocava o link do
+  cadastro para `/funil?o=<id>`; o Inbox novo usa esse link). `botoes.test.ts` com os dois lados (sai `leads/[id]/FichaLead.tsx`
+  e `InboxCliente`, entram `contatos/FichaContato.tsx`, `ConversaAberta` e `ListaAtendimentos`; `AcoesContato` entra em
+  `botoes-mapa.ts` e `estados-vazios-mapa.ts`). `Modal.tsx`
+  junta `folha` (3F) e `telaCheiaNoCelular` (2F), com `telaCheiaNoCelular` mandando no layout. Quadro com os dois blocos.
+  Conflito de comportamento achado e ajustado: o despachante da Fase 4B só envia pelo motor, então as regras 11 e 12 de
+  `regras-inbox.int.test.ts` passaram a usar número MOTOR e `drivers/motor` simulado.
+- **C2 (decisão do dono, 17/10/2026: portar tudo para o Inbox novo antes do merge):** a pendência da Task 33 acima fica resolvida.
+  No painel lateral (`AcoesContato.tsx`, abaixo do `PainelSetor`): criar oportunidade (`criarLeadDaConversa`), vincular contato
+  (`vincularContatoWhatsApp`, só dentro de `ConfirmarAcao`; voltou à lista fechada de `confirmacoes-mapa.ts`), editar nome
+  (`editarNomeContatoWhatsApp`), retomar régua (`marcarConversaTratada`), registrar pagamento (`PagamentoModal`) e promessa
+  de pagamento (`registrarPromessaPagamento`). Links: oportunidade em `/funil?o=<id>` (também no `PainelSetor`), aluno em
+  `/alunos/<id>`. As regras de quem vê cada botão vêm de `carregarAcoesContatoInbox` (`consultas-inbox.ts`), as mesmas de
+  `carregarThread` (regras extraídas para `regrasCadastroDoAtendimento` e `silencioPosInbound`, usadas pelas duas), e cada
+  Server Action confere a alçada de novo. Sem telefone no painel (regra 5). Anexar arquivo e gravar áudio já estavam no
+  `Compositor` (upload em `/api/whatsapp/upload` e `enviarMidiaInbox`); ganharam testes de interação.
+- **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
+- **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).

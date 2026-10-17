@@ -2,9 +2,13 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { temPapel, type UsuarioSessao } from "@/server/_shared";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
-import { cobrancaAtivaDoAtendimento, podeVerLeadNaThread } from "@/server/whatsapp/consultas-inbox";
+import { carregarAcoesContatoInbox, cobrancaAtivaDoAtendimento, podeVerLeadNaThread, type AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
 
-export type PainelSetor =
+export type PainelSetor = DadosSetor & {
+  /** Ações de cadastro e cobrança (as do Inbox antigo); null em grupo. Ausente nos testes de marcação antigos. */
+  acoes?: AcoesContatoInbox | null;
+};
+type DadosSetor =
   | { setor: "COMERCIAL"; oportunidade: { id: string; titulo: string; etapa: string; valor: string | null } | null; pessoaId: string | null }
   | { setor: "FINANCEIRO"; matriculaCodigo: string | null; cobrancas: { id: string; vencimento: string; valor: string; status: string }[] }
   | { setor: "SECRETARIA"; matriculaCodigo: string | null; documentosPendentes: number | null }
@@ -19,6 +23,11 @@ const CATEGORIAS_EXIGIDAS = ["CONTRATO", "COMPROVANTE"] as const;
  * SECRETARIA e PEDAGOGICO: quem entra só como convidado, sem papel do setor, recebe campos vazios).
  */
 export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): Promise<PainelSetor | null> {
+  const dados = await carregarDadosSetor(u, atendimentoId);
+  return dados && { ...dados, acoes: await carregarAcoesContatoInbox(u, atendimentoId) };
+}
+
+async function carregarDadosSetor(u: UsuarioSessao, atendimentoId: string): Promise<DadosSetor | null> {
   const a = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] },
     include: {

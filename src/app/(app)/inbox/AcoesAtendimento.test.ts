@@ -119,6 +119,12 @@ describe("revogar convite e cancelar agendamento pedem confirmação; diálogos 
     expect(folha).toMatch(/items-end p-0 sm:items-center sm:p-4/);
     expect(folha).toContain("rounded-b-none");
   });
+  it("Modal: com `folha` e `telaCheiaNoCelular` juntos, a tela cheia do celular manda no layout (merge 2F × 3F)", () => {
+    const ambos = renderToStaticMarkup(createElement(Modal, { titulo: "x", aoFechar: vi.fn(), folha: true, telaCheiaNoCelular: true }));
+    expect(ambos).not.toContain("items-end");
+    expect(ambos).not.toContain("rounded-b-none");
+    expect(ambos).toContain("h-dvh w-full max-w-none rounded-none");
+  });
   it("revogar e cancelar só rodam dentro da prop `acao` de um ConfirmarAcao (fonte)", () => {
     const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8");
     const usos = (nome: string) => fonte.match(new RegExp(`${nome}\\(`, "g"))?.length ?? 0;

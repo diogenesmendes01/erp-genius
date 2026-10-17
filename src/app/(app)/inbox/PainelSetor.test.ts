@@ -12,6 +12,11 @@ describe("PainelSetor", () => {
     expect(t).toContain("Maria"); expect(t).toContain("Proposta"); expect(t).not.toContain("PROPOSTA"); expect(t).toContain("R$ 1500,00");
     expect(h({ setor: "COMERCIAL", oportunidade: null, pessoaId: null })).toContain("Sem oportunidade visível");
   });
+  it("comercial: a oportunidade abre no funil (/funil?o=<id>), nunca em /leads", () => {
+    const t = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: null }, pessoaId: null });
+    expect(t).toMatch(/<a [^>]*href="\/funil\?o=o1"[^>]*>Maria<\/a>/);
+    expect(t).not.toContain("/leads");
+  });
   it("financeiro lista cobranças ou diz que não há", () => {
     expect(h({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [{ id: "c1", vencimento: "2026-10-10", valor: "99.90", status: "ATRASADO" }] })).toContain("R$ 99,90 · Atrasado");
     expect(h({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [{ id: "c1", vencimento: "2026-10-10", valor: "99.90", status: "ATRASADO" }] })).toContain("10/10/2026");

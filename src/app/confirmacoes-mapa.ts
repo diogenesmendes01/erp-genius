@@ -121,6 +121,13 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     efeito: "marca o lead como no-show e dispara a recuperação de no-show, sem correção pela tela",
   },
   {
+    arquivo: "src/app/(app)/inbox/AcoesContato.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "vincularContatoWhatsApp",
+    achado: "L2298",
+    efeito: "amarra o histórico da conversa a um aluno, responsável ou oportunidade; não há desvincular pela tela",
+  },
+  {
     arquivo: "src/app/(app)/inbox/OptOutContato.tsx",
     modulo: "@/server/whatsapp/acoes",
     acao: "registrarOptOutContato",
