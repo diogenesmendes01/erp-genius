@@ -16,8 +16,8 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   const [templateAvisosAgendaId, setTemplate] = useState(config.templateAvisosAgendaId ?? "");
   // salvarConfiguracaoAvisosAgenda não recebe chave de idempotência: resultado incerto manda conferir.
   const acao = useAcaoCliente({ idempotente: false });
-  const numeros = config.numeros.filter((n) => n.ativo && n.driver === "META_CLOUD" && !!n.providerRef);
-  const templates = config.templates.filter((t) => t.statusMeta === "APROVADO" && t.metaTemplateId && t.categoria === "utility" && t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
+  const numeros = config.numeros.filter((n) => n.ativo && n.driver === "MOTOR");
+  const templates = config.templates.filter((t) => t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
 
   async function salvar() {
     const d = await acao.executar(() => salvarConfiguracaoAvisosAgenda({ numeroAvisosAgendaId, templateAvisosAgendaId }));

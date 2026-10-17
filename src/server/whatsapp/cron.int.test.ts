@@ -98,7 +98,18 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
-  it("TRAVA S1 (lei): número remetente Baileys → cron não roda", async () => {
+  it("cron de cobrança enfileira em número MOTOR (S1 revogada, D36)", async () => {
+    const agora = agoraAs(10);
+    await seedCanal({ driver: "MOTOR", estado: "SHADOW" });
+    await seedCobranca({ vencimento: diasDepois(agora, 7) });
+
+    const r = await rodarCronRegua(agora);
+    expect(r.motivoParada).not.toBe("trava_driver_oficial");
+    expect(r.enfileiradas).toBeGreaterThan(0);
+    expect(await prisma.intencaoMensagem.count()).toBeGreaterThan(0);
+  });
+
+  it("BAILEYS legado continua barrado: número remetente Baileys → cron não roda", async () => {
     const agora = agoraAs(10);
     await seedCanal({ driver: "BAILEYS" });
     await seedCobranca({ vencimento: diasDepois(agora, 7) });
@@ -138,7 +149,7 @@ describe("despachante — guard-rails", () => {
       providerMessageId: "wamid.teste.1",
       corpo: "posso pagar sexta?",
       tipo: "TEXTO",
-      driver: "META_CLOUD",
+      driver: "MOTOR",
       fromMe: false,
       quando: new Date(antes.criadaEm.getTime() + intervalo),
     });
@@ -182,7 +193,7 @@ describe("despachante — guard-rails", () => {
       providerMessageId: "wamid.dup",
       corpo: "oi",
       tipo: "TEXTO" as const,
-      driver: "META_CLOUD" as const,
+      driver: "MOTOR" as const,
       fromMe: false,
       quando: new Date(),
     };

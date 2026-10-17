@@ -11,7 +11,7 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
-import { STATUS_TEMPLATE_LABEL, rotular } from "@/lib/labels";
+import { DRIVER_WHATSAPP_LABEL, STATUS_TEMPLATE_LABEL, rotular } from "@/lib/labels";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
@@ -227,13 +227,13 @@ export function PoliticaPainel({
                 .filter((n) => n.ativo)
                 .map((n) => (
                   <option key={n.id} value={n.id}>
-                    {n.rotulo} ({n.driver === "META_CLOUD" ? "oficial" : "baileys"})
+                    {n.rotulo} ({rotular(DRIVER_WHATSAPP_LABEL, n.driver)})
                   </option>
                 ))}
             </select>
-            {remetente && remetente.driver !== "META_CLOUD" && (
+            {remetente && remetente.driver !== "META_CLOUD" && remetente.driver !== "MOTOR" && (
               <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
-                <IconAlertTriangle className="h-3 w-3" /> trava S1: degraus automáticos exigem número oficial
+                <IconAlertTriangle className="h-3 w-3" /> Degraus automáticos exigem número do motor WhatsApp.
               </span>
             )}
           </label>
@@ -461,7 +461,7 @@ export function PoliticaPainel({
         >
           <p>A régua sai {politica.estado === "SHADOW" ? "do ensaio" : "de desligada"} e passa a <strong>ativa</strong>: os degraus abaixo disparam com mensagens reais aos clientes.</p>
           <ul className="list-disc space-y-0.5 pl-5">
-            <li>Remetente: {remetente ? `${remetente.rotulo} (${remetente.driver === "META_CLOUD" ? "oficial" : "baileys"})` : "nenhum escolhido"}</li>
+            <li>Remetente: {remetente ? `${remetente.rotulo} (${rotular(DRIVER_WHATSAPP_LABEL, remetente.driver)})` : "nenhum escolhido"}</li>
             <li>Janela: {textoJanela(form.janelaInicio, form.janelaFim, form.diasSemana)} (hora local do contato)</li>
             <li>Teto: {form.tetoPorContatoDia} {form.tetoPorContatoDia === 1 ? "mensagem automática" : "mensagens automáticas"} por contato/dia</li>
             <li>Automáticos (saem sozinhos): {armadosAutomaticos || "nenhum"}</li>
