@@ -6,7 +6,7 @@ import { ORIGEM_CANAL_LABEL } from "@/lib/labels";
 import { registrarEvento } from "@/server/_shared/evento";
 import { ErroPermissao, ErroRegra, type UsuarioSessao } from "@/server/_shared/sessao";
 import { normalizarTelefoneE164 } from "@/server/_shared/validacao";
-import { garantirPessoaTx } from "./pessoas";
+import { escopoPessoas, garantirPessoaTx } from "./pessoas";
 
 type Tx = Prisma.TransactionClient;
 
@@ -119,14 +119,16 @@ export async function previaContatos(validas: LinhaImportavel[]): Promise<{ novo
 /**
  * Aplica UMA linha em transação própria (quem chama abre a `tx`). Pessoa existente só recebe campos vazios;
  * `Aluno`/`Responsavel` não têm dado alterado (a ligação `pessoaId` é a do hub, feita por `garantirPessoaTx`).
- * Pessoa nova ganha oportunidade NOVO quando há `donoId`. Nenhum consentimento é gravado.
+ * Pessoa existente fora de `escopoPessoas(autor)` não é tocada. Pessoa nova ganha oportunidade NOVO quando há
+ * `donoId`. Nenhum consentimento é gravado.
  */
 export async function aplicarLinhaContato(
   tx: Tx,
   l: LinhaImportavel,
-  autorId: string,
+  autor: UsuarioSessao,
   donoId: string | null,
 ): Promise<{ criada: boolean; oportunidade: boolean }> {
+  const autorId = autor.id;
   let achada: string | null = null;
   let criada = false;
   if (!l.telefoneE164 && l.email) {
@@ -146,6 +148,11 @@ export async function aplicarLinhaContato(
   }
   const pessoaId: string = achada!;
   if (!criada) {
+    // Escopo comercial: pessoa existente fora da carteira do autor conta como existente e não é tocada
+    // (nem campos, nem tag, nem Evento).
+    const noEscopo = await tx.pessoa.findFirst({ where: { AND: [{ id: pessoaId }, await escopoPessoas(autor, tx)] }, select: { id: true } });
+    if (!noEscopo) return { criada: false, oportunidade: false };
+
     const atual = await tx.pessoa.findUniqueOrThrow({ where: { id: pessoaId }, select: { email: true, cidade: true, origemCanal: true } });
     const completar: Prisma.PessoaUpdateInput = {};
     if (!atual.email && l.email) completar.email = l.email;

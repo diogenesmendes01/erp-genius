@@ -104,6 +104,7 @@ export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
   DocumentoAnexado: () => "Documento anexado",
   DocumentoArquivado: () => "Documento arquivado",
   ExperimentalAtribuida: () => "Professor da experimental atribuído",
+  PessoasMescladas: () => "Contatos mesclados",
 };
 
 export function rotuloEventoCrm(tipo: string, payload: unknown): string {
@@ -217,7 +218,18 @@ export async function historicoPessoa(
   });
   if (!pessoa) return null;
 
-  const ou: Prisma.EventoWhereInput[] = [{ agregadoTipo: "Pessoa", agregadoId: id }];
+  // Lápides mescladas nesta pessoa (de forma transitiva): as notas e o histórico delas passaram para cá.
+  const ids = [id];
+  for (let fronteira = [id]; fronteira.length; ) {
+    const lapides = await prisma.pessoa.findMany({
+      where: { mescladaEmId: { in: fronteira }, id: { notIn: ids } },
+      select: { id: true },
+    });
+    fronteira = lapides.map((l) => l.id);
+    ids.push(...fronteira);
+  }
+
+  const ou: Prisma.EventoWhereInput[] = [{ agregadoTipo: "Pessoa", agregadoId: { in: ids } }];
   if (capacidadesCrm(usuario.papeis).has("funil.ver")) {
     const ops = await prisma.oportunidade.findMany({
       where: { AND: [{ pessoaId: id }, await escopoComercialAtual(usuario)] },
@@ -235,7 +247,13 @@ export async function historicoPessoa(
     take: LIMITE_HISTORICO_PESSOA,
     include: { autor: { select: { nome: true } } },
   });
-  return eventos.reverse().map((e) => {
+  // A mescla grava o mesmo PessoasMescladas na principal e na lápide; fica só o da principal daquela mescla.
+  const unicos = eventos.filter((e) => {
+    if (e.tipo !== "PessoasMescladas" || e.agregadoTipo !== "Pessoa") return true;
+    const p = e.payload && typeof e.payload === "object" && !Array.isArray(e.payload) ? (e.payload as Record<string, unknown>) : null;
+    return !p?.principalId || p.principalId === e.agregadoId;
+  });
+  return unicos.reverse().map((e) => {
     const p = e.payload && typeof e.payload === "object" && !Array.isArray(e.payload) ? (e.payload as Record<string, unknown>) : null;
     const item: ItemHistorico = {
       id: e.id,

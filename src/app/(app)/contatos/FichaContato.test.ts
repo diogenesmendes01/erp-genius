@@ -14,7 +14,7 @@ vi.mock("@/server/crm/contatos-acoes", () => ({
 vi.mock("@/server/comercial/acoes", () => ({ criarLead: vi.fn(), moverEtapa: vi.fn() }));
 vi.mock("@/server/crm/oportunidades", () => ({ buscarPossiveisDuplicados: vi.fn() }));
 
-import { FichaContato } from "./FichaContato";
+import { FichaContato, mensagemFalhaParcialCampos } from "./FichaContato";
 import { ListaContatos } from "./ListaContatos";
 import { MesclarContatos, escolhasDaMescla } from "./MesclarContatos";
 
@@ -158,5 +158,12 @@ describe("MesclarContatos", () => {
     const todas = { nome: "a", email: "b", cidade: "a", cargo: "b" } as const;
     expect(escolhasDaMescla("a", todas)).toEqual({ nome: "principal", email: "secundaria", cidade: "principal", cargo: "secundaria" });
     expect(escolhasDaMescla("b", todas)).toEqual({ nome: "secundaria", email: "principal", cidade: "secundaria", cargo: "principal" });
+  });
+});
+
+describe("mensagemFalhaParcialCampos", () => {
+  it("diz quantos campos ficaram salvos antes do erro", () => {
+    expect(mensagemFalhaParcialCampos(1, 3, "Curso", "Valor inválido.")).toBe("1 campo salvo de 3. Curso não foi salvo: Valor inválido.");
+    expect(mensagemFalhaParcialCampos(2, 3, "Curso", "Valor inválido.")).toBe("2 campos salvos de 3. Curso não foi salvo: Valor inválido.");
   });
 });

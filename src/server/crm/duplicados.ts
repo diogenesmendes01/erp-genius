@@ -1,3 +1,4 @@
+import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
@@ -23,6 +24,8 @@ export function pontuarDuplicado(a: PessoaComparavel, b: PessoaComparavel): { po
   if (na && na === normalizarNome(b.nome)) motivos.push("nome");
   return { pontos: motivos.reduce((s, m) => s + PONTOS[m], 0), motivos };
 }
+
+export const MSG_NOME_ALUNO = "Nome e e-mail de aluno são alterados pela Secretaria. Na mesclagem, mantenha o nome e o e-mail do aluno.";
 
 export const MSG_ACADEMICO = "Estas pessoas têm cadastro acadêmico. A Secretaria decide se são a mesma pessoa.";
 
@@ -168,6 +171,13 @@ export async function mesclarPessoas(input: {
           dadosPrincipal[campo] = secundaria[campo];
           mudados.push(campo);
         }
+      }
+      // Mesma trava de editarPessoa: nome e e-mail de aluno só mudam por Administrador. Vale para o aluno
+      // de qualquer lado; quando o cadastro acadêmico vem da secundária, o nome que fica precisa ser o dela.
+      const ladoAluno = principal.aluno ? principal : secundaria.aluno ? secundaria : null;
+      if (ladoAluno && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
+        const final = { nome: principal.nome, email: principal.email, ...dadosPrincipal };
+        if (final.nome !== ladoAluno.nome || final.email !== ladoAluno.email) throw new ErroRegra(MSG_NOME_ALUNO);
       }
       if (mudados.length) await tx.pessoa.update({ where: { id: de }, data: dadosPrincipal });
       await tx.pessoa.update({ where: { id: para }, data: { mescladaEmId: de } });
