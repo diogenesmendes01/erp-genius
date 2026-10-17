@@ -31,11 +31,21 @@ import { comContatoIndividual } from "./grupos";
 // SEGURANÇA DE AMBIENTE (gap A5 do doc 28): sem WHATSAPP_LIVE=1 no env, NENHUMA mensagem
 // real sai — tudo que passaria vira SIMULADA. Dev contra o banco compartilhado não dispara.
 
-// MOTOR ainda não tem driver (entra na Fase 4, Task 4); até lá um número MOTOR falha ao despachar.
+// O `driverMotor` já existe (Fase 4, Task 4), mas só entra aqui na Task 5 (bloco 4B), junto com o
+// `clientMessageId` no claim e o adiamento reprocessável. Até lá, um número MOTOR que chegue ao
+// despachante falha com `ErroDriver("driver_sem_implementacao")`: motivo estável, sem I/O, e não
+// `resultado_incerto` (nada saiu, então não há o que revisar).
 const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
   META_CLOUD: driverMetaCloud,
   BAILEYS: driverEvolution,
 };
+
+/** Driver registrado para o número; sem registro, falha tipada antes de qualquer envio. */
+export function driverDoNumero(driver: DriverWhatsApp): CanalWhatsApp {
+  const canal = DRIVERS[driver];
+  if (!canal) throw new ErroDriver("driver_sem_implementacao", `Driver ${driver} sem implementação no despachante.`);
+  return canal;
+}
 
 export interface ResultadoDespacho {
   avaliadas: number;
@@ -483,8 +493,7 @@ export async function despacharFila(
         driver: it.numero.driver,
         providerRef: it.numero.providerRef,
       };
-      const driver = DRIVERS[it.numero.driver];
-      if (!driver) throw new Error(`Driver ${it.numero.driver} sem implementação no despachante.`);
+      const driver = driverDoNumero(it.numero.driver);
       // Task 4: porta v2. O id real por tentativa chega na Task 8; até lá, drivers antigos ignoram.
       const opcoesEnvio: OpcoesEnvio = { clientMessageId: it.clientMessageId ?? randomUUID(), origem: it.origem };
       let envio;
