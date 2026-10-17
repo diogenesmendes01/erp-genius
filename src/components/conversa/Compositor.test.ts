@@ -19,7 +19,7 @@ vi.mock("react", async (original) => {
 import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
-import { criarGanchos, clicar, elementos } from "@/test/tela-sem-dom";
+import { criarGanchos, clicar, clicarBotao, elementos } from "@/test/tela-sem-dom";
 
 function props(p: Partial<PropsCompositor> = {}): PropsCompositor {
   return {
@@ -31,7 +31,7 @@ function props(p: Partial<PropsCompositor> = {}): PropsCompositor {
   };
 }
 const html = (p: Partial<PropsCompositor> = {}) => renderToStaticMarkup(createElement(Compositor, props(p)));
-const htmlSeletor = () => renderToStaticMarkup(createElement(SeletorEmoji, { driver: "META_CLOUD", aoEmoji: () => {}, aoFechar: () => {} }));
+const htmlSeletor = () => renderToStaticMarkup(createElement(SeletorEmoji, { gif: false, figurinha: false, aoEmoji: () => {}, aoFechar: () => {} }));
 
 const armazenamento = new Map<string, string>();
 beforeEach(() => {
@@ -57,7 +57,7 @@ describe("Compositor", () => {
     const tela = () => m.g!.renderizar(Compositor, p);
     expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain(AVISO_NOTA);
     digitar(tela(), "combinar com a coordenação");
-    clicar(tela(), "Enviar");
+    clicarBotao(tela(), "Enviar");
     await esvaziar();
     expect(p.aoNota).toHaveBeenCalledWith("combinar com a coordenação");
     expect(p.aoEnviarTexto).not.toHaveBeenCalled();
@@ -70,7 +70,7 @@ describe("Compositor", () => {
     const tela = () => m.g!.renderizar(Compositor, p);
     digitar(tela(), "  Olá  ");
     expect(armazenamento.get("conversa-rascunho:at1:responder")).toBe("  Olá  ");
-    clicar(tela(), "Enviar");
+    clicarBotao(tela(), "Enviar");
     await esvaziar();
     expect(p.aoEnviarTexto).toHaveBeenCalledWith("Olá");
     expect(p.aoNota).not.toHaveBeenCalled();
@@ -82,7 +82,7 @@ describe("Compositor", () => {
     const p = props({ aoEnviarTexto: vi.fn(async () => ({ ok: false as const, erro: "Janela de 24h fechada." })) });
     const tela = () => m.g!.renderizar(Compositor, p);
     digitar(tela(), "Oi");
-    clicar(tela(), "Enviar");
+    clicarBotao(tela(), "Enviar");
     await esvaziar();
     expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("Janela de 24h fechada.");
     expect(armazenamento.get("conversa-rascunho:at1:responder")).toBe("Oi");

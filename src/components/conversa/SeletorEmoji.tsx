@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { DriverWhatsApp } from "@prisma/client";
+import { Botao } from "@/components/Botao";
 import emojiDados from "./emoji-dados.json";
-import { AVISO_RECURSO_MOTOR, recursoDisponivel } from "./recursos-canal";
+import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
 
 export interface EntradaEmoji { emoji: string; label: string; keywords?: string; group: string; subgroup?: string }
 
@@ -40,13 +40,12 @@ function lerRecentes(): string[] {
 }
 function gravarRecentes(v: string[]) { try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(v)); } catch { /* sem armazenamento: segue sem recentes */ } }
 
-export function SeletorEmoji({ driver, aoEmoji, aoFechar }: { driver: DriverWhatsApp; aoEmoji: (e: string) => void; aoFechar: () => void }) {
+/** `gif`/`figurinha`: o canal executa o recurso (quem compõe decide com `recursoDisponivel`); sem ele, a aba fica desabilitada com aviso. */
+export function SeletorEmoji({ gif, figurinha, aoEmoji, aoFechar }: { gif: boolean; figurinha: boolean; aoEmoji: (e: string) => void; aoFechar: () => void }) {
   const [consulta, setConsulta] = useState("");
   const [grupo, setGrupo] = useState("Smileys & Emotion");
   const [limite, setLimite] = useState(LIMITE_INICIAL);
   const [recentes, setRecentes] = useState<string[]>(lerRecentes);
-  const gif = recursoDisponivel(driver, "gif");
-  const figurinha = recursoDisponivel(driver, "figurinha");
   const lista = useMemo(() => {
     if (!consulta.trim() && grupo === "recentes") {
       return recentes.map((r) => (emojiDados as EntradaEmoji[]).find((e) => e.emoji === r)).filter((e): e is EntradaEmoji => !!e);
@@ -70,13 +69,13 @@ export function SeletorEmoji({ driver, aoEmoji, aoFechar }: { driver: DriverWhat
           className={`${abaBase} text-gray-700 disabled:cursor-not-allowed disabled:text-disabled`}>GIFs</button>
         <button type="button" role="tab" aria-selected={false} disabled={!figurinha} title={figurinha ? undefined : AVISO_RECURSO_MOTOR}
           className={`${abaBase} text-gray-700 disabled:cursor-not-allowed disabled:text-disabled`}>Figurinhas</button>
-        <button type="button" onClick={aoFechar} aria-label="Fechar emojis" className="ml-auto rounded px-2 text-sm hover:bg-highlight">Fechar</button>
+        <Botao variante="fantasma" tamanho="sm" onClick={aoFechar} aria-label="Fechar emojis" className="ml-auto">Fechar</Botao>
       </div>
       {(!gif || !figurinha) && <p className="mb-2 text-xs text-gray-600">GIFs e figurinhas: {AVISO_RECURSO_MOTOR}</p>}
       <input type="search" aria-label="Pesquisar emojis" placeholder="Pesquisar emojis" value={consulta}
         onChange={(e) => { setConsulta(e.target.value); setLimite(LIMITE_INICIAL); }}
         className="mb-2 w-full rounded-full border border-gray-200 bg-surface px-3 py-1.5 text-sm" />
-      <div className="mb-2 flex flex-wrap gap-1">
+      <div role="group" aria-label="Categorias de emoji" className="mb-2 flex flex-wrap gap-1">
         <button type="button" aria-label="Emojis recentes" aria-pressed={grupo === "recentes"}
           onClick={() => { setGrupo("recentes"); setLimite(LIMITE_INICIAL); }}
           className={`${abaBase} ${grupo === "recentes" ? "bg-highlight" : ""}`}>🕘</button>
@@ -93,9 +92,9 @@ export function SeletorEmoji({ driver, aoEmoji, aoFechar }: { driver: DriverWhat
         ))}
       </div>
       {lista.length > limite && (
-        <button type="button" onClick={() => setLimite(limite + LIMITE_INICIAL)} className="mt-2 w-full rounded-full border border-border-soft py-1 text-sm hover:bg-highlight">
+        <Botao variante="secundario" tamanho="sm" onClick={() => setLimite(limite + LIMITE_INICIAL)} className="mt-2 w-full">
           Mostrar mais emojis
-        </button>
+        </Botao>
       )}
       {!lista.length && <p className="py-4 text-center text-sm text-gray-600">{grupo === "recentes" && !consulta.trim() ? "Os emojis usados aparecerão aqui." : "Nenhum emoji encontrado."}</p>}
     </section>
