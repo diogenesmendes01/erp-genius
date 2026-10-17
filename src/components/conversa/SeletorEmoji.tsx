@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Botao } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import emojiDados from "./emoji-dados.json";
 import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
 
@@ -85,7 +86,7 @@ export function SeletorEmoji({ gif, figurinha, aoEmoji, aoFechar }: { gif: boole
             className={`${abaBase} ${grupo === id ? "bg-highlight" : ""}`}>{icone}</button>
         ))}
       </div>
-      <div className="grid max-h-56 grid-cols-8 gap-1 overflow-y-auto">
+      <div className="grid max-h-56 grid-cols-[repeat(auto-fill,minmax(2.25rem,1fr))] gap-1 overflow-y-auto">
         {lista.slice(0, limite).map((e) => (
           <button key={e.emoji} type="button" aria-label={`${e.label} ${e.emoji}`} onClick={() => escolher(e.emoji)}
             className="rounded p-1 text-xl hover:bg-highlight">{e.emoji}</button>
@@ -96,7 +97,7 @@ export function SeletorEmoji({ gif, figurinha, aoEmoji, aoFechar }: { gif: boole
           Mostrar mais emojis
         </Botao>
       )}
-      {!lista.length && <p className="py-4 text-center text-sm text-gray-600">{grupo === "recentes" && !consulta.trim() ? "Os emojis usados aparecerão aqui." : "Nenhum emoji encontrado."}</p>}
+      {!lista.length && <EstadoVazio>{grupo === "recentes" && !consulta.trim() ? "Os emojis usados aparecerão aqui." : "Nenhum emoji encontrado."}</EstadoVazio>}
     </section>
   );
 }

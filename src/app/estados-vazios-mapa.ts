@@ -753,4 +753,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Não há alocação acadêmica disponível neste vínculo.",
     "compacto · Não há pendências operacionais identificadas nesta consulta.",
   ],
+  "src/components/conversa/SeletorEmoji.tsx": [
+    "compacto · {grupo === \"recentes\" && !consulta.trim() ? \"Os emojis usados aparecerão aqui.\" : \"Nenhum emoji enco",
+  ],
 };
