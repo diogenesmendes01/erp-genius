@@ -1935,10 +1935,37 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 ## Fase 3, Task 13: regressão de escopo (E5)
 
-- Mudanças de comportamento documentadas nos testes (comentário "E5, Task 13"): GERENTE_COMERCIAL passa a ver todo
-  COMERCIAL (`linha-comercial.int.test.ts`, LC-04); SECRETARIA encerra PEDAGOGICO só pela fila dos números que servem o
-  setor (`destinatario-atual.int.test.ts`); SECRETARIA sem aluno é destinatário roteado, não triagem (E4, `f2af0cdb`,
-  `linha-comercial.int.test.ts`).
-- Pendente (bug do escopo da Task 9, não da tabela): a fila COMERCIAL (`ramoFilaDoSetor`) mostra a vendedor sem relação
-  atendimento COMERCIAL de lead de outro vendedor em número sem dono. Falham por isso `acesso-atendimento` (2),
-  `preferencias` (2) e `inbox` (1, já era da linha de base).
+- Branch `claude/fase3-b-escopo-roteamento` (Tasks 9 a 13), empilhada sobre o bloco A.
+- Mudanças de comportamento aceitas (tabela da Task 13, redução deliberada de visibilidade da Q1, `escopo.ts`):
+  - FINANCEIRO deixa de ver todo atendimento FINANCEIRO com aluno (antes `{ finalidade: "FINANCEIRO", alunoId: { not:
+    null } }`). Agora vê o próprio (`responsavelId`), a fila sem responsável dos números que servem FINANCEIRO e os
+    atendimentos em que é participante vigente.
+  - SECRETARIA_ACADEMICA deixa de ver todo SECRETARIA, PEDAGOGICO e FINANCEIRO com aluno. Agora vê o próprio, a fila dos
+    números que servem os setores dela (Q1) e os atendimentos em que é participante vigente. Consequência coberta por
+    teste: SECRETARIA encerra PEDAGOGICO só pela fila (`destinatario-atual.int.test.ts`).
+  - GERENTE_COMERCIAL passa a ver todo COMERCIAL (`linha-comercial.int.test.ts`, LC-04).
+  - Fora da tabela, vindo de E4 (`f2af0cdb`): SECRETARIA sem aluno é destinatário roteado, não triagem
+    (`linha-comercial.int.test.ts`).
+- Vazamento da fila COMERCIAL (lead de outro vendedor em número sem dono, bug do escopo da Task 9): corrigido em
+  `04b1d345` (fila COMERCIAL só sem lead: `{ ...ramoFilaDoSetor('COMERCIAL'), leadId: null }`). As falhas que ele
+  causava em `acesso-atendimento` (2) e `preferencias` (2) passam.
+- Aguardando aval do integrador/produto: `c265d904` muda `inbox.int.test.ts` ("lead de OUTRO vendedor vinculado ao número
+  de A não vaza o cockpit"), de `toBeNull()` para thread visível com `lead` e `contato.leadId` nulos. Não é mudança de
+  E5. É a falha da linha de base (main f8a9c0e), resolvida no conflito doc 36 x LC-D02/SPEC-ERP-005 a favor de LC-D02,
+  regra que já existia: o dono da linha vê todas as conversas da linha (`donosDeLinhaVisiveis`, já em `d4c0f74`). O
+  cockpit de lead de outra carteira continua fechado. Se o aval for negado, reverter `c265d904` e manter o caso como
+  falha conhecida da linha de base. Ruling em `.superpowers/sdd/rulings-claude_fase3-b-escopo-roteamento.md`.
+- Verificação (banco `tester`, HEAD da correção da revisão final):
+  - `node_modules/.bin/tsc --noEmit`: saída 0 (linha de base: 0).
+  - `npm test`: saída 0, 647 arquivos e 4.634 testes (linha de base: 643 e 4.607).
+  - Recorte da Task 13, unitário (`vitest run src/server/whatsapp src/server/uploads`): saída 0, 25 arquivos e 197
+    testes.
+  - Recorte da Task 13, integração (`vitest run -c vitest.integration.config.ts src/server/whatsapp src/server/uploads`):
+    saída 0, 29 arquivos e 225 testes. Inclui a falha da linha de base de `whatsapp/inbox`, que passa por causa de
+    `c265d904` (ver acima).
+  - Revisão final (registro do revisor): `financeiro-matricula`, `pagador-contrato` e
+    `atendimento-pedagogico-autorizacao` com 20/20.
+- Pendente do integrador antes do PR: `npm run test:int` completo, que não foi rodado nesta faixa (mais de 2 h, regra do
+  integrador). Esperado: só as 6 falhas da linha de base em `academico/visibilidade`, mais as 14 sensíveis à data
+  anotadas no bloco A.
+- `npm run lint`: saída 0, 0 erros e 44 avisos (linha de base: 0 erros).

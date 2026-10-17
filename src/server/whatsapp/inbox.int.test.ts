@@ -502,8 +502,10 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     const { conversa, lead } = await seedLeadNaConversa(b.id); // número de A, lead de B
 
     const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    // E5, Task 13 (LC-D02/LC-08): o dono da linha VÊ a conversa (acesso pela linha), mas o painel do
-    // lead de outra carteira segue fechado: o P1 é o vazamento do cockpit, não o acesso à conversa.
+    // Falha da linha de base (main f8a9c0e), não mudança de E5: conflito doc 36 x LC-D02/SPEC-ERP-005
+    // (dono da linha vê todas as conversas da linha). Resolvido a favor de LC-D02, AGUARDANDO aval do
+    // integrador/produto (quadro, "Fase 3, Task 13"): o dono da linha VÊ a conversa, mas o painel do
+    // lead de outra carteira segue fechado; o P1 é o vazamento do cockpit, não o acesso à conversa.
     expect(thread).not.toBeNull();
     expect(thread?.lead).toBeNull();
     expect(thread?.contato.leadId).toBeNull();
