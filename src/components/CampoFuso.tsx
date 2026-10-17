@@ -1,6 +1,6 @@
 "use client";
 import { useId, type ChangeEvent } from "react";
-import { fusoIanaValido, MSG_FUSO_NAO_RECONHECIDO } from "@/server/operacao/fuso";
+import { fusoIanaValido, MSG_FUSO_NAO_RECONHECIDO, normalizarFusoIana } from "@/server/operacao/fuso";
 
 // O campo de fuso do sistema (docs/42-auditoria-frontend-ux.md, ganho rápido 14; docs/43 §6 item 6). Todo
 // campo em que alguém digita ou escolhe um fuso passa por aqui — a trava é src/app/fuso-instante.test.ts.
@@ -30,11 +30,20 @@ export const FUSOS_SUGERIDOS: readonly SugestaoFuso[] = [
   ["America/Rio_Branco", "Brasil — Rio Branco"],
 ];
 
+/**
+ * Lista do ambiente com o nome canônico no lugar de cada apelido legado (revisão R1 do #210, C1): o ICU ainda
+ * lista links do `backward` (Asia/Calcutta, Europe/Kiev…) que um Postgres sem `tzdata-legacy` não aceita.
+ * Sem duplicatas (Asia/Calcutta e Asia/Kolkata viram uma opção só) e em ordem alfabética.
+ */
+export function fusosCanonicos(fusos: readonly string[]): readonly string[] {
+  return [...new Set(fusos.map(normalizarFusoIana))].sort();
+}
+
 let todosEmCache: readonly string[] | null = null;
-/** Todos os fusos IANA do ambiente (lista vazia onde `Intl.supportedValuesOf` não existe). */
+/** Todos os fusos IANA do ambiente, pelo nome canônico (lista vazia onde `Intl.supportedValuesOf` não existe). */
 export function todosOsFusos(): readonly string[] {
   if (todosEmCache) return todosEmCache;
-  try { todosEmCache = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : []; } catch { todosEmCache = []; }
+  try { todosEmCache = typeof Intl.supportedValuesOf === "function" ? fusosCanonicos(Intl.supportedValuesOf("timeZone")) : []; } catch { todosEmCache = []; }
   return todosEmCache;
 }
 

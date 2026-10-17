@@ -114,3 +114,39 @@ it("repete o preparo após 40001 (P2010) e recalcula a versão esperada com o es
   expect(criar).toHaveBeenCalledTimes(1);
   expect(criar.mock.calls[0][0]).toMatchObject({ data: { versaoEsperada: 1, chaveIdempotencia: dados.chaveIdempotencia } });
 });
+
+// Revisão R1 do #209 (C1): a decisão concorrente perdedora recebe 40001/P2034. A nova
+// tentativa enxerga a decisão já confirmada e devolve o ErroRegra claro, não "Erro inesperado".
+it.each([
+  ["P2034", erroPrisma("P2034")],
+  ["40001 (P2010)", erroPrisma("P2010", { code: "40001" })],
+])("repete a decisão após %s e devolve a mensagem de proposta indisponível", async (_nome, conflito) => {
+  m.consultar.mockResolvedValue(undefined);
+  // Preflight vê a proposta aberta; a repetição a encontra já decidida pela concorrente.
+  m.proposta.mockResolvedValueOnce(proposta).mockResolvedValueOnce({ ...proposta, decisao: { id: "decisao-concorrente" } });
+  m.transacao
+    .mockImplementationOnce(async (fn: (tx: object) => unknown) => fn(m.tx))
+    .mockRejectedValueOnce(conflito);
+
+  await expect(decidirRegularizacaoFonteGravacao({ propostaId: "proposta", aprovar: true, motivo: "Aprovação concorrente perdedora" }))
+    .rejects.toThrow("A proposta de regularização não está disponível.");
+
+  expect(m.consultar).toHaveBeenCalledTimes(1);
+  expect(m.transacao).toHaveBeenCalledTimes(3);
+  expect(m.transacao.mock.calls[1][1]).toMatchObject({ isolationLevel: "Serializable" });
+  expect(m.transacao.mock.calls[2][1]).toMatchObject({ isolationLevel: "Serializable" });
+  expect(m.decisao).not.toHaveBeenCalled();
+});
+
+it("não repete a decisão quando a falha não é de serialização", async () => {
+  m.consultar.mockResolvedValue(undefined);
+  m.proposta.mockResolvedValue(proposta);
+  m.transacao
+    .mockImplementationOnce(async (fn: (tx: object) => unknown) => fn(m.tx))
+    .mockRejectedValueOnce(erroPrisma("P2002"));
+
+  await expect(decidirRegularizacaoFonteGravacao({ propostaId: "proposta", aprovar: false, motivo: "Rejeição com falha qualquer" }))
+    .rejects.toMatchObject({ code: "P2002" });
+
+  expect(m.transacao).toHaveBeenCalledTimes(2);
+});
