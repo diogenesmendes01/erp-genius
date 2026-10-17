@@ -236,3 +236,24 @@ export async function baixarMidiaEvolution(
     return null;
   }
 }
+
+/**
+ * Baixa do motor os bytes de uma mídia recebida. Qualquer falha (arquivo grande demais,
+ * motor fora, mídia expirada) devolve null: a mensagem entra no log sem binário.
+ */
+export async function baixarMidiaMotor(
+  numeroRef: string,
+  mensagemIdMotor: string,
+): Promise<{ bytes: Buffer; mime: string } | null> {
+  // Import dinâmico: cliente.ts importa MAX_BYTES_MIDIA daqui (evita ciclo estático).
+  const { baixarDoMotor, ErroMotor } = await import("./motor/cliente");
+  try {
+    const { bytes, mime } = await baixarDoMotor(
+      `/v1/numeros/${encodeURIComponent(numeroRef)}/midia/${encodeURIComponent(mensagemIdMotor)}`,
+    );
+    return { bytes, mime };
+  } catch (e) {
+    if (e instanceof ErroMotor) return null;
+    throw e;
+  }
+}
