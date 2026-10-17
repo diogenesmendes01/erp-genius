@@ -82,8 +82,27 @@ export class HistoricoConversa {
     } catch (e) { this.falhou(e, g); }
   }
 
-  /** Recarrega as mais recentes (por exemplo após `resync`, quando avisos podem ter sido perdidos). */
-  recarregar = () => (this.id ? this.abrir(this.id) : Promise.resolve());
+  /**
+   * Recarrega as mais recentes (por exemplo após `resync`, quando avisos podem ter sido perdidos). Diferente de
+   * `abrir`: aborta o que estava em voo e troca a geração, mas não publica `historicoVazio` — a janela atual fica
+   * na tela até a página nova chegar (sem piscar vazia na reconexão do LISTEN); falha comum mantém a janela com erro.
+   */
+  recarregar = async () => {
+    if (!this.id) return;
+    this.controller.abort(); this.controller = new AbortController(); this.geracao++; this.pendenteNovas = false;
+    const g = this.geracao, id = this.id;
+    this.publicar({ carregando: true, carregandoAntigas: false, carregandoNovas: false, erro: "" });
+    try {
+      const p = await this.fonte.pagina(id, {}, this.controller.signal);
+      if (g !== this.geracao) return;
+      this.antesDe.clear(); this.depoisDe.clear();
+      this.bordas(p);
+      this.publicar({ mensagens: [...p.mensagens].sort(comparar).slice(-LIMITE_HISTORICO), antes: p.antes, depois: p.depois,
+        temMaisAntes: p.temMais, temMaisDepois: false, carregando: false, erro: "" });
+      this.podarBordas();
+      this.drenar(g);
+    } catch (e) { this.falhou(e, g); }
+  };
 
   private drenar(g: number) {
     if (g === this.geracao && this.pendenteNovas) { this.pendenteNovas = false; void this.maisNovas(); }
