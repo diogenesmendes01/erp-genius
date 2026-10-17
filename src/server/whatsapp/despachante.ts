@@ -12,8 +12,7 @@ import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobranca
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { randomUUID } from "node:crypto";
 import { ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
-import { driverEvolution } from "./drivers/evolution";
-import { driverMetaCloud } from "./drivers/meta-cloud";
+import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
@@ -31,10 +30,9 @@ import { comContatoIndividual } from "./grupos";
 // SEGURANÇA DE AMBIENTE (gap A5 do doc 28): sem WHATSAPP_LIVE=1 no env, NENHUMA mensagem
 // real sai — tudo que passaria vira SIMULADA. Dev contra o banco compartilhado não dispara.
 
-// MOTOR ainda não tem driver (entra na Fase 4, Task 4); até lá um número MOTOR falha ao despachar.
+// Só o motor próprio envia. Número com outro driver (legado) falha com driver_indisponivel.
 const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
-  META_CLOUD: driverMetaCloud,
-  BAILEYS: driverEvolution,
+  MOTOR: driverMotor,
 };
 
 export interface ResultadoDespacho {
@@ -418,13 +416,9 @@ export async function despacharFila(
       continue;
     }
 
-    // 10. Driver oficial fora da janela de 24h exige template APROVADO na Meta (Camada 2).
-    //     Só a REATIVA é isenta (ela responde DENTRO da janela de 24h, texto livre vale). A
-    //     cadência comercial NÃO é: +3d e +7d caem fora da janela e, sem template aprovado, o
-    //     envio ou falha na API ou tenta texto livre indevido (review PR #55 P1). Falhar aqui
-    //     é o comportamento correto — a fila humana mostra o motivo.
-    if (it.numero.driver === "META_CLOUD" && automatica && !reativa && it.template?.statusMeta !== "APROVADO") {
-      await marcar(it.id, "FALHOU", "template_nao_aprovado_meta");
+    // 10. Número sem driver implementado (legado META_CLOUD/BAILEYS) falha sem qualquer I/O.
+    if (!DRIVERS[it.numero.driver]) {
+      await marcar(it.id, "FALHOU", "driver_indisponivel");
       r.falhas += 1;
       continue;
     }
@@ -433,11 +427,12 @@ export async function despacharFila(
     //     driver — cron, lote e clique rodando em paralelo nunca enviam a mesma intenção
     //     duas vezes. `despacharAposEm` vira o prazo do claim (stale = recuperação acima).
     let claimCount = 0;
+    const clientMessageId = it.clientMessageId ?? randomUUID(); // mantido entre tentativas
     try {
       await prisma.$transaction(confirmarTransacao(async (tx) => {
         const claim = await tx.intencaoMensagem.updateMany({
           where: { id: it.id, status: it.status },
-          data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+          data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS), clientMessageId },
         });
         if (claim.count !== 1) return;
         if (it.avisoAlteracaoAgendaId && !await claimAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId)) {
@@ -484,8 +479,7 @@ export async function despacharFila(
       };
       const driver = DRIVERS[it.numero.driver];
       if (!driver) throw new Error(`Driver ${it.numero.driver} sem implementação no despachante.`);
-      // Task 4: porta v2. O id real por tentativa chega na Task 8; até lá, drivers antigos ignoram.
-      const opcoesEnvio: OpcoesEnvio = { clientMessageId: it.clientMessageId ?? randomUUID(), origem: it.origem };
+      const opcoesEnvio: OpcoesEnvio = { clientMessageId, origem: it.origem };
       let envio;
       if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
         // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
@@ -497,7 +491,7 @@ export async function despacharFila(
           dadosBase64: midia.dadosBase64,
           legenda: it.corpoRenderizado || null,
         }, opcoesEnvio);
-      } else if (it.numero.driver === "META_CLOUD" && it.template) {
+      } else if (it.template) {
         envio = await driver.enviarTemplate(numeroCanal, it.contato.telefoneE164, {
           nome: it.template.nome,
           idioma: it.template.idioma,
@@ -526,9 +520,11 @@ export async function despacharFila(
             midiaPath: it.midiaPath,
             status: "ENVIADA",
             statusEm: agora,
-            driver: it.numero.driver,
+            driver: "MOTOR",
             origem: it.origem,
+            clientMessageId,
             providerMessageId: envio.providerMessageId,
+            mensagemIdMotor: envio.mensagemIdMotor ?? null,
             autorId: it.autorId,
             templateId: it.templateId,
           },
