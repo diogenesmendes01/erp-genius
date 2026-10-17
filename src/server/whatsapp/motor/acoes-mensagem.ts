@@ -5,6 +5,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { atendimentoVisivel } from "../atendimentos";
+import { despacharFila } from "../despachante";
+import { contentTypePorExtensao } from "@/lib/uploads";
+import { midiaSaidaDoAutor } from "../midia";
+import type { ConteudoEspecial } from "../canal";
+import type { EnvioInboxResultado } from "../acoes";
 import { executarAcaoMotor } from "./acoes";
 import { ErroMotor, MENSAGEM_LIMITE_RITMO } from "./cliente";
 
@@ -158,5 +163,70 @@ export async function encaminharMensagemWhatsApp(input: { mensagemId: string; at
     });
     revalidatePath("/inbox");
     return undefined;
+  });
+}
+
+const ConteudoSchema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("FIGURINHA") }),
+  z.object({ tipo: z.literal("GIF") }),
+  z.object({
+    tipo: z.literal("ENQUETE"),
+    nome: z.string().trim().min(1, "Informe a pergunta da enquete.").max(255, "A pergunta pode ter no máximo 255 caracteres."),
+    opcoes: z.array(z.string().trim().min(1, "Opção vazia.").max(100, "Cada opção pode ter no máximo 100 caracteres.")).min(2, "A enquete precisa de ao menos 2 opções.").max(12, "A enquete pode ter no máximo 12 opções."),
+    maxEscolhas: z.number().int().min(1, "Escolhas por pessoa: no mínimo 1."),
+  }),
+  z.object({
+    tipo: z.literal("LOCALIZACAO"),
+    latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180),
+    nome: z.string().trim().min(1).max(255).optional(),
+  }),
+  z.object({ tipo: z.literal("CONTATO"), contatoJid: z.string().regex(/^\d{8,20}@s\.whatsapp\.net$/, "Contato inválido.") }),
+]);
+const EnviarConteudoSchema = z.object({ atendimentoId: z.string().min(1), conteudo: ConteudoSchema, midiaUrl: z.string().min(1).optional() });
+
+const TIPO_INTENCAO = { FIGURINHA: "FIGURINHA", GIF: "VIDEO", ENQUETE: "ENQUETE", LOCALIZACAO: "LOCALIZACAO", CONTATO: "CONTATO" } as const;
+
+function resumo(c: ConteudoEspecial): string {
+  if (c.tipo === "ENQUETE") return c.nome;
+  if (c.tipo === "LOCALIZACAO") return `📍 ${c.nome ?? "Localização"}`;
+  return "";
+}
+
+/**
+ * Enquete, figurinha, GIF, localização ou contato pela inbox. Vira intenção HUMANO e passa pelo despachante
+ * (opt-out, kill switch, claim). Figurinha exige webp e GIF exige mp4, ambos subidos pelo próprio autor.
+ */
+export async function enviarConteudoInbox(input: { atendimentoId: string; conteudo: ConteudoEspecial; midiaUrl?: string }): Promise<Resultado<EnvioInboxResultado>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const dados = EnviarConteudoSchema.parse(input);
+    const c = dados.conteudo as ConteudoEspecial;
+    if (c.tipo === "ENQUETE" && c.maxEscolhas > c.opcoes.length) throw new ErroRegra("Escolhas por pessoa não pode passar do número de opções.");
+    const a = await atendimentoVisivel(u, dados.atendimentoId, true);
+    if (!a || a.encerradoEm) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+    if (!a.numero.ativo) throw new ErroRegra("Este número está inativo.");
+    if (a.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não envia esse tipo de conteúdo.");
+    if (a.contato.optOutEm) throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
+
+    let midiaPath: string | null = null;
+    if (c.tipo === "FIGURINHA" || c.tipo === "GIF") {
+      const esperado = c.tipo === "FIGURINHA" ? "image/webp" : "video/mp4";
+      if (!dados.midiaUrl || !midiaSaidaDoAutor(dados.midiaUrl, u.id)) throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
+      if (contentTypePorExtensao(dados.midiaUrl) !== esperado) {
+        throw new ErroRegra(c.tipo === "FIGURINHA" ? "A figurinha precisa ser uma imagem WebP." : "O GIF precisa ser um vídeo MP4.");
+      }
+      midiaPath = dados.midiaUrl;
+    }
+
+    const intencao = await prisma.intencaoMensagem.create({
+      data: {
+        numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: TIPO_INTENCAO[c.tipo],
+        conteudo: c as unknown as object, midiaPath, corpoRenderizado: resumo(c), autorId: u.id,
+      },
+    });
+    await despacharFila(new Date(), { intencaoId: intencao.id });
+    const final = await prisma.intencaoMensagem.findUnique({ where: { id: intencao.id }, select: { status: true, motivoFalha: true } });
+    revalidatePath("/inbox");
+    return { status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
   });
 }
