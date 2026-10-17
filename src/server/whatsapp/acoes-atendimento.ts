@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
-import { SETORES, papeisDoSetor, type Setor } from "./setor";
+import { SETORES, ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
+import { PRAZO_MAXIMO_CONVITE_DIAS } from "./participantes";
 import { setoresDoNumero } from "./numero-setor";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { proximoStatus } from "./status-atendimento";
@@ -181,5 +183,63 @@ export async function transferirAtendimento(input: { atendimentoId: string; dest
     }).catch(comoErroRegra);
     revalidatePath("/inbox");
     return { novoAtendimentoId: novoId };
+  });
+}
+
+const ConvidarSchema = z.object({
+  atendimentoId: z.string().min(1),
+  usuarioId: z.string().min(1),
+  podeEnviar: z.boolean(),
+  fim: z.string().refine((v) => !Number.isNaN(new Date(v).getTime()), "Informe uma data de término válida."),
+  motivo: z.string().trim().min(10, "Descreva o motivo do convite (mínimo de 10 caracteres).").max(500),
+});
+
+/** Convida alguém (de qualquer setor) a ver o atendimento, por prazo de até 30 dias (E3.4). Início = agora; concedente = quem convida. */
+export async function convidarParticipante(input: { atendimentoId: string; usuarioId: string; podeEnviar: boolean; fim: string; motivo: string }): Promise<Resultado<{ participanteId: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const dados = ConvidarSchema.parse(input);
+    const agora = new Date();
+    const fim = new Date(dados.fim);
+    if (fim <= agora) throw new ErroRegra("O fim do convite precisa ser no futuro.");
+    if (fim.getTime() > agora.getTime() + PRAZO_MAXIMO_CONVITE_DIAS * 86_400_000) throw new ErroRegra(`O convite pode durar no máximo ${PRAZO_MAXIMO_CONVITE_DIAS} dias.`);
+    const participanteId = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
+      const a = await atendimentoVisivel(u, dados.atendimentoId);
+      if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
+      if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
+      if (!podeExecutar(u, "convidar", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+      if (dados.usuarioId === u.id) throw new ErroRegra("Você não pode convidar a si mesmo.");
+      const alvo = await tx.usuario.findUnique({ where: { id: dados.usuarioId }, select: { ativo: true } });
+      if (!alvo?.ativo) throw new ErroRegra("A pessoa escolhida não está ativa.");
+      const ja = await tx.participanteAtendimentoWhatsApp.count({ where: { atendimentoId: a.id, usuarioId: dados.usuarioId, revogadoEm: null, fim: { gt: agora } } });
+      if (ja > 0) throw new ErroRegra("Esta pessoa já participa do atendimento.");
+      const p = await tx.participanteAtendimentoWhatsApp.create({
+        data: { atendimentoId: a.id, usuarioId: dados.usuarioId, concedenteId: u.id, inicio: agora, fim, podeEnviar: dados.podeEnviar, motivo: dados.motivo },
+      });
+      await registrarEvento(tx, { tipo: "ParticipanteConvidado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: u.id, payload: { participanteId: p.id, usuarioId: dados.usuarioId, podeEnviar: dados.podeEnviar, fim: fim.toISOString(), motivo: dados.motivo } });
+      return p.id;
+    });
+    revalidatePath("/inbox");
+    return { participanteId };
+  });
+}
+
+/** Revoga na hora (revogadoEm = agora, sem delete). Quem revoga: o concedente, o gerente do setor ou o administrador. */
+export async function revogarParticipante(participanteId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const id = IdSchema.parse(participanteId);
+    await prisma.$transaction(async (tx) => {
+      const p = await tx.participanteAtendimentoWhatsApp.findUnique({ where: { id }, include: { atendimento: { select: { id: true, finalidade: true } } } });
+      if (!p) throw new ErroRegra("Participante não encontrado.");
+      const permitido = p.concedenteId === u.id || u.papeis.includes(Papel.ADMINISTRADOR) || ehGerenteDoSetor(u.papeis, p.atendimento.finalidade);
+      if (!permitido) throw new ErroRegra(MSG_SEM_ALCADA);
+      const agora = new Date();
+      const r = await tx.participanteAtendimentoWhatsApp.updateMany({ where: { id, revogadoEm: null }, data: { revogadoEm: agora } });
+      if (r.count !== 1) throw new ErroRegra("Este convite já foi revogado.");
+      await registrarEvento(tx, { tipo: "ParticipanteRevogado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: p.atendimento.id, autorId: u.id, payload: { participanteId: id, usuarioId: p.usuarioId } });
+    });
+    revalidatePath("/inbox");
   });
 }
