@@ -2503,3 +2503,22 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   arquivos que o bloco toca: `motor/schema-motor`, `despachante.live`, `despachante-comercial`, `destinatario-atual`,
   `cron` e `acoes` (whatsapp): saída 0, 6 arquivos e 53 testes verdes. A suíte completa fica com o integrador.
 **Estado**: Implementado; aguardando o integrador.
+
+## Fase 4B — despachante pelo motor: correção da revisão final (17/10/2026)
+
+- Branch `claude/fase4-b-despachante`. Os testes de integração live migraram para `vi.mock('drivers/motor')` com
+  números MOTOR, sem `skip`: despachante.live, ciclo-cobranca, acesso-atendimento, destinatario-atual, origem-celular
+  (clientMessageId da mensagem = o da intenção), atendimento-pedagogico-autorizacao, cobrancas/conferencia,
+  agenda/substituicao-avisos e academico/visibilidade.
+- Guarda contra envio real em teste: `vitest.integration.config.ts` zera `MOTOR_URL`/`MOTOR_API_KEY`. Teste-trava:
+  `motor/guarda-teste.int.test.ts`.
+- Doc 30 §S1 reescrito: a trava vale só para BAILEYS legado; MOTOR e Meta aceitam automação (D38). Textos de
+  PoliticaPainel, AvisosAgendaPainel e `salvarConfiguracaoAvisosAgenda` corrigidos.
+- Integração (perfil `integracao`), 13 arquivos tocados: verdes, salvo as falhas preexistentes da linha de base:
+  academico/visibilidade (6, trigger P0001) e agenda/substituicao-avisos (3). Essas 3 viram SIMULADA pela política de
+  cobrança DESLIGADA antes do driver e falham igual no HEAD anterior. O ruling está em
+  `.superpowers/sdd/rulings-claude_fase4-b-despachante.md`.
+- `tsc --noEmit` 0. `npm run lint`: 0 erros e 43 avisos (já existentes). Testes unitários: 677 arquivos e 4903 testes.
+  `contraste`/`confirmacoes` estouraram o tempo uma vez, com load ~20 de outras faixas, e passam isolados. O
+  `PoliticaPainel.confirmacao` (rótulo "Meta cloud (legado)" da Tarefa 1) foi corrigido.
+**Estado**: Implementado; aguardando o integrador.

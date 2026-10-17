@@ -116,7 +116,7 @@ describe("PoliticaPainel \u2014 ativar a régua", () => {
     const [c] = doTipo(tela(), ConfirmarAcao);
     expect(c.props.titulo).toBe("Ativar a régua de cobrança e enviar mensagens reais?");
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
-    expect(consequencia).toContain("Remetente: Cobrança CR (oficial)");
+    expect(consequencia).toContain("Remetente: Cobrança CR (Meta cloud (legado))"); // rótulo do driver (Fase 4, Tarefa 1)
     expect(consequencia).toContain("Janela: 9h às 20h, seg, ter, qua, qui, sex");
     expect(consequencia).toContain("Teto: 2 mensagens automáticas por contato/dia");
     expect(consequencia).toContain("Automáticos (saem sozinhos): D-3 (cobranca_vencida)");
