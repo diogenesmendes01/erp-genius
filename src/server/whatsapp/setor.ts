@@ -1,4 +1,5 @@
 import { Papel, type FinalidadeAtendimentoWhatsApp } from "@prisma/client";
+import { setoresDoUsuario as setoresCrmDoUsuario } from "@/server/crm/setores-papel";
 
 /** Setor de atendimento = finalidade do atendimento (doc 02 E3.2). */
 export type Setor = FinalidadeAtendimentoWhatsApp;
@@ -6,9 +7,10 @@ export type Setor = FinalidadeAtendimentoWhatsApp;
 export const SETORES: readonly Setor[] = ["COMERCIAL", "FINANCEIRO", "SECRETARIA", "PEDAGOGICO"];
 
 /**
- * Ponto único da Q1. true = a SECRETARIA_ACADEMICA mantém também FINANCEIRO e
- * PEDAGOGICO (comportamento atual de escopo.ts). Se o produto decidir "só
- * SECRETARIA", trocar para false e ajustar o teste correspondente.
+ * Ponto único da Q1 (plano 03-fase-inbox, Tarefa 1; doc 02, "Conflito a decidir antes de E5").
+ * true = no INBOX a SECRETARIA_ACADEMICA mantém também FINANCEIRO e PEDAGOGICO (comportamento
+ * atual de escopo.ts). Se o produto decidir "só SECRETARIA", trocar para false e ajustar o teste.
+ * Não afeta a capacidade do CRM (`setoresDoUsuario` de `@/server/crm/setores-papel`).
  */
 export const SECRETARIA_VE_FIN_PEDAG = true;
 
@@ -25,22 +27,28 @@ const GERENTES: Partial<Record<Setor, Papel>> = {
   PEDAGOGICO: Papel.GERENTE_PEDAGOGICO,
 };
 
-function setoresDoPapel(papel: Papel): Setor[] {
-  if (papel === Papel.ADMINISTRADOR) return [...SETORES];
-  if (papel === Papel.SECRETARIA_ACADEMICA) {
-    return SECRETARIA_VE_FIN_PEDAG ? ["SECRETARIA", "FINANCEIRO", "PEDAGOGICO"] : ["SECRETARIA"];
-  }
-  return SETORES.filter((s) => PAPEIS_POR_SETOR[s].includes(papel));
-}
-
 /** Ordem fixa de saída: SECRETARIA primeiro, depois a ordem de SETORES. */
 const ORDEM_SAIDA: readonly Setor[] = ["SECRETARIA", ...SETORES.filter((s) => s !== "SECRETARIA")];
 
-/** Setores do usuário: união sem repetição, em ordem fixa (independe da ordem dos papéis). */
-export function setoresDoUsuario(papeis: Papel[]): Setor[] {
-  if (papeis.includes(Papel.ADMINISTRADOR)) return [...SETORES]; // teste do brief: ordem de SETORES
-  const uniao = new Set<Setor>();
-  for (const p of papeis) for (const s of setoresDoPapel(p)) uniao.add(s);
+/**
+ * Setores que o usuário enxerga no INBOX (plano 03-fase-inbox, Tarefa 1). Regra distinta da
+ * capacidade do CRM: a base (papel → setor) vem de uma fonte só, `setoresDoUsuario` em
+ * `@/server/crm/setores-papel` (reexportado por `@/server/crm/permissoes`), e aqui entram só
+ * as duas extensões do inbox, explícitas:
+ * - PROFESSOR → PEDAGOGICO (no CRM o professor não tem setor; no inbox o PEDAGOGICO dele é só a
+ *   turma, e a Tarefa 13 não lhe dá ramo de fila);
+ * - SECRETARIA_ACADEMICA → também FINANCEIRO e PEDAGOGICO enquanto `SECRETARIA_VE_FIN_PEDAG`
+ *   (Q1); no CRM a Secretaria tem só SECRETARIA.
+ * União sem repetição, em ordem fixa (independe da ordem dos papéis); administrador na ordem de SETORES.
+ */
+export function setoresVisiveisNoInbox(papeis: Papel[]): Setor[] {
+  if (papeis.includes(Papel.ADMINISTRADOR)) return [...SETORES];
+  const uniao = new Set<Setor>(setoresCrmDoUsuario(papeis));
+  if (papeis.includes(Papel.PROFESSOR)) uniao.add("PEDAGOGICO");
+  if (SECRETARIA_VE_FIN_PEDAG && papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
+    uniao.add("FINANCEIRO");
+    uniao.add("PEDAGOGICO");
+  }
   return ORDEM_SAIDA.filter((s) => uniao.has(s));
 }
 
@@ -53,4 +61,20 @@ export function ehGerenteDoSetor(papeis: Papel[], setor: Setor): boolean {
 /** Papéis nativos do setor (sem o administrador e sem a extensão da Q1). */
 export function papeisDoSetor(setor: Setor): Papel[] {
   return [...PAPEIS_POR_SETOR[setor]];
+}
+
+/**
+ * Papéis que podem ser responsáveis pela triagem de um número com esses setores: os papéis nativos
+ * dos setores (`papeisDoSetor`), sem repetição, menos o PROFESSOR, que não atende fila (o PEDAGOGICO
+ * dele é só a turma; plano 03-fase-inbox, Tarefa 13). O administrador não entra: ele já é o padrão
+ * (triagemResponsavelId null, Q2).
+ */
+export function papeisDeTriagem(setores: readonly Setor[]): Papel[] {
+  return [...new Set(SETORES.filter((s) => setores.includes(s)).flatMap((s) => PAPEIS_POR_SETOR[s]))].filter((p) => p !== Papel.PROFESSOR);
+}
+
+/** O usuário pode ser responsável pela triagem de um número com esses setores. */
+export function podeTriarSetores(papeis: readonly Papel[], setores: readonly Setor[]): boolean {
+  const aceitos = papeisDeTriagem(setores);
+  return papeis.some((p) => aceitos.includes(p));
 }

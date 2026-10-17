@@ -4,7 +4,7 @@ import { exigirSessaoComPapel } from "@/server/_shared";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME } from "@/server/cobrancas/fabrica";
 import { REGUA } from "@/server/cobrancas/regua";
 import { setoresDoNumero } from "./numero-setor";
-import type { Setor } from "./setor";
+import { SETORES, papeisDeTriagem, type Setor } from "./setor";
 export * from "./consultas-inbox";
 export { escopoNumeros } from "./escopo";
 export interface NumeroConfig {
@@ -47,10 +47,25 @@ export async function listarNumerosConfig(): Promise<NumeroConfig[]> {
   }));
 }
 
-/** Usuários ativos que podem ser escolhidos como responsável pela triagem de um número. */
-export async function listarResponsaveisTriagem(): Promise<{ id: string; nome: string }[]> {
+export interface ResponsavelTriagem {
+  id: string;
+  nome: string;
+  papeis: Papel[];
+}
+
+/**
+ * Usuários ativos que podem ser responsáveis pela triagem: só quem tem papel de triagem de algum
+ * dos `setores` (`papeisDeTriagem`; padrão: todos os setores). ALUNO, PROFESSOR e ADMINISTRADOR
+ * (o admin já é o padrão, Q2) ficam de fora. Os papéis voltam para o editor filtrar pelos setores
+ * marcados no número (`podeTriarSetores`); `salvarSetoresNumero` aplica a mesma regra no servidor.
+ */
+export async function listarResponsaveisTriagem(setores: readonly Setor[] = SETORES): Promise<ResponsavelTriagem[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-  return prisma.usuario.findMany({ where: { ativo: true }, orderBy: { nome: "asc" }, select: { id: true, nome: true } });
+  return prisma.usuario.findMany({
+    where: { ativo: true, papeis: { hasSome: papeisDeTriagem(setores) } },
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true, papeis: true },
+  });
 }
 
 export interface TemplateConfig {

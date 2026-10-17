@@ -44,7 +44,7 @@ async function intencao(a: Atendimento, contatoId: string, autorId: string, orig
 }
 async function comercial() {
   await prisma.numeroWhatsApp.update({ where: { id: canal.numero.id }, data: { finalidade: "VENDAS" } });
-  const lead = await prisma.lead.create({ data: { nome: "Ana", telefoneE164: "+50688880001", vendedorDonoId: ven.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Ana", telefoneE164: "+50688880001", vendedorDonoId: ven.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
   const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: canal.numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id, responsavelId: ven.id }));
   return { lead, contato, atendimento };
@@ -81,7 +81,7 @@ describe("destinatário atual para novos envios; histórico permanece autorizado
     const antiga = await mensagemHistorica(c.atendimento);
     const pendente = await intencao(c.atendimento, c.contato.id, ven.id, origem);
     expect(await atendimentoVisivel(ven, c.atendimento.id, true)).not.toBeNull();
-    await prisma.lead.update({ where: { id: c.lead.id }, data: { telefoneE164: "+50688880999" } });
+    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { telefoneE164: "+50688880999" } });
     expect(await destinatarioAtual(c.atendimento.id)).toBe(false);
     expect(await atendimentoVisivel(ven, c.atendimento.id, true)).toBeNull();
     expect((await carregarThread(ven, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([antiga.id]);
@@ -148,7 +148,7 @@ describe("destinatário atual para novos envios; histórico permanece autorizado
 
 describe("encerramento respeita a finalidade e inbound retorna à triagem", () => {
   it("PRO+FIN consulta sua experimental, mas não usa Financeiro para encerrar assunto PEDAGOGICO", async () => {
-    const lead = await prisma.lead.create({ data: { nome: "Experimental", telefoneE164: "+50688880666", professorExperimentalId: proFin.id, etapa: "EXPERIMENTAL_AGENDADA" } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Experimental", telefoneE164: "+50688880666", professorExperimentalId: proFin.id, etapa: "EXPERIMENTAL_AGENDADA" } });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
     const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: canal.numero.id, contatoId: contato.id, finalidade: "PEDAGOGICO", leadId: lead.id }));
     const pendente = await intencao(a, contato.id, proFin.id);

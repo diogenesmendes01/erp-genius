@@ -35,7 +35,7 @@ async function seedComercial(over: SeedComercial = {}) {
         data: { nome: "Japão", codigoISO: "JP", moedaLocal: "JPY", ddi: "+81", fuso: over.fusoLead, status: "ATIVO" },
       })
     : null;
-  const lead = await prisma.lead.create({ data: { codigo: "L-000900", nome: "Ana", telefoneE164: "+50699998888", paisId: pais?.id ?? null } });
+  const lead = await prisma.oportunidade.create({ data: { codigo: "L-000900", nome: "Ana", telefoneE164: "+50699998888", paisId: pais?.id ?? null } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50699998888", leadId: lead.id } });
   const politica = await prisma.politicaComercial.create({
     data: {

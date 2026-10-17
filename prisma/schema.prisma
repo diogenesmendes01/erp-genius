@@ -420,7 +420,7 @@ model AtendimentoWhatsApp {
   responsavelId String?
   responsavel Usuario? @relation("ResponsavelAtendimentoWhatsApp", fields: [responsavelId], references: [id], onDelete: SetNull)
   leadId String?
-  lead Lead? @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  lead Oportunidade? @relation(fields: [leadId], references: [id], onDelete: Restrict)
   alunoId String?
   aluno Aluno? @relation(fields: [alunoId], references: [id], onDelete: Restrict)
   matriculaId String?
@@ -785,8 +785,8 @@ model Usuario {
   ultimoAcesso      DateTime?
   criadoEm          DateTime  @default(now())
 
-  leads             Lead[]              @relation("VendedorLeads")
-  experimentais     Lead[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
+  leads             Oportunidade[]              @relation("VendedorLeads")
+  experimentais     Oportunidade[]              @relation("ProfessorExperimentais") // experimentais (leads) sob responsabilidade do professor (Issue #13)
   turmas            Turma[]             @relation("ProfessorTurmas")
   comissoes         Comissao[]
   eventos           Evento[]            @relation("AutorEventos")
@@ -836,6 +836,11 @@ model Usuario {
   aplicacoesCadastroMigracao AplicacaoCadastroMigracao[] @relation("ExecutorAplicacaoCadastroMigracao")
   sugestoesIADecididas SugestaoIA[]     @relation("DecisorSugestoesIA")
   acessoAluno       Aluno?              @relation("AcessoAluno") // Fase 3: portal do aluno
+
+  // CRM (2.M3)
+  tagsPessoaAtribuidas  PessoaTag[]  @relation("PessoaTagCriadoPor")
+  tagsEmpresaAtribuidas EmpresaTag[] @relation("EmpresaTagCriadoPor")
+  filtrosSalvos         FiltroSalvo[]
 }
 
 // ============================================================
@@ -865,7 +870,7 @@ model Pais {
   produtosPais   ProdutoPais[]
   precos         PrecoReferencia[]
   alunos         Aluno[]
-  leads          Lead[]
+  leads          Oportunidade[]
   matriculas     Matricula[]
   politicasComissao PoliticaComissao[]
 }
@@ -1112,6 +1117,8 @@ enum Escolaridade {
 // Nacionalidade / 2ª nacionalidade / país de residência / país emissor são ISO 3166
 // (qualquer país — ver `lib/paises-iso.ts`), pois não são mercados da Genius.
 model Aluno {
+  pessoaId String? @unique
+  pessoa   Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   contaPortal ContaPortalAluno?
   trocasEmailPortal SolicitacaoTrocaEmailPortalAluno[]
 
@@ -1195,6 +1202,8 @@ model Aluno {
 }
 
 model Responsavel {
+  pessoaId     String? @unique
+  pessoa       Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   id           String  @id @default(cuid())
   nome         String
   parentesco   String?
@@ -1339,7 +1348,13 @@ enum MotivoPerda {
   OUTRO
 }
 
-model Lead {
+model Oportunidade {
+  pessoaId     String?
+  pessoa       Pessoa?      @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  origemCanal  OrigemCanal?
+  empresaId    String?
+  empresa      Empresa?     @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  participantes ParticipanteOportunidade[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id             String      @id @default(cuid())
   codigo         String?     @unique // L-000001
@@ -1417,6 +1432,9 @@ model Lead {
   sugestoesIA      SugestaoIA[]
 
   @@index([telefoneE164])
+  @@index([pessoaId])
+  @@index([empresaId])
+  @@map("Lead")
 }
 
 enum CategoriaDocumento {
@@ -1439,7 +1457,7 @@ model Documento {
   condicoesEncerramento CondicoesEncerramentoMatricula[]
   id        String             @id @default(cuid())
   leadId    String?
-  lead      Lead?              @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  lead      Oportunidade?              @relation(fields: [leadId], references: [id], onDelete: Restrict)
   matriculaId String?
   matricula Matricula?         @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
   categoria CategoriaDocumento
@@ -1832,7 +1850,7 @@ model Matricula {
   alunoId                String
   aluno                  Aluno           @relation(fields: [alunoId], references: [id])
   leadId                 String?         @unique
-  lead                   Lead?           @relation(fields: [leadId], references: [id])
+  lead                   Oportunidade?           @relation(fields: [leadId], references: [id])
   produtoId              String
   produto                Produto         @relation(fields: [produtoId], references: [id])
   paisId                 String
@@ -2347,6 +2365,8 @@ model NumeroSetorWhatsApp {
 }
 
 model ContatoWhatsApp {
+  pessoaId     String?
+  pessoa       Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   id           String  @id @default(cuid())
   telefoneE164 String  @unique // 1ª unicidade de telefone do sistema (doc 29) — embrião da entidade Pessoa (comentário do topo)
   waId         String? @unique
@@ -2360,13 +2380,15 @@ model ContatoWhatsApp {
   responsavelId String?
   responsavel   Responsavel? @relation(fields: [responsavelId], references: [id])
   leadId        String?
-  lead          Lead?        @relation(fields: [leadId], references: [id])
+  lead          Oportunidade?        @relation(fields: [leadId], references: [id])
 
   optOutEm DateTime? // LEI: opt-out sempre respeitado pelo despachante (doc 26/30 S10)
   criadoEm DateTime  @default(now())
 
   conversas ConversaWhatsApp[]
   intencoes IntencaoMensagem[]
+
+  @@index([pessoaId])
 }
 
 // Grupo do WhatsApp visto por um número (E3.5): conversa de grupo não tem contato individual
@@ -2528,7 +2550,7 @@ model IntencaoMensagem {
   // Régua COMERCIAL (doc 27 C1 §Tese): lead-novo e demais cadências. Mesmo outbox/
   // despachante da cobrança; o vínculo de domínio é o Lead + o passo da cadência.
   leadId             String?
-  lead               Lead?             @relation(fields: [leadId], references: [id])
+  lead               Oportunidade?             @relation(fields: [leadId], references: [id])
   passoComercial     String? // passo da cadência comercial ("+30min"...) — idempotência
   // OCORRÊNCIA da cadência (review PR #56): a âncora em ISO. É o que separa um CICLO do
   // outro — experimental reagendada, segundo no-show. Sem ela a idempotência é eterna por
@@ -8477,7 +8499,7 @@ enum GatilhoSugestaoIA {
 model SugestaoIA {
   id      String            @id @default(cuid())
   leadId  String
-  lead    Lead              @relation(fields: [leadId], references: [id])
+  lead    Oportunidade              @relation(fields: [leadId], references: [id])
   loteId  String // agrupa as sugestões geradas numa MESMA análise
   tipo    TipoSugestaoIA
   status  StatusSugestaoIA  @default(PENDENTE)
@@ -8520,8 +8542,43 @@ model Empresa {
   ativo           Boolean  @default(true)
   criadoEm        DateTime @default(now())
 
-  matriculas Matricula[]
-  faturas    FaturaB2B[]
+  // CRM B2B (2.M2): ficha de prospect/cliente corporativo.
+  site            String?
+  segmentoMercado String?
+  porte           String?
+  origemCanal     OrigemCanal?
+
+  matriculas    Matricula[]
+  faturas       FaturaB2B[]
+  pessoas       Pessoa[]
+  oportunidades Oportunidade[]
+  tags          EmpresaTag[]
+  valoresCampo  ValorCampoPersonalizado[]
+
+  @@index([origemCanal])
+}
+
+enum PapelParticipante {
+  DECISOR
+  INFLUENCIADOR
+  RH_OPERACIONAL
+  FINANCEIRO
+  USUARIO_FINAL
+  OUTRO
+}
+
+// Pessoas envolvidas em uma oportunidade B2B, cada uma com seu papel (uma vez por oportunidade).
+model ParticipanteOportunidade {
+  id             String            @id @default(cuid())
+  oportunidadeId String
+  oportunidade   Oportunidade      @relation(fields: [oportunidadeId], references: [id], onDelete: Restrict)
+  pessoaId       String
+  pessoa         Pessoa            @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  papel          PapelParticipante
+  criadoEm       DateTime          @default(now())
+
+  @@unique([oportunidadeId, pessoaId])
+  @@index([pessoaId])
 }
 
 enum StatusFaturaB2B {
@@ -8670,4 +8727,167 @@ model FavoritoMensagemUsuario {
   criadoEm DateTime @default(now())
   @@unique([usuarioId, mensagemId])
   @@index([mensagemId])
+}
+
+// Hub de identidade do CRM (Fase 2, 2.M1): ContatoWhatsApp (N telefones), Aluno,
+// Responsavel e Oportunidade apontam para a Pessoa; nada é copiado. Sem delete físico:
+// mesclagem deixa lápide (mescladaEmId). CHECK em SQL: mescladaEmId <> id.
+enum OrigemCanal {
+  WHATSAPP
+  INSTAGRAM
+  ANUNCIO
+  GOOGLE
+  SITE
+  INDICACAO
+  EVENTO
+  LINKEDIN
+  IMPORTACAO
+  OUTRO
+}
+
+model Pessoa {
+  id           String       @id @default(cuid())
+  codigo       String?      @unique
+  nome         String
+  email        String?
+  cidade       String?
+  cargo        String?
+  linkedin     String?
+  origemCanal  OrigemCanal?
+  empresaId    String?
+  empresa      Empresa?     @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  mescladaEmId String?
+  mescladaEm   Pessoa?      @relation("PessoaMescla", fields: [mescladaEmId], references: [id], onDelete: Restrict)
+  mescladas    Pessoa[]     @relation("PessoaMescla")
+  criadoEm     DateTime     @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  contatosWhatsApp ContatoWhatsApp[]
+  aluno            Aluno?
+  responsavel      Responsavel?
+  oportunidades    Oportunidade[]
+  participacoes    ParticipanteOportunidade[]
+  tags             PessoaTag[]
+  valoresCampo     ValorCampoPersonalizado[]
+
+  @@index([empresaId])
+  @@index([mescladaEmId])
+}
+
+// CRM (2.M3): tags, campos personalizados e filtros salvos.
+enum CorTag {
+  NEUTRA
+  MARCA
+  INFO
+  SUCESSO
+  ALERTA
+  PERIGO
+  IA
+}
+
+model Tag {
+  id    String  @id @default(cuid())
+  nome  String  @unique
+  cor   CorTag
+  grupo String?
+  ativo Boolean @default(true)
+
+  criadoEm DateTime @default(now())
+
+  pessoas  PessoaTag[]
+  empresas EmpresaTag[]
+}
+
+model PessoaTag {
+  pessoaId    String
+  pessoa      Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  tagId       String
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  criadoPorId String?
+  criadoPor   Usuario? @relation("PessoaTagCriadoPor", fields: [criadoPorId], references: [id], onDelete: Restrict)
+  criadoEm    DateTime @default(now())
+
+  @@id([pessoaId, tagId])
+  @@index([tagId])
+}
+
+model EmpresaTag {
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  tagId       String
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  criadoPorId String?
+  criadoPor   Usuario? @relation("EmpresaTagCriadoPor", fields: [criadoPorId], references: [id], onDelete: Restrict)
+  criadoEm    DateTime @default(now())
+
+  @@id([empresaId, tagId])
+  @@index([tagId])
+}
+
+enum TipoCampoPersonalizado {
+  TEXTO
+  NUMERO
+  DATA
+  SELECAO
+  BOOLEANO
+}
+
+enum AlvoCampoPersonalizado {
+  PESSOA
+  EMPRESA
+}
+
+model CampoPersonalizado {
+  id          String                 @id @default(cuid())
+  nome        String
+  tipo        TipoCampoPersonalizado
+  alvo        AlvoCampoPersonalizado
+  opcoes      String[]
+  obrigatorio Boolean                @default(false)
+  arquivadoEm DateTime?
+  criadoEm    DateTime               @default(now())
+
+  valores ValorCampoPersonalizado[]
+
+  @@unique([alvo, nome])
+}
+
+// Exatamente um dono por valor (CHECK na migration): pessoa ou empresa.
+model ValorCampoPersonalizado {
+  id           String             @id @default(cuid())
+  campoId      String
+  campo        CampoPersonalizado @relation(fields: [campoId], references: [id], onDelete: Restrict)
+  pessoaId     String?
+  pessoa       Pessoa?            @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  empresaId    String?
+  empresa      Empresa?           @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  valor        Json?
+  atualizadoEm DateTime           @updatedAt
+
+  @@unique([campoId, pessoaId])
+  @@unique([campoId, empresaId])
+  @@index([pessoaId])
+  @@index([empresaId])
+}
+
+enum TelaFiltroSalvo {
+  FUNIL
+  CONTATOS
+  CARTEIRA
+  TAREFAS
+  COMISSOES
+}
+
+model FiltroSalvo {
+  id            String          @id @default(cuid())
+  usuarioId     String
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  tela          TelaFiltroSalvo
+  nome          String
+  filtros       Json
+  compartilhado Boolean         @default(false)
+  arquivadoEm   DateTime?
+  criadoEm      DateTime        @default(now())
+
+  @@unique([usuarioId, tela, nome])
 }

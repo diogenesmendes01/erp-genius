@@ -38,7 +38,7 @@ afterEach(() => { vi.unstubAllEnvs(); });
 async function cenario() {
   const vendedor = await criarUsuario([Papel.VENDEDOR]);
   const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
-  const lead = await prisma.lead.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
   const inbound: InboundNormalizado = {

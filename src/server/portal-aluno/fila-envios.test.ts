@@ -76,6 +76,43 @@ describe("consultarFilaEnviosPortalAluno", () => {
     expect((await ler({ depois: p1.proxima! })).itens.map((i) => i.id)).toEqual(p2.itens.map((i) => i.id));
   });
 
+  it("situação (docs/42 L431): o recorte vai no where junto do cursor; sem ela, todas as situações", async () => {
+    m.envios.mockResolvedValue([]);
+    await consultarFilaEnviosPortalAluno({ situacao: "incertos" });
+    expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: { situacao: "INCERTO" }, orderBy: { id: "asc" }, take: 21 }));
+    await consultarFilaEnviosPortalAluno({ situacao: "falhas", depois: "r19" });
+    expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: { situacao: "FALHOU", id: { gt: "r19" } }, take: 21 }));
+    await consultarFilaEnviosPortalAluno({ situacao: "todos", antes: "r40" });
+    // Com a volta vazia, lerPaginaDaFila relê o primeiro trecho (src/lib/cursor-fila.ts); a leitura "antes" é a penúltima.
+    expect(m.envios).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { lt: "r40" } }, orderBy: { id: "desc" } }));
+    await consultarFilaEnviosPortalAluno();
+    expect(m.envios).toHaveBeenLastCalledWith(expect.objectContaining({ where: {} }));
+  });
+
+  it("cursor nos dois sentidos dentro do recorte: só os incertos, ida e volta, e conciliar um não faz pular outro", async () => {
+    const todas = idsEmOrdem(60).map((id, i) => ({ ...linha(id), situacao: (i % 3 === 0 ? "INCERTO" : "ENVIADO") as "INCERTO" }));
+    m.envios.mockImplementation(findManyComOnde(todas));
+    const ler = async (nav: { depois?: string; antes?: string } = {}) => {
+      const r = await consultarFilaEnviosPortalAluno({ ...nav, situacao: "incertos" });
+      if (!r.ok || !r.dado) throw new Error("Fila ausente");
+      return r.dado;
+    };
+    const p1 = await ler();
+    expect(p1.itens).toHaveLength(20);
+    expect(p1.itens.every((i) => i.situacao === "INCERTO")).toBe(true);
+    expect(p1.temProxima).toBe(false);
+    // 20 incertos cabem num trecho; um a mais abre a Próxima, e a volta traz o mesmo trecho.
+    todas.push({ ...linha("r99"), situacao: "INCERTO" });
+    const q1 = await ler(), q2 = await ler({ depois: q1.proxima! });
+    expect(q2.itens.map((i) => i.id)).toEqual(["r99"]);
+    expect((await ler({ antes: q2.anterior! })).itens.map((i) => i.id)).toEqual(q1.itens.map((i) => i.id));
+  });
+
+  it("recusa situação fora da lista, sem consultar", async () => {
+    await expect(consultarFilaEnviosPortalAluno({ situacao: "INCERTO" } as never)).resolves.toMatchObject({ ok: false });
+    expect(m.envios).not.toHaveBeenCalled();
+  });
+
   it("recusa cursor inválido, os dois sentidos juntos e página numerada, sem consultar", async () => {
     await expect(consultarFilaEnviosPortalAluno({ depois: "../x" })).resolves.toMatchObject({ ok: false });
     await expect(consultarFilaEnviosPortalAluno({ depois: "a", antes: "b" })).resolves.toMatchObject({ ok: false });

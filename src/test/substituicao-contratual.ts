@@ -42,7 +42,7 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   await prisma.decisaoGradeTurma.create({ data: { propostaId: grade.id, decisorId: admin.id, aprovada: true, motivo: "Grade conferida" } });
   await prisma.encontroAgenda.create({ data: { turmaId: turma.id, propostaGradeId: grade.id, professorId: professor.id, preparadorId: secretaria.id, inicio: new Date("2099-10-01T12:00:00Z"), fim: new Date("2099-10-01T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Encontro de teste", chaveIdempotencia: "encontro-q116", entradaHash: "fixture" } });
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno", sobrenome: "Original", paisId: c.pais.id, email: "aluno@example.test", documento: "ALUNO-TESTE", ...(opcoes.camposCadastrais ? { rua: "Rua original", numero: "1", cidade: "Cidade" } : {}) } });
-  const lead = await prisma.lead.create({ data: { nome: "Contratação Q116", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Contratação Q116", vendedorDonoId: vendedor.id } });
   let agendaParticular: z.input<typeof PreparacaoComercialSchema>["agendaParticular"];
   if (opcoes.porHora) {
     const oferta = await prisma.produtoPais.update({ where: { produtoId_paisId: { produtoId: c.produto.id, paisId: c.pais.id } }, data: { formaAgenda: "PARTICULAR_FLEXIVEL" } });

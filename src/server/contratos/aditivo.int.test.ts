@@ -1418,7 +1418,7 @@ it("evidências paginadas conservam seleção fora da página e recusam arquivam
   const { proposta, dados } = await prepararConferencia(); await decidir(proposta);
   authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
   await prisma.documento.createMany({ data: Array.from({ length: 23 }, (_, i) => ({ id: `evidencia-publica-${String(i).padStart(2, "0")}`, matriculaId: fixture.matriculaId, categoria: "OUTRO" as const, nome: `Evidência ${i}`, url: `/api/files/evidencia-${i}.pdf` })) });
-  const outroLead = await prisma.lead.create({ data: { nome: "Lead de outro documento de teste" } });
+  const outroLead = await prisma.oportunidade.create({ data: { nome: "Lead de outro documento de teste" } });
   await prisma.documento.createMany({ data: [
     { id: "evidencia-arquivada-ui", matriculaId: fixture.matriculaId, categoria: "OUTRO", nome: "Arquivada", url: "/api/files/arquivo.pdf", arquivado: true },
     { id: "evidencia-sem-url-ui", matriculaId: fixture.matriculaId, categoria: "OUTRO", nome: "Sem arquivo", url: "" },

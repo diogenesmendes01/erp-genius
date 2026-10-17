@@ -1,5 +1,11 @@
 import {
+  CorTag,
+  TipoCampoPersonalizado,
+  AlvoCampoPersonalizado,
+  TelaFiltroSalvo,
   EtapaLead,
+  OrigemCanal,
+  PapelParticipante,
   Temperatura,
   Segmento,
   MotivoPerda,
@@ -130,6 +136,28 @@ export const ORIGEM_ENVIO_LABEL: Readonly<Record<OrigemEnvio, string>> = Object.
   LOTE: "Envio em lote",
   CELULAR: "Enviada pelo celular",
   IA: "Aria",
+});
+
+export const PAPEL_PARTICIPANTE_LABEL: Readonly<Record<PapelParticipante, string>> = Object.freeze({
+  DECISOR: "Decisor",
+  INFLUENCIADOR: "Influenciador",
+  RH_OPERACIONAL: "Recursos humanos",
+  FINANCEIRO: "Financeiro",
+  USUARIO_FINAL: "Usuário final",
+  OUTRO: "Outro",
+});
+
+export const ORIGEM_CANAL_LABEL: Readonly<Record<OrigemCanal, string>> = Object.freeze({
+  WHATSAPP: "WhatsApp",
+  INSTAGRAM: "Instagram",
+  ANUNCIO: "Anúncio",
+  GOOGLE: "Google",
+  SITE: "Site",
+  INDICACAO: "Indicação",
+  EVENTO: "Evento",
+  LINKEDIN: "Linkedin",
+  IMPORTACAO: "Importação",
+  OUTRO: "Outro",
 });
 
 export const TEMPERATURA_LABEL: Record<Temperatura, string> = {
@@ -661,4 +689,36 @@ export const UNIDADE_PERMUTA_SERVICO_LABEL: Readonly<Record<UnidadePermutaServic
   HORA: "Hora",
   AULA: "Aula",
   UNIDADE: "Unidade",
+});
+
+// Fase 2 CRM (2.M3): tags, campos personalizados e filtros salvos.
+export const COR_TAG_LABEL: Readonly<Record<CorTag, string>> = Object.freeze({
+  NEUTRA: "Neutra",
+  MARCA: "Marca",
+  INFO: "Azul",
+  SUCESSO: "Verde",
+  ALERTA: "Âmbar",
+  PERIGO: "Vermelha",
+  IA: "Índigo",
+});
+
+export const TIPO_CAMPO_PERSONALIZADO_LABEL: Readonly<Record<TipoCampoPersonalizado, string>> = Object.freeze({
+  TEXTO: "Texto",
+  NUMERO: "Número",
+  DATA: "Data",
+  SELECAO: "Seleção",
+  BOOLEANO: "Sim ou não",
+});
+
+export const ALVO_CAMPO_PERSONALIZADO_LABEL: Readonly<Record<AlvoCampoPersonalizado, string>> = Object.freeze({
+  PESSOA: "Pessoa",
+  EMPRESA: "Empresa",
+});
+
+export const TELA_FILTRO_SALVO_LABEL: Readonly<Record<TelaFiltroSalvo, string>> = Object.freeze({
+  FUNIL: "Funil",
+  CONTATOS: "Contatos",
+  CARTEIRA: "Carteira",
+  TAREFAS: "Tarefas",
+  COMISSOES: "Comissões",
 });

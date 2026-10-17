@@ -18,7 +18,7 @@ let aDela: { id: string }, aOutro: { id: string };
 const comoUsuario = (u: Usuario) => authMock.mockResolvedValue({ user: { id: u.id } });
 
 async function cenario(telefone: string, numeroId: string, leadTel: string) {
-  const lead = await prisma.lead.create({ data: { nome: `Lead ${leadTel}`, telefoneE164: leadTel, vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: `Lead ${leadTel}`, telefoneE164: leadTel, vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: leadTel, leadId: lead.id } });
   const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id, responsavelId: vendedor.id }));
   const msg = await prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: atendimento.conversaId, direcao: "ENTRADA", driver: "META_CLOUD", corpo: `Mensagem ${telefone}` } });
