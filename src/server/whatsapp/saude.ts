@@ -9,7 +9,9 @@ import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 // A régua de "fila não drena" é POR ESTADO (review PR #52): ADIADA com despacho no
 // futuro é uma fila SAUDÁVEL (noite/fim de semana/teto) — o problema é o que já venceu
 // e ninguém pegou. Cada estado tem seu relógio:
-//   PENDENTE → idade desde a criação (o próximo tick deveria drenar);
+//   PENDENTE → idade desde que ficou DESPACHÁVEL: a criação, ou o `agendadaPara` da
+//              mensagem agendada pelo atendente (Tarefas) — antes disso o despachante não
+//              a pega e ela não é incidente (C1 · R1 do #202);
 //   ADIADA   → quanto `despacharAposEm` está VENCIDO;
 //   ENVIANDO → quanto o prazo do claim expirou sem a recuperação rodar.
 
@@ -28,7 +30,7 @@ export interface SaudeCanal {
     pendentes: number;
     adiadas: number;
     enviando: number;
-    /** Idade em minutos da PENDENTE mais velha. */
+    /** Minutos desde que a PENDENTE mais velha ficou despachável (agendada no futuro não conta). */
     pendenteHaMin: number | null;
     /** Minutos desde que a ADIADA mais vencida passou do seu despacharAposEm (negativo = ainda no futuro). */
     adiadaVencidaHaMin: number | null;
@@ -46,18 +48,31 @@ export interface SaudeCanal {
 const minutosDesde = (agora: Date, quando: Date | null | undefined): number | null =>
   quando ? Math.round((agora.getTime() - quando.getTime()) / 60_000) : null;
 
+const maiorOuNulo = (a: number | null, b: number | null): number | null =>
+  a === null ? b : b === null ? a : Math.max(a, b);
+
 export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCanal> {
-  const [porStatus, pendenteMaisVelha, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica] =
+  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica] =
     await Promise.all([
+      // Contagem = ESTOQUE da fila, inclusive agendadas para o futuro (como as ADIADAS à
+      // espera de janela): é informativa e nenhum alerta depende dela. O que alarma é o
+      // relógio abaixo, que só olha o que já é despachável.
       prisma.intencaoMensagem.groupBy({
         by: ["status"],
         where: { status: { in: ["PENDENTE", "ADIADA", "ENVIANDO"] } },
         _count: { _all: true },
       }),
+      // Mesmo critério do despachante: PENDENTE sem agendamento conta desde a criação...
       prisma.intencaoMensagem.findFirst({
-        where: { status: "PENDENTE" },
+        where: { status: "PENDENTE", agendadaPara: null },
         orderBy: { criadaEm: "asc" },
         select: { criadaEm: true },
+      }),
+      // ...e a agendada só desde que venceu (agendadaPara > agora ainda não é fila).
+      prisma.intencaoMensagem.findFirst({
+        where: { status: "PENDENTE", agendadaPara: { lte: agora } },
+        orderBy: { agendadaPara: "asc" },
+        select: { agendadaPara: true },
       }),
       prisma.intencaoMensagem.findFirst({
         where: { status: "ADIADA", despacharAposEm: { not: null } },
@@ -86,7 +101,10 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
     ]);
 
   const contagem = new Map(porStatus.map((s) => [s.status, s._count._all]));
-  const pendenteHaMin = minutosDesde(agora, pendenteMaisVelha?.criadaEm);
+  const pendenteHaMin = maiorOuNulo(
+    minutosDesde(agora, pendenteMaisVelha?.criadaEm),
+    minutosDesde(agora, agendadaMaisVencida?.agendadaPara),
+  );
   const adiadaVencidaHaMin = minutosDesde(agora, adiadaMaisVencida?.despacharAposEm);
   const claimExpiradoHaMin = minutosDesde(agora, claimMaisVelho?.despacharAposEm);
 
