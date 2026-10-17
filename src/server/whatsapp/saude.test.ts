@@ -13,6 +13,8 @@ vi.mock("@/lib/prisma", () => ({
     intencaoMensagem: { groupBy: m.groupBy, findFirst: m.findFirst, count: m.count },
     numeroWhatsApp: { findMany: m.numeros },
     mensagemWhatsApp: { findFirst: m.inbound },
+    // Fase 4C: eventos do motor (sem número MOTOR ativo nestes cenários, fila de eventos vazia).
+    eventoMotorRecebido: { count: async () => 0, findFirst: async () => null },
   },
 }));
 vi.mock("@/server/cobrancas/politica", () => ({ carregarPoliticaRegua: m.politica }));
