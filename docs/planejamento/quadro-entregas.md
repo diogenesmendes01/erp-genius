@@ -2490,6 +2490,28 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   testes) e `reserva-vaga` (68). O banco foi apagado no fim.
 **Estado**: Implementado; aguardando o integrador e a confirmação da Q7. Não concluído.
 
+## CRM, bloco H: tarefas, agenda e mensagem agendada (Fase 2, Tasks 27 a 31; 17/10/2026)
+
+### Verificação para o PR (bloco H, branch `claude/fase2-h-tarefas`, 17/10/2026)
+- Tarefas: 27 (model `Tarefa` e `NotificacaoUsuario`, agrupamento por data civil institucional), 28 (ações de tarefa
+  com escopo por setor, versão e auditoria), 29 (mensagem agendada pela tarefa, com `agendadaPara` respeitado pelo
+  despachante), 30 (lembretes no cron, com notificação ao usuário) e 31 (tela `/tarefas` com lista, agenda e
+  calendário), mais as correções da revisão (ids de arraste da agenda semanal; editar a tarefa não rearma lembrete já
+  disparado; a lista mostra atrasadas antigas).
+- Migration 2.M4 `20261017090000_crm_tarefas`, conferida pelo integrador: vem depois de `20261001000000` a
+  `20261016130000_preferencias_inbox_usuario`.
+- **Merge da `main` (afd13cb9, com as Fases 2B a 2G, 2I, 3A e 3B):** houve conflito em `prisma/schema.prisma` (relações
+  de `Usuario`), `src/app/borda-rota-mapa.ts`, `src/app/borda-rota.render.test.ts` e `src/app/botoes.test.ts`. Nos
+  quatro, os dois lados foram mantidos (`/tarefas` ao lado de `/carteira` e `/comissoes`). `nav.ts`, `Sidebar.tsx`,
+  `labels.ts`, `trilha.ts` e `despachante.ts` mesclaram sem conflito. Nenhuma linha do H foi perdida: os
+  `revalidatePath("/tarefas")` e os ícones `Checklist`, `KanbanSquare` e `Briefcase` continuam.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 674 arquivos e 4874 testes, todos verdes.
+- Integração no perfil `dev-email` (`erp_genius_test_dev_email`, recriado com drop e create): `prisma migrate deploy`
+  aplicou tudo. Passaram `crm/tarefas`, `crm/lembretes`, `crm/mensagens-agendadas`, `whatsapp/despachante-agendada`,
+  `whatsapp/despachante-comercial` e `whatsapp/despachante.live`: 6 arquivos e 54 testes, com saída 0.
+**Estado**: Implementado; aguardando revisão e merge. Não concluído.
+
 ## Fase 3E: React e porte dos componentes do motor (17/10/2026)
 
 - **Branch:** `claude/fase3-e-componentes` (base `main` 08e2b4b7). **Tarefas:** 24 a 28 (React, lista virtual, histórico,
