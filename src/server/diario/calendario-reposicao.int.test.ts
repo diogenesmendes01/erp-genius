@@ -60,7 +60,7 @@ async function publicarCalendario(versao: number, periodos: Prisma.InputJsonValu
 }
 
 it.each([true, false])("usa apenas calendário aprovado vigente; feriado removido=%s", async (removido) => {
-  const feriado = [{ id: "feriado", nome: "Dia não letivo", tipo: "FERIADO", inicio: "2026-10-12", fim: "2026-10-12" }];
+  const feriado = [{ id: "feriado", nome: "Dia não letivo", tipo: "FERIADO", inicio: "2099-10-12", fim: "2099-10-12" }];
   await publicarCalendario(2, feriado);
   await publicarCalendario(3, removido ? [] : feriado);
   // Uma proposta posterior rejeitada não restaura o feriado.
@@ -75,7 +75,7 @@ it.each([true, false])("usa apenas calendário aprovado vigente; feriado removid
   entrar(secretariaId);
   const resultado = await agendarReposicaoIndividual({
     reposicaoId: "pedido-calendario-vigente", professorId,
-    inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC",
+    inicioLocal: "2099-10-12T10:00", fimLocal: "2099-10-12T11:00", fuso: "UTC",
     autorizacaoExcecaoId: autorizacao.id, motivo: "Data letiva após revisão aprovada",
     chaveIdempotencia: "agenda-calendario-vigente",
   });
