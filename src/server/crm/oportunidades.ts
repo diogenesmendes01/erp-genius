@@ -32,7 +32,6 @@ export async function moverEtapaEmLote(
     }
     if (movidas.length > 0) {
       revalidatePath("/funil");
-      revalidatePath("/leads");
       revalidatePath("/inbox");
     }
     return { movidas, recusadas };
