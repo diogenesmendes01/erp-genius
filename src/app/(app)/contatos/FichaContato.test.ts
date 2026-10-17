@@ -53,7 +53,7 @@ function renderLista(itens: LinhaContato[], extra: object = {}) {
 
 describe("FichaContato", () => {
   it("abas Visão geral, Histórico, Oportunidades e Campos; opt-out sem Desfazer", () => {
-    const html = renderFicha(detalhe, ["contatos.ver", "contatos.editar"]);
+    const html = renderFicha(detalhe, ["contatos.ver", "contatos.editar", "funil.ver"]);
     expect(html).toMatch(/>Visão geral<[\s\S]*>Histórico<[\s\S]*>Oportunidades<[\s\S]*>Campos</);
     expect(html).toContain("Registrar opt-out");
     expect(html).not.toContain("Desfazer");
@@ -64,6 +64,20 @@ describe("FichaContato", () => {
     for (const t of ["Importar", "Mesclar", "Nova oportunidade", "Temperatura"]) expect(html).not.toContain(t);
     expect(html).not.toContain("Registrar opt-out");
     expect(html).not.toContain("Salvar dados");
+  });
+
+  it("secretaria não vê a aba Oportunidades nem dados de funil, nem forçando a aba", () => {
+    for (const aba of ["geral", "oportunidades"] as const) {
+      const html = renderFicha(detalhe, ["contatos.ver"], [], { abaInicial: aba });
+      expect(html).not.toContain(">Oportunidades<");
+      for (const t of ["Temperatura", "Morno", "Novo", "Bia", "Nenhuma oportunidade"]) expect(html).not.toContain(t);
+    }
+  });
+
+  it("quem tem funil.ver vê a aba e a oportunidade com etapa e temperatura", () => {
+    const html = renderFicha(detalhe, ["contatos.ver", "funil.ver"], [], { abaInicial: "oportunidades" });
+    expect(html).toContain(">Oportunidades<");
+    expect(html).toContain("Bia");
   });
 
   it("vendedor vê Nova oportunidade; sem a capacidade de mover o botão some", () => {
