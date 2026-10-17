@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
+import { mkdir, readFile, rm, writeFile } from "fs/promises";
+import path from "path";
+import { UPLOAD_DIR } from "@/lib/uploads";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -66,12 +69,33 @@ describe("encaminhar mensagem como cópia", () => {
     expect((await encaminharMensagem({ mensagemId: m.id, destinoAtendimentoIds: Array(6).fill(meu2.a.id) })).ok).toBe(false);
   });
 
-  it("mídia é reenviada pelo mesmo midiaPath da origem", async () => {
+  it("mídia da origem é copiada para whatsapp-out/<autor> (de onde o despachante lê) com o mesmo conteúdo", async () => {
     const { v1, numero, origem, meu2 } = await cenario();
-    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: "BAILEYS", tipo: "IMAGEM", corpo: "foto", midiaPath: "/api/files/whatsapp-in/x.jpg" } });
+    const nome = `encaminhar-${Date.now()}.jpg`;
+    const dirIn = path.join(UPLOAD_DIR, "whatsapp");
+    await mkdir(dirIn, { recursive: true });
+    await writeFile(path.join(dirIn, nome), Buffer.from("conteudo-da-imagem"));
+    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: "BAILEYS", tipo: "IMAGEM", corpo: "foto", midiaPath: `/api/files/whatsapp/${nome}` } });
     comoUsuario(v1);
-    const r = await encaminharMensagem({ mensagemId: midia.id, destinoAtendimentoIds: [meu2.a.id] });
-    if (!r.ok) throw new Error(r.erro);
-    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: r.dado!.intencaoIds[0] } })).toMatchObject({ tipo: "IMAGEM", midiaPath: "/api/files/whatsapp-in/x.jpg", corpoRenderizado: "foto" });
+    try {
+      const r = await encaminharMensagem({ mensagemId: midia.id, destinoAtendimentoIds: [meu2.a.id] });
+      if (!r.ok) throw new Error(r.erro);
+      const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: r.dado!.intencaoIds[0] } });
+      expect(i).toMatchObject({ tipo: "IMAGEM", corpoRenderizado: "foto" });
+      expect(i.midiaPath).toMatch(new RegExp(`^/api/files/whatsapp-out/${v1.id}/[^/]+\\.jpg$`));
+      const copia = path.join(UPLOAD_DIR, i.midiaPath!.slice("/api/files/".length));
+      expect((await readFile(copia)).toString()).toBe("conteudo-da-imagem");
+      await rm(copia, { force: true });
+    } finally {
+      await rm(path.join(dirIn, nome), { force: true });
+    }
+  });
+
+  it("mídia que sumiu do storage recusa o encaminhamento sem criar intenção", async () => {
+    const { v1, numero, origem, meu2 } = await cenario();
+    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: "BAILEYS", tipo: "IMAGEM", corpo: "foto", midiaPath: "/api/files/whatsapp/nao-existe.jpg" } });
+    comoUsuario(v1);
+    expect((await encaminharMensagem({ mensagemId: midia.id, destinoAtendimentoIds: [meu2.a.id] })).ok).toBe(false);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 });
