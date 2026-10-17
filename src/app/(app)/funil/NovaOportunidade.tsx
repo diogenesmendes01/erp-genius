@@ -127,7 +127,7 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   const fechar = () => aoFechar?.();
 
   return (
-    <Modal titulo="Nova oportunidade" aoFechar={fechar} bloquearFechamento={acao.ocupado}>
+    <Modal titulo="Nova oportunidade" telaCheiaNoCelular aoFechar={fechar} bloquearFechamento={acao.ocupado}>
       <div role="group" aria-label="Tipo" className="mb-3 flex gap-2">
         <Botao variante={!empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={!empresa} disabled={acao.ocupado || !!criadaId} onClick={() => setEmpresa(false)}>Pessoa</Botao>
         <Botao variante={empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={empresa} disabled={acao.ocupado || !!criadaId} onClick={() => setEmpresa(true)}>Empresa</Botao>
