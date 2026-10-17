@@ -56,7 +56,7 @@ function destinatario(destino: string): { para: string } | { paraE164: string } 
 }
 
 function numeroId(numero: NumeroCanal): string {
-  return numero.providerRef ?? numero.id;
+  return encodeURIComponent(numero.providerRef ?? numero.id);
 }
 
 function citacao(opcoes: OpcoesEnvio): Record<string, unknown> {

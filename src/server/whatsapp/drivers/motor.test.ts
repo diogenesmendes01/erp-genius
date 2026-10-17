@@ -142,3 +142,12 @@ describe("driverMotor", () => {
     expect(p2).toMatchObject({ tipo: "imagem", gif: true });
   });
 });
+
+describe("driverMotor: id do número na rota", () => {
+  it("codifica o providerRef com encodeURIComponent (C6 da R1 do #205)", async () => {
+    chamar.mockReset();
+    chamar.mockResolvedValue({ providerMessageId: "3EB0X", mensagemIdMotor: null });
+    await driverMotor.enviarTexto({ ...numero, providerRef: "n 1/x" }, "+5", "oi", op);
+    expect(chamar.mock.calls[0][0]).toBe("/v1/numeros/n%201%2Fx/mensagens");
+  });
+});
