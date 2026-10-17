@@ -2458,3 +2458,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `dados.exportar_leads`. O integrador precisa confirmar essa capacidade e decidir a quem concedê-la antes do merge.
 **Estado**: Implementado; correções da revisão final aplicadas; aguardando o integrador (inclusive a confirmação de
 `dados.exportar_contatos`). Não concluído.
+
+- Verificação final do bloco (17/10/2026, branch `claude/fase2-f-contatos`, Tarefas 22 a 24): `tsc --noEmit` saída 0;
+  `npm test` 675 arquivos/4.879 testes, saída 0 (numa primeira rodada, com lint em paralelo, `confirmacoes.test.ts`
+  estourou o tempo de 30 s por carga; isolado passa e a rerrodada completa passou); `npm run lint` 0 erros, 43 avisos.
+  Integração no perfil `dev-gravacoes`: os 8 `*.int.test.ts` do diff + `src/server/crm`: 18 arquivos, 117 testes verdes,
+  saída 0. O `vitest related` sobre o diff alcança 206 arquivos de integração (via `evento.ts`/`labels.ts`) e foi
+  interrompido; até ali só falhou `agenda/substituicao-avisos`, preexistente da linha de base. Suíte completa fica com o integrador.
