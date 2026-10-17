@@ -5,7 +5,7 @@ import { exigirSessaoComPapel } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
 import { nomeDoContato } from "@/server/whatsapp/nome-contato";
-import { LEADS_POR_PAGINA, filtrosDaConsultaLeads, whereFiltrosLead, type FiltrosLead, type FiltrosLeads } from "./filtros";
+import { whereFiltrosLead, type FiltrosLead } from "./filtros";
 
 /** Vendedores ativos (para atribuir como dono do lead). */
 export async function listarVendedores() {
@@ -185,15 +185,3 @@ export async function obterLead(id: string, usuario: UsuarioSessao) {
 }
 
 export type LeadListado = Awaited<ReturnType<typeof listarLeads>>[number];
-
-/** Lista de /leads (E4): uma página com os filtros da URL, o total filtrado e o total da carteira. */
-export async function listarLeadsPagina(usuario: UsuarioSessao, filtros: FiltrosLeads) {
-  if (!podeListarLeads(usuario)) return { itens: [] as LeadListado[], total: 0, totalBase: 0 };
-  const consulta = filtrosDaConsultaLeads(filtros);
-  const [itens, total, totalBase] = await Promise.all([
-    listarLeads(usuario, consulta, { skip: (filtros.pagina - 1) * LEADS_POR_PAGINA, take: LEADS_POR_PAGINA }),
-    whereListaLeads(usuario, consulta).then((where) => prisma.oportunidade.count({ where })),
-    escopoComercialAtual(usuario).then((where) => prisma.oportunidade.count({ where })),
-  ]);
-  return { itens, total, totalBase };
-}

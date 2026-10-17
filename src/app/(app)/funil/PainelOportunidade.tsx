@@ -20,6 +20,7 @@ import { destinoDoArraste } from "@/server/crm/etapas";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico";
 import { ModalPerda } from "./ModalPerda";
+import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
 
 type Aba = "oportunidade" | "detalhes" | "atividade";
@@ -36,6 +37,8 @@ type Props = {
   historico: ItemHistorico[];
   capacidades: CapacidadeCrm[];
   vendedores: { id: string; nome: string }[];
+  /** Países operacionais, para editar os dados da oportunidade. */
+  paises?: { id: string; nome: string }[];
   aoFechar: () => void;
   /** Fuso institucional para exibir datas; o padrão é o do CartaoOportunidade. */
   fuso?: string;
@@ -54,7 +57,7 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, aoFechar, fuso = FUSO_PADRAO, abaInicial = "oportunidade" }: Props) {
+export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, abaInicial = "oportunidade" }: Props) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
@@ -219,28 +222,28 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
         )}
 
         {aba === "detalhes" && (
-          <div role="tabpanel" id="painel-detalhes" aria-labelledby="aba-detalhes">
+          <div role="tabpanel" id="painel-detalhes" aria-labelledby="aba-detalhes" className="space-y-4">
             <dl>
               <Linha rotulo="Tipo">{op.b2b ? "Empresa (B2B)" : "Pessoa física"}</Linha>
               <Linha rotulo="País">{op.pais ?? "Não informado"}</Linha>
               <Linha rotulo="Criada em">{dataHora(op.criadoEm, fuso)}</Linha>
               {op.proximoFollowUp && <Linha rotulo="Próximo follow-up">{dataHora(op.proximoFollowUp, fuso)}</Linha>}
-              <Linha rotulo="Interesse">{op.interesse ?? "Não informado"}</Linha>
-              <Linha rotulo="Objetivo">{op.objetivo ?? "Não informado"}</Linha>
-              <Linha rotulo="Urgência">{op.urgencia ?? "Não informada"}</Linha>
-              <Linha rotulo="Orçamento">{op.orcamento ?? "Não informado"}</Linha>
-              <Linha rotulo="Objeção">{op.objecao ?? "Não informada"}</Linha>
             </dl>
             {op.pessoaId && (
-              <p className="mt-3 text-sm">
+              <p className="text-sm">
                 <Link className="text-brand-700 underline" href={`/contatos/${op.pessoaId}`}>Abrir contato</Link>
               </p>
             )}
+            <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />
+            <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
+            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} />
+            <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
           </div>
         )}
 
         {aba === "atividade" && (
           <div role="tabpanel" id="painel-atividade" aria-labelledby="aba-atividade" className="space-y-4">
+            {podeMover && <InteracaoOportunidade oportunidadeId={op.id} />}
             {podeMover && (
               <div className="grid gap-2">
                 <label className="grid gap-1 text-sm text-gray-700">

@@ -1839,7 +1839,6 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/app/(app)/diario/encontros/[id]/OcorrenciaParticular.tsx", nome: "nomes", motivo: "opção do informe docente, na voz do professor (\"Aluno faltou\", \"Cancelada pela escola\")" },
   { arquivo: "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/SegundaChamadaPainel.tsx", nome: "override item.reserva.status", motivo: "frase explicativa das reservas consumidas/liberadas (\"consumida por falta; encontro não realizado\"); as demais vêm do mapa central" },
   { arquivo: "src/app/(app)/financeiro/AcessoAulasPainel.tsx", nome: "ternário m.status", motivo: "frase do acesso às aulas sob a guarda da liberação (\"Contrato pausado\", \"Contrato não ativo…\")" },
-  { arquivo: "src/app/(app)/leads/[id]/FichaLead.tsx", nome: "ternário lead.temperatura", motivo: "faixa de prioridade derivada da temperatura (Alta/Média/Baixa, doc 09), não o nome da temperatura" },
 ];
 /** Mapas fora das telas (src/lib, src/server) que não são rótulo do valor: mensagens, frases de documento, regras. */
 const MAPAS_DE_DOMINIO: { arquivo: string; nome: string; motivo: string }[] = [

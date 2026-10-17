@@ -65,13 +65,12 @@ import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
 // Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
 const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
 
-function revalidar(leadId?: string | null) {
-  revalidatePath("/leads");
+function revalidar() {
+  revalidatePath("/funil");
   revalidatePath("/alunos");
   revalidatePath("/financeiro", "layout");
   revalidatePath("/secretaria");
   revalidatePath("/comissoes");
-  if (leadId) revalidatePath(`/leads/${leadId}`);
 }
 
 // vencimento/comissão: regras puras em @/server/_shared/regras (testáveis).
@@ -626,7 +625,7 @@ export async function criarMatricula(
     exigirPapel(autor, ...PAPEIS_CRIAR);
 
     const res = await prisma.$transaction((tx) => criarMatriculaTx(tx, autor, input));
-    revalidar(res.leadId);
+    revalidar();
     return { id: res.id, alunoId: res.alunoId, aguardaPreco: res.aguardaPreco };
   });
 }
@@ -641,7 +640,7 @@ export async function ativarMatricula(
     exigirPapel(autor, ...PAPEIS_ATIVAR);
     const dados = AtivacaoSchema.parse(input);
 
-    const { leadId } = await prisma.$transaction((tx) =>
+    await prisma.$transaction((tx) =>
       ativarMatriculaTx(tx, autor, matriculaId, {
         valorRecebido: dados.valorRecebido,
         forma: dados.forma as FormaPagamento,
@@ -650,7 +649,7 @@ export async function ativarMatricula(
         comentario: dados.comentario,
       }),
     );
-    revalidar(leadId);
+    revalidar();
   });
 }
 
@@ -660,8 +659,8 @@ export async function concluirMatricula(matriculaId: string): Promise<Resultado>
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_ATIVAR);
     if (!matriculaId.trim()) throw new ErroRegra("Matrícula obrigatória.");
-    const { leadId } = await prisma.$transaction((tx) => ativarMatriculaTx(tx, autor, matriculaId, null));
-    revalidar(leadId);
+    await prisma.$transaction((tx) => ativarMatriculaTx(tx, autor, matriculaId, null));
+    revalidar();
   });
 }
 
@@ -694,7 +693,7 @@ export async function criarEAtivarMatricula(
       return { id: criada.id, alunoId: criada.alunoId, leadId: ativada.leadId };
     });
 
-    revalidar(res.leadId);
+    revalidar();
     return { id: res.id, alunoId: res.alunoId };
   });
 }
@@ -786,7 +785,7 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string): P
     if (!link) throw new ErroRegra("Informe o link (ou código) de pagamento enviado.");
     if (link.length > 2048) throw new ErroRegra("Link longo demais.");
     const agora = new Date();
-    const leadId = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       const cobranca = await tx.cobranca.findUnique({
         where: { id: cobrancaId },
         include: { matricula: { select: { id: true, leadId: true, status: true } } },
@@ -810,9 +809,8 @@ export async function registrarLinkPagamento(cobrancaId: string, url: string): P
         autorId: autor.id,
         payload: { quando: agora.toISOString(), reenvio: cobranca.linkEnviadoEm != null },
       });
-      return cobranca.matricula.leadId;
     });
-    revalidar(leadId);
+    revalidar();
   });
 }
 
@@ -829,7 +827,7 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
     const driver = gatewayAtivo();
 
     const agora = new Date();
-    const { url, leadId } = await prisma.$transaction(async (tx) => {
+    const { url } = await prisma.$transaction(async (tx) => {
       const cobranca = await tx.cobranca.findUnique({
         where: { id: cobrancaId },
         include: { matricula: { select: { id: true, leadId: true } } },
@@ -871,9 +869,9 @@ export async function gerarLinkPagamentoGateway(cobrancaId: string): Promise<Res
           linkReutilizado: !!(cobranca.gatewayRef && cobranca.linkPagamento),
         },
       });
-      return { url: link.url, leadId: cobranca.matricula.leadId };
+      return { url: link.url };
     });
-    revalidar(leadId);
+    revalidar();
     return { url };
   });
 }
