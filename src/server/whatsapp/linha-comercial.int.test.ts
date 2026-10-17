@@ -130,11 +130,12 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
-  it("LC-04: gerente da equipe do dono vê; gerente de outra equipe não", async () => {
+  it("LC-04: gerente da equipe do dono vê; gerente de outra equipe também (E5)", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     expect(await listarConversas(sessao(gerenteA))).toHaveLength(1);
-    expect(await listarConversas(sessao(gerenteB))).toHaveLength(0);
+    // E5, Task 13: GERENTE_COMERCIAL vê todo COMERCIAL (antes: só a carteira da equipe).
+    expect(await listarConversas(sessao(gerenteB))).toHaveLength(1);
     expect(await contarNaoLidas(sessao(gerenteA))).toBe(1);
   });
 
@@ -367,8 +368,10 @@ describe("LC-12: canal institucional inalterado", () => {
     await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: linha.id, contatoId: contato.id, finalidade: "SECRETARIA" }));
     await mensagem("linha-a");
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow();
-    // SECRETARIA sem aluno não tem destinatário atual → triagem, como antes da SPEC-ERP-005.
-    expect(m.atendimentoId).toBeNull();
+    // E4 (f2af0cdb), Task 13: SECRETARIA sem aluno é destinatário válido do atendimento roteado
+    // (antes: triagem). Cai no atendimento institucional já aberto, nunca no COMERCIAL da linha.
+    expect(m.atendimentoId).not.toBeNull();
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: m.atendimentoId! } })).finalidade).toBe("SECRETARIA");
     expect(await prisma.atendimentoWhatsApp.count({ where: { finalidade: "COMERCIAL" } })).toBe(0);
   });
 });
