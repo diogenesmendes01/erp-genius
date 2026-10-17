@@ -14,6 +14,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/diario": "Diário de aulas",
   "/empresas": "Empresas",
   "/financeiro": "Financeiro",
+  "/funil": "Funil",
   "/home": "Home",
   "/inbox": "Inbox",
   "/leads": "Leads",
@@ -131,7 +132,8 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Empresas, leads
   "/empresas/*": "Empresa",
   "/leads/*": "Ficha do lead",
-  "/leads/*/contratacao": "Contratação",
+  "/leads/*/contratacao": "Contratação", // só redireciona para /oportunidades/*/contratacao; sai com a Tarefa 37
+  "/oportunidades/*/contratacao": "Contratação",
 
   // Financeiro
   "/financeiro/cobrancas": "Cobranças",

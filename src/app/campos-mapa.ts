@@ -58,6 +58,15 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Motivo do encerramento · obrigatório · select",
     'Observação · obrigatório se motivoEnc === "Outro" · input · dica · erro: erroObsEnc',
   ],
+  "src/app/(app)/funil/NovaOportunidade.tsx": [
+    '{empresa ? "Nome da empresa" : "Nome"} · obrigatório · input · erro: erroLocal',
+    "WhatsApp · opcional · input",
+    "E-mail · opcional · input",
+    "País · opcional · select",
+    "Origem · opcional · select",
+    "Etapa · opcional · select",
+    "Responsável · opcional · select",
+  ],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": [
     "Nome · obrigatório · input · erro: errosPasso1.primeiroNome",
     "Sobrenome(s) · obrigatório · input · erro: errosPasso1.sobrenome",

@@ -14,8 +14,6 @@ import {
   executarAcao,
   ErroRegra,
   ErroPermissao,
-  ehEtapaManual,
-  transicaoManualPermitida,
   resolverDonoLead,
   normalizarTelefoneE164,
   podeCheckinExperimental,
@@ -23,6 +21,7 @@ import {
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
+import { moverEtapaTx } from "@/server/crm/mover-etapa";
 import { escopoPessoas, garantirPessoaTx } from "@/server/crm/pessoas";
 import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
@@ -87,6 +86,7 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
 
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
+  revalidatePath("/funil");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
   if (id) revalidatePath(`/leads/${id}`);
@@ -96,7 +96,7 @@ function revalidarLead(id?: string) {
 async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   exigirPapel(usuario, ...PAPEIS_COMERCIAL);
   const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
-  if (!lead) throw new ErroPermissao("Lead fora da sua carteira autorizada.");
+  if (!lead) throw new ErroPermissao("Oportunidade fora da sua carteira.");
   return lead;
 }
 
@@ -149,10 +149,36 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
       const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
       // `Empresa` não tem dono nem carteira; o escopo possível é o cadastro estar ativo. Inexistente ou
       // inativa devolve a mesma mensagem, em vez de estourar a FK (P2003) num erro genérico.
-      const empresaId = dados.empresaId || null;
+      let empresaId = dados.empresaId || null;
+      if (dados.criarEmpresa && (empresaId || dados.pessoaId)) {
+        throw new ErroRegra("Oportunidade de empresa nova não leva empresa nem contato já existentes.");
+      }
       if (empresaId) {
         const empresa = await tx.empresa.findFirst({ where: { id: empresaId, ativo: true }, select: { id: true } });
         if (!empresa) throw new ErroRegra("Empresa não encontrada.");
+      } else if (dados.criarEmpresa) {
+        // Ruling (C2 da R1 do #196): no modo Empresa a oportunidade nasce ligada a uma `Empresa` prospect, criada
+        // com o nome e o contato digitados, e nenhuma `Pessoa` recebe o nome da empresa. Participantes
+        // (`ParticipanteOportunidade`) entram depois, pela ficha.
+        const codigoEmpresa = await gerarCodigo("empresa", tx);
+        const empresa = await tx.empresa.create({
+          data: {
+            codigo: codigoEmpresa,
+            nome: dados.nome,
+            paisId: dados.paisId || null,
+            contatoTelefone: telefoneE164,
+            contatoEmail: dados.email || null,
+            origemCanal: dados.origemCanal ?? null,
+          },
+        });
+        empresaId = empresa.id;
+        await registrarEvento(tx, {
+          tipo: "EmpresaCriada",
+          agregadoTipo: "Empresa",
+          agregadoId: empresa.id,
+          autorId: autor.id,
+          payload: { codigo: codigoEmpresa, nome: empresa.nome, origem: "oportunidade" },
+        });
       }
       // Comportamento intencional nesta fase (R1 do PR #194, C2): com `pessoaId` informado, o telefone não
       // entra em `ContatoWhatsApp`; e o `email` digitado só vai para a Pessoa quando ela é criada aqui (via
@@ -166,7 +192,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
           select: { id: true },
         });
         if (!existente) throw new ErroRegra("Contato não encontrado.");
-      } else {
+      } else if (!dados.criarEmpresa) {
         pessoaId = (
           await garantirPessoaTx(
             tx,
@@ -186,7 +212,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
           paisId: dados.paisId || null,
           segmento: dados.segmento,
           temperatura: dados.temperatura,
-          b2b: dados.b2b,
+          b2b: dados.criarEmpresa || dados.b2b,
           vendedorDonoId: donoId,
           origemCampanha: dados.origemCampanha || null,
           origemConjunto: dados.origemConjunto || null,
@@ -202,7 +228,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
         agregadoTipo: "Lead",
         agregadoId: lead.id,
         autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId },
+        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId },
       });
       if (donoId) {
         await registrarEvento(tx, {
@@ -396,34 +422,8 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const lead = await exigirLeadVisivel(id, autor);
-    if (lead.etapa === etapa) return;
-
-    // Etapas geradas por evento (Exp. Realizada, Proposta, Aguardando Matrícula…)
-    // e saídas paralelas (Perdido/Matriculado) NÃO se movem por arraste.
-    if (!ehEtapaManual(etapa)) {
-      throw new ErroRegra(
-        "Esta etapa é definida por uma ação específica (agendar/realizar experimental, " +
-          "enviar proposta, marcar perdido ou converter em matrícula), não pelo arraste.",
-      );
-    }
-    // Valida a máquina de estados origem→destino — bloqueia saltos inválidos no
-    // backend mesmo que o client envie um destino fora da sequência (doc 10 §1).
-    if (!transicaoManualPermitida(lead.etapa, etapa)) {
-      throw new ErroRegra(
-        `Transição inválida: não é possível mover de "${lead.etapa}" para "${etapa}".`,
-      );
-    }
-    await prisma.$transaction(async (tx) => {
-      await tx.oportunidade.update({ where: { id }, data: { etapa } });
-      await registrarEvento(tx, {
-        tipo: "EtapaAlterada",
-        agregadoTipo: "Lead",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { de: lead.etapa, para: etapa, origem: "manual" },
-      });
-    });
+    // Máquina de estados, trava da linha e Evento na mesma transação: ver crm/mover-etapa.ts.
+    await prisma.$transaction((tx) => moverEtapaTx(tx, autor, id, etapa));
     revalidarLead(id);
   });
 }

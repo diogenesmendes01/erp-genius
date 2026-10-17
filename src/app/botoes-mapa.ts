@@ -927,7 +927,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Gerenciar documentos do contrato → btnSec",
     "<button> Reenviar link · Registrar link → btnSec",
   ],
-  "leads/[id]/contratacao/AgendaParticularFormulario.tsx": [
+  "oportunidades/[id]/contratacao/AgendaParticularFormulario.tsx": [
     "<button> Buscar professores → secundario/lg",
     "<button> Professores anteriores → secundario/md",
     "<button> Mais professores → secundario/md",
@@ -935,7 +935,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Adicionar encontro → secundario/lg",
     "<button> Conferir disponibilidade → secundario/lg",
   ],
-  "leads/[id]/contratacao/PreparacaoFormulario.tsx": [
+  "oportunidades/[id]/contratacao/PreparacaoFormulario.tsx": [
     "<button> Conferindo e preparando… · Preparar contratação e reservar → secundario/lg",
   ],
   "empresas/EmpresasCliente.tsx": [
@@ -970,6 +970,42 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrar → btnSec",
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
+  ],
+  "funil/FunilCliente.tsx": [
+    "<Link> Quadro → primario|secundario/md",
+    "<Link> Lista → primario|secundario/md",
+    "<Botao> Nova oportunidade → primario/md",
+    "<Botao> Filtrar → secundario/md",
+    "<Link> Limpar → fantasma/md",
+    "<Botao> Mover selecionadas → secundario/md",
+  ],
+  "funil/ModalPerda.tsx": [
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Salvando… · Marcar como perdida → perigo/md",
+  ],
+  "funil/NovaOportunidade.tsx": [
+    "<Botao> Pessoa → primario|secundario/sm",
+    "<Botao> Empresa → primario|secundario/sm",
+    "<Botao> Usar cadastro → secundario/sm",
+    "<Botao> Não usar → fantasma/sm",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Salvando… · Criar oportunidade → primario/md",
+  ],
+  "funil/PainelOportunidade.tsx": [
+    "<Botao> Atribuir responsável → secundario/md",
+    "<Botao> Agendar experimental → secundario/md",
+    "<Botao> Registrar link de pagamento → secundario/md",
+    "<Botao> Enviar proposta → primario/md",
+    "<Link> Preparar contratação → primario/md",
+    "<Botao> Marcar como perdida → perigo/md",
+    "<Botao> Registrar nota → secundario/md",
+  ],
+  "funil/QuadroFunil.tsx": [
+    "<Botao> Recolher · Mostrar cartões → fantasma/sm",
+  ],
+  "funil/page.tsx": [
+    "<Link> Limpar filtros → secundario/md",
+    "<a> Exportar → secundario/lg",
   ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",

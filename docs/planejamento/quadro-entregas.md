@@ -2327,3 +2327,56 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Verificação com o `main` mesclado: `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43 avisos já
   existentes); `vitest run` com 657 arquivos e 4758 testes, todos verdes.
 **Estado**: Implementado; correções da R1 aplicadas; aguardando o merge. Não concluído.
+
+## CRM, bloco E: funil (Fase 2, Tasks 12 a 18; 16/10/2026)
+
+### Verificação para o PR (bloco E, branch `claude/fase2-e-funil`, 16/10/2026)
+- Tarefas: 12 a 18 (funil: Kanban, lista, perda, ganho e contratação).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 653 arquivos e 4680 testes verdes (linha de base: 643 arquivos e 4607 testes).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco D): 13 arquivos,
+  153 testes verdes e 1 falha, a preexistente da linha de base (`src/server/whatsapp/inbox.int.test.ts`, "lead de OUTRO
+  vendedor ... não vaza o cockpit"), que este bloco não toca. Nenhuma falha nova. Suíte completa fica com o integrador.
+
+### Correções da R1 do #196 (17/10/2026)
+- **B1 (integração com o `main`):**
+  - O `main` (46f69962, já com o #194 e o #195) foi mesclado, primeiro via bloco D (`8bee5cbe`) e depois direto
+    (`f8abcd1d`).
+  - Em `revalidarLead`, fica só `/funil` (o `main` tirou `/pipeline`).
+  - Nenhum esqueleto do `main` serve para colunas de Kanban. Por isso, `EsqueletoColunas` volta para
+    `src/components/Esqueleto.tsx`, que o `funil/loading.tsx` usa, junto com a linha do teste e o piso de 8
+    exports em `Esqueleto.test.ts`.
+  - O mapa da trilha (C22 da #170, que veio do `main`) volta a ter `/leads/*/contratacao`. A página só redireciona
+    para `/oportunidades/*/contratacao` e sai com a Tarefa 37 (`595da65a`).
+- **C1 ("Mudar etapa…" da ficha), em `1b826890`:** o select de `/leads/[id]` tira "Exp. agendada" e oferece só
+  Novo, 1º contato e Qualificado. `moverEtapa` sempre recusava esse destino, e a experimental tem o próprio botão
+  "Agendar experimental". O teste está em `FichaLead.test.ts`.
+- **C2 (oportunidade de Empresa), em `74c70470`:**
+  - **Ruling:** o plano (Tasks 7, 8 e 16) dá `Empresa` B2B, `Oportunidade.empresaId`, `ParticipanteOportunidade` e
+    `criarLead` com `empresaId`, mas não define o fluxo do modo Empresa na nova oportunidade. A decisão segura é a
+    oportunidade de empresa **criar a `Empresa` e ligar `empresaId`, sem criar `Pessoa` com o nome da empresa**.
+    O participante não é criado automaticamente, porque o plano não pede isso. Ele entra depois, pela ficha.
+  - `criarLead({ criarEmpresa: true })`:
+    - cria a `Empresa` (código `E-`, `contatoTelefone`, `contatoEmail` e `origemCanal` vindos do formulário) com
+      o Evento `EmpresaCriada`;
+    - liga `empresaId` e grava `b2b = true`;
+    - não chama `garantirPessoaTx`, então não cria `Pessoa` nem `ContatoWhatsApp`;
+    - recusa a chamada se vier junto com `empresaId` ou `pessoaId`.
+  - `empresaId` sozinho segue a regra do #194: a empresa precisa estar ativa, e a pessoa de contato é criada pelo
+    nome digitado. `LeadCriado` passa a levar `empresaId` no payload.
+  - No modo Empresa, `NovaOportunidade` manda `criarEmpresa`, não manda `pessoaId` e não busca duplicados de pessoa.
+  - Testes: `NovaOportunidade.interacao.test.ts` e `pessoas.int.test.ts`.
+- **C3 (ponto de atenção de desempenho):** as ordens "tempo" e "perdidos" de `carregarFunil` carregam todos os ids
+  da coluna (no caso de perdidos, todos os PERDIDO do escopo) para ordenar e cortar em memória. Isso funciona no
+  volume atual, mas cresce com a base. Quando o volume subir, a ordenação e o corte devem ir para o SQL (por
+  exemplo, `etapaDesde` materializado ou uma subconsulta por `MAX(Evento.criadoEm)` com `LIMIT`).
+- **C4 (integração):** num banco descartável próprio, `erp_genius_test_fix196` (localhost:54329), `prisma migrate
+  deploy` aplicou tudo e `migrate status` deu "Database schema is up to date!". Passaram `funil` (4 testes),
+  `historico` (2), `oportunidades` (4) e `matricula/preparacao-escopo` (2), mais `crm/pessoas` (16) e
+  `comercial/leads` (8), que cobrem o `criarLead`: 6 arquivos e 36 testes no total. O banco foi apagado no fim.
+- Verificação com o `main` mesclado: `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43 avisos já
+  existentes); `vitest run` com 663 arquivos e 4792 testes, todos verdes. Uma rodada anterior teve uma falha
+  intermitente em `src/app/confirmacoes.test.ts`: o teste passa isolado (59 testes, cerca de 18 s) e passou na
+  rodada completa seguinte.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
