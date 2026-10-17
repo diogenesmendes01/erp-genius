@@ -852,3 +852,44 @@ async function falharClaim(id: string, motivo: string): Promise<void> {
     data: { status: "FALHOU", motivoFalha: motivo },
   });
 }
+
+/**
+ * Envio humano para GRUPO (E3.5): grupo não tem atendimento nem intenção, então a mensagem `NA_FILA`
+ * com `clientMessageId` é despachada direto, pelo mesmo driver. Sem `WHATSAPP_LIVE=1` nada sai
+ * (`SIMULADA`, a mensagem continua `NA_FILA`). Grupo não recebe automação: só origem HUMANO.
+ */
+export async function despacharMensagemGrupo(mensagemId: string, agora: Date = new Date()): Promise<"ENVIADA" | "FALHOU" | "SIMULADA"> {
+  const m = await prisma.mensagemWhatsApp.findUnique({
+    where: { id: mensagemId },
+    include: { numero: true, conversa: { include: { grupo: true } } },
+  });
+  if (!m || m.direcao !== "SAIDA" || m.status !== "NA_FILA" || !m.clientMessageId || !m.conversa.grupo || m.origem !== "HUMANO") {
+    throw new Error("Mensagem de grupo inválida para despacho.");
+  }
+  if (process.env.WHATSAPP_LIVE !== "1") return "SIMULADA";
+
+  // Mensagem é tabela operacional, não agregado de Evento (evento.ts); o motivo da falha fica no log do servidor.
+  const falhar = async (motivo: string) => {
+    await prisma.mensagemWhatsApp.updateMany({ where: { id: m.id, status: "NA_FILA" }, data: { status: "FALHOU", statusEm: agora } });
+    console.warn(`[whatsapp] envio ao grupo ${m.conversa.grupo!.id} falhou: ${motivo}`);
+    return "FALHOU" as const;
+  };
+
+  if (!m.numero.ativo) return falhar("numero_remetente_inativo");
+  if (!DRIVERS[m.numero.driver]) return falhar("driver_indisponivel");
+  try {
+    const canal = driverDoNumero(m.numero.driver);
+    const r = await canal.enviarTexto(
+      { id: m.numero.id, telefoneE164: m.numero.telefoneE164, driver: m.numero.driver, providerRef: m.numero.providerRef },
+      m.conversa.grupo.grupoJid, m.corpo ?? "", { clientMessageId: m.clientMessageId, origem: "HUMANO" },
+    );
+    // O eco `origem: "erp"` pode ter chegado antes: só completa o que falta.
+    await prisma.mensagemWhatsApp.updateMany({
+      where: { id: m.id, status: "NA_FILA" },
+      data: { status: "ENVIADA", statusEm: agora, providerMessageId: r.providerMessageId, mensagemIdMotor: r.mensagemIdMotor ?? null },
+    });
+    return "ENVIADA";
+  } catch (e) {
+    return falhar(e instanceof ErroDriver ? e.motivo : "erro_desconhecido");
+  }
+}
