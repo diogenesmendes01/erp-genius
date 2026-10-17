@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
-const db = vi.hoisted(() => ({ oportunidade: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn() }, evento: { groupBy: vi.fn(), findMany: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() } }));
+const db = vi.hoisted(() => ({ oportunidade: { findMany: vi.fn(), findFirst: vi.fn() }, evento: { groupBy: vi.fn(), findMany: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
-import { listarLeads, listarLeadsPagina, obterLead } from "./consultas";
-import { LEADS_POR_PAGINA, lerFiltrosLeads } from "./filtros";
+import { listarLeads, obterLead } from "./consultas";
 const u = (...papeis: Papel[]) => ({ id: "vendedor", nome: "V", papeis });
 beforeEach(() => {
   vi.clearAllMocks(); db.coberturaCarteira.findMany.mockResolvedValue([]); db.usuario.findMany.mockResolvedValue([]);
@@ -30,25 +29,5 @@ describe("consulta comercial não amplia carteira", () => {
   });
   it("vendedor também secretaria conserva documento pelo papel cadastral", async () => {
     expect((await obterLead("lead", u(Papel.VENDEDOR, Papel.SECRETARIA_ACADEMICA)))?.lead.documentos).toHaveLength(3);
-  });
-});
-
-describe("lista de /leads paginada (E4)", () => {
-  it("página e contagem filtrada somam escopo E filtros; total da carteira só o escopo", async () => {
-    db.oportunidade.count.mockImplementation(async ({ where }: { where: { AND?: unknown } }) => (where.AND ? 3 : 9));
-    const r = await listarLeadsPagina(u(Papel.VENDEDOR), lerFiltrosLeads({ etapa: "NOVO", pagina: "2" }));
-    const escopo = { vendedorDonoId: { in: ["vendedor"] } };
-    const consulta = db.oportunidade.findMany.mock.calls[0][0];
-    expect(consulta.where).toEqual({ AND: [escopo, { etapa: "NOVO" }] });
-    expect(consulta).toMatchObject({ skip: LEADS_POR_PAGINA, take: LEADS_POR_PAGINA, orderBy: [{ criadoEm: "desc" }, { id: "desc" }] });
-    const contagens = db.oportunidade.count.mock.calls.map((c) => c[0].where);
-    expect(contagens).toHaveLength(2);
-    expect(contagens).toEqual(expect.arrayContaining([{ AND: [escopo, { etapa: "NOVO" }] }, escopo]));
-    expect(r).toMatchObject({ total: 3, totalBase: 9 });
-  });
-
-  it("papel sem carteira comercial: nada consultado", async () => {
-    expect(await listarLeadsPagina(u(Papel.PROFESSOR), lerFiltrosLeads({}))).toEqual({ itens: [], total: 0, totalBase: 0 });
-    expect(db.oportunidade.count).not.toHaveBeenCalled();
   });
 });

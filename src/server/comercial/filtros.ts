@@ -1,11 +1,8 @@
 import { EtapaLead, Segmento, Temperatura, type Prisma } from "@prisma/client";
 
-// Filtros da lista de leads na URL (docs/42-auditoria-frontend-ux.md, E4) — mesmo desenho da lista
-// de alunos (src/server/alunos/filtros.ts): viviam em useState sobre a carteira inteira carregada de
-// uma vez, sem busca e sem página; voltar da ficha perdia tudo e a planilha ignorava o recorte. Um
-// único leitor serve a página e a rota de exportação. Módulo puro: sem Prisma client, testável.
-
-export const LEADS_POR_PAGINA = 50;
+// Filtros de leads na URL (docs/42-auditoria-frontend-ux.md, E4) — mesmo desenho dos filtros de
+// alunos (src/server/alunos/filtros.ts). A lista /leads saiu na Fase 2 (o funil a substituiu); o
+// leitor continua servindo a rota de exportação. Módulo puro: sem Prisma client, testável.
 
 export type TipoLead = "pf" | "b2b";
 
@@ -56,22 +53,6 @@ export function lerFiltrosLeads(p: Parametros): FiltrosLeads {
   };
 }
 
-/** Query string dos filtros (sem os vazios e sem a página 1). `semPagina` para links de filtro e exportação. */
-export function filtrosLeadsParaQuery(f: FiltrosLeads, { semPagina = false } = {}): string {
-  const q = new URLSearchParams();
-  if (f.busca) q.set("busca", f.busca);
-  if (f.tipo) q.set("tipo", f.tipo);
-  if (f.etapa) q.set("etapa", f.etapa);
-  if (f.segmento) q.set("segmento", f.segmento);
-  if (f.temperatura) q.set("temperatura", f.temperatura);
-  if (f.donoId) q.set("dono", f.donoId);
-  if (!semPagina && f.pagina > 1) q.set("pagina", String(f.pagina));
-  return q.toString();
-}
-
-export const temFiltroLeads = (f: FiltrosLeads) =>
-  !!(f.busca || f.tipo || f.etapa || f.segmento || f.temperatura || f.donoId);
-
 /** Filtros da URL → filtros da consulta. */
 export function filtrosDaConsultaLeads(f: FiltrosLeads): FiltrosLead {
   return {
@@ -119,35 +100,3 @@ export function whereFiltrosLead(filtros: FiltrosLead): Prisma.OportunidadeWhere
       : {}),
   };
 }
-
-/** Dono que não está mais nas opções (vendedor desligado, fora da equipe, papel sem o filtro) é descartado. */
-export function sanearFiltrosLeads(f: FiltrosLeads, opcoes: { donos: { id: string }[] }): FiltrosLeads {
-  return { ...f, donoId: opcoes.donos.some((d) => d.id === f.donoId) ? f.donoId : null };
-}
-
-/** Link da lista com estes filtros ("/funil" quando não há nenhum). */
-export const hrefLeads = (f: FiltrosLeads) => {
-  const q = filtrosLeadsParaQuery(f);
-  return q ? `/funil?${q}` : "/funil";
-};
-
-/** Página além do fim (link antigo, filtro que encolheu): destino da última página que existe; null se a página é válida. */
-export function destinoPaginaLeads(f: FiltrosLeads, total: number): string | null {
-  const ultima = Math.max(1, Math.ceil(total / LEADS_POR_PAGINA));
-  return f.pagina > ultima ? hrefLeads({ ...f, pagina: ultima }) : null;
-}
-
-/** Valores dos campos do formulário (texto), a partir dos filtros. */
-export type CamposLeads = { busca: string; tipo: string; etapa: string; segmento: string; temperatura: string; dono: string };
-export const camposDosFiltrosLeads = (f: FiltrosLeads): CamposLeads => ({
-  busca: f.busca,
-  tipo: f.tipo ?? "",
-  etapa: f.etapa ?? "",
-  segmento: f.segmento ?? "",
-  temperatura: f.temperatura ?? "",
-  dono: f.donoId ?? "",
-});
-
-
-/** Link a partir dos campos do formulário — mesmo leitor/validação da página; volta à página 1. */
-export const hrefDosCamposLeads = (c: CamposLeads) => hrefLeads(lerFiltrosLeads({ ...c }));

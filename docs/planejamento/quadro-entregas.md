@@ -2588,3 +2588,32 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   foi apagado no fim.
 **Estado**: Implementado; correções da revisão final aplicadas; aguardando o integrador (inclusive a confirmação de
 `dados.exportar_contatos`). Não concluído.
+
+## CRM, bloco J: saída de `/leads` e da ficha antiga (Fase 2, Tarefas 36 e 37; 17/10/2026)
+
+### Verificação para o PR (bloco J, branch `claude/fase2-j-saida-leads`, 17/10/2026)
+- Tarefas: 36 (links e revalidações de lead apontam para `/funil`) e 37 (saem `/leads`, `/leads/[id]` e
+  `/leads/[id]/contratacao`; a guarda `src/app/sem-rota-leads.test.ts` impede a volta).
+- Correção da revisão final:
+  - saiu o código que só servia à lista e à ficha antigas: `sanearFiltrosLeads`, `hrefLeads`, `destinoPaginaLeads`,
+    `hrefDosCamposLeads`, `camposDosFiltrosLeads`/`CamposLeads`, `filtrosLeadsParaQuery`, `temFiltroLeads` e
+    `LEADS_POR_PAGINA` (`src/server/comercial/filtros.ts`), `listarLeadsPagina` (`src/server/comercial/consultas.ts`) e
+    `tituloLead` (`src/server/titulos-registro.ts`), com os testes deles. Ficam `lerFiltrosLeads`,
+    `filtrosDaConsultaLeads`, `whereFiltrosLead` e `listarLeads`, usados por `/api/exportacoes/[tipo]`;
+  - `revalidarLead()` (`src/server/comercial/acoes.ts`) e `revalidar()` (`src/server/matricula/acoes.ts`) perderam o
+    parâmetro sem uso, e os `leadId` que só alimentavam esse argumento saíram dos chamadores. Os 2 avisos novos de lint
+    sumiram.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (os mesmos da linha de base).
+- `npm test`: 693 arquivos e 5017 testes, 5016 verdes e 1 falha, saída 1. A falha é o timeout de 30 s de
+  `src/app/confirmacoes.test.ts` ("nenhum window.confirm no src…", que analisa todo o `src` com a AST do TypeScript)
+  com o container sob carga das outras faixas (load average entre 13 e 18). Repeti com `--maxWorkers=4` e o resultado foi
+  o mesmo. Rodado sozinho, o arquivo passa (59/59). É a mesma falha por carga já registrada no bloco F e não vem do
+  diff: o bloco só remove código e não toca em `confirm` nem em `ConfirmarAcao`.
+- Integração no perfil `dev-gravacoes`: o `globalSetup` recusava o banco porque faltavam as 5 migrations da `main`
+  (`20261017090000_crm_tarefas` a `20261017130000_whatsapp_motor_dados`). Apliquei as 5 com `prisma migrate deploy`, só
+  nesse banco. Depois passaram `matricula/ativacao`, `matricula/fechamento`, `crm/oportunidades` e `financeiro/politica`
+  (4 arquivos, 41 testes) e `api/exportacoes/[tipo]/route.int.test.ts` (13 testes), todos com saída 0. O bloco não altera
+  nenhum `*.int.test.ts`. A suíte `npm run test:int` completa (mais de 2 h) fica com o integrador.
+**Estado**: Implementado; correções da revisão final aplicadas. Antes do merge, o integrador precisa rodar `npm test`
+completo, com a máquina sem carga, e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não concluído.
