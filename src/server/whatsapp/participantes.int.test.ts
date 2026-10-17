@@ -69,6 +69,23 @@ describe("convidar e revogar participante", () => {
     expect((await revogarParticipante(participanteId)).ok).toBe(false);
   });
 
+  it("revogar cancela as intenções pendentes do convidado, mas não as de quem ainda envia por outro vínculo (C5 da R1)", async () => {
+    const { v1, gc, fin, a } = await cenario();
+    const atend = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id }, include: { conversa: true } });
+    const nova = (autorId: string, status: "PENDENTE" | "ADIADA" | "DESPACHADA") => prisma.intencaoMensagem.create({ data: { numeroId: atend.conversa.numeroId, contatoId: atend.conversa.contatoId!, atendimentoId: a.id, origem: "HUMANO", autorId, status, corpoRenderizado: "x" } });
+    comoUsuario(v1);
+    const r = await convidar(a, fin, { podeEnviar: true });
+    const pend = await nova(fin.id, "PENDENTE"); const adi = await nova(fin.id, "ADIADA"); const env = await nova(fin.id, "DESPACHADA");
+    expect((await revogarParticipante(r.ok ? r.dado!.participanteId : "")).ok).toBe(true);
+    const st = async (id: string) => (await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } })).status;
+    expect([await st(pend.id), await st(adi.id), await st(env.id)]).toEqual(["CANCELADA", "CANCELADA", "DESPACHADA"]);
+    // O gerente comercial convidado continua enviando pelo setor: nada dele é cancelado.
+    const r2 = await convidar(a, gc, { podeEnviar: true });
+    const doGerente = await nova(gc.id, "PENDENTE");
+    expect((await revogarParticipante(r2.ok ? r2.dado!.participanteId : "")).ok).toBe(true);
+    expect(await st(doGerente.id)).toBe("PENDENTE");
+  });
+
   it("recusa prazo acima de 30 dias, prazo vencido, motivo curto, usuário inativo e duplicado", async () => {
     const { v1, fin, a } = await cenario();
     expect(PRAZO_MAXIMO_CONVITE_DIAS).toBe(30);

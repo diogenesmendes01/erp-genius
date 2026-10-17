@@ -31,7 +31,8 @@ async function alunoComMatricula(codigo: string, telefone: string) {
   const turma = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id, professorId: prof.id } });
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Al", sobrenome: "Uno", paisId: cat.pais.id, telefoneE164: telefone, whatsapp: true } });
   const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo } });
-  return { aluno, turma, matricula };
+  await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: turma.id, matriculaId: matricula.id } });
+  return { aluno, turma, matricula, cat, nivel, prof };
 }
 const ler = (id: string) => prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id } });
 
@@ -101,6 +102,18 @@ describe("transferir e encerrar", () => {
     expect(await prisma.evento.count({ where: { tipo: "AtendimentoTransferido" } })).toBe(0);
   });
 
+  it("PEDAGOGICO com turma que não é a da alocação ativa da matrícula: recusa e não encerra a origem (C3 da R1)", async () => {
+    const { v1, a, numero } = await cenario();
+    await prisma.numeroSetorWhatsApp.create({ data: { numeroId: numero.id, finalidade: "PEDAGOGICO" } });
+    const { aluno, matricula, cat, nivel, prof } = await alunoComMatricula("MAT-T", "+50688880001");
+    const outraTurma = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id, professorId: prof.id } });
+    comoUsuario(v1);
+    const r = await transferirAtendimento({ atendimentoId: a.id, destino: "PEDAGOGICO", destinoChave: `PEDAGOGICO:${aluno.id}:${outraTurma.id}:${matricula.id}:ALUNO`, contexto: ctx12 });
+    expect(r).toEqual({ ok: false, erro: "A turma escolhida não corresponde a uma alocação ativa desta matrícula." });
+    expect((await ler(a.id)).encerradoEm).toBeNull();
+    expect(await prisma.atendimentoWhatsApp.count({ where: { atendimentoOrigemId: a.id } })).toBe(0);
+  });
+
   it("erro de trigger do banco (265) desfaz tudo e vira mensagem de regra", async () => {
     const { v1, a, numero } = await cenario();
     await prisma.numeroSetorWhatsApp.create({ data: { numeroId: numero.id, finalidade: "PEDAGOGICO" } });
@@ -110,6 +123,7 @@ describe("transferir e encerrar", () => {
     const turma = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id, professorId: prof.id } });
     const aluno = await prisma.aluno.create({ data: { primeiroNome: "Al", sobrenome: "Uno", paisId: cat.pais.id, telefoneE164: "+50680001111", whatsapp: true } });
     const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-P" } });
+    await prisma.alocacaoTurma.create({ data: { alunoId: aluno.id, turmaId: turma.id, matriculaId: matricula.id } });
     comoUsuario(v1);
     // O contato da conversa (+50688880001) não é o telefone do aluno: o banco recusa o destino direto.
     const r = await transferirAtendimento({ atendimentoId: a.id, destino: "PEDAGOGICO", destinoChave: `PEDAGOGICO:${aluno.id}:${turma.id}:${matricula.id}:ALUNO`, contexto: ctx12 });

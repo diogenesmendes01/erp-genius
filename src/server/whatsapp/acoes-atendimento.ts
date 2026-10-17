@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
+import { escopoAtendimentos } from "./escopo";
 import { SETORES, ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "./participantes";
 import { setoresDoNumero } from "./numero-setor";
@@ -18,12 +19,27 @@ const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
 const MSG_FORA_DO_ESCOPO = "Atendimento fora do seu escopo.";
 const MSG_SEM_ALCADA = "Sua função não autoriza esta ação neste atendimento.";
 const MOTIVO_CANCELAMENTO = "Responsável do atendimento mudou; revisar antes de enviar.";
+const MOTIVO_CANCELAMENTO_REVOGADO = "Convite de participante revogado; revisar antes de enviar.";
+const MSG_RESPONSAVEL_SEM_ACESSO =
+  "Nesta linha de vendas o atendimento fica com o dono da linha; ele não pode ser assumido por quem não atende a linha.";
+
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/**
+ * Depois de gravar o novo responsável (mesma transação): ele precisa continuar enxergando o atendimento. Numa linha
+ * de VENDAS o responsável gravado não dá acesso ao COMERCIAL (LC-D02, escopo.ts); sem esta conferência o atendimento
+ * sairia da fila e ficaria invisível para quem o assumiu.
+ */
+async function exigirResponsavelEnxerga(tx: Tx, id: string, alvo: { id: string; papeis: Papel[] }) {
+  const n = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id }, await escopoAtendimentos(alvo)] } });
+  if (n !== 1) throw new ErroRegra(MSG_RESPONSAVEL_SEM_ACESSO);
+}
 
 const IdSchema = z.string().min(1);
 const AtribuirSchema = z.object({ atendimentoId: z.string().min(1), usuarioId: z.string().min(1) });
 
 /** Tira o atendimento de quem o tinha: intenções humanas ainda não enviadas deixam de valer (como comercial/acoes.ts, atribuirDono). */
-async function cancelarIntencoesDoResponsavel(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], atendimentoId: string, responsavelId: string | null) {
+async function cancelarIntencoesDoResponsavel(tx: Tx, atendimentoId: string, responsavelId: string | null) {
   if (!responsavelId) return;
   await tx.intencaoMensagem.updateMany({
     where: { atendimentoId, origem: "HUMANO", autorId: responsavelId, status: { in: ["PENDENTE", "ADIADA"] } },
@@ -45,6 +61,7 @@ export async function assumirAtendimento(atendimentoId: string): Promise<Resulta
       const status = proximoStatus(a.status, "ASSUMIDO", true);
       const r = await tx.atendimentoWhatsApp.updateMany({ where: { id, responsavelId: null, encerradoEm: null }, data: { responsavelId: u.id, status } });
       if (r.count !== 1) throw new ErroRegra(MSG_JA_ASSUMIDO);
+      await exigirResponsavelEnxerga(tx, id, u);
       await registrarEvento(tx, { tipo: "AtendimentoAssumido", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: u.id, payload: { de: null, para: u.id } });
     });
     revalidatePath("/inbox");
@@ -84,13 +101,14 @@ export async function atribuirAtendimento(input: { atendimentoId: string; usuari
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(u, "atribuir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
-      const alvo = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { ativo: true, papeis: true } });
+      const alvo = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { id: true, ativo: true, papeis: true } });
       const doSetor = papeisDoSetor(a.finalidade);
       if (!alvo || !alvo.ativo || !alvo.papeis.some((p) => doSetor.includes(p))) throw new ErroRegra("A pessoa escolhida não atende este setor.");
       const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id }, select: { status: true, responsavelId: true } });
       const anterior = atual.responsavelId;
       if (anterior === usuarioId) return;
       await tx.atendimentoWhatsApp.update({ where: { id }, data: { responsavelId: usuarioId, status: proximoStatus(atual.status, "ASSUMIDO", true) } });
+      await exigirResponsavelEnxerga(tx, id, alvo);
       await cancelarIntencoesDoResponsavel(tx, id, anterior);
       await registrarEvento(tx, { tipo: "AtendimentoAtribuido", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: u.id, payload: { de: anterior, para: usuarioId } });
     });
@@ -110,7 +128,7 @@ const TransferirSchema = z.object({
  * enxerga (quem transfere não precisa ter alçada no setor de destino). FINANCEIRO:<matrícula>;
  * PEDAGOGICO:<aluno>:<turma>:<matrícula>:(ALUNO|AUT:<autorização>).
  */
-async function resolverDestino(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], destino: Setor, chave: string | null, telefoneContato: string) {
+async function resolverDestino(tx: Tx, destino: Setor, chave: string | null, telefoneContato: string) {
   if (destino === "FINANCEIRO") {
     const p = chave?.split(":") ?? [];
     if (p[0] !== "FINANCEIRO" || !p[1]) throw new ErroRegra("Escolha a matrícula do atendimento financeiro.");
@@ -130,6 +148,10 @@ async function resolverDestino(tx: Parameters<Parameters<typeof prisma.$transact
     if (p[4] === "AUT" && !autorizacao) throw new ErroRegra("Escolha a autorização do atendimento pedagógico.");
     const m = await tx.matricula.findFirst({ where: { id: p[3], alunoId: p[1] }, select: { id: true } });
     if (!m) throw new ErroRegra("Matrícula pedagógica não corresponde ao aluno selecionado.");
+    // Mesmo critério da lista de opções: aluno, turma e matrícula precisam formar uma alocação ativa
+    // (o escopo do professor usa { alunoId, turmaId }; os triggers só olham matrícula × aluno).
+    const alocacao = await tx.alocacaoTurma.count({ where: { ativa: true, alunoId: p[1], turmaId: p[2], matriculaId: p[3] } });
+    if (alocacao === 0) throw new ErroRegra("A turma escolhida não corresponde a uma alocação ativa desta matrícula.");
     return { alunoId: p[1], matriculaId: p[3], turmaId: p[2], autorizacaoComunicacaoAcademicaId: autorizacao };
   }
   return null;
@@ -222,13 +244,22 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
     const u = await exigirSessao();
     const id = IdSchema.parse(participanteId);
     await prisma.$transaction(async (tx) => {
-      const p = await tx.participanteAtendimentoWhatsApp.findUnique({ where: { id }, include: { atendimento: { select: { id: true, finalidade: true } } } });
+      const p = await tx.participanteAtendimentoWhatsApp.findUnique({ where: { id }, include: { atendimento: { select: { id: true, finalidade: true } }, usuario: { select: { id: true, papeis: true } } } });
       if (!p) throw new ErroRegra("Participante não encontrado.");
       const permitido = p.concedenteId === u.id || u.papeis.includes(Papel.ADMINISTRADOR) || ehGerenteDoSetor(u.papeis, p.atendimento.finalidade);
       if (!permitido) throw new ErroRegra(MSG_SEM_ALCADA);
       const agora = new Date();
       const r = await tx.participanteAtendimentoWhatsApp.updateMany({ where: { id, revogadoEm: null }, data: { revogadoEm: agora } });
       if (r.count !== 1) throw new ErroRegra("Este convite já foi revogado.");
+      // Como devolver/atribuir: o que o revogado deixou pendente ou agendado fica CANCELADA, a menos que ele
+      // ainda possa enviar neste atendimento por outro vínculo (responsável, gerente, outro convite).
+      const aindaEnvia = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: p.atendimento.id }, await escopoAtendimentos(p.usuario, { enviar: true, agora })] } });
+      if (aindaEnvia === 0) {
+        await tx.intencaoMensagem.updateMany({
+          where: { atendimentoId: p.atendimento.id, origem: "HUMANO", autorId: p.usuarioId, status: { in: ["PENDENTE", "ADIADA"] } },
+          data: { status: "CANCELADA", motivoFalha: MOTIVO_CANCELAMENTO_REVOGADO },
+        });
+      }
       await registrarEvento(tx, { tipo: "ParticipanteRevogado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: p.atendimento.id, autorId: u.id, payload: { participanteId: id, usuarioId: p.usuarioId } });
     });
     revalidatePath("/inbox");
