@@ -581,6 +581,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · {busca ? ( <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId }",
     "compacto · Nenhum.",
   ],
+  "src/app/(app)/inbox/InboxNovo.tsx": [
+    "bloco · Nenhuma conversa neste filtro.",
+  ],
   "src/app/(app)/leads/LeadsLista.tsx": [
     "linha · {totalBase === 0 ? \"Nenhum lead na sua carteira.\" : filtrando ? ( <>Nenhum lead com esses filtros. <",
   ],

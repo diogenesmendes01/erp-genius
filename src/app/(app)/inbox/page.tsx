@@ -1,18 +1,19 @@
 import { Papel } from "@prisma/client";
 import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
-import { carregarThread, listarConversasInbox, listarLinhasDoUsuario } from "@/server/whatsapp/consultas";
-import { lerBuscaInbox, lerCanalInbox } from "@/server/whatsapp/busca-inbox";
-import { InboxCliente } from "./InboxCliente";
+import { lerFiltrosInbox } from "@/server/inbox/filtros";
+import { decodificarCursor } from "@/server/inbox/cursor";
+import { listarAtendimentosPagina } from "@/server/inbox/consultas-pagina";
+import { InboxNovo } from "./InboxNovo";
 import { AtendimentosPainel } from "./AtendimentosPainel";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
-// INBOX MÍNIMA (doc 26 §Camada 3 · doc 30 E3): lista (não-lidas primeiro) + thread +
-// texto livre + mídia + vínculo + ação rápida de cobrança. Guard de página ANTES de
-// qualquer consulta; o row-level real é o escopo do atendimento (whatsapp/escopo.ts).
-// SPEC-ERP-005: conversas das linhas comerciais (números de VENDAS) convivem com as institucionais;
-// o filtro "Minha linha / Institucional" aparece para quem enxerga os dois tipos.
+// Inbox novo (Fase 3): lista paginada por cursor + conversa + painel; tempo real por SSE (sem polling).
+// Guard de página ANTES de qualquer consulta; o row-level real é o escopo do atendimento (whatsapp/escopo.ts).
+// A triagem/revisão do Inbox antigo continua aqui, (abrir atendimento; triagem e revisão só do administrador) até a Task 33 movê-la para a conversa.
+
+const um = (v: string | string[] | undefined): string | undefined => (Array.isArray(v) ? v[0] : v);
 
 export default async function InboxPage({
   searchParams,
@@ -21,39 +22,29 @@ export default async function InboxPage({
 }) {
   const usuario = await exigirSessaoPagina(...PAPEIS_INBOX);
   const parametros = await searchParams;
-  const c = typeof parametros.c === "string" ? parametros.c : undefined;
-  // Busca no servidor (E4): alcança as conversas mais antigas, fora das 200 recentes.
-  const busca = lerBuscaInbox(parametros);
-  const canal = lerCanalInbox(parametros);
+  const c = um(parametros.c) || null;
+  const filtros = lerFiltrosInbox(parametros);
+  const bruto = um(parametros.cursor);
+  const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
+  const admin = temPapel(usuario, Papel.ADMINISTRADOR);
 
-  const [lista, thread, opcoes, triagem, revisoes, preferencia, linhas] = await Promise.all([
-    listarConversasInbox(usuario, { busca, ...(canal ? { canal } : {}) }),
-    c ? carregarThread(usuario, c) : Promise.resolve(null),
+  const [inicial, opcoes, triagem, revisoes, preferencia] = await Promise.all([
+    listarAtendimentosPagina(usuario, filtros, cursor),
     listarOpcoesAtendimento(),
-    temPapel(usuario, Papel.ADMINISTRADOR) ? listarTriagemWhatsApp() : Promise.resolve(null),
-    temPapel(usuario, Papel.ADMINISTRADOR) ? listarRevisoesEnvio() : Promise.resolve(null),
+    admin ? listarTriagemWhatsApp() : Promise.resolve(null),
+    admin ? listarRevisoesEnvio() : Promise.resolve(null),
     consultarPreferenciaFusoEquipe(),
-    listarLinhasDoUsuario(usuario),
   ]);
-
-  // Alçadas das ações rápidas seguem o doc 12: promessa/pagamento = Financeiro/Secretaria.
-  const podeCobranca = temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
-  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
-  // Filtro por tipo de canal só faz sentido para quem vê linhas comerciais E atendimentos institucionais.
-  const veLinhas = temPapel(usuario, Papel.ADMINISTRADOR, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
-  const veInstitucional = temPapel(usuario, Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA, Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
+  const fuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
 
   return (
     <div>
       <h1 className="text-2xl font-medium">Inbox</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Atendimentos institucionais separados por finalidade e vínculo com a escola.
-      </p>
-      <div className="mt-6">
-        <AtendimentosPainel opcoes={opcoes} triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+      <div className="mt-4">
+        <AtendimentosPainel opcoes={opcoes} triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />
       </div>
       <div className="mt-4">
-        <InboxCliente conversas={lista.itens} busca={busca} canal={canal} filtroCanal={veLinhas && veInstitucional} linhas={linhas} limitada={lista.limitada} thread={thread} podeCobranca={podeCobranca} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+        <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso} />
       </div>
     </div>
   );
