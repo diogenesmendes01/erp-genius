@@ -56,6 +56,20 @@ describe("barramento do inbox", () => {
     await vi.waitFor(() => expect(r).toContainEqual({ tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: m.id, conversaId: a.conversaId }), { timeout: 2000 });
     sair();
   });
+  it("C5: ao reconectar o LISTEN emite resync às assinaturas (e não na primeira conexão)", async () => {
+    const { r, sair } = escutar();
+    expect(r.filter((x) => x.tipo === "resync")).toHaveLength(0);
+    // Derruba só a conexão de escuta deste banco (a que fez LISTEN no canal), nunca outras.
+    const mortos = await prisma.$queryRawUnsafe<{ n: number }[]>(
+      `SELECT count(pg_terminate_backend(pid))::int AS n FROM pg_stat_activity
+       WHERE datname = current_database() AND pid <> pg_backend_pid() AND query LIKE 'LISTEN inbox_eventos%'`);
+    expect(mortos[0].n).toBeGreaterThan(0);
+    await vi.waitFor(() => expect(r).toContainEqual({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" }), { timeout: 8000 });
+    // A escuta voltou a funcionar.
+    const m = await criarMensagemEntrada("depois");
+    await vi.waitFor(() => expect(r).toContainEqual({ tipo: "mensagem.nova", atendimentoId: a.id, mensagemId: m.id, conversaId: a.conversaId }), { timeout: 3000 });
+    sair();
+  });
   it("espera de reconexão: 1 s, 2 s, 4 s… até 30 s", () => {
     expect([0, 1, 2, 3, 4, 5, 6, 9].map(esperaReconexaoMs)).toEqual([1000, 2000, 4000, 8000, 16000, 30000, 30000, 30000]);
   });
