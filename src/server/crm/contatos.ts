@@ -24,8 +24,11 @@ export type FiltrosContatos = {
 
 export type LinhaContato = {
   id: string;
+  codigo: string | null;
   tipo: "pessoa" | "empresa";
   nome: string;
+  cidade: string | null;
+  origem: OrigemCanal | null;
   subtitulo: string | null;
   telefone: string | null;
   tags: { id: string; nome: string; cor: CorTag }[];
@@ -171,8 +174,11 @@ export async function listarContatos(
       take: Math.min(CONTATOS_POR_PAGINA, totalP - inicio),
       select: {
         id: true,
+        codigo: true,
         nome: true,
         email: true,
+        cidade: true,
+        origemCanal: true,
         cargo: true,
         empresa: { select: { nome: true } },
         contatosWhatsApp: { select: { telefoneE164: true, optOutEm: true }, orderBy: { criadoEm: "asc" } },
@@ -184,8 +190,11 @@ export async function listarContatos(
       const op = comercial ? p.oportunidades[0] : undefined;
       const linha: LinhaContato = {
         id: p.id,
+        codigo: p.codigo,
         tipo: "pessoa",
         nome: p.nome,
+        cidade: p.cidade,
+        origem: p.origemCanal,
         subtitulo: [p.cargo, p.empresa?.nome].filter(Boolean).join(" · ") || p.email || null,
         telefone: p.contatosWhatsApp[0]?.telefoneE164 ?? null,
         tags: p.tags.map((t) => t.tag),
@@ -208,7 +217,9 @@ export async function listarContatos(
       take: Math.min(CONTATOS_POR_PAGINA - linhas.length, totalE - saltar),
       select: {
         id: true,
+        codigo: true,
         nome: true,
+        origemCanal: true,
         contatoNome: true,
         contatoTelefone: true,
         segmentoMercado: true,
@@ -220,8 +231,11 @@ export async function listarContatos(
       const op = comercial ? e.oportunidades[0] : undefined;
       const linha: LinhaContato = {
         id: e.id,
+        codigo: e.codigo,
         tipo: "empresa",
         nome: e.nome,
+        cidade: null,
+        origem: e.origemCanal,
         subtitulo: e.contatoNome ?? e.segmentoMercado ?? null,
         telefone: e.contatoTelefone ?? null,
         tags: e.tags.map((t) => t.tag),
