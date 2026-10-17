@@ -58,6 +58,23 @@ describe("moverEtapaEmLote", () => {
       recusadas: [{ id: opDeOutraCarteira, motivo: "Oportunidade fora da sua carteira." }],
     });
   });
+  it("lote sem papel comercial é recusado de uma vez, sem mover nem gravar Evento", async () => {
+    const financeiro = await criarUsuario([Papel.FINANCEIRO], "Financeiro");
+    logadoComo(financeiro.id);
+    const antes = await prisma.evento.count();
+    expect(await moverEtapaEmLote([opNovo, opQualificado], "EM_ATENDIMENTO")).toEqual({
+      ok: false,
+      erro: "Você não tem permissão para esta ação.",
+    });
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: opNovo } })).etapa).toBe("NOVO");
+    expect(await prisma.evento.count()).toBe(antes);
+  });
+  it("administrador move em lote (exigirPapel deixa o admin passar; o funil mostra os controles a ele)", async () => {
+    const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    logadoComo(admin.id);
+    const r = await moverEtapaEmLote([opNovo, opDeOutraCarteira], "EM_ATENDIMENTO");
+    expect(r.ok && r.dado).toEqual({ movidas: [opNovo, opDeOutraCarteira], recusadas: [] });
+  });
   it("lote acima de 50 é recusado", async () => {
     logadoComo(vendedor.id);
     expect(await moverEtapaEmLote(Array.from({ length: 51 }, (_, i) => `x${i}`), "NOVO")).toEqual({

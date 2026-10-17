@@ -86,6 +86,9 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
 
   function usarCadastro(d: PossivelDuplicado) {
     if (!d.pessoaId) return;
+    // Descarta o timer pendente e a resposta em voo: senão a lista volta com o cadastro já escolhido.
+    if (espera.current) clearTimeout(espera.current);
+    ++busca.current;
     setPessoaId(d.pessoaId);
     if (d.nome) setNome(d.nome);
     setDuplicados([]);
