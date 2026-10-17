@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
@@ -78,6 +78,37 @@ describe("lista paginada por cursor", () => {
     await prisma.preferenciaConversaUsuario.create({ data: { usuarioId: admin.id, conversaId: y.conversaId, marcadaNaoLida: true } });
     const r = await listarAtendimentosPagina(sess(admin), { naoLidas: true }, null);
     expect(r.itens.map((i) => i.id)).toEqual([y.id]);
+  });
+
+  it("C4: naoLidas com leitura registrada considera só ENTRADA depois de lidaAte, por usuário, sem lista global", async () => {
+    const lidaAte = new Date("2026-10-01T00:00:00Z");
+    const comNova = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
+    const semNova = await criarAtendimento(new Date("2026-10-02T00:00:00Z"));
+    const msg = (a: { id: string; conversaId: string }, criadoEm: Date, direcao: "ENTRADA" | "SAIDA") =>
+      prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao, driver: "BAILEYS", corpo: "x", criadoEm } });
+    await msg(comNova, new Date("2026-10-02T00:00:00Z"), "ENTRADA");
+    await msg(semNova, new Date("2026-10-02T00:00:00Z"), "SAIDA");
+    await msg(semNova, new Date("2026-09-30T00:00:00Z"), "ENTRADA");
+    for (const a of [comNova, semNova]) await prisma.preferenciaConversaUsuario.create({ data: { usuarioId: admin.id, conversaId: a.conversaId, lidaAte } });
+    const espiao = vi.spyOn(prisma, "$queryRaw");
+    try {
+      const r = await listarAtendimentosPagina(sess(admin), { naoLidas: true }, null);
+      expect(r.itens.map((i) => i.id)).toEqual([comNova.id]);
+      // A consulta crua parte das preferências do usuário (filtrada por ele), não varre atendimentos do banco todo.
+      const arg = espiao.mock.calls[0][0] as unknown as { sql?: string; strings?: string[] };
+      const sql = String(arg.sql ?? arg.strings?.join("?"));
+      expect(sql).toMatch(/FROM "PreferenciaConversaUsuario" p/);
+      expect(sql).toMatch(/p\."usuarioId" = /);
+    } finally { espiao.mockRestore(); }
+    // Outro usuário (sem preferência) não herda a leitura de admin: vale o contador compartilhado (0).
+    const outroAdm = await criarUsuario([Papel.ADMINISTRADOR]);
+    expect((await listarAtendimentosPagina(sess(outroAdm), { naoLidas: true }, null)).itens).toHaveLength(0);
+  });
+
+  it("C3: o índice de cursor da lista casa com a ordenação (DESC NULLS LAST, id DESC)", async () => {
+    const [idx] = await prisma.$queryRaw<{ indexdef: string }[]>`
+      SELECT indexdef FROM pg_indexes WHERE indexname = 'AtendimentoWhatsApp_ultimaMensagemEm_id_idx'`;
+    expect(idx.indexdef).toContain('("ultimaMensagemEm" DESC NULLS LAST, id DESC)');
   });
 
   it("fixadas do usuário vêm primeiro só para ele, só na 1ª página, sem repetir", async () => {

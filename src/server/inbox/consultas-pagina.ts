@@ -21,17 +21,27 @@ const LIMITE_FIXADAS = 100;
 const LIMITE_THREAD = 60;
 const LIMITE_THREAD_MAX = 100;
 
-/** Atendimentos com não lida PARA ESTE usuário (mesma regra de preferenciasDoUsuario), em qualquer posição da lista. */
-async function idsComNaoLidaPessoal(usuarioId: string): Promise<string[]> {
-  const linhas = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    SELECT a."id" FROM "AtendimentoWhatsApp" a
-    LEFT JOIN "PreferenciaConversaUsuario" p ON p."conversaId" = a."conversaId" AND p."usuarioId" = ${usuarioId}
-    WHERE p."marcadaNaoLida" = true
-       OR (p."lidaAte" IS NULL AND a."naoLidas" > 0)
-       OR (p."lidaAte" IS NOT NULL AND EXISTS (
-            SELECT 1 FROM "MensagemWhatsApp" m
-            WHERE m."atendimentoId" = a."id" AND m."direcao" = 'ENTRADA' AND m."criadoEm" > p."lidaAte"))`);
-  return linhas.map((l) => l.id);
+/**
+ * Atendimentos com não lida PARA ESTE usuário (mesma regra de preferenciasDoUsuario), em qualquer posição da lista.
+ * Vira condição da própria consulta paginada (sempre combinada com o escopo), sem varrer o banco todo:
+ * - marcada como não lida pelo usuário;
+ * - sem leitura registrada (lidaAte nulo ou sem preferência) e contador compartilhado > 0;
+ * - com leitura registrada: ENTRADA depois de lidaAte, achada a partir das preferências DO USUÁRIO
+ *   (limitadas às conversas dele) e não de todos os atendimentos.
+ */
+async function condicaoNaoLidaPessoal(usuarioId: string): Promise<Prisma.AtendimentoWhatsAppWhereInput> {
+  const comLeitura = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT DISTINCT a."id" FROM "PreferenciaConversaUsuario" p
+    JOIN "AtendimentoWhatsApp" a ON a."conversaId" = p."conversaId"
+    WHERE p."usuarioId" = ${usuarioId} AND p."lidaAte" IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM "MensagemWhatsApp" m
+        WHERE m."atendimentoId" = a."id" AND m."direcao" = 'ENTRADA' AND m."criadoEm" > p."lidaAte")`);
+  return { OR: [
+    { conversa: { preferenciasUsuarios: { some: { usuarioId, marcadaNaoLida: true } } } },
+    { naoLidas: { gt: 0 }, conversa: { preferenciasUsuarios: { none: { usuarioId, lidaAte: { not: null } } } } },
+    { id: { in: comLeitura.map((l) => l.id) } },
+  ] };
 }
 
 /** Filtros da URL como condições; sempre combinadas com o escopo (nunca o substituem). */
@@ -45,7 +55,7 @@ async function condicoesDosFiltros(u: UsuarioSessao, f: FiltrosInbox): Promise<P
   if (f.status) c.push({ status: f.status });
   if (f.prazoEstourado) c.push({ prazoRespostaEm: { lt: new Date() }, primeiraRespostaEm: null, encerradoEm: null });
   if (f.busca) c.push(whereBuscaConversas(f.busca));
-  if (f.naoLidas) c.push({ id: { in: await idsComNaoLidaPessoal(u.id) } });
+  if (f.naoLidas) c.push(await condicaoNaoLidaPessoal(u.id));
   return c;
 }
 
