@@ -23,6 +23,7 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
+import { executarAcaoMotor } from "./motor/acoes";
 import { escopoConversas } from "./escopo";
 import { garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial";
@@ -336,6 +337,16 @@ export async function marcarConversaLida(conversaId: string): Promise<Resultado>
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (conversa.naoLidas > 0) {
       await prisma.atendimentoWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
+    }
+    // Marca como lida no WhatsApp sem bloquear: motor fora do ar não impede a leitura local.
+    if (conversa.numero.driver === "MOTOR") {
+      const digitos = (conversa.contato.waId ?? conversa.contato.telefoneE164).replace(/\D/g, "");
+      try {
+        void executarAcaoMotor(conversa.numero.providerRef ?? conversa.numero.id, "message.read", { chatId: `${digitos}@s.whatsapp.net` })
+          .catch((e) => console.error("[marcarConversaLida] message.read falhou:", e instanceof Error ? e.name : "erro"));
+      } catch (e) {
+        console.error("[marcarConversaLida] message.read falhou:", e instanceof Error ? e.name : "erro");
+      }
     }
     revalidatePath("/inbox");
   });
