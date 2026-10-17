@@ -452,7 +452,7 @@ describe("roteamento de webhook por driver (P2-6)", () => {
       driver: "BAILEYS",
       quando: new Date(),
     });
-    expect(ignorado).toBe("ignorado");
+    expect(ignorado).toBe("sem_mensagem");
   });
 });
 
