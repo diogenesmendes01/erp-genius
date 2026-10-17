@@ -1,6 +1,6 @@
 # Funções do Inbox — lista oficial (aprovada em 15/10/2026)
 
-Referência única para o motor (`01-roteiro-adaptacao-motor.md`), o ERP (`02-modelo-atendimento-crm-erp.md`) e a análise da UI final.
+Referência única para o motor (roteiro de adaptação, no repositório `whatsapp-web-baileys`), o ERP (`modelo-atendimento-crm-erp.md`) e a análise da UI final.
 
 **Contexto:** no app original, cada pessoa usa o próprio WhatsApp. No CRM, **vários atendentes usam o mesmo número da escola**. Nenhuma funcionalidade é retirada por causa do visual: o que sai do motor são só os arquivos visuais derivados do WhatsApp Desktop (cores, logo, ícones, papel de parede). Botões e ações continuam, com o design system do produto.
 

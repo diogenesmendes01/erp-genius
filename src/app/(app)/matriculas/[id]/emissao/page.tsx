@@ -9,8 +9,9 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { TIPO_COBRANCA_ENTRADA_LABEL, TIPO_PAGADOR_LABEL, rotular } from "@/lib/labels";
+import { abreFinanceiro } from "@/app/(app)/financeiro/papeis";
 export default async function EmissaoPage({ params }: { params: Promise<{ id: string }> }) {
-  await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
+  const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
   const { id } = await params;
   const [r, preferencia] = await Promise.all([consultarTelaEmissao(id), consultarPreferenciaFusoEquipe()]);
   // Instante da conferência no fuso de exibição de quem lê, com a origem dita (docs/43 §6 item 6): antes era o ISO cru.
@@ -20,7 +21,8 @@ export default async function EmissaoPage({ params }: { params: Promise<{ id: st
   const tipo = (v: string) => rotular(TIPO_COBRANCA_ENTRADA_LABEL, v);
   if (r.dado.estado === "EMITIDA") {
     const c = r.dado.registro;
-    return <div className="space-y-4">{links}<h1 className="text-2xl">Emissão inicial registrada</h1><p>Conferida por {c.autor.nome} em {formatarInstanteExibicao(c.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p>{c.motivo}</p><ul>{c.cobrancas.map((b) => <li key={b.id}>{tipo(b.tipo)} · {formatarMoeda(Number(b.valor), b.moeda)} · Vencimento {formatarDataCivil(b.vencimento)}</li>)}</ul><p>Estes são os valores originalmente emitidos. A confirmação do recebimento e eventuais ajustes são acompanhados no Financeiro. A emissão não ativa a matrícula.</p><Link className="underline" href="/financeiro">Abrir Financeiro</Link>{r.dado.particular && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/entrada-particular`}>Conferir pagamentos de entrada da particular</Link>}</div>;
+    return <div className="space-y-4">{links}<h1 className="text-2xl">Emissão inicial registrada</h1><p>Conferida por {c.autor.nome} em {formatarInstanteExibicao(c.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p>{c.motivo}</p><ul>{c.cobrancas.map((b) => <li key={b.id}>{tipo(b.tipo)} · {formatarMoeda(Number(b.valor), b.moeda)} · Vencimento {formatarDataCivil(b.vencimento)}</li>)}</ul><p>Estes são os valores originalmente emitidos. A confirmação do recebimento e eventuais ajustes são acompanhados no Financeiro. A emissão não ativa a matrícula.</p>{/* Só quem abre /financeiro recebe o link (C36 da #170, como a #160 fez na entrada particular): a Secretaria
+        caía em "acesso negado". A frase acima já diz a ela quem acompanha o recebimento. */}{abreFinanceiro(usuario.papeis) && <Link className="underline" href="/financeiro">Abrir Financeiro</Link>}{r.dado.particular && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/entrada-particular`}>Conferir pagamentos de entrada da particular</Link>}</div>;
   }
   const v = r.dado.revisao, a = v.dados.aluno, p = v.dados.pagador;
   return <div className="space-y-5">{links}<h1 className="text-2xl">Conferência para emissão inicial</h1>
