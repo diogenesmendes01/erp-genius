@@ -590,6 +590,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum convite ativo que você possa revogar.",
     "compacto · Nenhuma mensagem agendada que você possa cancelar.",
   ],
+  "src/app/(app)/inbox/AcoesContato.tsx": [
+    "compacto · Nenhum encontrado.",
+  ],
   "src/app/(app)/inbox/NovoAtendimento.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",

@@ -79,13 +79,13 @@ describe("painel lateral por setor", () => {
     const m = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-S" } });
     const n = await numero("COBRANCA");
     const a = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: m.id, responsavelId: sec.id });
-    expect(await carregarPainel(sess(sec), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2 });
+    expect(await carregarPainel(sess(sec), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "c", url: "u" } });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "COMPROVANTE", nome: "x", url: "u", arquivado: true } });
     expect(await carregarPainel(sess(sec), a.id)).toMatchObject({ documentosPendentes: 1 });
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, sec);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null });
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
   });
 
   it("professor no pedagógico vê turma e frequência; sem telefone", async () => {
@@ -104,10 +104,61 @@ describe("painel lateral por setor", () => {
     const n = await numero("VENDAS");
     const a = await atendimento(n.id, (await contato({ alunoId: aluno.id, telefoneE164: "+50680001111" })).id, { finalidade: "PEDAGOGICO", alunoId: aluno.id, matriculaId: m.id, turmaId: turma.id });
     const painel = await carregarPainel(sess(prof), a.id);
-    expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75 });
+    expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75,
+      acoes: expect.objectContaining({ nomeSalvo: null, nomePerfil: null, podeCriarLead: false, podeVincular: false, podeEditarNome: false, cobranca: null }) });
     expect(JSON.stringify(painel)).not.toMatch(/\+\d{6,}/);
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, prof);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null });
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null,
+      acoes: expect.objectContaining({ podeVincular: false, podeEditarNome: false }) });
+  });
+  // C2 da R1 do #217 (decisão do dono): as ações do Inbox antigo voltam no painel, com as mesmas regras de carregarThread.
+  describe("ações de cadastro e cobrança (as do Inbox antigo)", () => {
+    it("linha comercial sem oportunidade: vendedor cria; com oportunidade visível, o id vem para o link do funil", async () => {
+      const dono = await criarUsuario([Papel.VENDEDOR], "Dono");
+      const linha = await numero("VENDAS", dono.id);
+      const a = await atendimento(linha.id, (await contato()).id, { finalidade: "COMERCIAL" });
+      const sem = await carregarPainel(sess(dono), a.id);
+      expect(sem?.acoes).toMatchObject({ podeCriarLead: true, podeVincular: true, podeEditarNome: true, leadId: null, cobranca: null, fonteNome: "contato" });
+      expect(JSON.stringify(sem)).not.toMatch(/\+\d{6,}/);
+      const op = await prisma.oportunidade.create({ data: { nome: "Maria", vendedorDonoId: dono.id } });
+      await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { leadId: op.id } });
+      expect((await carregarPainel(sess(dono), a.id))?.acoes).toMatchObject({ podeCriarLead: false, leadId: op.id, contatoNome: "Maria", fonteNome: "lead" });
+      await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { leadId: null, encerradoEm: new Date(), status: "ENCERRADO" } });
+      expect((await carregarPainel(sess(dono), a.id))?.acoes?.podeCriarLead).toBe(false);
+    });
+
+    it("oportunidade de outra carteira não vai para o painel de quem só vê pela linha (LC-L02)", async () => {
+      const dono = await criarUsuario([Papel.VENDEDOR]);
+      const donoDaLinha = await criarUsuario([Papel.VENDEDOR]);
+      const op = await prisma.oportunidade.create({ data: { nome: "Outra carteira", vendedorDonoId: dono.id } });
+      const linha = await numero("VENDAS", donoDaLinha.id);
+      const a = await atendimento(linha.id, (await contato()).id, { finalidade: "COMERCIAL", leadId: op.id });
+      expect((await carregarPainel(sess(donoDaLinha), a.id))?.acoes).toMatchObject({ leadId: null, podeCriarLead: false });
+    });
+
+    it("financeiro: cobrança ativa e silêncio só para FIN/SEC; editar nome exige ver todos os atendimentos do contato", async () => {
+      const canal = await seedCanal();
+      const base = await seedCobranca({ vencimento: new Date("2026-10-10T12:00:00Z") });
+      const ct = await contato({ alunoId: base.aluno.id });
+      const fin = await criarUsuario([Papel.FINANCEIRO]);
+      await prisma.pagadorPreparacaoMatricula.create({ data: {
+        matriculaId: base.matricula.id, preparadorId: fin.id, versao: 1, tipo: "ALUNO", dados: { alunoId: base.aluno.id },
+        motivo: "Pagador aluno identificado para o contrato", chaveIdempotencia: "pag-c2", entradaHash: "pag-c2" } });
+      await prisma.contatoWhatsApp.update({ where: { id: ct.id }, data: { telefoneE164: base.aluno.telefoneE164! } });
+      const aFin = await atendimento(canal.numero.id, ct.id, { finalidade: "FINANCEIRO", alunoId: base.aluno.id, matriculaId: base.matricula.id, ultimoInboundEm: new Date() });
+      const acoes = (await carregarPainel(sess(fin), aFin.id))?.acoes;
+      expect(acoes?.cobranca?.ativa?.id).toBe(base.cobranca.id);
+      expect(acoes?.cobranca?.silencio.ativo).toBe(true);
+      expect(acoes).toMatchObject({ podeVincular: false, podeEditarNome: true, alunoId: base.aluno.id });
+      const vendedorParticipante = await criarUsuario([Papel.VENDEDOR]);
+      await participar(aFin.id, vendedorParticipante, fin);
+      expect((await carregarPainel(sess(vendedorParticipante), aFin.id))?.acoes).toMatchObject({ cobranca: null, podeVincular: true });
+      expect((await carregarPainel(sess(vendedorParticipante), aFin.id))?.acoes?.podeEditarNome).toBe(true);
+      // Com outro atendimento do contato fora do escopo do vendedor, ele não edita o nome salvo.
+      const outroNumero = await numero("COBRANCA");
+      await atendimento(outroNumero.id, ct.id, { finalidade: "SECRETARIA" });
+      expect((await carregarPainel(sess(vendedorParticipante), aFin.id))?.acoes?.podeEditarNome).toBe(false);
+    });
   });
 });
