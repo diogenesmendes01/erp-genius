@@ -8,13 +8,19 @@ export type RecursoMotor =
 export const AVISO_RECURSO_MOTOR = "Disponível quando o motor próprio da escola entrar em uso.";
 
 /**
- * Recursos liberados por driver. Meta e Evolution/Baileys não executam nenhum deles; o valor MOTOR do enum só chega na
- * Fase 4, que preenche este mapa. É `Partial` de propósito: um driver ausente do mapa não libera nada, então o mapa
+ * Recursos liberados por driver. Meta e Evolution/Baileys não executam nenhum deles; só o MOTOR executa todos. É `Partial` de propósito: um driver ausente do mapa não libera nada, então o mapa
  * continua compilando quando o enum ganha um valor novo, em qualquer ordem de merge.
  */
+const TODOS_OS_RECURSOS: readonly RecursoMotor[] = [
+  "editar", "apagar", "reagir", "enquete", "figurinha", "gif", "localizacao", "cartaoContato",
+  "responderCitando", "confirmacaoLeitura", "digitando", "grupoEnviar", "grupoGerir", "bloquear",
+];
+
 const LIBERADOS: Partial<Record<DriverWhatsApp, ReadonlySet<RecursoMotor>>> = {
   META_CLOUD: new Set(),
   BAILEYS: new Set(),
+  // O motor próprio executa todos; Meta e Evolution seguem sem nenhum até a Task 25 removê-los.
+  MOTOR: new Set(TODOS_OS_RECURSOS),
 };
 
 export function recursoDisponivel(driver: DriverWhatsApp, r: RecursoMotor): boolean {

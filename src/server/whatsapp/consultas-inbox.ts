@@ -14,6 +14,8 @@ import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
 import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { comContatoIndividual } from "./grupos";
+import type { RecursoMotor } from "@/components/conversa/recursos-canal";
+import { capacidadesDoNumero } from "./motor/capacidades";
 
 export interface ConversaResumo {
   /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
@@ -55,6 +57,8 @@ export interface ThreadConversa {
     alunoId: string | null; alunoNome: string | null; responsavelId: string | null; responsavelNome: string | null;
     leadId: string | null; leadNome: string | null };
   janela24h: { aberta: boolean; fechaEm: string | null } | null;
+  /** Recursos do motor que o número executa agora (`recursos={(r) => capacidades.includes(r)}` na tela). */
+  capacidades: RecursoMotor[];
   silencio: { ativo: boolean; ate: string | null }; cobrancaAtiva: CobrancaAtivaThread | null;
   lead: LeadNaThread | null; mensagens: MensagemThread[];
 }
@@ -167,6 +171,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       optOutEm: c.contato.optOutEm?.toISOString() ?? null, alunoId: a.alunoId,
       alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
       leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
+    capacidades: capacidadesDoNumero({ driver: c.numero.driver, ativo: c.numero.ativo, sessao: c.numero.sessao }),
     janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
     silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
