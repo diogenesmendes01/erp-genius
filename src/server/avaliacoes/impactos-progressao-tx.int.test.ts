@@ -11,6 +11,7 @@ import { proporCorrecaoConclusaoReposicao, decidirCorrecaoConclusaoReposicao } f
 import { consultarCorrecoesConclusaoReposicao } from "@/server/diario/correcao-reposicao-consulta";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { publicarOfertaAgendaDestino, retirarAulaFuturaDaOferta } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { HABILIDADES } from "./calculo";
 import { confirmarFechamentoAcademico, revisarFechamentoAcademico } from "./fechamento";
@@ -63,6 +64,7 @@ async function criarTurma(nivelId: string, nome: string, emAndamento = false) {
     horarioFim: "19:00",
     vinculosDocentes: { create: { professorId, inicio } },
   } });
+  await publicarOfertaAgendaDestino(turma.id, { preparadorId: secretariaId, decisorId: gestorId, professorId });
   return emAndamento
     ? prisma.turma.update({ where: { id: turma.id }, data: { status: "EM_ANDAMENTO", dataInicio: inicio } })
     : turma;
@@ -124,6 +126,9 @@ async function prepararEquivalenciaSemAplicar(alocacaoOrigemId: string) {
 }
 
 async function fecharC(alocacaoCId: string, extra?: { alunoId: string; matriculaId: string }) {
+  // Fechar o nível em C pressupõe o nível concluído: sem a aula futura das
+  // ofertas de B (turma que o aluno deixou) e de C.
+  await retirarAulaFuturaDaOferta(turmaBId, turmaCId);
   // A aula precisa pertencer inequivocamente ao vínculo C. Usar o instante
   // persistido pela equivalência evita depender do desvio entre o relógio do
   // Node e o PostgreSQL que gravou a alocação.
