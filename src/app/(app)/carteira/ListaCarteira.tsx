@@ -229,7 +229,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
           className="sticky bottom-0 z-30 space-y-2 rounded-lg border border-border-soft bg-surface-raised p-3 shadow-popover max-sm:fixed max-sm:inset-x-0 max-sm:rounded-b-none max-sm:rounded-t-dialog max-sm:p-4"
         >
           <p className="text-sm font-medium">{selecionados.length === 1 ? "1 oportunidade selecionada" : `${selecionados.length} oportunidades selecionadas`}</p>
-          {aviso && <p className={"text-sm " + (aviso.bloqueia ? "text-red-700" : "text-gray-600")}>{aviso.texto}</p>}
+          {aviso && <p role={aviso.bloqueia ? "alert" : "status"} className={"text-sm " + (aviso.bloqueia ? "text-red-700" : "text-gray-600")}>{aviso.texto}</p>}
           <div className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-sm">
               Novo responsável
