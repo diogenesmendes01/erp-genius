@@ -2659,3 +2659,16 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   código: `PainelSetor` usa rótulos (`ETAPA_LABEL`, `STATUS_COBRANCA_LABEL`, `SETOR_ATENDIMENTO_LABEL`) e `EstadoVazio`;
   `AcoesAtendimento` passa o tipo do aviso (convite/agendamento) em vez de texto livre.
 - Nenhum link ou rota aponta para o Inbox antigo (`/inbox` é a mesma página; só a Sidebar linka).
+
+**Pendências explícitas da Task 33 (a confirmar com o produto antes do PR)**
+
+- Regressão funcional aceita: a UI nova (`AcoesAtendimento`) não oferece mais, na thread, ações que o Inbox antigo tinha: criar lead,
+  vincular contato, editar nome, registrar/remover opt-out, retomar régua/tratar, registrar pagamento, anexar e gravar áudio. As Server
+  Actions seguem testadas (regras 10, 12 e 14), mas não há botão. O brief manda remover o antigo, então a remoção é conforme; o
+  integrador precisa confirmar com o produto se essas ações voltam como botões (tarefa dona a definir) ou se ficam fora do escopo.
+- Regra 18, lacuna de requisito: o brief pede "upload no visível", mas `src/app/api/upload/route.ts` não tem upload por atendimento
+  (é por lead/matrícula). O teste 18 cobre envio só de arquivo do próprio autor e download no escopo. Upload por atendimento fica
+  como lacuna para a tarefa dona do envio de mídia.
+- Regra 21: o brief cita `AgendamentoCancelado`; o evento real gravado é `MensagemAgendadaCancelada`, e o teste usa o real.
+- Evidência pendente: `npm run test:int` completo não foi rodado (mais de 2 h; proibido na faixa). Só `regras-inbox.int.test.ts`
+  (21/21). A Task 33 só conta como concluída com essa ressalva, até o integrador rodar o `test:int`.
