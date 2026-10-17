@@ -26,6 +26,11 @@ export interface ConversaResumo {
 export interface MensagemThread {
   id: string; direcao: "ENTRADA" | "SAIDA"; tipo: string; corpo: string | null; midiaPath: string | null;
   status: string; origem: string | null; autorNome: string | null; templateNome: string | null; criadoEm: string;
+  /** Remetente em conversa de grupo (nulo em conversa individual). */
+  participanteNome: string | null;
+  /** Favorita do usuário da sessão (tabela pessoal). */
+  favorita: boolean;
+  clientMessageId: string | null;
 }
 export interface CobrancaAtivaThread {
   id: string; matriculaId: string; alunoId: string; alunoNome: string; moeda: string; vencimento: ReferenciaVencimentoCivil;
@@ -59,7 +64,7 @@ export interface PessoasVinculo {
   leads: { id: string; nome: string; codigo: string | null }[];
 }
 
-const contextoInclude = {
+export const contextoInclude = {
   matricula: { select: { id: true, codigo: true } },
   conversa: { include: { numero: true, contato: { include: { responsavel: { select: { nome: true } } } } } },
   aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
@@ -101,9 +106,9 @@ export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "",
   return { itens: mesclarPorRecencia(lista, naoLidasFora).map(resumirConversa), limitada };
 }
 
-type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;
+export type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;
 
-function resumirConversa(atendimento: AtendimentoDaLista): ConversaResumo {
+export function resumirConversa(atendimento: AtendimentoDaLista): ConversaResumo {
   const a = comContatoIndividual(atendimento);
   const pedag = a.finalidade === "PEDAGOGICO";
   const nome = nomeDoAtendimento(a);
@@ -128,7 +133,8 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const achado = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
     include: { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" }, take: 300,
-      include: { autor: { select: { nome: true } }, template: { select: { nome: true } } } } },
+      include: { autor: { select: { nome: true } }, template: { select: { nome: true } },
+        favoritosUsuarios: { where: { usuarioId: usuario.id }, select: { id: true } } } } },
   });
   if (!achado) return null;
   const a = comContatoIndividual(achado);
@@ -167,14 +173,15 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
     lead: verLead && a.lead ? await leadNaThread(a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
-      templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString() })) };
+      templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
+      participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId })) };
 }
 
 /**
  * Quem já via o lead antes da SPEC-ERP-005 continua vendo: administração, carteira/equipe/cobertura
  * atual e participante vigente do atendimento. Só o acesso "pela linha" não mostra o painel.
  */
-async function podeVerLeadNaThread(usuario: UsuarioSessao, atendimentoId: string, leadId: string, agora: number): Promise<boolean> {
+export async function podeVerLeadNaThread(usuario: UsuarioSessao, atendimentoId: string, leadId: string, agora: number): Promise<boolean> {
   if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
   if (temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)
     && await prisma.oportunidade.count({ where: { AND: [{ id: leadId }, await escopoComercialAtual(usuario)] } })) return true;
@@ -196,13 +203,18 @@ export async function listarLinhasDoUsuario(usuario: UsuarioSessao): Promise<Lin
   });
 }
 
-async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
-  const notas = await prisma.evento.findMany({ where: { agregadoTipo: "Lead", agregadoId: lead.id, tipo: "NotaInterna" },
+/** Notas internas do lead (Evento NotaInterna), mais recentes primeiro. */
+export async function notasDoLead(leadId: string): Promise<NotaInternaThread[]> {
+  const notas = await prisma.evento.findMany({ where: { agregadoTipo: "Lead", agregadoId: leadId, tipo: "NotaInterna" },
     orderBy: { criadoEm: "desc" }, take: 20, include: { autor: { select: { nome: true } } } });
+  return notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "",
+    autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
+}
+
+async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
   return { ...lead, dataExperimental: lead.dataExperimental?.toISOString() ?? null,
     etapasPermitidas: ETAPAS_MANUAIS.filter((d) => d !== lead.etapa && transicaoManualPermitida(lead.etapa, d)),
-    notas: notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "",
-      autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() })) };
+    notas: await notasDoLead(lead.id) };
 }
 
 async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {
