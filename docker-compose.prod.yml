@@ -122,6 +122,22 @@ services:
     depends_on:
       - app
 
+  # DESPACHO A CADA MINUTO: mensagens agendadas pelo atendimento saem na hora marcada
+  # (o tick de 5 min acima continua). Idempotente: só drena a fila.
+  cron-despacho:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    command: >-
+      sh -c 'while true; do
+        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/despacho
+          -o /dev/null -w "despacho tick %{http_code}\n" || true;
+        sleep 60;
+      done'
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?defina no .env}
+    depends_on:
+      - app
+
   # Única borda pública: TLS automático (Let's Encrypt) para o app — webhook da Meta
   # exige HTTPS válido. Evolution NÃO passa por aqui.
   caddy:
