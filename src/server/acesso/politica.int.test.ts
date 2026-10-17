@@ -141,12 +141,25 @@ describe("equipe e cobertura temporária (AC02/AC07/AC08)", () => {
     entrar(gerente.id);
     expect((await atribuirDono(lead.id, alheio.id, "Destino fora da equipe")).ok).toBe(false);
     expect((await atribuirDono(lead.id, substituto.id, "Redistribuição autorizada")).ok).toBe(true);
-    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimento.id } })).responsavelId).toBe(substituto.id);
+    expect(atendimento.status).toBe("ABERTO_SEM_RESPONSAVEL");
+    // Responsável preenchido conta como assumido: sai de "Na fila" junto com a reatribuição.
+    expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimento.id } })).toMatchObject({ responsavelId: substituto.id, status: "EM_ATENDIMENTO" });
     const depois = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } });
     expect(depois.status).toBe("CANCELADA"); expect(depois.autorId).toBe(titular.id);
     expect((await prisma.comissao.findFirstOrThrow({ where: { matriculaId: m.id } })).vendedorId).toBe(titular.id);
     expect(await listarLeads(titular)).toHaveLength(0);
     expect((await listarLeads(substituto)).map((l) => l.id)).toEqual([lead.id]);
     expect((await eventosDo("Lead", lead.id)).find((e) => e.tipo === "LeadAtribuido")?.payload).toMatchObject({ de: titular.id, para: substituto.id });
+  });
+
+  it("reatribuição não tira o atendimento de AGUARDANDO_CLIENTE", async () => {
+    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511987654322", rotulo: "Comercial", driver: "BAILEYS", finalidade: "VENDAS", donoId: titular.id } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688888889", leadId: lead.id } });
+    const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
+    expect(atendimento).toMatchObject({ responsavelId: titular.id, status: "EM_ATENDIMENTO" });
+    await prisma.atendimentoWhatsApp.update({ where: { id: atendimento.id }, data: { status: "AGUARDANDO_CLIENTE" } });
+    entrar(gerente.id);
+    expect((await atribuirDono(lead.id, substituto.id, "Redistribuição autorizada")).ok).toBe(true);
+    expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimento.id } })).toMatchObject({ responsavelId: substituto.id, status: "AGUARDANDO_CLIENTE" });
   });
 });

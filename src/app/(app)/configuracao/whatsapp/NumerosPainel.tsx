@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconQrcode, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
-import type { NumeroConfig } from "@/server/whatsapp/consultas";
+import type { NumeroConfig, ResponsavelTriagem } from "@/server/whatsapp/consultas";
+import { salvarSetoresNumero } from "@/server/whatsapp/acoes-numero";
+import { SETORES, podeTriarSetores, type Setor } from "@/server/whatsapp/setor";
 import { conectarNumeroQr, consultarSessaoNumero, salvarNumeroWhatsApp } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { FINALIDADE_NUMERO_LABEL, rotular } from "@/lib/labels";
+import { FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
@@ -50,9 +52,11 @@ const FORM_VAZIO: FormNumero = {
 export function NumerosPainel({
   numeros,
   vendedores,
+  responsaveis = [],
 }: {
   numeros: NumeroConfig[];
   vendedores: { id: string; nome: string }[];
+  responsaveis?: ResponsavelTriagem[];
 }) {
   const router = useRouter();
   const [form, setForm] = useState<FormNumero | null>(null);
@@ -110,6 +114,11 @@ export function NumerosPainel({
                     {n.driver === "BAILEYS" && (
                       <span className={"rounded-full px-1.5 py-0.5 " + badge.cls}>{badge.label}</span>
                     )}
+                    {n.setores.map((st) => (
+                      <span key={st} className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">
+                        {SETOR_ATENDIMENTO_LABEL[st].toLowerCase()}
+                      </span>
+                    ))}
                     {n.donoNome && <span className="text-gray-500">dono: {n.donoNome}</span>}
                     {n.providerRef && <span className="text-gray-400">ref: {n.providerRef}</span>}
                   </div>
@@ -240,11 +249,88 @@ export function NumerosPainel({
           </div>
         </div>
       )}
+      {form?.id && numeros.some((n) => n.id === form.id) && (
+        <SetoresNumeroEditor
+          key={form.id}
+          numero={numeros.find((n) => n.id === form.id)!}
+          responsaveis={responsaveis}
+        />
+      )}
       {/* Logo abaixo do "Salvar número" — e no mesmo lugar depois que o formulário fecha no sucesso. */}
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
 
       {qrDe && <QrModal numero={qrDe} onClose={() => { setQrDe(null); router.refresh(); }} />}
     </section>
+  );
+}
+
+// Setores atendidos e responsável pela triagem (doc 02 E3): o número pode servir vários setores;
+// a triagem só existe com 2+ setores (null = administrador, Q2).
+export function SetoresNumeroEditor({
+  numero,
+  responsaveis,
+}: {
+  numero: Pick<NumeroConfig, "id" | "setores" | "triagemResponsavelId">;
+  responsaveis: ResponsavelTriagem[];
+}) {
+  const router = useRouter();
+  const [setores, setSetores] = useState<Setor[]>(numero.setores);
+  const [triagem, setTriagem] = useState<string>(numero.triagemResponsavelId ?? "");
+  // Operação de "definir o conjunto": repetir é inofensivo.
+  const acao = useAcaoCliente({ idempotente: true });
+
+  function alternar(s: Setor) {
+    setSetores((atual) => (atual.includes(s) ? atual.filter((x) => x !== s) : SETORES.filter((x) => x === s || atual.includes(x))));
+  }
+
+  // Só quem tem papel de um dos setores marcados (mesma regra que salvarSetoresNumero aplica no servidor).
+  const elegiveis = responsaveis.filter((u) => podeTriarSetores(u.papeis, setores));
+  const triagemValida = elegiveis.some((u) => u.id === triagem) ? triagem : "";
+
+  async function salvar() {
+    const d = await acao.executar(
+      () => salvarSetoresNumero({ numeroId: numero.id, setores, triagemResponsavelId: setores.length >= 2 && triagemValida ? triagemValida : null }),
+      "Setores salvos.",
+    );
+    if (d?.tipo === "ok") router.refresh();
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-gray-200 bg-surface p-4">
+      <span className="text-sm font-medium">Setores atendidos</span>
+      <div className="mt-2 flex flex-wrap gap-4">
+        {SETORES.map((s) => (
+          <label key={s} className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              className="h-3.5 w-3.5 accent-brand-600"
+              checked={setores.includes(s)}
+              onChange={() => alternar(s)}
+            />
+            {SETOR_ATENDIMENTO_LABEL[s]}
+          </label>
+        ))}
+      </div>
+      {setores.length >= 2 && (
+        <label className="mt-3 block text-xs text-gray-600">
+          Responsável pela triagem
+          <select className={inputCls + " mt-1 sm:max-w-xs"} value={triagemValida} onChange={(e) => setTriagem(e.target.value)}>
+            <option value="">— Administrador —</option>
+            {elegiveis.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <div className="mt-3 flex justify-end">
+        <button type="button" className={btnPri} disabled={acao.ocupado || setores.length === 0} onClick={salvar}>
+          {acao.ocupado ? "Salvando…" : "Salvar setores"}
+        </button>
+      </div>
+      <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
+    </div>
   );
 }
 

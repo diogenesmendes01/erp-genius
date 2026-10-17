@@ -9,6 +9,7 @@ import {
   Temperatura,
   Segmento,
   MotivoPerda,
+  OrigemEnvio,
   StatusMatricula,
   StatusCobranca,
   StatusComissao,
@@ -51,6 +52,8 @@ import {
   StatusPagamentoInformado,
   ReferenciaCoberturaMensal,
   FinalidadeNumero,
+  FinalidadeAtendimentoWhatsApp,
+  StatusAtendimentoWhatsApp,
   FormaAgendaOferta,
   StatusPropostaAcertoTaxaAditivo,
   StatusConjuntoImpactosTaxaAditivo,
@@ -124,6 +127,15 @@ export const ETAPA_EXTENSO_LABEL: Readonly<Record<EtapaLead, string>> = Object.f
   MATRICULADO: "Matriculado",
   NO_SHOW: "No-show",
   PERDIDO: "Perdido",
+});
+
+export const ORIGEM_ENVIO_LABEL: Readonly<Record<OrigemEnvio, string>> = Object.freeze({
+  GESTAO: "Gestão",
+  HUMANO: "Atendente",
+  CRON: "Régua automática",
+  LOTE: "Envio em lote",
+  CELULAR: "Enviada pelo celular",
+  IA: "Aria",
 });
 
 export const PAPEL_PARTICIPANTE_LABEL: Readonly<Record<PapelParticipante, string>> = Object.freeze({
@@ -468,6 +480,22 @@ export const FINALIDADE_NUMERO_LABEL: Readonly<Record<FinalidadeNumero, string>>
   COBRANCA: "Cobrança",
   VENDAS: "Vendas",
   AGENDA: "Agenda",
+});
+
+/** Setor de atendimento do WhatsApp (finalidade do atendimento). */
+export const SETOR_ATENDIMENTO_LABEL: Readonly<Record<FinalidadeAtendimentoWhatsApp, string>> = Object.freeze({
+  COMERCIAL: "Comercial",
+  FINANCEIRO: "Financeiro",
+  SECRETARIA: "Secretaria",
+  PEDAGOGICO: "Pedagógico",
+});
+
+/** Status do atendimento do WhatsApp no Inbox. */
+export const STATUS_ATENDIMENTO_LABEL: Readonly<Record<StatusAtendimentoWhatsApp, string>> = Object.freeze({
+  ABERTO_SEM_RESPONSAVEL: "Na fila",
+  EM_ATENDIMENTO: "Em atendimento",
+  AGUARDANDO_CLIENTE: "Aguardando cliente",
+  ENCERRADO: "Encerrado",
 });
 
 export const CATEGORIA_DOCUMENTO_LABEL: Readonly<Record<CategoriaDocumento, string>> = Object.freeze({
