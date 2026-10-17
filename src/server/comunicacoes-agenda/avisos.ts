@@ -10,6 +10,7 @@ import { registrarPendenciaAvisoAgendaTx } from "./pendencias";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { validarFonteQuantidadeAulasTx } from "@/server/agenda/quantidade-fonte";
 import { envioQuantidadeAulasHabilitado } from "./quantidade-gate";
+import { envioAvisosAgendaHabilitado } from "./envio-gate";
 import { PropostaAgendaAditivoSchema, hashPropostaAgendaAditivo } from "@/server/contratos/agenda-aditivo-schema";
 import { formatarIntervaloAvisoAgenda } from "./formato-horario";
 
@@ -148,7 +149,7 @@ export async function despacharAvisoAlteracaoAgendaInterna(id: string, entregar:
 }
 
 export async function processarAvisosAlteracaoAgenda(entregar: EntregarAvisoAgenda) {
-  if (process.env.COMUNICACOES_AGENDA_ENVIO_ENABLED !== "true") return 0;
+  if (!envioAvisosAgendaHabilitado()) return 0;
   // Configuração ausente é pendência anterior ao envio: não faz claim, tentativa
   // nem transforma o aviso em INCERTO.
   let processados = 0;

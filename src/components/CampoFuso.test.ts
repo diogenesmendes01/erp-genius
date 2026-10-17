@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CampoFuso, FUSOS_SUGERIDOS, validadeDoFuso } from "./CampoFuso";
-import { MSG_FUSO_NAO_RECONHECIDO } from "@/server/operacao/fuso";
+import { CampoFuso, FUSOS_SUGERIDOS, fusosCanonicos, todosOsFusos, validadeDoFuso } from "./CampoFuso";
+import { APELIDOS_FUSO_LEGADOS, fusoIanaValido, MSG_FUSO_NAO_RECONHECIDO } from "@/server/operacao/fuso";
 
 describe("CampoFuso", () => {
   it("pré-preenche com o fuso institucional quando ele existe", () => {
@@ -52,5 +52,22 @@ describe("CampoFuso", () => {
     expect(preferencia).toContain('<option value="UTC">UTC — horário universal</option>');
     expect(preferencia).toContain('<option value="Europe/Lisbon">');
     expect(preferencia).not.toMatch(/<input[^>]*required/);
+  });
+
+  // Revisão R1 do #210 (C1): o ICU lista links do `backward` que um Postgres sem tzdata-legacy não aceita.
+  it("a lista completa mostra o nome canônico, sem duplicatas", () => {
+    expect(fusosCanonicos(["Asia/Kolkata", "Asia/Calcutta", "Europe/Kiev", "America/Sao_Paulo", "US/Eastern"]))
+      .toEqual(["America/New_York", "America/Sao_Paulo", "Asia/Kolkata", "Europe/Kyiv"]);
+    const todos = todosOsFusos();
+    expect(todos.length).toBeGreaterThan(0);
+    expect(new Set(todos).size).toBe(todos.length);
+    const apelidos = new Set(Object.keys(APELIDOS_FUSO_LEGADOS));
+    expect(todos.filter((f) => apelidos.has(f))).toEqual([]);
+    expect(todos.filter((f) => !fusoIanaValido(f))).toEqual([]);
+    const preferencia = renderToStaticMarkup(createElement(CampoFuso, { valor: "", onChange: () => {}, required: false, todos: true, sugestoes: [], className: "campo" }));
+    for (const link of ["Asia/Calcutta", "Europe/Kiev", "America/Buenos_Aires", "Asia/Saigon"]) expect(preferencia).not.toContain(`value="${link}"`);
+    for (const canonico of ["Asia/Kolkata", "Europe/Kyiv", "America/Argentina/Buenos_Aires", "Asia/Ho_Chi_Minh"]) {
+      expect(preferencia.split(`<option value="${canonico}">`)).toHaveLength(2);
+    }
   });
 });

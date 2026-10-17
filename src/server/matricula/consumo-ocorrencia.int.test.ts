@@ -132,7 +132,11 @@ it("consome falta e cancelamento tardio com reserva sem caixa e bloqueia escrita
   const outra = await reservarOutraMatricula("vinculo-cruzado");
   await expect(prisma.consumoHorasCompradas.create({ data: { reservaId: outra.reservaId, conferenciaOcorrenciaId: conferenciaFalta.id, autorId: financeiroId, motivo: "Tentativa de usar conferência de outra matrícula" } })).rejects.toThrow(/reserva, compra e agenda compatíveis|conferência cobrável da reserva vigente/);
   expect(await prisma.consumoHorasCompradas.count({ where: { reservaId: outra.reservaId } })).toBe(0);
-  const apuracao = await prisma.$transaction(tx => carregarApuracaoHorasTx(tx, { alunoId, matriculaId, periodo: { referencia: "q92-setembro", inicio: "2026-09-01T00:00:00Z", fimExclusivo: "2026-10-01T00:00:00Z" }, vencimento: "2026-10-10", escolha: "AGUARDAR" }));
+  // Os encontros acontecem no relógio real (alguns segundos à frente): o período
+  // apurado é o mês civil desses encontros, não um mês fixo do calendário.
+  const base = agendadas[0].encontro.inicio;
+  const mes = (deslocamento: number) => new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + deslocamento, 1)).toISOString().slice(0, 10);
+  const apuracao = await prisma.$transaction(tx => carregarApuracaoHorasTx(tx, { alunoId, matriculaId, periodo: { referencia: "q92-mes-dos-encontros", inicio: `${mes(0)}T00:00:00Z`, fimExclusivo: `${mes(1)}T00:00:00Z` }, vencimento: `${mes(1).slice(0, 8)}10`, escolha: "AGUARDAR" }));
   expect(apuracao).toMatchObject({ estado: "SEM_ITENS_A_FATURAR", totalApurado: "0.00", preservados: expect.arrayContaining(consumos.map(({ c, consumo }) => ({ encontroId: c.encontro.id, destinacao: { tipo: "ANTECIPACAO_CONFERIDA", registroId: consumo.id } }))) });
   const encerramento = await prisma.$transaction(tx => carregarHorasEncerramentoTx(tx, alunoId, matriculaId));
   for (const { c, consumo, desfecho } of consumos) {

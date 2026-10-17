@@ -454,7 +454,8 @@ model AtendimentoWhatsApp {
   @@index([alunoId])
   @@index([matriculaId])
   @@index([autorizacaoComunicacaoAcademicaId])
-  @@index([ultimaMensagemEm(sort: Desc), id])
+  // No banco: (ultimaMensagemEm DESC NULLS LAST, id DESC); o Prisma não expressa NULLS LAST (migration 20261017110000).
+  @@index([ultimaMensagemEm(sort: Desc), id(sort: Desc)])
 }
 
 model ParticipanteAtendimentoWhatsApp {
@@ -489,6 +490,10 @@ enum Papel {
 }
 
 model Usuario {
+  tarefasResponsavel Tarefa[] @relation("ResponsavelTarefa")
+  tarefasCriadas Tarefa[] @relation("CriadorTarefa")
+  tarefasConcluidas Tarefa[] @relation("ConcluidaPorTarefa")
+  notificacoes NotificacaoUsuario[]
   preferenciasConversaInbox PreferenciaConversaUsuario[]
   favoritosMensagemInbox FavoritoMensagemUsuario[]
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
@@ -1118,6 +1123,7 @@ enum Escolaridade {
 // Nacionalidade / 2ª nacionalidade / país de residência / país emissor são ISO 3166
 // (qualquer país — ver `lib/paises-iso.ts`), pois não são mercados da Genius.
 model Aluno {
+  tarefas Tarefa[]
   pessoaId String? @unique
   pessoa   Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   contaPortal ContaPortalAluno?
@@ -1350,6 +1356,7 @@ enum MotivoPerda {
 }
 
 model Oportunidade {
+  tarefas Tarefa[]
   pessoaId     String?
   pessoa       Pessoa?      @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   origemCanal  OrigemCanal?
@@ -1763,6 +1770,7 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  tarefas Tarefa[]
   conjuntosImpactosCoberturaAditivo ConjuntoImpactosCoberturaAditivo[]
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
   propostasVencimentoAditivo PropostaVencimentoAditivo[]
@@ -2615,6 +2623,10 @@ model IntencaoMensagem {
 
   criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
   atualizadoEm    DateTime          @default(now()) @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
+  // Mensagem agendada pelo atendente (Tarefas, Fase 2).
+  agendadaPara    DateTime?
+  tarefaId        String?
+  tarefa          Tarefa?           @relation(fields: [tarefaId], references: [id], onDelete: SetNull)
   despacharAposEm DateTime? // ADIADA (teto/janela) re-tenta depois daqui
   // B3 (doc 32): VALIDADE do disparo — intenção pré-evento (lembrete -24h/-2h) não pode
   // sair depois da aula, nem um degrau atrasado além da tolerância. O despachante CANCELA
@@ -2640,6 +2652,7 @@ model IntencaoMensagem {
   // mantém as intenções de COBRANÇA (essas colunas nulas) fora da constraint. O mesmo índice
   // cobre o lookup do enfileirador (findFirst com as quatro colunas presentes).
   @@index([status, despacharAposEm])
+  @@index([status, agendadaPara])
 }
 
 enum StatusTemplate {
@@ -8795,6 +8808,7 @@ enum OrigemCanal {
 }
 
 model Pessoa {
+  tarefas Tarefa[]
   id           String       @id @default(cuid())
   codigo       String?      @unique
   nome         String
@@ -8939,4 +8953,104 @@ model FiltroSalvo {
   criadoEm      DateTime        @default(now())
 
   @@unique([usuarioId, tela, nome])
+}
+
+// Fase 2 CRM (2.M4): tarefas e notificações ao usuário.
+enum TipoTarefa {
+  WHATSAPP
+  LIGACAO
+  EMAIL
+  REUNIAO
+  OUTRO
+}
+
+enum StatusTarefa {
+  ABERTA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum PrioridadeTarefa {
+  NORMAL
+  ALTA
+}
+
+enum OrigemTarefa {
+  HUMANO
+  IA
+  IA_SUGERIDA
+  AUTOMACAO
+}
+
+enum TipoNotificacao {
+  LEMBRETE_TAREFA
+}
+
+model Tarefa {
+  id         String                        @id @default(cuid())
+  titulo     String
+  descricao  String?
+  tipo       TipoTarefa
+  setor      FinalidadeAtendimentoWhatsApp
+  status     StatusTarefa                  @default(ABERTA)
+  prioridade PrioridadeTarefa              @default(NORMAL)
+
+  // Quando: data civil sempre (fuso de origem); instante só se tiver horário. O CHECK da migration
+  // impede inicioEm sem dataCivil.
+  dataCivil  String?
+  inicioEm   DateTime? @db.Timestamptz
+  duracaoMin Int       @default(30)
+  fusoOrigem String
+
+  lembreteAntecedenciaMin Int?
+  lembrarEm               DateTime? @db.Timestamptz
+  lembreteDisparadoEm     DateTime? @db.Timestamptz
+
+  responsavelId      String?
+  responsavel        Usuario?  @relation("ResponsavelTarefa", fields: [responsavelId], references: [id], onDelete: Restrict)
+  criadorId          String?
+  criador            Usuario?  @relation("CriadorTarefa", fields: [criadorId], references: [id], onDelete: Restrict)
+  concluidaEm        DateTime? @db.Timestamptz
+  concluidaPorId     String?
+  concluidaPor       Usuario?  @relation("ConcluidaPorTarefa", fields: [concluidaPorId], references: [id], onDelete: Restrict)
+  resultado          String?
+  canceladaEm        DateTime? @db.Timestamptz
+  motivoCancelamento String?
+
+  leadId      String?
+  lead        Oportunidade? @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  pessoaId    String?
+  pessoa      Pessoa?       @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  alunoId     String?
+  aluno       Aluno?        @relation(fields: [alunoId], references: [id], onDelete: Restrict)
+  matriculaId String?
+  matricula   Matricula?    @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
+
+  origem       OrigemTarefa @default(HUMANO)
+  versao       Int          @default(1)
+  criadoEm     DateTime     @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  intencoes IntencaoMensagem[]
+
+  @@index([responsavelId, status, dataCivil])
+  @@index([setor, status, responsavelId])
+  @@index([status, lembrarEm])
+  @@index([leadId, status])
+  @@index([pessoaId, status])
+}
+
+model NotificacaoUsuario {
+  id        String          @id @default(cuid())
+  usuarioId String
+  usuario   Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  tipo      TipoNotificacao
+  refTipo   String
+  refId     String
+  titulo    String
+  criadaEm  DateTime        @default(now())
+  lidaEm    DateTime?
+
+  @@unique([tipo, refId, criadaEm])
+  @@index([usuarioId, lidaEm])
 }

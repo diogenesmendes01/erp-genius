@@ -93,9 +93,8 @@ export function motivoConfiguracaoAgendaInvalida(config: ConfiguracaoAgenda | nu
   const numero = config?.numeroAvisosAgenda;
   const template = config?.templateAvisosAgenda;
   if (!config?.numeroAvisosAgendaId || !config.templateAvisosAgendaId || !numero || !template) return "configuracao_agenda_ausente";
-  const motor = numero.driver === "MOTOR";
-  if (!numero.ativo || numero.finalidade !== "AGENDA" || !(motor || (numero.driver === "META_CLOUD" && !!numero.providerRef?.trim()))) return "numero_agenda_invalido";
-  if (!motor && (template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility")) return "template_agenda_incompativel";
+  // Só o motor envia aviso de agenda: META_CLOUD não tem driver no despachante (C1 da R1 do #213).
+  if (!numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") return "numero_agenda_invalido";
   if (template.idioma !== idioma || !renderizarTemplateAgenda(template.corpo, { nome: "x", horarios: "x" })) return "template_agenda_incompativel";
   return null;
 }

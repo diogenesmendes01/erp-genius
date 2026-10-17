@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { driverAceitaAutomacao, ErroDriver } from "./canal";
 
 describe("driverAceitaAutomacao", () => {
-  it("MOTOR e META_CLOUD aceitam; BAILEYS não", () => {
+  it("só MOTOR aceita; META_CLOUD (sem driver no despachante, C1 da R1 do #213) e BAILEYS não", () => {
     expect(driverAceitaAutomacao("MOTOR")).toBe(true);
-    expect(driverAceitaAutomacao("META_CLOUD")).toBe(true);
+    expect(driverAceitaAutomacao("META_CLOUD")).toBe(false);
     expect(driverAceitaAutomacao("BAILEYS")).toBe(false);
   });
 });

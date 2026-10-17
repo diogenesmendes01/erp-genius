@@ -17,6 +17,7 @@ import {
   FinalidadeNumero, FinalidadeAtendimentoWhatsApp, StatusAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel, OrigemEnvio,
   OrigemCanal, PapelParticipante, DriverWhatsApp,
   CorTag, TipoCampoPersonalizado, AlvoCampoPersonalizado, TelaFiltroSalvo,
+  TipoTarefa, StatusTarefa, PrioridadeTarefa, OrigemTarefa, TipoNotificacao,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as L from "@/lib/labels";
@@ -2113,6 +2114,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["TIPO_MENSAGEM_LABEL", L.TIPO_MENSAGEM_LABEL, Object.values(TipoMensagem)],
   ["DRIVER_WHATSAPP_LABEL", L.DRIVER_WHATSAPP_LABEL, Object.values(DriverWhatsApp)],
   ["STATUS_INTENCAO_LABEL", L.STATUS_INTENCAO_LABEL, Object.values(StatusIntencao)],
+  ["STATUS_MENSAGEM_AGENDADA_LABEL", L.STATUS_MENSAGEM_AGENDADA_LABEL, Object.values(StatusIntencao)],
   ["TIPO_APROVACAO_LABEL", L.TIPO_APROVACAO_LABEL, Object.values(TipoAprovacao)],
   ["VIGENCIA_LABEL", L.VIGENCIA_LABEL, Object.values(Vigencia)],
   ["TIPO_AJUSTE_LABEL", L.TIPO_AJUSTE_LABEL, Object.values(TipoAjuste)],
@@ -2153,6 +2155,12 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["TIPO_CAMPO_PERSONALIZADO_LABEL", L.TIPO_CAMPO_PERSONALIZADO_LABEL, Object.values(TipoCampoPersonalizado)],
   ["ALVO_CAMPO_PERSONALIZADO_LABEL", L.ALVO_CAMPO_PERSONALIZADO_LABEL, Object.values(AlvoCampoPersonalizado)],
   ["TELA_FILTRO_SALVO_LABEL", L.TELA_FILTRO_SALVO_LABEL, Object.values(TelaFiltroSalvo)],
+  // Fase 2 CRM (2.M4): tarefas e notificações.
+  ["TIPO_TAREFA_LABEL", L.TIPO_TAREFA_LABEL, Object.values(TipoTarefa)],
+  ["STATUS_TAREFA_LABEL", L.STATUS_TAREFA_LABEL, Object.values(StatusTarefa)],
+  ["PRIORIDADE_TAREFA_LABEL", L.PRIORIDADE_TAREFA_LABEL, Object.values(PrioridadeTarefa)],
+  ["ORIGEM_TAREFA_LABEL", L.ORIGEM_TAREFA_LABEL, Object.values(OrigemTarefa)],
+  ["TIPO_NOTIFICACAO_LABEL", L.TIPO_NOTIFICACAO_LABEL, Object.values(TipoNotificacao)],
 ];
 /** Lista fechada do que labels.ts exporta em tempo de execução (R3 da #138, B14): `rotular`, as classes de temperatura,
  * os mapas antigos e os mapas novos. Função exportada (`rotuloTurma` com ternário) ou mapa novo fora da lista falha. */

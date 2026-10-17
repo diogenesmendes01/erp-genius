@@ -190,6 +190,20 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "L2244",
     efeito: "tira do substituto o acesso à carteira do titular na hora; voltar exige conceder nova cobertura",
   },
+  {
+    arquivo: "src/app/(app)/contatos/FichaContato.tsx",
+    modulo: "@/server/crm/contatos-acoes",
+    acao: "registrarOptOutDaFicha",
+    achado: "F2-T24",
+    efeito: "o contato deixa de receber mensagens em todos os telefones; não há desfazer pela tela",
+  },
+  {
+    arquivo: "src/app/(app)/contatos/MesclarContatos.tsx",
+    modulo: "@/server/crm/contatos-acoes",
+    acao: "mesclarContatosDaLista",
+    achado: "F2-T24",
+    efeito: "a pessoa secundária vira lápide e telefones, oportunidades e histórico passam para a principal; não há desfazer pela tela",
+  },
   // Fase 2, Task 35 (F2-I): estorno de comissão pelo FINANCEIRO no painel /comissoes.
   {
     arquivo: "src/app/(app)/comissoes/EstornarComissao.tsx",

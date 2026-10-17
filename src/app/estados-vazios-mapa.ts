@@ -427,6 +427,16 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": [
     "bloco · Nenhum template — rode o seed ou crie o primeiro.",
   ],
+  "src/app/(app)/contatos/FichaContato.tsx": [
+    "compacto · Nenhum telefone cadastrado.",
+    "compacto · Nenhuma tag neste contato.",
+    "compacto · Nenhuma atividade registrada.",
+    "compacto · Nenhuma oportunidade deste contato na sua carteira.",
+    "compacto · Nenhum campo personalizado de pessoa foi criado.",
+  ],
+  "src/app/(app)/contatos/ListaContatos.tsx": [
+    "bloco · {filtrando ? \"Nenhum contato com esses filtros.\" : \"Nenhum contato na sua carteira.\"}",
+  ],
   "src/app/(app)/diario/DiarioAulas.tsx": [
     "compacto · Nenhum aluno elegível na data selecionada.",
     "bloco · {mensagemVazio ?? \"Nenhuma aula registrada neste histórico.\"}",
@@ -557,6 +567,12 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/funil/page.tsx": [
     "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na sua carteira.\"}",
+  ],
+  "src/app/(app)/tarefas/ListaTarefas.tsx": [
+    "bloco · Nenhuma tarefa por aqui. Crie uma para começar.",
+  ],
+  "src/app/(app)/tarefas/SinoNotificacoes.tsx": [
+    "compacto · Nenhuma notificação.",
   ],
   "src/app/(app)/home/HomeGerente.tsx": [
     "compacto · Sem vendedores.",
@@ -752,5 +768,8 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Não há vínculo acadêmico com resultados disponíveis neste acesso.",
     "bloco · Não há alocação acadêmica disponível neste vínculo.",
     "compacto · Não há pendências operacionais identificadas nesta consulta.",
+  ],
+  "src/components/conversa/SeletorEmoji.tsx": [
+    "compacto · {grupo === \"recentes\" && !consulta.trim() ? \"Os emojis usados aparecerão aqui.\" : \"Nenhum emoji enco",
   ],
 };

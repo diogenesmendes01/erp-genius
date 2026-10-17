@@ -7,7 +7,9 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
+import { hrefSalvo } from "@/app/(app)/funil/href-salvo";
 import { salvarFiltro, arquivarFiltro, listarFiltros } from "./filtros-salvos";
+import { lerFiltrosFunil } from "./funil";
 
 function logadoComo(id: string) {
   authMock.mockResolvedValue({ user: { id } });
@@ -42,6 +44,19 @@ describe("salvarFiltro", () => {
     const r = await salvarFiltro({ tela: "FUNIL", nome: "Quentes", filtros: { temperatura: "QUENTE", hack: "x" } });
     expect((await prisma.filtroSalvo.findUniqueOrThrow({ where: { id: idDe(r) } })).filtros).toEqual({ temperatura: "QUENTE" });
     expect((await eventosDo("FiltroSalvo", idDe(r))).map((e) => e.tipo)).toEqual(["FiltroSalvoCriado"]);
+  });
+
+  it("visualização do funil guarda todas as chaves de FiltrosFunil e volta igual pela URL", async () => {
+    logadoComo(vendedor.id);
+    const filtros = {
+      busca: "ana", tipo: "b2b", donoId: vendedor.id, temperatura: "QUENTE", origem: "SITE",
+      tagId: "t1", perdidosDias: "30", ordem: "proxima",
+    };
+    idDe(await salvarFiltro({ tela: "FUNIL", nome: "Completo", filtros: { ...filtros, vendedor: "x", tag: "y", etapa: "z" } }));
+    const [salvo] = await listarFiltros(sessaoDe(vendedor), "FUNIL");
+    expect(salvo.filtros).toEqual(filtros);
+    const url = new URL(hrefSalvo(salvo.filtros), "http://x");
+    expect(lerFiltrosFunil(Object.fromEntries(url.searchParams))).toEqual(filtros);
   });
 
   it("vendedor não compartilha; gerente compartilha com a equipe", async () => {

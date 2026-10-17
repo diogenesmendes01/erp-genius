@@ -1,4 +1,9 @@
 import {
+  TipoTarefa,
+  StatusTarefa,
+  PrioridadeTarefa,
+  OrigemTarefa,
+  TipoNotificacao,
   CorTag,
   TipoCampoPersonalizado,
   AlvoCampoPersonalizado,
@@ -561,6 +566,17 @@ export const STATUS_INTENCAO_LABEL: Readonly<Record<StatusIntencao, string>> = O
   SIMULADA: "Simulada (ensaio)",
 });
 
+/** Status da mensagem agendada na tela de tarefas: o que o despachante realmente fez, sem prometer envio. */
+export const STATUS_MENSAGEM_AGENDADA_LABEL: Readonly<Record<StatusIntencao, string>> = Object.freeze({
+  PENDENTE: "Agendada",
+  ENVIANDO: "Enviando",
+  DESPACHADA: "Enviada",
+  CANCELADA: "Cancelada",
+  FALHOU: "Falhou",
+  ADIADA: "Adiada · fora da janela de envio",
+  SIMULADA: "Simulada",
+});
+
 // Financeiro.
 export const TIPO_APROVACAO_LABEL: Readonly<Record<TipoAprovacao, string>> = Object.freeze({
   DESCONTO: "Desconto",
@@ -734,4 +750,35 @@ export const TELA_FILTRO_SALVO_LABEL: Readonly<Record<TelaFiltroSalvo, string>> 
   CARTEIRA: "Carteira",
   TAREFAS: "Tarefas",
   COMISSOES: "Comissões",
+});
+
+// Fase 2 CRM (2.M4): tarefas e notificações.
+export const TIPO_TAREFA_LABEL: Readonly<Record<TipoTarefa, string>> = Object.freeze({
+  WHATSAPP: "WhatsApp",
+  LIGACAO: "Ligação",
+  EMAIL: "E-mail",
+  REUNIAO: "Reunião",
+  OUTRO: "Outro",
+});
+
+export const STATUS_TAREFA_LABEL: Readonly<Record<StatusTarefa, string>> = Object.freeze({
+  ABERTA: "Aberta",
+  CONCLUIDA: "Concluída",
+  CANCELADA: "Cancelada",
+});
+
+export const PRIORIDADE_TAREFA_LABEL: Readonly<Record<PrioridadeTarefa, string>> = Object.freeze({
+  NORMAL: "Normal",
+  ALTA: "Alta",
+});
+
+export const ORIGEM_TAREFA_LABEL: Readonly<Record<OrigemTarefa, string>> = Object.freeze({
+  HUMANO: "Criada por pessoa",
+  IA: "Criada pela IA",
+  IA_SUGERIDA: "Sugestão da IA aprovada",
+  AUTOMACAO: "Automação do funil",
+});
+
+export const TIPO_NOTIFICACAO_LABEL: Readonly<Record<TipoNotificacao, string>> = Object.freeze({
+  LEMBRETE_TAREFA: "Lembrete de tarefa",
 });

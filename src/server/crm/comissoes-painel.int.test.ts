@@ -101,4 +101,20 @@ describe("carregarPainelComissoes", () => {
     expect((await carregarPainelComissoes(sessaoDe(financeiro), base)).matriculadasSemComissao.map((o) => o.oportunidadeId).sort())
       .toEqual([daEquipe, deOutraEquipe].sort());
   });
+  it("matriculadas sem comissão seguem o filtro de vendedor sem sair do escopo", async () => {
+    const semComissao = async (dono: U, nome: string) => {
+      const aluno = await prisma.aluno.create({ data: { primeiroNome: nome, paisId: cat.pais.id } });
+      const lead = await prisma.oportunidade.create({ data: { nome, vendedorDonoId: dono.id, etapa: "MATRICULADO" } });
+      await prisma.matricula.create({ data: { alunoId: aluno.id, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "BRL", status: "ATIVA", mesesPlano: 2, referenciaCobertura: "MES_CIVIL" } });
+      return lead.id;
+    };
+    const deV1 = await semComissao(v1, "De V1");
+    await semComissao(v2, "De V2");
+    await semComissao(v3, "De V3");
+    const lista = async (u: U, vendedorId: string) => (await carregarPainelComissoes(sessaoDe(u), { ...base, vendedorId })).matriculadasSemComissao;
+    expect(await lista(financeiro, v1.id)).toEqual([{ oportunidadeId: deV1, nome: "De V1" }]);
+    expect(await lista(gerente, v1.id)).toEqual([{ oportunidadeId: deV1, nome: "De V1" }]);
+    // Gerente filtrando por vendedor de outra equipe: o escopo continua valendo (AND), nada aparece.
+    expect(await lista(gerente, v3.id)).toEqual([]);
+  });
 });
