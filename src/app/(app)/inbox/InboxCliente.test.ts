@@ -9,8 +9,8 @@ vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn()
 import { InboxCliente, EditarNomePainel } from "./InboxCliente";
 
 const mensagens = [
-  { id: "m1", direcao: "ENTRADA", tipo: "TEXTO", corpo: "Oi", midiaPath: null, status: "RECEBIDA", origem: null, autorNome: null, templateNome: null, criadoEm: "2026-10-01T02:30:00.000Z" },
-  { id: "m2", direcao: "SAIDA", tipo: "TEXTO", corpo: "Olá", midiaPath: null, status: "ENTREGUE", origem: "HUMANO", autorNome: "Equipe", templateNome: null, criadoEm: "2026-10-01T03:30:00.000Z" },
+  { id: "m1", direcao: "ENTRADA", tipo: "TEXTO", corpo: "Oi", midiaPath: null, status: "RECEBIDA", origem: null, autorNome: null, templateNome: null, criadoEm: "2026-10-01T02:30:00.000Z", participanteNome: null, favorita: false, clientMessageId: null },
+  { id: "m2", direcao: "SAIDA", tipo: "TEXTO", corpo: "Olá", midiaPath: null, status: "ENTREGUE", origem: "HUMANO", autorNome: "Equipe", templateNome: null, criadoEm: "2026-10-01T03:30:00.000Z", participanteNome: null, favorita: false, clientMessageId: null },
 ];
 
 const thread = {
