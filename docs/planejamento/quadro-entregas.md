@@ -2,6 +2,16 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 3, bloco D — tempo real e paginação (17/10/2026)
+
+Branch `claude/fase3-d-tempo-real` (PR empilhado sobre `claude/fase3-b-escopo-roteamento`). Tarefas 21 (aviso no banco, migration `20261017100000_inbox_tempo_real`, e barramento `LISTEN`), 22 (rota SSE `/api/inbox/eventos` filtrada por escopo) e 23 (lista e thread paginadas por cursor, filtros da URL).
+
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 670 arquivos, 4831 testes verdes.
+- `npm run lint`: saída 0; 0 erros (43 avisos já existentes).
+- Integração, recorte por `vitest related -c vitest.integration.config.ts` nos arquivos do bloco (migration aplicada só no banco do perfil de teste): 18 arquivos, 157 testes; 17 arquivos verdes (151 testes) e 6 falhas em `academico/visibilidade.int.test.ts`, preexistentes na linha de base (falham igual no `main`). Nenhuma falha nova. Não é a suíte completa.
+- **Estado**: implementado; aguarda o merge do bloco B e o integrador. Não concluído.
+
 ## Fase 3 — IDs de migration (16/10/2026)
 
 Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs foram **confirmados pelo integrador** (o controlador da sessão) em 16/10/2026, com registro no ledger de execução, sem renomear (ordem coerente: depois de 20261001/20261002 da #194). Estado por ID:
