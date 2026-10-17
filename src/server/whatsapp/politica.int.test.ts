@@ -10,7 +10,7 @@ import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import { REGUA } from "@/server/cobrancas/regua";
 import { MODOS_FABRICA } from "@/server/cobrancas/fabrica";
 import { carregarPoliticaConfig } from "./consultas";
-import { acionarKillSwitchRegua, salvarPoliticaRegua } from "./acoes";
+import { acionarKillSwitchRegua, salvarConfiguracaoAvisosAgenda, salvarPoliticaRegua } from "./acoes";
 import type { PoliticaReguaInput } from "./schema";
 
 // Integração E4 (doc 30): política como dado — salvar/armar com as LEIS (D+15 manual,
@@ -96,23 +96,21 @@ describe("salvarPoliticaRegua", () => {
     expect((await prisma.politicaRegua.findFirstOrThrow()).estado).toBe("SHADOW");
   });
 
-  it("prontidão S15: número oficial exige template APROVADO nos degraus armados", async () => {
+  it("META_CLOUD não arma a política: Meta Cloud ainda não tem envio disponível (C1 da R1 do #213)", async () => {
     const oficial = await seedNumero("META_CLOUD");
-    const rascunho = await prisma.templateWhatsApp.create({
-      data: { nome: "amigavel", corpo: "Olá {nome}!", statusMeta: "RASCUNHO" },
+    const aprovado = await prisma.templateWhatsApp.create({
+      data: { nome: "amigavel", corpo: "Olá {nome}!", statusMeta: "APROVADO" },
     });
-
     const input = inputFabrica({ estado: "SHADOW", numeroRemetenteId: oficial.id });
-    input.degraus = input.degraus.map((d) => ({ ...d, templateId: rascunho.id }));
-    const semAprovacao = await salvarPoliticaRegua(input);
-    expect(semAprovacao.ok).toBe(false);
-    expect((semAprovacao as { erro?: string }).erro).toContain("APROVADO");
+    input.degraus = input.degraus.map((d) => ({ ...d, templateId: aprovado.id, modo: d.modo === "AUTOMATICO" ? "MANUAL" as const : d.modo }));
+    const recusado = await salvarPoliticaRegua(input);
+    expect(recusado.ok).toBe(false);
+    expect((recusado as { erro?: string }).erro).toContain("Meta Cloud ainda não tem envio disponível");
+    expect(await prisma.politicaRegua.count()).toBe(0);
 
-    await prisma.templateWhatsApp.update({ where: { id: rascunho.id }, data: { statusMeta: "APROVADO" } });
-    const armado = await salvarPoliticaRegua(input);
-    expect(armado.ok, armado.ok ? "" : `falhou: ${(armado as { erro?: string }).erro}`).toBe(true);
-    const politica = await prisma.politicaRegua.findFirstOrThrow();
-    expect(politica.estado).toBe("SHADOW");
+    // Desligada continua salvando livre (nada é armado).
+    const desligada = await salvarPoliticaRegua(inputFabrica({ numeroRemetenteId: oficial.id }));
+    expect(desligada.ok).toBe(true);
   });
 
   it("não-admin é negado", async () => {
@@ -120,6 +118,33 @@ describe("salvarPoliticaRegua", () => {
     authMock.mockResolvedValue({ user: { id: financeiro.id } });
     const r = await salvarPoliticaRegua(inputFabrica());
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("salvarConfiguracaoAvisosAgenda", () => {
+  async function seedAgenda(driver: "META_CLOUD" | "MOTOR") {
+    const numero = await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: driver === "MOTOR" ? "+50675550001" : "+50675550002", rotulo: `Agenda ${driver}`, driver, finalidade: "AGENDA", providerRef: "ref-agenda" },
+    });
+    const template = await prisma.templateWhatsApp.create({
+      data: { nome: `agenda_${driver.toLowerCase()}`, corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-agenda" },
+    });
+    return { numero, template };
+  }
+
+  it("META_CLOUD é recusado: Meta Cloud ainda não tem envio disponível (C1 da R1 do #213)", async () => {
+    const { numero, template } = await seedAgenda("META_CLOUD");
+    const r = await salvarConfiguracaoAvisosAgenda({ numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id });
+    expect(r.ok).toBe(false);
+    expect((r as { erro?: string }).erro).toContain("Meta Cloud ainda não tem envio disponível");
+    expect(await prisma.configuracaoOperacional.count()).toBe(0);
+  });
+
+  it("MOTOR é aceito", async () => {
+    const { numero, template } = await seedAgenda("MOTOR");
+    const r = await salvarConfiguracaoAvisosAgenda({ numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id });
+    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
+    expect(await prisma.configuracaoOperacional.findUniqueOrThrow({ where: { id: "escola" } })).toMatchObject({ numeroAvisosAgendaId: numero.id });
   });
 });
 

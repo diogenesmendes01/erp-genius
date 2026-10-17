@@ -89,8 +89,8 @@ beforeEach(async () => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-// O número da agenda é MOTOR (D38). META_CLOUD só para exercitar a validação de template Meta,
-// que barra o aviso antes do despachante.
+// O número da agenda é MOTOR (D38). META_CLOUD só para exercitar a configuração inválida
+// (Meta Cloud ainda não tem envio, C1 da R1 do #213), que barra o aviso antes do despachante.
 async function configurarCanalAgenda(driver: "MOTOR" | "META_CLOUD" = "MOTOR") {
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver, finalidade: "AGENDA", providerRef: driver === "MOTOR" ? "n-agenda" : "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });

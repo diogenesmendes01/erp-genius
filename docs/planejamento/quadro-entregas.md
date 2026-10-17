@@ -2690,3 +2690,22 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   academico/visibilidade (6) e agenda/substituicao-avisos (3). `vitest related` não foi usado: `labels.ts` espalha o
   alvo por quase toda a suíte; a completa fica com o integrador.
 **Estado**: Implementado; aguardando o integrador.
+
+### Correções da R1 do #213 (17/10/2026)
+- **B1 (conflito com o `main`):** mesclados o `main` até a #210 (`f8b8d21f`) e depois a #212 (`d5930411`). Conflitos:
+  `despachante.ts` (DRIVERS só com MOTOR, como na 4B, mais o `driverDoNumero` tipado da R1 do #205 e o
+  `clientMessageId` gravado no claim), `agenda/substituicao-avisos.int.test.ts` (flag de agenda ligada mais o id
+  `3EB0-…` do motor) e este quadro. A retenção de agenda da #209/#212 (`decidirEnvio`/`RETER_AGENDA`,
+  `reterAvisoAgenda`, `retidasAgenda`) fica antes do passo 10 e do claim: o aviso retido não vira SIMULADA nem vai
+  ao driver. Teste novo em `despachante-motor.int.test.ts`; `despachante-driver.test.ts` passou para a semântica da
+  4B (MOTOR registrado; META_CLOUD/BAILEYS sem driver).
+- **C1:** `driverAceitaAutomacao` aceita só MOTOR. `salvarConfiguracaoAvisosAgenda`, `motivoConfiguracaoAgendaInvalida`
+  e `salvarPoliticaRegua` (ao armar) recusam META_CLOUD com "Meta Cloud ainda não tem envio disponível."; o
+  `PoliticaPainel` mostra o mesmo aviso para remetente Meta. Testes: `canal`, `cron`, `comunicacoes-agenda/whatsapp`,
+  `PoliticaPainel.confirmacao` e `politica.int`.
+- **C2:** `testTimeout` unitário volta para 30 s; 120 s só na varredura do `src` de `contraste.test.ts` (como já
+  estava em `confirmacoes.test.ts`).
+- Verificação: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos já existentes); `npm test` verde; integração
+  (whatsapp, agenda/substituicao-avisos, comunicacoes-agenda, academico/visibilidade, cobrancas/conferencia,
+  comercial/regua-comercial): 49 arquivos verdes, sem as falhas preexistentes citadas acima.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
