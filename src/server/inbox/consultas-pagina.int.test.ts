@@ -105,6 +105,40 @@ describe("lista paginada por cursor", () => {
     expect((await listarAtendimentosPagina(sess(outroAdm), { naoLidas: true }, null)).itens).toHaveLength(0);
   });
 
+  it("C4: ramos do contador compartilhado e da marcada como não lida, sempre pela preferência DO usuário", async () => {
+    const outroAdm = await criarUsuario([Papel.ADMINISTRADOR]);
+    const entrada = (a: { id: string; conversaId: string }, criadoEm: Date) =>
+      prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "x", criadoEm } });
+    const pref = (usuarioId: string, conversaId: string, data: { lidaAte?: Date; marcadaNaoLida?: boolean; fixadaEm?: Date }) =>
+      prisma.preferenciaConversaUsuario.create({ data: { usuarioId, conversaId, ...data } });
+    const ultimaEntrada = new Date("2026-10-02T00:00:00Z"), depoisDela = new Date("2026-10-03T00:00:00Z");
+    // naoLidas>0 e nenhuma preferência do usuário: vale o contador compartilhado, entra.
+    const semPref = await criarAtendimento(new Date("2026-10-05T00:00:00Z"), { naoLidas: 2 });
+    // naoLidas>0, mas o usuário leu depois da última ENTRADA: sai (o contador compartilhado não vale para ele).
+    const lida = await criarAtendimento(new Date("2026-10-04T00:00:00Z"), { naoLidas: 2 });
+    await entrada(lida, ultimaEntrada);
+    await pref(admin.id, lida.conversaId, { lidaAte: depoisDela });
+    // naoLidas>0 e a leitura é de OUTRO usuário: para admin vale o contador, entra.
+    const lidaPorOutro = await criarAtendimento(new Date("2026-10-03T00:00:00Z"), { naoLidas: 2 });
+    await entrada(lidaPorOutro, ultimaEntrada);
+    await pref(outroAdm.id, lidaPorOutro.conversaId, { lidaAte: depoisDela });
+    // naoLidas>0 com preferência do usuário sem leitura (só fixada, lidaAte nulo): entra.
+    const soFixada = await criarAtendimento(new Date("2026-10-02T00:00:00Z"), { naoLidas: 1 });
+    await pref(admin.id, soFixada.conversaId, { fixadaEm: new Date() });
+    // marcadaNaoLida do usuário entra mesmo com naoLidas=0 e lidaAte depois da última ENTRADA.
+    const marcada = await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    await entrada(marcada, new Date("2026-09-30T00:00:00Z"));
+    await pref(admin.id, marcada.conversaId, { lidaAte: depoisDela, marcadaNaoLida: true });
+    // marcadaNaoLida de OUTRO usuário não vale para admin.
+    const marcadaPorOutro = await criarAtendimento(new Date("2026-09-30T00:00:00Z"));
+    await pref(outroAdm.id, marcadaPorOutro.conversaId, { marcadaNaoLida: true });
+
+    const ids = async (u: U) => (await listarAtendimentosPagina(sess(u), { naoLidas: true }, null)).itens.map((i) => i.id);
+    // A fixada de admin vem primeiro só para ele.
+    expect(await ids(admin)).toEqual([soFixada.id, semPref.id, lidaPorOutro.id, marcada.id]);
+    expect(await ids(outroAdm)).toEqual([semPref.id, lida.id, soFixada.id, marcadaPorOutro.id]);
+  });
+
   it("C3: o índice de cursor da lista casa com a ordenação (DESC NULLS LAST, id DESC)", async () => {
     const [idx] = await prisma.$queryRaw<{ indexdef: string }[]>`
       SELECT indexdef FROM pg_indexes WHERE indexname = 'AtendimentoWhatsApp_ultimaMensagemEm_id_idx'`;
