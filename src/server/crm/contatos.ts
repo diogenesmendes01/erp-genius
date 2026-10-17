@@ -9,6 +9,7 @@ import { diffCampos } from "@/server/_shared/regras";
 import { palavrasDaBuscaLeads } from "@/server/comercial/filtros";
 import { capacidadesCrm, exigirCapacidadeCrm } from "./permissoes";
 import { escopoPessoas } from "./pessoas";
+import { escopoEmpresas } from "./tags";
 
 export const CONTATOS_POR_PAGINA = 50;
 
@@ -454,7 +455,12 @@ export async function editarPessoa(id: string, input: EditarPessoaInput): Promis
         throw new ErroRegra("Nome e e-mail de aluno são alterados pela Secretaria.");
       }
       if (depois.empresaId) {
-        const empresa = await tx.empresa.findUnique({ where: { id: depois.empresaId }, select: { id: true } });
+        // Só empresa visível ao autor (como em `definirValorCampo`): ligar a pessoa a uma empresa de outra
+        // carteira faria essa empresa aparecer na lista dele (R1 do PR #211, C2).
+        const empresa = await tx.empresa.findFirst({
+          where: { AND: [{ id: depois.empresaId }, await escopoEmpresas(autor, tx)] },
+          select: { id: true },
+        });
         if (!empresa) throw new ErroRegra("Empresa não encontrada.");
       }
 
