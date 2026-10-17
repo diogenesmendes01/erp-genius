@@ -2316,6 +2316,7 @@ model Contador {
 enum DriverWhatsApp {
   META_CLOUD
   BAILEYS
+  MOTOR
 }
 
 enum FinalidadeNumero {
@@ -2459,6 +2460,11 @@ enum TipoMensagem {
   VIDEO
   DOCUMENTO
   OUTRO
+  FIGURINHA
+  LOCALIZACAO
+  CONTATO
+  ENQUETE
+  CHAMADA
 }
 
 enum StatusMensagem {
@@ -2499,6 +2505,9 @@ model MensagemWhatsApp {
   origem            OrigemEnvio? // só SAIDA
   providerMessageId String? // wamid/key.id do driver
   clientMessageId   String?           @unique // UUID por tentativa de envio do motor (Fase 4); nulo com Meta/Evolution
+  mensagemIdMotor   String? // chatJid:idDoProtocolo do motor (Fase 4)
+  editadaEm         DateTime?
+  apagadaEm         DateTime?
   autorId           String?
   autor             Usuario?          @relation("AutorMensagensWhatsApp", fields: [autorId], references: [id])
   templateId        String?
@@ -2510,10 +2519,43 @@ model MensagemWhatsApp {
   criadoEm          DateTime          @default(now())
 
   intencao IntencaoMensagem?
+  reacoes  ReacaoMensagemWhatsApp[]
 
   @@unique([numeroId, providerMessageId]) // dedupe dos retries de webhook (S7)
   @@index([conversaId, criadoEm])
   @@index([atendimentoId, criadoEm, id])
+}
+
+/// Reação a uma mensagem (Fase 4): uma por autor e mensagem.
+model ReacaoMensagemWhatsApp {
+  id           String           @id @default(cuid())
+  mensagemId   String
+  mensagem     MensagemWhatsApp @relation(fields: [mensagemId], references: [id], onDelete: Restrict)
+  autorJid     String
+  deMim        Boolean
+  emoji        String
+  usuarioId    String?
+  atualizadoEm DateTime         @updatedAt
+
+  @@unique([mensagemId, autorJid])
+}
+
+/// Caixa de entrada dos eventos do motor (Fase 4): dedupe por idEvento, processada em ordem de seq.
+model EventoMotorRecebido {
+  id                 String    @id @default(cuid())
+  seq                BigInt    @unique @default(autoincrement())
+  idEvento           String    @unique
+  tipo               String
+  numeroRef          String
+  ocorridoEm         DateTime
+  dados              Json
+  recebidoEm         DateTime  @default(now())
+  tentativas         Int       @default(0)
+  proximaTentativaEm DateTime?
+  processadoEm       DateTime?
+  resultado          String?
+
+  @@index([processadoEm, seq])
 }
 
 enum StatusIntencao {
@@ -2573,6 +2615,11 @@ model IntencaoMensagem {
   // inbound (saudação) — isenta de janela/teto/silêncio (uma saudação "em segundos" não
   // pode esperar o horário comercial), mas respeita opt-out/kill switch/shadow.
   reativa Boolean @default(false)
+
+  // Motor (Fase 4): id gerado pelo ERP antes de enviar (um por tentativa) e conteúdo
+  // especial (ConteudoEspecial, sem binário).
+  clientMessageId String? @unique
+  conteudo        Json?
 
   criadaEm        DateTime          @default(now()) // lei do despachante compara com ultimoInboundEm
   atualizadoEm    DateTime          @default(now()) @updatedAt // instante da última transição — saúde mede FALHOU por aqui (PR #52)
