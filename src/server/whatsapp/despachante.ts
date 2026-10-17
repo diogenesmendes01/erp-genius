@@ -567,7 +567,16 @@ export async function despacharFila(
       r.despachadas += 1;
     } catch (e) {
       // Uma resposta perdida, timeout ou falha de persistência pode ocorrer DEPOIS de
-      // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana.
+      // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana, salvo
+      // falha que o driver declarou reprocessável (nada saiu): adia com o mesmo
+      // clientMessageId, dentro do limite de vida da intenção. Aviso de agenda não adia.
+      const limite = it.origem === "HUMANO" ? LIMITE_REPROCESSO_MS.HUMANO : LIMITE_REPROCESSO_MS.AUTOMACAO;
+      if (e instanceof ErroDriver && e.reprocessavel && !it.avisoAlteracaoAgendaId
+        && agora.getTime() - it.criadaEm.getTime() <= limite) {
+        await adiarReprocessavel(it.id, new Date(agora.getTime() + e.adiarMs), e.motivo);
+        r.adiadas += 1;
+        continue;
+      }
       const motivo = e instanceof ErroDriver ? e.motivo : "resultado_incerto";
       await falharClaim(it.id, motivo);
       // A falha pode ter ocorrido após a Meta aceitar a requisição. O aviso já
@@ -578,6 +587,9 @@ export async function despacharFila(
 
   return r;
 }
+
+/** Vida máxima (desde criadaEm) para reenviar automaticamente uma falha reprocessável. */
+export const LIMITE_REPROCESSO_MS = { HUMANO: 30 * 60_000, AUTOMACAO: 24 * 3_600_000 } as const;
 
 type IntencaoParaValidar = {
   id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
@@ -717,6 +729,14 @@ async function adiarClaim(id: string, ate: Date): Promise<boolean> {
     } });
     return false;
   }
+}
+
+/** Falha reprocessável do driver: ENVIANDO → ADIADA, mantendo o clientMessageId já gravado. */
+async function adiarReprocessavel(id: string, ate: Date, motivo: string): Promise<void> {
+  await prisma.intencaoMensagem.updateMany({
+    where: { id, status: "ENVIANDO" },
+    data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
+  });
 }
 
 /** Falha pós-claim: transita exclusivamente de ENVIANDO (o claim é deste worker). */
