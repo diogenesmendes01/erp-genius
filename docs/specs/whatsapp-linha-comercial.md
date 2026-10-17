@@ -1,9 +1,12 @@
 # SPEC-ERP-005 — Linha comercial do WhatsApp
 
-> Estado em 26/09/2026: **especificação aprovada; Fases 0, 2, 3 e 4 codificadas com testes escritos,
-> ainda sem execução** (o worktree não tinha dependências instaladas nem banco de teste — ver §9 e o
-> quadro de entregas). Decisões tomadas pelo responsável do produto em 26/09/2026 a partir de testes
-> em produção.
+> Estado em 13/10/2026: **especificação aprovada; Fases 0, 2, 3 e 4 na `main`** (PR #128, mergeada em
+> 26/09/2026; trava de opt-out do histórico na #129). **Executados:** TypeScript, ESLint e a suíte
+> unitária em 26/09 (§9), e o `npm test` do CI a cada PR desde a #151 — inclusive as travas unitárias
+> da linha (`linha-comercial.test.ts`, `escopo-atendimentos.test.ts`, `historico.test.ts`).
+> **Ainda não executados:** os testes de integração (`linha-comercial.int.test.ts` e as suítes de
+> WhatsApp ajustadas, fora do CI) e a conferência do payload real da Evolution 2.3.7 (§9). Decisões
+> tomadas pelo responsável do produto em 26/09/2026 a partir de testes em produção.
 > Complementa os docs [26](../26-whatsapp-v1.md), [30](../30-whatsapp-spec-implementacao.md),
 > [36](../36-politica-de-acesso-aprovada.md) e [37](../37-detalhamento-operacional-do-acesso.md);
 > onde houver conflito sobre números de finalidade VENDAS, prevalece esta SPEC (decisão LC-D01).

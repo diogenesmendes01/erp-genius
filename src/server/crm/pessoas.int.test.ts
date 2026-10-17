@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { criarLead } from "@/server/comercial/acoes";
 import { truncarBanco, criarUsuario, criarAlunoMinimo, eventosDo } from "@/test/integracao";
 import type { UsuarioSessao } from "@/server/_shared";
-import { escopoPessoas, garantirPessoaTx, possiveisDuplicados } from "./pessoas";
+import { chaveLockPessoaTelefone, escopoPessoas, garantirPessoaTx, possiveisDuplicados } from "./pessoas";
 
 function logadoComo(id: string) {
   authMock.mockResolvedValue({ user: { id } });
@@ -113,6 +113,56 @@ describe("garantirPessoaTx e criarLead", () => {
     expect(contato.pessoaId).toBe(r.pessoaId);
   });
 
+  it("criações simultâneas do mesmo telefone novo resultam numa só Pessoa (advisory lock)", async () => {
+    const telefone = "+50633332222";
+    const resultados = await Promise.all(
+      Array.from({ length: 5 }, (_, i) =>
+        prisma.$transaction((tx) => garantirPessoaTx(tx, { nome: `Corrida ${i}`, telefoneE164: telefone }, null)),
+      ),
+    );
+    const ids = new Set(resultados.map((r) => r.pessoaId));
+    expect(ids.size).toBe(1);
+    expect(resultados.filter((r) => r.criada)).toHaveLength(1);
+    expect(await prisma.pessoa.count()).toBe(1);
+    const contato = await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { telefoneE164: telefone } });
+    expect(contato.pessoaId).toBe([...ids][0]);
+  });
+
+  it("garantirPessoaTx espera o lock do telefone antes de buscar o contato", async () => {
+    const telefone = "+50644443333";
+    let liberar!: () => void;
+    const segurando = new Promise<void>((r) => (liberar = r));
+    let travado!: () => void;
+    const lockPego = new Promise<void>((r) => (travado = r));
+    const dono = prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chaveLockPessoaTelefone(telefone)}, 0))`;
+        travado();
+        await segurando;
+        // Grava a pessoa e o contato enquanto segura o lock: quem esperava tem de enxergá-los.
+        const p = await tx.pessoa.create({ data: { nome: "Primeira" } });
+        await tx.contatoWhatsApp.create({ data: { telefoneE164: telefone, pessoaId: p.id } });
+        return p.id;
+      },
+      { timeout: 20_000 },
+    );
+    await lockPego;
+    let terminou = false;
+    const esperando = prisma
+      .$transaction((tx) => garantirPessoaTx(tx, { nome: "Segunda", telefoneE164: telefone }, null), { timeout: 20_000 })
+      .then((r) => {
+        terminou = true;
+        return r;
+      });
+    await new Promise((r) => setTimeout(r, 500));
+    expect(terminou).toBe(false);
+    liberar();
+    const primeiraId = await dono;
+    const segunda = await esperando;
+    expect(segunda).toEqual({ pessoaId: primeiraId, criada: false });
+    expect(await prisma.pessoa.count()).toBe(1);
+  });
+
   it("PessoaCriada não leva telefone no payload", async () => {
     const r = await prisma.$transaction((tx) => garantirPessoaTx(tx, { nome: "Zé", telefoneE164: "+50655554444", email: "Ze@X.com" }, vendedor.id));
     const ev = await eventosDo("Pessoa", r.pessoaId);
@@ -143,6 +193,29 @@ describe("criarLead com pessoaId informado", () => {
       if (!r.ok) expect(r.erro).toBe("Contato não encontrado.");
     }
     expect(await prisma.oportunidade.count()).toBe(antes);
+  });
+});
+
+describe("criarLead com empresaId informado", () => {
+  const base = { segmento: "ADULTO", temperatura: "MORNO", b2b: true } as const;
+  it("aceita empresa ativa e liga a oportunidade a ela", async () => {
+    const empresa = await prisma.empresa.create({ data: { nome: "Acme" } });
+    logadoComo(vendedor.id);
+    const r = await criarLead({ nome: "Contato Acme", empresaId: empresa.id, ...base });
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: idDe(r) } })).empresaId).toBe(empresa.id);
+  });
+  it("recusa empresa inexistente ou inativa com erro amigável, sem estourar a FK nem criar nada", async () => {
+    const inativa = await prisma.empresa.create({ data: { nome: "Fechada", ativo: false } });
+    logadoComo(vendedor.id);
+    const antes = { oportunidades: await prisma.oportunidade.count(), pessoas: await prisma.pessoa.count() };
+    for (const empresaId of ["empresa-inexistente", inativa.id]) {
+      const r = await criarLead({ nome: "X", telefoneE164: "+50677776666", empresaId, ...base });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.erro).toBe("Empresa não encontrada.");
+    }
+    expect(await prisma.oportunidade.count()).toBe(antes.oportunidades);
+    expect(await prisma.pessoa.count()).toBe(antes.pessoas);
+    expect(await prisma.contatoWhatsApp.count({ where: { telefoneE164: "+50677776666" } })).toBe(0);
   });
 });
 
