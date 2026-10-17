@@ -19,6 +19,7 @@ export type AgregadoTipo =
   | "EncontroAgenda"
   | "VinculoDocente"
   | "Exportacao"
+  | "Importacao"
   | "Lead"
   | "Matricula"
   | "Aluno"
@@ -39,6 +40,7 @@ export type AgregadoTipo =
   | "NumeroWhatsApp"
   | "ContatoWhatsApp"
   | "TemplateWhatsApp"
+  | "IntencaoMensagem"
   | "PoliticaRegua"
   // Fase comercial (doc 27): config de automação comercial (auto-lead + saudação) e a
   // régua comercial editável (lead-novo e demais cadências).

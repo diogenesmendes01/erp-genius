@@ -15,6 +15,7 @@ import type { ColunaFunil, FiltrosFunil } from "@/server/crm/funil";
 import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico";
 import { FUSO_PADRAO, type AcaoDoCartao } from "./CartaoOportunidade";
 import { ListaFunil } from "./ListaFunil";
+import { hrefSalvo } from "./href-salvo";
 import { ModalPerda } from "./ModalPerda";
 import { NovaOportunidade } from "./NovaOportunidade";
 import { PainelOportunidade } from "./PainelOportunidade";
@@ -38,15 +39,6 @@ type Props = {
 };
 
 const CAMPO = "rounded-md border border-gray-300 bg-surface px-2 py-1.5 text-sm max-sm:min-h-11";
-// Chaves das visualizações salvas (CHAVES_FILTRO.FUNIL) que têm outro nome na URL do funil.
-const CHAVE_NA_URL: Record<string, string> = { vendedor: "donoId", tag: "tagId" };
-
-function hrefSalvo(f: Record<string, string>): string {
-  const q = new URLSearchParams();
-  for (const [k, v] of Object.entries(f)) if (v) q.set(CHAVE_NA_URL[k] ?? k, v);
-  const s = q.toString();
-  return s ? `/funil?${s}` : "/funil";
-}
 
 export function FunilCliente({
   colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, vazio,

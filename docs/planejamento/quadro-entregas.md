@@ -2,6 +2,20 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Decisões do dono 17/10/2026
+
+Registro completo em [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md). Branch `claude/decisoes-dono-17-10`.
+
+| Tema | Decisão | Efeito no quadro |
+| --- | --- | --- |
+| Q7 (comissão) | O estorno continua manual, feito por FINANCEIRO ou ADMINISTRADOR, com motivo obrigatório e auditoria. O estorno automático no cancelamento fica descartado por enquanto (desistência no prazo, troca de turma, reativação). Uma sugestão automática para o Financeiro confirmar pode ser avaliada no futuro. | Resolve a pendência bloqueante da Q7 no bloco F2-I (gate da Task 35): a Task 35 fica no PR, com a matriz da Task 4. |
+| Q6 (React) | A Fase 3 fica no React 18.3. A migração para o 19 vira um PR separado, depois das Fases 3 e 4. | `decisao-react-inbox.md`: "Status: decidido pelo dono em 17/10/2026". |
+| LC-D02 × doc 36 | Vale a LC-D02. O dono da linha vê todas as conversas da própria linha; o painel e o cockpit do lead de outro vendedor continuam fechados. | Doc 36 atualizado. O `c265d904` recebe o aval do produto e não precisa ser revertido. |
+| Fuso | `US/Eastern` sai das sugestões e é trocado por `America/New_York`. Apelidos legados (`US/*`, `Brazil/*`) são convertidos para o nome canônico IANA ao salvar a preferência. | Mapa `APELIDOS_FUSO_LEGADOS` com teste. Migration de dados `20261017150000_fuso_exibicao_canonico` para `Usuario."fusoExibicao"` e `ContaPortalAluno."fusoExibicao"`. `fuso-exibicao.int.test.ts` passa no Postgres do sistema (sem `tzdata-legacy`). |
+| Transferência e `AULA_FORA_DE_VINCULO_CONFERIDO` | A transferência não deve travar o fechamento do nível. | Implementação em outro PR, que precisa da validação da secretaria acadêmica. Só citada aqui. |
+
+- **Estado**: decisões registradas; a parte de fuso está implementada nesta branch e aguarda o merge.
+
 ## Fase 3, bloco D — tempo real e paginação (17/10/2026)
 
 Branch `claude/fase3-d-tempo-real` (PR empilhado sobre `claude/fase3-b-escopo-roteamento`). Tarefas 21 (aviso no banco, migration `20261017100000_inbox_tempo_real`, e barramento `LISTEN`), 22 (rota SSE `/api/inbox/eventos` filtrada por escopo) e 23 (lista e thread paginadas por cursor, filtros da URL).
@@ -1669,11 +1683,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Integrador: confirmar o ID de migração `20260929130000`, regenerar o client, rodar `tsc --noEmit`,
   `quantidade-transporte` e as integrações WhatsApp num perfil isolado.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E8 — portal público (docs/43 §6 item 8; 13/10/2026)
@@ -1700,11 +1709,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `/api/portal-aluno/token` devolve 422 também para a senha que o Zod recusa; a tela evita o caso validando antes.
 - Link de troca de e-mail (`VALIDAR_TROCA_EMAIL`) cai na mesma tela, que sempre manda senha; a rota recusa esse caso.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E10 — borda de rota (docs/43 §6 item 10; 13/10/2026)
@@ -1768,11 +1772,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Desvincular contato pela inbox (L2298) precisa de action nova e regra de permissão: fora desta fatia.
 - Alternadores de usuário, idioma e preço continuam invertendo o estado atual no servidor (contrato existente).
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## E11 — amostra Média/Baixa com nova semente (docs/43 §6 item 11; 13/10/2026)
@@ -1836,11 +1835,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
 - A thread da inbox cortada em 300 mensagens é da issue #168.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — botão em pílula (Fase 0, Task 5; 15/10/2026)
@@ -1865,11 +1859,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) o botão nos dois temas, inclusive os estados desabilitado e ocupado.
 - Telas que montam botão sem `Botao`/`botaoClasses` não mudam neste bloco.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — campos de formulário (Fase 0, Task 6; 15/10/2026)
@@ -1896,11 +1885,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Conferir no navegador (UAT) os campos nos dois temas, no celular (44 px) e no desktop.
 - Demais componentes base e telas: blocos seguintes da Fase 0.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
@@ -1934,11 +1918,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Verificação (HEAD `cb121aa`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (647 arquivos, 4.578 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos, os mesmos da base).
 - Sem schema nem migração; `*.int.test.ts` não alterados.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — navegação (Fase 0; 15/10/2026)
@@ -1959,11 +1938,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 ### Pendências
 - Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Design system, bloco DS-B — primitivos (Fase 0, Task 10; 15/10/2026)
@@ -1994,11 +1968,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Falta conferir no navegador (UAT): o menu dentro do drawer, a posição perto das bordas e os dois temas.
 - O focar após o posicionamento (`visibility` do painel) é ligação de DOM sem teste automatizado, porque não há jsdom.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Verificação do integrador: bloco DS-B (2026-10-15)
@@ -2035,11 +2004,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   cobrança; `Menu` ainda sem tela que o use.
 - Mergear por último na Fase 0, depois de DS-A e dos seis DS-B.
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## Fase 3, bloco A: modelo do atendimento por setor (16/10/2026)
@@ -2211,18 +2175,18 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   falharam (38 testes). Os mesmos 13 arquivos, rodados em worktree de `origin/integracao/ate-fase-1`, falham igual:
   38 testes. São preexistentes (fixtures com datas fixas de 2026 contra o relógio real, mais o `inbox` já listado).
 
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
-
 ### Pendências (revisão R1 do PR #193)
 - **C3, para quando `exigirCapacidadeCrm` for ligada nas telas e ações:** a troca não pode ampliar o que hoje é
   negado. A `MATRIZ` de `src/server/crm/permissoes.ts` concede `contatos.ver` à `SECRETARIA_ACADEMICA` e
   `comissoes.ver` ao `VENDEDOR`, mas os guards atuais negam esses acessos. Antes de ligar, ou a matriz é ajustada,
   ou o guard atual continua valendo junto. Em qualquer caso, precisa de um teste que prove que esses dois acessos
   seguem negados.
+- **Decisão sobre o C3 (17/10/2026, revisão final do bloco B):** a parte de `contatos.ver` para a
+  `SECRETARIA_ACADEMICA` fica **superada pelo plano**. O plano da Fase 2 quer que a Secretaria veja contatos
+  (alunos e responsáveis, sem dados de oportunidade), e o bloco F já liga isso em `obterContato`
+  (`src/server/crm/contatos.ts`) com `capacidadesCrm(...).has("contatos.ver")` e `escopoPessoas`. A parte de
+  `comissoes.ver` para o `VENDEDOR` **continua valendo**: ainda não está ligada em lugar nenhum, e o bloco de
+  comissões precisa do teste que prova o acesso negado (ou ajustar a matriz) antes de ligá-la.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
@@ -2590,6 +2554,67 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   apagado no fim.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+## CRM, bloco F: contatos (Fase 2, Tasks 19 a 24; 17/10/2026)
+
+### Verificação para o PR (bloco F, branch `claude/fase2-f-contatos`, 17/10/2026)
+- Tarefas: 19 a 24 (lista e ficha do contato, duplicados e mescla, exportação e importação de contatos, tela).
+- Correção da revisão final:
+  - a mescla aplica a trava de `editarPessoa`: quem não é Administrador não muda nome nem e-mail de aluno, esteja o
+    cadastro acadêmico na principal ou na secundária (`MSG_NOME_ALUNO`);
+  - o histórico da ficha inclui os eventos das lápides mescladas na pessoa, de forma transitiva, e mostra cada
+    `PessoasMescladas` uma vez ("Contatos mesclados");
+  - a importação só completa campos e põe tag em pessoa existente dentro de `escopoPessoas(autor)`; fora do escopo,
+    conta como existente e não grava nada nela;
+  - "Salvar campos" na ficha recarrega a tela e diz quantos campos ficaram salvos quando uma chamada falha no meio;
+  - teste de exportação com 58 linhas (2 páginas, a 2ª com pessoas e empresas) conferindo `quantidade` do
+    `DadosExportados`;
+  - a importação registra `console.error` por linha que falha, só com o número da linha e o nome/código do erro.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test` (`vitest run`): saída 0, 675 arquivos e 4879 testes verdes (linha de base: ~671 arquivos e ~4850 testes).
+- `npm run lint` (`eslint .`): 0 erros e 43 avisos (já existentes).
+- Integração no perfil `dev-gravacoes`: `src/server/crm/`, `src/app/api/contatos/`, `src/app/api/exportacoes/` e
+  `src/server/whatsapp/linha-comercial.int.test.ts`: 20 arquivos, 158 testes verdes e 1 falha, a preexistente da linha
+  de base em `api/exportacoes` ("alunos exportados por professor mantêm vínculo atual…", falha igual no `main`).
+  Nenhuma falha nova. O `vitest related` sobre os 32 .ts/.tsx do bloco alcança quase toda a suíte (via
+  `src/lib/labels.ts` e afins) e parou no limite de 90 min; até ali só apareceram falhas preexistentes da linha de base
+  (`agenda/substituicao-avisos`, `avaliacoes/impactos-progressao-tx`, `academico/visibilidade`,
+  `academico/progressao-fechamento`, `avaliacoes/aproveitamento-aplicado`). A suíte `npm run test:int` completa fica
+  com o integrador.
+- **Mudança de permissão — coordenar com o integrador (Tarefa 22):** capacidade nova `dados.exportar_contatos`
+  (`src/lib/capacidades.ts`, rótulo "Exportar contatos (sem telefone e e-mail)"), exigida por
+  `/api/exportacoes/contatos`. O Administrador já a tem; para os demais papéis é concedida por usuário (`Usuario.permissoes`), como
+  `dados.exportar_leads`. O integrador precisa confirmar essa capacidade e decidir a quem concedê-la antes do merge.
+- Verificação final do bloco (17/10/2026, branch `claude/fase2-f-contatos`, Tarefas 22 a 24): `tsc --noEmit` saída 0;
+  `npm test` 675 arquivos/4.879 testes, saída 0 (numa primeira rodada, com lint em paralelo, `confirmacoes.test.ts`
+  estourou o tempo de 30 s por carga; isolado passa e a rerrodada completa passou); `npm run lint` 0 erros, 43 avisos.
+  Integração no perfil `dev-gravacoes`: os 8 `*.int.test.ts` do diff + `src/server/crm`: 18 arquivos, 117 testes verdes,
+  saída 0. O `vitest related` sobre o diff alcança 206 arquivos de integração (via `evento.ts`/`labels.ts`) e foi
+  interrompido; até ali só falhou `agenda/substituicao-avisos`, preexistente da linha de base. Suíte completa fica com o integrador.
+- **Merge da `main` (`0d091807`, com #202 a #206 e #208):** houve conflito só em `src/app/botoes.test.ts` (`AREAS_MIGRADAS`
+  ficou com `/tarefas` e `/contatos`; na lista de alternâncias sem `aria-pressed` ficaram a `FichaContato` e o
+  `BalaoMensagem`) e neste quadro (blocos H, 4A, 3E e F, cada um com o próprio **Estado**). `schema.prisma`,
+  `labels.ts`, `nav.ts`, `Sidebar.tsx`, `trilha.ts`, as travas e mapas de `src/app/*.test.ts`, `Modal.tsx` e
+  `despachante.ts` mesclaram sem conflito, e nenhuma linha do F ou da `main` se perdeu (o bloco F não traz migration;
+  a última segue `20261017130000_whatsapp_motor_dados`). Verificação: `prisma validate` e `prisma generate`;
+  `tsc --noEmit` saída 0; `npm run lint` com 0 erros (43 avisos já existentes); `vitest run` com 699 arquivos e 5050
+  testes verdes. Num banco descartável próprio, `erp_genius_test_fix211` (localhost:54329), `prisma migrate deploy`
+  aplicou tudo e passaram os 8 `*.int.test.ts` do diff e `src/server/crm` (21 arquivos, 148 testes, saída 0). O banco
+  foi apagado no fim.
+- **Correções da R1 do #211 (17/10/2026):**
+  - **C2:** `editarPessoa` só liga a pessoa a empresa visível ao autor (`escopoEmpresas(autor, tx)`, como em
+    `definirValorCampo`); empresa de outra carteira devolve "Empresa não encontrada." e nada é gravado. Teste novo em
+    `ficha-contato.int.test.ts`.
+  - **C3:** na importação, a Pessoa que nasce ligada a aluno ou responsável (telefone do cadastro acadêmico) não ganha
+    oportunidade na carteira do vendedor. Pessoa existente fora da carteira faz `aplicarLinhaContato` lançar
+    `LinhaForaDaCarteira`: a transação da linha é desfeita (inclusive o `ContatoWhatsApp` que `garantirPessoaTx` teria
+    criado) e a linha conta em `foraDaCarteira` (resposta, tela e `ContatosImportados`), não em `atualizados`. Dois
+    testes novos e dois ajustados em `api/contatos/importar/route.int.test.ts`.
+- **Merge da `main` (`f8b8d21f`, com #207, #209 e #210):** conflito só neste quadro (ficam o bloco F e o da 3C, cada um
+  com o próprio **Estado**). O resto mesclou sem conflito. O bloco F continua sem migration; a última passa a ser
+  `20261017150000_fuso_exibicao_canonico`, da `main`.
+**Estado**: Implementado; correções da revisão final aplicadas; aguardando o integrador (inclusive a confirmação de
+`dados.exportar_contatos`). Não concluído.
+
 ## Inbox, bloco C: ações de atendimento (Fase 3, Tasks 14 a 20; 17/10/2026)
 
 ### Verificação para o PR (bloco C, branch `claude/fase3-c-acoes`, 17/10/2026)
@@ -2644,6 +2669,104 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `erp_genius_test_fix207` (migrate deploy, apagado no fim): os 7 `*.int.test.ts` da 3C e os 3 de `src/server/inbox`,
   10 arquivos e 72 testes, saída 0.
 **Estado**: Implementado; aguardando revisão e merge. Não concluído.
+
+## Fase 4B — despachante pelo motor: correção da revisão final (17/10/2026)
+
+- Branch `claude/fase4-b-despachante`. Os testes de integração live migraram para `vi.mock('drivers/motor')` com
+  números MOTOR, sem `skip`: despachante.live, ciclo-cobranca, acesso-atendimento, destinatario-atual, origem-celular
+  (clientMessageId da mensagem = o da intenção), atendimento-pedagogico-autorizacao, cobrancas/conferencia,
+  agenda/substituicao-avisos e academico/visibilidade.
+- Guarda contra envio real em teste: `vitest.integration.config.ts` zera `MOTOR_URL`/`MOTOR_API_KEY`. Teste-trava:
+  `motor/guarda-teste.int.test.ts`.
+- Doc 30 §S1 reescrito: a trava vale só para BAILEYS legado; MOTOR e Meta aceitam automação (D38). Textos de
+  PoliticaPainel, AvisosAgendaPainel e `salvarConfiguracaoAvisosAgenda` corrigidos.
+- Integração (perfil `integracao`), 13 arquivos tocados: verdes, salvo as falhas preexistentes da linha de base:
+  academico/visibilidade (6, trigger P0001) e agenda/substituicao-avisos (3). Essas 3 viram SIMULADA pela política de
+  cobrança DESLIGADA antes do driver e falham igual no HEAD anterior. O ruling está em
+  `.superpowers/sdd/rulings-claude_fase4-b-despachante.md`.
+- `tsc --noEmit` 0. `npm run lint`: 0 erros e 43 avisos (já existentes). Testes unitários: 677 arquivos e 4903 testes.
+  `contraste`/`confirmacoes` estouraram o tempo uma vez, com load ~20 de outras faixas, e passam isolados. O
+  `PoliticaPainel.confirmacao` (rótulo "Meta cloud (legado)" da Tarefa 1) foi corrigido.
+**Estado**: Implementado; aguardando o integrador.
+
+## Fase 4B — verificação final do bloco (17/10/2026)
+
+- Branch `claude/fase4-b-despachante`, tarefas 5 a 8 do plano `04-fase-motor.md`, empilhada sobre `claude/fase4-a-driver-motor`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- `npm test`: saída 0, 677 arquivos e 4903 testes. Duas rodadas anteriores falharam em varreduras do src
+  (`confirmacoes`, `contraste`) por estouro de 30 s com load ~20 de outras faixas; `testTimeout` unitário subiu para 120 s
+  e `confirmacoes` ganhou 120 s no teste da varredura.
+- Integração (perfil `integracao`), 14 arquivos `*.int.test.ts` do diff: 12 verdes, 116 testes. Falham só as preexistentes:
+  academico/visibilidade (6) e agenda/substituicao-avisos (3). `vitest related` não foi usado: `labels.ts` espalha o
+  alvo por quase toda a suíte; a completa fica com o integrador.
+**Estado**: Implementado; aguardando o integrador.
+
+### Correções da R1 do #213 (17/10/2026)
+- **B1 (conflito com o `main`):** mesclados o `main` até a #210 (`f8b8d21f`) e depois a #212 (`d5930411`). Conflitos:
+  `despachante.ts` (DRIVERS só com MOTOR, como na 4B, mais o `driverDoNumero` tipado da R1 do #205 e o
+  `clientMessageId` gravado no claim), `agenda/substituicao-avisos.int.test.ts` (flag de agenda ligada mais o id
+  `3EB0-…` do motor) e este quadro. A retenção de agenda da #209/#212 (`decidirEnvio`/`RETER_AGENDA`,
+  `reterAvisoAgenda`, `retidasAgenda`) fica antes do passo 10 e do claim: o aviso retido não vira SIMULADA nem vai
+  ao driver. Teste novo em `despachante-motor.int.test.ts`; `despachante-driver.test.ts` passou para a semântica da
+  4B (MOTOR registrado; META_CLOUD/BAILEYS sem driver).
+- **C1:** `driverAceitaAutomacao` aceita só MOTOR. `salvarConfiguracaoAvisosAgenda`, `motivoConfiguracaoAgendaInvalida`
+  e `salvarPoliticaRegua` (ao armar) recusam META_CLOUD com "Meta Cloud ainda não tem envio disponível."; o
+  `PoliticaPainel` mostra o mesmo aviso para remetente Meta. Testes: `canal`, `cron`, `comunicacoes-agenda/whatsapp`,
+  `PoliticaPainel.confirmacao` e `politica.int`.
+- **C2:** `testTimeout` unitário volta para 30 s; 120 s só na varredura do `src` de `contraste.test.ts` (como já
+  estava em `confirmacoes.test.ts`).
+- Verificação: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos já existentes); `npm test` verde; integração
+  (whatsapp, agenda/substituicao-avisos, comunicacoes-agenda, academico/visibilidade, cobrancas/conferencia,
+  comercial/regua-comercial): 49 arquivos verdes, sem as falhas preexistentes citadas acima.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
+
+## Pendências não bloqueantes das revisões do #212 e do #213 (17/10/2026)
+
+- Branch `claude/pendencias-212-213`.
+- **C1 do #212:** `medirSaudeCanal` só conta `retidasAgendaDesligada` com `COMUNICACOES_AGENDA_ENVIO_ENABLED`
+  desligado. Com o envio ligado, o valor é 0, mesmo que o motivo `envio_agenda_desligado` continue gravado até o
+  próximo tick. Testes novos (falhavam antes) em `saude.test.ts` e `saude.int.test.ts`.
+- **C4 do #213:** o comentário da trava de driver em `despachante.ts` e o doc 30 (§S1 e a ordem dos guard-rails)
+  dizem agora que só MOTOR aceita automação; META_CLOUD fica de fora até ter driver no despachante. A linha da
+  Fase 4B acima ("MOTOR e Meta aceitam automação") é histórica e foi mantida.
+- Verificação: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos já existentes); `npm test` 707 arquivos e 5191
+  testes; integração em banco descartável (`saude`, `agenda/substituicao-avisos`, `despachante-motor`): 3 arquivos e
+  45 testes verdes.
+**Estado**: Implementado; aguardando revisão e merge.
+
+## Fase 4C — verificação final do bloco (17/10/2026)
+
+- Branch `claude/fase4-c-webhook`, tarefas 9 a 17 do plano `04-fase-motor.md`, partindo da `claude/fase4-b-despachante` (base trocada para o `main` após o merge da #213).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 681 arquivos e 4928 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` foi interrompido por varredura ampla (`evento.ts` alcança quase toda a suíte);
+  rodados os 10 arquivos `*.int.test.ts` do diff e de `whatsapp/motor/` + `inbox` + `saude`: saída 0, 88 testes verdes.
+- **Merge do `main` após a #213 (17/10/2026):** base do #215 trocada para o `main`; mesclados o merge final da 4B
+  (B1/C1/C2), #207, #209, #210, #211 e #212; depois a #214 (retidas só contadas com o envio de agenda desligado). Conflitos, todos aditivos: `api/whatsapp/cron/route.ts` (+teste)
+  roda `eventosMotor` e `lembretesTarefas`; `saude.ts` (+`saude.int.test.ts`) soma os campos do motor
+  (`eventosMotorPendentes`/`eventosMotorFalhos`) aos da retenção de agenda (`retidasAgendaDesligada`/
+  `envioAgendaHabilitado`) e ao relógio da agendada vencida; este quadro. `saude.test.ts` (vindo do `main`) ganhou o
+  mock de `eventoMotorRecebido`. Mantidos o `testTimeout` de 30 s e `driverAceitaAutomacao` só com MOTOR. A 4C não
+  tem migrations próprias (usa as `20261017120000`/`20261017130000` da 4B).
+- Verificação pós-merge: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos); `npm test` verde; integração
+  (`whatsapp/motor/*`, `inbox`, `saude`, `despachante-*`): 14 arquivos, 126 testes verdes.
+
+### Correções da R1 do #215 (17/10/2026)
+- **B1:** merges do `main` acima (até a #214), preservando as duas etapas do cron e os campos de saúde dos dois lados.
+- **B2:** a saúde mede os eventos do motor por estado. `eventosMotorPendentes` conta só o que o dreno já deveria
+  pegar (sem backoff ou com a próxima tentativa vencida); `eventosMotorAdiados` (novo) conta os em backoff, sem
+  alerta. O alerta "Evento do motor parado" só olha evento sem backoff recebido há mais de 15 min ou com a próxima
+  tentativa vencida há mais de 15 min (minutos medidos desde a próxima tentativa). Testes em `saude.int.test.ts`.
+- **C1:** `sessao.estado` ignora (`ignorado:estado_antigo`) o estado com `ocorridoEm` anterior ao de outro
+  `sessao.estado` do mesmo número já aplicado (`resultado = ok`) na tabela de entrada; sem migration. Testes em
+  `processar-sessao.int.test.ts` (direto e pelo dreno).
+- **C3:** `POST /api/whatsapp/webhook/motor` recusa com 413, antes do HMAC e sem gravar, corpo acima de 1 MB
+  (`TETO_CORPO_WEBHOOK_MOTOR`): pelo `content-length` declarado e pelo tamanho lido em streaming. Maior evento do
+  contrato: `mensagem.recebida` com texto longo (~260 KB no pior caso UTF-8). Testes em `route.test.ts`.
+- **C2:** segue em aberto (os `*.int.test.ts` não rodam no CI).
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
 
 ## Inbox, bloco F: aceite das 21 regras e remoção do Inbox antigo (Fase 3, Task 33; 17/10/2026)
 

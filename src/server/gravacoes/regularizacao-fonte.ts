@@ -3,6 +3,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { repetirEmFalhaDeSerializacao } from "@/lib/repetir-serializacao";
 import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
 import { obterDriveOrganizacaoId, obterTokenDrive } from "./credenciais";
@@ -82,7 +83,10 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
       return { id: anterior.id };
     }
     const fixa = await fixarRevisaoDriveOrganizacional({ fileId: dados.arquivoOficialId, driveIdOrganizacao: obterDriveOrganizacaoId(), token: obterTokenPublicacaoDrive });
-    return prisma.$transaction(async (tx) => {
+    // Em SERIALIZABLE o snapshot precede a espera pelo lock do calendário. O preparo
+    // concorrente perdedor é repetido (sem repetir o Drive, já fixado acima) e cai no replay
+    // da chave de idempotência ou recalcula a versão esperada.
+    return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
       await exigirPreparadorFresco(tx, autor.id, dados.alvo, dados.alvoId);
       const anterior = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia } } });
       if (anterior) {
@@ -97,7 +101,7 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
         motivo: dados.motivo, preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia,
       } });
       return { id: proposta.id };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
   });
 }
 
@@ -114,7 +118,10 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
       return proposta;
     });
     if (dados.aprovar) await consultarRevisaoDriveFixada({ fonte: { fileId: preflight.arquivoOficialId, driveId: preflight.driveOrganizacaoId, revisionId: preflight.driveRevisionId, md5Checksum: preflight.driveRevisionMd5, size: preflight.driveRevisionSize.toString(), mimeType: preflight.mimeType }, token: obterTokenDrive });
-    return prisma.$transaction(async (tx) => {
+    // A decisão concorrente perdedora em SERIALIZABLE termina com 40001/P2034. Não há replay,
+    // mas a nova tentativa enxerga a decisão já confirmada e devolve o ErroRegra claro abaixo,
+    // em vez de "Erro inesperado". A consulta ao Drive fica fora da função repetida.
+    return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
       await exigirGestaoFresca(tx, decisor.id);
       const proposta = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { id: dados.propostaId }, include: { decisao: true } });
       if (!proposta || proposta.decisao) throw new ErroRegra("A proposta de regularização não está disponível.");
@@ -134,7 +141,7 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
       await registrarEvento(tx, { tipo: "FonteGravacaoRegularizada", agregadoTipo: agregado.tipo, agregadoId: agregado.id, autorId: decisor.id,
         payload: { propostaId: proposta.id, decisaoId: decisao.id, fonteId: fonte.id, versao: fonte.versao } });
       return { id: decisao.id, aprovada: true as const, fonteId: fonte.id };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
   });
 }
 

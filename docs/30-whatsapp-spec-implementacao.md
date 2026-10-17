@@ -8,7 +8,7 @@
 ## Decisões fechadas nesta spec (pendências resolvidas)
 | # | Decisão | Valor |
 |---|---|---|
-| S1 | **Trava do cron** (doc 26 §Em aberto) | **LIGADA como lei para COBRANÇA**: régua *automática* de cobrança exige número driver oficial. Manual e lote-com-aprovação rodam em qualquer driver. **Exceção decidida (D34, doc 15): cadências COMERCIAIS (C1/C2) e a classe reativa rodam no Baileys** — o risco de ban é aceito e contido por teto/janela/pacing + cohort do piloto (doc 32 B1) + kill switch; revalidação na WABA quando o driver oficial assumir. Reversível só por código. |
+| S1 | **Trava do cron** (doc 26 §Em aberto) | **Vale só para BAILEYS legado (D38, Fase 4).** Disparo *automático* do cron (régua de cobrança, avisos de agenda) exige driver que aceite automação: hoje só **MOTOR** (motor próprio, com ritmo por número — M8). **Meta** (META_CLOUD) fica de fora até ter driver no despachante (R1 do #213, C1); quando tiver, entra com template APROVADO. Armar política ou avisos de agenda com remetente Meta é recusado ("Meta Cloud ainda não tem envio disponível."). Número BAILEYS legado nunca recebe automação desassistida (`trava_driver_oficial`) e, sem driver no despachante, nem envia (`driver_indisponivel`). Manual e lote-com-aprovação seguem as mesmas regras de driver do despachante. A exceção histórica D34 (cadências COMERCIAIS C1/C2 e classe reativa isentas da trava) continua no código, e hoje essas cadências também saem pelo MOTOR. Reversível só por código (`driverAceitaAutomacao` em `canal.ts`). |
 | S2 | **Destinatário da cobrança** (gap 9) | Determinístico: responsável com vínculo `FINANCEIRO` e telefone (o mais antigo, se N); sem responsável cadastrado → `aluno.telefoneE164`; sem telefone algum → intenção **não nasce**, item vai à fila humana com motivo `sem_destino`. |
 | S3 | **Fuso da janela de envio** (gap 11) | Janela avaliada em `Aluno.fuso ?? Pais.fuso ?? America/Sao_Paulo` do destinatário. Cron roda em UTC. |
 | S4 | **Silêncio pós-inbound** (gap 13) | Inbound não tratado **suspende degraus automáticos do contato por 72h** (config `silencioPosInboundHoras`); tratar = registrar promessa/pagamento ou "retomar régua". |
@@ -51,7 +51,7 @@ modo, ativo, @@unique politicaId+passo).
   `meta-cloud` (Graph API, env `META_WA_TOKEN`/`META_WA_PHONE_ID`), `evolution` (env
   `EVOLUTION_URL`/`EVOLUTION_APIKEY`). Só `despachante.ts` importa drivers.
 - **Despachante** (ordem dos guard-rails, cada um com motivo auditável): kill switch →
-  estado da política → trava S1 (automático⇒oficial) → opt-out → lei do inbound (inbound
+  estado da política → trava S1 (automático⇒só MOTOR; META_CLOUD sem driver e BAILEYS barrado, D38) → opt-out → lei do inbound (inbound
   do contato após `criadaEm` ⇒ `CANCELADA`) → silêncio S4 → idempotência (`@@unique` +
   re-check `proximaAcao`) → teto S5 (⇒`ADIADA`) → janela/dias no fuso S3 (⇒`ADIADA`) →
   shadow (⇒`SIMULADA`) → driver → em `$transaction`: `MensagemWhatsApp` +

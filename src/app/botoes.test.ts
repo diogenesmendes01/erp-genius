@@ -19,7 +19,7 @@ vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => 
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/home", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado", "src/app/(app)/funil", "src/app/(app)/oportunidades", "src/app/(app)/carteira", "src/app/(app)/tarefas"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/leads", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/home", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado", "src/app/(app)/funil", "src/app/(app)/oportunidades", "src/app/(app)/carteira", "src/app/(app)/tarefas", "src/app/(app)/contatos"];
 
 /**
  * Telas públicas fora do shell (docs/43 §6 item 8): login da equipe, pagamento por link e o acesso ao portal do
@@ -43,6 +43,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
   "src/app/(app)/funil/PainelOportunidade.tsx": 1, // aba do painel da oportunidade (role=tab, selecionada = marca)
+  "src/app/(app)/contatos/FichaContato.tsx": 1, // aba da ficha do contato (role=tab, selecionada = marca)
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
@@ -73,6 +74,7 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   // Inbox: item de conversa, anexar, gravar, fechar busca de vínculo, item de nome.
   "src/app/(app)/funil/CartaoOportunidade.tsx": ["Sem código", "`Arrastar cartão de ${cartao.nome}`"], // abrir o cartão e alça de arraste (ícone)
   "src/app/(app)/funil/ListaFunil.tsx": ["Sem código"], // abrir a oportunidade (nome na linha)
+  "src/app/(app)/contatos/FichaContato.tsx": ["key a.id"], // aba da ficha do contato (role=tab)
   "src/app/(app)/funil/PainelOportunidade.tsx": ["key a.id"], // aba do painel (role=tab)
   // Paginação da lista/thread e navegação entre vistas do celular: não são ações de negócio.
   "src/app/(app)/inbox/ConversaAberta.tsx": ["Voltar para a lista", "Detalhes da conversa", "Mensagens anteriores"],
@@ -469,6 +471,11 @@ export function conferirExcecoes(achados: Achado[], excecoes: Achado[]): { semEx
 
 /** Rótulo destrutivo que de propósito não é `perigo`: arquivo + rótulo exato + motivo. */
 const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
+  {
+    arquivo: "src/app/(app)/contatos/FichaContato.tsx",
+    rotulo: "×",
+    motivo: "tira a tag da pílula do contato; reversível (adicionar a tag de novo) e com Evento, então não pede o vermelho de perigo",
+  },
 ];
 
 // ---------------------------------------------------------------------------------------------------
@@ -1147,6 +1154,7 @@ export function alternanciasSemAriaPressed(fonte: string, arquivo = "x.tsx", mod
 const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
+  { arquivo: "src/app/(app)/contatos/FichaContato.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected, que é o atributo próprio da aba; aria-pressed não vale para tab" },
   { arquivo: "src/app/(app)/funil/PainelOportunidade.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected, que é o atributo próprio da aba; aria-pressed não vale para tab" },
   { arquivo: "src/components/conversa/BalaoMensagem.tsx", rotulo: "i.rotulo", motivo: "item do menu da mensagem: a aparência muda por perigo (Apagar), não por estado alternável" },
   { arquivo: "src/components/Menu.tsx", rotulo: "key indice", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
