@@ -2605,15 +2605,11 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
     sumiram.
 - `node_modules/.bin/tsc --noEmit`: saída 0.
 - `npm run lint`: saída 0, 0 erros e 43 avisos (os mesmos da linha de base).
-- `npm test`: 693 arquivos e 5017 testes, 5016 verdes e 1 falha, saída 1. A falha é o timeout de 30 s de
-  `src/app/confirmacoes.test.ts` ("nenhum window.confirm no src…", que analisa todo o `src` com a AST do TypeScript)
-  com o container sob carga das outras faixas (load average entre 13 e 18). Repeti com `--maxWorkers=4` e o resultado foi
-  o mesmo. Rodado sozinho, o arquivo passa (59/59). É a mesma falha por carga já registrada no bloco F e não vem do
-  diff: o bloco só remove código e não toca em `confirm` nem em `ConfirmarAcao`.
-- Integração no perfil `dev-gravacoes`: o `globalSetup` recusava o banco porque faltavam as 5 migrations da `main`
-  (`20261017090000_crm_tarefas` a `20261017130000_whatsapp_motor_dados`). Apliquei as 5 com `prisma migrate deploy`, só
-  nesse banco. Depois passaram `matricula/ativacao`, `matricula/fechamento`, `crm/oportunidades` e `financeiro/politica`
-  (4 arquivos, 41 testes) e `api/exportacoes/[tipo]/route.int.test.ts` (13 testes), todos com saída 0. O bloco não altera
-  nenhum `*.int.test.ts`. A suíte `npm run test:int` completa (mais de 2 h) fica com o integrador.
+- `npm test`: primeira rodada com 1 falha por timeout (`src/app/confirmacoes.test.ts`, container sob carga das outras
+  faixas, load average 12 a 18); a repetição saiu com 693 arquivos e 5017 testes verdes, saída 0.
+- Integração no perfil `dev-gravacoes` (as 5 migrations da `main` aplicadas só nesse banco com `prisma migrate deploy`):
+  `vitest run -c vitest.integration.config.ts --changed origin/claude/fase2-f-contatos` (os `*.int.test.ts` que o diff
+  toca, pois `vitest related` com os 49 arquivos estourou os 30 min): 36 arquivos e 518 testes verdes, saída 0. A suíte
+  `npm run test:int` completa (mais de 2 h) fica com o integrador.
 **Estado**: Implementado; correções da revisão final aplicadas. Antes do merge, o integrador precisa rodar `npm test`
-completo, com a máquina sem carga, e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não concluído.
+completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não concluído.
