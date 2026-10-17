@@ -2104,10 +2104,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `node_modules/.bin/tsc --noEmit`: saída 0.
 - `npm test`: saída 0, 655 arquivos e 4698 testes verdes (linha de base: 643 arquivos e 4607 testes).
 - `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
-- Integração no perfil `integracao`: `src/server/crm/comissoes-painel.int.test.ts` e `comissoes-estorno.int.test.ts`
-  verdes (2 arquivos, 10 testes); `vitest related --run -c vitest.integration.config.ts` sobre `comissoes-painel.ts`,
-  `financeiro/consultas.ts`, `financeiro/ordem-comissoes.ts` e `confirmacoes-mapa.ts`: saída 0, 4 arquivos e 64 testes
-  verdes. Nenhuma das 7 falhas preexistentes foi tocada; a suíte `npm run test:int` completa fica com o integrador.
+- Integração no perfil `integracao`: `node_modules/.bin/vitest related --run -c vitest.integration.config.ts` sobre os
+  29 .ts/.tsx do diff contra `claude/fase2-g-carteira`: saída 0, 14 arquivos e 321 testes verdes (nova rodada de 17/10/2026). Nenhuma das 7 falhas preexistentes foi tocada; a suíte `npm run test:int` completa fica com o integrador.
 - **Pendência bloqueante do merge — Q7 (gate da Task 35):** a Q7 segue como decisão provisória
   (`00-visao-geral.md`, Global Constraints e `src/server/crm/permissoes.ts`). O PR F2-I sai com o estorno manual pelo
   FINANCEIRO sob decisão provisória; o ADMINISTRADOR também estorna, porque recebe todas as capacidades (matriz da
