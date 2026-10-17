@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Papel } from "@prisma/client";
 import { IconArrowLeft, IconLayoutSidebarRight } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
@@ -51,11 +51,21 @@ async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promi
   } catch { return null; }
 }
 
-/** Troca as linhas já conhecidas pelas da primeira página e põe no topo as que ainda não estavam na lista. */
-export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaInbox[]): ItemListaInbox[] {
+/**
+ * Troca as linhas já conhecidas pelas da primeira página, põe no topo as novas e remove as que saíram do filtro:
+ * sem `proximo` a primeira página é a lista inteira; com `proximo`, o que é tão recente quanto a última linha da
+ * página e não veio nela já não pertence à lista.
+ */
+export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaInbox[], proximo: string | null = null, manterId: string | null = null): ItemListaInbox[] {
+  if (!proximo) {
+    const fixo = manterId ? atual.find((i) => i.id === manterId) : undefined;
+    return fixo && !nova.some((i) => i.id === fixo.id) ? [fixo, ...nova] : nova;
+  }
   const novas = new Map(nova.map((i) => [i.id, i]));
   const conhecidos = new Set(atual.map((i) => i.id));
-  return [...nova.filter((i) => !conhecidos.has(i.id)), ...atual.map((i) => novas.get(i.id) ?? i)];
+  const limite = nova[nova.length - 1]?.ultimaMensagemEm ?? null;
+  const manter = (i: ItemListaInbox) => novas.has(i.id) || !limite || i.id === manterId || !i.ultimaMensagemEm || i.ultimaMensagemEm < limite;
+  return [...nova.filter((i) => !conhecidos.has(i.id)), ...atual.filter(manter).map((i) => novas.get(i.id) ?? i)];
 }
 
 function horaCurta(iso: string | null, fuso: string | null): string {
@@ -76,12 +86,14 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, f
   const [eventoRecente, setEventoRecente] = useState<AvisoInbox | null>(null);
   const [carregandoMais, setCarregandoMais] = useState(false);
   const rolagem = useRef<HTMLDivElement>(null);
+  const selecionadoRef = useRef(selecionado);
+  useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
 
   // Aviso do SSE: a thread se reconcilia em `useConversa` (recebe o aviso); a lista recarrega só a primeira página
   // e troca as linhas afetadas, sem refazer a página inteira.
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
-    void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens)); });
+    void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
   }, [filtros]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);

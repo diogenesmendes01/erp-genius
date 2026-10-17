@@ -24,3 +24,10 @@
 - Se `?c=` aponta atendimento fora da primeira página da lista, `atual` é null: a thread carrega (rota com escopo) mas o compositor fica desabilitado com MOTIVO_SEM_ENVIO e o driver é desconhecido. Resolver na Task 31 (buscar o item por id).
 - `podeEnviar` é sempre true na UI; a autorização real está nas actions.
 - A lista refaz a primeira página a cada aviso do SSE (sem rota por linha); pode ser caro com muito tráfego.
+
+## Rodada de correção 1/3
+1. Deep link `?c=` (Important): novo `obterItemListaInbox(u, id)` em `consultas-pagina.ts` (mesmo escopo `escopoAtendimentos`, mesma montagem de linha via `montarItens`, extraída de `listarAtendimentosPagina`). `page.tsx` busca o item quando `?c=` não está em `inicial.itens` e o põe no topo; fora do escopo devolve null e nada é inventado. `mesclarPrimeiraPagina` ganhou `manterId` (conversa aberta nunca sai da lista), então o compositor/driver continuam valendo depois de avisos do SSE. O link do `AtendimentosPainel` usa o mesmo `?c=`, coberto pelo mesmo caminho.
+2. Testes (Important): `InboxNovo.test.ts` ganhou ida e volta `lerFiltrosInbox(paramsDosFiltros(f))`, caso vazio/cursor, e 3 casos de `mesclarPrimeiraPagina`. A mesclagem agora remove linhas que saíram do filtro (sem `proximo` a primeira página é a lista toda; com `proximo`, remove as tão recentes quanto a última linha da página e ausentes dela; antigas e sem data ficam). `page.test.ts`: 2 casos do deep link. `consultas-pagina.int.test.ts`: caso de `obterItemListaInbox` (fora da primeira página, inexistente, fora do escopo).
+- Não adicionei teste de SSE -> atualização da lista em runtime (ambiente de teste é node, sem DOM/EventSource); a lógica pura da atualização (mesclagem) está coberta.
+- Comandos: tsc 0; eslint inbox + server/inbox 0 (corrigi react-hooks/refs com useEffect); vitest inbox + server/inbox + components verdes; integração `consultas-pagina.int.test.ts` 13/13 (apliquei `migrate deploy` no meu banco erp_genius_test_tester).
+- Ruling: nenhum achado contradito.
