@@ -49,8 +49,9 @@ export type VendedorCarteira = { id: string; nome: string; total: number; cobert
 export const TEXTO_CONSEQUENCIA_REATRIBUICAO =
   "Os atendimentos comerciais abertos passam para o novo responsável e as mensagens agendadas pelo responsável anterior são canceladas.";
 
-const MAX_LOTE = 50;
-const MAX_LINHAS = 500;
+export const MAX_LOTE_CARTEIRA = 50;
+/** Corte de linhas devolvidas pela carteira; `total` continua contando todas. */
+export const MAX_LINHAS_CARTEIRA = 500;
 const FUSO_PADRAO = "America/Sao_Paulo";
 
 const diasCivis = (de: string, ate: string) =>
@@ -128,7 +129,7 @@ export async function carregarCarteira(
       tags: (o.pessoa?.tags ?? []).map((t) => t.tag),
     }))
     .filter((l) => l.diasSemInteracao >= minimo);
-  const linhas = todas.sort((a, b) => b.diasSemInteracao - a.diasSemInteracao || (a.oportunidadeId < b.oportunidadeId ? -1 : 1)).slice(0, MAX_LINHAS);
+  const linhas = todas.sort((a, b) => b.diasSemInteracao - a.diasSemInteracao || (a.oportunidadeId < b.oportunidadeId ? -1 : 1)).slice(0, MAX_LINHAS_CARTEIRA);
 
   // Vendedores que o usuário enxerga: ele mesmo, os que cobre, a equipe (gerente) ou todos (admin).
   const admin = usuario.papeis.includes(Papel.ADMINISTRADOR);
@@ -171,7 +172,7 @@ export async function reatribuirEmLote(input: {
   ids: string[];
   vendedorId: string;
   motivo: string;
-}): Promise<Resultado<{ feitas: number; recusadas: { id: string; motivo: string }[] }>> {
+}): Promise<Resultado<{ feitas: number; jaEram: number; recusadas: { id: string; motivo: string }[] }>> {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
     const motivo = (input.motivo ?? "").trim();
@@ -179,14 +180,20 @@ export async function reatribuirEmLote(input: {
     if (motivo.length > 1000) throw new ErroRegra("O motivo deve ter no máximo 1.000 caracteres.");
     const unicos = [...new Set(input.ids)];
     if (unicos.length === 0) throw new ErroRegra("Selecione ao menos uma oportunidade.");
-    if (unicos.length > MAX_LOTE) throw new ErroRegra("Selecione no máximo 50 oportunidades.");
+    if (unicos.length > MAX_LOTE_CARTEIRA) throw new ErroRegra(`Selecione no máximo ${MAX_LOTE_CARTEIRA} oportunidades.`);
+    // `atribuirDono` devolve ok sem mudar nada (nem gravar Evento) quando a oportunidade já é do destino:
+    // essas não contam como reatribuídas. O dono só é lido para contar; a visibilidade continua em `atribuirDono`.
+    const donos = await prisma.oportunidade.findMany({ where: { id: { in: unicos } }, select: { id: true, vendedorDonoId: true } });
+    const donoAntes = new Map(donos.map((o) => [o.id, o.vendedorDonoId]));
     let feitas = 0;
+    let jaEram = 0;
     const recusadas: { id: string; motivo: string }[] = [];
     for (const id of unicos) {
       const r = await atribuirDono(id, input.vendedorId, motivo);
-      if (r.ok) feitas += 1;
-      else recusadas.push({ id, motivo: r.erro });
+      if (!r.ok) recusadas.push({ id, motivo: r.erro });
+      else if (donoAntes.get(id) === input.vendedorId) jaEram += 1;
+      else feitas += 1;
     }
-    return { feitas, recusadas };
+    return { feitas, jaEram, recusadas };
   });
 }

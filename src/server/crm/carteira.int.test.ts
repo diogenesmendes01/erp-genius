@@ -7,7 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo, seedCatalogoMinimo } from "@/test/integracao";
-import { carregarCarteira, reatribuirEmLote, type FiltrosCarteira } from "./carteira";
+import { MAX_LINHAS_CARTEIRA, carregarCarteira, reatribuirEmLote, type FiltrosCarteira } from "./carteira";
 
 const logadoComo = (id: string) => authMock.mockResolvedValue({ user: { id } });
 const sessaoDe = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id, nome: u.nome, papeis: u.papeis });
@@ -89,6 +89,22 @@ describe("carregarCarteira", () => {
     const todas = await carregarCarteira(sessaoDe(gerente), base);
     expect(todas.linhas.find((l) => l.oportunidadeId === op2)).toMatchObject({ turmaAtiva: null, tags: [] });
   });
+  it("total por vendedor: só abertas do escopo e não muda com os filtros", async () => {
+    await prisma.oportunidade.create({ data: { nome: "Bruno", vendedorDonoId: v2.id } as never });
+    const totais = (r: Awaited<ReturnType<typeof carregarCarteira>>) => r.vendedores.map((v) => [v.nome, v.total]);
+    expect(totais(await carregarCarteira(sessaoDe(gerente), base))).toEqual([["V1", 1], ["V2", 2]]);
+    const filtrado = await carregarCarteira(sessaoDe(gerente), { ...base, busca: "ana" });
+    expect(totais(filtrado)).toEqual([["V1", 1], ["V2", 2]]);
+    expect(filtrado.total).toBe(1);
+  });
+  it(`corta as linhas em ${MAX_LINHAS_CARTEIRA} e mantém o total completo`, async () => {
+    const extra = MAX_LINHAS_CARTEIRA + 3 - 2;
+    await prisma.oportunidade.createMany({ data: Array.from({ length: extra }, (_, i) => ({ nome: `Lote ${i}`, vendedorDonoId: v1.id })) as never });
+    const r = await carregarCarteira(sessaoDe(gerente), base);
+    expect(r.linhas).toHaveLength(MAX_LINHAS_CARTEIRA);
+    expect(r.total).toBe(MAX_LINHAS_CARTEIRA + 3);
+    expect(r.vendedores.find((v) => v.id === v1.id)?.total).toBe(1 + extra);
+  });
 });
 
 describe("reatribuirEmLote", () => {
@@ -96,7 +112,7 @@ describe("reatribuirEmLote", () => {
     logadoComo(gerente.id);
     expect(await reatribuirEmLote({ ids: [op1], vendedorId: v2.id, motivo: "" })).toEqual({ ok: false, erro: "Informe o motivo (mínimo 5 caracteres)." });
     const r = await reatribuirEmLote({ ids: [op1, opOutraEquipe], vendedorId: v2.id, motivo: "Férias de V1" });
-    expect(r.ok && r.dado).toEqual({ feitas: 1, recusadas: [{ id: opOutraEquipe, motivo: "Oportunidade fora da sua carteira." }] });
+    expect(r.ok && r.dado).toEqual({ feitas: 1, jaEram: 0, recusadas: [{ id: opOutraEquipe, motivo: "Oportunidade fora da sua carteira." }] });
     expect((await eventosDo("Lead", op1)).at(-1)).toMatchObject({ tipo: "LeadAtribuido", payload: { motivo: "Férias de V1" } });
     expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: op1 } })).vendedorDonoId).toBe(v2.id);
   });
@@ -106,7 +122,14 @@ describe("reatribuirEmLote", () => {
     expect(await reatribuirEmLote({ ids: Array.from({ length: 51 }, (_, i) => `x${i}`), vendedorId: v2.id, motivo: "Férias de V1" })).toEqual({ ok: false, erro: "Selecione no máximo 50 oportunidades." });
     expect(await reatribuirEmLote({ ids: [op1], vendedorId: v2.id, motivo: "x".repeat(1001) })).toMatchObject({ ok: false });
     const r = await reatribuirEmLote({ ids: [op1], vendedorId: v3.id, motivo: "Férias de V1" });
-    expect(r.ok && r.dado).toEqual({ feitas: 0, recusadas: [{ id: op1, motivo: "O vendedor não pertence à sua equipe." }] });
-    expect(op2).toBeTruthy();
+    expect(r.ok && r.dado).toEqual({ feitas: 0, jaEram: 0, recusadas: [{ id: op1, motivo: "O vendedor não pertence à sua equipe." }] });
+  });
+  it("oportunidade que já é do destino não conta como reatribuída nem grava evento", async () => {
+    logadoComo(gerente.id);
+    const antes = (await eventosDo("Lead", op2)).length;
+    const r = await reatribuirEmLote({ ids: [op1, op2], vendedorId: v2.id, motivo: "Férias de V1" });
+    expect(r.ok && r.dado).toEqual({ feitas: 1, jaEram: 1, recusadas: [] });
+    expect(await eventosDo("Lead", op2)).toHaveLength(antes);
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: op2 } })).vendedorDonoId).toBe(v2.id);
   });
 });
