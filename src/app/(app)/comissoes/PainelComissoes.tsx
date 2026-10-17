@@ -78,6 +78,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
       {painel.matriculadasSemComissao.length > 0 && (
         <section aria-label="Matrículas sem comissão" className="rounded-lg border border-border-soft p-3 text-sm">
           <h2 className="font-medium">Matriculadas sem comissão</h2>
+          <p className="text-xs text-gray-600">Pendências de todos os períodos{vendedorId ? ", só do vendedor filtrado" : ""}.</p>
           <ul className="mt-1 space-y-1">
             {painel.matriculadasSemComissao.map((o) => (
               <li key={o.oportunidadeId}><Link href={`/funil?o=${o.oportunidadeId}`} className="text-brand-700 hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center">{o.nome}</Link></li>
