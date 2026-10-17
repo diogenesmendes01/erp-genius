@@ -2,13 +2,19 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
+import { vi } from "vitest";
 import { medirSaudeCanal } from "./saude";
+
+const motor = vi.hoisted(() => ({ chamar: vi.fn() }));
+vi.mock("./motor/cliente", () => ({ chamarMotor: motor.chamar }));
 
 // Integração E5 (doc 30 · gap A7): a saúde do canal mede a fila POR ESTADO (review
 // PR #52) — ADIADA esperando janela é saudável; o alerta é o que VENCEU sem ninguém pegar.
 
 beforeEach(async () => {
   await truncarBanco();
+  motor.chamar.mockReset();
+  motor.chamar.mockResolvedValue({ eventos: [] });
 });
 
 async function seedContato(telefone = "+50611112222") {
@@ -44,6 +50,8 @@ describe("medirSaudeCanal — fila por estado", () => {
       adiadaVencidaHaMin: null,
       claimExpiradoHaMin: null,
       falhas24h: 0,
+      eventosMotorPendentes: 0,
+      eventosMotorFalhos: null,
     });
     expect(s.ultimoInboundEm).toBeNull();
   });
@@ -171,5 +179,34 @@ describe("medirSaudeCanal — fila por estado", () => {
 
     const s = await medirSaudeCanal();
     expect(s.ultimoInboundEm).not.toBeNull();
+  });
+});
+
+describe("medirSaudeCanal — motor", () => {
+  it("saúde alerta sessão MOTOR caída e eventos falhos no motor", async () => {
+    const { numero } = await seedCanal();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR", sessao: "CAIU" } });
+    motor.chamar.mockResolvedValue({ eventos: [{ idEvento: "e1" }] });
+    const s = await medirSaudeCanal();
+    expect(s.ok).toBe(false);
+    expect(s.alertas.some((a) => a.includes("Sessão do número") && a.includes("caiu"))).toBe(true);
+    expect(s.alertas.some((a) => a.includes("1 evento(s) falharam no motor"))).toBe(true);
+    expect(s.fila.eventosMotorFalhos).toBe(1);
+  });
+
+  it("evento do motor parado há mais de 15 min alerta; recente só conta como pendente", async () => {
+    const agora = new Date();
+    const base = { tipo: "mensagem.recebida", numeroRef: "n", ocorridoEm: agora, dados: {} };
+    await prisma.eventoMotorRecebido.create({
+      data: { ...base, idEvento: "11111111-1111-4111-8111-111111111111", recebidoEm: new Date(agora.getTime() - 20 * 60_000) },
+    });
+    const s = await medirSaudeCanal(agora);
+    expect(s.fila.eventosMotorPendentes).toBe(1);
+    expect(s.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(true);
+
+    await prisma.eventoMotorRecebido.updateMany({ data: { recebidoEm: new Date(agora.getTime() - 60_000) } });
+    const s2 = await medirSaudeCanal(agora);
+    expect(s2.fila.eventosMotorPendentes).toBe(1);
+    expect(s2.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(false);
   });
 });

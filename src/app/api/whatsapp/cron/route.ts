@@ -3,6 +3,7 @@ import { iniciarTurmasDaAgenda } from "@/server/agenda/inicio-turmas";
 import { rodarVencimentoParticulares } from "@/server/matricula/reserva-particular-cron";
 import { NextResponse } from "next/server";
 import { rodarCronRegua } from "@/server/whatsapp/cron";
+import { drenarEventosMotor } from "@/server/whatsapp/motor/drenar";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { adotarMensagensOrfasDaLinha } from "@/server/whatsapp/linha-comercial";
 import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
@@ -52,6 +53,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   // SPEC-ERP-005 (LC-15): mensagens de linha comercial paradas na triagem vão para o atendimento
   // da linha — backfill idempotente e em lote, sem migração de dados.
   const linhaComercial = await seguro("linha_comercial_orfas", () => adotarMensagensOrfasDaLinha());
+  // Eventos do motor recebidos e ainda não processados (ordem preservada, dreno serializado).
+  const eventosMotor = await seguro("eventos_motor", () => drenarEventosMotor(agora));
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
@@ -64,6 +67,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     comissoes,
     fechamentosPendentes,
     linhaComercial,
+    eventosMotor,
     despacho,
   });
 }
