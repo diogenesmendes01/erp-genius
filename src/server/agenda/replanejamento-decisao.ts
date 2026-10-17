@@ -3,6 +3,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { repetirEmFalhaDeSerializacao } from "@/lib/repetir-serializacao";
 import { exigirSessaoComPapel, executarAcao, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { AjustesReplanejamentoSchema } from "./replanejamento-ajustes";
 import { estadoReplanejamento } from "./replanejamento-estado";
@@ -19,7 +20,9 @@ export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeo
  return executarAcao(async () => {
   const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
   const d = Entrada.parse(input);
-  return prisma.$transaction(async (tx) => {
+  // O lock do calendário não basta em SERIALIZABLE: o snapshot precede a espera
+  // pelo lock. A decisão concorrente perdedora é repetida e cai no replay idempotente.
+  return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
    const usuario = await tx.usuario.findUnique({ where: { id: autor.id }, select: { ativo: true, papeis: true } });
    if (!usuario?.ativo || !usuario.papeis.some((p) => p === "GERENTE_PEDAGOGICO" || p === "ADMINISTRADOR")) throw new ErroPermissao();
@@ -74,6 +77,6 @@ export async function decidirEAplicarReplanejamentoConjunto(input: z.input<typeo
    // de negócio, sem parecer uma aplicação bem-sucedida ao chamador.
    await tx.$executeRawUnsafe('SET CONSTRAINTS "validar_aplicacao_replanejamento_material_167" IMMEDIATE');
    return { id: decisao.id, aprovada: true, aplicada: true };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 }));
  });
 }
