@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "../atendimentos";
-import { apagarMensagemWhatsApp, editarMensagemWhatsApp } from "./acoes-mensagem";
+import { apagarMensagemWhatsApp, editarMensagemWhatsApp, encaminharMensagemWhatsApp, reagirMensagemWhatsApp } from "./acoes-mensagem";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); acao.mockReset(); acao.mockResolvedValue({}); });
 const comoUsuario = async <T,>(u: { id: string }, f: () => Promise<T>) => { authMock.mockResolvedValue({ user: { id: u.id } }); return f(); };
@@ -75,5 +75,77 @@ describe("editar e apagar pelo motor", () => {
     const r = await comoUsuario(estranho, () => editarMensagemWhatsApp({ mensagemId: m.id, texto: "x" }));
     expect(r.ok).toBe(false);
     expect(acao).not.toHaveBeenCalled();
+  });
+});
+
+describe("reagir e encaminhar pelo motor", () => {
+  async function destino(numeroId: string, autorId: string, telefone: string, optOut = false) {
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone, ...(optOut ? { optOutEm: new Date() } : {}) } });
+    return prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: autorId }));
+  }
+  it("reagir grava reação do usuário", async () => {
+    const { autor, m, numero } = await cenario();
+    expect((await comoUsuario(autor, () => reagirMensagemWhatsApp({ mensagemId: m.id, emoji: "👍" }))).ok).toBe(true);
+    expect(acao).toHaveBeenCalledWith(numero.id, "message.react", { messageId: "c:3EB0X", emoji: "👍" }, { origem: "HUMANO" });
+    expect(await prisma.reacaoMensagemWhatsApp.findFirstOrThrow()).toMatchObject({ emoji: "👍", usuarioId: autor.id, deMim: true });
+    await comoUsuario(autor, () => reagirMensagemWhatsApp({ mensagemId: m.id, emoji: "❤️" }));
+    expect(await prisma.reacaoMensagemWhatsApp.count()).toBe(1);
+    await comoUsuario(autor, () => reagirMensagemWhatsApp({ mensagemId: m.id, emoji: "" }));
+    expect(await prisma.reacaoMensagemWhatsApp.count()).toBe(0);
+  });
+  it("reagir com emoji acima de 32 caracteres ou fora do escopo é recusado", async () => {
+    const { autor, m } = await cenario();
+    expect((await comoUsuario(autor, () => reagirMensagemWhatsApp({ mensagemId: m.id, emoji: "x".repeat(33) }))).ok).toBe(false);
+    const estranho = await criarUsuario([Papel.PROFESSOR], "Estranho");
+    expect((await comoUsuario(estranho, () => reagirMensagemWhatsApp({ mensagemId: m.id, emoji: "👍" }))).ok).toBe(false);
+    expect(acao).not.toHaveBeenCalled();
+  });
+  it("encaminhar grava a mensagem HUMANO no destino e o Evento", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002");
+    acao.mockResolvedValue({ key: { id: "FWD0", remoteJid: "50688880002@s.whatsapp.net" } });
+    const r = await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }));
+    expect(r.ok).toBe(true);
+    expect(acao).toHaveBeenCalledWith(numero.id, "message.forward", { messageId: "c:3EB0X", chatId: "50688880002@s.whatsapp.net" }, { origem: "HUMANO" });
+    expect(await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "FWD0" } })).toMatchObject({ origem: "HUMANO", autorId: autor.id, atendimentoId: dest.id, corpo: "oi", direcao: "SAIDA" });
+    expect(await evento("MensagemWhatsAppEncaminhada")).not.toBeNull();
+  });
+  it("encaminhar para atendimento fora do escopo é recusado", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002");
+    const estranho = await criarUsuario([Papel.PROFESSOR], "Estranho");
+    const r = await comoUsuario(estranho, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }));
+    expect(r.ok).toBe(false);
+    expect(acao).not.toHaveBeenCalled();
+  });
+  it("encaminhar para contato com opt-out é recusado", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002", true);
+    const r = await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }));
+    expect(r.ok).toBe(false);
+    expect(acao).not.toHaveBeenCalled();
+  });
+  it("encaminhar para outro número → ErroRegra 'Encaminhe só entre conversas do mesmo número.'", async () => {
+    const { autor, m } = await cenario();
+    const outroNumero = await criarNumeroSetor({ telefoneE164: "+5511999990002", setores: ["COMERCIAL"], finalidade: "COBRANCA", donoId: (await criarUsuario([Papel.FINANCEIRO], "Dono2")).id });
+    await prisma.numeroWhatsApp.update({ where: { id: outroNumero.id }, data: { driver: "MOTOR", sessao: "CONECTADO", providerRef: outroNumero.id } });
+    const dest = await destino(outroNumero.id, autor.id, "+50688880003");
+    const r = await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }));
+    expect(r).toEqual({ ok: false, erro: "Encaminhe só entre conversas do mesmo número." });
+    expect(acao).not.toHaveBeenCalled();
+  });
+  it("eco celular do encaminhamento antes da resposta é corrigido para HUMANO", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002");
+    const { processarMensagemEnviada } = await import("./processar-mensagem");
+    const eco = await processarMensagemEnviada({
+      idEvento: "11111111-1111-4111-8111-111111111111", tipo: "mensagem.enviada", numeroId: numero.id, ocorridoEm: Date.now(),
+      dados: { mensagemId: "50688880002@s.whatsapp.net:FWD1", providerMessageId: "FWD1", chatJid: "50688880002@s.whatsapp.net", tipo: "TEXTO", texto: "oi", quando: Date.now(), ehGrupo: false, origem: "celular", contato: { telefoneE164: "+50688880002" } },
+    });
+    expect(eco).toBe("ok");
+    acao.mockResolvedValue({ key: { id: "FWD1", remoteJid: "50688880002@s.whatsapp.net" } });
+    expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }))).ok).toBe(true);
+    expect(await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "FWD1" } })).toMatchObject({ origem: "HUMANO", autorId: autor.id, atendimentoId: dest.id });
+    expect(await prisma.mensagemWhatsApp.count({ where: { providerMessageId: "FWD1" } })).toBe(1);
   });
 });
