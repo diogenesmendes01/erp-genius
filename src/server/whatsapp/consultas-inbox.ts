@@ -217,7 +217,7 @@ async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; 
     notas: await notasDoLead(lead.id) };
 }
 
-async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {
+export async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {
   const contato = await prisma.contatoWhatsApp.findUnique({ where: { id: contatoId } });
   if (!contato) return null;
   const matricula = await prisma.matricula.findFirst({ where: { id: matriculaId, alunoId }, include: INCLUDE_MATRICULA_DESTINO });
