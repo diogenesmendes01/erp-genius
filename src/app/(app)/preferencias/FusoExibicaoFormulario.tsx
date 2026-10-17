@@ -8,7 +8,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoFuso, validadeDoFuso, type SugestaoFuso } from "@/components/CampoFuso";
 
-export const DESTAQUES_FUSO_EXIBICAO: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["US/Eastern", "Estados Unidos — Leste"]];
+export const DESTAQUES_FUSO_EXIBICAO: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["America/New_York", "Estados Unidos — Leste (Nova York)"]];
 
 export function FusoExibicaoFormulario({ atual }: { atual: string | null }) {
   const [fuso, setFuso] = useState(atual ?? ""); const router = useRouter();
