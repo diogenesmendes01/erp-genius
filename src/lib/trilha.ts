@@ -132,6 +132,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Empresas, leads
   "/empresas/*": "Empresa",
   "/leads/*": "Ficha do lead",
+  "/leads/*/contratacao": "Contratação", // só redireciona para /oportunidades/*/contratacao; sai com a Tarefa 37
   "/oportunidades/*/contratacao": "Contratação",
 
   // Financeiro
