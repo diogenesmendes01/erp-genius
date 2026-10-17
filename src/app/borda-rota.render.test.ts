@@ -21,6 +21,7 @@ import LoadingAlunos from "@/app/(app)/alunos/(lista)/loading";
 import LoadingLeads from "@/app/(app)/leads/(lista)/loading";
 import LoadingFunil from "@/app/(app)/funil/loading";
 import LoadingCarteira from "@/app/(app)/carteira/loading";
+import LoadingContatos from "@/app/(app)/contatos/loading";
 import LoadingComissoes from "@/app/(app)/comissoes/loading";
 import LoadingInbox from "@/app/(app)/inbox/loading";
 import LoadingFinanceiro from "@/app/(app)/financeiro/(painel)/loading";
@@ -45,6 +46,7 @@ import ErroEmpresas from "@/app/(app)/empresas/error";
 import ErroFinanceiro from "@/app/(app)/financeiro/error";
 import ErroFunil from "@/app/(app)/funil/error";
 import ErroCarteira from "@/app/(app)/carteira/error";
+import ErroContatos from "@/app/(app)/contatos/error";
 import ErroComissoes from "@/app/(app)/comissoes/error";
 import ErroInbox from "@/app/(app)/inbox/error";
 import ErroLeads from "@/app/(app)/leads/error";
@@ -64,6 +66,7 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/leads/(lista)": { Componente: LoadingLeads, titulos: 1, rotulo: "Carregando leads" },
   "src/app/(app)/funil": { Componente: LoadingFunil, titulos: 1, rotulo: "Carregando funil" },
   "src/app/(app)/carteira": { Componente: LoadingCarteira, titulos: 1, rotulo: "Carregando carteira" },
+  "src/app/(app)/contatos": { Componente: LoadingContatos, titulos: 1, rotulo: "Carregando contatos" },
   "src/app/(app)/comissoes": { Componente: LoadingComissoes, titulos: 1, rotulo: "Carregando comissões" },
   "src/app/(app)/inbox": { Componente: LoadingInbox, titulos: 1, rotulo: "Carregando conversas" },
   "src/app/(app)/financeiro/(painel)": { Componente: LoadingFinanceiro, titulos: 0, rotulo: "Carregando financeiro" },
@@ -148,6 +151,7 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/(app)/financeiro": { Componente: ErroFinanceiro, caminho: "/financeiro/acertos-taxa", titulo: "Não foi possível carregar o financeiro", voltar: "/financeiro" },
   "src/app/(app)/funil": { Componente: ErroFunil, caminho: "/funil", titulo: "Não foi possível carregar o funil", voltar: "/home" },
   "src/app/(app)/carteira": { Componente: ErroCarteira, caminho: "/carteira", titulo: "Não foi possível carregar a carteira", voltar: "/home" },
+  "src/app/(app)/contatos": { Componente: ErroContatos, caminho: "/contatos", titulo: "Não foi possível carregar os contatos", voltar: "/home" },
   "src/app/(app)/inbox": { Componente: ErroInbox, caminho: "/inbox", titulo: "Não foi possível carregar a inbox", voltar: "/home" },
   "src/app/(app)/leads": { Componente: ErroLeads, caminho: "/leads/l1/contratacao", titulo: "Não foi possível carregar os leads", voltar: "/leads" },
   "src/app/(app)/matriculas/[id]": { Componente: ErroMatricula, caminho: "/matriculas/m1/preparacao", params: { id: "m1" }, titulo: "Não foi possível carregar esta seção da matrícula", voltar: "/matriculas/m1" },
