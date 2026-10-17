@@ -89,7 +89,7 @@ describe("salvarPoliticaRegua", () => {
     expect((travado as { erro?: string }).erro).toContain("Trava do cron");
   });
 
-  it("salvarPoliticaRegua arma degrau AUTOMATICO com remetente MOTOR (D36), sem exigir template aprovado", async () => {
+  it("salvarPoliticaRegua arma degrau AUTOMATICO com remetente MOTOR (D38), sem exigir template aprovado", async () => {
     const motor = await seedNumero("MOTOR");
     const r = await salvarPoliticaRegua(inputFabrica({ estado: "SHADOW", numeroRemetenteId: motor.id }));
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);

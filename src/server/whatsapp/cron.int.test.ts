@@ -98,7 +98,7 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
-  it("cron de cobrança enfileira em número MOTOR (S1 revogada, D36)", async () => {
+  it("cron de cobrança enfileira em número MOTOR (S1 revogada, D38)", async () => {
     const agora = agoraAs(10);
     await seedCanal({ driver: "MOTOR", estado: "SHADOW" });
     await seedCobranca({ vencimento: diasDepois(agora, 7) });

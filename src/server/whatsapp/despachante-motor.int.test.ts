@@ -98,6 +98,23 @@ describe("despachante × motor", () => {
     expect(enviarTemplate).not.toHaveBeenCalled();
   });
 
+  it("intenção CRON em número MOTOR não é cancelada por trava_driver_oficial (S1 revogada, D38)", async () => {
+    const { intencaoId } = await seed({}, { origem: "CRON" });
+    await despacharFila(new Date(), { intencaoId });
+    const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoId } });
+    expect(i.motivoFalha).not.toBe("trava_driver_oficial");
+    expect(i.status).not.toBe("CANCELADA");
+  });
+
+  it("intenção CRON em número BAILEYS segue cancelada por trava_driver_oficial", async () => {
+    const { intencaoId } = await seed({ driver: "BAILEYS" }, { origem: "CRON" });
+    const r = await despacharFila(new Date(), { intencaoId });
+    expect(r.canceladas).toBe(1);
+    const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoId } });
+    expect(i).toMatchObject({ status: "CANCELADA", motivoFalha: "trava_driver_oficial" });
+    expect(enviarTexto).not.toHaveBeenCalled();
+  });
+
   describe("falha reprocessável", () => {
     const agora = new Date("2026-10-17T15:00:00.000Z");
     const intencao = (id: string) => prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
