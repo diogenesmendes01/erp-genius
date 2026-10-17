@@ -6,6 +6,7 @@ import { resolverCaminhoUpload } from "@/lib/uploads";
 import { acharNumero, processarMensagemNormalizada, type InboundNormalizado } from "../inbound";
 import { baixarMidiaMotor, salvarMidiaInbound } from "../midia";
 import { DadosMensagemSchema, type DadosMensagem, type EnvelopeMotor } from "./eventos";
+import { processarMensagemGrupo } from "./processar-grupo";
 import { PROCESSADORES, type ResultadoProcessamento } from "./receber";
 
 /** Tipos do motor (`tipoMotor`) que não cabem no `tipo` genérico do evento. */
@@ -18,7 +19,7 @@ export const TIPO_POR_TIPO_MOTOR: Record<string, TipoMensagem> = {
 
 const TIPOS_GENERICOS = new Set<string>(["TEXTO", "IMAGEM", "AUDIO", "VIDEO", "DOCUMENTO", "OUTRO"]);
 
-function tipoDaMensagem(d: DadosMensagem): TipoMensagem {
+export function tipoDaMensagem(d: DadosMensagem): TipoMensagem {
   if (d.tipoMotor && Object.hasOwn(TIPO_POR_TIPO_MOTOR, d.tipoMotor)) return TIPO_POR_TIPO_MOTOR[d.tipoMotor];
   return TIPOS_GENERICOS.has(d.tipo) ? (d.tipo as TipoMensagem) : "OUTRO";
 }
@@ -49,7 +50,7 @@ export function inboundDeEventoMotor(
   };
 }
 
-async function apagarArquivo(midiaPath: string): Promise<void> {
+export async function apagarArquivo(midiaPath: string): Promise<void> {
   const segmentos = midiaPath.slice("/api/files/".length).split("/").filter(Boolean);
   const caminho = resolverCaminhoUpload(segmentos);
   if (caminho) await unlink(caminho).catch(() => undefined);
@@ -120,8 +121,9 @@ export async function reconciliarEcoErp(numeroId: string, dados: DadosMensagem):
 }
 
 async function gravarMensagemMotor(env: EnvelopeMotor, dados: DadosMensagem, fromMe: boolean): Promise<ResultadoProcessamento> {
+  if (dados.ehGrupo) return processarMensagemGrupo(env, dados, fromMe);
   const inbound = inboundDeEventoMotor(env, dados, fromMe);
-  if ("descarte" in inbound) return { ignorado: inbound.descarte }; // grupo: Task 16
+  if ("descarte" in inbound) return { ignorado: inbound.descarte };
 
   const numero = await acharNumero(inbound);
   if (!numero) return { ignorado: "numero_desconhecido" };

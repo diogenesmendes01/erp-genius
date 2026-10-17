@@ -101,10 +101,6 @@ describe("mensagem.recebida (1:1)", () => {
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
   });
 
-  it("grupo fica ignorado até a Task 16", async () => {
-    expect(await processar(env({ ehGrupo: true }))).toEqual({ ignorado: "grupo" });
-  });
-
   it("não sobra arquivo órfão quando a gravação resulta em duplicada", async () => {
     // Corrida: a mensagem aparece entre a checagem e a gravação.
     baixar.mockImplementation(async () => {
