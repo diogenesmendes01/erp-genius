@@ -2688,3 +2688,12 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Verificação: `tsc --noEmit` com saída 0; `eslint src --quiet` com saída 0; `npm test` com 703 arquivos e 5104 testes, todos
   verdes; integração em `regras-inbox`, `paineis` e `opcoes-filtro` (3 arquivos, 27 testes) com saída 0.
   O `npm run test:int` completo continua pendente para o integrador.
+
+## Fase 3F: telas do Inbox novo (17/10/2026)
+
+- Branch: `claude/fase3-f-telas` (base main 35d8263a). Tarefas 29 a 33: casca, lista, conversa, painel lateral por setor e remoção do Inbox antigo.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 703 arquivos e 5104 testes verdes (linha de base: ~697/~5060).
+- `npm run lint`: saída 0; 0 erros e 43 avisos.
+- Integração relacionada (`vitest list --filesOnly --changed origin/main` com `vitest run -c vitest.integration.config.ts` sobre os 97 arquivos `*.int.test.ts` apontados): saída 0; 96 arquivos passaram, 1 ignorado; 1041 testes passaram, 1 ignorado. O `vitest related` direto passou de 30 min sem terminar, por isso a lista foi resolvida antes e rodada em seguida.
+- A suíte de integração completa (`npm run test:int`) não foi rodada; fica para o integrador.
