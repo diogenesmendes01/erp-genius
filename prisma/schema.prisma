@@ -2308,6 +2308,7 @@ model Contador {
 enum DriverWhatsApp {
   META_CLOUD
   BAILEYS
+  MOTOR
 }
 
 enum FinalidadeNumero {
@@ -2451,6 +2452,11 @@ enum TipoMensagem {
   VIDEO
   DOCUMENTO
   OUTRO
+  FIGURINHA
+  LOCALIZACAO
+  CONTATO
+  ENQUETE
+  CHAMADA
 }
 
 enum StatusMensagem {
