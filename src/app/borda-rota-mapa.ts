@@ -14,6 +14,7 @@ export const ROTAS_COM_LOADING = [
   "src/app/(app)/alunos/(lista)",
   "src/app/(app)/leads/(lista)",
   "src/app/(app)/funil",
+  "src/app/(app)/tarefas",
   "src/app/(app)/inbox",
   "src/app/(app)/financeiro/(painel)",
   "src/app/(app)/financeiro/continuidade",
@@ -50,6 +51,7 @@ export const ROTAS_COM_ERROR = [
   "src/app/(app)/matriculas/[id]",
   "src/app/(app)/oportunidades",
   "src/app/(app)/secretaria",
+  "src/app/(app)/tarefas",
   "src/app/pagar/[token]",
   "src/app/certificado/[codigo]",
 ] as const;

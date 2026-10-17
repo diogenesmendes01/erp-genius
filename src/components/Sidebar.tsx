@@ -17,6 +17,7 @@ import {
   IconMoon,
   IconMessageCircle,
   IconBuilding,
+  IconChecklist,
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
@@ -34,6 +35,7 @@ const ICONS: Record<string, Icone> = {
   Settings: IconSettings,
   MessageCircle: IconMessageCircle,
   Building: IconBuilding,
+  Checklist: IconChecklist,
 };
 
 /** Alternância de tema — compartilhada pela Sidebar e pela barra mobile. `className` ajusta a área de toque. */

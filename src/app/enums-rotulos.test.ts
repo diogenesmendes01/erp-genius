@@ -2110,6 +2110,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["STATUS_TEMPLATE_LABEL", L.STATUS_TEMPLATE_LABEL, Object.values(StatusTemplate)],
   ["TIPO_MENSAGEM_LABEL", L.TIPO_MENSAGEM_LABEL, Object.values(TipoMensagem)],
   ["STATUS_INTENCAO_LABEL", L.STATUS_INTENCAO_LABEL, Object.values(StatusIntencao)],
+  ["STATUS_MENSAGEM_AGENDADA_LABEL", L.STATUS_MENSAGEM_AGENDADA_LABEL, Object.values(StatusIntencao)],
   ["TIPO_APROVACAO_LABEL", L.TIPO_APROVACAO_LABEL, Object.values(TipoAprovacao)],
   ["VIGENCIA_LABEL", L.VIGENCIA_LABEL, Object.values(Vigencia)],
   ["TIPO_AJUSTE_LABEL", L.TIPO_AJUSTE_LABEL, Object.values(TipoAjuste)],
