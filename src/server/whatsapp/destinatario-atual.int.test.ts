@@ -160,6 +160,8 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).encerradoEm).toBeNull();
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: pendente.id } })).status).toBe("PENDENTE");
     expect(await eventosDo("AtendimentoWhatsApp", a.id)).toHaveLength(0);
+    // E5, Task 13: SECRETARIA só alcança PEDAGOGICO pela fila dos números que servem o setor.
+    await prisma.numeroSetorWhatsApp.create({ data: { numeroId: canal.numero.id, finalidade: "PEDAGOGICO" } });
     entrar(sec.id);
     expect((await encerrarAtendimentoWhatsApp(a.id)).ok).toBe(true);
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: pendente.id } })).status).toBe("CANCELADA");
