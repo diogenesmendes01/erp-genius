@@ -1,18 +1,20 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { Papel } from "@prisma/client";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), transferirAtendimento: vi.fn() }));
-vi.mock("@/server/whatsapp/acoes-conversa", () => ({ agendarMensagemNoAtendimento: vi.fn(), registrarNotaAtendimento: vi.fn() }));
-vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ listarPessoasParaAtendimento: vi.fn(), origemVisivelDaTransferencia: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), revogarParticipante: vi.fn(), transferirAtendimento: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes-conversa", () => ({ agendarMensagemNoAtendimento: vi.fn(), cancelarAgendamentoDoAtendimento: vi.fn(), registrarNotaAtendimento: vi.fn() }));
+vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ listarConvitesEAgendamentos: vi.fn(() => new Promise(() => {})), listarPessoasParaAtendimento: vi.fn(), origemVisivelDaTransferencia: vi.fn() }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ encerrarAtendimentoWhatsApp: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
 
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { Setor } from "@/server/whatsapp/setor";
-import { AcoesAtendimento, DialogoTransferir, validarQuando } from "./AcoesAtendimento";
+import { Modal } from "@/components/Modal";
+import { AcoesAtendimento, DialogoPendentes, DialogoTransferir, validarQuando } from "./AcoesAtendimento";
 import { ConversaAberta, textoOrigem } from "./ConversaAberta";
 
 type Opcoes = { papeis?: Papel[]; responsavelId?: string | null; finalidade?: Setor; status?: string; linhaComercial?: boolean; donoLinhaId?: string | null };
@@ -96,5 +98,33 @@ describe("ConversaAberta", () => {
     const h = renderToStaticMarkup(createElement(ConversaAberta, { item, usuario: { id: "eu", papeis: [Papel.FINANCEIRO] }, fuso: null, conversa, aoVoltar: vi.fn(), aoAbrirPainel: vi.fn(), aoMudar: vi.fn() } as never));
     for (const t of ["Maria Souza", "Financeiro", "Cobrança", "Na fila", "Sem responsável", "Assumir"]) expect(h).toContain(t);
     expect(h).not.toContain("+5511999990000");
+  });
+});
+
+describe("revogar convite e cancelar agendamento pedem confirmação; diálogos viram bottom sheet no celular", () => {
+  it("quem pode convidar ou agendar vê 'Convites e agendamentos'; atendimento encerrado, não", () => {
+    expect(html({ papeis: [Papel.VENDEDOR] })).toContain("Convites e agendamentos");
+    expect(html({ papeis: [Papel.VENDEDOR], status: "ENCERRADO" })).not.toContain("Convites e agendamentos");
+    expect(html({ papeis: [Papel.FINANCEIRO], responsavelId: null, finalidade: "FINANCEIRO", status: "ABERTO_SEM_RESPONSAVEL" })).toContain("Convites e agendamentos"); // pode agendar
+  });
+  it("o diálogo abre como folha (bottom sheet) e carrega a lista", () => {
+    const h = renderToStaticMarkup(createElement(DialogoPendentes, { atendimentoId: "a1", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
+    expect(h).toContain("Convites e agendamentos"); expect(h).toContain("Carregando");
+    expect(h).toContain("items-end");
+  });
+  it("Modal: sem `folha` continua centralizado; com `folha` ancora embaixo no celular e volta ao centro a partir de sm", () => {
+    const base = renderToStaticMarkup(createElement(Modal, { titulo: "x", aoFechar: vi.fn() }));
+    const folha = renderToStaticMarkup(createElement(Modal, { titulo: "x", aoFechar: vi.fn(), folha: true }));
+    expect(base).not.toContain("items-end");
+    expect(folha).toMatch(/items-end p-0 sm:items-center sm:p-4/);
+    expect(folha).toContain("rounded-b-none");
+  });
+  it("revogar e cancelar só rodam dentro da prop `acao` de um ConfirmarAcao (fonte)", () => {
+    const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8");
+    const usos = (nome: string) => fonte.match(new RegExp(`${nome}\\(`, "g"))?.length ?? 0;
+    expect(usos("revogarParticipante")).toBe(1);
+    expect(usos("cancelarAgendamentoDoAtendimento")).toBe(1);
+    expect(fonte).toMatch(/<ConfirmarAcao[^>]*\n\s*folha\n[\s\S]*?acao=\{\(\) => \(convite \? revogarParticipante\([^)]*\) : cancelarAgendamentoDoAtendimento\(/);
+    expect(fonte.match(/<Modal /g)!.length).toBe(fonte.match(/<Modal folha /g)!.length);
   });
 });

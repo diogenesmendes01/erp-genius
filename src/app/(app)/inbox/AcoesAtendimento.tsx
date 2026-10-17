@@ -14,9 +14,9 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
-import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
-import { agendarMensagemNoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
-import { listarPessoasParaAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
+import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { agendarMensagemNoAtendimento, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { listarConvitesEAgendamentos, listarPessoasParaAtendimento, type AgendamentoAtivo, type ConviteAtivo } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "@/server/whatsapp/operacoes-atendimento";
 import { alternarFixada, silenciarConversa } from "@/server/whatsapp/preferencias";
 import type { Resultado } from "@/server/_shared/resultado";
@@ -56,7 +56,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
   return setoresDoNumero.filter((s) => s !== atual);
 }
 
-type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "encerrar";
+type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
 export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar }: PropsAcoesAtendimento) {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
@@ -83,6 +83,7 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
         {pode("convidar") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("convidar")}>Convidar</Botao>}
         {pode("notaInterna") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("nota")}>Nota interna</Botao>}
         {pode("agendar") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("agendar")}>Agendar mensagem</Botao>}
+        {(pode("convidar") || pode("agendar")) && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("pendentes")}>Convites e agendamentos</Botao>}
         {pode("encerrar") && <Botao tamanho="sm" variante="perigo" onClick={() => setDialogo("encerrar")}>Encerrar atendimento</Botao>}
         {pode("bloquear") && <Botao tamanho="sm" variante="secundario" disabled title={AVISO_RECURSO_MOTOR}>Bloquear</Botao>}
         <Botao tamanho="sm" variante="fantasma" ocupado={direta.ocupado} aria-pressed={fixada} onClick={() => void rodar(() => alternarFixada(atendimento.id), fixada ? "Conversa desafixada." : "Conversa fixada.")}>{fixada ? "Desafixar" : "Fixar"}</Botao>
@@ -96,8 +97,10 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
       {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
+      {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={(msg) => { setAviso(msg); aoMudar?.(); }} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
+          folha
           titulo="Encerrar este atendimento?"
           confirmacao="encerramento"
           idempotente={false}
@@ -142,7 +145,7 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
   }
 
   return (
-    <Modal titulo="Transferir atendimento" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
+    <Modal folha titulo="Transferir atendimento" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
       <form onSubmit={(e) => void enviar(e)} className="space-y-3">
         {setores.length === 0 ? <EstadoVazio>Este número não atende outro setor.</EstadoVazio> : (
           <>
@@ -197,7 +200,7 @@ function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialo
   }
 
   return (
-    <Modal titulo={modo === "atribuir" ? "Atribuir atendimento" : "Convidar participante"} aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
+    <Modal folha titulo={modo === "atribuir" ? "Atribuir atendimento" : "Convidar participante"} aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
       <form onSubmit={(e) => void enviar(e)} className="space-y-3">
         <Campo rotulo="Pessoa" obrigatorio dica={pessoas && pessoas.length === 0 ? "Ninguém disponível." : undefined}>
           {(c) => (
@@ -234,7 +237,7 @@ function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { a
     if (d?.tipo === "ok") aoConcluir();
   }
   return (
-    <Modal titulo="Nota interna" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
+    <Modal folha titulo="Nota interna" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
       <form onSubmit={(e) => void enviar(e)} className="space-y-3">
         <Campo rotulo="Nota" obrigatorio dica="Fica só para a equipe e não é enviada ao contato.">
           {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={4} maxLength={2000} value={nota} onChange={(e) => setNota(e.target.value)} />}
@@ -260,7 +263,7 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
     if (d?.tipo === "ok") aoConcluir();
   }
   return (
-    <Modal titulo="Agendar mensagem" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
+    <Modal folha titulo="Agendar mensagem" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
       <form onSubmit={(e) => void enviar(e)} className="space-y-3">
         <Campo rotulo="Mensagem" obrigatorio>
           {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={4} maxLength={4000} value={texto} onChange={(e) => setTexto(e.target.value)} />}
@@ -271,6 +274,73 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
         <FeedbackAcao erro={acao.erro} />
         <Rodape ocupado={acao.ocupado} aoFechar={aoFechar}><Botao type="submit" ocupado={acao.ocupado} disabled={!texto.trim()}>Agendar</Botao></Rodape>
       </form>
+    </Modal>
+  );
+}
+
+type AlvoPendente = { tipo: "convite"; item: ConviteAtivo } | { tipo: "agendamento"; item: AgendamentoAtivo };
+const FORMATO_DATA = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+/** Convites ativos e mensagens agendadas do atendimento; "Revogar convite" e "Cancelar agendamento" pedem confirmação. */
+export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { atendimentoId: string; aoFechar: () => void; aoConcluir: (mensagem: string) => void }) {
+  const [dados, setDados] = useState<{ convites: ConviteAtivo[]; agendamentos: AgendamentoAtivo[] } | null>(null);
+  const [alvo, setAlvo] = useState<AlvoPendente | null>(null);
+  const [carregou, setCarregou] = useState(false);
+  const carregar = () => { void listarConvitesEAgendamentos(atendimentoId).then(setDados).catch(() => setDados({ convites: [], agendamentos: [] })); };
+  if (!carregou) { setCarregou(true); carregar(); }
+
+  if (alvo) {
+    const convite = alvo.tipo === "convite";
+    return (
+      <ConfirmarAcao
+        folha
+        titulo={convite ? `Revogar o convite de ${alvo.item.nome}?` : "Cancelar esta mensagem agendada?"}
+        confirmacao={convite ? "revogação" : "cancelamento"}
+        idempotente={false}
+        acao={() => (convite ? revogarParticipante(alvo.item.id) : cancelarAgendamentoDoAtendimento({ atendimentoId, intencaoId: alvo.item.id }))}
+        aoConcluir={() => { aoConcluir(convite ? "Convite revogado." : "Agendamento cancelado."); setAlvo(null); setDados(null); carregar(); }}
+        aoCancelar={() => setAlvo(null)}
+      >
+        {convite
+          ? <p>{alvo.item.nome} perde o acesso a este atendimento agora, e o que a pessoa deixou pendente ou agendado aqui é cancelado. Não há desfazer; só um novo convite devolve o acesso.</p>
+          : <p>A mensagem não será enviada ao contato. Não há desfazer; para enviar, é preciso agendar de novo.</p>}
+      </ConfirmarAcao>
+    );
+  }
+
+  return (
+    <Modal folha titulo="Convites e agendamentos" aoFechar={aoFechar}>
+      {!dados ? <p className="text-sm text-gray-600">Carregando…</p> : (
+        <div className="space-y-4">
+          <section aria-label="Convites ativos" className="space-y-2">
+            <h4 className="text-sm font-medium">Convites ativos</h4>
+            {dados.convites.length === 0 ? <EstadoVazio>Nenhum convite ativo que você possa revogar.</EstadoVazio> : (
+              <ul className="space-y-2">
+                {dados.convites.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span>{c.nome} até {FORMATO_DATA.format(new Date(c.fim))}{c.podeEnviar ? " (pode enviar)" : " (só leitura)"}</span>
+                    <Botao tamanho="sm" variante="perigo" onClick={() => setAlvo({ tipo: "convite", item: c })}>Revogar convite</Botao>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section aria-label="Mensagens agendadas" className="space-y-2">
+            <h4 className="text-sm font-medium">Mensagens agendadas</h4>
+            {dados.agendamentos.length === 0 ? <EstadoVazio>Nenhuma mensagem agendada que você possa cancelar.</EstadoVazio> : (
+              <ul className="space-y-2">
+                {dados.agendamentos.map((m) => (
+                  <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 truncate">{FORMATO_DATA.format(new Date(m.agendadaPara))}: {m.texto}</span>
+                    <Botao tamanho="sm" variante="perigo" onClick={() => setAlvo({ tipo: "agendamento", item: m })}>Cancelar agendamento</Botao>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      )}
+      <div className="mt-4 flex justify-end"><Botao variante="secundario" onClick={aoFechar}>Fechar</Botao></div>
     </Modal>
   );
 }
