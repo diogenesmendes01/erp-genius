@@ -118,7 +118,10 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
       return proposta;
     });
     if (dados.aprovar) await consultarRevisaoDriveFixada({ fonte: { fileId: preflight.arquivoOficialId, driveId: preflight.driveOrganizacaoId, revisionId: preflight.driveRevisionId, md5Checksum: preflight.driveRevisionMd5, size: preflight.driveRevisionSize.toString(), mimeType: preflight.mimeType }, token: obterTokenDrive });
-    return prisma.$transaction(async (tx) => {
+    // A decisão concorrente perdedora em SERIALIZABLE termina com 40001/P2034. Não há replay,
+    // mas a nova tentativa enxerga a decisão já confirmada e devolve o ErroRegra claro abaixo,
+    // em vez de "Erro inesperado". A consulta ao Drive fica fora da função repetida.
+    return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
       await exigirGestaoFresca(tx, decisor.id);
       const proposta = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { id: dados.propostaId }, include: { decisao: true } });
       if (!proposta || proposta.decisao) throw new ErroRegra("A proposta de regularização não está disponível.");
@@ -138,7 +141,7 @@ export async function decidirRegularizacaoFonteGravacao(input: unknown) {
       await registrarEvento(tx, { tipo: "FonteGravacaoRegularizada", agregadoTipo: agregado.tipo, agregadoId: agregado.id, autorId: decisor.id,
         payload: { propostaId: proposta.id, decisaoId: decisao.id, fonteId: fonte.id, versao: fonte.versao } });
       return { id: decisao.id, aprovada: true as const, fonteId: fonte.id };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
   });
 }
 

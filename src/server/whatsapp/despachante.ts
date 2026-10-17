@@ -20,7 +20,7 @@ import { DriverWhatsApp, Papel, type EstadoPolitica } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
-import { envioAvisosAgendaHabilitado } from "@/server/comunicacoes-agenda/envio-gate";
+import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/server/comunicacoes-agenda/envio-gate";
 import { aplicarResposta } from "./status-atendimento";
 import { comContatoIndividual } from "./grupos";
 
@@ -52,7 +52,10 @@ export interface ResultadoDespacho {
   canceladas: number;
   adiadas: number;
   falhas: number;
-  pendentes: number; // deixadas na fila (kill switch / política desligada / envio de agenda desligado)
+  pendentes: number; // deixadas na fila (kill switch / política desligada)
+  /** Avisos de agenda retidos com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado (R1 do #209, C2):
+   *  contados à parte para não se misturarem ao kill switch em `pendentes`. */
+  retidasAgenda: number;
 }
 
 function horaLocal(data: Date, fuso: string): number {
@@ -120,9 +123,10 @@ export type DecisaoEnvio = "RETER_AGENDA" | "SIMULAR" | "ENVIAR";
  * Última decisão antes do driver (revisão R1 do #208, C2). O cron geral do WhatsApp drena a
  * MESMA fila que o worker de agenda (`despacharFila` sem `somenteAvisosAgenda`), então o
  * despachante confere COMUNICACOES_AGENDA_ENVIO_ENABLED por conta própria: com o envio de
- * agenda desligado, a intenção de aviso fica como está (PENDENTE/ADIADA), como no kill
+ * agenda desligado, a intenção de aviso fica no mesmo status (PENDENTE/ADIADA), como no kill
  * switch — não é enviada, nem vira SIMULADA, e volta a ser avaliada quando o envio for
- * religado. Vale também sem WHATSAPP_LIVE: o aviso retido não é "ensaiado".
+ * religado. Vale também sem WHATSAPP_LIVE: o aviso retido não é "ensaiado". O motivo
+ * `envio_agenda_desligado` fica gravado na intenção e o resultado conta em `retidasAgenda`.
  */
 export function decidirEnvio(e: EntradaShadow & { envioAgendaHabilitado: boolean }): DecisaoEnvio {
   if (e.agenda && !e.envioAgendaHabilitado) return "RETER_AGENDA";
@@ -198,6 +202,7 @@ export async function despacharFila(
     adiadas: 0,
     falhas: 0,
     pendentes: 0,
+    retidasAgenda: 0,
   };
 
   for (const it of intencoes) {
@@ -472,7 +477,8 @@ export async function despacharFila(
       envioAgendaHabilitado: envioAvisosAgendaHabilitado(),
     });
     if (decisao === "RETER_AGENDA") {
-      r.pendentes += 1;
+      await reterAvisoAgenda(it.id);
+      r.retidasAgenda += 1;
       continue;
     }
     if (decisao === "SIMULAR") {
@@ -757,6 +763,23 @@ function chaveComercial(it: { politicaComercial: { chave: string } | null }): st
 
 // Marks dos guard-rails só transitam de estados "na fila" — nunca clobberam um claim
 // ENVIANDO de outro worker nem estados terminais (review PR #49).
+/**
+ * Aviso de agenda retido com o envio de agenda desligado (R1 do #209, C2): grava só o motivo,
+ * sem mudar o status (PENDENTE/ADIADA) nem o `despacharAposEm`, para a fila operacional mostrar
+ * por que o aviso não sai. Só escreve quando o motivo ainda não é este: o cron reavalia a
+ * intenção a cada tick e não precisa reescrevê-la (nem tocar `atualizadoEm`) toda vez.
+ */
+async function reterAvisoAgenda(id: string): Promise<void> {
+  await prisma.intencaoMensagem.updateMany({
+    where: {
+      id,
+      status: { in: ["PENDENTE", "ADIADA"] },
+      OR: [{ motivoFalha: null }, { motivoFalha: { not: MOTIVO_ENVIO_AGENDA_DESLIGADO } }],
+    },
+    data: { motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
+  });
+}
+
 async function marcar(id: string, status: "CANCELADA" | "FALHOU", motivo: string): Promise<void> {
   await prisma.intencaoMensagem.updateMany({
     where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
