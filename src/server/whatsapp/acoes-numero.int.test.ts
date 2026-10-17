@@ -125,6 +125,17 @@ describe("ciclo do número no motor", () => {
     expect(chamar).toHaveBeenCalledWith(`/v1/numeros/${num.id}`, expect.objectContaining({ metodo: "PUT", json: { rotulo: "Secretaria" } }));
   });
 
+  it("editar número legado preserva driver e providerRef e não o cadastra no motor", async () => {
+    const legado = await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511999990010", rotulo: "Antigo", driver: "META_CLOUD", providerRef: "phone-number-id-123", finalidade: "COBRANCA" },
+    });
+    const r = await salvarNumeroWhatsApp({ id: legado.id, telefoneE164: "+5511999990010", rotulo: "Renomeado", finalidade: "COBRANCA" });
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    const depois = await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: legado.id } });
+    expect(depois).toMatchObject({ driver: "META_CLOUD", providerRef: "phone-number-id-123", rotulo: "Renomeado" });
+    expect(chamar).not.toHaveBeenCalled();
+  });
+
   it("motor fora do ar ao salvar não desfaz o número (cadastro refeito no conectar)", async () => {
     chamar.mockRejectedValue(new ErroMotor("INDISPONIVEL", 0));
     const r = await salvarNumeroWhatsApp({ telefoneE164: "+5511999990002", rotulo: "Vendas", finalidade: "VENDAS" });
