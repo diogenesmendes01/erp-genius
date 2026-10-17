@@ -46,7 +46,7 @@ describe("estornarComissao", () => {
     expect([...MOTIVOS_ESTORNO]).toEqual(["CANCELAMENTO_MATRICULA", "DESISTENCIA_7_DIAS", "ERRO_LANCAMENTO", "OUTRO"]);
   });
 
-  it("só FINANCEIRO; só PENDENTE/APROVADA; PAGA exige clawback (fora da fase)", async () => {
+  it("só FINANCEIRO (e ADMINISTRADOR, que tem todas as capacidades); só PENDENTE/APROVADA; PAGA exige clawback (fora da fase)", async () => {
     logadoComo(gerente.id);
     expect((await estornarComissao({ id: aprovada, motivo: "ERRO_LANCAMENTO" })).ok).toBe(false);
     logadoComo(vendedor.id);
@@ -60,6 +60,14 @@ describe("estornarComissao", () => {
     expect(c.status).toBe("ESTORNADA");
     expect(c.valor.toString()).toBe("25");
     expect((await eventosDo("Comissao", aprovada)).at(-1)).toMatchObject({ tipo: "ComissaoEstornada", payload: { de: "APROVADA", motivo: "CANCELAMENTO_MATRICULA" } });
+  });
+
+  it("ADMINISTRADOR estorna (matriz da Task 4: o admin recebe todas as capacidades)", async () => {
+    const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    logadoComo(admin.id);
+    expect(await estornarComissao({ id: aprovada, motivo: "ERRO_LANCAMENTO" })).toMatchObject({ ok: true });
+    expect((await prisma.comissao.findUniqueOrThrow({ where: { id: aprovada } })).status).toBe("ESTORNADA");
+    expect((await eventosDo("Comissao", aprovada)).at(-1)).toMatchObject({ tipo: "ComissaoEstornada", autorId: admin.id });
   });
 
   it("estorna PENDENTE com detalhe, e não estorna duas vezes nem sem existir", async () => {

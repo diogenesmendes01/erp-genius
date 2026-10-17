@@ -2,6 +2,7 @@ import { Papel, Prisma, type StatusComissao } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComissoes } from "@/server/financeiro/consultas";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { nomeCompleto } from "@/lib/nome";
 
@@ -57,9 +58,13 @@ const porMoedaEStatus = (a: { moeda: string; status?: string }, b: { moeda: stri
 async function matriculadasSemComissao(usuario: UsuarioSessao) {
   const todos = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO);
   if (!todos && !usuario.papeis.includes(Papel.GERENTE_COMERCIAL)) return [];
-  const donos: Prisma.OportunidadeWhereInput = todos ? {} : { vendedor: { OR: [{ id: usuario.id }, { gerenteComercialId: usuario.id }] } };
+  // Escopo comercial padrão (coberturas vigentes + equipe de gerenteComercialId); FINANCEIRO vê tudo, mas
+  // escopoComercialAtual o trataria como sem acesso, por isso o {} explícito.
+  const donos: Prisma.OportunidadeWhereInput = todos ? {} : await escopoComercialAtual(usuario);
+  // Matrícula cancelada ou encerrada não gera comissão a cobrar: não entra como pendência.
+  const vigente: Prisma.MatriculaWhereInput = { status: { notIn: ["CANCELADA", "ENCERRADA"] }, comissoes: { none: {} } };
   const ops = await prisma.oportunidade.findMany({
-    where: { AND: [donos, { etapa: "MATRICULADO", matricula: { is: { comissoes: { none: {} } } } }] },
+    where: { AND: [donos, { etapa: "MATRICULADO", matricula: { is: vigente } }] },
     select: { id: true, nome: true }, orderBy: [{ criadoEm: "desc" }, { id: "asc" }], take: 200,
   });
   return ops.map((o) => ({ oportunidadeId: o.id, nome: o.nome }));

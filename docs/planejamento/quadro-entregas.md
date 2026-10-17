@@ -34,10 +34,10 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - Reverificação antes do PR (16/10/2026, HEAD `61d19cd`): `tsc --noEmit` saída 0; `npm test` saída 0 (635 arquivos, 4519 testes); `npm run lint` saída 0 (0 erros, 44 avisos); `vitest related --run -c vitest.integration.config.ts` sobre o diff contra `origin/claude/fase1-c-telas`: saída 1, 7 falhas em 165 testes. As mesmas 7 falham em `origin/claude/fase1-c-telas` (rodado em `whatsapp/inbox.int.test.ts` e `academico/visibilidade.int.test.ts`): falhas da linha de base, nenhuma nova.
 - A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
 - **Pendências registradas (Fase 2/4):**
-  - `revalidatePath` para rotas removidas, inofensivos mas mortos: `/pipeline` em `src/server/comercial/acoes.ts` (linhas 90 e 631), `src/server/matricula/acoes.ts:70` e `src/server/ia/acoes.ts:37` (sai com o Bloco D); `/carteiras` em `src/server/acesso/coberturas.ts:24,39`; `/comissoes` em `src/server/matricula/acoes.ts:74`.
-  - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:25,35` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
+  - `revalidatePath` para rotas removidas, inofensivos mas mortos: `/pipeline` em `src/server/comercial/acoes.ts` (linhas 90 e 631), `src/server/matricula/acoes.ts:70` e `src/server/ia/acoes.ts:37` (sai com o Bloco D); `/carteiras` em `src/server/acesso/coberturas.ts:24,39`. (O `revalidatePath("/comissoes")` de `src/server/matricula/acoes.ts:74` voltou a valer: a rota `/comissoes` do CRM foi recriada na Fase 2, bloco I.)
+  - ~~Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:25,35` e `src/server/financeiro/ordem-comissoes.ts:5-6`.~~ Resolvido na Fase 2, bloco I: os comentários passaram a citar `/financeiro/comissoes`, para não confundir com o painel do CRM em `/comissoes`.
   - **Código órfão em `src/server/comercial/consultas.ts`** (sem uso fora do próprio módulo desde a tarefa 9; o `page.test` do WhatsApp deixou de mocká-lo): `carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com as interfaces `ReguaComercialConfig`, `DegrauComercialConfig`, `NumeroResumo`, `TemplateResumo` e `EnsaioComercial`. Somam-se a `salvarConfigComercial`, `salvarReguaComercial` e `carregarSaudacoesSimuladas`, já listados no plano. Remover na Fase 2/4.
-  - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
+  - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0). Na Fase 2, bloco I, `/comissoes` (painel do CRM, título "Comissões" para o Administrador) voltou à lista.
 
 ## Fase 1D — aceite do bloco (PR 4, 16/10/2026)
 
@@ -57,11 +57,11 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 | Pendência | Onde | Fase |
 |---|---|---|
 | `CoberturaCarteira` sem UI: `concederCobertura`/`revogarCobertura` sem tela; o escopo continua lendo as coberturas gravadas | `src/server/acesso/coberturas.ts` | 2 (Carteira) |
-| VENDEDOR sem "minhas comissões" (`/financeiro` só para FINANCEIRO e GC) | `src/app/(app)/financeiro/papeis.ts:6` | 2 (Comissões) |
+| ~~VENDEDOR sem "minhas comissões" (`/financeiro` só para FINANCEIRO e GC)~~ Resolvido na Fase 2, bloco I: `/comissoes` mostra "Minhas comissões" ao VENDEDOR | `src/app/(app)/comissoes/page.tsx` | 2 (Comissões) |
 | Inbox sem nota interna (`registrarNotaInterna` sem tela na thread; a ficha do lead ainda tem) e sem etapa/temperatura do lead | `InboxCliente.tsx` | 3 |
 | `ThreadConversa.lead` ainda calculado e não lido pela tela | `consultas-inbox.ts` | 3 |
 | Código órfão sem chamador: `fila.enfileirarIntencaoComercial`, `elegibilidade.reagendamentoPendente`, `comercial/regua-comercial.ts`, `comercial/regua-fabrica.ts` (ainda usada por `prisma/seed-whatsapp.ts:4`), ramos COMERCIAL/GESTAO/reativa do `despachante.ts`, `salvarConfigComercial`, `salvarReguaComercial`, `carregarSaudacoesSimuladas`, `checkinExperimental`, `EsqueletoColunas` | `src/server/**` | 2/4 |
-| `revalidatePath("/pipeline")` e `("/comissoes")` inofensivos | `matricula/acoes.ts:70,74`, `comercial/acoes.ts:90,631` | 2 |
+| `revalidatePath("/pipeline")` inofensivo (o `("/comissoes")` de `matricula/acoes.ts:74` voltou a valer com a rota do bloco I) | `matricula/acoes.ts:70`, `comercial/acoes.ts:90,631` | 2 |
 | Scripts fora do `tsc`/vitest quebrados: `scripts/auditoria/cenarios.test.mjs:30` (cron-comercial) e `scripts/validacao/http-acesso.mjs:47` (`/carteiras`; entrada já retirada no Bloco C) | `scripts/` | 2 |
 | `@dnd-kit/*` sem uso (remover só com o integrador) e `ANTHROPIC_API_KEY` nos composes | `package.json`, `docker-compose.*.yml` | 5 |
 | Campos de `ConfigComercial` órfãos (`autoLeadAtivo`, `saudacao*`, `copiloto*`, `gestao*`), `SugestaoIA`, `PoliticaComercial`/`DegrauComercial`: schema intocado | `prisma/schema.prisma` | 2 (migration reservada) |
@@ -2094,3 +2094,22 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco E): 3 arquivos,
   18 testes verdes, saída 0. Nenhuma das 7 falhas preexistentes foi tocada; a suíte completa fica com o integrador.
+
+### Verificação para o PR (bloco I, branch `claude/fase2-i-comissoes`, 17/10/2026)
+- Tarefas: 33 (painel de comissões por papel e moeda), 34 (tela `/comissoes` para vendedor, gerente e financeiro) e
+  35 (estorno pelo FINANCEIRO), mais a correção do `aprovadaEm` e o commit de correção da revisão final.
+- Correção da revisão final: "matriculadas sem comissão" passou a usar `escopoComercialAtual` (o FINANCEIRO e o
+  ADMINISTRADOR continuam vendo tudo) e não conta matrícula CANCELADA nem ENCERRADA; `estornarComissaoDoPainel`
+  entrou na lista fechada de `src/app/confirmacoes-mapa.ts`; teste do ADMINISTRADOR no estorno.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 655 arquivos e 4698 testes verdes (linha de base: 643 arquivos e 4607 testes).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- Integração no perfil `integracao`: `src/server/crm/comissoes-painel.int.test.ts` e `comissoes-estorno.int.test.ts`
+  verdes (2 arquivos, 10 testes); `vitest related --run -c vitest.integration.config.ts` sobre `comissoes-painel.ts`,
+  `financeiro/consultas.ts`, `financeiro/ordem-comissoes.ts` e `confirmacoes-mapa.ts`: saída 0, 4 arquivos e 64 testes
+  verdes. Nenhuma das 7 falhas preexistentes foi tocada; a suíte `npm run test:int` completa fica com o integrador.
+- **Pendência bloqueante do merge — Q7 (gate da Task 35):** a Q7 segue como decisão provisória
+  (`00-visao-geral.md`, Global Constraints e `src/server/crm/permissoes.ts`). O PR F2-I sai com o estorno manual pelo
+  FINANCEIRO sob decisão provisória; o ADMINISTRADOR também estorna, porque recebe todas as capacidades (matriz da
+  Task 4, com teste). O dono do produto precisa confirmar a Q7 antes do merge: se decidir "estorno automático no
+  cancelamento da matrícula", a Task 35 sai do PR; se decidir outro operador, muda só a matriz da Task 4.

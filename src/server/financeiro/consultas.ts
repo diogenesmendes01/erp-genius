@@ -22,7 +22,7 @@ export function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prism
 export const COMISSOES_POR_PAGINA = 50;
 
 /**
- * Busca de /comissoes (E4, §5.6 A9): por palavras no nome do beneficiário — a coluna que a tabela
+ * Busca de /financeiro/comissoes (E4, §5.6 A9): por palavras no nome do beneficiário — a coluna que a tabela
  * mostra —, cada uma precisa aparecer ("ana silva" acha "Ana Maria Silva"). No máximo 6 palavras
  * (limita o tamanho da consulta, como nas outras listas). Sem busca, nenhuma condição.
  */
@@ -32,7 +32,7 @@ export function condicoesBuscaComissoes(busca: string): Prisma.ComissaoWhereInpu
 }
 
 /**
- * Lista de /comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
+ * Lista de /financeiro/comissoes (E4): antes trazia todas as comissões do escopo de uma vez, sem filtro nem
  * página. Filtro por situação e busca (em AND com o escopo), 50 por página, total filtrado. Ordem pelo
  * cabeçalho (E1) feita no banco, antes da página, com desempate por id; sem ordem, beneficiário crescente.
  */
