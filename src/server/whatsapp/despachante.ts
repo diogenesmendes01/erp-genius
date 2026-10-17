@@ -260,7 +260,8 @@ export async function despacharFila(
     }
 
     // 2. Trava de driver (S1 revogada para MOTOR, D38): disparo do CRON exige driver que aceite
-    //    automação (MOTOR ou Meta); BAILEYS legado nunca recebe automação desassistida.
+    //    automação: hoje só MOTOR (META_CLOUD não tem driver em DRIVERS — R1 do #213, C1);
+    //    BAILEYS legado nunca recebe automação desassistida.
     //    Reativa e cadência comercial são isentas (D34).
     if (it.origem === "CRON" && !reativa && !comercial && !driverAceitaAutomacao(it.numero.driver)) {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
