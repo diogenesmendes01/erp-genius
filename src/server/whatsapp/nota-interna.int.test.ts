@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
+import { transferirAtendimento } from "./acoes-atendimento";
 import { notasDoAtendimento, registrarNotaAtendimento } from "./acoes-conversa";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
@@ -50,5 +51,20 @@ describe("nota interna do atendimento", () => {
     expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "" })).ok).toBe(false);
     expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "x".repeat(2001) })).ok).toBe(false);
     expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "x".repeat(2000) })).ok).toBe(true);
+  });
+
+  it("transferência grava o contexto como nota interna do novo atendimento, com o autor de quem transferiu", async () => {
+    const adm = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    const numero = await criarNumeroSetor({ telefoneE164: "+5511999990002", setores: ["COMERCIAL", "SECRETARIA"], donoId: adm.id });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880002" } });
+    const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: adm.id }));
+    comoUsuario(adm);
+    const contexto = "Pediu histórico escolar";
+    const r = await transferirAtendimento({ atendimentoId: a.id, destino: "SECRETARIA", destinoChave: null, contexto });
+    expect(r.ok).toBe(true);
+    const novoId = r.ok ? r.dado!.novoAtendimentoId : "";
+    expect((await notasDoAtendimento(novoId))[0]).toMatchObject({ nota: contexto, autorNome: adm.nome });
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 });

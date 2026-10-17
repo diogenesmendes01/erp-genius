@@ -111,6 +111,29 @@ export function midiaSaidaDoAutor(url: string, autorId: string): boolean {
   );
 }
 
+/**
+ * Copia uma mídia já armazenada (recebida em `whatsapp/` ou enviada em `whatsapp-out/`) para
+ * `whatsapp-out/<autor>/`, de onde o despachante a lê (encaminhamento). Só aceita essas duas
+ * origens; devolve null se o caminho for inválido, de outra pasta ou o arquivo sumiu.
+ */
+export async function copiarMidiaParaSaida(autorId: string, midiaPath: string): Promise<string | null> {
+  const prefixo = "/api/files/";
+  if (!midiaPath.startsWith(prefixo)) return null;
+  const segmentos = midiaPath.slice(prefixo.length).split("/").filter(Boolean);
+  if (segmentos[0] !== SUBPASTA && segmentos[0] !== SUBPASTA_SAIDA) return null;
+  const caminho = resolverCaminhoUpload(segmentos);
+  if (!caminho) return null;
+  const mime = contentTypePorExtensao(caminho);
+  if (!mime) return null;
+  let bytes: Buffer;
+  try {
+    bytes = await readFile(caminho);
+  } catch {
+    return null;
+  }
+  return salvarMidiaSaida(autorId, bytes, mime);
+}
+
 export interface MidiaParaEnvio {
   mime: string;
   nomeArquivo: string;
