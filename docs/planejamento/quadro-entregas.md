@@ -2535,3 +2535,13 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   academico/visibilidade (6) e agenda/substituicao-avisos (3). `vitest related` não foi usado: `labels.ts` espalha o
   alvo por quase toda a suíte; a completa fica com o integrador.
 **Estado**: Implementado; aguardando o integrador.
+
+## Fase 4C — verificação final do bloco (17/10/2026)
+
+- Branch `claude/fase4-c-webhook`, tarefas 9 a 17 do plano `04-fase-motor.md`, empilhada sobre `claude/fase4-b-despachante`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 681 arquivos e 4928 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` foi interrompido por varredura ampla (`evento.ts` alcança quase toda a suíte);
+  rodados os 10 arquivos `*.int.test.ts` do diff e de `whatsapp/motor/` + `inbox` + `saude`: saída 0, 88 testes verdes.
+**Estado**: Implementado; aguardando o integrador.
