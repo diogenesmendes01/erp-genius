@@ -5,18 +5,16 @@ import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { UPLOAD_DIR } from "@/lib/uploads";
 
-// Drivers FALSOS: este arquivo liga WHATSAPP_LIVE=1 para exercitar o caminho "real" do
-// despachante (o que os outros int tests nunca fazem) — nenhuma mensagem pode sair.
+// Driver do motor FALSO: este arquivo liga WHATSAPP_LIVE=1 para exercitar o caminho "real" do
+// despachante — nenhuma mensagem pode sair. Desde a Fase 4 (Tarefa 5) só o motor envia; números
+// legados (META_CLOUD/BAILEYS) falham com driver_indisponivel sem qualquer I/O.
 const { enviarTextoMock, enviarTemplateMock, enviarMidiaMock } = vi.hoisted(() => ({
-  enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-texto" }),
-  enviarTemplateMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-template" }),
-  enviarMidiaMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-midia" }),
+  enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-texto", mensagemIdMotor: "c:texto" }),
+  enviarTemplateMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-template", mensagemIdMotor: "c:template" }),
+  enviarMidiaMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-midia", mensagemIdMotor: "c:midia" }),
 }));
-vi.mock("./drivers/meta-cloud", () => ({
-  driverMetaCloud: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
-}));
-vi.mock("./drivers/evolution", () => ({
-  driverEvolution: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
+vi.mock("./drivers/motor", () => ({
+  driverMotor: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
 }));
 
 import { prisma } from "@/lib/prisma";
@@ -121,7 +119,7 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
 describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #53 2ª passada)", () => {
   async function seedSaudacao(estado: "SHADOW" | "ATIVA") {
     const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511988880000", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-x" },
+      data: { telefoneE164: "+5511988880000", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS", providerRef: "n-vendas" },
     });
     const contato = await seedContato();
     await prisma.configComercial.create({ data: { id: "comercial", saudacaoEstado: estado, saudacaoTexto: "Oi!" } });
@@ -138,7 +136,7 @@ describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #5
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
   });
 
-  it("saudação ATIVA: a MESMA reativa envia de verdade (contra-prova) — em Baileys, sem trava S1", async () => {
+  it("saudação ATIVA: a MESMA reativa envia de verdade (contra-prova) pelo motor", async () => {
     await seedSaudacao("ATIVA");
     const r = await despacharFila();
     expect(r.despachadas).toBe(1);
@@ -147,13 +145,13 @@ describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #5
   });
 });
 
-describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys)", () => {
+describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 · D38 — automação no motor)", () => {
   async function seedComercial(
     estado: "SHADOW" | "ATIVA",
     over: { driver?: DriverWhatsApp; template?: StatusTemplate | null } = {},
   ) {
     const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: over.driver ?? "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
+      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: over.driver ?? "MOTOR", finalidade: "VENDAS", providerRef: "n-comercial" },
     });
     const contato = await seedContato();
     const lead = await prisma.oportunidade.create({ data: { codigo: "L-000123", nome: "Ana", telefoneE164: contato.telefoneE164 } });
@@ -175,7 +173,7 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
     });
   }
 
-  it("ATIVA: a cadência ENVIA no Baileys (trava S1 NÃO cancela) — review doc 27", async () => {
+  it("ATIVA: a cadência ENVIA pelo motor (trava S1 NÃO cancela) — review doc 27", async () => {
     await seedComercial("ATIVA");
     const r = await despacharFila();
     expect(r.despachadas).toBe(1);
@@ -192,12 +190,11 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
   });
 
-  // Camada 2 (doc 26 · review PR #55 P1): no número OFICIAL a cadência não é reativa —
-  // +3d/+7d caem fora da janela de 24h. Sem template APROVADO, mandar texto livre é envio
-  // indevido (ou erro da API); FALHAR aqui é o comportamento certo — a fila humana mostra
-  // o motivo em vez de o degrau sumir em silêncio.
-  it("META_CLOUD sem template APROVADO: a cadência FALHA sem tocar o driver", async () => {
-    await seedComercial("ATIVA", { driver: "META_CLOUD", template: null });
+  // Números legados: a Camada 2 da Meta (template APROVADO) saiu com o driver Meta na Fase 4
+  // (Tarefa 5). Hoje META_CLOUD e BAILEYS não têm driver no despachante e FALHAM sem I/O — a
+  // fila humana mostra o motivo em vez de o degrau sumir em silêncio.
+  it.each(["META_CLOUD", "BAILEYS"] as const)("%s legado: a cadência FALHA com driver_indisponivel sem tocar o driver", async (driver) => {
+    await seedComercial("ATIVA", { driver, template: "APROVADO" });
     const r = await despacharFila();
     expect(r.falhas).toBe(1);
     expect(r.despachadas).toBe(0);
@@ -206,23 +203,16 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
 
     const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
     expect(intencao.status).toBe("FALHOU");
-    expect(intencao.motivoFalha).toBe("template_nao_aprovado_meta");
+    expect(intencao.motivoFalha).toBe("driver_indisponivel");
   });
 
-  it("META_CLOUD com template só EM_REVISAO também falha (aprovado é aprovado)", async () => {
-    await seedComercial("ATIVA", { driver: "META_CLOUD", template: "EM_REVISAO" });
-    const r = await despacharFila();
-    expect(r.falhas).toBe(1);
-    expect(enviarTemplateMock).not.toHaveBeenCalled();
-    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("template_nao_aprovado_meta");
-  });
-
-  it("contra-prova: com template APROVADO, o MESMO degrau sai como template na Meta", async () => {
-    await seedComercial("ATIVA", { driver: "META_CLOUD", template: "APROVADO" });
+  it("MOTOR com template: o degrau sai por enviarTemplate (texto renderizado), sem exigir aprovação Meta", async () => {
+    await seedComercial("ATIVA", { template: "EM_REVISAO" });
     const r = await despacharFila();
     expect(r.despachadas).toBe(1);
     expect(r.falhas).toBe(0);
     expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
+    expect(enviarTemplateMock.mock.calls[0][2]).toMatchObject({ nome: "lead_novo_30min", corpoRenderizado: "Oi Ana!" });
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
   });
 });

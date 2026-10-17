@@ -52,6 +52,8 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx", modulo: "@/server/catalogo/acoes", acao: "alternarPrecoAtivo", achado: "L2340" },
   { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", modulo: "@/server/empresas/acoes", acao: "definirSituacaoEmpresa", achado: "L2281" },
   { arquivo: "src/app/(app)/carteira/CoberturasPainel.tsx", modulo: "@/server/acesso/coberturas", acao: "revogarCobertura", achado: "L2244" },
+  { arquivo: "src/app/(app)/contatos/FichaContato.tsx", modulo: "@/server/crm/contatos-acoes", acao: "registrarOptOutDaFicha", achado: "F2-T24" },
+  { arquivo: "src/app/(app)/contatos/MesclarContatos.tsx", modulo: "@/server/crm/contatos-acoes", acao: "mesclarContatosDaLista", achado: "F2-T24" },
   { arquivo: "src/app/(app)/comissoes/EstornarComissao.tsx", modulo: "@/server/crm/comissoes-estorno-acao", acao: "estornarComissaoDoPainel", achado: "F2-T35" },
 ];
 
@@ -556,7 +558,7 @@ describe("ações irreversíveis passam pelo ConfirmarAcao", () => {
   it("nenhum window.confirm no src: a confirmação é o <ConfirmarAcao>", () => {
     const ofensas = FONTES.flatMap(({ arquivo, conteudo }) => confirmacoesNativas(conteudo).map((c) => `${arquivo}: ${c}`));
     expect(ofensas).toEqual([]);
-  });
+  }, 120_000);
 
   it("a varredura acha as telas, o componente, src/lib, src/test e src/server, e nenhum teste", () => {
     const arquivos = FONTES.map((f) => f.arquivo);

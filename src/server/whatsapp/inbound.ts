@@ -23,6 +23,8 @@ export interface InboundNormalizado {
   /** pushName/perfil do REMETENTE. Em fromMe é o perfil da própria linha: descartado aqui. */
   nomeExibicao?: string | null;
   providerMessageId: string;
+  /** Id da mensagem no motor (chatJid:idDoProtocolo); só o driver MOTOR preenche. */
+  mensagemIdMotor?: string | null;
   corpo: string | null;
   tipo: TipoMensagem;
   /** URL canônica /api/files/... do binário já baixado pelo webhook (E3 — gap A3). */
@@ -86,6 +88,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           driver: m.driver,
           origem: m.fromMe ? "CELULAR" : null, // fromMe fora do ERP: enviada pelo celular (E3.6)
           providerMessageId: m.providerMessageId,
+          mensagemIdMotor: m.mensagemIdMotor ?? null,
           criadoEm: m.quando,
         },
       });
@@ -159,6 +162,8 @@ export interface StatusNormalizado {
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;
   providerMessageId: string;
+  /** Motor: o `providerMessageId` pode diferir do gravado no envio; o UUID da tentativa é a segunda chave. */
+  clientMessageId?: string | null;
   status: StatusMensagem;
   driver: DriverWhatsApp;
   quando: Date;
@@ -173,20 +178,29 @@ const ORDEM_STATUS: Record<StatusMensagem, number> = {
   FALHOU: 9,
 };
 
-export async function processarStatusNormalizado(s: StatusNormalizado): Promise<"atualizado" | "ignorado"> {
+export async function processarStatusNormalizado(
+  s: StatusNormalizado,
+  /** Roda na MESMA transação do update (ex.: Evento de auditoria). */
+  aposAtualizar?: (tx: Prisma.TransactionClient, msg: { id: string }) => Promise<void>,
+): Promise<"atualizado" | "ignorado" | "sem_mensagem"> {
   const numero = await acharNumero(s);
   if (!numero) return "ignorado";
 
-  const msg = await prisma.mensagemWhatsApp.findUnique({
-    where: { numeroId_providerMessageId: { numeroId: numero.id, providerMessageId: s.providerMessageId } },
+  const ou: Prisma.MensagemWhatsAppWhereInput[] = [{ providerMessageId: s.providerMessageId }];
+  if (s.clientMessageId) ou.push({ clientMessageId: s.clientMessageId });
+  const msg = await prisma.mensagemWhatsApp.findFirst({
+    where: { numeroId: numero.id, OR: ou },
     select: { id: true, status: true },
   });
-  if (!msg) return "ignorado"; // status fora de ordem antes da mensagem existir: retry da Meta resolve
+  if (!msg) return "sem_mensagem"; // status antes da mensagem existir: o motor adia e reprocessa; a Meta reenvia
   if (ORDEM_STATUS[s.status] <= ORDEM_STATUS[msg.status]) return "ignorado";
 
-  await prisma.mensagemWhatsApp.update({
-    where: { id: msg.id },
-    data: { status: s.status, statusEm: s.quando },
+  await prisma.$transaction(async (tx) => {
+    await tx.mensagemWhatsApp.update({
+      where: { id: msg.id },
+      data: { status: s.status, statusEm: s.quando },
+    });
+    if (aposAtualizar) await aposAtualizar(tx, msg);
   });
   return "atualizado";
 }

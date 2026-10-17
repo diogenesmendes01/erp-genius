@@ -4,11 +4,12 @@ import { driverDoNumero } from "./despachante";
 
 // Revisão R1 do #205 (C3): número sem driver registrado em DRIVERS não pode virar `resultado_incerto`
 // (revisão humana de algo que com certeza não saiu). Falha com motivo estável antes de qualquer I/O.
+// Fase 4B: só o MOTOR está registrado; os legados META_CLOUD/BAILEYS ficam sem driver.
 describe("driverDoNumero", () => {
-  it("MOTOR antes do registro em DRIVERS lança ErroDriver driver_sem_implementacao", () => {
+  it.each(["META_CLOUD", "BAILEYS"] as const)("%s legado sem registro lança ErroDriver driver_sem_implementacao", (driver) => {
     let erro: unknown;
     try {
-      driverDoNumero("MOTOR");
+      driverDoNumero(driver);
     } catch (e) {
       erro = e;
     }
@@ -16,8 +17,7 @@ describe("driverDoNumero", () => {
     expect(erro).toMatchObject({ motivo: "driver_sem_implementacao", reprocessavel: false });
   });
 
-  it("META_CLOUD e BAILEYS seguem com o driver de sempre", () => {
-    expect(driverDoNumero("META_CLOUD").enviarTexto).toBeTypeOf("function");
-    expect(driverDoNumero("BAILEYS").enviarTexto).toBeTypeOf("function");
+  it("MOTOR segue com o driver do motor próprio", () => {
+    expect(driverDoNumero("MOTOR").enviarTexto).toBeTypeOf("function");
   });
 });

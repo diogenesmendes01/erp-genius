@@ -58,6 +58,28 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Motivo do encerramento · obrigatório · select",
     'Observação · obrigatório se motivoEnc === "Outro" · input · dica · erro: erroObsEnc',
   ],
+  "src/app/(app)/contatos/FichaContato.tsx": [
+    "Adicionar tag · opcional · select",
+    "Nome · opcional · input",
+    "E-mail · opcional · input",
+    "Cidade · opcional · input",
+    "Cargo · opcional · input",
+    "LinkedIn · opcional · input",
+    "Motivo · opcional · input",
+    "Nota interna · opcional · CampoTexto · dica",
+    "{c.nome} · obrigatório se c.obrigatorio · select",
+    "{c.nome} · obrigatório se c.obrigatorio · input",
+    "{c.nome} · obrigatório se c.obrigatorio · input",
+    "{c.nome} · obrigatório se c.obrigatorio · input",
+  ],
+  "src/app/(app)/contatos/ImportarContatos.tsx": [
+    "Planilha de contatos · opcional · input",
+    "Responsável pelas oportunidades novas · opcional · select · dica",
+  ],
+  "src/app/(app)/contatos/MesclarContatos.tsx": [
+    "Contato que permanece · opcional · select",
+    "{`${rotulo} que fica`} · opcional · select",
+  ],
   "src/app/(app)/funil/NovaOportunidade.tsx": [
     '{empresa ? "Nome da empresa" : "Nome"} · obrigatório · input · erro: erroLocal',
     "WhatsApp · opcional · input",
