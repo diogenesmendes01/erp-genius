@@ -14,6 +14,7 @@ import { decidirSubstituicaoDocente } from "./substituicao-decisao";
 import { processarAvisosAlteracaoAgenda } from "@/server/comunicacoes-agenda/avisos";
 import { enfileirarAvisosAgendaWhatsApp } from "@/server/comunicacoes-agenda/whatsapp";
 import { despacharFila } from "@/server/whatsapp/despachante";
+import { medirSaudeCanal } from "@/server/whatsapp/saude";
 import { ErroDriver } from "@/server/whatsapp/canal";
 import { prepararLoteMigracao } from "@/server/migracao/acoes";
 import { ensaiarVinculoMigracao, revisarCorrespondenciaProdutoMigracao, revisarCorrespondenciaStatusMatriculaMigracao, revisarCorrespondenciaTurmaMigracao } from "@/server/migracao/ensaio-vinculo";
@@ -360,14 +361,22 @@ it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia 
   enviarTemplateMock.mockResolvedValue({ providerMessageId: "3EB0-agenda-religada" });
   const retido = await despacharFila();
   expect(enviarTemplateMock).not.toHaveBeenCalled();
-  expect(retido).toMatchObject({ pendentes: 1, simuladas: 0, despachadas: 0 });
-  expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "PENDENTE", despachadaEm: null });
+  // R1 do #209 (C2): contada à parte do kill switch e com motivo próprio, sem mudar o status.
+  expect(retido).toMatchObject({ retidasAgenda: 1, pendentes: 0, simuladas: 0, despachadas: 0 });
+  expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "PENDENTE", despachadaEm: null, motivoFalha: "envio_agenda_desligado" });
+  const saude = await medirSaudeCanal();
+  expect(saude.fila).toMatchObject({ retidasAgendaDesligada: 1, envioAgendaHabilitado: false, pendenteHaMin: null });
+  // O tick seguinte não reescreve a intenção já marcada.
+  const marcada = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } });
+  expect(await despacharFila()).toMatchObject({ retidasAgenda: 1 });
+  expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).atualizadoEm).toEqual(marcada.atualizadoEm);
   expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: intencao.avisoAlteracaoAgendaId! } })).toMatchObject({ situacao: "PREPARADO" });
 
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
   await despacharFila();
   expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
   expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: intencao.avisoAlteracaoAgendaId! } })).toMatchObject({ situacao: "ENVIADO" });
+  expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "DESPACHADA", motivoFalha: null });
 });
 
 it("template revogado antes da preparação deixa o aviso pendente sem chamar o driver", async () => {
