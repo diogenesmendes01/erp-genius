@@ -2179,3 +2179,33 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco: saída 0, 4 arquivos e 37 testes verdes.
   `prisma migrate deploy` no banco `dev-gravacoes`: sem pendências. Nenhuma das 7 falhas preexistentes da linha de base
   foi tocada; a suíte de integração completa fica com o integrador.
+
+### Correções da R1 do #195 (17/10/2026)
+- **C1 (quadro × `main`):** o `main` (com o #194, 683bf3e5) foi mesclado nesta branch sem conflito. Os blocos B, C e
+  D ficam no quadro, cada um com a própria linha **Estado**.
+- **C2 (unicidade fora da transação):** `criarTag` e `salvarFiltro` passam a envolver a transação em `comUnicidade`
+  (`src/server/crm/unicidade.ts`), que traduz o P2002 de uma corrida na mesma mensagem da checagem prévia ("Já
+  existe uma tag com este nome." e "Já existe uma visualização com este nome."). A reativação de um filtro
+  arquivado agora é condicional (`updateMany` com `arquivadoEm: { not: null }`). Se outra chamada já o reativou,
+  a resposta é "Já existe…", e não há segundo Evento. Os testes estão em `unicidade.test.ts` e nos `*.int.test.ts`
+  de tags e filtros-salvos: a checagem prévia é forçada a "não achou" e o índice único do banco recusa. A mutação
+  (não traduzir o P2002) foi detectada pelos 2 testes de corrida.
+  Um `Promise.all` com duas actions reais não serve como teste aqui: o import dinâmico de `@/lib/auth` em
+  `exigirSessao`, feito em paralelo, escapa do `vi.mock` (`ERR_MODULE_NOT_FOUND` de `next/server`) até com nomes
+  diferentes. As suítes que testam concorrência mockam `exigirSessao` no arquivo inteiro (por exemplo
+  `academico/fluxo.int.test.ts`).
+- **C3 (`"use server"`):** no repositório, a diretiva fica no próprio módulo de `src/server` (como em
+  `comercial/acoes.ts` e `crm/oportunidades.ts`). Nenhum módulo `"use server"` reexporta de outro. Hoje nenhuma
+  tela chama as mutações de `crm/tags.ts`, `crm/campos.ts` e `crm/filtros-salvos.ts`: o `/funil` (bloco E) só
+  lê `listarFiltros` no servidor. Por isso, **a exposição como action vem junto com a tela** que a consumir
+  (salvar visualização no funil e contatos no bloco F). Nesse momento, as exportações que não são action
+  (`CLASSES_COR_TAG`, `escopoEmpresas`, `CHAVES_FILTRO`, `validarValorCampo`, `listarFiltros(usuario, …)`) precisam
+  sair do módulo marcado ou ficar num módulo `"use server"` separado só com as mutações. Nenhum módulo foi
+  criado agora sem consumidor.
+- **C4 (integração e ID):** o integrador confirmou o ID `20261003000000`. A integração rodou num banco descartável
+  próprio, `erp_genius_test_fix195` (localhost:54329): `prisma migrate deploy` aplicou tudo, `migrate status`
+  deu "Database schema is up to date!", e `campos`, `tags` e `filtros-salvos.int.test.ts` passaram (3 arquivos,
+  27 testes). O banco foi apagado no fim.
+- Verificação com o `main` mesclado: `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43 avisos já
+  existentes); `vitest run` com 657 arquivos e 4758 testes, todos verdes.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o merge. Não concluído.
