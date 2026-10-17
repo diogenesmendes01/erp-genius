@@ -342,7 +342,7 @@ export const MIGRADOS = [
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx",
   "src/app/(app)/diario/encontros/[id]/remarcacao/RemarcacaoParticular.tsx",
   "src/app/(app)/diario/reposicoes/ReposicoesEquipe.tsx",
-  "src/app/(app)/leads/[id]/contratacao/AgendaParticularFormulario.tsx",
+  "src/app/(app)/oportunidades/[id]/contratacao/AgendaParticularFormulario.tsx",
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx",
   "src/app/(app)/matriculas/[id]/fechamentos-horas/PrepararFechamento.tsx",

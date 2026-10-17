@@ -673,7 +673,7 @@ export const TELAS_DO_ITEM_3: [string, string][] = [
   ["src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/page.tsx", "LancarNotas"],
   ["src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/designacao/page.tsx", "FormularioDesignacao"],
   ["src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/participantes/page.tsx", "FormularioParticipantes"],
-  ["src/app/(app)/leads/[id]/contratacao/page.tsx", "PreparacaoFormulario"],
+  ["src/app/(app)/oportunidades/[id]/contratacao/page.tsx", "PreparacaoFormulario"],
   ["src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/substituicao/page.tsx", "Formulario"],
   ["src/app/(app)/academico/correcoes/[lancamentoId]/page.tsx", "ProporCorrecao"],
   ["src/app/(app)/academico/calendario/[id]/replanejamento/page.tsx", "EditorRevisao"],
@@ -759,7 +759,7 @@ describe("formulários preservam o digitado: sem key volátil, sem <form> aninha
       "src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/page.tsx :: LancarNotas",
       "src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/designacao/page.tsx :: FormularioDesignacao",
       "src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/participantes/page.tsx :: FormularioParticipantes",
-      "src/app/(app)/leads/[id]/contratacao/page.tsx :: PreparacaoFormulario",
+      "src/app/(app)/oportunidades/[id]/contratacao/page.tsx :: PreparacaoFormulario",
       "src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/substituicao/page.tsx :: Formulario",
       "src/app/(app)/academico/correcoes/[lancamentoId]/page.tsx :: ProporCorrecao",
       "src/app/(app)/academico/calendario/[id]/replanejamento/page.tsx :: EditorRevisao",
@@ -787,7 +787,7 @@ describe("formulários preservam o digitado: sem key volátil, sem <form> aninha
       expect(fonte, arquivo).not.toMatch(/method=["']get["']/i);
     }
     // As que ficaram com key: só a identidade do registro (a oferta escolhida; a base escolhida em outra tela).
-    expect(keysDoComponente(readFileSync("src/app/(app)/leads/[id]/contratacao/page.tsx", "utf8"), "PreparacaoFormulario")).toEqual(["key={o.selecionada.id}"]);
+    expect(keysDoComponente(readFileSync("src/app/(app)/oportunidades/[id]/contratacao/page.tsx", "utf8"), "PreparacaoFormulario")).toEqual(["key={o.selecionada.id}"]);
     expect(keysDoComponente(readFileSync("src/app/(app)/academico/calendario/novo/page.tsx", "utf8"), "PrepararCalendario")).toEqual(["key={base?.id ?? \"novo\"}"]);
     for (const [arquivo, componente] of TELAS_DO_ITEM_3.filter(([, c]) => c !== "PreparacaoFormulario" && c !== "PrepararCalendario")) {
       expect(keysDoComponente(readFileSync(arquivo, "utf8"), componente).every((k) => k === null), `${arquivo}: <${componente}> sem key`).toBe(true);

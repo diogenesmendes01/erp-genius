@@ -101,7 +101,7 @@ export const EXCECOES_VAZIO_PAGINADO: readonly Excecao[] = [
   },
   // Não são estado vazio: título, opção de seleção e instrução sobre a própria tela.
   {
-    arquivo: "src/app/(app)/leads/[id]/contratacao/page.tsx",
+    arquivo: "src/app/(app)/oportunidades/[id]/contratacao/page.tsx",
     trecho: "Turmas compatíveis nesta página",
     motivo: "título da lista de turmas da página atual da consulta (paginada por 'turmas'); descreve o recorte mostrado, não afirma ausência",
   },

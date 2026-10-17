@@ -15,6 +15,7 @@ export const NAV: NavItem[] = [
   { href: "/secretaria/envios-portal", label: "Envios do portal", icon: "Mail", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] },
   { href: "/diario", label: "Diário de aulas", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] },
   { href: "/home", label: "Home", icon: "Home", papeis: "all" },
+  { href: "/funil", label: "Funil", icon: "KanbanSquare", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
   {
     href: "/leads",
     label: "Leads",

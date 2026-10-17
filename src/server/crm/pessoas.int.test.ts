@@ -219,6 +219,37 @@ describe("criarLead com empresaId informado", () => {
   });
 });
 
+describe("criarLead no modo Empresa (criarEmpresa) — Ruling do C2 da R1 do #196", () => {
+  const base = { segmento: "ADULTO", temperatura: "MORNO", b2b: false } as const;
+  it("cria a Empresa com o nome e o contato, liga empresaId e não cria Pessoa nem ContatoWhatsApp", async () => {
+    logadoComo(vendedor.id);
+    const r = await criarLead({ nome: "ACME Ltda", telefoneE164: "+50655554444", email: "compras@acme.example", origemCanal: "LINKEDIN", criarEmpresa: true, ...base });
+    const op = await prisma.oportunidade.findUniqueOrThrow({ where: { id: idDe(r) } });
+    expect(op.pessoaId).toBeNull();
+    expect(op.b2b).toBe(true);
+    const empresa = await prisma.empresa.findUniqueOrThrow({ where: { id: op.empresaId! } });
+    expect(empresa).toEqual(expect.objectContaining({ nome: "ACME Ltda", contatoTelefone: "+50655554444", contatoEmail: "compras@acme.example", origemCanal: "LINKEDIN", ativo: true }));
+    expect(empresa.codigo).toMatch(/^E-\d{6}$/);
+    expect(await prisma.pessoa.count()).toBe(0);
+    expect(await prisma.contatoWhatsApp.count()).toBe(0);
+    expect((await eventosDo("Empresa", empresa.id)).map((e) => e.tipo)).toEqual(["EmpresaCriada"]);
+    const [criado] = await eventosDo("Lead", op.id);
+    expect(criado.payload).toEqual(expect.objectContaining({ pessoaId: null, empresaId: empresa.id, b2b: true }));
+  });
+  it("criarEmpresa com empresa ou contato existente é recusado sem criar nada", async () => {
+    const existente = await prisma.empresa.create({ data: { nome: "Acme" } });
+    const p = await pessoaComOportunidade("Minha", vendedor.id);
+    logadoComo(vendedor.id);
+    const antes = { empresas: await prisma.empresa.count(), oportunidades: await prisma.oportunidade.count() };
+    for (const extra of [{ empresaId: existente.id }, { pessoaId: p.id }]) {
+      const r = await criarLead({ nome: "Nova SA", criarEmpresa: true, ...extra, ...base });
+      expect(r).toEqual({ ok: false, erro: "Oportunidade de empresa nova não leva empresa nem contato já existentes." });
+    }
+    expect(await prisma.empresa.count()).toBe(antes.empresas);
+    expect(await prisma.oportunidade.count()).toBe(antes.oportunidades);
+  });
+});
+
 describe("possiveisDuplicados", () => {
   it("duplicado fora da carteira não revela o nome", async () => {
     await pessoaComOportunidade("Alheia", outro.id, "+50670001111");
