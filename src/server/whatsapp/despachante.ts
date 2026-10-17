@@ -17,10 +17,11 @@ import { driverMetaCloud } from "./drivers/meta-cloud";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
-import { DriverWhatsApp, Papel } from "@prisma/client";
+import { DriverWhatsApp, Papel, type EstadoPolitica } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
+import { envioAvisosAgendaHabilitado } from "@/server/comunicacoes-agenda/envio-gate";
 import { aplicarResposta } from "./status-atendimento";
 import { comContatoIndividual } from "./grupos";
 
@@ -54,7 +55,7 @@ export interface ResultadoDespacho {
   canceladas: number;
   adiadas: number;
   falhas: number;
-  pendentes: number; // deixadas na fila (kill switch / política desligada)
+  pendentes: number; // deixadas na fila (kill switch / política desligada / envio de agenda desligado)
 }
 
 function horaLocal(data: Date, fuso: string): number {
@@ -77,6 +78,58 @@ function diaSemanaLocal(data: Date, fuso: string): number {
   } catch {
     return data.getDay();
   }
+}
+
+export interface EntradaShadow {
+  /** WHATSAPP_LIVE=1 no ambiente. */
+  live: boolean;
+  /** Intenção de aviso de alteração de agenda (avisoAlteracaoAgendaId preenchido). */
+  agenda: boolean;
+  /** origem !== HUMANO (CRON, LOTE, GESTAO). */
+  automatica: boolean;
+  reativa: boolean;
+  /** origem === GESTAO. */
+  gestao: boolean;
+  /** Estado da política que rege a intenção (cobrança ou comercial). */
+  politicaEstado: EstadoPolitica;
+  gestaoEstado: EstadoPolitica;
+  saudacaoEstado: EstadoPolitica;
+}
+
+/**
+ * SHADOW (S8): decide se a intenção vira SIMULADA em vez de chamar o driver. Função pura
+ * para ter trava unitária no CI (revisão R1 do #208, C1): a isenção `!agenda` já caiu uma
+ * vez num merge (#161) sem nenhum teste unitário perceber.
+ *
+ * - Sem WHATSAPP_LIVE tudo é simulado, inclusive origem HUMANO.
+ * - Gestão olha só o seu shadow (gestaoEstado); a saudação reativa, o saudacaoEstado.
+ * - O resto da automação (cobrança, comercial, lote) olha o estado da sua política.
+ * - Aviso de agenda NÃO usa o ensaio da política de cobrança: o gate dele é
+ *   COMUNICACOES_AGENDA_ENVIO_ENABLED (conferido antes do shadow, em `decidirEnvio`) mais
+ *   número e template AGENDA (`motivoAvisoAgendaInvalido`).
+ */
+export function intencaoEmShadow(e: EntradaShadow): boolean {
+  return (
+    !e.live ||
+    (e.gestao && e.gestaoEstado !== "ATIVA") ||
+    (!e.agenda && e.automatica && !e.reativa && !e.gestao && e.politicaEstado !== "ATIVA") ||
+    (e.reativa && e.saudacaoEstado !== "ATIVA")
+  );
+}
+
+export type DecisaoEnvio = "RETER_AGENDA" | "SIMULAR" | "ENVIAR";
+
+/**
+ * Última decisão antes do driver (revisão R1 do #208, C2). O cron geral do WhatsApp drena a
+ * MESMA fila que o worker de agenda (`despacharFila` sem `somenteAvisosAgenda`), então o
+ * despachante confere COMUNICACOES_AGENDA_ENVIO_ENABLED por conta própria: com o envio de
+ * agenda desligado, a intenção de aviso fica como está (PENDENTE/ADIADA), como no kill
+ * switch — não é enviada, nem vira SIMULADA, e volta a ser avaliada quando o envio for
+ * religado. Vale também sem WHATSAPP_LIVE: o aviso retido não é "ensaiado".
+ */
+export function decidirEnvio(e: EntradaShadow & { envioAgendaHabilitado: boolean }): DecisaoEnvio {
+  if (e.agenda && !e.envioAgendaHabilitado) return "RETER_AGENDA";
+  return intencaoEmShadow(e) ? "SIMULAR" : "ENVIAR";
 }
 
 /** Prazo do claim: intenção ENVIANDO além disto = worker morreu no meio do envio. */
@@ -415,14 +468,17 @@ export async function despacharFila(
     // SHADOW (S8): ensaio da automação. Cobrança olha o estado da SUA política; a saudação
     // reativa olha o seu shadow PRÓPRIO (saudacaoEstado — review PR #53). Ambiente sem
     // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
-    const shadow =
-      !live ||
-      (gestao && gestaoEstado !== "ATIVA") ||
-      // Aviso de agenda não usa o ensaio da política de COBRANÇA: tem gate próprio
-      // (COMUNICACOES_AGENDA_ENVIO_ENABLED + número AGENDA), como no kill switch e no teto.
-      (!agenda && automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
-      (reativa && saudacaoEstado !== "ATIVA");
-    if (shadow) {
+    // Aviso de agenda com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado fica retido (C2 do #208).
+    const decisao = decidirEnvio({
+      live, agenda, automatica, reativa, gestao,
+      politicaEstado: politica.estado, gestaoEstado, saudacaoEstado,
+      envioAgendaHabilitado: envioAvisosAgendaHabilitado(),
+    });
+    if (decisao === "RETER_AGENDA") {
+      r.pendentes += 1;
+      continue;
+    }
+    if (decisao === "SIMULAR") {
       await prisma.intencaoMensagem.updateMany({
         where: { id: it.id, status: it.status }, // não clobbera claim concorrente
         data: { status: "SIMULADA", despachadaEm: agora, motivoFalha: live ? null : "ambiente_sem_live" },

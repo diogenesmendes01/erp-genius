@@ -3,6 +3,7 @@
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { repetirEmFalhaDeSerializacao } from "@/lib/repetir-serializacao";
 import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
 import { obterDriveOrganizacaoId, obterTokenDrive } from "./credenciais";
@@ -82,7 +83,10 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
       return { id: anterior.id };
     }
     const fixa = await fixarRevisaoDriveOrganizacional({ fileId: dados.arquivoOficialId, driveIdOrganizacao: obterDriveOrganizacaoId(), token: obterTokenPublicacaoDrive });
-    return prisma.$transaction(async (tx) => {
+    // Em SERIALIZABLE o snapshot precede a espera pelo lock do calendário. O preparo
+    // concorrente perdedor é repetido (sem repetir o Drive, já fixado acima) e cai no replay
+    // da chave de idempotência ou recalcula a versão esperada.
+    return repetirEmFalhaDeSerializacao(() => prisma.$transaction(async (tx) => {
       await exigirPreparadorFresco(tx, autor.id, dados.alvo, dados.alvoId);
       const anterior = await tx.propostaRegularizacaoFonteGravacao.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia } } });
       if (anterior) {
@@ -97,7 +101,7 @@ export async function proporRegularizacaoFonteGravacao(input: unknown) {
         motivo: dados.motivo, preparadorId: autor.id, chaveIdempotencia: dados.chaveIdempotencia,
       } });
       return { id: proposta.id };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
   });
 }
 
