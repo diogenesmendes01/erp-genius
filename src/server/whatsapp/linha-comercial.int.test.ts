@@ -288,8 +288,8 @@ describe("LC-09: troca de dono — o histórico segue a linha", () => {
     await mensagem("linha-a");
     const vendedorD = await criarUsuario([Papel.VENDEDOR], "Vendedor D");
     entrar(admin);
-    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "BAILEYS",
-      finalidade: "VENDAS", providerRef: linha.providerRef ?? "", donoId: vendedorD.id, ativo: true });
+    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "MOTOR",
+      finalidade: "VENDAS", donoId: vendedorD.id, ativo: true });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
     expect(await listarConversas(sessao(vendedorD))).toHaveLength(1);
     expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
@@ -418,8 +418,8 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
     const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, contatoId: contato.id } });
     await prisma.mensagemWhatsApp.create({ data: { conversaId: conversa.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "sem dono", providerMessageId: "O-3" } });
     entrar(admin);
-    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "BAILEYS",
-      finalidade: "VENDAS", providerRef: linha.providerRef ?? "", donoId: vendedorA.id, ativo: true });
+    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "MOTOR",
+      finalidade: "VENDAS", donoId: vendedorA.id, ativo: true });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
     expect(await listarConversas(sessao(vendedorA))).toHaveLength(1);
   });

@@ -4,12 +4,16 @@ import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+const { chamar } = vi.hoisted(() => ({ chamar: vi.fn() }));
+vi.mock("./motor/cliente", async (orig) => ({ ...(await orig<typeof import("./motor/cliente")>()), chamarMotor: chamar }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { setoresDoNumero } from "./numero-setor";
 import { salvarSetoresNumero } from "./acoes-numero";
+import { conectarNumeroQr, consultarSessaoNumero, desconectarNumero, parearNumeroPorCodigo, salvarNumeroWhatsApp } from "./acoes";
+import { ErroMotor } from "./motor/cliente";
 import { listarResponsaveisTriagem } from "./consultas";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
@@ -95,5 +99,89 @@ describe("listarResponsaveisTriagem", () => {
 
     authMock.mockResolvedValue({ user: { id: gerente.id } });
     await expect(listarResponsaveisTriagem()).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+function dadoDe<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
+  if (!r.ok) throw new Error(r.erro);
+  return r.dado as T;
+}
+
+// Task 18 — ciclo do número no motor (motor simulado: nenhuma chamada real)
+// ---------------------------------------------------------------------------
+describe("ciclo do número no motor", () => {
+  beforeEach(async () => {
+    chamar.mockReset();
+    chamar.mockResolvedValue({});
+    authMock.mockResolvedValue({ user: { id: admin.id } });
+  });
+
+  it("número novo nasce MOTOR com providerRef = id e é cadastrado no motor", async () => {
+    const r = await salvarNumeroWhatsApp({ telefoneE164: "+5511999990001", rotulo: "Secretaria", finalidade: "COBRANCA" });
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    const num = await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: dadoDe(r).id } });
+    expect(num).toMatchObject({ driver: "MOTOR", providerRef: num.id });
+    expect(chamar).toHaveBeenCalledWith(`/v1/numeros/${num.id}`, expect.objectContaining({ metodo: "PUT", json: { rotulo: "Secretaria" } }));
+  });
+
+  it("motor fora do ar ao salvar não desfaz o número (cadastro refeito no conectar)", async () => {
+    chamar.mockRejectedValue(new ErroMotor("INDISPONIVEL", 0));
+    const r = await salvarNumeroWhatsApp({ telefoneE164: "+5511999990002", rotulo: "Vendas", finalidade: "VENDAS" });
+    expect(r.ok).toBe(true);
+    expect(await prisma.numeroWhatsApp.count({ where: { id: dadoDe(r).id } })).toBe(1);
+    chamar.mockReset();
+    chamar.mockImplementation(async (_rota: string, init: { metodo: string }) =>
+      init.metodo === "GET" ? { sessao: { status: "qr", qr: "data:image/png;base64,QUFB" } } : {},
+    );
+    const c = await conectarNumeroQr(dadoDe(r).id);
+    expect(c.ok).toBe(true);
+    expect(chamar).toHaveBeenCalledWith(`/v1/numeros/${dadoDe(r).id}`, expect.objectContaining({ metodo: "PUT" }));
+  });
+
+  it("conectar devolve QR data URL do GET e grava AGUARDANDO_QR", async () => {
+    const num = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990003", rotulo: "Cobrança", driver: "MOTOR", finalidade: "COBRANCA" } });
+    chamar.mockImplementation(async (_rota: string, init: { metodo: string }) =>
+      init.metodo === "GET" ? { sessao: { status: "qr", qr: "data:image/png;base64,QUFB" } } : {},
+    );
+    const r = await conectarNumeroQr(num.id);
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    expect(dadoDe(r)).toMatchObject({ qrBase64: "data:image/png;base64,QUFB", estado: "AGUARDANDO_QR", erro: null });
+    expect((await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).sessao).toBe("AGUARDANDO_QR");
+  });
+
+  it("pareamento por código devolve codigoPareamento", async () => {
+    const num = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990004", rotulo: "Cobrança", driver: "MOTOR", finalidade: "COBRANCA" } });
+    chamar.mockImplementation(async (rota: string) => (rota.endsWith("/pareamento") ? { codigoPareamento: "ABCD-1234" } : {}));
+    const r = await parearNumeroPorCodigo(num.id, "+5511999990004");
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    expect(dadoDe(r)).toMatchObject({ codigoPareamento: "ABCD-1234", estado: "AGUARDANDO_QR" });
+  });
+
+  it("consultar devolve a sessão do motor", async () => {
+    const num = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990006", rotulo: "Cobrança", driver: "MOTOR", finalidade: "COBRANCA", sessao: "AGUARDANDO_QR" } });
+    chamar.mockResolvedValue({ sessao: { status: "connected" } });
+    const r = await consultarSessaoNumero(num.id);
+    expect(dadoDe(r)).toMatchObject({ sessao: "CONECTADO" });
+  });
+
+  it("desconectar grava Evento e sessão DESCONECTADO", async () => {
+    const num = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990005", rotulo: "Cobrança", driver: "MOTOR", finalidade: "COBRANCA", sessao: "CONECTADO" } });
+    const r = await desconectarNumero(num.id);
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    expect(chamar).toHaveBeenCalledWith(`/v1/numeros/${num.id}/desconectar`, expect.objectContaining({ metodo: "POST" }));
+    expect((await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: num.id } })).sessao).toBe("DESCONECTADO");
+    expect((await eventosDo("NumeroWhatsApp", num.id)).map((e) => e.tipo)).toContain("NumeroWhatsAppDesconectado");
+  });
+
+  it("não-ADMINISTRADOR é recusado", async () => {
+    const num = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990007", rotulo: "Cobrança", driver: "MOTOR", finalidade: "COBRANCA" } });
+    authMock.mockResolvedValue({ user: { id: gerente.id } });
+    expect((await salvarNumeroWhatsApp({ telefoneE164: "+5511999990008", rotulo: "Outro", finalidade: "COBRANCA" })).ok).toBe(false);
+    expect((await conectarNumeroQr(num.id)).ok).toBe(false);
+    expect((await parearNumeroPorCodigo(num.id, "+5511999990007")).ok).toBe(false);
+    expect((await consultarSessaoNumero(num.id)).ok).toBe(false);
+    expect((await desconectarNumero(num.id)).ok).toBe(false);
+    expect(chamar).not.toHaveBeenCalled();
   });
 });
