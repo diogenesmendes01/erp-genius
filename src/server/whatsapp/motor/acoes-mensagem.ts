@@ -230,3 +230,27 @@ export async function enviarConteudoInbox(input: { atendimentoId: string; conteu
     return { status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
   });
 }
+
+const INTERVALO_DIGITANDO_MS = 10_000;
+const digitandoEm = new Map<string, number>();
+
+/** "Digitando…" no WhatsApp: no máximo uma vez a cada 10 s por usuário e atendimento. Tabela operacional, sem Evento. */
+export async function avisarDigitando(atendimentoId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const a = await atendimentoVisivel(u, atendimentoId, true);
+    if (!a) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+    if (a.numero.driver !== "MOTOR") return undefined;
+    const chave = `${u.id}:${atendimentoId}`;
+    const agora = Date.now();
+    const ultimo = digitandoEm.get(chave);
+    if (ultimo !== undefined && agora - ultimo < INTERVALO_DIGITANDO_MS) return undefined;
+    digitandoEm.set(chave, agora);
+    if (digitandoEm.size > 5000) for (const [k, t] of digitandoEm) if (agora - t >= INTERVALO_DIGITANDO_MS) digitandoEm.delete(k);
+    const digitos = (a.contato.waId ?? a.contato.telefoneE164).replace(/\D/g, "");
+    try {
+      await executarAcaoMotor(a.numero.providerRef ?? a.numero.id, "presence", { chatId: `${digitos}@s.whatsapp.net`, state: "composing" }, { origem: "HUMANO" });
+    } catch (e) { digitandoEm.delete(chave); traduzir(e); }
+    return undefined;
+  });
+}
