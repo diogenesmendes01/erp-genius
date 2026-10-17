@@ -382,6 +382,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/alunos/turma/[id]/page.tsx": [
     "linha · Nenhum aluno alocado.",
   ],
+  "src/app/(app)/comissoes/PainelComissoes.tsx": [
+    "bloco · {filtrando ? \"Nenhuma comissão com esses filtros.\" : \"Nenhuma comissão neste período.\"}",
+  ],
   "src/app/(app)/configuracao/catalogo/EntradasOfertas.tsx": [
     "compacto · Cadastre a oferta do produto no país para configurar sua entrada.",
   ],
