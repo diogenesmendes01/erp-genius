@@ -16,6 +16,22 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 
 type Cobertura = { id: string; titular: string; substituto: string; inicio: string; fim: string; revogada: boolean; motivo: string };
 
+type PeriodoExibido = { inicio: { texto: string; fuso: string }; fim: { texto: string } };
+
+/** Corpo da confirmação de revogação (exportado para o teste: o diálogo só abre no clique). */
+export function ConsequenciaRevogacao({ cobertura, periodo }: { cobertura: Pick<Cobertura, "substituto" | "titular">; periodo: PeriodoExibido }) {
+  return (
+    <>
+      <p>
+        {cobertura.substituto} deixa de atender a carteira de {cobertura.titular} na hora, mesmo que o período combinado
+        ({periodo.inicio.texto} até {periodo.fim.texto}, horário em {periodo.inicio.fuso}) ainda não tenha acabado.
+      </p>
+      <p>Revogar a cobertura não tem desfazer pela tela.</p>
+      <p>Para devolver o acesso, é preciso conceder uma nova cobertura.</p>
+    </>
+  );
+}
+
 export function CoberturasPainel({
   vendedores,
   coberturas,
@@ -146,12 +162,7 @@ export function CoberturasPainel({
           aoConcluir={() => revogada(revogando)}
           aoCancelar={() => setRevogando(null)}
         >
-          <p>
-            {revogando.substituto} deixa de atender a carteira de {revogando.titular} na hora, mesmo que o período combinado
-            ({periodoDe(revogando).inicio.texto} até {periodoDe(revogando).fim.texto}, horário em {periodoDe(revogando).inicio.fuso}) ainda não tenha acabado.
-          </p>
-          <p>Revogar a cobertura não tem desfazer pela tela.</p>
-          <p>Para devolver o acesso, é preciso conceder uma nova cobertura.</p>
+          <ConsequenciaRevogacao cobertura={revogando} periodo={periodoDe(revogando)} />
         </ConfirmarAcao>
       )}
     </div>
