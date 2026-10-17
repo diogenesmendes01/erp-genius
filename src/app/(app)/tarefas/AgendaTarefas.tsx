@@ -31,7 +31,8 @@ export function slotDaHora(hora: string): string {
   return `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${minutos % 60 ? "30" : "00"}`;
 }
 
-const idSlot = (data: string, hora: string) => `slot|${data}|${hora}`;
+/** `v` distingue a árvore do celular da da grade: o dnd-kit indexa por id, então ids repetidos se anulariam. */
+const idSlot = (data: string, hora: string, v: string) => `slot|${data}|${hora}|${v}`;
 export function lerSlot(alvo: unknown): { data: string; hora: string | null } | null {
   if (typeof alvo !== "string" || !alvo.startsWith("slot|")) return null;
   const partes = alvo.split("|");
@@ -52,8 +53,10 @@ export function AgendaTarefas({ visao, data, hoje, itens, fusoEscola, fusoExibic
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
   const [reagendando, setReagendando] = useState<ItemAgenda | null>(null);
-  const [diaMovel, setDiaMovel] = useState(data);
+  const [diaEscolhido, setDiaMovel] = useState(data);
   const dias = visao === "semana" ? diasDaSemana(data) : [data];
+  // Derivado: ao navegar para outra semana o componente segue montado, e o dia antigo não pertence mais à semana.
+  const diaMovel = dias.includes(diaEscolhido) ? diaEscolhido : dias.includes(hoje) ? hoje : dias[0];
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
@@ -70,15 +73,16 @@ export function AgendaTarefas({ visao, data, hoje, itens, fusoEscola, fusoExibic
 
   async function aoSoltar(e: DragEndEvent) {
     const destino = lerSlot(e.over?.id);
-    const item = itens.find((i) => i.tipo === "tarefa" && chaveItem(i) === e.active.id);
+    const idItem = String(e.active.id).split("|")[0];
+    const item = itens.find((i) => i.tipo === "tarefa" && chaveItem(i) === idItem);
     if (!destino || !item || item.tipo !== "tarefa") return;
     const t = item.tarefa;
     const d = await acao.executar(() => reagendarTarefa(t.id, t.versao, { dataCivil: destino.data, hora: destino.hora }), "Tarefa reagendada.");
     if (d?.tipo === "ok") router.refresh();
   }
 
-  const coluna = (d: string, rotulos: boolean) => (
-    <ColunaDia key={d} data={d} hoje={hoje} itens={porDia.get(d) ?? []} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} rotulos={rotulos} params={params} aoReagendar={setReagendando} />
+  const coluna = (d: string, rotulos: boolean, v: string) => (
+    <ColunaDia key={d} data={d} hoje={hoje} itens={porDia.get(d) ?? []} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} rotulos={rotulos} v={v} params={params} aoReagendar={setReagendando} />
   );
 
   return (
@@ -93,7 +97,7 @@ export function AgendaTarefas({ visao, data, hoje, itens, fusoEscola, fusoExibic
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       <DndContext sensors={sensores} onDragEnd={aoSoltar}>
         {visao === "dia" ? (
-          coluna(data, true)
+          coluna(data, true, "d")
         ) : (
           <>
             <div className="sm:hidden">
@@ -102,9 +106,9 @@ export function AgendaTarefas({ visao, data, hoje, itens, fusoEscola, fusoExibic
                   <Chip key={d} selecionado={d === diaMovel} onClick={() => setDiaMovel(d)}>{rotuloDiaCurto(d)}</Chip>
                 ))}
               </div>
-              {coluna(diaMovel, true)}
+              {coluna(diaMovel, true, "m")}
             </div>
-            <div className="hidden sm:grid sm:grid-cols-7 sm:gap-2">{dias.map((d) => coluna(d, false))}</div>
+            <div className="hidden sm:grid sm:grid-cols-7 sm:gap-2">{dias.map((d) => coluna(d, false, "g"))}</div>
           </>
         )}
       </DndContext>
@@ -113,8 +117,8 @@ export function AgendaTarefas({ visao, data, hoje, itens, fusoEscola, fusoExibic
   );
 }
 
-function ColunaDia({ data, hoje, itens, fusoEscola, fusoExibicao, rotulos, params, aoReagendar }: {
-  data: string; hoje: string; itens: ItemAgenda[]; fusoEscola: string; fusoExibicao: string; rotulos: boolean; params: ParamsTarefas; aoReagendar: (i: ItemAgenda) => void;
+function ColunaDia({ data, hoje, itens, fusoEscola, fusoExibicao, rotulos, v, params, aoReagendar }: {
+  data: string; hoje: string; itens: ItemAgenda[]; fusoEscola: string; fusoExibicao: string; rotulos: boolean; v: string; params: ParamsTarefas; aoReagendar: (i: ItemAgenda) => void;
 }) {
   const porSlot = new Map<string, ItemAgenda[]>();
   const diaTodo: ItemAgenda[] = [];
@@ -124,13 +128,13 @@ function ColunaDia({ data, hoje, itens, fusoEscola, fusoExibicao, rotulos, param
     const slot = slotDaHora(horaNoFuso(inst, fusoEscola));
     porSlot.set(slot, [...(porSlot.get(slot) ?? []), i]);
   }
-  const bloco = (i: ItemAgenda) => <BlocoItem key={chaveItem(i)} item={i} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} params={params} aoReagendar={aoReagendar} />;
+  const bloco = (i: ItemAgenda) => <BlocoItem key={chaveItem(i)} item={i} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} params={params} aoReagendar={aoReagendar} v={v} />;
   return (
     <section aria-label={rotuloDia(data)} className="min-w-0 rounded-md border border-gray-200">
       <h3 className={`border-b border-gray-200 px-2 py-1.5 text-xs font-medium ${data === hoje ? "bg-brand-bg text-brand-800" : "text-gray-700"}`}>{rotuloDiaCurto(data)}</h3>
-      <Slot id={idSlot(data, "")} rotulo={rotulos ? "Dia todo" : null}>{diaTodo.map(bloco)}</Slot>
+      <Slot id={idSlot(data, "", v)} rotulo={rotulos ? "Dia todo" : null}>{diaTodo.map(bloco)}</Slot>
       {HORAS_DA_GRADE.map((h) => (
-        <Slot key={h} id={idSlot(data, h)} rotulo={rotulos || h.endsWith(":00") ? h : null}>{(porSlot.get(h) ?? []).map(bloco)}</Slot>
+        <Slot key={h} id={idSlot(data, h, v)} rotulo={rotulos || h.endsWith(":00") ? h : null}>{(porSlot.get(h) ?? []).map(bloco)}</Slot>
       ))}
     </section>
   );
@@ -146,11 +150,11 @@ function Slot({ id, rotulo, children }: { id: string; rotulo: string | null; chi
   );
 }
 
-function BlocoItem({ item, fusoEscola, fusoExibicao, params, aoReagendar }: { item: ItemAgenda; fusoEscola: string; fusoExibicao: string; params: ParamsTarefas; aoReagendar: (i: ItemAgenda) => void }) {
+function BlocoItem({ item, fusoEscola, fusoExibicao, params, aoReagendar, v }: { v: string; item: ItemAgenda; fusoEscola: string; fusoExibicao: string; params: ParamsTarefas; aoReagendar: (i: ItemAgenda) => void }) {
   const router = useRouter();
   const ehTarefa = item.tipo === "tarefa";
   const aberta = ehTarefa && item.tarefa.status === "ABERTA";
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({ id: chaveItem(item), disabled: !aberta });
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({ id: `${chaveItem(item)}|${v}`, disabled: !aberta });
   const inst = instanteDoItem(item);
   const hora = inst ? textoHora(inst, fusoExibicao, fusoEscola) : null;
   const titulo = ehTarefa ? item.tarefa.titulo : `Mensagem para ${item.nomeContato}`;
