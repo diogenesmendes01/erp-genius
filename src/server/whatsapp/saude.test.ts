@@ -137,6 +137,22 @@ describe("medirSaudeCanal — aviso de agenda retido com o envio de agenda desli
     vi.unstubAllEnvs();
   });
 
+  // C1 do #212: o motivo `envio_agenda_desligado` só é limpo quando o despachante pega a intenção.
+  // Entre religar o envio e o próximo tick, a contagem não pode seguir mostrando avisos retidos.
+  it("com o envio de agenda ligado, nada conta como retido (motivo antigo até o próximo tick)", async () => {
+    vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
+    retidas(3);
+
+    const s = await medirSaudeCanal(AGORA);
+
+    expect(s.fila.envioAgendaHabilitado).toBe(true);
+    expect(s.fila.retidasAgendaDesligada).toBe(0);
+    expect(m.count).not.toHaveBeenCalledWith({
+      where: { status: { in: ["PENDENTE", "ADIADA"] }, motivoFalha: "envio_agenda_desligado" },
+    });
+    vi.unstubAllEnvs();
+  });
+
   it("com o envio de agenda ligado, o aviso de agenda parado volta a contar no relógio", async () => {
     vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
     pendentes([{ criadaEm: horasAtras(30), agendadaPara: null, agenda: true }]);

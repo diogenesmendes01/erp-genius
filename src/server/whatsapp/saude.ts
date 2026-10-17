@@ -44,7 +44,8 @@ export interface SaudeCanal {
     /** Intenções que TRANSICIONARAM para FALHOU nas últimas 24h (por atualizadoEm). */
     falhas24h: number;
     /** Avisos de agenda PENDENTE/ADIADA retidos pelo envio de agenda desligado
-     *  (motivoFalha `envio_agenda_desligado`). Já contados em `pendentes`/`adiadas`. */
+     *  (motivoFalha `envio_agenda_desligado`). Já contados em `pendentes`/`adiadas`. Com o envio
+     *  ligado é sempre 0, mesmo com o motivo antigo ainda gravado até o próximo tick. */
     retidasAgendaDesligada: number;
     /** Estado atual de COMUNICACOES_AGENDA_ENVIO_ENABLED. */
     envioAgendaHabilitado: boolean;
@@ -111,9 +112,13 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
         select: { criadoEm: true },
       }),
       carregarPoliticaRegua(),
-      prisma.intencaoMensagem.count({
-        where: { status: { in: ["PENDENTE", "ADIADA"] }, motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
-      }),
+      // Só conta com o envio desligado (C1 do #212): o motivo fica gravado até o próximo tick
+      // pegar a intenção, então, religado o envio, nada mais está retido por ele.
+      envioAgendaHabilitado
+        ? Promise.resolve(0)
+        : prisma.intencaoMensagem.count({
+            where: { status: { in: ["PENDENTE", "ADIADA"] }, motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
+          }),
     ]);
 
   const contagem = new Map(porStatus.map((s) => [s.status, s._count._all]));
