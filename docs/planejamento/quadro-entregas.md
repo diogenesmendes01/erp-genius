@@ -2262,3 +2262,37 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   intermitente em `src/app/confirmacoes.test.ts`: o teste passa isolado (59 testes, cerca de 18 s) e passou na
   rodada completa seguinte.
 **Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
+
+### Verificação para o PR (bloco G, branch `claude/fase2-g-carteira`, 17/10/2026)
+- Tarefas: 25 (carteira derivada das oportunidades, reatribuição em lote) e 26 (tela da carteira e coberturas).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 654 arquivos e 4691 testes verdes (linha de base: 643 arquivos e 4607 testes). Uma correção do bloco:
+  o aviso da carteira virou região de status (`src/app/anuncios.test.ts`).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco E): 3 arquivos,
+  18 testes verdes, saída 0. Nenhuma das 7 falhas preexistentes foi tocada; a suíte completa fica com o integrador.
+
+### Correções da R1 do #198 (17/10/2026)
+- **B1 (integração com o `main`), em `6826ff0b`:** o `main` (f4ded562, já com o #196) foi mesclado. Em
+  `src/server/acesso/coberturas.ts`, as duas ações mantêm `revalidatePath("/carteira")` e o import de `next/cache`
+  voltou. Em `src/components/Sidebar.tsx`, ficam `KanbanSquare: IconLayoutKanban` (usado pelo `/funil` do `nav.ts`) e
+  `Briefcase: IconBriefcase`, com o import de `IconLayoutKanban` de volta. A trava `casca-crm-removida.test.ts` só
+  proíbe a pasta antiga `/carteiras`, então não mudou. Os conflitos herdados (`comercial/acoes.ts` e o esqueleto do
+  funil) já vieram resolvidos pelo #196.
+- **C1 ("sem interação" zerava com a reatribuição), em `c5dacf9f`:** a conta ignora a lista explícita
+  `EVENTOS_IGNORADOS_SEM_INTERACAO` (`LeadAtribuido`, `TagAtribuida`, `TagRemovida`, `CampoPersonalizadoAlterado`).
+  Teste em `carteira.int.test.ts`: a reatribuição em lote não zera os dias, e só com eventos administrativos a conta
+  parte da criação da oportunidade.
+- **C2 (ponto de atenção de volume):** `carregarCarteira` carrega todas as oportunidades abertas do escopo e faz o
+  `groupBy` de `Evento` com `in` de todos os ids, para filtrar por dias e ordenar em memória (o corte de 500 é só na
+  resposta). Funciona no volume atual, mas cresce com a base. Quando o volume subir, o filtro e a ordenação por dias
+  devem ir para o SQL (por exemplo, uma subconsulta por `MAX(Evento.criadoEm)` com `LIMIT`, ou a última interação
+  materializada na oportunidade).
+- **C3 (nomes das recusadas), em `97f57a16`:** `recusadasComNome` guarda o nome das linhas na hora da resposta, antes
+  do `router.refresh()`. Teste em `carteira/page.test.ts`.
+- **C4 (integração):** num banco descartável próprio, `erp_genius_test_fix198` (localhost:54329), `prisma migrate
+  deploy` aplicou tudo. Passaram `carteira.int.test.ts` (10 testes) e `coberturas-lista.int.test.ts` (2). O banco foi
+  apagado no fim.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 664 arquivos e 4804 testes, todos verdes.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
