@@ -10,6 +10,7 @@ vi.mock("@/server/whatsapp/drivers/evolution", () => ({ driverEvolution: { envia
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
+import { publicarOfertaAgendaDestino } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import type { Resultado } from "@/server/_shared";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
@@ -72,6 +73,7 @@ async function cenario({ comAgendaPublicada = true }: { comAgendaPublicada?: boo
     vinculosDocentes: { create: { professorId: sucessor.id, inicio } },
   } });
   const destino = await prisma.turma.update({ where: { id: destinoRascunho.id }, data: { status: "EM_ANDAMENTO", dataInicio: inicio } });
+  await publicarOfertaAgendaDestino(destino.id, { preparadorId: secretaria.id, decisorId: gestao.id, professorId: sucessor.id, chave: "visibilidade-destino" });
   const aluno = await prisma.aluno.create({ data: {
     primeiroNome: "Ana", sobrenome: "Santos", paisId: cat.pais.id, telefoneE164: "+50688887777", whatsapp: true, email: "privado@example.test", documento: "DOCUMENTO_PRIVADO",
   } });

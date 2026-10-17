@@ -19,6 +19,7 @@ import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } fro
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { publicarOfertaAgendaDestino, retirarAulaFuturaDaOferta } from "@/test/oferta-agenda-destino";
 import { consultarFechamentosPortalAluno } from "./fechamentos";
 import { criarSessaoPortalAlunoTx } from "./sessao";
 
@@ -116,6 +117,7 @@ beforeEach(async () => {
   };
   turmaAId = await criarTurma("Turma A origem", "EM_ANDAMENTO");
   turmaBId = await criarTurma("Turma B destino", "ABERTA");
+  await publicarOfertaAgendaDestino(turmaBId, { preparadorId: secretariaId, decisorId: gestorId, professorId });
   alunoId = (await prisma.aluno.create({ data: { primeiroNome: "Aluna transferida", paisId: catalogo.pais.id, email: "transferida@portal.test" } })).id;
   matriculaId = (await prisma.matricula.create({ data: { alunoId, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", codigo: "M-TRAJ-A-B", status: "ATIVA", ativadaEm: inicio } })).id;
   alocacaoAId = (await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId, turmaId: turmaAId, criadoEm: inicio } })).id;
@@ -159,6 +161,8 @@ it("agrega frequência A→B no mesmo nível e exige nova versão de fechamento 
 
   const frequencia = await prisma.$transaction(tx => carregarFrequenciaNivelTx(tx, { matriculaId, nivelId, minimoPercentual: "75" }));
   expect(frequencia).toMatchObject({ base: 2, presencas: 2, faltas: 0, regularizadas: 0, percentual: { numerador: "200", denominador: "2" }, alocacoesIds: [alocacaoAId, alocacaoBId] });
+  // Fechar o nível em B pressupõe o nível concluído, sem a aula futura da oferta.
+  await retirarAulaFuturaDaOferta(turmaBId);
   const fechamentoB = await confirmar(alocacaoBId, "fechamentos-transferencia-b-v2");
   expect(fechamentoB).toMatchObject({ versao: 2, resultadoSuficiente: true });
   const atual = await consultarFechamentosPortalAluno();
