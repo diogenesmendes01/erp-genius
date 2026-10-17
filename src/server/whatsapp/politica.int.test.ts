@@ -43,10 +43,10 @@ function inputFabrica(over: Partial<PoliticaReguaInput> = {}): PoliticaReguaInpu
   };
 }
 
-async function seedNumero(driver: "META_CLOUD" | "BAILEYS") {
+async function seedNumero(driver: "META_CLOUD" | "BAILEYS" | "MOTOR") {
   return prisma.numeroWhatsApp.create({
     data: {
-      telefoneE164: driver === "META_CLOUD" ? "+5511999990000" : "+5511988880000",
+      telefoneE164: driver === "META_CLOUD" ? "+5511999990000" : driver === "MOTOR" ? "+5511977770000" : "+5511988880000",
       rotulo: `Teste ${driver}`,
       driver,
       finalidade: "COBRANCA",
@@ -87,6 +87,13 @@ describe("salvarPoliticaRegua", () => {
     const travado = await salvarPoliticaRegua(inputFabrica({ estado: "SHADOW", numeroRemetenteId: baileys.id }));
     expect(travado.ok).toBe(false);
     expect((travado as { erro?: string }).erro).toContain("Trava do cron");
+  });
+
+  it("salvarPoliticaRegua arma degrau AUTOMATICO com remetente MOTOR (D36), sem exigir template aprovado", async () => {
+    const motor = await seedNumero("MOTOR");
+    const r = await salvarPoliticaRegua(inputFabrica({ estado: "SHADOW", numeroRemetenteId: motor.id }));
+    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
+    expect((await prisma.politicaRegua.findFirstOrThrow()).estado).toBe("SHADOW");
   });
 
   it("prontidão S15: número oficial exige template APROVADO nos degraus armados", async () => {

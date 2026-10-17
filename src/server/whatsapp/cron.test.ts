@@ -69,12 +69,19 @@ describe("rodarCronRegua — quem recebe é decidirEnvioCron", () => {
     expect(m.carregar).toHaveBeenCalledWith(AGORA, []);
   });
 
-  it("fora do driver oficial, o cron não carrega cobranças nem enfileira (trava S1)", async () => {
+  it("em BAILEYS legado, o cron não carrega cobranças nem enfileira (trava_driver_oficial)", async () => {
     m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "BAILEYS" });
     const r = await rodarCronRegua(AGORA);
     expect(r).toMatchObject({ executou: false, motivoParada: "trava_driver_oficial" });
     expect(m.carregar).not.toHaveBeenCalled();
     expect(m.enfileirar).not.toHaveBeenCalled();
+  });
+
+  it("número MOTOR enfileira normalmente (S1 revogada, D36)", async () => {
+    m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "MOTOR" });
+    const r = await rodarCronRegua(AGORA);
+    expect(r.motivoParada).not.toBe("trava_driver_oficial");
+    expect(r.enfileiradas).toBe(1);
   });
 
   it("política desligada não gera nem intenção", async () => {

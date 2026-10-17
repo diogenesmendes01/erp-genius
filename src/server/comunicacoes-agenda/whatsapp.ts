@@ -93,8 +93,9 @@ export function motivoConfiguracaoAgendaInvalida(config: ConfiguracaoAgenda | nu
   const numero = config?.numeroAvisosAgenda;
   const template = config?.templateAvisosAgenda;
   if (!config?.numeroAvisosAgendaId || !config.templateAvisosAgendaId || !numero || !template) return "configuracao_agenda_ausente";
-  if (!numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "META_CLOUD" || !numero.providerRef?.trim()) return "numero_agenda_invalido";
-  if (template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility") return "template_agenda_incompativel";
+  const motor = numero.driver === "MOTOR";
+  if (!numero.ativo || numero.finalidade !== "AGENDA" || !(motor || (numero.driver === "META_CLOUD" && !!numero.providerRef?.trim()))) return "numero_agenda_invalido";
+  if (!motor && (template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility")) return "template_agenda_incompativel";
   if (template.idioma !== idioma || !renderizarTemplateAgenda(template.corpo, { nome: "x", horarios: "x" })) return "template_agenda_incompativel";
   return null;
 }

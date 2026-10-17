@@ -38,6 +38,7 @@ import {
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import { nomeConhecidoDoContato } from "./nome-contato";
+import { driverAceitaAutomacao } from "./canal";
 import { contatoIndividual } from "./grupos";
 import {
   LoteCobrancaSchema,
@@ -724,10 +725,12 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
       prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroAvisosAgendaId } }),
       prisma.templateWhatsApp.findUnique({ where: { id: dados.templateAvisosAgendaId } }),
     ]);
-    if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "META_CLOUD" || !numero.providerRef?.trim()) {
-      throw new ErroRegra("Escolha um número de agenda ativo, oficial Meta Cloud e com phone_number_id.");
+    const ehMotor = numero?.driver === "MOTOR";
+    if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || !(ehMotor || (numero.driver === "META_CLOUD" && !!numero.providerRef?.trim()))) {
+      throw new ErroRegra("Escolha um número de agenda ativo, do motor WhatsApp ou oficial Meta Cloud com phone_number_id.");
     }
-    if (!template || template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility") {
+    if (!template) throw new ErroRegra("Escolha um template de agenda.");
+    if (!ehMotor && (template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility")) {
       throw new ErroRegra("Escolha um template utility aprovado e sincronizado na Meta.");
     }
     if (/\{[^}]+\}/.test(template.corpo.replace(/\{(nome|horarios)\}/g, "")) || !template.corpo.includes("{horarios}")) {
@@ -946,10 +949,10 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
-      // TRAVA S1 (lei): régua automática exige driver oficial.
-      if (remetente.driver !== "META_CLOUD" && automaticos.length > 0) {
+      // Trava de driver (S1 revogada para MOTOR, D36): automação exige número do motor (ou Meta).
+      if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
         throw new ErroRegra(
-          "Trava do cron (S1): degraus automáticos exigem número com driver oficial (Meta Cloud). " +
+          "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +
             "Troque o remetente ou deixe os degraus em manual/lote.",
         );
       }

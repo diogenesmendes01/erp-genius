@@ -11,7 +11,7 @@ import {
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { randomUUID } from "node:crypto";
-import { ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
+import { driverAceitaAutomacao, ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
 import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
@@ -191,10 +191,10 @@ export async function despacharFila(
       continue;
     }
 
-    // 2. TRAVA S1 (lei): disparo do CRON exige driver oficial — Baileys nunca recebe
-    //    automação desassistida (padrão de ban, doc 26 §Em aberto → decidido no doc 30).
-    //    Reativa e cadência comercial são isentas: rodam no número de vendas (Baileys).
-    if (it.origem === "CRON" && !reativa && !comercial && it.numero.driver !== "META_CLOUD") {
+    // 2. Trava de driver (S1 revogada para MOTOR, D36): disparo do CRON exige driver que aceite
+    //    automação (MOTOR ou Meta); BAILEYS legado nunca recebe automação desassistida.
+    //    Reativa e cadência comercial são isentas (D34).
+    if (it.origem === "CRON" && !reativa && !comercial && !driverAceitaAutomacao(it.numero.driver)) {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
       r.canceladas += 1;
       continue;
