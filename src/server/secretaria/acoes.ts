@@ -21,7 +21,7 @@ const PedidoSchema = z.object({ matriculaId: z.string().min(1), campo: z.enum(["
   if (mensagem) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["valorProposto"], message: mensagem });
 });
 
-function revalidar() { revalidatePath("/secretaria"); revalidatePath("/alunos", "layout"); revalidatePath("/leads", "layout"); }
+function revalidar() { revalidatePath("/secretaria"); revalidatePath("/alunos", "layout"); revalidatePath("/funil"); }
 
 export async function anexarDocumentoMatricula(matriculaId: string, input: { categoria: CategoriaDocumento; nome: string; url: string }) {
   return executarAcao(async () => {

@@ -84,12 +84,10 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
   return normalizada.getFullYear() === ano && normalizada.getMonth() === mes - 1 && normalizada.getDate() === dia ? valor : null;
 }
 
-function revalidarLead(id?: string) {
-  revalidatePath("/leads");
+function revalidarLead() {
   revalidatePath("/funil");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
-  if (id) revalidatePath(`/leads/${id}`);
 }
 
 /** Carrega o lead garantindo que o usuário pode vê-lo (vendedor só os próprios). */
@@ -242,7 +240,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
       return lead.id;
     });
 
-    revalidarLead(id);
+    revalidarLead();
     return { id };
   });
 }
@@ -271,7 +269,7 @@ export async function registrarNotaInterna(leadId: string, input: NotaInternaInp
         payload: { nota },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -294,7 +292,7 @@ export async function definirTemperatura(leadId: string, temperatura: Temperatur
         payload: { de: lead.temperatura, temperatura, campo: "temperatura" },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -338,7 +336,7 @@ export async function editarLead(id: string, input: LeadInput): Promise<Resultad
         payload: { nome: dados.nome, temperatura: dados.temperatura },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -378,7 +376,7 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
         },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -414,7 +412,7 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
         },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -424,7 +422,7 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     // Máquina de estados, trava da linha e Evento na mesma transação: ver crm/mover-etapa.ts.
     await prisma.$transaction((tx) => moverEtapaTx(tx, autor, id, etapa));
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -444,7 +442,7 @@ export async function registrarInteracao(id: string, input: InteracaoInput): Pro
         payload: { canal: dados.canal || null, nota: dados.nota },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -505,7 +503,7 @@ export async function agendarExperimental(
         });
       }
     });
-    revalidarLead(id);
+    revalidarLead();
     revalidatePath("/home");
   });
 }
@@ -529,7 +527,7 @@ export async function enviarProposta(id: string): Promise<Resultado> {
         payload: { data: agora.toISOString() },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -552,7 +550,7 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu
         payload: { motivoPerda: dados.motivoPerda, observacao: dados.observacao || null },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -579,7 +577,7 @@ export async function anexarDocumentoLead(
         payload: { categoria: doc.categoria, nome: doc.nome },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -607,7 +605,7 @@ export async function arquivarDocumentoLead(documentoId: string): Promise<Result
         payload: { documentoId, nome: doc.nome },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -655,7 +653,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
       });
     });
     revalidatePath("/home");
-    revalidatePath("/leads");
+    revalidatePath("/funil");
   });
 }
 
@@ -686,7 +684,7 @@ export async function atribuirProfessorExperimental(
         payload: { de: anterior, professorId },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
     revalidatePath("/home");
   });
 }
@@ -899,6 +897,6 @@ export async function atribuirDono(
         payload: { de: lead.vendedorDonoId, para: vendedorId, motivo: motivo || null },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }

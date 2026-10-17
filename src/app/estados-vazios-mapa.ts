@@ -562,6 +562,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/carteira/ListaCarteira.tsx": [
     "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na carteira.\"}",
   ],
+  "src/app/(app)/funil/EdicaoOportunidade.tsx": [
+    "compacto · Nenhum documento anexado.",
+  ],
   "src/app/(app)/funil/PainelOportunidade.tsx": [
     "compacto · Nenhuma atividade registrada.",
   ],
@@ -590,14 +593,6 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/InboxCliente.tsx": [
     "bloco · {busca ? ( <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId }",
     "compacto · Nenhum.",
-  ],
-  "src/app/(app)/leads/LeadsLista.tsx": [
-    "linha · {totalBase === 0 ? \"Nenhum lead na sua carteira.\" : filtrando ? ( <>Nenhum lead com esses filtros. <",
-  ],
-  "src/app/(app)/leads/[id]/FichaLead.tsx": [
-    "compacto · Nenhum documento anexado.",
-    "compacto · Sem transferências de dono.",
-    "compacto · Sem eventos ainda.",
   ],
   "src/app/(app)/oportunidades/[id]/contratacao/page.tsx": [
     "bloco · {c.podeCadastrarNovo ? \"Não há cadastro com o contato da negociação. Você poderá preencher os dados ",

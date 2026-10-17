@@ -8,6 +8,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }))
 vi.mock("@/server/comercial/acoes", () => ({
   atribuirDono: vi.fn(), definirTemperatura: vi.fn(), agendarExperimental: vi.fn(),
   enviarProposta: vi.fn(), registrarNotaInterna: vi.fn(), marcarPerdido: vi.fn(),
+  atualizarResumo: vi.fn(), atualizarDatas: vi.fn(), editarLead: vi.fn(), registrarInteracao: vi.fn(),
+  anexarDocumentoLead: vi.fn(), arquivarDocumentoLead: vi.fn(),
 }));
 vi.mock("@/server/matricula/acoes", () => ({ registrarLinkPagamento: vi.fn() }));
 
@@ -20,6 +22,9 @@ const base: DetalheOportunidade = {
   proximaAcao: "Ligar", proximoFollowUp: null, dataExperimental: null, motivoPerda: null,
   criadoEm: new Date("2026-10-01T12:00:00Z"), pessoaId: "p1", interesse: null, objetivo: null,
   urgencia: null, orcamento: null, objecao: null, taxaMatricula: null,
+  telefoneE164: "+50688887777", paisId: "cr", segmento: "ADULTO", origemCampanha: null, origemConjunto: null,
+  origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null,
+  documentos: [{ id: "d1", categoria: "PROPOSTA", nome: "proposta.pdf", url: "/api/files/a.pdf" }],
 };
 const detalheEmProposta: DetalheOportunidade = { ...base, etapa: "PROPOSTA" };
 const detalheEmExperimental: DetalheOportunidade = { ...base, etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: new Date("2026-10-20T18:00:00Z") };
@@ -76,5 +81,19 @@ describe("PainelOportunidade", () => {
     });
     expect(html.indexOf("Perdida: Preço")).toBeGreaterThan(-1);
     expect(html.indexOf("Perdida: Preço")).toBeLessThan(html.indexOf("Oportunidade criada"));
+  });
+  it("edições da ficha antiga no painel: resumo, datas, dados e documentos em Detalhes; interação em Atividade (B1 da R1 do #216)", () => {
+    const detalhes = render(base, GERENTE, { abaInicial: "detalhes" });
+    for (const t of ["Editar resumo", "Salvar datas", "Editar dados", "Anexar documento", "proposta.pdf", "Próximo follow-up"]) expect(detalhes).toContain(t);
+    expect(render(base, GERENTE, { abaInicial: "atividade" })).toContain("Registrar interação");
+    const vendedor = render(base, ["funil.ver", "funil.mover"], { abaInicial: "detalhes" });
+    expect(vendedor).toContain("Editar resumo");
+    expect(vendedor).toContain("Salvar datas");
+  });
+  it("só leitura não edita resumo, datas, dados, documentos nem registra interação", () => {
+    const so = render(base, ["funil.ver"], { abaInicial: "detalhes" });
+    for (const t of ["Editar resumo", "Salvar datas", "Editar dados", "Anexar documento", ">Arquivar"]) expect(so).not.toContain(t);
+    expect(so).toContain("proposta.pdf");
+    expect(render(base, ["funil.ver"], { abaInicial: "atividade" })).not.toContain("Registrar interação");
   });
 });

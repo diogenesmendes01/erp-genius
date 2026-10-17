@@ -2767,3 +2767,59 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   contrato: `mensagem.recebida` com texto longo (~260 KB no pior caso UTF-8). Testes em `route.test.ts`.
 - **C2:** segue em aberto (os `*.int.test.ts` não rodam no CI).
 **Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
+
+## CRM, bloco J: saída de `/leads` e da ficha antiga (Fase 2, Tarefas 36 e 37; 17/10/2026)
+
+### Verificação para o PR (bloco J, branch `claude/fase2-j-saida-leads`, 17/10/2026)
+- Tarefas: 36 (links e revalidações de lead apontam para `/funil`) e 37 (saem `/leads`, `/leads/[id]` e
+  `/leads/[id]/contratacao`; a guarda `src/app/sem-rota-leads.test.ts` impede a volta).
+- Correção da revisão final:
+  - saiu o código que só servia à lista e à ficha antigas: `sanearFiltrosLeads`, `hrefLeads`, `destinoPaginaLeads`,
+    `hrefDosCamposLeads`, `camposDosFiltrosLeads`/`CamposLeads`, `filtrosLeadsParaQuery`, `temFiltroLeads` e
+    `LEADS_POR_PAGINA` (`src/server/comercial/filtros.ts`), `listarLeadsPagina` (`src/server/comercial/consultas.ts`) e
+    `tituloLead` (`src/server/titulos-registro.ts`), com os testes deles. Ficam `lerFiltrosLeads`,
+    `filtrosDaConsultaLeads`, `whereFiltrosLead` e `listarLeads`, usados por `/api/exportacoes/[tipo]`;
+  - `revalidarLead()` (`src/server/comercial/acoes.ts`) e `revalidar()` (`src/server/matricula/acoes.ts`) perderam o
+    parâmetro sem uso, e os `leadId` que só alimentavam esse argumento saíram dos chamadores. Os 2 avisos novos de lint
+    sumiram.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (os mesmos da linha de base).
+- `npm test`: primeira rodada com 1 falha por timeout (`src/app/confirmacoes.test.ts`, container sob carga das outras
+  faixas, load average 12 a 18); a repetição saiu com 693 arquivos e 5017 testes verdes, saída 0.
+- Integração no perfil `dev-gravacoes` (as 5 migrations da `main` aplicadas só nesse banco com `prisma migrate deploy`):
+  `vitest run -c vitest.integration.config.ts --changed origin/claude/fase2-f-contatos` (os `*.int.test.ts` que o diff
+  toca, pois `vitest related` com os 49 arquivos estourou os 30 min): 36 arquivos e 518 testes verdes, saída 0. A suíte
+  `npm run test:int` completa (mais de 2 h) fica com o integrador.
+
+### Base trocada para `main` e correções da R1 do #216 (17/10/2026)
+- **Merges do `main`:** três merges, `f8d6969a` (#211, #212, #213 e #207), `019503f0` (#214) e `ec188b0d` (#215,
+  Fase 4C). Nos três o conflito foi só neste quadro; ficam os blocos de cada PR, com o próprio **Estado**. O código
+  mesclou sem conflito, e o `main` não trouxe novos links ou usos de `/leads` nem da ficha antiga. Sem migration nova.
+- **B1:** as edições que só existiam na ficha antiga ficam no `PainelOportunidade` do `/funil`
+  (`src/app/(app)/funil/EdicaoOportunidade.tsx`), com as mesmas server actions, o mesmo papel e o mesmo escopo de
+  carteira. Na aba Detalhes: resumo e próximo passo (`atualizarResumo`); datas e follow-up (`atualizarDatas`); dados
+  da oportunidade (`editarLead`; temperatura e a origem que a tela não mostra vão como estão); documentos
+  (`anexarDocumentoLead`, com upload ligado à oportunidade e à categoria, e `arquivarDocumentoLead`). Na aba
+  Atividade: registrar interação (`registrarInteracao`). Edita quem tem `funil.mover`.
+  - `obterOportunidade` traz os campos novos e os documentos ativos com o filtro de `obterLead`.
+  - O plano (Tarefas 15 a 18, 36 e 37) não dava destino a essas edições.
+  - Testes: `EdicaoOportunidade.interacao.test.ts`, `PainelOportunidade.test.ts` e `historico.int.test.ts`. A trava
+    `sem-rota-leads.test.ts` passa a exigir as cinco seções no painel e as seis ações. Manifestos `botoes-mapa`,
+    `campos-mapa` e `estados-vazios-mapa` atualizados.
+- **C2:** redirects permanentes em `next.config.mjs`: `/leads` → `/funil`, `/leads/:id` → `/funil?o=:id` e
+  `/leads/:id/contratacao` → `/oportunidades/:id/contratacao`. Teste em `sem-rota-leads.test.ts`.
+- **C3 (decisão):** a entrada da matrícula a partir da oportunidade é "Preparar contratação"
+  (`/oportunidades/[id]/contratacao`). O "Converter em matrícula" da ficha antiga (`/matriculas/nova?lead=<id>`)
+  não volta. O pré-preenchimento por `?lead=` em `/matriculas/nova` fica no código por enquanto; a remoção é uma
+  tarefa à parte.
+- Verificação depois do último merge, num banco descartável `erp_genius_test_fix216` (`migrate deploy`, apagado no
+  fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: 0 erros e 43 avisos já existentes.
+  - `npm test`: 706 arquivos e 5204 testes verdes, saída 0.
+  - Integração: os `*.int.test.ts` tocados pelo diff da 2J (`--changed origin/main`), pelos três merges e pela R1.
+    Foram 61 arquivos e 728 testes verdes. A rodada saiu com código 1 por um erro não tratado
+    (`ErroAutenticacao`) atribuído a `portal-aluno/preferencia-fuso.int.test.ts`, no teste de revogação concorrente.
+    O arquivo veio do `main` e não é tocado pela 2J; isolado, passou duas vezes (9 testes, sem erro).
+**Estado**: Implementado; base `main`; correções da R1 aplicadas. Antes do merge, o integrador precisa rodar `npm test`
+completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não concluído.

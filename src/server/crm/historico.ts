@@ -1,4 +1,4 @@
-import { Papel, type EtapaLead, type MotivoPerda, type Prisma, type StatusCobranca, type Temperatura } from "@prisma/client";
+import { Papel, type CategoriaDocumento, type EtapaLead, type MotivoPerda, type Prisma, type Segmento, type StatusCobranca, type Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
@@ -40,6 +40,20 @@ export type DetalheOportunidade = {
   urgencia: string | null;
   orcamento: string | null;
   objecao: string | null;
+  /** Campos editados no painel (B1 da R1 do #216: o que só a ficha antiga de /leads editava). */
+  telefoneE164: string | null;
+  paisId: string | null;
+  segmento: Segmento;
+  origemCampanha: string | null;
+  origemConjunto: string | null;
+  origemAnuncio: string | null;
+  origemPalavra: string | null;
+  planoPrevisto: string | null;
+  comissaoPrevista: string | null;
+  dataProposta: Date | null;
+  /** Documentos ativos, com o mesmo filtro da ficha antiga (obterLead): fora do cadastro administrativo,
+   * some OUTRO e, depois que a secretaria assume a matrícula, só fica PROPOSTA. */
+  documentos: { id: string; categoria: CategoriaDocumento; nome: string; url: string }[];
   /** Taxa de matrícula (cobrança tipo MATRICULA) da matrícula da oportunidade, quando existe. */
   taxaMatricula: {
     cobrancaId: string;
@@ -148,8 +162,10 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     include: {
       pais: { select: { nome: true, moedaLocal: true } },
       vendedor: { select: { id: true, nome: true } },
+      documentos: { where: { arquivado: false }, orderBy: { criadoEm: "desc" }, select: { id: true, categoria: true, nome: true, url: true } },
       matricula: {
         select: {
+          secretariaAssumiuEm: true,
           cobrancas: {
             where: { tipo: "MATRICULA" },
             orderBy: { criadoEm: "asc" },
@@ -162,6 +178,10 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
   });
   if (!l) return null;
   const taxa = l.matricula?.cobrancas[0] ?? null;
+  const cadastroAdministrativo = usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
+  const documentos = cadastroAdministrativo
+    ? l.documentos
+    : l.documentos.filter((d) => d.categoria !== "OUTRO" && (!l.matricula?.secretariaAssumiuEm || d.categoria === "PROPOSTA"));
   return {
     id: l.id,
     codigo: l.codigo,
@@ -184,6 +204,17 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     urgencia: l.urgencia,
     orcamento: l.orcamento,
     objecao: l.objecao,
+    telefoneE164: l.telefoneE164,
+    paisId: l.paisId,
+    segmento: l.segmento,
+    origemCampanha: l.origemCampanha,
+    origemConjunto: l.origemConjunto,
+    origemAnuncio: l.origemAnuncio,
+    origemPalavra: l.origemPalavra,
+    planoPrevisto: l.planoPrevisto,
+    comissaoPrevista: l.comissaoPrevista ? l.comissaoPrevista.toFixed(2) : null,
+    dataProposta: l.dataProposta,
+    documentos,
     taxaMatricula: taxa
       ? { cobrancaId: taxa.id, status: taxa.status, linkPagamento: taxa.linkPagamento, linkEnviadoEm: taxa.linkEnviadoEm }
       : null,
