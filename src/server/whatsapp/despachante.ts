@@ -10,7 +10,8 @@ import {
 } from "@/server/comercial/regua-fabrica";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
-import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
+import { randomUUID } from "node:crypto";
+import { ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
 import { driverEvolution } from "./drivers/evolution";
 import { driverMetaCloud } from "./drivers/meta-cloud";
 import { lerMidiaParaEnvio } from "./midia";
@@ -483,6 +484,8 @@ export async function despacharFila(
       };
       const driver = DRIVERS[it.numero.driver];
       if (!driver) throw new Error(`Driver ${it.numero.driver} sem implementação no despachante.`);
+      // Task 4: porta v2. O id real por tentativa chega na Task 8; até lá, drivers antigos ignoram.
+      const opcoesEnvio: OpcoesEnvio = { clientMessageId: it.clientMessageId ?? randomUUID(), origem: it.origem };
       let envio;
       if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
         // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
@@ -493,16 +496,16 @@ export async function despacharFila(
           nomeArquivo: midia.nomeArquivo,
           dadosBase64: midia.dadosBase64,
           legenda: it.corpoRenderizado || null,
-        });
+        }, opcoesEnvio);
       } else if (it.numero.driver === "META_CLOUD" && it.template) {
         envio = await driver.enviarTemplate(numeroCanal, it.contato.telefoneE164, {
           nome: it.template.nome,
           idioma: it.template.idioma,
           variaveis: (it.variaveis as string[] | null) ?? [],
           corpoRenderizado: it.corpoRenderizado,
-        });
+        }, opcoesEnvio);
       } else {
-        envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado);
+        envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado, opcoesEnvio);
       }
 
       await prisma.$transaction(confirmarTransacao(async (tx) => {
