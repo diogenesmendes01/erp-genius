@@ -70,6 +70,7 @@ function revalidar(leadId?: string | null) {
   revalidatePath("/alunos");
   revalidatePath("/financeiro", "layout");
   revalidatePath("/secretaria");
+  revalidatePath("/comissoes");
   if (leadId) revalidatePath(`/leads/${leadId}`);
 }
 
@@ -568,7 +569,7 @@ async function ativarMatriculaTx(
     if (com.status !== StatusComissao.PENDENTE) continue;
     await tx.comissao.updateMany({
       where: { id: com.id, status: StatusComissao.PENDENTE },
-      data: { status: StatusComissao.APROVADA },
+      data: { status: StatusComissao.APROVADA, aprovadaEm: new Date() },
     });
   }
 

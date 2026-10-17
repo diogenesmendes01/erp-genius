@@ -2,8 +2,9 @@ import type { Prisma } from "@prisma/client";
 import { lerOrdenacao, orderByDe, parametrosOrdenacao, type CriteriosOrdenacao, type Ordenacao } from "@/lib/ordenacao";
 import type { ParametrosUrl } from "@/lib/pagina-url";
 
-// Ordenação das listas de comissões (/comissoes e a aba do /financeiro) pelo cabeçalho (E1,
-// docs/42-auditoria-frontend-ux.md §5.6 A9: "/comissoes não tem ordenação"). Lista fechada de colunas,
+// Ordenação das listas de comissões (/financeiro/comissoes e a aba do /financeiro) pelo cabeçalho (E1,
+// docs/42-auditoria-frontend-ux.md §5.6 A9, que chamava a lista de "/comissoes"; não é o painel do CRM em
+// /comissoes). Lista fechada de colunas,
 // ordem feita no banco antes da página. Módulo puro (sem Prisma client): as páginas leem a URL daqui.
 
 export const ORDENS_COMISSOES = ["vendedor", "valor", "status"] as const;
