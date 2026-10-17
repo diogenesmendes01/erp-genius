@@ -2524,4 +2524,34 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   se espalha por quase toda a suíte (`labels.ts` é importado em todo lugar) e foi interrompido por tempo. Rodados os
   arquivos que o bloco toca: `motor/schema-motor`, `despachante.live`, `despachante-comercial`, `destinatario-atual`,
   `cron` e `acoes` (whatsapp): saída 0, 6 arquivos e 53 testes verdes. A suíte completa fica com o integrador.
-**Estado**: Implementado; aguardando o integrador.
+
+### Correções da R1 do #205 (17/10/2026)
+- **C1 (conflito com o `main`):** o `main` (8a5debff, com o CRM bloco H) foi mesclado. Só o quadro teve conflito: os
+  dois blocos ficaram, cada um com a própria linha **Estado**. `schema.prisma` (`IntencaoMensagem` com `agendadaPara` e
+  `tarefaId` ao lado de `clientMessageId`), `labels.ts`, `enums-rotulos.test.ts` e `despachante.ts` (filtro por
+  `agendadaPara` ao lado da porta v2) mesclaram sem conflito. As migrations da 4A (`20261017120000` e
+  `20261017130000`) seguem depois de `20261017090000_crm_tarefas` e `20261017100000_inbox_tempo_real`.
+- **C2 (ambiente sem envio até ligar o driver), decisão registrada:** a migration
+  `20261017130000_whatsapp_motor_dados` termina com `UPDATE "NumeroWhatsApp" SET ativo = false, sessao =
+  'DESCONECTADO' WHERE driver <> 'MOTOR'`, ou seja, desativa todos os números que não são MOTOR. Como o `driverMotor`
+  só entra em `DRIVERS` na Task 5 (bloco 4B) e ainda não há como cadastrar um número MOTOR (Tasks 18 e 19), **depois
+  do deploy da 4A o ambiente fica sem envio de WhatsApp até a tarefa que liga o driver**. Isso é intencional: segue
+  as decisões D1 e D3 (ambiente em teste; Meta e Evolution saem). O integrador não deve subir a 4A num ambiente que
+  precise enviar WhatsApp antes da 4B.
+- **C3 (número MOTOR no despachante):** o comentário de `DRIVERS` dizia que o MOTOR "entra na Fase 4, Task 4"; agora
+  diz que o driver entra na Task 5. Novo `driverDoNumero(driver)` em `despachante.ts`: sem driver registrado, lança
+  `ErroDriver("driver_sem_implementacao")` (não reprocessável), e o `catch` grava esse motivo em vez de
+  `resultado_incerto`, que mandava para revisão humana algo que com certeza não saiu. O registro do driver ficou para
+  a Task 5, como manda o plano, porque depende do `clientMessageId` no claim e do adiamento reprocessável (Task 6).
+  Teste unitário: `src/server/whatsapp/despachante-driver.test.ts`.
+- **C4 (requisito para a Task 8, pendência):** `drivers/motor.ts` trata `TIMEOUT` e `INDISPONIVEL` (inclui
+  `ECONNRESET`) como reprocessáveis, mas um timeout depois que o motor recebeu o POST é um resultado incerto. **A nova
+  tentativa precisa reaproveitar o mesmo `clientMessageId`** para o motor deduplicar; hoje o despachante gera
+  `randomUUID()` quando a intenção não tem id, e o schema descreve o id como "um por tentativa". A Task 8 precisa
+  garantir isso junto com as Tasks 5 e 6 (id gravado no claim e mantido no adiamento): só o reenvio decidido na revisão
+  humana (`REENVIAR_APOS_VERIFICACAO`) zera o id. Não muda nada nesta PR, porque o driver não está ligado e o
+  despachante ainda não lê `reprocessavel`.
+- **C5:** tratado na #206 (`recursos-canal.ts`).
+- **C6 (nit):** `drivers/motor.ts` passou a montar `/v1/numeros/${encodeURIComponent(…)}`, como `motor/acoes.ts`.
+  Teste em `drivers/motor.test.ts`.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
