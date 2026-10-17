@@ -43,7 +43,11 @@ it("recusa a sessão revogada depois da captura", async () => {
 });
 
 it("recusa a sessão expirada depois da captura", async () => {
-  await prisma.sessaoPortalAluno.update({ where: { id: sessao.sessaoId }, data: { expiraEm: new Date(Date.now() - 1_000) } });
+  // A sessão foi criada há instantes; um vencimento "1s atrás" ficaria antes da
+  // criação e violaria SessaoPortalAluno_expira_depois_criacao. Simula uma
+  // sessão emitida no passado e vencida antes da revalidação.
+  const agora = Date.now();
+  await prisma.sessaoPortalAluno.update({ where: { id: sessao.sessaoId }, data: { criadaEm: new Date(agora - 60 * 60_000), expiraEm: new Date(agora - 1_000) } });
   await expect(revalidar()).rejects.toThrow("Sessão do aluno inválida ou expirada");
 });
 

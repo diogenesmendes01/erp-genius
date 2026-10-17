@@ -130,6 +130,20 @@ export const EXCECOES_VAZIO_PAGINADO: readonly Excecao[] = [
     arquivo: "src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/page.tsx",
     trecho: "página(s).",
     motivo: "contagem de folhas do PDF do original ('{a.paginas} página(s).'); o desconhecido antes é número, não página de lista",
+  },  {
+    arquivo: "src/components/conversa/emoji-dados.json",
+    trecho: "aninhando | galhos | lar | ninho | ninho vazio | passarinho | pássaro | empty nest",
+    motivo: "palavras-chave de busca do emoji (dados CLDR em emoji-dados.json, importados pelo SeletorEmoji): nomeiam o desenho do emoji, nunca são texto de lista vazia",
+  },
+  {
+    arquivo: "src/components/conversa/emoji-dados.json",
+    trecho: "página dobrada",
+    motivo: "palavras-chave de busca do emoji (dados CLDR em emoji-dados.json, importados pelo SeletorEmoji): nomeiam o desenho do emoji, nunca são texto de lista vazia",
+  },
+  {
+    arquivo: "src/components/conversa/emoji-dados.json",
+    trecho: "página voltada para cima",
+    motivo: "palavras-chave de busca do emoji (dados CLDR em emoji-dados.json, importados pelo SeletorEmoji): nomeiam o desenho do emoji, nunca são texto de lista vazia",
   },
 ];
 

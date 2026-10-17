@@ -26,6 +26,13 @@ import { carregarReposicoesFrequenciaTx } from "@/server/avaliacoes/frequencia-r
 import { aprovarCorrecaoAula, proporCorrecaoAula, revisarCorrecaoAula, revisarImpactosCorrecaoAula } from "./correcao-aula";
 
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
+// O banco (CURRENT_DATE nos triggers de vigência e de agenda) usa o relógio
+// real, que não segue vi.setSystemTime. As agendas futuras ficam nos meses
+// seguintes ao mês real, e as datas passadas derivam do dia real.
+const AGORA_REAL = new Date();
+const mesCivil = (deslocamento: number) => new Date(Date.UTC(AGORA_REAL.getUTCFullYear(), AGORA_REAL.getUTCMonth() + deslocamento, 1)).toISOString().slice(0, 7);
+const diaCivil = (deslocamento: number) => new Date(Date.UTC(AGORA_REAL.getUTCFullYear(), AGORA_REAL.getUTCMonth(), AGORA_REAL.getUTCDate() + deslocamento)).toISOString().slice(0, 10);
+const M1 = mesCivil(1), M2 = mesCivil(2), M3 = mesCivil(3);
 let gestorId: string, adminId: string, secretariaId: string, professorId: string, alunoId: string, matriculaId: string, turmaId: string, produtoPaisId: string;
 let aulaId: string, aulaExtraId: string;
 
@@ -50,9 +57,9 @@ async function criarAulaOriginal(chave: string, inicio = "2026-09-10T10:00:00.00
   return aula.id;
 }
 
-async function regraESnapshot(chave = "regra-beneficio-001", quantidadePorPeriodo = 3) {
+async function regraESnapshot(chave = "regra-beneficio-001", quantidadePorPeriodo = 3, periodo: { unidade: "DIAS" | "MESES"; duracaoPeriodo: number } = { unidade: "MESES", duracaoPeriodo: 1 }) {
   entrar(gestorId);
-  const proposta = await proporRegraBeneficioReposicaoOferta({ produtoPaisId, permiteParticular: true, referencia: "CIVIL", unidade: "MESES", duracaoPeriodo: 1, quantidadePorPeriodo, antecedenciaCancelamentoMinutos: 120, motivo: "Benefício acadêmico mensal de reposição", chaveIdempotencia: chave });
+  const proposta = await proporRegraBeneficioReposicaoOferta({ produtoPaisId, permiteParticular: true, referencia: "CIVIL", ...periodo, quantidadePorPeriodo, antecedenciaCancelamentoMinutos: 120, motivo: "Benefício acadêmico mensal de reposição", chaveIdempotencia: chave });
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
   entrar(adminId);
   expect(await decidirRegraBeneficioReposicaoOferta({ regraId: proposta.dado.id, aprovar: true, motivo: "Regra de oferta conferida independentemente" })).toMatchObject({ ok: true, dado: { aprovada: true } });
@@ -145,36 +152,36 @@ it("reserva benefício de oferta aprovada e cria encontro REPOSICAO ligado ao pe
   const { beneficioId } = await regraESnapshot();
   await inserirPedido("pedido-normal");
   entrar(secretariaId);
-  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-normal", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC", motivo: "Secretaria confirmou o horário com o aluno", chaveIdempotencia: "agenda-normal-001" });
+  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-normal", professorId, inicioLocal: `${M1}-06T10:00`, fimLocal: `${M1}-06T11:00`, fuso: "UTC", motivo: "Secretaria confirmou o horário com o aluno", chaveIdempotencia: "agenda-normal-001" });
   expect(agenda).toMatchObject({ ok: true, dado: { idempotente: false } });
   if (!agenda.ok || !agenda.dado) throw new Error(JSON.stringify(agenda));
   const [linha] = await prisma.$queryRaw<{ beneficioId: string; reposicaoId: string; encontroId: string; status: string; periodoInicio: Date; periodoFimExclusivo: Date; reposicaoIndividualId: string }[]>(Prisma.sql`
     SELECT a."beneficioId" AS "beneficioId",a."reposicaoId" AS "reposicaoId",a."encontroId" AS "encontroId",a."statusBeneficio"::text AS status,a."periodoInicio" AS "periodoInicio",a."periodoFimExclusivo" AS "periodoFimExclusivo",e."reposicaoIndividualId" AS "reposicaoIndividualId"
     FROM "AgendaReposicaoIndividual" a JOIN "EncontroAgenda" e ON e.id=a."encontroId" WHERE a.id=${agenda.dado.agendaId}
   `);
-  expect(linha).toMatchObject({ beneficioId, reposicaoId: "pedido-normal", encontroId: agenda.dado.encontroId, reposicaoIndividualId: "pedido-normal", status: "RESERVADA", periodoInicio: new Date("2026-10-01T00:00:00.000Z"), periodoFimExclusivo: new Date("2026-11-01T00:00:00.000Z") });
-  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-normal", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC", motivo: "Tentativa duplicada não pode criar outro encontro", chaveIdempotencia: "agenda-normal-002" })).toMatchObject({ ok: false });
+  expect(linha).toMatchObject({ beneficioId, reposicaoId: "pedido-normal", encontroId: agenda.dado.encontroId, reposicaoIndividualId: "pedido-normal", status: "RESERVADA", periodoInicio: new Date(`${M1}-01T00:00:00.000Z`), periodoFimExclusivo: new Date(`${M2}-01T00:00:00.000Z`) });
+  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-normal", professorId, inicioLocal: `${M1}-07T10:00`, fimLocal: `${M1}-07T11:00`, fuso: "UTC", motivo: "Tentativa duplicada não pode criar outro encontro", chaveIdempotencia: "agenda-normal-002" })).toMatchObject({ ok: false });
 });
 
 it("a prévia autenticada informa período, saldo e conflitos antes de confirmar a agenda", async () => {
   await regraESnapshot("regra-previa", 2);
   await inserirPedido("pedido-previa");
   entrar(secretariaId);
-  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC" })).toMatchObject({
-    ok: true, dado: { periodo: { inicio: "2026-10-01", fimExclusivo: "2026-11-01" }, quantidadePorPeriodo: 2, saldo: 2,
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: `${M1}-06T10:00`, fimLocal: `${M1}-06T11:00`, fuso: "UTC" })).toMatchObject({
+    ok: true, dado: { periodo: { inicio: `${M1}-01`, fimExclusivo: `${M2}-01` }, quantidadePorPeriodo: 2, saldo: 2,
       conflitos: { encontros: 0, indisponibilidades: 0, reservas: 0 }, podeAgendar: true },
   });
   entrar(gestorId);
-  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC" })).toMatchObject({ ok: false });
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-previa", professorId, inicioLocal: `${M1}-06T10:00`, fimLocal: `${M1}-06T11:00`, fuso: "UTC" })).toMatchObject({ ok: false });
 });
 
 it("a última cota é reservável uma vez e bloqueia outra origem no mesmo período", async () => {
   await regraESnapshot("regra-uma-cota", 1);
   await inserirPedido("pedido-cota-1");
   entrar(secretariaId);
-  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-cota-1", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC", motivo: "Reserva da única cota acadêmica", chaveIdempotencia: "agenda-cota-1" })).toMatchObject({ ok: true });
+  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-cota-1", professorId, inicioLocal: `${M1}-06T10:00`, fimLocal: `${M1}-06T11:00`, fuso: "UTC", motivo: "Reserva da única cota acadêmica", chaveIdempotencia: "agenda-cota-1" })).toMatchObject({ ok: true });
   await inserirPedido("pedido-cota-2", aulaExtraId);
-  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-cota-2", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC", motivo: "Segunda reserva no mesmo período", chaveIdempotencia: "agenda-cota-2" })).toMatchObject({ ok: false });
+  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-cota-2", professorId, inicioLocal: `${M1}-07T10:00`, fimLocal: `${M1}-07T11:00`, fuso: "UTC", motivo: "Segunda reserva no mesmo período", chaveIdempotencia: "agenda-cota-2" })).toMatchObject({ ok: false });
 });
 
 it("serializa duas agendas distintas na última cota e preserva o replay vencedor", async () => {
@@ -184,11 +191,11 @@ it("serializa duas agendas distintas na última cota e preserva o replay vencedo
   const outraSecretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   const entradas = [
     {
-      reposicaoId: "pedido-cota-concorrente-1", professorId, inicioLocal: "2026-10-06T10:00", fimLocal: "2026-10-06T11:00", fuso: "UTC",
+      reposicaoId: "pedido-cota-concorrente-1", professorId, inicioLocal: `${M1}-06T10:00`, fimLocal: `${M1}-06T11:00`, fuso: "UTC",
       motivo: "Primeira disputa pela única cota de reposição", chaveIdempotencia: "agenda-cota-concorrente-1",
     },
     {
-      reposicaoId: "pedido-cota-concorrente-2", professorId, inicioLocal: "2026-10-07T10:00", fimLocal: "2026-10-07T11:00", fuso: "UTC",
+      reposicaoId: "pedido-cota-concorrente-2", professorId, inicioLocal: `${M1}-07T10:00`, fimLocal: `${M1}-07T11:00`, fuso: "UTC",
       motivo: "Segunda disputa pela única cota de reposição", chaveIdempotencia: "agenda-cota-concorrente-2",
     },
   ] as const;
@@ -232,8 +239,8 @@ it("serializa duas agendas distintas na última cota e preserva o replay vencedo
     id: resultadoVencedor.dado.agendaId,
     reposicaoId: entradaVencedora.reposicaoId,
     encontroId: resultadoVencedor.dado.encontroId,
-    periodoInicio: new Date("2026-10-01T00:00:00.000Z"),
-    periodoFimExclusivo: new Date("2026-11-01T00:00:00.000Z"),
+    periodoInicio: new Date(`${M1}-01T00:00:00.000Z`),
+    periodoFimExclusivo: new Date(`${M2}-01T00:00:00.000Z`),
   }]);
   authMock.mockResolvedValue({ user: { id: secretariaVencedora } });
   expect(await agendarReposicaoIndividual(entradaVencedora)).toEqual({
@@ -245,12 +252,12 @@ it("serializa duas agendas distintas na última cota e preserva o replay vencedo
 });
 
 it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir benefício", async () => {
-  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-outubro", nome: "Recesso de outubro", tipo: "RECESSO", inicio: "2026-10-12", fim: "2026-10-12" }], motivo: "Nova versão com recesso de outubro", chaveIdempotencia: "calendario-agenda-reposicao-v2", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Nova versão do calendário conferida" } } } });
+  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-outubro", nome: "Recesso de outubro", tipo: "RECESSO", inicio: `${M1}-12`, fim: `${M1}-12` }], motivo: "Nova versão com recesso de outubro", chaveIdempotencia: "calendario-agenda-reposicao-v2", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Nova versão do calendário conferida" } } } });
   await inserirPedido("pedido-excecao", aulaExtraId);
   entrar(secretariaId);
-  const proposta = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Aluno só tem disponibilidade no recesso", evidencia: "Solicitação registrada no atendimento", chaveIdempotencia: "excecao-calendario-001" });
+  const proposta = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: `${M1}-12T10:00`, fimLocal: `${M1}-12T11:00`, fuso: "UTC", motivo: "Aluno só tem disponibilidade no recesso", evidencia: "Solicitação registrada no atendimento", chaveIdempotencia: "excecao-calendario-001" });
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
-  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Não pode agendar antes da exceção", chaveIdempotencia: "agenda-sem-excecao" })).toMatchObject({ ok: false });
+  expect(await agendarReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: `${M1}-12T10:00`, fimLocal: `${M1}-12T11:00`, fuso: "UTC", motivo: "Não pode agendar antes da exceção", chaveIdempotencia: "agenda-sem-excecao" })).toMatchObject({ ok: false });
   entrar(adminId);
   expect(await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: proposta.dado.id, aprovar: true, motivo: "Exceção pontual de calendário conferida" })).toMatchObject({ ok: true });
   entrar(secretariaId);
@@ -259,8 +266,8 @@ it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir be
   entrar(adminId);
   expect(await decidirAutorizacaoExcecaoReposicaoParticular({ autorizacaoId: autorizacao.dado.id, aprovar: true, motivo: "Gratuidade excepcional independente aprovada" })).toMatchObject({ ok: true });
   entrar(secretariaId);
-  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id })).toMatchObject({ ok: true, dado: { diasNaoLetivos: expect.any(Array), excecaoAgendaAprovada: true, podeAgendar: true } });
-  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id, motivo: "Agenda excepcional autorizada", chaveIdempotencia: "agenda-q34-001" });
+  expect(await consultarPreviaAgendaReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: `${M1}-12T10:00`, fimLocal: `${M1}-12T11:00`, fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id })).toMatchObject({ ok: true, dado: { diasNaoLetivos: expect.any(Array), excecaoAgendaAprovada: true, podeAgendar: true } });
+  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-excecao", professorId, inicioLocal: `${M1}-12T10:00`, fimLocal: `${M1}-12T11:00`, fuso: "UTC", autorizacaoExcecaoId: autorizacao.dado.id, motivo: "Agenda excepcional autorizada", chaveIdempotencia: "agenda-q34-001" });
   expect(agenda).toMatchObject({ ok: true });
   if (!agenda.ok || !agenda.dado) throw new Error(JSON.stringify(agenda));
   const [isenta] = await prisma.$queryRaw<{ beneficioId: string | null; status: string; autorizacaoId: string | null }[]>(Prisma.sql`SELECT "beneficioId" AS "beneficioId","statusBeneficio"::text AS status,"autorizacaoExcecaoId" AS "autorizacaoId" FROM "AgendaReposicaoIndividual" WHERE id=${agenda.dado.agendaId}`);
@@ -268,12 +275,12 @@ it("dia não letivo exige exceção aprovada e Q34 agenda isenta sem consumir be
 });
 
 it("rejeição Q19 permanece possível e idempotente quando a proposta fica indisponível ou passada", async () => {
-  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-rejeicao", nome: "Recesso para rejeição", tipo: "RECESSO", inicio: "2026-10-12", fim: "2026-10-12" }], motivo: "Calendário para rejeitar proposta obsoleta", chaveIdempotencia: "calendario-rejeicao-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
+  await prisma.versaoCalendarioEscolar.create({ data: { versao: 2, preparadorId: gestorId, fusoInstitucional: "UTC", periodos: [{ id: "recesso-rejeicao", nome: "Recesso para rejeição", tipo: "RECESSO", inicio: `${M1}-12`, fim: `${M1}-12` }], motivo: "Calendário para rejeitar proposta obsoleta", chaveIdempotencia: "calendario-rejeicao-q19", entradaHash: "fixture", decisao: { create: { decisorId: adminId, aprovada: true, motivo: "Calendário conferido" } } } });
   await inserirPedido("pedido-rejeitar-conflito");
   entrar(secretariaId);
-  const conflito = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-conflito", professorId, inicioLocal: "2026-10-12T10:00", fimLocal: "2026-10-12T11:00", fuso: "UTC", motivo: "Horário inicialmente disponível", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-conflito" });
+  const conflito = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-conflito", professorId, inicioLocal: `${M1}-12T10:00`, fimLocal: `${M1}-12T11:00`, fuso: "UTC", motivo: "Horário inicialmente disponível", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-conflito" });
   if (!conflito.ok || !conflito.dado) throw new Error(JSON.stringify(conflito));
-  await criarAulaOriginal("conflito-posterior-q19", "2026-10-12T10:00:00.000Z");
+  await criarAulaOriginal("conflito-posterior-q19", `${M1}-12T10:00:00.000Z`);
   entrar(adminId);
   const rejeitada = await decidirExcecaoAgendaReposicaoIndividual({ excecaoId: conflito.dado.id, aprovar: false, motivo: "Conflito posterior impede a aprovação" });
   expect(rejeitada, JSON.stringify(rejeitada)).toMatchObject({ ok: true, dado: { aprovada: false } });
@@ -281,7 +288,7 @@ it("rejeição Q19 permanece possível e idempotente quando a proposta fica indi
 
   await inserirPedido("pedido-rejeitar-passado", aulaExtraId);
   entrar(secretariaId);
-  const passada = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-passado", professorId, inicioLocal: "2026-10-12T12:00", fimLocal: "2026-10-12T13:00", fuso: "UTC", motivo: "Horário que se tornou obsoleto", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-passado" });
+  const passada = await proporExcecaoAgendaReposicaoIndividual({ reposicaoId: "pedido-rejeitar-passado", professorId, inicioLocal: `${M1}-12T12:00`, fimLocal: `${M1}-12T13:00`, fuso: "UTC", motivo: "Horário que se tornou obsoleto", evidencia: "Atendimento registrado", chaveIdempotencia: "excecao-rejeitar-passado" });
   if (!passada.ok || !passada.dado) throw new Error(JSON.stringify(passada));
   await prisma.excecaoAgendaReposicaoIndividual.update({ where: { id: passada.dado.id }, data: { inicio: new Date("2026-01-12T12:00:00.000Z"), fim: new Date("2026-01-12T13:00:00.000Z") } });
   entrar(adminId);
@@ -314,11 +321,11 @@ it("pedido de cancelamento apresentado no prazo devolve a reserva mesmo quando a
   await regraESnapshot("regra-cancelamento-no-prazo");
   await inserirPedido("pedido-cancelamento-no-prazo");
   entrar(secretariaId);
-  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-cancelamento-no-prazo", professorId, inicioLocal: "2026-10-20T10:00", fimLocal: "2026-10-20T11:00", fuso: "UTC", motivo: "Horário inicialmente confirmado", chaveIdempotencia: "agenda-cancelamento-no-prazo" });
+  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-cancelamento-no-prazo", professorId, inicioLocal: `${M1}-20T10:00`, fimLocal: `${M1}-20T11:00`, fuso: "UTC", motivo: "Horário inicialmente confirmado", chaveIdempotencia: "agenda-cancelamento-no-prazo" });
   if (!agenda.ok || !agenda.dado) throw new Error(JSON.stringify(agenda));
   const agendaId = agenda.dado.agendaId;
   if (!agendaId) throw new Error("O agendamento não retornou a agenda criada.");
-  const inicio = Date.parse("2026-10-20T10:00:00.000Z");
+  const inicio = Date.parse(`${M1}-20T10:00:00.000Z`);
   vi.setSystemTime(new Date(inicio - 3 * 60 * 60_000));
   const proposta = await proporCancelamentoReposicaoIndividual({ agendaId, motivo: "Aluno avisou o cancelamento com antecedência", evidencia: "Registro do atendimento ao aluno", chaveIdempotencia: "cancelamento-no-prazo-001" });
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
@@ -341,7 +348,7 @@ it("repetir a mesma decisão de cancelamento devolve o resultado persistido apó
   await regraESnapshot("regra-replay-cancelamento");
   await inserirPedido("pedido-replay-cancelamento");
   entrar(secretariaId);
-  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-replay-cancelamento", professorId, inicioLocal: "2026-10-21T10:00", fimLocal: "2026-10-21T11:00", fuso: "UTC", motivo: "Horário inicialmente confirmado", chaveIdempotencia: "agenda-replay-cancelamento" });
+  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-replay-cancelamento", professorId, inicioLocal: `${M1}-21T10:00`, fimLocal: `${M1}-21T11:00`, fuso: "UTC", motivo: "Horário inicialmente confirmado", chaveIdempotencia: "agenda-replay-cancelamento" });
   if (!agenda.ok || !agenda.dado) throw new Error(JSON.stringify(agenda));
   const agendaId = agenda.dado.agendaId;
   if (!agendaId) throw new Error("O agendamento não retornou a agenda criada.");
@@ -360,9 +367,9 @@ it("remarcação troca a reserva para o período novo, preserva o encontro antig
   await regraESnapshot("regra-remarca-periodo", 2);
   await inserirPedido("pedido-remarca-periodo");
   entrar(secretariaId);
-  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-remarca-periodo", professorId, inicioLocal: "2026-10-20T10:00", fimLocal: "2026-10-20T11:00", fuso: "UTC", motivo: "Horário original da particular", chaveIdempotencia: "agenda-remarca-periodo" });
+  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-remarca-periodo", professorId, inicioLocal: `${M1}-20T10:00`, fimLocal: `${M1}-20T11:00`, fuso: "UTC", motivo: "Horário original da particular", chaveIdempotencia: "agenda-remarca-periodo" });
   if (!agenda.ok || !agenda.dado?.agendaId || !agenda.dado.encontroId) throw new Error(JSON.stringify(agenda));
-  const proposta = await proporRemarcacaoReposicaoIndividual({ agendaId: agenda.dado.agendaId, professorId, inicioLocal: "2026-11-05T10:00", fimLocal: "2026-11-05T11:00", fuso: "UTC", motivo: "Aluno pediu nova data no período seguinte", evidencia: "Atendimento documentado para remarcação", chaveIdempotencia: "remarca-periodo-001" });
+  const proposta = await proporRemarcacaoReposicaoIndividual({ agendaId: agenda.dado.agendaId, professorId, inicioLocal: `${M2}-05T10:00`, fimLocal: `${M2}-05T11:00`, fuso: "UTC", motivo: "Aluno pediu nova data no período seguinte", evidencia: "Atendimento documentado para remarcação", chaveIdempotencia: "remarca-periodo-001" });
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
   entrar(adminId);
   const primeira = await decidirRemarcacaoReposicaoIndividual({ propostaId: proposta.dado.id, aprovar: true, motivo: "Gestão conferiu disponibilidade e reserva" });
@@ -380,8 +387,8 @@ it("remarcação troca a reserva para o período novo, preserva o encontro antig
     JOIN "EncontroAgenda" novo ON novo.id=a."encontroId"
     WHERE a.id=${agenda.dado.agendaId}
   `);
-  expect(linha).toMatchObject({ encontroId: primeira.dado.encontroId, periodoInicio: new Date("2026-11-01T00:00:00.000Z"), periodoFim: new Date("2026-12-01T00:00:00.000Z"), statusBeneficio: "RESERVADA", antigoStatus: "CANCELADO", novoStatus: "PREVISTO", encontros: BigInt(2) });
-  const fontes = await prisma.$transaction(tx => carregarReposicoesFrequenciaTx(tx, { matriculaId, aulaOriginalIds: [aulaId], apuradaEm: new Date("2026-12-01T00:00:00.000Z") }));
+  expect(linha).toMatchObject({ encontroId: primeira.dado.encontroId, periodoInicio: new Date(`${M2}-01T00:00:00.000Z`), periodoFim: new Date(`${M3}-01T00:00:00.000Z`), statusBeneficio: "RESERVADA", antigoStatus: "CANCELADO", novoStatus: "PREVISTO", encontros: BigInt(2) });
+  const fontes = await prisma.$transaction(tx => carregarReposicoesFrequenciaTx(tx, { matriculaId, aulaOriginalIds: [aulaId], apuradaEm: new Date(`${M3}-01T00:00:00.000Z`) }));
   expect(fontes.get(aulaId) ?? []).toHaveLength(0);
 });
 
@@ -390,10 +397,10 @@ it("remarcação não troca agenda quando a cota do período novo já foi ocupad
   await inserirPedido("pedido-remarca-sem-saldo");
   await inserirPedido("pedido-ocupante-novembro", aulaExtraId);
   entrar(secretariaId);
-  const original = await agendarReposicaoIndividual({ reposicaoId: "pedido-remarca-sem-saldo", professorId, inicioLocal: "2026-10-20T10:00", fimLocal: "2026-10-20T11:00", fuso: "UTC", motivo: "Reserva original no período de outubro", chaveIdempotencia: "agenda-remarca-sem-saldo" });
-  const ocupante = await agendarReposicaoIndividual({ reposicaoId: "pedido-ocupante-novembro", professorId, inicioLocal: "2026-11-10T10:00", fimLocal: "2026-11-10T11:00", fuso: "UTC", motivo: "Reserva que ocupa a única cota de novembro", chaveIdempotencia: "agenda-ocupante-novembro" });
+  const original = await agendarReposicaoIndividual({ reposicaoId: "pedido-remarca-sem-saldo", professorId, inicioLocal: `${M1}-20T10:00`, fimLocal: `${M1}-20T11:00`, fuso: "UTC", motivo: "Reserva original no período de outubro", chaveIdempotencia: "agenda-remarca-sem-saldo" });
+  const ocupante = await agendarReposicaoIndividual({ reposicaoId: "pedido-ocupante-novembro", professorId, inicioLocal: `${M2}-10T10:00`, fimLocal: `${M2}-10T11:00`, fuso: "UTC", motivo: "Reserva que ocupa a única cota de novembro", chaveIdempotencia: "agenda-ocupante-novembro" });
   if (!original.ok || !original.dado?.agendaId || !original.dado.encontroId || !ocupante.ok) throw new Error(JSON.stringify({ original, ocupante }));
-  const proposta = await proporRemarcacaoReposicaoIndividual({ agendaId: original.dado.agendaId, professorId, inicioLocal: "2026-11-05T10:00", fimLocal: "2026-11-05T11:00", fuso: "UTC", motivo: "Proposta para o período já ocupado", evidencia: "Atendimento documentado para remarcação", chaveIdempotencia: "remarca-sem-saldo-001" });
+  const proposta = await proporRemarcacaoReposicaoIndividual({ agendaId: original.dado.agendaId, professorId, inicioLocal: `${M2}-05T10:00`, fimLocal: `${M2}-05T11:00`, fuso: "UTC", motivo: "Proposta para o período já ocupado", evidencia: "Atendimento documentado para remarcação", chaveIdempotencia: "remarca-sem-saldo-001" });
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
   entrar(adminId);
   expect(await decidirRemarcacaoReposicaoIndividual({ propostaId: proposta.dado.id, aprovar: true, motivo: "Gestão revalidou a disponibilidade do período" })).toMatchObject({ ok: false });
@@ -401,25 +408,29 @@ it("remarcação não troca agenda quando a cota do período novo já foi ocupad
     SELECT a."encontroId" AS "encontroId",e.status::text AS status,a."periodoInicio" AS "periodoInicio"
     FROM "AgendaReposicaoIndividual" a JOIN "EncontroAgenda" e ON e.id=a."encontroId" WHERE a.id=${original.dado.agendaId}
   `);
-  expect(linha).toEqual({ encontroId: original.dado.encontroId, status: "PREVISTO", periodoInicio: new Date("2026-10-01T00:00:00.000Z") });
+  expect(linha).toEqual({ encontroId: original.dado.encontroId, status: "PREVISTO", periodoInicio: new Date(`${M1}-01T00:00:00.000Z`) });
   expect(await prisma.encontroAgenda.count({ where: { reposicaoIndividualId: "pedido-remarca-sem-saldo" } })).toBe(1);
 });
 
 it("remarcação normal consome benefício ao registrar diário, conclui uma única fonte e não usa o encontro cancelado", async () => {
   // A conclusão SQL usa o relógio real: agendar e remarcar no passado simulado,
-  // mas realizar em data já transcorrida também no banco.
-  vi.setSystemTime(new Date("2026-09-12T12:00:00.000Z"));
-  await regraESnapshot("regra-remarca-consumo", 2);
+  // mas realizar em data já transcorrida também no banco. Por isso as datas
+  // derivam do relógio real, e o benefício usa um único período civil longo:
+  // o trigger de vigência calcula "hoje" pelo banco, não pelo relógio simulado,
+  // e um período mensal divergiria nos primeiros dias de cada mês.
+  const D0 = diaCivil(-3), D1 = diaCivil(-2), D2 = diaCivil(-1);
+  vi.setSystemTime(new Date(`${D0}T12:00:00.000Z`));
+  await regraESnapshot("regra-remarca-consumo", 2, { unidade: "DIAS", duracaoPeriodo: 36500 });
   await inserirPedido("pedido-remarca-consumo");
   entrar(secretariaId);
-  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-remarca-consumo", professorId, inicioLocal: "2026-09-13T10:00", fimLocal: "2026-09-13T11:00", fuso: "UTC", motivo: "Reserva normal para consumo posterior", chaveIdempotencia: "agenda-remarca-consumo" });
+  const agenda = await agendarReposicaoIndividual({ reposicaoId: "pedido-remarca-consumo", professorId, inicioLocal: `${D1}T10:00`, fimLocal: `${D1}T11:00`, fuso: "UTC", motivo: "Reserva normal para consumo posterior", chaveIdempotencia: "agenda-remarca-consumo" });
   if (!agenda.ok || !agenda.dado?.agendaId || !agenda.dado.encontroId) throw new Error(JSON.stringify(agenda));
-  const proposta = await proporRemarcacaoReposicaoIndividual({ agendaId: agenda.dado.agendaId, professorId, inicioLocal: "2026-09-14T10:00", fimLocal: "2026-09-14T11:00", fuso: "UTC", motivo: "Nova data confirmada com o aluno", evidencia: "Atendimento documentado para a nova data", chaveIdempotencia: "remarca-consumo-001" });
+  const proposta = await proporRemarcacaoReposicaoIndividual({ agendaId: agenda.dado.agendaId, professorId, inicioLocal: `${D2}T10:00`, fimLocal: `${D2}T11:00`, fuso: "UTC", motivo: "Nova data confirmada com o aluno", evidencia: "Atendimento documentado para a nova data", chaveIdempotencia: "remarca-consumo-001" });
   if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
   entrar(adminId);
   const decisao = await decidirRemarcacaoReposicaoIndividual({ propostaId: proposta.dado.id, aprovar: true, motivo: "Gestão autorizou a nova data da reposição" });
   if (!decisao.ok || !decisao.dado?.encontroId) throw new Error(JSON.stringify(decisao));
-  vi.setSystemTime(new Date("2026-09-14T12:00:00.000Z"));
+  vi.setSystemTime(new Date(`${D2}T12:00:00.000Z`));
   entrar(professorId);
   expect(await registrarDiarioReposicaoIndividual({ reposicaoId: "pedido-remarca-consumo", encontroReposicaoId: decisao.dado.encontroId, conteudo: "Reposição individual realizada na data remarcada", participacao: "PRESENTE" })).toMatchObject({ ok: true });
   const conclusao = await concluirReposicaoIndividual({ reposicaoId: "pedido-remarca-consumo", versaoAnterior: 0, encontroReposicaoId: decisao.dado.encontroId, evidencia: "Diário da particular remarcada e presença do aluno" });
@@ -430,7 +441,7 @@ it("remarcação normal consome benefício ao registrar diário, conclui uma ún
     WHERE a.id=${agenda.dado.agendaId}
   `);
   expect(linha).toEqual({ status: "CONSUMIDA", antigo: "CANCELADO" });
-  const fontes = await prisma.$transaction(tx => carregarReposicoesFrequenciaTx(tx, { matriculaId, aulaOriginalIds: [aulaId], apuradaEm: new Date("2026-10-24T00:00:00.000Z") }));
+  const fontes = await prisma.$transaction(tx => carregarReposicoesFrequenciaTx(tx, { matriculaId, aulaOriginalIds: [aulaId], apuradaEm: new Date(`${diaCivil(7)}T00:00:00.000Z`) }));
   expect(fontes.get(aulaId) ?? []).toHaveLength(1);
   const beneficioConsumido = await prisma.agendaReposicaoIndividual.findUniqueOrThrow({ where: { id: agenda.dado.agendaId } });
   entrar(gestorId);

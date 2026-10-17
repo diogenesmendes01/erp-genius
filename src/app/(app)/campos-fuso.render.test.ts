@@ -71,7 +71,7 @@ describe("campos de fuso migrados para o CampoFuso", () => {
   it("preferência: as sugestões trazem a opção de não ter preferência e todos os fusos do ambiente", () => {
     const html = render(FusoExibicaoFormulario, { atual: null });
     expect(html).toContain('<option value="">Usar fuso de origem do encontro</option>');
-    expect(html).toContain('<option value="US/Eastern">Estados Unidos — Leste</option>');
+    expect(html).toContain('<option value="America/New_York">Estados Unidos — Leste (Nova York)</option>');
     expect(html).toContain('<option value="Europe/Lisbon">');
   });
 });
