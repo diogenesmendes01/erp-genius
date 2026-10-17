@@ -2644,3 +2644,18 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `erp_genius_test_fix207` (migrate deploy, apagado no fim): os 7 `*.int.test.ts` da 3C e os 3 de `src/server/inbox`,
   10 arquivos e 72 testes, saída 0.
 **Estado**: Implementado; aguardando revisão e merge. Não concluído.
+
+## Inbox, bloco F: aceite das 21 regras e remoção do Inbox antigo (Fase 3, Task 33; 17/10/2026)
+
+- `src/server/inbox/regras-inbox.int.test.ts`: um `it` por regra do §4.4 (21 testes, com o número no nome), sobre as funções
+  reais de produção e o Postgres de teste, driver simulado. Saída 0 (21 testes).
+- Removidos: `InboxCliente.tsx` (e os dois testes) e `AtendimentosPainel.tsx` (e o teste). A triagem do número e a revisão de
+  envio incerto foram para `PainelTriagem.tsx`, dentro da conversa aberta (e na tela "Escolha uma conversa"); a triagem
+  aparece a quem `listarTriagemWhatsApp` aceita (administrador ou responsável pela triagem do número), a revisão só ao
+  administrador. O formulário "Abrir atendimento" foi para `NovoAtendimento.tsx`, sem mudança de comportamento.
+- Travas globais ajustadas sem afrouxar: `botoes-mapa.ts`, `botoes.test.ts`, `confirmacoes-mapa.ts`, `confirmacoes.test.ts`,
+  `enums-rotulos.test.ts`, `estados-vazios-mapa.ts` (entradas do arquivo removido saíram; as dos arquivos novos entraram) e
+  `sem-polling.test.ts` (a lista `LEGADO` ficou vazia). O que estava pendente da Task 33 nas telas novas foi corrigido no
+  código: `PainelSetor` usa rótulos (`ETAPA_LABEL`, `STATUS_COBRANCA_LABEL`, `SETOR_ATENDIMENTO_LABEL`) e `EstadoVazio`;
+  `AcoesAtendimento` passa o tipo do aviso (convite/agendamento) em vez de texto livre.
+- Nenhum link ou rota aponta para o Inbox antigo (`/inbox` é a mesma página; só a Sidebar linka).

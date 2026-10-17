@@ -15,7 +15,9 @@ import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
+import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { AcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
+import { PainelTriagem } from "./PainelTriagem";
 
 export interface PropsConversaAberta {
   item: ItemListaInbox | null;
@@ -23,6 +25,9 @@ export interface PropsConversaAberta {
   fuso: string | null;
   conversa: ConversaHook;
   destinos?: DestinoTransferencia[];
+  /** Triagem do número (a quem `listarTriagemWhatsApp` aceita) e revisão de envio incerto (administrador); nulos para os demais. */
+  triagem?: ItemTriagem[] | null;
+  revisoes?: RevisaoEnvio[] | null;
   aoVoltar(): void;
   aoAbrirPainel(): void;
   /** Uma ação do cabeçalho concluiu (a tela recarrega a lista). */
@@ -34,7 +39,7 @@ export function textoOrigem(setor: Setor | null): string | null {
   return setor ? `Transferido de ${rotular(SETOR_ATENDIMENTO_LABEL, setor)}` : null;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, destinos, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
@@ -82,6 +87,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, destinos, aoVolt
         )}
       </header>
       <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto p-3">
+        {(triagem || revisoes) && <div className="mb-3"><PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} /></div>}
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList

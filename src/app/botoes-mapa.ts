@@ -973,25 +973,12 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Cancelar agendamento → perigo/sm",
     "<Botao> Fechar → secundario/md",
   ],
-  "inbox/AtendimentosPainel.tsx": [
+  "inbox/NovoAtendimento.tsx": [
     "<button> Abrir atendimento → primario/lg",
+  ],
+  "inbox/PainelTriagem.tsx": [
     "<button> Classificar esta mensagem → secundario/md",
     "<button> Registrar revisão → secundario/md",
-  ],
-  "inbox/InboxCliente.tsx": [
-    "const btnPri → primario/md",
-    "const btnSec → secundario/sm",
-    "<button> Criando… · Criar lead → btnSec",
-    "<button> Editar nome → btnSec",
-    "<button> Vincular → btnSec",
-    "<button> Remover opt-out → btnSec",
-    "<button> Registrar opt-out → btnSec",
-    "<button> Retomar régua → secundario/sm",
-    "<button> Registrar pagamento → btnSec",
-    "<button> Promessa de pagamento → btnSec",
-    "<button> Registrar → btnSec",
-    "<button> Enviar → btnPri",
-    "<button> Salvando… · Salvar → primario/sm",
   ],
   "carteira/CoberturasPainel.tsx": [
     "<button> Conceder cobertura → primario/lg",

@@ -72,6 +72,8 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
     if (d?.tipo === "ok") { setAviso(sucesso); aoMudar?.(); }
   }
   const concluir = (msg: string) => { setDialogo(null); setAviso(msg); aoMudar?.(); };
+  // Revogar convite / cancelar agendamento: o diálogo de pendências continua aberto para as próximas.
+  const avisar = (qual: "convite" | "agendamento") => { setAviso(qual === "convite" ? "Convite revogado." : "Agendamento cancelado."); aoMudar?.(); };
 
   return (
     <div className="space-y-2">
@@ -97,7 +99,7 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
       {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
-      {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={(msg) => { setAviso(msg); aoMudar?.(); }} />}
+      {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
           folha
@@ -282,7 +284,7 @@ type AlvoPendente = { tipo: "convite"; item: ConviteAtivo } | { tipo: "agendamen
 const FORMATO_DATA = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
 
 /** Convites ativos e mensagens agendadas do atendimento; "Revogar convite" e "Cancelar agendamento" pedem confirmação. */
-export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { atendimentoId: string; aoFechar: () => void; aoConcluir: (mensagem: string) => void }) {
+export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { atendimentoId: string; aoFechar: () => void; aoConcluir: (qual: "convite" | "agendamento") => void }) {
   const [dados, setDados] = useState<{ convites: ConviteAtivo[]; agendamentos: AgendamentoAtivo[] } | null>(null);
   const [alvo, setAlvo] = useState<AlvoPendente | null>(null);
   const [carregou, setCarregou] = useState(false);
@@ -298,7 +300,7 @@ export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { aten
         confirmacao={convite ? "revogação" : "cancelamento"}
         idempotente={false}
         acao={() => (convite ? revogarParticipante(alvo.item.id) : cancelarAgendamentoDoAtendimento({ atendimentoId, intencaoId: alvo.item.id }))}
-        aoConcluir={() => { aoConcluir(convite ? "Convite revogado." : "Agendamento cancelado."); setAlvo(null); setDados(null); carregar(); }}
+        aoConcluir={() => { aoConcluir(convite ? "convite" : "agendamento"); setAlvo(null); setDados(null); carregar(); }}
         aoCancelar={() => setAlvo(null)}
       >
         {convite

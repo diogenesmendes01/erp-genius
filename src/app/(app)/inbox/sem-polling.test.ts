@@ -1,10 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-// Arquivos do Inbox antigo, que a Task 33 remove; até lá eles ainda têm `router.refresh()` e `setInterval`.
-// Esta lista só pode encolher: a Task 33 apaga o teste do legado junto com os arquivos.
+// O Inbox antigo foi removido na Task 33: nenhum arquivo da pasta tem exceção.
 const RAIZ = "src/app/(app)/inbox";
-const LEGADO = ["src/app/(app)/inbox/InboxCliente.tsx", "src/app/(app)/inbox/AtendimentosPainel.tsx"];
+const LEGADO: string[] = [];
 
 describe("inbox sem polling", () => {
   it("nenhum arquivo do inbox faz polling", () => {

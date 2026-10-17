@@ -12,7 +12,9 @@ import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { FiltrosInbox } from "@/server/inbox/filtros";
 import { ConversaAberta } from "./ConversaAberta";
+import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
+import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
 
 export type VistaInbox = "lista" | "conversa" | "painel";
@@ -25,6 +27,9 @@ export interface PropsInboxNovo {
   fuso: string | null;
   /** Destinos de transferência com contexto (FINANCEIRO/PEDAGOGICO), de `listarOpcoesAtendimento`. */
   destinos?: DestinoTransferencia[];
+  /** Triagem e revisão de envio (Task 33): nulas para quem `listarTriagemWhatsApp` / `listarRevisoesEnvio` recusam. */
+  triagem?: ItemTriagem[] | null;
+  revisoes?: RevisaoEnvio[] | null;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
@@ -75,7 +80,7 @@ function horaCurta(iso: string | null, fuso: string | null): string {
 const COLUNA_LISTA = "min-[700px]:flex min-[700px]:w-[320px] min-[700px]:shrink-0 min-[1100px]:w-[360px]";
 const COLUNA_CONVERSA = "min-[700px]:flex min-[700px]:min-w-0 min-[700px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem = null, revisoes = null }: PropsInboxNovo) {
   const [itens, setItens] = useState(inicial.itens);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
@@ -150,9 +155,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
       <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-w-0 flex-col ${COLUNA_CONVERSA}`}>
         {!selecionado ? (
-          <div className="m-auto p-6 text-center text-gray-600">
-            <p className="font-medium">Escolha uma conversa</p>
-            <p className="text-sm">As mensagens aparecem aqui.</p>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+            {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
+            <div className="p-6 text-center text-gray-600">
+              <p className="font-medium">Escolha uma conversa</p>
+              <p className="text-sm">As mensagens aparecem aqui.</p>
+            </div>
           </div>
         ) : (
           <ConversaAberta
@@ -161,6 +169,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             fuso={fuso}
             conversa={conversa}
             destinos={destinos}
+            triagem={triagem}
+            revisoes={revisoes}
             aoVoltar={() => setVista("lista")}
             aoAbrirPainel={() => setVista("painel")}
             aoMudar={recarregarLista}
