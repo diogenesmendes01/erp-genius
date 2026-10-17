@@ -2095,4 +2095,40 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
   `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
   (3 arquivos, 20 testes), todos verdes, saída 0.
+
+### Correções da revisão R1 do PR #194 (17/10/2026)
+- **B1, conflito com o main:** `origin/main` (`097f5df5`, com a #193) mesclado sem squash. O único conflito foi este
+  quadro: a seção "DS-B — avisos" fica só na posição para onde o main a moveu, e no fim os blocos B (com as
+  pendências da R1 do #193) e C ficam ambos, cada um com a própria linha **Estado**. Nenhum `\w+.lead.<método>`
+  em `src` fora da string do próprio teste de trava (`oportunidade-map.test.ts`).
+- **C1, `empresaId` em `criarLead`:** validado na transação antes do `create`. Inexistente ou de empresa inativa
+  devolve "Empresa não encontrada." em vez de estourar a FK (P2003). `Empresa` não tem dono nem carteira; o escopo
+  disponível hoje é `ativo`. Quando houver escopo de empresa, ele entra no mesmo `findFirst`.
+- **C2, telefone e e-mail com Pessoa existente — intencional nesta fase, documentado no código (`criarLead` e
+  `garantirPessoaTx`):** com `pessoaId` informado, o telefone não entra em `ContatoWhatsApp`; e o `email`
+  digitado só vai para a Pessoa quando ela é criada por `garantirPessoaTx`. Pessoa já existente (informada, achada
+  pelo contato ou pelo aluno/responsável) não tem telefone nem e-mail atualizados por `criarLead`.
+- **C3, corrida em `garantirPessoaTx`:** `pg_advisory_xact_lock(hashtextextended('pessoa:'||telefone, 0))` antes
+  da busca do contato, com o telefone já normalizado em E.164. Duas criações simultâneas do mesmo telefone novo
+  passam a dar uma só Pessoa.
+- **C4, vendedor e `pessoaId` sem oportunidade — comportamento esperado:** o vendedor só vê pessoas da própria
+  carteira (com oportunidade em `escopoComercialAtual`). Uma pessoa sem oportunidade (por exemplo, vinda de
+  aluno) é recusada como "Contato não encontrado." quando o vendedor informa o `pessoaId`. **Ponto para a tela de
+  nova oportunidade (#196):** a busca de contato do vendedor não deve oferecer essas pessoas; ele cria a
+  oportunidade pelo telefone, e `garantirPessoaTx` liga à pessoa certa pelo contato ou pelo aluno/responsável.
+- **C5, IDs das migrations — confirmados pelo integrador em 17/10/2026:** `20261001000000_crm_pessoa` (2.M1) e
+  `20261002000000_crm_empresa_b2b` (2.M2). A pendência "confirmar ou renomear os IDs" acima fica resolvida.
+
+### Verificação da R1 (HEAD dos commits de correção)
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros (43 avisos, nenhum nos arquivos tocados).
+- `node_modules/.bin/vitest run` completo: 655 arquivos e 4.738 testes verdes, saída 0.
+- Integração: o banco do perfil `tester` estava em uso por outra suíte e já tinha migrations da Fase 3
+  (`20261016*`), então rodou num banco descartável próprio, `erp_genius_test_fix194` (mesmo Postgres,
+  porta 54329), criado do zero com `prisma migrate deploy` das migrations desta branch e apagado no fim.
+  `src/server/crm/*.int.test.ts` e `src/server/comercial/*.int.test.ts`: 7 arquivos e 46 testes verdes,
+  saída 0 (inclui `pessoas`, `empresa-schema`, `pessoa-schema` e `leads`, que exercita o `criarLead` alterado).
+- Os dois testes do C3 (concorrência com 5 chamadas paralelas e espera pelo lock) falham com o lock removido
+  (conferido localmente) e passam com ele.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
