@@ -2,12 +2,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { ErroPermissaoFalso } = vi.hoisted(() => ({ ErroPermissaoFalso: class extends Error {} }));
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), item: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), item: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn(), filtro: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.admin, ErroPermissao: ErroPermissaoFalso }));
 vi.mock("@/server/inbox/consultas-pagina", () => ({ listarAtendimentosPagina: mocks.pagina, obterItemListaInbox: mocks.item }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes }: { fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|itens:${inicial.itens.map((i) => i.id)}` }));
+vi.mock("@/server/inbox/opcoes-filtro", () => ({ opcoesFiltroInbox: mocks.filtro }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro }: { opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}` }));
 vi.mock("./NovoAtendimento", () => ({ NovoAtendimento: () => "novo-atendimento" }));
 
 import Page from "./page";
@@ -21,6 +22,14 @@ describe("InboxPage", () => {
     mocks.admin.mockReturnValue(false);
     mocks.triagem.mockResolvedValue([]); mocks.revisoes.mockResolvedValue([]);
     mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
+    mocks.filtro.mockResolvedValue({ setores: ["SECRETARIA"], numeros: [{ id: "n1", rotulo: "Secretaria" }] });
+  });
+
+  it("entrega ao InboxNovo os setores e números do PainelFiltros, consultados com o usuário da sessão", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(h).toContain("setores:SECRETARIA|numeros:n1");
+    expect(mocks.filtro).toHaveBeenCalledWith({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
   });
 
   it("encaminha a preferência somente depois da guarda", async () => {

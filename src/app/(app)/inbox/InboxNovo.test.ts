@@ -2,7 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox" }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { InboxNovo, mesclarPrimeiraPagina, paramsDosFiltros } from "./InboxNovo";
@@ -14,10 +15,10 @@ const item = (id: string, nome: string) => ({
   linhaComercial: false, status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
 });
 
-function html(p: { selecionado?: string | null } = {}) {
+function html(p: { selecionado?: string | null; extra?: Record<string, unknown> } = {}) {
   return renderToStaticMarkup(createElement(InboxNovo, {
     inicial: { itens: [item("a1", "Ana"), item("a2", "Beto")], proximo: null }, filtros: {},
-    selecionado: p.selecionado ?? null, usuario: { id: "u1", papeis: ["VENDEDOR"] }, fuso: null,
+    selecionado: p.selecionado ?? null, usuario: { id: "u1", papeis: ["VENDEDOR"] }, fuso: null, ...p.extra,
   } as never));
 }
 
@@ -35,6 +36,25 @@ describe("InboxNovo", () => {
     const h = html();
     expect(h).toContain("Ana");
     expect(h).toContain("Beto");
+  });
+  it("a lista é a ListaAtendimentos: setor, número e status em cada linha", () => {
+    const h = html();
+    expect(h).toContain("Comercial"); expect(h).toContain("Escola"); expect(h).toContain("Em atendimento");
+  });
+  it("com as opções do servidor mostra o PainelFiltros (busca, abas e setores do usuário)", () => {
+    const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola" }] } } });
+    expect(h).toContain('aria-label="Buscar conversas"');
+    for (const t of ["Todas", "Minhas", "Fila", "Não lidas", "Prazo estourado", "Todos os setores"]) expect(h).toContain(t);
+    expect(html()).not.toContain('aria-label="Buscar conversas"');
+  });
+  it("conversa aberta: o painel por setor carrega da rota e o opt-out do contato está no painel", () => {
+    const h = html({ selecionado: "a1" });
+    expect(h).toContain("Carregando detalhes");
+    expect(h).toContain("Registrar opt-out");
+  });
+  it("triagem e revisão vazias não renderizam painel", () => {
+    expect(html({ extra: { triagem: [], revisoes: [] } })).not.toContain("Triagem administrativa");
+    expect(html({ selecionado: "a1", extra: { triagem: [], revisoes: [] } })).not.toContain("Envios que exigem revisão");
   });
 });
 

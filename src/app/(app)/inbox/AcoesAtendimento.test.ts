@@ -14,7 +14,7 @@ vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), sile
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { Setor } from "@/server/whatsapp/setor";
 import { Modal } from "@/components/Modal";
-import { AcoesAtendimento, DialogoPendentes, DialogoTransferir, validarQuando } from "./AcoesAtendimento";
+import { AcoesAtendimento, DialogoPendentes, DialogoPessoa, DialogoTransferir, validarQuando } from "./AcoesAtendimento";
 import { ConversaAberta, textoOrigem } from "./ConversaAberta";
 
 type Opcoes = { papeis?: Papel[]; responsavelId?: string | null; finalidade?: Setor; status?: string; linhaComercial?: boolean; donoLinhaId?: string | null };
@@ -126,5 +126,20 @@ describe("revogar convite e cancelar agendamento pedem confirmação; diálogos 
     expect(usos("cancelarAgendamentoDoAtendimento")).toBe(1);
     expect(fonte).toMatch(/<ConfirmarAcao[^>]*\n\s*folha\n[\s\S]*?acao=\{\(\) => \(convite \? revogarParticipante\([^)]*\) : cancelarAgendamentoDoAtendimento\(/);
     expect(fonte.match(/<Modal /g)!.length).toBe(fonte.match(/<Modal folha /g)!.length);
+  });
+});
+
+describe("diálogos carregam fora do render (efeito, não chamada no corpo do componente)", () => {
+  it("DialogoPessoa e DialogoPendentes não chamam a server action durante o render", async () => {
+    const consultas = await import("@/server/whatsapp/consultas-acoes-atendimento");
+    vi.mocked(consultas.listarPessoasParaAtendimento).mockClear();
+    vi.mocked(consultas.listarConvitesEAgendamentos).mockClear();
+    const h = renderToStaticMarkup(createElement(DialogoPessoa, { atendimentoId: "a1", modo: "atribuir", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
+    expect(h).toContain("Carregando…");
+    renderToStaticMarkup(createElement(DialogoPendentes, { atendimentoId: "a1", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
+    expect(consultas.listarPessoasParaAtendimento).not.toHaveBeenCalled();
+    expect(consultas.listarConvitesEAgendamentos).not.toHaveBeenCalled();
+    const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8");
+    expect(fonte).not.toMatch(/setCarregou|as Resultado\b/);
   });
 });
