@@ -2166,6 +2166,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+## Fase 3, bloco D: tempo real (Tasks 21 a 23)
+
+- Integrador autorizou `pg` 8.23.1 e `@types/pg` 8.23.1 (16/10) para o LISTEN da Task 21
+
 ## CRM, bloco B: Oportunidade, capacidades e etapas do funil (Fase 2, Tasks 3 a 5; 16/10/2026)
 
 ### Verificação antes do merge (branch `claude/fase2-b-oportunidade`, HEAD `435b10e`)
