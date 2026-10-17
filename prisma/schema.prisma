@@ -454,7 +454,8 @@ model AtendimentoWhatsApp {
   @@index([alunoId])
   @@index([matriculaId])
   @@index([autorizacaoComunicacaoAcademicaId])
-  @@index([ultimaMensagemEm(sort: Desc), id])
+  // No banco: (ultimaMensagemEm DESC NULLS LAST, id DESC); o Prisma não expressa NULLS LAST (migration 20261017110000).
+  @@index([ultimaMensagemEm(sort: Desc), id(sort: Desc)])
 }
 
 model ParticipanteAtendimentoWhatsApp {
