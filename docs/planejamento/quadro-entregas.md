@@ -2589,3 +2589,58 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   inclusive as migrations da 4A, e os mesmos 3 arquivos de integração do inbox passaram (28 testes). O banco foi
   apagado no fim.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
+
+## Inbox, bloco C: ações de atendimento (Fase 3, Tasks 14 a 20; 17/10/2026)
+
+### Verificação para o PR (bloco C, branch `claude/fase3-c-acoes`, 17/10/2026)
+- Tarefas: 14 (matriz de permissões do doc 03 e assumir/devolver/atribuir), 15 (abrir atendimento recusa fila fora do
+  escopo), 16 (transferência = encerrar + abrir, com contexto como nota interna), 17 (participante de outro setor com
+  prazo e revogação), 18 (nota interna nunca enviada), 19 (agendar reusando `agendadaPara`) e 20 (encaminhar como
+  cópia, validando o escopo do destino). Branch empilhada sobre `claude/fase2-h-tarefas`; `main` 08e2b4b7 mesclado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (43 avisos já existentes). `npm test`: 682 arquivos e 4940 testes,
+  saída 0. A trava `confirmacoes.test.ts` acusou `e.constructor` em `erro-regra-atendimento.ts`; trocado por
+  `Object.getPrototypeOf(e) === Error.prototype`. Numa rodada com a máquina carregada um teste dessa trava estourou o
+  tempo (30 s); isolado e na rodada seguinte passou.
+- Integração no perfil `dev-email`: os 12 arquivos `*.int.test.ts` do bloco (inbox/barramento, consultas-pagina,
+  eventos-sse; whatsapp/abrir-atendimento-escopo, agendamento, atribuicao, encaminhar, nota-interna, participantes,
+  pg-proc-whatsapp, saude, transferencia) passaram: 12 arquivos, 72 testes, saída 0. O `vitest related` completo
+  alcança centenas de arquivos e foi interrompido após cerca de 70 min; os 4 arquivos que ele terminou antes
+  (agenda/substituicao-avisos, diario/reposicao-agenda, diario/reposicao-permissoes, academico/visibilidade) falharam
+  como na linha de base (falhas preexistentes sensíveis à data/visibilidade).
+- **Base trocada para `main` e `main` mesclado (0d091807, com a Fase 4A #203 a #205, a Fase 3E #206 e o #208):** três
+  merges (7ed4cc1b, bfce6d3b, f6bfe2e2). Os dois primeiros tiveram conflito só neste quadro; os blocos da 4A, da 3E e da
+  3C ficaram, cada um com a própria linha **Estado**. O do #208 foi limpo. A 3C não mexe em `schema.prisma`,
+  `labels.ts`, travas `src/app/*.test.ts`, `despachante.ts` nem `src/server/inbox` (barramento, consultas, SSE), então
+  não houve disputa nesses arquivos. A 3C não tem migration; a ordem segue `20261017100000_inbox_tempo_real`,
+  `20261017110000_inbox_indice_cursor_lista` (3E), `20261017120000` e `20261017130000` (4A). `prisma validate` ok.
+
+### Correções da R1 do #207 (17/10/2026)
+- **B1 (linha de VENDAS):** `assumirAtendimento` e `atribuirAtendimento` conferem, na mesma transação e depois do
+  UPDATE, que o novo responsável enxerga o atendimento (`count` com `AND: [{ id }, escopoAtendimentos(alvo)]`). Se não
+  enxergar, recusam com "Nesta linha de vendas o atendimento fica com o dono da linha; ele não pode ser assumido por
+  quem não atende a linha." e nada é gravado. `atribuicao.int.test.ts`: os casos positivos passaram para um número
+  que atende o COMERCIAL fora de VENDAS (ali o responsável gravado dá acesso) e chamam `atendimentoVisivel` depois de
+  assumir e de atribuir; bloco novo com número VENDAS e `donoId: null` (vendedor não assume, gerente não atribui,
+  o atendimento segue na fila e visível pela fila) e com número VENDAS do dono (o dono assume da fila e recebe a
+  atribuição, e continua vendo). Commit e7fee8fa.
+- **C1:** `main` mesclado (acima).
+- **C2:** descrição do PR atualizada: base `main`, sem empilhamento.
+- **C3:** a transferência para PEDAGOGICO exige `alocacaoTurma` ativa com o aluno, a turma e a matrícula da chave,
+  como a lista de opções. Teste novo em `transferencia.int.test.ts`; o teste do trigger 265 passou a criar a alocação.
+  Commit e7fee8fa.
+- **C4 (pendência registrada, não corrigida aqui):** `devolverParaFila`, `atribuirAtendimento`,
+  `transferirAtendimento`, `convidarParticipante` e `registrarNotaAtendimento` chamam `atendimentoVisivel` (que usa o
+  `prisma` global, assim como `escopoAtendimentos`, `escopoComercialAtual` e a leitura de alocações do professor)
+  dentro da transação interativa, nas quatro primeiras com o `FOR UPDATE` já tomado. Cada ação usa duas conexões do
+  pool ao mesmo tempo; com `connection_limit` baixo e concorrência, o pool pode esgotar. A correção é passar um `db`
+  opcional por `atendimentoVisivel`, `escopoAtendimentos` e os helpers de escopo comercial; como mexe no escopo usado
+  por todo o Inbox, fica para uma tarefa própria.
+- **C5:** `revogarParticipante` cancela (`CANCELADA`) as intenções HUMANO `PENDENTE`/`ADIADA` do revogado no
+  atendimento, salvo se ele ainda puder enviar por outro vínculo (conferido com `escopoAtendimentos(…, { enviar })`).
+  Teste novo em `participantes.int.test.ts`. Commit e7fee8fa.
+- Verificação com o `main` 0d091807 mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros
+  (43 avisos já existentes); `vitest run` com 697 arquivos e 5065 testes, todos verdes (numa rodada anterior a trava
+  `confirmacoes.test.ts` estourou os 30 s com a máquina carregada; isolada passa). Integração num banco descartável
+  `erp_genius_test_fix207` (migrate deploy, apagado no fim): os 7 `*.int.test.ts` da 3C e os 3 de `src/server/inbox`,
+  10 arquivos e 72 testes, saída 0.
+**Estado**: Implementado; aguardando revisão e merge. Não concluído.
