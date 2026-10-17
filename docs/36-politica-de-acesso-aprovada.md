@@ -35,6 +35,15 @@ Conferir as quatro dimensões no servidor, inclusive em consultas por ID, arquiv
 
 Exportar exige concessão específica e não amplia registros ou campos. Contato ou telefone compartilhado não concede acesso a todos os atendimentos. Responsável financeiro não recebe permissão acadêmica automaticamente.
 
+### Linha comercial do WhatsApp (decisão do dono, 17/10/2026)
+
+O conflito entre este doc e a LC-D02 da [SPEC-ERP-005](specs/whatsapp-linha-comercial.md) foi resolvido a favor da LC-D02. A leitura anterior era que "o dono do número não recebe histórico de outro vendedor". Ela passa a ser: **o dono da linha vê a conversa da linha; dados do lead e funil de outra carteira continuam fechados.**
+
+- O dono atual da linha (`NumeroWhatsApp.donoId`) vê todas as conversas da própria linha, inclusive a de um lead de outro vendedor que escreveu para esse número.
+- O painel e o cockpit desse lead continuam fechados para ele: a thread aparece sem `lead` e com `contato.leadId` nulo. O funil e os dados da carteira do outro vendedor não aparecem.
+- A frase "contato ou telefone compartilhado não concede acesso a todos os atendimentos" continua valendo para os demais casos. A linha comercial é a exceção definida pela LC-D02.
+- O teste que fixa a regra veio no `c265d904` (`src/server/whatsapp/inbox.int.test.ts`, "lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit"). Ele tem o aval do produto. Registro: [decisões do dono de 17/10/2026](planejamento/decisoes-dono-2026-10-17.md).
+
 Pausa, retomada, encerramento, cobrança e acesso têm a matrícula como referência, conforme Q102 e sua SPEC. Calendário, turma e encontro podem ser compartilhados, mas a autorização do participante continua vinculada à contratação correta.
 
 ## Evidência de implementação
