@@ -969,6 +969,20 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
   ],
+  "carteira/CoberturasPainel.tsx": [
+    "<button> Conceder cobertura → primario/lg",
+    "<button> Revogar → perigo/sm",
+  ],
+  "carteira/ListaCarteira.tsx": [
+    "<button> Filtrar → secundario/lg",
+    "<Link> Limpar filtros → secundario/md",
+    "<Botao> Mudar responsável → primario/lg",
+    "<Botao> Limpar seleção → fantasma/lg",
+  ],
+  "carteira/page.tsx": [
+    "<Link> Carteira → primario|fantasma/md",
+    "<Link> Coberturas → primario|fantasma/md",
+  ],
   "funil/FunilCliente.tsx": [
     "<Link> Quadro → primario|secundario/md",
     "<Link> Lista → primario|secundario/md",

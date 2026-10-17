@@ -538,6 +538,12 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum recebimento nesta página.",
     "compacto · Nenhum recebimento registrado.",
   ],
+  "src/app/(app)/carteira/CoberturasPainel.tsx": [
+    "compacto · Nenhuma cobertura cadastrada.",
+  ],
+  "src/app/(app)/carteira/ListaCarteira.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na carteira.\"}",
+  ],
   "src/app/(app)/funil/PainelOportunidade.tsx": [
     "compacto · Nenhuma atividade registrada.",
   ],
