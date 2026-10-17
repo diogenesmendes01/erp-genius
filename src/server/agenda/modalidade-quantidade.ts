@@ -5,6 +5,7 @@ import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
+import { repetirEmFalhaDeSerializacao } from "@/lib/repetir-serializacao";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { carregarPreviaQuantidadeAulasTx } from "./modalidade-quantidade-tx";
 import { carregarGradeInicialTx } from "./grade-turma-tx";
@@ -28,7 +29,10 @@ export async function prepararAlteracaoQuantidadeAulasModalidade(input: z.input<
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
     const d = Preparar.parse(input), entradaHash = hash(d);
-    return prisma.$transaction(confirmarTransacao(async (tx) => {
+    // O lock da modalidade não basta em SERIALIZABLE: o snapshot precede a espera pelo
+    // lock. O preparo concorrente perdedor é repetido e cai no replay da chave de
+    // idempotência (mesma entrada) ou na conferência de versão (outra revisão).
+    return repetirEmFalhaDeSerializacao(() => prisma.$transaction(confirmarTransacao(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'modalidade-quantidade:' + d.modalidadeId}, 0))`;
       await usuarioAtualTx(tx, autor.id);
       const repetida = await tx.propostaQuantidadeAulasModalidade.findUnique({ where: { preparadorId_chaveIdempotencia: { preparadorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } } });
@@ -52,7 +56,7 @@ export async function prepararAlteracaoQuantidadeAulasModalidade(input: z.input<
       await registrarEvento(tx, { tipo: "QuantidadeAulasModalidadePreparada", agregadoTipo: "Modalidade", agregadoId: p.modalidadeId, autorId: autor.id,
         payload: { propostaId: p.id, versao: p.versao, quantidadeAnterior: p.quantidadeAnterior, quantidadeNova: p.quantidadeNova } });
       return { id: p.id, versao: p.versao };
-    }), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 });
+    }), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 }));
   });
 }
 
@@ -61,7 +65,9 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
     const d = Decidir.parse(input);
-    return prisma.$transaction(confirmarTransacao(async (tx) => {
+    // Mesmo motivo do preparo; aqui o snapshot é fixado já na leitura da proposta, antes
+    // do lock. A decisão perdedora é repetida e cai no replay de `p.decisao`.
+    return repetirEmFalhaDeSerializacao(() => prisma.$transaction(confirmarTransacao(async (tx) => {
       const p = await tx.propostaQuantidadeAulasModalidade.findUnique({ where: { id: d.propostaId }, include: { decisao: true, aplicacao: true } });
       if (!p) throw new ErroRegra("Proposta de quantidade não encontrada.");
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'modalidade-quantidade:' + p.modalidadeId}, 0))`;
@@ -114,6 +120,6 @@ export async function decidirAlteracaoQuantidadeAulasModalidade(input: z.input<t
       const evento = await registrarEvento(tx, { tipo: "QuantidadeAulasModalidadeAplicada", agregadoTipo: "Modalidade", agregadoId: p.modalidadeId, autorId: autor.id, payload: { propostaId: p.id, decisaoId: decisao.id, aplicacaoId: aplicacao.id, quantidadeAnterior: p.quantidadeAnterior, quantidadeNova: p.quantidadeNova, motivo: d.motivo, encontros: encontrosAplicados } });
       await criarAvisosQuantidadeAulasTx(tx, { eventoId: evento.id, propostaId: p.id });
       return { id: decisao.id, aprovada: true, aplicada: true };
-    }), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 });
+    }), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 20000 }));
   });
 }

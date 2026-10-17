@@ -349,6 +349,27 @@ it("opt-out depois da preparação cancela antes do driver", async () => {
   expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "opt_out" });
 });
 
+// Revisão R1 do #208 (C2): o cron geral (`despacharFila` sem `somenteAvisosAgenda`) drena a
+// mesma fila do worker de agenda e precisa respeitar o envio de agenda desligado.
+it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia ao religar", async () => {
+  await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
+  expect(await decidir(true)).toMatchObject({ ok: true });
+  expect(await enfileirarAvisosAgendaWhatsApp()).toBe(1);
+  const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: { not: null } } });
+  vi.stubEnv("WHATSAPP_LIVE", "1"); vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "false");
+  enviarTemplateMock.mockResolvedValue({ providerMessageId: "3EB0-agenda-religada" });
+  const retido = await despacharFila();
+  expect(enviarTemplateMock).not.toHaveBeenCalled();
+  expect(retido).toMatchObject({ pendentes: 1, simuladas: 0, despachadas: 0 });
+  expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).toMatchObject({ status: "PENDENTE", despachadaEm: null });
+  expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: intencao.avisoAlteracaoAgendaId! } })).toMatchObject({ situacao: "PREPARADO" });
+
+  vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
+  await despacharFila();
+  expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
+  expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: intencao.avisoAlteracaoAgendaId! } })).toMatchObject({ situacao: "ENVIADO" });
+});
+
 it("template revogado antes da preparação deixa o aviso pendente sem chamar o driver", async () => {
   await ativarWhatsappDaPrimeira(); const { template } = await configurarCanalAgenda("META_CLOUD");
   await prisma.templateWhatsApp.update({ where: { id: template.id }, data: { statusMeta: "RASCUNHO" } });
@@ -458,7 +479,7 @@ it("não troca responsável autorizado por outra pessoa com o mesmo telefone ant
   await prisma.alunoResponsavel.deleteMany({ where: { alunoId: matricula.alunoId, responsavelId: original.id } });
   const substitutoMesmoTelefone = await prisma.responsavel.create({ data: { nome: "Outra pessoa mesmo telefone", telefoneE164: "+50679999994" } });
   await prisma.alunoResponsavel.create({ data: { alunoId: matricula.alunoId, responsavelId: substitutoMesmoTelefone.id, papel: "PEDAGOGICO" } });
-  vi.stubEnv("WHATSAPP_LIVE", "1");
+  vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");
   enviarTemplateMock.mockResolvedValue({ providerMessageId: "3EB0-identidade" });
   await despacharFila(new Date(), { somenteAvisosAgenda: true });
   expect(enviarTemplateMock).toHaveBeenCalledTimes(2);

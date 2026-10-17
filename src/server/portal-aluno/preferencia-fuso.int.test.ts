@@ -24,6 +24,12 @@ it("grava a preferência da conta da sessão e revalida versão antes de alterar
   await expect(salvarPreferenciaFusoPortalAluno({ fusoExibicao: "UTC" })).rejects.toThrow("Sessão do aluno inválida ou expirada");
 });
 
+it("grava apelido legado com o nome canônico IANA (decisão do dono, 17/10/2026)", async () => {
+  expect(await salvarPreferenciaFusoPortalAluno({ fusoExibicao: "US/Eastern" })).toEqual({ fusoExibicao: "America/New_York" });
+  expect(await consultarPreferenciaFusoPortalAluno()).toEqual({ fusoExibicao: "America/New_York" });
+  await expect(prisma.contaPortalAluno.update({ where: { id: sessaoAtual.valor.contaId }, data: { ativa: true } })).resolves.toBeDefined();
+});
+
 it("mantém a conta ativa exigida e o SQL recusa Factory", async () => {
   await expect(prisma.contaPortalAluno.update({ where: { id: sessaoAtual.valor.contaId }, data: { fusoExibicao: "Factory" } })).rejects.toThrow("Fuso de exibição inválido");
   await prisma.contaPortalAluno.update({ where: { id: sessaoAtual.valor.contaId }, data: { ativa: false } });

@@ -10,6 +10,7 @@ vi.mock("next/headers", () => ({
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { publicarOfertaAgendaDestino, retirarAulaFuturaDaOferta } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { HABILIDADES } from "./calculo";
 import { carregarAproveitamentoAplicadoTx } from "./aproveitamento-aplicado-tx";
@@ -358,6 +359,7 @@ beforeEach(async () => {
     vinculosDocentes: { create: { professorId, inicio } },
   } });
   turmaDestinoId = destino.id;
+  await publicarOfertaAgendaDestino(destino.id, { preparadorId: secretariaId, decisorId: gestorId, professorId });
   regraId = (await prisma.turma.findUniqueOrThrow({ where: { id: turmaDestinoId } })).regraAvaliacaoId!;
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluna aproveitada", paisId: catalogo.pais.id } });
   alunoId = aluno.id;
@@ -535,6 +537,7 @@ it("preserva a cadeia A→B→C e não duplica a fonte aproveitada no consolidad
     capacidade: 10,
     vinculosDocentes: { create: { professorId, inicio } },
   } });
+  await publicarOfertaAgendaDestino(turmaC.id, { preparadorId: secretariaId, decisorId: gestorId, professorId });
   const regraC = await prisma.turma.findUniqueOrThrow({ where: { id: turmaC.id }, select: { regraAvaliacaoId: true } });
   const regraCId = regraC.regraAvaliacaoId;
   if (!regraCId) throw new Error("Turma C sem regra de avaliação publicada.");
@@ -767,6 +770,8 @@ it("ACA/V01 transfere a recuperação oficial, fecha o destino e mantém isolada
   } });
   const notaIsolada = await oficializarFala(alocacaoIsolada.id, "4", "aca-v01-isolada-i1");
 
+  // Fechar o nível no destino pressupõe o nível concluído, sem a aula futura da oferta.
+  await retirarAulaFuturaDaOferta((await prisma.alocacaoTurma.findUniqueOrThrow({ where: { id: executada.dado.alocacaoDestinoId } })).turmaId);
   entrar(gestorId);
   const revisaoFechamento = await revisarFechamentoAcademico({ alocacaoId: executada.dado.alocacaoDestinoId });
   assertOk(revisaoFechamento);

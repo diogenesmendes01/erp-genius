@@ -1,11 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
+import { Prisma } from "@prisma/client";
 
 const m = vi.hoisted(() => ({
-  sessao: vi.fn(), usuario: vi.fn(), proposta: vi.fn(), material: vi.fn(), publicacao: vi.fn(),
+  transacao: vi.fn(), sessao: vi.fn(), usuario: vi.fn(), proposta: vi.fn(), material: vi.fn(), publicacao: vi.fn(),
   fixar: vi.fn(), consultar: vi.fn(), decisao: vi.fn(), fonte: vi.fn(), evento: vi.fn(), tx: {} as Record<string, unknown>,
 }));
 
-vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (fn: (tx: object) => unknown) => fn(m.tx) } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: (...args: unknown[]) => m.transacao(...args) } }));
 vi.mock("@/server/_shared", () => ({
   ErroPermissao: class ErroPermissao extends Error {}, ErroRegra: class ErroRegra extends Error {},
   executarAcao: async (fn: () => unknown) => fn(), exigirSessaoComPapel: m.sessao, registrarEvento: m.evento,
@@ -25,6 +26,7 @@ const proposta = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  m.transacao.mockImplementation(async (fn: (tx: object) => unknown) => fn(m.tx));
   m.sessao.mockResolvedValue({ id: "gestor" });
   m.usuario.mockResolvedValue({ ativo: true, papeis: ["GERENTE_PEDAGOGICO"] });
   m.material.mockResolvedValue({ id: "material" });
@@ -65,4 +67,50 @@ it("mantém o preparo de gestão para publicação legada sem carregar diário",
 
   expect(m.publicacao).toHaveBeenCalledWith({ where: { id: dadosPublicacao.alvoId }, select: { id: true } });
   expect(m.fixar).not.toHaveBeenCalled();
+});
+
+// Revisão R1 do #208 (C3): o preparo roda em SERIALIZABLE com o lock do calendário; o
+// perdedor concorrente recebe 40001/P2034 e deve ser repetido até cair no replay da chave.
+const erroPrisma = (code: string, meta?: Record<string, unknown>) =>
+  new Prisma.PrismaClientKnownRequestError("falha", { code, clientVersion: "5.22.0", meta });
+
+it("repete o preparo após P2034 e devolve o replay da chave, sem fixar o Drive de novo", async () => {
+  const criar = vi.fn();
+  m.tx.propostaRegularizacaoFonteGravacao = { findUnique: m.proposta, create: criar };
+  m.publicacao.mockResolvedValue({ id: dadosPublicacao.alvoId });
+  m.fixar.mockResolvedValue({ fileId: "arquivo", driveId: "drive", revisionId: "rev-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
+  const repetida = { ...proposta, alvo: "PUBLICACAO_AULA", publicacaoAulaId: dadosPublicacao.alvoId, materialReposicaoId: null,
+    arquivoOficialId: dadosPublicacao.arquivoOficialId, motivo: dadosPublicacao.motivo };
+  // Pré-conferência sem proposta; a concorrente vence e grava; a repetição a encontra.
+  m.proposta.mockResolvedValueOnce(null).mockResolvedValueOnce(repetida);
+  m.transacao
+    .mockImplementationOnce(async (fn: (tx: object) => unknown) => fn(m.tx))
+    .mockRejectedValueOnce(erroPrisma("P2034"));
+
+  await expect(proporRegularizacaoFonteGravacao(dadosPublicacao)).resolves.toEqual({ id: "proposta" });
+
+  expect(m.fixar).toHaveBeenCalledTimes(1);
+  expect(m.transacao).toHaveBeenCalledTimes(3);
+  expect(m.transacao.mock.calls[1][1]).toMatchObject({ isolationLevel: "Serializable" });
+  expect(m.transacao.mock.calls[2][1]).toMatchObject({ isolationLevel: "Serializable" });
+  expect(criar).not.toHaveBeenCalled();
+});
+
+it("repete o preparo após 40001 (P2010) e recalcula a versão esperada com o estado confirmado", async () => {
+  const criar = vi.fn().mockResolvedValue({ id: "proposta-nova" });
+  const contar = vi.fn().mockResolvedValue(1);
+  m.tx.propostaRegularizacaoFonteGravacao = { findUnique: m.proposta, create: criar };
+  m.tx.fonteRevisaoGravacao = { count: contar, create: m.fonte };
+  m.fixar.mockResolvedValue({ fileId: "arquivo", driveId: "drive", revisionId: "rev-1", md5Checksum: "a".repeat(32), size: "10", mimeType: "video/mp4" });
+  m.proposta.mockResolvedValue(null);
+  m.transacao
+    .mockImplementationOnce(async (fn: (tx: object) => unknown) => fn(m.tx))
+    .mockRejectedValueOnce(erroPrisma("P2010", { code: "40001" }));
+
+  await expect(proporRegularizacaoFonteGravacao(dados)).resolves.toEqual({ id: "proposta-nova" });
+
+  expect(m.fixar).toHaveBeenCalledTimes(1);
+  expect(m.transacao).toHaveBeenCalledTimes(3);
+  expect(criar).toHaveBeenCalledTimes(1);
+  expect(criar.mock.calls[0][0]).toMatchObject({ data: { versaoEsperada: 1, chaveIdempotencia: dados.chaveIdempotencia } });
 });

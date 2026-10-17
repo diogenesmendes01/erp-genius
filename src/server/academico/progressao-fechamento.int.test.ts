@@ -7,6 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { publicarOfertaAgendaDestino } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { decidirCorrecaoNota, proporCorrecaoNota, revisarCorrecaoNota } from "@/server/avaliacoes/correcao";
@@ -191,6 +192,7 @@ beforeEach(async () => {
     vinculosDocentes: { create: { professorId, inicio } },
   } });
   turmaDestinoId = destino.id;
+  await publicarOfertaAgendaDestino(destino.id, { preparadorId: secretariaId, decisorId: gestorId, professorId });
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno em progressão", paisId: catalogo.pais.id, status: "ATIVO" } });
   alunoId = aluno.id;
   const matricula = await prisma.matricula.create({ data: {

@@ -7,7 +7,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoFuso, validadeDoFuso, type SugestaoFuso } from "@/components/CampoFuso";
 
-const destaques: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["US/Eastern", "Estados Unidos — Leste"]];
+const destaques: readonly SugestaoFuso[] = [["America/Sao_Paulo", "Brasil — São Paulo"], ["America/Costa_Rica", "Costa Rica"], ["UTC", "UTC — horário universal"], ["America/New_York", "Estados Unidos — Leste (Nova York)"]];
 
 export function PreferenciasFusoPortalFormulario({ atual }: { atual: string | null }) {
   const [ocupado, iniciar] = useTransition(), [erro, setErro] = useState(""), [feito, setFeito] = useState(""), [fuso, setFuso] = useState(atual ?? ""); const router = useRouter();
