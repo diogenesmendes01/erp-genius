@@ -15,6 +15,8 @@ import {
   IconSun,
   IconMoon,
   IconMessageCircle,
+  IconBriefcase,
+  IconLayoutKanban,
   IconBuilding,
   type IconProps,
 } from "@tabler/icons-react";
@@ -27,6 +29,8 @@ const ICONS: Record<string, Icone> = {
   Home: IconHome,
   // Chave "Mail" (antes `IconMail` solto virava a chave "IconMail" e "Envios do portal" caía no ícone de Home).
   Mail: IconMail,
+  KanbanSquare: IconLayoutKanban,
+  Briefcase: IconBriefcase,
   Users: IconUsers,
   UserCheck: IconUserCheck,
   Wallet: IconWallet,
