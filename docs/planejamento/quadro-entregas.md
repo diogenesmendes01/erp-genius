@@ -2078,6 +2078,94 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+
+## Fase 3, Task 13: regressão de escopo (E5)
+
+- Branch `claude/fase3-b-escopo-roteamento` (Tasks 9 a 13), empilhada sobre o bloco A.
+- Mudanças de comportamento aceitas (tabela da Task 13, redução deliberada de visibilidade da Q1, `escopo.ts`):
+  - FINANCEIRO deixa de ver todo atendimento FINANCEIRO com aluno (antes `{ finalidade: "FINANCEIRO", alunoId: { not:
+    null } }`). Agora vê o próprio (`responsavelId`), a fila sem responsável dos números que servem FINANCEIRO e os
+    atendimentos em que é participante vigente.
+  - SECRETARIA_ACADEMICA deixa de ver todo SECRETARIA, PEDAGOGICO e FINANCEIRO com aluno. Agora vê o próprio, a fila dos
+    números que servem os setores dela (Q1) e os atendimentos em que é participante vigente. Consequência coberta por
+    teste: SECRETARIA encerra PEDAGOGICO só pela fila (`destinatario-atual.int.test.ts`).
+  - GERENTE_COMERCIAL passa a ver todo COMERCIAL (`linha-comercial.int.test.ts`, LC-04).
+  - Fora da tabela, vindo de E4 (`f2af0cdb`): SECRETARIA sem aluno é destinatário roteado, não triagem
+    (`linha-comercial.int.test.ts`).
+- Vazamento da fila COMERCIAL (lead de outro vendedor em número sem dono, bug do escopo da Task 9): corrigido em
+  `04b1d345` (fila COMERCIAL só sem lead: `{ ...ramoFilaDoSetor('COMERCIAL'), leadId: null }`). As falhas que ele
+  causava em `acesso-atendimento` (2) e `preferencias` (2) passam.
+- Aguardando aval do integrador/produto: `c265d904` muda `inbox.int.test.ts` ("lead de OUTRO vendedor vinculado ao número
+  de A não vaza o cockpit"), de `toBeNull()` para thread visível com `lead` e `contato.leadId` nulos. Não é mudança de
+  E5. É a falha da linha de base (main f8a9c0e), resolvida no conflito doc 36 x LC-D02/SPEC-ERP-005 a favor de LC-D02,
+  regra que já existia: o dono da linha vê todas as conversas da linha (`donosDeLinhaVisiveis`, já em `d4c0f74`). O
+  cockpit de lead de outra carteira continua fechado. Se o aval for negado, reverter `c265d904` e manter o caso como
+  falha conhecida da linha de base. Ruling em `.superpowers/sdd/rulings-claude_fase3-b-escopo-roteamento.md`.
+- Verificação (banco `tester`, HEAD da correção da revisão final):
+  - `node_modules/.bin/tsc --noEmit`: saída 0 (linha de base: 0).
+  - `npm test`: saída 0, 647 arquivos e 4.634 testes (linha de base: 643 e 4.607).
+  - Recorte da Task 13, unitário (`vitest run src/server/whatsapp src/server/uploads`): saída 0, 25 arquivos e 197
+    testes.
+  - Recorte da Task 13, integração (`vitest run -c vitest.integration.config.ts src/server/whatsapp src/server/uploads`):
+    saída 0, 29 arquivos e 225 testes. Inclui a falha da linha de base de `whatsapp/inbox`, que passa por causa de
+    `c265d904` (ver acima).
+  - Revisão final (registro do revisor): `financeiro-matricula`, `pagador-contrato` e
+    `atendimento-pedagogico-autorizacao` com 20/20.
+- Pendente do integrador antes do PR: `npm run test:int` completo, que não foi rodado nesta faixa (mais de 2 h, regra do
+  integrador). Esperado: só as 6 falhas da linha de base em `academico/visibilidade`, mais as 14 sensíveis à data
+  anotadas no bloco A.
+- `npm run lint`: saída 0, 0 erros e 44 avisos (linha de base: 0 erros).
+
+### Fase 3B: verificação de abertura do PR (2026-10-17)
+
+- Branch `claude/fase3-b-escopo-roteamento`, tarefas 9 a 13, base `claude/fase3-a-modelo-atendimento`. Banco `tester`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 647 arquivos e 4.634 testes (a primeira execução teve 1 timeout de 30 s em `confirmacoes.test.ts` por carga
+  do container; o arquivo passa isolado e a suíte inteira passou na repetição).
+- `npm run lint`: saída 0, 0 erros e 44 avisos.
+- Integração dos arquivos tocados (`destinatario-atual`, `escopo-grupos`, `inbox`, `linha-comercial`, `roteamento`,
+  `triagem-numero`): saída 0, 6 arquivos e 69 testes.
+- `vitest related -c vitest.integration.config.ts` sobre o diff arrastou dependentes transitivos sem relação com o bloco
+  (agenda, diário, academico/visibilidade) e foi interrompido após ~17 min sem terminar. Falhas parciais observadas:
+  `academico/visibilidade` (6, linha de base conhecida) e `agenda/substituicao-avisos`, `diario/reposicao-*`,
+  `diario/calendario-reposicao`, `agenda/replanejamento-concorrencia` (serialização 40001), que o bloco não toca e não foram
+  comparadas com o main. Pendente para a suíte completa do integrador.
+
+### Fase 3B: revisão R1 do PR #199 (17/10/2026)
+
+- **B1:** `origin/claude/fase3-a-modelo-atendimento` (`83d473f4`) e `origin/main` (`f4ded562`, com a #196) mesclados
+  (`b0ffdff6`, `e3dad326`). Conflito só neste quadro: seções da 3A e da 3B mantidas. `escopo.ts` passa a usar
+  `setoresVisiveisNoInbox` (`whatsapp/setor.ts`) no lugar de `setoresDoUsuario` nas duas chamadas (`escopoAtendimentos`
+  e `escopoGrupos`). Como as duas tiram o PROFESSOR antes, o resultado é o mesmo da função antiga para todo papel
+  (`escopo-setor.test.ts` verde). `triagem-numero.int.test.ts` usa `prisma.oportunidade.create` (trava de
+  `oportunidade-map.test.ts`).
+- **B2, Ruling:** o E3.4 define o participante como convite explícito (Task 17), não como efeito de abrir. Por isso
+  `abrirAtendimentoInstitucional` não inclui quem abriu como participante: depois do `garantirAtendimento`, se o
+  atendimento tem outro responsável e está fora do escopo de quem abriu, recusa antes de gravar
+  `AtendimentoInstitucionalAberto`, com "Este atendimento já está com <nome>; peça para ser incluído como participante."
+  Teste: `whatsapp/abrir-atendimento-escopo.int.test.ts` (dois FINANCEIRO no mesmo número e matrícula, participante
+  vigente pode abrir, SECRETARIA_ACADEMICA em SECRETARIA e em FINANCEIRO de outro responsável). Sem a correção, 2 dos 3
+  casos falham.
+- **C1:** `docs/specs/whatsapp-linha-comercial.md` (LC-D02 e LC-04) atualizada para a regra da Fase 3 (E3.2, Task 13):
+  o GERENTE_COMERCIAL vê as conversas de todo COMERCIAL; a carteira do lead continua restrita à equipe.
+- **C2:** a lista de triagem para o responsável do número (não admin) fica para a tela do inbox novo (Tasks 29 a 31).
+  Até lá, `inbox/page.tsx` só mostra a triagem ao ADMINISTRADOR; o servidor já aceita o responsável.
+- **C3:** o aval do `c265d904` continua pendente com o integrador/produto; se negado, reverter antes do merge.
+- **C4:** confirmado. FINANCEIRO e SECRETARIA deixam de ver encerrados de que não foram responsáveis nem participantes
+  (a fila é só de abertos, tabela da Task 13). O histórico do setor para o atendente fica para a consulta de histórico
+  do inbox novo (Task 26), se o produto pedir.
+- **C5 e verificação** (banco `tester` recriado do zero com `prisma migrate deploy`, porque o anterior tinha as 2026100*
+  aplicadas depois das 20261016*):
+  - `node_modules/.bin/tsc --noEmit`: saída 0;
+  - `npm run lint`: saída 0, 0 erros e 43 avisos;
+  - `node_modules/.bin/vitest run`: saída 0, 667 arquivos e 4.822 testes (sem o teste novo de integração);
+  - integração de `src/server/whatsapp` inteiro mais os `*.int.test.ts` do diff contra a 3A fora dele (`crm/funil`,
+    `crm/historico`, `crm/oportunidades`, `crm/pessoas`, `matricula/preparacao-escopo`): saída 0, 34 arquivos e 249
+    testes. `academico/visibilidade` (usa `abrirAtendimentoInstitucional`): as 6 falhas conhecidas da linha de base.
+  - O `vitest related` interrompido da verificação de abertura foi substituído por essa integração dos arquivos tocados.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## CRM, bloco B: Oportunidade, capacidades e etapas do funil (Fase 2, Tasks 3 a 5; 16/10/2026)
 
 ### Verificação antes do merge (branch `claude/fase2-b-oportunidade`, HEAD `435b10e`)

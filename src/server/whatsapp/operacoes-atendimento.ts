@@ -1,11 +1,11 @@
 "use server";
 
-import { Papel, type FinalidadeAtendimentoWhatsApp } from "@prisma/client";
+import { Papel, type FinalidadeAtendimentoWhatsApp, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
-import { ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, registrarEvento, type Resultado } from "@/server/_shared";
+import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { garantirContato } from "./identidade";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
@@ -16,6 +16,7 @@ import { snapshotCobranca } from "./elegibilidade";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { nomeDoContato } from "./nome-contato";
 import { comContatoIndividual, contatoIndividual } from "./grupos";
+import { escopoAtendimentos } from "./escopo";
 
 export interface OpcaoAtendimento {
   chave: string; nome: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -166,6 +167,7 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
       }
     }
     if (!telefone) throw new ErroRegra("A secretaria precisa cadastrar um destinatário válido para essa finalidade.");
+    const escopo = await escopoAtendimentos(u);
     const atendimento = await prisma.$transaction(async (tx) => {
       const contato = await garantirContato(tx, { telefoneE164: telefone!, nomeExibicao: nome, responsavelId,
         leadId: destino.leadId, alunoId: destino.finalidade === "FINANCEIRO" ? contatoAlunoId : responsavelId ? null : destino.alunoId });
@@ -173,6 +175,14 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
         leadId: destino.leadId, alunoId: alunoAtendimentoId, turmaId: destino.turmaId, matriculaId, responsavelId: u.id,
         autorizacaoComunicacaoAcademicaId: destino.autorizacaoComunicacaoAcademicaId });
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado; solicite revisão à gestão antes de reabri-lo.");
+      // Ruling B2 do #199 (E3.4): o upsert devolve o atendimento já aberto no mesmo contexto. Se ele
+      // está com outro responsável e fora do escopo de quem abriu, recusa antes do evento: entrar
+      // como participante é convite explícito (Task 17), nunca efeito colateral de "abrir".
+      if (a.responsavelId && a.responsavelId !== u.id
+        && !await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: a.id }, escopo] } })) {
+        const dono = await tx.usuario.findUnique({ where: { id: a.responsavelId }, select: { nome: true } });
+        throw new ErroRegra(`Este atendimento já está com ${dono?.nome ?? "outro atendente"}; peça para ser incluído como participante.`);
+      }
       await registrarEvento(tx, { tipo: "AtendimentoInstitucionalAberto", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id,
         autorId: u.id, payload: { finalidade: a.finalidade, leadId: a.leadId, alunoId: a.alunoId, turmaId: a.turmaId, matriculaId: a.matriculaId } });
       return a;
@@ -180,6 +190,19 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
     revalidatePath("/inbox");
     return { id: atendimento.id };
   });
+}
+
+/**
+ * Triagem do número (E4.3): ADMINISTRADOR vê todos os números; o responsável pela triagem
+ * (`NumeroWhatsApp.triagemResponsavelId`) vê só os dele. Quem não é nenhum dos dois é recusado.
+ */
+async function exigirAlcadaTriagem(): Promise<{ u: Awaited<ReturnType<typeof exigirSessao>>; filtroNumero: Prisma.NumeroWhatsAppWhereInput | null }> {
+  const u = await exigirSessao();
+  if (temPapel(u, Papel.ADMINISTRADOR)) return { u, filtroNumero: null };
+  if (!await prisma.numeroWhatsApp.count({ where: { triagemResponsavelId: u.id } })) {
+    throw new ErroPermissao("Acesso restrito à administração ou ao responsável pela triagem do número.");
+  }
+  return { u, filtroNumero: { triagemResponsavelId: u.id } };
 }
 
 export interface ItemTriagem {
@@ -190,8 +213,8 @@ export interface ItemTriagem {
 
 /** Legado e inbound ambíguo são lidos exclusivamente na triagem administrativa. */
 export async function listarTriagemWhatsApp(): Promise<ItemTriagem[]> {
-  await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-  const mensagens = await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: null, conversa: { grupoId: null } }, take: 100, orderBy: { criadoEm: "desc" },
+  const { filtroNumero } = await exigirAlcadaTriagem();
+  const mensagens = await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: null, conversa: { grupoId: null, ...(filtroNumero ? { numero: filtroNumero } : {}) } }, take: 100, orderBy: { criadoEm: "desc" },
     include: { conversa: { include: { contato: true, atendimentos: { include: {
       aluno: true, lead: true, matricula: { select: { id: true, codigo: true } },
     } } } } } });
@@ -210,7 +233,7 @@ export async function listarTriagemWhatsApp(): Promise<ItemTriagem[]> {
 
 export async function classificarMensagemWhatsApp(input: { mensagemId: string; atendimentoId: string; motivo: string }): Promise<Resultado> {
   return executarAcao(async () => {
-    const u = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const { u, filtroNumero } = await exigirAlcadaTriagem();
     const dados = z.object({ mensagemId: z.string().min(1), atendimentoId: z.string().min(1), motivo: z.string().trim().min(12).max(1000) }).parse(input);
     await prisma.$transaction(async (tx) => {
       const [m, a] = await Promise.all([
@@ -218,6 +241,9 @@ export async function classificarMensagemWhatsApp(input: { mensagemId: string; a
         tx.atendimentoWhatsApp.findUnique({ where: { id: dados.atendimentoId }, include: { conversa: { include: { contato: true } } } }),
       ]);
       if (!m || !a || m.conversaId !== a.conversaId || m.atendimentoId) throw new ErroRegra("Mensagem ausente, já classificada ou de outro contato/canal.");
+      if (filtroNumero && a.conversa.numeroId && !await tx.numeroWhatsApp.count({ where: { id: a.conversa.numeroId, ...filtroNumero } })) {
+        throw new ErroPermissao("Esta mensagem pertence a um número que você não tria.");
+      }
       if (a.finalidade === "FINANCEIRO" && (!a.matriculaId || a.encerradoEm)) {
         throw new ErroRegra("Atendimento financeiro sem matrícula atual ou encerrado não recebe nova classificação.");
       }

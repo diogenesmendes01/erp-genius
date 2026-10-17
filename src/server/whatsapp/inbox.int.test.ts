@@ -502,7 +502,13 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     const { conversa, lead } = await seedLeadNaConversa(b.id); // número de A, lead de B
 
     const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    expect(thread).toBeNull(); // doc 36: o dono do número não recebe histórico de outro vendedor.
+    // Falha da linha de base (main f8a9c0e), não mudança de E5: conflito doc 36 x LC-D02/SPEC-ERP-005
+    // (dono da linha vê todas as conversas da linha). Resolvido a favor de LC-D02, AGUARDANDO aval do
+    // integrador/produto (quadro, "Fase 3, Task 13"): o dono da linha VÊ a conversa, mas o painel do
+    // lead de outra carteira segue fechado; o P1 é o vazamento do cockpit, não o acesso à conversa.
+    expect(thread).not.toBeNull();
+    expect(thread?.lead).toBeNull();
+    expect(thread?.contato.leadId).toBeNull();
 
     // Caminho feliz intacto: se o lead for do PRÓPRIO A, o cockpit volta a aparecer.
     await prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });

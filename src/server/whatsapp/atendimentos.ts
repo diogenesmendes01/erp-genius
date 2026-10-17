@@ -6,6 +6,7 @@ import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { chaveDeReabertura } from "./status-atendimento";
 import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./linha-comercial";
 import { comContatoIndividual } from "./grupos";
+import { setoresDoNumero } from "./numero-setor";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -101,13 +102,29 @@ export async function atendimentoDoInbound(tx: Prisma.TransactionClient, convers
   const c = await tx.conversaWhatsApp.findUnique({ where: { id: conversaId }, include: { numero: true, contato: { include: { lead: true } } } });
   if (!c?.numero.ativo || !c.contato || !c.contatoId) return null;
   // VENDAS sem atendimento aberto é linha comercial e já foi roteado acima.
-  if (c.numero.finalidade === "COBRANCA" && c.contato.alunoId) {
-    // A identidade não escolhe contrato: só roteia quando existe uma única matrícula possível.
-    const matriculas = await tx.matricula.findMany({ where: { alunoId: c.contato.alunoId }, select: { id: true }, take: 2 });
-    if (matriculas.length !== 1) return null;
-    const atendimento = await garantirAtendimento(tx, { numeroId: c.numeroId, contatoId: c.contatoId,
-      finalidade: "FINANCEIRO", alunoId: c.contato.alunoId, matriculaId: matriculas[0].id });
-    return atendimento.encerradoEm ? null : atendimento.id;
+  // Roteamento por setor do número: zero ou vários setores → triagem. A classificação pela Aria é da Fase 5.
+  const setores = await setoresDoNumero(tx, c.numeroId);
+  if (setores.length !== 1) return null;
+  const base = { numeroId: c.numeroId, contatoId: c.contatoId, reabrir: true as const };
+  let atendimento;
+  switch (setores[0]) {
+    case "COMERCIAL":
+      atendimento = await garantirAtendimento(tx, { ...base, finalidade: "COMERCIAL", leadId: c.contato.leadId });
+      break;
+    case "SECRETARIA":
+      atendimento = await garantirAtendimento(tx, { ...base, finalidade: "SECRETARIA", alunoId: c.contato.alunoId });
+      break;
+    case "FINANCEIRO": {
+      if (!c.contato.alunoId) return null;
+      // A identidade não escolhe contrato: só roteia quando existe uma única matrícula possível.
+      const matriculas = await tx.matricula.findMany({ where: { alunoId: c.contato.alunoId }, select: { id: true }, take: 2 });
+      if (matriculas.length !== 1) return null;
+      atendimento = await garantirAtendimento(tx, { ...base, finalidade: "FINANCEIRO", alunoId: c.contato.alunoId, matriculaId: matriculas[0].id });
+      break;
+    }
+    default:
+      // PEDAGOGICO: a abertura exige matrícula e autorização explícitas.
+      return null;
   }
-  return null;
+  return atendimento.encerradoEm ? null : atendimento.id;
 }
