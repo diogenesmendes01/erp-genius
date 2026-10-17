@@ -998,6 +998,17 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Limpar → fantasma/md",
     "<Botao> Mover selecionadas → secundario/md",
   ],
+  "funil/EdicaoOportunidade.tsx": [
+    "<Botao> Editar resumo → fantasma/sm",
+    "<Botao> Salvar resumo → primario/md",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Salvar datas → secundario/md",
+    "<Botao> Editar dados → secundario/md",
+    "<Botao> Salvar dados → primario/md",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Arquivar → fantasma/sm",
+    "<Botao> Registrar interação → secundario/md",
+  ],
   "funil/ModalPerda.tsx": [
     "<Botao> Voltar → secundario/md",
     "<Botao> Salvando… · Marcar como perdida → perigo/md",
