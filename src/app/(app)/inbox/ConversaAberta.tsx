@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconArrowLeft, IconLayoutSidebarRight } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
-import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
+import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
 import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import { recursoDisponivel } from "@/components/conversa/recursos-canal";
 import type { ConversaHook } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { podeExecutar } from "@/server/inbox/permissoes";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
@@ -37,6 +38,15 @@ export interface PropsConversaAberta {
 /** "Transferido de Comercial": só quando o usuário também enxerga o atendimento de origem (escopo). */
 export function textoOrigem(setor: Setor | null): string | null {
   return setor ? `Transferido de ${rotular(SETOR_ATENDIMENTO_LABEL, setor)}` : null;
+}
+
+/** Comandos do menu da mensagem que esta tela já executa; os outros ficam fora do menu até serem ligados. */
+export const COMANDOS_MENSAGEM_LIGADOS: readonly ComandoMensagem[] = ["copiar"];
+
+/** O compositor só envia com a alçada de envio (podeExecutar) e com o atendimento aberto. */
+export function podeEnviarNaConversa(usuario: { id: string; papeis: Papel[] }, item: ItemListaInbox): boolean {
+  if (item.status === "ENCERRADO") return false;
+  return podeExecutar(usuario, "enviar", { setor: item.finalidade as Setor, responsavelId: item.responsavelId, linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId });
 }
 
 export function ConversaAberta({ item, usuario, fuso, conversa, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
@@ -96,7 +106,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, destinos, triage
           estimatedHeight={72}
           scrollRef={rolagem}
           renderItem={(m) => (
-            <BalaoMensagem m={m} fuso={fuso} recursos={(r) => (item ? recursoDisponivel(item.driver as never, r) : false)}
+            <BalaoMensagem m={m} fuso={fuso} comandos={COMANDOS_MENSAGEM_LIGADOS} recursos={(r) => (item ? recursoDisponivel(item.driver as never, r) : false)}
               aoComando={(c) => { if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo); }} />
           )}
         />
@@ -105,7 +115,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, destinos, triage
         <Compositor
           atendimentoId={item.id}
           modo="responder"
-          podeEnviar
+          podeEnviar={podeEnviarNaConversa(usuario, item)}
           driver={item.driver as never}
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
