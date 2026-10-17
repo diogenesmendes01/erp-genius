@@ -1,21 +1,24 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), conversas: vi.fn(), thread: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), linhas: vi.fn() }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: () => false }));
-vi.mock("@/server/whatsapp/consultas", () => ({ listarConversasInbox: mocks.conversas, carregarThread: mocks.thread, listarLinhasDoUsuario: mocks.linhas }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn() }));
+vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.admin }));
+vi.mock("@/server/inbox/consultas-pagina", () => ({ listarAtendimentosPagina: mocks.pagina }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./InboxCliente", () => ({ InboxCliente: ({ preferenciaFusoExibicao, busca, limitada, canal }: { preferenciaFusoExibicao: string | null; busca: string; limitada: boolean; canal: string }) => `inbox:${preferenciaFusoExibicao}|busca:${busca}|limitada:${limitada}|canal:${canal}` }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial }: { fuso: string | null; filtros: object; selecionado: string | null; inicial: { proximo: string | null } }) => `inbox:${fuso}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}` }));
 vi.mock("./AtendimentosPainel", () => ({ AtendimentosPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => `triagem:${preferenciaFusoExibicao}` }));
 
 import Page from "./page";
+
+const cursorValido = Buffer.from(JSON.stringify({ em: "2026-10-01T00:00:00.000Z", id: "x" })).toString("base64url");
 
 describe("InboxPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.sessao.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
-    mocks.conversas.mockResolvedValue({ itens: [], limitada: false }); mocks.thread.mockResolvedValue(null); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] }); mocks.linhas.mockResolvedValue([]);
+    mocks.admin.mockReturnValue(false);
+    mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
   });
 
   it("encaminha a preferência somente depois da guarda", async () => {
@@ -29,28 +32,26 @@ describe("InboxPage", () => {
     expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("inbox:null");
   });
 
-  it("não lê preferência ou atendimentos se a guarda falhar", async () => {
+  it("não lê preferência nem lista se a guarda falhar", async () => {
     mocks.sessao.mockRejectedValue(new Error("negado"));
     await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow("negado");
     expect(mocks.preferencia).not.toHaveBeenCalled();
-    expect(mocks.conversas).not.toHaveBeenCalled();
+    expect(mocks.pagina).not.toHaveBeenCalled();
   });
 
-  it("busca da URL vai à consulta (servidor) e à tela; o aviso de lista cortada chega à tela", async () => {
+  it("filtros e conversa da URL vão à consulta paginada e à tela; sem ?c= nada é selecionado", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
-    mocks.conversas.mockResolvedValue({ itens: [], limitada: true });
-    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "  ana  ", c: "x" }) }));
-    expect(mocks.conversas).toHaveBeenCalledWith(expect.anything(), { busca: "ana" });
-    expect(html).toContain("busca:ana|limitada:true");
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ busca: "  ana  ", setor: "FINANCEIRO", c: "x" }) }));
+    expect(mocks.pagina).toHaveBeenCalledWith(expect.anything(), { busca: "ana", setor: "FINANCEIRO" }, null);
+    expect(html).toContain("sel:x");
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("sel:null");
   });
 
-  it("filtro de canal da URL restringe a consulta e chega à tela; valor desconhecido é ignorado (SPEC-ERP-005)", async () => {
+  it("cursor válido da URL é repassado; inválido é ignorado", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
-    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ canal: "linha" }) }));
-    expect(mocks.conversas).toHaveBeenCalledWith(expect.anything(), { busca: "", canal: "linha" });
-    expect(html).toContain("canal:linha");
-    mocks.conversas.mockClear();
-    await Page({ searchParams: Promise.resolve({ canal: "qualquer" }) });
-    expect(mocks.conversas).toHaveBeenCalledWith(expect.anything(), { busca: "" });
+    await Page({ searchParams: Promise.resolve({ cursor: cursorValido }) });
+    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, cursorValido);
+    await Page({ searchParams: Promise.resolve({ cursor: "lixo!" }) });
+    expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, null);
   });
 });
