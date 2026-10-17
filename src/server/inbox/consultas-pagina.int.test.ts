@@ -163,22 +163,33 @@ describe("thread paginada", () => {
     const esperado = (await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: a.id }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { id: true } })).map((m) => m.id);
     const p1 = (await listarMensagensPagina(sess(admin), a.id, {}))!;
     expect(p1.mensagens).toHaveLength(60);
-    expect(p1.depois).toBeNull();
+    expect(p1.temMais).toBe(true);
+    // C2: sempre os dois cursores; `depois` da última página pega o que chegar depois.
+    expect(p1.depois).not.toBeNull();
+    expect(p1.depois).toBe(codificarCursor({ em: p1.mensagens.at(-1)!.criadoEm, id: p1.mensagens.at(-1)!.id }));
+    expect(p1.antes).toBe(codificarCursor({ em: p1.mensagens[0].criadoEm, id: p1.mensagens[0].id }));
     const p2 = (await listarMensagensPagina(sess(admin), a.id, { antes: p1.antes! }))!;
     const p3 = (await listarMensagensPagina(sess(admin), a.id, { antes: p2.antes! }))!;
     expect(p2.mensagens).toHaveLength(60);
     expect(p3.mensagens).toHaveLength(30);
-    expect(p3.antes).toBeNull();
+    expect(p3.temMais).toBe(false);
+    expect(p3.antes).not.toBeNull();
     expect([...p3.mensagens, ...p2.mensagens, ...p1.mensagens].map((m) => m.id)).toEqual(esperado);
     // Para a frente: da mais antiga até o fim, sem sobreposição.
     const f1 = (await listarMensagensPagina(sess(admin), a.id, { depois: p2.antes!, limite: 100 }))!;
     expect(f1.mensagens.length).toBeGreaterThan(0);
     // O cursor é exclusivo: segue a primeira mensagem da página 2.
     expect(f1.mensagens[0].id).toBe(esperado[esperado.indexOf(p2.mensagens[0].id) + 1]);
+    expect(f1.depois).not.toBeNull();
     const f2 = f1.depois ? (await listarMensagensPagina(sess(admin), a.id, { depois: f1.depois }))! : null;
     const juntas = [...f1.mensagens, ...(f2?.mensagens ?? [])].map((m) => m.id);
     expect(new Set(juntas).size).toBe(juntas.length);
     expect(juntas.at(-1)).toBe(esperado.at(-1));
+    // Após mensagem.nova: pedir `depois` do cursor da última devolve só as novas.
+    const nova = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA", driver: "BAILEYS", corpo: "nova", criadoEm: new Date(t0 + 999_000) } });
+    const novas = (await listarMensagensPagina(sess(admin), a.id, { depois: p1.depois! }))!;
+    expect(novas.mensagens.map((m) => m.id)).toEqual([nova.id]);
+    expect(novas.temMais).toBe(false);
     // Limite máximo 100.
     expect((await listarMensagensPagina(sess(admin), a.id, { limite: 500 }))!.mensagens).toHaveLength(100);
     // Fora do escopo: null (a rota responde 404).
