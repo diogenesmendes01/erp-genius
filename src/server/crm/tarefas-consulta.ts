@@ -6,19 +6,30 @@ import { escopoTarefas } from "./tarefas";
 
 const incluirResponsavel = { responsavel: { select: { id: true, nome: true } } } as const;
 
-/** Itens da lista: o intervalo (tarefas e mensagens) mais as tarefas abertas sem data. */
+/**
+ * Itens da lista: o intervalo (tarefas e mensagens), mais as tarefas abertas sem data
+ * e as abertas com data anterior ao intervalo (atrasadas há muito tempo não somem da lista).
+ */
 export async function listarItensLista(usuario: UsuarioSessao, intervalo: { de: string; ate: string }, equipe: boolean): Promise<ItemAgenda[]> {
   if (!usuario?.id) return [];
-  const [itens, semData] = await Promise.all([
+  const escopo = await escopoTarefas(usuario, equipe);
+  const [itens, antigas, semData] = await Promise.all([
     listarItensAgenda(usuario, intervalo, equipe),
     prisma.tarefa.findMany({
-      where: { AND: [await escopoTarefas(usuario, equipe), { dataCivil: null, status: "ABERTA" }] },
+      where: { AND: [escopo, { dataCivil: { lt: intervalo.de }, status: "ABERTA" }] },
+      include: incluirResponsavel,
+      orderBy: [{ dataCivil: "asc" }, { inicioEm: { sort: "asc", nulls: "last" } }, { criadoEm: "asc" }],
+      take: 200,
+    }),
+    prisma.tarefa.findMany({
+      where: { AND: [escopo, { dataCivil: null, status: "ABERTA" }] },
       include: incluirResponsavel,
       orderBy: { criadoEm: "asc" },
       take: 200,
     }),
   ]);
-  return [...itens, ...semData.map((tarefa): ItemAgenda => ({ tipo: "tarefa", tarefa }))];
+  const comoItem = (tarefa: (typeof semData)[number]): ItemAgenda => ({ tipo: "tarefa", tarefa });
+  return [...antigas.map(comoItem), ...itens, ...semData.map(comoItem)];
 }
 
 /** Uma tarefa, só se estiver no escopo do usuário (inclusive a equipe, quando a capacidade existe). */

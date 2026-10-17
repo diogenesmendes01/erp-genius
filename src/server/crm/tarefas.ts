@@ -234,11 +234,15 @@ export async function editarTarefa(id: string, versao: number, i: Partial<Tarefa
         const antecedencia = d.lembreteAntecedenciaMin !== undefined ? d.lembreteAntecedenciaMin : t.lembreteAntecedenciaMin;
         if (antecedencia !== null && !(dataCivil && hora)) throw new ErroRegra("O lembrete exige data e horário.");
         const q = agendamento(dataCivil, hora, t.fusoOrigem, antecedencia);
-        set("dataCivil", q.dataCivil, t.dataCivil);
-        set("inicioEm", q.inicioEm, t.inicioEm);
-        set("lembreteAntecedenciaMin", antecedencia, t.lembreteAntecedenciaMin);
-        set("lembrarEm", q.lembrarEm, t.lembrarEm);
-        data.lembreteDisparadoEm = null;
+        const mesmoInstante = (a: Date | null, b: Date | null) => (a?.getTime() ?? null) === (b?.getTime() ?? null);
+        if (q.dataCivil !== t.dataCivil) set("dataCivil", q.dataCivil, t.dataCivil);
+        if (!mesmoInstante(q.inicioEm, t.inicioEm)) set("inicioEm", q.inicioEm, t.inicioEm);
+        if (antecedencia !== t.lembreteAntecedenciaMin) set("lembreteAntecedenciaMin", antecedencia, t.lembreteAntecedenciaMin);
+        // Só um lembrete novo rearma o disparo: reenviar o mesmo agendamento não notifica de novo.
+        if (!mesmoInstante(q.lembrarEm, t.lembrarEm)) {
+          set("lembrarEm", q.lembrarEm, t.lembrarEm);
+          data.lembreteDisparadoEm = null;
+        }
       }
       await gravar(tx, t, versao, "ABERTA", data);
       await registrarEvento(tx, { tipo: "TarefaEditada", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id, payload: { campos: mudou as Prisma.InputJsonObject, versao: versao + 1 } });
