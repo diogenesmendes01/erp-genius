@@ -1932,3 +1932,13 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `integracao/ate-fase-1` neste banco (sensíveis à data de hoje, 16/10/2026, e ao ambiente); anotadas, não são do bloco.
   `cobrancas/resposta-contrato` quebrava pelo CHECK `Atendimento_status_encerrado` e foi corrigido no teste (4/4 verdes).
 - Pendência de merge: IDs de migration escolhidos pelo implementador; o integrador deve confirmá-los ou renomeá-los.
+
+## Fase 3, Task 13: regressão de escopo (E5)
+
+- Mudanças de comportamento documentadas nos testes (comentário "E5, Task 13"): GERENTE_COMERCIAL passa a ver todo
+  COMERCIAL (`linha-comercial.int.test.ts`, LC-04); SECRETARIA encerra PEDAGOGICO só pela fila dos números que servem o
+  setor (`destinatario-atual.int.test.ts`); SECRETARIA sem aluno é destinatário roteado, não triagem (E4, `f2af0cdb`,
+  `linha-comercial.int.test.ts`).
+- Pendente (bug do escopo da Task 9, não da tabela): a fila COMERCIAL (`ramoFilaDoSetor`) mostra a vendedor sem relação
+  atendimento COMERCIAL de lead de outro vendedor em número sem dono. Falham por isso `acesso-atendimento` (2),
+  `preferencias` (2) e `inbox` (1, já era da linha de base).
