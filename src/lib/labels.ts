@@ -525,6 +525,17 @@ export const STATUS_INTENCAO_LABEL: Readonly<Record<StatusIntencao, string>> = O
   SIMULADA: "Simulada (ensaio)",
 });
 
+/** Status da mensagem agendada na tela de tarefas: o que o despachante realmente fez, sem prometer envio. */
+export const STATUS_MENSAGEM_AGENDADA_LABEL: Readonly<Record<StatusIntencao, string>> = Object.freeze({
+  PENDENTE: "Agendada",
+  ENVIANDO: "Enviando",
+  DESPACHADA: "Enviada",
+  CANCELADA: "Cancelada",
+  FALHOU: "Falhou",
+  ADIADA: "Adiada · fora da janela de envio",
+  SIMULADA: "Simulada",
+});
+
 // Financeiro.
 export const TIPO_APROVACAO_LABEL: Readonly<Record<TipoAprovacao, string>> = Object.freeze({
   DESCONTO: "Desconto",

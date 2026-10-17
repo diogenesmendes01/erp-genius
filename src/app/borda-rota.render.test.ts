@@ -20,6 +20,7 @@ import LoadingPortalAluno from "@/app/portal-aluno/loading";
 import LoadingAlunos from "@/app/(app)/alunos/(lista)/loading";
 import LoadingLeads from "@/app/(app)/leads/(lista)/loading";
 import LoadingFunil from "@/app/(app)/funil/loading";
+import LoadingTarefas from "@/app/(app)/tarefas/loading";
 import LoadingInbox from "@/app/(app)/inbox/loading";
 import LoadingFinanceiro from "@/app/(app)/financeiro/(painel)/loading";
 import LoadingContinuidade from "@/app/(app)/financeiro/continuidade/loading";
@@ -42,6 +43,7 @@ import ErroDiario from "@/app/(app)/diario/error";
 import ErroEmpresas from "@/app/(app)/empresas/error";
 import ErroFinanceiro from "@/app/(app)/financeiro/error";
 import ErroFunil from "@/app/(app)/funil/error";
+import ErroTarefas from "@/app/(app)/tarefas/error";
 import ErroInbox from "@/app/(app)/inbox/error";
 import ErroLeads from "@/app/(app)/leads/error";
 import ErroOportunidades from "@/app/(app)/oportunidades/error";
@@ -59,6 +61,7 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/alunos/(lista)": { Componente: LoadingAlunos, titulos: 1, rotulo: "Carregando alunos" },
   "src/app/(app)/leads/(lista)": { Componente: LoadingLeads, titulos: 1, rotulo: "Carregando leads" },
   "src/app/(app)/funil": { Componente: LoadingFunil, titulos: 1, rotulo: "Carregando funil" },
+  "src/app/(app)/tarefas": { Componente: LoadingTarefas, titulos: 1, rotulo: "Carregando tarefas" },
   "src/app/(app)/inbox": { Componente: LoadingInbox, titulos: 1, rotulo: "Carregando conversas" },
   "src/app/(app)/financeiro/(painel)": { Componente: LoadingFinanceiro, titulos: 0, rotulo: "Carregando financeiro" },
   "src/app/(app)/financeiro/continuidade": { Componente: LoadingContinuidade, titulos: 0, rotulo: "Carregando fila de continuidade mensal…" },
@@ -144,6 +147,7 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/(app)/leads": { Componente: ErroLeads, caminho: "/leads/l1/contratacao", titulo: "Não foi possível carregar os leads", voltar: "/leads" },
   "src/app/(app)/matriculas/[id]": { Componente: ErroMatricula, caminho: "/matriculas/m1/preparacao", params: { id: "m1" }, titulo: "Não foi possível carregar esta seção da matrícula", voltar: "/matriculas/m1" },
   "src/app/(app)/oportunidades": { Componente: ErroOportunidades, caminho: "/oportunidades/o1/contratacao", titulo: "Não foi possível carregar a oportunidade", voltar: "/funil" },
+  "src/app/(app)/tarefas": { Componente: ErroTarefas, caminho: "/tarefas", titulo: "Não foi possível carregar as tarefas", voltar: "/home" },
   "src/app/(app)/secretaria": { Componente: ErroSecretaria, caminho: "/secretaria/reservas", titulo: "Não foi possível carregar a secretaria", voltar: "/secretaria" },
   "src/app/pagar/[token]": { Componente: ErroPagar, caminho: "/pagar/t1", titulo: "Não foi possível abrir o pagamento", voltar: null },
   "src/app/certificado/[codigo]": { Componente: ErroCertificado, caminho: "/certificado/C1", titulo: "Não foi possível conferir o certificado agora", voltar: null },
