@@ -219,7 +219,7 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
       alocacoes: {
         where: { ativa: true, ...(!temVisaoAmpla(usuario) ? { turma: escopoTurmasDocente(usuario.id) } : {}) },
         orderBy: { id: "asc" },
-        include: { turma: { include: { modalidade: true, nivel: true, vinculosDocentes: true } } },
+        include: { turma: { include: { modalidade: true, nivel: { include: { idioma: true } }, vinculosDocentes: true } } },
       },
       // Cobranças só para quem vê financeiro: antes vinham para todo papel (inclusive Professor) e
       // eram descartadas — agora o filtro impossível evita a leitura.
@@ -240,7 +240,8 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
       status: a.status,
       pais: a.pais.nome,
       criadoEm: a.criadoEm.toISOString(),
-      turmas: alocacoes.map(({ turma }) => ({ id: turma.id, label: `${turma.modalidade.nome} ${turma.nivel.codigo}` })),
+      // Mesmo rótulo do filtro (C17, #170): "Regular B1" sozinho repetia entre turmas diferentes na célula e na planilha.
+      turmas: alocacoes.map(({ turma }) => ({ id: turma.id, label: rotuloTurmaAcademica(turma) })),
       financeiro: verFinanceiro ? resumoFinanceiro(cobrancas) : null,
     };
   });
