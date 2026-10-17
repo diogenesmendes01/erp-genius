@@ -23,6 +23,8 @@ export interface InboundNormalizado {
   /** pushName/perfil do REMETENTE. Em fromMe é o perfil da própria linha: descartado aqui. */
   nomeExibicao?: string | null;
   providerMessageId: string;
+  /** Id da mensagem no motor (chatJid:idDoProtocolo); só o driver MOTOR preenche. */
+  mensagemIdMotor?: string | null;
   corpo: string | null;
   tipo: TipoMensagem;
   /** URL canônica /api/files/... do binário já baixado pelo webhook (E3 — gap A3). */
@@ -86,6 +88,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           driver: m.driver,
           origem: m.fromMe ? "CELULAR" : null, // fromMe fora do ERP: enviada pelo celular (E3.6)
           providerMessageId: m.providerMessageId,
+          mensagemIdMotor: m.mensagemIdMotor ?? null,
           criadoEm: m.quando,
         },
       });
