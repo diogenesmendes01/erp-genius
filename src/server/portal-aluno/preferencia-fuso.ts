@@ -4,10 +4,10 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ErroAutenticacao } from "@/server/_shared";
-import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
+import { FusoPreferenciaSchema } from "@/server/operacao/fuso";
 import { exigirSessaoPortalAluno, revalidarSessaoPortalAlunoTx } from "./sessao";
 
-const Entrada = z.object({ fusoExibicao: z.union([FusoInstitucionalSchema, z.literal(""), z.null()]) }).strict().transform((d) => ({ fusoExibicao: d.fusoExibicao || null }));
+const Entrada = z.object({ fusoExibicao: z.union([FusoPreferenciaSchema, z.literal(""), z.null()]) }).strict().transform((d) => ({ fusoExibicao: d.fusoExibicao || null }));
 
 /** A escrita bloqueia primeiro a conta e depois a sessão; a validação acontece depois
  * dos locks para que revogação ou troca de versão concorrente vença a preferência. */
