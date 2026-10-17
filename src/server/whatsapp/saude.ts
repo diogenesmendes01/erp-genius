@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
+import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/server/comunicacoes-agenda/envio-gate";
 
 // SAÚDE DO CANAL (doc 30 E5 · gap A7 do doc 28): o "alerta" que o doc 26 cita 3× sem
 // existir. Um monitor externo (UptimeRobot etc.) bate em GET /api/whatsapp/health a cada
@@ -14,6 +15,10 @@ import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 //              a pega e ela não é incidente (C1 · R1 do #202);
 //   ADIADA   → quanto `despacharAposEm` está VENCIDO;
 //   ENVIANDO → quanto o prazo do claim expirou sem a recuperação rodar.
+//
+// Aviso de agenda com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado fica retido de propósito
+// (R1 do #209, C2): conta em `retidasAgendaDesligada` e, enquanto o envio estiver desligado,
+// fica fora dos relógios — não é sinal de cron parado, como a fila com kill switch ligado.
 
 /** PENDENTE além disto (min) = o tick horário não está rodando. */
 const LIMIAR_PENDENTE_MIN = 120;
@@ -38,6 +43,11 @@ export interface SaudeCanal {
     claimExpiradoHaMin: number | null;
     /** Intenções que TRANSICIONARAM para FALHOU nas últimas 24h (por atualizadoEm). */
     falhas24h: number;
+    /** Avisos de agenda PENDENTE/ADIADA retidos pelo envio de agenda desligado
+     *  (motivoFalha `envio_agenda_desligado`). Já contados em `pendentes`/`adiadas`. */
+    retidasAgendaDesligada: number;
+    /** Estado atual de COMUNICACOES_AGENDA_ENVIO_ENABLED. */
+    envioAgendaHabilitado: boolean;
   };
   sessoes: { rotulo: string; driver: string; sessao: string }[];
   politica: { estado: string; killSwitch: boolean } | null;
@@ -52,7 +62,10 @@ const maiorOuNulo = (a: number | null, b: number | null): number | null =>
   a === null ? b : b === null ? a : Math.max(a, b);
 
 export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCanal> {
-  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica] =
+  const envioAgendaHabilitado = envioAvisosAgendaHabilitado();
+  // Com o envio de agenda desligado, o aviso de agenda não é despachável: fora dos relógios.
+  const despachavel = envioAgendaHabilitado ? {} : { avisoAlteracaoAgendaId: null };
+  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica, retidasAgendaDesligada] =
     await Promise.all([
       // Contagem = ESTOQUE da fila, inclusive agendadas para o futuro (como as ADIADAS à
       // espera de janela): é informativa e nenhum alerta depende dela. O que alarma é o
@@ -64,18 +77,18 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
       }),
       // Mesmo critério do despachante: PENDENTE sem agendamento conta desde a criação...
       prisma.intencaoMensagem.findFirst({
-        where: { status: "PENDENTE", agendadaPara: null },
+        where: { status: "PENDENTE", agendadaPara: null, ...despachavel },
         orderBy: { criadaEm: "asc" },
         select: { criadaEm: true },
       }),
       // ...e a agendada só desde que venceu (agendadaPara > agora ainda não é fila).
       prisma.intencaoMensagem.findFirst({
-        where: { status: "PENDENTE", agendadaPara: { lte: agora } },
+        where: { status: "PENDENTE", agendadaPara: { lte: agora }, ...despachavel },
         orderBy: { agendadaPara: "asc" },
         select: { agendadaPara: true },
       }),
       prisma.intencaoMensagem.findFirst({
-        where: { status: "ADIADA", despacharAposEm: { not: null } },
+        where: { status: "ADIADA", despacharAposEm: { not: null }, ...despachavel },
         orderBy: { despacharAposEm: "asc" },
         select: { despacharAposEm: true },
       }),
@@ -98,6 +111,9 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
         select: { criadoEm: true },
       }),
       carregarPoliticaRegua(),
+      prisma.intencaoMensagem.count({
+        where: { status: { in: ["PENDENTE", "ADIADA"] }, motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
+      }),
     ]);
 
   const contagem = new Map(porStatus.map((s) => [s.status, s._count._all]));
@@ -160,6 +176,8 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
       adiadaVencidaHaMin,
       claimExpiradoHaMin,
       falhas24h,
+      retidasAgendaDesligada,
+      envioAgendaHabilitado,
     },
     sessoes: numeros.map((n) => ({ rotulo: n.rotulo, driver: n.driver, sessao: n.sessao })),
     politica: { estado: politica.estado, killSwitch: politica.killSwitch },
