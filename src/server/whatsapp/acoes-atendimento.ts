@@ -10,6 +10,7 @@ import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento
 import { SETORES, ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "./participantes";
 import { setoresDoNumero } from "./numero-setor";
+import { comoErroRegra } from "./erro-regra-atendimento";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { proximoStatus } from "./status-atendimento";
 
@@ -132,18 +133,6 @@ async function resolverDestino(tx: Parameters<Parameters<typeof prisma.$transact
     return { alunoId: p[1], matriculaId: p[3], turmaId: p[2], autorizacaoComunicacaoAcademicaId: autorizacao };
   }
   return null;
-}
-
-/** Erro de trigger/regra do banco (264/265 etc.) vira ErroRegra com a mensagem do banco. */
-function comoErroRegra(e: unknown): never {
-  if (e instanceof ErroRegra) throw e;
-  const msg = e instanceof Error ? e.message : String(e);
-  // Trigger com RAISE EXCEPTION (SQLSTATE P0001): o Prisma embute a mensagem do banco no texto do erro.
-  const doBanco = /code: "P0001", message: "((?:[^"\\]|\\.)*)"/.exec(msg)?.[1];
-  if (doBanco) throw new ErroRegra(doBanco);
-  // Erro simples de domínio lançado por garantirAtendimento (Error comum, não do Prisma).
-  if (e instanceof Error && !e.constructor.name.startsWith("PrismaClient")) throw new ErroRegra(msg);
-  throw e;
 }
 
 /** Transferir = encerrar a origem e abrir outro atendimento no setor de destino (E3.3); o contexto da origem nunca muda. */
