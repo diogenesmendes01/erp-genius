@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { TipoAjuste, Vigencia } from "@prisma/client";
 import { formatarMoeda, parseMoeda, formatarMoedaParaCampo } from "@/lib/dinheiro";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
@@ -13,6 +14,7 @@ import { botaoClasses } from "@/components/Botao";
 
 export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>> }) {
   return <div className="space-y-4"><h1 className="text-2xl font-medium">Acompanhamento comercial · {dados.aluno.primeiroNome} {dados.aluno.sobrenome}</h1>
+    <Link className="text-sm text-brand-700 underline" href="/comissoes">Consultar histórico de comissões</Link>
     {dados.matriculas.map((m) => <section key={m.id} className="space-y-3 rounded border p-4 text-sm">
       {m.precoAguardandoAprovacao && <p className="rounded bg-amber-50 p-3 text-amber-800">Os valores propostos foram encaminhados para aprovação independente. Os preços de referência permanecem vigentes até a decisão, e a ativação aguarda essa análise.</p>}
       <h2 className="font-medium">{m.codigo} · {m.produto}</h2><p>Pagamento inicial: {m.pagamentoInicialConfirmado ? "confirmado" : "aguardando confirmação"}</p>

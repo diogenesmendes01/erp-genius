@@ -1,9 +1,12 @@
 # SPEC-ERP-005 — Linha comercial do WhatsApp
 
-> Estado em 26/09/2026: **especificação aprovada; Fases 0, 2, 3 e 4 codificadas com testes escritos,
-> ainda sem execução** (o worktree não tinha dependências instaladas nem banco de teste — ver §9 e o
-> quadro de entregas). Decisões tomadas pelo responsável do produto em 26/09/2026 a partir de testes
-> em produção.
+> Estado em 13/10/2026: **especificação aprovada; Fases 0, 2, 3 e 4 na `main`** (PR #128, mergeada em
+> 26/09/2026; trava de opt-out do histórico na #129). **Executados:** TypeScript, ESLint e a suíte
+> unitária em 26/09 (§9), e o `npm test` do CI a cada PR desde a #151 — inclusive as travas unitárias
+> da linha (`linha-comercial.test.ts`, `escopo-atendimentos.test.ts`, `historico.test.ts`).
+> **Ainda não executados:** os testes de integração (`linha-comercial.int.test.ts` e as suítes de
+> WhatsApp ajustadas, fora do CI) e a conferência do payload real da Evolution 2.3.7 (§9). Decisões
+> tomadas pelo responsável do produto em 26/09/2026 a partir de testes em produção.
 > Complementa os docs [26](../26-whatsapp-v1.md), [30](../30-whatsapp-spec-implementacao.md),
 > [36](../36-politica-de-acesso-aprovada.md) e [37](../37-detalhamento-operacional-do-acesso.md);
 > onde houver conflito sobre números de finalidade VENDAS, prevalece esta SPEC (decisão LC-D01).
@@ -43,7 +46,7 @@ conversas no próprio celular. A inbox tem de espelhar o aparelho.
 | ID | Decisão |
 |---|---|
 | LC-D01 | Número de VENDAS é uma linha comercial: toda conversa 1:1 do número aparece na inbox, com ou sem lead. Exceção explícita à regra "número remetente não substitui carteira" (doc 37 §6.6), restrita ao **conteúdo da conversa**. |
-| LC-D02 | Acesso à conversa da linha: dono atual da linha (`NumeroWhatsApp.donoId`), gerente comercial cuja equipe inclui o dono (`Usuario.gerenteComercialId`), administrador. Cobertura de carteira (`CoberturaCarteira`) **não** dá ao substituto acesso à linha do titular — regra implementada e testada; o substituto continua vendo os leads cobertos pela regra de carteira. Mudar isso é decisão de produto, não código pendente. |
+| LC-D02 | Acesso à conversa da linha: dono atual da linha (`NumeroWhatsApp.donoId`), gerente comercial cuja equipe inclui o dono (`Usuario.gerenteComercialId`), administrador. Cobertura de carteira (`CoberturaCarteira`) **não** dá ao substituto acesso à linha do titular — regra implementada e testada; o substituto continua vendo os leads cobertos pela regra de carteira. Mudar isso é decisão de produto, não código pendente. **Fase 3 (E5, plano 03, Task 13; doc 02 E3.2):** o GERENTE_COMERCIAL passa a ver as conversas de todo o setor COMERCIAL (`escopoAtendimentos`, ramo `{ finalidade: "COMERCIAL" }`), não só as da equipe; o dono atual da linha e o administrador seguem como acima. A carteira de leads do gerente (painel do lead, LC-L01) continua restrita à equipe. |
 | LC-D03 | O histórico segue a linha: quando o dono muda, o novo dono vê todas as conversas, inclusive as anteriores. A troca continua auditada (evento já emitido por `salvarNumeroWhatsApp`). |
 | LC-D04 | Ao conectar uma linha BAILEYS, importar o histórico das conversas 1:1 dos **últimos 30 dias**. Nada anterior é gravado. |
 | LC-D05 | Lead: a Configuração Comercial decide (`ConfigComercial.autoLeadAtivo`, já existente). Ligado → o 1º inbound real de contato sem vínculo cria o lead do dono da linha, como hoje. Desligado → a conversa aparece sem lead e mostra o botão **"Criar lead"**. |
@@ -160,7 +163,7 @@ Segundo clique é recusado ("Esta conversa já tem lead").
 | LC-01 | Contato desconhecido escreve para a linha do vendedor A, auto-lead desligado | Conversa aparece na inbox de A, sem lead, com "Criar lead"; não aparece na triagem |
 | LC-02 | Idem com auto-lead ligado | Lead criado com dono A, vinculado ao mesmo atendimento; conversa na inbox de A |
 | LC-03 | Vendedor B (outra equipe, sem cobertura) pede a conversa de LC-01 por id | Negado em thread, envio, mídia, busca e contador |
-| LC-04 | Gerente comercial de A abre a inbox | Vê as conversas da linha de A; gerente de outra equipe não vê |
+| LC-04 | Gerente comercial de A abre a inbox | Vê as conversas da linha de A; desde a Fase 3 (E3.2), gerente de outra equipe também vê a conversa (setor COMERCIAL inteiro), sem ganhar a carteira do lead |
 | LC-05 | Vendedor A responde pelo celular | Mensagem entra como SAIDA no mesmo atendimento |
 | LC-06 | A cria lead numa conversa com mensagens anteriores | Um único atendimento com todo o histórico e `leadId` preenchido |
 | LC-07 | Contato da linha é aluno matriculado | A vê as mensagens da linha; ficha/financeiro/matrícula do aluno continuam negados |

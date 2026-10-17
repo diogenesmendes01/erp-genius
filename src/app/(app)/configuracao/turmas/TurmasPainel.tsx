@@ -15,6 +15,7 @@ import { ImportarTurmasModal } from "./ImportarTurmasModal";
 import { useDialogo } from "@/lib/dialogo";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 export interface TurmaRow {
   id: string;
@@ -192,8 +193,10 @@ export function TurmasPainel({
                       {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {t.dataInicio ? new Date(t.dataInicio).toLocaleDateString("pt-BR") : "—"}
-                      {t.dataFim ? ` → ${new Date(t.dataFim).toLocaleDateString("pt-BR")}` : ""}
+                      {/* Início e término são dias (gravados à meia-noite UTC): o dia sai do ISO, sem passar pelo fuso do
+                          navegador — em UTC−3 o toLocaleDateString mostrava o dia anterior (C52 da #170). */}
+                      {t.dataInicio ? formatarDataCivil(t.dataInicio.slice(0, 10)) : "—"}
+                      {t.dataFim ? ` → ${formatarDataCivil(t.dataFim.slice(0, 10))}` : ""}
                       {t.status === "PLANEJADA" && !t.dataFim && (
                         <span className="block text-xs text-gray-500">Previsão de término pendente da grade.</span>
                       )}

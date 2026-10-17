@@ -2,13 +2,61 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 3 — IDs de migration (16/10/2026)
+
+Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs foram **confirmados pelo integrador** (o controlador da sessão) em 16/10/2026, com registro no ledger de execução, sem renomear (ordem coerente: depois de 20261001/20261002 da #194). Estado por ID:
+
+| Migration | Task | Pasta | Estado do ID |
+| --- | --- | --- | --- |
+| M1 `numero_setor_whatsapp` | 2 | `20261016090000_numero_setor_whatsapp` | Confirmado pelo integrador |
+| M2 `atendimento_status_prazos` | 4 | `20261016100000_atendimento_status_prazos` | Confirmado pelo integrador |
+| M3 `grupos_whatsapp` | 6 | `20261016110000_grupos_whatsapp` | Confirmado pelo integrador |
+| M4 `origem_celular_client_message_id` | 7 | `20261016120000_origem_celular_client_message_id` | Confirmado pelo integrador |
+| M5 `preferencias_inbox_usuario` | 8 | `20261016130000_preferencias_inbox_usuario` | Confirmado pelo integrador |
+
+- Os cinco IDs são posteriores à última migration do `main` mesclado e foram aplicados com `prisma migrate deploy` num banco descartável próprio (`erp_genius_test_fix197`, apagado depois). As próximas migrations da Fase 3 partem de um ID posterior a `20261016130000`, reservado pelo integrador.
+- Regra de status (revisão final do bloco A): responsável preenchido conta como assumido. Backfill da M2, `garantirAtendimento`, `atendimentoComercialDaLinha` (linha VENDAS nasce `EM_ATENDIMENTO` quando há dono) e `atribuirDono` (reatribuição tira de `ABERTO_SEM_RESPONSAVEL`; `AGUARDANDO_CLIENTE` se mantém) seguem a mesma regra.
+- Evidências da correção: `tsc --noEmit` saída 0; integração (recorte, não suíte completa) `linha-comercial`, `acesso/politica`, `atendimento-status` e `reabertura` `.int.test.ts`: 4 arquivos, 48 testes verdes; unitários `vitest related` de `linha-comercial.ts` e `comercial/acoes.ts`: 82 arquivos, 717 testes verdes (inclui o ajuste de `linha-comercial.test.ts` ao filtro `grupoId: null` de `baa2e7ed`); eslint 0 nos arquivos tocados.
+- **Estado**: IDs confirmados pelo integrador em 16/10/2026 (ordem coerente: depois de 20261001/20261002 da #194). Não concluído: o bloco aguarda o merge.
+
+## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-a-fundacao`)
+- Tokens WDS claro/escuro nos blocos `:root` e `.dark` de `src/app/globals.css` (tabela de tokens do plano
+  `00-fase-design-system.md`), com `--surface-raised`, `--highlight`, `--pressed`, `--border-soft`, `--text-disabled`,
+  `--brand-strong`, `--on-brand-solid`, `--cold-text`, `--entry`, `--entry-accent`, `--composer` e as duas sombras de
+  camada. Spec copiado para `docs/planejamento/design-system-referencia.md`.
+- `src/app/contraste.test.ts` recalcula pelo `globals.css` o texto de cada fundo sólido (par de `TEXTO_SOBRE_SOLIDO`,
+  ≥ 4,5:1), a borda de controle (≥ 3:1) e o `--brand-solid` sobre as superfícies, nos dois temas.
+- `tailwind.config.ts`: cores novas (`on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`,
+  `entry`, `entry-accent`, `composer`, `cold-700`, `brand-800`), raios (`rounded-item`, `rounded-dialog`) e só
+  `shadow-popover`/`shadow-dialog`.
+- Roboto variável (`src/app/fonts/roboto-variable.woff2`, licença Apache 2.0 oficial do `googlefonts/roboto` em
+  `LICENSE-Roboto.txt`) por `next/font/local`; pesos 400, 500 e 600 (`tipografia.test.ts`).
+- Fundo sólido da marca usa `text-on-brand` (branco no claro, preto no escuro); `Botao.primario` e o doc 18 atualizados.
+
+### Verificação
+- Na HEAD `ce4895c` (revisão final): `tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.573 testes;
+  `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
+  effect), que já existia em `f8a9c0e`.
+- Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
+- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
+  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Componentes base (botões em pílula, camadas com sombra, alvos de 44 px) e telas: blocos seguintes da Fase 0.
+- Conferir no navegador (UAT) os dois temas com a Roboto.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## Fase 1A — verificação do bloco (15/10/2026)
 
 - Branch `claude/fase1-a-linha-de-base`; tarefa 1 do plano (E0: fontes da fase 1 e linha de base de testes). Só `docs/` mudou em relação à `main`; `src/`, `prisma/` e `package*.json` sem diferença.
 - `node_modules/.bin/tsc --noEmit`: saída 0.
 - `npm test`: saída 0; 646 arquivos, 4560 testes, 0 falhas (igual à linha de base).
 - `npm run lint`: saída 0; 0 erros, 44 avisos preexistentes.
-- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS acima; nenhuma falha nova. Duração 7139 s.
+- `npm run test:int` (perfil `dev-email`): saída 1, 16 arquivos com falha, 174 passaram, 3 pulados; 44 testes falharam, 1712 passaram, 4 pulados. Mesmos totais e mesmas 44 falhas da LB_FALHAS abaixo; nenhuma falha nova. Duração 7139 s.
 
 ## Fase 1B — aceite parcial do bloco (PR 2, 16/10/2026)
 
@@ -34,10 +82,12 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 - Reverificação antes do PR (16/10/2026, HEAD `61d19cd`): `tsc --noEmit` saída 0; `npm test` saída 0 (635 arquivos, 4519 testes); `npm run lint` saída 0 (0 erros, 44 avisos); `vitest related --run -c vitest.integration.config.ts` sobre o diff contra `origin/claude/fase1-c-telas`: saída 1, 7 falhas em 165 testes. As mesmas 7 falham em `origin/claude/fase1-c-telas` (rodado em `whatsapp/inbox.int.test.ts` e `academico/visibilidade.int.test.ts`): falhas da linha de base, nenhuma nova.
 - A suíte `npm run test:int` completa **não foi rodada** (mais de 2 h). **Pendente para o integrador antes do merge:** rodar a suíte de integração completa, comparar com a LB_FALHAS e registrar aqui código de saída e totais.
 - **Pendências registradas (Fase 2/4):**
-  - `revalidatePath` para rotas removidas, inofensivos mas mortos: `/pipeline` em `src/server/comercial/acoes.ts` (linhas 90 e 631), `src/server/matricula/acoes.ts:70` e `src/server/ia/acoes.ts:37` (sai com o Bloco D); `/carteiras` em `src/server/acesso/coberturas.ts:24,39`; `/comissoes` em `src/server/matricula/acoes.ts:74`.
-  - Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:25,35` e `src/server/financeiro/ordem-comissoes.ts:5-6`. A lista que eles descrevem segue viva em `/financeiro/comissoes`.
-  - **Código órfão em `src/server/comercial/consultas.ts`** (sem uso fora do próprio módulo desde a tarefa 9; o `page.test` do WhatsApp deixou de mocká-lo): `carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com as interfaces `ReguaComercialConfig`, `DegrauComercialConfig`, `NumeroResumo`, `TemplateResumo` e `EnsaioComercial`. Somam-se a `salvarConfigComercial`, `salvarReguaComercial` e `carregarSaudacoesSimuladas`, já listados no plano. Remover na Fase 2/4.
-  - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0).
+  - Resolvido no `684af0b3` (C2 da R1 da #191): saíram os `revalidatePath` de `/pipeline`, `/carteiras` e `/comissoes` (comercial, matrícula, IA e coberturas) e as consultas órfãs de `src/server/comercial/consultas.ts` (`carregarReguasComerciaisConfig`, `listarNumerosVendasResumo`, `listarTemplatesResumo` e `carregarEnsaioComercial`, com suas interfaces). Na Fase 2, bloco I, o `revalidatePath("/comissoes")` de `revalidar()` em `src/server/matricula/acoes.ts` voltou no merge da `main`, porque a rota `/comissoes` do CRM foi recriada.
+  - ~~Comentários que ainda citam `/comissoes`: `src/server/financeiro/consultas.ts:36,46` e `src/server/financeiro/ordem-comissoes.ts:5-6`.~~ Resolvido na Fase 2, bloco I: os comentários passaram a citar `/financeiro/comissoes`, para não confundir com o painel do CRM em `/comissoes`.
+  - Ainda pendentes, já listados no plano: `salvarConfigComercial` e `salvarReguaComercial` (`src/server/comercial/acoes.ts`) e `carregarSaudacoesSimuladas` (`src/server/comercial/consultas.ts`), que seguem usados por testes de integração. Remover na Fase 2/4.
+  - `scripts/validacao/http-acesso.mjs`: as entradas `/carteiras` e `/comissoes` da lista de páginas do Administrador foram retiradas no commit de correção, porque as duas rotas saíram nas tarefas 7 e 8. O script fica fora do `vitest` e do `tsc`; só `node --check` foi rodado nele (saída 0). Na Fase 2, bloco I, `/comissoes` (painel do CRM, título "Comissões" para o Administrador) voltou à lista.
+
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
 
 ## Fase 1D — aceite do bloco (PR 4, 16/10/2026)
 
@@ -57,16 +107,18 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 | Pendência | Onde | Fase |
 |---|---|---|
 | `CoberturaCarteira` sem UI: `concederCobertura`/`revogarCobertura` sem tela; o escopo continua lendo as coberturas gravadas | `src/server/acesso/coberturas.ts` | 2 (Carteira) |
-| VENDEDOR sem "minhas comissões" (`/financeiro` só para FINANCEIRO e GC) | `src/app/(app)/financeiro/papeis.ts:6` | 2 (Comissões) |
+| ~~VENDEDOR sem "minhas comissões" (`/financeiro` só para FINANCEIRO e GC)~~ Resolvido na Fase 2, bloco I: `/comissoes` mostra "Minhas comissões" ao VENDEDOR | `src/app/(app)/comissoes/page.tsx` | 2 (Comissões) |
 | Inbox sem nota interna (`registrarNotaInterna` sem tela na thread; a ficha do lead ainda tem) e sem etapa/temperatura do lead | `InboxCliente.tsx` | 3 |
 | `ThreadConversa.lead` ainda calculado e não lido pela tela | `consultas-inbox.ts` | 3 |
 | Código órfão sem chamador: `fila.enfileirarIntencaoComercial`, `elegibilidade.reagendamentoPendente`, `comercial/regua-comercial.ts`, `comercial/regua-fabrica.ts` (ainda usada por `prisma/seed-whatsapp.ts:4`), ramos COMERCIAL/GESTAO/reativa do `despachante.ts`, `salvarConfigComercial`, `salvarReguaComercial`, `carregarSaudacoesSimuladas`, `checkinExperimental`, `EsqueletoColunas` | `src/server/**` | 2/4 |
-| `revalidatePath("/pipeline")` e `("/comissoes")` inofensivos | `matricula/acoes.ts:70,74`, `comercial/acoes.ts:90,631` | 2 |
+| ~~`revalidatePath("/pipeline")` e `("/comissoes")` inofensivos~~: resolvido na main pelo `684af0b3` (C2 da R1 da #191), trazido para esta branch no merge da main; o `("/comissoes")` de `matricula/acoes.ts` voltou com a rota do bloco I | `matricula/acoes.ts`, `comercial/acoes.ts` | — |
 | Scripts fora do `tsc`/vitest quebrados: `scripts/auditoria/cenarios.test.mjs:30` (cron-comercial) e `scripts/validacao/http-acesso.mjs:47` (`/carteiras`; entrada já retirada no Bloco C) | `scripts/` | 2 |
 | `@dnd-kit/*` sem uso (remover só com o integrador) e `ANTHROPIC_API_KEY` nos composes | `package.json`, `docker-compose.*.yml` | 5 |
 | Campos de `ConfigComercial` órfãos (`autoLeadAtivo`, `saudacao*`, `copiloto*`, `gestao*`), `SugestaoIA`, `PoliticaComercial`/`DegrauComercial`: schema intocado | `prisma/schema.prisma` | 2 (migration reservada) |
 | Docs que descrevem a casca (08, 27, 32, SPEC-ERP-005, 09) | `docs/` | 2 |
 | Itens 3-4 da E0 do doc 02: decisão React 19 (Q6) e reserva dos IDs de migration pelo integrador | dono e integrador | antes das Fases 2 e 3 |
+
+**Estado**: Implementado; aguardando o integrador (suíte de integração completa). Não concluído.
 
 ## Fase 1 (E0) — linha de base em 15/10/2026
 
@@ -185,6 +237,13 @@ Uma linha por PR, de #133 a #161. Os números #139–#142, #152 e #162 são issu
 | #159 | Fuso e instante: 20 campos pelo `CampoFuso`; `PaisSchema` valida fuso IANA; `AvisoFusoNaoConfigurado`; `PreviaConversao`; item 6 | `b59744b9`, 10/10/2026 15:44 | Integrador em `c406fff7`, suíte sem banco configurado: 593/593 arquivos, 4.062 testes; 11/11 KILLED. **APPROVE** escrito na R1, em modo leve | L1566, L1747, L406 e L1256 parciais; `fusoIanaValido` recusa `EST5EDT` (`src/server/operacao/fuso.ts:9`); ramo `fuso === ""` sem efeito (`src/server/paises/schema.ts:29`); validade só no `onChange` |
 | #160 | Becos sem saída e identificação do registro (`IdentificacaoRegistro`) fora de `/matriculas/[id]`; item 7 | `19be34de`, 10/10/2026 17:10 | Integrador em `a51d4e1e`: 591/591 arquivos, 4.057 testes; 12/12 KILLED. **APPROVE** escrito na R2. O último commit (`f50608f5`, merge com a #158) teve só a verificação do integrador: 609/609 arquivos, 4.208 testes | 66 IDs crus e 12 telas de detalhe sem identificação (tetos em `identificacao-registro.test.ts:378` e `:421`); link para `/financeiro` sem `abreFinanceiro` em `matriculas/[id]/emissao/page.tsx:23`; L934 e L1709 |
 | #161 | Filas de trabalho por cursor nos dois sentidos: 12 filas e 11 consultas, `PaginacaoFila` e `cursor-fila.ts` | `e5418550`, 10/10/2026 17:18 | Integrador em `8c697968`, suíte sem banco configurado: 604/604 arquivos, 4.194 testes; 15/15 KILLED. **APPROVE** escrito na R1 e na R2 (review leve). Os 8 `*.int.test.ts` alterados **não foram executados** | **#162 aberta**; C1, subselect da âncora sem escopo em `segunda-chamada-fila-agenda.ts`; decisões de produto em aberto (`autorizacoes-preparacao` como histórico; link no vazio em vez de redirect) |
+| #163 | Docs de 13/10: o que está e o que não está publicado no UAT, remedição da auditoria de UX (doc 43 §7) e análise das PRs #63–#161 (doc 44) | `e864ef4d`, 13/10/2026 15:47 | Só documentação. **APPROVE** escrito na R1 | As pendências do doc 44 §5 viraram as issues #164–#170 |
+| #171 | Trava `guard-pagina`: B7, B8 e B9 da R3 da #143 (carga dinâmica do módulo do guard, contaminação por chave e desestruturação, recusa branda sob laço, `switch` e operador lógico); fecha a #152 | `4cb396b7`, 13/10/2026 16:13 | Integrador em `824ab622`, com o TS2345 corrigido: `tsc` 0; 612/612 arquivos, 4.271/4.271 testes; 10/10 KILLED e controle. **APPROVE** escrito na R1 | #170: atribuição a membro (`obj.p = sessao.papeis`) e chave não literal ainda escapam |
+| #172 | Item 8 (portal público): `/portal-aluno/ativar` (token na aba, regra e confirmação da senha), `/recuperar` sem falso "enviado", `/pagar/[token]` com os 6 casos e `noindex`, `/login` com `callbackUrl` só interno (`src/proxy.ts` novo) | `77fe6f1e`, 13/10/2026 16:42 | Integrador em `5e870be9`: `tsc` 0; 626/626 arquivos, 4.366/4.366 testes; 17/17 KILLED (X3 equivalente) e controle; R1 C1 (`router.refresh()` depois de pagar) aplicado. **APPROVE** escrito na R2 | #170: `maxLength` em caracteres; aviso `set-state-in-effect`; troca de e-mail em "link indisponível"; 422 genérico; `/login` #1, #3, #5 e #6 |
+| #173 | Moeda: `parseMoeda` recusa ponto ambíguo (`1.23`); CRC/CLP sem arredondamento, com aviso neutro; dica do ponto no `CampoMoeda`; permuta sem moeda mostra "moeda não definida"; fecha a #167 | `02444a1d`, 13/10/2026 16:53 | Integrador em `28a8a55a`: `tsc` 0; 630/630 arquivos, 4.405/4.405 testes; 13/13 + 9/9 KILLED e controles. **APPROVE** escrito na R2 | #170: a dica do ponto é anunciada (`role="alert"`) durante a digitação |
+| #174 | Item 10 (borda de rota): `loading.tsx` com o formato da tela em 8 rotas, `error.tsx` em 15 áreas (`ErroArea`), `<Suspense>` em `/academico/reposicoes` e na preparação da matrícula, trava `borda-rota.test.ts`; C3 da #170 (esqueleto do financeiro em dobro) | `4c4f526a`, 13/10/2026 17:27 | Integrador em `c5e17404`, com o `key` do `<Suspense>` só pela matrícula e a trava aceitando segmento com páginas filhas: `tsc` 0; 633/633 arquivos, 4.478/4.478 testes; 20/20 KILLED e controle. **APPROVE** escrito na R1 | Conferir no UAT o esqueleto do financeiro e os `<Suspense>`; #170: volta do erro do hub da matrícula; `matriculas/nova`, `configuracao/whatsapp` e `/portal` sem `loading.tsx` |
+| #175 | Fatia B do `ConfirmarAcao` (13 ações, digitação do nome ao encerrar país, alcance numérico ao ativar a régua com `estimarAlcanceRegua`, `definirSituacaoEmpresa` com estado-alvo); regra do cron extraída para `decidirEnvioCron`; fecha a #169 | `f8a9c0e7`, 13/10/2026 18:09 | Integrador em `5009916b`, com travas de enum e de estado vazio, TS2345 e `cron.test.ts` novo: `tsc` 0; 646/646 arquivos, 4.560/4.560 testes; 19/19 KILLED e 2 controles. `cron.int.test.ts` **não executado** (#162). **APPROVE** escrito na R2 | #170: botão da ativação habilitado durante a estimativa; alternadores de usuário, idioma e preço invertem o estado; "Desvincular" na inbox; L325, L1479, L2019 e L2142 sem confirmação |
+| #176 | Item 11: amostra Média/Baixa com a semente 20261013 na `main` `4c4f526a` (doc 43 §7.6) | `d1f2c03f`, 13/10/2026 17:59 | Só documentação. Integrador: sorteio reproduzido (126 achados = as 126 linhas da tabela), contagens por estrato conferidas e estimativa recalculada (66,8% abertos, IC 58,7–74,9%). **APPROVE** escrito na R1 | Os padrões com mais abertos: layout e hierarquia, texto e validação de campo |
 
 ### Tarefas operacionais pendentes
 
@@ -213,6 +272,13 @@ Próximos itens do doc 43, não iniciados (ver doc 43 §7.5):
 - **Item 9:** consultas e dados no servidor.
 - **Item 10:** borda de rota restante (`<Suspense>` e `loading.tsx`).
 - **Item 11:** Média e Baixa, repetir a amostra com outra semente.
+
+**Atualização de 13/10/2026, fim do dia (integrador):**
+- **Itens 8, 10 e 11:** entregues (#172, #174 e #176). O item 9 está em andamento (`claude/e9-consultas-servidor`).
+- **Issues fechadas:** #152 (pela #171), #167 (#173) e #169 (#175).
+- **#170:** em andamento por grupos (`claude/fu170-grupo-a`); o C3 foi resolvido pela #174.
+- **Abertas sem frente:** #141 (collation, depende do integrador), #162 (testes de integração, depende do banco de teste isolado), #164 (portar a #62), #165 (operação no UAT), #166 (idempotência, exige migração) e #168 (inbox).
+- **Média e Baixa na semente 20261013:** 66,8% abertos (IC 58,7–74,9%, ≈ 486), contra 58,9% na semente 42. Os intervalos se sobrepõem (doc 43 §7.6).
 
 ## Integração da main na PR #61 — 21/09/2026
 
@@ -1662,6 +1728,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `/portal`. Sem error.tsx próprio: `home`, `preferencias` e `acesso-negado` (o de `(app)` basta) e `/login`.
 - Conferir no navegador (UAT) o esqueleto do financeiro na troca de aba e o fallback dos dois `<Suspense>`.
 
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+**Atualização de 13/10/2026 (integrador):** mergeada pela #174 (`4c4f526a`). Ver "Entregas desde a #133". Falta conferir no UAT o esqueleto do financeiro e os dois `<Suspense>`.
+
 ## ConfirmarAcao, fatia B (issue #169; 13/10/2026)
 
 ### Solução implementada (branch `claude/fu169-confirmacoes-b`)
@@ -1716,34 +1786,45 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Estado**: Medição entregue (docs). Os achados medidos seguem abertos conforme o doc 43 §7.6.
 
-## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
+## FU170 grupo A — pendências menores da issue #170 (13/10/2026)
 
-### Solução implementada (branch `claude/fase0-ds-a-fundacao`)
-- Tokens WDS claro/escuro nos blocos `:root` e `.dark` de `src/app/globals.css` (tabela de tokens do plano
-  `00-fase-design-system.md`), com `--surface-raised`, `--highlight`, `--pressed`, `--border-soft`, `--text-disabled`,
-  `--brand-strong`, `--on-brand-solid`, `--cold-text`, `--entry`, `--entry-accent`, `--composer` e as duas sombras de
-  camada. Spec copiado para `docs/planejamento/design-system-referencia.md`.
-- `src/app/contraste.test.ts` recalcula pelo `globals.css` o texto de cada fundo sólido (par de `TEXTO_SOBRE_SOLIDO`,
-  ≥ 4,5:1), a borda de controle (≥ 3:1) e o `--brand-solid` sobre as superfícies, nos dois temas.
-- `tailwind.config.ts`: cores novas (`on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`,
-  `entry`, `entry-accent`, `composer`, `cold-700`, `brand-800`), raios (`rounded-item`, `rounded-dialog`) e só
-  `shadow-popover`/`shadow-dialog`.
-- Roboto variável (`src/app/fonts/roboto-variable.woff2`, licença Apache 2.0 oficial do `googlefonts/roboto` em
-  `LICENSE-Roboto.txt`) por `next/font/local`; pesos 400, 500 e 600 (`tipografia.test.ts`).
-- Fundo sólido da marca usa `text-on-brand` (branco no claro, preto no escuro); `Botao.primario` e o doc 18 atualizados.
+### Entrega (branch `claude/fu170-grupo-a`)
+- C10: a conferência de reserva sem resultado usa `MSG_RESULTADO_INCERTO_SEM_CHAVE`; trava nova em `mensagens.test.ts` (nenhuma tela escreve "Resultado não confirmado" à mão).
+- C17: célula e planilha de alunos com o rótulo do filtro (`rotuloTurmaAcademica`: código · nome · modalidade · idioma nível).
+- C21: `ThemeToggle` com uma fonte só (`src/lib/tema.ts`, `useSyncExternalStore` sobre a classe `dark`) e `aria-pressed`. A trava de `botoes.test.ts` passa a exigir grupo rotulado só para conjunto de seleção.
+- C22/C23: 57 páginas entraram no mapa da trilha (eram 60 de 181 fora); 3 ficam em `FORA_DA_TRILHA`, com motivo e teto, em `trilha.test.ts`. A volta de `tentativas/*/autorizacao` diz "Avaliador da recuperação" (L1617).
+- C36: "Abrir Financeiro" na emissão só para quem abre `/financeiro` (`abreFinanceiro`).
+- C52 (parte): `TurmasPainel` com `formatarDataCivil`; o `PagarCliente` já não formatava data. Trava nova em `datas-civis.test.ts` para `new Date(campo civil).toLocaleDateString`, com 2 usos contados (FichaEmpresa e InformesPagamento).
+- C1 da R1 da #174: o erro do hub da matrícula volta para `/home`.
+- D4 e D6: `docs/18` (e o comentário de `globals.css`) sobre `--ai-solid`/`--brand-solid`; cabeçalho da SPEC-ERP-005 e linha do índice.
 
 ### Verificação
-- Na HEAD `ce4895c` (revisão final): `tsc --noEmit` saída 0; `npm test` saída 0, 647 arquivos e 4.573 testes;
-  `npm run lint` saída 0, 0 erros e 44 avisos. O único aviso em arquivo alterado é `Sidebar.tsx:43` (setState em
-  effect), que já existia em `f8a9c0e`.
-- Depois das correções da revisão (só doc 18, licença e este quadro): `npm test` saída 0, 647 arquivos e 4.573 testes.
-- Verificação do integrador (15/10/2026, HEAD `93bcba3`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0
-  (647 arquivos, 4.573 testes; linha de base da main: 646 e 4.560); `npm run lint` saída 0 (0 erros, 44 avisos).
-- Sem schema nem migração; `*.int.test.ts` não alterados.
+- Não executada neste worktree (sem node_modules). Verificação: pelo integrador (suíte unitária, `tsc --noEmit`, eslint e mutação).
 
 ### Pendências
-- Componentes base (botões em pílula, camadas com sombra, alvos de 44 px) e telas: blocos seguintes da Fase 0.
-- Conferir no navegador (UAT) os dois temas com a Roboto.
+- C52: `FichaEmpresa.tsx:190` (fora deste grupo, PR #175) e `InformesPagamento.tsx:38` (conferir se `dataPagamento` é dia ou instante).
+- C23: os `VoltarPara` com href dinâmico continuam sem trava.
+
+## E9 — consultas e dados no servidor (docs/43 §6 item 9; 13/10/2026)
+
+### Entrega (branch `claude/e9-consultas-servidor`)
+- Fila de cobrança (`/financeiro/cobrancas`) em trechos de 50 por cursor nos dois sentidos (`depois`/`antes`), com o filtro da URL da #144 mantido. O cursor leva a chave de ordem da fila (`prioridade_atraso_id`), e por isso pagar o item do cursor não faz a próxima pular ninguém. A consulta lê a fila inteira só com o que ordena, filtra e conta. O detalhe pesado (vencimento civil, destino, envios, respostas, mensagem) é lido só para o trecho, com `take`. O lote só leva o que está na tela.
+- Informes a conferir (`/financeiro/informes`) viraram fila por cursor (30 por vez). O número da aba vem de um `count`.
+- Lote de migração (`/configuracao/migracao/[loteId]`): linhas paginadas (25 por página, `Paginacao`) e o JSON de cada linha e de cada tentativa divergente dentro de `<details>` fechado.
+- Importação de alunos: a linha que repete um aluno já cadastrado, ou uma linha anterior da mesma planilha, é ignorada e volta com o motivo. Critérios: documento no mesmo país, ou nome + e-mail, nome + telefone ou nome + nascimento. No modal, depois do resultado, o botão passa a ser "Importar outra planilha" (docs/42 L224).
+- Envios do portal: abas "Incertos" (padrão), "Falhas" e "Todos" na URL (`?situacao=`), mantidas no cursor (docs/42 L431).
+- `/pipeline`: **retirado desta PR na integração (16/10)**. A Fase 1C (#191) remove a tela `/pipeline` com o resto da casca do CRM antigo; alterar arquivos que ela apaga só criaria conflito. O funil volta a ser tratado no CRM novo.
+- Travas atualizadas: `paginacao-dois-sentidos` (2 filas novas), `estados-vazios-mapa` e `botoes-mapa`.
+
+### Verificação
+- Testes novos ou atualizados: `fila-cursor`, `fila-contadores`, `filtros-fila`, `fila-informes`, `fila-envios`, `consultas-lote`, `importacao-duplicidade`, `route.test` da importação e os de tela (cobranças, informes no painel, envios, lote, modal de importação, FilaCobranca).
+- Integrador (16/10, com a `main` depois das #177, #178, #189 e #190): `tsc` 0; suíte unitária completa 655/655 arquivos, 4.644/4.644 testes; eslint 0; 22/22 mutações da PR KILLED com controle, e C1 da R1 (o detalhe repete o recorte de situação) KILLED com controle. Testes de integração não rodados (#162).
+
+### Pendências
+- A fila de cobrança ainda lê todas as cobranças abertas na passada leve, porque a ordem e os cartões dependem da régua calculada em memória. Um `take` real nessa leitura exigiria gravar o estado da régua no banco, o que pede migração e não foi feito.
+- A deduplicação não tem índice único: duas importações simultâneas ainda podem duplicar. Um documento só é achado no cadastro quando lá está igual ao da planilha ou sem pontuação: "8822-1381" no cadastro e "88221381" na planilha não casam. Resolver isso pede uma coluna normalizada com índice único, ou seja, migração.
+- `listarAlunos` ainda carrega as cobranças de cada aluno (`src/server/alunos/consultas.ts:226-229`), no máximo 50 alunos por página. Não foi alterado para não colidir com a `claude/fu170-grupo-a`, que mexe na mesma função.
+- A thread da inbox cortada em 300 mensagens é da issue #168.
 
 - Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
   `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
@@ -1812,6 +1893,30 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
+
+### Solução implementada (branch `claude/fase0-ds-b-avisos`)
+- `src/components/Aviso.tsx`: caixa única de aviso (`rounded-md p-3 text-sm` + tom). Tons `info`, `sucesso`, `atencao`
+  e `erro`; os três últimos com borda inicial de 3 px. Papel `alert` no erro e `status` nos demais (`papel="nenhum"`
+  quando a região anunciante é outra).
+- `FeedbackAcao`, `MensagemStatus` (prop `tom` nova), `ErroArea` (via `EstadoRota aviso="erro"`) e
+  `AvisoFusoNaoConfigurado` passam a usar o `Aviso`, sem mudar as props existentes.
+- Esqueleto pulsa (`animate-pulse`). O `@media (prefers-reduced-motion: reduce)` de `src/app/globals.css` desliga
+  animação, transição e rolagem suave (teste em `src/app/design-system.test.ts`).
+- `docs/18-design-system.md`: seção "Avisos e movimento reduzido".
+
+### Verificação
+- Revisão final (diff `9ead958..51e683d`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, sem filtro,
+  648 arquivos e 4.586 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos
+  preexistentes e fora dos arquivos da task.
+- Sem schema nem migração; `*.int.test.ts` não alterados.
+
+### Pendências
+- Conferir no navegador (UAT) os avisos nos dois temas e o esqueleto com movimento reduzido.
+- Demais tasks do DS-B (5–8 e 10) e DS-C seguem nos próprios PRs.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## 2026-10-15 — Fase 0 DS-B: modal, confirmação e drawer (Task 7)
 
 - Branch `claude/fase0-ds-b-camadas`, empilhada sobre `claude/fase0-ds-a-fundacao` (`9ead958..cb121aa`; Task 7 `9ead958..e0269c3`).
@@ -1843,35 +1948,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 ### Pendências
 - Conferir no navegador (UAT) a sidebar, a gaveta mobile e as sub-abas nos dois temas.
-
-- Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
-  `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
-  (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
-  `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
-  (3 arquivos, 20 testes), todos verdes, saída 0.
-**Estado**: Implementado; aguardando o integrador. Não concluído.
-
-## Design system, bloco DS-B — avisos, estados e movimento reduzido (Fase 0, Task 9; 15/10/2026)
-
-### Solução implementada (branch `claude/fase0-ds-b-avisos`)
-- `src/components/Aviso.tsx`: caixa única de aviso (`rounded-md p-3 text-sm` + tom). Tons `info`, `sucesso`, `atencao`
-  e `erro`; os três últimos com borda inicial de 3 px. Papel `alert` no erro e `status` nos demais (`papel="nenhum"`
-  quando a região anunciante é outra).
-- `FeedbackAcao`, `MensagemStatus` (prop `tom` nova), `ErroArea` (via `EstadoRota aviso="erro"`) e
-  `AvisoFusoNaoConfigurado` passam a usar o `Aviso`, sem mudar as props existentes.
-- Esqueleto pulsa (`animate-pulse`). O `@media (prefers-reduced-motion: reduce)` de `src/app/globals.css` desliga
-  animação, transição e rolagem suave (teste em `src/app/design-system.test.ts`).
-- `docs/18-design-system.md`: seção "Avisos e movimento reduzido".
-
-### Verificação
-- Revisão final (diff `9ead958..51e683d`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, sem filtro,
-  648 arquivos e 4.586 testes (linha de base da main: 646 e 4.560); `npm run lint` saída 0, 0 erros e 44 avisos, todos
-  preexistentes e fora dos arquivos da task.
-- Sem schema nem migração; `*.int.test.ts` não alterados.
-
-### Pendências
-- Conferir no navegador (UAT) os avisos nos dois temas e o esqueleto com movimento reduzido.
-- Demais tasks do DS-B (5–8 e 10) e DS-C seguem nos próprios PRs.
 
 - Reverificação (16/10/2026, HEAD `1f21347`): tsc 0; `npm test` 646 arquivos/4.632 testes, saída 0; lint 0 erros (44 avisos).
   `vitest related` sobre os 10 arquivos do diff contra `claude/fase2-b-oportunidade` arrasta praticamente toda a suíte
@@ -1956,6 +2032,140 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   (3 arquivos, 20 testes), todos verdes, saída 0.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+## Fase 3, bloco A: modelo do atendimento por setor (16/10/2026)
+
+- Branch `claude/fase3-a-modelo-atendimento`, criada sobre `integracao/ate-fase-1` (d4c0f74); desde a R1 do PR #197 a base
+  é o `main`, mesclado na branch (B1: `Lead` → `Oportunidade` da #193). Tarefas 1 a 8 do plano
+  `03-fase-inbox.md`: número por setor, status e prazos do atendimento, reabertura, grupos, origem CELULAR/IA com
+  `clientMessageId`, preferências do inbox por usuário. Cinco migrations (`20261016090000` a `20261016130000`).
+- Verificação (banco `tester`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 646 arquivos e 4.627 testes;
+  `npm run lint` saída 0, 0 erros e 44 avisos. Integração relacionada (`vitest related -c vitest.integration.config.ts`
+  sobre os 53 arquivos alterados): 78 arquivos, 876 verdes, 21 falhas, todas preexistentes (ver abaixo).
+- Falhas de integração: as 7 da linha de base (6 em `academico/visibilidade`, 1 em `whatsapp/inbox`) mais 14 em
+  `agenda/substituicao-avisos` (3), `agenda/replanejamento-concorrencia`, `diario/reposicao-agenda` (7),
+  `diario/reposicao-permissoes`, `diario/calendario-reposicao` (1 cada). Essas 14 falham igual rodando o código de
+  `integracao/ate-fase-1` neste banco (sensíveis à data de hoje, 16/10/2026, e ao ambiente); anotadas, não são do bloco.
+  `cobrancas/resposta-contrato` quebrava pelo CHECK `Atendimento_status_encerrado` e foi corrigido no teste (4/4 verdes).
+- IDs de migration: confirmados pelo integrador em 16/10/2026, registrados no ledger de execução (ver "Fase 3 — IDs de migration").
+
+### Revisão R1 do PR #197 (16/10/2026)
+- **B1**: `main` mesclado; `atribuirDono` usa `tx.oportunidade.update` e mantém o `updateMany` de status; três
+  `*.int.test.ts` passaram a `prisma.oportunidade`.
+- **B2**: conflito aditivo com a #194 (`schema.prisma`, `labels.ts`, `enums-rotulos.test.ts`); quem integrar em segundo
+  lugar mantém os dois lados. Resolvido em 17/10/2026 no merge do `main` (`683bf3e5`, após o merge da #194): os dois lados mantidos.
+- **B3** (R3): conflito com a #195 no import de `@prisma/client` de `enums-rotulos.test.ts`, resolvido no merge do
+  `main` (`46f69962`): o import mantém os enums da #194, da #195 e desta PR. Migrations: 20261001/20261002/20261003 do
+  `main`, depois as 20261016* desta PR.
+- **C1**: o mapeamento papel → setor tem uma fonte só (`src/server/crm/setores-papel.ts`, reexportado por
+  `crm/permissoes.ts`). O inbox usa `setoresVisiveisNoInbox` (`whatsapp/setor.ts`), que acrescenta só as extensões do
+  plano 03, Tarefa 1: PROFESSOR → PEDAGOGICO e a Q1 (`SECRETARIA_VE_FIN_PEDAG`, provisória "mantém"). A branch da
+  Fase 3B (`escopo.ts`) precisa trocar `setoresDoUsuario` de `./setor` por `setoresVisiveisNoInbox`.
+- **C2**: `listarResponsaveisTriagem` e `salvarSetoresNumero` só aceitam papéis de triagem dos setores do número
+  (`papeisDeTriagem`: papéis nativos, sem PROFESSOR, ALUNO nem ADMINISTRADOR, que já é o padrão).
+- **C3**: assumir, devolver e transferir pela inbox **ainda não mexem no status** neste bloco. Isso entra no
+  **bloco C** do plano 03 (PR C, ações de atendimento), não no bloco B (escopo e roteamento): Task 15 (`assumirAtendimento`
+  → `EM_ATENDIMENTO`, `devolverParaFila`, `atribuirAtendimento`, com `proximoStatus` da Task 5) e Task 16
+  (`transferirAtendimento` encerra a origem com `ENCERRADO` e abre outro). Até lá, só `atribuirDono` e a criação mexem no status.
+- **C4**: IDs `20261016090000` a `20261016130000` confirmados pelo integrador em 16/10/2026 (ordem coerente: depois de
+  20261001/20261002 da #194). A confirmação é do integrador, registrada no ledger de execução, e não da revisão R1.
+- Verificação (HEAD de código `a2120aa4`, 17/10/2026): `node_modules/.bin/tsc --noEmit` saída 0; `npm run lint` saída 0,
+  0 erros e 43 avisos; `node_modules/.bin/vitest run` saída 0, 658 arquivos e 4.759 testes. Integração (recorte, não
+  suíte completa) no banco descartável `erp_genius_test_fix197` (`prisma migrate deploy` limpo, apagado depois): os 14
+  `*.int.test.ts` novos ou tocados pelo PR (`acesso/politica`, `cobrancas/resposta-contrato` e 12 de `whatsapp/`:
+  `acoes-numero`, `atendimento-pedagogico-autorizacao`, `atendimento-status`, `destinatario-atual`, `grupos`,
+  `linha-comercial`, `numero-setor`, `origem-celular`, `pagador-contrato`, `pg-proc-whatsapp`, `preferencias`,
+  `reabertura`), 99 testes, todos verdes.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
+
+## Fase 3, Task 13: regressão de escopo (E5)
+
+- Branch `claude/fase3-b-escopo-roteamento` (Tasks 9 a 13), empilhada sobre o bloco A.
+- Mudanças de comportamento aceitas (tabela da Task 13, redução deliberada de visibilidade da Q1, `escopo.ts`):
+  - FINANCEIRO deixa de ver todo atendimento FINANCEIRO com aluno (antes `{ finalidade: "FINANCEIRO", alunoId: { not:
+    null } }`). Agora vê o próprio (`responsavelId`), a fila sem responsável dos números que servem FINANCEIRO e os
+    atendimentos em que é participante vigente.
+  - SECRETARIA_ACADEMICA deixa de ver todo SECRETARIA, PEDAGOGICO e FINANCEIRO com aluno. Agora vê o próprio, a fila dos
+    números que servem os setores dela (Q1) e os atendimentos em que é participante vigente. Consequência coberta por
+    teste: SECRETARIA encerra PEDAGOGICO só pela fila (`destinatario-atual.int.test.ts`).
+  - GERENTE_COMERCIAL passa a ver todo COMERCIAL (`linha-comercial.int.test.ts`, LC-04).
+  - Fora da tabela, vindo de E4 (`f2af0cdb`): SECRETARIA sem aluno é destinatário roteado, não triagem
+    (`linha-comercial.int.test.ts`).
+- Vazamento da fila COMERCIAL (lead de outro vendedor em número sem dono, bug do escopo da Task 9): corrigido em
+  `04b1d345` (fila COMERCIAL só sem lead: `{ ...ramoFilaDoSetor('COMERCIAL'), leadId: null }`). As falhas que ele
+  causava em `acesso-atendimento` (2) e `preferencias` (2) passam.
+- Aguardando aval do integrador/produto: `c265d904` muda `inbox.int.test.ts` ("lead de OUTRO vendedor vinculado ao número
+  de A não vaza o cockpit"), de `toBeNull()` para thread visível com `lead` e `contato.leadId` nulos. Não é mudança de
+  E5. É a falha da linha de base (main f8a9c0e), resolvida no conflito doc 36 x LC-D02/SPEC-ERP-005 a favor de LC-D02,
+  regra que já existia: o dono da linha vê todas as conversas da linha (`donosDeLinhaVisiveis`, já em `d4c0f74`). O
+  cockpit de lead de outra carteira continua fechado. Se o aval for negado, reverter `c265d904` e manter o caso como
+  falha conhecida da linha de base. Ruling em `.superpowers/sdd/rulings-claude_fase3-b-escopo-roteamento.md`.
+- Verificação (banco `tester`, HEAD da correção da revisão final):
+  - `node_modules/.bin/tsc --noEmit`: saída 0 (linha de base: 0).
+  - `npm test`: saída 0, 647 arquivos e 4.634 testes (linha de base: 643 e 4.607).
+  - Recorte da Task 13, unitário (`vitest run src/server/whatsapp src/server/uploads`): saída 0, 25 arquivos e 197
+    testes.
+  - Recorte da Task 13, integração (`vitest run -c vitest.integration.config.ts src/server/whatsapp src/server/uploads`):
+    saída 0, 29 arquivos e 225 testes. Inclui a falha da linha de base de `whatsapp/inbox`, que passa por causa de
+    `c265d904` (ver acima).
+  - Revisão final (registro do revisor): `financeiro-matricula`, `pagador-contrato` e
+    `atendimento-pedagogico-autorizacao` com 20/20.
+- Pendente do integrador antes do PR: `npm run test:int` completo, que não foi rodado nesta faixa (mais de 2 h, regra do
+  integrador). Esperado: só as 6 falhas da linha de base em `academico/visibilidade`, mais as 14 sensíveis à data
+  anotadas no bloco A.
+- `npm run lint`: saída 0, 0 erros e 44 avisos (linha de base: 0 erros).
+
+### Fase 3B: verificação de abertura do PR (2026-10-17)
+
+- Branch `claude/fase3-b-escopo-roteamento`, tarefas 9 a 13, base `claude/fase3-a-modelo-atendimento`. Banco `tester`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 647 arquivos e 4.634 testes (a primeira execução teve 1 timeout de 30 s em `confirmacoes.test.ts` por carga
+  do container; o arquivo passa isolado e a suíte inteira passou na repetição).
+- `npm run lint`: saída 0, 0 erros e 44 avisos.
+- Integração dos arquivos tocados (`destinatario-atual`, `escopo-grupos`, `inbox`, `linha-comercial`, `roteamento`,
+  `triagem-numero`): saída 0, 6 arquivos e 69 testes.
+- `vitest related -c vitest.integration.config.ts` sobre o diff arrastou dependentes transitivos sem relação com o bloco
+  (agenda, diário, academico/visibilidade) e foi interrompido após ~17 min sem terminar. Falhas parciais observadas:
+  `academico/visibilidade` (6, linha de base conhecida) e `agenda/substituicao-avisos`, `diario/reposicao-*`,
+  `diario/calendario-reposicao`, `agenda/replanejamento-concorrencia` (serialização 40001), que o bloco não toca e não foram
+  comparadas com o main. Pendente para a suíte completa do integrador.
+
+### Fase 3B: revisão R1 do PR #199 (17/10/2026)
+
+- **B1:** `origin/claude/fase3-a-modelo-atendimento` (`83d473f4`) e `origin/main` (`f4ded562`, com a #196) mesclados
+  (`b0ffdff6`, `e3dad326`). Conflito só neste quadro: seções da 3A e da 3B mantidas. `escopo.ts` passa a usar
+  `setoresVisiveisNoInbox` (`whatsapp/setor.ts`) no lugar de `setoresDoUsuario` nas duas chamadas (`escopoAtendimentos`
+  e `escopoGrupos`). Como as duas tiram o PROFESSOR antes, o resultado é o mesmo da função antiga para todo papel
+  (`escopo-setor.test.ts` verde). `triagem-numero.int.test.ts` usa `prisma.oportunidade.create` (trava de
+  `oportunidade-map.test.ts`).
+- **B2, Ruling:** o E3.4 define o participante como convite explícito (Task 17), não como efeito de abrir. Por isso
+  `abrirAtendimentoInstitucional` não inclui quem abriu como participante: depois do `garantirAtendimento`, se o
+  atendimento tem outro responsável e está fora do escopo de quem abriu, recusa antes de gravar
+  `AtendimentoInstitucionalAberto`, com "Este atendimento já está com <nome>; peça para ser incluído como participante."
+  Teste: `whatsapp/abrir-atendimento-escopo.int.test.ts` (dois FINANCEIRO no mesmo número e matrícula, participante
+  vigente pode abrir, SECRETARIA_ACADEMICA em SECRETARIA e em FINANCEIRO de outro responsável). Sem a correção, 2 dos 3
+  casos falham.
+- **C1:** `docs/specs/whatsapp-linha-comercial.md` (LC-D02 e LC-04) atualizada para a regra da Fase 3 (E3.2, Task 13):
+  o GERENTE_COMERCIAL vê as conversas de todo COMERCIAL; a carteira do lead continua restrita à equipe.
+- **C2:** a lista de triagem para o responsável do número (não admin) fica para a tela do inbox novo (Tasks 29 a 31).
+  Até lá, `inbox/page.tsx` só mostra a triagem ao ADMINISTRADOR; o servidor já aceita o responsável.
+- **C3:** o aval do `c265d904` continua pendente com o integrador/produto; se negado, reverter antes do merge.
+- **C4:** confirmado. FINANCEIRO e SECRETARIA deixam de ver encerrados de que não foram responsáveis nem participantes
+  (a fila é só de abertos, tabela da Task 13). O histórico do setor para o atendente fica para a consulta de histórico
+  do inbox novo (Task 26), se o produto pedir.
+- **C5 e verificação** (banco `tester` recriado do zero com `prisma migrate deploy`, porque o anterior tinha as 2026100*
+  aplicadas depois das 20261016*):
+  - `node_modules/.bin/tsc --noEmit`: saída 0;
+  - `npm run lint`: saída 0, 0 erros e 43 avisos;
+  - `node_modules/.bin/vitest run`: saída 0, 667 arquivos e 4.822 testes (sem o teste novo de integração);
+  - integração de `src/server/whatsapp` inteiro mais os `*.int.test.ts` do diff contra a 3A fora dele (`crm/funil`,
+    `crm/historico`, `crm/oportunidades`, `crm/pessoas`, `matricula/preparacao-escopo`): saída 0, 34 arquivos e 249
+    testes. `academico/visibilidade` (usa `abrirAtendimentoInstitucional`): as 6 falhas conhecidas da linha de base.
+  - O `vitest related` interrompido da verificação de abertura foi substituído por essa integração dos arquivos tocados.
+
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## CRM, bloco B: Oportunidade, capacidades e etapas do funil (Fase 2, Tasks 3 a 5; 16/10/2026)
 
 ### Verificação antes do merge (branch `claude/fase2-b-oportunidade`, HEAD `435b10e`)
@@ -1992,6 +2202,14 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
   `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
   (3 arquivos, 20 testes), todos verdes, saída 0.
+
+### Pendências (revisão R1 do PR #193)
+- **C3, para quando `exigirCapacidadeCrm` for ligada nas telas e ações:** a troca não pode ampliar o que hoje é
+  negado. A `MATRIZ` de `src/server/crm/permissoes.ts` concede `contatos.ver` à `SECRETARIA_ACADEMICA` e
+  `comissoes.ver` ao `VENDEDOR`, mas os guards atuais negam esses acessos. Antes de ligar, ou a matriz é ajustada,
+  ou o guard atual continua valendo junto. Em qualquer caso, precisa de um teste que prove que esses dois acessos
+  seguem negados.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## CRM, bloco C: Pessoa como hub e empresa B2B (Fase 2, Tasks 6 a 8; 16/10/2026)
@@ -2028,6 +2246,42 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   (`evento.ts` e `labels.ts` são importados em todo lugar) e foi interrompido após 30 min; no lugar rodaram-se
   `src/server/crm` + `comercial/leads` (4 arquivos, 22 testes) e `comercial/{captura,regua-comercial,config-comercial}`
   (3 arquivos, 20 testes), todos verdes, saída 0.
+
+### Correções da revisão R1 do PR #194 (17/10/2026)
+- **B1, conflito com o main:** `origin/main` (`097f5df5`, com a #193) mesclado sem squash. O único conflito foi este
+  quadro: a seção "DS-B — avisos" fica só na posição para onde o main a moveu, e no fim os blocos B (com as
+  pendências da R1 do #193) e C ficam ambos, cada um com a própria linha **Estado**. Nenhum `\w+.lead.<método>`
+  em `src` fora da string do próprio teste de trava (`oportunidade-map.test.ts`).
+- **C1, `empresaId` em `criarLead`:** validado na transação antes do `create`. Inexistente ou de empresa inativa
+  devolve "Empresa não encontrada." em vez de estourar a FK (P2003). `Empresa` não tem dono nem carteira; o escopo
+  disponível hoje é `ativo`. Quando houver escopo de empresa, ele entra no mesmo `findFirst`.
+- **C2, telefone e e-mail com Pessoa existente — intencional nesta fase, documentado no código (`criarLead` e
+  `garantirPessoaTx`):** com `pessoaId` informado, o telefone não entra em `ContatoWhatsApp`; e o `email`
+  digitado só vai para a Pessoa quando ela é criada por `garantirPessoaTx`. Pessoa já existente (informada, achada
+  pelo contato ou pelo aluno/responsável) não tem telefone nem e-mail atualizados por `criarLead`.
+- **C3, corrida em `garantirPessoaTx`:** `pg_advisory_xact_lock(hashtextextended('pessoa:'||telefone, 0))` antes
+  da busca do contato, com o telefone já normalizado em E.164. Duas criações simultâneas do mesmo telefone novo
+  passam a dar uma só Pessoa.
+- **C4, vendedor e `pessoaId` sem oportunidade — comportamento esperado:** o vendedor só vê pessoas da própria
+  carteira (com oportunidade em `escopoComercialAtual`). Uma pessoa sem oportunidade (por exemplo, vinda de
+  aluno) é recusada como "Contato não encontrado." quando o vendedor informa o `pessoaId`. **Ponto para a tela de
+  nova oportunidade (#196):** a busca de contato do vendedor não deve oferecer essas pessoas; ele cria a
+  oportunidade pelo telefone, e `garantirPessoaTx` liga à pessoa certa pelo contato ou pelo aluno/responsável.
+- **C5, IDs das migrations — confirmados pelo integrador em 17/10/2026:** `20261001000000_crm_pessoa` (2.M1) e
+  `20261002000000_crm_empresa_b2b` (2.M2). A pendência "confirmar ou renomear os IDs" acima fica resolvida.
+
+### Verificação da R1 (HEAD dos commits de correção)
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros (43 avisos, nenhum nos arquivos tocados).
+- `node_modules/.bin/vitest run` completo: 655 arquivos e 4.738 testes verdes, saída 0.
+- Integração: o banco do perfil `tester` estava em uso por outra suíte e já tinha migrations da Fase 3
+  (`20261016*`), então rodou num banco descartável próprio, `erp_genius_test_fix194` (mesmo Postgres,
+  porta 54329), criado do zero com `prisma migrate deploy` das migrations desta branch e apagado no fim.
+  `src/server/crm/*.int.test.ts` e `src/server/comercial/*.int.test.ts`: 7 arquivos e 46 testes verdes,
+  saída 0 (inclui `pessoas`, `empresa-schema`, `pessoa-schema` e `leads`, que exercita o `criarLead` alterado).
+- Os dois testes do C3 (concorrência com 5 chamadas paralelas e espera pelo lock) falham com o lock removido
+  (conferido localmente) e passam com ele.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## CRM, bloco D: tags, campos personalizados e visualizações salvas (Fase 2, Tasks 9 a 11; 16/10/2026)
@@ -2077,6 +2331,38 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `prisma migrate deploy` no banco `dev-gravacoes`: sem pendências. Nenhuma das 7 falhas preexistentes da linha de base
   foi tocada; a suíte de integração completa fica com o integrador.
 
+### Correções da R1 do #195 (17/10/2026)
+- **C1 (quadro × `main`):** o `main` (com o #194, 683bf3e5) foi mesclado nesta branch sem conflito. Os blocos B, C e
+  D ficam no quadro, cada um com a própria linha **Estado**.
+- **C2 (unicidade fora da transação):** `criarTag` e `salvarFiltro` passam a envolver a transação em `comUnicidade`
+  (`src/server/crm/unicidade.ts`), que traduz o P2002 de uma corrida na mesma mensagem da checagem prévia ("Já
+  existe uma tag com este nome." e "Já existe uma visualização com este nome."). A reativação de um filtro
+  arquivado agora é condicional (`updateMany` com `arquivadoEm: { not: null }`). Se outra chamada já o reativou,
+  a resposta é "Já existe…", e não há segundo Evento. Os testes estão em `unicidade.test.ts` e nos `*.int.test.ts`
+  de tags e filtros-salvos: a checagem prévia é forçada a "não achou" e o índice único do banco recusa. A mutação
+  (não traduzir o P2002) foi detectada pelos 2 testes de corrida.
+  Um `Promise.all` com duas actions reais não serve como teste aqui: o import dinâmico de `@/lib/auth` em
+  `exigirSessao`, feito em paralelo, escapa do `vi.mock` (`ERR_MODULE_NOT_FOUND` de `next/server`) até com nomes
+  diferentes. As suítes que testam concorrência mockam `exigirSessao` no arquivo inteiro (por exemplo
+  `academico/fluxo.int.test.ts`).
+- **C3 (`"use server"`):** no repositório, a diretiva fica no próprio módulo de `src/server` (como em
+  `comercial/acoes.ts` e `crm/oportunidades.ts`). Nenhum módulo `"use server"` reexporta de outro. Hoje nenhuma
+  tela chama as mutações de `crm/tags.ts`, `crm/campos.ts` e `crm/filtros-salvos.ts`: o `/funil` (bloco E) só
+  lê `listarFiltros` no servidor. Por isso, **a exposição como action vem junto com a tela** que a consumir
+  (salvar visualização no funil e contatos no bloco F). Nesse momento, as exportações que não são action
+  (`CLASSES_COR_TAG`, `escopoEmpresas`, `CHAVES_FILTRO`, `validarValorCampo`, `listarFiltros(usuario, …)`) precisam
+  sair do módulo marcado ou ficar num módulo `"use server"` separado só com as mutações. Nenhum módulo foi
+  criado agora sem consumidor.
+- **C4 (integração e ID):** o integrador confirmou o ID `20261003000000`. A integração rodou num banco descartável
+  próprio, `erp_genius_test_fix195` (localhost:54329): `prisma migrate deploy` aplicou tudo, `migrate status`
+  deu "Database schema is up to date!", e `campos`, `tags` e `filtros-salvos.int.test.ts` passaram (3 arquivos,
+  27 testes). O banco foi apagado no fim.
+- Verificação com o `main` mesclado: `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43 avisos já
+  existentes); `vitest run` com 657 arquivos e 4758 testes, todos verdes.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o merge. Não concluído.
+
+## CRM, bloco E: funil (Fase 2, Tasks 12 a 18; 16/10/2026)
+
 ### Verificação para o PR (bloco E, branch `claude/fase2-e-funil`, 16/10/2026)
 - Tarefas: 12 a 18 (funil: Kanban, lista, perda, ganho e contratação).
 - `node_modules/.bin/tsc --noEmit`: saída 0.
@@ -2085,3 +2371,129 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco D): 13 arquivos,
   153 testes verdes e 1 falha, a preexistente da linha de base (`src/server/whatsapp/inbox.int.test.ts`, "lead de OUTRO
   vendedor ... não vaza o cockpit"), que este bloco não toca. Nenhuma falha nova. Suíte completa fica com o integrador.
+
+### Correções da R1 do #196 (17/10/2026)
+- **B1 (integração com o `main`):**
+  - O `main` (46f69962, já com o #194 e o #195) foi mesclado, primeiro via bloco D (`8bee5cbe`) e depois direto
+    (`f8abcd1d`).
+  - Em `revalidarLead`, fica só `/funil` (o `main` tirou `/pipeline`).
+  - Nenhum esqueleto do `main` serve para colunas de Kanban. Por isso, `EsqueletoColunas` volta para
+    `src/components/Esqueleto.tsx`, que o `funil/loading.tsx` usa, junto com a linha do teste e o piso de 8
+    exports em `Esqueleto.test.ts`.
+  - O mapa da trilha (C22 da #170, que veio do `main`) volta a ter `/leads/*/contratacao`. A página só redireciona
+    para `/oportunidades/*/contratacao` e sai com a Tarefa 37 (`595da65a`).
+- **C1 ("Mudar etapa…" da ficha), em `1b826890`:** o select de `/leads/[id]` tira "Exp. agendada" e oferece só
+  Novo, 1º contato e Qualificado. `moverEtapa` sempre recusava esse destino, e a experimental tem o próprio botão
+  "Agendar experimental". O teste está em `FichaLead.test.ts`.
+- **C2 (oportunidade de Empresa), em `74c70470`:**
+  - **Ruling:** o plano (Tasks 7, 8 e 16) dá `Empresa` B2B, `Oportunidade.empresaId`, `ParticipanteOportunidade` e
+    `criarLead` com `empresaId`, mas não define o fluxo do modo Empresa na nova oportunidade. A decisão segura é a
+    oportunidade de empresa **criar a `Empresa` e ligar `empresaId`, sem criar `Pessoa` com o nome da empresa**.
+    O participante não é criado automaticamente, porque o plano não pede isso. Ele entra depois, pela ficha.
+  - `criarLead({ criarEmpresa: true })`:
+    - cria a `Empresa` (código `E-`, `contatoTelefone`, `contatoEmail` e `origemCanal` vindos do formulário) com
+      o Evento `EmpresaCriada`;
+    - liga `empresaId` e grava `b2b = true`;
+    - não chama `garantirPessoaTx`, então não cria `Pessoa` nem `ContatoWhatsApp`;
+    - recusa a chamada se vier junto com `empresaId` ou `pessoaId`.
+  - `empresaId` sozinho segue a regra do #194: a empresa precisa estar ativa, e a pessoa de contato é criada pelo
+    nome digitado. `LeadCriado` passa a levar `empresaId` no payload.
+  - No modo Empresa, `NovaOportunidade` manda `criarEmpresa`, não manda `pessoaId` e não busca duplicados de pessoa.
+  - Testes: `NovaOportunidade.interacao.test.ts` e `pessoas.int.test.ts`.
+- **C3 (ponto de atenção de desempenho):** as ordens "tempo" e "perdidos" de `carregarFunil` carregam todos os ids
+  da coluna (no caso de perdidos, todos os PERDIDO do escopo) para ordenar e cortar em memória. Isso funciona no
+  volume atual, mas cresce com a base. Quando o volume subir, a ordenação e o corte devem ir para o SQL (por
+  exemplo, `etapaDesde` materializado ou uma subconsulta por `MAX(Evento.criadoEm)` com `LIMIT`).
+- **C4 (integração):** num banco descartável próprio, `erp_genius_test_fix196` (localhost:54329), `prisma migrate
+  deploy` aplicou tudo e `migrate status` deu "Database schema is up to date!". Passaram `funil` (4 testes),
+  `historico` (2), `oportunidades` (4) e `matricula/preparacao-escopo` (2), mais `crm/pessoas` (16) e
+  `comercial/leads` (8), que cobrem o `criarLead`: 6 arquivos e 36 testes no total. O banco foi apagado no fim.
+- Verificação com o `main` mesclado: `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43 avisos já
+  existentes); `vitest run` com 663 arquivos e 4792 testes, todos verdes. Uma rodada anterior teve uma falha
+  intermitente em `src/app/confirmacoes.test.ts`: o teste passa isolado (59 testes, cerca de 18 s) e passou na
+  rodada completa seguinte.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
+
+### Verificação para o PR (bloco G, branch `claude/fase2-g-carteira`, 17/10/2026)
+- Tarefas: 25 (carteira derivada das oportunidades, reatribuição em lote) e 26 (tela da carteira e coberturas).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 654 arquivos e 4691 testes verdes (linha de base: 643 arquivos e 4607 testes). Uma correção do bloco:
+  o aviso da carteira virou região de status (`src/app/anuncios.test.ts`).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco E): 3 arquivos,
+  18 testes verdes, saída 0. Nenhuma das 7 falhas preexistentes foi tocada; a suíte completa fica com o integrador.
+
+### Correções da R1 do #198 (17/10/2026)
+- **B1 (integração com o `main`), em `6826ff0b`:** o `main` (f4ded562, já com o #196) foi mesclado. Em
+  `src/server/acesso/coberturas.ts`, as duas ações mantêm `revalidatePath("/carteira")` e o import de `next/cache`
+  voltou. Em `src/components/Sidebar.tsx`, ficam `KanbanSquare: IconLayoutKanban` (usado pelo `/funil` do `nav.ts`) e
+  `Briefcase: IconBriefcase`, com o import de `IconLayoutKanban` de volta. A trava `casca-crm-removida.test.ts` só
+  proíbe a pasta antiga `/carteiras`, então não mudou. Os conflitos herdados (`comercial/acoes.ts` e o esqueleto do
+  funil) já vieram resolvidos pelo #196.
+- **C1 ("sem interação" zerava com a reatribuição), em `c5dacf9f`:** a conta ignora a lista explícita
+  `EVENTOS_IGNORADOS_SEM_INTERACAO` (`LeadAtribuido`, `TagAtribuida`, `TagRemovida`, `CampoPersonalizadoAlterado`).
+  Teste em `carteira.int.test.ts`: a reatribuição em lote não zera os dias, e só com eventos administrativos a conta
+  parte da criação da oportunidade.
+- **C2 (ponto de atenção de volume):** `carregarCarteira` carrega todas as oportunidades abertas do escopo e faz o
+  `groupBy` de `Evento` com `in` de todos os ids, para filtrar por dias e ordenar em memória (o corte de 500 é só na
+  resposta). Funciona no volume atual, mas cresce com a base. Quando o volume subir, o filtro e a ordenação por dias
+  devem ir para o SQL (por exemplo, uma subconsulta por `MAX(Evento.criadoEm)` com `LIMIT`, ou a última interação
+  materializada na oportunidade).
+- **C3 (nomes das recusadas), em `97f57a16`:** `recusadasComNome` guarda o nome das linhas na hora da resposta, antes
+  do `router.refresh()`. Teste em `carteira/page.test.ts`.
+- **C4 (integração):** num banco descartável próprio, `erp_genius_test_fix198` (localhost:54329), `prisma migrate
+  deploy` aplicou tudo. Passaram `carteira.int.test.ts` (10 testes) e `coberturas-lista.int.test.ts` (2). O banco foi
+  apagado no fim.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 664 arquivos e 4804 testes, todos verdes.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
+
+### Verificação para o PR (bloco I, branch `claude/fase2-i-comissoes`, 17/10/2026)
+- Tarefas: 33 (painel de comissões por papel e moeda), 34 (tela `/comissoes` para vendedor, gerente e financeiro) e
+  35 (estorno pelo FINANCEIRO), mais a correção do `aprovadaEm` e o commit de correção da revisão final.
+- Correção da revisão final: "matriculadas sem comissão" passou a usar `escopoComercialAtual` (o FINANCEIRO e o
+  ADMINISTRADOR continuam vendo tudo) e não conta matrícula CANCELADA nem ENCERRADA; `estornarComissaoDoPainel`
+  entrou na lista fechada de `src/app/confirmacoes-mapa.ts`; teste do ADMINISTRADOR no estorno.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 655 arquivos e 4698 testes verdes (linha de base: 643 arquivos e 4607 testes).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- Integração no perfil `integracao`: `node_modules/.bin/vitest related --run -c vitest.integration.config.ts` sobre os
+  29 .ts/.tsx do diff contra `claude/fase2-g-carteira`: saída 0, 14 arquivos e 321 testes verdes (nova rodada de 17/10/2026). Nenhuma das 7 falhas preexistentes foi tocada; a suíte `npm run test:int` completa fica com o integrador.
+- **Pendência bloqueante do merge — Q7 (gate da Task 35):** a Q7 segue como decisão provisória
+  (`00-visao-geral.md`, Global Constraints e `src/server/crm/permissoes.ts`). O PR F2-I sai com o estorno manual pelo
+  FINANCEIRO sob decisão provisória; o ADMINISTRADOR também estorna, porque recebe todas as capacidades (matriz da
+  Task 4, com teste). O dono do produto precisa confirmar a Q7 antes do merge: se decidir "estorno automático no
+  cancelamento da matrícula", a Task 35 sai do PR; se decidir outro operador, muda só a matriz da Task 4.
+- **Merge da `main` (17/10/2026):** a base do #200 passou a ser `main` (já com as Fases 2B a 2G e as correções da R1
+  do #198). Só o quadro teve conflito: os blocos dos dois lados foram mantidos, cada um com a própria linha **Estado**,
+  e as pendências do topo seguem a versão da `main` com as notas do bloco I. O merge automático tirou o
+  `revalidatePath("/comissoes")` de `revalidar()` em `src/server/matricula/acoes.ts` (removido pelo `684af0b3`); ele
+  voltou, porque a rota `/comissoes` existe de novo. `coberturas.ts`, `Sidebar.tsx`, `EsqueletoColunas` e as travas de
+  `src/app/*.test.ts` ficaram com a versão da `main` somada às entradas do bloco I. Verificação: `prisma generate`;
+  `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43 avisos já existentes); `vitest run` com 665 arquivos e
+  4811 testes, todos verdes. Num banco descartável próprio, `erp_genius_test_fix200` (localhost:54329), `prisma migrate
+  deploy` aplicou tudo e passaram `comissoes-estorno`, `comissoes-painel` e `comissao-aprovada-em` (3 arquivos, 11
+  testes) e `reserva-vaga` (68). O banco foi apagado no fim.
+**Estado**: Implementado; aguardando o integrador e a confirmação da Q7. Não concluído.
+
+## CRM, bloco H: tarefas, agenda e mensagem agendada (Fase 2, Tasks 27 a 31; 17/10/2026)
+
+### Verificação para o PR (bloco H, branch `claude/fase2-h-tarefas`, 17/10/2026)
+- Tarefas: 27 (model `Tarefa` e `NotificacaoUsuario`, agrupamento por data civil institucional), 28 (ações de tarefa
+  com escopo por setor, versão e auditoria), 29 (mensagem agendada pela tarefa, com `agendadaPara` respeitado pelo
+  despachante), 30 (lembretes no cron, com notificação ao usuário) e 31 (tela `/tarefas` com lista, agenda e
+  calendário), mais as correções da revisão (ids de arraste da agenda semanal; editar a tarefa não rearma lembrete já
+  disparado; a lista mostra atrasadas antigas).
+- Migration 2.M4 `20261017090000_crm_tarefas`, conferida pelo integrador: vem depois de `20261001000000` a
+  `20261016130000_preferencias_inbox_usuario`.
+- **Merge da `main` (afd13cb9, com as Fases 2B a 2G, 2I, 3A e 3B):** houve conflito em `prisma/schema.prisma` (relações
+  de `Usuario`), `src/app/borda-rota-mapa.ts`, `src/app/borda-rota.render.test.ts` e `src/app/botoes.test.ts`. Nos
+  quatro, os dois lados foram mantidos (`/tarefas` ao lado de `/carteira` e `/comissoes`). `nav.ts`, `Sidebar.tsx`,
+  `labels.ts`, `trilha.ts` e `despachante.ts` mesclaram sem conflito. Nenhuma linha do H foi perdida: os
+  `revalidatePath("/tarefas")` e os ícones `Checklist`, `KanbanSquare` e `Briefcase` continuam.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 674 arquivos e 4874 testes, todos verdes.
+- Integração no perfil `dev-email` (`erp_genius_test_dev_email`, recriado com drop e create): `prisma migrate deploy`
+  aplicou tudo. Passaram `crm/tarefas`, `crm/lembretes`, `crm/mensagens-agendadas`, `whatsapp/despachante-agendada`,
+  `whatsapp/despachante-comercial` e `whatsapp/despachante.live`: 6 arquivos e 54 testes, com saída 0.
+**Estado**: Implementado; aguardando revisão e merge. Não concluído.

@@ -18,6 +18,8 @@ describe("BarraMobile (shell abaixo de md)", () => {
     expect(html).toMatch(/<header[^>]*class="[^"]*\bmd:hidden\b/);
     expect(html).toMatch(/<button[^>]*aria-label="Abrir menu"[^>]*aria-expanded="false"|<button[^>]*aria-expanded="false"[^>]*aria-label="Abrir menu"/);
     expect(html).toContain('aria-label="Alternar tema"');
+    // C21 da #170: o estado do tema é anunciado; no HTML do servidor, claro (a hidratação lê a classe do <html>).
+    expect(html).toMatch(/<button[^>]*aria-label="Alternar tema"[^>]*aria-pressed="false"/);
     expect(html).toContain('href="/preferencias"');
     expect(html).toContain('aria-label="Sair"');
   });
