@@ -28,7 +28,7 @@ export default async function FinanceiroPainelLayout({ children }: { children: R
       <BarraAbasFinanceiro
         abas={abasVisiveis(permissoes)}
         contagem={{
-          informes: filas.informes.length,
+          informes: filas.informesAConferir,
           retomadas: filas.retomadas.filter((p) => p.status === "PENDENTE").length,
           aprovacoes: filas.aprovacoes.length,
         }}

@@ -35,7 +35,8 @@ describe("fila operacional de envios do portal", () => {
 
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "envio-0" }) }));
 
-    expect(mocks.consultar).toHaveBeenCalledWith({ depois: "envio-0" });
+    // Sem `situacao` na URL, a tela abre em "Incertos" (docs/42 L431); o recorte vai à consulta junto do cursor.
+    expect(mocks.consultar).toHaveBeenCalledWith({ depois: "envio-0", situacao: "incertos" });
     expect(html).toContain("Aceito pelo provedor");
     expect(html).toContain("Resultado incerto exige conciliação");
     expect(html).not.toMatch(/entregue ao aluno/i);
@@ -47,7 +48,7 @@ describe("fila operacional de envios do portal", () => {
     // Início: só Próxima, sem link para si mesmo (nem ?pagina=1 nem cursor vazio).
     mocks.consultar.mockResolvedValue({ ok: true, dado: { itens, temAnterior: false, temProxima: true, anterior: null, proxima: "interno-2" } });
     const inicio = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
-    expect(mocks.consultar).toHaveBeenLastCalledWith({});
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ situacao: "incertos" });
     expect(inicio).not.toContain("Anterior");
     expect(inicio).not.toContain("pagina=");
     expect(inicio).not.toContain("depois=&");
@@ -55,22 +56,57 @@ describe("fila operacional de envios do portal", () => {
 
     // Voltando: o cursor `antes` chega à consulta.
     renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ antes: "envio-9" }) }));
-    expect(mocks.consultar).toHaveBeenLastCalledWith({ antes: "envio-9" });
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ antes: "envio-9", situacao: "incertos" });
   });
 
   it("vazio: fila zerada no início; depois de um cursor que não leva a nada, a volta ao início", async () => {
     mocks.sessao.mockResolvedValue({ id: "secretaria" });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
     mocks.consultar.mockResolvedValue({ ok: true, dado: { itens: [], temAnterior: false, temProxima: false, anterior: null, proxima: null } });
-    const zerada = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    const zerada = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ situacao: "todos" }) }));
     expect(zerada).toContain("Nenhuma solicitação de acesso ao portal na fila.");
     expect(zerada).not.toContain("nesta página");
     expect(zerada).not.toContain("Anterior");
-    expect(zerada).not.toContain('href="/secretaria/envios-portal"');
+    expect(zerada).not.toContain("Ir para o início da fila");
     const alem = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ depois: "envio-sumido" }) }));
     expect(alem).toContain("Nenhuma solicitação a partir deste ponto da fila");
     expect(alem).not.toContain("nesta página");
     expect(alem).toContain('href="/secretaria/envios-portal">Ir para o início da fila');
+    // A volta ao início fica no mesmo recorte.
+    const alemFalhas = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ situacao: "falhas", depois: "envio-sumido" }) }));
+    expect(alemFalhas).toContain('href="/secretaria/envios-portal?situacao=falhas">Ir para o início da fila');
+  });
+
+  it("abas de situação (docs/42 L431): Incertos é o padrão; cada aba é um link real e a ativa é marcada", async () => {
+    mocks.sessao.mockResolvedValue({ id: "secretaria" });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { itens: [], temAnterior: false, temProxima: false, anterior: null, proxima: null } });
+    const padrao = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(padrao).toContain('aria-label="Situação dos envios"');
+    expect(padrao).toContain('<span aria-current="true" class="font-medium text-gray-900">Incertos</span>');
+    expect(padrao).toContain('href="/secretaria/envios-portal?situacao=falhas"');
+    expect(padrao).toContain('href="/secretaria/envios-portal?situacao=todos"');
+    expect(padrao).toContain("Nenhum envio com resultado incerto para conciliar.");
+    const falhas = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ situacao: "falhas" }) }));
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ situacao: "falhas" });
+    expect(falhas).toContain('<span aria-current="true" class="font-medium text-gray-900">Falhas</span>');
+    // O padrão não leva parâmetro: a aba Incertos volta à rota limpa.
+    expect(falhas).toContain('href="/secretaria/envios-portal">Incertos</a>');
+    expect(falhas).toContain("Nenhum envio com falha.");
+    // Valor desconhecido na URL: o padrão.
+    await Page({ searchParams: Promise.resolve({ situacao: "INCERTO" }) });
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ situacao: "incertos" });
+  });
+
+  it("o cursor anda dentro do recorte: Anterior e Próxima mantêm a situação escolhida", async () => {
+    mocks.sessao.mockResolvedValue({ id: "secretaria" });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+    const itens = [{ id: "e1", alunoNome: "Ana", finalidade: "CONVITE", situacao: "FALHOU", criadoEm: new Date("2026-09-16T12:00:00.000Z"), atualizadoEm: new Date("2026-09-16T12:00:00.000Z") }];
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { itens, temAnterior: true, temProxima: true, anterior: "e1", proxima: "e1" } });
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ situacao: "falhas", depois: "e0" }) }));
+    expect(mocks.consultar).toHaveBeenLastCalledWith({ depois: "e0", situacao: "falhas" });
+    expect(html).toContain('href="/secretaria/envios-portal?situacao=falhas&amp;antes=e1">← Anterior');
+    expect(html).toContain('href="/secretaria/envios-portal?situacao=falhas&amp;depois=e1">Próxima');
   });
 
   it("mostra evidência auditável e separa os controles de registrar e decidir", async () => {
