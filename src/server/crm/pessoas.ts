@@ -84,6 +84,8 @@ async function travarTelefoneTx(tx: Tx, telefoneE164: string): Promise<void> {
  *    cria pessoa nova e não liga a nenhum: telefone compartilhado não identifica a pessoa;
  * 3. criar.
  * `ContatoWhatsApp` é upserted e só recebe `pessoaId` quando estava nulo.
+ * O `email` só é gravado quando a Pessoa é criada aqui; Pessoa achada não é atualizada (intencional
+ * nesta fase; R1 do PR #194, C2).
  */
 export async function garantirPessoaTx(
   tx: Tx,

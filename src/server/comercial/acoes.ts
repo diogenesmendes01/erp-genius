@@ -154,6 +154,10 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
         const empresa = await tx.empresa.findFirst({ where: { id: empresaId, ativo: true }, select: { id: true } });
         if (!empresa) throw new ErroRegra("Empresa não encontrada.");
       }
+      // Comportamento intencional nesta fase (R1 do PR #194, C2): com `pessoaId` informado, o telefone não
+      // entra em `ContatoWhatsApp`; e o `email` digitado só vai para a Pessoa quando ela é criada aqui (via
+      // `garantirPessoaTx`). Pessoa já existente — informada, achada pelo contato ou pelo aluno/responsável —
+      // não tem telefone nem e-mail atualizados por esta ação.
       let pessoaId = dados.pessoaId || null;
       if (pessoaId) {
         // Fora do escopo do autor (ou lápide) é indistinguível de inexistente: não vaza o contato.
