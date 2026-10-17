@@ -2522,3 +2522,16 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `contraste`/`confirmacoes` estouraram o tempo uma vez, com load ~20 de outras faixas, e passam isolados. O
   `PoliticaPainel.confirmacao` (rótulo "Meta cloud (legado)" da Tarefa 1) foi corrigido.
 **Estado**: Implementado; aguardando o integrador.
+
+## Fase 4B — verificação final do bloco (17/10/2026)
+
+- Branch `claude/fase4-b-despachante`, tarefas 5 a 8 do plano `04-fase-motor.md`, empilhada sobre `claude/fase4-a-driver-motor`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- `npm test`: saída 0, 677 arquivos e 4903 testes. Duas rodadas anteriores falharam em varreduras do src
+  (`confirmacoes`, `contraste`) por estouro de 30 s com load ~20 de outras faixas; `testTimeout` unitário subiu para 120 s
+  e `confirmacoes` ganhou 120 s no teste da varredura.
+- Integração (perfil `integracao`), 14 arquivos `*.int.test.ts` do diff: 12 verdes, 116 testes. Falham só as preexistentes:
+  academico/visibilidade (6) e agenda/substituicao-avisos (3). `vitest related` não foi usado: `labels.ts` espalha o
+  alvo por quase toda a suíte; a completa fica com o integrador.
+**Estado**: Implementado; aguardando o integrador.
