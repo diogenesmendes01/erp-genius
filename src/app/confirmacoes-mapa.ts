@@ -121,20 +121,6 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     efeito: "marca o lead como no-show e dispara a recuperação de no-show, sem correção pela tela",
   },
   {
-    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
-    modulo: "@/server/whatsapp/acoes",
-    acao: "vincularContatoWhatsApp",
-    achado: "L2298",
-    efeito: "amarra o histórico da conversa a um aluno, responsável ou lead; não há desvincular pela tela",
-  },
-  {
-    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
-    modulo: "@/server/whatsapp/acoes",
-    acao: "registrarOptOutContato",
-    achado: "L2298",
-    efeito: "bloqueia toda mensagem ao contato; só a administração desfaz, com evidência",
-  },
-  {
     arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx",
     modulo: "@/server/agenda/replanejamento-decisao",
     acao: "decidirEAplicarReplanejamentoConjunto",

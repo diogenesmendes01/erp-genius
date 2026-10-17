@@ -1823,8 +1823,6 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", nome: "ESTADO_HINT", motivo: "dica do efeito de cada estado da política" },
   { arquivo: "src/app/(app)/diario/reposicoes/ReposicoesEquipe.tsx", nome: "rotuloParticipacaoOrigem", motivo: "frase sobre a aula de origem (\"falta na aula de origem\")" },
   { arquivo: "src/app/(app)/funil/NovaOportunidade.tsx", nome: "ETAPAS", motivo: "só as 3 etapas de entrada, em minúsculas (\"1º contato\"); o rótulo curto do funil é \"1º Contato\"" },
-  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "NOTA_POR_STATUS", motivo: "mensagem de resultado do envio (\"Mensagem enviada.\")" },
-  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", nome: "ORIGEM_LABEL", motivo: "fragmento minúsculo ao lado da hora da mensagem; envio humano fica sem marca (\"\")" },
   { arquivo: "src/app/(app)/matriculas/[id]/preparacao/page.tsx", nome: "tipos", motivo: "rotula também o regime da preparação, com a duração da hora (\"Hora particular (60 minutos)\")" },
   // Ternários (revisão R1 da #138, B2): os que eram só rótulo foram para labels.ts; ficam as frases do fluxo.
   { arquivo: "src/app/(app)/financeiro/RetomadasPainel.tsx", nome: "ternário p.status", motivo: "fila de retomada: \"Aguardando aprovação\" diz quem age (o Financeiro aprova)" },

@@ -42,10 +42,6 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 2, // aba ativa da barra de seções (marca = selecionada): o <Link> e o literal
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
-  // Inbox (chat): item da lista de conversas, contador de não lidas, barra "Conversas" do celular,
-  // pílula de link, 2 botões só de ícone (anexar, gravar), lista de nomes,
-  // abas do filtro de canal (Todas / Linha comercial / Institucional — SPEC-ERP-005).
-  "src/app/(app)/inbox/InboxCliente.tsx": 8,
   "src/app/(app)/funil/PainelOportunidade.tsx": 1, // aba do painel da oportunidade (role=tab, selecionada = marca)
   "src/app/(app)/leads/[id]/FichaLead.tsx": 1, // etapa atual do funil (indicador, marca = atual)
   "src/app/(app)/home/page.tsx": 1, // atalhos da home em blocos (card de grade)
@@ -78,7 +74,6 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/funil/CartaoOportunidade.tsx": ["Sem código", "`Arrastar cartão de ${cartao.nome}`"], // abrir o cartão e alça de arraste (ícone)
   "src/app/(app)/funil/ListaFunil.tsx": ["Sem código"], // abrir a oportunidade (nome na linha)
   "src/app/(app)/funil/PainelOportunidade.tsx": ["key a.id"], // aba do painel (role=tab)
-  "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   // Paginação da lista/thread e navegação entre vistas do celular: não são ações de negócio.
   "src/app/(app)/inbox/ConversaAberta.tsx": ["Voltar para a lista", "Detalhes da conversa", "Mensagens anteriores"],
   "src/app/(app)/inbox/InboxNovo.tsx": ["Carregar mais"],
@@ -475,11 +470,6 @@ export function conferirExcecoes(achados: Achado[], excecoes: Achado[]): { semEx
 
 /** Rótulo destrutivo que de propósito não é `perigo`: arquivo + rótulo exato + motivo. */
 const DESTRUTIVOS_SEM_PERIGO: (Achado & { motivo: string })[] = [
-  {
-    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
-    rotulo: "Remover opt-out",
-    motivo: "o efeito é registrar nova autorização de contato (opt-in com evidência): reabre o canal, não apaga nem recusa nada",
-  },
 ];
 
 // ---------------------------------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { formatarDataCivil } from "@/lib/data-civil";
+import { ETAPA_LABEL, SETOR_ATENDIMENTO_LABEL, STATUS_COBRANCA_LABEL, rotular } from "@/lib/labels";
 import type { PainelSetor as Painel } from "@/server/inbox/paineis";
 
 const brl = (v: string) => `R$ ${v.replace(".", ",")}`;
@@ -10,16 +13,16 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
 export function PainelSetor({ painel }: { painel: Painel | null }) {
   if (!painel) return <p className="p-4 text-sm text-muted-foreground">Sem detalhes para este atendimento.</p>;
   return (
-    <section aria-label={`Painel ${painel.setor}`} className="p-4">
+    <section aria-label={`Painel ${rotular(SETOR_ATENDIMENTO_LABEL, painel.setor)}`} className="p-4">
       {painel.setor === "COMERCIAL" && (painel.oportunidade
-        ? <dl><Linha rotulo="Oportunidade">{painel.oportunidade.titulo}</Linha><Linha rotulo="Etapa">{painel.oportunidade.etapa}</Linha>
+        ? <dl><Linha rotulo="Oportunidade">{painel.oportunidade.titulo}</Linha><Linha rotulo="Etapa">{rotular(ETAPA_LABEL, painel.oportunidade.etapa)}</Linha>
             <Linha rotulo="Valor">{painel.oportunidade.valor ? brl(painel.oportunidade.valor) : "Sem valor"}</Linha></dl>
         : <p className="text-sm text-muted-foreground">Sem oportunidade visível para você.</p>)}
       {painel.setor === "FINANCEIRO" && (<>
         <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha></dl>
         {painel.cobrancas.length
-          ? <ul className="mt-2 space-y-1 text-sm">{painel.cobrancas.map((c) => <li key={c.id} className="flex justify-between"><span>{c.vencimento}</span><span>{brl(c.valor)} · {c.status}</span></li>)}</ul>
-          : <p className="mt-2 text-sm text-muted-foreground">Nenhuma cobrança em aberto.</p>}
+          ? <ul className="mt-2 space-y-1 text-sm">{painel.cobrancas.map((c) => <li key={c.id} className="flex justify-between"><span>{formatarDataCivil(c.vencimento)}</span><span>{brl(c.valor)} · {rotular(STATUS_COBRANCA_LABEL, c.status)}</span></li>)}</ul>
+          : <EstadoVazio className="mt-2">Nenhuma cobrança em aberto.</EstadoVazio>}
       </>)}
       {painel.setor === "SECRETARIA" && (
         <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha><Linha rotulo="Documentos pendentes">{painel.documentosPendentes ?? "—"}</Linha></dl>)}

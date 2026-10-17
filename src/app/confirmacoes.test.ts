@@ -43,8 +43,6 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx", modulo: "@/server/whatsapp/acoes", acao: "aprovarLoteCobranca", achado: "L2018" },
   { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", modulo: "@/server/paises/acoes", acao: "alterarStatusPais", achado: "L2428" },
   { arquivo: "src/app/(app)/home/HomeProfessor.tsx", modulo: "@/server/comercial/acoes", acao: "checkinExperimental", achado: "L2693" },
-  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", modulo: "@/server/whatsapp/acoes", acao: "vincularContatoWhatsApp", achado: "L2298" },
-  { arquivo: "src/app/(app)/inbox/InboxCliente.tsx", modulo: "@/server/whatsapp/acoes", acao: "registrarOptOutContato", achado: "L2298" },
   { arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx", modulo: "@/server/agenda/replanejamento-decisao", acao: "decidirEAplicarReplanejamentoConjunto", achado: "L1102" },
   { arquivo: "src/app/(app)/academico/modalidades/[id]/quantidade/propostas/[propostaId]/DecidirQuantidadeAulas.tsx", modulo: "@/server/agenda/modalidade-quantidade", acao: "decidirAlteracaoQuantidadeAulasModalidade", achado: "L1218" },
   { arquivo: "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx", modulo: "@/server/migracao/presenca-historica", acao: "decidirPresencaHistoricaMigracao", achado: "L2499" },

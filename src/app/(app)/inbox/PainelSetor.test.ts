@@ -9,11 +9,12 @@ const h = (painel: Painel | null) => renderToStaticMarkup(createElement(PainelSe
 describe("PainelSetor", () => {
   it("comercial mostra oportunidade, etapa e valor; sem oportunidade avisa", () => {
     const t = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: "1500.00" }, pessoaId: "p1" });
-    expect(t).toContain("Maria"); expect(t).toContain("PROPOSTA"); expect(t).toContain("R$ 1500,00");
+    expect(t).toContain("Maria"); expect(t).toContain("Proposta"); expect(t).not.toContain("PROPOSTA"); expect(t).toContain("R$ 1500,00");
     expect(h({ setor: "COMERCIAL", oportunidade: null, pessoaId: null })).toContain("Sem oportunidade visível");
   });
   it("financeiro lista cobranças ou diz que não há", () => {
-    expect(h({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [{ id: "c1", vencimento: "2026-10-10", valor: "99.90", status: "ATRASADO" }] })).toContain("R$ 99,90");
+    expect(h({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [{ id: "c1", vencimento: "2026-10-10", valor: "99.90", status: "ATRASADO" }] })).toContain("R$ 99,90 · Atrasado");
+    expect(h({ setor: "FINANCEIRO", matriculaCodigo: "M-1", cobrancas: [{ id: "c1", vencimento: "2026-10-10", valor: "99.90", status: "ATRASADO" }] })).toContain("10/10/2026");
     expect(h({ setor: "FINANCEIRO", matriculaCodigo: null, cobrancas: [] })).toContain("Nenhuma cobrança");
   });
   it("secretaria mostra documentos pendentes", () => {

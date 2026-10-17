@@ -1,13 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { ErroPermissaoFalso } = vi.hoisted(() => ({ ErroPermissaoFalso: class extends Error {} }));
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), item: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn() }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.admin }));
+vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.admin, ErroPermissao: ErroPermissaoFalso }));
 vi.mock("@/server/inbox/consultas-pagina", () => ({ listarAtendimentosPagina: mocks.pagina, obterItemListaInbox: mocks.item }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial }: { fuso: string | null; filtros: object; selecionado: string | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|itens:${inicial.itens.map((i) => i.id)}` }));
-vi.mock("./AtendimentosPainel", () => ({ AtendimentosPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => `triagem:${preferenciaFusoExibicao}` }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes }: { fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|itens:${inicial.itens.map((i) => i.id)}` }));
+vi.mock("./NovoAtendimento", () => ({ NovoAtendimento: () => "novo-atendimento" }));
 
 import Page from "./page";
 
@@ -18,6 +19,7 @@ describe("InboxPage", () => {
     vi.resetAllMocks();
     mocks.sessao.mockResolvedValue({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
     mocks.admin.mockReturnValue(false);
+    mocks.triagem.mockResolvedValue([]); mocks.revisoes.mockResolvedValue([]);
     mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
   });
 
@@ -25,6 +27,25 @@ describe("InboxPage", () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
     expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ c: "atendimento" }) }))).toContain("inbox:America/Costa_Rica");
     expect(mocks.sessao.mock.invocationCallOrder[0]).toBeLessThan(mocks.preferencia.mock.invocationCallOrder[0]!);
+  });
+
+  it("triagem vai a quem a consulta aceita (administrador ou responsável do número); a revisão de envio só ao administrador", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    mocks.triagem.mockResolvedValue([{ id: "m1" }]);
+    mocks.revisoes.mockResolvedValue([{ id: "r1" }, { id: "r2" }]);
+    const resp = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(resp).toContain("tri:1|rev:nao");
+    expect(mocks.revisoes).not.toHaveBeenCalled();
+    mocks.admin.mockReturnValue(true);
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("tri:1|rev:2");
+  });
+
+  it("quem a triagem recusa (ErroPermissao) abre o inbox sem o painel; outro erro propaga", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    mocks.triagem.mockRejectedValue(new ErroPermissaoFalso("restrito"));
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("tri:nao|rev:nao");
+    mocks.triagem.mockRejectedValue(new Error("banco fora"));
+    await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow("banco fora");
   });
 
   it("mantém UTC como fallback quando não há preferência válida", async () => {

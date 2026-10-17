@@ -577,14 +577,13 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum convite ativo que você possa revogar.",
     "compacto · Nenhuma mensagem agendada que você possa cancelar.",
   ],
-  "src/app/(app)/inbox/AtendimentosPainel.tsx": [
+  "src/app/(app)/inbox/NovoAtendimento.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
     "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
   ],
-  "src/app/(app)/inbox/InboxCliente.tsx": [
-    "bloco · {busca ? ( <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId }",
-    "compacto · Nenhum.",
+  "src/app/(app)/inbox/PainelSetor.tsx": [
+    "compacto · Nenhuma cobrança em aberto.",
   ],
   "src/app/(app)/inbox/InboxNovo.tsx": [
     "bloco · Nenhuma conversa neste filtro.",
