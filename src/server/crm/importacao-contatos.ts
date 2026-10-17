@@ -117,10 +117,24 @@ export async function previaContatos(validas: LinhaImportavel[]): Promise<{ novo
 }
 
 /**
+ * Linha cuja pessoa já existe fora de `escopoPessoas(autor)`. É lançada (e não devolvida) para a transação da
+ * linha ser desfeita: `garantirPessoaTx` pode ter criado o `ContatoWhatsApp` dessa pessoa antes da checagem de
+ * escopo. Quem chama conta a linha à parte, como "fora da carteira" (R1 do PR #211, C3).
+ */
+export class LinhaForaDaCarteira extends Error {
+  constructor() {
+    super("Contato já cadastrado fora da carteira do autor.");
+    this.name = "LinhaForaDaCarteira";
+  }
+}
+
+/**
  * Aplica UMA linha em transação própria (quem chama abre a `tx`). Pessoa existente só recebe campos vazios;
  * `Aluno`/`Responsavel` não têm dado alterado (a ligação `pessoaId` é a do hub, feita por `garantirPessoaTx`).
- * Pessoa existente fora de `escopoPessoas(autor)` não é tocada. Pessoa nova ganha oportunidade NOVO quando há
- * `donoId`. Nenhum consentimento é gravado.
+ * Pessoa existente fora de `escopoPessoas(autor)` não é tocada: lança `LinhaForaDaCarteira`, e a transação
+ * desfaz o que `garantirPessoaTx` tenha gravado. Pessoa nova ganha oportunidade NOVO quando há `donoId`, salvo se
+ * nasceu ligada a aluno ou responsável: o telefone da planilha é de alguém do cadastro acadêmico e não vira lead
+ * da carteira (R1 do PR #211, C3). Nenhum consentimento é gravado.
  */
 export async function aplicarLinhaContato(
   tx: Tx,
@@ -148,10 +162,10 @@ export async function aplicarLinhaContato(
   }
   const pessoaId: string = achada!;
   if (!criada) {
-    // Escopo comercial: pessoa existente fora da carteira do autor conta como existente e não é tocada
-    // (nem campos, nem tag, nem Evento).
+    // Escopo comercial: pessoa existente fora da carteira do autor não é tocada (nem contato, campos, tag ou
+    // Evento). Lançar desfaz a transação da linha.
     const noEscopo = await tx.pessoa.findFirst({ where: { AND: [{ id: pessoaId }, await escopoPessoas(autor, tx)] }, select: { id: true } });
-    if (!noEscopo) return { criada: false, oportunidade: false };
+    if (!noEscopo) throw new LinhaForaDaCarteira();
 
     const atual = await tx.pessoa.findUniqueOrThrow({ where: { id: pessoaId }, select: { email: true, cidade: true, origemCanal: true } });
     const completar: Prisma.PessoaUpdateInput = {};
@@ -189,7 +203,11 @@ export async function aplicarLinhaContato(
   }
 
   let oportunidade = false;
-  if (criada && donoId) {
+  const ligadaAoAcademico =
+    criada &&
+    donoId !== null &&
+    (await tx.pessoa.count({ where: { id: pessoaId, OR: [{ aluno: { isNot: null } }, { responsavel: { isNot: null } }] } })) > 0;
+  if (criada && donoId && !ligadaAoAcademico) {
     const codigo = await gerarCodigo("lead", tx);
     const lead = await tx.oportunidade.create({
       data: { codigo, nome: l.nome, telefoneE164: l.telefoneE164, pessoaId, origemCanal: l.origemCanal ?? "IMPORTACAO", vendedorDonoId: donoId },
@@ -205,7 +223,7 @@ export async function aplicarLinhaContato(
 export async function registrarResumoImportacao(
   tx: Tx,
   autorId: string,
-  resumo: { novos: number; atualizados: number; invalidos: number; comOportunidade: number },
+  resumo: { novos: number; atualizados: number; foraDaCarteira: number; invalidos: number; comOportunidade: number },
 ): Promise<void> {
   await registrarEvento(tx, { tipo: "ContatosImportados", agregadoTipo: "Importacao", agregadoId: randomUUID(), autorId, payload: resumo });
 }
