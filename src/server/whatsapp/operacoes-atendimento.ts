@@ -299,7 +299,7 @@ export async function revisarFalhaEnvio(input: { id: string; decisao: "CANCELAR"
       }
       const r = await tx.intencaoMensagem.updateMany({ where: { id: i.id, status: "FALHOU" }, data: {
         status: novoStatus, motivoFalha: motivo, despacharAposEm: null,
-        ...(novoStatus === "PENDENTE" ? { origem: "HUMANO", autorId: u.id, criadaEm: new Date() } : {}),
+        ...(novoStatus === "PENDENTE" ? { origem: "HUMANO", autorId: u.id, criadaEm: new Date(), clientMessageId: null } : {}),
       } });
       if (r.count !== 1) throw new ErroRegra("Envio revisado por outra operação.");
       await registrarEvento(tx, { tipo: "FalhaWhatsAppRevisada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: i.atendimentoId ?? i.id,
