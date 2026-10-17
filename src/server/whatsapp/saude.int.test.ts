@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
@@ -200,5 +200,32 @@ describe("medirSaudeCanal — fila por estado", () => {
 
     const s = await medirSaudeCanal();
     expect(s.ultimoInboundEm).not.toBeNull();
+  });
+});
+
+// C1 do #212: o motivo `envio_agenda_desligado` fica gravado até o próximo tick pegar a intenção.
+// Religado o envio de agenda, a saúde não pode seguir mostrando avisos retidos por ele.
+describe("medirSaudeCanal — retidas pelo envio de agenda desligado", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("com o envio desligado, conta a intenção retida pelo motivo próprio", async () => {
+    vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "false");
+    await seedIntencao({ motivoFalha: "envio_agenda_desligado" });
+
+    const s = await medirSaudeCanal();
+    expect(s.fila.envioAgendaHabilitado).toBe(false);
+    expect(s.fila.retidasAgendaDesligada).toBe(1);
+  });
+
+  it("religado o envio, o motivo antigo ainda gravado não conta como retido", async () => {
+    vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
+    await seedIntencao({ motivoFalha: "envio_agenda_desligado" });
+
+    const s = await medirSaudeCanal();
+    expect(s.fila.envioAgendaHabilitado).toBe(true);
+    expect(s.fila.retidasAgendaDesligada).toBe(0);
+    expect(s.fila.pendentes).toBe(1);
   });
 });
