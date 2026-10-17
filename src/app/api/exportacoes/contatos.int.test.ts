@@ -62,4 +62,28 @@ describe("exportação de contatos", () => {
     expect(ev.payload).toMatchObject({ conjunto: "contatos", quantidade: 1, filtros: { busca: { aplicada: true, caracteres: 3 } } });
     expect(JSON.stringify(ev.payload)).not.toMatch(/"ana"|Souza/);
   });
+
+  it("exporta todas as páginas, com pessoas e empresas na mesma página", async () => {
+    // 1 + 54 pessoas e 3 empresas no escopo: 58 linhas, 2 páginas de 50; a 2ª mistura 5 pessoas e 3 empresas.
+    for (let i = 0; i < 54; i++) {
+      const p = await prisma.pessoa.create({ data: { nome: `Pessoa ${String(i).padStart(2, "0")}` } });
+      await prisma.oportunidade.create({ data: { nome: p.nome, vendedorDonoId: vendedor.id, pessoaId: p.id } });
+    }
+    for (let i = 0; i < 3; i++) {
+      const e = await prisma.empresa.create({ data: { nome: `Empresa ${i}` } });
+      await prisma.oportunidade.create({ data: { nome: e.nome, b2b: true, vendedorDonoId: vendedor.id, empresaId: e.id } });
+    }
+    await concederCapacidade(vendedor.id, "dados.exportar_contatos");
+    logadoComo(vendedor.id);
+    const res = await GET(req("/api/exportacoes/contatos"), params("contatos"));
+    expect(res.status).toBe(200);
+    const { linhas } = await lerXlsx(res);
+    expect(linhas).toHaveLength(58);
+    expect(new Set(linhas.map((l) => l[1])).size).toBe(58);
+    expect(linhas.filter((l) => l[2] === "Pessoa")).toHaveLength(55);
+    expect(linhas.filter((l) => l[2] === "Empresa").map((l) => l[1]).sort()).toEqual(["Empresa 0", "Empresa 1", "Empresa 2"]);
+    expect(linhas.some((l) => l[1] === "Ana Alheia")).toBe(false);
+    const ev = await prisma.evento.findFirstOrThrow({ where: { tipo: "DadosExportados" }, orderBy: { criadoEm: "desc" } });
+    expect(ev.payload).toMatchObject({ conjunto: "contatos", quantidade: 58 });
+  });
 });

@@ -7,7 +7,10 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, criarAlunoMinimo, eventosDo } from "@/test/integracao";
-import { mesclarPessoas, sugerirDuplicados } from "./duplicados";
+import type { UsuarioSessao } from "@/server/_shared/sessao";
+import { registrarNotaPessoa } from "./contatos";
+import { MSG_NOME_ALUNO, mesclarPessoas, sugerirDuplicados } from "./duplicados";
+import { historicoPessoa } from "./historico";
 
 const logadoComo = (id: string) => authMock.mockResolvedValue({ user: { id } });
 
@@ -73,9 +76,43 @@ describe("mesclarPessoas", () => {
 
   it("move o cadastro acadêmico quando só a secundária o tem e não remescla lápide", async () => {
     logadoComo(gerente.id);
-    expect((await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: {} })).ok).toBe(true);
+    expect((await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { nome: "secundaria", email: "secundaria" } })).ok).toBe(true);
+    expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: a } })).toMatchObject({ nome: "Aluno", email: null });
     expect((await prisma.aluno.findFirstOrThrow({ where: { pessoaId: a } })).pessoaId).toBe(a);
     expect((await mesclarPessoas({ principalId: pessoaResponsavel, secundariaId: pessoaAluno, escolhas: {} })).ok).toBe(false);
+  });
+
+  it("quem não é Administrador não muda nome nem e-mail de aluno pela mescla", async () => {
+    await prisma.pessoa.update({ where: { id: pessoaAluno }, data: { email: "aluno@x.com" } });
+    logadoComo(gerente.id);
+    // Aluno na principal, nome da secundária escolhido.
+    expect(await mesclarPessoas({ principalId: pessoaAluno, secundariaId: a, escolhas: { nome: "secundaria" } }))
+      .toEqual({ ok: false, erro: MSG_NOME_ALUNO });
+    // Aluno na secundária, nome comercial da principal mantido.
+    expect(await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { email: "secundaria" } }))
+      .toEqual({ ok: false, erro: MSG_NOME_ALUNO });
+    expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoaAluno } })).toMatchObject({ nome: "Aluno", email: "aluno@x.com", mescladaEmId: null });
+    expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: a } })).toMatchObject({ nome: "Beatriz Lima", mescladaEmId: null });
+    expect(await prisma.aluno.count({ where: { pessoaId: pessoaAluno } })).toBe(1);
+
+    const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    logadoComo(admin.id);
+    expect((await mesclarPessoas({ principalId: pessoaAluno, secundariaId: a, escolhas: { nome: "secundaria" } })).ok).toBe(true);
+    expect((await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoaAluno } })).nome).toBe("Beatriz Lima");
+  });
+
+  it("notas e histórico da secundária (e das lápides dela) aparecem na principal", async () => {
+    const c = (await prisma.pessoa.create({ data: { nome: "Beatriz L." } })).id;
+    logadoComo(gerente.id);
+    expect((await registrarNotaPessoa(c, "nota-da-c")).ok).toBe(true);
+    expect((await registrarNotaPessoa(b, "nota-da-b")).ok).toBe(true);
+    expect((await mesclarPessoas({ principalId: b, secundariaId: c, escolhas: {} })).ok).toBe(true);
+    expect((await mesclarPessoas({ principalId: a, secundariaId: b, escolhas: {} })).ok).toBe(true);
+    const sessao: UsuarioSessao = { id: gerente.id, nome: gerente.nome, papeis: gerente.papeis };
+    const h = (await historicoPessoa(a, sessao))!;
+    expect(h.filter((i) => i.tipo === "NotaInterna").map((i) => i.texto).sort()).toEqual(["nota-da-b", "nota-da-c"]);
+    // Cada mescla aparece uma vez, não uma por agregado.
+    expect(h.filter((i) => i.tipo === "PessoasMescladas").map((i) => i.rotulo)).toEqual(["Contatos mesclados", "Contatos mesclados"]);
   });
 
   it("campo personalizado: vale o da principal quando não é nulo", async () => {

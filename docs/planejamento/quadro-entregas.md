@@ -2425,3 +2425,36 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   deploy` aplicou tudo e passaram `comissoes-estorno`, `comissoes-painel` e `comissao-aprovada-em` (3 arquivos, 11
   testes) e `reserva-vaga` (68). O banco foi apagado no fim.
 **Estado**: Implementado; aguardando o integrador e a confirmação da Q7. Não concluído.
+
+## CRM, bloco F: contatos (Fase 2, Tasks 19 a 24; 17/10/2026)
+
+### Verificação para o PR (bloco F, branch `claude/fase2-f-contatos`, 17/10/2026)
+- Tarefas: 19 a 24 (lista e ficha do contato, duplicados e mescla, exportação e importação de contatos, tela).
+- Correção da revisão final:
+  - a mescla aplica a trava de `editarPessoa`: quem não é Administrador não muda nome nem e-mail de aluno, esteja o
+    cadastro acadêmico na principal ou na secundária (`MSG_NOME_ALUNO`);
+  - o histórico da ficha inclui os eventos das lápides mescladas na pessoa, de forma transitiva, e mostra cada
+    `PessoasMescladas` uma vez ("Contatos mesclados");
+  - a importação só completa campos e põe tag em pessoa existente dentro de `escopoPessoas(autor)`; fora do escopo,
+    conta como existente e não grava nada nela;
+  - "Salvar campos" na ficha recarrega a tela e diz quantos campos ficaram salvos quando uma chamada falha no meio;
+  - teste de exportação com 58 linhas (2 páginas, a 2ª com pessoas e empresas) conferindo `quantidade` do
+    `DadosExportados`;
+  - a importação registra `console.error` por linha que falha, só com o número da linha e o nome/código do erro.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test` (`vitest run`): saída 0, 675 arquivos e 4879 testes verdes (linha de base: ~671 arquivos e ~4850 testes).
+- `npm run lint` (`eslint .`): 0 erros e 43 avisos (já existentes).
+- Integração no perfil `dev-gravacoes`: `src/server/crm/`, `src/app/api/contatos/`, `src/app/api/exportacoes/` e
+  `src/server/whatsapp/linha-comercial.int.test.ts`: 20 arquivos, 158 testes verdes e 1 falha, a preexistente da linha
+  de base em `api/exportacoes` ("alunos exportados por professor mantêm vínculo atual…", falha igual no `main`).
+  Nenhuma falha nova. O `vitest related` sobre os 32 .ts/.tsx do bloco alcança quase toda a suíte (via
+  `src/lib/labels.ts` e afins) e parou no limite de 90 min; até ali só apareceram falhas preexistentes da linha de base
+  (`agenda/substituicao-avisos`, `avaliacoes/impactos-progressao-tx`, `academico/visibilidade`,
+  `academico/progressao-fechamento`, `avaliacoes/aproveitamento-aplicado`). A suíte `npm run test:int` completa fica
+  com o integrador.
+- **Mudança de permissão — coordenar com o integrador (Tarefa 22):** capacidade nova `dados.exportar_contatos`
+  (`src/lib/capacidades.ts`, rótulo "Exportar contatos (sem telefone e e-mail)"), exigida por
+  `/api/exportacoes/contatos`. O Administrador já a tem; para os demais papéis é concedida por usuário (`Usuario.permissoes`), como
+  `dados.exportar_leads`. O integrador precisa confirmar essa capacidade e decidir a quem concedê-la antes do merge.
+**Estado**: Implementado; correções da revisão final aplicadas; aguardando o integrador (inclusive a confirmação de
+`dados.exportar_contatos`). Não concluído.

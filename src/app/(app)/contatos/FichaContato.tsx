@@ -72,6 +72,12 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
 }
 
 /** Valor do campo como o controle mostra: texto, ou "true"/"false" para o booleano. */
+/** Erro de "Salvar campos" quando parte dos campos já foi gravada antes da falha. */
+export function mensagemFalhaParcialCampos(salvos: number, total: number, campo: string, erro: string): string {
+  const feitos = salvos === 1 ? "1 campo salvo" : `${salvos} campos salvos`;
+  return `${feitos} de ${total}. ${campo} não foi salvo: ${erro}`;
+}
+
 function valorInicial(c: CampoDaFicha): string {
   if (c.valor === null || c.valor === undefined) return "";
   return String(c.valor);
@@ -135,9 +141,15 @@ function FichaCorpo({
     acao.limpar();
     const mudados = campos.filter((c) => (valores[c.id] ?? "") !== valorInicial(c));
     if (mudados.length === 0) return acao.setErro("Nenhum campo foi alterado.");
-    for (const c of mudados) {
+    for (const [i, c] of mudados.entries()) {
       const r = await acao.executar(() => definirCampoDaFicha({ campoId: c.id, pessoaId: d.id, valor: valores[c.id] ?? "" }));
-      if (r?.tipo !== "ok") return;
+      if (r?.tipo === "ok") continue;
+      // Falha no meio: os anteriores já estão gravados. A tela recarrega e diz o que ficou salvo.
+      if (r && i > 0) {
+        acao.setErro(mensagemFalhaParcialCampos(i, mudados.length, c.nome, r.mensagem));
+        router.refresh();
+      }
+      return;
     }
     acao.setSucesso(mudados.length === 1 ? "Campo salvo." : `${mudados.length} campos salvos.`);
     router.refresh();

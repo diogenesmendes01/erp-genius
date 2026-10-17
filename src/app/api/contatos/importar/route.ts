@@ -93,11 +93,18 @@ export async function POST(req: Request) {
     const falhas = [...invalidas];
     for (const l of validas) {
       try {
-        const r = await prisma.$transaction((tx) => aplicarLinhaContato(tx, l, usuario.id, donoId));
+        const r = await prisma.$transaction((tx) => aplicarLinhaContato(tx, l, usuario, donoId));
         if (r.criada) novos++;
         else atualizados++;
         if (r.oportunidade) comOportunidade++;
-      } catch {
+      } catch (e) {
+        // Sem PII: só a linha e a classe/código do erro (ex.: P2002 de unicidade).
+        const codigo = (e as { code?: unknown })?.code;
+        console.error("[contatos/importar] falha na linha", {
+          linha: l.linha,
+          erro: e instanceof Error ? e.name : typeof e,
+          codigo: typeof codigo === "string" ? codigo : undefined,
+        });
         falhas.push({ linha: l.linha, motivo: "Não foi possível importar esta linha." });
       }
     }
