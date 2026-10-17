@@ -76,7 +76,6 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/funil/PainelOportunidade.tsx": ["key a.id"], // aba do painel (role=tab)
   // Paginação da lista/thread e navegação entre vistas do celular: não são ações de negócio.
   "src/app/(app)/inbox/ConversaAberta.tsx": ["Voltar para a lista", "Detalhes da conversa", "Mensagens anteriores"],
-  "src/app/(app)/inbox/InboxNovo.tsx": ["Carregar mais"],
   "src/app/(app)/inbox/ListaAtendimentos.tsx": ["Carregar mais"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/app/(app)/tarefas/AgendaTarefas.tsx": ["`Arrastar tarefa ${titulo}`"], // alça de arraste (ícone)

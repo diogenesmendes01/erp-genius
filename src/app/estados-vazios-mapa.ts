@@ -585,9 +585,6 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/inbox/PainelSetor.tsx": [
     "compacto · Nenhuma cobrança em aberto.",
   ],
-  "src/app/(app)/inbox/InboxNovo.tsx": [
-    "bloco · Nenhuma conversa neste filtro.",
-  ],
   "src/app/(app)/inbox/ListaAtendimentos.tsx": [
     "bloco · Nenhuma conversa neste filtro.",
   ],

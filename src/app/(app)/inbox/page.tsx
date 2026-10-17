@@ -4,6 +4,7 @@ import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
 import { listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import { InboxNovo } from "./InboxNovo";
 import { NovoAtendimento } from "./NovoAtendimento";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
@@ -34,12 +35,13 @@ export default async function InboxPage({
     throw e;
   });
 
-  const [inicial, opcoes, triagem, revisoes, preferencia] = await Promise.all([
+  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro] = await Promise.all([
     listarAtendimentosPagina(usuario, filtros, cursor),
     listarOpcoesAtendimento(),
     triagemOuNula(),
     admin ? listarRevisoesEnvio() : Promise.resolve(null),
     consultarPreferenciaFusoEquipe(),
+    opcoesFiltroInbox(usuario),
   ]);
   // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
   if (c && !inicial.itens.some((i) => i.id === c)) {
@@ -57,7 +59,7 @@ export default async function InboxPage({
       <div className="mt-4">
         <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
           destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
-          triagem={triagem} revisoes={revisoes} />
+          triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} />
       </div>
     </div>
   );

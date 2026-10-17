@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
@@ -180,24 +180,30 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
   );
 }
 
-function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
+export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
   const acao = useAcaoCliente({ idempotente: false });
   const [pessoas, setPessoas] = useState<{ id: string; nome: string }[] | null>(null);
   const [usuarioId, setUsuarioId] = useState("");
   const [podeEnviar, setPodeEnviar] = useState(false);
   const [dias, setDias] = useState(7);
   const [motivo, setMotivo] = useState("");
-  const [carregou, setCarregou] = useState(false);
-  if (!carregou) {
-    setCarregou(true);
-    void listarPessoasParaAtendimento(atendimentoId, modo).then(setPessoas).catch(() => setPessoas([]));
-  }
+  // Carga fora do render: em StrictMode o efeito roda duas vezes, mas a resposta descartada não é aplicada.
+  useEffect(() => {
+    let ativo = true;
+    void listarPessoasParaAtendimento(atendimentoId, modo)
+      .then((l) => { if (ativo) setPessoas(l); })
+      .catch(() => { if (ativo) setPessoas([]); });
+    return () => { ativo = false; };
+  }, [atendimentoId, modo]);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const d = await acao.executar(async (): Promise<Resultado> => modo === "atribuir"
-      ? atribuirAtendimento({ atendimentoId, usuarioId })
-      : { ...(await convidarParticipante({ atendimentoId, usuarioId, podeEnviar, fim: new Date(Date.now() + dias * 86_400_000).toISOString(), motivo })), dado: undefined } as Resultado);
+    const d = await acao.executar(async (): Promise<Resultado> => {
+      if (modo === "atribuir") return atribuirAtendimento({ atendimentoId, usuarioId });
+      const r = await convidarParticipante({ atendimentoId, usuarioId, podeEnviar, fim: new Date(Date.now() + dias * 86_400_000).toISOString(), motivo });
+      // O id do participante não interessa à tela: só o desfecho.
+      return r.ok ? { ok: true } : { ok: false, erro: r.erro };
+    });
     if (d?.tipo === "ok") aoConcluir();
   }
 
@@ -287,9 +293,15 @@ const FORMATO_DATA = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", time
 export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { atendimentoId: string; aoFechar: () => void; aoConcluir: (qual: "convite" | "agendamento") => void }) {
   const [dados, setDados] = useState<{ convites: ConviteAtivo[]; agendamentos: AgendamentoAtivo[] } | null>(null);
   const [alvo, setAlvo] = useState<AlvoPendente | null>(null);
-  const [carregou, setCarregou] = useState(false);
-  const carregar = () => { void listarConvitesEAgendamentos(atendimentoId).then(setDados).catch(() => setDados({ convites: [], agendamentos: [] })); };
-  if (!carregou) { setCarregou(true); carregar(); }
+  const [versao, setVersao] = useState(0);
+  const carregar = () => setVersao((v) => v + 1);
+  useEffect(() => {
+    let ativo = true;
+    void listarConvitesEAgendamentos(atendimentoId)
+      .then((d) => { if (ativo) setDados(d); })
+      .catch(() => { if (ativo) setDados({ convites: [], agendamentos: [] }); });
+    return () => { ativo = false; };
+  }, [atendimentoId, versao]);
 
   if (alvo) {
     const convite = alvo.tipo === "convite";

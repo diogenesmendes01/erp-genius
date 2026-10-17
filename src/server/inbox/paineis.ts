@@ -35,7 +35,7 @@ export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): P
       const ver = !!a.lead && await podeVerLeadNaThread(u, a.id, a.lead.id, Date.now());
       if (!ver || !a.lead) return { setor: "COMERCIAL", oportunidade: null, pessoaId: null };
       return { setor: "COMERCIAL",
-        oportunidade: { id: a.lead.id, titulo: a.lead.nome, etapa: a.lead.etapa, valor: a.lead.valorPrevisto?.toString() ?? null },
+        oportunidade: { id: a.lead.id, titulo: a.lead.nome, etapa: a.lead.etapa, valor: a.lead.valorPrevisto?.toFixed(2) ?? null },
         // Regra 6: o responsável legal não é a pessoa comercial.
         pessoaId: a.lead.pessoa?.responsavel ? null : a.lead.pessoaId };
     }

@@ -2662,13 +2662,29 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Pendências explícitas da Task 33 (a confirmar com o produto antes do PR)**
 
-- Regressão funcional aceita: a UI nova (`AcoesAtendimento`) não oferece mais, na thread, ações que o Inbox antigo tinha: criar lead,
-  vincular contato, editar nome, registrar/remover opt-out, retomar régua/tratar, registrar pagamento, anexar e gravar áudio. As Server
-  Actions seguem testadas (regras 10, 12 e 14), mas não há botão. O brief manda remover o antigo, então a remoção é conforme; o
-  integrador precisa confirmar com o produto se essas ações voltam como botões (tarefa dona a definir) ou se ficam fora do escopo.
+- Regressão funcional, em aberto até decisão do produto: o opt-out voltou (ver a correção da revisão final, abaixo). Na thread
+  continuam sem botão: criar lead, vincular contato, editar nome, retomar régua/tratar, registrar pagamento, anexar e gravar áudio.
+  As Server Actions seguem testadas (regras 10, 12 e 14). Antes do merge, o integrador precisa da decisão do produto por escrito:
+  repor (e qual tarefa faz isso) ou aceitar a perda.
 - Regra 18, lacuna de requisito: o brief pede "upload no visível", mas `src/app/api/upload/route.ts` não tem upload por atendimento
   (é por lead/matrícula). O teste 18 cobre envio só de arquivo do próprio autor e download no escopo. Upload por atendimento fica
   como lacuna para a tarefa dona do envio de mídia.
 - Regra 21: o brief cita `AgendamentoCancelado`; o evento real gravado é `MensagemAgendadaCancelada`, e o teste usa o real.
 - Evidência pendente: `npm run test:int` completo não foi rodado (mais de 2 h; proibido na faixa). Só `regras-inbox.int.test.ts`
   (21/21). A Task 33 só conta como concluída com essa ressalva, até o integrador rodar o `test:int`.
+
+**Correção da revisão final do bloco F (17/10/2026)**
+
+- Tasks 30 e 32 ligadas na tela: `InboxNovo` usa `ListaAtendimentos` (setor, número, status, responsável, "Prazo estourado",
+  virtualização acima de 100 linhas) e `PainelFiltros`. As opções do filtro vêm de `opcoesFiltroInbox`
+  (`src/server/inbox/opcoes-filtro.ts`). Quando o filtro muda, a lista recomeça da nova primeira página, por estado derivado e sem
+  key de remontagem. O `PainelSetor` fica no aside e no Drawer e é lido por `GET /api/inbox/atendimentos/[id]/painel`
+  (`carregarPainel`; 401, 403 e 404 fora do escopo).
+- Opt-out reposto no painel da conversa (`OptOutContato.tsx`). O registro passa por `ConfirmarAcao`, e o par voltou à lista
+  fechada de `confirmacoes-mapa.ts`. O administrador remove o opt-out com evidência de 12 caracteres ou mais.
+- `PainelTriagem`: lista vazia conta como ausência, então não aparece `<details>` com "· 0". `DialogoPessoa` e `DialogoPendentes`
+  carregam em `useEffect`, não mais durante o render. O convite usa mapeamento tipado do `Resultado`. O valor do painel Comercial
+  sai com `toFixed(2)`, como o do Financeiro.
+- Verificação: `tsc --noEmit` com saída 0; `eslint src --quiet` com saída 0; `npm test` com 703 arquivos e 5104 testes, todos
+  verdes; integração em `regras-inbox`, `paineis` e `opcoes-filtro` (3 arquivos, 27 testes) com saída 0.
+  O `npm run test:int` completo continua pendente para o integrador.

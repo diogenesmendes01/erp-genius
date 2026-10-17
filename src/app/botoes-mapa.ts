@@ -976,6 +976,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/NovoAtendimento.tsx": [
     "<button> Abrir atendimento → primario/lg",
   ],
+  "inbox/OptOutContato.tsx": [
+    "<Botao> Remover opt-out → perigo/sm",
+    "<Botao> Registrar opt-out → secundario/sm",
+  ],
   "inbox/PainelTriagem.tsx": [
     "<button> Classificar esta mensagem → secundario/md",
     "<button> Registrar revisão → secundario/md",

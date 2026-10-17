@@ -29,4 +29,14 @@ describe("PainelTriagem", () => {
   it("sem triagem nem revisão (papel sem alçada) não renderiza nada", () => {
     expect(painel({})).toBe("");
   });
+
+  it("listas vazias valem como ausência: sem <details> com zero pendências", () => {
+    expect(painel({ triagem: [], revisoes: [] })).toBe("");
+    const soRevisao = painel({ triagem: [], revisoes });
+    expect(soRevisao).not.toContain("Triagem administrativa");
+    expect(soRevisao).toContain("Envios que exigem revisão · 1");
+    const soTriagem = painel({ triagem, revisoes: [] });
+    expect(soTriagem).not.toContain("Envios que exigem revisão");
+    expect(soTriagem).toContain("Triagem administrativa · 1");
+  });
 });

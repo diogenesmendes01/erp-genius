@@ -35,7 +35,7 @@ describe("painel lateral por setor", () => {
     const op = await prisma.oportunidade.create({ data: { nome: "Maria Silva", etapa: "PROPOSTA", vendedorDonoId: dono.id, valorPrevisto: 1500 } });
     const linha = await numero("VENDAS", donoDaLinhaSemCarteira.id);
     const a = await atendimento(linha.id, (await contato()).id, { finalidade: "COMERCIAL", leadId: op.id });
-    expect(await carregarPainel(sess(dono), a.id)).toMatchObject({ setor: "COMERCIAL", oportunidade: { id: op.id, titulo: "Maria Silva", etapa: "PROPOSTA", valor: "1500" } });
+    expect(await carregarPainel(sess(dono), a.id)).toMatchObject({ setor: "COMERCIAL", oportunidade: { id: op.id, titulo: "Maria Silva", etapa: "PROPOSTA", valor: "1500.00" } });
     expect(await carregarPainel(sess(donoDaLinhaSemCarteira), a.id)).toMatchObject({ setor: "COMERCIAL", oportunidade: null, pessoaId: null });
   });
 

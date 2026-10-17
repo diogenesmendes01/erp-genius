@@ -17,12 +17,14 @@ export function PainelTriagem({ triagem, revisoes, preferenciaFusoExibicao }: { 
   // Resolvida a mensagem ou a falha, ela sai do painel na hora (a próxima carga da página já não a traz).
   const [resolvidas, setResolvidas] = useState<ReadonlySet<string>>(new Set());
   const resolver = (id: string) => setResolvidas((atual) => new Set(atual).add(id));
-  const pendentesTriagem = triagem?.filter((m) => !resolvidas.has(m.id)) ?? null;
-  const pendentesRevisao = revisoes?.filter((r) => !resolvidas.has(r.id)) ?? null;
+  // Lista vazia é ausência: sem pendência o painel não mostra um <details> com "· 0".
+  const pendentes = <T extends { id: string }>(l: T[] | null) => { const f = l?.filter((x) => !resolvidas.has(x.id)); return f?.length ? f : null; };
+  const pendentesTriagem = pendentes(triagem);
+  const pendentesRevisao = pendentes(revisoes);
   if (!pendentesTriagem && !pendentesRevisao) return null;
   return <div className="space-y-3">
     {pendentesRevisao && <details className="rounded-lg border border-gray-200 p-3">
-      <summary className="cursor-pointer text-sm font-medium">Envios que exigem revisão · {pendentesRevisao?.length}</summary>
+      <summary className="cursor-pointer text-sm font-medium">Envios que exigem revisão · {pendentesRevisao.length}</summary>
       <p className="my-2 text-xs text-gray-600">Um envio com erro pode ter chegado ao destinatário. Confirme o resultado no provedor antes de autorizar uma nova tentativa.</p>
       <div className="max-h-96 space-y-2 overflow-y-auto">{pendentesRevisao.map((r) => <Revisao key={r.id} item={r} />)}</div>
     </details>}

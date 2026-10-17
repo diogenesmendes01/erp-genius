@@ -2,18 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Papel } from "@prisma/client";
-import { Avatar } from "@/components/Avatar";
-import { EstadoVazio } from "@/components/EstadoVazio";
 import { Drawer } from "@/components/Drawer";
-import { ItemLista } from "@/components/ItemLista";
 import { useConversa } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { FiltrosInbox } from "@/server/inbox/filtros";
+import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
+import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
 import { ConversaAberta } from "./ConversaAberta";
 import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
+import { ListaAtendimentos } from "./ListaAtendimentos";
+import { OptOutContato } from "./OptOutContato";
+import { PainelFiltros } from "./PainelFiltros";
+import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
 
@@ -30,6 +33,8 @@ export interface PropsInboxNovo {
   /** Triagem e revisão de envio (Task 33): nulas para quem `listarTriagemWhatsApp` / `listarRevisoesEnvio` recusam. */
   triagem?: ItemTriagem[] | null;
   revisoes?: RevisaoEnvio[] | null;
+  /** Setores e números do PainelFiltros (`opcoesFiltroInbox`); sem eles a barra de filtros não aparece. */
+  opcoesFiltro?: OpcoesFiltroInbox;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
@@ -70,29 +75,58 @@ export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaIn
   return [...nova.filter((i) => !conhecidos.has(i.id)), ...atual.filter(manter).map((i) => novas.get(i.id) ?? i)];
 }
 
-function horaCurta(iso: string | null, fuso: string | null): string {
-  if (!iso) return "";
-  try { return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: fuso ?? "UTC" }).format(new Date(iso)); } catch { return ""; }
+/** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
+async function buscarPainel(id: string): Promise<DadosPainelSetor | null> {
+  try {
+    const r = await fetch(`/api/inbox/atendimentos/${encodeURIComponent(id)}/painel`, { cache: "no-store", credentials: "same-origin" });
+    return r.ok ? await r.json() as DadosPainelSetor : null;
+  } catch { return null; }
 }
+
+/** Lista vazia de triagem/revisão vale como ausência (nenhum painel com "· 0"). */
+const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 
 // Breakpoints do protótipo (mobile.js): <700px uma vista por vez; 700–1099px lista + conversa com o painel em Drawer;
 // ≥1100px as três colunas.
 const COLUNA_LISTA = "min-[700px]:flex min-[700px]:w-[320px] min-[700px]:shrink-0 min-[1100px]:w-[360px]";
 const COLUNA_CONVERSA = "min-[700px]:flex min-[700px]:min-w-0 min-[700px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem = null, revisoes = null }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro }: PropsInboxNovo) {
+  const triagem = ouNulo(triagemBruta);
+  const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(inicial.itens);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
   const [eventoRecente, setEventoRecente] = useState<AvisoInbox | null>(null);
   const [carregandoMais, setCarregandoMais] = useState(false);
+  // Filtro novo (o PainelFiltros troca a URL e a página traz outra primeira página): a lista recomeça dela.
+  // Estado derivado no render, sem key de remontagem: o que não depende do filtro (Drawer, digitação) fica.
+  const chaveFiltros = paramsDosFiltros(filtros);
+  const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);
+  if (filtrosVistos !== chaveFiltros) {
+    setFiltrosVistos(chaveFiltros);
+    setItens(inicial.itens);
+    setProximo(inicial.proximo);
+    setSelecionado(selecionadoInicial);
+    setVista(selecionadoInicial ? "conversa" : "lista");
+  }
   const selecionadoRef = useRef(selecionado);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
+  // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
+  const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
+  const [versaoPainel, setVersaoPainel] = useState(0);
+  useEffect(() => {
+    if (!selecionado) return;
+    let ativo = true;
+    void buscarPainel(selecionado).then((dado) => { if (ativo) setPainelSetor({ id: selecionado, dado }); });
+    return () => { ativo = false; };
+  }, [selecionado, versaoPainel]);
 
   // Aviso do SSE: a thread se reconcilia em `useConversa` (recebe o aviso); a lista recarrega só a primeira página
   // e troca as linhas afetadas, sem refazer a página inteira.
   const recarregarLista = useCallback(() => {
+    setVersaoPainel((v) => v + 1);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
   }, [filtros]);
   const aoAviso = useCallback((a: AvisoInbox) => {
@@ -126,31 +160,27 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   }
 
   const painel = atual ? (
-    <div className="space-y-2 p-4 text-sm">
-      <p className="font-medium">{atual.contatoNome}</p>
-      <p className="text-gray-600">{atual.contatoTelefone}</p>
-      <p className="text-gray-600">{atual.numeroRotulo} · {rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade)}</p>
+    <div>
+      <div className="space-y-2 p-4 text-sm">
+        <p className="font-medium">{atual.contatoNome}</p>
+        {atual.contatoTelefone && <p className="text-gray-600">{atual.contatoTelefone}</p>}
+        <p className="text-gray-600">{atual.numeroRotulo} · {rotular(SETOR_ATENDIMENTO_LABEL, atual.finalidade)}</p>
+      </div>
+      {painelSetor?.id === atual.id
+        ? <PainelSetor painel={painelSetor.dado} />
+        : <p className="p-4 text-sm text-gray-600">Carregando detalhes…</p>}
+      {!atual.grupo && (
+        <OptOutContato key={atual.contatoId} contatoId={atual.contatoId} nome={atual.contatoNome} optOut={atual.optOut}
+          podeReautorizar={usuario.papeis.includes("ADMINISTRADOR")} aoMudar={recarregarLista} />
+      )}
     </div>
   ) : <p className="p-4 text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
 
   return (
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="flex h-[calc(100dvh-8rem)] min-h-[420px] overflow-hidden rounded-item border">
       <section aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full flex-col border-r ${COLUNA_LISTA}`}>
-        <div className="min-h-0 flex-1 overflow-y-auto p-1">
-          {itens.length === 0 && <EstadoVazio bloco>Nenhuma conversa neste filtro.</EstadoVazio>}
-          {itens.map((i) => (
-            <ItemLista
-              key={i.id}
-              titulo={i.contatoNome}
-              resumo={i.preview ?? ""}
-              inicio={<Avatar nome={i.contatoNome} />}
-              meta={<span className="flex flex-col items-end gap-1"><span>{horaCurta(i.ultimaMensagemEm, fuso)}</span>{i.naoLidas > 0 && <span className="rounded-full bg-brand px-1.5 text-on-brand">{i.naoLidas}</span>}</span>}
-              selecionado={i.id === selecionado}
-              onClick={() => abrir(i.id)}
-            />
-          ))}
-          {proximo && <button type="button" onClick={() => void maisAntigas()} disabled={carregandoMais} className="w-full p-3 text-sm text-brand-800">Carregar mais</button>}
-        </div>
+        {opcoesFiltro && <PainelFiltros filtros={filtros} setores={opcoesFiltro.setores} numeros={opcoesFiltro.numeros} />}
+        <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} />
       </section>
 
       <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-w-0 flex-col ${COLUNA_CONVERSA}`}>
