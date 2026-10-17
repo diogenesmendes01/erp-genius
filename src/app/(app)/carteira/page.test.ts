@@ -21,6 +21,7 @@ vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFuso
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }), usePathname: () => "/carteira", redirect: vi.fn() }));
 
 import Page from "./page";
+import { ConsequenciaRevogacao } from "./CoberturasPainel";
 import { ConsequenciaReatribuicao } from "./ListaCarteira";
 import { TEXTO_CONSEQUENCIA_REATRIBUICAO } from "@/server/crm/carteira";
 
@@ -77,5 +78,23 @@ describe("/carteira (página)", () => {
     const html = renderConfirmacaoReatribuir();
     expect(html).toContain(TEXTO_CONSEQUENCIA_REATRIBUICAO);
     expect(html).toContain("2 oportunidades passam para Bia.");
+  });
+
+  it("revogar: a lista mostra o botão Revogar só da cobertura vigente", async () => {
+    const base = { titular: "Bia", substituto: "Caio", inicio: new Date("2026-10-01T12:00:00Z"), fim: new Date("2026-10-20T12:00:00Z"), motivo: "Férias da titular" };
+    mocks.coberturas.mockResolvedValueOnce({ itens: [{ id: "c1", revogadaEm: null, ...base }, { id: "c2", revogadaEm: new Date("2026-10-02T12:00:00Z"), ...base }], possuiMais: false });
+    const html = await renderPagina(gerente, { aba: "coberturas" });
+    expect(html).toContain("Caio atende a carteira de Bia");
+    expect(html.match(/>Revogar</g)).toHaveLength(1);
+    expect(html).toContain("Revogada");
+  });
+
+  it("revogar mostra a consequência antes de confirmar", () => {
+    const periodo = { inicio: { texto: "01/10/2026 09:00", fuso: "America/Sao_Paulo" }, fim: { texto: "20/10/2026 09:00" } };
+    const html = renderToStaticMarkup(createElement(ConsequenciaRevogacao, { cobertura: { substituto: "Caio", titular: "Bia" }, periodo }));
+    expect(html).toContain("Caio deixa de atender a carteira de Bia na hora");
+    expect(html).toContain("01/10/2026 09:00 até 20/10/2026 09:00");
+    expect(html).toContain("Revogar a cobertura não tem desfazer pela tela.");
+    expect(html).toContain("conceder uma nova cobertura");
   });
 });
