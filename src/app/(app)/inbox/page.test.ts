@@ -1,12 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), pagina: vi.fn(), item: vi.fn(), opcoes: vi.fn(), triagem: vi.fn(), revisoes: vi.fn(), preferencia: vi.fn(), admin: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.admin }));
-vi.mock("@/server/inbox/consultas-pagina", () => ({ listarAtendimentosPagina: mocks.pagina }));
+vi.mock("@/server/inbox/consultas-pagina", () => ({ listarAtendimentosPagina: mocks.pagina, obterItemListaInbox: mocks.item }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial }: { fuso: string | null; filtros: object; selecionado: string | null; inicial: { proximo: string | null } }) => `inbox:${fuso}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}` }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial }: { fuso: string | null; filtros: object; selecionado: string | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|itens:${inicial.itens.map((i) => i.id)}` }));
 vi.mock("./AtendimentosPainel", () => ({ AtendimentosPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => `triagem:${preferenciaFusoExibicao}` }));
 
 import Page from "./page";
@@ -53,5 +53,24 @@ describe("InboxPage", () => {
     expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, cursorValido);
     await Page({ searchParams: Promise.resolve({ cursor: "lixo!" }) });
     expect(mocks.pagina).toHaveBeenLastCalledWith(expect.anything(), {}, null);
+  });
+
+  it("deep link fora da primeira página: o item é buscado por id e entra na lista", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    mocks.pagina.mockResolvedValue({ itens: [{ id: "p1" }], proximo: null });
+    mocks.item.mockResolvedValue({ id: "x" });
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ c: "x" }) }));
+    expect(mocks.item).toHaveBeenCalledWith(expect.anything(), "x");
+    expect(html).toContain("itens:x,p1");
+  });
+
+  it("deep link já presente na página, ou fora do escopo, não duplica nem inventa item", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    mocks.pagina.mockResolvedValue({ itens: [{ id: "x" }], proximo: null });
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ c: "x" }) }))).toContain("itens:x<");
+    expect(mocks.item).not.toHaveBeenCalled();
+    mocks.pagina.mockResolvedValue({ itens: [{ id: "p1" }], proximo: null });
+    mocks.item.mockResolvedValue(null);
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ c: "y" }) }))).toContain("itens:p1<");
   });
 });

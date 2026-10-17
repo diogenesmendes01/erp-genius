@@ -3,7 +3,7 @@ import { exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
-import { listarAtendimentosPagina } from "@/server/inbox/consultas-pagina";
+import { listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { InboxNovo } from "./InboxNovo";
 import { AtendimentosPainel } from "./AtendimentosPainel";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
@@ -35,6 +35,11 @@ export default async function InboxPage({
     admin ? listarRevisoesEnvio() : Promise.resolve(null),
     consultarPreferenciaFusoEquipe(),
   ]);
+  // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
+  if (c && !inicial.itens.some((i) => i.id === c)) {
+    const item = await obterItemListaInbox(usuario, c);
+    if (item) inicial.itens = [item, ...inicial.itens];
+  }
   const fuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
 
   return (
