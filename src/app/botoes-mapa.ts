@@ -1023,6 +1023,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Compareceu → primario/sm",
     "<button> Faltou → secundario/sm",
   ],
+  "comissoes/EstornarComissao.tsx": [
+    "<Botao> Estornar → perigo/md",
+  ],
   "comissoes/PainelComissoes.tsx": [
     "<Link> Fechar mês → secundario/md",
     "<button> Filtrar → secundario/md",

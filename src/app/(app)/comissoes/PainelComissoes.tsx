@@ -4,6 +4,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { Paginacao } from "@/components/Paginacao";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
+import { EstornarComissao } from "./EstornarComissao";
 import type { PainelComissoes as Painel, PeriodoComissao } from "@/server/crm/comissoes-painel";
 
 const PERIODO_ROTULO: Record<PeriodoComissao, string> = {
@@ -21,12 +22,15 @@ function calculo(l: Painel["linhas"][number]) {
   return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(Number(l.percentual))}% da ${BASE_ROTULO[l.base] ?? "base da política"}`;
 }
 
+/** Só PENDENTE/APROVADA estornam; a paga exigiria desconto no fechamento (fora da fase). */
+const estornavel = (status: string) => status === "PENDENTE" || status === "APROVADA";
+
 function dia(data: Date, fuso: string) {
   const [a, m, d] = dataCivilInstitucional(data, fuso).split("-");
   return `${d}/${m}/${a}`;
 }
 
-export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedores, veTodos, podeFecharMes, fuso, hrefPagina }: {
+export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedores, veTodos, podeFecharMes, podeEstornar = false, fuso, hrefPagina }: {
   painel: Painel;
   periodo: PeriodoComissao;
   pagina: number;
@@ -34,6 +38,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
   vendedores: { id: string; nome: string }[];
   veTodos: boolean;
   podeFecharMes: boolean;
+  podeEstornar?: boolean;
   fuso: string;
   hrefPagina: (pagina: number) => string;
 }) {
@@ -140,6 +145,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                     <th scope="col" className="px-4 py-2 font-medium">Valor</th>
                     <th scope="col" className="px-4 py-2 font-medium">Situação</th>
                     <th scope="col" className="px-4 py-2 font-medium">Competência</th>
+                    {podeEstornar && <th scope="col" className="px-4 py-2 font-medium">Ações</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -152,6 +158,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                       <td className="px-4 py-2">{moeda(l.valor, l.moeda)}</td>
                       <td className="px-4 py-2">{rotular(STATUS_COMISSAO_LABEL, l.status)}</td>
                       <td className="px-4 py-2">{dia(l.competencia, fuso)}</td>
+                      {podeEstornar && <td className="px-4 py-2">{estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -165,6 +172,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                   <p>{calculo(l)}</p>
                   <p className="flex flex-wrap justify-between gap-2"><span className="font-medium">{moeda(l.valor, l.moeda)}</span><span>{rotular(STATUS_COMISSAO_LABEL, l.status)}</span></p>
                   <p className="text-xs text-gray-600">{dia(l.competencia, fuso)}</p>
+                  {podeEstornar && estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}
                 </li>
               ))}
             </ul>

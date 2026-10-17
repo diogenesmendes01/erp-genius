@@ -3,6 +3,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { prisma } from "@/lib/prisma";
 import { hrefLista, lerOpcao, lerPagina, lerTexto, type ParametrosUrl } from "@/lib/pagina-url";
 import { carregarPainelComissoes, type PeriodoComissao } from "@/server/crm/comissoes-painel";
+import { capacidadesCrm } from "@/server/crm/permissoes";
 import { PainelComissoes } from "./PainelComissoes";
 
 const PERIODOS: readonly PeriodoComissao[] = ["mes", "mes_anterior", "trimestre", "ano"];
@@ -34,6 +35,7 @@ export default async function ComissoesPage({ searchParams }: { searchParams?: P
       vendedores={vendedores}
       veTodos={veTodos}
       podeFecharMes={papeis.includes(Papel.FINANCEIRO)}
+      podeEstornar={capacidadesCrm(papeis).has("comissoes.estornar")}
       fuso={config?.fusoInstitucional ?? "America/Sao_Paulo"}
       hrefPagina={(p) => hrefLista("/comissoes", { periodo: periodo === "mes" ? null : periodo, vendedor: vendedorId, pagina: p })}
     />
