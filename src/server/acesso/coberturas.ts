@@ -21,7 +21,7 @@ export async function concederCobertura(input: { titularId: string; substitutoId
       const cobertura = await tx.coberturaCarteira.create({ data: { ...dados, concedenteId: autor.id } });
       await registrarEvento(tx, { tipo: "CoberturaConcedida", agregadoTipo: "CoberturaCarteira", agregadoId: cobertura.id, autorId: autor.id, payload: { ...dados, inicio: dados.inicio.toISOString(), fim: dados.fim.toISOString() } });
     });
-    revalidatePath("/carteiras");
+    revalidatePath("/carteira");
   });
 }
 
@@ -36,6 +36,6 @@ export async function revogarCobertura(id: string) {
       await tx.coberturaCarteira.update({ where: { id }, data: { revogadaEm: new Date() } });
       await registrarEvento(tx, { tipo: "CoberturaRevogada", agregadoTipo: "CoberturaCarteira", agregadoId: id, autorId: autor.id });
     });
-    revalidatePath("/carteiras");
+    revalidatePath("/carteira");
   });
 }

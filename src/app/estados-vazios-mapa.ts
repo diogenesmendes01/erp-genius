@@ -382,6 +382,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/alunos/turma/[id]/page.tsx": [
     "linha · Nenhum aluno alocado.",
   ],
+  "src/app/(app)/comissoes/PainelComissoes.tsx": [
+    "bloco · {filtrando ? \"Nenhuma comissão com esses filtros.\" : \"Nenhuma comissão neste período.\"}",
+  ],
   "src/app/(app)/configuracao/catalogo/EntradasOfertas.tsx": [
     "compacto · Cadastre a oferta do produto no país para configurar sua entrada.",
   ],
@@ -399,6 +402,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/configuracao/migracao/[loteId]/EnsaioVinculoMigracao.tsx": [
     "compacto · Ainda não há ensaio registrado para esta fotografia.",
+  ],
+  "src/app/(app)/configuracao/migracao/[loteId]/page.tsx": [
+    "bloco · Nenhuma linha neste trecho do lote: o link ficou antigo.",
   ],
   "src/app/(app)/configuracao/migracao/page.tsx": [
     "bloco · Nenhum lote foi preparado ainda.",
@@ -477,6 +483,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma restrição ou solicitação pendente.",
   ],
   "src/app/(app)/financeiro/FilaCobranca.tsx": [
+    "bloco · Nenhuma cobrança a partir deste ponto da fila: as seguintes já foram resolvidas ou o link ficou anti",
     "bloco · Nada nesta visão.",
   ],
   "src/app/(app)/financeiro/FinanceiroPainel.tsx": [
@@ -489,6 +496,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Sem comissões.",
   ],
   "src/app/(app)/financeiro/InformesPagamento.tsx": [
+    "compacto · Nenhum informe a partir deste ponto da fila: os seguintes já foram conferidos ou o link ficou antigo",
     "compacto · Nenhum informe neste atendimento.",
   ],
   "src/app/(app)/financeiro/RetomadasPainel.tsx": [
@@ -537,6 +545,12 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/financeiro/recebimentos/page.tsx": [
     "compacto · Nenhum recebimento nesta página.",
     "compacto · Nenhum recebimento registrado.",
+  ],
+  "src/app/(app)/carteira/CoberturasPainel.tsx": [
+    "compacto · Nenhuma cobertura cadastrada.",
+  ],
+  "src/app/(app)/carteira/ListaCarteira.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na carteira.\"}",
   ],
   "src/app/(app)/funil/PainelOportunidade.tsx": [
     "compacto · Nenhuma atividade registrada.",
@@ -724,6 +738,8 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/secretaria/envios-portal/page.tsx": [
     "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · Nenhum envio com resultado incerto para conciliar.",
+    "bloco · Nenhum envio com falha.",
     "bloco · Nenhuma solicitação de acesso ao portal na fila.",
   ],
   "src/app/(app)/secretaria/reservas/[id]/page.tsx": [

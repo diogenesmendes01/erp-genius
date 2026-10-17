@@ -21,6 +21,8 @@ import LoadingAlunos from "@/app/(app)/alunos/(lista)/loading";
 import LoadingLeads from "@/app/(app)/leads/(lista)/loading";
 import LoadingFunil from "@/app/(app)/funil/loading";
 import LoadingTarefas from "@/app/(app)/tarefas/loading";
+import LoadingCarteira from "@/app/(app)/carteira/loading";
+import LoadingComissoes from "@/app/(app)/comissoes/loading";
 import LoadingInbox from "@/app/(app)/inbox/loading";
 import LoadingFinanceiro from "@/app/(app)/financeiro/(painel)/loading";
 import LoadingContinuidade from "@/app/(app)/financeiro/continuidade/loading";
@@ -44,6 +46,8 @@ import ErroEmpresas from "@/app/(app)/empresas/error";
 import ErroFinanceiro from "@/app/(app)/financeiro/error";
 import ErroFunil from "@/app/(app)/funil/error";
 import ErroTarefas from "@/app/(app)/tarefas/error";
+import ErroCarteira from "@/app/(app)/carteira/error";
+import ErroComissoes from "@/app/(app)/comissoes/error";
 import ErroInbox from "@/app/(app)/inbox/error";
 import ErroLeads from "@/app/(app)/leads/error";
 import ErroOportunidades from "@/app/(app)/oportunidades/error";
@@ -62,6 +66,8 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/leads/(lista)": { Componente: LoadingLeads, titulos: 1, rotulo: "Carregando leads" },
   "src/app/(app)/funil": { Componente: LoadingFunil, titulos: 1, rotulo: "Carregando funil" },
   "src/app/(app)/tarefas": { Componente: LoadingTarefas, titulos: 1, rotulo: "Carregando tarefas" },
+  "src/app/(app)/carteira": { Componente: LoadingCarteira, titulos: 1, rotulo: "Carregando carteira" },
+  "src/app/(app)/comissoes": { Componente: LoadingComissoes, titulos: 1, rotulo: "Carregando comissões" },
   "src/app/(app)/inbox": { Componente: LoadingInbox, titulos: 1, rotulo: "Carregando conversas" },
   "src/app/(app)/financeiro/(painel)": { Componente: LoadingFinanceiro, titulos: 0, rotulo: "Carregando financeiro" },
   "src/app/(app)/financeiro/continuidade": { Componente: LoadingContinuidade, titulos: 0, rotulo: "Carregando fila de continuidade mensal…" },
@@ -138,11 +144,13 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/portal-aluno": { Componente: ErroPortalAluno, caminho: "/portal-aluno", titulo: "Não foi possível abrir esta página", voltar: null },
   "src/app/(app)/academico": { Componente: ErroAcademico, caminho: "/academico/avaliacoes", titulo: "Não foi possível carregar o acadêmico", voltar: "/academico" },
   "src/app/(app)/alunos": { Componente: ErroAlunos, caminho: "/alunos/a1", titulo: "Não foi possível carregar os alunos", voltar: "/alunos" },
+  "src/app/(app)/comissoes": { Componente: ErroComissoes, caminho: "/comissoes", titulo: "Não foi possível carregar as comissões", voltar: "/home" },
   "src/app/(app)/configuracao": { Componente: ErroConfiguracao, caminho: "/configuracao/migracao/l1", titulo: "Não foi possível carregar esta configuração", voltar: "/configuracao" },
   "src/app/(app)/diario": { Componente: ErroDiario, caminho: "/diario/reposicoes/r1/troca-fonte", titulo: "Não foi possível carregar o diário de aulas", voltar: "/diario" },
   "src/app/(app)/empresas": { Componente: ErroEmpresas, caminho: "/empresas/e1", titulo: "Não foi possível carregar as empresas", voltar: "/empresas" },
   "src/app/(app)/financeiro": { Componente: ErroFinanceiro, caminho: "/financeiro/acertos-taxa", titulo: "Não foi possível carregar o financeiro", voltar: "/financeiro" },
   "src/app/(app)/funil": { Componente: ErroFunil, caminho: "/funil", titulo: "Não foi possível carregar o funil", voltar: "/home" },
+  "src/app/(app)/carteira": { Componente: ErroCarteira, caminho: "/carteira", titulo: "Não foi possível carregar a carteira", voltar: "/home" },
   "src/app/(app)/inbox": { Componente: ErroInbox, caminho: "/inbox", titulo: "Não foi possível carregar a inbox", voltar: "/home" },
   "src/app/(app)/leads": { Componente: ErroLeads, caminho: "/leads/l1/contratacao", titulo: "Não foi possível carregar os leads", voltar: "/leads" },
   "src/app/(app)/matriculas/[id]": { Componente: ErroMatricula, caminho: "/matriculas/m1/preparacao", params: { id: "m1" }, titulo: "Não foi possível carregar esta seção da matrícula", voltar: "/matriculas/m1" },
@@ -238,13 +246,18 @@ describe("error.tsx: área, volta e \"Tentar de novo\" (E10)", () => {
     // Configuração: uma sub-aba já é o índice (as outras seguem no layout).
     expect(voltaEm("src/app/(app)/configuracao", "/configuracao/usuarios")).toEqual(["/home"]);
     expect(voltaEm("src/app/(app)/configuracao", "/configuracao")).toEqual(["/home"]);
-    // Matrícula: da seção ao hub; do hub à Secretaria.
-    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1")).toEqual(["/secretaria"]);
+    // Matrícula: da seção ao hub; do hub ao início — Financeiro e Gerência pedagógica abrem o hub, mas não
+    // a Secretaria (C1 da R1 da #174).
+    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1")).toEqual(["/home"]);
+    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1/")).toEqual(["/home"]);
+    expect(voltaEm("src/app/(app)/matriculas/[id]", "/matriculas/m1/emissao")).toEqual(["/matriculas/m1"]);
   });
 
   it("o link de volta da matrícula tem o nome do destino (mapa da trilha)", () => {
     expect(abrir(ERROS["src/app/(app)/matriculas/[id]"]).html).toContain('aria-label="Voltar para Matrícula"');
-    expect(abrir(ERROS["src/app/(app)/matriculas/[id]"], "/matriculas/m1").html).toContain('aria-label="Voltar para Secretaria"');
+    const hub = abrir(ERROS["src/app/(app)/matriculas/[id]"], "/matriculas/m1").html;
+    expect(hub).toContain('aria-label="Voltar para Home"');
+    expect(hub).not.toContain('href="/secretaria"');
   });
 
   it("destinoDoErro ignora query string e barra final, e aceita outro destino acima do índice", () => {

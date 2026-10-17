@@ -397,6 +397,20 @@ enum FinalidadeAtendimentoWhatsApp {
   PEDAGOGICO
 }
 
+enum StatusAtendimentoWhatsApp {
+  ABERTO_SEM_RESPONSAVEL
+  EM_ATENDIMENTO
+  AGUARDANDO_CLIENTE
+  ENCERRADO
+}
+
+// Prazo de primeira resposta por setor, em minutos (valores provisórios, Q3).
+model PrazoRespostaSetor {
+  finalidade FinalidadeAtendimentoWhatsApp @id
+  minutos Int
+  atualizadoEm DateTime @updatedAt
+}
+
 model AtendimentoWhatsApp {
   id String @id @default(cuid())
   conversaId String
@@ -423,10 +437,19 @@ model AtendimentoWhatsApp {
   ultimoInboundEm DateTime?
   inboundTratadoEm DateTime?
   naoLidas Int @default(0)
+  status StatusAtendimentoWhatsApp @default(ABERTO_SEM_RESPONSAVEL)
+  primeiroInboundEm DateTime?
+  primeiraRespostaEm DateTime?
+  prazoRespostaEm DateTime?
+  atendimentoOrigemId String?
+  atendimentoOrigem AtendimentoWhatsApp? @relation("TransferenciaAtendimento", fields: [atendimentoOrigemId], references: [id], onDelete: Restrict)
+  transferidos AtendimentoWhatsApp[] @relation("TransferenciaAtendimento")
   mensagens MensagemWhatsApp[]
   intencoes IntencaoMensagem[]
   participantes ParticipanteAtendimentoWhatsApp[]
   @@unique([conversaId, contextoChave])
+  @@index([status, finalidade])
+  @@index([atendimentoOrigemId])
   @@index([leadId])
   @@index([alunoId])
   @@index([matriculaId])
@@ -438,8 +461,9 @@ model ParticipanteAtendimentoWhatsApp {
   atendimentoId String
   atendimento AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   usuarioId String
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  usuario Usuario @relation("ParticipanteUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
   concedenteId String
+  concedente Usuario @relation("ConcedenteParticipante", fields: [concedenteId], references: [id], onDelete: Restrict)
   inicio DateTime
   fim DateTime
   revogadoEm DateTime?
@@ -468,6 +492,8 @@ model Usuario {
   tarefasCriadas Tarefa[] @relation("CriadorTarefa")
   tarefasConcluidas Tarefa[] @relation("ConcluidaPorTarefa")
   notificacoes NotificacaoUsuario[]
+  preferenciasConversaInbox PreferenciaConversaUsuario[]
+  favoritosMensagemInbox FavoritoMensagemUsuario[]
   vencimentosAditivoPreparados PropostaVencimentoAditivo[] @relation("PreparadorVencimentoAditivo")
   vencimentosAditivoDecididos DecisaoVencimentoAditivo[] @relation("DecisorVencimentoAditivo")
   vencimentosAditivoAplicados AplicacaoVencimentoAditivo[] @relation("ExecutorVencimentoAditivo")
@@ -753,7 +779,8 @@ model Usuario {
   coberturasSubstituto CoberturaCarteira[] @relation("SubstitutoCobertura")
   coberturasConcedidas CoberturaCarteira[] @relation("ConcedenteCobertura")
   atendimentosResponsavel AtendimentoWhatsApp[] @relation("ResponsavelAtendimentoWhatsApp")
-  participacoesAtendimento ParticipanteAtendimentoWhatsApp[]
+  participacoesAtendimento ParticipanteAtendimentoWhatsApp[] @relation("ParticipanteUsuario")
+  participacoesConcedidas ParticipanteAtendimentoWhatsApp[] @relation("ConcedenteParticipante")
   // dados pessoais (ex.: professores importados — doc 23). Opcionais.
   telefoneE164      String?
   documento         String?
@@ -772,6 +799,7 @@ model Usuario {
   ajustes           AjusteFinanceiro[]  @relation("AutorAjustes")
   movimentacoes     MovimentacaoAluno[] @relation("AutorMovimentacoes")
   numerosWhatsApp   NumeroWhatsApp[]    @relation("DonoNumerosWhatsApp")
+  numerosTriagemWhatsApp NumeroWhatsApp[] @relation("TriagemNumeroWhatsApp")
   autorizacoesComunicacaoAcademicaAutorizadas AutorizacaoComunicacaoAcademica[] @relation("AutorizadorComunicacaoAcademica")
   autorizacoesComunicacaoAcademicaRevogadas AutorizacaoComunicacaoAcademica[] @relation("RevogadorComunicacaoAcademica")
   mensagensWhatsApp MensagemWhatsApp[]  @relation("AutorMensagensWhatsApp")
@@ -1004,6 +1032,7 @@ enum StatusTurma {
 }
 
 model Turma {
+  gruposWhatsApp GrupoWhatsApp[]
   conferenciasRegraHistorica PropostaConferenciaRegraHistoricaTurma[]
   correspondenciasMigracao CorrespondenciaTurmaMigracao[]
   registrosAvaliacao RegistroAvaliacaoMatricula[]
@@ -2310,10 +2339,14 @@ model NumeroWhatsApp {
   sessao       SessaoNumero     @default(DESCONECTADO) // relevante só p/ BAILEYS
   donoId       String? // dono da conversa = dono do número (doc 26 §Camada 3)
   dono         Usuario?         @relation("DonoNumerosWhatsApp", fields: [donoId], references: [id])
+  triagemResponsavelId String? // responsável pela triagem do número (null = ADMINISTRADOR, Q2 provisória)
+  triagemResponsavel   Usuario?         @relation("TriagemNumeroWhatsApp", fields: [triagemResponsavelId], references: [id], onDelete: SetNull)
   ativo        Boolean          @default(true)
   criadoEm     DateTime         @default(now())
 
+  setores             NumeroSetorWhatsApp[]
   conversas           ConversaWhatsApp[]
+  grupos              GrupoWhatsApp[]
   mensagens           MensagemWhatsApp[]
   intencoes           IntencaoMensagem[]
   politicas           PoliticaRegua[]
@@ -2325,6 +2358,17 @@ model NumeroWhatsApp {
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
   // mensagem cairia na conversa/dono errados (review PR #51 P2-6).
   @@unique([driver, providerRef])
+}
+
+/// Setores que um número atende (um número serve vários setores; sem repetir).
+model NumeroSetorWhatsApp {
+  id         String                        @id @default(cuid())
+  numeroId   String
+  numero     NumeroWhatsApp                @relation(fields: [numeroId], references: [id], onDelete: Cascade)
+  finalidade FinalidadeAtendimentoWhatsApp
+  criadoEm   DateTime                      @default(now())
+
+  @@unique([numeroId, finalidade])
 }
 
 model ContatoWhatsApp {
@@ -2354,13 +2398,34 @@ model ContatoWhatsApp {
   @@index([pessoaId])
 }
 
+// Grupo do WhatsApp visto por um número (E3.5): conversa de grupo não tem contato individual
+// nem abre atendimento — só leitura e escopo (Divergência 3 do plano).
+model GrupoWhatsApp {
+  id       String         @id @default(cuid())
+  numeroId String
+  numero   NumeroWhatsApp @relation(fields: [numeroId], references: [id])
+  grupoJid String
+  nome     String
+  turmaId  String?
+  turma    Turma?         @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  criadoEm DateTime       @default(now())
+
+  conversas ConversaWhatsApp[]
+
+  @@unique([numeroId, grupoJid])
+}
+
 model ConversaWhatsApp {
+  preferenciasUsuarios PreferenciaConversaUsuario[]
   atendimentos AtendimentoWhatsApp[]
   id               String          @id @default(cuid())
   numeroId         String
   numero           NumeroWhatsApp  @relation(fields: [numeroId], references: [id])
-  contatoId        String
-  contato          ContatoWhatsApp @relation(fields: [contatoId], references: [id])
+  // XOR (CHECK "Conversa_contato_xor_grupo"): conversa individual tem contato; de grupo tem grupo.
+  contatoId        String?
+  contato          ContatoWhatsApp? @relation(fields: [contatoId], references: [id], onDelete: Restrict)
+  grupoId          String?
+  grupo            GrupoWhatsApp?  @relation(fields: [grupoId], references: [id], onDelete: Restrict)
   ultimaMensagemEm DateTime?
   ultimoInboundEm  DateTime? // alimenta a lei do despachante + silêncio pós-inbound (S4)
   // "Tratar" o inbound (S4/E3): promessa/pagamento pela inbox ou "retomar régua" marcam
@@ -2377,6 +2442,7 @@ model ConversaWhatsApp {
   mensagens MensagemWhatsApp[]
 
   @@unique([numeroId, contatoId]) // um contexto conversa por um número só (doc 26)
+  @@unique([numeroId, grupoId])
 }
 
 enum DirecaoMensagem {
@@ -2406,9 +2472,12 @@ enum OrigemEnvio {
   HUMANO
   CRON
   LOTE
+  CELULAR // eco fromMe: enviada pelo app do celular, fora do ERP (E3.6)
+  IA // resposta do agente Aria (motor, Fase 4)
 }
 
 model MensagemWhatsApp {
+  favoritosUsuarios FavoritoMensagemUsuario[]
   atendimentoId String?
   atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   id         String           @id @default(cuid())
@@ -2427,10 +2496,15 @@ model MensagemWhatsApp {
   driver            DriverWhatsApp
   origem            OrigemEnvio? // só SAIDA
   providerMessageId String? // wamid/key.id do driver
+  clientMessageId   String?           @unique // UUID por tentativa de envio do motor (Fase 4); nulo com Meta/Evolution
   autorId           String?
   autor             Usuario?          @relation("AutorMensagensWhatsApp", fields: [autorId], references: [id])
   templateId        String?
   template          TemplateWhatsApp? @relation(fields: [templateId], references: [id])
+  // Remetente em conversa de GRUPO (E3.5); nulos em conversa individual.
+  participanteJid   String?
+  participanteE164  String?
+  participanteNome  String?
   criadoEm          DateTime          @default(now())
 
   intencao IntencaoMensagem?
@@ -8638,6 +8712,33 @@ model Certificado {
   // Um certificado por aluno×nível (review PR #60): aprovações concorrentes não geram
   // dois códigos públicos válidos — a ação trata o P2002 como idempotência.
   @@unique([alunoId, nivelId])
+}
+
+/// Preferências pessoais da inbox (fixar, silenciar, não lida). Tabela operacional, sem Evento.
+model PreferenciaConversaUsuario {
+  id String @id @default(cuid())
+  usuarioId String
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  conversaId String
+  conversa ConversaWhatsApp @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  fixadaEm DateTime?
+  silenciadaAte DateTime?
+  marcadaNaoLida Boolean @default(false)
+  lidaAte DateTime?
+  @@unique([usuarioId, conversaId])
+  @@index([conversaId])
+}
+
+/// Mensagens favoritas por usuário. Tabela operacional, sem Evento.
+model FavoritoMensagemUsuario {
+  id String @id @default(cuid())
+  usuarioId String
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mensagemId String
+  mensagem MensagemWhatsApp @relation(fields: [mensagemId], references: [id], onDelete: Cascade)
+  criadoEm DateTime @default(now())
+  @@unique([usuarioId, mensagemId])
+  @@index([mensagemId])
 }
 
 // Hub de identidade do CRM (Fase 2, 2.M1): ContatoWhatsApp (N telefones), Aluno,

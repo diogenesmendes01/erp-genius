@@ -67,7 +67,6 @@ const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRA
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
-  revalidatePath("/pipeline");
   revalidatePath("/alunos");
   revalidatePath("/financeiro", "layout");
   revalidatePath("/secretaria");
@@ -570,7 +569,7 @@ async function ativarMatriculaTx(
     if (com.status !== StatusComissao.PENDENTE) continue;
     await tx.comissao.updateMany({
       where: { id: com.id, status: StatusComissao.PENDENTE },
-      data: { status: StatusComissao.APROVADA },
+      data: { status: StatusComissao.APROVADA, aprovadaEm: new Date() },
     });
   }
 
