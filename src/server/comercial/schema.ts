@@ -28,7 +28,10 @@ export const LeadSchema = z.object({
   pessoaId: z.string().optional(),
   email: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
   origemCanal: z.nativeEnum(OrigemCanal).optional(),
+  // CRM B2B: `empresaId` liga uma `Empresa` ativa existente; `criarEmpresa` cria a `Empresa` com o `nome` informado
+  // e não cria `Pessoa` (Ruling do C2 da R1 do #196: nenhuma Pessoa recebe o nome da empresa).
   empresaId: z.string().optional(),
+  criarEmpresa: z.boolean().optional().default(false),
   origemCampanha: z.string().optional(),
   origemConjunto: z.string().optional(),
   origemAnuncio: z.string().optional(),

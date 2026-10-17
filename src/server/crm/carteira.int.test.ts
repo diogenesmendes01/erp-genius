@@ -52,7 +52,7 @@ describe("carregarCarteira", () => {
     expect((await carregarCarteira(sessaoDe(v2), base)).vendedores.map((v) => v.cobertoPor)).toEqual([null, "V2"]);
   });
   it("dias sem interação usa o último evento; filtros de tipo, turma e busca", async () => {
-    await prisma.evento.create({ data: { tipo: "LeadAtribuido", agregadoTipo: "Lead", agregadoId: op1, payload: {}, criadoEm: new Date(Date.now() - 20 * 86_400_000) } });
+    await prisma.evento.create({ data: { tipo: "InteracaoRegistrada", agregadoTipo: "Lead", agregadoId: op1, payload: {}, criadoEm: new Date(Date.now() - 20 * 86_400_000) } });
     const r = await carregarCarteira(sessaoDe(gerente), base);
     const ana = r.linhas.find((l) => l.oportunidadeId === op1)!;
     expect(ana.diasSemInteracao).toBeGreaterThanOrEqual(19);
@@ -61,6 +61,29 @@ describe("carregarCarteira", () => {
     expect((await carregarCarteira(sessaoDe(gerente), { ...base, busca: "bia" })).linhas.map((l) => l.nome)).toEqual(["Bia"]);
     expect((await carregarCarteira(sessaoDe(gerente), { ...base, tipo: "pj" })).linhas).toEqual([]);
     expect((await carregarCarteira(sessaoDe(gerente), { ...base, emTurma: true })).linhas).toEqual([]);
+  });
+  it("reatribuição e eventos administrativos não zeram os dias sem interação", async () => {
+    const vinteDias = new Date(Date.now() - 20 * 86_400_000);
+    await prisma.oportunidade.update({ where: { id: op1 }, data: { criadoEm: new Date(Date.now() - 40 * 86_400_000) } });
+    await prisma.evento.create({ data: { tipo: "InteracaoRegistrada", agregadoTipo: "Lead", agregadoId: op1, payload: {}, criadoEm: vinteDias } });
+    logadoComo(gerente.id);
+    const r = await reatribuirEmLote({ ids: [op1], vendedorId: v2.id, motivo: "Redistribuição" });
+    expect(r.ok && r.dado).toMatchObject({ feitas: 1 });
+    expect((await eventosDo("Lead", op1)).at(-1)).toMatchObject({ tipo: "LeadAtribuido" });
+    for (const tipo of ["TagAtribuida", "TagRemovida", "CampoPersonalizadoAlterado"]) {
+      await prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: op1, payload: {} } });
+    }
+    const ana = (await carregarCarteira(sessaoDe(gerente), base)).linhas.find((l) => l.oportunidadeId === op1)!;
+    expect(ana.dono?.id).toBe(v2.id);
+    expect(ana.diasSemInteracao).toBeGreaterThanOrEqual(19);
+    expect(ana.diasSemInteracao).toBeLessThanOrEqual(20);
+    expect((await carregarCarteira(sessaoDe(gerente), { ...base, semInteracaoDias: "15" })).linhas.map((l) => l.nome)).toEqual(["Ana"]);
+  });
+  it("só eventos administrativos: conta desde a criação da oportunidade", async () => {
+    await prisma.oportunidade.update({ where: { id: op1 }, data: { criadoEm: new Date(Date.now() - 31 * 86_400_000) } });
+    await prisma.evento.create({ data: { tipo: "LeadAtribuido", agregadoTipo: "Lead", agregadoId: op1, payload: {} } });
+    const ana = (await carregarCarteira(sessaoDe(gerente), base)).linhas.find((l) => l.oportunidadeId === op1)!;
+    expect(ana.diasSemInteracao).toBeGreaterThanOrEqual(30);
   });
   it("caminho positivo: b2b, turma ativa e tags aparecem nas linhas e nos filtros", async () => {
     const b2b = (await prisma.oportunidade.create({ data: { nome: "Empresa Alfa", vendedorDonoId: v1.id, b2b: true } as never })).id;

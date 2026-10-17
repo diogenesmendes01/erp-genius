@@ -7,6 +7,7 @@ import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { exigirCapacidadeCrm } from "./permissoes";
 import { escopoPessoas } from "./pessoas";
+import { comUnicidade } from "./unicidade";
 
 /** Classes do mapa de cores do Tailwind (fundo suave + texto), sem hex. */
 export const CLASSES_COR_TAG: Record<CorTag, string> = {
@@ -38,8 +39,9 @@ export async function criarTag(input: { nome: string; cor: CorTag; grupo?: strin
     exigirCapacidadeCrm(autor, "carteira.equipe");
     const dados = TagSchema.parse(input);
     const existente = await prisma.tag.findUnique({ where: { nome: dados.nome }, select: { id: true } });
-    if (existente) throw new ErroRegra("Já existe uma tag com este nome.");
-    return prisma.$transaction(async (tx) => {
+    const repetida = "Já existe uma tag com este nome.";
+    if (existente) throw new ErroRegra(repetida);
+    return comUnicidade(repetida, () => prisma.$transaction(async (tx) => {
       const tag = await tx.tag.create({ data: { nome: dados.nome, cor: dados.cor, grupo: dados.grupo ?? null } });
       await registrarEvento(tx, {
         tipo: "TagCriada",
@@ -49,7 +51,7 @@ export async function criarTag(input: { nome: string; cor: CorTag; grupo?: strin
         payload: { nome: tag.nome, cor: tag.cor, grupo: tag.grupo },
       });
       return { id: tag.id };
-    });
+    }));
   });
 }
 

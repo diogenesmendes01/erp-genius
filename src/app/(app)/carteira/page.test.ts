@@ -22,7 +22,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }), use
 
 import Page from "./page";
 import { ConsequenciaRevogacao } from "./CoberturasPainel";
-import { ConsequenciaReatribuicao, avisoLimiteLote, idsParaSelecionarTodas, textoConclusaoLote } from "./ListaCarteira";
+import { ConsequenciaReatribuicao, avisoLimiteLote, idsParaSelecionarTodas, recusadasComNome, textoConclusaoLote } from "./ListaCarteira";
 import { TEXTO_CONSEQUENCIA_REATRIBUICAO } from "@/server/crm/carteira";
 
 const linha = { oportunidadeId: "o1", pessoaId: null, empresaId: null, nome: "Ana", tipo: "pf", etapa: "NOVO", dono: { id: "v1", nome: "Bia" }, diasSemInteracao: 3, turmaAtiva: null, tags: [] };
@@ -114,5 +114,11 @@ describe("/carteira (página)", () => {
     expect(textoConclusaoLote({ feitas: 2, jaEram: 0 })).toBe("2 oportunidades reatribuídas.");
     expect(textoConclusaoLote({ feitas: 1, jaEram: 1 })).toBe("1 oportunidade reatribuída. 1 já era do novo responsável.");
     expect(textoConclusaoLote({ feitas: 0, jaEram: 3 })).toBe("0 oportunidades reatribuídas. 3 já eram do novo responsável.");
+  });
+
+  it("recusadas guardam o nome da linha no momento da resposta", () => {
+    const linhas = [{ oportunidadeId: "o1", nome: "Ana" }, { oportunidadeId: "o2", nome: "Bia" }];
+    const r = recusadasComNome([{ id: "o2", motivo: "Fora da carteira." }, { id: "sumiu", motivo: "x" }], linhas);
+    expect(r).toEqual([{ id: "o2", nome: "Bia", motivo: "Fora da carteira." }, { id: "sumiu", nome: "Oportunidade", motivo: "x" }]);
   });
 });
