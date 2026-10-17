@@ -22,7 +22,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }), use
 
 import Page from "./page";
 import { ConsequenciaRevogacao } from "./CoberturasPainel";
-import { ConsequenciaReatribuicao } from "./ListaCarteira";
+import { ConsequenciaReatribuicao, avisoLimiteLote, idsParaSelecionarTodas, textoConclusaoLote } from "./ListaCarteira";
 import { TEXTO_CONSEQUENCIA_REATRIBUICAO } from "@/server/crm/carteira";
 
 const linha = { oportunidadeId: "o1", pessoaId: null, empresaId: null, nome: "Ana", tipo: "pf", etapa: "NOVO", dono: { id: "v1", nome: "Bia" }, diasSemInteracao: 3, turmaAtiva: null, tags: [] };
@@ -96,5 +96,23 @@ describe("/carteira (página)", () => {
     expect(html).toContain("01/10/2026 09:00 até 20/10/2026 09:00");
     expect(html).toContain("Revogar a cobertura não tem desfazer pela tela.");
     expect(html).toContain("conceder uma nova cobertura");
+  });
+
+  it("selecionar todas marca no máximo 50 e a barra mostra o limite do lote", async () => {
+    const muitas = Array.from({ length: 60 }, (_, i) => ({ ...linha, oportunidadeId: `o${i}`, nome: `Pessoa ${i}` }));
+    expect(idsParaSelecionarTodas(muitas)).toEqual(muitas.slice(0, 50).map((l) => l.oportunidadeId));
+    expect(idsParaSelecionarTodas(muitas.slice(0, 3))).toEqual(["o0", "o1", "o2"]);
+    expect(await renderPagina(gerente, {}, muitas)).toContain('aria-label="Selecionar as primeiras 50 oportunidades"');
+    expect(await renderPagina(gerente)).toContain('aria-label="Selecionar todas as oportunidades"');
+    expect(avisoLimiteLote(10, 60)).toBeNull();
+    expect(avisoLimiteLote(50, 50)).toBeNull();
+    expect(avisoLimiteLote(50, 60)).toEqual({ texto: "O lote aceita no máximo 50 oportunidades por vez; as demais ficam para o próximo lote.", bloqueia: false });
+    expect(avisoLimiteLote(53, 60)).toEqual({ texto: "O lote aceita no máximo 50 oportunidades por vez; desmarque 3.", bloqueia: true });
+  });
+
+  it("conclusão do lote só conta as que mudaram de responsável", () => {
+    expect(textoConclusaoLote({ feitas: 2, jaEram: 0 })).toBe("2 oportunidades reatribuídas.");
+    expect(textoConclusaoLote({ feitas: 1, jaEram: 1 })).toBe("1 oportunidade reatribuída. 1 já era do novo responsável.");
+    expect(textoConclusaoLote({ feitas: 0, jaEram: 3 })).toBe("0 oportunidades reatribuídas. 3 já eram do novo responsável.");
   });
 });

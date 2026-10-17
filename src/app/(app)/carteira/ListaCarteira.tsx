@@ -10,9 +10,9 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ETAPA_LABEL } from "@/lib/labels";
 import { reatribuirCarteiraEmLote } from "@/server/crm/carteira-acoes";
-import { TEXTO_CONSEQUENCIA_REATRIBUICAO, type FiltrosCarteira, type LinhaCarteira, type VendedorCarteira } from "@/server/crm/carteira";
+import { MAX_LOTE_CARTEIRA, TEXTO_CONSEQUENCIA_REATRIBUICAO, type FiltrosCarteira, type LinhaCarteira, type VendedorCarteira } from "@/server/crm/carteira";
 
-const MAX_LOTE = 50;
+const MAX_LOTE = MAX_LOTE_CARTEIRA;
 const CAIXA = "flex h-11 w-11 items-center justify-center";
 const CONTROLE = "rounded-md border border-border-soft bg-surface-raised px-2 text-sm min-h-11 sm:min-h-9";
 
@@ -29,6 +29,29 @@ export function ConsequenciaReatribuicao({ quantidade, para }: { quantidade?: nu
       <p>Não há desfazer pela tela: para devolver, é preciso reatribuir de novo.</p>
     </>
   );
+}
+
+/** "Selecionar todas" marca só as primeiras linhas que cabem num lote. */
+export function idsParaSelecionarTodas(linhas: Pick<LinhaCarteira, "oportunidadeId">[]): string[] {
+  return linhas.slice(0, MAX_LOTE).map((l) => l.oportunidadeId);
+}
+
+/** Aviso da barra de seleção sobre o limite do lote; `bloqueia` desabilita "Mudar responsável". */
+export function avisoLimiteLote(selecionados: number, linhas: number): { texto: string; bloqueia: boolean } | null {
+  if (selecionados > MAX_LOTE) {
+    return { texto: `O lote aceita no máximo ${MAX_LOTE} oportunidades por vez; desmarque ${selecionados - MAX_LOTE}.`, bloqueia: true };
+  }
+  if (selecionados === MAX_LOTE && linhas > MAX_LOTE) {
+    return { texto: `O lote aceita no máximo ${MAX_LOTE} oportunidades por vez; as demais ficam para o próximo lote.`, bloqueia: false };
+  }
+  return null;
+}
+
+/** Mensagem depois do lote: só conta como reatribuída a que mudou de responsável. */
+export function textoConclusaoLote({ feitas, jaEram }: { feitas: number; jaEram: number }): string {
+  const mudaram = feitas === 1 ? "1 oportunidade reatribuída." : `${feitas} oportunidades reatribuídas.`;
+  if (jaEram === 0) return mudaram;
+  return `${mudaram} ${jaEram === 1 ? "1 já era do novo responsável." : `${jaEram} já eram do novo responsável.`}`;
 }
 
 function textoDias(dias: number): string {
@@ -57,7 +80,9 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
   const [recusadas, setRecusadas] = useState<{ id: string; motivo: string }[]>([]);
 
   const marcados = new Set(selecionados);
-  const todos = linhas.length > 0 && linhas.every((l) => marcados.has(l.oportunidadeId));
+  const paraTodas = idsParaSelecionarTodas(linhas);
+  const todos = paraTodas.length > 0 && paraTodas.every((id) => marcados.has(id));
+  const aviso = avisoLimiteLote(selecionados.length, linhas.length);
   const alternar = (id: string) => setSelecionados((atual) => (atual.includes(id) ? atual.filter((s) => s !== id) : [...atual, id]));
   const nomeDestino = vendedores.find((v) => v.id === destino)?.nome ?? "";
 
@@ -73,14 +98,13 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
     setConfirmando(true);
   }
 
-  function concluido(dado: { feitas: number; recusadas: { id: string; motivo: string }[] } | undefined) {
+  function concluido(dado: { feitas: number; jaEram: number; recusadas: { id: string; motivo: string }[] } | undefined) {
     setConfirmando(false);
     setSelecionados([]);
     setMotivo("");
     setDestino("");
     setRecusadas(dado?.recusadas ?? []);
-    const feitas = dado?.feitas ?? 0;
-    acao.setSucesso(feitas === 1 ? "1 oportunidade reatribuída." : `${feitas} oportunidades reatribuídas.`);
+    acao.setSucesso(textoConclusaoLote({ feitas: dado?.feitas ?? 0, jaEram: dado?.jaEram ?? 0 }));
     router.refresh();
   }
 
@@ -151,9 +175,9 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
                       <label className={CAIXA}>
                         <input
                           type="checkbox"
-                          aria-label="Selecionar todas as oportunidades"
+                          aria-label={linhas.length > MAX_LOTE ? `Selecionar as primeiras ${MAX_LOTE} oportunidades` : "Selecionar todas as oportunidades"}
                           checked={todos}
-                          onChange={() => setSelecionados(todos ? [] : linhas.map((l) => l.oportunidadeId))}
+                          onChange={() => setSelecionados(todos ? [] : paraTodas)}
                           className="h-4 w-4"
                         />
                       </label>
@@ -205,6 +229,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
           className="sticky bottom-0 z-30 space-y-2 rounded-lg border border-border-soft bg-surface-raised p-3 shadow-popover max-sm:fixed max-sm:inset-x-0 max-sm:rounded-b-none max-sm:rounded-t-dialog max-sm:p-4"
         >
           <p className="text-sm font-medium">{selecionados.length === 1 ? "1 oportunidade selecionada" : `${selecionados.length} oportunidades selecionadas`}</p>
+          {aviso && <p className={"text-sm " + (aviso.bloqueia ? "text-red-700" : "text-gray-600")}>{aviso.texto}</p>}
           <div className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-sm">
               Novo responsável
@@ -219,7 +244,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
               Motivo
               <input value={motivo} onChange={(e) => setMotivo(e.target.value)} minLength={5} maxLength={1000} className={CONTROLE} />
             </label>
-            <Botao tamanho="lg" onClick={pedirConfirmacao}>Mudar responsável</Botao>
+            <Botao tamanho="lg" onClick={pedirConfirmacao} disabled={aviso?.bloqueia}>Mudar responsável</Botao>
             <Botao variante="fantasma" tamanho="lg" onClick={() => { setSelecionados([]); acao.setErro(null); }}>Limpar seleção</Botao>
           </div>
           <FeedbackAcao erro={acao.erro} />
