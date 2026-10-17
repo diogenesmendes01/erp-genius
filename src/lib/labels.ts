@@ -1,4 +1,9 @@
 import {
+  TipoTarefa,
+  StatusTarefa,
+  PrioridadeTarefa,
+  OrigemTarefa,
+  TipoNotificacao,
   CorTag,
   TipoCampoPersonalizado,
   AlvoCampoPersonalizado,
@@ -51,6 +56,7 @@ import {
   TipoDestinacaoRecebimento,
   StatusPagamentoInformado,
   ReferenciaCoberturaMensal,
+  DriverWhatsApp,
   FinalidadeNumero,
   FinalidadeAtendimentoWhatsApp,
   StatusAtendimentoWhatsApp,
@@ -534,6 +540,18 @@ export const TIPO_MENSAGEM_LABEL: Readonly<Record<TipoMensagem, string>> = Objec
   VIDEO: "Vídeo",
   DOCUMENTO: "Documento",
   OUTRO: "Outro",
+  FIGURINHA: "Figurinha",
+  LOCALIZACAO: "Localização",
+  CONTATO: "Contato",
+  ENQUETE: "Enquete",
+  CHAMADA: "Chamada",
+});
+
+/** Driver de envio de um número de WhatsApp. Meta e Evolution ficam só como legado. */
+export const DRIVER_WHATSAPP_LABEL: Readonly<Record<DriverWhatsApp, string>> = Object.freeze({
+  MOTOR: "Motor WhatsApp",
+  META_CLOUD: "Meta cloud (legado)",
+  BAILEYS: "Evolution (legado)",
 });
 
 /** Envio pela API do WhatsApp (intenção da régua). Era "na fila de envio"… em minúscula na fila de
@@ -546,6 +564,17 @@ export const STATUS_INTENCAO_LABEL: Readonly<Record<StatusIntencao, string>> = O
   FALHOU: "Falhou",
   ADIADA: "Na fila (aguardando janela)",
   SIMULADA: "Simulada (ensaio)",
+});
+
+/** Status da mensagem agendada na tela de tarefas: o que o despachante realmente fez, sem prometer envio. */
+export const STATUS_MENSAGEM_AGENDADA_LABEL: Readonly<Record<StatusIntencao, string>> = Object.freeze({
+  PENDENTE: "Agendada",
+  ENVIANDO: "Enviando",
+  DESPACHADA: "Enviada",
+  CANCELADA: "Cancelada",
+  FALHOU: "Falhou",
+  ADIADA: "Adiada · fora da janela de envio",
+  SIMULADA: "Simulada",
 });
 
 // Financeiro.
@@ -721,4 +750,35 @@ export const TELA_FILTRO_SALVO_LABEL: Readonly<Record<TelaFiltroSalvo, string>> 
   CARTEIRA: "Carteira",
   TAREFAS: "Tarefas",
   COMISSOES: "Comissões",
+});
+
+// Fase 2 CRM (2.M4): tarefas e notificações.
+export const TIPO_TAREFA_LABEL: Readonly<Record<TipoTarefa, string>> = Object.freeze({
+  WHATSAPP: "WhatsApp",
+  LIGACAO: "Ligação",
+  EMAIL: "E-mail",
+  REUNIAO: "Reunião",
+  OUTRO: "Outro",
+});
+
+export const STATUS_TAREFA_LABEL: Readonly<Record<StatusTarefa, string>> = Object.freeze({
+  ABERTA: "Aberta",
+  CONCLUIDA: "Concluída",
+  CANCELADA: "Cancelada",
+});
+
+export const PRIORIDADE_TAREFA_LABEL: Readonly<Record<PrioridadeTarefa, string>> = Object.freeze({
+  NORMAL: "Normal",
+  ALTA: "Alta",
+});
+
+export const ORIGEM_TAREFA_LABEL: Readonly<Record<OrigemTarefa, string>> = Object.freeze({
+  HUMANO: "Criada por pessoa",
+  IA: "Criada pela IA",
+  IA_SUGERIDA: "Sugestão da IA aprovada",
+  AUTOMACAO: "Automação do funil",
+});
+
+export const TIPO_NOTIFICACAO_LABEL: Readonly<Record<TipoNotificacao, string>> = Object.freeze({
+  LEMBRETE_TAREFA: "Lembrete de tarefa",
 });
