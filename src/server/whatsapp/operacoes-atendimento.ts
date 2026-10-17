@@ -8,7 +8,7 @@ import { nomeCompleto } from "@/lib/nome";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { garantirContato } from "./identidade";
-import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
+import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
 import { donosDeLinhaVisiveis, ehLinhaComercial } from "./linha-comercial";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
@@ -324,9 +324,7 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
           : [Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA];
     if (!temPapel(u, ...papeisDaFinalidade)) throw new ErroRegra("Sua função não autoriza encerrar atendimentos desta finalidade.");
     await prisma.$transaction(async (tx) => {
-      await tx.atendimentoWhatsApp.update({ where: { id: a.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
-      await tx.intencaoMensagem.updateMany({ where: { atendimentoId: a.id, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "atendimento_encerrado" } });
-      await registrarEvento(tx, { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: u.id, payload: {} });
+      await encerrarAtendimentoNaTransacao(tx, a.id, u.id);
     });
     revalidatePath("/inbox");
   });

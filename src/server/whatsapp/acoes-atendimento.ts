@@ -5,8 +5,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { podeExecutar } from "@/server/inbox/permissoes";
-import { atendimentoVisivel } from "./atendimentos";
-import { papeisDoSetor } from "./setor";
+import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
+import { SETORES, papeisDoSetor, type Setor } from "./setor";
+import { setoresDoNumero } from "./numero-setor";
 import { proximoStatus } from "./status-atendimento";
 
 const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
@@ -90,5 +91,89 @@ export async function atribuirAtendimento(input: { atendimentoId: string; usuari
       await registrarEvento(tx, { tipo: "AtendimentoAtribuido", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: u.id, payload: { de: anterior, para: usuarioId } });
     });
     revalidatePath("/inbox");
+  });
+}
+
+const TransferirSchema = z.object({
+  atendimentoId: z.string().min(1),
+  destino: z.enum(SETORES as [Setor, ...Setor[]]),
+  destinoChave: z.string().min(1).nullable(),
+  contexto: z.string().trim().min(12, "Descreva o contexto da transferência (mínimo de 12 caracteres).").max(1000),
+});
+
+/**
+ * A chave do destino é a de `listarOpcoesAtendimento`, mas resolvida contra o banco e não contra o que o usuário
+ * enxerga (quem transfere não precisa ter alçada no setor de destino). FINANCEIRO:<matrícula>;
+ * PEDAGOGICO:<aluno>:<turma>:<matrícula>:(ALUNO|AUT:<autorização>).
+ */
+async function resolverDestino(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], destino: Setor, chave: string | null) {
+  if (destino === "FINANCEIRO") {
+    const p = chave?.split(":") ?? [];
+    if (p[0] !== "FINANCEIRO" || !p[1]) throw new ErroRegra("Escolha a matrícula do atendimento financeiro.");
+    const m = await tx.matricula.findUnique({ where: { id: p[1] }, select: { id: true, alunoId: true } });
+    if (!m) throw new ErroRegra("Matrícula do atendimento financeiro não encontrada.");
+    return { alunoId: m.alunoId, matriculaId: m.id, turmaId: null, autorizacaoComunicacaoAcademicaId: null };
+  }
+  if (destino === "PEDAGOGICO") {
+    const p = chave?.split(":") ?? [];
+    if (p[0] !== "PEDAGOGICO" || p.length < 5 || !p[1] || !p[2] || !p[3]) throw new ErroRegra("Escolha o aluno, a turma e a matrícula do atendimento pedagógico.");
+    const autorizacao = p[4] === "AUT" ? p[5] : null;
+    if (p[4] === "AUT" && !autorizacao) throw new ErroRegra("Escolha a autorização do atendimento pedagógico.");
+    const m = await tx.matricula.findFirst({ where: { id: p[3], alunoId: p[1] }, select: { id: true } });
+    if (!m) throw new ErroRegra("Matrícula pedagógica não corresponde ao aluno selecionado.");
+    return { alunoId: p[1], matriculaId: p[3], turmaId: p[2], autorizacaoComunicacaoAcademicaId: autorizacao };
+  }
+  return null;
+}
+
+/** Erro de trigger/regra do banco (264/265 etc.) vira ErroRegra com a mensagem do banco. */
+function comoErroRegra(e: unknown): never {
+  if (e instanceof ErroRegra) throw e;
+  const msg = e instanceof Error ? e.message : String(e);
+  // Trigger com RAISE EXCEPTION (SQLSTATE P0001): o Prisma embute a mensagem do banco no texto do erro.
+  const doBanco = /code: "P0001", message: "((?:[^"\\]|\\.)*)"/.exec(msg)?.[1];
+  if (doBanco) throw new ErroRegra(doBanco);
+  // Erro simples de domínio lançado por garantirAtendimento (Error comum, não do Prisma).
+  if (e instanceof Error && !e.constructor.name.startsWith("PrismaClient")) throw new ErroRegra(msg);
+  throw e;
+}
+
+/** Transferir = encerrar a origem e abrir outro atendimento no setor de destino (E3.3); o contexto da origem nunca muda. */
+export async function transferirAtendimento(input: { atendimentoId: string; destino: Setor; destinoChave: string | null; contexto: string }): Promise<Resultado<{ novoAtendimentoId: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const dados = TransferirSchema.parse(input);
+    const novoId = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
+      const a = await atendimentoVisivel(u, dados.atendimentoId);
+      if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
+      if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
+      if (!podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+      if (dados.destino === a.finalidade && !["FINANCEIRO", "PEDAGOGICO"].includes(dados.destino)) throw new ErroRegra("O atendimento já pertence a este setor.");
+      const ctx = await resolverDestino(tx, dados.destino, dados.destinoChave);
+      if (!(await setoresDoNumero(tx, a.numeroId)).includes(dados.destino)) throw new ErroRegra("O número deste atendimento não atende o setor escolhido.");
+      await encerrarAtendimentoNaTransacao(tx, a.id, u.id);
+      const conversaId = a.conversaId;
+      const antes = new Set((await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, select: { id: true } })).map((x) => x.id));
+      let novo;
+      try {
+        novo = await garantirAtendimento(tx, {
+          numeroId: a.numeroId, contatoId: a.contatoId, finalidade: dados.destino, reabrir: true, atendimentoOrigemId: a.id,
+          leadId: dados.destino === "COMERCIAL" ? a.leadId ?? a.contato.leadId : null,
+          alunoId: ctx?.alunoId ?? (dados.destino === "SECRETARIA" ? a.alunoId ?? a.contato.alunoId : null),
+          matriculaId: ctx?.matriculaId ?? null, turmaId: ctx?.turmaId ?? null,
+          autorizacaoComunicacaoAcademicaId: ctx?.autorizacaoComunicacaoAcademicaId ?? null, responsavelId: null,
+        });
+      } catch (e) { comoErroRegra(e); }
+      if (antes.has(novo.id)) throw new ErroRegra("Já existe um atendimento aberto neste setor e contexto para esta conversa.");
+      if (!novo.atendimentoOrigemId) novo = await tx.atendimentoWhatsApp.update({ where: { id: novo.id }, data: { atendimentoOrigemId: a.id } });
+      const payload = { de: a.finalidade, para: dados.destino, origemId: a.id, novoId: novo.id, contexto: dados.contexto };
+      for (const agregadoId of [a.id, novo.id]) {
+        await registrarEvento(tx, { tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", agregadoId, autorId: u.id, payload });
+      }
+      return novo.id;
+    }).catch(comoErroRegra);
+    revalidatePath("/inbox");
+    return { novoAtendimentoId: novoId };
   });
 }
