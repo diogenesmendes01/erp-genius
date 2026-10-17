@@ -5,7 +5,8 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
-import { garantirAtendimento } from "./atendimentos";
+import { criarNumeroSetor } from "@/test/integracao-whatsapp";
+import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 import { assumirAtendimento, atribuirAtendimento, devolverParaFila } from "./acoes-atendimento";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
@@ -15,16 +16,24 @@ function comoUsuario(u: U) { authMock.mockResolvedValue({ user: { id: u.id } });
 /** auth() é um mock global: cada chamada concorrente precisa enxergar o seu usuário já na 1ª leitura. */
 async function como<T>(u: U, f: () => Promise<T>): Promise<T> { comoUsuario(u); return f(); }
 
-async function cenario() {
+/**
+ * Padrão: número institucional que atende o COMERCIAL fora de uma linha de VENDAS — ali o responsável gravado dá
+ * acesso (escopo.ts). `linhaVendas` monta a linha de VENDAS, onde a posse vem do dono da linha (LC-D02).
+ */
+async function cenario(opcoes: { linhaVendas?: boolean; donoDaLinha?: "v1" } = {}) {
   const v1 = await criarUsuario([Papel.VENDEDOR], "Vend Um");
   const v2 = await criarUsuario([Papel.VENDEDOR], "Vend Dois");
   const gc = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
   const fin = await criarUsuario([Papel.FINANCEIRO], "Fin");
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990001", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", donoId: null } });
+  const numero = opcoes.linhaVendas
+    ? await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990001", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", donoId: opcoes.donoDaLinha === "v1" ? v1.id : null } })
+    : await criarNumeroSetor({ telefoneE164: "+5511999990001", setores: ["COMERCIAL"], finalidade: "AGENDA", donoId: null });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" }));
   return { v1, v2, gc, fin, numero, contato, a };
 }
+const sessao = (u: { id: string; nome: string; papeis: Papel[] }) => ({ id: u.id, nome: u.nome, papeis: u.papeis });
+const MSG_LINHA = "Nesta linha de vendas o atendimento fica com o dono da linha; ele não pode ser assumido por quem não atende a linha.";
 const ler = (id: string) => prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id } });
 const eventos = (tipo: string) => prisma.evento.findMany({ where: { tipo }, orderBy: { criadoEm: "asc" } });
 
@@ -33,6 +42,7 @@ describe("assumir, devolver e atribuir", () => {
     const { v1, a } = await cenario();
     comoUsuario(v1); expect((await assumirAtendimento(a.id)).ok).toBe(true);
     expect(await ler(a.id)).toMatchObject({ responsavelId: v1.id, status: "EM_ATENDIMENTO" });
+    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
     const [e] = await eventos("AtendimentoAssumido");
     expect(e.payload).toEqual({ de: null, para: v1.id });
   });
@@ -76,6 +86,7 @@ describe("assumir, devolver e atribuir", () => {
     comoUsuario(gc); expect(await atribuirAtendimento({ atendimentoId: a.id, usuarioId: fin.id })).toEqual({ ok: false, erro: "A pessoa escolhida não atende este setor." });
     expect((await atribuirAtendimento({ atendimentoId: a.id, usuarioId: v2.id })).ok).toBe(true);
     expect(await ler(a.id)).toMatchObject({ responsavelId: v2.id, status: "EM_ATENDIMENTO" });
+    expect(await atendimentoVisivel(sessao(v2), a.id)).not.toBeNull();
     expect((await eventos("AtendimentoAtribuido"))[0].payload).toEqual({ de: null, para: v2.id });
     expect((await devolverParaFila(a.id)).ok).toBe(true);
     expect(await ler(a.id)).toMatchObject({ responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
@@ -109,5 +120,35 @@ describe("assumir, devolver e atribuir", () => {
     comoUsuario(gc); await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { status: "ENCERRADO", encerradoEm: new Date() } });
     expect((await devolverParaFila(a.id)).ok).toBe(false);
     expect(await ler(a.id)).toMatchObject({ responsavelId: v1.id, status: "ENCERRADO" });
+  });
+});
+
+describe("linha de VENDAS: a posse vem do dono da linha (B1 da R1 do #207)", () => {
+  it("vendedor que não é dono da linha não assume: recusa, segue na fila e continua visível", async () => {
+    const { v1, a } = await cenario({ linhaVendas: true });
+    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull(); // vê pela fila
+    comoUsuario(v1); expect(await assumirAtendimento(a.id)).toEqual({ ok: false, erro: MSG_LINHA });
+    expect(await ler(a.id)).toMatchObject({ responsavelId: null, status: "ABERTO_SEM_RESPONSAVEL" });
+    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
+    expect(await eventos("AtendimentoAssumido")).toHaveLength(0);
+  });
+
+  it("gerente não atribui a quem não é dono da linha: recusa sem gravar", async () => {
+    const { v2, gc, a } = await cenario({ linhaVendas: true });
+    comoUsuario(gc); expect(await atribuirAtendimento({ atendimentoId: a.id, usuarioId: v2.id })).toEqual({ ok: false, erro: MSG_LINHA });
+    expect(await ler(a.id)).toMatchObject({ responsavelId: null });
+    expect(await eventos("AtendimentoAtribuido")).toHaveLength(0);
+  });
+
+  it("dono da linha: assume da fila e recebe atribuição, e o atendimento continua visível para ele", async () => {
+    const { v1, gc, a } = await cenario({ linhaVendas: true, donoDaLinha: "v1" });
+    expect(await ler(a.id)).toMatchObject({ responsavelId: v1.id }); // a linha já entrega ao dono
+    comoUsuario(gc); expect((await devolverParaFila(a.id)).ok).toBe(true);
+    comoUsuario(v1); expect(await assumirAtendimento(a.id)).toEqual({ ok: true });
+    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
+    comoUsuario(gc); expect((await devolverParaFila(a.id)).ok).toBe(true);
+    expect(await atribuirAtendimento({ atendimentoId: a.id, usuarioId: v1.id })).toEqual({ ok: true });
+    expect(await ler(a.id)).toMatchObject({ responsavelId: v1.id });
+    expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
   });
 });
