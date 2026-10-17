@@ -86,7 +86,6 @@ function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
 
 function revalidarLead(id?: string) {
   revalidatePath("/leads");
-  revalidatePath("/pipeline");
   revalidatePath("/funil");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
@@ -148,6 +147,17 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
     const id = await prisma.$transaction(async (tx) => {
       const codigo = await gerarCodigo("lead");
       const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
+      // `Empresa` não tem dono nem carteira; o escopo possível é o cadastro estar ativo. Inexistente ou
+      // inativa devolve a mesma mensagem, em vez de estourar a FK (P2003) num erro genérico.
+      const empresaId = dados.empresaId || null;
+      if (empresaId) {
+        const empresa = await tx.empresa.findFirst({ where: { id: empresaId, ativo: true }, select: { id: true } });
+        if (!empresa) throw new ErroRegra("Empresa não encontrada.");
+      }
+      // Comportamento intencional nesta fase (R1 do PR #194, C2): com `pessoaId` informado, o telefone não
+      // entra em `ContatoWhatsApp`; e o `email` digitado só vai para a Pessoa quando ela é criada aqui (via
+      // `garantirPessoaTx`). Pessoa já existente — informada, achada pelo contato ou pelo aluno/responsável —
+      // não tem telefone nem e-mail atualizados por esta ação.
       let pessoaId = dados.pessoaId || null;
       if (pessoaId) {
         // Fora do escopo do autor (ou lápide) é indistinguível de inexistente: não vaza o contato.
@@ -172,7 +182,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
           telefoneE164,
           pessoaId,
           origemCanal: dados.origemCanal ?? null,
-          empresaId: dados.empresaId || null,
+          empresaId,
           paisId: dados.paisId || null,
           segmento: dados.segmento,
           temperatura: dados.temperatura,
@@ -620,7 +630,6 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     });
     revalidatePath("/home");
     revalidatePath("/leads");
-    revalidatePath("/pipeline");
   });
 }
 

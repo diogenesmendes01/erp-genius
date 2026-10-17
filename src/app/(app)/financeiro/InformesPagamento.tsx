@@ -11,13 +11,24 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import Link from "next/link";
+import { PaginacaoFila } from "@/components/PaginacaoFila";
+import { hrefLista } from "@/lib/pagina-url";
 
 function textoInstanteOperacional(iso: string, preferenciaFusoExibicao: string | null) {
   const exibicao = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
   return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
 }
 
-export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: { informes: Awaited<ReturnType<typeof listarInformesPagamento>>; preferenciaFusoExibicao?: string | null }) {
+/** Navegação da fila de informes a conferir (aba do /financeiro): cursores do trecho, rota e a volta ao início. */
+export type FilaInformes = { anterior: string | null; proxima: string | null; rota: string; inicioDaFila: string | null };
+
+export function InformesPagamento({ informes, fila = null, preferenciaFusoExibicao = null }: {
+  informes: Awaited<ReturnType<typeof listarInformesPagamento>>;
+  /** Só na fila do /financeiro (por cursor nos dois sentidos); a ficha do aluno mostra o histórico dele sem trechos. */
+  fila?: FilaInformes | null;
+  preferenciaFusoExibicao?: string | null;
+}) {
   const router = useRouter();
   // Conferência de dinheiro sem chave de idempotência (server/financeiro/acoes.ts:127); só a versão do
   // informe e a repetição pelo mesmo conferente (acoes.ts:136-137) protegem. Conferir antes de repetir.
@@ -33,7 +44,9 @@ export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: 
   return <section className="space-y-3">
     <h2 className="text-lg font-medium">Pagamentos informados</h2>
     <p className="text-sm text-gray-600">Informes a conferir preservam o saldo até a confirmação de outra pessoa do Financeiro.</p>
-    {!informes.length && <EstadoVazio>Nenhum informe neste atendimento.</EstadoVazio>}
+    {!informes.length && (fila?.inicioDaFila
+      ? <EstadoVazio acao={<Link className="text-brand-700 underline" href={fila.inicioDaFila}>Ir para o início da fila</Link>}>Nenhum informe a partir deste ponto da fila: os seguintes já foram conferidos ou o link ficou antigo.</EstadoVazio>
+      : <EstadoVazio>Nenhum informe neste atendimento.</EstadoVazio>)}
     {informes.map((i) => <article key={i.id} className="space-y-2 rounded-md border p-3 text-sm">
       <p><strong>{i.aluno}</strong> · {i.cobranca} · {formatarMoeda(i.valor, i.moeda)} · {new Date(i.dataPagamento).toLocaleDateString("pt-BR")}</p>
       <p>{rotular(STATUS_PAGAMENTO_INFORMADO_LABEL, i.status)} · {rotular(FORMA_PAGAMENTO_LABEL, i.forma)}</p>
@@ -48,5 +61,6 @@ export function InformesPagamento({ informes, preferenciaFusoExibicao = null }: 
       </div>}
       <FeedbackAcao erro={alvo === i.id ? acao.erro : null} />
     </article>)}
+    {fila && <PaginacaoFila anterior={fila.anterior} proxima={fila.proxima} href={(cursor) => hrefLista(fila.rota, cursor)} rotulo="Navegação da fila de informes a conferir" />}
   </section>;
 }
