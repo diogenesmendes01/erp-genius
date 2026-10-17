@@ -69,7 +69,7 @@ async function erroDaResposta(res: Response): Promise<ErroMotor> {
   }
   if (status === 409 && corpo.code === "EM_ANDAMENTO") return new ErroMotor("EM_ANDAMENTO", status, motivo);
   if (corpo.code === "RESULTADO_INCERTO") return new ErroMotor("RESULTADO_INCERTO", status, motivo, pid);
-  if (status === 404) return new ErroMotor("NUMERO_INEXISTENTE", status, motivo);
+  if (status === 404 && corpo.code === "NUMERO_INEXISTENTE") return new ErroMotor("NUMERO_INEXISTENTE", status, motivo);
   if (status === 403 && corpo.code === "ACAO_NAO_DISPONIVEL") return new ErroMotor("ACAO_NAO_DISPONIVEL", status, motivo);
   return new ErroMotor("HTTP", status, motivo);
 }
@@ -99,8 +99,18 @@ export async function chamarMotor<T>(rota: string, init: InitMotor): Promise<T> 
   }
   if (!res.ok) throw await erroDaResposta(res);
   if (res.status === 204) return undefined as T;
-  const texto = await res.text();
-  return (texto ? JSON.parse(texto) : undefined) as T;
+  let texto: string;
+  try {
+    texto = await res.text();
+  } catch (e) {
+    throw traduzirFalhaDeRede(e);
+  }
+  if (!texto) return undefined as T;
+  try {
+    return JSON.parse(texto) as T;
+  } catch {
+    throw new ErroMotor("HTTP", res.status, "resposta_invalida");
+  }
 }
 
 export async function baixarDoMotor(
