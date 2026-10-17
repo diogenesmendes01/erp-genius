@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { exigirSessao, ErroAutenticacao, exigirPapel, ErroPermissao } from "@/server/_shared/sessao";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
-import { decodificarCursor } from "@/server/inbox/cursor";
+import { cursorThreadValido } from "@/server/inbox/cursor";
 import { listarMensagensPagina } from "@/server/inbox/consultas-pagina";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const q = new URL(req.url).searchParams;
   const antes = q.get("antes") ?? undefined, depois = q.get("depois") ?? undefined;
-  if ((antes && !decodificarCursor(antes)) || (depois && !decodificarCursor(depois))) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
+  if ((antes && !cursorThreadValido(antes)) || (depois && !cursorThreadValido(depois))) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
   const limiteBruto = Number(q.get("limite"));
   const r = await listarMensagensPagina(usuario, id, { antes, depois, limite: Number.isFinite(limiteBruto) && limiteBruto > 0 ? limiteBruto : undefined });
   if (!r) return NextResponse.json({ erro: "Atendimento não encontrado." }, { status: 404 });

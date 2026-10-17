@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
-const { sessaoMock } = vi.hoisted(() => ({ sessaoMock: vi.fn() }));
+const { sessaoMock, sair } = vi.hoisted(() => ({ sessaoMock: vi.fn(), sair: vi.fn() }));
 vi.mock("@/server/_shared/sessao", async (orig) => ({ ...(await orig<typeof import("@/server/_shared/sessao")>()), exigirSessao: async () => { const u = await sessaoMock(); if (u === "SEM_SESSAO") throw new (await orig<typeof import("@/server/_shared/sessao")>()).ErroAutenticacao(); return u; } }));
-vi.mock("@/server/inbox/barramento", () => ({ assinarInbox: vi.fn(() => () => {}), iniciarEscuta: vi.fn(async () => {}) }));
+vi.mock("@/server/inbox/barramento", () => ({ assinarInbox: vi.fn(() => sair), iniciarEscuta: vi.fn(async () => {}) }));
 import { GET } from "./route";
 
-beforeEach(() => sessaoMock.mockReset());
+beforeEach(() => { sessaoMock.mockReset(); sair.mockReset(); });
 const sessao = (papeis: Papel[]) => ({ id: "u1", nome: "U", papeis });
 
 describe("GET /api/inbox/eventos", () => {
@@ -23,6 +23,19 @@ describe("GET /api/inbox/eventos", () => {
     const res = await GET(new Request("http://x/api/inbox/eventos", { signal: ctl.signal }));
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/event-stream");
+    expect(sair).not.toHaveBeenCalled();
     ctl.abort();
+    expect(sair).toHaveBeenCalledTimes(1);
+    await res.body!.cancel(); // cancel depois do abort não desassina de novo
+    expect(sair).toHaveBeenCalledTimes(1);
+  });
+  it("cancel do corpo (aba fechada) desassina uma vez", async () => {
+    sessaoMock.mockResolvedValue(sessao([Papel.VENDEDOR]));
+    const ctl = new AbortController();
+    const res = await GET(new Request("http://x/api/inbox/eventos", { signal: ctl.signal }));
+    await res.body!.cancel();
+    expect(sair).toHaveBeenCalledTimes(1);
+    ctl.abort();
+    expect(sair).toHaveBeenCalledTimes(1);
   });
 });

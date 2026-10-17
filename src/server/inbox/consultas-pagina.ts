@@ -104,7 +104,8 @@ const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: 
  * Página da thread, ordem (criadoEm, id). Sem `antes`/`depois`: as mais recentes. `antes`: as anteriores
  * ao cursor. `depois`: as posteriores. Devolve em ordem cronológica; `antes`/`depois` são os cursores para
  * continuar (null quando não há mais naquele sentido; em `antes=` o sentido "depois" não é calculado).
- * 404 (null) fora do escopo.
+ * 404 (null) fora do escopo. Cursor de thread com `em: null` (só existe na lista) é inválido: null, nunca
+ * a página mais recente em silêncio (o cliente duplicaria mensagens).
  */
 export async function listarMensagensPagina(
   u: UsuarioSessao, atendimentoId: string, o: { antes?: string; depois?: string; limite?: number } = {},
@@ -119,6 +120,7 @@ export async function listarMensagensPagina(
   const cDepois = !cAntes && o.depois ? decodificarCursor(o.depois) : null;
   const sentido = cDepois ? "asc" : "desc";
   const pos = cDepois ?? cAntes;
+  if (pos && pos.em === null) return null;
   const operador = sentido === "asc" ? "gt" : "lt";
   const dataPos = pos?.em ? new Date(pos.em) : null;
   const posicao: Prisma.MensagemWhatsAppWhereInput = pos && dataPos

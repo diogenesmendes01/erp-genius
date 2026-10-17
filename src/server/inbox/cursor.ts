@@ -18,3 +18,8 @@ export function decodificarCursor(s: string): CursorInbox | null {
     return { em, id };
   } catch { return null; }
 }
+
+/** Cursor da thread: toda mensagem tem `criadoEm`, então `em: null` (válido só na lista) é inválido aqui. */
+export function cursorThreadValido(s: string): boolean {
+  return decodificarCursor(s)?.em != null;
+}
