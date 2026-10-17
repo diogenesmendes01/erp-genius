@@ -39,6 +39,7 @@ export type AgregadoTipo =
   // são tabelas operacionais (doc 29 regra 3 — "Evento = auditoria; tabela = operacional").
   | "NumeroWhatsApp"
   | "ContatoWhatsApp"
+  | "GrupoWhatsApp"
   | "TemplateWhatsApp"
   | "IntencaoMensagem"
   | "PoliticaRegua"

@@ -14,6 +14,7 @@ import type { ConteudoEspecial } from "../canal";
 import type { EnvioInboxResultado } from "../acoes";
 import { executarAcaoMotor } from "./acoes";
 import { ErroMotor, MENSAGEM_LIMITE_RITMO } from "./cliente";
+import { podeExecutar } from "@/server/inbox/permissoes";
 
 const JANELA_EDICAO_MS = 15 * 60_000;
 
@@ -288,5 +289,111 @@ export async function enviarMensagemGrupo(input: { conversaId: string; texto: st
     });
     revalidatePath("/inbox");
     return { status };
+  });
+}
+
+const jidDe = (e164: string) => `${e164.replace(/\D/g, "")}@s.whatsapp.net`;
+const ParticipantesSchema = z.array(z.string().regex(/^\+\d{8,15}$/, "Telefone de participante inválido.")).min(1, "Informe ao menos um participante.").max(256, "O grupo aceita no máximo 256 participantes por vez.");
+const BloquearSchema = z.object({
+  atendimentoId: z.string().min(1),
+  motivo: z.string().trim().min(10, "Informe o motivo do bloqueio (mínimo 10 caracteres)."),
+  desbloquear: z.boolean().optional(),
+});
+
+/** Bloqueia (ou desbloqueia) o contato no WhatsApp (contact.block). Só ADMINISTRADOR e gerentes; o motivo vai no Evento. */
+export async function bloquearContatoWhatsApp(input: { atendimentoId: string; motivo: string; desbloquear?: boolean }): Promise<Resultado> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    if (!podeExecutar(u, "bloquear", { setor: "COMERCIAL", responsavelId: null })) throw new ErroRegra("Sem permissão para bloquear contatos.");
+    const dados = BloquearSchema.parse(input);
+    const a = await atendimentoVisivel(u, dados.atendimentoId);
+    if (!a) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+    if (a.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não permite bloquear contatos.");
+    const desbloquear = dados.desbloquear === true;
+    try {
+      await executarAcaoMotor(a.numero.providerRef ?? a.numero.id, "contact.block", { contactId: jidDe(a.contato.waId ?? a.contato.telefoneE164), value: !desbloquear });
+    } catch (e) { traduzir(e); }
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: desbloquear ? "ContatoWhatsAppDesbloqueado" : "ContatoWhatsAppBloqueado", agregadoTipo: "ContatoWhatsApp", agregadoId: a.contatoId, autorId: u.id,
+        payload: { motivo: dados.motivo, atendimentoId: a.id, numeroId: a.numeroId },
+      });
+    });
+    revalidatePath("/inbox");
+    return undefined;
+  });
+}
+
+const CriarGrupoSchema = z.object({
+  numeroId: z.string().min(1),
+  nome: z.string().trim().min(3, "O nome do grupo precisa de ao menos 3 caracteres.").max(100, "O nome do grupo pode ter no máximo 100 caracteres."),
+  participantesE164: ParticipantesSchema,
+  turmaId: z.string().min(1).optional(),
+});
+const MSG_SEM_GRUPO = "Sem permissão para gerir grupos.";
+
+/** Cria um grupo no WhatsApp (group.create) e grava `GrupoWhatsApp`, opcionalmente ligado à turma. */
+export async function criarGrupoWhatsApp(input: { numeroId: string; nome: string; participantesE164: string[]; turmaId?: string }): Promise<Resultado<{ grupoId: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    if (!podeExecutar(u, "grupoGerir", { setor: "SECRETARIA", responsavelId: null })) throw new ErroRegra(MSG_SEM_GRUPO);
+    const dados = CriarGrupoSchema.parse(input);
+    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroId }, select: { id: true, ativo: true, driver: true, providerRef: true } });
+    if (!numero || !numero.ativo) throw new ErroRegra("Número não encontrado ou inativo.");
+    if (numero.driver !== "MOTOR") throw new ErroRegra("Este canal não cria grupos.");
+    if (dados.turmaId && !(await prisma.turma.findUnique({ where: { id: dados.turmaId }, select: { id: true } }))) throw new ErroRegra("Turma não encontrada.");
+    let criado: { id?: string; subject?: string } | undefined;
+    try {
+      criado = await executarAcaoMotor(numero.providerRef ?? numero.id, "group.create", { subject: dados.nome, participants: dados.participantesE164.map(jidDe) });
+    } catch (e) { traduzir(e); }
+    if (!criado?.id) throw new ErroRegra("O motor não confirmou a criação do grupo.");
+    const grupoJid = criado.id;
+    const grupo = await prisma.$transaction(async (tx) => {
+      // O evento de grupo do motor pode ter criado a linha antes desta resposta: o upsert não duplica.
+      const g = await tx.grupoWhatsApp.upsert({
+        where: { numeroId_grupoJid: { numeroId: numero.id, grupoJid } },
+        create: { numeroId: numero.id, grupoJid, nome: dados.nome, turmaId: dados.turmaId ?? null },
+        update: { nome: dados.nome, ...(dados.turmaId ? { turmaId: dados.turmaId } : {}) },
+      });
+      await registrarEvento(tx, {
+        tipo: "GrupoWhatsAppCriado", agregadoTipo: "GrupoWhatsApp", agregadoId: g.id, autorId: u.id,
+        payload: { numeroId: numero.id, grupoJid, nome: dados.nome, turmaId: dados.turmaId ?? null, participantesE164: dados.participantesE164 },
+      });
+      return g;
+    });
+    revalidatePath("/inbox");
+    return { grupoId: grupo.id };
+  });
+}
+
+const OPERACAO_GRUPO = { adicionar: "add", remover: "remove", promover: "promote", rebaixar: "demote" } as const;
+const AlterarParticipantesSchema = z.object({
+  grupoId: z.string().min(1),
+  acao: z.enum(["adicionar", "remover", "promover", "rebaixar"]),
+  participantesE164: ParticipantesSchema,
+});
+
+/** Adiciona, remove, promove ou rebaixa participantes (group.participants), dentro do `escopoGrupos`. */
+export async function alterarParticipantesGrupo(input: { grupoId: string; acao: "adicionar" | "remover" | "promover" | "rebaixar"; participantesE164: string[] }): Promise<Resultado> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    if (!podeExecutar(u, "grupoGerir", { setor: "SECRETARIA", responsavelId: null })) throw new ErroRegra(MSG_SEM_GRUPO);
+    const dados = AlterarParticipantesSchema.parse(input);
+    const grupo = await prisma.grupoWhatsApp.findFirst({ where: { id: dados.grupoId, ...(await escopoGrupos(u)) }, include: { numero: { select: { id: true, ativo: true, driver: true, providerRef: true } } } });
+    if (!grupo) throw new ErroRegra("Grupo fora do seu escopo.");
+    if (!grupo.numero.ativo || grupo.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não gerencia grupos.");
+    try {
+      await executarAcaoMotor(grupo.numero.providerRef ?? grupo.numero.id, "group.participants", {
+        id: grupo.grupoJid, participants: dados.participantesE164.map(jidDe), operation: OPERACAO_GRUPO[dados.acao],
+      });
+    } catch (e) { traduzir(e); }
+    await prisma.$transaction(async (tx) => {
+      await registrarEvento(tx, {
+        tipo: "ParticipantesGrupoAlterados", agregadoTipo: "GrupoWhatsApp", agregadoId: grupo.id, autorId: u.id,
+        payload: { acao: dados.acao, participantesE164: dados.participantesE164 },
+      });
+    });
+    revalidatePath("/inbox");
+    return undefined;
   });
 }
