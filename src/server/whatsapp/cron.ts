@@ -53,7 +53,7 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
 
   const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: politica.numeroRemetenteId } });
   if (!numero || !numero.ativo) return zerado("numero_remetente_inativo");
-  // Trava de driver (S1 revogada para MOTOR, D36): o cron nem enfileira em driver legado (BAILEYS).
+  // Trava de driver (S1 revogada para MOTOR, D38): o cron nem enfileira em driver legado (BAILEYS).
   if (!driverAceitaAutomacao(numero.driver)) return zerado("trava_driver_oficial");
 
   const { cobrancas, regua } = await carregarCobrancasDaRegua(agora, politica.degraus);

@@ -949,7 +949,7 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
-      // Trava de driver (S1 revogada para MOTOR, D36): automação exige número do motor (ou Meta).
+      // Trava de driver (S1 revogada para MOTOR, D38): automação exige número do motor (ou Meta).
       if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
         throw new ErroRegra(
           "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +

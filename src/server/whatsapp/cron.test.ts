@@ -77,7 +77,7 @@ describe("rodarCronRegua — quem recebe é decidirEnvioCron", () => {
     expect(m.enfileirar).not.toHaveBeenCalled();
   });
 
-  it("número MOTOR enfileira normalmente (S1 revogada, D36)", async () => {
+  it("número MOTOR enfileira normalmente (S1 revogada, D38)", async () => {
     m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "MOTOR" });
     const r = await rodarCronRegua(AGORA);
     expect(r.motivoParada).not.toBe("trava_driver_oficial");

@@ -191,7 +191,7 @@ export async function despacharFila(
       continue;
     }
 
-    // 2. Trava de driver (S1 revogada para MOTOR, D36): disparo do CRON exige driver que aceite
+    // 2. Trava de driver (S1 revogada para MOTOR, D38): disparo do CRON exige driver que aceite
     //    automação (MOTOR ou Meta); BAILEYS legado nunca recebe automação desassistida.
     //    Reativa e cadência comercial são isentas (D34).
     if (it.origem === "CRON" && !reativa && !comercial && !driverAceitaAutomacao(it.numero.driver)) {
