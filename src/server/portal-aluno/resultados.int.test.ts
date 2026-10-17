@@ -12,6 +12,7 @@ import { salvarLancamentoAvaliacao, oficializarLancamentoAvaliacao } from "@/ser
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { publicarOfertaAgendaDestino } from "@/test/oferta-agenda-destino";
 import { consultarResultadosPortalAluno } from "./resultados";
 import { carregarFontesEquivalenciaTx } from "@/server/avaliacoes/fontes-equivalencia-tx";
 import { conferirEstadoEquivalenciaTx } from "@/server/avaliacoes/equivalencia-estado-tx";
@@ -161,6 +162,8 @@ it("conferência da transferência liga fontes oficiais e requisitos da regra de
     nome: "Destino do aproveitamento", modalidadeId: origem.turma.modalidadeId, nivelId: origem.turma.nivelId,
     professorId, dataInicio: new Date("2099-01-01T00:00:00.000Z"), capacidade: 10, status: "ABERTA",
   } });
+  const secretariaOferta = await criarUsuario(["SECRETARIA_ACADEMICA"]);
+  await publicarOfertaAgendaDestino(destino.id, { preparadorId: secretariaOferta.id, decisorId: gestorId, professorId });
   const entrada = { matriculaId, alocacaoOrigemId: alocacaoId, turmaDestinoId: destino.id, mapeamentos: [] };
   const antes = await prisma.$transaction(tx => conferirEstadoEquivalenciaTx(tx, entrada));
   expect(antes.projecao.itens.every(i => i.situacao === "PENDENTE")).toBe(true);
