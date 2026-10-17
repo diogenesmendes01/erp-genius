@@ -6,7 +6,7 @@ import { HistoricoConversa, historicoVazio, reagirAoAviso, type EstadoHistorico 
 
 export type ConversaHook = EstadoHistorico & { maisAntigas: () => Promise<void>; maisNovas: () => Promise<void>; recarregar: () => Promise<void> };
 
-/** Histórico paginado de um atendimento; o último aviso do SSE (`mensagem.nova`, `resync`) mantém a janela atual. */
+/** Histórico paginado de um atendimento; o último aviso do SSE (`mensagem.nova`, `mensagem.status`, `resync`) mantém a janela atual. */
 export function useConversa(atendimentoId: string | null, aviso: AvisoInbox | null): ConversaHook {
   const historico = useMemo(() => new HistoricoConversa(fonteErp), []);
   const estado = useSyncExternalStore(historico.subscribe, historico.getState, historico.getState);

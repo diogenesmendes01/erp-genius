@@ -145,9 +145,13 @@ export class HistoricoConversa {
   };
 }
 
-/** Reação do histórico aos avisos do SSE: nova mensagem busca só o que veio depois; `resync` recarrega tudo. */
+/**
+ * Reação do histórico aos avisos do SSE: nova mensagem busca só o que veio depois; `resync` recarrega tudo.
+ * `mensagem.status` do atendimento aberto também reconcilia com `maisNovas`: o React pode agrupar dois avisos
+ * (nova + status) num só render e o hook só vê o último; `maisNovas` é idempotente e barato (cursor da última).
+ */
 export function reagirAoAviso(h: HistoricoConversa, atendimentoId: string, aviso: AvisoInbox): Promise<void> {
   if (aviso.tipo === "resync") return h.recarregar();
-  if (aviso.tipo === "mensagem.nova" && aviso.atendimentoId === atendimentoId) return h.maisNovas();
+  if ((aviso.tipo === "mensagem.nova" || aviso.tipo === "mensagem.status") && aviso.atendimentoId === atendimentoId) return h.maisNovas();
   return Promise.resolve();
 }
