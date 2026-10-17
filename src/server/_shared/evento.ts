@@ -19,6 +19,7 @@ export type AgregadoTipo =
   | "EncontroAgenda"
   | "VinculoDocente"
   | "Exportacao"
+  | "Importacao"
   | "Lead"
   | "Matricula"
   | "Aluno"
