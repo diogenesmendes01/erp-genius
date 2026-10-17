@@ -6,7 +6,7 @@ vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/ser
 vi.mock("@/server/whatsapp/motor/receber", () => ({ registrarEventoMotor: m.registrar }));
 vi.mock("@/server/whatsapp/motor/drenar", () => ({ drenarEventosMotor: m.drenar }));
 
-import { POST } from "./route";
+import { POST, TETO_CORPO_WEBHOOK_MOTOR } from "./route";
 
 const SEGREDO = "s".repeat(40);
 const ID = "0b9f3c1e-6c1d-4a55-9d3e-2f6f8a1b7c10";
@@ -67,5 +67,47 @@ describe("POST /api/whatsapp/webhook/motor", () => {
     vi.stubEnv("MOTOR_WEBHOOK_SECRET", "");
     expect((await post(corpo)).status).toBe(503);
     expect(m.registrar).not.toHaveBeenCalled();
+  });
+  it("content-length declarado acima do teto → 413 sem ler o corpo nem gravar", async () => {
+    const req = new Request("https://example.test/api/whatsapp/webhook/motor", {
+      method: "POST",
+      headers: { "x-motor-evento": ID, "content-length": String(TETO_CORPO_WEBHOOK_MOTOR + 1) },
+      body: corpo,
+    });
+    const r = await POST(req);
+    expect(r.status).toBe(413);
+    expect(req.bodyUsed).toBe(false);
+    expect(m.registrar).not.toHaveBeenCalled();
+  });
+  it("corpo lido acima do teto → 413 sem verificar nem gravar", async () => {
+    const grande = "x".repeat(TETO_CORPO_WEBHOOK_MOTOR + 1);
+    const r = await post(grande);
+    expect(r.status).toBe(413);
+    expect(m.registrar).not.toHaveBeenCalled();
+  });
+  it("corpo acima do teto sem content-length confiável → 413 pelo tamanho lido", async () => {
+    const grande = "x".repeat(TETO_CORPO_WEBHOOK_MOTOR + 10);
+    const ts = String(Math.floor(Date.now() / 1000));
+    const assinatura = createHmac("sha256", SEGREDO).update(`${ts}.${grande}`).digest("hex");
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        const bytes = new TextEncoder().encode(grande);
+        for (let i = 0; i < bytes.length; i += 64 * 1024) c.enqueue(bytes.subarray(i, i + 64 * 1024));
+        c.close();
+      },
+    });
+    const r = await POST(new Request("https://example.test/api/whatsapp/webhook/motor", {
+      method: "POST",
+      headers: { "x-motor-evento": ID, "x-motor-timestamp": ts, "x-motor-assinatura": assinatura, "content-length": "10" },
+      body: stream,
+      duplex: "half",
+    } as RequestInit));
+    expect(r.status).toBe(413);
+    expect(m.registrar).not.toHaveBeenCalled();
+  });
+  it("corpo no limite do teto segue para a verificação normal", async () => {
+    expect(TETO_CORPO_WEBHOOK_MOTOR).toBe(1024 * 1024);
+    const r = await post(corpo);
+    expect(r.status).toBe(200);
   });
 });
