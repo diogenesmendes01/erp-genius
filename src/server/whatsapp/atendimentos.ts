@@ -7,6 +7,7 @@ import { chaveDeReabertura } from "./status-atendimento";
 import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./linha-comercial";
 import { comContatoIndividual } from "./grupos";
 import { setoresDoNumero } from "./numero-setor";
+import { registrarEvento } from "@/server/_shared";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   numeroId: string; contatoId: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -16,6 +17,8 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
    *  COMERCIAL em linha VENDAS já se comporta assim sempre (atendimentoComercialDaLinha só considera abertos e
    *  cria `COMERCIAL:LINHA:<n>`), portanto `reabrir` é redundante ali. */
   reabrir?: boolean;
+  /** Transferência entre setores (E3.3): o atendimento novo aponta para o encerrado. */
+  atendimentoOrigemId?: string | null;
 }) {
   if (dados.finalidade === "FINANCEIRO") {
     if (!dados.matriculaId || !dados.alunoId) throw new Error("Atendimento financeiro exige matrícula e aluno.");
@@ -42,6 +45,7 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
     finalidade: dados.finalidade,
     leadId: dados.leadId, alunoId: dados.alunoId, matriculaId: dados.matriculaId, turmaId: dados.turmaId, responsavelId: dados.responsavelId,
     autorizacaoComunicacaoAcademicaId: dados.autorizacaoComunicacaoAcademicaId,
+    ...(dados.atendimentoOrigemId ? { atendimentoOrigemId: dados.atendimentoOrigemId } : {}),
     ...(dados.responsavelId ? { status: "EM_ATENDIMENTO" as const } : {}),
   };
   if (dados.reabrir) {
@@ -127,4 +131,14 @@ export async function atendimentoDoInbound(tx: Prisma.TransactionClient, convers
       return null;
   }
   return atendimento.encerradoEm ? null : atendimento.id;
+}
+
+/**
+ * Encerra o atendimento (ENCERRADO + cancela intenções pendentes/adiadas + Evento) na transação do chamador.
+ * Ponto único usado por `encerrarAtendimentoWhatsApp` e pela transferência entre setores.
+ */
+export async function encerrarAtendimentoNaTransacao(tx: Prisma.TransactionClient, atendimentoId: string, autorId: string, payload: Prisma.InputJsonValue = {}) {
+  await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+  await tx.intencaoMensagem.updateMany({ where: { atendimentoId, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "atendimento_encerrado" } });
+  await registrarEvento(tx, { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId, payload });
 }
