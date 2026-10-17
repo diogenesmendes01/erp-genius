@@ -46,9 +46,9 @@ function montar(extra: Partial<Props>) {
   return {
     texto: () => texto(arvore()),
     tem: (rotulo: string) => elementos(arvore()).some((n) => n.type === Campo && texto(n.props.rotulo).trim() === rotulo),
-    async digitar(rotulo: string, valor: string) {
+    async digitar(rotulo: string, valor: string, esperaMs = 400) {
       (controle(campoPor(rotulo)).props.onChange as (e: unknown) => void)({ target: { value: valor } });
-      await vi.advanceTimersByTimeAsync(400);
+      await vi.advanceTimersByTimeAsync(esperaMs);
     },
     opcoes: (rotulo: string) =>
       (controle(campoPor(rotulo)).props.children as No[]).map((o) => texto(o.props.children)),
@@ -126,5 +126,57 @@ describe("NovaOportunidade", () => {
     const t = montar({ preenchido: { pessoaId: "p9", nome: "Caio" } });
     await t.clicar("Criar oportunidade");
     expect(criarLeadMock).toHaveBeenCalledWith(expect.objectContaining({ pessoaId: "p9", nome: "Caio" }));
+  });
+
+  describe("descarte de resposta antiga da busca de duplicados", () => {
+    const ANA = { pessoaId: "p1", nome: "Ana Souza", motivo: "telefone" };
+    const BETO = { pessoaId: "p2", nome: "Beto Souza", motivo: "nome" };
+    function adiada<T>() {
+      let resolver!: (v: T) => void;
+      const promessa = new Promise<T>((r) => { resolver = r; });
+      return { promessa, resolver };
+    }
+
+    it("resposta de uma rodada antiga não sobrescreve a mais nova", async () => {
+      const antiga = adiada<unknown>();
+      const nova = adiada<unknown>();
+      duplicadosMock.mockReturnValueOnce(antiga.promessa).mockReturnValueOnce(nova.promessa);
+      const t = montar({});
+      await t.digitar("Nome", "Ana");
+      await t.digitar("Nome", "Beto");
+      nova.resolver({ ok: true, dado: [BETO] });
+      await vi.advanceTimersByTimeAsync(0);
+      antiga.resolver({ ok: true, dado: [ANA] });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.texto()).toContain("Já existe no CRM: Beto Souza");
+      expect(t.texto()).not.toContain("Ana Souza");
+    });
+
+    it("resposta em voo depois de Usar cadastro é descartada", async () => {
+      duplicadosMock.mockResolvedValueOnce({ ok: true, dado: [ANA] });
+      const emVoo = adiada<unknown>();
+      duplicadosMock.mockReturnValueOnce(emVoo.promessa);
+      const t = montar({});
+      await t.digitar("WhatsApp", "+5511988887777");
+      await t.digitar("Nome", "Ana"); // segunda busca sai e fica em voo
+      expect(duplicadosMock).toHaveBeenCalledTimes(2);
+      await t.clicar("Usar cadastro");
+      emVoo.resolver({ ok: true, dado: [BETO] });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.texto()).not.toContain("Já existe no CRM");
+      await t.clicar("Criar oportunidade");
+      expect(criarLeadMock).toHaveBeenCalledWith(expect.objectContaining({ pessoaId: "p1" }));
+    });
+
+    it("timer pendente depois de Usar cadastro não dispara a busca", async () => {
+      duplicadosMock.mockResolvedValueOnce({ ok: true, dado: [ANA] });
+      const t = montar({});
+      await t.digitar("WhatsApp", "+5511988887777");
+      await t.digitar("Nome", "Ana", 100); // agenda a busca sem esperar os 400 ms
+      await t.clicar("Usar cadastro");
+      await vi.advanceTimersByTimeAsync(400);
+      expect(duplicadosMock).toHaveBeenCalledTimes(1);
+      expect(t.texto()).not.toContain("Já existe no CRM");
+    });
   });
 });

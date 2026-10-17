@@ -97,6 +97,9 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
 
   function usarCadastro(d: PossivelDuplicado) {
     if (!d.pessoaId) return;
+    // Descarta o timer pendente e a resposta em voo: senão a lista volta com o cadastro já escolhido.
+    if (espera.current) clearTimeout(espera.current);
+    ++busca.current;
     setPessoaId(d.pessoaId);
     if (d.nome) setNome(d.nome);
     setDuplicados([]);
@@ -139,7 +142,7 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   const fechar = () => aoFechar?.();
 
   return (
-    <Modal titulo="Nova oportunidade" aoFechar={fechar} bloquearFechamento={acao.ocupado}>
+    <Modal titulo="Nova oportunidade" telaCheiaNoCelular aoFechar={fechar} bloquearFechamento={acao.ocupado}>
       <div role="group" aria-label="Tipo" className="mb-3 flex gap-2">
         <Botao variante={!empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={!empresa} disabled={acao.ocupado || !!criadaId} onClick={() => trocarTipo(false)}>Pessoa</Botao>
         <Botao variante={empresa ? "primario" : "secundario"} tamanho="sm" aria-pressed={empresa} disabled={acao.ocupado || !!criadaId} onClick={() => trocarTipo(true)}>Empresa</Botao>
