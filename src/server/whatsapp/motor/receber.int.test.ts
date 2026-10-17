@@ -116,4 +116,24 @@ describe("drenarEventosMotor", () => {
     const r = await drenarEventosMotor();
     expect(r).toMatchObject({ processados: 1, adiados: 1 });
   });
+
+  it("prazo vencido: para de pegar eventos novos e deixa o resto para o próximo dreno", async () => {
+    let t = 0;
+    const relogio = () => t;
+    const vistos: string[] = [];
+    PROCESSADORES["t.a"] = async (e) => {
+      vistos.push((e.dados as { k: string }).k);
+      t += 40_000; // processador lento (ex.: download de mídia)
+      return "ok";
+    };
+    for (const k of ["e1", "e2", "e3", "e4"]) await registrarEventoMotor(env("t.a", { k }));
+    const r = await drenarEventosMotor(new Date(), { prazoMs: 90_000, relogio });
+    expect(vistos).toEqual(["e1", "e2", "e3"]);
+    expect(r).toMatchObject({ processados: 3, interrompido: true });
+    expect(await prisma.eventoMotorRecebido.count({ where: { processadoEm: null } })).toBe(1);
+
+    const r2 = await drenarEventosMotor(new Date(), { prazoMs: 90_000, relogio });
+    expect(vistos).toEqual(["e1", "e2", "e3", "e4"]);
+    expect(r2).toMatchObject({ processados: 1, interrompido: false });
+  });
 });

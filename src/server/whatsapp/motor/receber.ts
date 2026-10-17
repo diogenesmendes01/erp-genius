@@ -30,6 +30,15 @@ export const PROCESSADORES: Record<string, ProcessadorEvento> = {};
 export const MAX_TENTATIVAS_EVENTO = 12;
 export const RETENCAO_EVENTO_MS = 7 * 86_400_000;
 
+/**
+ * Prazo do dreno: depois dele não pega evento novo; o resto fica para o próximo dreno.
+ * Um evento sozinho pode levar até 60 s (download de mídia), então o timeout da transação
+ * que segura o lock precisa cobrir prazo + 1 evento lento + folga. Se a transação expirasse,
+ * o lock seria liberado com o laço ainda rodando e um segundo dreno processaria os mesmos eventos.
+ */
+export const PRAZO_DRENO_MS = 60_000;
+const TIMEOUT_TX_DRENO_MS = 180_000;
+
 const BACKOFF_BASE_MS = 5_000;
 const BACKOFF_MAX_MS = 10 * 60_000;
 
@@ -61,13 +70,16 @@ async function executar(ev: {
  */
 export async function drenarEventosMotor(
   agora: Date = new Date(),
-): Promise<{ processados: number; adiados: number; descartados: number }> {
-  const r = { processados: 0, adiados: 0, descartados: 0 };
+  opcoes: { prazoMs?: number; relogio?: () => number } = {},
+): Promise<{ processados: number; adiados: number; descartados: number; interrompido: boolean }> {
+  const r = { processados: 0, adiados: 0, descartados: 0, interrompido: false };
+  const relogio = opcoes.relogio ?? Date.now;
+  const limite = relogio() + (opcoes.prazoMs ?? PRAZO_DRENO_MS);
   await prisma.$transaction(
     async (tx) => {
       const [{ ok }] = await tx.$queryRaw<{ ok: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext('eventos_motor')) AS ok`;
       if (!ok) return;
-      for (;;) {
+      drenar: for (;;) {
         const lote = await prisma.eventoMotorRecebido.findMany({
           where: {
             processadoEm: null,
@@ -78,6 +90,10 @@ export async function drenarEventosMotor(
         });
         if (!lote.length) break;
         for (const ev of lote) {
+          if (relogio() >= limite) {
+            r.interrompido = true;
+            break drenar;
+          }
           const res = await executar(ev);
           if (res === "ok") {
             await prisma.eventoMotorRecebido.update({
@@ -120,7 +136,7 @@ export async function drenarEventosMotor(
         where: { processadoEm: { not: null }, recebidoEm: { lt: new Date(agora.getTime() - RETENCAO_EVENTO_MS) } },
       });
     },
-    { timeout: 120_000 },
+    { timeout: TIMEOUT_TX_DRENO_MS },
   );
   return r;
 }
