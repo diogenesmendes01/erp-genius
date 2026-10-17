@@ -45,7 +45,8 @@ describe("escopoAtendimentos por setor", () => {
   it("vendedor mantém carteira e linha (regras 2 e 3)", async () => {
     const r = await ramos("v1", Papel.VENDEDOR);
     expect(r).toContainEqual(LINHA(["v1"]));
-    expect(r).toContainEqual(ramoFilaDoSetor("COMERCIAL"));
+    expect(r).toContainEqual({ ...ramoFilaDoSetor("COMERCIAL"), leadId: null });
+    expect(r).not.toContainEqual(ramoFilaDoSetor("COMERCIAL"));
   });
   it("vendedor: responsável gravado não vira acesso genérico em COMERCIAL (LC-D02)", async () => {
   const r = await ramos("v1", Papel.VENDEDOR);
