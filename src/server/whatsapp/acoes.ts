@@ -716,7 +716,10 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
   });
 }
 
-/** Configura o único caminho proativo de agenda: Meta oficial + template utility aprovado. */
+/**
+ * Configura o caminho proativo de agenda (D38): número AGENDA do motor com o texto do template,
+ * ou número Meta Cloud (futuro) com template utility aprovado. BAILEYS legado é recusado.
+ */
 export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAgendaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);

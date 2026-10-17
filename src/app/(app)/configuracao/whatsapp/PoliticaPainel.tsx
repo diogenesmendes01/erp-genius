@@ -16,7 +16,8 @@ import { DRIVER_WHATSAPP_LABEL, STATUS_TEMPLATE_LABEL, rotular } from "@/lib/lab
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
 // estado desligada/shadow/ativa). LEIS fora da config: D+15 nunca automatiza; trava S1
-// (cron só em driver oficial); prontidão S15 validada no servidor ao armar.
+// (só BAILEYS legado: o cron roda no motor próprio ou na Meta — D38); prontidão S15
+// validada no servidor ao armar.
 
 const btnPri = botaoClasses({ tamanho: "md" });
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
@@ -384,7 +385,7 @@ export function PoliticaPainel({
                             ))}
                           </select>
                           {precisaAprovado && !templateOk && (
-                            <span title="Número oficial: degrau armado exige template aprovado na Meta">
+                            <span title="Número Meta Cloud: degrau armado exige template aprovado na Meta">
                               <IconAlertTriangle className="h-3.5 w-3.5 text-amber-600" />
                             </span>
                           )}
@@ -410,7 +411,7 @@ export function PoliticaPainel({
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[11px] text-gray-400">
             Defaults de fábrica: D-7/D-3/D0 automáticos · D+3/D+7 lote · D+15 aprovação. Armar (shadow/ativa) valida a
-            prontidão: número oficial exige template aprovado nos degraus automáticos/lote.
+            prontidão: número Meta Cloud exige template aprovado nos degraus automáticos/lote; no motor vale o texto do template.
           </p>
           <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
             {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}
