@@ -94,11 +94,6 @@ export const EXCECOES_VAZIO_PAGINADO: readonly Excecao[] = [
     trecho: "Nenhuma empresa nesta página.",
     motivo: "o ramo só ocorre fora da primeira página: base não vazia (totalBase > 0), sem filtro e página sem itens; a volta ('Ir para a primeira página') está no próprio texto",
   },
-  {
-    arquivo: "src/app/(app)/leads/LeadsLista.tsx",
-    trecho: "Nenhum lead nesta página.",
-    motivo: "o ramo só ocorre fora da primeira página: carteira não vazia (totalBase > 0), sem filtro e página sem itens; a volta ('Ir para a primeira página') está no próprio texto",
-  },
   // Não são estado vazio: título, opção de seleção e instrução sobre a própria tela.
   {
     arquivo: "src/app/(app)/oportunidades/[id]/contratacao/page.tsx",

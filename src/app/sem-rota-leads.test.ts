@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -17,15 +17,19 @@ function arquivosSrc() {
     .map((c) => ({ arquivo: relative(process.cwd(), c), conteudo: readFileSync(c, "utf8") }));
 }
 
-// Fora da pasta de /leads, só a navegação e a trilha (somem com a Tarefa 37) e o fallback da Secretaria
-// na contratação (a Secretaria não acessa /funil até a Tarefa 37) ainda citam a rota antiga.
-const ATE_TAREFA_37 = ["src/lib/nav.ts", "src/lib/trilha.ts", "src/app/(app)/oportunidades/[id]/contratacao/page.tsx"];
-
 describe("saída de /leads", () => {
-  it("nenhum link ou revalidate aponta para /leads fora da própria pasta", () => {
+  it("nenhum link ou revalidate aponta para /leads em lugar nenhum de src", () => {
     const ofensores = arquivosSrc().filter(
-      (a) => !a.arquivo.includes("src/app/(app)/leads/") && !ATE_TAREFA_37.includes(a.arquivo) && /["'`]\/leads(?:[/?"'`$]|\$\{)/.test(a.conteudo),
+      (a) => /["'`]\/leads(?:[/?"'`$]|\$\{)/.test(a.conteudo),
     );
     expect(ofensores.map((o) => o.arquivo)).toEqual([]);
+  });
+
+  it("a rota /leads não existe mais", () => expect(existsSync("src/app/(app)/leads")).toBe(false));
+
+  it("Preparar contratação, link de pagamento e exportar leads têm casa nova", () => {
+    expect(existsSync("src/app/(app)/oportunidades/[id]/contratacao/page.tsx")).toBe(true);
+    expect(readFileSync("src/app/(app)/funil/PainelOportunidade.tsx", "utf-8")).toContain("registrarLinkPagamento");
+    expect(readFileSync("src/app/(app)/funil/page.tsx", "utf-8")).toContain("/api/exportacoes/leads");
   });
 });
