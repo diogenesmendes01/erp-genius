@@ -97,6 +97,10 @@ export interface EventoTimeline {
   autor: { nome: string } | null;
 }
 
+// "Mudar etapa…" só oferece destinos que o select consegue mover: a experimental agendada é recusada por
+// `moverEtapa` (destinoDoArraste pede a ação) e tem o próprio botão "Agendar experimental".
+const ETAPAS_DO_SELETOR = ETAPAS_MANUAIS.filter((e) => e !== EtapaLead.EXPERIMENTAL_AGENDADA);
+
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = botaoClasses();
@@ -383,7 +387,7 @@ function BarraAcoes({
           className={inputCls + " w-auto"}
         >
           <option value="">Mudar etapa…</option>
-          {ETAPAS_MANUAIS.map((e) => (
+          {ETAPAS_DO_SELETOR.map((e) => (
             <option key={e} value={e}>
               {ETAPA_LABEL[e]}
             </option>

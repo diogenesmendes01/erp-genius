@@ -57,3 +57,12 @@ it("etapa atual da trilha: fundo bg-brand-solid com texto on-brand; nunca bg-bra
   expect(etapas.filter(([, classe]) => classe.includes("bg-brand-solid"))).toHaveLength(1);
   expect(html).not.toMatch(/bg-brand-(?:500|600)/);
 });
+
+it("\"Mudar etapa…\" não oferece Exp. agendada (moverEtapa recusa; há o botão \"Agendar experimental\")", () => {
+  const lead = { id: "lead", codigo: "L-1", nome: "Ana", telefoneE164: null, etapa: EtapaLead.QUALIFICADO, segmento: Segmento.ADULTO, temperatura: Temperatura.MORNO, b2b: false, criadoEm: "2026-01-01T02:30:00.000Z", pais: null, vendedor: null, origemCampanha: null, origemAnuncio: null, interesse: null, objetivo: null, urgencia: null, orcamento: null, objecao: null, proximaAcao: null, proximoFollowUp: null, dataExperimental: null, dataProposta: null, motivoPerda: null, matricula: null, valorPrevisto: null, planoPrevisto: null, comissaoPrevista: null, documentos: [], professorExperimentalId: null };
+  const html = renderToStaticMarkup(createElement(FichaLead, { lead, timeline: [], professores: [], preferenciaFusoExibicao: null }));
+  const seletor = html.match(/<select[^>]*aria-label="Mudar etapa do lead"[^>]*>([\s\S]*?)<\/select>/)?.[1] ?? "";
+  const valores = [...seletor.matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]);
+  expect(valores).toEqual(["", EtapaLead.NOVO, EtapaLead.EM_ATENDIMENTO, EtapaLead.QUALIFICADO]);
+  expect(html).toContain("Agendar experimental");
+});
