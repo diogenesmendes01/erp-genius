@@ -51,11 +51,14 @@ export async function processarMensagemEditada(env: EnvelopeMotor): Promise<Resu
   const parsed = DadosEdicaoSchema.safeParse(env.dados);
   if (!parsed.success) return { ignorado: "dados_invalidos" };
   const d = parsed.data;
+  // Sem texto não há o que gravar: nunca apagar o corpo original.
+  if (d.texto == null) return { ignorado: "dados_invalidos" };
+  const texto = d.texto;
   const r = await acharMensagem(env, d.providerMessageId);
   if (r.erro) return r.erro;
   const quando = new Date(env.ocorridoEm);
   await prisma.$transaction(async (tx) => {
-    await tx.mensagemWhatsApp.update({ where: { id: r.mensagem.id }, data: { corpo: d.texto ?? null, editadaEm: quando } });
+    await tx.mensagemWhatsApp.update({ where: { id: r.mensagem.id }, data: { corpo: texto, editadaEm: quando } });
     await registrarEvento(tx, {
       tipo: "MensagemWhatsAppEditada",
       agregadoTipo: "NumeroWhatsApp",

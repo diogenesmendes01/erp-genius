@@ -49,6 +49,13 @@ describe("alterações do motor", () => {
     expect(await prisma.mensagemWhatsApp.count()).toBe(1);
   });
 
+  it("edição sem texto é ignorada e preserva o corpo", async () => {
+    expect(await processar(envelope("mensagem.editada", { mensagemId: "x:ABC", providerMessageId: "ABC" }))).toEqual({ ignorado: "dados_invalidos" });
+    const m = await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { numeroId_providerMessageId: { numeroId, providerMessageId: "ABC" } } });
+    expect(m.corpo).toBe("original");
+    expect(m.editadaEm).toBeNull();
+  });
+
   it("edição de mensagem inexistente adia", async () => {
     expect(await processar(envEdicao("x", "NAOEXISTE"))).toEqual({ adiar: "mensagem_inexistente" });
   });
