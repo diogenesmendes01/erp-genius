@@ -55,7 +55,11 @@ const dinheiro = (v: Prisma.Decimal | null | undefined) => (v ?? new Prisma.Deci
 const porMoedaEStatus = (a: { moeda: string; status?: string }, b: { moeda: string; status?: string }) =>
   a.moeda.localeCompare(b.moeda) || (a.status ?? "").localeCompare(b.status ?? "");
 
-async function matriculadasSemComissao(usuario: UsuarioSessao) {
+/**
+ * Pendências de comissão: segue o filtro de vendedor do painel (dentro do escopo, em AND), mas não o
+ * período, porque uma matrícula sem comissão continua pendente até ser resolvida; a tela avisa isso.
+ */
+async function matriculadasSemComissao(usuario: UsuarioSessao, vendedorId?: string) {
   const todos = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO);
   if (!todos && !usuario.papeis.includes(Papel.GERENTE_COMERCIAL)) return [];
   // Escopo comercial padrão (coberturas vigentes + equipe de gerenteComercialId); FINANCEIRO vê tudo, mas
@@ -64,7 +68,7 @@ async function matriculadasSemComissao(usuario: UsuarioSessao) {
   // Matrícula cancelada ou encerrada não gera comissão a cobrar: não entra como pendência.
   const vigente: Prisma.MatriculaWhereInput = { status: { notIn: ["CANCELADA", "ENCERRADA"] }, comissoes: { none: {} } };
   const ops = await prisma.oportunidade.findMany({
-    where: { AND: [donos, { etapa: "MATRICULADO", matricula: { is: vigente } }] },
+    where: { AND: [donos, { etapa: "MATRICULADO", matricula: { is: vigente } }, ...(vendedorId ? [{ vendedorDonoId: vendedorId }] : [])] },
     select: { id: true, nome: true }, orderBy: [{ criadoEm: "desc" }, { id: "asc" }], take: 200,
   });
   return ops.map((o) => ({ oportunidadeId: o.id, nome: o.nome }));
@@ -104,7 +108,7 @@ export async function carregarPainelComissoes(
         } },
       },
     }),
-    matriculadasSemComissao(usuario),
+    matriculadasSemComissao(usuario, f.vendedorId),
   ]);
 
   const nomesVendedores = new Map((await prisma.usuario.findMany({ where: { id: { in: porVendedor.map((g) => g.vendedorId) } }, select: { id: true, nome: true } })).map((u) => [u.id, u.nome]));
