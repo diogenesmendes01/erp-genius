@@ -79,7 +79,7 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
     motivo: "dica curta dentro de uma linha de checkboxes do formulário",
   },
   {
-    arquivo: "src/app/(app)/leads/[id]/contratacao/AgendaParticularFormulario.tsx",
+    arquivo: "src/app/(app)/oportunidades/[id]/contratacao/AgendaParticularFormulario.tsx",
     condicao: "revisao.impedimentos.length",
     folha: "<label className=\"block\"><input type=\"checkbox\" checked={confirmado} onChange={(e) => { setConfirmado(e.target.checked); onChange(e.target.checked ? { ...agenda(), estadoHash: revisao.estadoHash, horariosAcordadosConferidos: true } : null); }} /> Conferi os horários acordados e apresentados acima.</label>",
     motivo: "sem itens, a tela mostra o passo seguinte (confirmação/formulário), não uma mensagem",
@@ -543,6 +543,12 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum recebimento nesta página.",
     "compacto · Nenhum recebimento registrado.",
   ],
+  "src/app/(app)/funil/PainelOportunidade.tsx": [
+    "compacto · Nenhuma atividade registrada.",
+  ],
+  "src/app/(app)/funil/page.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na sua carteira.\"}",
+  ],
   "src/app/(app)/home/HomeGerente.tsx": [
     "compacto · Sem vendedores.",
     "compacto · Sem vendedores ativos.",
@@ -568,7 +574,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Sem transferências de dono.",
     "compacto · Sem eventos ainda.",
   ],
-  "src/app/(app)/leads/[id]/contratacao/page.tsx": [
+  "src/app/(app)/oportunidades/[id]/contratacao/page.tsx": [
     "bloco · {c.podeCadastrarNovo ? \"Não há cadastro com o contato da negociação. Você poderá preencher os dados ",
   ],
   "src/app/(app)/matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx": [
