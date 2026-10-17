@@ -971,6 +971,20 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Enviar → btnPri",
     "<button> Salvando… · Salvar → primario/sm",
   ],
+  "carteira/CoberturasPainel.tsx": [
+    "<button> Conceder cobertura → primario/lg",
+    "<button> Revogar → perigo/sm",
+  ],
+  "carteira/ListaCarteira.tsx": [
+    "<button> Filtrar → secundario/lg",
+    "<Link> Limpar filtros → secundario/md",
+    "<Botao> Mudar responsável → primario/lg",
+    "<Botao> Limpar seleção → fantasma/lg",
+  ],
+  "carteira/page.tsx": [
+    "<Link> Carteira → primario|fantasma/md",
+    "<Link> Coberturas → primario|fantasma/md",
+  ],
   "funil/FunilCliente.tsx": [
     "<Link> Quadro → primario|secundario/md",
     "<Link> Lista → primario|secundario/md",
@@ -1010,6 +1024,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",
     "<button> Faltou → secundario/sm",
+  ],
+  "comissoes/EstornarComissao.tsx": [
+    "<Botao> Estornar → perigo/md",
+  ],
+  "comissoes/PainelComissoes.tsx": [
+    "<Link> Fechar mês → secundario/md",
+    "<button> Filtrar → secundario/md",
   ],
   "preferencias/FusoExibicaoFormulario.tsx": [
     "<button> Salvando… · Salvar preferência → secundario/lg",
