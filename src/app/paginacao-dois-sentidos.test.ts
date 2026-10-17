@@ -44,7 +44,7 @@ import { ehTeste, soParaFrente } from "../../scripts/medicao-ux/nucleo.mjs";
 // Fora do alcance (declarado): paginação por estado no cliente, sem URL (botões que chamam a consulta de
 // novo, como DisponibilidadeOferta e CorrecaoAula); `router.push`/`redirect` (a volta para a última página
 // válida não é navegação da lista); chave de página com nome fora do padrão (`cadastros`, `modelos`,
-// `turmas` em leads/[id]/contratacao e contrato/aditivos, que já andam nos dois sentidos); URL guardada em
+// `turmas` em oportunidades/[id]/contratacao e contrato/aditivos, que já andam nos dois sentidos); URL guardada em
 // estrutura que não é constante local (estado, contexto, prop). Duas listas no mesmo arquivo com o mesmo
 // nome de chave contam como uma.
 

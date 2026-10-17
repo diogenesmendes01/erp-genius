@@ -22,7 +22,7 @@ export const MAPA_VAZIO_PAGINADO: readonly string[] = [
   "src/app/(app)/financeiro/migracao/page.tsx | pagina > 1 | Nenhuma linha financeira nesta página.",
   "src/app/(app)/financeiro/permuta/page.tsx | pagina > 1 | Nenhum acordo nesta página.",
   "src/app/(app)/financeiro/recebimentos/page.tsx | pagina > 1 | Nenhum recebimento nesta página.",
-  "src/app/(app)/leads/[id]/contratacao/page.tsx | c.pagina > 1 | Nenhum cadastro nesta página. Consulte as demais páginas ou confira a identidade com a Secretaria.",
+  "src/app/(app)/oportunidades/[id]/contratacao/page.tsx | c.pagina > 1 | Nenhum cadastro nesta página. Consulte as demais páginas ou confira a identidade com a Secretaria.",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/OriginaisPainel.tsx | pagina > 1 | Nenhum original nesta página.",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesFormulario.tsx | formulario.paginaDocumentos > 1 | Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes de concluir.",
   "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesHistorico.tsx | pagina > 1 | Nenhuma conferência nesta página.",
