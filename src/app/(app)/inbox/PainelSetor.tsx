@@ -22,7 +22,7 @@ export function PainelSetor({ painel }: { painel: Painel | null }) {
           : <p className="mt-2 text-sm text-muted-foreground">Nenhuma cobrança em aberto.</p>}
       </>)}
       {painel.setor === "SECRETARIA" && (
-        <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha><Linha rotulo="Documentos pendentes">{painel.documentosPendentes}</Linha></dl>)}
+        <dl><Linha rotulo="Matrícula">{painel.matriculaCodigo ?? "—"}</Linha><Linha rotulo="Documentos pendentes">{painel.documentosPendentes ?? "—"}</Linha></dl>)}
       {painel.setor === "PEDAGOGICO" && (
         <dl><Linha rotulo="Turma">{painel.turma ?? "—"}</Linha><Linha rotulo="Frequência">{painel.frequenciaPct === null ? "Sem registros" : `${painel.frequenciaPct}%`}</Linha></dl>)}
     </section>

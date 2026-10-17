@@ -83,6 +83,9 @@ describe("painel lateral por setor", () => {
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "c", url: "u" } });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "COMPROVANTE", nome: "x", url: "u", arquivado: true } });
     expect(await carregarPainel(sess(sec), a.id)).toMatchObject({ documentosPendentes: 1 });
+    const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
+    await participar(a.id, vendedorConvidado, sec);
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null });
   });
 
   it("professor no pedagógico vê turma e frequência; sem telefone", async () => {
@@ -103,5 +106,8 @@ describe("painel lateral por setor", () => {
     const painel = await carregarPainel(sess(prof), a.id);
     expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75 });
     expect(JSON.stringify(painel)).not.toMatch(/\+\d{6,}/);
+    const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
+    await participar(a.id, vendedorConvidado, prof);
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null });
   });
 });
