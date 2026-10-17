@@ -1,13 +1,22 @@
-import { type EtapaLead, type MotivoPerda, type StatusCobranca, type Temperatura } from "@prisma/client";
+import { Papel, type EtapaLead, type MotivoPerda, type Prisma, type StatusCobranca, type Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
 import { capacidadesCrm } from "./permissoes";
+import { escopoPessoas } from "./pessoas";
 
 // Q8: motivos de perda fixos (MotivoPerda); alternativa configurável em Configurações (Fase 5).
 
-export type ItemHistorico = { id: string; tipo: string; rotulo: string; autor: string | null; em: Date };
+export type ItemHistorico = {
+  id: string;
+  tipo: string;
+  rotulo: string;
+  autor: string | null;
+  em: Date;
+  /** Texto da nota interna (só em NotaInterna); o resto do payload nunca sai. */
+  texto?: string | null;
+};
 
 export type DetalheOportunidade = {
   id: string;
@@ -84,10 +93,18 @@ export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
   ResumoAtualizado: () => "Resumo atualizado",
   DatasAtualizadas: () => "Datas atualizadas",
   InteracaoRegistrada: () => "Interação registrada",
-  NotaInterna: () => "Nota interna registrada",
+  NotaInterna: () => "Nota interna",
+  // Agregado "Pessoa" (ficha do contato).
+  PessoaCriada: () => "Contato criado",
+  PessoaEditada: () => "Dados do contato editados",
+  TagAtribuida: () => "Tag atribuída",
+  TagRemovida: () => "Tag removida",
+  OptOutRegistrado: () => "Opt-out registrado",
+  OptOutRemovido: () => "Opt-out removido",
   DocumentoAnexado: () => "Documento anexado",
   DocumentoArquivado: () => "Documento arquivado",
   ExperimentalAtribuida: () => "Professor da experimental atribuído",
+  PessoasMescladas: () => "Contatos mesclados",
 };
 
 export function rotuloEventoCrm(tipo: string, payload: unknown): string {
@@ -173,3 +190,79 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
   };
 }
 
+
+export type FiltroHistoricoPessoa = "tudo" | "notas" | "etapas" | "alteracoes";
+
+const TIPOS_POR_FILTRO: Record<Exclude<FiltroHistoricoPessoa, "tudo">, string[]> = {
+  notas: ["NotaInterna"],
+  etapas: ["EtapaAlterada", "LeadPerdido"],
+  alteracoes: ["PessoaEditada", "LeadEditado", "LeadAtribuido", "DatasAtualizadas", "ResumoAtualizado", "TagAtribuida", "TagRemovida"],
+};
+
+const LIMITE_HISTORICO_PESSOA = 500;
+
+/**
+ * Histórico unificado da pessoa (mais antigo primeiro): eventos da Pessoa e dos "Lead" das oportunidades dela
+ * que o usuário enxerga; eventos do "Aluno" ligado só para Secretaria e Administrador.
+ * `null` = fora do escopo do usuário.
+ */
+export async function historicoPessoa(
+  id: string,
+  usuario: UsuarioSessao,
+  filtro: FiltroHistoricoPessoa = "tudo",
+): Promise<ItemHistorico[] | null> {
+  if (!usuario?.id || !capacidadesCrm(usuario.papeis).has("contatos.ver")) return null;
+  const pessoa = await prisma.pessoa.findFirst({
+    where: { AND: [{ id }, await escopoPessoas(usuario)] },
+    select: { id: true, aluno: { select: { id: true } } },
+  });
+  if (!pessoa) return null;
+
+  // Lápides mescladas nesta pessoa (de forma transitiva): as notas e o histórico delas passaram para cá.
+  const ids = [id];
+  for (let fronteira = [id]; fronteira.length; ) {
+    const lapides = await prisma.pessoa.findMany({
+      where: { mescladaEmId: { in: fronteira }, id: { notIn: ids } },
+      select: { id: true },
+    });
+    fronteira = lapides.map((l) => l.id);
+    ids.push(...fronteira);
+  }
+
+  const ou: Prisma.EventoWhereInput[] = [{ agregadoTipo: "Pessoa", agregadoId: { in: ids } }];
+  if (capacidadesCrm(usuario.papeis).has("funil.ver")) {
+    const ops = await prisma.oportunidade.findMany({
+      where: { AND: [{ pessoaId: id }, await escopoComercialAtual(usuario)] },
+      select: { id: true },
+    });
+    if (ops.length) ou.push({ agregadoTipo: "Lead", agregadoId: { in: ops.map((o) => o.id) } });
+  }
+  if (pessoa.aluno && (usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA) || usuario.papeis.includes(Papel.ADMINISTRADOR))) {
+    ou.push({ agregadoTipo: "Aluno", agregadoId: pessoa.aluno.id });
+  }
+
+  const eventos = await prisma.evento.findMany({
+    where: { AND: [{ OR: ou }, ...(filtro === "tudo" ? [] : [{ tipo: { in: TIPOS_POR_FILTRO[filtro] } }])] },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+    take: LIMITE_HISTORICO_PESSOA,
+    include: { autor: { select: { nome: true } } },
+  });
+  // A mescla grava o mesmo PessoasMescladas na principal e na lápide; fica só o da principal daquela mescla.
+  const unicos = eventos.filter((e) => {
+    if (e.tipo !== "PessoasMescladas" || e.agregadoTipo !== "Pessoa") return true;
+    const p = e.payload && typeof e.payload === "object" && !Array.isArray(e.payload) ? (e.payload as Record<string, unknown>) : null;
+    return !p?.principalId || p.principalId === e.agregadoId;
+  });
+  return unicos.reverse().map((e) => {
+    const p = e.payload && typeof e.payload === "object" && !Array.isArray(e.payload) ? (e.payload as Record<string, unknown>) : null;
+    const item: ItemHistorico = {
+      id: e.id,
+      tipo: e.tipo,
+      rotulo: rotuloEventoCrm(e.tipo, e.payload),
+      autor: e.autor?.nome ?? null,
+      em: e.criadoEm,
+    };
+    if (e.tipo === "NotaInterna") item.texto = texto(p?.texto) ?? texto(p?.nota);
+    return item;
+  });
+}
