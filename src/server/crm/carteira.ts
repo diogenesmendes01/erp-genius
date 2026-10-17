@@ -28,6 +28,22 @@ export type LinhaCarteira = {
   tags: { id: string; nome: string; cor: CorTag }[];
 };
 
+type ParametrosUrl = Record<string, string | string[] | undefined>;
+const um = (v: string | string[] | undefined) => ((Array.isArray(v) ? v[0] : v) ?? "").trim();
+
+/** Filtros da URL de /carteira; valor fora das opções vira o padrão. */
+export function lerFiltrosCarteira(p: ParametrosUrl): FiltrosCarteira {
+  const dias = um(p.semInteracao);
+  const tipo = um(p.tipo);
+  return {
+    donoId: um(p.dono).slice(0, 64),
+    busca: um(p.busca).slice(0, 100),
+    semInteracaoDias: dias === "7" || dias === "15" || dias === "30" ? dias : "",
+    emTurma: um(p.emTurma) === "1",
+    tipo: tipo === "pf" || tipo === "pj" ? tipo : "todos",
+  };
+}
+
 export type VendedorCarteira = { id: string; nome: string; total: number; cobertoPor: string | null };
 
 export const TEXTO_CONSEQUENCIA_REATRIBUICAO =
