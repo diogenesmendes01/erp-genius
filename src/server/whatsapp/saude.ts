@@ -51,7 +51,8 @@ export interface SaudeCanal {
     /** Eventos que o motor deu por esgotados (`GET /v1/eventos/falhos`); null = sem número MOTOR ativo ou motor inalcançável (este último gera alerta). */
     eventosMotorFalhos: number | null;
     /** Avisos de agenda PENDENTE/ADIADA retidos pelo envio de agenda desligado
-     *  (motivoFalha `envio_agenda_desligado`). Já contados em `pendentes`/`adiadas`. */
+     *  (motivoFalha `envio_agenda_desligado`). Já contados em `pendentes`/`adiadas`. Com o envio
+     *  ligado é sempre 0, mesmo com o motivo antigo ainda gravado até o próximo tick. */
     retidasAgendaDesligada: number;
     /** Estado atual de COMUNICACOES_AGENDA_ENVIO_ENABLED. */
     envioAgendaHabilitado: boolean;
@@ -142,9 +143,13 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
         orderBy: { recebidoEm: "asc" },
         select: { recebidoEm: true },
       }),
-      prisma.intencaoMensagem.count({
-        where: { status: { in: ["PENDENTE", "ADIADA"] }, motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
-      }),
+      // Só conta com o envio desligado (C1 do #212): o motivo fica gravado até o próximo tick
+      // pegar a intenção, então, religado o envio, nada mais está retido por ele.
+      envioAgendaHabilitado
+        ? Promise.resolve(0)
+        : prisma.intencaoMensagem.count({
+            where: { status: { in: ["PENDENTE", "ADIADA"] }, motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
+          }),
     ]);
   const consultaMotor = numeros.some((n) => n.driver === "MOTOR") ? await contarEventosFalhosDoMotor() : null;
   const eventosMotorFalhos = consultaMotor?.falhos ?? null;

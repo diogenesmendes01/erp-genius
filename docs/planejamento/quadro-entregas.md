@@ -2721,6 +2721,20 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   comercial/regua-comercial): 49 arquivos verdes, sem as falhas preexistentes citadas acima.
 **Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
 
+## Pendências não bloqueantes das revisões do #212 e do #213 (17/10/2026)
+
+- Branch `claude/pendencias-212-213`.
+- **C1 do #212:** `medirSaudeCanal` só conta `retidasAgendaDesligada` com `COMUNICACOES_AGENDA_ENVIO_ENABLED`
+  desligado. Com o envio ligado, o valor é 0, mesmo que o motivo `envio_agenda_desligado` continue gravado até o
+  próximo tick. Testes novos (falhavam antes) em `saude.test.ts` e `saude.int.test.ts`.
+- **C4 do #213:** o comentário da trava de driver em `despachante.ts` e o doc 30 (§S1 e a ordem dos guard-rails)
+  dizem agora que só MOTOR aceita automação; META_CLOUD fica de fora até ter driver no despachante. A linha da
+  Fase 4B acima ("MOTOR e Meta aceitam automação") é histórica e foi mantida.
+- Verificação: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos já existentes); `npm test` 707 arquivos e 5191
+  testes; integração em banco descartável (`saude`, `agenda/substituicao-avisos`, `despachante-motor`): 3 arquivos e
+  45 testes verdes.
+**Estado**: Implementado; aguardando revisão e merge.
+
 ## Fase 4C — verificação final do bloco (17/10/2026)
 
 - Branch `claude/fase4-c-webhook`, tarefas 9 a 17 do plano `04-fase-motor.md`, partindo da `claude/fase4-b-despachante` (base trocada para o `main` após o merge da #213).
@@ -2730,7 +2744,7 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Integração (perfil `integracao`): `vitest related` foi interrompido por varredura ampla (`evento.ts` alcança quase toda a suíte);
   rodados os 10 arquivos `*.int.test.ts` do diff e de `whatsapp/motor/` + `inbox` + `saude`: saída 0, 88 testes verdes.
 - **Merge do `main` após a #213 (17/10/2026):** base do #215 trocada para o `main`; mesclados o merge final da 4B
-  (B1/C1/C2), #207, #209, #210, #211 e #212. Conflitos, todos aditivos: `api/whatsapp/cron/route.ts` (+teste)
+  (B1/C1/C2), #207, #209, #210, #211 e #212; depois a #214 (retidas só contadas com o envio de agenda desligado). Conflitos, todos aditivos: `api/whatsapp/cron/route.ts` (+teste)
   roda `eventosMotor` e `lembretesTarefas`; `saude.ts` (+`saude.int.test.ts`) soma os campos do motor
   (`eventosMotorPendentes`/`eventosMotorFalhos`) aos da retenção de agenda (`retidasAgendaDesligada`/
   `envioAgendaHabilitado`) e ao relógio da agendada vencida; este quadro. `saude.test.ts` (vindo do `main`) ganhou o
