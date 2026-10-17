@@ -5,8 +5,7 @@ import { Papel } from "@prisma/client";
 const { authMock, enviarMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("./drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
-vi.mock("./drivers/evolution", () => ({ driverEvolution: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
+vi.mock("./drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 vi.mock("@/server/_shared/sessao", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/server/_shared/sessao")>();
   const sessao = async () => {
@@ -37,7 +36,7 @@ let canal: Awaited<ReturnType<typeof seedCanal>>;
 const entrar = (id: string) => authMock.mockResolvedValue({ user: { id } });
 type Atendimento = Awaited<ReturnType<typeof garantirAtendimento>>;
 async function mensagemHistorica(a: Atendimento) {
-  return prisma.mensagemWhatsApp.create({ data: { numeroId: canal.numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Histórico autorizado anterior à alteração", criadoEm: new Date(Date.now() - 60000) } });
+  return prisma.mensagemWhatsApp.create({ data: { numeroId: canal.numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "Histórico autorizado anterior à alteração", criadoEm: new Date(Date.now() - 60000) } });
 }
 async function intencao(a: Atendimento, contatoId: string, autorId: string, origem: "HUMANO" | "CRON" = "HUMANO") {
   return prisma.intencaoMensagem.create({ data: { numeroId: canal.numero.id, contatoId, atendimentoId: a.id, autorId, origem, corpoRenderizado: "Envio preparado antes da alteração" } });
@@ -71,7 +70,7 @@ beforeEach(async () => {
   [ven, fin, sec, adm, proFin] = await Promise.all([
     criarUsuario([Papel.VENDEDOR]), criarUsuario([Papel.FINANCEIRO]), criarUsuario([Papel.SECRETARIA_ACADEMICA]), criarUsuario([Papel.ADMINISTRADOR]), criarUsuario([Papel.PROFESSOR, Papel.FINANCEIRO]),
   ]);
-  canal = await seedCanal({ driver: "BAILEYS", estado: "ATIVA", janela: [0, 24] });
+  canal = await seedCanal({ driver: "MOTOR", estado: "ATIVA", janela: [0, 24] });
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
@@ -174,7 +173,7 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     entrar(adm.id);
     expect((await encerrarAtendimentoWhatsApp(c.atendimento.id)).ok).toBe(true);
     const antes = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.atendimento.id } });
-    expect(await processarMensagemNormalizada({ numeroProviderRef: canal.numero.providerRef, contatoWaId: c.contato.telefoneE164.replace(/\D/g, ""), providerMessageId: "inbound-apos-encerramento", corpo: "Uma nova solicitação após o encerramento", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() })).toBe("gravada");
+    expect(await processarMensagemNormalizada({ numeroProviderRef: canal.numero.providerRef, contatoWaId: c.contato.telefoneE164.replace(/\D/g, ""), providerMessageId: "inbound-apos-encerramento", corpo: "Uma nova solicitação após o encerramento", tipo: "TEXTO", driver: "MOTOR", fromMe: false, quando: new Date() })).toBe("gravada");
     const inbound = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "inbound-apos-encerramento" } });
     expect(inbound.atendimentoId).not.toBeNull();
     expect(inbound.atendimentoId).not.toBe(c.atendimento.id);
@@ -194,7 +193,7 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     entrar(adm.id);
     expect((await encerrarAtendimentoWhatsApp(c.atendimento.id)).ok).toBe(true);
     const antes = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.atendimento.id } });
-    expect(await processarMensagemNormalizada({ numeroProviderRef: canal.numero.providerRef, contatoWaId: c.contato.telefoneE164.replace(/\D/g, ""), providerMessageId: "inbound-apos-encerramento", corpo: "Uma nova solicitação após o encerramento", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() })).toBe("gravada");
+    expect(await processarMensagemNormalizada({ numeroProviderRef: canal.numero.providerRef, contatoWaId: c.contato.telefoneE164.replace(/\D/g, ""), providerMessageId: "inbound-apos-encerramento", corpo: "Uma nova solicitação após o encerramento", tipo: "TEXTO", driver: "MOTOR", fromMe: false, quando: new Date() })).toBe("gravada");
     const inbound = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "inbound-apos-encerramento" } });
     expect(inbound.atendimentoId).not.toBeNull();
     expect(inbound.atendimentoId).not.toBe(c.atendimento.id);

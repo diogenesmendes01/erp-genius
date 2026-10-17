@@ -15,7 +15,10 @@ export default defineConfig({
     include: ["src/**/*.int.test.ts"],
     globalSetup: ["src/test/setup-integracao.ts"],
     fileParallelism: false,
-    env: { DATABASE_URL: DATABASE_URL_TESTE },
+    // Nunca enviar mensagem real em teste (Fase 4): MOTOR_URL/MOTOR_API_KEY do shell são
+    // apagados aqui, então um teste live que esqueça de mockar `drivers/motor` cai em
+    // SEM_CONFIG em vez de fazer HTTP para um motor de verdade.
+    env: { DATABASE_URL: DATABASE_URL_TESTE, MOTOR_URL: "", MOTOR_API_KEY: "" },
     testTimeout: 30000,
     hookTimeout: 60000,
   },

@@ -46,7 +46,7 @@ const modos = new Map<PassoRegua, ModoDegrau>([["D+3", "AUTOMATICO"], ["D+7", "L
 beforeEach(() => {
   vi.clearAllMocks();
   m.politica.mockResolvedValue({ id: "pol", estado: "ATIVA", killSwitch: false, numeroRemetenteId: "num", degraus: [], modoPorPasso: modos, templateIdPorPasso: new Map() });
-  m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "META_CLOUD" });
+  m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "MOTOR" });
   m.templates.mockResolvedValue([]);
   m.contato.mockResolvedValue({ id: "contato" });
   m.enfileirar.mockResolvedValue("criada");
@@ -69,12 +69,19 @@ describe("rodarCronRegua — quem recebe é decidirEnvioCron", () => {
     expect(m.carregar).toHaveBeenCalledWith(AGORA, []);
   });
 
-  it("fora do driver oficial, o cron não carrega cobranças nem enfileira (trava S1)", async () => {
-    m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "BAILEYS" });
+  it.each(["BAILEYS", "META_CLOUD"])("em %s (sem envio pelo despachante), o cron não carrega cobranças nem enfileira (trava_driver_oficial)", async (driver) => {
+    m.numero.mockResolvedValue({ id: "num", ativo: true, driver });
     const r = await rodarCronRegua(AGORA);
     expect(r).toMatchObject({ executou: false, motivoParada: "trava_driver_oficial" });
     expect(m.carregar).not.toHaveBeenCalled();
     expect(m.enfileirar).not.toHaveBeenCalled();
+  });
+
+  it("número MOTOR enfileira normalmente (S1 revogada, D38)", async () => {
+    m.numero.mockResolvedValue({ id: "num", ativo: true, driver: "MOTOR" });
+    const r = await rodarCronRegua(AGORA);
+    expect(r.motivoParada).not.toBe("trava_driver_oficial");
+    expect(r.enfileiradas).toBe(1);
   });
 
   it("política desligada não gera nem intenção", async () => {

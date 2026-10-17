@@ -38,6 +38,7 @@ import {
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import { nomeConhecidoDoContato } from "./nome-contato";
+import { driverAceitaAutomacao, MENSAGEM_META_CLOUD_SEM_ENVIO } from "./canal";
 import { contatoIndividual } from "./grupos";
 import {
   LoteCobrancaSchema,
@@ -715,7 +716,10 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
   });
 }
 
-/** Configura o único caminho proativo de agenda: Meta oficial + template utility aprovado. */
+/**
+ * Configura o caminho proativo de agenda (D38): número AGENDA do motor com o texto do template,
+ * ou número Meta Cloud (futuro) com template utility aprovado. BAILEYS legado é recusado.
+ */
 export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAgendaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
@@ -724,12 +728,14 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
       prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroAvisosAgendaId } }),
       prisma.templateWhatsApp.findUnique({ where: { id: dados.templateAvisosAgendaId } }),
     ]);
-    if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "META_CLOUD" || !numero.providerRef?.trim()) {
-      throw new ErroRegra("Escolha um número de agenda ativo, oficial Meta Cloud e com phone_number_id.");
+    // C1 da R1 do #213: META_CLOUD não tem driver no despachante; só o motor envia aviso de agenda.
+    if (numero?.driver === "META_CLOUD") {
+      throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Escolha um número de agenda do motor WhatsApp.`);
     }
-    if (!template || template.statusMeta !== "APROVADO" || !template.metaTemplateId || template.categoria !== "utility") {
-      throw new ErroRegra("Escolha um template utility aprovado e sincronizado na Meta.");
+    if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") {
+      throw new ErroRegra("Escolha um número de agenda ativo do motor WhatsApp.");
     }
+    if (!template) throw new ErroRegra("Escolha um template de agenda.");
     if (/\{[^}]+\}/.test(template.corpo.replace(/\{(nome|horarios)\}/g, "")) || !template.corpo.includes("{horarios}")) {
       throw new ErroRegra("O template de agenda deve usar somente {nome} e {horarios}, incluindo {horarios}.");
     }
@@ -945,28 +951,19 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
+      // C1 da R1 do #213: META_CLOUD não tem driver no despachante, então armar a política nele
+      // (automático, lote ou manual) só geraria intenções que falham com driver_indisponivel.
+      if (remetente.driver === "META_CLOUD") {
+        throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Troque o remetente por um número do motor WhatsApp antes de armar a política.`);
+      }
+
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
-      // TRAVA S1 (lei): régua automática exige driver oficial.
-      if (remetente.driver !== "META_CLOUD" && automaticos.length > 0) {
+      // Trava de driver (S1 revogada para MOTOR, D38): automação exige número do motor.
+      if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
         throw new ErroRegra(
-          "Trava do cron (S1): degraus automáticos exigem número com driver oficial (Meta Cloud). " +
+          "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +
             "Troque o remetente ou deixe os degraus em manual/lote.",
         );
-      }
-      if (remetente.driver === "META_CLOUD") {
-        const armados = degraus.filter((d) => d.ativo && d.modo !== "MANUAL");
-        const templates = await prisma.templateWhatsApp.findMany({
-          where: { id: { in: armados.map((d) => d.templateId).filter((x): x is string => !!x) } },
-          select: { id: true, statusMeta: true },
-        });
-        const aprovado = new Map(templates.map((t) => [t.id, t.statusMeta === "APROVADO"]));
-        const pendentes = armados.filter((d) => !d.templateId || !aprovado.get(d.templateId));
-        if (pendentes.length > 0) {
-          throw new ErroRegra(
-            `Degrau(s) ${pendentes.map((d) => d.passo).join(", ")} sem template APROVADO na Meta — ` +
-              "aprove os templates (tela ao lado) antes de armar a política em número oficial.",
-          );
-        }
       }
     }
 

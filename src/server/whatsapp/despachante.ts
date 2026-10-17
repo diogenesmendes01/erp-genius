@@ -11,16 +11,16 @@ import {
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { randomUUID } from "node:crypto";
-import { ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
-import { driverEvolution } from "./drivers/evolution";
-import { driverMetaCloud } from "./drivers/meta-cloud";
+import { driverAceitaAutomacao, ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
+import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
-import { DriverWhatsApp, Papel } from "@prisma/client";
+import { DriverWhatsApp, Papel, type EstadoPolitica } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
+import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/server/comunicacoes-agenda/envio-gate";
 import { aplicarResposta } from "./status-atendimento";
 import { comContatoIndividual } from "./grupos";
 
@@ -31,13 +31,11 @@ import { comContatoIndividual } from "./grupos";
 // SEGURANÇA DE AMBIENTE (gap A5 do doc 28): sem WHATSAPP_LIVE=1 no env, NENHUMA mensagem
 // real sai — tudo que passaria vira SIMULADA. Dev contra o banco compartilhado não dispara.
 
-// O `driverMotor` já existe (Fase 4, Task 4), mas só entra aqui na Task 5 (bloco 4B), junto com o
-// `clientMessageId` no claim e o adiamento reprocessável. Até lá, um número MOTOR que chegue ao
-// despachante falha com `ErroDriver("driver_sem_implementacao")`: motivo estável, sem I/O, e não
-// `resultado_incerto` (nada saiu, então não há o que revisar).
+// Só o motor próprio envia. Número com outro driver (legado) falha com driver_indisponivel no passo 10,
+// antes do claim; `driverDoNumero` é a defesa tipada (ErroDriver driver_sem_implementacao, sem I/O e
+// nunca `resultado_incerto`) caso um driver sem registro chegue ao envio.
 const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
-  META_CLOUD: driverMetaCloud,
-  BAILEYS: driverEvolution,
+  MOTOR: driverMotor,
 };
 
 /** Driver registrado para o número; sem registro, falha tipada antes de qualquer envio. */
@@ -55,6 +53,9 @@ export interface ResultadoDespacho {
   adiadas: number;
   falhas: number;
   pendentes: number; // deixadas na fila (kill switch / política desligada)
+  /** Avisos de agenda retidos com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado (R1 do #209, C2):
+   *  contados à parte para não se misturarem ao kill switch em `pendentes`. */
+  retidasAgenda: number;
 }
 
 function horaLocal(data: Date, fuso: string): number {
@@ -77,6 +78,59 @@ function diaSemanaLocal(data: Date, fuso: string): number {
   } catch {
     return data.getDay();
   }
+}
+
+export interface EntradaShadow {
+  /** WHATSAPP_LIVE=1 no ambiente. */
+  live: boolean;
+  /** Intenção de aviso de alteração de agenda (avisoAlteracaoAgendaId preenchido). */
+  agenda: boolean;
+  /** origem !== HUMANO (CRON, LOTE, GESTAO). */
+  automatica: boolean;
+  reativa: boolean;
+  /** origem === GESTAO. */
+  gestao: boolean;
+  /** Estado da política que rege a intenção (cobrança ou comercial). */
+  politicaEstado: EstadoPolitica;
+  gestaoEstado: EstadoPolitica;
+  saudacaoEstado: EstadoPolitica;
+}
+
+/**
+ * SHADOW (S8): decide se a intenção vira SIMULADA em vez de chamar o driver. Função pura
+ * para ter trava unitária no CI (revisão R1 do #208, C1): a isenção `!agenda` já caiu uma
+ * vez num merge (#161) sem nenhum teste unitário perceber.
+ *
+ * - Sem WHATSAPP_LIVE tudo é simulado, inclusive origem HUMANO.
+ * - Gestão olha só o seu shadow (gestaoEstado); a saudação reativa, o saudacaoEstado.
+ * - O resto da automação (cobrança, comercial, lote) olha o estado da sua política.
+ * - Aviso de agenda NÃO usa o ensaio da política de cobrança: o gate dele é
+ *   COMUNICACOES_AGENDA_ENVIO_ENABLED (conferido antes do shadow, em `decidirEnvio`) mais
+ *   número e template AGENDA (`motivoAvisoAgendaInvalido`).
+ */
+export function intencaoEmShadow(e: EntradaShadow): boolean {
+  return (
+    !e.live ||
+    (e.gestao && e.gestaoEstado !== "ATIVA") ||
+    (!e.agenda && e.automatica && !e.reativa && !e.gestao && e.politicaEstado !== "ATIVA") ||
+    (e.reativa && e.saudacaoEstado !== "ATIVA")
+  );
+}
+
+export type DecisaoEnvio = "RETER_AGENDA" | "SIMULAR" | "ENVIAR";
+
+/**
+ * Última decisão antes do driver (revisão R1 do #208, C2). O cron geral do WhatsApp drena a
+ * MESMA fila que o worker de agenda (`despacharFila` sem `somenteAvisosAgenda`), então o
+ * despachante confere COMUNICACOES_AGENDA_ENVIO_ENABLED por conta própria: com o envio de
+ * agenda desligado, a intenção de aviso fica no mesmo status (PENDENTE/ADIADA), como no kill
+ * switch — não é enviada, nem vira SIMULADA, e volta a ser avaliada quando o envio for
+ * religado. Vale também sem WHATSAPP_LIVE: o aviso retido não é "ensaiado". O motivo
+ * `envio_agenda_desligado` fica gravado na intenção e o resultado conta em `retidasAgenda`.
+ */
+export function decidirEnvio(e: EntradaShadow & { envioAgendaHabilitado: boolean }): DecisaoEnvio {
+  if (e.agenda && !e.envioAgendaHabilitado) return "RETER_AGENDA";
+  return intencaoEmShadow(e) ? "SIMULAR" : "ENVIAR";
 }
 
 /** Prazo do claim: intenção ENVIANDO além disto = worker morreu no meio do envio. */
@@ -148,6 +202,7 @@ export async function despacharFila(
     adiadas: 0,
     falhas: 0,
     pendentes: 0,
+    retidasAgenda: 0,
   };
 
   for (const it of intencoes) {
@@ -204,10 +259,10 @@ export async function despacharFila(
       continue;
     }
 
-    // 2. TRAVA S1 (lei): disparo do CRON exige driver oficial — Baileys nunca recebe
-    //    automação desassistida (padrão de ban, doc 26 §Em aberto → decidido no doc 30).
-    //    Reativa e cadência comercial são isentas: rodam no número de vendas (Baileys).
-    if (it.origem === "CRON" && !reativa && !comercial && it.numero.driver !== "META_CLOUD") {
+    // 2. Trava de driver (S1 revogada para MOTOR, D38): disparo do CRON exige driver que aceite
+    //    automação (MOTOR ou Meta); BAILEYS legado nunca recebe automação desassistida.
+    //    Reativa e cadência comercial são isentas (D34).
+    if (it.origem === "CRON" && !reativa && !comercial && !driverAceitaAutomacao(it.numero.driver)) {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
       r.canceladas += 1;
       continue;
@@ -415,14 +470,18 @@ export async function despacharFila(
     // SHADOW (S8): ensaio da automação. Cobrança olha o estado da SUA política; a saudação
     // reativa olha o seu shadow PRÓPRIO (saudacaoEstado — review PR #53). Ambiente sem
     // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
-    const shadow =
-      !live ||
-      (gestao && gestaoEstado !== "ATIVA") ||
-      // Aviso de agenda não usa o ensaio da política de COBRANÇA: tem gate próprio
-      // (COMUNICACOES_AGENDA_ENVIO_ENABLED + número AGENDA), como no kill switch e no teto.
-      (!agenda && automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
-      (reativa && saudacaoEstado !== "ATIVA");
-    if (shadow) {
+    // Aviso de agenda com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado fica retido (C2 do #208).
+    const decisao = decidirEnvio({
+      live, agenda, automatica, reativa, gestao,
+      politicaEstado: politica.estado, gestaoEstado, saudacaoEstado,
+      envioAgendaHabilitado: envioAvisosAgendaHabilitado(),
+    });
+    if (decisao === "RETER_AGENDA") {
+      await reterAvisoAgenda(it.id);
+      r.retidasAgenda += 1;
+      continue;
+    }
+    if (decisao === "SIMULAR") {
       await prisma.intencaoMensagem.updateMany({
         where: { id: it.id, status: it.status }, // não clobbera claim concorrente
         data: { status: "SIMULADA", despachadaEm: agora, motivoFalha: live ? null : "ambiente_sem_live" },
@@ -431,13 +490,9 @@ export async function despacharFila(
       continue;
     }
 
-    // 10. Driver oficial fora da janela de 24h exige template APROVADO na Meta (Camada 2).
-    //     Só a REATIVA é isenta (ela responde DENTRO da janela de 24h, texto livre vale). A
-    //     cadência comercial NÃO é: +3d e +7d caem fora da janela e, sem template aprovado, o
-    //     envio ou falha na API ou tenta texto livre indevido (review PR #55 P1). Falhar aqui
-    //     é o comportamento correto — a fila humana mostra o motivo.
-    if (it.numero.driver === "META_CLOUD" && automatica && !reativa && it.template?.statusMeta !== "APROVADO") {
-      await marcar(it.id, "FALHOU", "template_nao_aprovado_meta");
+    // 10. Número sem driver implementado (legado META_CLOUD/BAILEYS) falha sem qualquer I/O.
+    if (!DRIVERS[it.numero.driver]) {
+      await marcar(it.id, "FALHOU", "driver_indisponivel");
       r.falhas += 1;
       continue;
     }
@@ -446,11 +501,12 @@ export async function despacharFila(
     //     driver — cron, lote e clique rodando em paralelo nunca enviam a mesma intenção
     //     duas vezes. `despacharAposEm` vira o prazo do claim (stale = recuperação acima).
     let claimCount = 0;
+    const clientMessageId = it.clientMessageId ?? randomUUID(); // mantido entre tentativas
     try {
       await prisma.$transaction(confirmarTransacao(async (tx) => {
         const claim = await tx.intencaoMensagem.updateMany({
           where: { id: it.id, status: it.status },
-          data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS) },
+          data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS), clientMessageId },
         });
         if (claim.count !== 1) return;
         if (it.avisoAlteracaoAgendaId && !await claimAvisoAgendaTx(tx, it.avisoAlteracaoAgendaId)) {
@@ -496,8 +552,7 @@ export async function despacharFila(
         providerRef: it.numero.providerRef,
       };
       const driver = driverDoNumero(it.numero.driver);
-      // Task 4: porta v2. O id real por tentativa chega na Task 8; até lá, drivers antigos ignoram.
-      const opcoesEnvio: OpcoesEnvio = { clientMessageId: it.clientMessageId ?? randomUUID(), origem: it.origem };
+      const opcoesEnvio: OpcoesEnvio = { clientMessageId, origem: it.origem };
       let envio;
       if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
         // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
@@ -509,7 +564,7 @@ export async function despacharFila(
           dadosBase64: midia.dadosBase64,
           legenda: it.corpoRenderizado || null,
         }, opcoesEnvio);
-      } else if (it.numero.driver === "META_CLOUD" && it.template) {
+      } else if (it.template) {
         envio = await driver.enviarTemplate(numeroCanal, it.contato.telefoneE164, {
           nome: it.template.nome,
           idioma: it.template.idioma,
@@ -538,9 +593,11 @@ export async function despacharFila(
             midiaPath: it.midiaPath,
             status: "ENVIADA",
             statusEm: agora,
-            driver: it.numero.driver,
+            driver: "MOTOR",
             origem: it.origem,
+            clientMessageId,
             providerMessageId: envio.providerMessageId,
+            mensagemIdMotor: envio.mensagemIdMotor ?? null,
             autorId: it.autorId,
             templateId: it.templateId,
           },
@@ -583,7 +640,16 @@ export async function despacharFila(
       r.despachadas += 1;
     } catch (e) {
       // Uma resposta perdida, timeout ou falha de persistência pode ocorrer DEPOIS de
-      // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana.
+      // o provedor receber a mensagem. Toda falha pós-claim exige revisão humana, salvo
+      // falha que o driver declarou reprocessável (nada saiu): adia com o mesmo
+      // clientMessageId, dentro do limite de vida da intenção. Aviso de agenda não adia.
+      const limite = it.origem === "HUMANO" ? LIMITE_REPROCESSO_MS.HUMANO : LIMITE_REPROCESSO_MS.AUTOMACAO;
+      if (e instanceof ErroDriver && e.reprocessavel && !it.avisoAlteracaoAgendaId
+        && agora.getTime() - it.criadaEm.getTime() <= limite) {
+        await adiarReprocessavel(it.id, new Date(agora.getTime() + e.adiarMs), e.motivo);
+        r.adiadas += 1;
+        continue;
+      }
       const motivo = e instanceof ErroDriver ? e.motivo : "resultado_incerto";
       await falharClaim(it.id, motivo);
       // A falha pode ter ocorrido após a Meta aceitar a requisição. O aviso já
@@ -594,6 +660,9 @@ export async function despacharFila(
 
   return r;
 }
+
+/** Vida máxima (desde criadaEm) para reenviar automaticamente uma falha reprocessável. */
+export const LIMITE_REPROCESSO_MS = { HUMANO: 30 * 60_000, AUTOMACAO: 24 * 3_600_000 } as const;
 
 type IntencaoParaValidar = {
   id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
@@ -694,6 +763,23 @@ function chaveComercial(it: { politicaComercial: { chave: string } | null }): st
 
 // Marks dos guard-rails só transitam de estados "na fila" — nunca clobberam um claim
 // ENVIANDO de outro worker nem estados terminais (review PR #49).
+/**
+ * Aviso de agenda retido com o envio de agenda desligado (R1 do #209, C2): grava só o motivo,
+ * sem mudar o status (PENDENTE/ADIADA) nem o `despacharAposEm`, para a fila operacional mostrar
+ * por que o aviso não sai. Só escreve quando o motivo ainda não é este: o cron reavalia a
+ * intenção a cada tick e não precisa reescrevê-la (nem tocar `atualizadoEm`) toda vez.
+ */
+async function reterAvisoAgenda(id: string): Promise<void> {
+  await prisma.intencaoMensagem.updateMany({
+    where: {
+      id,
+      status: { in: ["PENDENTE", "ADIADA"] },
+      OR: [{ motivoFalha: null }, { motivoFalha: { not: MOTIVO_ENVIO_AGENDA_DESLIGADO } }],
+    },
+    data: { motivoFalha: MOTIVO_ENVIO_AGENDA_DESLIGADO },
+  });
+}
+
 async function marcar(id: string, status: "CANCELADA" | "FALHOU", motivo: string): Promise<void> {
   await prisma.intencaoMensagem.updateMany({
     where: { id, status: { in: ["PENDENTE", "ADIADA"] } },
@@ -733,6 +819,14 @@ async function adiarClaim(id: string, ate: Date): Promise<boolean> {
     } });
     return false;
   }
+}
+
+/** Falha reprocessável do driver: ENVIANDO → ADIADA, mantendo o clientMessageId já gravado. */
+async function adiarReprocessavel(id: string, ate: Date, motivo: string): Promise<void> {
+  await prisma.intencaoMensagem.updateMany({
+    where: { id, status: "ENVIANDO" },
+    data: { status: "ADIADA", despacharAposEm: ate, motivoFalha: motivo },
+  });
 }
 
 /** Falha pós-claim: transita exclusivamente de ENVIANDO (o claim é deste worker). */

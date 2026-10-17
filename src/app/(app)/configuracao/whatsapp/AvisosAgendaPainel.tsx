@@ -16,8 +16,8 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   const [templateAvisosAgendaId, setTemplate] = useState(config.templateAvisosAgendaId ?? "");
   // salvarConfiguracaoAvisosAgenda não recebe chave de idempotência: resultado incerto manda conferir.
   const acao = useAcaoCliente({ idempotente: false });
-  const numeros = config.numeros.filter((n) => n.ativo && n.driver === "META_CLOUD" && !!n.providerRef);
-  const templates = config.templates.filter((t) => t.statusMeta === "APROVADO" && t.metaTemplateId && t.categoria === "utility" && t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
+  const numeros = config.numeros.filter((n) => n.ativo && n.driver === "MOTOR");
+  const templates = config.templates.filter((t) => t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
 
   async function salvar() {
     const d = await acao.executar(() => salvarConfiguracaoAvisosAgenda({ numeroAvisosAgendaId, templateAvisosAgendaId }));
@@ -26,11 +26,11 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
 
   return <section className="rounded-lg border border-gray-200 p-4">
     <h2 className="text-lg font-medium">Avisos de agenda</h2>
-    <p className="mt-1 text-sm text-gray-500">Escolha o número institucional e o template Meta. Sem esta configuração, os avisos ficam preparados e não são enviados.</p>
+    <p className="mt-1 text-sm text-gray-500">Escolha o número institucional do motor WhatsApp e o template do aviso. Sem esta configuração, os avisos ficam preparados e não são enviados.</p>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <label className="text-xs text-gray-600">Número institucional de agenda
         <select className={input} value={numeroAvisosAgendaId} onChange={(e) => setNumero(e.target.value)}>
-          <option value="">Selecione um número Meta Cloud ativo</option>
+          <option value="">Selecione um número ativo do motor</option>
           {numeros.map((n) => <option key={n.id} value={n.id}>{n.rotulo} · {n.providerRef}</option>)}
         </select>
       </label>
@@ -41,7 +41,7 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
         </select>
       </label>
     </div>
-    <p className="mt-3 text-xs text-gray-500">O template deve conter <code>{"{horarios}"}</code> e pode usar <code>{"{nome}"}</code>. O envio proativo usa somente Meta Cloud; Baileys não é habilitado para este canal.</p>
+    <p className="mt-3 text-xs text-gray-500">O template deve conter <code>{"{horarios}"}</code> e pode usar <code>{"{nome}"}</code>. O envio proativo sai pelo motor WhatsApp; números Baileys legados não são habilitados para este canal.</p>
     <button className={`${botaoClasses({ tamanho: "md" })} mt-4`} disabled={acao.ocupado || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar canal de agenda"}</button>
     <FeedbackAcao erro={acao.erro} className="mt-3" />
   </section>;

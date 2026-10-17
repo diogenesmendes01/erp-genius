@@ -4,9 +4,9 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, ErroAutenticacao, exigirSessao } from "@/server/_shared";
-import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
+import { FusoPreferenciaSchema } from "@/server/operacao/fuso";
 
-const Entrada = z.object({ fusoExibicao: z.union([FusoInstitucionalSchema, z.literal(""), z.null()]) }).strict().transform((d) => ({ fusoExibicao: d.fusoExibicao || null }));
+const Entrada = z.object({ fusoExibicao: z.union([FusoPreferenciaSchema, z.literal(""), z.null()]) }).strict().transform((d) => ({ fusoExibicao: d.fusoExibicao || null }));
 
 export async function consultarPreferenciaFusoEquipe() {
   return executarAcao(async () => {

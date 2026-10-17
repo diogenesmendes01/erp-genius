@@ -892,5 +892,5 @@ describe("contraste: bg-brand-500|600 nunca com text-white (docs/43 §6 item 5)"
     const folhas = arquivos.filter((f) => f.endsWith(".css"));
     expect(folhas).toContain("src/app/globals.css");
     expect(folhas.flatMap((f) => contrasteNoCss(readFileSync(f, "utf-8")).map((a) => `${f}: ${a}`))).toEqual([]);
-  });
+  }, 120_000); // varredura do src inteiro: sob carga passa dos 30 s globais (C2 da R1 do #213)
 });

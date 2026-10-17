@@ -9,6 +9,7 @@ import {
   analisarPlanilhaContatos,
   chaveColuna,
   exigirDonoDaImportacao,
+  LinhaForaDaCarteira,
   previaContatos,
   registrarResumoImportacao,
 } from "@/server/crm/importacao-contatos";
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
 
     let novos = 0;
     let atualizados = 0;
+    let foraDaCarteira = 0;
     let comOportunidade = 0;
     const falhas = [...invalidas];
     for (const l of validas) {
@@ -98,6 +100,11 @@ export async function POST(req: Request) {
         else atualizados++;
         if (r.oportunidade) comOportunidade++;
       } catch (e) {
+        // Contato já existente na carteira de outro: a linha foi desfeita e é contada à parte.
+        if (e instanceof LinhaForaDaCarteira) {
+          foraDaCarteira++;
+          continue;
+        }
         // Sem PII: só a linha e a classe/código do erro (ex.: P2002 de unicidade).
         const codigo = (e as { code?: unknown })?.code;
         console.error("[contatos/importar] falha na linha", {
@@ -108,7 +115,7 @@ export async function POST(req: Request) {
         falhas.push({ linha: l.linha, motivo: "Não foi possível importar esta linha." });
       }
     }
-    const resumo = { novos, atualizados, invalidos: falhas.length, comOportunidade };
+    const resumo = { novos, atualizados, foraDaCarteira, invalidos: falhas.length, comOportunidade };
     await prisma.$transaction((tx) => registrarResumoImportacao(tx, usuario.id, resumo));
     return Response.json({ modo, ...resumo, repetidasNaPlanilha, erros: falhas.sort((a, b) => a.linha - b.linha) });
   } catch (e) {

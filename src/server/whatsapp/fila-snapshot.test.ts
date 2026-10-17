@@ -66,7 +66,7 @@ beforeEach(() => {
   m.db.cobranca.findUnique.mockImplementation(async () => ({ ...atual }));
   m.db.$transaction.mockImplementation(async (fn: (db: Prisma.TransactionClient) => Promise<unknown>) => fn(tx));
   m.db.usuario.findUnique.mockResolvedValue({ nome: "Financeiro", ativo: true, papeis: ["FINANCEIRO"] });
-  m.db.numeroWhatsApp.findUnique.mockResolvedValue({ id: "numero", ativo: true, driver: "META_CLOUD" });
+  m.db.numeroWhatsApp.findUnique.mockResolvedValue({ id: "numero", ativo: true, driver: "MOTOR" });
   m.db.templateWhatsApp.findMany.mockResolvedValue([{ id: "template", nome: "amigavel", idioma: "pt", corpo: "{nome}, vencimento {vencimento}: {valor}" }]);
   m.db.intencaoMensagem.findUnique.mockResolvedValue(null);
   m.db.intencaoMensagem.findMany.mockResolvedValue([]);
