@@ -454,6 +454,7 @@ model AtendimentoWhatsApp {
   @@index([alunoId])
   @@index([matriculaId])
   @@index([autorizacaoComunicacaoAcademicaId])
+  @@index([ultimaMensagemEm(sort: Desc), id])
 }
 
 model ParticipanteAtendimentoWhatsApp {
@@ -2504,6 +2505,7 @@ model MensagemWhatsApp {
 
   @@unique([numeroId, providerMessageId]) // dedupe dos retries de webhook (S7)
   @@index([conversaId, criadoEm])
+  @@index([atendimentoId, criadoEm, id])
 }
 
 enum StatusIntencao {

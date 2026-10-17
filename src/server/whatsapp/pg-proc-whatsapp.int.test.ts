@@ -9,7 +9,7 @@ const BASE = [
   "validar_intencao_destino_direto_pedagogico_atual_265",
   "validar_intencao_pedagogica_264",
 ];
-const NOVAS: string[] = ["impedir_atendimento_em_grupo"];
+const NOVAS: string[] = ["impedir_atendimento_em_grupo", "notificar_inbox"];
 const HASH_BASE: Record<string, string> = {
   guard_identidade_destinatario_aviso_agenda: "e572bc232c823241c656314c34df1a6b",
   validar_contexto_financeiro_atendimento_whatsapp: "f73eef8ea4a2c107115e367c3ea04e3d",
