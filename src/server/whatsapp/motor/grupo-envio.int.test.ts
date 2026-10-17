@@ -62,6 +62,28 @@ describe("envio humano para grupo", () => {
     expect(await prisma.mensagemWhatsApp.count({ where: { numeroId: numero.id } })).toBe(1);
   });
 
+  it("eco origem erp que chega com a mensagem ainda NA_FILA completa o envio sem duplicar", async () => {
+    const { conversa, numero } = await cenario();
+    let resultadoEco: unknown;
+    let statusNoEco: string | undefined;
+    enviarTexto.mockImplementation(async (_n: unknown, _jid: string, _t: string, opcoes: { clientMessageId: string }) => {
+      // O eco chega antes de o despachante gravar o resultado do envio.
+      resultadoEco = await reconciliarEcoErp("n-grupo", {
+        mensagemId: `${GRUPO}:3EBG1`, providerMessageId: "3EBG1", chatJid: GRUPO, ehGrupo: true, direcao: "SAIDA", origem: "erp",
+        clientMessageId: opcoes.clientMessageId, tipo: "TEXTO", tipoMotor: "text", texto: "oi grupo", quando: Date.now(),
+      } as never);
+      statusNoEco = (await prisma.mensagemWhatsApp.findFirstOrThrow()).status;
+      return { providerMessageId: "3EBG1", mensagemIdMotor: `${GRUPO}:3EBG1` };
+    });
+    expect(await enviarMensagemGrupo({ conversaId: conversa.id, texto: "oi grupo" })).toEqual({ ok: true, dado: { status: "ENVIADA" } });
+    expect(resultadoEco).toBe("ok");
+    expect(statusNoEco).toBe("NA_FILA");
+    expect(await prisma.mensagemWhatsApp.count({ where: { numeroId: numero.id } })).toBe(1);
+    expect(await prisma.mensagemWhatsApp.findFirstOrThrow()).toMatchObject({
+      status: "ENVIADA", providerMessageId: "3EBG1", mensagemIdMotor: `${GRUPO}:3EBG1`,
+    });
+  });
+
   it("sem WHATSAPP_LIVE fica SIMULADA sem I/O", async () => {
     vi.stubEnv("WHATSAPP_LIVE", "");
     const { conversa } = await cenario();
