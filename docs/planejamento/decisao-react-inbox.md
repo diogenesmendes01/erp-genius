@@ -1,6 +1,6 @@
 # Decisão Q6: versão do React para o Inbox novo
 
-Decisão: manter 18.3
+Decisão: manter 18.3 na Fase 3. Status: decidido pelo dono em 17/10/2026.
 
 ## Contexto
 
@@ -21,4 +21,6 @@ O integrador sobe `react`, `react-dom` e `@types/react*` (alteração de `packag
 
 ## Status
 
-O dono ainda não decidiu. Ruling do integrador: ficar no 18.3 nesta fase (menor risco).
+Status: decidido pelo dono em 17/10/2026. A Fase 3 fica no React 18.3. A migração para o React 19 vira um PR separado,
+depois das Fases 3 e 4. Até esse PR, vale a regra acima (sem API exclusiva do 19). Antes, o ruling do integrador era
+ficar no 18.3 nesta fase, por ser o menor risco. Registro: [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md).

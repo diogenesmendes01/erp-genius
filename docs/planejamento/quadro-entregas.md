@@ -2,6 +2,20 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Decisões do dono 17/10/2026
+
+Registro completo em [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md). Branch `claude/decisoes-dono-17-10`.
+
+| Tema | Decisão | Efeito no quadro |
+| --- | --- | --- |
+| Q7 (comissão) | O estorno continua manual, feito por FINANCEIRO ou ADMINISTRADOR, com motivo obrigatório e auditoria. O estorno automático no cancelamento fica descartado por enquanto (desistência no prazo, troca de turma, reativação). Uma sugestão automática para o Financeiro confirmar pode ser avaliada no futuro. | Resolve a pendência bloqueante da Q7 no bloco F2-I (gate da Task 35): a Task 35 fica no PR, com a matriz da Task 4. |
+| Q6 (React) | A Fase 3 fica no React 18.3. A migração para o 19 vira um PR separado, depois das Fases 3 e 4. | `decisao-react-inbox.md`: "Status: decidido pelo dono em 17/10/2026". |
+| LC-D02 × doc 36 | Vale a LC-D02. O dono da linha vê todas as conversas da própria linha; o painel e o cockpit do lead de outro vendedor continuam fechados. | Doc 36 atualizado. O `c265d904` recebe o aval do produto e não precisa ser revertido. |
+| Fuso | `US/Eastern` sai das sugestões e é trocado por `America/New_York`. Apelidos legados (`US/*`, `Brazil/*`) são convertidos para o nome canônico IANA ao salvar a preferência. | Mapa `APELIDOS_FUSO_LEGADOS` com teste. Migration de dados `20261017150000_fuso_exibicao_canonico` para `Usuario."fusoExibicao"` e `ContaPortalAluno."fusoExibicao"`. `fuso-exibicao.int.test.ts` passa no Postgres do sistema (sem `tzdata-legacy`). |
+| Transferência e `AULA_FORA_DE_VINCULO_CONFERIDO` | A transferência não deve travar o fechamento do nível. | Implementação em outro PR, que precisa da validação da secretaria acadêmica. Só citada aqui. |
+
+- **Estado**: decisões registradas; a parte de fuso está implementada nesta branch e aguarda o merge.
+
 ## Fase 3, bloco D — tempo real e paginação (17/10/2026)
 
 Branch `claude/fase3-d-tempo-real` (PR empilhado sobre `claude/fase3-b-escopo-roteamento`). Tarefas 21 (aviso no banco, migration `20261017100000_inbox_tempo_real`, e barramento `LISTEN`), 22 (rota SSE `/api/inbox/eventos` filtrada por escopo) e 23 (lista e thread paginadas por cursor, filtros da URL).
