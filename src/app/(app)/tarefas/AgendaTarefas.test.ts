@@ -47,6 +47,8 @@ describe("AgendaTarefas", () => {
     expect(slotDaHora("23:59")).toBe("21:30");
     expect(lerSlot("slot|2026-10-20|09:30")).toEqual({ data: "2026-10-20", hora: "09:30" });
     expect(lerSlot("slot|2026-10-20|")).toEqual({ data: "2026-10-20", hora: null });
+    expect(lerSlot("slot|2026-10-20|09:30|m")).toEqual({ data: "2026-10-20", hora: "09:30" });
+    expect(lerSlot("slot|2026-10-20||g")).toEqual({ data: "2026-10-20", hora: null });
     expect(lerSlot("coluna:NOVO")).toBeNull();
   });
 
