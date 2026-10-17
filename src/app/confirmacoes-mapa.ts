@@ -190,6 +190,14 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "L2244",
     efeito: "tira do substituto o acesso à carteira do titular na hora; voltar exige conceder nova cobertura",
   },
+  // Fase 2, Task 35 (F2-I): estorno de comissão pelo FINANCEIRO no painel /comissoes.
+  {
+    arquivo: "src/app/(app)/comissoes/EstornarComissao.tsx",
+    modulo: "@/server/crm/comissoes-estorno-acao",
+    acao: "estornarComissaoDoPainel",
+    achado: "F2-T35",
+    efeito: "estorna a comissão: o valor sai dos totais a pagar e não há reativação pela tela",
+  },
 ];
 
 /**

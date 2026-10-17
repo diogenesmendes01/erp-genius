@@ -86,4 +86,19 @@ describe("carregarPainelComissoes", () => {
     expect((await carregarPainelComissoes(sessaoDe(v1), base)).matriculadasSemComissao).toEqual([]);
     expect((await carregarPainelComissoes(sessaoDe(gerente), base)).matriculadasSemComissao).toEqual([{ oportunidadeId: lead.id, nome: "Sem comissão" }]);
   });
+  it("matriculadas sem comissão: gerente não vê a equipe de outro gerente, e matrícula cancelada ou encerrada não conta", async () => {
+    const semComissao = async (dono: U, nome: string, status: "ATIVA" | "CANCELADA" | "ENCERRADA") => {
+      const aluno = await prisma.aluno.create({ data: { primeiroNome: nome, paisId: cat.pais.id } });
+      const lead = await prisma.oportunidade.create({ data: { nome, vendedorDonoId: dono.id, etapa: "MATRICULADO" } });
+      await prisma.matricula.create({ data: { alunoId: aluno.id, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "BRL", status, mesesPlano: 2, referenciaCobertura: "MES_CIVIL" } });
+      return lead.id;
+    };
+    const daEquipe = await semComissao(v2, "Da equipe", "ATIVA");
+    const deOutraEquipe = await semComissao(v3, "De outra equipe", "ATIVA");
+    await semComissao(v1, "Cancelada", "CANCELADA");
+    await semComissao(v1, "Encerrada", "ENCERRADA");
+    expect((await carregarPainelComissoes(sessaoDe(gerente), base)).matriculadasSemComissao).toEqual([{ oportunidadeId: daEquipe, nome: "Da equipe" }]);
+    expect((await carregarPainelComissoes(sessaoDe(financeiro), base)).matriculadasSemComissao.map((o) => o.oportunidadeId).sort())
+      .toEqual([daEquipe, deOutraEquipe].sort());
+  });
 });
