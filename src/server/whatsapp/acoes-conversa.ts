@@ -7,6 +7,7 @@ import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado 
 import { agendarMensagem } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
 import { despacharFila } from "./despachante";
+import { copiarMidiaParaSaida } from "./midia";
 
 const NotaSchema = z.object({ atendimentoId: z.string().min(1), nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres.") });
 
@@ -58,7 +59,7 @@ const EncaminharSchema = z.object({
 
 /**
  * Encaminha uma mensagem como cópia (nova intenção HUMANO por destino). A autorização vem de a origem ser visível
- * (não passa por `midiaSaidaDoAutor`: o `midiaPath` é o da própria origem). Cada destino exige envio no escopo e
+ * (a mídia da origem é copiada para whatsapp-out/<autor>, que é de onde o despachante lê). Cada destino exige envio no escopo e
  * contato sem opt-out; qualquer recusa cancela tudo antes de criar intenção.
  */
 export async function encaminharMensagem(input: { mensagemId: string; destinoAtendimentoIds: string[] }): Promise<Resultado<{ intencaoIds: string[] }>> {
@@ -80,13 +81,20 @@ export async function encaminharMensagem(input: { mensagemId: string; destinoAte
       destinos.push(d);
     }
 
+    // O despachante só lê de whatsapp-out/: copia a mídia da origem (recebida ou enviada) para a pasta do autor.
+    let midiaPath: string | null = null;
+    if (origem.midiaPath) {
+      midiaPath = await copiarMidiaParaSaida(u.id, origem.midiaPath);
+      if (!midiaPath) throw new ErroRegra("A mídia desta mensagem não está mais disponível para encaminhar.");
+    }
+
     const intencaoIds = await prisma.$transaction(async (tx) => {
       const ids: string[] = [];
       for (const d of destinos) {
         const i = await tx.intencaoMensagem.create({
           data: {
             numeroId: d.numeroId, atendimentoId: d.id, contatoId: d.contatoId, origem: "HUMANO",
-            tipo: origem.tipo, midiaPath: origem.midiaPath, corpoRenderizado: origem.corpo ?? "", autorId: u.id,
+            tipo: origem.tipo, midiaPath, corpoRenderizado: origem.corpo ?? "", autorId: u.id,
           },
         });
         ids.push(i.id);

@@ -179,6 +179,8 @@ export async function transferirAtendimento(input: { atendimentoId: string; dest
       for (const agregadoId of [a.id, novo.id]) {
         await registrarEvento(tx, { tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", agregadoId, autorId: u.id, payload });
       }
+      // O contexto também vira nota interna do novo atendimento (mesmo mecanismo de registrarNotaAtendimento), autor = quem transferiu.
+      await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: novo.id, autorId: u.id, payload: { nota: dados.contexto } });
       return novo.id;
     }).catch(comoErroRegra);
     revalidatePath("/inbox");
