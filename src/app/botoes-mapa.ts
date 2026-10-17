@@ -1021,6 +1021,31 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Limpar filtros → secundario/md",
     "<a> Exportar → secundario/lg",
   ],
+  "tarefas/AgendaTarefas.tsx": [
+    "<Link> Anterior → secundario/md",
+    "<Link> Hoje → secundario/md",
+    "<Link> Próximo → secundario/md",
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Salvando… · Reagendar → primario/md",
+  ],
+  "tarefas/CalendarioTarefas.tsx": [
+    "<Link> Anterior → secundario/md",
+    "<Link> Hoje → secundario/md",
+    "<Link> Próximo → secundario/md",
+  ],
+  "tarefas/ListaTarefas.tsx": [
+    "<Botao> Concluir selecionadas → primario/sm",
+  ],
+  "tarefas/PainelTarefa.tsx": [
+    "<Botao> Salvando… · Salvar → primario/md",
+    "<Botao> Assumir → secundario/md",
+    "<Botao> Reabrir → secundario/md",
+    "<Botao> Concluir → secundario/md",
+    "<Botao> Cancelar tarefa → perigo/md",
+  ],
+  "tarefas/page.tsx": [
+    "<Link> Nova tarefa → primario/lg",
+  ],
   "home/HomeProfessor.tsx": [
     "<button> Compareceu → primario/sm",
     "<button> Faltou → secundario/sm",
