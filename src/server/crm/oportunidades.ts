@@ -15,6 +15,7 @@ export async function moverEtapaEmLote(
 ): Promise<Resultado<{ movidas: string[]; recusadas: { id: string; motivo: string }[] }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
+    exigirPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
     const unicos = [...new Set(ids)];
     if (unicos.length === 0) throw new ErroRegra("Selecione ao menos uma oportunidade.");
     if (unicos.length > MAX_LOTE) throw new ErroRegra("Selecione no máximo 50 oportunidades.");
