@@ -55,6 +55,24 @@ describe("chamarMotor", () => {
     f.mockResolvedValue(json(404, { code: "NUMERO_INEXISTENTE" }));
     await expect(chamarMotor("/x", { metodo: "GET" })).rejects.toMatchObject({ codigo: "NUMERO_INEXISTENTE" });
   });
+  it("404 sem code NUMERO_INEXISTENTE → HTTP", async () => {
+    f.mockResolvedValue(json(404, { code: "MIDIA_AUSENTE" }));
+    await expect(chamarMotor("/x", { metodo: "GET" })).rejects.toMatchObject({ codigo: "HTTP", status: 404 });
+  });
+  it("timeout lendo o corpo de um 200 → TIMEOUT", async () => {
+    const res = new Response("{}", { status: 200 });
+    vi.spyOn(res, "text").mockRejectedValue(Object.assign(new Error("timed out"), { name: "TimeoutError" }));
+    f.mockResolvedValue(res);
+    const erro = await chamarMotor("/x", { metodo: "GET" }).catch((e: unknown) => e);
+    expect(erro).toBeInstanceOf(ErroMotor);
+    expect(erro).toMatchObject({ codigo: "TIMEOUT" });
+  });
+  it("200 com JSON inválido → HTTP com o status", async () => {
+    f.mockResolvedValue(new Response("{nao-json", { status: 200 }));
+    const erro = await chamarMotor("/x", { metodo: "GET" }).catch((e: unknown) => e);
+    expect(erro).toBeInstanceOf(ErroMotor);
+    expect(erro).toMatchObject({ codigo: "HTTP", status: 200 });
+  });
   it("403 ACAO_NAO_DISPONIVEL", async () => {
     f.mockResolvedValue(json(403, { code: "ACAO_NAO_DISPONIVEL" }));
     await expect(chamarMotor("/x", { metodo: "POST" })).rejects.toMatchObject({ codigo: "ACAO_NAO_DISPONIVEL" });
@@ -104,6 +122,10 @@ describe("baixarDoMotor", () => {
     f.mockResolvedValue(res);
     await expect(baixarDoMotor("/v1/numeros/n1/midia/m1")).rejects.toMatchObject({ codigo: "HTTP", status: 413 });
     expect(lerCorpo).not.toHaveBeenCalled();
+  });
+  it("404 de mídia ausente → HTTP, não NUMERO_INEXISTENTE", async () => {
+    f.mockResolvedValue(json(404, { code: "NAO_ENCONTRADO" }));
+    await expect(baixarDoMotor("/m")).rejects.toMatchObject({ codigo: "HTTP", status: 404 });
   });
   it("devolve bytes, mime e tamanho", async () => {
     f.mockResolvedValue(new Response(Buffer.from("abc"), { status: 200, headers: { "content-type": "image/png; charset=x" } }));
