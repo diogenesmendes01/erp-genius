@@ -2,6 +2,16 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Fase 3, bloco D — tempo real e paginação (17/10/2026)
+
+Branch `claude/fase3-d-tempo-real` (PR empilhado sobre `claude/fase3-b-escopo-roteamento`). Tarefas 21 (aviso no banco, migration `20261017100000_inbox_tempo_real`, e barramento `LISTEN`), 22 (rota SSE `/api/inbox/eventos` filtrada por escopo) e 23 (lista e thread paginadas por cursor, filtros da URL).
+
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 670 arquivos, 4831 testes verdes.
+- `npm run lint`: saída 0; 0 erros (43 avisos já existentes).
+- Integração, recorte por `vitest related -c vitest.integration.config.ts` nos arquivos do bloco (migration aplicada só no banco do perfil de teste): 18 arquivos, 157 testes; 17 arquivos verdes (151 testes) e 6 falhas em `academico/visibilidade.int.test.ts`, preexistentes na linha de base (falham igual no `main`). Nenhuma falha nova. Não é a suíte completa.
+- **Estado**: implementado; aguarda o merge do bloco B e o integrador. Não concluído.
+
 ## Fase 3 — IDs de migration (16/10/2026)
 
 Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs foram **confirmados pelo integrador** (o controlador da sessão) em 16/10/2026, com registro no ledger de execução, sem renomear (ordem coerente: depois de 20261001/20261002 da #194). Estado por ID:
@@ -2116,6 +2126,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
+## Fase 3, bloco D: tempo real (Tasks 21 a 23)
+
+- Integrador autorizou `pg` 8.23.1 e `@types/pg` 8.23.1 (16/10) para o LISTEN da Task 21
+
 ## CRM, bloco B: Oportunidade, capacidades e etapas do funil (Fase 2, Tasks 3 a 5; 16/10/2026)
 
 ### Verificação antes do merge (branch `claude/fase2-b-oportunidade`, HEAD `435b10e`)
@@ -2426,6 +2440,106 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   testes) e `reserva-vaga` (68). O banco foi apagado no fim.
 **Estado**: Implementado; aguardando o integrador e a confirmação da Q7. Não concluído.
 
+## CRM, bloco H: tarefas, agenda e mensagem agendada (Fase 2, Tasks 27 a 31; 17/10/2026)
+
+### Verificação para o PR (bloco H, branch `claude/fase2-h-tarefas`, 17/10/2026)
+- Tarefas: 27 (model `Tarefa` e `NotificacaoUsuario`, agrupamento por data civil institucional), 28 (ações de tarefa
+  com escopo por setor, versão e auditoria), 29 (mensagem agendada pela tarefa, com `agendadaPara` respeitado pelo
+  despachante), 30 (lembretes no cron, com notificação ao usuário) e 31 (tela `/tarefas` com lista, agenda e
+  calendário), mais as correções da revisão (ids de arraste da agenda semanal; editar a tarefa não rearma lembrete já
+  disparado; a lista mostra atrasadas antigas).
+- Migration 2.M4 `20261017090000_crm_tarefas`, conferida pelo integrador: vem depois de `20261001000000` a
+  `20261016130000_preferencias_inbox_usuario`.
+- **Merge da `main` (afd13cb9, com as Fases 2B a 2G, 2I, 3A e 3B):** houve conflito em `prisma/schema.prisma` (relações
+  de `Usuario`), `src/app/borda-rota-mapa.ts`, `src/app/borda-rota.render.test.ts` e `src/app/botoes.test.ts`. Nos
+  quatro, os dois lados foram mantidos (`/tarefas` ao lado de `/carteira` e `/comissoes`). `nav.ts`, `Sidebar.tsx`,
+  `labels.ts`, `trilha.ts` e `despachante.ts` mesclaram sem conflito. Nenhuma linha do H foi perdida: os
+  `revalidatePath("/tarefas")` e os ícones `Checklist`, `KanbanSquare` e `Briefcase` continuam.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 674 arquivos e 4874 testes, todos verdes.
+- Integração no perfil `dev-email` (`erp_genius_test_dev_email`, recriado com drop e create): `prisma migrate deploy`
+  aplicou tudo. Passaram `crm/tarefas`, `crm/lembretes`, `crm/mensagens-agendadas`, `whatsapp/despachante-agendada`,
+  `whatsapp/despachante-comercial` e `whatsapp/despachante.live`: 6 arquivos e 54 testes, com saída 0.
+**Estado**: Implementado; aguardando revisão e merge. Não concluído.
+
+## Fase 4A — driver MOTOR e cliente do motor (17/10/2026)
+
+- Branch `claude/fase4-a-driver-motor`, base `main` 08e2b4b7. Tarefas 1 a 4 do plano `04-fase-motor.md`: enum `MOTOR` e
+  tipos de mensagem, tabelas de eventos e reações (migrations `20261017120000_whatsapp_motor_enums` e
+  `20261017130000_whatsapp_motor_dados`), configuração e cliente HTTP do motor, porta v2 e `drivers/motor.ts`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 676 arquivos e 4898 testes verdes (linha de base: ~671 e ~4850).
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração no perfil `integracao` (banco `erp_genius_test`, migrations em dia): `vitest related` sobre os 15 .ts do diff
+  se espalha por quase toda a suíte (`labels.ts` é importado em todo lugar) e foi interrompido por tempo. Rodados os
+  arquivos que o bloco toca: `motor/schema-motor`, `despachante.live`, `despachante-comercial`, `destinatario-atual`,
+  `cron` e `acoes` (whatsapp): saída 0, 6 arquivos e 53 testes verdes. A suíte completa fica com o integrador.
+
+### Correções da R1 do #205 (17/10/2026)
+- **C1 (conflito com o `main`):** o `main` (8a5debff, com o CRM bloco H) foi mesclado. Só o quadro teve conflito: os
+  dois blocos ficaram, cada um com a própria linha **Estado**. `schema.prisma` (`IntencaoMensagem` com `agendadaPara` e
+  `tarefaId` ao lado de `clientMessageId`), `labels.ts`, `enums-rotulos.test.ts` e `despachante.ts` (filtro por
+  `agendadaPara` ao lado da porta v2) mesclaram sem conflito. As migrations da 4A (`20261017120000` e
+  `20261017130000`) seguem depois de `20261017090000_crm_tarefas` e `20261017100000_inbox_tempo_real`.
+- **C2 (ambiente sem envio até ligar o driver), decisão registrada:** a migration
+  `20261017130000_whatsapp_motor_dados` termina com `UPDATE "NumeroWhatsApp" SET ativo = false, sessao =
+  'DESCONECTADO' WHERE driver <> 'MOTOR'`, ou seja, desativa todos os números que não são MOTOR. Como o `driverMotor`
+  só entra em `DRIVERS` na Task 5 (bloco 4B) e ainda não há como cadastrar um número MOTOR (Tasks 18 e 19), **depois
+  do deploy da 4A o ambiente fica sem envio de WhatsApp até a tarefa que liga o driver**. Isso é intencional: segue
+  as decisões D1 e D3 (ambiente em teste; Meta e Evolution saem). O integrador não deve subir a 4A num ambiente que
+  precise enviar WhatsApp antes da 4B.
+- **C3 (número MOTOR no despachante):** o comentário de `DRIVERS` dizia que o MOTOR "entra na Fase 4, Task 4"; agora
+  diz que o driver entra na Task 5. Novo `driverDoNumero(driver)` em `despachante.ts`: sem driver registrado, lança
+  `ErroDriver("driver_sem_implementacao")` (não reprocessável), e o `catch` grava esse motivo em vez de
+  `resultado_incerto`, que mandava para revisão humana algo que com certeza não saiu. O registro do driver ficou para
+  a Task 5, como manda o plano, porque depende do `clientMessageId` no claim e do adiamento reprocessável (Task 6).
+  Teste unitário: `src/server/whatsapp/despachante-driver.test.ts`.
+- **C4 (requisito para a Task 8, pendência):** `drivers/motor.ts` trata `TIMEOUT` e `INDISPONIVEL` (inclui
+  `ECONNRESET`) como reprocessáveis, mas um timeout depois que o motor recebeu o POST é um resultado incerto. **A nova
+  tentativa precisa reaproveitar o mesmo `clientMessageId`** para o motor deduplicar; hoje o despachante gera
+  `randomUUID()` quando a intenção não tem id, e o schema descreve o id como "um por tentativa". A Task 8 precisa
+  garantir isso junto com as Tasks 5 e 6 (id gravado no claim e mantido no adiamento): só o reenvio decidido na revisão
+  humana (`REENVIAR_APOS_VERIFICACAO`) zera o id. Não muda nada nesta PR, porque o driver não está ligado e o
+  despachante ainda não lê `reprocessavel`.
+- **C5:** tratado na #206 (`recursos-canal.ts`).
+- **C6 (nit):** `drivers/motor.ts` passou a montar `/v1/numeros/${encodeURIComponent(…)}`, como `motor/acoes.ts`.
+  Teste em `drivers/motor.test.ts`.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 685 arquivos e 4950 testes, todos verdes. Os `*.int.test.ts` não rodaram
+  nesta rodada (precisam de banco).
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
+
+## Fase 3E: React e porte dos componentes do motor (17/10/2026)
+
+- **Branch:** `claude/fase3-e-componentes` (base `main` 08e2b4b7). **Tarefas:** 24 a 28 (React, lista virtual, histórico,
+  balão e compositor em `src/components/conversa/`).
+- **Verificação:** `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0 (679 arquivos, 4905 testes verdes);
+  `npm run lint` saída 0 (0 erros, 45 avisos); `vitest related --run -c vitest.integration.config.ts` sobre os 29
+  arquivos .ts/.tsx do diff, saída 0 (3 arquivos, 28 testes), no banco `tester`. Suíte de integração completa não rodada
+  (fica com o integrador). Nenhuma falha nova em relação à linha de base.
+- **Índice do cursor da lista (atenção para migrations futuras):** o `NULLS LAST` de
+  `AtendimentoWhatsApp_ultimaMensagemEm_id_idx` (`ultimaMensagemEm DESC NULLS LAST, id DESC`) só existe na migration
+  `20261017110000_inbox_indice_cursor_lista`. O Prisma não expressa a ordem de nulos no schema, que declara só
+  `sort: Desc`. Um `prisma migrate dev` futuro pode enxergar diferença nesse índice e propor recriá-lo sem o
+  `NULLS LAST`. Se propuser, a migration gerada deve ser editada para manter `DESC NULLS LAST`, porque é essa ordem que
+  casa com a consulta da lista. No `prisma migrate diff` desta revisão, o índice não apareceu.
+- **Correções da R1 (17/10/2026):** merge da `main` (`1c02c4c5`) com conflito em `src/app/botoes.test.ts` (entradas dos
+  dois lados mantidas, sem afrouxar a trava) e neste quadro (bloco H e bloco 3E, cada um com o próprio Estado).
+  `LIBERADOS` de `recursos-canal.ts` virou `Partial<Record<DriverWhatsApp, …>>`, para compilar com o `MOTOR` da #205 em
+  qualquer ordem de merge, com teste de driver ausente do mapa. O `Compositor` ajusta rascunho, anexo e erro no render
+  quando muda o atendimento ou o modo, sem setState em effect, com teste da troca.
+- **Verificação com a `main` mesclada:** `prisma generate`; `tsc --noEmit` saída 0; `npm run lint` com 0 erros e 43
+  avisos (nenhum nos arquivos da PR); `vitest run` com 687 arquivos e 4956 testes verdes. Num banco descartável próprio,
+  `erp_genius_test_fix206` (localhost:54329), `prisma migrate deploy` aplicou tudo e passaram
+  `inbox/barramento`, `inbox/consultas-pagina` e `inbox/eventos-sse` (3 arquivos, 28 testes). O banco foi apagado no fim.
+- **Segundo merge da `main` (`cd0a9cbc`, com a #205 da Fase 4A):** só este quadro teve conflito (ficam o bloco da 4A e o
+  da 3E, cada um com o próprio Estado). Com `MOTOR` no enum `DriverWhatsApp`: `prisma generate`; `tsc --noEmit` saída 0,
+  o que confirma o `LIBERADOS` parcial; `npm run lint` com 0 erros e 43 avisos (nenhum nos arquivos da PR); `vitest run`
+  com 692 arquivos e 5007 testes verdes; no `erp_genius_test_fix206` recriado, `prisma migrate deploy` aplicou tudo,
+  inclusive as migrations da 4A, e os mesmos 3 arquivos de integração do inbox passaram (28 testes). O banco foi
+  apagado no fim.
+**Estado**: Implementado; aguardando o integrador. Não concluído.
+
 ## CRM, bloco F: contatos (Fase 2, Tasks 19 a 24; 17/10/2026)
 
 ### Verificação para o PR (bloco F, branch `claude/fase2-f-contatos`, 17/10/2026)
@@ -2456,12 +2570,21 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   (`src/lib/capacidades.ts`, rótulo "Exportar contatos (sem telefone e e-mail)"), exigida por
   `/api/exportacoes/contatos`. O Administrador já a tem; para os demais papéis é concedida por usuário (`Usuario.permissoes`), como
   `dados.exportar_leads`. O integrador precisa confirmar essa capacidade e decidir a quem concedê-la antes do merge.
-**Estado**: Implementado; correções da revisão final aplicadas; aguardando o integrador (inclusive a confirmação de
-`dados.exportar_contatos`). Não concluído.
-
 - Verificação final do bloco (17/10/2026, branch `claude/fase2-f-contatos`, Tarefas 22 a 24): `tsc --noEmit` saída 0;
   `npm test` 675 arquivos/4.879 testes, saída 0 (numa primeira rodada, com lint em paralelo, `confirmacoes.test.ts`
   estourou o tempo de 30 s por carga; isolado passa e a rerrodada completa passou); `npm run lint` 0 erros, 43 avisos.
   Integração no perfil `dev-gravacoes`: os 8 `*.int.test.ts` do diff + `src/server/crm`: 18 arquivos, 117 testes verdes,
   saída 0. O `vitest related` sobre o diff alcança 206 arquivos de integração (via `evento.ts`/`labels.ts`) e foi
   interrompido; até ali só falhou `agenda/substituicao-avisos`, preexistente da linha de base. Suíte completa fica com o integrador.
+- **Merge da `main` (`0d091807`, com #202 a #206 e #208):** houve conflito só em `src/app/botoes.test.ts` (`AREAS_MIGRADAS`
+  ficou com `/tarefas` e `/contatos`; na lista de alternâncias sem `aria-pressed` ficaram a `FichaContato` e o
+  `BalaoMensagem`) e neste quadro (blocos H, 4A, 3E e F, cada um com o próprio **Estado**). `schema.prisma`,
+  `labels.ts`, `nav.ts`, `Sidebar.tsx`, `trilha.ts`, as travas e mapas de `src/app/*.test.ts`, `Modal.tsx` e
+  `despachante.ts` mesclaram sem conflito, e nenhuma linha do F ou da `main` se perdeu (o bloco F não traz migration;
+  a última segue `20261017130000_whatsapp_motor_dados`). Verificação: `prisma validate` e `prisma generate`;
+  `tsc --noEmit` saída 0; `npm run lint` com 0 erros (43 avisos já existentes); `vitest run` com 699 arquivos e 5050
+  testes verdes. Num banco descartável próprio, `erp_genius_test_fix211` (localhost:54329), `prisma migrate deploy`
+  aplicou tudo e passaram os 8 `*.int.test.ts` do diff e `src/server/crm` (21 arquivos, 148 testes, saída 0). O banco
+  foi apagado no fim.
+**Estado**: Implementado; correções da revisão final aplicadas; aguardando o integrador (inclusive a confirmação de
+`dados.exportar_contatos`). Não concluído.

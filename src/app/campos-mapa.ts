@@ -137,4 +137,21 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Certificado (só Costa Rica) · opcional · CampoMoeda · erro: errosPasso2.certificado",
     "Justificativa da exceção (sem tabela de preço) · obrigatório · CampoTexto",
   ],
+  "src/app/(app)/tarefas/AgendaTarefas.tsx": [
+    'Data · obrigatório se item.tipo === "mensagem" · input',
+    'Hora · obrigatório se item.tipo === "mensagem" · input · dica',
+  ],
+  "src/app/(app)/tarefas/PainelTarefa.tsx": [
+    "Título · obrigatório · input",
+    "Tipo · opcional · select",
+    "Prioridade · opcional · select",
+    "Data · opcional · input",
+    "Hora · opcional · input · dica",
+    "Duração · opcional · select",
+    "Lembrete · opcional · select · dica",
+    "Responsável · opcional · select",
+    "Descrição · opcional · CampoTexto",
+    "Resultado · opcional · CampoTexto · dica",
+    "Motivo do cancelamento · opcional · input",
+  ],
 };

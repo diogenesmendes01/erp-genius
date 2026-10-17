@@ -10,13 +10,14 @@ import {
 } from "@/server/comercial/regua-fabrica";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
-import { ErroDriver, type CanalWhatsApp, type NumeroCanal } from "./canal";
+import { randomUUID } from "node:crypto";
+import { ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
 import { driverEvolution } from "./drivers/evolution";
 import { driverMetaCloud } from "./drivers/meta-cloud";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
-import { Papel } from "@prisma/client";
+import { DriverWhatsApp, Papel } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
@@ -30,10 +31,21 @@ import { comContatoIndividual } from "./grupos";
 // SEGURANÇA DE AMBIENTE (gap A5 do doc 28): sem WHATSAPP_LIVE=1 no env, NENHUMA mensagem
 // real sai — tudo que passaria vira SIMULADA. Dev contra o banco compartilhado não dispara.
 
-const DRIVERS: Record<"META_CLOUD" | "BAILEYS", CanalWhatsApp> = {
+// O `driverMotor` já existe (Fase 4, Task 4), mas só entra aqui na Task 5 (bloco 4B), junto com o
+// `clientMessageId` no claim e o adiamento reprocessável. Até lá, um número MOTOR que chegue ao
+// despachante falha com `ErroDriver("driver_sem_implementacao")`: motivo estável, sem I/O, e não
+// `resultado_incerto` (nada saiu, então não há o que revisar).
+const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
   META_CLOUD: driverMetaCloud,
   BAILEYS: driverEvolution,
 };
+
+/** Driver registrado para o número; sem registro, falha tipada antes de qualquer envio. */
+export function driverDoNumero(driver: DriverWhatsApp): CanalWhatsApp {
+  const canal = DRIVERS[driver];
+  if (!canal) throw new ErroDriver("driver_sem_implementacao", `Driver ${driver} sem implementação no despachante.`);
+  return canal;
+}
 
 export interface ResultadoDespacho {
   avaliadas: number;
@@ -107,8 +119,9 @@ export async function despacharFila(
       ...(opts.intencaoId ? { id: opts.intencaoId } : {}),
       ...(opts.somenteAvisosAgenda ? { avisoAlteracaoAgendaId: { not: null } } : {}),
       OR: [
-        { status: "PENDENTE" },
-        { status: "ADIADA", despacharAposEm: { lte: agora } },
+        // Mensagem agendada pelo atendente (Tarefas): só entra na fila a partir de `agendadaPara`.
+        { status: "PENDENTE", OR: [{ agendadaPara: null }, { agendadaPara: { lte: agora } }] },
+        { status: "ADIADA", despacharAposEm: { lte: agora }, OR: [{ agendadaPara: null }, { agendadaPara: { lte: agora } }] },
         // Conferência pode terminar antes do prazo: revalidar a cada execução.
         { status: "ADIADA", motivoFalha: "comprovante_em_conferencia" },
       ],
@@ -405,7 +418,9 @@ export async function despacharFila(
     const shadow =
       !live ||
       (gestao && gestaoEstado !== "ATIVA") ||
-      (automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
+      // Aviso de agenda não usa o ensaio da política de COBRANÇA: tem gate próprio
+      // (COMUNICACOES_AGENDA_ENVIO_ENABLED + número AGENDA), como no kill switch e no teto.
+      (!agenda && automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
       (reativa && saudacaoEstado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
@@ -480,9 +495,11 @@ export async function despacharFila(
         driver: it.numero.driver,
         providerRef: it.numero.providerRef,
       };
-      const driver = DRIVERS[it.numero.driver];
+      const driver = driverDoNumero(it.numero.driver);
+      // Task 4: porta v2. O id real por tentativa chega na Task 8; até lá, drivers antigos ignoram.
+      const opcoesEnvio: OpcoesEnvio = { clientMessageId: it.clientMessageId ?? randomUUID(), origem: it.origem };
       let envio;
-      if (it.tipo !== "TEXTO" && it.tipo !== "OUTRO" && it.midiaPath) {
+      if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
         // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
         const midia = await lerMidiaParaEnvio(it.midiaPath);
         envio = await driver.enviarMidia(numeroCanal, it.contato.telefoneE164, {
@@ -491,16 +508,16 @@ export async function despacharFila(
           nomeArquivo: midia.nomeArquivo,
           dadosBase64: midia.dadosBase64,
           legenda: it.corpoRenderizado || null,
-        });
+        }, opcoesEnvio);
       } else if (it.numero.driver === "META_CLOUD" && it.template) {
         envio = await driver.enviarTemplate(numeroCanal, it.contato.telefoneE164, {
           nome: it.template.nome,
           idioma: it.template.idioma,
           variaveis: (it.variaveis as string[] | null) ?? [],
           corpoRenderizado: it.corpoRenderizado,
-        });
+        }, opcoesEnvio);
       } else {
-        envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado);
+        envio = await driver.enviarTexto(numeroCanal, it.contato.telefoneE164, it.corpoRenderizado, opcoesEnvio);
       }
 
       await prisma.$transaction(confirmarTransacao(async (tx) => {

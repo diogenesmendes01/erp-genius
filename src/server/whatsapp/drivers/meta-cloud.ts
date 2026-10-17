@@ -4,6 +4,7 @@ import {
   type EnvioMidia,
   type EnvioTemplate,
   type NumeroCanal,
+  type OpcoesEnvio,
   type ResultadoEnvio,
 } from "../canal";
 
@@ -86,7 +87,8 @@ const CAMPO_MIDIA: Record<EnvioMidia["tipo"], "image" | "audio" | "video" | "doc
 };
 
 export const driverMetaCloud: CanalWhatsApp = {
-  async enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string): Promise<ResultadoEnvio> {
+  async enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string, opcoes: OpcoesEnvio): Promise<ResultadoEnvio> {
+    void opcoes;
     return chamarGraph(numero, {
       to: paraE164.replace(/\D/g, ""),
       type: "text",
@@ -94,7 +96,8 @@ export const driverMetaCloud: CanalWhatsApp = {
     });
   },
 
-  async enviarTemplate(numero: NumeroCanal, paraE164: string, t: EnvioTemplate): Promise<ResultadoEnvio> {
+  async enviarTemplate(numero: NumeroCanal, paraE164: string, t: EnvioTemplate, opcoes: OpcoesEnvio): Promise<ResultadoEnvio> {
+    void opcoes;
     return chamarGraph(numero, {
       to: paraE164.replace(/\D/g, ""),
       type: "template",
@@ -108,7 +111,8 @@ export const driverMetaCloud: CanalWhatsApp = {
     });
   },
 
-  async enviarMidia(numero: NumeroCanal, paraE164: string, m: EnvioMidia): Promise<ResultadoEnvio> {
+  async enviarMidia(numero: NumeroCanal, paraE164: string, m: EnvioMidia, opcoes: OpcoesEnvio): Promise<ResultadoEnvio> {
+    void opcoes;
     const mediaId = await subirMidia(numero, m);
     const campo = CAMPO_MIDIA[m.tipo];
     const objeto: Record<string, unknown> = { id: mediaId };

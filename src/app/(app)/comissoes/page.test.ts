@@ -13,6 +13,8 @@ vi.mock("@/lib/prisma", () => ({
     configuracaoOperacional: { findUnique: async () => ({ fusoInstitucional: "America/Sao_Paulo" }) },
   },
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/server/crm/comissoes-estorno-acao", () => ({ estornarComissaoDoPainel: vi.fn() }));
 vi.mock("@/server/crm/comissoes-painel", async (original) => ({ ...(await original<typeof import("@/server/crm/comissoes-painel")>()), carregarPainelComissoes: mocks.carregar }));
 
 import Page from "./page";
@@ -74,6 +76,29 @@ describe("/comissoes (página)", () => {
     const html = await renderPagina(vendedor);
     expect(html).toContain("md:table");
     expect(html).toContain("md:hidden");
+  });
+
+  it("botão Estornar só para FINANCEIRO e ADMINISTRADOR (comissoes.estornar), e só em linha estornável", async () => {
+    const aprovada = { ...painel.linhas[0], id: "c2", nome: "Bruno Lima", status: "APROVADA" };
+    const comAprovada = async (usuario: typeof vendedor) => {
+      mocks.usuario.valor = usuario;
+      mocks.carregar.mockResolvedValue({ ...painel, linhas: [...painel.linhas, aprovada] });
+      return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    };
+    for (const u of [financeiro, com(["ADMINISTRADOR"])]) {
+      const html = await comAprovada(u);
+      expect(html).toContain('aria-label="Estornar comissão de Bruno Lima"');
+      expect(html).not.toContain("Estornar comissão de Ana Souza"); // PAGA não é estornável
+    }
+    for (const u of [vendedor, gerente]) expect(await comAprovada(u)).not.toContain("Estornar");
+  });
+
+  it("matriculadas sem comissão avisam que são pendências de todos os períodos", async () => {
+    mocks.usuario.valor = financeiro;
+    mocks.carregar.mockResolvedValue({ ...painel, matriculadasSemComissao: [{ oportunidadeId: "o1", nome: "Carla" }] });
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ periodo: "ano" }) }));
+    expect(html).toContain("Matriculadas sem comissão");
+    expect(html).toContain("Pendências de todos os períodos");
   });
 
   it("período e vendedor da URL chegam ao carregamento", async () => {
