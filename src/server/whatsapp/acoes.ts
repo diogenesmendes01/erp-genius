@@ -621,6 +621,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
     });
     if (conflito) throw new ErroRegra("Já existe um número cadastrado com este telefone.");
 
+    let driverEditado: string = dados.driver;
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
         const antes = await tx.numeroWhatsApp.findUnique({ where: { id: dados.id } });
@@ -630,13 +631,13 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
           data: {
             telefoneE164: dados.telefoneE164,
             rotulo: dados.rotulo,
-            driver: dados.driver,
             finalidade: dados.finalidade,
-            providerRef: dados.id,
             donoId: dados.donoId,
             ativo: dados.ativo,
           },
         });
+        // Edição preserva driver e providerRef do registro (número legado não vira MOTOR aqui).
+        driverEditado = antes.driver;
         // Auditoria D26 (inclui troca de driver): antes → depois.
         await registrarEvento(tx, {
           tipo: "NumeroWhatsAppAlterado",
@@ -656,9 +657,9 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
             depois: {
               telefoneE164: dados.telefoneE164,
               rotulo: dados.rotulo,
-              driver: dados.driver,
+              driver: antes.driver,
               finalidade: dados.finalidade,
-              providerRef: dados.id,
+              providerRef: antes.providerRef,
               donoId: dados.donoId,
               ativo: dados.ativo,
             },
@@ -689,10 +690,12 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
     });
 
     // Cadastro no motor fora da transação: motor fora do ar não desfaz o número (o conectar refaz).
-    try {
-      await garantirNumeroNoMotor({ providerRef: id, rotulo: dados.rotulo });
-    } catch (e) {
-      console.error("[salvarNumeroWhatsApp] cadastro no motor fica para o conectar:", e);
+    if (driverEditado === "MOTOR") {
+      try {
+        await garantirNumeroNoMotor({ providerRef: id, rotulo: dados.rotulo });
+      } catch (e) {
+        console.error("[salvarNumeroWhatsApp] cadastro no motor fica para o conectar:", e);
+      }
     }
 
     // Linha comercial (SPEC-ERP-005 LC-15): conversas desta linha que estavam na triagem passam já
