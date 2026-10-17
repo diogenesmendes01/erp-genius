@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { APELIDOS_FUSO_LEGADOS, dataCivilInstitucional, fusoIanaValido, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
+import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
 // Um critério só para servidor, PaisSchema e CampoFuso (docs/43 §6 item 6).
 describe("fusoIanaValido", () => {
   it.each(["America/Sao_Paulo", "America/Costa_Rica", "UTC", "Etc/GMT+3", "US/Eastern"])("aceita %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(true));
@@ -48,7 +48,39 @@ describe("migration 20261017150000 (preferências já gravadas)", () => {
   it("converte, nas duas tabelas, exatamente os apelidos do mapa", () => {
     for (const tabela of ['UPDATE "Usuario"', 'UPDATE "ContaPortalAluno"']) expect(sql).toContain(tabela);
     const pares = [...sql.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(([, apelido, canonico]) => [apelido, canonico]);
-    const esperado = Object.entries(APELIDOS_FUSO_LEGADOS);
+    const esperado = Object.entries(APELIDOS_FUSO_US_BRASIL);
+    expect(pares).toEqual([...esperado, ...esperado]);
+  });
+});
+// Revisão R1 do #210 (C1): links do `backward` que o ICU lista em Intl.supportedValuesOf("timeZone").
+describe("links do backward listados pelo ICU", () => {
+  it.each([
+    ["Asia/Calcutta", "Asia/Kolkata"], ["America/Buenos_Aires", "America/Argentina/Buenos_Aires"], ["Europe/Kiev", "Europe/Kyiv"],
+    ["Asia/Saigon", "Asia/Ho_Chi_Minh"], ["Asia/Katmandu", "Asia/Kathmandu"], ["Asia/Rangoon", "Asia/Yangon"],
+    ["Atlantic/Faeroe", "Atlantic/Faroe"], ["America/Indianapolis", "America/Indiana/Indianapolis"],
+    ["America/Louisville", "America/Kentucky/Louisville"], ["Pacific/Truk", "Pacific/Chuuk"], ["Pacific/Ponape", "Pacific/Pohnpei"],
+    ["America/Godthab", "America/Nuuk"], ["Pacific/Enderbury", "Pacific/Kanton"], ["Africa/Asmera", "Africa/Asmara"],
+    ["America/Cordoba", "America/Argentina/Cordoba"], ["America/Mendoza", "America/Argentina/Mendoza"],
+    ["America/Jujuy", "America/Argentina/Jujuy"], ["America/Catamarca", "America/Argentina/Catamarca"],
+  ])("%s vira %s", (link, canonico) => {
+    expect(normalizarFusoIana(link)).toBe(canonico);
+    expect(FusoPreferenciaSchema.parse(link)).toBe(canonico);
+  });
+  it("cada link e seu destino são o mesmo fuso para o ICU", () => {
+    const zona = (fuso: string) => new Intl.DateTimeFormat("en", { timeZone: fuso }).resolvedOptions().timeZone;
+    for (const [link, canonico] of Object.entries(LINKS_FUSO_BACKWARD_ICU)) expect(zona(canonico), link).toBe(zona(link));
+  });
+  it("o mapa geral reúne os dois grupos, sem chave repetida", () => {
+    expect(Object.keys(APELIDOS_FUSO_LEGADOS)).toHaveLength(Object.keys(APELIDOS_FUSO_US_BRASIL).length + Object.keys(LINKS_FUSO_BACKWARD_ICU).length);
+    expect(new Set(Object.keys(APELIDOS_FUSO_LEGADOS).map((k) => k.toLowerCase())).size).toBe(Object.keys(APELIDOS_FUSO_LEGADOS).length);
+  });
+});
+describe("migration 20261017170000 (links do backward já gravados)", () => {
+  const sql = readFileSync(path.join(process.cwd(), "prisma/migrations/20261017170000_fuso_exibicao_links_backward/migration.sql"), "utf8");
+  it("converte, nas duas tabelas, exatamente os links do mapa", () => {
+    for (const tabela of ['UPDATE "Usuario"', 'UPDATE "ContaPortalAluno"']) expect(sql).toContain(tabela);
+    const pares = [...sql.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(([, apelido, canonico]) => [apelido, canonico]);
+    const esperado = Object.entries(LINKS_FUSO_BACKWARD_ICU);
     expect(pares).toEqual([...esperado, ...esperado]);
   });
 });
