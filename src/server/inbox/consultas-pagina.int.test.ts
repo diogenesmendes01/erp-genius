@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { listarAtendimentosPagina, listarMensagensPagina } from "./consultas-pagina";
+import { codificarCursor, cursorThreadValido } from "./cursor";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 let admin: U, outro: U, numeroId: string;
@@ -152,6 +153,12 @@ describe("thread paginada", () => {
     // Fora do escopo: null (a rota responde 404).
     expect(await listarMensagensPagina(sess(outro), a.id, {})).toBeNull();
     expect(await listarMensagensPagina(sess(admin), "inexistente", {})).toBeNull();
+    // Cursor com `em: null` não vale na thread: null, não a página mais recente (que duplicaria mensagens).
+    const cursorNulo = codificarCursor({ em: null, id: p1.mensagens[0].id });
+    expect(await listarMensagensPagina(sess(admin), a.id, { antes: cursorNulo })).toBeNull();
+    expect(await listarMensagensPagina(sess(admin), a.id, { depois: cursorNulo })).toBeNull();
+    expect(cursorThreadValido(cursorNulo)).toBe(false);
+    expect(cursorThreadValido(p1.antes!)).toBe(true);
   });
 
   it("favorita é do usuário, participante e clientMessageId vêm no item", async () => {
