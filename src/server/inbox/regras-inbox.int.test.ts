@@ -328,6 +328,7 @@ describe("§4.4 — regras do Inbox", () => {
     expect((await eventosDo("AtendimentoWhatsApp", a.id)).map((e) => e.tipo)).toContain("AtendimentoEncerrado");
   });
 
+  // Lacuna: o brief pede também "upload no visível", mas não existe upload por atendimento (upload/route.ts é por lead/matrícula).
   it("18 mídia: envio só de arquivo do próprio autor e download no escopo", async () => {
     const { numero, a } = await comercial();
     como(vend);
