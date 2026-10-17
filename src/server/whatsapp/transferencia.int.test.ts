@@ -24,6 +24,15 @@ async function cenario() {
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: v1.id }));
   return { v1, v2, gc, numero, contato, a };
 }
+async function alunoComMatricula(codigo: string, telefone: string) {
+  const cat = await seedCatalogoMinimo();
+  const prof = await criarUsuario([Papel.PROFESSOR], "Prof " + codigo);
+  const nivel = await prisma.nivel.create({ data: { idiomaId: cat.idioma.id, codigo: "A1", ordem: 1 } });
+  const turma = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: cat.modalidade.id, professorId: prof.id } });
+  const aluno = await prisma.aluno.create({ data: { primeiroNome: "Al", sobrenome: "Uno", paisId: cat.pais.id, telefoneE164: telefone, whatsapp: true } });
+  const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo } });
+  return { aluno, turma, matricula };
+}
 const ler = (id: string) => prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id } });
 
 describe("transferir e encerrar", () => {
@@ -53,11 +62,12 @@ describe("transferir e encerrar", () => {
     expect((await ler(a.id)).encerradoEm).toBeNull();
   });
 
-  it("setor que o número não atende: recusa", async () => {
+  it("setor que o número não atende: recusa pela checagem do número (chave válida)", async () => {
     const { v1, a } = await cenario();
+    const { aluno, turma, matricula } = await alunoComMatricula("MAT-S", "+50680001111");
     comoUsuario(v1);
-    const r = await transferirAtendimento({ atendimentoId: a.id, destino: "PEDAGOGICO", destinoChave: "PEDAGOGICO:a:t:m:ALUNO", contexto: "x".repeat(12) });
-    expect(r.ok).toBe(false);
+    const r = await transferirAtendimento({ atendimentoId: a.id, destino: "PEDAGOGICO", destinoChave: `PEDAGOGICO:${aluno.id}:${turma.id}:${matricula.id}:ALUNO`, contexto: "x".repeat(12) });
+    expect(r).toEqual({ ok: false, erro: "O número deste atendimento não atende o setor escolhido." });
     expect((await ler(a.id)).encerradoEm).toBeNull();
   });
 
@@ -72,14 +82,23 @@ describe("transferir e encerrar", () => {
   });
 
   it("FINANCEIRO com matrícula: abre o atendimento financeiro ligado à origem", async () => {
-    const { v1, a } = await cenario();
-    const cat = await seedCatalogoMinimo();
-    const aluno = await prisma.aluno.create({ data: { primeiroNome: "Al", sobrenome: "Uno", paisId: cat.pais.id, telefoneE164: "+50680001111", whatsapp: true } });
-    const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-F" } });
+    const { v1, a, contato } = await cenario();
+    const { aluno, matricula } = await alunoComMatricula("MAT-F", contato.telefoneE164);
     comoUsuario(v1);
     const r = await transferirAtendimento({ atendimentoId: a.id, destino: "FINANCEIRO", destinoChave: `FINANCEIRO:${matricula.id}`, contexto: ctx12 });
     expect(r.ok).toBe(true);
     expect(await ler(r.ok ? r.dado!.novoAtendimentoId : "")).toMatchObject({ finalidade: "FINANCEIRO", matriculaId: matricula.id, alunoId: aluno.id, atendimentoOrigemId: a.id });
+  });
+
+  it("FINANCEIRO com contato sem relação com a matrícula: recusa e não encerra a origem", async () => {
+    const { v1, a } = await cenario();
+    const { matricula } = await alunoComMatricula("MAT-X", "+50680001111");
+    comoUsuario(v1);
+    const r = await transferirAtendimento({ atendimentoId: a.id, destino: "FINANCEIRO", destinoChave: `FINANCEIRO:${matricula.id}`, contexto: ctx12 });
+    expect(r).toEqual({ ok: false, erro: "O contato desta conversa não é o destinatário de cobrança da matrícula escolhida." });
+    expect((await ler(a.id)).encerradoEm).toBeNull();
+    expect(await prisma.atendimentoWhatsApp.count({ where: { atendimentoOrigemId: a.id } })).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: "AtendimentoTransferido" } })).toBe(0);
   });
 
   it("erro de trigger do banco (265) desfaz tudo e vira mensagem de regra", async () => {
