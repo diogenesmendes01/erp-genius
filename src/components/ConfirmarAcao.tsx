@@ -48,9 +48,11 @@ export type PropsConfirmarAcao<T> = {
   aoFalhar?: (falha: FalhaConfirmacao) => void;
   /** Voltar, Escape ou clique no fundo — nada foi executado. */
   aoCancelar: () => void;
+  /** Bottom sheet no celular (ver Modal). */
+  folha?: boolean;
 };
 
-export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, digitacao, acao, idempotente, aoConcluir, aoFalhar, aoCancelar }: PropsConfirmarAcao<T>) {
+export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, digitacao, acao, idempotente, aoConcluir, aoFalhar, aoCancelar, folha }: PropsConfirmarAcao<T>) {
   const execucao = useAcaoCliente({ idempotente });
   const [conferido, setConferido] = useState(false);
   const [digitado, setDigitado] = useState("");
@@ -74,7 +76,7 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, d
   }
 
   return (
-    <Modal titulo={titulo} papel="alertdialog" descricaoId={descricaoId} focoInicial={voltar} aoFechar={cancelar} bloquearFechamento={ocupado}>
+    <Modal titulo={titulo} folha={folha} papel="alertdialog" descricaoId={descricaoId} focoInicial={voltar} aoFechar={cancelar} bloquearFechamento={ocupado}>
       <div id={descricaoId} className="space-y-2 text-sm text-gray-700">{children}</div>
       {conferencia !== undefined && (
         <label className="mt-3 flex items-start gap-2 text-sm text-gray-800">

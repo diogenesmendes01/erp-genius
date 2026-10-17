@@ -10,12 +10,14 @@ import { useDialogo } from "@/lib/dialogo";
 // precisa aparecer dentro do modal.
 // A confirmação de ação irreversível (ConfirmarAcao) usa o mesmo casco como `alertdialog`, descrito
 // pelo texto da consequência (aria-describedby) e com o foco inicial no botão seguro.
-export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = false, papel = "dialog", descricaoId, focoInicial, children }: {
+export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = false, folha = false, papel = "dialog", descricaoId, focoInicial, children }: {
   titulo: React.ReactNode;
   aoFechar: () => void;
   bloquearFechamento?: boolean;
   /** Variante larga (640 px a partir de `sm`); o padrão é 460 px. Em tela estreita ocupa a largura menos 24 px. */
   larga?: boolean;
+  /** Bottom sheet no celular: ancorado na borda de baixo, largura total e cantos de cima arredondados; a partir de `sm` volta a ser o modal centralizado. */
+  folha?: boolean;
   /** "alertdialog": pede uma decisão sobre algo que não se desfaz (o leitor de tela anuncia título e descrição). */
   papel?: "dialog" | "alertdialog";
   /** id do elemento que descreve o diálogo (aria-describedby). */
@@ -28,7 +30,7 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
   const tituloId = useId();
   useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento, focoInicial });
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
+    <div className={`fixed inset-0 z-50 flex justify-center bg-black/60 ${folha ? "items-end p-0 sm:items-center sm:p-4" : "items-center p-4"}`} onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
       <div
         ref={ref}
         role={papel === "alertdialog" ? "alertdialog" : "dialog"}
@@ -36,7 +38,7 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
         aria-labelledby={tituloId}
         aria-describedby={descricaoId}
         tabIndex={-1}
-        className={`max-h-[90dvh] w-full max-w-[calc(100vw-24px)] overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog ${larga ? "sm:w-[640px]" : "sm:w-[460px]"}`}
+        className={`max-h-[90dvh] w-full ${folha ? "max-w-full rounded-b-none sm:max-w-[calc(100vw-24px)] sm:rounded-b-dialog" : "max-w-[calc(100vw-24px)]"} overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog ${larga ? "sm:w-[640px]" : "sm:w-[460px]"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <h3 id={tituloId} className="mb-3 text-xl font-medium">{titulo}</h3>

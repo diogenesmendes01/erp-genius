@@ -959,6 +959,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Convidar → secundario/sm",
     "<Botao> Nota interna → secundario/sm",
     "<Botao> Agendar mensagem → secundario/sm",
+    "<Botao> Convites e agendamentos → secundario/sm",
     "<Botao> Encerrar atendimento → perigo/sm",
     "<Botao> Bloquear → secundario/sm",
     "<Botao> Desafixar · Fixar → fantasma/sm",
@@ -968,6 +969,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> atribuir · Atribuir · Convidar → primario/md",
     "<Botao> Registrar nota → primario/md",
     "<Botao> Agendar → primario/md",
+    "<Botao> Revogar convite → perigo/sm",
+    "<Botao> Cancelar agendamento → perigo/sm",
+    "<Botao> Fechar → secundario/md",
   ],
   "inbox/AtendimentosPainel.tsx": [
     "<button> Abrir atendimento → primario/lg",

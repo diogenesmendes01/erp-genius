@@ -574,6 +574,8 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/inbox/AcoesAtendimento.tsx": [
     "compacto · Este número não atende outro setor.",
+    "compacto · Nenhum convite ativo que você possa revogar.",
+    "compacto · Nenhuma mensagem agendada que você possa cancelar.",
   ],
   "src/app/(app)/inbox/AtendimentosPainel.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
