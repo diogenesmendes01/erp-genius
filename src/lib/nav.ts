@@ -26,12 +26,6 @@ export const NAV: NavItem[] = [
     papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA],
   },
   {
-    href: "/leads",
-    label: "Leads",
-    icon: "Users",
-    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR],
-  },
-  {
     // Cada atendimento valida finalidade e vínculos atuais; menu é apenas navegação.
     href: "/inbox",
     label: "Inbox",

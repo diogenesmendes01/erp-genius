@@ -120,7 +120,7 @@ describe("trilha de navegação", () => {
   });
 
   it("query string e barra final são ignoradas; área sozinha tem um item só", () => {
-    expect(resumo("/leads/cl1z2x3/?aba=historico")).toEqual(["Leads → /leads", "Ficha do lead"]);
+    expect(resumo("/empresas/cl1z2x3/?aba=historico")).toEqual(["Empresas → /empresas", "Empresa"]);
     expect(trilhaDoCaminho("/home")).toHaveLength(1);
     expect(trilhaDoCaminho("/")).toEqual([]);
   });
