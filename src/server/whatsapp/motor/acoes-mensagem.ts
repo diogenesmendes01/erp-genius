@@ -5,7 +5,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { atendimentoVisivel } from "../atendimentos";
-import { despacharFila } from "../despachante";
+import { despacharFila, despacharMensagemGrupo } from "../despachante";
+import { escopoGrupos } from "../escopo";
+import { randomUUID } from "node:crypto";
 import { contentTypePorExtensao } from "@/lib/uploads";
 import { midiaSaidaDoAutor } from "../midia";
 import type { ConteudoEspecial } from "../canal";
@@ -252,5 +254,39 @@ export async function avisarDigitando(atendimentoId: string): Promise<Resultado>
       await executarAcaoMotor(a.numero.providerRef ?? a.numero.id, "presence", { chatId: `${digitos}@s.whatsapp.net`, state: "composing" }, { origem: "HUMANO" });
     } catch (e) { digitandoEm.delete(chave); traduzir(e); }
     return undefined;
+  });
+}
+
+const EnviarGrupoSchema = z.object({ conversaId: z.string().min(1), texto: z.string().trim().min(1, "Escreva o texto.").max(4096, "O texto pode ter no máximo 4096 caracteres.") });
+
+/**
+ * Texto humano para um grupo do WhatsApp (E3.5), dentro do `escopoGrupos` da Fase 3. Grupo não tem atendimento nem
+ * automação: cria a `MensagemWhatsApp` SAIDA `NA_FILA` (origem HUMANO, `clientMessageId` novo) e o despachante envia.
+ */
+export async function enviarMensagemGrupo(input: { conversaId: string; texto: string }): Promise<Resultado<{ status: string }>> {
+  return executarAcao(async () => {
+    const dados = EnviarGrupoSchema.parse(input);
+    const u = await exigirSessao();
+    const conversa = await prisma.conversaWhatsApp.findFirst({
+      where: { id: dados.conversaId, grupoId: { not: null }, grupo: { is: await escopoGrupos(u) } },
+      include: { numero: true, grupo: true },
+    });
+    if (!conversa?.grupo) throw new ErroRegra("Grupo fora do seu escopo de envio.");
+    if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
+    if (conversa.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não envia para grupos.");
+
+    const mensagem = await prisma.mensagemWhatsApp.create({
+      data: {
+        conversaId: conversa.id, numeroId: conversa.numeroId, direcao: "SAIDA", tipo: "TEXTO", corpo: dados.texto, status: "NA_FILA",
+        driver: "MOTOR", origem: "HUMANO", autorId: u.id, clientMessageId: randomUUID(),
+      },
+    });
+    const status = await despacharMensagemGrupo(mensagem.id);
+    await prisma.conversaWhatsApp.updateMany({
+      where: { id: conversa.id, OR: [{ ultimaMensagemEm: null }, { ultimaMensagemEm: { lt: mensagem.criadoEm } }] },
+      data: { ultimaMensagemEm: mensagem.criadoEm },
+    });
+    revalidatePath("/inbox");
+    return { status };
   });
 }
