@@ -1969,3 +1969,18 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   integrador). Esperado: só as 6 falhas da linha de base em `academico/visibilidade`, mais as 14 sensíveis à data
   anotadas no bloco A.
 - `npm run lint`: saída 0, 0 erros e 44 avisos (linha de base: 0 erros).
+
+### Fase 3B: verificação de abertura do PR (2026-10-17)
+
+- Branch `claude/fase3-b-escopo-roteamento`, tarefas 9 a 13, base `claude/fase3-a-modelo-atendimento`. Banco `tester`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 647 arquivos e 4.634 testes (a primeira execução teve 1 timeout de 30 s em `confirmacoes.test.ts` por carga
+  do container; o arquivo passa isolado e a suíte inteira passou na repetição).
+- `npm run lint`: saída 0, 0 erros e 44 avisos.
+- Integração dos arquivos tocados (`destinatario-atual`, `escopo-grupos`, `inbox`, `linha-comercial`, `roteamento`,
+  `triagem-numero`): saída 0, 6 arquivos e 69 testes.
+- `vitest related -c vitest.integration.config.ts` sobre o diff arrastou dependentes transitivos sem relação com o bloco
+  (agenda, diário, academico/visibilidade) e foi interrompido após ~17 min sem terminar. Falhas parciais observadas:
+  `academico/visibilidade` (6, linha de base conhecida) e `agenda/substituicao-avisos`, `diario/reposicao-*`,
+  `diario/calendario-reposicao`, `agenda/replanejamento-concorrencia` (serialização 40001), que o bloco não toca e não foram
+  comparadas com o main. Pendente para a suíte completa do integrador.
