@@ -418,7 +418,9 @@ export async function despacharFila(
     const shadow =
       !live ||
       (gestao && gestaoEstado !== "ATIVA") ||
-      (automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
+      // Aviso de agenda não usa o ensaio da política de COBRANÇA: tem gate próprio
+      // (COMUNICACOES_AGENDA_ENVIO_ENABLED + número AGENDA), como no kill switch e no teto.
+      (!agenda && automatica && !reativa && !gestao && politica.estado !== "ATIVA") ||
       (reativa && saudacaoEstado !== "ATIVA");
     if (shadow) {
       await prisma.intencaoMensagem.updateMany({
