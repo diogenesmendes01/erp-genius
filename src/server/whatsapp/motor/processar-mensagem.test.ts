@@ -34,6 +34,10 @@ describe("inboundDeEventoMotor", () => {
     });
   });
 
+  it("fromMe propaga para o InboundNormalizado", () => {
+    expect(inboundDeEventoMotor(env, dados, true)).toMatchObject({ fromMe: true, driver: "MOTOR" });
+  });
+
   it("LID sem telefone descarta sem conteúdo no log", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const lid = { ...dados, texto: "segredo-da-conversa", contato: { jid: "123@lid", nomePerfil: "Ana" } };

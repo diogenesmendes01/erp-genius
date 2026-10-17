@@ -37,6 +37,9 @@ export const DadosMensagemSchema = z.object({
       gif: z.boolean().nullish(),
     })
     .nullish(),
+  /** `mensagem.enviada`: quem originou o eco (`erp` = envio pelo motor; `celular` = app do telefone). */
+  origem: z.enum(["erp", "celular"]).optional(),
+  clientMessageId: z.string().nullish(),
   citacaoMensagemId: z.string().nullish(),
   encaminhada: z.boolean().nullish(),
   localizacao: z.unknown().optional(),

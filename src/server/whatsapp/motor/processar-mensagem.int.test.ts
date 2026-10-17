@@ -123,3 +123,67 @@ describe("mensagem.recebida (1:1)", () => {
     expect(await readdir(dir).catch(() => [] as string[])).toEqual(arquivosAntes);
   });
 });
+
+describe("mensagem.enviada (eco)", () => {
+  const processarEnviada = (e: EnvelopeMotor) => PROCESSADORES["mensagem.enviada"](e);
+  const CID = "11111111-2222-4333-8444-555555555555";
+  const envEnviada = (extra: Record<string, unknown> = {}): EnvelopeMotor => ({
+    ...env({ direcao: "SAIDA", ...extra }),
+    tipo: "mensagem.enviada",
+  });
+  const msg = (id: string) => prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: id } });
+
+  async function intencao(status: "ENVIANDO" | "FALHOU", motivoFalha: string | null) {
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777" } });
+    return prisma.intencaoMensagem.create({
+      data: { numeroId, contatoId: contato.id, origem: "HUMANO", status, corpoRenderizado: "oi", clientMessageId: CID, motivoFalha },
+    });
+  }
+
+  it("origem celular grava SAIDA CELULAR e marca primeiraRespostaEm", async () => {
+    // Um inbound abre o atendimento; a resposta do celular fecha a primeira resposta.
+    await processar(env({ providerMessageId: "IN1", mensagemId: "50688887777@s.whatsapp.net:IN1" }));
+    expect(await processarEnviada(envEnviada({ origem: "celular", providerMessageId: "CEL1", mensagemId: "50688887777@s.whatsapp.net:CEL1" }))).toBe("ok");
+    expect(await msg("CEL1")).toMatchObject({ direcao: "SAIDA", origem: "CELULAR", autorId: null, driver: "MOTOR" });
+    const at = await prisma.atendimentoWhatsApp.findFirstOrThrow();
+    expect(at.primeiraRespostaEm).not.toBeNull();
+    expect(at.ultimaMensagemEm).not.toBeNull();
+  });
+
+  it("eco origem erp de mensagem já gravada preenche mensagemIdMotor e não duplica", async () => {
+    await processar(env());
+    const m = await prisma.mensagemWhatsApp.findFirstOrThrow();
+    await prisma.mensagemWhatsApp.update({ where: { id: m.id }, data: { mensagemIdMotor: null, clientMessageId: CID, providerMessageId: "ERP1" } });
+    expect(await processarEnviada(envEnviada({ origem: "erp", clientMessageId: CID, providerMessageId: "ERP1", mensagemId: "50688887777@s.whatsapp.net:ERP1" }))).toBe("ok");
+    expect(await prisma.mensagemWhatsApp.count()).toBe(1);
+    expect((await prisma.mensagemWhatsApp.findFirstOrThrow()).mensagemIdMotor).toBe("50688887777@s.whatsapp.net:ERP1");
+  });
+
+  it("eco origem erp com intenção ENVIANDO adia e não grava", async () => {
+    await intencao("ENVIANDO", null);
+    expect(await processarEnviada(envEnviada({ origem: "erp", clientMessageId: CID }))).toEqual({ adiar: "intencao_enviando" });
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+  });
+
+  it("eco origem erp com intenção FALHOU resultado_incerto grava Evento EnvioIncertoConfirmadoPeloMotor", async () => {
+    const i = await intencao("FALHOU", "resultado_incerto");
+    const e = envEnviada({ origem: "erp", clientMessageId: CID });
+    expect(await processarEnviada(e)).toBe("ok");
+    expect(await processarEnviada(e)).toBe("ok");
+    const evs = await prisma.evento.findMany({ where: { tipo: "EnvioIncertoConfirmadoPeloMotor" } });
+    expect(evs).toHaveLength(1);
+    expect(evs[0]).toMatchObject({ agregadoTipo: "IntencaoMensagem", agregadoId: i.id });
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } })).status).toBe("FALHOU");
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+  });
+
+  it("eco origem erp com clientMessageId desconhecido → {ignorado:'eco_sem_origem'}", async () => {
+    expect(await processarEnviada(envEnviada({ origem: "erp", clientMessageId: CID }))).toEqual({ ignorado: "eco_sem_origem" });
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+  });
+
+  it("eco do mesmo evento celular duas vezes não duplica", async () => {
+    await processarEnviada(envEnviada({ origem: "celular", providerMessageId: "CEL2" }));
+    expect(await processarEnviada(envEnviada({ origem: "celular", providerMessageId: "CEL2" }))).toEqual({ ignorado: "duplicada" });
+  });
+});
