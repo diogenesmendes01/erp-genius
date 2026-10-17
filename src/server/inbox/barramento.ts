@@ -5,7 +5,8 @@ import { Client } from "pg";
 export const CANAL_INBOX = "inbox_eventos";
 
 export type AvisoInbox = {
-  tipo: "atendimento.atualizado" | "mensagem.nova" | "mensagem.status";
+  // `resync`: a escuta caiu e voltou; avisos podem ter sido perdidos, o cliente recarrega o que mostra.
+  tipo: "atendimento.atualizado" | "mensagem.nova" | "mensagem.status" | "resync";
   atendimentoId: string | null;
   mensagemId: string | null;
   conversaId: string;
@@ -17,11 +18,12 @@ type Estado = {
   iniciando: Promise<void> | null;
   url: string | null;
   tentativa: number;
+  jaConectou: boolean;
   timer: ReturnType<typeof setTimeout> | null;
 };
 
 const g = globalThis as unknown as { __barramentoInbox?: Estado };
-const estado: Estado = (g.__barramentoInbox ??= { assinantes: new Set(), client: null, iniciando: null, url: null, tentativa: 0, timer: null });
+const estado: Estado = (g.__barramentoInbox ??= { assinantes: new Set(), client: null, iniciando: null, url: null, tentativa: 0, jaConectou: false, timer: null });
 
 const ESPERA_INICIAL_MS = 1000;
 const ESPERA_MAXIMA_MS = 30_000;
@@ -39,6 +41,10 @@ function emitir(payload: string | undefined) {
   if (!payload) return;
   let aviso: AvisoInbox;
   try { aviso = JSON.parse(payload) as AvisoInbox; } catch { return; }
+  repassar(aviso);
+}
+
+function repassar(aviso: AvisoInbox) {
   for (const fn of [...estado.assinantes]) {
     try { fn(aviso); } catch { /* assinante com defeito não derruba o barramento */ }
   }
@@ -87,6 +93,9 @@ async function conectar(): Promise<void> {
   }
   estado.client = client;
   estado.tentativa = 0;
+  // Reconexão (não a primeira): o NOTIFY não é guardado enquanto a escuta está fora, então manda reler.
+  if (estado.jaConectou) repassar({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+  estado.jaConectou = true;
 }
 
 // Idempotente: chamadas repetidas reaproveitam a escuta ativa (ou em andamento).

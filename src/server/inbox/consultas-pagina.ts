@@ -112,14 +112,14 @@ const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: 
 
 /**
  * Página da thread, ordem (criadoEm, id). Sem `antes`/`depois`: as mais recentes. `antes`: as anteriores
- * ao cursor. `depois`: as posteriores. Devolve em ordem cronológica; `antes`/`depois` são os cursores para
- * continuar (null quando não há mais naquele sentido; em `antes=` o sentido "depois" não é calculado).
+ * ao cursor. `depois`: as posteriores. Devolve em ordem cronológica; `antes`/`depois` são sempre os cursores da
+ * primeira/última mensagem da página e `temMais` indica se há mais no sentido pedido.
  * 404 (null) fora do escopo. Cursor de thread com `em: null` (só existe na lista) é inválido: null, nunca
  * a página mais recente em silêncio (o cliente duplicaria mensagens).
  */
 export async function listarMensagensPagina(
   u: UsuarioSessao, atendimentoId: string, o: { antes?: string; depois?: string; limite?: number } = {},
-): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[]; antes: string | null; depois: string | null } | null> {
+): Promise<{ mensagens: MensagemThread[]; notas: NotaInternaThread[]; antes: string | null; depois: string | null; temMais: boolean } | null> {
   const atendimento = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] },
     select: { id: true, finalidade: true, leadId: true },
@@ -155,7 +155,11 @@ export async function listarMensagensPagina(
   const notas = verNotas ? await notasDoLead(atendimento.leadId!) : [];
   return {
     mensagens, notas,
-    antes: sentido === "desc" && temMais && primeira ? dataCursor(primeira) : null,
-    depois: sentido === "asc" && temMais && ultima ? dataCursor(ultima) : null,
+    // Sempre os dois cursores da página (null só se vazia): `antes` pede as anteriores à primeira mensagem e
+    // `depois` as posteriores à última, para o cliente buscar "mais novas" após `mensagem.nova` (C2).
+    // `temMais` diz se há mais no sentido pedido (desc: mais antigas; asc: mais novas).
+    antes: primeira ? dataCursor(primeira) : null,
+    depois: ultima ? dataCursor(ultima) : null,
+    temMais,
   };
 }

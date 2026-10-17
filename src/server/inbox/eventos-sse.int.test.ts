@@ -45,6 +45,24 @@ describe("filtro de avisos do SSE", () => {
     await prisma.participanteAtendimentoWhatsApp.update({ where: { id: p.id }, data: { revogadoEm: new Date() } });
     expect(await filtro(aviso(a))).toBe(true);
   });
+  it("C1: não guarda 'não visível': quem ganha acesso passa a ser avisado dentro do TTL", async () => {
+    const filtro = criarFiltroDeAvisos(sess(fin));
+    expect(await filtro(aviso(a))).toBe(false);
+    await participar();
+    expect(await filtro(aviso(a))).toBe(true);
+  });
+  it("C1: atendimento.atualizado invalida o cache de 'visível' (perda de escopo vale na hora)", async () => {
+    const p = await participar();
+    const filtro = criarFiltroDeAvisos(sess(fin));
+    expect(await filtro(aviso(a))).toBe(true);
+    await prisma.participanteAtendimentoWhatsApp.update({ where: { id: p.id }, data: { revogadoEm: new Date() } });
+    expect(await filtro({ ...aviso(a), tipo: "atendimento.atualizado" })).toBe(false);
+    expect(await filtro(aviso(a))).toBe(false);
+  });
+  it("C5: resync passa para qualquer usuário, sem consultar atendimento", async () => {
+    expect(await criarFiltroDeAvisos(sess(fin))({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" })).toBe(true);
+    expect(formatarSSE({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" })).toMatch(/^event: resync\n/);
+  });
   it("mensagem de grupo (sem atendimento) passa pelo escopoGrupos", async () => {
     const grupo = await prisma.grupoWhatsApp.create({ data: { numeroId, grupoJid: "g1@g.us", nome: "G" } });
     const conv = await prisma.conversaWhatsApp.create({ data: { numeroId, grupoId: grupo.id } });
