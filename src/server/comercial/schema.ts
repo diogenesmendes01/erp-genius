@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Segmento, Temperatura, EtapaLead, MotivoPerda } from "@prisma/client";
+import { Segmento, Temperatura, EtapaLead, MotivoPerda, OrigemCanal } from "@prisma/client";
 import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
 import { parseMoeda } from "@/lib/dinheiro";
 
@@ -24,6 +24,11 @@ export const LeadSchema = z.object({
   temperatura: z.nativeEnum(Temperatura).default(Temperatura.MORNO),
   b2b: z.boolean().optional().default(false),
   vendedorDonoId: z.string().optional(),
+  // CRM: liga a oportunidade a uma Pessoa existente (senão o servidor resolve por telefone/cria).
+  pessoaId: z.string().optional(),
+  email: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
+  origemCanal: z.nativeEnum(OrigemCanal).optional(),
+  empresaId: z.string().optional(),
   origemCampanha: z.string().optional(),
   origemConjunto: z.string().optional(),
   origemAnuncio: z.string().optional(),
