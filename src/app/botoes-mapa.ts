@@ -1057,6 +1057,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Solicitando… · Solicitar recuperação → primario/lg",
   ],
   // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
+  "src/components/conversa/CartaoPix.tsx": [
+    "<Botao> Copiar código Pix → secundario/sm",
+  ],
   "src/components/ConfirmarAcao.tsx": [
     "<Botao> Voltar → secundario/md",
     "<Botao> Confirmando… · Confirmar → perigo/md",
