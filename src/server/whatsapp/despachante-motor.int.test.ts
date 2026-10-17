@@ -14,6 +14,7 @@ import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { despacharFila } from "./despachante";
 import { garantirAtendimento } from "./atendimentos";
+import { ErroDriver } from "./canal";
 
 beforeEach(async () => {
   await truncarBanco();
@@ -89,5 +90,47 @@ describe("despachante × motor", () => {
     expect(i).toMatchObject({ status: "FALHOU", motivoFalha: "driver_indisponivel" });
     expect(enviarTexto).not.toHaveBeenCalled();
     expect(enviarTemplate).not.toHaveBeenCalled();
+  });
+
+  describe("falha reprocessável", () => {
+    const agora = new Date("2026-10-17T15:00:00.000Z");
+    const intencao = (id: string) => prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
+    const falhaMotor = () => new ErroDriver("motor_indisponivel", undefined, { reprocessavel: true, adiarMs: 60000 });
+
+    it("ECONNREFUSED adia 60 s com o mesmo clientMessageId", async () => {
+      const { intencaoId } = await seed({}, { criadaEm: agora });
+      enviarTexto.mockRejectedValue(falhaMotor());
+      const r = await despacharFila(agora, { intencaoId });
+      expect(r).toMatchObject({ adiadas: 1, falhas: 0 });
+      expect(await intencao(intencaoId)).toMatchObject({ status: "ADIADA", motivoFalha: "motor_indisponivel", despacharAposEm: new Date(agora.getTime() + 60000) });
+      enviarTexto.mockResolvedValue({ providerMessageId: "3EB0X", mensagemIdMotor: "c:3EB0X" });
+      await despacharFila(new Date(agora.getTime() + 61000), { intencaoId });
+      expect(enviarTexto).toHaveBeenCalledTimes(2);
+      expect(enviarTexto.mock.calls[0][3].clientMessageId).toBe(enviarTexto.mock.calls[1][3].clientMessageId);
+      expect((await intencao(intencaoId)).status).toBe("DESPACHADA");
+    });
+
+    it("HUMANO com 31 min de vida falha em vez de adiar", async () => {
+      const { intencaoId } = await seed({}, { criadaEm: new Date(agora.getTime() - 31 * 60_000) });
+      enviarTexto.mockRejectedValue(falhaMotor());
+      const r = await despacharFila(agora, { intencaoId });
+      expect(r).toMatchObject({ adiadas: 0, falhas: 1 });
+      expect(await intencao(intencaoId)).toMatchObject({ status: "FALHOU", motivoFalha: "motor_indisponivel" });
+    });
+
+    it("HUMANO com 29 min de vida ainda adia", async () => {
+      const { intencaoId } = await seed({}, { criadaEm: new Date(agora.getTime() - 29 * 60_000) });
+      enviarTexto.mockRejectedValue(falhaMotor());
+      await despacharFila(agora, { intencaoId });
+      expect((await intencao(intencaoId)).status).toBe("ADIADA");
+    });
+
+    it("resultado_incerto continua FALHOU (revisão humana)", async () => {
+      const { intencaoId } = await seed({}, { criadaEm: agora });
+      enviarTexto.mockRejectedValue(new ErroDriver("resultado_incerto"));
+      const r = await despacharFila(agora, { intencaoId });
+      expect(r).toMatchObject({ adiadas: 0, falhas: 1 });
+      expect(await intencao(intencaoId)).toMatchObject({ status: "FALHOU", motivoFalha: "resultado_incerto" });
+    });
   });
 });
