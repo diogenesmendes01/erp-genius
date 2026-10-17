@@ -2582,4 +2582,10 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   avisos (nenhum nos arquivos da PR); `vitest run` com 687 arquivos e 4956 testes verdes. Num banco descartável próprio,
   `erp_genius_test_fix206` (localhost:54329), `prisma migrate deploy` aplicou tudo e passaram
   `inbox/barramento`, `inbox/consultas-pagina` e `inbox/eventos-sse` (3 arquivos, 28 testes). O banco foi apagado no fim.
+- **Segundo merge da `main` (`cd0a9cbc`, com a #205 da Fase 4A):** só este quadro teve conflito (ficam o bloco da 4A e o
+  da 3E, cada um com o próprio Estado). Com `MOTOR` no enum `DriverWhatsApp`: `prisma generate`; `tsc --noEmit` saída 0,
+  o que confirma o `LIBERADOS` parcial; `npm run lint` com 0 erros e 43 avisos (nenhum nos arquivos da PR); `vitest run`
+  com 692 arquivos e 5007 testes verdes; no `erp_genius_test_fix206` recriado, `prisma migrate deploy` aplicou tudo,
+  inclusive as migrations da 4A, e os mesmos 3 arquivos de integração do inbox passaram (28 testes). O banco foi
+  apagado no fim.
 **Estado**: Implementado; aguardando o integrador. Não concluído.
