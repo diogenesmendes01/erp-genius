@@ -808,6 +808,11 @@ model Usuario {
   aplicacoesCadastroMigracao AplicacaoCadastroMigracao[] @relation("ExecutorAplicacaoCadastroMigracao")
   sugestoesIADecididas SugestaoIA[]     @relation("DecisorSugestoesIA")
   acessoAluno       Aluno?              @relation("AcessoAluno") // Fase 3: portal do aluno
+
+  // CRM (2.M3)
+  tagsPessoaAtribuidas  PessoaTag[]  @relation("PessoaTagCriadoPor")
+  tagsEmpresaAtribuidas EmpresaTag[] @relation("EmpresaTagCriadoPor")
+  filtrosSalvos         FiltroSalvo[]
 }
 
 // ============================================================
@@ -8473,6 +8478,8 @@ model Empresa {
   faturas       FaturaB2B[]
   pessoas       Pessoa[]
   oportunidades Oportunidade[]
+  tags          EmpresaTag[]
+  valoresCampo  ValorCampoPersonalizado[]
 
   @@index([origemCanal])
 }
@@ -8659,7 +8666,127 @@ model Pessoa {
   responsavel      Responsavel?
   oportunidades    Oportunidade[]
   participacoes    ParticipanteOportunidade[]
+  tags             PessoaTag[]
+  valoresCampo     ValorCampoPersonalizado[]
 
   @@index([empresaId])
   @@index([mescladaEmId])
+}
+
+// CRM (2.M3): tags, campos personalizados e filtros salvos.
+enum CorTag {
+  NEUTRA
+  MARCA
+  INFO
+  SUCESSO
+  ALERTA
+  PERIGO
+  IA
+}
+
+model Tag {
+  id    String  @id @default(cuid())
+  nome  String  @unique
+  cor   CorTag
+  grupo String?
+  ativo Boolean @default(true)
+
+  criadoEm DateTime @default(now())
+
+  pessoas  PessoaTag[]
+  empresas EmpresaTag[]
+}
+
+model PessoaTag {
+  pessoaId    String
+  pessoa      Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  tagId       String
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  criadoPorId String?
+  criadoPor   Usuario? @relation("PessoaTagCriadoPor", fields: [criadoPorId], references: [id], onDelete: Restrict)
+  criadoEm    DateTime @default(now())
+
+  @@id([pessoaId, tagId])
+  @@index([tagId])
+}
+
+model EmpresaTag {
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  tagId       String
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  criadoPorId String?
+  criadoPor   Usuario? @relation("EmpresaTagCriadoPor", fields: [criadoPorId], references: [id], onDelete: Restrict)
+  criadoEm    DateTime @default(now())
+
+  @@id([empresaId, tagId])
+  @@index([tagId])
+}
+
+enum TipoCampoPersonalizado {
+  TEXTO
+  NUMERO
+  DATA
+  SELECAO
+  BOOLEANO
+}
+
+enum AlvoCampoPersonalizado {
+  PESSOA
+  EMPRESA
+}
+
+model CampoPersonalizado {
+  id          String                 @id @default(cuid())
+  nome        String
+  tipo        TipoCampoPersonalizado
+  alvo        AlvoCampoPersonalizado
+  opcoes      String[]
+  obrigatorio Boolean                @default(false)
+  arquivadoEm DateTime?
+  criadoEm    DateTime               @default(now())
+
+  valores ValorCampoPersonalizado[]
+
+  @@unique([alvo, nome])
+}
+
+// Exatamente um dono por valor (CHECK na migration): pessoa ou empresa.
+model ValorCampoPersonalizado {
+  id           String             @id @default(cuid())
+  campoId      String
+  campo        CampoPersonalizado @relation(fields: [campoId], references: [id], onDelete: Restrict)
+  pessoaId     String?
+  pessoa       Pessoa?            @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  empresaId    String?
+  empresa      Empresa?           @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  valor        Json?
+  atualizadoEm DateTime           @updatedAt
+
+  @@unique([campoId, pessoaId])
+  @@unique([campoId, empresaId])
+  @@index([pessoaId])
+  @@index([empresaId])
+}
+
+enum TelaFiltroSalvo {
+  FUNIL
+  CONTATOS
+  CARTEIRA
+  TAREFAS
+  COMISSOES
+}
+
+model FiltroSalvo {
+  id            String          @id @default(cuid())
+  usuarioId     String
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  tela          TelaFiltroSalvo
+  nome          String
+  filtros       Json
+  compartilhado Boolean         @default(false)
+  arquivadoEm   DateTime?
+  criadoEm      DateTime        @default(now())
+
+  @@unique([usuarioId, tela, nome])
 }
