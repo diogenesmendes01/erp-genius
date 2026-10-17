@@ -81,7 +81,9 @@ export async function escopoAtendimentos(
       // COMERCIAL: o responsável gravado NÃO concede acesso (LC-D02) — vale só o ramo comercial
       // acima (carteira / sem lead fora da linha VENDAS) e a posse atual da linha; aqui só a fila.
       if (setor !== "COMERCIAL") ors.push({ finalidade: setor, responsavelId: usuario.id });
-      ors.push(ramoFilaDoSetor(setor));
+      // Fila COMERCIAL só sem lead: com lead, o acesso é a carteira (ramo comercial acima);
+      // fila não pode vazar lead de outro vendedor.
+      ors.push(setor === "COMERCIAL" ? { ...ramoFilaDoSetor(setor), leadId: null } : ramoFilaDoSetor(setor));
     }
   }
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
