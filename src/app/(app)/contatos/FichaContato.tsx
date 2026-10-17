@@ -99,6 +99,7 @@ function FichaCorpo({
   const podeEditar = pode("contatos.editar");
   const classeFiltro = (f: FiltroHistoricoPessoa) => botaoClasses({ variante: filtroHistorico === f ? "primario" : "fantasma", tamanho: "sm" });
   const podeCriarOportunidade = pode("funil.mover");
+  const abas = ABAS.filter((a) => a.id !== "oportunidades" || pode("funil.ver"));
 
   const [nome, setNome] = useState(d.nome);
   const [email, setEmail] = useState(d.email ?? "");
@@ -170,7 +171,7 @@ function FichaCorpo({
       </header>
 
       <div role="tablist" aria-label="Seções do contato" className="flex gap-1 overflow-x-auto border-b border-border-soft">
-        {ABAS.map((a) => (
+        {abas.map((a) => (
           <button
             key={a.id}
             type="button"
@@ -318,7 +319,7 @@ function FichaCorpo({
         </div>
       )}
 
-      {aba === "oportunidades" && (
+      {aba === "oportunidades" && pode("funil.ver") && (
         <div role="tabpanel" id="painel-contato-oportunidades" aria-labelledby="aba-contato-oportunidades" className="space-y-3">
           {d.oportunidades.length === 0 ? (
             <EstadoVazio>Nenhuma oportunidade deste contato na sua carteira.</EstadoVazio>
