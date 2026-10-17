@@ -12,12 +12,13 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
 import { DRIVER_WHATSAPP_LABEL, STATUS_TEMPLATE_LABEL, rotular } from "@/lib/labels";
+import { MENSAGEM_META_CLOUD_SEM_ENVIO } from "@/server/whatsapp/canal";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
 // estado desligada/shadow/ativa). LEIS fora da config: D+15 nunca automatiza; trava S1
-// (só BAILEYS legado: o cron roda no motor próprio ou na Meta — D38); prontidão S15
-// validada no servidor ao armar.
+// (só BAILEYS legado: o cron roda no motor próprio — D38); META_CLOUD ainda não tem envio
+// (C1 da R1 do #213) e não arma a política; prontidão S15 validada no servidor ao armar.
 
 const btnPri = botaoClasses({ tamanho: "md" });
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
@@ -95,7 +96,6 @@ export function PoliticaPainel({
   );
 
   const remetente = numeros.find((n) => n.id === form.numeroRemetenteId) ?? null;
-  const aprovadoPorId = new Map(templates.map((t) => [t.id, t.statusMeta === "APROVADO"]));
 
   function mudarDegrau(passo: string, patch: Partial<DegrauConfig>) {
     setForm((f) => ({
@@ -232,6 +232,11 @@ export function PoliticaPainel({
                   </option>
                 ))}
             </select>
+            {remetente?.driver === "META_CLOUD" && (
+              <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
+                <IconAlertTriangle className="h-3 w-3" /> {MENSAGEM_META_CLOUD_SEM_ENVIO} Escolha um número do motor WhatsApp para armar a política.
+              </span>
+            )}
             {remetente && remetente.driver !== "META_CLOUD" && remetente.driver !== "MOTOR" && (
               <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
                 <IconAlertTriangle className="h-3 w-3" /> Degraus automáticos exigem número do motor WhatsApp.
@@ -330,9 +335,6 @@ export function PoliticaPainel({
             <tbody>
               {form.degraus.map((d) => {
                 const bloquear = d.tipo === "bloquear";
-                const precisaAprovado =
-                  remetente?.driver === "META_CLOUD" && d.ativo && d.modo !== "MANUAL" && form.estado !== "DESLIGADA";
-                const templateOk = d.templateId ? aprovadoPorId.get(d.templateId) : false;
                 return (
                   <tr key={d.passo} className="border-b border-gray-100 last:border-0">
                     <td className="py-2 pr-3">
@@ -384,11 +386,6 @@ export function PoliticaPainel({
                               </option>
                             ))}
                           </select>
-                          {precisaAprovado && !templateOk && (
-                            <span title="Número Meta Cloud: degrau armado exige template aprovado na Meta">
-                              <IconAlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-                            </span>
-                          )}
                         </span>
                       )}
                     </td>
@@ -411,7 +408,7 @@ export function PoliticaPainel({
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[11px] text-gray-400">
             Defaults de fábrica: D-7/D-3/D0 automáticos · D+3/D+7 lote · D+15 aprovação. Armar (shadow/ativa) valida a
-            prontidão: número Meta Cloud exige template aprovado nos degraus automáticos/lote; no motor vale o texto do template.
+            prontidão: só número do motor WhatsApp arma a política (Meta Cloud ainda não tem envio); no motor vale o texto do template.
           </p>
           <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
             {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}

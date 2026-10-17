@@ -149,6 +149,7 @@ describe("despachante × motor", () => {
     });
 
     it("aviso de agenda não adia: segue o fluxo FALHOU atual", async () => {
+      vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
       const { intencaoId } = await seed({}, { criadaEm: agora });
       const { pais, produto } = await seedCatalogoMinimo();
       const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno aviso", paisId: pais.id } });
@@ -164,6 +165,26 @@ describe("despachante × motor", () => {
       const r = await despacharFila(agora, { intencaoId });
       expect(r).toMatchObject({ adiadas: 0, falhas: 1 });
       expect(await intencao(intencaoId)).toMatchObject({ status: "FALHOU", motivoFalha: "motor_indisponivel" });
+    });
+
+    // B1 da R1 do #213: a retenção de agenda da #209/#212 vale também com o envio pelo motor.
+    it("aviso de agenda com o envio de agenda desligado fica retido: não vai ao motor nem vira SIMULADA", async () => {
+      vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "false");
+      const { intencaoId } = await seed({}, { criadaEm: agora });
+      const { pais, produto } = await seedCatalogoMinimo();
+      const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno aviso", paisId: pais.id } });
+      const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: produto.id, paisId: pais.id, moeda: "CRC", status: "ATIVA" } });
+      const evento = await prisma.evento.create({ data: {
+        tipo: "RemarcacaoParticularDecidida", agregadoTipo: "Matricula", agregadoId: matricula.id, payload: { aprovada: true },
+      } });
+      const aviso = await prisma.avisoAlteracaoAgenda.create({
+        data: { mudancaId: evento.id, eventoId: evento.id, matriculaId: matricula.id, alunoId: aluno.id, canal: "WHATSAPP", destinatarioAlunoId: aluno.id, contatoHash: "h", chave: "chave-aviso-retido" },
+      });
+      await prisma.intencaoMensagem.update({ where: { id: intencaoId }, data: { avisoAlteracaoAgendaId: aviso.id } });
+      const r = await despacharFila(agora, { intencaoId });
+      expect(r).toMatchObject({ retidasAgenda: 1, despachadas: 0, simuladas: 0, falhas: 0 });
+      expect(enviarTexto).not.toHaveBeenCalled();
+      expect(await intencao(intencaoId)).toMatchObject({ status: "PENDENTE", motivoFalha: "envio_agenda_desligado", clientMessageId: null });
     });
 
     it("resultado_incerto continua FALHOU (revisão humana)", async () => {

@@ -220,3 +220,18 @@ describe("PoliticaPainel — alcance da ativação (docs/42 L2517)", () => {
     expect(m.estimar).not.toHaveBeenCalled();
   });
 });
+
+describe("PoliticaPainel \u2014 remetente Meta Cloud (C1 da R1 do #213)", () => {
+  it("avisa que Meta Cloud ainda não tem envio disponível", () => {
+    const tudo = texto(tela()).replace(/\s+/g, " ");
+    expect(tudo).toContain("Meta Cloud ainda não tem envio disponível.");
+    expect(tudo).not.toContain("Degraus automáticos exigem número do motor WhatsApp.");
+  });
+
+  it("remetente do motor não mostra o aviso de Meta Cloud", () => {
+    const motor = { ...numero, id: "n2", driver: "MOTOR" as const };
+    politica = { ...politicaBase, numeroRemetenteId: "n2" };
+    const tudo = texto(m.ganchos!.renderizar(PoliticaPainel, { politica, numeros: [motor], templates: [template] })).replace(/\s+/g, " ");
+    expect(tudo).not.toContain("Meta Cloud ainda não tem envio disponível.");
+  });
+});
