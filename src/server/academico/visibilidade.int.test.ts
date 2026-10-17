@@ -73,7 +73,7 @@ async function cenario({ comAgendaPublicada = true }: { comAgendaPublicada?: boo
   } });
   const destino = await prisma.turma.update({ where: { id: destinoRascunho.id }, data: { status: "EM_ANDAMENTO", dataInicio: inicio } });
   const aluno = await prisma.aluno.create({ data: {
-    primeiroNome: "Ana", sobrenome: "Santos", paisId: cat.pais.id, telefoneE164: "+50688887777", email: "privado@example.test", documento: "DOCUMENTO_PRIVADO",
+    primeiroNome: "Ana", sobrenome: "Santos", paisId: cat.pais.id, telefoneE164: "+50688887777", whatsapp: true, email: "privado@example.test", documento: "DOCUMENTO_PRIVADO",
   } });
   const matricula = await prisma.matricula.create({ data: {
     alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "ATIVA", ativadaEm: inicio,
@@ -96,7 +96,7 @@ async function cenario({ comAgendaPublicada = true }: { comAgendaPublicada?: boo
   const aulaId = diario.id;
   const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id } });
-  const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aluno.id, turmaId: origem.id }));
+  const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aluno.id, matriculaId: matricula.id, turmaId: origem.id }));
   const segmentosMidia = ["whatsapp", "atividade-origem.pdf"];
   await prisma.mensagemWhatsApp.create({ data: {
     numeroId: numero.id, conversaId: atendimento.conversaId, atendimentoId: atendimento.id,
@@ -241,7 +241,7 @@ describe("mudança acadêmica revoga vínculos atuais e preserva o diário", () 
     expect((await listarAulasDiario(c.sucessor)).aulas).toEqual([]);
     expect(await carregarThread(c.sucessor, c.atendimento.id)).toBeNull();
     entrar(c.sucessor.id);
-    const novo = sucesso(await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: `PEDAGOGICO:${c.aluno.id}:${c.destino.id}` }));
+    const novo = sucesso(await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: `PEDAGOGICO:${c.aluno.id}:${c.destino.id}:${c.matricula.id}:ALUNO` }));
     expect(novo.id).not.toBe(c.atendimento.id);
     const thread = await carregarThread(c.sucessor, novo.id);
     expect(thread?.mensagens).toEqual([]);
