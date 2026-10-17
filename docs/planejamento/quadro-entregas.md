@@ -2131,6 +2131,39 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `diario/calendario-reposicao`, `agenda/replanejamento-concorrencia` (serialização 40001), que o bloco não toca e não foram
   comparadas com o main. Pendente para a suíte completa do integrador.
 
+### Fase 3B: revisão R1 do PR #199 (17/10/2026)
+
+- **B1:** `origin/claude/fase3-a-modelo-atendimento` (`83d473f4`) e `origin/main` (`f4ded562`, com a #196) mesclados
+  (`b0ffdff6`, `e3dad326`). Conflito só neste quadro: seções da 3A e da 3B mantidas. `escopo.ts` passa a usar
+  `setoresVisiveisNoInbox` (`whatsapp/setor.ts`) no lugar de `setoresDoUsuario` nas duas chamadas (`escopoAtendimentos`
+  e `escopoGrupos`). Como as duas tiram o PROFESSOR antes, o resultado é o mesmo da função antiga para todo papel
+  (`escopo-setor.test.ts` verde). `triagem-numero.int.test.ts` usa `prisma.oportunidade.create` (trava de
+  `oportunidade-map.test.ts`).
+- **B2, Ruling:** o E3.4 define o participante como convite explícito (Task 17), não como efeito de abrir. Por isso
+  `abrirAtendimentoInstitucional` não inclui quem abriu como participante: depois do `garantirAtendimento`, se o
+  atendimento tem outro responsável e está fora do escopo de quem abriu, recusa antes de gravar
+  `AtendimentoInstitucionalAberto`, com "Este atendimento já está com <nome>; peça para ser incluído como participante."
+  Teste: `whatsapp/abrir-atendimento-escopo.int.test.ts` (dois FINANCEIRO no mesmo número e matrícula, participante
+  vigente pode abrir, SECRETARIA_ACADEMICA em SECRETARIA e em FINANCEIRO de outro responsável). Sem a correção, 2 dos 3
+  casos falham.
+- **C1:** `docs/specs/whatsapp-linha-comercial.md` (LC-D02 e LC-04) atualizada para a regra da Fase 3 (E3.2, Task 13):
+  o GERENTE_COMERCIAL vê as conversas de todo COMERCIAL; a carteira do lead continua restrita à equipe.
+- **C2:** a lista de triagem para o responsável do número (não admin) fica para a tela do inbox novo (Tasks 29 a 31).
+  Até lá, `inbox/page.tsx` só mostra a triagem ao ADMINISTRADOR; o servidor já aceita o responsável.
+- **C3:** o aval do `c265d904` continua pendente com o integrador/produto; se negado, reverter antes do merge.
+- **C4:** confirmado. FINANCEIRO e SECRETARIA deixam de ver encerrados de que não foram responsáveis nem participantes
+  (a fila é só de abertos, tabela da Task 13). O histórico do setor para o atendente fica para a consulta de histórico
+  do inbox novo (Task 26), se o produto pedir.
+- **C5 e verificação** (banco `tester` recriado do zero com `prisma migrate deploy`, porque o anterior tinha as 2026100*
+  aplicadas depois das 20261016*):
+  - `node_modules/.bin/tsc --noEmit`: saída 0;
+  - `npm run lint`: saída 0, 0 erros e 43 avisos;
+  - `node_modules/.bin/vitest run`: saída 0, 667 arquivos e 4.822 testes (sem o teste novo de integração);
+  - integração de `src/server/whatsapp` inteiro mais os `*.int.test.ts` do diff contra a 3A fora dele (`crm/funil`,
+    `crm/historico`, `crm/oportunidades`, `crm/pessoas`, `matricula/preparacao-escopo`): saída 0, 34 arquivos e 249
+    testes. `academico/visibilidade` (usa `abrirAtendimentoInstitucional`): as 6 falhas conhecidas da linha de base.
+  - O `vitest related` interrompido da verificação de abertura foi substituído por essa integração dos arquivos tocados.
+
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
 ## CRM, bloco B: Oportunidade, capacidades e etapas do funil (Fase 2, Tasks 3 a 5; 16/10/2026)
