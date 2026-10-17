@@ -16,6 +16,7 @@ import { snapshotCobranca } from "./elegibilidade";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { nomeDoContato } from "./nome-contato";
 import { comContatoIndividual, contatoIndividual } from "./grupos";
+import { escopoAtendimentos } from "./escopo";
 
 export interface OpcaoAtendimento {
   chave: string; nome: string; finalidade: FinalidadeAtendimentoWhatsApp;
@@ -166,6 +167,7 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
       }
     }
     if (!telefone) throw new ErroRegra("A secretaria precisa cadastrar um destinatário válido para essa finalidade.");
+    const escopo = await escopoAtendimentos(u);
     const atendimento = await prisma.$transaction(async (tx) => {
       const contato = await garantirContato(tx, { telefoneE164: telefone!, nomeExibicao: nome, responsavelId,
         leadId: destino.leadId, alunoId: destino.finalidade === "FINANCEIRO" ? contatoAlunoId : responsavelId ? null : destino.alunoId });
@@ -173,6 +175,14 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
         leadId: destino.leadId, alunoId: alunoAtendimentoId, turmaId: destino.turmaId, matriculaId, responsavelId: u.id,
         autorizacaoComunicacaoAcademicaId: destino.autorizacaoComunicacaoAcademicaId });
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado; solicite revisão à gestão antes de reabri-lo.");
+      // Ruling B2 do #199 (E3.4): o upsert devolve o atendimento já aberto no mesmo contexto. Se ele
+      // está com outro responsável e fora do escopo de quem abriu, recusa antes do evento: entrar
+      // como participante é convite explícito (Task 17), nunca efeito colateral de "abrir".
+      if (a.responsavelId && a.responsavelId !== u.id
+        && !await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: a.id }, escopo] } })) {
+        const dono = await tx.usuario.findUnique({ where: { id: a.responsavelId }, select: { nome: true } });
+        throw new ErroRegra(`Este atendimento já está com ${dono?.nome ?? "outro atendente"}; peça para ser incluído como participante.`);
+      }
       await registrarEvento(tx, { tipo: "AtendimentoInstitucionalAberto", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id,
         autorId: u.id, payload: { finalidade: a.finalidade, leadId: a.leadId, alunoId: a.alunoId, turmaId: a.turmaId, matriculaId: a.matriculaId } });
       return a;
