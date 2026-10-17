@@ -4,20 +4,20 @@ Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente;
 
 ## Fase 3 — IDs de migration (16/10/2026)
 
-Branch `claude/fase3-a-modelo-atendimento`. As cinco pastas estão aplicadas só no banco do perfil `tester` (`erp_genius_test_tester`, `prisma migrate deploy`). Estado por ID:
+Branch `claude/fase3-a-modelo-atendimento` (PR #197, base `main`). Os cinco IDs foram **confirmados pelo integrador** na revisão R1 do PR #197 (16/10/2026), sem renomear. Estado por ID:
 
 | Migration | Task | Pasta | Estado do ID |
 | --- | --- | --- | --- |
-| M1 `numero_setor_whatsapp` | 2 | `20261016090000_numero_setor_whatsapp` | Provisório (posterior a `20260929130000`, a última da base) |
-| M2 `atendimento_status_prazos` | 4 | `20261016100000_atendimento_status_prazos` | Provisório |
-| M3 `grupos_whatsapp` | 6 | `20261016110000_grupos_whatsapp` | Confirmado no ledger da Task 6 (fechamento pós-revisão: "ID confirmado; próximas migrations da Fase 3 a partir de `20261016120000`"); o integrador ratifica no merge |
-| M4 `origem_celular_client_message_id` | 7 | `20261016120000_origem_celular_client_message_id` | Provisório (primeiro ID da faixa indicada no ledger da Task 6; sem confirmação explícita) |
-| M5 `preferencias_inbox_usuario` | 8 | `20261016130000_preferencias_inbox_usuario` | Provisório (sequência de M4; sem confirmação explícita) |
+| M1 `numero_setor_whatsapp` | 2 | `20261016090000_numero_setor_whatsapp` | Confirmado pelo integrador |
+| M2 `atendimento_status_prazos` | 4 | `20261016100000_atendimento_status_prazos` | Confirmado pelo integrador |
+| M3 `grupos_whatsapp` | 6 | `20261016110000_grupos_whatsapp` | Confirmado pelo integrador |
+| M4 `origem_celular_client_message_id` | 7 | `20261016120000_origem_celular_client_message_id` | Confirmado pelo integrador |
+| M5 `preferencias_inbox_usuario` | 8 | `20261016130000_preferencias_inbox_usuario` | Confirmado pelo integrador |
 
-- Antes do merge, o integrador confirma cada ID provisório ou informa o oficial. Se renomear: (a) recriar o banco do perfil `tester` e reaplicar (`migrate deploy`), porque o nome fica em `_prisma_migrations`; (b) nenhum teste depende do ID: `atendimento-status.int.test.ts` localiza a pasta pelo sufixo `_atendimento_status_prazos`.
+- Os cinco IDs são posteriores à última migration do `main` mesclado e foram aplicados com `prisma migrate deploy` num banco descartável próprio (`erp_genius_test_fix197`, apagado depois). As próximas migrations da Fase 3 partem de um ID posterior a `20261016130000`, reservado pelo integrador.
 - Regra de status (revisão final do bloco A): responsável preenchido conta como assumido. Backfill da M2, `garantirAtendimento`, `atendimentoComercialDaLinha` (linha VENDAS nasce `EM_ATENDIMENTO` quando há dono) e `atribuirDono` (reatribuição tira de `ABERTO_SEM_RESPONSAVEL`; `AGUARDANDO_CLIENTE` se mantém) seguem a mesma regra.
 - Evidências da correção: `tsc --noEmit` saída 0; integração (recorte, não suíte completa) `linha-comercial`, `acesso/politica`, `atendimento-status` e `reabertura` `.int.test.ts`: 4 arquivos, 48 testes verdes; unitários `vitest related` de `linha-comercial.ts` e `comercial/acoes.ts`: 82 arquivos, 717 testes verdes (inclui o ajuste de `linha-comercial.test.ts` ao filtro `grupoId: null` de `baa2e7ed`); eslint 0 nos arquivos tocados.
-- **Estado**: Implementado; IDs M1, M2, M4 e M5 aguardando o integrador. Não concluído.
+- **Estado**: IDs confirmados pelo integrador (C4 do PR #197). Não concluído: o bloco aguarda o merge.
 
 ## Design system, bloco DS-A — fundação (Fase 0, Tasks 1–4; 15/10/2026)
 
@@ -1984,7 +1984,8 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 
 ## Fase 3, bloco A: modelo do atendimento por setor (16/10/2026)
 
-- Branch `claude/fase3-a-modelo-atendimento`, empilhada sobre `integracao/ate-fase-1` (d4c0f74). Tarefas 1 a 8 do plano
+- Branch `claude/fase3-a-modelo-atendimento`, criada sobre `integracao/ate-fase-1` (d4c0f74); desde a R1 do PR #197 a base
+  é o `main`, mesclado na branch (B1: `Lead` → `Oportunidade` da #193). Tarefas 1 a 8 do plano
   `03-fase-inbox.md`: número por setor, status e prazos do atendimento, reabertura, grupos, origem CELULAR/IA com
   `clientMessageId`, preferências do inbox por usuário. Cinco migrations (`20261016090000` a `20261016130000`).
 - Verificação (banco `tester`): `node_modules/.bin/tsc --noEmit` saída 0; `npm test` saída 0, 646 arquivos e 4.627 testes;
@@ -1995,7 +1996,31 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `diario/reposicao-permissoes`, `diario/calendario-reposicao` (1 cada). Essas 14 falham igual rodando o código de
   `integracao/ate-fase-1` neste banco (sensíveis à data de hoje, 16/10/2026, e ao ambiente); anotadas, não são do bloco.
   `cobrancas/resposta-contrato` quebrava pelo CHECK `Atendimento_status_encerrado` e foi corrigido no teste (4/4 verdes).
-- Pendência de merge: IDs de migration escolhidos pelo implementador; o integrador deve confirmá-los ou renomeá-los.
+- IDs de migration: confirmados pelo integrador (C4 da R1 do PR #197; ver "Fase 3 — IDs de migration").
+
+### Revisão R1 do PR #197 (16/10/2026)
+- **B1**: `main` mesclado; `atribuirDono` usa `tx.oportunidade.update` e mantém o `updateMany` de status; três
+  `*.int.test.ts` passaram a `prisma.oportunidade`.
+- **B2**: conflito aditivo com a #194 (`schema.prisma`, `labels.ts`, `enums-rotulos.test.ts`); quem integrar em segundo
+  lugar mantém os dois lados.
+- **C1**: o mapeamento papel → setor tem uma fonte só (`src/server/crm/setores-papel.ts`, reexportado por
+  `crm/permissoes.ts`). O inbox usa `setoresVisiveisNoInbox` (`whatsapp/setor.ts`), que acrescenta só as extensões do
+  plano 03, Tarefa 1: PROFESSOR → PEDAGOGICO e a Q1 (`SECRETARIA_VE_FIN_PEDAG`, provisória "mantém"). A branch da
+  Fase 3B (`escopo.ts`) precisa trocar `setoresDoUsuario` de `./setor` por `setoresVisiveisNoInbox`.
+- **C2**: `listarResponsaveisTriagem` e `salvarSetoresNumero` só aceitam papéis de triagem dos setores do número
+  (`papeisDeTriagem`: papéis nativos, sem PROFESSOR, ALUNO nem ADMINISTRADOR, que já é o padrão).
+- **C3**: assumir, devolver e transferir pela inbox **ainda não mexem no status** neste bloco. Isso entra no
+  **bloco C** do plano 03 (PR C, ações de atendimento), não no bloco B (escopo e roteamento): Task 15 (`assumirAtendimento`
+  → `EM_ATENDIMENTO`, `devolverParaFila`, `atribuirAtendimento`, com `proximoStatus` da Task 5) e Task 16
+  (`transferirAtendimento` encerra a origem com `ENCERRADO` e abre outro). Até lá, só `atribuirDono` e a criação mexem no status.
+- **C4**: IDs `20261016090000` a `20261016130000` confirmados pelo integrador.
+- Verificação (HEAD de código `a2120aa4`, 17/10/2026): `node_modules/.bin/tsc --noEmit` saída 0; `npm run lint` saída 0,
+  0 erros e 43 avisos; `node_modules/.bin/vitest run` saída 0, 658 arquivos e 4.759 testes. Integração (recorte, não
+  suíte completa) no banco descartável `erp_genius_test_fix197` (`prisma migrate deploy` limpo, apagado depois): os 14
+  `*.int.test.ts` novos ou tocados pelo PR (`acesso/politica`, `cobrancas/resposta-contrato` e 12 de `whatsapp/`:
+  `acoes-numero`, `atendimento-pedagogico-autorizacao`, `atendimento-status`, `destinatario-atual`, `grupos`,
+  `linha-comercial`, `numero-setor`, `origem-celular`, `pagador-contrato`, `pg-proc-whatsapp`, `preferencias`,
+  `reabertura`), 99 testes, todos verdes.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
 
