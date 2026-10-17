@@ -51,6 +51,7 @@ import {
   TipoDestinacaoRecebimento,
   StatusPagamentoInformado,
   ReferenciaCoberturaMensal,
+  DriverWhatsApp,
   FinalidadeNumero,
   FinalidadeAtendimentoWhatsApp,
   StatusAtendimentoWhatsApp,
@@ -534,6 +535,18 @@ export const TIPO_MENSAGEM_LABEL: Readonly<Record<TipoMensagem, string>> = Objec
   VIDEO: "Vídeo",
   DOCUMENTO: "Documento",
   OUTRO: "Outro",
+  FIGURINHA: "Figurinha",
+  LOCALIZACAO: "Localização",
+  CONTATO: "Contato",
+  ENQUETE: "Enquete",
+  CHAMADA: "Chamada",
+});
+
+/** Driver de envio de um número de WhatsApp. Meta e Evolution ficam só como legado. */
+export const DRIVER_WHATSAPP_LABEL: Readonly<Record<DriverWhatsApp, string>> = Object.freeze({
+  MOTOR: "Motor WhatsApp",
+  META_CLOUD: "Meta cloud (legado)",
+  BAILEYS: "Evolution (legado)",
 });
 
 /** Envio pela API do WhatsApp (intenção da régua). Era "na fila de envio"… em minúscula na fila de

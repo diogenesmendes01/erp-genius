@@ -15,7 +15,7 @@ import {
   StatusTemplate, StatusTurma, TipoAjuste, TipoAprovacao, TipoDestinacaoRecebimento, TipoMensagem, TipoMovimentacao,
   TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
   FinalidadeNumero, FinalidadeAtendimentoWhatsApp, StatusAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel, OrigemEnvio,
-  OrigemCanal, PapelParticipante,
+  OrigemCanal, PapelParticipante, DriverWhatsApp,
   CorTag, TipoCampoPersonalizado, AlvoCampoPersonalizado, TelaFiltroSalvo,
 } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -2110,6 +2110,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["TIPO_SUGESTAO_IA_LABEL", L.TIPO_SUGESTAO_IA_LABEL, Object.values(TipoSugestaoIA)],
   ["STATUS_TEMPLATE_LABEL", L.STATUS_TEMPLATE_LABEL, Object.values(StatusTemplate)],
   ["TIPO_MENSAGEM_LABEL", L.TIPO_MENSAGEM_LABEL, Object.values(TipoMensagem)],
+  ["DRIVER_WHATSAPP_LABEL", L.DRIVER_WHATSAPP_LABEL, Object.values(DriverWhatsApp)],
   ["STATUS_INTENCAO_LABEL", L.STATUS_INTENCAO_LABEL, Object.values(StatusIntencao)],
   ["TIPO_APROVACAO_LABEL", L.TIPO_APROVACAO_LABEL, Object.values(TipoAprovacao)],
   ["VIGENCIA_LABEL", L.VIGENCIA_LABEL, Object.values(Vigencia)],

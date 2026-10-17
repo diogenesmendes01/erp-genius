@@ -16,7 +16,7 @@ import { driverMetaCloud } from "./drivers/meta-cloud";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
-import { Papel } from "@prisma/client";
+import { DriverWhatsApp, Papel } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
@@ -30,7 +30,8 @@ import { comContatoIndividual } from "./grupos";
 // SEGURANÇA DE AMBIENTE (gap A5 do doc 28): sem WHATSAPP_LIVE=1 no env, NENHUMA mensagem
 // real sai — tudo que passaria vira SIMULADA. Dev contra o banco compartilhado não dispara.
 
-const DRIVERS: Record<"META_CLOUD" | "BAILEYS", CanalWhatsApp> = {
+// MOTOR ainda não tem driver (entra na Fase 4, Task 4); até lá um número MOTOR falha ao despachar.
+const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
   META_CLOUD: driverMetaCloud,
   BAILEYS: driverEvolution,
 };
@@ -481,8 +482,9 @@ export async function despacharFila(
         providerRef: it.numero.providerRef,
       };
       const driver = DRIVERS[it.numero.driver];
+      if (!driver) throw new Error(`Driver ${it.numero.driver} sem implementação no despachante.`);
       let envio;
-      if (it.tipo !== "TEXTO" && it.tipo !== "OUTRO" && it.midiaPath) {
+      if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
         // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
         const midia = await lerMidiaParaEnvio(it.midiaPath);
         envio = await driver.enviarMidia(numeroCanal, it.contato.telefoneE164, {
