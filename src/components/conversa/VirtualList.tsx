@@ -30,7 +30,8 @@ export type VirtualListProps<T> = {
   /** Optional cheap exclusion for date/system rows; remaining rows are checked for actual controls. */
   isItemFocusable?: (item: T, index: number) => boolean;
 };
-const focusable = 'button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
+// Linhas da lista (mensagens, conversas) não têm campo de texto longo; o compositor fica fora da lista.
+const focusable = 'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 function controlsIn(row?: HTMLElement) {
   return row ? [...row.querySelectorAll<HTMLElement>(focusable)].filter(element =>
     element.tabIndex >= 0 && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden',

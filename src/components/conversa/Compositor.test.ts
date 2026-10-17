@@ -19,6 +19,7 @@ vi.mock("react", async (original) => {
 import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
+import { CampoTexto } from "@/components/CampoTexto";
 import { criarGanchos, clicar, clicarBotao, elementos } from "@/test/tela-sem-dom";
 
 function props(p: Partial<PropsCompositor> = {}): PropsCompositor {
@@ -45,7 +46,7 @@ beforeEach(() => {
 afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
 
 function digitar(raiz: ReactNode, v: string) {
-  const ta = elementos(raiz).find((n) => n.type === "textarea")!;
+  const ta = elementos(raiz).find((n) => n.type === CampoTexto)!;
   (ta.props.onChange as (e: unknown) => void)({ target: { value: v } });
 }
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));

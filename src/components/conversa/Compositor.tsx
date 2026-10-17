@@ -5,6 +5,7 @@ import type { DriverWhatsApp } from "@prisma/client";
 import { IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import type { Resultado } from "@/server/_shared/resultado";
 import { Botao } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, recursoDisponivel, type RecursoMotor } from "./recursos-canal";
 
@@ -219,7 +220,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
         <button type="button" aria-label="Emojis" aria-pressed={emoji} onClick={() => setEmoji(!emoji)} className="rounded-full p-2 hover:bg-highlight">
           <IconMoodSmile size={20} aria-hidden />
         </button>
-        <textarea
+        <CampoTexto
           ref={entrada}
           aria-label={nota ? "Escreva uma nota interna" : "Digite uma mensagem"}
           placeholder={nota ? "Escreva uma nota interna" : "Digite uma mensagem"}
