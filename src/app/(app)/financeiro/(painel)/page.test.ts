@@ -7,7 +7,7 @@ import { Papel } from "@prisma/client";
 // PRÓPRIO guard antes das consultas e só as consultas dela.
 const mocks = vi.hoisted(() => ({
   guard: vi.fn(), preferencia: vi.fn(), fila: vi.fn(), comissoes: vi.fn(), totais: vi.fn(), kpis: vi.fn(),
-  aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
+  aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), contarInformes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
   podeConfigurar: vi.fn(),
   redirect: vi.fn((d: string) => { throw new Error(`REDIRECT ${d}`); }),
   componente: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock("@/server/retomada/consultas", () => ({ listarPropostasRetomada: mocks.r
 vi.mock("@/server/financeiro/consultas", () => ({
   COMISSOES_POR_PAGINA: 50, listarComissoesPagina: mocks.comissoes, totaisComissoesAPagar: mocks.totais,
   kpisFinanceiro: mocks.kpis, dadosCambio: mocks.cotacoes,
-  relatorioDescontosComissoes: mocks.relatorio, listarInformesPagamento: mocks.informes,
+  relatorioDescontosComissoes: mocks.relatorio, listarFilaInformesPagamento: mocks.informes, contarInformesAConferir: mocks.contarInformes,
   configuracaoComissoes: mocks.politicas, carregarConfigFinanceiro: mocks.configFinanceiro,
   podeConfigurarComissoes: mocks.podeConfigurar,
 }));
@@ -48,7 +48,7 @@ vi.mock("../BarraAbasFinanceiro", () => ({
 import Indice from "./page";
 import Layout from "./layout";
 import CobrancasPagina from "./cobrancas/page";
-import Informes from "./informes/page";
+import InformesPagina from "./informes/page";
 import Retomadas from "./retomadas/page";
 import ComissoesPagina from "./comissoes/page";
 import Descontos from "./descontos/page";
@@ -60,6 +60,8 @@ import Cambio from "./cambio/page";
 const html = async (el: Promise<React.ReactElement | null>) => renderToStaticMarkup((await el) ?? createElement("span"));
 /** A aba de cobranças lê os filtros da fila da URL (E4); sem parâmetros, a fila inteira. */
 const Cobrancas = (parametros: Record<string, string> = {}) => CobrancasPagina({ searchParams: Promise.resolve(parametros) });
+/** A aba de informes lê o cursor da fila da URL (item 9); sem parâmetros, o início da fila. */
+const Informes = (parametros: Record<string, string> = {}) => InformesPagina({ searchParams: Promise.resolve(parametros) });
 /** A aba de comissões lê situação e página da URL (E4); sem parâmetros, a primeira página. */
 const Comissoes = (parametros: Record<string, string> = {}) => ComissoesPagina({ searchParams: Promise.resolve(parametros) });
 /** Consultas pesadas, cada uma só da sua aba. */
@@ -76,7 +78,8 @@ describe("/financeiro por rota (E8)", () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
     mocks.fila.mockResolvedValue({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] });
     mocks.comissoes.mockResolvedValue({ itens: [], total: 0 }); mocks.totais.mockResolvedValue([]); mocks.kpis.mockResolvedValue({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 });
-    mocks.aprovacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({}); mocks.informes.mockResolvedValue([]);
+    mocks.aprovacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({});
+    mocks.informes.mockResolvedValue({ itens: [], temAnterior: false, temProxima: false, anterior: null, proxima: null }); mocks.contarInformes.mockResolvedValue(0);
     mocks.politicas.mockResolvedValue({}); mocks.podeConfigurar.mockResolvedValue(false); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] }); mocks.configFinanceiro.mockResolvedValue({ fechamentoComissaoAutomatico: false });
   });
   afterEach(() => vi.clearAllMocks());
@@ -101,16 +104,19 @@ describe("/financeiro por rota (E8)", () => {
     expect(pesadas()).toEqual(nenhuma);
     expect(mocks.preferencia).not.toHaveBeenCalled();
     expect(mocks.informes).not.toHaveBeenCalled();
+    expect(mocks.contarInformes).not.toHaveBeenCalled();
   });
 
   it("layout: barra com as abas do papel e contagens das filas; Financeiro não consulta aprovações", async () => {
-    mocks.informes.mockResolvedValue([{}, {}]);
+    // Item 9: o número de informes a conferir é um count — o layout não lê os informes.
+    mocks.contarInformes.mockResolvedValue(2);
     mocks.retomadas.mockResolvedValue({ ok: true, dado: [{ status: "PENDENTE" }, { status: "APLICADA" }] });
     const pagina = await html(Layout({ children: createElement("p", null, "filho") }));
     expect(pagina).toContain('data-abas="cobrancas,informes,retomadas,comissoes,descontos,geral,cambio"');
     expect(pagina).toContain(`data-contagem="${JSON.stringify({ informes: 2, retomadas: 1, aprovacoes: 0 }).replaceAll('"', "&quot;")}"`);
     expect(pagina).toContain("<p>filho</p>");
     expect(mocks.aprovacoes).not.toHaveBeenCalled();
+    expect(mocks.informes).not.toHaveBeenCalled();
     expect(pesadas()).toEqual(nenhuma); // o layout não consulta nada das abas
   });
 
@@ -189,10 +195,21 @@ describe("/financeiro por rota (E8)", () => {
     expect(vazio).toContain('href="/financeiro/comissoes?ordem=valor&amp;dir=desc"');
   });
 
-  it("informes e retomadas vêm das filas pendentes (uma consulta), com o fuso", async () => {
+  it("informes: a aba lê a própria fila por cursor (item 9); retomadas vêm das filas pendentes; ambas com o fuso", async () => {
     expect(await html(Informes())).toContain('[informes|');
+    expect(mocks.informes).toHaveBeenCalledTimes(1);
+    expect(mocks.informes).toHaveBeenCalledWith({});
+    await html(Informes({ depois: "informe-30" }));
+    expect(mocks.informes).toHaveBeenLastCalledWith({ depois: "informe-30" });
     expect(await html(Retomadas())).toContain('|America/Costa_Rica]');
     expect(pesadas()).toEqual(nenhuma);
+  });
+
+  it("informes: cursor fora do formato é erro com a volta ao início, sem consultar a fila", async () => {
+    const pagina = await html(Informes({ depois: "../x" }));
+    expect(pagina).toContain('role="alert"');
+    expect(pagina).toContain('href="/financeiro/informes"');
+    expect(mocks.informes).not.toHaveBeenCalled();
   });
 
   it("Gerente pedindo uma aba de cobrança direto: acesso negado, sem consultar a fila nem os informes", async () => {
@@ -200,6 +217,7 @@ describe("/financeiro por rota (E8)", () => {
     for (const aba of [Cobrancas, Informes, Retomadas, Geral, Cambio]) expect(await html(aba())).toContain("Acesso negado");
     expect(pesadas()).toEqual(nenhuma);
     expect(mocks.informes).not.toHaveBeenCalled();
+    expect(mocks.contarInformes).not.toHaveBeenCalled();
     expect(await html(Aprovacoes())).toContain('[aprovacoes|'); // Gerente aprova
     expect(mocks.aprovacoes).toHaveBeenCalledTimes(1);
   });

@@ -67,7 +67,6 @@ const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRA
 
 function revalidar(leadId?: string | null) {
   revalidatePath("/leads");
-  revalidatePath("/pipeline");
   revalidatePath("/alunos");
   revalidatePath("/financeiro", "layout");
   revalidatePath("/secretaria");

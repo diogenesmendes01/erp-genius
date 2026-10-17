@@ -54,6 +54,19 @@ export const MAX_LOTE_CARTEIRA = 50;
 export const MAX_LINHAS_CARTEIRA = 500;
 const FUSO_PADRAO = "America/Sao_Paulo";
 
+/**
+ * Eventos administrativos que NÃO contam como interação com o cliente no "sem interação" da carteira.
+ * A reatribuição (`LeadAtribuido`) é o caso principal: sem esta lista, redistribuir uma oportunidade
+ * parada há 30 dias faria ela aparecer como "Hoje" para o novo responsável. Tags e campos personalizados
+ * hoje são gravados no agregado Pessoa/Empresa, mas ficam aqui para não passarem a contar se mudarem de agregado.
+ */
+export const EVENTOS_IGNORADOS_SEM_INTERACAO = [
+  "LeadAtribuido",
+  "TagAtribuida",
+  "TagRemovida",
+  "CampoPersonalizadoAlterado",
+] as const;
+
 const diasCivis = (de: string, ate: string) =>
   Math.round((Date.parse(`${ate}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86_400_000);
 
@@ -107,10 +120,10 @@ export async function carregarCarteira(
     }),
   ]);
 
-  // Último Evento de cada oportunidade -> dias civis sem interação no fuso institucional.
+  // Último Evento (fora os administrativos) de cada oportunidade -> dias civis sem interação no fuso institucional.
   const ids = brutas.map((o) => o.id);
   const ultimos = ids.length
-    ? await prisma.evento.groupBy({ by: ["agregadoId"], where: { agregadoTipo: "Lead", agregadoId: { in: ids } }, _max: { criadoEm: true } })
+    ? await prisma.evento.groupBy({ by: ["agregadoId"], where: { agregadoTipo: "Lead", agregadoId: { in: ids }, tipo: { notIn: [...EVENTOS_IGNORADOS_SEM_INTERACAO] } }, _max: { criadoEm: true } })
     : [];
   const ultimoPor = new Map(ultimos.map((u) => [u.agregadoId, u._max.criadoEm]));
   const minimo = f.semInteracaoDias ? Number(f.semInteracaoDias) : 0;

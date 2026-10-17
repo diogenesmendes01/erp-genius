@@ -67,6 +67,16 @@ async function criarPessoa(tx: Tx, e: EntradaPessoa, autorId: string | null, vin
   return pessoa.id;
 }
 
+/** Chave do advisory lock por telefone normalizado. Exportada para o teste conferir o lock. */
+export function chaveLockPessoaTelefone(telefoneE164: string): string {
+  return `pessoa:${telefoneE164}`;
+}
+
+async function travarTelefoneTx(tx: Tx, telefoneE164: string): Promise<void> {
+  // $executeRaw: pg_advisory_xact_lock devolve `void`, que o $queryRaw não desserializa.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${chaveLockPessoaTelefone(telefoneE164)}, 0))`;
+}
+
 /**
  * Garante a Pessoa de uma identidade, sem duplicar. Precedência:
  * 1. `ContatoWhatsApp.pessoaId` do telefone;
@@ -74,6 +84,8 @@ async function criarPessoa(tx: Tx, e: EntradaPessoa, autorId: string | null, vin
  *    cria pessoa nova e não liga a nenhum: telefone compartilhado não identifica a pessoa;
  * 3. criar.
  * `ContatoWhatsApp` é upserted e só recebe `pessoaId` quando estava nulo.
+ * O `email` só é gravado quando a Pessoa é criada aqui; Pessoa achada não é atualizada (intencional
+ * nesta fase; R1 do PR #194, C2).
  */
 export async function garantirPessoaTx(
   tx: Tx,
@@ -81,6 +93,11 @@ export async function garantirPessoaTx(
   autorId: string | null,
 ): Promise<{ pessoaId: string; criada: boolean }> {
   const telefone = e.telefoneE164 || null;
+  // Serializa criações simultâneas do mesmo telefone (R1 do PR #194, C3): sem o lock, duas transações
+  // leem `contato = null`, criam duas Pessoas e a segunda oportunidade aponta para uma órfã. O lock é
+  // da transação (solto no commit/rollback) e vem ANTES da busca, para a segunda ler o contato já gravado.
+  // `telefone` já chega normalizado em E.164 (quem chama normaliza).
+  if (telefone) await travarTelefoneTx(tx, telefone);
   const contato = telefone ? await tx.contatoWhatsApp.findUnique({ where: { telefoneE164: telefone } }) : null;
 
   let pessoaId: string | null = contato?.pessoaId ?? null;

@@ -31,6 +31,15 @@ export function ConsequenciaReatribuicao({ quantidade, para }: { quantidade?: nu
   );
 }
 
+/** Junta o nome da linha a cada recusada, enquanto a linha ainda está na tela. */
+export function recusadasComNome(
+  recusadas: { id: string; motivo: string }[],
+  linhas: Pick<LinhaCarteira, "oportunidadeId" | "nome">[],
+): { id: string; nome: string; motivo: string }[] {
+  const nomes = new Map(linhas.map((l) => [l.oportunidadeId, l.nome]));
+  return recusadas.map((r) => ({ ...r, nome: nomes.get(r.id) ?? "Oportunidade" }));
+}
+
 /** "Selecionar todas" marca só as primeiras linhas que cabem num lote. */
 export function idsParaSelecionarTodas(linhas: Pick<LinhaCarteira, "oportunidadeId">[]): string[] {
   return linhas.slice(0, MAX_LOTE).map((l) => l.oportunidadeId);
@@ -77,7 +86,8 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
   const [motivo, setMotivo] = useState("");
   const acao = useAcaoCliente({ idempotente: false });
   const [confirmando, setConfirmando] = useState(false);
-  const [recusadas, setRecusadas] = useState<{ id: string; motivo: string }[]>([]);
+  // Nome guardado na hora da resposta: o `router.refresh()` pode tirar a linha da tela (ex.: filtro por vendedor).
+  const [recusadas, setRecusadas] = useState<{ id: string; nome: string; motivo: string }[]>([]);
 
   const marcados = new Set(selecionados);
   const paraTodas = idsParaSelecionarTodas(linhas);
@@ -103,7 +113,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
     setSelecionados([]);
     setMotivo("");
     setDestino("");
-    setRecusadas(dado?.recusadas ?? []);
+    setRecusadas(recusadasComNome(dado?.recusadas ?? [], linhas));
     acao.setSucesso(textoConclusaoLote({ feitas: dado?.feitas ?? 0, jaEram: dado?.jaEram ?? 0 }));
     router.refresh();
   }
@@ -152,7 +162,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
       {recusadas.length > 0 && (
         <ul className="space-y-1 text-sm text-red-700" aria-label="Oportunidades não reatribuídas">
           {recusadas.map((r) => (
-            <li key={r.id}>{linhas.find((l) => l.oportunidadeId === r.id)?.nome ?? "Oportunidade"}: {r.motivo}</li>
+            <li key={r.id}>{r.nome}: {r.motivo}</li>
           ))}
         </ul>
       )}

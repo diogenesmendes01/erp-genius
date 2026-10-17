@@ -1,5 +1,16 @@
 import { Papel, Prisma, StatusCobranca, StatusComissao, StatusMatricula } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import {
+  alemDoCursor,
+  camposNavegacaoFila,
+  cursorDaLeitura,
+  direcaoDeLeitura,
+  lerPaginaDaFila,
+  MENSAGEM_DOIS_SENTIDOS,
+  umSentido,
+  type NavegacaoFila,
+} from "@/lib/cursor-fila";
 import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, numeroOuNull, semDecimais } from "@/server/_shared/decimal";
 import { exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
@@ -193,16 +204,66 @@ export async function relatorioDescontosComissoes() {
   };
 }
 
+const INCLUDE_INFORME = {
+  cobranca: { select: { codigo: true, matricula: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } } } },
+} satisfies Prisma.PagamentoInformadoInclude;
+type InformeLido = Prisma.PagamentoInformadoGetPayload<{ include: typeof INCLUDE_INFORME }>;
+
+/** Informes a conferir por trecho da fila do /financeiro/informes. */
+export const INFORMES_POR_TRECHO = 30;
+
+/**
+ * Informes de um aluno (ficha financeira: histórico do atendimento, todos os estados). Sem aluno, o
+ * primeiro trecho da fila a conferir — a aba do /financeiro lê a fila inteira por cursor
+ * (listarFilaInformesPagamento); a consulta sem `take` sobre todos os informes saiu (docs/43 §6 item 9).
+ */
 export async function listarInformesPagamento(alunoId?: string) {
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
   if (!alunoId && !usuario.papeis.some((papel) => papel === Papel.ADMINISTRADOR || papel === Papel.FINANCEIRO)) {
     throw new ErroPermissao("Consulte os informes no atendimento individual do aluno.");
   }
+  if (!alunoId) return (await listarFilaInformesPagamento()).itens;
   const informes = await prisma.pagamentoInformado.findMany({
-    where: { ...(alunoId ? { cobranca: { matricula: { alunoId } } } : { status: "A_CONFERIR" as const }) },
-    orderBy: { criadoEm: "asc" },
-    include: { cobranca: { select: { codigo: true, matricula: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } } } } },
+    where: { cobranca: { matricula: { alunoId } } },
+    orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
+    include: INCLUDE_INFORME,
   });
+  return projetarInformes(informes, usuario);
+}
+
+/**
+ * Fila de informes a conferir (aba "A conferir" do /financeiro): cursor nos dois sentidos (decisão de
+ * 10/10/2026 para filas de trabalho), mais antigo primeiro. Conferir um informe tira-o da fila; o cursor é o
+ * id do informe de fronteira, e a âncora continua existindo depois de conferida (só o status muda).
+ */
+export async function listarFilaInformesPagamento(input: NavegacaoFila = {}) {
+  const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO);
+  const nav = z.object(camposNavegacaoFila).strict().refine(umSentido, MENSAGEM_DOIS_SENTIDOS).parse(input);
+  const aConferir: Prisma.PagamentoInformadoWhereInput = { status: "A_CONFERIR" };
+  const { registros, ...navegacao } = await lerPaginaDaFila(nav, INFORMES_POR_TRECHO, async (leitura, take) => {
+    const cursor = cursorDaLeitura(leitura);
+    const ancora = cursor === null ? null : await prisma.pagamentoInformado.findUnique({ where: { id: cursor }, select: { id: true, criadoEm: true } });
+    if (cursor !== null && !ancora) return [];
+    const sentido = direcaoDeLeitura(leitura);
+    return prisma.pagamentoInformado.findMany({
+      where: ancora
+        ? { AND: [aConferir, { OR: [{ criadoEm: alemDoCursor(leitura, "asc", ancora.criadoEm) }, { criadoEm: ancora.criadoEm, id: alemDoCursor(leitura, "asc", ancora.id) }] }] }
+        : aConferir,
+      orderBy: [{ criadoEm: sentido("asc") }, { id: sentido("asc") }],
+      take,
+      include: INCLUDE_INFORME,
+    });
+  }, (informe) => informe.id);
+  return { itens: projetarInformes(registros, usuario), ...navegacao };
+}
+
+/** Quantos informes esperam conferência (o número da aba "A conferir"), sem ler os informes. */
+export async function contarInformesAConferir() {
+  await exigirSessaoComPapel(Papel.FINANCEIRO);
+  return prisma.pagamentoInformado.count({ where: { status: "A_CONFERIR" } });
+}
+
+function projetarInformes(informes: InformeLido[], usuario: { id: string; papeis: Papel[] }) {
   return semDecimais(informes.map((i) => ({
     id: i.id, versao: i.versao, valor: i.valor, moeda: i.moeda, forma: i.forma,
     aluno: `${i.cobranca.matricula.aluno.primeiroNome} ${i.cobranca.matricula.aluno.sobrenome}`, cobranca: i.cobranca.codigo,
