@@ -102,6 +102,43 @@ describe("HistoricoConversa", () => {
     expect(ids(h).slice(-2)).toEqual(["m00010", "m00011"]);
   });
 
+  it("recarregar (resync da reconexão) não esvazia a janela enquanto a página nova não chega", async () => {
+    const f = fonteFalsa({ a: 150 }), h = new HistoricoConversa(f);
+    await h.abrir("a");
+    await h.maisAntigas();
+    expect(h.getState().mensagens).toHaveLength(120);
+    const vistos: number[] = [];
+    h.subscribe(() => vistos.push(h.getState().mensagens.length));
+    let soltar!: () => void;
+    f.atraso = () => new Promise<void>((ok) => { soltar = ok; });
+    f.dados.a.push(msg(150));
+    const recarregando = reagirAoAviso(h, "a", { tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    // em voo: a janela anterior continua montada, do mesmo atendimento, só marcada como carregando
+    expect(h.getState().mensagens).toHaveLength(120);
+    expect(h.getState().atendimentoId).toBe("a");
+    expect(h.getState().carregando).toBe(true);
+    f.atraso = undefined; soltar();
+    await recarregando;
+    expect(vistos.length).toBeGreaterThan(0);
+    expect(vistos.every((n) => n > 0)).toBe(true);
+    expect(h.getState().carregando).toBe(false);
+    expect(ids(h).at(-1)).toBe("m00150");
+  });
+
+  it("recarregar descarta a resposta antiga de maisAntigas que estava em voo", async () => {
+    const f = fonteFalsa({ a: 150 }), h = new HistoricoConversa(f);
+    await h.abrir("a");
+    let soltar!: () => void;
+    f.atraso = () => new Promise<void>((ok) => { soltar = ok; });
+    const antigas = h.maisAntigas();
+    const soltarAntigas = soltar;
+    f.atraso = undefined;
+    await h.recarregar();
+    soltarAntigas(); await antigas;
+    expect(h.getState().mensagens).toHaveLength(60);
+    expect(h.getState().carregandoAntigas).toBe(false);
+  });
+
   it("descarta resposta atrasada de outro atendimento", async () => {
     const f = fonteFalsa({ a: 20, b: 5 }), h = new HistoricoConversa(f);
     const soltar: Record<string, () => void> = {};
