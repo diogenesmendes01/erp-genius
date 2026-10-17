@@ -7,7 +7,7 @@ import { cobrancaAtivaDoAtendimento, podeVerLeadNaThread } from "@/server/whatsa
 export type PainelSetor =
   | { setor: "COMERCIAL"; oportunidade: { id: string; titulo: string; etapa: string; valor: string | null } | null; pessoaId: string | null }
   | { setor: "FINANCEIRO"; matriculaCodigo: string | null; cobrancas: { id: string; vencimento: string; valor: string; status: string }[] }
-  | { setor: "SECRETARIA"; matriculaCodigo: string | null; documentosPendentes: number }
+  | { setor: "SECRETARIA"; matriculaCodigo: string | null; documentosPendentes: number | null }
   | { setor: "PEDAGOGICO"; turma: string | null; frequenciaPct: number | null };
 
 /** Categorias que a Secretaria espera ver arquivadas na matrícula (não arquivadas) para considerá-la documentada. */
@@ -15,7 +15,8 @@ const CATEGORIAS_EXIGIDAS = ["CONTRATO", "COMPROVANTE"] as const;
 
 /**
  * Painel lateral do setor do atendimento (Tarefa 32). Só leitura. null fora do escopo do usuário
- * (participante convidado entra no escopo; o conteúdo sensível do setor segue filtrado por papel).
+ * (participante convidado entra no escopo; o conteúdo do setor é filtrado por papel em FINANCEIRO,
+ * SECRETARIA e PEDAGOGICO: quem entra só como convidado, sem papel do setor, recebe campos vazios).
  */
 export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): Promise<PainelSetor | null> {
   const a = await prisma.atendimentoWhatsApp.findFirst({
@@ -49,6 +50,7 @@ export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): P
           valor: ativa.saldo.toFixed(2), status: ativa.status }] : [] };
     }
     case "SECRETARIA": {
+      if (!temPapel(u, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR)) return { setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null };
       let pendentes = 0;
       if (a.matriculaId) {
         const presentes = await prisma.documento.findMany({ where: { matriculaId: a.matriculaId, arquivado: false, categoria: { in: [...CATEGORIAS_EXIGIDAS] } }, select: { categoria: true } });
@@ -58,6 +60,7 @@ export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): P
       return { setor: "SECRETARIA", matriculaCodigo: a.matricula?.codigo ?? null, documentosPendentes: pendentes };
     }
     case "PEDAGOGICO": {
+      if (!temPapel(u, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR)) return { setor: "PEDAGOGICO", turma: null, frequenciaPct: null };
       let pct: number | null = null;
       if (a.turmaId && a.alunoId) {
         const regs = await prisma.registroAulaAluno.findMany({
