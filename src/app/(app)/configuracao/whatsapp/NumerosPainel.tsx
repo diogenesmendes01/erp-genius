@@ -12,7 +12,7 @@ import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
+import { DRIVER_WHATSAPP_LABEL, FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro (driver é atributo do NÚMERO — bimotor),
 // estado de sessão Baileys e fluxo "conectar via QR" (Evolution). Soft-delete via ativo.
@@ -32,9 +32,7 @@ interface FormNumero {
   id?: string;
   telefoneE164: string;
   rotulo: string;
-  driver: "META_CLOUD" | "BAILEYS";
   finalidade: "COBRANCA" | "VENDAS" | "AGENDA";
-  providerRef: string;
   donoId: string;
   ativo: boolean;
 }
@@ -42,9 +40,7 @@ interface FormNumero {
 const FORM_VAZIO: FormNumero = {
   telefoneE164: "",
   rotulo: "",
-  driver: "META_CLOUD",
   finalidade: "COBRANCA",
-  providerRef: "",
   donoId: "",
   ativo: true,
 };
@@ -106,12 +102,12 @@ export function NumerosPainel({
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
                     <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-gray-600">
-                      {n.driver === "META_CLOUD" ? "oficial (Meta Cloud)" : "baileys (Evolution)"}
+                      {rotular(DRIVER_WHATSAPP_LABEL, n.driver)}
                     </span>
                     <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">
                       {rotular(FINALIDADE_NUMERO_LABEL, n.finalidade).toLowerCase()}
                     </span>
-                    {n.driver === "BAILEYS" && (
+                    {n.driver !== "META_CLOUD" && (
                       <span className={"rounded-full px-1.5 py-0.5 " + badge.cls}>{badge.label}</span>
                     )}
                     {n.setores.map((st) => (
@@ -124,7 +120,7 @@ export function NumerosPainel({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {n.driver === "BAILEYS" && n.ativo && (
+                  {n.driver === "MOTOR" && n.ativo && (
                     <button type="button" className={btnSec} onClick={() => setQrDe(n)}>
                       <span className="flex items-center gap-1">
                         <IconQrcode className="h-3.5 w-3.5" /> Conectar QR
@@ -139,9 +135,7 @@ export function NumerosPainel({
                         id: n.id,
                         telefoneE164: n.telefoneE164,
                         rotulo: n.rotulo,
-                        driver: n.driver as FormNumero["driver"],
                         finalidade: n.finalidade as FormNumero["finalidade"],
-                        providerRef: n.providerRef ?? "",
                         donoId: n.donoId ?? "",
                         ativo: n.ativo,
                       })
@@ -186,17 +180,6 @@ export function NumerosPainel({
               />
             </label>
             <label className="text-xs text-gray-600">
-              Driver
-              <select
-                className={inputCls + " mt-1"}
-                value={form.driver}
-                onChange={(e) => setForm({ ...form, driver: e.target.value as FormNumero["driver"] })}
-              >
-                <option value="META_CLOUD">Oficial (Meta Cloud API)</option>
-                <option value="BAILEYS">Baileys (Evolution, via QR)</option>
-              </select>
-            </label>
-            <label className="text-xs text-gray-600">
               Finalidade
               <select
                 className={inputCls + " mt-1"}
@@ -207,15 +190,6 @@ export function NumerosPainel({
                 <option value="VENDAS">Vendas</option>
                 <option value="AGENDA">Agenda institucional</option>
               </select>
-            </label>
-            <label className="text-xs text-gray-600">
-              {form.driver === "META_CLOUD" ? "phone_number_id (Meta)" : "Instância Evolution"}
-              <input
-                className={inputCls + " mt-1"}
-                placeholder={form.driver === "META_CLOUD" ? "ex.: 1065534…" : "gerado no conectar, se vazio"}
-                value={form.providerRef}
-                onChange={(e) => setForm({ ...form, providerRef: e.target.value })}
-              />
             </label>
             <label className="text-xs text-gray-600">
               Dono da conversa (vendas)
