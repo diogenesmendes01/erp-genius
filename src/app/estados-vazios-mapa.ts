@@ -382,6 +382,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/alunos/turma/[id]/page.tsx": [
     "linha · Nenhum aluno alocado.",
   ],
+  "src/app/(app)/comissoes/PainelComissoes.tsx": [
+    "bloco · {filtrando ? \"Nenhuma comissão com esses filtros.\" : \"Nenhuma comissão neste período.\"}",
+  ],
   "src/app/(app)/configuracao/catalogo/EntradasOfertas.tsx": [
     "compacto · Cadastre a oferta do produto no país para configurar sua entrada.",
   ],
@@ -542,6 +545,12 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/financeiro/recebimentos/page.tsx": [
     "compacto · Nenhum recebimento nesta página.",
     "compacto · Nenhum recebimento registrado.",
+  ],
+  "src/app/(app)/carteira/CoberturasPainel.tsx": [
+    "compacto · Nenhuma cobertura cadastrada.",
+  ],
+  "src/app/(app)/carteira/ListaCarteira.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na carteira.\"}",
   ],
   "src/app/(app)/funil/PainelOportunidade.tsx": [
     "compacto · Nenhuma atividade registrada.",

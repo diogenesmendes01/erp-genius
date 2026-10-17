@@ -20,6 +20,8 @@ import { Papel } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
+import { aplicarResposta } from "./status-atendimento";
+import { comContatoIndividual } from "./grupos";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -273,13 +275,13 @@ export async function despacharFila(
       if (chave === CHAVE_LEAD_NOVO) {
         if (lead.etapa !== "NOVO") motivoObsoleta = "etapa_mudou";
         else if (conversa && it.ocorrenciaComercial) {
-          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox) e
+          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox), CELULAR (eco) e
           // origem null (fromMe: app do celular) — significa "vendedor assumiu".
           const manuais = await prisma.mensagemWhatsApp.count({
             where: {
               conversaId: conversa.id,
               direcao: "SAIDA",
-              OR: [{ origem: "HUMANO" }, { origem: null }],
+              OR: [{ origem: "HUMANO" }, { origem: "CELULAR" }, { origem: null }],
               criadoEm: { gt: new Date(it.ocorrenciaComercial) },
             },
           });
@@ -527,7 +529,10 @@ export async function despacharFila(
           },
         });
         await tx.conversaWhatsApp.update({ where: { id: conv.id }, data: { ultimaMensagemEm: agora } });
-        if (it.atendimentoId) await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
+        if (it.atendimentoId) {
+          await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
+          if (it.origem === "HUMANO") await aplicarResposta(tx, it.atendimentoId, agora);
+        }
         if (it.cobrancaId && it.passo) {
           await registrarEventoCobrancaEnviada(tx, {
             cobrancaId: it.cobrancaId,
@@ -608,7 +613,7 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
     finalidadeAtendimento = a.finalidade;
     // Aviso de agenda revalida sua identidade congelada (aluno ou responsável)
     // no helper próprio; a regra genérica prefere responsável quando existe um.
-    if (!it.avisoAlteracaoAgendaId && !await destinatarioAtualDoAtendimento(a)) return "destinatario_alterado";
+    if (!it.avisoAlteracaoAgendaId && !await destinatarioAtualDoAtendimento(comContatoIndividual(a))) return "destinatario_alterado";
   }
   if (it.cobrancaId) {
     const snapshot = await snapshotCobranca(it.cobrancaId);

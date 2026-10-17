@@ -26,6 +26,7 @@ describe("validade do domínio no despacho (W01–W05)", () => {
     db.mensagemWhatsApp.count.mockResolvedValue(1);
     expect(await motivoCadenciaInvalida(intencao, futuro)).toBe("atendimento_comercial_iniciado");
     expect(JSON.stringify(db.mensagemWhatsApp.count.mock.calls[0])).toContain('"origem":null');
+    expect(JSON.stringify(db.mensagemWhatsApp.count.mock.calls[0])).toContain('"origem":"CELULAR"'); // eco do celular (E3.6)
   });
   it("experimental vencida, reagendada ou com pedido de reagendamento não recebe lembrete antigo", async () => {
     db.oportunidade.findUnique.mockResolvedValue({ id: "lead", etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: futuro });

@@ -147,6 +147,43 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
     const id = await prisma.$transaction(async (tx) => {
       const codigo = await gerarCodigo("lead");
       const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
+      // `Empresa` não tem dono nem carteira; o escopo possível é o cadastro estar ativo. Inexistente ou
+      // inativa devolve a mesma mensagem, em vez de estourar a FK (P2003) num erro genérico.
+      let empresaId = dados.empresaId || null;
+      if (dados.criarEmpresa && (empresaId || dados.pessoaId)) {
+        throw new ErroRegra("Oportunidade de empresa nova não leva empresa nem contato já existentes.");
+      }
+      if (empresaId) {
+        const empresa = await tx.empresa.findFirst({ where: { id: empresaId, ativo: true }, select: { id: true } });
+        if (!empresa) throw new ErroRegra("Empresa não encontrada.");
+      } else if (dados.criarEmpresa) {
+        // Ruling (C2 da R1 do #196): no modo Empresa a oportunidade nasce ligada a uma `Empresa` prospect, criada
+        // com o nome e o contato digitados, e nenhuma `Pessoa` recebe o nome da empresa. Participantes
+        // (`ParticipanteOportunidade`) entram depois, pela ficha.
+        const codigoEmpresa = await gerarCodigo("empresa", tx);
+        const empresa = await tx.empresa.create({
+          data: {
+            codigo: codigoEmpresa,
+            nome: dados.nome,
+            paisId: dados.paisId || null,
+            contatoTelefone: telefoneE164,
+            contatoEmail: dados.email || null,
+            origemCanal: dados.origemCanal ?? null,
+          },
+        });
+        empresaId = empresa.id;
+        await registrarEvento(tx, {
+          tipo: "EmpresaCriada",
+          agregadoTipo: "Empresa",
+          agregadoId: empresa.id,
+          autorId: autor.id,
+          payload: { codigo: codigoEmpresa, nome: empresa.nome, origem: "oportunidade" },
+        });
+      }
+      // Comportamento intencional nesta fase (R1 do PR #194, C2): com `pessoaId` informado, o telefone não
+      // entra em `ContatoWhatsApp`; e o `email` digitado só vai para a Pessoa quando ela é criada aqui (via
+      // `garantirPessoaTx`). Pessoa já existente — informada, achada pelo contato ou pelo aluno/responsável —
+      // não tem telefone nem e-mail atualizados por esta ação.
       let pessoaId = dados.pessoaId || null;
       if (pessoaId) {
         // Fora do escopo do autor (ou lápide) é indistinguível de inexistente: não vaza o contato.
@@ -155,7 +192,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
           select: { id: true },
         });
         if (!existente) throw new ErroRegra("Contato não encontrado.");
-      } else {
+      } else if (!dados.criarEmpresa) {
         pessoaId = (
           await garantirPessoaTx(
             tx,
@@ -171,11 +208,11 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
           telefoneE164,
           pessoaId,
           origemCanal: dados.origemCanal ?? null,
-          empresaId: dados.empresaId || null,
+          empresaId,
           paisId: dados.paisId || null,
           segmento: dados.segmento,
           temperatura: dados.temperatura,
-          b2b: dados.b2b,
+          b2b: dados.criarEmpresa || dados.b2b,
           vendedorDonoId: donoId,
           origemCampanha: dados.origemCampanha || null,
           origemConjunto: dados.origemConjunto || null,
@@ -191,7 +228,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
         agregadoTipo: "Lead",
         agregadoId: lead.id,
         autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId },
+        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId },
       });
       if (donoId) {
         await registrarEvento(tx, {
@@ -849,6 +886,9 @@ export async function atribuirDono(
       await exigirDestinoComercial(autor, vendedorId, tx);
       if (lead.vendedorDonoId === vendedorId) return;
       await tx.oportunidade.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
+      // Responsável preenchido conta como assumido (regra do backfill da M2): quem estava "Na fila" passa a
+      // EM_ATENDIMENTO; AGUARDANDO_CLIENTE e EM_ATENDIMENTO mantêm o status.
+      await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null, status: "ABERTO_SEM_RESPONSAVEL" }, data: { responsavelId: vendedorId, status: "EM_ATENDIMENTO" } });
       await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null }, data: { responsavelId: vendedorId } });
       if (lead.vendedorDonoId) await tx.intencaoMensagem.updateMany({ where: { OR: [{ leadId: id }, { atendimento: { is: { leadId: id, finalidade: "COMERCIAL" } } }], origem: "HUMANO", autorId: lead.vendedorDonoId, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "Carteira transferida; revisar responsável antes de enviar." } });
       await registrarEvento(tx, {

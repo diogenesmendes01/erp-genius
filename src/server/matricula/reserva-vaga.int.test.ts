@@ -1113,7 +1113,7 @@ it.each([
     expect(await prisma.matricula.findUniqueOrThrow({ where: { id: outroContratoAtivo.id } })).toEqual(outroContratoAtivo);
     expect(await prisma.cobranca.count({ where: { matriculaId: alvoAceite.matriculaId, tipo: "MENSALIDADE" } })).toBe(1);
     expect(await prisma.recebimento.count()).toBe(recebimentosAntes);
-    expect(await prisma.comissao.findMany({ where: { matriculaId: alvoAceite.matriculaId } })).toMatchObject([{ vendedorId: vendedor.id, status: "APROVADA" }]);
+    expect(await prisma.comissao.findMany({ where: { matriculaId: alvoAceite.matriculaId } })).toMatchObject([{ vendedorId: vendedor.id, status: "APROVADA", aprovadaEm: expect.any(Date) }]);
     expect(await prisma.evento.count({ where: { agregadoId: alvoAceite.matriculaId, tipo: "MatriculaAtivada" } })).toBe(1);
     return;
   }
@@ -1520,6 +1520,7 @@ it.each([
     expect(await prisma.cobranca.count({ where: { matriculaId: r.matriculaId, tipo: "MENSALIDADE" } })).toBe(regime === "MENSALIDADE" ? 1 : 0);
     expect(await prisma.cobranca.count({ where: { matriculaId: r.matriculaId, tipo: "HORA_PARTICULAR" } })).toBe(exigirPagamentoAulas && regime === "HORA_PARTICULAR" ? 1 : 0);
     expect(await prisma.comissao.count({ where: { matriculaId: r.matriculaId, vendedorId: vendedor.id } })).toBe(1);
+    expect(await prisma.comissao.findMany({ where: { matriculaId: r.matriculaId } })).toMatchObject([{ status: "APROVADA", aprovadaEm: expect.any(Date) }]);
     expect(await prisma.evento.count({ where: { agregadoId: r.matriculaId, tipo: "MatriculaAtivada" } })).toBe(1);
     if (regime === "HORA_PARTICULAR" && exigirPagamentoAulas) {
       authMock.mockResolvedValue({ user: { id: financeiro.id } });
