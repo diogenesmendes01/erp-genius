@@ -6,6 +6,7 @@ import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import type { FiltrosFunil } from "./funil";
 import { exigirCapacidadeCrm } from "./permissoes";
+import { comUnicidade } from "./unicidade";
 
 /** As chaves do funil são as de FiltrosFunil (lerFiltrosFunil lê a URL com esses nomes). */
 const CHAVES_FUNIL = [
@@ -52,19 +53,26 @@ export async function salvarFiltro(input: {
       where: { usuarioId_tela_nome: { usuarioId: autor.id, tela: dados.tela, nome: dados.nome } },
       select: { id: true, arquivadoEm: true },
     });
-    if (existente && !existente.arquivadoEm) throw new ErroRegra("Já existe uma visualização com este nome.");
+    const repetida = "Já existe uma visualização com este nome.";
+    if (existente && !existente.arquivadoEm) throw new ErroRegra(repetida);
 
-    return prisma.$transaction(async (tx) => {
+    return comUnicidade(repetida, () => prisma.$transaction(async (tx) => {
       // A unicidade (usuário, tela, nome) inclui arquivados e não há delete físico:
-      // salvar com o nome de um arquivado o reativa com os novos filtros.
-      const f = existente
-        ? await tx.filtroSalvo.update({
-            where: { id: existente.id },
-            data: { filtros, compartilhado, arquivadoEm: null },
-          })
-        : await tx.filtroSalvo.create({
-            data: { usuarioId: autor.id, tela: dados.tela, nome: dados.nome, filtros, compartilhado },
-          });
+      // salvar com o nome de um arquivado o reativa com os novos filtros. A reativação só vale
+      // se ele ainda estiver arquivado: outra chamada simultânea pode tê-lo reativado antes.
+      let f;
+      if (existente) {
+        const { count } = await tx.filtroSalvo.updateMany({
+          where: { id: existente.id, arquivadoEm: { not: null } },
+          data: { filtros, compartilhado, arquivadoEm: null },
+        });
+        if (count === 0) throw new ErroRegra(repetida);
+        f = await tx.filtroSalvo.findUniqueOrThrow({ where: { id: existente.id } });
+      } else {
+        f = await tx.filtroSalvo.create({
+          data: { usuarioId: autor.id, tela: dados.tela, nome: dados.nome, filtros, compartilhado },
+        });
+      }
       await registrarEvento(tx, {
         tipo: "FiltroSalvoCriado",
         agregadoTipo: "FiltroSalvo",
@@ -73,7 +81,7 @@ export async function salvarFiltro(input: {
         payload: { tela: f.tela, nome: f.nome, compartilhado: f.compartilhado },
       });
       return { id: f.id };
-    });
+    }));
   });
 }
 

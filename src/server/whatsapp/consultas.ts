@@ -3,6 +3,8 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoComPapel } from "@/server/_shared";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME } from "@/server/cobrancas/fabrica";
 import { REGUA } from "@/server/cobrancas/regua";
+import { setoresDoNumero } from "./numero-setor";
+import { SETORES, papeisDeTriagem, type Setor } from "./setor";
 export * from "./consultas-inbox";
 export { escopoNumeros } from "./escopo";
 export interface NumeroConfig {
@@ -16,6 +18,10 @@ export interface NumeroConfig {
   donoId: string | null;
   donoNome: string | null;
   ativo: boolean;
+  /** Setores que o número atende (cadastro explícito ou, sem cadastro, derivado da finalidade legada). */
+  setores: Setor[];
+  /** Responsável pela triagem; null = ADMINISTRADOR (Q2). */
+  triagemResponsavelId: string | null;
 }
 
 export async function listarNumerosConfig(): Promise<NumeroConfig[]> {
@@ -24,7 +30,8 @@ export async function listarNumerosConfig(): Promise<NumeroConfig[]> {
     orderBy: { criadoEm: "asc" },
     include: { dono: { select: { nome: true } } },
   });
-  return numeros.map((n) => ({
+  const setores = await Promise.all(numeros.map((n) => setoresDoNumero(prisma, n.id)));
+  return numeros.map((n, i) => ({
     id: n.id,
     telefoneE164: n.telefoneE164,
     rotulo: n.rotulo,
@@ -35,7 +42,30 @@ export async function listarNumerosConfig(): Promise<NumeroConfig[]> {
     donoId: n.donoId,
     donoNome: n.dono?.nome ?? null,
     ativo: n.ativo,
+    setores: setores[i],
+    triagemResponsavelId: n.triagemResponsavelId,
   }));
+}
+
+export interface ResponsavelTriagem {
+  id: string;
+  nome: string;
+  papeis: Papel[];
+}
+
+/**
+ * Usuários ativos que podem ser responsáveis pela triagem: só quem tem papel de triagem de algum
+ * dos `setores` (`papeisDeTriagem`; padrão: todos os setores). ALUNO, PROFESSOR e ADMINISTRADOR
+ * (o admin já é o padrão, Q2) ficam de fora. Os papéis voltam para o editor filtrar pelos setores
+ * marcados no número (`podeTriarSetores`); `salvarSetoresNumero` aplica a mesma regra no servidor.
+ */
+export async function listarResponsaveisTriagem(setores: readonly Setor[] = SETORES): Promise<ResponsavelTriagem[]> {
+  await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+  return prisma.usuario.findMany({
+    where: { ativo: true, papeis: { hasSome: papeisDeTriagem(setores) } },
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true, papeis: true },
+  });
 }
 
 export interface TemplateConfig {

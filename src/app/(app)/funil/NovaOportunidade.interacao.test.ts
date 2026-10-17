@@ -103,6 +103,25 @@ describe("NovaOportunidade", () => {
     expect(criarLeadMock.mock.calls[0][0].pessoaId).toBeUndefined();
     expect(moverEtapaMock.mock.calls).toEqual([["op1", "EM_ATENDIMENTO"], ["op1", "QUALIFICADO"]]);
   });
+  it("modo Empresa cria a Empresa pelo nome, sem Pessoa: não busca duplicados nem manda pessoaId", async () => {
+    duplicadosMock.mockResolvedValue({ ok: true, dado: [{ pessoaId: "p1", nome: "Ana Souza", motivo: "telefone" }] });
+    const t = montar({ preenchido: { pessoaId: "p9", nome: "Caio" } });
+    await t.clicar("Empresa");
+    await t.digitar("Nome da empresa", "ACME Ltda");
+    await t.digitar("WhatsApp", "+5511988887777");
+    expect(duplicadosMock).not.toHaveBeenCalled();
+    expect(t.texto()).not.toContain("Usando o cadastro");
+    await t.clicar("Criar oportunidade");
+    const enviado = criarLeadMock.mock.calls[0][0];
+    expect(enviado).toEqual(expect.objectContaining({ nome: "ACME Ltda", b2b: true, criarEmpresa: true }));
+    expect(enviado.pessoaId).toBeUndefined();
+  });
+  it("modo Pessoa não pede criação de empresa", async () => {
+    const t = montar({});
+    await t.digitar("Nome", "Bia Lima");
+    await t.clicar("Criar oportunidade");
+    expect(criarLeadMock.mock.calls[0][0].criarEmpresa).toBeUndefined();
+  });
   it("pré-preenchido por pessoaId vincula o cadastro sem pôr nome ou telefone na URL", async () => {
     const t = montar({ preenchido: { pessoaId: "p9", nome: "Caio" } });
     await t.clicar("Criar oportunidade");

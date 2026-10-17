@@ -287,7 +287,7 @@ function StatusEnvio({ status }: { status: string }) {
   return <IconCheck className="h-3.5 w-3.5 text-gray-400" />;
 }
 
-const ORIGEM_LABEL: Record<string, string> = { CRON: "régua", LOTE: "lote", HUMANO: "" };
+const ORIGEM_LABEL: Record<string, string> = { CRON: "régua", LOTE: "lote", HUMANO: "", CELULAR: "celular", IA: "Aria" };
 
 export function Thread({
   thread,

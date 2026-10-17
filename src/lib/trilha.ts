@@ -10,6 +10,8 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Áreas
   "/academico": "Acadêmico",
   "/alunos": "Alunos",
+  "/carteira": "Carteira",
+  "/comissoes": "Comissões",
   "/configuracao": "Configuração",
   "/diario": "Diário de aulas",
   "/empresas": "Empresas",
@@ -132,8 +134,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Empresas, leads
   "/empresas/*": "Empresa",
   "/leads/*": "Ficha do lead",
-  // Só redireciona para /oportunidades/*/contratacao (sai com a Tarefa 37); fica no mapa porque a página existe.
-  "/leads/*/contratacao": "Contratação",
+  "/leads/*/contratacao": "Contratação", // só redireciona para /oportunidades/*/contratacao; sai com a Tarefa 37
   "/oportunidades/*/contratacao": "Contratação",
 
   // Financeiro

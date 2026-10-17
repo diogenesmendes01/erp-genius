@@ -30,7 +30,7 @@ import { clicar, criarGanchos, elementos, texto, type No } from "@/test/tela-sem
 
 const numero: NumeroConfig = {
   id: "n1", telefoneE164: "+50688887777", rotulo: "Cobrança CR", driver: "META_CLOUD", finalidade: "COBRANCA",
-  providerRef: null, sessao: "", donoId: null, donoNome: null, ativo: true,
+  providerRef: null, sessao: "", donoId: null, donoNome: null, ativo: true, setores: ["FINANCEIRO"], triagemResponsavelId: null,
 };
 const template: TemplateConfig = {
   id: "t1", nome: "cobranca_vencida", corpo: "Olá {nome}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: null, atualizadoEm: "2026-01-01T00:00:00.000Z",

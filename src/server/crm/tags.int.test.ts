@@ -53,6 +53,18 @@ describe("criarTag", () => {
     expect(await prisma.tag.count()).toBe(1);
   });
 
+  it("corrida: a checagem prévia passa mas o índice único recusa (P2002) com a mesma mensagem", async () => {
+    logadoComo(gerente.id);
+    // Simula a outra chamada ter criado "Quente" entre a checagem e a transação.
+    const espiao = vi.spyOn(prisma.tag, "findUnique").mockResolvedValueOnce(null);
+    try {
+      expect(await criarTag({ nome: "Quente", cor: "INFO" })).toEqual({ ok: false, erro: "Já existe uma tag com este nome." });
+    } finally {
+      espiao.mockRestore();
+    }
+    expect(await prisma.tag.count()).toBe(1);
+  });
+
   it("toda cor tem classes do mapa do Tailwind, sem hex", () => {
     for (const classes of Object.values(CLASSES_COR_TAG)) expect(classes).not.toMatch(/#|\[/);
     expect(Object.keys(CLASSES_COR_TAG)).toHaveLength(7);
