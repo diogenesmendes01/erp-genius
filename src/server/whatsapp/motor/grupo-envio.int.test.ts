@@ -12,6 +12,7 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { despacharMensagemGrupo } from "../despachante";
 import { enviarMensagemGrupo } from "./acoes-mensagem";
 import { reconciliarEcoErp } from "./processar-mensagem";
+import { MSG_MOTOR_DESCONECTADO } from "./capacidades";
 
 const GRUPO = "120363000000000001@g.us";
 
@@ -24,7 +25,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 async function cenario() {
   const numero = await prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511900000001", rotulo: "Motor", driver: "MOTOR", finalidade: "COBRANCA", providerRef: "n-grupo", setores: { create: [{ finalidade: "FINANCEIRO" }] } },
+    data: { telefoneE164: "+5511900000001", rotulo: "Motor", driver: "MOTOR", sessao: "CONECTADO", finalidade: "COBRANCA", providerRef: "n-grupo", setores: { create: [{ finalidade: "FINANCEIRO" }] } },
   });
   const grupo = await prisma.grupoWhatsApp.create({ data: { numeroId: numero.id, grupoJid: GRUPO, nome: "Avisos" } });
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, grupoId: grupo.id } });
@@ -100,6 +101,14 @@ describe("envio humano para grupo", () => {
     const vendedor = await criarUsuario([Papel.VENDEDOR], "Vendedor");
     authMock.mockResolvedValue({ user: { id: vendedor.id } });
     expect(await enviarMensagemGrupo({ conversaId: conversa.id, texto: "oi" })).toEqual({ ok: false, erro: "Grupo fora do seu escopo de envio." });
+    expect(enviarTexto).not.toHaveBeenCalled();
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+  });
+
+  it("sessão DESCONECTADO recusa sem criar mensagem nem chamar o driver", async () => {
+    const { conversa, numero } = await cenario();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "DESCONECTADO" } });
+    expect(await enviarMensagemGrupo({ conversaId: conversa.id, texto: "oi" })).toEqual({ ok: false, erro: MSG_MOTOR_DESCONECTADO });
     expect(enviarTexto).not.toHaveBeenCalled();
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
   });

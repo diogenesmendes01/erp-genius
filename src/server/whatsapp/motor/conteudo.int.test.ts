@@ -26,6 +26,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 async function cenario(optOut = false) {
   const { numero } = await seedCanal();
+  await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "CONECTADO" } });
   const autor = await criarUsuario([Papel.ADMINISTRADOR], "Autor");
   authMock.mockResolvedValue({ user: { id: autor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777", optOutEm: optOut ? new Date() : null } });

@@ -10,7 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "../atendimentos";
-import { apagarMensagemWhatsApp, editarMensagemWhatsApp, encaminharMensagemWhatsApp, reagirMensagemWhatsApp } from "./acoes-mensagem";
+import { apagarMensagemWhatsApp, avisarDigitando, editarMensagemWhatsApp, encaminharMensagemWhatsApp, enviarConteudoInbox, reagirMensagemWhatsApp } from "./acoes-mensagem";
+import { MSG_MOTOR_DESCONECTADO } from "./capacidades";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); acao.mockReset(); acao.mockResolvedValue({}); });
 const comoUsuario = async <T,>(u: { id: string }, f: () => Promise<T>) => { authMock.mockResolvedValue({ user: { id: u.id } }); return f(); };
@@ -147,5 +148,26 @@ describe("reagir e encaminhar pelo motor", () => {
     expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }))).ok).toBe(true);
     expect(await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "FWD1" } })).toMatchObject({ origem: "HUMANO", autorId: autor.id, atendimentoId: dest.id });
     expect(await prisma.mensagemWhatsApp.count({ where: { providerMessageId: "FWD1" } })).toBe(1);
+  });
+});
+
+describe("trava de sessão do motor", () => {
+  it.each(["CAIU", "DESCONECTADO"] as const)("sessão %s: editar, apagar, reagir, encaminhar, conteúdo e digitando recusam sem chamar o motor", async (sessao) => {
+    const { autor, numero, at, m } = await cenario();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao } });
+    const contato2 = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880002" } });
+    const destino = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato2.id, finalidade: "COMERCIAL", responsavelId: autor.id }));
+    const recusa = { ok: false, erro: MSG_MOTOR_DESCONECTADO };
+    await comoUsuario(autor, async () => {
+      expect(await editarMensagemWhatsApp({ mensagemId: m.id, texto: "x" })).toEqual(recusa);
+      expect(await apagarMensagemWhatsApp({ mensagemId: m.id })).toEqual(recusa);
+      expect(await reagirMensagemWhatsApp({ mensagemId: m.id, emoji: "👍" })).toEqual(recusa);
+      expect(await encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: destino.id })).toEqual(recusa);
+      expect(await enviarConteudoInbox({ atendimentoId: at.id, conteudo: { tipo: "LOCALIZACAO", latitude: 1, longitude: 1 } })).toEqual(recusa);
+      expect(await avisarDigitando(at.id)).toEqual(recusa);
+    });
+    expect(acao).not.toHaveBeenCalled();
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: m.id } })).toMatchObject({ corpo: "oi", apagadaEm: null });
   });
 });

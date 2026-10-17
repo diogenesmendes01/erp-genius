@@ -15,6 +15,7 @@ import type { EnvioInboxResultado } from "../acoes";
 import { executarAcaoMotor } from "./acoes";
 import { ErroMotor, MENSAGEM_LIMITE_RITMO } from "./cliente";
 import { podeExecutar } from "@/server/inbox/permissoes";
+import { exigirMotorConectado } from "./capacidades";
 
 const JANELA_EDICAO_MS = 15 * 60_000;
 
@@ -26,12 +27,13 @@ async function mensagemPropria(mensagemId: string, verbo: "editar" | "apagar") {
   const u = await exigirSessao();
   const m = await prisma.mensagemWhatsApp.findUnique({
     where: { id: mensagemId },
-    include: { numero: { select: { id: true, driver: true, providerRef: true } } },
+    include: { numero: { select: { id: true, driver: true, providerRef: true, ativo: true, sessao: true } } },
   });
   if (!m?.atendimentoId || !(await atendimentoVisivel(u, m.atendimentoId, true))) throw new ErroRegra("Mensagem fora do seu escopo de envio.");
   if (m.direcao !== "SAIDA" || m.autorId !== u.id) throw new ErroRegra(`Só é possível ${verbo} as próprias mensagens.`);
   if (m.numero.driver !== "MOTOR" || !m.mensagemIdMotor) throw new ErroRegra(`Esta mensagem não pode ser ${verbo === "editar" ? "editada" : "apagada"} neste canal.`);
   if (m.apagadaEm) throw new ErroRegra("Esta mensagem já foi apagada.");
+  exigirMotorConectado(m.numero);
   return { u, m, numeroRef: m.numero.providerRef ?? m.numero.id, mensagemIdMotor: m.mensagemIdMotor };
 }
 
@@ -95,11 +97,12 @@ export async function reagirMensagemWhatsApp(input: { mensagemId: string; emoji:
     const u = await exigirSessao();
     const m = await prisma.mensagemWhatsApp.findUnique({
       where: { id: dados.mensagemId },
-      include: { numero: { select: { id: true, driver: true, providerRef: true } } },
+      include: { numero: { select: { id: true, driver: true, providerRef: true, ativo: true, sessao: true } } },
     });
     if (!m?.atendimentoId || !(await atendimentoVisivel(u, m.atendimentoId, true))) throw new ErroRegra("Mensagem fora do seu escopo de envio.");
     if (m.numero.driver !== "MOTOR" || !m.mensagemIdMotor) throw new ErroRegra("Esta mensagem não pode receber reação neste canal.");
     if (m.apagadaEm) throw new ErroRegra("Esta mensagem já foi apagada.");
+    exigirMotorConectado(m.numero);
     try {
       await executarAcaoMotor(m.numero.providerRef ?? m.numero.id, "message.react", { messageId: m.mensagemIdMotor, emoji: dados.emoji }, { origem: "HUMANO" });
     } catch (e) { traduzir(e); }
@@ -123,7 +126,7 @@ export async function encaminharMensagemWhatsApp(input: { mensagemId: string; at
     const u = await exigirSessao();
     const m = await prisma.mensagemWhatsApp.findUnique({
       where: { id: dados.mensagemId },
-      include: { numero: { select: { id: true, driver: true, providerRef: true } } },
+      include: { numero: { select: { id: true, driver: true, providerRef: true, ativo: true, sessao: true } } },
     });
     if (!m?.atendimentoId || !(await atendimentoVisivel(u, m.atendimentoId))) throw new ErroRegra("Mensagem de origem fora do seu escopo.");
     if (m.numero.driver !== "MOTOR" || !m.mensagemIdMotor) throw new ErroRegra("Esta mensagem não pode ser encaminhada neste canal.");
@@ -133,6 +136,7 @@ export async function encaminharMensagemWhatsApp(input: { mensagemId: string; at
     if (!d.numero.ativo) throw new ErroRegra("O destino está em número inativo.");
     if (d.contato.optOutEm) throw new ErroRegra("O destino pediu para não receber mensagens (opt-out).");
     if (d.numeroId !== m.numeroId) throw new ErroRegra("Encaminhe só entre conversas do mesmo número.");
+    exigirMotorConectado(m.numero);
 
     const digitos = (d.contato.waId ?? d.contato.telefoneE164).replace(/\D/g, "");
     const chatId = `${digitos}@s.whatsapp.net`;
@@ -210,6 +214,7 @@ export async function enviarConteudoInbox(input: { atendimentoId: string; conteu
     if (!a.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (a.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não envia esse tipo de conteúdo.");
     if (a.contato.optOutEm) throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
+    exigirMotorConectado(a.numero);
 
     let midiaPath: string | null = null;
     if (c.tipo === "FIGURINHA" || c.tipo === "GIF") {
@@ -244,6 +249,7 @@ export async function avisarDigitando(atendimentoId: string): Promise<Resultado>
     const a = await atendimentoVisivel(u, atendimentoId, true);
     if (!a) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (a.numero.driver !== "MOTOR") return undefined;
+    exigirMotorConectado(a.numero);
     const chave = `${u.id}:${atendimentoId}`;
     const agora = Date.now();
     const ultimo = digitandoEm.get(chave);
@@ -275,6 +281,7 @@ export async function enviarMensagemGrupo(input: { conversaId: string; texto: st
     if (!conversa?.grupo) throw new ErroRegra("Grupo fora do seu escopo de envio.");
     if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (conversa.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não envia para grupos.");
+    exigirMotorConectado(conversa.numero);
 
     const mensagem = await prisma.mensagemWhatsApp.create({
       data: {
@@ -309,6 +316,7 @@ export async function bloquearContatoWhatsApp(input: { atendimentoId: string; mo
     const a = await atendimentoVisivel(u, dados.atendimentoId);
     if (!a) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (a.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não permite bloquear contatos.");
+    exigirMotorConectado(a.numero);
     const desbloquear = dados.desbloquear === true;
     try {
       await executarAcaoMotor(a.numero.providerRef ?? a.numero.id, "contact.block", { contactId: jidDe(a.contato.waId ?? a.contato.telefoneE164), value: !desbloquear });
@@ -338,9 +346,10 @@ export async function criarGrupoWhatsApp(input: { numeroId: string; nome: string
     const u = await exigirSessao();
     if (!podeExecutar(u, "grupoGerir", { setor: "SECRETARIA", responsavelId: null })) throw new ErroRegra(MSG_SEM_GRUPO);
     const dados = CriarGrupoSchema.parse(input);
-    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroId }, select: { id: true, ativo: true, driver: true, providerRef: true } });
+    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroId }, select: { id: true, ativo: true, driver: true, sessao: true, providerRef: true } });
     if (!numero || !numero.ativo) throw new ErroRegra("Número não encontrado ou inativo.");
     if (numero.driver !== "MOTOR") throw new ErroRegra("Este canal não cria grupos.");
+    exigirMotorConectado(numero);
     if (dados.turmaId && !(await prisma.turma.findUnique({ where: { id: dados.turmaId }, select: { id: true } }))) throw new ErroRegra("Turma não encontrada.");
     let criado: { id?: string; subject?: string } | undefined;
     try {
@@ -379,9 +388,10 @@ export async function alterarParticipantesGrupo(input: { grupoId: string; acao: 
     const u = await exigirSessao();
     if (!podeExecutar(u, "grupoGerir", { setor: "SECRETARIA", responsavelId: null })) throw new ErroRegra(MSG_SEM_GRUPO);
     const dados = AlterarParticipantesSchema.parse(input);
-    const grupo = await prisma.grupoWhatsApp.findFirst({ where: { id: dados.grupoId, ...(await escopoGrupos(u)) }, include: { numero: { select: { id: true, ativo: true, driver: true, providerRef: true } } } });
+    const grupo = await prisma.grupoWhatsApp.findFirst({ where: { id: dados.grupoId, ...(await escopoGrupos(u)) }, include: { numero: { select: { id: true, ativo: true, driver: true, sessao: true, providerRef: true } } } });
     if (!grupo) throw new ErroRegra("Grupo fora do seu escopo.");
     if (!grupo.numero.ativo || grupo.numero.driver !== "MOTOR") throw new ErroRegra("Este canal não gerencia grupos.");
+    exigirMotorConectado(grupo.numero);
     try {
       await executarAcaoMotor(grupo.numero.providerRef ?? grupo.numero.id, "group.participants", {
         id: grupo.grupoJid, participants: dados.participantesE164.map(jidDe), operation: OPERACAO_GRUPO[dados.acao],
