@@ -44,6 +44,8 @@ describe("medirSaudeCanal — fila por estado", () => {
       adiadaVencidaHaMin: null,
       claimExpiradoHaMin: null,
       falhas24h: 0,
+      retidasAgendaDesligada: 0,
+      envioAgendaHabilitado: process.env.COMUNICACOES_AGENDA_ENVIO_ENABLED === "true",
     });
     expect(s.ultimoInboundEm).toBeNull();
   });
