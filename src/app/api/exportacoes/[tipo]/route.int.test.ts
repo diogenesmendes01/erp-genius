@@ -112,7 +112,7 @@ describe("D09: geração/download de XLSX com escopo e campos autorizados", () =
     const dados = await linhas(res);
     expect(dados).toHaveLength(2);
     expect(dados[0]).toEqual(["Código", "Nome", "Situação", "País", "Turma"]);
-    expect(dados[1]).toEqual(["A-000001", "Ana", "Ativo", cat.pais.nome, "Regular A1"]);
+    expect(dados[1]).toEqual(["A-000001", "Ana", "Ativo", cat.pais.nome, `${cat.modalidade.nome} · ${cat.idioma.nome} A1`]);
     expect(JSON.stringify(dados)).not.toMatch(/pessoal@|88887777|segredo|999|outra turma/);
   });
 
