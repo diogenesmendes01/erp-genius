@@ -2554,4 +2554,7 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - **C5:** tratado na #206 (`recursos-canal.ts`).
 - **C6 (nit):** `drivers/motor.ts` passou a montar `/v1/numeros/${encodeURIComponent(…)}`, como `motor/acoes.ts`.
   Teste em `drivers/motor.test.ts`.
+- Verificação com o `main` mesclado: `prisma generate`; `tsc --noEmit` com saída 0; `npm run lint` com 0 erros (43
+  avisos já existentes); `vitest run` com 685 arquivos e 4950 testes, todos verdes. Os `*.int.test.ts` não rodaram
+  nesta rodada (precisam de banco).
 **Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador. Não concluído.
