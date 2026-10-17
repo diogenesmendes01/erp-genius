@@ -10,6 +10,8 @@ import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import {
   criarTarefa, editarTarefa, concluirTarefa, reabrirTarefa, reagendarTarefa, cancelarTarefa, assumirTarefa, escopoTarefas,
 } from "./tarefas";
+import { rodarLembretesTarefas } from "./lembretes";
+import { listarItensLista } from "./tarefas-consulta";
 
 function logadoComo(id: string) {
   authMock.mockResolvedValue({ user: { id } });
@@ -158,5 +160,65 @@ describe("versão e transições", () => {
     expect((await prisma.tarefa.findUniqueOrThrow({ where: { id: tFilaSecretaria } })).responsavelId).toBe(secretaria.id);
     expect((await eventosDo("Tarefa", tFilaSecretaria)).map((e) => e.tipo)).toEqual(["TarefaAssumida"]);
     expect(await assumirTarefa(tFilaSecretaria)).toEqual({ ok: false, erro: "Esta tarefa já tem responsável." });
+  });
+});
+
+describe("editar o agendamento", () => {
+  // 2026-10-15 09:00 em Costa Rica (UTC-6) = 15:00Z; lembrete 10 min antes = 14:50Z.
+  const depoisDoLembrete = new Date("2026-10-15T16:30:00Z");
+  const agendamento = { dataCivil: "2026-10-15", hora: "09:00", lembreteAntecedenciaMin: 10 as const };
+  async function comLembreteDisparado() {
+    logadoComo(vendedor.id);
+    const id = idDe(await criarTarefa({ titulo: "Ligar", tipo: "LIGACAO", ...agendamento }));
+    expect((await rodarLembretesTarefas(depoisDoLembrete)).notificadas).toBe(1);
+    return id;
+  }
+
+  it("editar só o título não rearma o lembrete já disparado", async () => {
+    const t = await comLembreteDisparado();
+    expect((await editarTarefa(t, 1, { titulo: "Ligar de novo" })).ok).toBe(true);
+    expect((await rodarLembretesTarefas(depoisDoLembrete)).notificadas).toBe(0);
+    expect((await buscar(t)).lembreteDisparadoEm).not.toBeNull();
+  });
+
+  it("reenviar o mesmo agendamento junto com o título não rearma o lembrete", async () => {
+    const t = await comLembreteDisparado();
+    expect((await editarTarefa(t, 1, { titulo: "Ligar de novo", descricao: "Corrigida", ...agendamento })).ok).toBe(true);
+    expect((await rodarLembretesTarefas(depoisDoLembrete)).notificadas).toBe(0);
+    expect(await prisma.notificacaoUsuario.count({ where: { refId: t } })).toBe(1);
+    const ev = (await eventosDo("Tarefa", t)).at(-1)!;
+    expect(Object.keys((ev.payload as { campos: object }).campos).sort()).toEqual(["descricao", "titulo"]);
+  });
+
+  it("trocar a hora recalcula lembrarEm e rearma o lembrete", async () => {
+    const t = await comLembreteDisparado();
+    expect((await editarTarefa(t, 1, { hora: "11:00" })).ok).toBe(true);
+    const x = await buscar(t);
+    expect(x.inicioEm?.toISOString()).toBe("2026-10-15T17:00:00.000Z");
+    expect(x.lembrarEm?.toISOString()).toBe("2026-10-15T16:50:00.000Z");
+    expect(x.lembreteDisparadoEm).toBeNull();
+    expect((await rodarLembretesTarefas(depoisDoLembrete)).notificadas).toBe(0);
+    expect((await rodarLembretesTarefas(new Date("2026-10-15T16:51:00Z"))).notificadas).toBe(1);
+  });
+
+  it("limpar data, hora e lembrete juntos, como o painel faz", async () => {
+    const t = await comLembreteDisparado();
+    expect((await editarTarefa(t, 1, { dataCivil: null, hora: null, lembreteAntecedenciaMin: null })).ok).toBe(true);
+    expect(await buscar(t)).toMatchObject({ dataCivil: null, inicioEm: null, lembrarEm: null, lembreteAntecedenciaMin: null });
+    expect((await rodarLembretesTarefas(new Date("2026-12-01T00:00:00Z"))).notificadas).toBe(0);
+  });
+});
+
+describe("listarItensLista", () => {
+  it("inclui as abertas atrasadas antes do intervalo, mas não as concluídas", async () => {
+    logadoComo(vendedor.id);
+    const antiga = idDe(await criarTarefa({ titulo: "Antiga", tipo: "OUTRO", dataCivil: "2026-08-01" }));
+    const concluida = idDe(await criarTarefa({ titulo: "Feita", tipo: "OUTRO", dataCivil: "2026-08-02" }));
+    await concluirTarefa(concluida, 1);
+    const noIntervalo = idDe(await criarTarefa({ titulo: "Hoje", tipo: "OUTRO", dataCivil: "2026-10-15" }));
+    const semData = idDe(await criarTarefa({ titulo: "Sem data", tipo: "OUTRO" }));
+    const itens = await listarItensLista({ id: vendedor.id, nome: vendedor.nome, papeis: vendedor.papeis }, { de: "2026-09-15", ate: "2027-10-15" }, false);
+    const ids = itens.flatMap((i) => (i.tipo === "tarefa" ? [i.tarefa.id] : []));
+    expect(ids).toEqual([antiga, noIntervalo, semData]);
   });
 });

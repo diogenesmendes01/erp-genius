@@ -14,6 +14,7 @@ import { PRIORIDADE_TAREFA_LABEL, STATUS_TAREFA_LABEL, TIPO_TAREFA_LABEL } from 
 import type { Resultado } from "@/server/_shared/resultado";
 import type { TarefaLista } from "@/server/crm/mensagens-agendadas";
 import { assumirTarefa, cancelarTarefa, concluirTarefa, criarTarefa, editarTarefa, reabrirTarefa } from "@/server/crm/tarefas-acoes";
+import { camposAlterados, type CamposFormulario } from "./edicao";
 import { horaNoFuso, hrefTarefas, textoHora, type ParamsTarefas } from "./visao";
 
 const CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11";
@@ -64,7 +65,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
   const horaNaEscola = tarefa?.inicioEm ? textoHora(tarefa.inicioEm, fusoExibicao, fusoEscola) : null;
 
   async function salvar() {
-    const base = {
+    const base: CamposFormulario = {
       titulo, tipo, descricao, duracaoMin: duracao as 15 | 30 | 45 | 60 | 90, prioridade,
       dataCivil: dataCivil || null, hora: hora || null,
       lembreteAntecedenciaMin: (lembrete === "" ? null : Number(lembrete)) as 0 | 10 | 30 | 60 | null,
@@ -74,7 +75,13 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
         return criarTarefa({ ...base, ...(responsaveis.length && responsavel !== "__eu__" ? { responsavelId: responsavel || null } : {}) });
       }
       const mudouResponsavel = responsaveis.length > 0 && responsavel !== (tarefa.responsavelId ?? "");
-      return editarTarefa(tarefa.id, tarefa.versao, { ...base, ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}) });
+      const lida: CamposFormulario = {
+        titulo: tarefa.titulo, tipo: tarefa.tipo, descricao: tarefa.descricao ?? "",
+        duracaoMin: tarefa.duracaoMin as CamposFormulario["duracaoMin"], prioridade: tarefa.prioridade,
+        dataCivil: tarefa.dataCivil, hora: tarefa.inicioEm ? horaNoFuso(tarefa.inicioEm, tarefa.fusoOrigem) : null,
+        lembreteAntecedenciaMin: tarefa.lembreteAntecedenciaMin as CamposFormulario["lembreteAntecedenciaMin"],
+      };
+      return editarTarefa(tarefa.id, tarefa.versao, { ...camposAlterados(lida, base), ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}) });
     }, tarefa ? "Tarefa salva." : "Tarefa criada.");
     if (d?.tipo === "ok") {
       router.refresh();
