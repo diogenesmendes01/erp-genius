@@ -19,6 +19,6 @@ export function comoErroRegra(e: unknown): never {
   // Trigger com RAISE EXCEPTION (SQLSTATE P0001): o Prisma embute a mensagem do banco no texto do erro.
   const doBanco = /code: "P0001", message: "((?:[^"\\]|\\.)*)"/.exec(e.message)?.[1];
   if (doBanco) throw new ErroRegra(doBanco);
-  if (e.constructor === Error && MENSAGENS_REGRA_GARANTIR_ATENDIMENTO.has(e.message)) throw new ErroRegra(e.message);
+  if (Object.getPrototypeOf(e) === Error.prototype && MENSAGENS_REGRA_GARANTIR_ATENDIMENTO.has(e.message)) throw new ErroRegra(e.message);
   throw e;
 }
