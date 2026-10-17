@@ -60,10 +60,21 @@ describe("HistoricoConversa", () => {
     await reagirAoAviso(h, "a", aviso);
     expect(f.chamadas).toEqual([{ id: "a", depois: ultimo }]);
     expect(ids(h).slice(-2)).toEqual(["m00070", "m00071"]);
-    // aviso de outro atendimento ou de status não consulta nada
+    // aviso de outro atendimento ou de outro tipo não consulta nada
     f.chamadas.length = 0;
     await reagirAoAviso(h, "a", { ...aviso, atendimentoId: "b" });
-    await reagirAoAviso(h, "a", { ...aviso, tipo: "mensagem.status" });
+    await reagirAoAviso(h, "a", { ...aviso, tipo: "atendimento.atualizado" });
+    expect(f.chamadas).toHaveLength(0);
+  });
+
+  it("mensagem.status sozinho (nova agrupada pelo React) ainda busca a mensagem nova", async () => {
+    const f = fonteFalsa({ a: 70 }), h = new HistoricoConversa(f);
+    await h.abrir("a");
+    f.dados.a.push(msg(70));
+    await reagirAoAviso(h, "a", { tipo: "mensagem.status", atendimentoId: "a", mensagemId: "m00070", conversaId: "cv" });
+    expect(ids(h).slice(-1)).toEqual(["m00070"]);
+    f.chamadas.length = 0;
+    await reagirAoAviso(h, "a", { tipo: "mensagem.status", atendimentoId: "b", mensagemId: "x", conversaId: "cv" });
     expect(f.chamadas).toHaveLength(0);
   });
 
