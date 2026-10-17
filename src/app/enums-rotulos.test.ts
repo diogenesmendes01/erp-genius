@@ -15,7 +15,7 @@ import {
   StatusTemplate, StatusTurma, TipoAjuste, TipoAprovacao, TipoDestinacaoRecebimento, TipoMensagem, TipoMovimentacao,
   TipoSugestaoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
   FinalidadeNumero, FinalidadeAtendimentoWhatsApp, StatusAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel, OrigemEnvio,
-  OrigemCanal, PapelParticipante,
+  OrigemCanal, PapelParticipante, DriverWhatsApp,
   CorTag, TipoCampoPersonalizado, AlvoCampoPersonalizado, TelaFiltroSalvo,
   TipoTarefa, StatusTarefa, PrioridadeTarefa, OrigemTarefa, TipoNotificacao,
 } from "@prisma/client";
@@ -1846,6 +1846,7 @@ const MAPAS_DE_DOMINIO: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/server/matricula/desistencia-documental.ts", nome: "(literal em descricaoEstado)", motivo: "fragmento minúsculo no meio da frase do servidor (\"processo com envio incerto\"), não o nome do estado" },
   { arquivo: "src/server/portal-aluno/envio-resend.ts", nome: "ternário mensagem.finalidade", motivo: "assunto do e-mail por finalidade (\"Seu acesso ao portal da escola\"), frase e não o nome da finalidade" },
   { arquivo: "src/server/whatsapp/drivers/evolution.ts", nome: "MEDIATYPE", motivo: "valor técnico do payload da Evolution API (\"image\", \"video\"), não rótulo" },
+  { arquivo: "src/server/whatsapp/drivers/motor.ts", nome: "TIPO_MIDIA", motivo: "valor técnico do payload do motor (\"imagem\", \"audio\"), não rótulo" },
   { arquivo: "src/server/whatsapp/drivers/meta-cloud.ts", nome: "CAMPO_MIDIA", motivo: "campo técnico do payload da Cloud API da Meta (\"image\", \"audio\"), não rótulo" },
 ];
 
@@ -2111,6 +2112,7 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["TIPO_SUGESTAO_IA_LABEL", L.TIPO_SUGESTAO_IA_LABEL, Object.values(TipoSugestaoIA)],
   ["STATUS_TEMPLATE_LABEL", L.STATUS_TEMPLATE_LABEL, Object.values(StatusTemplate)],
   ["TIPO_MENSAGEM_LABEL", L.TIPO_MENSAGEM_LABEL, Object.values(TipoMensagem)],
+  ["DRIVER_WHATSAPP_LABEL", L.DRIVER_WHATSAPP_LABEL, Object.values(DriverWhatsApp)],
   ["STATUS_INTENCAO_LABEL", L.STATUS_INTENCAO_LABEL, Object.values(StatusIntencao)],
   ["STATUS_MENSAGEM_AGENDADA_LABEL", L.STATUS_MENSAGEM_AGENDADA_LABEL, Object.values(StatusIntencao)],
   ["TIPO_APROVACAO_LABEL", L.TIPO_APROVACAO_LABEL, Object.values(TipoAprovacao)],

@@ -4,6 +4,7 @@ import {
   type EnvioMidia,
   type EnvioTemplate,
   type NumeroCanal,
+  type OpcoesEnvio,
   type ResultadoEnvio,
 } from "../canal";
 
@@ -55,14 +56,16 @@ const MEDIATYPE: Record<Exclude<EnvioMidia["tipo"], "AUDIO">, string> = {
 };
 
 export const driverEvolution: CanalWhatsApp = {
-  async enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string): Promise<ResultadoEnvio> {
+  async enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string, opcoes: OpcoesEnvio): Promise<ResultadoEnvio> {
+    void opcoes;
     return chamarEvolution(numero, "message/sendText", {
       number: paraE164.replace(/\D/g, ""),
       text: corpo,
     });
   },
 
-  async enviarTemplate(numero: NumeroCanal, paraE164: string, t: EnvioTemplate): Promise<ResultadoEnvio> {
+  async enviarTemplate(numero: NumeroCanal, paraE164: string, t: EnvioTemplate, opcoes: OpcoesEnvio): Promise<ResultadoEnvio> {
+    void opcoes;
     // Baileys não tem ciclo de template: envia o corpo já renderizado como texto.
     return chamarEvolution(numero, "message/sendText", {
       number: paraE164.replace(/\D/g, ""),
@@ -70,7 +73,8 @@ export const driverEvolution: CanalWhatsApp = {
     });
   },
 
-  async enviarMidia(numero: NumeroCanal, paraE164: string, m: EnvioMidia): Promise<ResultadoEnvio> {
+  async enviarMidia(numero: NumeroCanal, paraE164: string, m: EnvioMidia, opcoes: OpcoesEnvio): Promise<ResultadoEnvio> {
+    void opcoes;
     const number = paraE164.replace(/\D/g, "");
     if (m.tipo === "AUDIO") {
       // Rota própria: vira mensagem de voz (PTT) — sem legenda no protocolo.
