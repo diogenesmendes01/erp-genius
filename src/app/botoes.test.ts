@@ -52,6 +52,11 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/layout.tsx": 1, // link "pular para o conteúdo" (acessibilidade, visível só no foco)
   "src/components/BarraMobile.tsx": 2, // botões só de ícone da barra do celular (menu, sair)
   "src/components/Chip.tsx": 1, // primitivo de filtro em pílula (selecionado = accent-soft): seleção, não ação
+  // Compositor da conversa: 5 botões só de ícone (remover anexo, anexar, emojis, parar e gravar voz).
+  "src/components/conversa/Compositor.tsx": 5,
+  // Seletor de emoji: aba ativa (role=tab, selecionada = fundo), 2 fichas de categoria (recentes e grupos,
+  // selecionada = fundo) e a célula do emoji (item de grade).
+  "src/components/conversa/SeletorEmoji.tsx": 4,
   "src/components/Menu.tsx": 1, // item do menu de ações (role=menuitem, hover translúcido): o papel é do menu, não do Botao
   "src/components/Sidebar.tsx": 1, // contador de não lidas (o item ativo agora é seleção suave, bg-brand-bg)
   "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: seleção, não ação; fundo bg-brand-solid): o literal e o <Link>
@@ -77,6 +82,15 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/app/(app)/tarefas/AgendaTarefas.tsx": ["`Arrastar tarefa ${titulo}`"], // alça de arraste (ícone)
   "src/app/(app)/tarefas/SinoNotificacoes.tsx": ["naoLidas ? `Notificações, ${naoLidas} não lidas` : \"Notifica"], // sino (ícone)
+  // Conversa: gatilho e itens do menu da mensagem; abrir imagem, vídeo e documento no visualizador.
+  "src/components/conversa/BalaoMensagem.tsx": ["Opções da mensagem", "i.rotulo"],
+  "src/components/conversa/VisualizadorMidia.tsx": ["Abrir imagem", "Reproduzir vídeo", "Abrir"],
+  // Compositor: ícones (remover anexo, anexar, emojis, parar e gravar voz) e itens do menu de anexo (role=menuitem,
+  // CLASSE_ITEM_MENU; "(sem nome)" é o item do motor, cujo rótulo vem de ITENS_MOTOR). Enviar passa pelo <Botao>.
+  "src/components/conversa/Compositor.tsx": ["Remover anexo", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz"],
+  // Seletor de emoji: abas (role=tab), fichas de categoria (recentes e grupos, no grupo rotulado) e a célula do emoji.
+  // Fechar e "Mostrar mais emojis" passam pelo <Botao>.
+  "src/components/conversa/SeletorEmoji.tsx": ["Emojis", "GIFs", "Figurinhas", "🕘", "rotulo", "`${e.label} ${e.emoji}`"],
   "src/components/BarraMobile.tsx": ["rotuloBotaoMenu(aberta, naoLidasInbox)", "Sair"], // ícones da barra do celular (menu, sair)
   "src/components/Chip.tsx": ["(sem nome)"], // primitivo: ficha de filtro (rótulo vem dos children)
   "src/components/Drawer.tsx": ["Fechar"], // ícone de fechar da gaveta
@@ -1141,6 +1155,7 @@ const ALTERNANCIAS_SEM_ARIA_PRESSED: (Achado & { motivo: string })[] = [
   { arquivo: "src/components/Chip.tsx", rotulo: "(sem nome) — aria-pressed fora de grupo rotulado", motivo: "primitivo: já leva aria-pressed; o grupo rotulado (role=group + aria-label) é de quem compõe os chips" },
   { arquivo: "src/components/ItemLista.tsx", rotulo: "(sem nome)", motivo: "item selecionado anuncia aria-current=true (seleção em lista, não alternância)" },
   { arquivo: "src/app/(app)/funil/PainelOportunidade.tsx", rotulo: "key a.id", motivo: "aba (role=tab): o estado vai em aria-selected, que é o atributo próprio da aba; aria-pressed não vale para tab" },
+  { arquivo: "src/components/conversa/BalaoMensagem.tsx", rotulo: "i.rotulo", motivo: "item do menu da mensagem: a aparência muda por perigo (Apagar), não por estado alternável" },
   { arquivo: "src/components/Menu.tsx", rotulo: "key indice", motivo: "item de menu: a aparência muda por perigo (cor de ação destrutiva), não por estado alternável" },
 ];
 
