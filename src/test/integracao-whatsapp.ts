@@ -26,9 +26,9 @@ export async function seedCanal(
     data: {
       telefoneE164: "+5511999990000",
       rotulo: "Cobrança (teste)",
-      driver: over.driver ?? "META_CLOUD",
+      driver: over.driver ?? "MOTOR",
       finalidade: "COBRANCA",
-      providerRef: "PHONE_ID_TESTE",
+      providerRef: "n-teste",
     },
   });
   const templates = new Map<string, string>();

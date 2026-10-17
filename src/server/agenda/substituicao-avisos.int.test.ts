@@ -3,7 +3,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const { authMock, enviarEmailMock, enviarTemplateMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarEmailMock: vi.fn(), enviarTemplateMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 vi.mock("@/server/email/resend", () => ({ enviarEmailResend: enviarEmailMock }));
-vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: vi.fn(), enviarMidia: vi.fn(), enviarTemplate: enviarTemplateMock } }));
+// Driver do motor FALSO: desde a Fase 4 (Tarefa 5) só o motor envia; nada sai de verdade.
+vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: vi.fn(), enviarMidia: vi.fn(), enviarTemplate: enviarTemplateMock } }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
@@ -88,8 +89,10 @@ beforeEach(async () => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-async function configurarCanalAgenda() {
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
+// O número da agenda é MOTOR (D38). META_CLOUD só para exercitar a configuração inválida
+// (Meta Cloud ainda não tem envio, C1 da R1 do #213), que barra o aviso antes do despachante.
+async function configurarCanalAgenda(driver: "MOTOR" | "META_CLOUD" = "MOTOR") {
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver, finalidade: "AGENDA", providerRef: driver === "MOTOR" ? "n-agenda" : "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
   await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
   return { numero, template };
@@ -289,7 +292,7 @@ it("trata aceite do provedor como ENVIADO sem inferir entrega ao aluno", async (
   expect(await prisma.tentativaAvisoAlteracaoAgenda.findFirstOrThrow({ where: { avisoId: aviso.id, situacao: "ENVIADO" } })).toMatchObject({ provedorId: "aceite-externo" });
 });
 
-it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o aceite Meta", async () => {
+it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o aceite do motor", async () => {
   for (const [indice, matriculaId] of matriculasElegiveis.entries()) {
     const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } });
     await prisma.aluno.update({ where: { id: matricula.alunoId }, data: { whatsapp: true, telefoneE164: `+5067000000${indice}` } });
@@ -298,7 +301,7 @@ it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o
   const primeira = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculasElegiveis[0] } });
   await prisma.alunoResponsavel.create({ data: { alunoId: primeira.alunoId, responsavelId: responsavel.id, papel: "PEDAGOGICO" } });
   await prisma.autorizacaoComunicacaoAcademica.create({ data: { matriculaId: primeira.id, responsavelId: responsavel.id, autorizadaPorId: secretariaId, evidencia: "Autorização acadêmica registrada no atendimento" } });
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "MOTOR", finalidade: "AGENDA", providerRef: "n-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
   expect(await decidir(true)).toMatchObject({ ok: true });
   const avisos = await prisma.avisoAlteracaoAgenda.findMany({ where: { canal: "WHATSAPP" }, include: { aluno: true } });
@@ -306,7 +309,7 @@ it("enfileira somente contatos acadêmicos no número AGENDA e confirma apenas o
   expect(avisos.filter((a) => a.alunoId === primeira.alunoId)).toHaveLength(2);
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
   vi.stubEnv("WHATSAPP_LIVE", "1");
-  enviarTemplateMock.mockImplementation(async () => ({ providerMessageId: `wamid-agenda-${enviarTemplateMock.mock.calls.length}` }));
+  enviarTemplateMock.mockImplementation(async () => ({ providerMessageId: `3EB0-agenda-${enviarTemplateMock.mock.calls.length}` }));
   // Sem configuração não há claim, tentativa ou envio; a pendência pode ser
   // resolvida pelo admin sem deixar o worker preso em reprocessamento.
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
@@ -325,12 +328,12 @@ it("resultado incerto do driver preserva INCERTO e não reenvia automaticamente"
   await ativarWhatsappDaPrimeira(); await configurarCanalAgenda();
   expect(await decidir(true)).toMatchObject({ ok: true });
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");
-  enviarTemplateMock.mockRejectedValue(new ErroDriver("recusado_meta"));
+  enviarTemplateMock.mockRejectedValue(new ErroDriver("motor_numero_invalido"));
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
   const aviso = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { canal: "WHATSAPP" } });
   expect(aviso.situacao).toBe("INCERTO");
   const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: aviso.id } });
-  expect(intencao).toMatchObject({ status: "FALHOU", motivoFalha: "recusado_meta" });
+  expect(intencao).toMatchObject({ status: "FALHOU", motivoFalha: "motor_numero_invalido" });
   await processarAvisosAlteracaoAgenda(async () => ({ situacao: "RECUSADO" }));
   expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
 });
@@ -355,7 +358,7 @@ it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia 
   expect(await enfileirarAvisosAgendaWhatsApp()).toBe(1);
   const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { avisoAlteracaoAgendaId: { not: null } } });
   vi.stubEnv("WHATSAPP_LIVE", "1"); vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "false");
-  enviarTemplateMock.mockResolvedValue({ providerMessageId: "wamid-agenda-religada" });
+  enviarTemplateMock.mockResolvedValue({ providerMessageId: "3EB0-agenda-religada" });
   const retido = await despacharFila();
   expect(enviarTemplateMock).not.toHaveBeenCalled();
   // R1 do #209 (C2): contada à parte do kill switch e com motivo próprio, sem mudar o status.
@@ -377,7 +380,7 @@ it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia 
 });
 
 it("template revogado antes da preparação deixa o aviso pendente sem chamar o driver", async () => {
-  await ativarWhatsappDaPrimeira(); const { template } = await configurarCanalAgenda();
+  await ativarWhatsappDaPrimeira(); const { template } = await configurarCanalAgenda("META_CLOUD");
   await prisma.templateWhatsApp.update({ where: { id: template.id }, data: { statusMeta: "RASCUNHO" } });
   expect(await decidir(true)).toMatchObject({ ok: true });
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");
@@ -486,7 +489,7 @@ it("não troca responsável autorizado por outra pessoa com o mesmo telefone ant
   const substitutoMesmoTelefone = await prisma.responsavel.create({ data: { nome: "Outra pessoa mesmo telefone", telefoneE164: "+50679999994" } });
   await prisma.alunoResponsavel.create({ data: { alunoId: matricula.alunoId, responsavelId: substitutoMesmoTelefone.id, papel: "PEDAGOGICO" } });
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");
-  enviarTemplateMock.mockResolvedValue({ providerMessageId: "wamid-identidade" });
+  enviarTemplateMock.mockResolvedValue({ providerMessageId: "3EB0-identidade" });
   await despacharFila(new Date(), { somenteAvisosAgenda: true });
   expect(enviarTemplateMock).toHaveBeenCalledTimes(2);
   const avisoOriginal = await prisma.avisoAlteracaoAgenda.findFirstOrThrow({ where: { destinatarioResponsavelId: original.id } });
