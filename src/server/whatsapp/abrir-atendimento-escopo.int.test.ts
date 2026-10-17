@@ -79,4 +79,21 @@ describe("abrir atendimento institucional já aberto por um colega", () => {
       .toEqual({ ok: false, erro: "Este atendimento já está com Fin Um; peça para ser incluído como participante." });
     expect(await abertos()).toBe(2);
   });
+
+  it("C6: atendimento sem responsável e fora do escopo de quem abre é recusado, sem evento", async () => {
+    const c = await base();
+    const f1 = await criarUsuario([Papel.FINANCEIRO], "Fin Um");
+    const f2 = await criarUsuario([Papel.FINANCEIRO], "Fin Dois");
+    const chave = `FINANCEIRO:${c.matricula.id}`;
+    como(f1);
+    const a = await abrirAtendimentoInstitucional({ numeroId: c.canal.numero.id, destinoChave: chave });
+    if (!a.ok) throw new Error(a.erro);
+    // Volta para a fila, mas o número deixa de servir o setor FINANCEIRO: a fila não alcança f2.
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.dado!.id }, data: { responsavelId: null } });
+    await prisma.numeroSetorWhatsApp.create({ data: { numeroId: c.canal.numero.id, finalidade: "SECRETARIA" } });
+    como(f2);
+    expect(await abrirAtendimentoInstitucional({ numeroId: c.canal.numero.id, destinoChave: chave }))
+      .toEqual({ ok: false, erro: "Este atendimento está fora do seu escopo; peça para ser incluído como participante." });
+    expect(await abertos()).toBe(1);
+  });
 });

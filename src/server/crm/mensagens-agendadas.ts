@@ -8,7 +8,7 @@ import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
-import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
+import { atendimentoVisivel, garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { capacidadesCrm, exigirCapacidadeCrm } from "./permissoes";
 import { escopoTarefas } from "./tarefas";
 import { somarDiasDataCivil } from "./tarefas-regras";
@@ -28,6 +28,8 @@ export type AgendarMensagemInput = {
   tarefaId?: string;
   leadId?: string;
   pessoaId?: string;
+  /** Agendamento pelo Inbox: o destino é o contato do atendimento e o número é o dele (o acesso vem do atendimento). */
+  atendimentoId?: string;
 };
 
 const MSG_FUTURO = "Escolha uma data e hora no futuro.";
@@ -42,6 +44,7 @@ const AgendarSchema = z.object({
   tarefaId: z.string().min(1).optional(),
   leadId: z.string().min(1).optional(),
   pessoaId: z.string().min(1).optional(),
+  atendimentoId: z.string().min(1).optional(),
 });
 
 const ehAdmin = (u: UsuarioSessao) => u.papeis.includes(Papel.ADMINISTRADOR);
@@ -78,9 +81,10 @@ function futuro(v: string, agora = new Date()): Date {
   return d;
 }
 
-function aggregadoDe(m: { tarefaId: string | null; leadId: string | null; contato: { pessoaId: string | null } }): { agregadoTipo: AgregadoTipo; agregadoId: string } | null {
+function aggregadoDe(m: { tarefaId: string | null; leadId: string | null; atendimentoId?: string | null; contato: { pessoaId: string | null } }): { agregadoTipo: AgregadoTipo; agregadoId: string } | null {
   if (m.tarefaId) return { agregadoTipo: "Tarefa", agregadoId: m.tarefaId };
   if (m.leadId) return { agregadoTipo: "Lead", agregadoId: m.leadId };
+  if (m.atendimentoId) return { agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId };
   if (m.contato.pessoaId) return { agregadoTipo: "Pessoa", agregadoId: m.contato.pessoaId };
   return null;
 }
@@ -88,11 +92,27 @@ function aggregadoDe(m: { tarefaId: string | null; leadId: string | null; contat
 export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    exigirCapacidadeCrm(autor, "tarefas.ver");
     const d = AgendarSchema.parse(i);
+    if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
+
+    if (d.atendimentoId) {
+      const a = await atendimentoVisivel(autor, d.atendimentoId, true);
+      if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
+      if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
+      if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
+      const id = await prisma.$transaction(async (tx) => {
+        const m = await tx.intencaoMensagem.create({
+          data: { numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: "TEXTO", corpoRenderizado: d.texto, agendadaPara: quando, validaAte, autorId: autor.id },
+        });
+        await registrarEvento(tx, { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: autor.id, payload: { intencaoId: m.id, agendadaPara: quando.toISOString(), numeroId: a.numeroId } });
+        return m.id;
+      });
+      revalidar();
+      return { id };
+    }
 
     const id = await prisma.$transaction(async (tx) => {
       const numero = await tx.numeroWhatsApp.findFirst({ where: { AND: [{ id: d.numeroId }, numeroDoUsuario(autor)] }, select: { id: true } });
@@ -177,7 +197,7 @@ async function alterar(
     await prisma.$transaction(async (tx) => {
       const m = await tx.intencaoMensagem.findFirst({
         where: { AND: [{ id }, baseAgendada, escopoAutores(autor, true)] },
-        select: { status: true, tarefaId: true, leadId: true, validaAte: true, contato: { select: { pessoaId: true } } },
+        select: { status: true, tarefaId: true, leadId: true, atendimentoId: true, validaAte: true, contato: { select: { pessoaId: true } } },
       });
       if (!m) throw recusa(undefined);
       if (m.status !== "PENDENTE" && m.status !== "ADIADA") throw recusa(m.status);
