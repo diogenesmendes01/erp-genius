@@ -27,6 +27,22 @@ export async function processarSessaoEstado(env: EnvelopeMotor): Promise<Resulta
   const numero = await acharNumero({ numeroProviderRef: env.numeroId, driver: "MOTOR" });
   if (!numero) return { ignorado: "numero_desconhecido" };
 
+  // Fora de ordem (R1 do #215, C1): a re-tentativa de um estado antigo (ex.: CAIU em backoff) não
+  // pode sobrescrever um estado posterior já aplicado ao número. "Aplicado" = outro sessao.estado do
+  // mesmo número já processado com sucesso pelo dreno, com ocorridoEm maior que o deste evento.
+  const posterior = await prisma.eventoMotorRecebido.findFirst({
+    where: {
+      tipo: "sessao.estado",
+      numeroRef: env.numeroId,
+      idEvento: { not: env.idEvento },
+      processadoEm: { not: null },
+      resultado: "ok",
+      ocorridoEm: { gt: new Date(env.ocorridoEm) },
+    },
+    select: { id: true },
+  });
+  if (posterior) return { ignorado: "estado_antigo" };
+
   await aplicarEstadoSessao(numero.id, d.estado, "webhook");
 
   // Telefone divergente: só registra; nunca troca o cadastro.

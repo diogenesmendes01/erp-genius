@@ -46,8 +46,11 @@ export interface SaudeCanal {
     claimExpiradoHaMin: number | null;
     /** Intenções que TRANSICIONARAM para FALHOU nas últimas 24h (por atualizadoEm). */
     falhas24h: number;
-    /** Eventos do motor recebidos e ainda não processados (processadoEm nulo). */
+    /** Eventos do motor não processados que o dreno já deveria pegar (sem backoff ou com a
+     *  próxima tentativa vencida). */
     eventosMotorPendentes: number;
+    /** Eventos do motor em backoff (próxima tentativa no futuro): tráfego normal, sem alerta. */
+    eventosMotorAdiados: number;
     /** Eventos que o motor deu por esgotados (`GET /v1/eventos/falhos`); null = sem número MOTOR ativo ou motor inalcançável (este último gera alerta). */
     eventosMotorFalhos: number | null;
     /** Avisos de agenda PENDENTE/ADIADA retidos pelo envio de agenda desligado
@@ -86,9 +89,10 @@ const maiorOuNulo = (a: number | null, b: number | null): number | null =>
 
 export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCanal> {
   const envioAgendaHabilitado = envioAvisosAgendaHabilitado();
+  const limiarEventoMotor = new Date(agora.getTime() - LIMIAR_EVENTO_MOTOR_PARADO_MIN * 60_000);
   // Com o envio de agenda desligado, o aviso de agenda não é despachável: fora dos relógios.
   const despachavel = envioAgendaHabilitado ? {} : { avisoAlteracaoAgendaId: null };
-  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica, eventosMotorPendentes, eventoMotorParado, retidasAgendaDesligada] =
+  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica, eventosMotorPendentes, eventosMotorAdiados, eventoMotorParado, retidasAgendaDesligada] =
     await Promise.all([
       // Contagem = ESTOQUE da fila, inclusive agendadas para o futuro (como as ADIADAS à
       // espera de janela): é informativa e nenhum alerta depende dela. O que alarma é o
@@ -134,14 +138,23 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
         select: { criadoEm: true },
       }),
       carregarPoliticaRegua(),
-      prisma.eventoMotorRecebido.count({ where: { processadoEm: null } }),
+      prisma.eventoMotorRecebido.count({
+        where: { processadoEm: null, OR: [{ proximaTentativaEm: null }, { proximaTentativaEm: { lte: agora } }] },
+      }),
+      prisma.eventoMotorRecebido.count({ where: { processadoEm: null, proximaTentativaEm: { gt: agora } } }),
+      // "Parado" por estado (R1 do #215, B2): só o que o dreno já devia ter pegado — sem backoff e
+      // recebido há mais do limiar, ou com a próxima tentativa vencida há mais do limiar. Evento em
+      // backoff (até ~51 min em tráfego normal) não alarma; aparece em `eventosMotorAdiados`.
       prisma.eventoMotorRecebido.findFirst({
         where: {
           processadoEm: null,
-          recebidoEm: { lt: new Date(agora.getTime() - LIMIAR_EVENTO_MOTOR_PARADO_MIN * 60_000) },
+          OR: [
+            { proximaTentativaEm: null, recebidoEm: { lt: limiarEventoMotor } },
+            { proximaTentativaEm: { lt: limiarEventoMotor } },
+          ],
         },
-        orderBy: { recebidoEm: "asc" },
-        select: { recebidoEm: true },
+        orderBy: { seq: "asc" },
+        select: { recebidoEm: true, proximaTentativaEm: true },
       }),
       // Só conta com o envio desligado (C1 do #212): o motivo fica gravado até o próximo tick
       // pegar a intenção, então, religado o envio, nada mais está retido por ele.
@@ -211,7 +224,7 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
   // 4c. Eventos do motor parados na tabela de entrada / esgotados no motor.
   if (eventoMotorParado) {
     alertas.push(
-      `Evento do motor parado há ${minutosDesde(agora, eventoMotorParado.recebidoEm)}min sem processamento — o dreno está rodando?`,
+      `Evento do motor parado há ${minutosDesde(agora, eventoMotorParado.proximaTentativaEm ?? eventoMotorParado.recebidoEm)}min sem processamento — o dreno está rodando?`,
     );
   }
   if (eventosMotorFalhos && eventosMotorFalhos > 0) {
@@ -240,6 +253,7 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
       claimExpiradoHaMin,
       falhas24h,
       eventosMotorPendentes,
+      eventosMotorAdiados,
       eventosMotorFalhos,
       retidasAgendaDesligada,
       envioAgendaHabilitado,

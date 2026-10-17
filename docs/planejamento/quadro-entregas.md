@@ -2752,4 +2752,18 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   tem migrations próprias (usa as `20261017120000`/`20261017130000` da 4B).
 - Verificação pós-merge: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos); `npm test` verde; integração
   (`whatsapp/motor/*`, `inbox`, `saude`, `despachante-*`): 14 arquivos, 126 testes verdes.
-**Estado**: Implementado; aguardando o integrador.
+
+### Correções da R1 do #215 (17/10/2026)
+- **B1:** merges do `main` acima (até a #214), preservando as duas etapas do cron e os campos de saúde dos dois lados.
+- **B2:** a saúde mede os eventos do motor por estado. `eventosMotorPendentes` conta só o que o dreno já deveria
+  pegar (sem backoff ou com a próxima tentativa vencida); `eventosMotorAdiados` (novo) conta os em backoff, sem
+  alerta. O alerta "Evento do motor parado" só olha evento sem backoff recebido há mais de 15 min ou com a próxima
+  tentativa vencida há mais de 15 min (minutos medidos desde a próxima tentativa). Testes em `saude.int.test.ts`.
+- **C1:** `sessao.estado` ignora (`ignorado:estado_antigo`) o estado com `ocorridoEm` anterior ao de outro
+  `sessao.estado` do mesmo número já aplicado (`resultado = ok`) na tabela de entrada; sem migration. Testes em
+  `processar-sessao.int.test.ts` (direto e pelo dreno).
+- **C3:** `POST /api/whatsapp/webhook/motor` recusa com 413, antes do HMAC e sem gravar, corpo acima de 1 MB
+  (`TETO_CORPO_WEBHOOK_MOTOR`): pelo `content-length` declarado e pelo tamanho lido em streaming. Maior evento do
+  contrato: `mensagem.recebida` com texto longo (~260 KB no pior caso UTF-8). Testes em `route.test.ts`.
+- **C2:** segue em aberto (os `*.int.test.ts` não rodam no CI).
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
