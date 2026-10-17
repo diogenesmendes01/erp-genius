@@ -60,11 +60,18 @@ describe("HistoricoConversa", () => {
     await reagirAoAviso(h, "a", aviso);
     expect(f.chamadas).toEqual([{ id: "a", depois: ultimo }]);
     expect(ids(h).slice(-2)).toEqual(["m00070", "m00071"]);
-    // aviso de outro atendimento ou de outro tipo não consulta nada
-    f.chamadas.length = 0;
-    await reagirAoAviso(h, "a", { ...aviso, atendimentoId: "b" });
-    await reagirAoAviso(h, "a", { ...aviso, tipo: "atendimento.atualizado" });
-    expect(f.chamadas).toHaveLength(0);
+  });
+
+  it("qualquer aviso (outro atendimento, atendimento.atualizado) reconcilia: a nova agrupada pelo React não se perde", async () => {
+    const f = fonteFalsa({ a: 70 }), h = new HistoricoConversa(f);
+    await h.abrir("a");
+    f.dados.a.push(msg(70));
+    // o render só viu o último aviso, de outro atendimento
+    await reagirAoAviso(h, "a", { tipo: "mensagem.nova", atendimentoId: "b", mensagemId: "x", conversaId: "cv" });
+    expect(ids(h).slice(-1)).toEqual(["m00070"]);
+    f.dados.a.push(msg(71));
+    await reagirAoAviso(h, "a", { tipo: "atendimento.atualizado", atendimentoId: "a", mensagemId: null, conversaId: "cv" });
+    expect(ids(h).slice(-1)).toEqual(["m00071"]);
   });
 
   it("mensagem.status sozinho (nova agrupada pelo React) ainda busca a mensagem nova", async () => {
@@ -73,9 +80,6 @@ describe("HistoricoConversa", () => {
     f.dados.a.push(msg(70));
     await reagirAoAviso(h, "a", { tipo: "mensagem.status", atendimentoId: "a", mensagemId: "m00070", conversaId: "cv" });
     expect(ids(h).slice(-1)).toEqual(["m00070"]);
-    f.chamadas.length = 0;
-    await reagirAoAviso(h, "a", { tipo: "mensagem.status", atendimentoId: "b", mensagemId: "x", conversaId: "cv" });
-    expect(f.chamadas).toHaveLength(0);
   });
 
   it("mensagem.nova durante o carregamento não se perde", async () => {
