@@ -572,6 +572,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma experimental agendada.",
     "compacto · Você não tem turmas atribuídas.",
   ],
+  "src/app/(app)/inbox/AcoesAtendimento.tsx": [
+    "compacto · Este número não atende outro setor.",
+  ],
   "src/app/(app)/inbox/AtendimentosPainel.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
@@ -582,6 +585,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum.",
   ],
   "src/app/(app)/inbox/InboxNovo.tsx": [
+    "bloco · Nenhuma conversa neste filtro.",
+  ],
+  "src/app/(app)/inbox/ListaAtendimentos.tsx": [
     "bloco · Nenhuma conversa neste filtro.",
   ],
   "src/app/(app)/leads/LeadsLista.tsx": [

@@ -80,7 +80,9 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/app/(app)/funil/PainelOportunidade.tsx": ["key a.id"], // aba do painel (role=tab)
   "src/app/(app)/inbox/InboxCliente.tsx": ["— · sem lead · opt-out", "Anexar arquivo", 'gravando ? "Parar e enviar" : "Gravar áudio"', "Fechar", "Fechar", "key i.id"],
   // Paginação da lista/thread e navegação entre vistas do celular: não são ações de negócio.
-  "src/app/(app)/inbox/InboxNovo.tsx": ["Carregar mais", "Voltar para a lista", "Detalhes da conversa", "Mensagens anteriores"],
+  "src/app/(app)/inbox/ConversaAberta.tsx": ["Voltar para a lista", "Detalhes da conversa", "Mensagens anteriores"],
+  "src/app/(app)/inbox/InboxNovo.tsx": ["Carregar mais"],
+  "src/app/(app)/inbox/ListaAtendimentos.tsx": ["Carregar mais"],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": ["✓"], // etapa do assistente
   "src/app/(app)/tarefas/AgendaTarefas.tsx": ["`Arrastar tarefa ${titulo}`"], // alça de arraste (ícone)
   "src/app/(app)/tarefas/SinoNotificacoes.tsx": ["naoLidas ? `Notificações, ${naoLidas} não lidas` : \"Notifica"], // sino (ícone)

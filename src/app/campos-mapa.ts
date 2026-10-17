@@ -67,6 +67,17 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Etapa · opcional · select",
     "Responsável · opcional · select",
   ],
+  "src/app/(app)/inbox/AcoesAtendimento.tsx": [
+    "Setor de destino · obrigatório · select",
+    "Contexto do destino · obrigatório · select · dica",
+    "Contexto da transferência · obrigatório · CampoTexto",
+    "Pessoa · obrigatório · select · dica",
+    "Duração do convite (dias) · obrigatório · input · dica",
+    "Motivo do convite · obrigatório · CampoTexto",
+    "Nota · obrigatório · CampoTexto · dica",
+    "Mensagem · obrigatório · CampoTexto",
+    "Enviar em · obrigatório · input · erro: erroQuando",
+  ],
   "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": [
     "Nome · obrigatório · input · erro: errosPasso1.primeiroNome",
     "Sobrenome(s) · obrigatório · input · erro: errosPasso1.sobrenome",

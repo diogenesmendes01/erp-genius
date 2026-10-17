@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
 import { whereBuscaConversas } from "@/server/whatsapp/busca-inbox";
+import { setoresDeNumero } from "@/server/whatsapp/numero-setor";
+import type { Setor } from "@/server/whatsapp/setor";
 import { preferenciasDoUsuario } from "@/server/whatsapp/preferencias-consulta";
 import {
   contextoInclude, podeVerLeadNaThread, notasDoLead, resumirConversa,
@@ -14,6 +16,8 @@ import type { FiltrosInbox } from "./filtros";
 export interface ItemListaInbox extends ConversaResumo {
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
   fixada: boolean; silenciada: boolean; naoLidas: number; grupo: boolean;
+  /** Para decidir as ações do cabeçalho (podeExecutar): responsável, dono da linha, setores do número e origem da transferência. */
+  responsavelId: string | null; numeroDonoId: string | null; setoresDoNumero: Setor[]; atendimentoOrigemId: string | null;
 }
 
 const LIMITE_LISTA = 50;
@@ -110,7 +114,9 @@ async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<Item
     return { ...resumirConversa(a), status: a.status, responsavelNome: a.responsavel?.nome ?? null,
       prazoRespostaEm: a.prazoRespostaEm?.toISOString() ?? null,
       fixada: pref?.fixada ?? false, silenciada: pref?.silenciada ?? false,
-      naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId };
+      naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId,
+      responsavelId: a.responsavelId, numeroDonoId: a.conversa.numero.donoId, setoresDoNumero: setoresDeNumero(a.conversa.numero),
+      atendimentoOrigemId: a.atendimentoOrigemId };
   });
 }
 

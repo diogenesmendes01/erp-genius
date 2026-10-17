@@ -49,7 +49,8 @@ export default async function InboxPage({
         <AtendimentosPainel opcoes={opcoes} triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />
       </div>
       <div className="mt-4">
-        <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso} />
+        <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
+          destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))} />
       </div>
     </div>
   );

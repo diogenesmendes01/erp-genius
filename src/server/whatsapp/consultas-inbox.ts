@@ -66,7 +66,7 @@ export interface PessoasVinculo {
 
 export const contextoInclude = {
   matricula: { select: { id: true, codigo: true } },
-  conversa: { include: { numero: true, contato: { include: { responsavel: { select: { nome: true } } } } } },
+  conversa: { include: { numero: { include: { setores: { select: { finalidade: true } } } }, contato: { include: { responsavel: { select: { nome: true } } } } } },
   aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
   lead: { select: { id: true, nome: true, etapa: true, temperatura: true, dataExperimental: true } },
 } as const;
