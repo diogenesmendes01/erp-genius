@@ -7,8 +7,12 @@ export type RecursoMotor =
 
 export const AVISO_RECURSO_MOTOR = "Disponível quando o motor próprio da escola entrar em uso.";
 
-/** Recursos liberados por driver. Meta e Evolution/Baileys não executam nenhum deles; o valor MOTOR do enum só chega na Fase 4, que preenche este mapa. */
-const LIBERADOS: Record<DriverWhatsApp, ReadonlySet<RecursoMotor>> = {
+/**
+ * Recursos liberados por driver. Meta e Evolution/Baileys não executam nenhum deles; o valor MOTOR do enum só chega na
+ * Fase 4, que preenche este mapa. É `Partial` de propósito: um driver ausente do mapa não libera nada, então o mapa
+ * continua compilando quando o enum ganha um valor novo, em qualquer ordem de merge.
+ */
+const LIBERADOS: Partial<Record<DriverWhatsApp, ReadonlySet<RecursoMotor>>> = {
   META_CLOUD: new Set(),
   BAILEYS: new Set(),
 };
