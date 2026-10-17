@@ -27,6 +27,16 @@ async function criarAtendimento(ultimaMensagemEm: Date | null, extra: { naoLidas
 }
 
 describe("lista paginada por cursor", () => {
+  it("o item traz responsável, dono da linha, setores do número (legado COBRANCA → FINANCEIRO) e origem da transferência", async () => {
+    const a = await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    const [item] = (await listarAtendimentosPagina(sess(admin), {}, null)).itens;
+    expect(item).toMatchObject({ id: a.id, responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null });
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { setores: { create: [{ finalidade: "SECRETARIA" }, { finalidade: "COMERCIAL" }] } } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: outro.id, atendimentoOrigemId: null } });
+    const [depois] = (await listarAtendimentosPagina(sess(admin), {}, null)).itens;
+    expect(depois).toMatchObject({ responsavelId: outro.id, setoresDoNumero: ["COMERCIAL", "SECRETARIA"] });
+  });
+
   it("cursor estável com empate e inserção concorrente", async () => {
     const mesmo = new Date("2026-10-01T12:00:00.000Z");
     const criados: string[] = [];

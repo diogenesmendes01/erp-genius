@@ -2,22 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Papel } from "@prisma/client";
-import { IconArrowLeft, IconLayoutSidebarRight } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Drawer } from "@/components/Drawer";
 import { ItemLista } from "@/components/ItemLista";
-import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
-import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
-import { VirtualList } from "@/components/conversa/VirtualList";
-import { recursoDisponivel } from "@/components/conversa/recursos-canal";
 import { useConversa } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { FiltrosInbox } from "@/server/inbox/filtros";
-import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
-import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { ConversaAberta } from "./ConversaAberta";
+import type { DestinoTransferencia } from "./AcoesAtendimento";
 import { useEventosInbox } from "./useEventosInbox";
 
 export type VistaInbox = "lista" | "conversa" | "painel";
@@ -28,6 +23,8 @@ export interface PropsInboxNovo {
   selecionado: string | null;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
+  /** Destinos de transferência com contexto (FINANCEIRO/PEDAGOGICO), de `listarOpcoesAtendimento`. */
+  destinos?: DestinoTransferencia[];
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
@@ -78,19 +75,21 @@ function horaCurta(iso: string | null, fuso: string | null): string {
 const COLUNA_LISTA = "min-[700px]:flex min-[700px]:w-[320px] min-[700px]:shrink-0 min-[1100px]:w-[360px]";
 const COLUNA_CONVERSA = "min-[700px]:flex min-[700px]:min-w-0 min-[700px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, fuso }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos }: PropsInboxNovo) {
   const [itens, setItens] = useState(inicial.itens);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
   const [eventoRecente, setEventoRecente] = useState<AvisoInbox | null>(null);
   const [carregandoMais, setCarregandoMais] = useState(false);
-  const rolagem = useRef<HTMLDivElement>(null);
   const selecionadoRef = useRef(selecionado);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
 
   // Aviso do SSE: a thread se reconcilia em `useConversa` (recebe o aviso); a lista recarrega só a primeira página
   // e troca as linhas afetadas, sem refazer a página inteira.
+  const recarregarLista = useCallback(() => {
+    void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
+  }, [filtros]);
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
@@ -156,38 +155,16 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, f
             <p className="text-sm">As mensagens aparecem aqui.</p>
           </div>
         ) : (
-          <>
-            <header className="flex items-center gap-2 border-b p-3">
-              <button type="button" aria-label="Voltar para a lista" onClick={() => setVista("lista")} className="min-[700px]:hidden"><IconArrowLeft size={20} aria-hidden /></button>
-              <span className="min-w-0 flex-1 truncate font-medium">{atual?.contatoNome ?? "Conversa"}</span>
-              <button type="button" aria-label="Detalhes da conversa" onClick={() => setVista("painel")} className="min-[1100px]:hidden"><IconLayoutSidebarRight size={20} aria-hidden /></button>
-            </header>
-            <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto p-3">
-              {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
-              {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
-              <VirtualList
-                items={conversa.mensagens}
-                getKey={(m) => m.id}
-                estimatedHeight={72}
-                scrollRef={rolagem}
-                renderItem={(m) => (
-                  <BalaoMensagem m={m} fuso={fuso} recursos={(r) => (atual ? recursoDisponivel(atual.driver as never, r) : false)}
-                    aoComando={(c) => { if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo); }} />
-                )}
-              />
-            </div>
-            {atual ? (
-              <Compositor
-                atendimentoId={atual.id}
-                modo="responder"
-                podeEnviar
-                driver={atual.driver as never}
-                aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: atual.id, texto })}
-                aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: atual.id, url, legenda })}
-                aoNota={(nota) => registrarNotaAtendimento({ atendimentoId: atual.id, nota })}
-              />
-            ) : <p className="border-t p-3 text-sm text-gray-600">{MOTIVO_SEM_ENVIO}</p>}
-          </>
+          <ConversaAberta
+            item={atual}
+            usuario={usuario}
+            fuso={fuso}
+            conversa={conversa}
+            destinos={destinos}
+            aoVoltar={() => setVista("lista")}
+            aoAbrirPainel={() => setVista("painel")}
+            aoMudar={recarregarLista}
+          />
         )}
       </section>
 
