@@ -2085,3 +2085,12 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco D): 13 arquivos,
   153 testes verdes e 1 falha, a preexistente da linha de base (`src/server/whatsapp/inbox.int.test.ts`, "lead de OUTRO
   vendedor ... não vaza o cockpit"), que este bloco não toca. Nenhuma falha nova. Suíte completa fica com o integrador.
+
+### Verificação para o PR (bloco G, branch `claude/fase2-g-carteira`, 17/10/2026)
+- Tarefas: 25 (carteira derivada das oportunidades, reatribuição em lote) e 26 (tela da carteira e coberturas).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 654 arquivos e 4691 testes verdes (linha de base: 643 arquivos e 4607 testes). Uma correção do bloco:
+  o aviso da carteira virou região de status (`src/app/anuncios.test.ts`).
+- `npm run lint`: saída 0, 0 erros e 44 avisos (já existentes).
+- `vitest related --run -c vitest.integration.config.ts` sobre os .ts/.tsx do bloco (diferença contra o bloco E): 3 arquivos,
+  18 testes verdes, saída 0. Nenhuma das 7 falhas preexistentes foi tocada; a suíte completa fica com o integrador.
