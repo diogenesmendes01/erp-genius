@@ -31,7 +31,7 @@ async function comercial() {
   // Linha SEM dono: aqui o acesso vem só da carteira. Dono da linha vê a conversa (SPEC-ERP-005
   // LC-D01) — coberto em linha-comercial.int.test.ts.
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", driver: "BAILEYS", finalidade: "VENDAS", donoId: null } });
-  const lead = await prisma.lead.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
   return { vendedor, outro, numero, lead, contato, a };
@@ -44,7 +44,7 @@ async function filaComercial(chave = "LEAD_NOVO_SEM_RESPOSTA") {
   const ocorrencia = chave === "PRE_EXPERIMENTAL" ? aula : ancora;
   const passo = chave === "PRE_EXPERIMENTAL" ? "-2h" : "+30min";
   await prisma.conversaWhatsApp.update({ where: { id: c.a.conversaId }, data: { capturadaEm: ancora, ultimoInboundEm: ancora } });
-  if (chave === "PRE_EXPERIMENTAL") await prisma.lead.update({ where: { id: c.lead.id }, data: { etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: aula } });
+  if (chave === "PRE_EXPERIMENTAL") await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: aula } });
   const politica = await prisma.politicaComercial.create({ data: { chave, nome: chave, estado: "ATIVA", janelaInicio: 0, janelaFim: 24,
     diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: c.numero.id, degraus: { create: { passo, offsetMinutos: chave === "PRE_EXPERIMENTAL" ? -120 : 30, rotulo: "teste" } } } });
   const dados = { numeroId: c.numero.id, contatoId: c.contato.id, leadId: c.lead.id, politicaComercialId: politica.id,
@@ -70,7 +70,7 @@ describe("D02: atendimento comercial segue carteira/equipe/cobertura atual", () 
     expect((await listarConversas(sessao(c.vendedor))).map((a) => a.id)).toContain(c.a.id);
     expect(await carregarThread(sessao(c.outro), c.a.id)).toBeNull();
     await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: c.contato.id, atendimentoId: c.a.id, origem: "HUMANO", autorId: c.vendedor.id, corpoRenderizado: "Antes da transferência" } });
-    await prisma.lead.update({ where: { id: c.lead.id }, data: { vendedorDonoId: c.outro.id } });
+    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { vendedorDonoId: c.outro.id } });
     expect(await carregarThread(sessao(c.vendedor), c.a.id)).toBeNull();
     expect(await carregarThread(sessao(c.outro), c.a.id)).not.toBeNull();
     await despacharFila();
@@ -154,7 +154,7 @@ describe("W01–W07: intenção velha nunca chama o driver", () => {
   it("W01: mudança de etapa cancela uma intenção adiada", async () => {
     const c = await filaComercial();
     await prisma.intencaoMensagem.update({ where: { id: c.i.id }, data: { status: "ADIADA", despacharAposEm: new Date(0) } });
-    await prisma.lead.update({ where: { id: c.lead.id }, data: { etapa: "EM_ATENDIMENTO" } });
+    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { etapa: "EM_ATENDIMENTO" } });
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.i.id } })).motivoFalha).toBe("etapa_comercial_alterada");
   });

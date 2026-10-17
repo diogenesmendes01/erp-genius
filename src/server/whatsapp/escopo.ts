@@ -3,7 +3,7 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { prisma } from "@/lib/prisma";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
-import { ehGerenteDoSetor, setoresDoUsuario, type Setor } from "./setor";
+import { ehGerenteDoSetor, setoresVisiveisNoInbox, type Setor } from "./setor";
 import { whereNumeroServeSetor } from "./numero-setor";
 import { donosDeLinhaVisiveis, whereLinhasDosDonos } from "./linha-comercial";
 
@@ -75,7 +75,7 @@ export async function escopoAtendimentos(
   // Setor: gerente vê todo o setor; os demais, o que é seu + a fila. O PEDAGOGICO do professor é
   // só a turma (ramo abaixo): sem responsável próprio nem fila.
   const papeisSemProfessor = usuario.papeis.filter((p) => p !== Papel.PROFESSOR);
-  for (const setor of setoresDoUsuario(papeisSemProfessor)) {
+  for (const setor of setoresVisiveisNoInbox(papeisSemProfessor)) {
     if (ehGerenteDoSetor(usuario.papeis, setor)) ors.push({ finalidade: setor });
     else {
       // COMERCIAL: o responsável gravado NÃO concede acesso (LC-D02) — vale só o ramo comercial
@@ -135,7 +135,7 @@ export async function escopoGrupos(
     ors.push({ turma: { is: escopoTurmasDocente(usuario.id, agora) } });
   }
   // O PEDAGOGICO do professor é só a turma dele (acima); os demais papéis do setor veem toda turma.
-  const setores = setoresDoUsuario(usuario.papeis.filter((p) => p !== Papel.PROFESSOR));
+  const setores = setoresVisiveisNoInbox(usuario.papeis.filter((p) => p !== Papel.PROFESSOR));
   if (setores.includes("PEDAGOGICO")) ors.push({ turmaId: { not: null } });
   if (GRUPO_SEM_TURMA_PARA_SETORES_DO_NUMERO && setores.length) {
     ors.push({ turmaId: null, numero: { OR: setores.map(whereNumeroServeSetor) } });

@@ -93,7 +93,7 @@ export async function ativarPreparacaoTx(tx: Prisma.TransactionClient, matricula
     memoriaCalculo: { ...comissao.memoria, vendedorId: responsavel }, calculadaEm: agora, status: "APROVADA" } });
   await tx.movimentacaoAluno.create({ data: { matriculaId: m.id, alunoId: m.alunoId, tipo: "MATRICULA", turmaDestinoId: reserva?.turmaId ?? null, usuarioId: autorId, motivo: "Ingresso da contratação preparada" } });
   if (m.leadId && m.lead?.etapa !== "MATRICULADO") {
-    await tx.lead.update({ where: { id: m.leadId }, data: { etapa: "MATRICULADO" } });
+    await tx.oportunidade.update({ where: { id: m.leadId }, data: { etapa: "MATRICULADO" } });
     await registrarEvento(tx, { tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId: m.leadId, autorId, payload: { de: m.lead?.etapa ?? null, para: "MATRICULADO" } });
   }
   await registrarEvento(tx, { tipo: "MatriculaAtivada", agregadoTipo: "Matricula", agregadoId: m.id, autorId,

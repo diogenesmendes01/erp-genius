@@ -37,7 +37,7 @@ export async function consultarPreparacaoContratacao(input: { matriculaId: strin
       void descartadas;
       const admin = autor.papeis.includes(Papel.ADMINISTRADOR);
       const gerente = autor.papeis.includes(Papel.GERENTE_COMERCIAL);
-      const escopoDecisao = admin || !!(gerente && leadId && await tx.lead.findFirst({ where: { AND: [{ id: leadId }, await escopoComercialAtual(autor, tx)] }, select: { id: true } }));
+      const escopoDecisao = admin || !!(gerente && leadId && await tx.oportunidade.findFirst({ where: { AND: [{ id: leadId }, await escopoComercialAtual(autor, tx)] }, select: { id: true } }));
       const alcada = referencias.success ? referencias.data.alcada : undefined;
       let impedimento = p.decisaoPreco ? "A exceção já foi decidida." : !["RASCUNHO", "AGUARDANDO"].includes(m.status) ? "A matrícula não está em preparação." : !alcada ? "A análise de alçada precisa ser conferida." : alcada.componentes.every((c) => c.resultado === "DENTRO_ALCADA") ? "O preço proposto não exige exceção de alçada." : preparadorId === autor.id ? "Outra pessoa autorizada deve decidir." : !escopoDecisao ? "Aguardando decisão comercial autorizada." : referencias.success && referencias.data.exigeDirecao && !admin ? "Esta proposta exige decisão da Administração." : null;
       const podeRejeitar = impedimento === null;

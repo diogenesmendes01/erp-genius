@@ -3,7 +3,7 @@ import { CategoriaDocumento, Papel } from "@prisma/client";
 const db = vi.hoisted(() => ({
   cobranca: { findFirst: vi.fn(), findUnique: vi.fn() }, pagamentoInformado: { findFirst: vi.fn() },
   registroUpload: { findUnique: vi.fn(), updateMany: vi.fn() }, documento: { findFirst: vi.fn() },
-  lead: { findFirst: vi.fn() }, matricula: { findUnique: vi.fn(), count: vi.fn() }, aluno: { findUnique: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() },
+  oportunidade: { findFirst: vi.fn() }, matricula: { findUnique: vi.fn(), count: vi.fn() }, aluno: { findUnique: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() },
   mensagemWhatsApp: { findFirst: vi.fn() }, intencaoMensagem: { findFirst: vi.fn() },
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
@@ -20,7 +20,7 @@ beforeEach(() => {
   db.registroUpload.findUnique.mockResolvedValue(null); db.documento.findFirst.mockResolvedValue(null);
   db.mensagemWhatsApp.findFirst.mockResolvedValue(null); db.intencaoMensagem.findFirst.mockResolvedValue(null);
   db.coberturaCarteira.findMany.mockResolvedValue([]); db.usuario.findMany.mockResolvedValue([]);
-  db.lead.findFirst.mockResolvedValue({ id: "lead", matricula: null });
+  db.oportunidade.findFirst.mockResolvedValue({ id: "lead", matricula: null });
   db.cobranca.findUnique.mockResolvedValue({ matricula: { id: "matricula", alunoId: "aluno", leadId: "lead" } });
   db.matricula.findUnique.mockResolvedValue({ alunoId: "aluno", secretariaAssumiuEm: new Date() });
   db.registroUpload.updateMany.mockResolvedValue({ count: 1 });

@@ -48,7 +48,13 @@ export type AgregadoTipo =
   // Fase 2 (doc 03): financeiro automatizado + B2B.
   | "ConfigFinanceiro"
   | "Empresa"
-  | "FaturaB2B";
+  | "FaturaB2B"
+  // Fase 2 CRM (2.M1+): hub de identidade, tarefas, tags, campos e filtros do CRM.
+  | "Pessoa"
+  | "Tarefa"
+  | "Tag"
+  | "CampoPersonalizado"
+  | "FiltroSalvo";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
@@ -69,7 +75,7 @@ export interface EntradaEvento {
  *
  * @example
  * await prisma.$transaction(async (tx) => {
- *   await tx.lead.update({ ... });
+ *   await tx.oportunidade.update({ ... });
  *   await registrarEvento(tx, {
  *     tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId, autorId,
  *     payload: { de, para },

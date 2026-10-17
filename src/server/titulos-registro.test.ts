@@ -3,9 +3,9 @@ import { Papel } from "@prisma/client";
 
 const m = vi.hoisted(() => ({
   sessao: vi.fn(),
-  aluno: vi.fn(), lead: vi.fn(), empresa: vi.fn(),
+  aluno: vi.fn(), oportunidade: vi.fn(), empresa: vi.fn(),
 }));
-vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: m.aluno }, lead: { findFirst: m.lead }, empresa: { findUnique: m.empresa } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: m.aluno }, oportunidade: { findFirst: m.oportunidade }, empresa: { findUnique: m.empresa } } }));
 vi.mock("@/server/_shared", () => ({ exigirSessao: m.sessao }));
 vi.mock("@/server/_shared/escopo-comercial", () => ({ escopoComercialAtual: async () => ({ vendedorDonoId: { in: ["v1"] } }) }));
 // Espelha o fail-closed real: professor vê as suas turmas; visão ampla vê tudo; resto, nada.
@@ -36,15 +36,15 @@ describe("títulos de aba das fichas (E2)", () => {
   it("lead: só papéis comerciais consultam, sempre no escopo da carteira", async () => {
     m.sessao.mockResolvedValue(u(Papel.PROFESSOR));
     expect(await tituloLead("l1")).toBe("Lead");
-    expect(m.lead).not.toHaveBeenCalled();
+    expect(m.oportunidade).not.toHaveBeenCalled();
     m.sessao.mockResolvedValue(u(Papel.VENDEDOR));
-    m.lead.mockResolvedValueOnce({ nome: "Bia" });
+    m.oportunidade.mockResolvedValueOnce({ nome: "Bia" });
     expect(await tituloLead("l1")).toBe("Bia · Lead");
-    expect(m.lead.mock.calls[0][0].where).toEqual({ AND: [{ id: "l1" }, { vendedorDonoId: { in: ["v1"] } }] });
+    expect(m.oportunidade.mock.calls[0][0].where).toEqual({ AND: [{ id: "l1" }, { vendedorDonoId: { in: ["v1"] } }] });
     // Cada papel que abre a ficha do lead também lê o título.
     for (const papel of [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL]) {
       m.sessao.mockResolvedValue(u(papel));
-      m.lead.mockResolvedValueOnce({ nome: "Caio" });
+      m.oportunidade.mockResolvedValueOnce({ nome: "Caio" });
       expect(await tituloLead("l2"), papel).toBe("Caio · Lead");
     }
   });

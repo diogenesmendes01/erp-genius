@@ -23,7 +23,7 @@ vi.mock("@/server/_shared/capacidades", () => ({ exigirCapacidade: async () => u
 vi.mock("@/server/_shared/escopo-comercial", () => ({ escopoComercialAtual: async () => ({}) }));
 vi.mock("@/server/alunos/consultas", () => ({ listarAlunos: mocks.listarAlunos }));
 vi.mock("@/server/comercial/consultas", () => ({ listarLeads: mocks.listarLeads }));
-vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (f: (tx: unknown) => unknown) => f({}), lead: { count: mocks.contarLeads } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (f: (tx: unknown) => unknown) => f({}), oportunidade: { count: mocks.contarLeads } } }));
 
 import ExcelJS from "exceljs";
 import { GET } from "./route";

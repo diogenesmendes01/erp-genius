@@ -10,6 +10,7 @@ import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { setoresDoNumero } from "./numero-setor";
 import { salvarSetoresNumero } from "./acoes-numero";
+import { listarResponsaveisTriagem } from "./consultas";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
 let gerente: Awaited<ReturnType<typeof criarUsuario>>;
@@ -58,7 +59,7 @@ describe("salvarSetoresNumero", () => {
     expect((await salvarSetoresNumero({ numeroId: n.id, setores: ["XPTO" as never], triagemResponsavelId: null })).ok).toBe(false);
     expect(await salvarSetoresNumero({ numeroId: "nao-existe", setores: ["COMERCIAL"], triagemResponsavelId: null })).toEqual({ ok: false, erro: "Número não encontrado." });
     await prisma.usuario.update({ where: { id: sec.id }, data: { ativo: false } });
-    const r = await salvarSetoresNumero({ numeroId: n.id, setores: ["COMERCIAL", "FINANCEIRO"], triagemResponsavelId: sec.id });
+    const r = await salvarSetoresNumero({ numeroId: n.id, setores: ["SECRETARIA", "FINANCEIRO"], triagemResponsavelId: sec.id });
     expect(r.ok).toBe(false);
     expect(await setoresDoNumero(prisma, n.id)).toEqual(["COMERCIAL"]);
   });
@@ -67,5 +68,32 @@ describe("salvarSetoresNumero", () => {
     const r = await salvarSetoresNumero({ numeroId: n.id, setores: ["COMERCIAL", "COMERCIAL"], triagemResponsavelId: null });
     expect(r.ok).toBe(true);
     expect(await prisma.numeroSetorWhatsApp.count({ where: { numeroId: n.id } })).toBe(1);
+  });
+
+  it("recusa responsável pela triagem sem papel de um dos setores do número", async () => {
+    const r = await salvarSetoresNumero({ numeroId: n.id, setores: ["COMERCIAL", "FINANCEIRO"], triagemResponsavelId: sec.id });
+    expect(r).toEqual({ ok: false, erro: "O responsável pela triagem precisa ter papel de um dos setores do número." });
+    expect(await setoresDoNumero(prisma, n.id)).toEqual(["COMERCIAL"]);
+    expect((await salvarSetoresNumero({ numeroId: n.id, setores: ["COMERCIAL", "FINANCEIRO"], triagemResponsavelId: gerente.id })).ok).toBe(true);
+  });
+});
+
+describe("listarResponsaveisTriagem", () => {
+  it("lista só usuários ativos com papel de setor, filtrando pelos setores pedidos", async () => {
+    await criarUsuario([Papel.ALUNO], "Aluno");
+    await criarUsuario([Papel.PROFESSOR], "Professora");
+    const gp = await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gerente pedagógica");
+    const inativo = await criarUsuario([Papel.FINANCEIRO], "Financeiro inativo");
+    await prisma.usuario.update({ where: { id: inativo.id }, data: { ativo: false } });
+
+    const todos = await listarResponsaveisTriagem();
+    expect(todos.map((u) => u.nome)).toEqual(["Gerente", "Gerente pedagógica", "Secretaria"]);
+    expect(todos.find((u) => u.id === gp.id)?.papeis).toEqual([Papel.GERENTE_PEDAGOGICO]);
+
+    expect((await listarResponsaveisTriagem(["SECRETARIA", "FINANCEIRO"])).map((u) => u.id)).toEqual([sec.id]);
+    expect((await listarResponsaveisTriagem(["COMERCIAL", "PEDAGOGICO"])).map((u) => u.id)).toEqual([gerente.id, gp.id]);
+
+    authMock.mockResolvedValue({ user: { id: gerente.id } });
+    await expect(listarResponsaveisTriagem()).rejects.toThrow();
   });
 });

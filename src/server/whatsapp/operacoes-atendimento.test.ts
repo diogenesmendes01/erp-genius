@@ -8,7 +8,7 @@ import { Papel } from "@prisma/client";
 const m = vi.hoisted(() => ({
   sessao: vi.fn(),
   db: {
-    lead: { findMany: vi.fn(), count: vi.fn() },
+    oportunidade: { findMany: vi.fn(), count: vi.fn() },
     turma: { findMany: vi.fn() },
     aluno: { findMany: vi.fn() },
     matricula: { findMany: vi.fn() },
@@ -41,8 +41,8 @@ function entrar(id: string, ...papeis: Papel[]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  for (const f of [m.db.lead.findMany, m.db.turma.findMany, m.db.aluno.findMany, m.db.matricula.findMany, m.db.usuario.findMany]) f.mockResolvedValue([]);
-  m.db.lead.count.mockResolvedValue(1);
+  for (const f of [m.db.oportunidade.findMany, m.db.turma.findMany, m.db.aluno.findMany, m.db.matricula.findMany, m.db.usuario.findMany]) f.mockResolvedValue([]);
+  m.db.oportunidade.count.mockResolvedValue(1);
   // Canais ativos EXISTEM: se a checagem de "sem destino" cair, eles vazariam para a tela.
   m.db.numeroWhatsApp.findMany.mockResolvedValue([LINHA_DE_V1, COBRANCA]);
 });
@@ -74,7 +74,7 @@ describe("listarOpcoesAtendimento — sem destinatário no escopo", () => {
 describe("listarOpcoesAtendimento — com destinatário", () => {
   it("vendedor com lead: comercial, canais listados e só a própria linha aceita o assunto comercial", async () => {
     entrar("v1", Papel.VENDEDOR);
-    m.db.lead.findMany.mockResolvedValue([{ id: "lead-1", nome: "Ana", professorExperimentalId: null, etapa: "NOVO" }]);
+    m.db.oportunidade.findMany.mockResolvedValue([{ id: "lead-1", nome: "Ana", professorExperimentalId: null, etapa: "NOVO" }]);
     const r = await listarOpcoesAtendimento();
     expect(r.comercial).toBe(true);
     expect(r.destinos.map((d) => d.chave)).toEqual(["COMERCIAL:lead-1"]);
