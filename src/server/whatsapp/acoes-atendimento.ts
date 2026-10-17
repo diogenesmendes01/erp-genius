@@ -8,6 +8,7 @@ import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
 import { SETORES, papeisDoSetor, type Setor } from "./setor";
 import { setoresDoNumero } from "./numero-setor";
+import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
 import { proximoStatus } from "./status-atendimento";
 
 const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
@@ -106,13 +107,18 @@ const TransferirSchema = z.object({
  * enxerga (quem transfere não precisa ter alçada no setor de destino). FINANCEIRO:<matrícula>;
  * PEDAGOGICO:<aluno>:<turma>:<matrícula>:(ALUNO|AUT:<autorização>).
  */
-async function resolverDestino(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], destino: Setor, chave: string | null) {
+async function resolverDestino(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], destino: Setor, chave: string | null, telefoneContato: string) {
   if (destino === "FINANCEIRO") {
     const p = chave?.split(":") ?? [];
     if (p[0] !== "FINANCEIRO" || !p[1]) throw new ErroRegra("Escolha a matrícula do atendimento financeiro.");
-    const m = await tx.matricula.findUnique({ where: { id: p[1] }, select: { id: true, alunoId: true } });
+    const m = await tx.matricula.findUnique({ where: { id: p[1] }, include: INCLUDE_MATRICULA_DESTINO });
     if (!m) throw new ErroRegra("Matrícula do atendimento financeiro não encontrada.");
-    return { alunoId: m.alunoId, matriculaId: m.id, turmaId: null, autorizacaoComunicacaoAcademicaId: null };
+    // Mesmo critério de abrirAtendimentoInstitucional: o destinatário de cobrança da matrícula é único; o contato
+    // da conversa tem de ser esse destinatário, senão as cobranças iriam para a pessoa errada.
+    const fin = resolverDestinoFinanceiroDaMatricula(m);
+    if (!fin) throw new ErroRegra("A matrícula selecionada não possui destinatário válido para cobrança. Confira o pagador e o telefone deste contrato.");
+    if (fin.telefoneE164 !== telefoneContato) throw new ErroRegra("O contato desta conversa não é o destinatário de cobrança da matrícula escolhida.");
+    return { alunoId: fin.alunoId, matriculaId: fin.matriculaId, turmaId: null, autorizacaoComunicacaoAcademicaId: null };
   }
   if (destino === "PEDAGOGICO") {
     const p = chave?.split(":") ?? [];
@@ -150,7 +156,7 @@ export async function transferirAtendimento(input: { atendimentoId: string; dest
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
       if (dados.destino === a.finalidade && !["FINANCEIRO", "PEDAGOGICO"].includes(dados.destino)) throw new ErroRegra("O atendimento já pertence a este setor.");
-      const ctx = await resolverDestino(tx, dados.destino, dados.destinoChave);
+      const ctx = await resolverDestino(tx, dados.destino, dados.destinoChave, a.contato.telefoneE164);
       if (!(await setoresDoNumero(tx, a.numeroId)).includes(dados.destino)) throw new ErroRegra("O número deste atendimento não atende o setor escolhido.");
       await encerrarAtendimentoNaTransacao(tx, a.id, u.id);
       const conversaId = a.conversaId;
