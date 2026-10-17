@@ -1083,6 +1083,8 @@ enum Escolaridade {
 // Nacionalidade / 2ª nacionalidade / país de residência / país emissor são ISO 3166
 // (qualquer país — ver `lib/paises-iso.ts`), pois não são mercados da Genius.
 model Aluno {
+  pessoaId String? @unique
+  pessoa   Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   contaPortal ContaPortalAluno?
   trocasEmailPortal SolicitacaoTrocaEmailPortalAluno[]
 
@@ -1166,6 +1168,8 @@ model Aluno {
 }
 
 model Responsavel {
+  pessoaId     String? @unique
+  pessoa       Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   id           String  @id @default(cuid())
   nome         String
   parentesco   String?
@@ -1311,6 +1315,12 @@ enum MotivoPerda {
 }
 
 model Oportunidade {
+  pessoaId     String?
+  pessoa       Pessoa?      @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  origemCanal  OrigemCanal?
+  empresaId    String?
+  empresa      Empresa?     @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  participantes ParticipanteOportunidade[]
   atendimentosWhatsApp AtendimentoWhatsApp[]
   id             String      @id @default(cuid())
   codigo         String?     @unique // L-000001
@@ -1388,6 +1398,8 @@ model Oportunidade {
   sugestoesIA      SugestaoIA[]
 
   @@index([telefoneE164])
+  @@index([pessoaId])
+  @@index([empresaId])
   @@map("Lead")
 }
 
@@ -2304,6 +2316,8 @@ model NumeroWhatsApp {
 }
 
 model ContatoWhatsApp {
+  pessoaId     String?
+  pessoa       Pessoa? @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
   id           String  @id @default(cuid())
   telefoneE164 String  @unique // 1ª unicidade de telefone do sistema (doc 29) — embrião da entidade Pessoa (comentário do topo)
   waId         String? @unique
@@ -2324,6 +2338,8 @@ model ContatoWhatsApp {
 
   conversas ConversaWhatsApp[]
   intencoes IntencaoMensagem[]
+
+  @@index([pessoaId])
 }
 
 model ConversaWhatsApp {
@@ -8447,8 +8463,41 @@ model Empresa {
   ativo           Boolean  @default(true)
   criadoEm        DateTime @default(now())
 
-  matriculas Matricula[]
-  faturas    FaturaB2B[]
+  // CRM B2B (2.M2): ficha de prospect/cliente corporativo.
+  site            String?
+  segmentoMercado String?
+  porte           String?
+  origemCanal     OrigemCanal?
+
+  matriculas    Matricula[]
+  faturas       FaturaB2B[]
+  pessoas       Pessoa[]
+  oportunidades Oportunidade[]
+
+  @@index([origemCanal])
+}
+
+enum PapelParticipante {
+  DECISOR
+  INFLUENCIADOR
+  RH_OPERACIONAL
+  FINANCEIRO
+  USUARIO_FINAL
+  OUTRO
+}
+
+// Pessoas envolvidas em uma oportunidade B2B, cada uma com seu papel (uma vez por oportunidade).
+model ParticipanteOportunidade {
+  id             String            @id @default(cuid())
+  oportunidadeId String
+  oportunidade   Oportunidade      @relation(fields: [oportunidadeId], references: [id], onDelete: Restrict)
+  pessoaId       String
+  pessoa         Pessoa            @relation(fields: [pessoaId], references: [id], onDelete: Restrict)
+  papel          PapelParticipante
+  criadoEm       DateTime          @default(now())
+
+  @@unique([oportunidadeId, pessoaId])
+  @@index([pessoaId])
 }
 
 enum StatusFaturaB2B {
@@ -8570,4 +8619,47 @@ model Certificado {
   // Um certificado por aluno×nível (review PR #60): aprovações concorrentes não geram
   // dois códigos públicos válidos — a ação trata o P2002 como idempotência.
   @@unique([alunoId, nivelId])
+}
+
+// Hub de identidade do CRM (Fase 2, 2.M1): ContatoWhatsApp (N telefones), Aluno,
+// Responsavel e Oportunidade apontam para a Pessoa; nada é copiado. Sem delete físico:
+// mesclagem deixa lápide (mescladaEmId). CHECK em SQL: mescladaEmId <> id.
+enum OrigemCanal {
+  WHATSAPP
+  INSTAGRAM
+  ANUNCIO
+  GOOGLE
+  SITE
+  INDICACAO
+  EVENTO
+  LINKEDIN
+  IMPORTACAO
+  OUTRO
+}
+
+model Pessoa {
+  id           String       @id @default(cuid())
+  codigo       String?      @unique
+  nome         String
+  email        String?
+  cidade       String?
+  cargo        String?
+  linkedin     String?
+  origemCanal  OrigemCanal?
+  empresaId    String?
+  empresa      Empresa?     @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  mescladaEmId String?
+  mescladaEm   Pessoa?      @relation("PessoaMescla", fields: [mescladaEmId], references: [id], onDelete: Restrict)
+  mescladas    Pessoa[]     @relation("PessoaMescla")
+  criadoEm     DateTime     @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  contatosWhatsApp ContatoWhatsApp[]
+  aluno            Aluno?
+  responsavel      Responsavel?
+  oportunidades    Oportunidade[]
+  participacoes    ParticipanteOportunidade[]
+
+  @@index([empresaId])
+  @@index([mescladaEmId])
 }
