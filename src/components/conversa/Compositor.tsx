@@ -4,6 +4,7 @@ import { Suspense, lazy, useEffect, useRef, useState, type ChangeEvent, type Key
 import type { DriverWhatsApp } from "@prisma/client";
 import { IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import type { Resultado } from "@/server/_shared/resultado";
+import { Botao } from "@/components/Botao";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, recursoDisponivel, type RecursoMotor } from "./recursos-canal";
 
@@ -187,7 +188,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
       {emoji && (
         <div className="mb-2">
           <Suspense fallback={<div className="p-3 text-sm">Carregando…</div>}>
-            <SeletorEmoji driver={driver} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
+            <SeletorEmoji gif={recursoDisponivel(driver, "gif")} figurinha={recursoDisponivel(driver, "figurinha")} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
           </Suspense>
         </div>
       )}
@@ -239,10 +240,9 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
             <IconMicrophone size={20} aria-hidden />
           </button>
         ) : (
-          <button type="button" disabled={enviando || vazio} onClick={() => void enviar()}
-            className="inline-flex items-center gap-1 rounded-full bg-brand-solid px-4 py-2 text-sm font-medium text-on-brand disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-disabled">
+          <Botao disabled={vazio} ocupado={enviando} onClick={() => void enviar()}>
             <IconSend size={16} aria-hidden />Enviar
-          </button>
+          </Botao>
         )}
       </div>
       <input hidden ref={seletor} type="file" aria-label="Escolher arquivo" onChange={(e) => { escolherArquivo(e.target.files?.[0]); e.target.value = ""; }} />
