@@ -14,7 +14,7 @@ function inicioDoMes() {
 }
 
 /** Escopo das comissões: financeiro/admin tudo; gerente as suas e as da equipe; vendedor as suas. */
-function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.ComissaoWhereInput {
+export function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.ComissaoWhereInput {
   return usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.papeis.includes(Papel.FINANCEIRO) ? {} :
     usuario.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: usuario.id }, { vendedor: { gerenteComercialId: usuario.id } }] } : { vendedorId: usuario.id };
 }
