@@ -2511,3 +2511,22 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   aplicou tudo. Passaram `crm/tarefas`, `crm/lembretes`, `crm/mensagens-agendadas`, `whatsapp/despachante-agendada`,
   `whatsapp/despachante-comercial` e `whatsapp/despachante.live`: 6 arquivos e 54 testes, com saída 0.
 **Estado**: Implementado; aguardando revisão e merge. Não concluído.
+
+## Inbox, bloco C: ações de atendimento (Fase 3, Tasks 14 a 20; 17/10/2026)
+
+### Verificação para o PR (bloco C, branch `claude/fase3-c-acoes`, 17/10/2026)
+- Tarefas: 14 (matriz de permissões do doc 03 e assumir/devolver/atribuir), 15 (abrir atendimento recusa fila fora do
+  escopo), 16 (transferência = encerrar + abrir, com contexto como nota interna), 17 (participante de outro setor com
+  prazo e revogação), 18 (nota interna nunca enviada), 19 (agendar reusando `agendadaPara`) e 20 (encaminhar como
+  cópia, validando o escopo do destino). Branch empilhada sobre `claude/fase2-h-tarefas`; `main` 08e2b4b7 mesclado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (43 avisos já existentes). `npm test`: 682 arquivos e 4940 testes,
+  saída 0. A trava `confirmacoes.test.ts` acusou `e.constructor` em `erro-regra-atendimento.ts`; trocado por
+  `Object.getPrototypeOf(e) === Error.prototype`. Numa rodada com a máquina carregada um teste dessa trava estourou o
+  tempo (30 s); isolado e na rodada seguinte passou.
+- Integração no perfil `dev-email`: os 12 arquivos `*.int.test.ts` do bloco (inbox/barramento, consultas-pagina,
+  eventos-sse; whatsapp/abrir-atendimento-escopo, agendamento, atribuicao, encaminhar, nota-interna, participantes,
+  pg-proc-whatsapp, saude, transferencia) passaram: 12 arquivos, 72 testes, saída 0. O `vitest related` completo
+  alcança centenas de arquivos e foi interrompido após cerca de 70 min; os 4 arquivos que ele terminou antes
+  (agenda/substituicao-avisos, diario/reposicao-agenda, diario/reposicao-permissoes, academico/visibilidade) falharam
+  como na linha de base (falhas preexistentes sensíveis à data/visibilidade).
+**Estado**: Implementado; aguardando revisão e merge (depois de `claude/fase2-h-tarefas`). Não concluído.
