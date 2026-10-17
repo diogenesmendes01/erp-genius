@@ -2669,3 +2669,54 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `erp_genius_test_fix207` (migrate deploy, apagado no fim): os 7 `*.int.test.ts` da 3C e os 3 de `src/server/inbox`,
   10 arquivos e 72 testes, saída 0.
 **Estado**: Implementado; aguardando revisão e merge. Não concluído.
+
+## Fase 4B — despachante pelo motor: correção da revisão final (17/10/2026)
+
+- Branch `claude/fase4-b-despachante`. Os testes de integração live migraram para `vi.mock('drivers/motor')` com
+  números MOTOR, sem `skip`: despachante.live, ciclo-cobranca, acesso-atendimento, destinatario-atual, origem-celular
+  (clientMessageId da mensagem = o da intenção), atendimento-pedagogico-autorizacao, cobrancas/conferencia,
+  agenda/substituicao-avisos e academico/visibilidade.
+- Guarda contra envio real em teste: `vitest.integration.config.ts` zera `MOTOR_URL`/`MOTOR_API_KEY`. Teste-trava:
+  `motor/guarda-teste.int.test.ts`.
+- Doc 30 §S1 reescrito: a trava vale só para BAILEYS legado; MOTOR e Meta aceitam automação (D38). Textos de
+  PoliticaPainel, AvisosAgendaPainel e `salvarConfiguracaoAvisosAgenda` corrigidos.
+- Integração (perfil `integracao`), 13 arquivos tocados: verdes, salvo as falhas preexistentes da linha de base:
+  academico/visibilidade (6, trigger P0001) e agenda/substituicao-avisos (3). Essas 3 viram SIMULADA pela política de
+  cobrança DESLIGADA antes do driver e falham igual no HEAD anterior. O ruling está em
+  `.superpowers/sdd/rulings-claude_fase4-b-despachante.md`.
+- `tsc --noEmit` 0. `npm run lint`: 0 erros e 43 avisos (já existentes). Testes unitários: 677 arquivos e 4903 testes.
+  `contraste`/`confirmacoes` estouraram o tempo uma vez, com load ~20 de outras faixas, e passam isolados. O
+  `PoliticaPainel.confirmacao` (rótulo "Meta cloud (legado)" da Tarefa 1) foi corrigido.
+**Estado**: Implementado; aguardando o integrador.
+
+## Fase 4B — verificação final do bloco (17/10/2026)
+
+- Branch `claude/fase4-b-despachante`, tarefas 5 a 8 do plano `04-fase-motor.md`, empilhada sobre `claude/fase4-a-driver-motor`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- `npm test`: saída 0, 677 arquivos e 4903 testes. Duas rodadas anteriores falharam em varreduras do src
+  (`confirmacoes`, `contraste`) por estouro de 30 s com load ~20 de outras faixas; `testTimeout` unitário subiu para 120 s
+  e `confirmacoes` ganhou 120 s no teste da varredura.
+- Integração (perfil `integracao`), 14 arquivos `*.int.test.ts` do diff: 12 verdes, 116 testes. Falham só as preexistentes:
+  academico/visibilidade (6) e agenda/substituicao-avisos (3). `vitest related` não foi usado: `labels.ts` espalha o
+  alvo por quase toda a suíte; a completa fica com o integrador.
+**Estado**: Implementado; aguardando o integrador.
+
+### Correções da R1 do #213 (17/10/2026)
+- **B1 (conflito com o `main`):** mesclados o `main` até a #210 (`f8b8d21f`) e depois a #212 (`d5930411`). Conflitos:
+  `despachante.ts` (DRIVERS só com MOTOR, como na 4B, mais o `driverDoNumero` tipado da R1 do #205 e o
+  `clientMessageId` gravado no claim), `agenda/substituicao-avisos.int.test.ts` (flag de agenda ligada mais o id
+  `3EB0-…` do motor) e este quadro. A retenção de agenda da #209/#212 (`decidirEnvio`/`RETER_AGENDA`,
+  `reterAvisoAgenda`, `retidasAgenda`) fica antes do passo 10 e do claim: o aviso retido não vira SIMULADA nem vai
+  ao driver. Teste novo em `despachante-motor.int.test.ts`; `despachante-driver.test.ts` passou para a semântica da
+  4B (MOTOR registrado; META_CLOUD/BAILEYS sem driver).
+- **C1:** `driverAceitaAutomacao` aceita só MOTOR. `salvarConfiguracaoAvisosAgenda`, `motivoConfiguracaoAgendaInvalida`
+  e `salvarPoliticaRegua` (ao armar) recusam META_CLOUD com "Meta Cloud ainda não tem envio disponível."; o
+  `PoliticaPainel` mostra o mesmo aviso para remetente Meta. Testes: `canal`, `cron`, `comunicacoes-agenda/whatsapp`,
+  `PoliticaPainel.confirmacao` e `politica.int`.
+- **C2:** `testTimeout` unitário volta para 30 s; 120 s só na varredura do `src` de `contraste.test.ts` (como já
+  estava em `confirmacoes.test.ts`).
+- Verificação: `tsc --noEmit` 0; `npm run lint` 0 erros (43 avisos já existentes); `npm test` verde; integração
+  (whatsapp, agenda/substituicao-avisos, comunicacoes-agenda, academico/visibilidade, cobrancas/conferencia,
+  comercial/regua-comercial): 49 arquivos verdes, sem as falhas preexistentes citadas acima.
+**Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
