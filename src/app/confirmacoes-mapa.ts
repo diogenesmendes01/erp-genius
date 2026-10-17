@@ -212,6 +212,13 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "F2-T35",
     efeito: "estorna a comissão: o valor sai dos totais a pagar e não há reativação pela tela",
   },
+  {
+    arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "desconectarNumero",
+    achado: "Fase 4D",
+    efeito: "faz logout do número no motor: o número para de enviar e receber até novo pareamento por QR ou código",
+  },
 ];
 
 /**

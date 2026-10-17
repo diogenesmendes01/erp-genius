@@ -56,6 +56,7 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/contatos/FichaContato.tsx", modulo: "@/server/crm/contatos-acoes", acao: "registrarOptOutDaFicha", achado: "F2-T24" },
   { arquivo: "src/app/(app)/contatos/MesclarContatos.tsx", modulo: "@/server/crm/contatos-acoes", acao: "mesclarContatosDaLista", achado: "F2-T24" },
   { arquivo: "src/app/(app)/comissoes/EstornarComissao.tsx", modulo: "@/server/crm/comissoes-estorno-acao", acao: "estornarComissaoDoPainel", achado: "F2-T35" },
+  { arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "desconectarNumero", achado: "Fase 4D" },
 ];
 
 /** Cópia literal das exceções (arquivo, trecho exato). */
