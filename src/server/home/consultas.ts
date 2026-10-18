@@ -7,6 +7,9 @@ import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero } from "@/server/_shared/decimal";
 import { exigirPapel, ErroAutenticacao, type UsuarioSessao } from "@/server/_shared";
+import { escopoRelatorio } from "@/server/relatorios/escopo";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { progressoMetas } from "@/server/metas/metas";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { escopoTurmasDocente } from "@/server/diario/permissoes";
 
@@ -146,8 +149,20 @@ export async function dadosHomeGerente(usuario: UsuarioSessao) {
 
   const funil = await prisma.oportunidade.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
 
+  // Meta de matrículas do mês corrente (Q9): soma das metas do escopo; null quando ninguém definiu meta.
+  const fuso = await fusoDaEscola();
+  const partes = new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit" }).formatToParts(new Date());
+  const competencia = `${partes.find((p) => p.type === "year")?.value}-${partes.find((p) => p.type === "month")?.value}`;
+  const metasMes = (await progressoMetas({ competencias: [competencia], escopo: await escopoRelatorio(usuario) })).filter((p) => p.metrica === "MATRICULAS");
+  const metaGeral = metasMes.find((p) => p.usuarioId === null);
+  const metaMatriculasMes = metaGeral
+    ? { meta: metaGeral.meta, realizado: metaGeral.realizado }
+    : metasMes.length
+      ? { meta: metasMes.reduce((s, p) => s + p.meta, 0), realizado: metasMes.reduce((s, p) => s + p.realizado, 0) }
+      : null;
+
   return {
-    kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla, checkInsVencidos },
+    kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla, checkInsVencidos, metaMatriculasMes },
     ranking,
     equipe: vendedores.map((v) => v.nome),
     funil: funil.map((f) => ({ etapa: f.etapa, total: f._count._all })),

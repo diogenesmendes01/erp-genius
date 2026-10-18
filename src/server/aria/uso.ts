@@ -38,6 +38,7 @@ export async function registrarChamadaIA(
         entrada: r.tokensEntrada,
         cache: r.tokensCache,
         saida: r.tokensSaida,
+        escritaCache: r.tokensEscritaCache,
       }),
       latenciaMs: r.latenciaMs,
       resultado: r.recusa ? "RECUSA" : "OK",

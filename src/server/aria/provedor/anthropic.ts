@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { modeloPermitido } from "./custo";
 import { ErroProvedorIA, type ModelosIA, type PedidoIA, type ProvedorIA, type RespostaIA } from "./tipos";
 
 // Porta mínima do SDK: o SDK 0.131.0 não tipa os campos de reserva/output_config
@@ -17,7 +18,12 @@ export function clientePadrao(): ClienteMensagens {
 interface RespostaBruta {
   stop_reason?: string | null;
   content?: { type: string; text?: string }[];
-  usage?: { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number | null };
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_input_tokens?: number | null;
+    cache_creation_input_tokens?: number | null;
+  };
 }
 
 function traduzirErro(e: unknown): ErroProvedorIA {
@@ -52,6 +58,10 @@ export function criarProvedorAnthropic(cliente: ClienteMensagens, modelos: Model
     nome: "anthropic",
     async gerar(p: PedidoIA): Promise<RespostaIA> {
       const modelo = p.tarefa === "classificacao" ? modelos.classificacao : modelos.conversa;
+      // Valida antes da chamada paga: sem preço cadastrado o custo falharia só depois.
+      if (!modeloPermitido(modelo)) {
+        throw new ErroProvedorIA("MODELO_NAO_PERMITIDO", `Modelo fora de MODELOS_PERMITIDOS: ${modelo}`);
+      }
       const outputConfig: Record<string, unknown> = { effort: "low" };
       if (p.esquemaSaida) outputConfig.format = { type: "json_schema", schema: p.esquemaSaida };
       const req: Record<string, unknown> = {
@@ -84,6 +94,7 @@ export function criarProvedorAnthropic(cliente: ClienteMensagens, modelos: Model
         tokensEntrada: r.usage?.input_tokens ?? 0,
         tokensSaida: r.usage?.output_tokens ?? 0,
         tokensCache: r.usage?.cache_read_input_tokens ?? 0,
+        tokensEscritaCache: r.usage?.cache_creation_input_tokens ?? 0,
         latenciaMs: Date.now() - inicio,
       };
     },

@@ -20,6 +20,8 @@ export const CONFIG_TABS: ConfigTab[] = [
   { href: "/configuracao/usuarios", label: "Usuários", papeis: [Papel.ADMINISTRADOR] },
   { href: "/configuracao/operacao", label: "Operação", papeis: [Papel.ADMINISTRADOR] },
   { href: "/configuracao/migracao", label: "Preparação de migração", papeis: [Papel.ADMINISTRADOR] },
+  // CRM (Fase 5F): seções Distribuição, Tags, Respostas, Metas (Fase 5E, Q9 — antes aba própria) e IA; é a única
+  // aba de Configuração que o Gerente Comercial vê.
   { href: "/configuracao/crm", label: "CRM", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL] },
   // Canal WhatsApp: só o administrador vê as seções (o Gerente Comercial saiu na E1). O gate real está em whatsapp/secoes.ts + o guard de cada página de seção (E8).
   {

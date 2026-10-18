@@ -2,6 +2,48 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox novo — pendências da revisão do #223 (18/10/2026)
+
+Branch `claude/pendencias-223`. Duas pendências da revisão do #223 (mergeado em 31304a7e).
+
+- **C1, a revogação chega ao ex-convidado**: depois da revogação o ex-convidado sai do `escopoAtendimentos`, e o filtro do SSE descartava o `atendimento.atualizado`. Agora `revogarParticipante` também emite, na mesma transação, um `pg_notify` direcionado. Ele leva só ids (`tipo`, `atendimentoId`, `mensagemId: null`, `conversaId`) e `paraUsuarioId` = o revogado. `criarFiltroDeAvisos` deixa esse aviso passar só para esse usuário, sem consultar o escopo, e só no tipo `atendimento.atualizado`. Os demais usuários não recebem o aviso direcionado, e `formatarSSE` não repassa o `paraUsuarioId`. No cliente, a recarga do painel que volta 404 (fora do escopo) mantém o último painel com `podeEnviar: false` e sem ações, e o compositor trava sem reabrir. Um 404 na carga inicial continua como erro com "Tentar de novo". Sem migration.
+- **C2, paginação do encaminhar**: `buscarDestinosEncaminhar` aceita o `cursor` e devolve `{ itens, proximo }`. O diálogo mostra "Carregar mais" (o padrão da lista do Inbox novo) enquanto houver `proximo`. O botão segue a busca aplicada, acrescenta sem repetir linhas e mantém a lista se a página falhar. Uma página que fica vazia depois do filtro de origem, grupo e opt-out não mostra o estado vazio enquanto houver próxima página.
+- Testes: integração em `participantes-aviso.int.test.ts` (o ex-convidado recebe só o aviso direcionado, um terceiro fora do escopo não recebe nada e o responsável recebe só o aviso comum) e em `eventos-sse.int.test.ts` (o filtro do aviso direcionado e o quadro sem o destinatário). Componente em `InboxNovo.interacao.test.ts` (404 na recarga e na carga inicial) e em `AcoesMensagem.test.ts` (cursor, "Carregar mais" e falha ao carregar mais).
+- `tsc --noEmit`: saída 0. `eslint .`: 0 erros (40 avisos, já existentes, nenhum nos arquivos tocados). `npm test`: 732 arquivos, 5423 testes verdes.
+- Integração no banco descartável `erp_genius_test_pend223`: `src/server/inbox` (7 arquivos) e os 8 arquivos de atendimento e participante de `src/server/whatsapp`, ao todo 15 arquivos e 114 testes verdes. `src/app/api/inbox` não tem `.int.test.ts`; os testes de rota dela rodam no `npm test`.
+- **Estado**: implementado, aguarda revisão.
+
+## Pendências do #226 (Fase 5B), revisão R2 — N2 (18/10/2026)
+
+Branch `claude/pendencias-226`. A regra `uploadLivreDoAutor` (`src/server/uploads/autorizacao.ts`), que libera um upload para a base de conhecimento da Aria, só tinha cobertura em `*.int.test.ts`, fora do CI. Agora `autorizacao.test.ts` (prisma mockado, roda no `npm test`) cobre: upload de outro autor → `null`; vínculo por lead, aluno, cobrança ou matrícula → `null`; referência como comprovante de cobrança, informe de pagamento, documento, mídia de mensagem ou de intenção de WhatsApp → `null`; upload livre do próprio autor → aceito. Cinco mutações da regra (autoria, vínculos, matrícula, referências, intenção) fazem o teste falhar.
+
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (40 avisos já existentes). `npm test`: 726 arquivos, 5386 testes verdes.
+- **Estado**: só teste; nenhuma mudança de código de produção. Aguarda o merge.
+## Auditoria de regras atualizada para as APIs atuais (18/10/2026)
+
+Branch `claude/auditoria-atualizada`, base `main` (após o #222). A suíte `scripts/auditoria/cenarios.test.mjs` passou de 18 verdes, 10 falhas e 1 pulado para **28 verdes e 1 pulado (F03, inconclusivo por mocks, como antes)**. Nenhuma das 10 falhas era defeito do produto: todas vinham de contrato de API ou regra nova intencional. Nenhum critério auditado foi afrouxado.
+
+- **F01, F02, F05, F06, W06**: `registrarPagamento` exige `chaveIdempotencia` (16 caracteres ou mais) e evidência da destinação (`comentario`, 5 caracteres ou mais). O helper `pagamento()` passou a enviar os dois campos.
+- **F01**: um ajuste pedido pela administração agora gera `Aprovacao` (alçada nova). O cenário confere `{ aprovacao: true }` e faz uma segunda pessoa da direção aprovar (`decidirAprovacao`) antes de medir o saldo.
+- **F05, F06**: a ativação exige um contrato vigente confirmado pela secretaria e a cobertura da primeira mensalidade conferida. O helper `contratoConfirmado()` monta essas pré-condições no banco, como faz `comissao-aprovada-em.int.test.ts`. A ativação também exige evidência (`comentario`).
+- **F07** (regra nova): o recebimento já não ativa a matrícula sem contrato confirmado. O cenário prova que a ativação é recusada e que a matrícula continua `AGUARDANDO`, com `contratoOk=false` e sem quem confirmou.
+- **F08** (regra nova): a retomada direta foi desativada. O cenário prova que `reativarAluno` recusa e que a própria solicitante não aprova a retomada. A retomada passa por `solicitarRetomada` e pela aprovação de outra pessoa do Financeiro (`decidirRetomada`), e a cobrança futura volta a `PENDENTE`.
+- **F11** (regra nova): os tipos de documento são editados por id. O cenário prova que excluir um tipo em uso é recusado e que renomear pelo id preserva o `tipoDocumentoId` do aluno.
+- **A01** (e C03): o escopo docente exige `VinculoDocente` vigente. O helper `turma()` cria esse vínculo, e o C03 deixou de passar sem testar nada.
+- **A06** (contrato novo): a busca fora do escopo devolve listas vazias em vez de um erro. O cenário usa um atendimento real da secretaria e faz uma contraprova: o administrador encontra o aluno e o professor não, com ou sem o `atendimentoId`.
+- O `vitest.config.ts` da auditoria passou a usar o banco do perfil de teste (`DATABASE_URL_TESTE`, o mesmo do `globalSetup`) e a apagar `MOTOR_URL` e `MOTOR_API_KEY`.
+- Verificação: auditoria com 28 verdes e 1 pulado (banco descartável). `tsc --noEmit` com saída 0. `npm run lint`: 0 erros e 40 avisos. `npm test`: 715 arquivos e 5308 testes verdes.
+- **Estado**: implementado; aguardando revisão.
+## Inbox novo — encaminhar e aviso de convite (18/10/2026)
+
+Branch `claude/inbox-encaminhar-convite`. Pendências deixadas pela Fase 4D (#219) e pelo #220.
+
+- **Encaminhar**: o comando entra em `COMANDOS_MENSAGEM_LIGADOS`. Ele exige a capacidade do número (`encaminhar` entra em `RECURSOS_MOTOR`: MOTOR ativo e sessão CONECTADO), o envio liberado (`envioLiberado === true`) e a mensagem não apagada. Abre o diálogo `EncaminharMensagem` (`Modal`), que lista o destino pela lista do Inbox novo (`GET /api/inbox/atendimentos?numeroId=…&envio=1&busca=…`). Com `envio=1`, a lista usa o escopo de envio. Ficam de fora a própria origem, os grupos e os contatos em opt-out. O envio roda no `ConfirmarAcao`, que entra na lista fechada de `confirmacoes-mapa.ts`. A action `encaminharMensagemWhatsApp` já revalidava no destino o envio, o encerramento, o opt-out, o mesmo número e a sessão do motor. Novos testes de integração cobrem o convidado só com leitura, o destino encerrado, a sessão caída e a mensagem apagada.
+- **Aviso no SSE**: `convidarParticipante` e `revogarParticipante` fazem, na mesma transação, um UPDATE sem mudança no `AtendimentoWhatsApp`. O trigger `notificar_inbox` já existente emite `atendimento.atualizado`, sem migration. O ID reservado 20261018500000 não foi usado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (os avisos já existiam). `npm test`: 719 arquivos, 5334 testes verdes.
+- Integração no banco descartável `erp_genius_test_encaminhar`: `src/server/inbox` com 7 arquivos e 67 testes; `src/server/whatsapp` com 53 arquivos e 414 testes. Tudo verde, motor simulado.
+- **Estado**: implementado, aguarda revisão.
+
 ## Decisões do dono 17/10/2026
 
 Registro completo em [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md). Branch `claude/decisoes-dono-17-10`.
@@ -3103,6 +3145,113 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
   `comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `secretaria/politica`, `whatsapp/{inbox,acesso-atendimento,motor}`
   (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
   39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+## Fase 5A, pendências da revisão do #224 (18/10/2026)
+
+Branch `claude/pendencias-224` (sobre main `f1b4a41c`). Nenhuma chamada real à API; cliente Anthropic mockado nos testes.
+
+- **C1, escrita de cache:** o provedor Anthropic passa a ler `usage.cache_creation_input_tokens` (ausente ou nulo vira 0) em
+  `RespostaIA.tokensEscritaCache`; o simulado devolve 0. `custoMicroUsd` cobra a escrita a 1,25× a entrada (Sonnet 5.5: 2,50 USD/M;
+  Haiku 5.5: 0,125 USD/M) e soma ao total; `registrarChamadaIA` repassa o campo. Sem coluna nova em `ChamadaIA`: o custo gravado já
+  inclui a escrita; guardar a contagem separada fica para quando houver migration da Aria.
+- **C3, modelo validado antes da chamada:** `modeloPermitido()` em `custo.ts`; o provedor Anthropic lança
+  `ErroProvedorIA("MODELO_NAO_PERMITIDO")` antes de chamar o cliente quando o modelo da tarefa está fora de `MODELOS_PERMITIDOS`.
+  Não existe schema de validação da `ConfigIA` (nenhuma tela ou action grava os modelos ainda); validar lá quando ela for criada.
+- **C6:** comentários do copiloto removido ajustados em `globals.css`, `tailwind.config.ts`, `_shared/regras.ts` e
+  `whatsapp/consultas-inbox.ts`.
+- Leitura de cache do Sonnet 5.5 segue 0,20 (decisão pendente do dono).
+- Evidências: `tsc --noEmit` saída 0; `npm run lint` saída 0 (0 erros, 40 avisos, linha de base); `npm test` saída 0, 721 arquivos,
+  5349 testes verdes; integração `src/server/aria` (banco descartável `erp_genius_test_pend224`, `migrate deploy`): saída 0, 2 arquivos,
+  13 testes verdes.
+## Fase 5, bloco B — configuração da Aria, Tasks 6 a 11 (18/10/2026)
+
+Branch `claude/fase5-b-config` (sobre `claude/fase5-a-fundacao`, main 6d6d33ee + 24af270d). Tasks 6 (schema versionado, predefinições e matriz), 7 (divisão Admin × Gerente Comercial), 8 (rascunho, publicação numerada com diff, descarte e restauração), 9 (estado DESLIGADA/SHADOW/ATIVA, pausa global e supervisão), 10 (base de conhecimento: fontes, trechos e extração de PDF pelo provedor simulado) e 11 (busca textual em português), mais o commit de correção da revisão final. Só provedor simulado; nenhuma chamada real à API.
+
+- **Migration** `20261018020000_aria_conhecimento`: ID reservado pelo integrador para `<ID-F5-02> aria_conhecimento` (registro de 18/10 em `planejamento/execucao-ledger.md`: `020000 aria_conhecimento`). Aplicada só no banco do perfil `tester` (`prisma migrate status`: em dia, 455 migrations).
+- **Correções da revisão final:** Gerente não encurta supervisão em vigor (DF5-13; teste `gerente_nao_encurta_supervisao`); ADR-F5-01 registra o descarte do rascunho como única remoção física e a regra de que o Gerente não salva nem publica rascunho que o Admin alterou fora da alçada dele; testes de `busca` com controle positivo (conferido por mutação: tirar o filtro de `status` ou de `arquivadaEm` derruba `ignora_fonte_arquivada_e_nao_pronta`).
+- **Pendência para o dono (matriz):** a tabela de predefinições do plano (Task 6, Step 3) traz `CONDICAO_COMERCIAL` EQUILIBRADO `ooossooo` e AUTONOMO `oooeeooo` (etapas EXPERIMENTAL_*), mas o teste do próprio plano exige `EQUILIBRADO.PROPOSTA = SUGERE`. O código segue o teste: EQUILIBRADO `ooooosso` e AUTONOMO `oooooeeo` (PROPOSTA e AGUARDANDO_MATRICULA). Condição comercial em experimental não faz sentido de negócio, então a tabela do plano parece deslocada. Até o dono confirmar e o integrador corrigir a tabela do plano, a referência dos blocos C e D é `src/server/aria/matriz.ts`.
+- Evidências (HEAD da correção):
+  - `node_modules/.bin/tsc --noEmit`: saída 0 (linha de base: 0).
+  - `npm test`: saída 0; 723 arquivos, 5328 testes verdes (linha de base do bloco A: 720/5301).
+  - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+  - Integração, recorte (não é a suíte completa), banco do perfil `tester`: `npm run test:int -- src/server/aria`: saída 0; 6 arquivos, 45 testes verdes. `vitest related` sobre `aria/estado.ts` e `aria/conhecimento/busca.ts`: saída 0; 2 arquivos, 15 testes.
+- **Pendente para o integrador antes do merge:** `npm run test:int` completo (mais de 2 h, proibido nesta faixa), comparando com as falhas preexistentes conhecidas (sensíveis à data e o flake de `portal-aluno/preferencia-fuso`); confirmação do dono sobre a matriz.
+- **Estado**: implementado; aguarda a suíte completa, a confirmação da matriz e o integrador. Não concluído.
+
+### Fase 5B: verificação final do bloco antes do PR — 2026-10-18
+
+Branch `claude/fase5-b-config` (HEAD 9745f787), PR em rascunho empilhado sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 723 arquivos, 5328 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- `vitest related --run -c vitest.integration.config.ts` sobre os 15 .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 4 arquivos, 33 testes verdes (recorte, não a suíte completa).
+
+### Fase 5B: merge do `main` (f1b4a41c) — 2026-10-18
+
+Branch `claude/fase5-b-config` (sobre d11663d3). Conflito só neste quadro (ficam os blocos de cada lado). Nada da Aria cita Meta, Evolution ou drivers legados; nenhuma migration nova colide com `20261018020000_aria_conhecimento`.
+- `prisma validate`: válido. `node_modules/.bin/tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos.
+- `npm test`: saída 0; 724 arquivos, 5369 testes verdes.
+- Integração em banco descartável novo (`migrate deploy` de todas as migrations: saída 0), recorte (não é a suíte completa): `src/server/aria`, `whatsapp`, `inbox`, `comunicacoes-agenda`, `comercial`, `crm/{funil,pessoas,oportunidades,mensagens-agendadas}`, `academico/visibilidade`, `acesso/politica`, `agenda/substituicao-avisos`, `secretaria/politica`: saída 0; 83 arquivos, 645 testes verdes.
+- `prisma migrate diff` banco × schema: as divergências são antigas (nomes de índices/FKs e defaults de data em outras áreas), salvo `TrechoConhecimento.busca` (coluna gerada `tsvector` e índice GIN em SQL manual, que o Prisma não representa). **Pendência:** um `migrate dev` futuro tentará removê-los; revisar antes de gerar a próxima migration.
+- **Pendente antes do merge:** `npm run test:int` completo pelo integrador; confirmação do dono sobre a matriz; PR #223 segue aberto no `main`.
+
+### Fase 5B: correções da R1 do PR #226 — 2026-10-18
+
+Branch `claude/fase5-b-config` (sobre c1f4dead; `git merge origin/main`: já em dia com f1b4a41c). TDD: cada teste novo falhou antes da correção.
+- **B1** `criarFonteArquivo` só aceita upload "livre" do próprio autor (`uploadLivreDoAutor` em `uploads/autorizacao.ts`): sem vínculo a lead/aluno/cobrança/matrícula e sem referência em cobrança, informe de pagamento, documento ou mídia de WhatsApp; fora disso, "Arquivo não encontrado." antes de qualquer leitura do disco. `podeLerArquivo` não serve de porta aqui: nega todo upload sem referência (o caso legítimo); a regra adotada é mais restrita para qualquer arquivo com finalidade, inclusive para o Administrador.
+- **B2** mock do provedor no teste parte de `provedorSimulado.gerar(p)` (compatível com o #227).
+- **C2** `buscarTrechos` ignora fontes vencidas; criação recusa `validoAte` no passado ou inválido. **C3** `salvarRascunho`/`restaurarVersao` exigem o rascunho aberto (`id` + `atualizadoEm`, de `rascunhoAtual()` ou do último salvamento) e recusam se mudou. **C4** teste unitário (prisma dublê) liga `definirEstadoAria`/`publicarRascunho` às capacidades (conferido por mutação). **C5** `busca` declarada com `dbgenerated` + `@@index([busca], type: Gin)`; `prisma migrate diff` banco × schema perdeu as duas linhas de `TrechoConhecimento` e não ganhou nenhuma; trava em `conhecimento/migracao-busca.test.ts`. **C6** tetos: 200 mil caracteres por fonte, PDF de 10 MB, 400 trechos por fonte.
+- **Atenção bloco C:** a assinatura de `salvarRascunho` (campo `rascunho`) e de `restaurarVersao(versaoId, rascunho)` mudou.
+- `tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5374 testes.
+- Integração (recorte) em banco descartável com todas as migrations: `src/server/aria`, `src/server/uploads` e as suítes que usam `uploads/autorizacao` (`academico/visibilidade`, `matricula/condicoes-horas`, `inbox/regras-inbox`, `financeiro/recebimentos-destinados`): saída 0; 11 arquivos, 127 testes.
+
+### Fase 5E: relatórios e metas (verificação do bloco) — 2026-10-18
+
+Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 725 arquivos, 5336 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- Integração, recorte: `vitest related --run -c vitest.integration.config.ts` sobre os arquivos .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 14 arquivos, 109 testes verdes.
+- Pendente: suíte de integração completa a cargo do integrador no fim da fase.
+
+**Merge do `main` (#224, Fase 5A, já com 4D a 4F) na Fase 5E (18/10/2026)**
+
+- PR #228 passa a ter base `main` (não empilhado). Merge de `f1b4a41c`; conflito só neste quadro (ficam os dois blocos). `botoes-mapa.ts`,
+  `botoes.test.ts` e `enums-rotulos.test.ts` mesclaram sozinhos. A 5E não cita Meta, Evolution, drivers legados nem o Inbox antigo.
+  `20261018030000_metas_comerciais` segue a última migration, depois de `20261018010000_aria_base`; sem colisão.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5377 testes verdes.
+- Integração (banco descartável, `migrate deploy` completo; `migrate diff` só com a deriva preexistente de defaults de timestamp, nada em
+  `MetaComercial`): `src/app/api/relatorios`, `home/consultas`, `metas`, `relatorios`, `aria`, `src/server/inbox`, `whatsapp/motor`: saída 0;
+  31 arquivos, 252 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+**Correções da R1 do PR #228 (18/10/2026)**
+
+- B1: a meta EXPERIMENTAIS_REALIZADAS passa a contar a primeira `ExperimentalRealizada` (check-in do professor) por oportunidade no mês
+  da escola, aceitando também `EtapaAlterada` para EXPERIMENTAL_REALIZADA; respeita escopo e dono. Nas abas de Relatórios só o funil conta
+  experimentais, e já usava os dois eventos; Atividades e Equipe não contam experimentais.
+- C1: a aba Metas da Configuração inclui o Gerente Comercial (única aba dele; o link "Definir metas" fica na aba Equipe de Relatórios);
+  a meta do próprio gerente aparece com o nome dele.
+- C2: `/api/relatorios/exportar` recusa com 403 (mensagem "só para a gestão comercial") as abas Equipe e Aria, os filtros de responsável e
+  de autor e o detalhe por pessoa para quem não é admin nem gerente comercial.
+- C3 (DF5-11): no relatório o vendedor é só ele. Diferente de `escopoComercialAtual`, as coberturas de carteira não entram nos relatórios
+  nem nas metas na v1 (documentado em `relatorios/escopo.ts`, com teste).
+- C4: o nome da etapa no Funil diz que abre as oportunidades que estão nela agora (título, rótulo acessível e nota da tabela).
+- C5: Equipe mostra "Meta dos meses do período" e explica que soma os meses inteiros tocados; VALOR_GANHO usa `valorPrevisto`.
+- B2: resolvido no merge do `main` com o #226 (ver bloco seguinte).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos (linha de base). `npm test`: saída 0; 727 arquivos, 5380 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`: saída 0; 8 arquivos, 68 testes verdes.
+
+**Merge do `main` (#226, Fase 5B) na Fase 5E (18/10/2026)**
+
+- Merge de `86261292`. Conflitos: `prisma/schema.prisma` (ficam `MetricaMeta`/`MetaComercial` da 5E e `TipoFonteConhecimento`,
+  `StatusFonteConhecimento`, `FonteConhecimento`, `TrechoConhecimento` da 5B, com `busca` em `dbgenerated` e `@@index([busca], type: Gin)`)
+  e este quadro (ficam os dois blocos).
+- `prisma validate`: válido. Banco limpo com `migrate deploy`: `20261018010000_aria_base`, `20261018020000_aria_conhecimento` e
+  `20261018030000_metas_comerciais` aplicam em sequência; `migrate diff` banco × schema sem nada em `MetaComercial`, `FonteConhecimento`
+  ou `TrechoConhecimento` (só a deriva preexistente de outras tabelas).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 732 arquivos, 5412 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`, `src/server/aria`, `src/server/uploads`:
+  saída 0; 15 arquivos, 133 testes verdes. O `npm run test:int` completo segue com o integrador.
 
 ### Fase 5F, Task 38: Configurações › Números (setores, triagem, perfil, privacidade, temporárias) — 2026-10-18
 

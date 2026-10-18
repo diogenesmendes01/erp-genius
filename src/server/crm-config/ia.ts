@@ -2,7 +2,7 @@ import { AcaoOrcamentoIA, Papel, type OrigemChamadaIA } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado } from "@/server/_shared";
-import { MODELOS_PERMITIDOS } from "@/server/aria/provedor/custo";
+import { modeloPermitido } from "@/server/aria/provedor/custo";
 import { chaveConfigurada } from "@/server/aria/provedor";
 import { estadoOrcamento } from "@/server/aria/uso";
 
@@ -19,7 +19,8 @@ export interface ConfigIAInput {
   limiarTriagem: number;
 }
 
-const Modelo = z.string().refine((m) => (MODELOS_PERMITIDOS as readonly string[]).includes(m), "Modelo não permitido. Use Sonnet 5.5 ou Haiku 5.5.");
+// Mesma regra que o provedor aplica antes de chamar a API (#227): MODELOS_PERMITIDOS via modeloPermitido().
+const Modelo = z.string().refine(modeloPermitido, "Modelo não permitido. Use Sonnet 5.5 ou Haiku 5.5.");
 
 const Schema = z.object({
   modeloConversa: Modelo,
