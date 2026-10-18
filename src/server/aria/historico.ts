@@ -1,8 +1,8 @@
-import { EtapaLead, Papel, Prisma, type AcaoAgenteIA } from "@prisma/client";
+import { EtapaLead, Prisma, type AcaoAgenteIA } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado, type UsuarioSessao } from "../_shared";
-import { escopoComercialAtual } from "../_shared/escopo-comercial";
 import { transicaoManualPermitida } from "../_shared/regras";
+import { podeDecidirAcaoAria } from "./escopo-decisao";
 import { capacidadesAria } from "./permissoes-tela";
 import { aplicarAcao, efetivarRespostaSugerida } from "./turno/executor";
 
@@ -32,15 +32,7 @@ async function travarAcao(tx: Tx, id: string): Promise<AcaoAgenteIA> {
 
 /** Gerente só decide sobre oportunidades da própria equipe; ação sem oportunidade é só do Administrador. */
 async function exigirEscopo(tx: Tx, u: UsuarioSessao, acao: AcaoAgenteIA): Promise<void> {
-  let leadId = acao.oportunidadeId;
-  if (!leadId && acao.atendimentoId) {
-    leadId = (await tx.atendimentoWhatsApp.findUnique({ where: { id: acao.atendimentoId }, select: { leadId: true } }))?.leadId ?? null;
-  }
-  if (leadId) {
-    const visivel = await tx.oportunidade.findFirst({ where: { AND: [{ id: leadId }, await escopoComercialAtual(u, tx)] }, select: { id: true } });
-    if (visivel) return;
-  } else if (u.papeis.includes(Papel.ADMINISTRADOR)) return;
-  throw new ErroRegra("Esta ação está fora do seu escopo.");
+  if (!(await podeDecidirAcaoAria(tx, u, acao))) throw new ErroRegra("Esta ação está fora do seu escopo.");
 }
 
 const travarLead = (tx: Tx, id: string) => tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;

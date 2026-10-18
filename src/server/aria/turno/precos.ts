@@ -13,7 +13,14 @@ export interface PrecoAria {
 export async function precosDaOportunidade(oportunidadeId: string, tx?: Prisma.TransactionClient): Promise<PrecoAria[]> {
   const db = tx ?? prisma;
   const op = await db.oportunidade.findUnique({ where: { id: oportunidadeId }, select: { paisId: true } });
-  if (!op?.paisId) return [];
+  return precosDoPais(op?.paisId ?? null, tx);
+}
+
+/** Mesma regra de `precosDaOportunidade`, a partir do país (usada também pelo playground). */
+export async function precosDoPais(paisId: string | null, tx?: Prisma.TransactionClient): Promise<PrecoAria[]> {
+  const db = tx ?? prisma;
+  if (!paisId) return [];
+  const op = { paisId };
   const precos = await db.precoReferencia.findMany({
     where: {
       paisId: op.paisId,

@@ -10,6 +10,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Áreas
   "/academico": "Acadêmico",
   "/alunos": "Alunos",
+  "/aria": "Agente de IA",
   "/carteira": "Carteira",
   "/comissoes": "Comissões",
   "/relatorios": "Relatórios",
