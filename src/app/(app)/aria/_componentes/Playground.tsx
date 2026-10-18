@@ -9,7 +9,8 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL } from "@/lib/labels";
 import { ETAPAS_ARIA } from "@/server/aria/matriz";
-import { testarAria, type ResultadoPlayground } from "@/server/aria/playground";
+import { testarAria } from "@/server/aria/acoes";
+import type { ResultadoPlayground } from "@/server/aria/playground";
 import { CONTROLE } from "./Campos";
 
 type Props = { paises: { id: string; nome: string }[]; temRascunho: boolean; nome: string };

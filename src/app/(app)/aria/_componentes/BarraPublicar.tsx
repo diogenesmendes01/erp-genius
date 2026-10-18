@@ -6,7 +6,8 @@ import { Botao } from "@/components/Botao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { descartarRascunho, publicarRascunho, type RascunhoAberto } from "@/server/aria/versoes";
+import { descartarRascunho, publicarRascunho } from "@/server/aria/acoes";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 
 type Props = {
   /** Caminhos alterados do rascunho em relação à versão publicada (ex.: "confianca.executaAPartirDe"). */

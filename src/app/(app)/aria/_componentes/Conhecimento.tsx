@@ -10,7 +10,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { STATUS_FONTE_CONHECIMENTO_LABEL } from "@/lib/labels";
-import { arquivarFonte, criarFonteTexto } from "@/server/aria/conhecimento/fontes";
+import { arquivarFonte, criarFonteTexto } from "@/server/aria/acoes";
 import type { ConfigAria } from "@/server/aria/config-schema";
 import type { FonteTela } from "@/server/aria/tela";
 import { CONTROLE, Interruptor } from "./Campos";

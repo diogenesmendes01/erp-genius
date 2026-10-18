@@ -10,7 +10,7 @@ import { Campo } from "@/components/Campo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ESTADO_POLITICA_LABEL } from "@/lib/labels";
-import { definirEstadoAria, pausarAria, reativarAria } from "@/server/aria/estado";
+import { definirEstadoAria, pausarAria, reativarAria } from "@/server/aria/acoes";
 
 type Props = {
   nome: string;

@@ -7,7 +7,7 @@ import { Campo } from "@/components/Campo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { ConfigAria } from "@/server/aria/config-schema";
-import { definirSupervisao } from "@/server/aria/estado";
+import { definirSupervisao } from "@/server/aria/acoes";
 import { CONTROLE } from "./Campos";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
