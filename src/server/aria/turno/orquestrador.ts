@@ -1,7 +1,7 @@
 import type { AcaoAgenteIATipo, EtapaLead, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { configPadrao, modoDaAcao, type ConfigAria } from "../config-schema";
-import { escolherProvedor, ErroProvedorIA, type ProvedorIA, type RespostaIA } from "../provedor";
+import { chaveConfigurada, escolherProvedor, ErroProvedorIA, type ProvedorIA, type RespostaIA } from "../provedor";
 import { registrarChamadaIA, estadoOrcamento } from "../uso";
 import { situacaoAria } from "../estado";
 import { montarContextoTurno, montarSistema, ocultarDadosPessoais, type ContextoTurno } from "./contexto";
@@ -139,7 +139,16 @@ async function executarTurno(
 
   // Chamada ao provedor fora de transação.
   const cfgIA = await prisma.configIA.upsert({ where: { id: "ia" }, create: { id: "ia" }, update: {} });
-  const provedor = provedorInjetado ?? escolherProvedor({ conversa: cfgIA.modeloConversa, classificacao: cfgIA.modeloClassificacao });
+  // ATIVA sem chave: o simulado nunca fala com cliente real; vira erro de provedor (handoff ERRO_PROVEDOR).
+  const semChaveEmAtiva = !provedorInjetado && situacao.estado === "ATIVA" && !chaveConfigurada();
+  const provedor: ProvedorIA = semChaveEmAtiva
+    ? {
+        nome: "anthropic",
+        async gerar() {
+          throw new ErroProvedorIA("SEM_CHAVE");
+        },
+      }
+    : (provedorInjetado ?? escolherProvedor({ conversa: cfgIA.modeloConversa, classificacao: cfgIA.modeloClassificacao }));
   let resposta: RespostaIA | null = null;
   let chamadaId: string | null = null;
   const inicio = Date.now();
