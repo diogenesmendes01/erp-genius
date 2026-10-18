@@ -36,6 +36,8 @@ $COMPOSE exec -T app tar -czf - -C /app/data uploads > "$PASTA/uploads.tar.gz"
 #    O tar roda num container auxiliar que monta o volume do container do motor
 #    (--volumes-from, só leitura): não depende de a imagem do motor ter tar.
 #    O motor fica fora do ar por alguns segundos; o webhook e a fila do ERP reenviam depois.
+#    Um 503 isolado de "Motor WhatsApp inalcançável" no /api/whatsapp/health nessa janela é
+#    esperado (SETUP.md §backup).
 IMAGEM_TAR="${IMAGEM_TAR:-alpine:3.20}"
 MOTOR_CID="$($COMPOSE ps -aq motor)"
 [ -n "$MOTOR_CID" ] || { echo "[backup] ERRO: container do motor não encontrado" >&2; exit 1; }

@@ -3022,3 +3022,36 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
     rodada só a regra 15 de `regras-inbox` falhou (acima); corrigida, o arquivo rodou de novo isolado: 21 testes verdes.
   - O `npm run test:int` completo fica com o integrador.
 **Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
+## Fase 4F — E2E com motor simulado (18/10/2026)
+
+- Branch `claude/fase4-f-e2e` (PR empilhado sobre `claude/fase4-e-remove-legados`), tarefa 27 do plano `04-fase-motor.md`:
+  motor simulado (`src/test/motor-simulado.ts`) e teste de ponta a ponta (`src/server/whatsapp/motor/ponta-a-ponta.int.test.ts`).
+  A tarefa 28 (roteiro com aparelho real) segue com o integrador.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` sobre os 2 arquivos do diff: 1 arquivo, 6 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4E).
+
+**Base trocada para `main` e correções da R1 do #222 (18/10/2026)**
+
+- **Merge do `main`** (`d15e0969`, #221 com a 4E). Conflito só neste quadro (ficam os blocos de cada PR).
+- **C3:** `MotorSimulado.reiniciar()` zera recebidos, enviadas, contador de ids, idempotência por `clientMessageId`,
+  falha e mídia; o `beforeEach` do ponta a ponta chama `sim.reiniciar()`. O primeiro caso lê o `providerMessageId`/`mensagemIdMotor`
+  de `sim.enviadas` em vez de fixar `3EB01`. Caso novo prova o reinício (o mesmo `clientMessageId` recebe id novo, sem cache).
+- **C4:** `RESULTADO_INCERTO` no simulado agora significa "enviou, mas a confirmação se perdeu" (registra a mensagem e responde 502).
+  Caso novo: intenção `FALHOU`/`resultado_incerto`, o despacho não reenvia sozinho, o reenvio com o mesmo `clientMessageId`
+  devolve a mesma mensagem (uma só em `sim.enviadas`) e o eco repetido registra um único `EnvioIncertoConfirmadoPeloMotor`
+  sem criar `MensagemWhatsApp`. A opção `falharEnvio` de `iniciarMotorSimulado` saiu (ninguém a usava; `reiniciar()` volta a `null`).
+- **#221 C2:** `SETUP.md` (§Backup diário), `docs/31` §4 e o cabeçalho de `backup-producao.sh` citam o 503 isolado de
+  "Motor WhatsApp inalcançável" esperado às 03:15, com o motor parado durante o tar. O §4 do doc 31 deixa de citar a Evolution.
+- **`scripts/auditoria/cenarios.test.mjs`:** mock de `drivers/motor` no lugar de `drivers/meta-cloud`/`evolution`, número de teste
+  `MOTOR`. O script já não rodava antes: importava `whatsapp/cron-comercial`, removido na E1 (`53c69b4b`). W03 saiu com o cron
+  comercial; W04 fica no registro do reagendamento; W05 confere que um novo `despacharFila` não reabre a falha.
+  Rodado (`vitest run -c scripts/auditoria/vitest.config.ts`, com banco descartável): 18 verdes, 10 falhas, 1 pulado. As falhas são
+  deriva de API fora do WhatsApp (`registrarPagamento` exige campos novos, alçadas novas de retomada/país, A01/A06); a suíte é de
+  auditoria e pode falhar por desenho. W01, W02, W05 e W07 passam com o motor mockado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 715 arquivos, 5308 testes verdes.
+- Integração (banco descartável): `ponta-a-ponta.int.test.ts` 8 testes verdes; `src/server/whatsapp/motor`: 14 arquivos, 112 testes verdes.
+**Estado**: Implementado; base `main` (não empilhado); correções da R1 aplicadas; aguardando revisão.
