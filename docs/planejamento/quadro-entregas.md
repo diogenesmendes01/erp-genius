@@ -2,6 +2,21 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Auditoria de regras atualizada para as APIs atuais (18/10/2026)
+
+Branch `claude/auditoria-atualizada`, base `main` (após o #222). A suíte `scripts/auditoria/cenarios.test.mjs` passou de 18 verdes, 10 falhas e 1 pulado para **28 verdes e 1 pulado (F03, inconclusivo por mocks, como antes)**. Nenhuma das 10 falhas era defeito do produto: todas vinham de contrato de API ou regra nova intencional. Nenhum critério auditado foi afrouxado.
+
+- **F01, F02, F05, F06, W06**: `registrarPagamento` exige `chaveIdempotencia` (16 caracteres ou mais) e evidência da destinação (`comentario`, 5 caracteres ou mais). O helper `pagamento()` passou a enviar os dois campos.
+- **F01**: um ajuste pedido pela administração agora gera `Aprovacao` (alçada nova). O cenário confere `{ aprovacao: true }` e faz uma segunda pessoa da direção aprovar (`decidirAprovacao`) antes de medir o saldo.
+- **F05, F06**: a ativação exige um contrato vigente confirmado pela secretaria e a cobertura da primeira mensalidade conferida. O helper `contratoConfirmado()` monta essas pré-condições no banco, como faz `comissao-aprovada-em.int.test.ts`. A ativação também exige evidência (`comentario`).
+- **F07** (regra nova): o recebimento já não ativa a matrícula sem contrato confirmado. O cenário prova que a ativação é recusada e que a matrícula continua `AGUARDANDO`, com `contratoOk=false` e sem quem confirmou.
+- **F08** (regra nova): a retomada direta foi desativada. O cenário prova que `reativarAluno` recusa e que a própria solicitante não aprova a retomada. A retomada passa por `solicitarRetomada` e pela aprovação de outra pessoa do Financeiro (`decidirRetomada`), e a cobrança futura volta a `PENDENTE`.
+- **F11** (regra nova): os tipos de documento são editados por id. O cenário prova que excluir um tipo em uso é recusado e que renomear pelo id preserva o `tipoDocumentoId` do aluno.
+- **A01** (e C03): o escopo docente exige `VinculoDocente` vigente. O helper `turma()` cria esse vínculo, e o C03 deixou de passar sem testar nada.
+- **A06** (contrato novo): a busca fora do escopo devolve listas vazias em vez de um erro. O cenário usa um atendimento real da secretaria e faz uma contraprova: o administrador encontra o aluno e o professor não, com ou sem o `atendimentoId`.
+- O `vitest.config.ts` da auditoria passou a usar o banco do perfil de teste (`DATABASE_URL_TESTE`, o mesmo do `globalSetup`) e a apagar `MOTOR_URL` e `MOTOR_API_KEY`.
+- Verificação: auditoria com 28 verdes e 1 pulado (banco descartável). `tsc --noEmit` com saída 0. `npm run lint`: 0 erros e 40 avisos. `npm test`: 715 arquivos e 5308 testes verdes.
+- **Estado**: implementado; aguardando revisão.
 ## Inbox novo — encaminhar e aviso de convite (18/10/2026)
 
 Branch `claude/inbox-encaminhar-convite`. Pendências deixadas pela Fase 4D (#219) e pelo #220.
