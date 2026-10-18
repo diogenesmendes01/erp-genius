@@ -102,18 +102,25 @@ export async function processarTurnoAria(mensagemId: string, deps: DepsTurno = {
   }
 }
 
-/** Só inbound que a Aria responderia supera outro (áudio/figurinha param em SEM_TEXTO e não respondem por ela). */
+/** Tipos que a Aria pode responder (o corpo ainda precisa ter texto: ver `haFalaQueSupera`). */
 const tiposQueSuperam = () => ({ in: [...TIPOS_COM_TEXTO] });
 
-/** Há inbound mais novo (não apagado, de tipo que a Aria responde) no mesmo atendimento depois desta âncora. */
-async function falaSuperada(atendimentoId: string, criadoEm: Date, ancoraId: string): Promise<boolean> {
-  const n = await prisma.mensagemWhatsApp.count({
-    where: {
-      atendimentoId, direcao: "ENTRADA", apagadaEm: null, id: { not: ancoraId }, tipo: tiposQueSuperam(),
-      OR: [{ criadoEm: { gt: criadoEm } }, { criadoEm, id: { gt: ancoraId } }],
-    },
+/**
+ * Só supera outra fala o inbound que a Aria responderia: tipo de TIPOS_COM_TEXTO e corpo não vazio
+ * após trim. Áudio/figurinha e foto/vídeo/documento sem legenda param em SEM_TEXTO; se superassem,
+ * ninguém responderia a pergunta anterior (B4 e B2 da R2 do #234).
+ */
+async function haFalaQueSupera(where: Prisma.MensagemWhatsAppWhereInput): Promise<boolean> {
+  const posteriores = await prisma.mensagemWhatsApp.findMany({
+    where: { ...where, direcao: "ENTRADA", apagadaEm: null, tipo: tiposQueSuperam(), corpo: { not: null } },
+    select: { corpo: true },
   });
-  return n > 0;
+  return posteriores.some((m) => !!m.corpo?.trim());
+}
+
+/** Há fala mais nova (não apagada, que a Aria responderia) no mesmo atendimento depois desta âncora. */
+function falaSuperada(atendimentoId: string, criadoEm: Date, ancoraId: string): Promise<boolean> {
+  return haFalaQueSupera({ atendimentoId, id: { not: ancoraId }, OR: [{ criadoEm: { gt: criadoEm } }, { criadoEm, id: { gt: ancoraId } }] });
 }
 
 interface MsgTurno {
@@ -385,10 +392,7 @@ export async function reprocessarTurnosPendentes(agora: Date = new Date()): Prom
   for (const m of candidatas) {
     if (comTurno.has(m.id)) continue;
     // Só a última fala do cliente: uma pergunta antiga não deve ser respondida fora de hora.
-    const posterior = await prisma.mensagemWhatsApp.count({
-      where: { atendimentoId: m.atendimentoId, direcao: "ENTRADA", apagadaEm: null, tipo: tiposQueSuperam(), criadoEm: { gt: m.criadoEm } },
-    });
-    if (posterior > 0) continue;
+    if (await haFalaQueSupera({ atendimentoId: m.atendimentoId, criadoEm: { gt: m.criadoEm } })) continue;
     try {
       const r = await processarTurnoAria(m.id, { agora });
       if (!("duplicado" in r)) processadas++;
