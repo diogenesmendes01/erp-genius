@@ -2963,3 +2963,13 @@ Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6
 - `npm run lint`: saída 0; 0 erros, 44 avisos (linha de base 43; os avisos são do tipo `no-unused-vars`).
 - Integração, banco do perfil `tester` (`tester34`), recorte: `vitest related` sobre os 41 .ts do diff contra `claude/fase5-b-config` alcança praticamente toda a suíte (passou de 38 min e foi interrompido). Em seu lugar, `vitest run -c vitest.integration.config.ts` nos 12 `*.int.test.ts` do diff mais `src/server/aria`, `whatsapp/{despachante,inbound,atendimentos}` e `crm/mensagens-agendadas`: saída 0; 23 arquivos, 208 testes verdes.
 - Pendente para o integrador: `npm run test:int` completo, comparando com as falhas preexistentes conhecidas.
+
+## Fase 5, bloco D — tela da Aria, playground e Aria no Inbox, Tasks 26 a 29 (18/10/2026)
+
+Branch `claude/fase5-d-tela` (empilhada sobre `claude/fase5-c-turno`; main 6d6d33ee + 24af270d). Tasks 26 (menu e consultas de visão geral e histórico), 27 (tela com abas, matriz por papel e publicação com diff), 28 (playground sem efeito) e 29 (estado da Aria, devolver e sugestões no painel do Inbox), mais o commit de correção da revisão. Só provedor e motor simulados.
+
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 733 arquivos, 5414 testes verdes (linha de base ~714/~5270).
+- `npm run lint`: saída 0; 0 erros, 44 avisos (linha de base 43).
+- Integração, banco do perfil `tester`, recorte: `vitest related` sobre os 61 .ts/.tsx do diff contra `claude/fase5-c-turno` alcança praticamente toda a suíte (passou de 18 min e foi interrompido por mim). Em seu lugar, `vitest run -c vitest.integration.config.ts` em `src/server/aria`, `inbox/paineis.int.test.ts`, `whatsapp/consultas-inbox.aria.int.test.ts`, `whatsapp/inbound-triagem-aria.int.test.ts` e `whatsapp/despachante`: saída 0; 27 arquivos, 254 testes verdes.
+- Pendente para o integrador: `npm run test:int` completo, comparando com as falhas preexistentes conhecidas.
