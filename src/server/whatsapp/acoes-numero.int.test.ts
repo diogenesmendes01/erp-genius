@@ -38,9 +38,12 @@ describe("salvarSetoresNumero", () => {
     expect(await setoresDoNumero(prisma, n.id)).toEqual(["FINANCEIRO", "SECRETARIA"]);
     const num = await prisma.numeroWhatsApp.findUnique({ where: { id: n.id } });
     expect(num?.triagemResponsavelId).toBe(sec.id);
-    const ev = (await eventosDo("NumeroWhatsApp", n.id)).filter((e) => e.tipo === "SetoresNumeroAlterados");
+    const ev = (await eventosDo("NumeroWhatsApp", n.id)).filter((e) => e.tipo === "NumeroSetoresAlterados");
     expect(ev).toHaveLength(1);
-    expect(ev[0].payload).toEqual({ de: ["COMERCIAL"], para: ["FINANCEIRO", "SECRETARIA"], triagemResponsavelId: sec.id });
+    expect(ev[0].payload).toEqual({ de: ["COMERCIAL"], para: ["FINANCEIRO", "SECRETARIA"] });
+    const tri = (await eventosDo("NumeroWhatsApp", n.id)).filter((e) => e.tipo === "NumeroTriagemAlterada");
+    expect(tri).toHaveLength(1);
+    expect(tri[0].payload).toEqual({ de: null, para: sec.id });
   });
 
   it("recusa lista vazia e quem não é admin", async () => {

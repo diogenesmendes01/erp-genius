@@ -8,6 +8,8 @@ import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./li
 import { comContatoIndividual } from "./grupos";
 import { setoresDoNumero } from "./numero-setor";
 import { registrarEvento } from "@/server/_shared";
+import { atribuirAutomaticamente } from "@/server/crm-config/distribuicao";
+import { comSavepoint } from "./savepoint";
 import { MSG_FINANCEIRO_EXIGE_MATRICULA, MSG_MATRICULA_DE_OUTRO_ALUNO, MSG_MATRICULA_EXIGE_ALUNO } from "./erro-regra-atendimento";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
@@ -89,7 +91,18 @@ export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: 
  * Linha comercial: toda mensagem vai para o atendimento único da conversa (SPEC-ERP-005 §5.2).
  * Canal institucional: não adivinha o assunto quando há mais de um atendimento aberto — fica na triagem.
  */
-export async function atendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
+export async function atendimentoDoInbound(
+  tx: Prisma.TransactionClient, conversaId: string, opcoes: { atribuir: boolean },
+): Promise<string | null> {
+  const id = await resolverAtendimentoDoInbound(tx, conversaId);
+  // Abertura sem responsável: a distribuição do setor (Fase 5F) atribui só no 1º inbound DO CONTATO.
+  // Mensagem `fromMe` (celular da escola) e chamada recebida passam `atribuir: false` para não
+  // consumir a vez do rodízio nem dar o atendimento a outra pessoa; sem regra, fica na fila.
+  if (id && opcoes.atribuir) await atribuirAutomaticamente(tx, id);
+  return id;
+}
+
+async function resolverAtendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
   const abertos = await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, include: { conversa: { include: { contato: true } } }, take: 2 });
   // Assunto institucional aberto: o roteamento institucional vale mesmo num número de VENDAS (LC-I01).
   if (abertos.every((a) => a.finalidade === "COMERCIAL")) {
@@ -111,7 +124,8 @@ export async function atendimentoDoInbound(tx: Prisma.TransactionClient, convers
   // classificação pela Aria depois do commit: `agendarTriagemAria`).
   const setores = await setoresDoNumero(tx, c.numeroId);
   if (setores.length !== 1) return null;
-  const atendimento = await abrirAtendimentoDoSetor(tx, { numeroId: c.numeroId, contatoId: c.contatoId, contato: c.contato }, setores[0]);
+  // Sem atribuir aqui: atendimentoDoInbound decide (mensagem fromMe e chamada não atribuem).
+  const atendimento = await abrirAtendimentoDoSetor(tx, { numeroId: c.numeroId, contatoId: c.contatoId, contato: c.contato }, setores[0], { atribuir: false });
   return atendimento && !atendimento.encerradoEm ? atendimento.id : null;
 }
 
@@ -119,8 +133,31 @@ export async function atendimentoDoInbound(tx: Prisma.TransactionClient, convers
  * Abre (ou reaproveita) o atendimento do setor para o contato, com a regra de contexto da Fase 3:
  * FINANCEIRO só com uma única matrícula possível; PEDAGOGICO exige matrícula e autorização explícitas
  * (nunca abre automaticamente). Devolve null quando o contexto não permite abrir.
+ *
+ * Ponto comum de abertura por setor (inbound e triagem da Aria, Fase 5C): por padrão aplica a
+ * distribuição do setor (Fase 5F) ao atendimento aberto sem responsável, para quem abre por aqui
+ * sem passar por atendimentoDoInbound também entrar no rodízio.
  */
 export async function abrirAtendimentoDoSetor(
+  tx: Prisma.TransactionClient,
+  c: { numeroId: string; contatoId: string; contato: { leadId: string | null; alunoId: string | null } },
+  setor: FinalidadeAtendimentoWhatsApp,
+  opcoes: { atribuir: boolean } = { atribuir: true },
+) {
+  const atendimento = await abrirSemAtribuir(tx, c, setor);
+  if (atendimento && !atendimento.encerradoEm && opcoes.atribuir) {
+    // A atribuição roda num SAVEPOINT: se ela falhar (ex.: erro de banco no FOR UPDATE), a transação do
+    // chamador continua utilizável e o atendimento fica na fila do setor, sem responsável.
+    const responsavelId = await comSavepoint(tx, "atribuir_setor", () => atribuirAutomaticamente(tx, atendimento.id), (e) => {
+      console.error("[distribuicao] atribuição automática falhou; atendimento fica na fila do setor:", e);
+      return null;
+    });
+    if (responsavelId) return { ...atendimento, responsavelId, status: "EM_ATENDIMENTO" as const };
+  }
+  return atendimento;
+}
+
+async function abrirSemAtribuir(
   tx: Prisma.TransactionClient,
   c: { numeroId: string; contatoId: string; contato: { leadId: string | null; alunoId: string | null } },
   setor: FinalidadeAtendimentoWhatsApp,

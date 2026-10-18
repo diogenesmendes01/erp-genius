@@ -83,7 +83,8 @@ export async function montarContextoTurno(atendimentoId: string, tx?: Prisma.Tra
 
   const publicada = await versaoPublicada(tx);
   const config = publicada?.config;
-  const ultimaFala = [...mensagens].reverse().find((m) => m.direcao === "ENTRADA")?.texto ?? "";
+  // Última fala COM texto: áudio, figurinha ou imagem sem legenda (corpo vazio) não apagam a busca nas fontes.
+  const ultimaFala = [...mensagens].reverse().find((m) => m.direcao === "ENTRADA" && m.texto.trim() !== "")?.texto ?? "";
   // buscarTrechos usa o cliente global; fontes só entram quando há fala e fontes ativas.
   const trechos = config && ultimaFala ? (await buscarTrechos(ultimaFala, config.fontesAtivas)).map((t) => ({ id: t.id, texto: t.texto })) : [];
 
