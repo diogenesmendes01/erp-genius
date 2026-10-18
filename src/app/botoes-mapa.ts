@@ -903,6 +903,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> ← Voltar → secundario/lg",
     "<button> Processando… · Salvar matrícula → secundario/lg",
   ],
+  "relatorios/_componentes/Filtros.tsx": [
+    "<button> Filtrar → secundario/md",
+    "<a> Exportar CSV → secundario/md",
+  ],
+  "relatorios/_componentes/PainelDetalhe.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
   "secretaria/CondicoesEncerramento.tsx": [
     "<button> Registrar decisão → secundario/lg",
     "<button> Enviar para aprovação administrativa → secundario/lg",
