@@ -20,6 +20,7 @@ export const CONFIG_TABS: ConfigTab[] = [
   { href: "/configuracao/usuarios", label: "Usuários", papeis: [Papel.ADMINISTRADOR] },
   { href: "/configuracao/operacao", label: "Operação", papeis: [Papel.ADMINISTRADOR] },
   { href: "/configuracao/migracao", label: "Preparação de migração", papeis: [Papel.ADMINISTRADOR] },
+  { href: "/configuracao/crm", label: "CRM", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL] },
   // Canal WhatsApp: só o administrador vê as seções (o Gerente Comercial saiu na E1). O gate real está em whatsapp/secoes.ts + o guard de cada página de seção (E8).
   {
     href: "/configuracao/whatsapp",
