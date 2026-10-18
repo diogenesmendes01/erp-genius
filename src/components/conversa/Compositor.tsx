@@ -226,9 +226,10 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
         </div>
       )}
       {sugestoes.length > 0 && (
-        <ul role="listbox" aria-label="Respostas rápidas" className={`mb-2 ${CLASSE_PAINEL_MENU}`}>
+        // Lista simples de botões (Tab chega a cada um): listbox exigiria foco gerenciado e setas.
+        <ul aria-label="Respostas rápidas" className={`mb-2 ${CLASSE_PAINEL_MENU}`}>
           {sugestoes.map((s) => (
-            <li key={s.id} role="option" aria-selected={false}>
+            <li key={s.id}>
               <button type="button" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => { mudar(aplicarVariaveisResposta(s.corpo, variaveisResposta)); entrada.current?.focus(); }}>
                 <strong>{s.atalho}</strong> <span className="text-gray-600">{s.titulo}</span>
               </button>

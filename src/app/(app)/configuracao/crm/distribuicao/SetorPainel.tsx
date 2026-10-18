@@ -28,6 +28,8 @@ const REGRAS = [
   { v: "RODIZIO", t: "Rodízio" },
   { v: "MENOR_CARGA", t: "Menor carga" },
 ] as const;
+/** Alertas e "só no horário" já são gravados, mas nada os consome ainda (prazo e alertas do SLA: pendência no quadro). */
+export const AVISO_SLA_EM_BREVE = "Em breve: os alertas e a contagem só no horário ficam gravados, mas ainda não mudam o prazo nem disparam avisos.";
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
 
 export function SetorPainel(p: SetorPainelProps) {
@@ -76,6 +78,7 @@ export function SetorPainel(p: SetorPainelProps) {
       <label className="flex items-center gap-1"><input type="checkbox" checked={alGer} onChange={(e) => setAlGer(e.target.checked)} />Alertar o gerente</label>
       <label className="flex items-center gap-1"><input type="checkbox" checked={horario} onChange={(e) => setHorario(e.target.checked)} />Contar só no horário de atendimento</label>
     </div>
+    <p className="mt-1 text-xs text-gray-500">{AVISO_SLA_EM_BREVE}</p>
     <button className={`${botaoClasses({ tamanho: "md" })} mt-4`} disabled={acao.ocupado} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar setor"}</button>
     <FeedbackAcao erro={acao.erro} className="mt-3" />
   </section>;

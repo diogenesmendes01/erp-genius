@@ -7,6 +7,7 @@ import { atualizarPerfilNumero, atualizarPrivacidadeNumero, definirTemporariasNu
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { privacidadeInicial } from "./privacidade-inicial";
 
 // Perfil, privacidade e mensagens temporárias de cada número MOTOR (só ADMINISTRADOR).
 // O motor é chamado primeiro; se ele recusar, nada é salvo no ERP.
@@ -25,7 +26,6 @@ const DURACOES = [
   { s: 604800, l: "7 dias" },
   { s: 7776000, l: "90 dias" },
 ] as const;
-const PRIV_PADRAO = { vistoPorUltimo: "CONTATOS", foto: "CONTATOS", recado: "CONTATOS", grupos: "CONTATOS" } as const;
 
 export function PerfilNumeroPainel({ numeros }: { numeros: PerfilNumeroDados[] }) {
   if (numeros.length === 0) return null;
@@ -45,7 +45,7 @@ function PainelDoNumero({ n }: { n: PerfilNumeroDados }) {
   const [nome, setNome] = useState(n.perfilNome ?? "");
   const [recado, setRecado] = useState(n.perfilRecado ?? "");
   const [foto, setFoto] = useState<File | null>(null);
-  const [priv, setPriv] = useState(n.privacidade ?? PRIV_PADRAO);
+  const [priv, setPriv] = useState(privacidadeInicial(n.privacidade));
   const [segundos, setSegundos] = useState<number>(n.temporariasSegundos);
   const [confirmacao, setConfirmacao] = useState("");
   const aPerfil = useAcaoCliente({ idempotente: true });

@@ -8,7 +8,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
-import { atendimentoDoInbound } from "@/server/whatsapp/atendimentos";
+import { abrirAtendimentoDoSetor, atendimentoDoInbound } from "@/server/whatsapp/atendimentos";
 import { processarMensagemNormalizada } from "@/server/whatsapp/inbound";
 import { salvarDistribuicaoSetor } from "./distribuicao";
 import { salvarConfigSetor, salvarSlaSetor } from "./sla";
@@ -144,5 +144,27 @@ describe("Distribuição e SLA por setor", () => {
     expect(atendimento.responsavelId).toBeNull();
     expect((await eventos()).some((e) => e.tipo === "AtendimentoAtribuido")).toBe(false);
     expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } })).ultimoAtribuidoId).toBeNull();
+  });
+
+  // Ponto comum de abertura por setor: a triagem da Aria (5C) abre direto por aqui, sem passar por
+  // atendimentoDoInbound, e também entra no rodízio.
+  it("abrir_atendimento_do_setor_entra_no_rodizio", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
+    const abrir = async (atribuir?: boolean) => {
+      seq += 1;
+      const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: `+5069100${String(seq).padStart(4, "0")}` } });
+      const a = await prisma.$transaction((tx) => abrirAtendimentoDoSetor(
+        tx, { numeroId, contatoId: contato.id, contato: { leadId: null, alunoId: null } }, "COMERCIAL",
+        ...(atribuir === undefined ? [] : [{ atribuir }]),
+      ));
+      return prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a!.id } });
+    };
+    const a1 = await abrir();
+    const a2 = await abrir();
+    expect([a1.responsavelId, a2.responsavelId]).toEqual([v1.id, v2.id]);
+    expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ atendimentoId: a2.id, motivo: "RODIZIO" });
+    const semAtribuir = await abrir(false);
+    expect(semAtribuir.responsavelId).toBeNull();
+    expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } })).ultimoAtribuidoId).toBe(v2.id);
   });
 });

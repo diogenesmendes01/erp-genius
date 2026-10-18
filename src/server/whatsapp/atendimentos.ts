@@ -122,28 +122,56 @@ async function resolverAtendimentoDoInbound(tx: Prisma.TransactionClient, conver
   // Roteamento por setor do número: zero ou vários setores → triagem. A classificação pela Aria é da Fase 5.
   const setores = await setoresDoNumero(tx, c.numeroId);
   if (setores.length !== 1) return null;
+  // Sem atribuir aqui: atendimentoDoInbound decide (mensagem fromMe e chamada não atribuem).
+  const atendimento = await abrirAtendimentoDoSetor(tx, { numeroId: c.numeroId, contatoId: c.contatoId, contato: c.contato }, setores[0], { atribuir: false });
+  return atendimento && !atendimento.encerradoEm ? atendimento.id : null;
+}
+
+/**
+ * Abre (ou reaproveita) o atendimento do setor para o contato, com a regra de contexto da Fase 3:
+ * FINANCEIRO só com uma única matrícula possível; PEDAGOGICO exige matrícula e autorização explícitas
+ * (nunca abre automaticamente). Devolve null quando o contexto não permite abrir.
+ *
+ * Ponto comum de abertura por setor (inbound e triagem da Aria, Fase 5C): por padrão aplica a
+ * distribuição do setor (Fase 5F) ao atendimento aberto sem responsável, para quem abre por aqui
+ * sem passar por atendimentoDoInbound também entrar no rodízio.
+ */
+export async function abrirAtendimentoDoSetor(
+  tx: Prisma.TransactionClient,
+  c: { numeroId: string; contatoId: string; contato: { leadId: string | null; alunoId: string | null } },
+  setor: FinalidadeAtendimentoWhatsApp,
+  opcoes: { atribuir: boolean } = { atribuir: true },
+) {
+  const atendimento = await abrirSemAtribuir(tx, c, setor);
+  if (atendimento && !atendimento.encerradoEm && opcoes.atribuir) {
+    const responsavelId = await atribuirAutomaticamente(tx, atendimento.id);
+    if (responsavelId) return { ...atendimento, responsavelId, status: "EM_ATENDIMENTO" as const };
+  }
+  return atendimento;
+}
+
+async function abrirSemAtribuir(
+  tx: Prisma.TransactionClient,
+  c: { numeroId: string; contatoId: string; contato: { leadId: string | null; alunoId: string | null } },
+  setor: FinalidadeAtendimentoWhatsApp,
+) {
   const base = { numeroId: c.numeroId, contatoId: c.contatoId, reabrir: true as const };
-  let atendimento;
-  switch (setores[0]) {
+  switch (setor) {
     case "COMERCIAL":
-      atendimento = await garantirAtendimento(tx, { ...base, finalidade: "COMERCIAL", leadId: c.contato.leadId });
-      break;
+      return garantirAtendimento(tx, { ...base, finalidade: "COMERCIAL", leadId: c.contato.leadId });
     case "SECRETARIA":
-      atendimento = await garantirAtendimento(tx, { ...base, finalidade: "SECRETARIA", alunoId: c.contato.alunoId });
-      break;
+      return garantirAtendimento(tx, { ...base, finalidade: "SECRETARIA", alunoId: c.contato.alunoId });
     case "FINANCEIRO": {
       if (!c.contato.alunoId) return null;
       // A identidade não escolhe contrato: só roteia quando existe uma única matrícula possível.
       const matriculas = await tx.matricula.findMany({ where: { alunoId: c.contato.alunoId }, select: { id: true }, take: 2 });
       if (matriculas.length !== 1) return null;
-      atendimento = await garantirAtendimento(tx, { ...base, finalidade: "FINANCEIRO", alunoId: c.contato.alunoId, matriculaId: matriculas[0].id });
-      break;
+      return garantirAtendimento(tx, { ...base, finalidade: "FINANCEIRO", alunoId: c.contato.alunoId, matriculaId: matriculas[0].id });
     }
     default:
       // PEDAGOGICO: a abertura exige matrícula e autorização explícitas.
       return null;
   }
-  return atendimento.encerradoEm ? null : atendimento.id;
 }
 
 /**
