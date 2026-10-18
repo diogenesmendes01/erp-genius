@@ -3103,3 +3103,10 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
   `comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `secretaria/politica`, `whatsapp/{inbox,acesso-atendimento,motor}`
   (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
   39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+### Fase 5F, Task 38: Configurações › Números (setores, triagem, perfil, privacidade, temporárias) — 2026-10-18
+
+- `src/server/crm-config/{numeros,perfil-numero}.ts` (só ADMINISTRADOR, motor chamado antes de gravar, `Evento` `NumeroSetoresAlterados`, `NumeroTriagemAlterada`, `NumeroPerfilAlterado`, `NumeroPrivacidadeAlterada`, `NumeroTemporariasAlteradas` com `{de, para}`), painel `numeros/PerfilNumeroPainel.tsx`.
+- Cliente do motor em `src/server/whatsapp/motor/numero.ts` (`atualizarPerfil`, `atualizarPrivacidade`, `definirTemporarias`, injetável). O contrato /v1 do motor TEM os endpoints (`profile.update`, `profile.picture`, `privacy.update` incl. `defaultDisappearing`), então não há pendência no repositório do motor, exceto: a foto aceita no máximo 128 KB decodificados no motor (o ERP aceita até 2 MB pelo brief; acima de 128 KB o motor recusa e nada é salvo) e "adicionar a grupos" não tem a opção "ninguém" no WhatsApp.
+- As colunas `perfilNome/perfilRecado/perfilFotoUploadId/privacidade/temporariasSegundos` já vieram na migration `20261018040000_crm_configuracoes` (Task 37); nenhuma migration nova.
+- Temporárias = padrão para conversas novas (`defaultDisappearing`); conversas já abertas não mudam.

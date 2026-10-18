@@ -146,6 +146,12 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Atualizar QR → btnSec",
     "<button> Gerar código → btnSec",
   ],
+  "configuracao/whatsapp/numeros/PerfilNumeroPainel.tsx": [
+    "const btn → primario/sm",
+    "<button> Salvando… · Salvar perfil → btn",
+    "<button> Salvando… · Salvar privacidade → btn",
+    "<button> Salvando… · Salvar temporárias → btn",
+  ],
   "configuracao/whatsapp/PoliticaPainel.tsx": [
     "const btnPri → primario/md",
     "<button> Kill switch LIGADO — destravar · Kill switch → perigo|secundario/md",
