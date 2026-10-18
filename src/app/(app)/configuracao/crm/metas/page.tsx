@@ -27,7 +27,11 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
   const [progresso, vendedores] = await Promise.all([
     progressoMetas({ competencias: [competencia], escopo }),
     prisma.usuario.findMany({
-      where: { ativo: true, papeis: { has: Papel.VENDEDOR }, ...(ehAdmin ? {} : { gerenteComercialId: usuario.id }) },
+      // Quem pode receber meta: o admin vê vendedores e gerentes; o gerente, a equipe e ele mesmo (a meta dele
+      // também aparece na tabela e precisa do nome).
+      where: ehAdmin
+        ? { ativo: true, papeis: { hasSome: [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL] } }
+        : { ativo: true, OR: [{ id: usuario.id }, { gerenteComercialId: usuario.id, papeis: { has: Papel.VENDEDOR } }] },
       select: { id: true, nome: true },
       orderBy: { nome: "asc" },
     }),
@@ -57,7 +61,7 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
             <tbody>
               {progresso.map((p) => (
                 <tr key={`${p.usuarioId}-${p.metrica}-${p.moeda}`} className="border-t border-gray-200">
-                  <td className="py-1">{p.usuarioId ? (nomes.get(p.usuarioId) ?? "Vendedor") : "Equipe"}</td>
+                  <td className="py-1">{p.usuarioId ? (nomes.get(p.usuarioId) ?? "Pessoa inativa") : "Equipe"}</td>
                   <td>{METRICA_META_LABEL[p.metrica]}{p.moeda ? ` (${p.moeda})` : ""}</td>
                   <td>{p.meta}</td>
                   <td>{p.realizado}</td>

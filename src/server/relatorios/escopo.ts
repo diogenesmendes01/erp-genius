@@ -11,6 +11,11 @@ type Cliente = PrismaClient | Prisma.TransactionClient;
  * Escopo por papel, com papéis lidos FRESCOS do banco (a sessão pode estar defasada):
  * ADMINISTRADOR vê tudo; GERENTE_COMERCIAL, ele e a equipe (`gerenteComercialId`); VENDEDOR, só ele.
  * Qualquer outro papel (ou usuário inativo/inexistente) lança `ErroPermissao`.
+ *
+ * Diferença deliberada para `escopoComercialAtual` (_shared/escopo-comercial.ts), plano DF5-11: aqui o vendedor
+ * é SÓ ele. As coberturas de carteira (`CoberturaCarteira`, substituição temporária) dão acesso operacional às
+ * oportunidades do titular, mas não entram nos relatórios nem nas metas na v1: o desempenho continua de quem
+ * é o dono. O gerente também não herda coberturas — vê ele e quem tem `gerenteComercialId` apontando para ele.
  */
 export async function escopoRelatorio(u: UsuarioSessao, tx?: Cliente): Promise<EscopoRelatorio> {
   const fresco = await carregarUsuarioFresco(u.id);

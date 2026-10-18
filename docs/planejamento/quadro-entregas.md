@@ -3122,3 +3122,20 @@ Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase
 - Integração (banco descartável, `migrate deploy` completo; `migrate diff` só com a deriva preexistente de defaults de timestamp, nada em
   `MetaComercial`): `src/app/api/relatorios`, `home/consultas`, `metas`, `relatorios`, `aria`, `src/server/inbox`, `whatsapp/motor`: saída 0;
   31 arquivos, 252 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+**Correções da R1 do PR #228 (18/10/2026)**
+
+- B1: a meta EXPERIMENTAIS_REALIZADAS passa a contar a primeira `ExperimentalRealizada` (check-in do professor) por oportunidade no mês
+  da escola, aceitando também `EtapaAlterada` para EXPERIMENTAL_REALIZADA; respeita escopo e dono. Nas abas de Relatórios só o funil conta
+  experimentais, e já usava os dois eventos; Atividades e Equipe não contam experimentais.
+- C1: a aba Metas da Configuração inclui o Gerente Comercial (única aba dele; o link "Definir metas" fica na aba Equipe de Relatórios);
+  a meta do próprio gerente aparece com o nome dele.
+- C2: `/api/relatorios/exportar` recusa com 403 (mensagem "só para a gestão comercial") as abas Equipe e Aria, os filtros de responsável e
+  de autor e o detalhe por pessoa para quem não é admin nem gerente comercial.
+- C3 (DF5-11): no relatório o vendedor é só ele. Diferente de `escopoComercialAtual`, as coberturas de carteira não entram nos relatórios
+  nem nas metas na v1 (documentado em `relatorios/escopo.ts`, com teste).
+- C4: o nome da etapa no Funil diz que abre as oportunidades que estão nela agora (título, rótulo acessível e nota da tabela).
+- C5: Equipe mostra "Meta dos meses do período" e explica que soma os meses inteiros tocados; VALOR_GANHO usa `valorPrevisto`.
+- B2 (conflito de schema com o #226) fica para depois do merge do #226.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos (linha de base). `npm test`: saída 0; 727 arquivos, 5380 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`: saída 0; 8 arquivos, 68 testes verdes.

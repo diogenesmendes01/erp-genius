@@ -8,7 +8,15 @@ export function AbaEquipe({ linhas, anterior, params }: { linhas: DesempenhoUsua
   const antes = new Map(anterior.map((l) => [l.usuarioId, l]));
   return (
     <section aria-labelledby="equipe-titulo" className="space-y-1 text-sm">
-      <h2 id="equipe-titulo" className="font-medium">Desempenho por pessoa</h2>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="equipe-titulo" className="font-medium">Desempenho por pessoa</h2>
+        {/* A aba Equipe é só da gestão (admin e gerente comercial), que define as metas. */}
+        <Link href="/configuracao/crm/metas" className="text-brand-700 hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center">Definir metas</Link>
+      </div>
+      <p className="text-xs text-gray-600">
+        Meta dos meses do período: soma as metas e o realizado de cada mês inteiro que o período toca (um período de
+        20/10 a 10/11 compara outubro e novembro completos). Valor ganho usa o valor previsto das oportunidades.
+      </p>
       <div className="overflow-x-auto rounded-lg border border-border-soft">
         <table className="w-full min-w-[56rem] text-sm">
           <thead>
@@ -22,7 +30,7 @@ export function AbaEquipe({ linhas, anterior, params }: { linhas: DesempenhoUsua
               <th scope="col" className="p-2">Primeira resposta</th>
               <th scope="col" className="p-2">Tarefas concluídas</th>
               <th scope="col" className="p-2">Comissão</th>
-              <th scope="col" className="p-2">Meta do mês</th>
+              <th scope="col" className="p-2">Meta dos meses do período</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-soft">
