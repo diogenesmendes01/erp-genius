@@ -79,13 +79,13 @@ describe("painel lateral por setor", () => {
     const m = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-S" } });
     const n = await numero("COBRANCA");
     const a = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: m.id, responsavelId: sec.id });
-    expect(await carregarPainel(sess(sec), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2, podeEnviar: false, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
+    expect(await carregarPainel(sess(sec), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] }, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "c", url: "u" } });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "COMPROVANTE", nome: "x", url: "u", arquivado: true } });
     expect(await carregarPainel(sess(sec), a.id)).toMatchObject({ documentosPendentes: 1 });
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, sec);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null, podeEnviar: false, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] }, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
   });
 
   it("professor no pedagógico vê turma e frequência; sem telefone", async () => {
@@ -104,12 +104,12 @@ describe("painel lateral por setor", () => {
     const n = await numero("VENDAS");
     const a = await atendimento(n.id, (await contato({ alunoId: aluno.id, telefoneE164: "+50680001111" })).id, { finalidade: "PEDAGOGICO", alunoId: aluno.id, matriculaId: m.id, turmaId: turma.id });
     const painel = await carregarPainel(sess(prof), a.id);
-    expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75, podeEnviar: true,
+    expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75, podeEnviar: true, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] },
       acoes: expect.objectContaining({ nomeSalvo: null, nomePerfil: null, podeCriarLead: false, podeVincular: false, podeEditarNome: false, cobranca: null }) });
     expect(JSON.stringify(painel)).not.toMatch(/\+\d{6,}/);
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, prof);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null, podeEnviar: false,
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null, podeEnviar: false, aria: { pausada: false, motivo: null, podeDevolver: false, sugestoes: [] },
       acoes: expect.objectContaining({ podeVincular: false, podeEditarNome: false }) });
   });
   // C6 do #217: o compositor do Inbox novo decide pelo podeEnviar da thread (atendimentoVisivel com envio), não

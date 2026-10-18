@@ -129,6 +129,24 @@ export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
 ];
 
 export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
+  "src/app/(app)/aria/_componentes/Comportamento.tsx": [
+    "compacto · Nenhum exemplo cadastrado.",
+  ],
+  "src/app/(app)/aria/_componentes/Conhecimento.tsx": [
+    "bloco · Nenhuma fonte cadastrada. Adicione um texto abaixo para a Aria consultar.",
+    "compacto · Nenhuma pergunta cadastrada.",
+  ],
+  "src/app/(app)/aria/_componentes/Historico.tsx": [
+    "bloco · Nenhuma ação da Aria com esses filtros.",
+  ],
+  "src/app/(app)/aria/_componentes/Playground.tsx": [
+    "compacto · Escreva como se fosse o cliente. {nome} responde sem enviar nada.",
+    "compacto · Nenhuma.",
+    "compacto · Nenhuma.",
+  ],
+  "src/app/(app)/aria/_componentes/VisaoGeral.tsx": [
+    "compacto · Nenhuma conversa no período.",
+  ],
   "src/app/(app)/academico/MudancasAcademicasPainel.tsx": [
     "compacto · Não há turma de destino disponível no mesmo idioma, modalidade e formato.",
     "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",

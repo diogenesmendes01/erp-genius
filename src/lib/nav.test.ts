@@ -12,6 +12,14 @@ describe("NAV", () => {
   });
 });
 
+describe("menu da Aria", () => {
+  it("nav_aria_so_admin_e_gerente", () => {
+    expect(navParaPapeis([Papel.VENDEDOR]).some((i) => i.href === "/aria")).toBe(false);
+    expect(navParaPapeis([Papel.GERENTE_COMERCIAL]).some((i) => i.href === "/aria")).toBe(true);
+    expect(navParaPapeis([Papel.ADMINISTRADOR]).some((i) => i.href === "/aria")).toBe(true);
+  });
+});
+
 describe("hrefAtivoMaisLongo", () => {
   it("escolhe o prefixo mais longo entre dois hrefs que compartilham prefixo (o bug real de /financeiro e /financeiro/permuta)", () => {
     expect(hrefAtivoMaisLongo("/financeiro/permuta", ["/financeiro", "/financeiro/permuta"])).toBe("/financeiro/permuta");

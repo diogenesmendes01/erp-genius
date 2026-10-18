@@ -48,7 +48,7 @@ describe("ações da Aria exigem a capacidade certa", () => {
 
   it("vendedor_nao_publica", async () => {
     sessaoMock.mockResolvedValue(usuario([Papel.VENDEDOR]));
-    expect(await publicarRascunho({ nota: "x" })).toEqual({ ok: false, erro: "Sem acesso à configuração da Aria." });
+    expect(await publicarRascunho({ nota: "x", rascunho: null })).toEqual({ ok: false, erro: "Sem acesso à configuração da Aria." });
     expect(banco.$transaction).not.toHaveBeenCalled();
   });
 

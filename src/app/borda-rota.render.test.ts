@@ -22,6 +22,7 @@ import LoadingFunil from "@/app/(app)/funil/loading";
 import LoadingTarefas from "@/app/(app)/tarefas/loading";
 import LoadingCarteira from "@/app/(app)/carteira/loading";
 import LoadingContatos from "@/app/(app)/contatos/loading";
+import LoadingAria from "@/app/(app)/aria/loading";
 import LoadingComissoes from "@/app/(app)/comissoes/loading";
 import LoadingRelatorios from "@/app/(app)/relatorios/loading";
 import LoadingInbox from "@/app/(app)/inbox/loading";
@@ -49,6 +50,7 @@ import ErroFunil from "@/app/(app)/funil/error";
 import ErroTarefas from "@/app/(app)/tarefas/error";
 import ErroCarteira from "@/app/(app)/carteira/error";
 import ErroContatos from "@/app/(app)/contatos/error";
+import ErroAria from "@/app/(app)/aria/error";
 import ErroComissoes from "@/app/(app)/comissoes/error";
 import ErroRelatorios from "@/app/(app)/relatorios/error";
 import ErroInbox from "@/app/(app)/inbox/error";
@@ -69,6 +71,7 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/tarefas": { Componente: LoadingTarefas, titulos: 1, rotulo: "Carregando tarefas" },
   "src/app/(app)/carteira": { Componente: LoadingCarteira, titulos: 1, rotulo: "Carregando carteira" },
   "src/app/(app)/contatos": { Componente: LoadingContatos, titulos: 1, rotulo: "Carregando contatos" },
+  "src/app/(app)/aria": { Componente: LoadingAria, titulos: 1, rotulo: "Carregando Agente de IA" },
   "src/app/(app)/comissoes": { Componente: LoadingComissoes, titulos: 1, rotulo: "Carregando comissões" },
   "src/app/(app)/relatorios": { Componente: LoadingRelatorios, titulos: 1, rotulo: "Carregando relatórios" },
   "src/app/(app)/inbox": { Componente: LoadingInbox, titulos: 1, rotulo: "Carregando conversas" },
@@ -147,6 +150,7 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/portal-aluno": { Componente: ErroPortalAluno, caminho: "/portal-aluno", titulo: "Não foi possível abrir esta página", voltar: null },
   "src/app/(app)/academico": { Componente: ErroAcademico, caminho: "/academico/avaliacoes", titulo: "Não foi possível carregar o acadêmico", voltar: "/academico" },
   "src/app/(app)/alunos": { Componente: ErroAlunos, caminho: "/alunos/a1", titulo: "Não foi possível carregar os alunos", voltar: "/alunos" },
+  "src/app/(app)/aria": { Componente: ErroAria, caminho: "/aria", titulo: "Não foi possível carregar o Agente de IA", voltar: "/home" },
   "src/app/(app)/comissoes": { Componente: ErroComissoes, caminho: "/comissoes", titulo: "Não foi possível carregar as comissões", voltar: "/home" },
   "src/app/(app)/relatorios": { Componente: ErroRelatorios, caminho: "/relatorios", titulo: "Não foi possível carregar os relatórios", voltar: "/home" },
   "src/app/(app)/configuracao": { Componente: ErroConfiguracao, caminho: "/configuracao/migracao/l1", titulo: "Não foi possível carregar esta configuração", voltar: "/configuracao" },

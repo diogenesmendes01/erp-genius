@@ -19,7 +19,7 @@ const logado = (u: Usuario) => authMock.mockResolvedValue({ user: { id: u.id } }
 async function publicarComPadrao() {
   logado(admin);
   expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null, rascunho: await rascunhoAtual() })).ok).toBe(true);
-  expect((await publicarRascunho({})).ok).toBe(true);
+  expect((await publicarRascunho({ rascunho: await rascunhoAtual() })).ok).toBe(true);
 }
 
 beforeEach(async () => {
