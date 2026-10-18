@@ -2823,3 +2823,77 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
     O arquivo veio do `main` e não é tocado pela 2J; isolado, passou duas vezes (9 testes, sem erro).
 **Estado**: Implementado; base `main`; correções da R1 aplicadas. Antes do merge, o integrador precisa rodar `npm test`
 completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não concluído.
+
+## Inbox, bloco F: aceite das 21 regras e remoção do Inbox antigo (Fase 3, Task 33; 17/10/2026)
+
+- `src/server/inbox/regras-inbox.int.test.ts`: um `it` por regra do §4.4 (21 testes, com o número no nome), sobre as funções
+  reais de produção e o Postgres de teste, driver simulado. Saída 0 (21 testes).
+- Removidos: `InboxCliente.tsx` (e os dois testes) e `AtendimentosPainel.tsx` (e o teste). A triagem do número e a revisão de
+  envio incerto foram para `PainelTriagem.tsx`, dentro da conversa aberta (e na tela "Escolha uma conversa"); a triagem
+  aparece a quem `listarTriagemWhatsApp` aceita (administrador ou responsável pela triagem do número), a revisão só ao
+  administrador. O formulário "Abrir atendimento" foi para `NovoAtendimento.tsx`, sem mudança de comportamento.
+- Travas globais ajustadas sem afrouxar: `botoes-mapa.ts`, `botoes.test.ts`, `confirmacoes-mapa.ts`, `confirmacoes.test.ts`,
+  `enums-rotulos.test.ts`, `estados-vazios-mapa.ts` (entradas do arquivo removido saíram; as dos arquivos novos entraram) e
+  `sem-polling.test.ts` (a lista `LEGADO` ficou vazia). O que estava pendente da Task 33 nas telas novas foi corrigido no
+  código: `PainelSetor` usa rótulos (`ETAPA_LABEL`, `STATUS_COBRANCA_LABEL`, `SETOR_ATENDIMENTO_LABEL`) e `EstadoVazio`;
+  `AcoesAtendimento` passa o tipo do aviso (convite/agendamento) em vez de texto livre.
+- Nenhum link ou rota aponta para o Inbox antigo (`/inbox` é a mesma página; só a Sidebar linka).
+
+**Pendências explícitas da Task 33 (a confirmar com o produto antes do PR)**
+
+- Regressão funcional, em aberto até decisão do produto: o opt-out voltou (ver a correção da revisão final, abaixo). Na thread
+  continuam sem botão: criar lead, vincular contato, editar nome, retomar régua/tratar, registrar pagamento, anexar e gravar áudio.
+  As Server Actions seguem testadas (regras 10, 12 e 14). Antes do merge, o integrador precisa da decisão do produto por escrito:
+  repor (e qual tarefa faz isso) ou aceitar a perda.
+- Regra 18, lacuna de requisito: o brief pede "upload no visível", mas `src/app/api/upload/route.ts` não tem upload por atendimento
+  (é por lead/matrícula). O teste 18 cobre envio só de arquivo do próprio autor e download no escopo. Upload por atendimento fica
+  como lacuna para a tarefa dona do envio de mídia.
+- Regra 21: o brief cita `AgendamentoCancelado`; o evento real gravado é `MensagemAgendadaCancelada`, e o teste usa o real.
+- Evidência pendente: `npm run test:int` completo não foi rodado (mais de 2 h; proibido na faixa). Só `regras-inbox.int.test.ts`
+  (21/21). A Task 33 só conta como concluída com essa ressalva, até o integrador rodar o `test:int`.
+
+**Correção da revisão final do bloco F (17/10/2026)**
+
+- Tasks 30 e 32 ligadas na tela: `InboxNovo` usa `ListaAtendimentos` (setor, número, status, responsável, "Prazo estourado",
+  virtualização acima de 100 linhas) e `PainelFiltros`. As opções do filtro vêm de `opcoesFiltroInbox`
+  (`src/server/inbox/opcoes-filtro.ts`). Quando o filtro muda, a lista recomeça da nova primeira página, por estado derivado e sem
+  key de remontagem. O `PainelSetor` fica no aside e no Drawer e é lido por `GET /api/inbox/atendimentos/[id]/painel`
+  (`carregarPainel`; 401, 403 e 404 fora do escopo).
+- Opt-out reposto no painel da conversa (`OptOutContato.tsx`). O registro passa por `ConfirmarAcao`, e o par voltou à lista
+  fechada de `confirmacoes-mapa.ts`. O administrador remove o opt-out com evidência de 12 caracteres ou mais.
+- `PainelTriagem`: lista vazia conta como ausência, então não aparece `<details>` com "· 0". `DialogoPessoa` e `DialogoPendentes`
+  carregam em `useEffect`, não mais durante o render. O convite usa mapeamento tipado do `Resultado`. O valor do painel Comercial
+  sai com `toFixed(2)`, como o do Financeiro.
+- Verificação: `tsc --noEmit` com saída 0; `eslint src --quiet` com saída 0; `npm test` com 703 arquivos e 5104 testes, todos
+  verdes; integração em `regras-inbox`, `paineis` e `opcoes-filtro` (3 arquivos, 27 testes) com saída 0.
+  O `npm run test:int` completo continua pendente para o integrador.
+
+## Fase 3F: telas do Inbox novo (17/10/2026)
+
+- Branch: `claude/fase3-f-telas` (base main 35d8263a). Tarefas 29 a 33: casca, lista, conversa, painel lateral por setor e remoção do Inbox antigo.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 703 arquivos e 5104 testes verdes (linha de base: ~697/~5060).
+- `npm run lint`: saída 0; 0 erros e 43 avisos.
+- Integração relacionada (`vitest list --filesOnly --changed origin/main` com `vitest run -c vitest.integration.config.ts` sobre os 97 arquivos `*.int.test.ts` apontados): saída 0; 96 arquivos passaram, 1 ignorado; 1041 testes passaram, 1 ignorado. O `vitest related` direto passou de 30 min sem terminar, por isso a lista foi resolvida antes e rodada em seguida.
+- A suíte de integração completa (`npm run test:int`) não foi rodada; fica para o integrador.
+
+**Correção da R1 do #217 (17/10/2026)**
+
+- **B1 (merge do main até 2d53a7c9, #208 a #216):** `InboxCliente.tsx` continua removido (o #216 só trocava o link do
+  cadastro para `/funil?o=<id>`; o Inbox novo usa esse link). `botoes.test.ts` com os dois lados (sai `leads/[id]/FichaLead.tsx`
+  e `InboxCliente`, entram `contatos/FichaContato.tsx`, `ConversaAberta` e `ListaAtendimentos`; `AcoesContato` entra em
+  `botoes-mapa.ts` e `estados-vazios-mapa.ts`). `Modal.tsx`
+  junta `folha` (3F) e `telaCheiaNoCelular` (2F), com `telaCheiaNoCelular` mandando no layout. Quadro com os dois blocos.
+  Conflito de comportamento achado e ajustado: o despachante da Fase 4B só envia pelo motor, então as regras 11 e 12 de
+  `regras-inbox.int.test.ts` passaram a usar número MOTOR e `drivers/motor` simulado.
+- **C2 (decisão do dono, 17/10/2026: portar tudo para o Inbox novo antes do merge):** a pendência da Task 33 acima fica resolvida.
+  No painel lateral (`AcoesContato.tsx`, abaixo do `PainelSetor`): criar oportunidade (`criarLeadDaConversa`), vincular contato
+  (`vincularContatoWhatsApp`, só dentro de `ConfirmarAcao`; voltou à lista fechada de `confirmacoes-mapa.ts`), editar nome
+  (`editarNomeContatoWhatsApp`), retomar régua (`marcarConversaTratada`), registrar pagamento (`PagamentoModal`) e promessa
+  de pagamento (`registrarPromessaPagamento`). Links: oportunidade em `/funil?o=<id>` (também no `PainelSetor`), aluno em
+  `/alunos/<id>`. As regras de quem vê cada botão vêm de `carregarAcoesContatoInbox` (`consultas-inbox.ts`), as mesmas de
+  `carregarThread` (regras extraídas para `regrasCadastroDoAtendimento` e `silencioPosInbound`, usadas pelas duas), e cada
+  Server Action confere a alçada de novo. Sem telefone no painel (regra 5). Anexar arquivo e gravar áudio já estavam no
+  `Compositor` (upload em `/api/whatsapp/upload` e `enviarMidiaInbox`); ganharam testes de interação.
+- **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
+- **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).

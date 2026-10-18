@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
-import { listarAtendimentosPagina, listarMensagensPagina } from "./consultas-pagina";
+import { listarAtendimentosPagina, listarMensagensPagina, obterItemListaInbox } from "./consultas-pagina";
 import { codificarCursor, cursorThreadValido } from "./cursor";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
@@ -27,6 +27,16 @@ async function criarAtendimento(ultimaMensagemEm: Date | null, extra: { naoLidas
 }
 
 describe("lista paginada por cursor", () => {
+  it("o item traz responsável, dono da linha, setores do número (legado COBRANCA → FINANCEIRO) e origem da transferência", async () => {
+    const a = await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    const [item] = (await listarAtendimentosPagina(sess(admin), {}, null)).itens;
+    expect(item).toMatchObject({ id: a.id, responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null });
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { setores: { create: [{ finalidade: "SECRETARIA" }, { finalidade: "COMERCIAL" }] } } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: outro.id, atendimentoOrigemId: null } });
+    const [depois] = (await listarAtendimentosPagina(sess(admin), {}, null)).itens;
+    expect(depois).toMatchObject({ responsavelId: outro.id, setoresDoNumero: ["COMERCIAL", "SECRETARIA"] });
+  });
+
   it("cursor estável com empate e inserção concorrente", async () => {
     const mesmo = new Date("2026-10-01T12:00:00.000Z");
     const criados: string[] = [];
@@ -244,5 +254,19 @@ describe("thread paginada", () => {
     const adm2 = await criarUsuario([Papel.ADMINISTRADOR]);
     expect((await listarMensagensPagina(sess(admin), a.id, {}))!.mensagens[0]).toMatchObject({ favorita: true, clientMessageId: "cmid-1", participanteNome: "Fulano" });
     expect((await listarMensagensPagina(sess(adm2), a.id, {}))!.mensagens[0].favorita).toBe(false);
+  });
+});
+
+describe("obterItemListaInbox (deep link)", () => {
+  it("devolve a linha de qualquer atendimento do escopo, mesmo fora da primeira página, e null fora do escopo", async () => {
+    const antigo = await criarAtendimento(new Date("2020-01-01T00:00:00Z"));
+    for (let i = 0; i < 3; i++) await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    const p1 = await listarAtendimentosPagina(sess(admin), {}, null, 2);
+    expect(p1.itens.map((i) => i.id)).not.toContain(antigo.id);
+    const item = await obterItemListaInbox(sess(admin), antigo.id);
+    expect(item?.id).toBe(antigo.id);
+    expect(item?.driver).toBe("BAILEYS");
+    expect(await obterItemListaInbox(sess(admin), "inexistente")).toBeNull();
+    expect(await obterItemListaInbox(sess(outro), antigo.id)).toBeNull();
   });
 });

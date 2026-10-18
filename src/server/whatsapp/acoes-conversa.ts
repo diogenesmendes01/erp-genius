@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
-import { agendarMensagem } from "@/server/crm/mensagens-agendadas";
+import { agendarMensagem, cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
 import { despacharFila } from "./despachante";
 import { copiarMidiaParaSaida } from "./midia";
@@ -49,6 +49,24 @@ export async function agendarMensagemNoAtendimento(input: { atendimentoId: strin
     revalidatePath("/inbox");
     return r.dado!;
   });
+}
+
+/** Cancela uma mensagem agendada pelo atendimento: ela precisa ser deste atendimento; autoria e estado ficam em `cancelarMensagemAgendada`. */
+export async function cancelarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string }): Promise<Resultado> {
+  const pre = await executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const a = await atendimentoVisivel(u, atendimentoId);
+    if (!a) throw new ErroRegra("Atendimento não encontrado.");
+    const m = await prisma.intencaoMensagem.findFirst({ where: { id: intencaoId, atendimentoId }, select: { id: true } });
+    if (!m) throw new ErroRegra("Mensagem agendada não encontrada.");
+    return intencaoId;
+  });
+  if (!pre.ok || !pre.dado) return pre.ok ? { ok: false, erro: "Mensagem agendada não encontrada." } : pre;
+  const r = await cancelarMensagemAgendada(pre.dado);
+  if (r.ok) revalidatePath("/inbox");
+  return r;
 }
 
 const MAX_DESTINOS_ENCAMINHAR = 5;

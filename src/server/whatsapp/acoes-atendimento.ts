@@ -13,6 +13,7 @@ import { PRAZO_MAXIMO_CONVITE_DIAS } from "./participantes";
 import { setoresDoNumero } from "./numero-setor";
 import { comoErroRegra } from "./erro-regra-atendimento";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
+import { ehLinhaComercial } from "./linha-comercial";
 import { proximoStatus } from "./status-atendimento";
 
 const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
@@ -20,8 +21,10 @@ const MSG_FORA_DO_ESCOPO = "Atendimento fora do seu escopo.";
 const MSG_SEM_ALCADA = "Sua função não autoriza esta ação neste atendimento.";
 const MOTIVO_CANCELAMENTO = "Responsável do atendimento mudou; revisar antes de enviar.";
 const MOTIVO_CANCELAMENTO_REVOGADO = "Convite de participante revogado; revisar antes de enviar.";
-const MSG_RESPONSAVEL_SEM_ACESSO =
+const MSG_RESPONSAVEL_SEM_ACESSO_LINHA =
   "Nesta linha de vendas o atendimento fica com o dono da linha; ele não pode ser assumido por quem não atende a linha.";
+const MSG_RESPONSAVEL_SEM_ACESSO =
+  "Esta pessoa não teria acesso a este atendimento depois da mudança; escolha quem atende o setor e a conversa.";
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -32,7 +35,11 @@ type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
  */
 async function exigirResponsavelEnxerga(tx: Tx, id: string, alvo: { id: string; papeis: Papel[] }) {
   const n = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id }, await escopoAtendimentos(alvo)] } });
-  if (n !== 1) throw new ErroRegra(MSG_RESPONSAVEL_SEM_ACESSO);
+  if (n === 1) return;
+  // O texto segue o motivo: só a linha de vendas tem a regra do dono da linha.
+  const a = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { finalidade: true, conversa: { select: { numero: { select: { finalidade: true } } } } } });
+  const linha = a?.finalidade === "COMERCIAL" && !!a.conversa.numero && ehLinhaComercial(a.conversa.numero);
+  throw new ErroRegra(linha ? MSG_RESPONSAVEL_SEM_ACESSO_LINHA : MSG_RESPONSAVEL_SEM_ACESSO);
 }
 
 const IdSchema = z.string().min(1);
