@@ -7,7 +7,9 @@ export const TTL_FILTRO_MS = 10_000;
 
 /** Quadro SSE: `event: <tipo>`, `data: <json>` e linha em branco. */
 export function formatarSSE(a: AvisoInbox): string {
-  return `event: ${a.tipo}\ndata: ${JSON.stringify(a)}\n\n`;
+  const { paraUsuarioId: _destinatario, ...publico } = a;
+  void _destinatario;
+  return `event: ${a.tipo}\ndata: ${JSON.stringify(publico)}\n\n`;
 }
 
 /**
@@ -16,7 +18,9 @@ export function formatarSSE(a: AvisoInbox): string {
  * aviso sem atendimento só passa se for conversa de grupo dentro do `escopoGrupos`.
  * Só `visivel: true` é guardado (um "não" em cache faria o usuário perder avisos de quem acabou de ganhar acesso,
  * por transferência ou participação), `atendimento.atualizado` invalida a chave (o escopo pode ter mudado) e o
- * Map é podado de expirados com teto de chaves. `resync` (escuta reconectada) passa sempre.
+ * Map é podado de expirados com teto de chaves. `resync` (escuta reconectada) passa sempre. `atendimento.atualizado`
+ * direcionado (`paraUsuarioId`, da revogação de convite) passa só para esse usuário e não consulta o escopo: o
+ * ex-convidado já está fora dele, e o aviso só carrega ids (o cliente recarrega o painel e recebe 404).
  */
 const MAX_CHAVES_CACHE = 500;
 
@@ -41,6 +45,11 @@ export function criarFiltroDeAvisos(usuario: UsuarioSessao, ttlMs: number = TTL_
   };
   return async (a) => {
     if (a.tipo === "resync") return true;
+    if (a.paraUsuarioId !== undefined) {
+      if (a.tipo !== "atendimento.atualizado" || a.paraUsuarioId !== usuario.id) return false;
+      if (a.atendimentoId) cache.delete(`a:${a.atendimentoId}`);
+      return true;
+    }
     const chave = a.atendimentoId ? `a:${a.atendimentoId}` : `c:${a.conversaId}`;
     const agora = Date.now();
     if (a.tipo === "atendimento.atualizado") cache.delete(chave);
