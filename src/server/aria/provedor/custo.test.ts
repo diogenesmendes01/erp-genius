@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { custoMicroUsd, modeloPermitido, MODELOS_PERMITIDOS } from "./custo";
+import { CACHE_CONTROL_SISTEMA, custoMicroUsd, fatorEscritaCache, modeloPermitido, MODELOS_PERMITIDOS } from "./custo";
+
+describe("fatorEscritaCache", () => {
+  it("cache_efemero_5_min_sem_ttl_custa_1_25x", () => {
+    expect(fatorEscritaCache(undefined)).toBe(1.25);
+    expect(fatorEscritaCache("5m")).toBe(1.25);
+  });
+  it("ttl_1h_custa_2x", () => expect(fatorEscritaCache("1h")).toBe(2));
+  it("cache_control_do_sistema_e_efemero_sem_ttl", () =>
+    expect(CACHE_CONTROL_SISTEMA).toEqual({ type: "ephemeral" }));
+});
 
 describe("custoMicroUsd", () => {
   it("custo_sonnet", () =>
