@@ -2,6 +2,17 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox novo — pendências da revisão do #223 (18/10/2026)
+
+Branch `claude/pendencias-223`. Duas pendências da revisão do #223 (mergeado em 31304a7e).
+
+- **C1, a revogação chega ao ex-convidado**: depois da revogação o ex-convidado sai do `escopoAtendimentos`, e o filtro do SSE descartava o `atendimento.atualizado`. Agora `revogarParticipante` também emite, na mesma transação, um `pg_notify` direcionado. Ele leva só ids (`tipo`, `atendimentoId`, `mensagemId: null`, `conversaId`) e `paraUsuarioId` = o revogado. `criarFiltroDeAvisos` deixa esse aviso passar só para esse usuário, sem consultar o escopo, e só no tipo `atendimento.atualizado`. Os demais usuários não recebem o aviso direcionado, e `formatarSSE` não repassa o `paraUsuarioId`. No cliente, a recarga do painel que volta 404 (fora do escopo) mantém o último painel com `podeEnviar: false` e sem ações, e o compositor trava sem reabrir. Um 404 na carga inicial continua como erro com "Tentar de novo". Sem migration.
+- **C2, paginação do encaminhar**: `buscarDestinosEncaminhar` aceita o `cursor` e devolve `{ itens, proximo }`. O diálogo mostra "Carregar mais" (o padrão da lista do Inbox novo) enquanto houver `proximo`. O botão segue a busca aplicada, acrescenta sem repetir linhas e mantém a lista se a página falhar. Uma página que fica vazia depois do filtro de origem, grupo e opt-out não mostra o estado vazio enquanto houver próxima página.
+- Testes: integração em `participantes-aviso.int.test.ts` (o ex-convidado recebe só o aviso direcionado, um terceiro fora do escopo não recebe nada e o responsável recebe só o aviso comum) e em `eventos-sse.int.test.ts` (o filtro do aviso direcionado e o quadro sem o destinatário). Componente em `InboxNovo.interacao.test.ts` (404 na recarga e na carga inicial) e em `AcoesMensagem.test.ts` (cursor, "Carregar mais" e falha ao carregar mais).
+- `tsc --noEmit`: saída 0. `eslint .`: 0 erros (40 avisos, já existentes, nenhum nos arquivos tocados). `npm test`: 732 arquivos, 5423 testes verdes.
+- Integração no banco descartável `erp_genius_test_pend223`: `src/server/inbox` (7 arquivos) e os 8 arquivos de atendimento e participante de `src/server/whatsapp`, ao todo 15 arquivos e 114 testes verdes. `src/app/api/inbox` não tem `.int.test.ts`; os testes de rota dela rodam no `npm test`.
+- **Estado**: implementado, aguarda revisão.
+
 ## Inbox novo — encaminhar e aviso de convite (18/10/2026)
 
 Branch `claude/inbox-encaminhar-convite`. Pendências deixadas pela Fase 4D (#219) e pelo #220.
