@@ -34,6 +34,8 @@ const ARQUIVOS_FIXOS = [
   "src/server/aria/historico.ts",
   "src/server/aria/pausa.ts",
   "src/server/aria/conhecimento/fontes.ts",
+  // Fronteira "use server" da Aria (como as acoes-*.ts de crm-config): só repassa aos módulos acima.
+  "src/server/aria/acoes.ts",
   "src/server/metas/metas.ts",
 ];
 const ARQUIVOS_CRM_CONFIG = readdirSync("src/server/crm-config")
@@ -48,6 +50,7 @@ const SOMENTE_LEITURA = new Set([
   "painelIA", "listarRespostasRapidas", "progressoMetas", "versaoPublicada", "situacaoAria",
   // leituras reais que o plano não listou
   "rascunhoAtual", "respostasRapidasDoCompositor", "respostasParaAria", "listarPerfisNumero", "uploadIdPorUrl", "exigirEdicaoDoSetor",
+  "podeDevolverParaAria",
 ]);
 
 /** Remoções físicas aceitas, ancoradas em arquivo + chamada. */
@@ -56,6 +59,16 @@ const EXCECOES_DELETE = new Set([
   "src/server/aria/versoes.ts:versaoAgenteIA.delete",
   // Desfazer a TAG que a Aria pôs: remove o vínculo pessoa↔tag como crm/tags.ts; `TagRemovida`.
   "src/server/aria/historico.ts:pessoaTag.delete",
+]);
+
+/**
+ * Ações exportadas que gravam sem Evento por desenho, ancoradas em arquivo + função, com as únicas
+ * mutações permitidas (seguindo as chamadas). A trava falha se a exceção sumir ou gravar outra coisa.
+ */
+const EXCECOES_SEM_EVENTO = new Map<string, readonly string[]>([
+  // Playground (Task 28): sem efeito em configuração nem CRM; só o registro de uso/custo da chamada
+  // ao provedor (ChamadaIA, a mesma telemetria do turno). Entra pela fronteira "use server" aria/acoes.ts.
+  ["src/server/aria/acoes.ts#testarAria", ["chamadaIA.create"]],
 ]);
 
 const MUTACOES = new Set(["create", "createMany", "createManyAndReturn", "update", "updateMany", "upsert", "delete", "deleteMany"]);
@@ -320,16 +333,28 @@ describe("trava de auditoria das configurações", () => {
 
   it("toda_action_exportada_grava_evento", () => {
     const semEvento: string[] = [];
+    const excecoesVistas = new Set<string>();
     let conferidas = 0;
     for (const arquivo of ARQUIVOS) {
       for (const fn of funcoesExportadas(prj, arquivo)) {
         if (SOMENTE_LEITURA.has(fn.nome) || !podeGravar(fn)) continue;
         conferidas++;
-        if (!chamaRegistrarEventoDentroDeTransacao(prj, fn)) semEvento.push(`${arquivo}#${fn.nome}`);
+        const chave = `${arquivo}#${fn.nome}`;
+        const permitidas = EXCECOES_SEM_EVENTO.get(chave);
+        if (permitidas) {
+          excecoesVistas.add(chave);
+          for (const m of prj.mutacoes(arquivo, fn.no)) {
+            if (!permitidas.includes(m.slice(m.lastIndexOf(":") + 1))) semEvento.push(`${chave} → ${m}`);
+          }
+          continue;
+        }
+        if (!chamaRegistrarEventoDentroDeTransacao(prj, fn)) semEvento.push(chave);
       }
     }
     expect(semEvento).toEqual([]);
     expect(conferidas).toBeGreaterThan(30);
+    // Exceção que não existe mais sai da lista.
+    expect([...excecoesVistas].sort()).toEqual([...EXCECOES_SEM_EVENTO.keys()].sort());
   });
 
   it("somente_leitura_nao_altera_nada", () => {

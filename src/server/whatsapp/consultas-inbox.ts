@@ -1,4 +1,4 @@
-import { Papel, type EtapaLead, type Prisma } from "@prisma/client";
+import { Papel, type AcaoAgenteIATipo, type EtapaLead, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { temPapel, transicaoManualPermitida, type UsuarioSessao } from "@/server/_shared";
@@ -14,6 +14,10 @@ import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
 import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { comContatoIndividual } from "./grupos";
+import { capacidadesAria } from "@/server/aria/permissoes-tela";
+import { leadsDecidiveis } from "@/server/aria/escopo-decisao";
+import { podeDevolverParaAria } from "@/server/aria/pausa";
+import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { capacidadesDoNumero } from "./motor/capacidades";
 
@@ -326,4 +330,48 @@ export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: stri
   if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
   const fora = await prisma.atendimentoWhatsApp.count({ where: { conversa: { contatoId }, NOT: await escopoAtendimentos(usuario) } });
   return fora === 0;
+}
+
+/** Estado da Aria no detalhe do atendimento (Task 29): pausa e sugestões pendentes de `AcaoAgenteIA` (fonte única). */
+export interface AriaDoAtendimento {
+  pausada: boolean;
+  motivo: MotivoPausaAtendimentoIA | null;
+  /** Mostra "Devolver para Aria": Aria pausada e o usuário com escopo de envio (a regra de `devolverParaAria`). */
+  podeDevolver: boolean;
+  sugestoes: { id: string; acao: AcaoAgenteIATipo; resumo: string; expiraEm: string }[];
+}
+
+const RESUMO_MAX = 200;
+function resumoDaSugestao(a: { acao: AcaoAgenteIATipo; payload: Prisma.JsonValue; justificativa: string | null }): string {
+  const p = (a.payload && typeof a.payload === "object" && !Array.isArray(a.payload) ? a.payload : {}) as Record<string, unknown>;
+  const bruto = typeof p.texto === "string" && p.texto.trim() ? p.texto : a.justificativa?.trim() || ACAO_AGENTE_IA_LABEL[a.acao];
+  return bruto.length > RESUMO_MAX ? `${bruto.slice(0, RESUMO_MAX - 1)}…` : bruto;
+}
+
+/** null fora do escopo do usuário. Só quem decide o histórico da Aria recebe as sugestões; sugestão vencida não entra. */
+export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendimentoId: string, agora: Date = new Date()): Promise<AriaDoAtendimento | null> {
+  const a = await prisma.atendimentoWhatsApp.findFirst({
+    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
+    select: { id: true, leadId: true, iaPausadaEm: true, iaPausaMotivo: true },
+  });
+  if (!a) return null;
+  const candidatas = capacidadesAria(usuario).has("decidirHistorico")
+    ? await prisma.acaoAgenteIA.findMany({
+        where: { atendimentoId: a.id, status: "SUGERIDA", OR: [{ expiraEm: null }, { expiraEm: { gt: agora } }] },
+        orderBy: { criadoEm: "asc" },
+        select: { id: true, acao: true, payload: true, justificativa: true, expiraEm: true, oportunidadeId: true },
+      })
+    : [];
+  // Mesmo critério de aprovarAcaoAria/rejeitarAcaoAria: escopoAtendimentos (setor inteiro para o
+  // Gerente) mostra o atendimento, mas só aparece a sugestão que ele de fato pode decidir.
+  const leadDe = (s: { oportunidadeId: string | null }) => s.oportunidadeId ?? a.leadId;
+  const decidiveis = candidatas.length ? await leadsDecidiveis(prisma, usuario, candidatas.map(leadDe)) : new Set<string | null>();
+  const sugestoes = candidatas.filter((s) => decidiveis.has(leadDe(s)));
+  const pausada = a.iaPausadaEm !== null;
+  return {
+    pausada,
+    motivo: pausada ? a.iaPausaMotivo : null,
+    podeDevolver: pausada && (await podeDevolverParaAria(prisma, usuario, a.id)),
+    sugestoes: sugestoes.map((s) => ({ id: s.id, acao: s.acao, resumo: resumoDaSugestao(s), expiraEm: (s.expiraEm ?? agora).toISOString() })),
+  };
 }

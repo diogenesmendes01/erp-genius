@@ -1,6 +1,6 @@
 import type { MotivoPausaAtendimentoIA, OrigemEnvio, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "../_shared";
+import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado, type UsuarioSessao } from "../_shared";
 import { escopoAtendimentos } from "../whatsapp/escopo";
 
 // Pausa da Aria por atendimento: quando um humano responde (ERP ou celular) a Aria sai da conversa
@@ -68,13 +68,20 @@ export async function aoGravarSaidaHumana(
   else if (m.origem === "CELULAR") await pausarAriaNoAtendimento(tx, m.atendimentoId, "CELULAR", m.autorId);
 }
 
+/**
+ * Devolver põe a Aria para FALAR com o contato: exige o escopo de envio, não só o de leitura. Regra
+ * única da action (`devolverParaAria`) e do botão "Devolver para Aria" no Inbox (`carregarAriaDoAtendimento`).
+ */
+export async function podeDevolverParaAria(db: Tx | typeof prisma, u: UsuarioSessao, atendimentoId: string): Promise<boolean> {
+  const visivel = await db.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { enviar: true })] } });
+  return visivel === 1;
+}
+
 export async function devolverParaAria(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     await prisma.$transaction(async (tx) => {
-      // Devolver põe a Aria para FALAR com o contato: exige o escopo de envio, não só o de leitura.
-      const visivel = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { enviar: true })] } });
-      if (visivel !== 1) throw new ErroRegra("Atendimento fora do seu escopo.");
+      if (!(await podeDevolverParaAria(tx, u, atendimentoId))) throw new ErroRegra("Atendimento fora do seu escopo.");
       const r = await tx.atendimentoWhatsApp.updateMany({
         where: { id: atendimentoId, iaPausadaEm: { not: null } },
         data: { iaPausadaEm: null, iaPausaMotivo: null, iaRetomadaEm: new Date(), iaRetomadaPorId: u.id },
