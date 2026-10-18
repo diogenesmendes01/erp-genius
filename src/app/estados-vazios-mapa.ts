@@ -412,6 +412,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx": [
     "compacto · Nenhuma proposta.",
   ],
+  "src/app/(app)/configuracao/crm/metas/page.tsx": [
+    "compacto · Nenhuma meta definida para este mês.",
+  ],
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx": [
     "compacto · Nenhum documento. Adicione ao menos um para poder ativar o país.",
   ],
@@ -590,6 +593,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum convite ativo que você possa revogar.",
     "compacto · Nenhuma mensagem agendada que você possa cancelar.",
   ],
+  "src/app/(app)/inbox/AcoesMensagem.tsx": [
+    "compacto · Nenhuma conversa deste número em que você possa enviar.",
+  ],
   "src/app/(app)/inbox/AcoesContato.tsx": [
     "compacto · Nenhum encontrado.",
   ],
@@ -606,6 +612,29 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   ],
   "src/app/(app)/oportunidades/[id]/contratacao/page.tsx": [
     "bloco · {c.podeCadastrarNovo ? \"Não há cadastro com o contato da negociação. Você poderá preencher os dados ",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaAria.tsx": [
+    "bloco · Nenhum atendimento comercial com resposta neste período e com estes filtros.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaAtividades.tsx": [
+    "compacto · Nenhuma tarefa no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaConversas.tsx": [
+    "compacto · Nenhuma mensagem enviada no período.",
+    "compacto · Nenhuma mensagem recebida no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaEquipe.tsx": [
+    "bloco · Nenhuma pessoa da equipe neste recorte.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaFunil.tsx": [
+    "bloco · Nenhuma oportunidade no funil neste período e com estes filtros.",
+    "compacto · Nenhuma perda no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaVisao.tsx": [
+    "compacto · Nenhuma variação de 10% ou mais nos indicadores.",
+  ],
+  "src/app/(app)/relatorios/_componentes/PainelDetalhe.tsx": [
+    "compacto · Nenhuma oportunidade aqui.",
   ],
   "src/app/(app)/matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx": [
     "compacto · Não há responsável pedagógico vinculado a esta matrícula.",

@@ -47,12 +47,12 @@ export function textoOrigem(setor: Setor | null): string | null {
 
 /**
  * Comandos do menu da mensagem que esta tela já executa; os outros ficam fora do menu até serem ligados.
- * Reagir, editar e apagar vão pelo motor (Fase 4D) e ainda passam por `comandosDaMensagem`. Encaminhar fica de
- * fora: a action existe, mas a tela ainda não tem a escolha da conversa de destino (do mesmo número).
+ * Reagir, encaminhar, editar e apagar vão pelo motor (Fase 4D) e ainda passam por `comandosDaMensagem`. Encaminhar
+ * abre a escolha da conversa de destino (mesmo número, com envio) em AcoesMensagem.
  */
-export const COMANDOS_MENSAGEM_LIGADOS: readonly ComandoMensagem[] = ["copiar", "reagir", "editar", "apagar"];
+export const COMANDOS_MENSAGEM_LIGADOS: readonly ComandoMensagem[] = ["copiar", "reagir", "encaminhar", "editar", "apagar"];
 
-const RECURSO_DO_COMANDO: Partial<Record<ComandoMensagem, RecursoMotor>> = { reagir: "reagir", editar: "editar", apagar: "apagar" };
+const RECURSO_DO_COMANDO: Partial<Record<ComandoMensagem, RecursoMotor>> = { reagir: "reagir", encaminhar: "encaminhar", editar: "editar", apagar: "apagar" };
 
 /**
  * Os comandos ligados que valem para esta mensagem. Os do motor exigem a capacidade do número (MOTOR ativo e
@@ -92,7 +92,8 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     return () => { ativo = false; };
   }, [origemId]);
   const transferido = origemId && origem.de === origemId ? textoOrigem(origem.setor) : null;
-  const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread } | null>(null);
+  // A origem (atendimento e número) fica guardada no clique: o encaminhar não muda de conversa se a seleção mudar.
+  const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread; atendimentoId: string; numeroId: string } | null>(null);
   const capacidades = item?.capacidades ?? [];
   // null (carregando) só chega ao compositor; os comandos da mensagem exigem o envio confirmado.
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
@@ -145,7 +146,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
             <BalaoMensagem m={m} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
               aoComando={(c) => {
                 if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo);
-                else if (c === "reagir" || c === "editar" || c === "apagar") setAcaoMensagem({ acao: c, m });
+                else if ((c === "reagir" || c === "encaminhar" || c === "editar" || c === "apagar") && item) setAcaoMensagem({ acao: c, m, atendimentoId: item.id, numeroId: item.numeroId });
               }} />
           )}
         />
@@ -164,6 +165,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       ) : <p className="border-t p-3 text-sm text-gray-600">{MOTIVO_SEM_ENVIO}</p>}
       {acaoMensagem && (
         <AcoesMensagem key={`${acaoMensagem.acao}:${acaoMensagem.m.id}`} acao={acaoMensagem.acao} mensagem={acaoMensagem.m}
+          origem={{ atendimentoId: acaoMensagem.atendimentoId, numeroId: acaoMensagem.numeroId }}
           aoFechar={() => setAcaoMensagem(null)} aoMudar={() => void conversa.recarregar()} />
       )}
     </>

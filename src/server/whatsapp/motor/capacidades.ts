@@ -7,7 +7,7 @@ type EstadoNumero = { driver: DriverWhatsApp; ativo: boolean; sessao: SessaoNume
 export const MSG_NUMERO_INATIVO = "Este número está inativo.";
 export const MSG_MOTOR_DESCONECTADO = "O WhatsApp deste número não está conectado agora. Reconecte o número e tente de novo.";
 
-/** Recursos que o número executa agora: número ativo, sessão CONECTADO e driver que os libera. "Encaminhar" não é RecursoMotor. */
+/** Recursos que o número executa agora: número ativo, sessão CONECTADO e driver que os libera (encaminhar inclusive: message.forward). */
 export function capacidadesDoNumero(n: EstadoNumero): RecursoMotor[] {
   if (!n.ativo || n.sessao !== "CONECTADO") return [];
   return RECURSOS_MOTOR.filter((r) => recursoDisponivel(n.driver, r));
