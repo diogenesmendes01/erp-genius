@@ -9,6 +9,7 @@ import { comContatoIndividual } from "./grupos";
 import { setoresDoNumero } from "./numero-setor";
 import { registrarEvento } from "@/server/_shared";
 import { atribuirAutomaticamente } from "@/server/crm-config/distribuicao";
+import { comSavepoint } from "./savepoint";
 import { MSG_FINANCEIRO_EXIGE_MATRICULA, MSG_MATRICULA_DE_OUTRO_ALUNO, MSG_MATRICULA_EXIGE_ALUNO } from "./erro-regra-atendimento";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
@@ -119,7 +120,8 @@ async function resolverAtendimentoDoInbound(tx: Prisma.TransactionClient, conver
   const c = await tx.conversaWhatsApp.findUnique({ where: { id: conversaId }, include: { numero: true, contato: { include: { lead: true } } } });
   if (!c?.numero.ativo || !c.contato || !c.contatoId) return null;
   // VENDAS sem atendimento aberto é linha comercial e já foi roteado acima.
-  // Roteamento por setor do número: zero ou vários setores → triagem. A classificação pela Aria é da Fase 5.
+  // Roteamento por setor do número: zero ou vários setores → triagem (humana ou, com `triagemAtiva`,
+  // classificação pela Aria depois do commit: `agendarTriagemAria`).
   const setores = await setoresDoNumero(tx, c.numeroId);
   if (setores.length !== 1) return null;
   // Sem atribuir aqui: atendimentoDoInbound decide (mensagem fromMe e chamada não atribuem).
@@ -144,7 +146,12 @@ export async function abrirAtendimentoDoSetor(
 ) {
   const atendimento = await abrirSemAtribuir(tx, c, setor);
   if (atendimento && !atendimento.encerradoEm && opcoes.atribuir) {
-    const responsavelId = await atribuirAutomaticamente(tx, atendimento.id);
+    // A atribuição roda num SAVEPOINT: se ela falhar (ex.: erro de banco no FOR UPDATE), a transação do
+    // chamador continua utilizável e o atendimento fica na fila do setor, sem responsável.
+    const responsavelId = await comSavepoint(tx, "atribuir_setor", () => atribuirAutomaticamente(tx, atendimento.id), (e) => {
+      console.error("[distribuicao] atribuição automática falhou; atendimento fica na fila do setor:", e);
+      return null;
+    });
     if (responsavelId) return { ...atendimento, responsavelId, status: "EM_ATENDIMENTO" as const };
   }
   return atendimento;

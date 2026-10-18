@@ -3264,6 +3264,35 @@ Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase
 - Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`, `src/server/aria`, `src/server/uploads`:
   saída 0; 15 arquivos, 133 testes verdes. O `npm run test:int` completo segue com o integrador.
 
+## Fase 5, bloco C — turno da Aria, Tasks 12 a 25 (18/10/2026)
+
+Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6d33ee + 24af270d). Tasks 12 a 25 (contexto, decisão, guardas, gatilhos, executores, handoff, expiração, orquestrador e despacho), todas com revisão limpa. Só provedor e motor simulados; nenhuma chamada real à API da Anthropic nem ao WhatsApp.
+
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 729 arquivos, 5383 testes verdes (linha de base ~714/~5270).
+- `npm run lint`: saída 0; 0 erros, 44 avisos (linha de base 43; os avisos são do tipo `no-unused-vars`).
+- Integração, banco do perfil `tester` (`tester34`), recorte: `vitest related` sobre os 41 .ts do diff contra `claude/fase5-b-config` alcança praticamente toda a suíte (passou de 38 min e foi interrompido). Em seu lugar, `vitest run -c vitest.integration.config.ts` nos 12 `*.int.test.ts` do diff mais `src/server/aria`, `whatsapp/{despachante,inbound,atendimentos}` e `crm/mensagens-agendadas`: saída 0; 23 arquivos, 208 testes verdes.
+- Pendente para o integrador: `npm run test:int` completo, comparando com as falhas preexistentes conhecidas.
+
+### Fase 5C: merge do `main` (até 9b01b45f) e R1 do PR #229 — 2026-10-18
+
+Branch `claude/fase5-c-turno`, agora com base `main` (não mais empilhada). Merges de 86261292 (#226), c9f14e91 (#228) e 9b01b45f (#227, #230); conflitos só no quadro e em `IntencaoParaValidar` (`despachante.ts`, ficam `acaoAgenteIAId` e `conteudo`).
+- **C1** migration da 5C renomeada para `20261018060000_aria_triagem_shadow_sem_atendimento` (030000 é de `metas_comerciais`; 040000/050000 reservados à 5F) e, na R2, para `20261018080000_` (o #232 trouxe `20261018070000_chamada_ia_escrita_cache`). Banco limpo aplica todas em sequência.
+- **B2** dublês de provedor da 5C partem de `provedorSimulado.gerar(p)` (tsc 0 com `tokensEscritaCache` obrigatório). `triagem.int.test.ts` usa `driver: "MOTOR"`. Contexto do turno: teste de fonte vencida fora dos trechos.
+- **B3** `pausarAriaNoAtendimento` cancela as intenções PENDENTE/ADIADA de origem IA (`aria_pausada`), inclusive já pausada; handoff preserva a própria mensagem. Despachante (origem IA) cancela com `aria_pausada` se o atendimento está pausado (fora a pausa do handoff) ou se houve fala/fila humana depois (conferido por mutação).
+- **C2** rajada: âncora com inbound mais novo vira `IGNORADO:FALA_SUPERADA` (antes e depois da chamada ao provedor). **C3** turnos EM_ANDAMENTO há mais de 10 min viram handoff `TURNO_INTERROMPIDO` no reprocesso. **C4** sai o parâmetro `origem` de `agendarMensagem`. **C5** `devolverParaAria` exige escopo de envio. **C7** sem `_p`.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 738 arquivos, 5492 testes.
+- Integração em banco descartável novo: `src/server/aria`, `src/server/whatsapp`, `crm/mensagens-agendadas`, `metas`: saída 0; 74 arquivos, 629 testes. `npm run test:int` completo segue com o integrador.
+
+### Fase 5C: R2 do PR #229 e merge do `main` (cb9ca307) — 2026-10-18
+
+- Merges de fd094fc0 (#231) e cb9ca307 (#232), sem conflitos.
+- **B4** a rajada (C2) e o reprocesso só contam como "fala mais nova" inbound de tipo que a Aria responde (`TIPOS_COM_TEXTO`, exportado de `guardas.ts`); texto + figurinha/áudio/localização responde uma vez ao texto; texto + texto segue respondendo só ao último. O reprocesso também não cria turno para inbound sem texto.
+- **C1** migration da 5C em `20261018080000_aria_triagem_shadow_sem_atendimento`; banco limpo aplica 010000, 020000, 030000, 070000 e 080000 em sequência.
+- **C9 (pendência entre 5C e 5F):** a triagem da Aria abre atendimento por `abrirAtendimentoDoSetor` (`aria/triagem.ts`), fora de `atendimentoDoInbound`, onde o #233 (5F) põe `atribuirAutomaticamente`. TODO no código; **quem entrar por último no `main` (5C ou 5F) aplica o rodízio nesse caminho também.** **Resolvido no #233** (merge do `main` 1a99b63b): ver a entrada "Fase 5F (#233): merge do #229".
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 740 arquivos, 5509 testes.
+- Integração em banco descartável novo: `src/server/aria`, `src/server/whatsapp`, `crm/mensagens-agendadas`: saída 0; 73 arquivos, 621 testes.
+
 ### Fase 5F, Task 38: Configurações › Números (setores, triagem, perfil, privacidade, temporárias) — 2026-10-18
 
 - `src/server/crm-config/{numeros,perfil-numero}.ts` (só ADMINISTRADOR, motor chamado antes de gravar, `Evento` `NumeroSetoresAlterados`, `NumeroTriagemAlterada`, `NumeroPerfilAlterado`, `NumeroPrivacidadeAlterada`, `NumeroTemporariasAlteradas` com `{de, para}`), painel `numeros/PerfilNumeroPainel.tsx`.
@@ -3298,3 +3327,12 @@ Branch `claude/fase5-f-config-crm`, agora com base `main` (não mais empilhada n
 - **Migrations em sequência num banco limpo** (`migrate deploy` em banco descartável): 010000 aria_base, 020000 aria_conhecimento (5B), 030000 metas_comerciais (5E), 040000 crm_configuracoes e 050000 resposta_rapida_titulo (5F), 070000 chamada_ia_escrita_cache (#232). `migrate diff` contra o schema: só o drift antigo de nomes/defaults de tabelas das fases 1 a 4, nada das 5B/5E/5F.
 - **R1:** C2 — o plano 05 (Task 39) não define o efeito de `alertarResponsavel`, `alertarGerente` e `contarSoNoHorario`: a tela marca "em breve" e fica a **pendência** de ligar prazo (`prazoRespostaEm` respeitando o horário) e alertas. Mesma coisa para `ariaPodeUsar` / `respostasParaAria`: **pendência de ligação** quando o turno da Aria (5C, #229) entrar. C3 — a privacidade gravada pode ser parcial; o painel completa com o padrão (`privacidade-inicial.ts`). C4 — `crm-config/numeros.ts` (`definirSetoresDoNumero`, `definirResponsavelTriagem`, sem chamador) removido; fica só `whatsapp/acoes-numero.salvarSetoresNumero`, a que a tela usa, e os testes de `numeros.int.test.ts` passaram a usá-la (ela recusa triagem que perdeu o papel em vez de zerar; a tela já manda null nesse caso). C5 — `atribuirAutomaticamente` ganhou testes unitários com tx mockada; a abertura por setor virou `abrirAtendimentoDoSetor` em `whatsapp/atendimentos.ts` (mesma assinatura da 5C) e aplica a distribuição por padrão, então a triagem da Aria (5C) entra no rodízio ao chamar essa função; o inbound passa `{ atribuir: false }` e mantém a decisão em `atendimentoDoInbound` (fromMe e chamada não atribuem). Ao entrar a 5C, o conflito em `atendimentos.ts` resolve-se mantendo esta versão. C6 — respostas rápidas do compositor viram lista simples de botões (sem `listbox`/`option`).
 - Evidências (banco descartável `erp_genius_test_fix233`, `migrate deploy`): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` 0 erros e 40 avisos (linha de base); `npm test` 741 arquivos, 5487 testes verdes; integração `crm-config/*`, `whatsapp/{acoes-numero,financeiro-matricula,roteamento}`, `aria/*`, `metas`, `relatorios/atendimento-aria`, `api/relatorios/exportar`: 17 arquivos, 165 testes verdes; mais os 32 `*.int.test.ts` que importam `whatsapp/atendimentos` ou `whatsapp/inbound` (por causa de `abrirAtendimentoDoSetor`): 32 arquivos, 265 testes verdes. A suíte completa segue com o integrador.
+
+### Fase 5F (#233): merge do #229 (5C) e pendências C7, C9, C10 — 2026-10-18
+
+Merge do `main` em `1a99b63b` (#229). Conflitos: este quadro (os dois lados) e `whatsapp/atendimentos.ts`, onde fica a versão do #233 de `abrirAtendimentoDoSetor` (`opcoes.atribuir`, `abrirSemAtribuir`), que é o superconjunto da 5C.
+- **C9:** a triagem da Aria (`aria/triagem.ts`) chama `abrirAtendimentoDoSetor` com 3 argumentos e recebe o rodízio por padrão; TODO removido. Teste `atendimento_aberto_pela_triagem_recebe_responsavel_pelo_rodizio`.
+- **C7 (R2):** novo `whatsapp/savepoint.ts` (`comSavepoint`). A atribuição dentro de `abrirAtendimentoDoSetor` roda num SAVEPOINT: se falhar (erro de banco no `FOR UPDATE`, por exemplo), volta ao savepoint, o atendimento fica na fila do setor sem responsável e a transação do chamador segue utilizável. Na triagem, a abertura inteira também roda num SAVEPOINT (o `try/catch` que engolia o erro com a transação abortada saiu); falha na abertura devolve a mensagem à triagem humana. Teste `falha_de_banco_na_atribuicao_nao_quebra_a_transacao_e_o_lead_fica_na_fila_do_setor` (com `SELECT 1/0` dentro da transação; antes da correção dava `25P02`).
+- **C10 (R3 do #229):** em `aria/turno/contexto.ts`, `ultimaFala` é o último inbound com `texto.trim()` não vazio; áudio, figurinha ou imagem sem legenda depois do texto não apagam a busca nas FONTES. Teste `ultima_fala_ignora_inbound_sem_texto`.
+- Migrations num banco limpo, em sequência: 010000, 020000, 030000, 040000, 050000, 070000, 080000 (`aria_triagem_shadow_sem_atendimento`).
+- Evidências (banco descartável, `migrate deploy`): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` 0 erros e 40 avisos (linha de base); `npm test` 747 arquivos, 5542 testes verdes; integração `src/server/{aria,whatsapp,crm-config}`: 77 arquivos, 659 testes verdes. A suíte completa segue com o integrador.

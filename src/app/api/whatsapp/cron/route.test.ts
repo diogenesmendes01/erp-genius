@@ -10,6 +10,8 @@ vi.mock("@/server/financeiro/cron-financeiro", () => ({ rodarFechamentoComissoes
 vi.mock("@/server/matricula/cron-fechamento", () => ({ rodarFechamentosPendentes: m.outras }));
 vi.mock("@/server/whatsapp/motor/drenar", () => ({ drenarEventosMotor: m.outras }));
 vi.mock("@/server/crm/lembretes", () => ({ rodarLembretesTarefas: m.outras }));
+vi.mock("@/server/aria/turno/orquestrador", () => ({ reprocessarTurnosPendentes: m.outras }));
+vi.mock("@/server/aria/expiracao", () => ({ expirarSugestoesAria: m.outras }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: m.outras }));
 vi.mock("@/server/whatsapp/linha-comercial", () => ({ adotarMensagensOrfasDaLinha: m.outras }));
 vi.mock("@/server/contratos/vencimento-acesso", () => ({ rodarReconciliacaoAcessoVencimento: m.outras }));
@@ -42,7 +44,7 @@ it("chamada autenticada adota mensagens órfãs das linhas comerciais (SPEC-ERP-
 it("tick só com etapas de base: sem comercial, copiloto e gestão (E1)", async () => {
   vi.stubEnv("CRON_SECRET", "segredo-fixture");
   const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
-  expect(Object.keys(corpo).sort()).toEqual(["acessoAulas", "acessoVencimentos", "cobranca", "comissoes", "despacho", "eventosMotor", "fechamentosPendentes", "inicioTurmas", "lembretesTarefas", "linhaComercial", "reservasParticulares"]);
+  expect(Object.keys(corpo).sort()).toEqual(["acessoAulas", "acessoVencimentos", "aria", "ariaExpiracao", "cobranca", "comissoes", "despacho", "eventosMotor", "fechamentosPendentes", "inicioTurmas", "lembretesTarefas", "linhaComercial", "reservasParticulares"]);
 });
 it("resposta inclui a chave lembretesTarefas (Fase 2)", async () => {
   vi.stubEnv("CRON_SECRET", "segredo-fixture");
@@ -62,4 +64,10 @@ it("cron devolve eventosMotor no JSON", async () => {
   m.outras.mockResolvedValue({ processados: 3 });
   const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
   expect(corpo.eventosMotor).toEqual({ processados: 3 });
+});
+it("cron devolve ariaExpiracao e isola a falha da etapa", async () => {
+  vi.stubEnv("CRON_SECRET", "segredo-fixture");
+  m.outras.mockResolvedValue({ expiradas: 2, handoffs: 1 });
+  const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
+  expect(corpo.ariaExpiracao).toEqual({ expiradas: 2, handoffs: 1 });
 });
