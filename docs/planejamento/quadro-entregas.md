@@ -2921,3 +2921,12 @@ Branch `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, `@anthropic-ai/sdk` 
   - Por task: Task 2, `ator.test.ts` + `enums-rotulos.test.ts` 130 testes verdes e `vitest related` 431 arquivos/2817 testes verdes; Task 3, `src/server/aria/provedor` 6 testes; Task 4, 13 testes (inclui 401, 429, 500, timeout e conexão); Task 5, `custo.test.ts` 5 testes e `uso.int.test.ts` 8 testes. Todos com saída 0.
 - **Pendente para o integrador antes do merge:** `npm run test:int` completo no `.erp-test-profile` (mais de 2 h; a regra do integrador desta faixa proíbe rodá-lo aqui). Comparar com as falhas preexistentes conhecidas (sensíveis à data e o flake de `portal-aluno/preferencia-fuso`) e registrar aqui código de saída e totais.
 - **Estado**: implementado; aguarda a suíte de integração completa, a decisão do preço de cache do Sonnet 5.5 e o integrador. Não concluído.
+
+### Fase 5A: fundação da Aria (verificação do bloco) — 2026-10-18
+
+Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 720 arquivos, 5301 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- Integração (banco `dev-email`, migration `aria_base` aplicada só nele), recorte dos arquivos tocados e dos que importam `comercial/{acoes,consultas,schema}`: `src/server/aria`, `src/server/comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `whatsapp/{inbox,acesso-atendimento}`, `secretaria/politica`: saída 0; 13 arquivos, 120 testes verdes.
+- Nota: `vitest related` com `src/lib/labels.ts`/`evento.ts` alcança praticamente toda a suíte de integração (passou de 2 h e foi interrompido pelo limite de tempo); a suíte completa fica para o integrador.
