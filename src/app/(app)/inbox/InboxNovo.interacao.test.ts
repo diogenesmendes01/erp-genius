@@ -130,6 +130,24 @@ describe("InboxNovo: aviso do SSE recarrega o painel do atendimento aberto (C3 d
     expect(c.podeEnviar).toBe(true);
     expect(c.falhaPermissao).toBeUndefined();
   });
+  it("recarga por aviso que volta 404 (acesso revogado) trava o compositor, sem erro de tentar de novo (C1 da revisão do #223)", async () => {
+    tela(); await esvaziar();
+    expect(conversa(tela()).podeEnviar).toBe(true);
+    respostaPainel = () => new Response(JSON.stringify({ erro: "Atendimento não encontrado." }), { status: 404 });
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", mensagemId: null, conversaId: "cv1" });
+    tela(); await esvaziar();
+    expect(chamadasPainel).toHaveLength(2);
+    const c = conversa(tela());
+    expect(c.podeEnviar).toBe(false);
+    expect(c.falhaPermissao).toBeUndefined();
+  });
+  it("404 na carga inicial segue como erro com tentar de novo", async () => {
+    respostaPainel = () => new Response("", { status: 404 });
+    tela(); await esvaziar();
+    const c = conversa(tela());
+    expect(c.podeEnviar).toBeNull();
+    expect(typeof c.falhaPermissao).toBe("function");
+  });
   it("aviso de outro atendimento não recarrega o painel", async () => {
     tela(); await esvaziar();
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });

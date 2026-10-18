@@ -10,6 +10,12 @@ export type AvisoInbox = {
   atendimentoId: string | null;
   mensagemId: string | null;
   conversaId: string;
+  /**
+   * Aviso direcionado (só `atendimento.atualizado`): vai apenas a este usuário, sem consultar o escopo. Sai da
+   * revogação de um convite, quando o ex-convidado já está fora do escopo e o aviso comum não o alcançaria.
+   * O NOTIFY só é emitido pelo servidor (nunca pelo cliente) e o id não é repassado no quadro SSE.
+   */
+  paraUsuarioId?: string;
 };
 
 type Estado = {
