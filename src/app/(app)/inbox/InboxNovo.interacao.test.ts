@@ -110,6 +110,25 @@ describe("InboxNovo: aviso do SSE recarrega o painel do atendimento aberto (C3 d
     tela(); await esvaziar();
     expect(chamadasPainel).toHaveLength(2);
   });
+  it("mensagem.nova e mensagem.status do atendimento selecionado não recarregam o painel (C1 da R1 do #220)", async () => {
+    tela(); await esvaziar();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    tela(); await esvaziar();
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    tela(); await esvaziar();
+    expect(chamadasPainel).toHaveLength(1);
+  });
+  it("recarga por aviso que falha mantém o último true conhecido: sem erro no meio da digitação (C2 da R1 do #220)", async () => {
+    tela(); await esvaziar();
+    expect(conversa(tela()).podeEnviar).toBe(true);
+    respostaPainel = () => new Response("", { status: 500 });
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", mensagemId: null, conversaId: "cv1" });
+    tela(); await esvaziar();
+    expect(chamadasPainel).toHaveLength(2);
+    const c = conversa(tela());
+    expect(c.podeEnviar).toBe(true);
+    expect(c.falhaPermissao).toBeUndefined();
+  });
   it("aviso de outro atendimento não recarrega o painel", async () => {
     tela(); await esvaziar();
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
