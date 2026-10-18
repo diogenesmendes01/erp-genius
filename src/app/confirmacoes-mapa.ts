@@ -114,14 +114,14 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     efeito: "marca o lead como no-show e dispara a recuperação de no-show, sem correção pela tela",
   },
   {
-    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
+    arquivo: "src/app/(app)/inbox/AcoesContato.tsx",
     modulo: "@/server/whatsapp/acoes",
     acao: "vincularContatoWhatsApp",
     achado: "L2298",
-    efeito: "amarra o histórico da conversa a um aluno, responsável ou lead; não há desvincular pela tela",
+    efeito: "amarra o histórico da conversa a um aluno, responsável ou oportunidade; não há desvincular pela tela",
   },
   {
-    arquivo: "src/app/(app)/inbox/InboxCliente.tsx",
+    arquivo: "src/app/(app)/inbox/OptOutContato.tsx",
     modulo: "@/server/whatsapp/acoes",
     acao: "registrarOptOutContato",
     achado: "L2298",
@@ -211,6 +211,13 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     acao: "desconectarNumero",
     achado: "Fase 4D",
     efeito: "faz logout do número no motor: o número para de enviar e receber até novo pareamento por QR ou código",
+  },
+  {
+    arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx",
+    modulo: "@/server/whatsapp/motor/acoes-mensagem",
+    acao: "apagarMensagemWhatsApp",
+    achado: "Fase 4D",
+    efeito: "apaga a mensagem para todos no WhatsApp do contato; não há como desfazer pela tela",
   },
 ];
 

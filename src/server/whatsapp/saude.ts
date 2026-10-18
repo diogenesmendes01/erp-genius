@@ -92,7 +92,7 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
   const limiarEventoMotor = new Date(agora.getTime() - LIMIAR_EVENTO_MOTOR_PARADO_MIN * 60_000);
   // Com o envio de agenda desligado, o aviso de agenda não é despachável: fora dos relógios.
   const despachavel = envioAgendaHabilitado ? {} : { avisoAlteracaoAgendaId: null };
-  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica, eventosMotorPendentes, eventosMotorAdiados, eventoMotorParado, retidasAgendaDesligada] =
+  const [porStatus, pendenteMaisVelha, agendadaMaisVencida, adiadaMaisVencida, claimMaisVelho, falhas24h, numeros, ultimoInbound, politica, eventosMotorPendentes, eventosMotorAdiados, eventoMotorParadoDesde, retidasAgendaDesligada] =
     await Promise.all([
       // Contagem = ESTOQUE da fila, inclusive agendadas para o futuro (como as ADIADAS à
       // espera de janela): é informativa e nenhum alerta depende dela. O que alarma é o
@@ -145,16 +145,22 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
       // "Parado" por estado (R1 do #215, B2): só o que o dreno já devia ter pegado — sem backoff e
       // recebido há mais do limiar, ou com a próxima tentativa vencida há mais do limiar. Evento em
       // backoff (até ~51 min em tráfego normal) não alarma; aparece em `eventosMotorAdiados`.
-      prisma.eventoMotorRecebido.findFirst({
-        where: {
-          processadoEm: null,
-          OR: [
-            { proximaTentativaEm: null, recebidoEm: { lt: limiarEventoMotor } },
-            { proximaTentativaEm: { lt: limiarEventoMotor } },
-          ],
-        },
-        orderBy: { seq: "asc" },
-        select: { recebidoEm: true, proximaTentativaEm: true },
+      // O alerta mede o MAIS atrasado (C4 do #215), não o de menor seq: cada estado tem seu relógio,
+      // então uma consulta por estado, cada uma ordenada pelo seu, e vale a mais antiga das duas.
+      Promise.all([
+        prisma.eventoMotorRecebido.findFirst({
+          where: { processadoEm: null, proximaTentativaEm: null, recebidoEm: { lt: limiarEventoMotor } },
+          orderBy: { recebidoEm: "asc" },
+          select: { recebidoEm: true },
+        }),
+        prisma.eventoMotorRecebido.findFirst({
+          where: { processadoEm: null, proximaTentativaEm: { lt: limiarEventoMotor } },
+          orderBy: { proximaTentativaEm: "asc" },
+          select: { proximaTentativaEm: true },
+        }),
+      ]).then(([semBackoff, emBackoff]) => {
+        const datas = [semBackoff?.recebidoEm, emBackoff?.proximaTentativaEm].filter((d): d is Date => !!d);
+        return datas.length ? new Date(Math.min(...datas.map((d) => d.getTime()))) : null;
       }),
       // Só conta com o envio desligado (C1 do #212): o motivo fica gravado até o próximo tick
       // pegar a intenção, então, religado o envio, nada mais está retido por ele.
@@ -215,9 +221,9 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
   }
 
   // 4c. Eventos do motor parados na tabela de entrada / esgotados no motor.
-  if (eventoMotorParado) {
+  if (eventoMotorParadoDesde) {
     alertas.push(
-      `Evento do motor parado há ${minutosDesde(agora, eventoMotorParado.proximaTentativaEm ?? eventoMotorParado.recebidoEm)}min sem processamento — o dreno está rodando?`,
+      `Evento do motor parado há ${minutosDesde(agora, eventoMotorParadoDesde)}min sem processamento — o dreno está rodando?`,
     );
   }
   if (eventosMotorFalhos && eventosMotorFalhos > 0) {
