@@ -412,6 +412,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx": [
     "compacto · Nenhuma proposta.",
   ],
+  "src/app/(app)/configuracao/crm/metas/page.tsx": [
+    "compacto · Nenhuma meta definida para este mês.",
+  ],
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx": [
     "compacto · Nenhum documento. Adicione ao menos um para poder ativar o país.",
   ],

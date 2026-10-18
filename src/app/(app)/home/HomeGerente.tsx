@@ -24,7 +24,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi titulo="Leads hoje" valor={String(kpis.leadsHoje)} />
         <Kpi titulo="Conversão" valor={`${kpis.conversao}%`} />
-        <Kpi titulo="Matrículas no mês" valor={String(kpis.matriculasMes)} />
+        <Kpi titulo={kpis.metaMatriculasMes ? `Matrículas no mês · meta ${kpis.metaMatriculasMes.meta} (${kpis.metaMatriculasMes.realizado} feitas)` : "Matrículas no mês"} valor={String(kpis.matriculasMes)} />
         <Kpi titulo="Recebido no mês" valor={formatarValores(kpis.receitaMes)} />
       </div>
 
