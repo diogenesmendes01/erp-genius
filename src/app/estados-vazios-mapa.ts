@@ -394,6 +394,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx": [
     "linha · Nenhum preço cadastrado.",
   ],
+  "src/app/(app)/configuracao/crm/distribuicao/SetorPainel.tsx": [
+    "compacto · Nenhum usuário ativo neste setor.",
+  ],
   "src/app/(app)/configuracao/contratos/[codigo]/page.tsx": [
     "compacto · Sem campos variáveis.",
   ],
