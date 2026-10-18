@@ -2779,3 +2779,14 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `motor/conteudo`, `motor/grupo-envio`, `motor/presenca`): 89 testes verdes; e `despachante-motor/comercial/agendada` + `inbox`:
   43 testes verdes. Sem falhas novas.
 **Estado**: Implementado; aguardando revisão e merge (depois da 4C).
+
+## Fase 4E — remove Meta/Evolution e sobe o motor (18/10/2026)
+
+- Branch `claude/fase4-e-remove-legados` (PR empilhado sobre `claude/fase4-d-inbox-motor`), tarefas 25 e 26 do plano `04-fase-motor.md`:
+  remoção dos drivers, webhooks e templates de Meta e Evolution; deploy com o serviço do motor no lugar do Evolution.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` varria quase toda a suíte e foi interrompido; rodados os 37 `*.int.test.ts` do diff:
+  37 arquivos, 326 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4D).
