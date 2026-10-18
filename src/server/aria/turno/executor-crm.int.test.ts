@@ -158,6 +158,12 @@ describe("executor: ações no CRM", () => {
     expect(await prisma.evento.count({ where: { tipo: "TagAtribuida" } })).toBe(0);
   });
 
+  it("shadow_com_sugerir_vira_simulada_e_nao_pode_ser_aplicada_como_sugestao", async () => {
+    const a = await exec({ acao: "TAG", tagId: c.tag.id, justificativa: "x" }, "SUGERIR", { simulado: true });
+    expect(a).toMatchObject({ status: "SIMULADA", modoConfigurado: "SHADOW", expiraEm: null });
+    expect(await tagsDe()).toEqual([]);
+  });
+
   it("desconto_entre_limites_cria_aprovacao", async () => {
     const a = await exec({ acao: "CONDICAO_COMERCIAL", tipoCobranca: "MENSALIDADE", descontoPct: 15, parcelas: 1, justificativa: "x" });
     expect(a).toMatchObject({ status: "EXECUTADA", aprovacaoId: expect.any(String), reversivel: false });

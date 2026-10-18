@@ -93,7 +93,7 @@ export async function executarResposta(tx: Tx, i: EntradaResposta): Promise<{ ac
 
   const corpo = i.ctx.primeiraDaAria ? `${APRESENTACAO(i.nomeAria)} ${i.texto}` : i.texto;
   const executa = i.destino === "EXECUTAR";
-  const status = !executa ? "SUGERIDA" : i.simulado ? "SIMULADA" : "EXECUTADA";
+  const status = i.simulado ? "SIMULADA" : !executa ? "SUGERIDA" : "EXECUTADA";
 
   const acao = await tx.acaoAgenteIA.create({
     data: {
@@ -439,7 +439,7 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA): Promise<{ eventoI
 
 /**
  * Decide e (quando permitido) executa uma ação proposta no CRM, tudo na transação recebida.
- * NEGAR/inválida -> BLOQUEADA; SUGERIR -> SUGERIDA com expiração; simulado -> SIMULADA; senão EXECUTADA.
+ * NEGAR/inválida -> BLOQUEADA; simulado (SHADOW, vale mesmo com SUGERIR) -> SIMULADA; SUGERIR -> SUGERIDA com expiração; senão EXECUTADA.
  */
 export async function executarAcaoCrm(tx: Tx, i: EntradaAcaoCrm): Promise<AcaoAgenteIA> {
   const config = i.config ?? (await versaoPublicada(tx))?.config ?? configPadrao();
@@ -475,11 +475,12 @@ export async function executarAcaoCrm(tx: Tx, i: EntradaAcaoCrm): Promise<AcaoAg
     reversivel: plano.reversivel,
     motivoIrreversivel: plano.motivoIrreversivel,
   };
+  // SHADOW vence a matriz: nada sai e nada muda, nem como sugestão aprovável depois.
+  if (i.simulado) return tx.acaoAgenteIA.create({ data: { ...dados, status: "SIMULADA" } });
   if (i.destino === "SUGERIR") {
     const expiraEm = new Date(Date.now() + config.confianca.expiracaoSugestaoMin * 60_000);
     return tx.acaoAgenteIA.create({ data: { ...dados, status: "SUGERIDA", expiraEm } });
   }
-  if (i.simulado) return tx.acaoAgenteIA.create({ data: { ...dados, status: "SIMULADA" } });
 
   const criada = await tx.acaoAgenteIA.create({ data: { ...dados, status: "EXECUTADA" } });
   await aplicarAcao(tx, criada);
