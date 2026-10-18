@@ -2,6 +2,13 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Pendências do #226 (Fase 5B), revisão R2 — N2 (18/10/2026)
+
+Branch `claude/pendencias-226`. A regra `uploadLivreDoAutor` (`src/server/uploads/autorizacao.ts`), que libera um upload para a base de conhecimento da Aria, só tinha cobertura em `*.int.test.ts`, fora do CI. Agora `autorizacao.test.ts` (prisma mockado, roda no `npm test`) cobre: upload de outro autor → `null`; vínculo por lead, aluno, cobrança ou matrícula → `null`; referência como comprovante de cobrança, informe de pagamento, documento, mídia de mensagem ou de intenção de WhatsApp → `null`; upload livre do próprio autor → aceito. Cinco mutações da regra (autoria, vínculos, matrícula, referências, intenção) fazem o teste falhar.
+
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (40 avisos já existentes). `npm test`: 726 arquivos, 5386 testes verdes.
+- **Estado**: só teste; nenhuma mudança de código de produção. Aguarda o merge.
+
 ## Decisões do dono 17/10/2026
 
 Registro completo em [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md). Branch `claude/decisoes-dono-17-10`.
