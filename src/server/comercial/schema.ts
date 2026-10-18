@@ -135,9 +135,6 @@ export const ConfigComercialSchema = z
     autoLeadAtivo: z.boolean(),
     saudacaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
     saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
-    // C3 (doc 27): copiloto IA só-leitura — nasce desligado (regra de ouro).
-    copilotoAtivo: z.boolean().default(false),
-    copilotoQuietudeMinutos: z.number().int().min(1).max(1440).default(10),
     // C4 (doc 27): matrícula automática (contrato OK + taxa PAGA ativam) — nasce desligada.
     matriculaAutomaticaAtiva: z.boolean().default(false),
     // C5 (doc 27): gestão — alerta de SLA + relatório diário do gestor. Nasce desligada.
