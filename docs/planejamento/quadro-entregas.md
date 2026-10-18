@@ -2921,3 +2921,14 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   `npm test` com saída 0 (714 arquivos, 5276 testes). Integração com saída 0 em `saude.int.test.ts` (20 testes) e em
   `src/server/inbox/` (7 arquivos, 64 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
   foi rodado; fica para o integrador.
+
+## Pendências da revisão do #218 (C2, C3) (18/10/2026)
+
+- **C2:** o compositor do Inbox novo distingue permissão carregando (`podeEnviar: null` → "Carregando…", em `role="status"`),
+  painel que falhou (`falhaPermissao` → erro em `role="alert"` com o `<Botao>` "Tentar de novo", que volta a carregar) e
+  permissão negada (`false` → o motivo). Continua falhando fechado: só `true` envia. Testes em `Compositor.test.ts`,
+  `ConversaAberta.test.ts` e `InboxNovo.interacao.test.ts`.
+- **C3:** um aviso do SSE do atendimento aberto, ou um `resync`, recarrega o painel (`versaoPainel`). Assim o compositor libera
+  quando alguém transfere ou convida com envio. Teste de componente que simula o aviso em `InboxNovo.interacao.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (715 arquivos, 5288 testes). Nenhuma mudança no servidor, então a integração não foi rodada.
