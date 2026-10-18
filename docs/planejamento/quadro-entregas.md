@@ -2897,3 +2897,9 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   `Compositor` (upload em `/api/whatsapp/upload` e `enviarMidiaInbox`); ganharam testes de interação.
 - **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
 - **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).
+
+## Fase 5, Task 1: trava de pré-requisitos (18/10/2026)
+
+- Branch: `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, SDK 0.131.0 exato). Teste: `src/test/pre-requisitos-fase5.test.ts` (5 testes verdes), `tsc` saída 0.
+- Nomes reais do main diferentes do plano (trava usa os reais): `Tarefa.leadId` (plano: `oportunidadeId`), `Tag.ativo` (plano: `arquivadaEm`), `PrazoRespostaSetor{finalidade, minutos}` (plano: `ConfigSetorAtendimento{prazoPrimeiraRespostaMin}`).
+- A conferir depois, quando as faixas integrarem: `NotaAtendimento`, `src/server/whatsapp/envio-inbox.ts`, `NumeroWhatsApp.perfilNome/privacidade/temporariasSegundos` e `drivers/motor.ts` (`atualizarPerfil`/`atualizarPrivacidade`/`definirTemporarias`, Fase 4D–4F), `ConfigSetorAtendimento`.
