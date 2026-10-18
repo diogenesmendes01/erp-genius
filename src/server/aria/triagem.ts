@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { abrirAtendimentoDoSetor } from "@/server/whatsapp/atendimentos";
+import { comSavepoint } from "@/server/whatsapp/savepoint";
 import { setoresDoNumero } from "@/server/whatsapp/numero-setor";
 import { aplicarInbound } from "@/server/whatsapp/status-atendimento";
 import { payloadDaAria } from "./ator";
@@ -178,17 +179,14 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
     await tx.$queryRaw`SELECT id FROM "MensagemWhatsApp" WHERE id = ${msg.id} FOR UPDATE`;
     const atual = await tx.mensagemWhatsApp.findUniqueOrThrow({ where: { id: msg.id }, select: { atendimentoId: true } });
     if (atual.atendimentoId) return null;
-    let atendimento;
-    try {
-      // TODO(5F, #233): o rodízio (`atribuirAutomaticamente`) da 5F roda só dentro de
-      // `atendimentoDoInbound`; este caminho abre o atendimento direto por `abrirAtendimentoDoSetor`
-      // e ficaria fora dele. Quem entrar por último no main (5C ou 5F) aplica o rodízio aqui também.
-      atendimento = await abrirAtendimentoDoSetor(
-        tx, { numeroId: msg.conversa.numeroId, contatoId, contato: msg.conversa.contato! }, setor,
-      );
-    } catch {
-      atendimento = null;
-    }
+    // abrirAtendimentoDoSetor aplica o rodízio da 5F (atribuição num SAVEPOINT próprio). A abertura
+    // também roda num SAVEPOINT: um erro de banco nela não deixa esta transação abortada e a mensagem
+    // volta para a triagem humana (SETOR_FORA_DO_NUMERO).
+    const atendimento = await comSavepoint(
+      tx, "abrir_setor",
+      () => abrirAtendimentoDoSetor(tx, { numeroId: msg.conversa.numeroId, contatoId, contato: msg.conversa.contato! }, setor),
+      () => null,
+    );
     if (!atendimento || atendimento.encerradoEm) return { fora: true as const };
     await tx.mensagemWhatsApp.update({ where: { id: msg.id }, data: { atendimentoId: atendimento.id } });
     await tx.atendimentoWhatsApp.update({ where: { id: atendimento.id }, data: {

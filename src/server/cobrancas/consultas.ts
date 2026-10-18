@@ -24,6 +24,7 @@ import {
 import { lerPaginaDaFila, type NavegacaoDaPagina, type NavegacaoFila } from "@/lib/cursor-fila";
 import { cicloDoEventoCobranca } from "./eventos";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { ONDE_MODELO_REGUA } from "@/server/whatsapp/modelos-regua";
 
 // Read path da régua de cobrança (doc 24). Monta a EntradaRegua de cada cobrança aberta a partir
 // dos eventos já gravados (passo cumprido + promessa) e roda o cérebro `proximaAcao`. Tudo
@@ -331,7 +332,7 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   // Canal WhatsApp (E2): templates p/ renderizar a mensagem sugerida no servidor,
   // última intenção por cobrança (estado do braço) e inbound por destino ("respondeu").
   const ids = cobrancas.map((c) => c.id);
-  const templates = await prisma.templateWhatsApp.findMany();
+  const templates = await prisma.templateWhatsApp.findMany({ where: ONDE_MODELO_REGUA });
   const templatePorId = new Map(templates.map((t) => [t.id, t]));
   const templatePorNome = new Map(templates.map((t) => [t.nome, t]));
 
