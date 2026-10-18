@@ -57,6 +57,12 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Fora do horário comercial · opcional · select",
     "Mensagem para o contato · opcional · CampoTexto · dica",
   ],
+  "src/app/(app)/aria/_componentes/Playground.tsx": [
+    "Etapa da oportunidade · opcional · select",
+    "País dos preços · opcional · select",
+    "Configuração testada · opcional · select",
+    "Mensagem do cliente · opcional · CampoTexto",
+  ],
   "src/app/portal-aluno/ativar/page.tsx": [
     "Nova senha · obrigatório · input · dica · erro: errosCampos.senha",
     "Repita a senha · obrigatório · input · dica · erro: errosCampos.confirmacao",

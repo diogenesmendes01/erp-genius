@@ -17,6 +17,7 @@ import { Confianca } from "./_componentes/Confianca";
 import { Conhecimento } from "./_componentes/Conhecimento";
 import { Handoff } from "./_componentes/Handoff";
 import { Historico } from "./_componentes/Historico";
+import { Playground } from "./_componentes/Playground";
 import { Permissoes } from "./_componentes/Permissoes";
 import { VisaoGeral } from "./_componentes/VisaoGeral";
 
@@ -100,6 +101,7 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
             />
           )}
         </div>
+        {aba === "playground" && <Playground paises={dados.paises ?? []} temRascunho={!!dados.rascunho} nome={config.nome} />}
       </div>
 
       <BarraPublicar diff={dados.diff} podePublicar={cap.has("publicar")} podeDescartar={podeEditar} />
