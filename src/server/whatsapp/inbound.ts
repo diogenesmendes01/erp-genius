@@ -7,6 +7,7 @@ import { garantirContato, telefoneDeWaId } from "./identidade";
 import { atendimentoDoInbound } from "./atendimentos";
 import { aplicarInbound, aplicarResposta } from "./status-atendimento";
 import { aoGravarSaidaHumana } from "@/server/aria/pausa";
+import { agendarTurnoAria } from "@/server/aria/turno/orquestrador";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
@@ -57,6 +58,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
   const telefoneContato = telefoneDeWaId(m.contatoWaId);
 
   try {
+    const ancoraAria: { id: string | null } = { id: null };
     await prisma.$transaction(async (tx) => {
       const contato = await garantirContato(tx, {
         telefoneE164: telefoneContato,
@@ -152,9 +154,14 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           await aplicarResposta(tx, atendimentoId, m.quando);
           await aoGravarSaidaHumana(tx, { atendimentoId, origem: "CELULAR", autorId: null });
         }
-        else await aplicarInbound(tx, atendimentoId, m.quando);
+        else {
+          await aplicarInbound(tx, atendimentoId, m.quando);
+          ancoraAria.id = mensagem.id;
+        }
       }
     });
+    // Depois do commit: a Aria roda em segundo plano, sem atrasar nem derrubar a ingestão.
+    if (ancoraAria.id) agendarTurnoAria(ancoraAria.id);
     return "gravada";
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return "duplicada";

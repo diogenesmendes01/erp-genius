@@ -10,6 +10,7 @@ import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
 import { rodarFechamentoComissoes } from "@/server/financeiro/cron-financeiro";
 import { rodarFechamentosPendentes } from "@/server/matricula/cron-fechamento";
 import { rodarLembretesTarefas } from "@/server/crm/lembretes";
+import { reprocessarTurnosPendentes } from "@/server/aria/turno/orquestrador";
 
 // CRON DA RÉGUA (doc 26 §Camada 1 · doc 27 · doc 29 §fluxo F1). Rota machine-to-machine:
 // autenticação por SEGREDO (header x-cron-secret), nunca por sessão. Agendamento externo
@@ -58,6 +59,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   const eventosMotor = await seguro("eventos_motor", () => drenarEventosMotor(agora));
   // Lembretes de tarefa do CRM (Fase 2): claim atômico + notificação ao responsável; sem envio externo.
   const lembretesTarefas = await seguro("lembretes_tarefas", () => rodarLembretesTarefas(agora));
+  // Aria: âncoras sem turno há mais de 2 min (inbound perdido); só gera intenções, o despacho abaixo as drena.
+  const aria = await seguro("aria", () => reprocessarTurnosPendentes(agora));
   // ...então uma passada do despachante drena o que eles enfileiraram (idempotente).
   const despacho = await seguro("despacho", () => despacharFila(agora));
 
@@ -72,6 +75,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     linhaComercial,
     eventosMotor,
     lembretesTarefas,
+    aria,
     despacho,
   });
 }
