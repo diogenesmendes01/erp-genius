@@ -39,6 +39,7 @@ import { enviarTextoInbox } from "../acoes";
 import { garantirAtendimento } from "../atendimentos";
 import { rodarCronRegua } from "../cron";
 import { despacharFila } from "../despachante";
+import { driverMotor } from "../drivers/motor";
 import { drenarEventosMotor } from "./drenar";
 
 let sim: MotorSimulado;
@@ -54,8 +55,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await truncarBanco();
-  sim.recebidos.length = 0;
-  sim.falharEnvio = null;
+  sim.reiniciar();
   vi.stubEnv("MOTOR_URL", sim.url);
   vi.stubEnv("MOTOR_API_KEY", "k".repeat(40));
   vi.stubEnv("MOTOR_WEBHOOK_SECRET", "s".repeat(40));
@@ -105,18 +105,19 @@ describe("ponta a ponta com o motor simulado", () => {
     expect(envio.cabecalhos["x-origem"]).toBe("HUMANO");
     expect(corpo).toMatchObject({ tipo: "texto", texto: "olá", paraE164: TELEFONE });
 
+    const { providerMessageId, mensagemIdMotor } = sim.enviadas[0];
     const eco = {
-      mensagemId: "c:3EB01", providerMessageId: "3EB01", chatJid: "50688888888@s.whatsapp.net", ehGrupo: false,
+      mensagemId: mensagemIdMotor, providerMessageId, chatJid: "50688888888@s.whatsapp.net", ehGrupo: false,
       contato: { telefoneE164: TELEFONE }, tipo: "TEXTO", texto: "olá", quando: Date.now(),
       clientMessageId: corpo.clientMessageId, origem: "erp",
     };
     expect((await sim.emitir("mensagem.enviada", numeroId, eco)).status).toBe(200);
-    expect((await sim.emitir("mensagem.status", numeroId, { providerMessageId: "3EB01", clientMessageId: corpo.clientMessageId, status: "LIDA" })).status).toBe(200);
+    expect((await sim.emitir("mensagem.status", numeroId, { providerMessageId, clientMessageId: corpo.clientMessageId, status: "LIDA" })).status).toBe(200);
     await drenarEventosMotor();
 
     const mensagens = await prisma.mensagemWhatsApp.findMany();
     expect(mensagens).toHaveLength(1);
-    expect(mensagens[0]).toMatchObject({ origem: "HUMANO", direcao: "SAIDA", status: "LIDA", driver: "MOTOR", clientMessageId: corpo.clientMessageId, providerMessageId: "3EB01", mensagemIdMotor: "c:3EB01" });
+    expect(mensagens[0]).toMatchObject({ origem: "HUMANO", direcao: "SAIDA", status: "LIDA", driver: "MOTOR", clientMessageId: corpo.clientMessageId, providerMessageId, mensagemIdMotor });
     expect(await prisma.eventoMotorRecebido.count({ where: { processadoEm: null } })).toBe(0);
   });
 
@@ -178,6 +179,67 @@ describe("ponta a ponta com o motor simulado", () => {
     // reexecutar o despacho não envia de novo
     await despacharFila(new Date(Date.now() + 120_000), { intencaoId: intencao.id });
     expect(envios(numeroId)).toHaveLength(2);
+  });
+
+  it("reiniciar() zera recebidos, contador, idempotência e falha do simulado", async () => {
+    const postar = async (clientMessageId: string) => {
+      const r = await fetch(`${sim.url}/v1/numeros/n1/mensagens`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${"k".repeat(40)}`, "content-type": "application/json" },
+        body: JSON.stringify({ clientMessageId, tipo: "texto", texto: "x", paraE164: TELEFONE }),
+      });
+      return ((await r.json()) as { providerMessageId: string }).providerMessageId;
+    };
+    const a = await postar("cid-a");
+    const b = await postar("cid-b");
+    expect(b).not.toBe(a);
+    sim.falharEnvio = "NAO_ENVIADO";
+
+    sim.reiniciar();
+    expect(sim.recebidos).toHaveLength(0);
+    expect(sim.enviadas).toHaveLength(0);
+    expect(sim.falharEnvio).toBeNull();
+    // sem o cache antigo de clientMessageId e com o contador do zero: cid-b recebe o 1º id, não o de antes
+    expect(await postar("cid-b")).toBe(a);
+  });
+
+  it("motor responde 502 RESULTADO_INCERTO (mas enviou) → FALHOU sem reenvio; mesmo clientMessageId não duplica", async () => {
+    const { atendimento, numero, numeroId } = await cenario();
+    sim.falharEnvio = "RESULTADO_INCERTO";
+    await enviarTextoInbox({ conversaId: atendimento.id, texto: "chegou?" });
+
+    let intencao = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(intencao).toMatchObject({ status: "FALHOU", motivoFalha: "resultado_incerto" });
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+    const cid = intencao.clientMessageId!;
+    expect(cid).toBeTruthy();
+    // o simulado entregou de fato (só a confirmação se perdeu)
+    expect(sim.enviadas).toEqual([expect.objectContaining({ clientMessageId: cid })]);
+
+    // o despacho não reenvia sozinho um resultado incerto (revisão humana)
+    sim.falharEnvio = null;
+    await despacharFila(new Date(Date.now() + 61_000), { intencaoId: intencao.id });
+    expect(envios(numeroId)).toHaveLength(1);
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } })).status).toBe("FALHOU");
+
+    // reenvio com o MESMO clientMessageId: o motor devolve a mensagem já enviada, não manda outra
+    const reenvio = await driverMotor.enviarTexto(numero, TELEFONE, "chegou?", { clientMessageId: cid, origem: "HUMANO" });
+    expect(reenvio).toEqual({ providerMessageId: sim.enviadas[0].providerMessageId, mensagemIdMotor: sim.enviadas[0].mensagemIdMotor });
+    expect(envios(numeroId)).toHaveLength(2);
+    expect(sim.enviadas).toHaveLength(1);
+
+    // o eco do motor (mesmo repetido) confirma o envio incerto sem criar mensagem duplicada
+    const eco = dadosEntrada({
+      mensagemId: reenvio.mensagemIdMotor, providerMessageId: reenvio.providerMessageId, texto: "chegou?",
+      clientMessageId: cid, origem: "erp",
+    });
+    await sim.emitir("mensagem.enviada", numeroId, eco);
+    await sim.emitir("mensagem.enviada", numeroId, eco);
+    await drenarEventosMotor();
+    intencao = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } });
+    expect(intencao.status).toBe("FALHOU");
+    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: "EnvioIncertoConfirmadoPeloMotor", agregadoId: intencao.id } })).toBe(1);
   });
 
   it("régua de cobrança CRON em número MOTOR envia na janela e simula sem WHATSAPP_LIVE", async () => {

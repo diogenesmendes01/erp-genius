@@ -8,11 +8,9 @@ const { authMock, sendMock } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({
-  driverMetaCloud: { enviarTexto: sendMock, enviarTemplate: sendMock, enviarMidia: sendMock },
-}));
-vi.mock("@/server/whatsapp/drivers/evolution", () => ({
-  driverEvolution: { enviarTexto: sendMock, enviarTemplate: sendMock, enviarMidia: sendMock },
+// Fase 4E: o único driver é o motor próprio (Meta Cloud e Evolution saíram do código).
+vi.mock("@/server/whatsapp/drivers/motor", () => ({
+  driverMotor: { enviarTexto: sendMock, enviarTemplate: sendMock, enviarMidia: sendMock, enviarConteudo: sendMock },
 }));
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo } from "@/test/integracao";
@@ -27,7 +25,6 @@ import { criarLead } from "@/server/comercial/acoes";
 import { obterLead, listarLeads } from "@/server/comercial/consultas";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 import { editarPais } from "@/server/paises/acoes";
-import { rodarLeadNovoSemResposta, rodarPreExperimental } from "@/server/whatsapp/cron-comercial";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { capturarRespostaExperimental } from "@/server/comercial/captura";
 import { CADENCIAS_COMERCIAIS, CHAVE_LEAD_NOVO, CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
@@ -260,7 +257,7 @@ describe("Dinheiro e ciclo de matricula", () => {
 
 async function canalComercial(chave = CHAVE_LEAD_NOVO, etapa = "NOVO", ancora = new Date(Date.now() - 45 * 60000)) {
   const numero = await prisma.numeroWhatsApp.create({ data: {
-    telefoneE164: "+50677776666", rotulo: "Auditoria", driver: "BAILEYS", finalidade: "VENDAS",
+    telefoneE164: "+50677776666", rotulo: "Auditoria", driver: "MOTOR", finalidade: "VENDAS",
     donoId: vendedor.id, providerRef: "audit-instance", sessao: "CONECTADO",
   } });
   const cadencia = CADENCIAS_COMERCIAIS.find(c => c.chave === chave);
@@ -303,15 +300,8 @@ describe("WhatsApp com drivers falsos e banco real", () => {
     await intencao(c); await despacharFila();
     expect(sendMock).not.toHaveBeenCalled();
   });
-  it("W03 saida humana pelo celular interrompe lead novo", async () => {
-    const c = await canalComercial();
-    await prisma.mensagemWhatsApp.create({ data: {
-      conversaId: c.conversa.id, numeroId: c.numero.id, direcao: "SAIDA", origem: null,
-      corpo: "Eu sou o vendedor, vou te atender", driver: "BAILEYS",
-    } });
-    const r = await rodarLeadNovoSemResposta();
-    expect(r.enfileiradas).toBe(0);
-  });
+  // W03 (lead novo interrompido pela saída do celular) saiu com o cron comercial na E1 (53c69b4b):
+  // não há mais enfileiramento automático de lead novo para auditar.
   it("W04 pedido de reagendamento impede novos lembretes", async () => {
     const c = await canalComercial(CHAVE_PRE_EXPERIMENTAL, "EXPERIMENTAL_AGENDADA", new Date(Date.now() + 60000 * 60));
     await prisma.evento.create({ data: {
@@ -319,15 +309,15 @@ describe("WhatsApp com drivers falsos e banco real", () => {
       payload: { chave: CHAVE_PRE_EXPERIMENTAL, passo: "-24h", ocorrencia: c.ancora.toISOString() },
     } });
     await prisma.$transaction(tx => capturarRespostaExperimental(tx, { leadId: c.lead.id, corpo: "REAGENDAR", quando: new Date() }));
+    // Sem o cron comercial (E1), o critério auditável é o registro do pedido de reagendamento.
     expect(await prisma.evento.count({ where: { tipo: "ExperimentalReagendamentoSolicitado" } })).toBe(1);
-    expect((await rodarPreExperimental()).enfileiradas).toBe(0);
   });
   it("W05 falha de envio incerto nao eh reaberta automaticamente", async () => {
     const c = await canalComercial();
     const i = await intencao(c, { status: "ENVIANDO", despacharAposEm: new Date(Date.now() - 60000) });
     await despacharFila();
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } })).motivoFalha).toBe("envio_interrompido");
-    await rodarLeadNovoSemResposta();
+    await despacharFila(); // novo despacho não reabre a falha incerta
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } })).status).toBe("FALHOU");
   });
   it("W06 cobranca paga depois do enqueue nao eh enviada", async () => {
