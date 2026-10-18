@@ -1,6 +1,6 @@
 import type { DriverWhatsApp } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { AVISO_RECURSO_MOTOR, mimeVozAceito, recursoDisponivel, type RecursoMotor } from "./recursos-canal";
+import { AVISO_RECURSO_MOTOR, RECURSOS_MOTOR, mimeVozAceito, recursoDisponivel, type RecursoMotor } from "./recursos-canal";
 
 const TODOS: RecursoMotor[] = ["editar", "apagar", "reagir", "enquete", "figurinha", "gif", "localizacao", "cartaoContato",
   "responderCitando", "confirmacaoLeitura", "digitando", "grupoEnviar", "grupoGerir", "bloquear"];
@@ -13,8 +13,12 @@ describe("recursos por driver", () => {
   it("nenhum recurso do motor está liberado nos drivers atuais", () => {
     for (const d of ["META_CLOUD", "BAILEYS"] as const) for (const r of TODOS) expect(recursoDisponivel(d, r)).toBe(false);
   });
+  it("RECURSOS_MOTOR é a lista única dos 14 recursos", () => { expect([...RECURSOS_MOTOR]).toEqual(TODOS); });
+  it("MOTOR libera todos os recursos", () => {
+    for (const r of TODOS) expect(recursoDisponivel("MOTOR", r)).toBe(true);
+  });
   it("driver ausente do mapa não libera recurso", () => {
-    // Simula um valor novo do enum (como o MOTOR da Fase 4) antes de alguém preenchê-lo no mapa.
+    // Simula um valor novo do enum antes de alguém preenchê-lo no mapa.
     const ausente = "DRIVER_FORA_DO_MAPA" as DriverWhatsApp;
     for (const r of TODOS) expect(recursoDisponivel(ausente, r)).toBe(false);
   });

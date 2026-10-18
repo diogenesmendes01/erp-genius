@@ -2922,6 +2922,37 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   `src/server/inbox/` (7 arquivos, 64 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
   foi rodado; fica para o integrador.
 
+## Fase 4D — verificação final do bloco (18/10/2026)
+
+- Branch `claude/fase4-d-inbox-motor` (PR empilhado sobre `claude/fase4-c-webhook`), tarefas 18 a 24b do plano `04-fase-motor.md`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 714 arquivos e 5245 testes (linha de base da 4C: 711/5220).
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` ficou varrendo a suíte inteira (`evento.ts`/`schema.ts` alcançam quase tudo) e foi
+  interrompido; rodados os 7 `*.int.test.ts` do diff (`acoes-numero`, `linha-comercial`, `motor/acoes-admin`, `motor/acoes-mensagem`,
+  `motor/conteudo`, `motor/grupo-envio`, `motor/presenca`): 89 testes verdes; e `despachante-motor/comercial/agendada` + `inbox`:
+  43 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4C).
+
+**Base trocada para `main` e correções da R1 do #219 (18/10/2026)**
+
+- **Merges do `main`:** dois merges, `2e4efada` (#216 e #217) e o de `ad4142cd` (#218).
+  - Conflitos: este quadro (ficam os blocos de cada PR), `Compositor.test.ts` (testes de anexo e áudio do #217 junto com os de capacidades da 4D) e `ConversaAberta.tsx` (o `podeEnviar` do painel do #218 junto com as capacidades da 4D).
+  - A 4D não mexia no Inbox antigo removido pela 3F. Sem migration nova.
+- **B1:** o Inbox novo decide os recursos do motor por `ItemListaInbox.capacidades`, calculado com `capacidadesDoNumero` como em `ThreadConversa.capacidades`. Antes decidia por `recursoDisponivel(item.driver)`, que libera MOTOR com a sessão caída. O compositor recebe `capacidades`.
+- **C4:** `COMANDOS_MENSAGEM_LIGADOS = ["copiar", "reagir", "editar", "apagar"]`, filtrados por mensagem em `comandosDaMensagem`.
+  - Cada comando exige a capacidade do número, o envio liberado e a mensagem não apagada. Editar e apagar valem só na própria mensagem de saída, e editar só em texto. `MensagemThread` ganha `propria` e `apagada`.
+  - Os diálogos ficam em `inbox/AcoesMensagem.tsx`. Apagar roda em `ConfirmarAcao` e entrou na lista fechada.
+  - Encaminhar fica fora: falta a escolha da conversa de destino.
+- **C6:** `criarGrupoWhatsApp` confere `grupoNovoNoEscopo`, que tem os mesmos ramos de `escopoGrupos`. Teste em `motor/acoes-admin.int.test.ts`.
+- Verificação num banco descartável `erp_genius_test_fix219` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: 0 erros e 43 avisos já existentes.
+  - `npm test`: 718 arquivos e 5314 testes verdes, saída 0.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp`): 59 arquivos e 473 testes verdes, saída 0.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
 ## Pendências da revisão do #218 (C2, C3) (18/10/2026)
 
 - **C2:** o compositor do Inbox novo distingue permissão carregando (`podeEnviar: null` → "Carregando…", em `role="status"`),

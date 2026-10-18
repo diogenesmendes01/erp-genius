@@ -37,6 +37,18 @@ describe("lista paginada por cursor", () => {
     expect(depois).toMatchObject({ responsavelId: outro.id, setoresDoNumero: ["COMERCIAL", "SECRETARIA"] });
   });
 
+  it("capacidades do item: só MOTOR ativo com sessão CONECTADO libera os recursos do motor", async () => {
+    await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    const capacidades = async () => (await listarAtendimentosPagina(sess(admin), {}, null)).itens[0]!.capacidades;
+    expect(await capacidades()).toEqual([]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { driver: "MOTOR", sessao: "DESCONECTADO" } });
+    expect(await capacidades()).toEqual([]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { sessao: "CONECTADO" } });
+    expect(await capacidades()).toEqual(expect.arrayContaining(["editar", "apagar", "reagir", "gif", "figurinha"]));
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
+    expect(await capacidades()).toEqual([]);
+  });
+
   it("cursor estável com empate e inserção concorrente", async () => {
     const mesmo = new Date("2026-10-01T12:00:00.000Z");
     const criados: string[] = [];
