@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -89,7 +90,7 @@ describe("despachante × motor", () => {
   });
 
   it("número BAILEYS legado → FALHOU driver_indisponivel sem I/O", async () => {
-    const { intencaoId } = await seed({ driver: "BAILEYS" });
+    const { intencaoId } = await seed({ driver: DriverWhatsApp.BAILEYS });
     const r = await despacharFila(new Date(), { intencaoId });
     expect(r.falhas).toBe(1);
     const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoId } });
@@ -107,7 +108,7 @@ describe("despachante × motor", () => {
   });
 
   it("intenção CRON em número BAILEYS segue cancelada por trava_driver_oficial", async () => {
-    const { intencaoId } = await seed({ driver: "BAILEYS" }, { origem: "CRON" });
+    const { intencaoId } = await seed({ driver: DriverWhatsApp.BAILEYS }, { origem: "CRON" });
     const r = await despacharFila(new Date(), { intencaoId });
     expect(r.canceladas).toBe(1);
     const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencaoId } });

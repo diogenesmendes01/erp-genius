@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -21,7 +22,7 @@ async function cenario(telefone: string, numeroId: string, leadTel: string) {
   const lead = await prisma.oportunidade.create({ data: { nome: `Lead ${leadTel}`, telefoneE164: leadTel, vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: leadTel, leadId: lead.id } });
   const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id, responsavelId: vendedor.id }));
-  const msg = await prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: atendimento.conversaId, direcao: "ENTRADA", driver: "META_CLOUD", corpo: `Mensagem ${telefone}` } });
+  const msg = await prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: atendimento.conversaId, direcao: "ENTRADA", driver: DriverWhatsApp.META_CLOUD, corpo: `Mensagem ${telefone}` } });
   return { atendimento, msg };
 }
 

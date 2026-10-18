@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, DriverWhatsApp } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { opcoesFiltroInbox } from "./opcoes-filtro";
@@ -11,7 +11,7 @@ afterAll(() => prisma.$disconnect());
 async function numero(rotulo: string, finalidade: "VENDAS" | "COBRANCA", setores: ("COMERCIAL" | "FINANCEIRO" | "SECRETARIA" | "PEDAGOGICO")[] = []) {
   seq += 1;
   return prisma.numeroWhatsApp.create({ data: {
-    telefoneE164: `+55118${String(seq).padStart(8, "0")}`, rotulo, driver: "BAILEYS", finalidade, providerRef: `ref-of-${seq}`,
+    telefoneE164: `+55118${String(seq).padStart(8, "0")}`, rotulo, driver: DriverWhatsApp.BAILEYS, finalidade, providerRef: `ref-of-${seq}`,
     setores: { create: setores.map((s) => ({ finalidade: s })) },
   } });
 }

@@ -2,15 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconCloudDownload, IconPencil, IconPlus, IconSend, IconX } from "@tabler/icons-react";
+import { IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import type { TemplateConfig } from "@/server/whatsapp/consultas";
-import {
-  salvarTemplateWhatsApp,
-  sincronizarTemplatesMeta,
-  submeterTemplateMeta,
-} from "@/server/whatsapp/acoes";
+import { salvarTemplateWhatsApp } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
-import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
@@ -19,22 +14,12 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { templateAlterado } from "./template-alterado";
 
-// TEMPLATES (doc 26 §Camada 2 — entidade única, ciclo duplo):
-// - Mapeador (Marco 1): "Sincronizar com a Meta" espelha o status da WABA (e importa
-//   aprovados criados por fora) — pré-requisito do go-live em número oficial;
-// - Editor (Marco 2): criar/editar com variáveis amigáveis; submeter → em revisão →
-//   aprovado/rejeitado (via webhook). Em número Baileys todo template vale no ato.
+// TEMPLATES (doc 26 §Camada 2): editor de texto. O motor envia o texto do template como está,
+// sem aprovação externa; as variáveis amigáveis são preenchidas pela régua.
 
 const btnPri = botaoClasses({ tamanho: "md" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
-
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  RASCUNHO: { label: "rascunho", cls: "bg-gray-100 text-gray-600" },
-  EM_REVISAO: { label: "em revisão", cls: "bg-amber-100 text-amber-700" },
-  APROVADO: { label: "aprovado", cls: "bg-green-100 text-green-700" },
-  REJEITADO: { label: "rejeitado", cls: "bg-red-100 text-red-700" },
-};
 
 interface FormTemplate {
   id?: string;
@@ -49,11 +34,9 @@ const FORM_VAZIO: FormTemplate = { nome: "", corpo: "", idioma: "es", categoria:
 export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) {
   const router = useRouter();
   const [form, setForm] = useState<FormTemplate | null>(null);
-  // Nenhuma das actions (sincronizar, submeter, salvar) recebe chave de idempotência: resultado
-  // incerto manda conferir antes de repetir.
+  // A action de salvar não recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
-  // O resultado aparece onde o botão foi clicado: cabeçalho (sincronizar), linha do template
-  // (submeter, pelo id) ou formulário (salvar).
+  // O resultado aparece no formulário (salvar).
   const [origem, setOrigem] = useState<string | null>(null);
   const ocupado = acao.ocupado;
   useAvisoAoSair(templateAlterado(form, templates)); // docs/43 §6 item 3: editor aberto com alteração não salva
@@ -64,29 +47,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
     if (d?.tipo === "ok") router.refresh();
     return d;
   }
-  const feedback = (secao: string) => (
-    <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
-  );
-
-  async function sincronizar() {
-    await run("sincronizar", () => sincronizarTemplatesMeta(), (d) =>
-      `Sincronizado com a WABA: ${d!.total} template(s) lá, ${d!.atualizados} atualizado(s), ${d!.importados} importado(s).`);
-  }
-
-  // Editar um template APROVADO o devolve a rascunho e tira do ar o degrau que dependia dele (docs/42
-  // L2518): o aviso sobe para o topo do formulário e o Salvar, nesse caso, só abre a confirmação.
-  const original = form?.id ? templates.find((t: TemplateConfig) => t.id === form.id) : undefined;
-  const editandoAprovado = original?.statusMeta === "APROVADO";
-  const [confirmando, setConfirmando] = useState(false);
-
   async function salvar() {
     if (!form) return;
-    if (editandoAprovado) {
-      setOrigem("form");
-      acao.limpar();
-      setConfirmando(true);
-      return;
-    }
     const dados = form;
     const d = await run("form", () => salvarTemplateWhatsApp(dados), "Template salvo.");
     if (d?.tipo === "ok") setForm(null);
@@ -98,15 +60,10 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
         <div>
           <h2 className="text-lg font-medium">Templates</h2>
           <p className="mt-0.5 text-sm text-gray-500">
-            Uma entidade só, ciclo duplo: a Meta aprova para o número oficial; no Baileys todo texto vale.
+            Texto-base das mensagens automáticas. Vale no ato, sem aprovação externa.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className={btnSec} disabled={ocupado} onClick={sincronizar} title="Mapeador: espelha o status da WABA">
-            <span className="flex items-center gap-1">
-              <IconCloudDownload className="h-3.5 w-3.5" /> Sincronizar com a Meta
-            </span>
-          </button>
           <button type="button" className={btnPri} disabled={ocupado} onClick={() => setForm(FORM_VAZIO)}>
             <span className="flex items-center gap-1">
               <IconPlus className="h-4 w-4" /> Novo template
@@ -115,11 +72,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
         </div>
       </div>
 
-      {feedback("sincronizar")}
-
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
         {templates.map((t) => {
-          const badge = STATUS_BADGE[t.statusMeta] ?? STATUS_BADGE.RASCUNHO;
           const posicional = /\{\{\d+\}\}/.test(t.corpo);
           return (
             <div key={t.id} className="border-b border-gray-100 px-4 py-3 last:border-0">
@@ -127,21 +81,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-800">{t.nome}</span>
                   <span className="text-xs text-gray-400">{t.idioma} · {t.categoria}</span>
-                  <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {(t.statusMeta === "RASCUNHO" || t.statusMeta === "REJEITADO") && (
-                    <button
-                      type="button"
-                      className={btnSec}
-                      disabled={ocupado}
-                      onClick={() => run(t.id, () => submeterTemplateMeta(t.id), "Template submetido — a Meta responde pelo webhook.")}
-                    >
-                      <span className="flex items-center gap-1">
-                        <IconSend className="h-3.5 w-3.5" /> Submeter à Meta
-                      </span>
-                    </button>
-                  )}
                   <button
                     type="button"
                     className={btnSec}
@@ -164,11 +105,10 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
               <p className="mt-1 whitespace-pre-wrap text-xs text-gray-500">{t.corpo}</p>
               {posicional && (
                 <p className="mt-1 text-[11px] text-amber-700">
-                  Corpo com variáveis posicionais {"{{n}}"} (importado da Meta) — troque pelas amigáveis{" "}
+                  Corpo com variáveis posicionais {"{{n}}"} — troque pelas amigáveis{" "}
                   {"{nome} {valor} {vencimento} {link}"} para a régua preencher.
                 </p>
               )}
-              {feedback(t.id)}
             </div>
           );
         })}
@@ -185,15 +125,9 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
               <IconX className="h-4 w-4" />
             </button>
           </div>
-          {editandoAprovado && (
-            <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Este template está aprovado pela Meta. Salvar uma alteração o devolve a rascunho: os degraus que o usam
-              ficam sem template aprovado até ele ser submetido e aprovado de novo.
-            </p>
-          )}
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="text-xs text-gray-600">
-              Nome (padrão Meta)
+              Nome
               <input
                 className={inputCls + " mt-1"}
                 placeholder="cobranca_vencida"
@@ -231,10 +165,6 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
               onChange={(e) => setForm({ ...form, corpo: e.target.value })}
             />
           </label>
-          <p className="mt-1 text-[11px] text-gray-400">
-            Editar um template aprovado volta o status para rascunho — re-submeta à Meta depois. A Meta limita a
-            frequência de submissões e pode reclassificar utility → marketing.
-          </p>
           {/* Erro dentro do card, colado ao "Salvar" — o formulário continua aberto para corrigir. */}
           <FeedbackAcao erro={origem === "form" ? acao.erro : null} className="mt-3" />
           <div className="mt-3 flex justify-end">
@@ -243,25 +173,6 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
             </button>
           </div>
         </div>
-      )}
-      {form && confirmando && (
-        <ConfirmarAcao
-          titulo={`Salvar o template aprovado "${original?.nome ?? form.nome}" e devolvê-lo a rascunho?`}
-          confirmacao="alteração do template"
-          idempotente={false}
-          acao={() => salvarTemplateWhatsApp(form)}
-          aoConcluir={() => {
-            setConfirmando(false);
-            setForm(null);
-            setOrigem("form");
-            acao.setSucesso("Template salvo — voltou a rascunho; submeta à Meta de novo.");
-            router.refresh();
-          }}
-          aoCancelar={() => setConfirmando(false)}
-        >
-          <p>Este template está aprovado e será revertido para rascunho. Os degraus que o usam ficam sem template aprovado.</p>
-          <p>Em número oficial, a automação desses degraus deixa de enviar até o template ser submetido e aprovado de novo pela Meta.</p>
-        </ConfirmarAcao>
       )}
       {/* O card fecha no sucesso; "Template salvo." é anunciado aqui, numa região sempre montada. */}
       <FeedbackAcao erro={null} sucesso={!form && origem === "form" ? acao.sucesso : null} className="mt-3" />
