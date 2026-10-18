@@ -562,6 +562,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/carteira/ListaCarteira.tsx": [
     "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na carteira.\"}",
   ],
+  "src/app/(app)/funil/EdicaoOportunidade.tsx": [
+    "compacto · Nenhum documento anexado.",
+  ],
   "src/app/(app)/funil/PainelOportunidade.tsx": [
     "compacto · Nenhuma atividade registrada.",
   ],
@@ -582,22 +585,24 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma experimental agendada.",
     "compacto · Você não tem turmas atribuídas.",
   ],
-  "src/app/(app)/inbox/AtendimentosPainel.tsx": [
+  "src/app/(app)/inbox/AcoesAtendimento.tsx": [
+    "compacto · Este número não atende outro setor.",
+    "compacto · Nenhum convite ativo que você possa revogar.",
+    "compacto · Nenhuma mensagem agendada que você possa cancelar.",
+  ],
+  "src/app/(app)/inbox/AcoesContato.tsx": [
+    "compacto · Nenhum encontrado.",
+  ],
+  "src/app/(app)/inbox/NovoAtendimento.tsx": [
     "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
     "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
     "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
   ],
-  "src/app/(app)/inbox/InboxCliente.tsx": [
-    "bloco · {busca ? ( <>Nenhuma conversa para “{busca}”. <Link href={hrefInbox({ canal, c: thread?.conversaId }",
-    "compacto · Nenhum.",
+  "src/app/(app)/inbox/PainelSetor.tsx": [
+    "compacto · Nenhuma cobrança em aberto.",
   ],
-  "src/app/(app)/leads/LeadsLista.tsx": [
-    "linha · {totalBase === 0 ? \"Nenhum lead na sua carteira.\" : filtrando ? ( <>Nenhum lead com esses filtros. <",
-  ],
-  "src/app/(app)/leads/[id]/FichaLead.tsx": [
-    "compacto · Nenhum documento anexado.",
-    "compacto · Sem transferências de dono.",
-    "compacto · Sem eventos ainda.",
+  "src/app/(app)/inbox/ListaAtendimentos.tsx": [
+    "bloco · Nenhuma conversa neste filtro.",
   ],
   "src/app/(app)/oportunidades/[id]/contratacao/page.tsx": [
     "bloco · {c.podeCadastrarNovo ? \"Não há cadastro com o contato da negociação. Você poderá preencher os dados ",

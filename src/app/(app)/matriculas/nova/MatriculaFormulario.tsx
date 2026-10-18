@@ -376,7 +376,7 @@ export function MatriculaFormulario({
       return;
     }
 
-    router.push(lead ? `/leads/${lead.id}` : "/alunos");
+    router.push(lead ? `/funil?o=${lead.id}` : "/alunos");
     router.refresh();
   }
 
