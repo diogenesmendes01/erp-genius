@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { PREDEFINICOES, configPadrao, type ConfigAria } from "./config-schema";
 import {
-  descartarRascunho, diffConfig, publicarRascunho, restaurarVersao, salvarRascunho, versaoPublicada,
+  descartarRascunho, diffConfig, publicarRascunho, rascunhoAtual, restaurarVersao, salvarRascunho, versaoPublicada,
 } from "./versoes";
 
 type Usuario = Awaited<ReturnType<typeof criarUsuario>>;
@@ -21,7 +21,7 @@ const comNome = (nome: string): ConfigAria => ({ ...configPadrao(), nome });
 const comMatriz = (matriz: ConfigAria["matriz"]): ConfigAria => ({ ...configPadrao(), matriz });
 
 async function publicarComPadrao() {
-  const r = await salvarRascunho({ config: configPadrao(), baseVersaoId: null });
+  const r = await salvarRascunho({ config: configPadrao(), baseVersaoId: null, rascunho: await rascunhoAtual() });
   expect(r.ok).toBe(true);
   expect((await publicarRascunho({})).ok).toBe(true);
   return (await versaoPublicada())!;
@@ -41,7 +41,7 @@ beforeEach(async () => {
 describe("versões da Aria", () => {
   it("primeiro_rascunho_parte_do_padrao", async () => {
     logado(admin);
-    const r = await salvarRascunho({ config: configPadrao(), baseVersaoId: null });
+    const r = await salvarRascunho({ config: configPadrao(), baseVersaoId: null, rascunho: await rascunhoAtual() });
     expect(r.ok).toBe(true);
     expect(await eventosDo("VersaoAgenteIA", r.ok ? r.dado!.versaoId : "")).toHaveLength(1);
   });
@@ -49,16 +49,46 @@ describe("versões da Aria", () => {
   it("bloqueio_otimista", async () => {
     logado(admin);
     const pub = await publicarComPadrao();
-    expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: pub.id })).ok).toBe(true);
-    const velho = await salvarRascunho({ config: configPadrao(), baseVersaoId: "outra" });
+    expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: pub.id, rascunho: await rascunhoAtual() })).ok).toBe(true);
+    const velho = await salvarRascunho({ config: configPadrao(), baseVersaoId: "outra", rascunho: await rascunhoAtual() });
     expect(velho).toEqual({ ok: false, erro: "A configuração mudou desde que você abriu. Recarregue para ver a versão atual." });
-    expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null })).ok).toBe(false);
+    expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null, rascunho: await rascunhoAtual() })).ok).toBe(false);
+  });
+
+  it("rascunho_alterado_por_outra_pessoa_nao_e_sobrescrito", async () => {
+    const msg = { ok: false, erro: "O rascunho foi alterado por outra pessoa desde que você abriu. Recarregue para ver a versão atual." };
+    logado(admin);
+    const pub = await publicarComPadrao();
+    // Admin e gerente abrem a tela sem rascunho; o gerente salva primeiro.
+    const abertoAdmin = await rascunhoAtual();
+    expect(abertoAdmin).toBeNull();
+    logado(gerente);
+    const doGerente = await salvarRascunho({ config: comNome("Lia"), baseVersaoId: pub.id, rascunho: null });
+    expect(doGerente.ok).toBe(true);
+    logado(admin);
+    expect(await salvarRascunho({ config: comNome("Bia"), baseVersaoId: pub.id, rascunho: abertoAdmin })).toEqual(msg);
+    expect(await restaurarVersao(pub.id, abertoAdmin)).toEqual(msg);
+    // Quem abriu o rascunho do gerente salva; o token antigo desse rascunho deixa de valer.
+    const aberto = await rascunhoAtual();
+    expect(aberto?.id).toBe(doGerente.ok ? doGerente.dado!.versaoId : "");
+    const salvo = await salvarRascunho({ config: comNome("Bia"), baseVersaoId: pub.id, rascunho: aberto });
+    expect(salvo.ok).toBe(true);
+    expect(salvo.ok && salvo.dado!.atualizadoEm.getTime()).toBeGreaterThan(aberto!.atualizadoEm.getTime());
+    logado(gerente);
+    expect(await salvarRascunho({ config: comNome("Lia 2"), baseVersaoId: pub.id, rascunho: aberto })).toEqual(msg);
+    expect(await restaurarVersao(pub.id, aberto)).toEqual(msg);
+    const final = await prisma.versaoAgenteIA.findFirstOrThrow({ where: { status: "RASCUNHO" } });
+    expect((final.config as { nome: string }).nome).toBe("Bia");
+    // O token devolvido pelo salvamento serve para o próximo salvamento de quem salvou.
+    logado(admin);
+    const r = await restaurarVersao(pub.id, salvo.ok ? { id: salvo.dado!.versaoId, atualizadoEm: salvo.dado!.atualizadoEm } : null);
+    expect(r.ok).toBe(true);
   });
 
   it("publicar_numera_arquiva_e_aponta_agente", async () => {
     logado(admin);
     await publicarComPadrao();
-    await salvarRascunho({ config: comNome("Lia"), baseVersaoId: (await versaoPublicada())!.id });
+    await salvarRascunho({ config: comNome("Lia"), baseVersaoId: (await versaoPublicada())!.id, rascunho: await rascunhoAtual() });
     expect(await publicarRascunho({ nota: "nome" })).toEqual({ ok: true, dado: { numero: 2 } });
     expect(await prisma.versaoAgenteIA.count({ where: { status: "PUBLICADA" } })).toBe(1);
     expect(await prisma.versaoAgenteIA.count({ where: { status: "ARQUIVADA" } })).toBe(1);
@@ -74,7 +104,7 @@ describe("versões da Aria", () => {
   it("descartar_apaga_rascunho_sem_tocar_publicada", async () => {
     logado(admin);
     const pub = await publicarComPadrao();
-    const r = await salvarRascunho({ config: comNome("Lia"), baseVersaoId: pub.id });
+    const r = await salvarRascunho({ config: comNome("Lia"), baseVersaoId: pub.id, rascunho: await rascunhoAtual() });
     expect(await descartarRascunho()).toEqual({ ok: true, dado: undefined });
     expect(await prisma.versaoAgenteIA.count({ where: { status: "RASCUNHO" } })).toBe(0);
     expect((await versaoPublicada())!.id).toBe(pub.id);
@@ -84,34 +114,34 @@ describe("versões da Aria", () => {
   it("restaurar_copia_versao_antiga_para_rascunho", async () => {
     logado(admin);
     const v1 = await publicarComPadrao();
-    await salvarRascunho({ config: comNome("Lia"), baseVersaoId: v1.id });
+    await salvarRascunho({ config: comNome("Lia"), baseVersaoId: v1.id, rascunho: await rascunhoAtual() });
     await publicarRascunho({});
-    const r = await restaurarVersao(v1.id);
+    const r = await restaurarVersao(v1.id, await rascunhoAtual());
     expect(r.ok).toBe(true);
     const rascunho = await prisma.versaoAgenteIA.findFirst({ where: { status: "RASCUNHO" } });
     expect(rascunho!.id).toBe(r.ok ? r.dado!.versaoId : "");
     expect(rascunho!.config).toEqual(v1.config);
     expect(rascunho!.baseVersaoId).toBe((await versaoPublicada())!.id);
     expect((await ultimoEvento("AgenteIAVersaoRestaurada")).payload).toMatchObject({ deVersaoId: v1.id });
-    expect((await restaurarVersao(rascunho!.id)).ok).toBe(false);
+    expect((await restaurarVersao(rascunho!.id, await rascunhoAtual())).ok).toBe(false);
   });
 
   it("gerente_nao_publica_matriz_alterada", async () => {
     logado(admin);
     const pub = await publicarComPadrao();
     logado(gerente);
-    expect((await salvarRascunho({ config: comMatriz(PREDEFINICOES.AUTONOMO), baseVersaoId: pub.id })).ok).toBe(false);
+    expect((await salvarRascunho({ config: comMatriz(PREDEFINICOES.AUTONOMO), baseVersaoId: pub.id, rascunho: await rascunhoAtual() })).ok).toBe(false);
     logado(admin);
-    await salvarRascunho({ config: comMatriz(PREDEFINICOES.AUTONOMO), baseVersaoId: pub.id });
+    await salvarRascunho({ config: comMatriz(PREDEFINICOES.AUTONOMO), baseVersaoId: pub.id, rascunho: await rascunhoAtual() });
     logado(gerente);
     expect((await publicarRascunho({})).ok).toBe(false);
-    expect((await salvarRascunho({ config: comNome("Lia"), baseVersaoId: pub.id })).ok).toBe(true);
+    expect((await salvarRascunho({ config: comNome("Lia"), baseVersaoId: pub.id, rascunho: await rascunhoAtual() })).ok).toBe(true);
     expect((await publicarRascunho({})).ok).toBe(true);
   });
 
   it("vendedor_sem_acesso", async () => {
     logado(vendedor);
-    expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null })).ok).toBe(false);
+    expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null, rascunho: await rascunhoAtual() })).ok).toBe(false);
     expect((await publicarRascunho({})).ok).toBe(false);
     expect((await descartarRascunho()).ok).toBe(false);
   });
