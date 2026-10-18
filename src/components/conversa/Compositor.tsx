@@ -1,13 +1,12 @@
 "use client";
 
 import { Suspense, lazy, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import type { DriverWhatsApp } from "@prisma/client";
 import { IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import type { Resultado } from "@/server/_shared/resultado";
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
-import { AVISO_RECURSO_MOTOR, mimeVozAceito, recursoDisponivel, type RecursoMotor } from "./recursos-canal";
+import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 
 const SeletorEmoji = lazy(() => import("./SeletorEmoji"));
 
@@ -19,7 +18,8 @@ export interface PropsCompositor {
   atendimentoId: string;
   modo: "responder" | "nota";
   podeEnviar: boolean;
-  driver: DriverWhatsApp;
+  /** `ThreadConversa.capacidades`: recursos que o número executa agora (motor ativo e sessão CONECTADO). */
+  capacidades: readonly RecursoMotor[];
   aoEnviarTexto(t: string): Promise<Resultado<unknown>>;
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
   aoNota(t: string): Promise<Resultado>;
@@ -47,7 +47,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTexto, aoEnviarMidia, aoNota }: PropsCompositor) {
+export function Compositor({ atendimentoId, modo, podeEnviar, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota }: PropsCompositor) {
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erro, setErro] = useState("");
@@ -195,7 +195,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
       {emoji && (
         <div className="mb-2">
           <Suspense fallback={<div className="p-3 text-sm">Carregando…</div>}>
-            <SeletorEmoji gif={recursoDisponivel(driver, "gif")} figurinha={recursoDisponivel(driver, "figurinha")} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
+            <SeletorEmoji gif={capacidades.includes("gif")} figurinha={capacidades.includes("figurinha")} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
           </Suspense>
         </div>
       )}
@@ -211,7 +211,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
                 <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("image/*,video/*")}>Fotos e vídeos</button>
                 <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("audio/*")}>Áudio</button>
                 {ITENS_MOTOR.map((i) => {
-                  const livre = recursoDisponivel(driver, i.recurso);
+                  const livre = capacidades.includes(i.recurso);
                   return (
                     <div key={i.recurso}>
                       <button type="button" role="menuitem" disabled={!livre} className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>

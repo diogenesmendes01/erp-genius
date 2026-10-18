@@ -1641,6 +1641,7 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
+  { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", nome: "`Reagir com ${e}`", vezes: 1, motivo: "um botão por emoji de REACOES_RAPIDAS (lista fixa no mesmo arquivo): 'Reagir com 👍', 'Reagir com ❤️'…" },
   { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo" }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
 ];
 

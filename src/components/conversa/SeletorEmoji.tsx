@@ -41,7 +41,7 @@ function lerRecentes(): string[] {
 }
 function gravarRecentes(v: string[]) { try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(v)); } catch { /* sem armazenamento: segue sem recentes */ } }
 
-/** `gif`/`figurinha`: o canal executa o recurso (quem compõe decide com `recursoDisponivel`); sem ele, a aba fica desabilitada com aviso. */
+/** `gif`/`figurinha`: o canal executa o recurso (quem compõe decide com `capacidades` da thread); sem ele, a aba fica desabilitada com aviso. */
 export function SeletorEmoji({ gif, figurinha, aoEmoji, aoFechar }: { gif: boolean; figurinha: boolean; aoEmoji: (e: string) => void; aoFechar: () => void }) {
   const [consulta, setConsulta] = useState("");
   const [grupo, setGrupo] = useState("Smileys & Emotion");

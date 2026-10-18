@@ -83,6 +83,7 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
         {pix && <CartaoPix pix={pix} />}
         {m.corpo && !enquete && !pix && <p className="whitespace-pre-wrap break-words">{m.corpo}</p>}
         <div className="mt-1 flex items-center justify-end gap-1 text-xs text-gray-600">
+          {m.apagada && <span>Apagada para todos</span>}
           {m.favorita && <IconStar size={12} aria-label="Favorita" />}
           <time dateTime={m.criadoEm}>{hora(m.criadoEm, fuso)}</time>
           {st && <span title={st.rotulo} className={`inline-flex items-center gap-0.5 ${st.erro ? "text-red-700" : ""}`}>{st.icone}{st.erro && <span>{st.rotulo}</span>}</span>}
