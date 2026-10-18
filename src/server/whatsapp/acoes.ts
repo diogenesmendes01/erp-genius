@@ -66,6 +66,7 @@ import {
 } from "./sessao";
 import { ErroMotor } from "./motor/cliente";
 import { telefoneE164 as telefoneE164Schema } from "@/server/_shared/validacao";
+import { ONDE_MODELO_REGUA, ehModeloRegua } from "./modelos-regua";
 
 // Ações do braço API da fila de cobrança (doc 30 E2). Mesmos papéis que já operam a
 // cobrança manual (financeiro/acoes.ts). NENHUMA envia direto: gravam INTENÇÃO e chamam o
@@ -88,7 +89,7 @@ async function prepararCanal(): Promise<CanalPronto> {
   const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: politica.numeroRemetenteId } });
   if (!numero || !numero.ativo) throw new ErroRegra("O número remetente da cobrança está inativo.");
   const templates = await prisma.templateWhatsApp.findMany({
-    where: { tipo: "MODELO_AUTOMACAO" },
+    where: ONDE_MODELO_REGUA,
     select: { id: true, nome: true, corpo: true, idioma: true },
   });
   return { politica, numeroId: numero.id, templates: new Map(templates.map((t) => [t.id, t])) };
@@ -734,7 +735,7 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
     if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") {
       throw new ErroRegra("Escolha um número de agenda ativo do motor WhatsApp.");
     }
-    if (!template || template.tipo !== "MODELO_AUTOMACAO") throw new ErroRegra("Escolha um template de agenda.");
+    if (!ehModeloRegua(template)) throw new ErroRegra("Escolha um template de agenda.");
     if (/\{[^}]+\}/.test(template.corpo.replace(/\{(nome|horarios)\}/g, "")) || !template.corpo.includes("{horarios}")) {
       throw new ErroRegra("O template de agenda deve usar somente {nome} e {horarios}, incluindo {horarios}.");
     }
@@ -851,7 +852,7 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
         const antes = await tx.templateWhatsApp.findUnique({ where: { id: dados.id } });
-        if (!antes || antes.tipo !== "MODELO_AUTOMACAO") throw new ErroRegra("Template não encontrado.");
+        if (!antes || !ehModeloRegua(antes)) throw new ErroRegra("Template não encontrado.");
         await tx.templateWhatsApp.update({
           where: { id: dados.id },
           data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },
@@ -914,7 +915,7 @@ export async function estimarAlcanceRegua(input: PoliticaReguaInput): Promise<Re
     const dados = PoliticaReguaSchema.parse(input);
     const degraus = degrausComTipoFixo(dados.degraus);
     const ids = degraus.map((d) => d.templateId).filter((x): x is string => !!x);
-    const templates = ids.length ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true } }) : [];
+    const templates = ids.length ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids }, ...ONDE_MODELO_REGUA }, select: { id: true, nome: true } }) : [];
     const nomePorId = new Map(templates.map((t) => [t.id, t.nome]));
     const politica = traduzirDegrausPolitica(
       degraus.map((d) => ({ ...d, templateNome: d.templateId ? nomePorId.get(d.templateId) ?? null : null })),
@@ -930,6 +931,13 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
 
     // D+15 conserva envio manual. A restrição automática de aulas tem política própria D+30.
     const degraus = degrausComTipoFixo(dados.degraus);
+
+    // Degrau só aponta para modelo de automação: resposta rápida do Inbox (mesma tabela) não entra na régua.
+    const idsTemplate = [...new Set(degraus.map((d) => d.templateId).filter((x): x is string => !!x))];
+    if (idsTemplate.length) {
+      const validos = await prisma.templateWhatsApp.count({ where: { id: { in: idsTemplate }, ...ONDE_MODELO_REGUA } });
+      if (validos !== idsTemplate.length) throw new ErroRegra("Template inválido num degrau: escolha um modelo de automação.");
+    }
 
     // Prontidão (S15): armar a política (SHADOW/ATIVA) valida o canal por número
     // (doc 26: "degrau só arma se o template estiver pronto para o driver do remetente").

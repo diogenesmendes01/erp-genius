@@ -2,26 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { salvarDistribuicaoDaTela, salvarSlaDaTela } from "@/server/crm-config/acoes-distribuicao";
+import { salvarConfigSetorDaTela } from "@/server/crm-config/acoes-distribuicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
 
-export type Prazo = 15 | 30 | 60 | 120 | 240;
 export interface SetorPainelProps {
   finalidade: "COMERCIAL" | "FINANCEIRO" | "SECRETARIA" | "PEDAGOGICO";
   rotulo: string;
   regra: "RODIZIO" | "MENOR_CARGA" | "MANUAL";
   participantesIds: string[];
   candidatos: { id: string; nome: string }[];
-  prazo: Prazo;
+  /** Prazo gravado, em minutos; um valor fora da lista padrão aparece como opção e é preservado. */
+  prazo: number;
   alertarResponsavel: boolean;
   alertarGerente: boolean;
   contarSoNoHorario: boolean;
 }
 
-const PRAZOS: Prazo[] = [15, 30, 60, 120, 240];
+const PRAZOS = [15, 30, 60, 120, 240, 1440];
+const rotuloPrazo = (m: number) => (m % 60 === 0 && m >= 60 ? `${m / 60} h` : `${m} min`);
 const REGRAS = [
   { v: "MANUAL", t: "Manual (fila do setor)" },
   { v: "RODIZIO", t: "Rodízio" },
@@ -33,7 +34,8 @@ export function SetorPainel(p: SetorPainelProps) {
   const router = useRouter();
   const [regra, setRegra] = useState(p.regra);
   const [ids, setIds] = useState(p.participantesIds);
-  const [prazo, setPrazo] = useState<Prazo>(p.prazo);
+  const [prazo, setPrazo] = useState(p.prazo);
+  const opcoesPrazo = PRAZOS.includes(p.prazo) ? PRAZOS : [...PRAZOS, p.prazo].sort((a, b) => a - b);
   const [alResp, setAlResp] = useState(p.alertarResponsavel);
   const [alGer, setAlGer] = useState(p.alertarGerente);
   const [horario, setHorario] = useState(p.contarSoNoHorario);
@@ -41,11 +43,10 @@ export function SetorPainel(p: SetorPainelProps) {
 
   const alternar = (id: string) => setIds((a) => (a.includes(id) ? a.filter((x) => x !== id) : [...a, id]));
   async function salvar() {
-    const d = await acao.executar(async () => {
-      const r = await salvarDistribuicaoDaTela({ finalidade: p.finalidade, regra, participantesIds: ids });
-      if (!r.ok) return r;
-      return salvarSlaDaTela({ finalidade: p.finalidade, prazoPrimeiraRespostaMin: prazo, alertarResponsavel: alResp, alertarGerente: alGer, contarSoNoHorario: horario });
-    });
+    const d = await acao.executar(() => salvarConfigSetorDaTela({
+      distribuicao: { finalidade: p.finalidade, regra, participantesIds: ids },
+      sla: { prazoPrimeiraRespostaMin: prazo, alertarResponsavel: alResp, alertarGerente: alGer, contarSoNoHorario: horario },
+    }));
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -58,8 +59,8 @@ export function SetorPainel(p: SetorPainelProps) {
         </select>
       </label>
       <label className="text-xs text-gray-600">Prazo da primeira resposta
-        <select className={input} value={prazo} onChange={(e) => setPrazo(Number(e.target.value) as Prazo)}>
-          {PRAZOS.map((m) => <option key={m} value={m}>{m} min</option>)}
+        <select className={input} value={prazo} onChange={(e) => setPrazo(Number(e.target.value))}>
+          {opcoesPrazo.map((m) => <option key={m} value={m}>{rotuloPrazo(m)}</option>)}
         </select>
       </label>
     </div>

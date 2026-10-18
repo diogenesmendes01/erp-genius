@@ -8,6 +8,10 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { modelosDasReguas } from "@/server/whatsapp/modelos-regua";
+import { carregarConfiguracaoAvisosAgenda, listarTemplatesConfig } from "@/server/whatsapp/consultas";
+import { estimarAlcanceRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
+import { REGUA } from "@/server/cobrancas/regua";
+import { MODOS_FABRICA } from "@/server/cobrancas/fabrica";
 import { arquivarRespostaRapida, listarRespostasRapidas, salvarRespostaRapida, VARIAVEIS_RESPOSTA } from "./respostas-rapidas";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
@@ -47,6 +51,24 @@ describe("Respostas rápidas", () => {
     const t = await prisma.templateWhatsApp.findUniqueOrThrow({ where: { id: x.dado.id } });
     expect(t).toMatchObject({ tipo: "RESPOSTA_RAPIDA", nome: "rr:/preco", atalho: "/preco" });
     expect((await modelosDasReguas()).some((m) => m.nome === t.nome)).toBe(false);
+  });
+
+  it("resposta_rapida_fora_das_telas_e_da_politica_da_regua", async () => {
+    const x = await salvarRespostaRapida(r);
+    if (!x.ok || !x.dado) throw new Error("falha");
+    const modelo = await prisma.templateWhatsApp.create({ data: { nome: "amigavel", corpo: "Oi {nome}" } });
+    // Consumidores reais (não só o helper): tela de templates e tela de avisos da agenda.
+    expect((await listarTemplatesConfig()).map((t) => t.id)).toEqual([modelo.id]);
+    expect((await carregarConfiguracaoAvisosAgenda()).templates.map((t) => t.id)).toEqual([modelo.id]);
+    const politica = (templateId: string) => ({
+      estado: "DESLIGADA" as const, janelaInicio: 9, janelaFim: 20, diasSemana: [1, 2, 3, 4, 5], tetoPorContatoDia: 2,
+      silencioPosInboundHoras: 72, killSwitch: false,
+      degraus: REGUA.map((d, i) => ({ passo: d.passo, offsetDias: d.offsetDias, modo: MODOS_FABRICA[d.passo], ativo: true, ...(i === 0 ? { templateId } : {}) })),
+    });
+    expect(await salvarPoliticaRegua(politica(x.dado.id))).toEqual({ ok: false, erro: "Template inválido num degrau: escolha um modelo de automação." });
+    expect(await prisma.politicaRegua.count()).toBe(0);
+    expect((await salvarPoliticaRegua(politica(modelo.id))).ok).toBe(true);
+    expect((await estimarAlcanceRegua(politica(x.dado.id))).ok).toBe(true);
   });
 
   it("financeiro_ve_so_do_setor_e_gerais", async () => {

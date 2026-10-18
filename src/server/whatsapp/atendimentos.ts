@@ -90,10 +90,14 @@ export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: 
  * Linha comercial: toda mensagem vai para o atendimento único da conversa (SPEC-ERP-005 §5.2).
  * Canal institucional: não adivinha o assunto quando há mais de um atendimento aberto — fica na triagem.
  */
-export async function atendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
+export async function atendimentoDoInbound(
+  tx: Prisma.TransactionClient, conversaId: string, opcoes: { atribuir: boolean },
+): Promise<string | null> {
   const id = await resolverAtendimentoDoInbound(tx, conversaId);
-  // Abertura sem responsável: a distribuição do setor (Fase 5F) atribui no 1º inbound; sem regra, fica na fila.
-  if (id) await atribuirAutomaticamente(tx, id);
+  // Abertura sem responsável: a distribuição do setor (Fase 5F) atribui só no 1º inbound DO CONTATO.
+  // Mensagem `fromMe` (celular da escola) e chamada recebida passam `atribuir: false` para não
+  // consumir a vez do rodízio nem dar o atendimento a outra pessoa; sem regra, fica na fila.
+  if (id && opcoes.atribuir) await atribuirAutomaticamente(tx, id);
   return id;
 }
 

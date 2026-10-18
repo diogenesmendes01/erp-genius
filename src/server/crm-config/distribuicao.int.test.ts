@@ -9,8 +9,9 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { atendimentoDoInbound } from "@/server/whatsapp/atendimentos";
+import { processarMensagemNormalizada } from "@/server/whatsapp/inbound";
 import { salvarDistribuicaoSetor } from "./distribuicao";
-import { salvarSlaSetor } from "./sla";
+import { salvarConfigSetor, salvarSlaSetor } from "./sla";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 let admin: U, gerente: U, financeiro: U, v1: U, v2: U;
@@ -26,7 +27,7 @@ async function novoInboundComercial(leadId?: string) {
   seq += 1;
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: `+5069000${String(seq).padStart(4, "0")}`, ...(leadId ? { leadId } : {}) } });
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId, contatoId: contato.id } });
-  const id = await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id));
+  const id = await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id, { atribuir: true }));
   return prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: id! } });
 }
 const eventos = async () => (await eventosDo("ConfigSetorAtendimento", "COMERCIAL"));
@@ -91,5 +92,57 @@ describe("Distribuição e SLA por setor", () => {
     const a = await novoInboundComercial(lead.id);
     expect(a.responsavelId).toBe(v2.id);
     expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ motivo: "CARTEIRA" });
+  });
+
+  it("carteira_vale_mesmo_em_setor_manual", async () => {
+    await config("COMERCIAL", "MANUAL", []);
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: v2.id, etapa: "NOVO" } });
+    const a = await novoInboundComercial(lead.id);
+    expect(a.responsavelId).toBe(v2.id);
+    expect(a.status).toBe("EM_ATENDIMENTO");
+    expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ motivo: "CARTEIRA" });
+    const semDono = await novoInboundComercial();
+    expect(semDono.responsavelId).toBeNull();
+  });
+
+  it("salvar_so_a_distribuicao_preserva_sla_de_24h_sem_SlaAlterado", async () => {
+    await prisma.prazoRespostaSetor.create({ data: { finalidade: "PEDAGOGICO", minutos: 1440 } });
+    logado(admin);
+    const r = await salvarConfigSetor({
+      distribuicao: { finalidade: "PEDAGOGICO", regra: "RODIZIO", participantesIds: [] },
+      sla: { prazoPrimeiraRespostaMin: 1440, alertarResponsavel: true, alertarGerente: false, contarSoNoHorario: true },
+    });
+    expect(r.ok).toBe(true);
+    const cfg = await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "PEDAGOGICO" } });
+    expect(cfg).toMatchObject({ minutos: 1440, regraDistribuicao: "RODIZIO" });
+    const ev = await eventosDo("ConfigSetorAtendimento", "PEDAGOGICO");
+    expect(ev.map((e) => e.tipo)).toEqual(["DistribuicaoAlterada"]);
+  });
+
+  it("prazo_fora_da_lista_e_diferente_do_gravado_nao_salva_nada", async () => {
+    await prisma.prazoRespostaSetor.create({ data: { finalidade: "COMERCIAL", minutos: 60 } });
+    logado(admin);
+    const r = await salvarConfigSetor({
+      distribuicao: { finalidade: "COMERCIAL", regra: "RODIZIO", participantesIds: [v1.id] },
+      sla: { prazoPrimeiraRespostaMin: 45, alertarResponsavel: true, alertarGerente: false, contarSoNoHorario: true },
+    });
+    expect(r.ok).toBe(false);
+    const cfg = await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } });
+    expect(cfg).toMatchObject({ minutos: 60, regraDistribuicao: "MANUAL", participantesIds: [] });
+    expect(await eventos()).toEqual([]);
+  });
+
+  it("mensagem_fromMe_do_celular_nao_atribui_nem_consome_rodizio", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
+    const numero = await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: numeroId } });
+    const msg = (id: string, fromMe: boolean, quando: Date) => processarMensagemNormalizada({
+      numeroProviderRef: numero.providerRef, contatoWaId: "50691110001", providerMessageId: id,
+      corpo: fromMe ? "Olá, aqui é a escola" : "Oi!", tipo: "TEXTO", driver: "MOTOR", fromMe, quando,
+    });
+    expect(await msg("wamid.fromme.1", true, new Date(Date.now() - 60_000))).toBe("gravada");
+    const atendimento = await prisma.atendimentoWhatsApp.findFirstOrThrow({ where: { conversa: { numeroId } } });
+    expect(atendimento.responsavelId).toBeNull();
+    expect((await eventos()).some((e) => e.tipo === "AtendimentoAtribuido")).toBe(false);
+    expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } })).ultimoAtribuidoId).toBeNull();
   });
 });

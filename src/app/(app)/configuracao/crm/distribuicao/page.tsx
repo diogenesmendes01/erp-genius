@@ -4,7 +4,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { setoresDoUsuario } from "@/server/crm/setores-papel";
 import { setoresEditaveis } from "@/server/crm-config/distribuicao";
 import { SETOR_ATENDIMENTO_LABEL } from "@/lib/labels";
-import { SetorPainel, type Prazo } from "./SetorPainel";
+import { SetorPainel } from "./SetorPainel";
 
 export default async function Pagina() {
   const usuario = await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
@@ -20,7 +20,8 @@ export default async function Pagina() {
       <div className="mt-4 grid gap-4">
         {setores.map((s) => {
           const c = prazos.find((x) => x.finalidade === s);
-          const prazo = ([15, 30, 60, 120, 240] as number[]).includes(c?.minutos ?? 0) ? (c!.minutos as Prazo) : 60;
+          // Mostra o prazo gravado como está (ex.: Pedagógico 24 h); só sem linha cai no padrão 60.
+          const prazo = c?.minutos ?? 60;
           return <SetorPainel key={s} finalidade={s} rotulo={SETOR_ATENDIMENTO_LABEL[s]} regra={c?.regraDistribuicao ?? "MANUAL"}
             participantesIds={c?.participantesIds ?? []} prazo={prazo}
             alertarResponsavel={c?.alertarResponsavel ?? true} alertarGerente={c?.alertarGerente ?? false} contarSoNoHorario={c?.contarSoNoHorario ?? true}

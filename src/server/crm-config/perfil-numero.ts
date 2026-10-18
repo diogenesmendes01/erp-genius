@@ -10,6 +10,7 @@ import { ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Re
 import { exigirMotorConectado } from "@/server/whatsapp/motor/capacidades";
 import { ErroMotor } from "@/server/whatsapp/motor/cliente";
 import {
+  ErroMotorParcial,
   MSG_RECURSO_INDISPONIVEL,
   SEGUNDOS_TEMPORARIAS,
   clienteMotorNumero,
@@ -27,7 +28,9 @@ export interface DepsNumero {
 }
 
 const FRASE_TEMPORARIAS = "ativar temporárias";
-const MAX_FOTO_BYTES = 2 * 1024 * 1024;
+/** Limite do motor (bytes decodificados): acima disso o `profile.picture` é recusado. */
+const MAX_FOTO_BYTES = 128 * 1024;
+const MSG_FOTO_GRANDE = "A foto pode ter no máximo 128 KB. Reduza a imagem e tente de novo.";
 const MIMES_FOTO = ["image/jpeg", "image/png"];
 const VISIBILIDADE = z.enum(["TODOS", "CONTATOS", "NINGUEM"], { message: "Visibilidade inválida." });
 
@@ -64,17 +67,23 @@ async function carregarNumero(id: string) {
   return { ...n, ref: n.providerRef ?? n.id };
 }
 
-/** Chama o motor e traduz a falha: nada é gravado no ERP quando isto lança. */
+const MSG_MOTOR_FALHOU = "O motor do WhatsApp não aplicou a mudança. Nada foi salvo; tente de novo em instantes.";
+
+/**
+ * Chama o motor e traduz a falha: nada é gravado no ERP quando isto lança. `ErroMotorParcial`
+ * passa adiante para o chamador gravar só a parte que o motor já aplicou.
+ */
 async function noMotor(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch (e) {
+    if (e instanceof ErroMotorParcial) throw e;
     if (e instanceof ErroMotor) {
       if (e.codigo === "ACAO_NAO_DISPONIVEL") throw new ErroRegra(MSG_RECURSO_INDISPONIVEL);
-      throw new ErroRegra("O motor do WhatsApp não aplicou a mudança. Nada foi salvo; tente de novo em instantes.");
+      throw new ErroRegra(MSG_MOTOR_FALHOU);
     }
     if (e instanceof ErroRegra) throw e;
-    throw new ErroRegra("O motor do WhatsApp não aplicou a mudança. Nada foi salvo; tente de novo em instantes.");
+    throw new ErroRegra(MSG_MOTOR_FALHOU);
   }
 }
 
@@ -82,7 +91,7 @@ async function lerFoto(uploadId: string): Promise<string> {
   const reg = await prisma.registroUpload.findUnique({ where: { id: uploadId }, select: { url: true, mime: true, tamanho: true } });
   if (!reg) throw new ErroRegra("Foto não encontrada. Envie a imagem de novo.");
   if (!MIMES_FOTO.includes(reg.mime)) throw new ErroRegra("A foto precisa ser JPEG ou PNG.");
-  if (reg.tamanho > MAX_FOTO_BYTES) throw new ErroRegra("A foto pode ter no máximo 2 MB.");
+  if (reg.tamanho > MAX_FOTO_BYTES) throw new ErroRegra(MSG_FOTO_GRANDE);
   const caminho = resolverCaminhoUpload([reg.url.split("/").at(-1) ?? ""]);
   if (!caminho) throw new ErroRegra("Foto não encontrada. Envie a imagem de novo.");
   let bytes: Buffer;
@@ -91,7 +100,7 @@ async function lerFoto(uploadId: string): Promise<string> {
   } catch {
     throw new ErroRegra("Foto não encontrada. Envie a imagem de novo.");
   }
-  if (bytes.length > MAX_FOTO_BYTES) throw new ErroRegra("A foto pode ter no máximo 2 MB.");
+  if (bytes.length > MAX_FOTO_BYTES) throw new ErroRegra(MSG_FOTO_GRANDE);
   return `data:${reg.mime};base64,${bytes.toString("base64")}`;
 }
 
@@ -115,18 +124,25 @@ export async function atualizarPerfilNumero(
     if (d.nome === undefined && d.recado === undefined && d.fotoUploadId === undefined) throw new ErroRegra("Nada para alterar no perfil.");
     const n = await carregarNumero(d.numeroId);
     const fotoDataUri = d.fotoUploadId ? await lerFoto(d.fotoUploadId) : undefined;
-    await noMotor(() => cliente(deps).atualizarPerfil(n.ref, { nome: d.nome, recado: d.recado, fotoDataUri }));
+    let parcial = false;
+    try {
+      await noMotor(() => cliente(deps).atualizarPerfil(n.ref, { nome: d.nome, recado: d.recado, fotoDataUri }));
+    } catch (e) {
+      if (!(e instanceof ErroMotorParcial)) throw e;
+      parcial = true; // a foto já está no motor; nome e recado não
+    }
     await prisma.$transaction(async (tx) => {
       const antes = { nome: n.perfilNome, recado: n.perfilRecado, fotoUploadId: n.perfilFotoUploadId };
       const depois = {
-        nome: d.nome ?? n.perfilNome,
-        recado: d.recado ?? n.perfilRecado,
+        nome: parcial ? n.perfilNome : d.nome ?? n.perfilNome,
+        recado: parcial ? n.perfilRecado : d.recado ?? n.perfilRecado,
         fotoUploadId: d.fotoUploadId ?? n.perfilFotoUploadId,
       };
       await tx.numeroWhatsApp.update({ where: { id: n.id }, data: { perfilNome: depois.nome, perfilRecado: depois.recado, perfilFotoUploadId: depois.fotoUploadId } });
-      await registrarEvento(tx, { tipo: "NumeroPerfilAlterado", agregadoTipo: "NumeroWhatsApp", agregadoId: n.id, autorId: autor.id, payload: { de: antes, para: depois } });
+      await registrarEvento(tx, { tipo: "NumeroPerfilAlterado", agregadoTipo: "NumeroWhatsApp", agregadoId: n.id, autorId: autor.id, payload: { de: antes, para: depois, ...(parcial ? { parcial: true } : {}) } });
     });
     revalidatePath("/configuracao/whatsapp", "layout");
+    if (parcial) throw new ErroRegra("A foto foi aplicada e salva, mas o motor não aplicou o nome e o recado. Tente salvar de novo.");
     return undefined;
   });
 }
@@ -145,12 +161,22 @@ export async function atualizarPrivacidadeNumero(
     const mudou: Partial<PrivacidadeNumero> = {};
     for (const k of ["vistoPorUltimo", "foto", "recado", "grupos"] as const) if (atual?.[k] !== d.privacidade[k]) mudou[k] = d.privacidade[k];
     if (Object.keys(mudou).length === 0) return undefined;
-    await noMotor(() => cliente(deps).atualizarPrivacidade(n.ref, mudou));
+    let para: Partial<PrivacidadeNumero> = d.privacidade;
+    let parcial = false;
+    try {
+      await noMotor(() => cliente(deps).atualizarPrivacidade(n.ref, mudou));
+    } catch (e) {
+      if (!(e instanceof ErroMotorParcial)) throw e;
+      // Grava só o que o motor já aplicou: o resto continua como estava.
+      parcial = true;
+      para = { ...(atual ?? {}), ...(e.aplicado.privacidade ?? {}) };
+    }
     await prisma.$transaction(async (tx) => {
-      await tx.numeroWhatsApp.update({ where: { id: n.id }, data: { privacidade: d.privacidade as Prisma.InputJsonValue } });
-      await registrarEvento(tx, { tipo: "NumeroPrivacidadeAlterada", agregadoTipo: "NumeroWhatsApp", agregadoId: n.id, autorId: autor.id, payload: { de: atual, para: d.privacidade } });
+      await tx.numeroWhatsApp.update({ where: { id: n.id }, data: { privacidade: para as Prisma.InputJsonValue } });
+      await registrarEvento(tx, { tipo: "NumeroPrivacidadeAlterada", agregadoTipo: "NumeroWhatsApp", agregadoId: n.id, autorId: autor.id, payload: { de: atual, para, ...(parcial ? { parcial: true } : {}) } });
     });
     revalidatePath("/configuracao/whatsapp", "layout");
+    if (parcial) throw new ErroRegra("O motor aplicou só parte da privacidade; essa parte foi salva. Tente salvar de novo para o restante.");
     return undefined;
   });
 }
