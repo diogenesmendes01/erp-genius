@@ -288,7 +288,7 @@ describe("§4.4 — regras do Inbox", () => {
   it("15 ambíguo vai para a triagem do número", async () => {
     const recepcao = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Recepção");
     const numero = await criarNumeroSetor({ telefoneE164: "+5511900000101", setores: ["COMERCIAL", "SECRETARIA"], finalidade: "COBRANCA", triagemResponsavelId: recepcao.id });
-    await processarMensagemNormalizada({ numeroProviderRef: numero.providerRef, contatoWaId: "50688889999", providerMessageId: "R15-1", corpo: "Quero informações", tipo: "TEXTO", driver: DriverWhatsApp.META_CLOUD, fromMe: false, quando: new Date() });
+    await processarMensagemNormalizada({ numeroProviderRef: numero.providerRef, contatoWaId: "50688889999", providerMessageId: "R15-1", corpo: "Quero informações", tipo: "TEXTO", driver: DriverWhatsApp.MOTOR, fromMe: false, quando: new Date() });
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow();
     expect(m.atendimentoId).toBeNull();
     como(recepcao);

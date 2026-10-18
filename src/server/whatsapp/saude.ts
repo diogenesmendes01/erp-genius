@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { chamarMotor } from "./motor/cliente";
@@ -209,6 +210,16 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
   for (const n of numeros) {
     if (n.driver === "MOTOR" && n.sessao === "CAIU") {
       alertas.push(`Sessão do número "${n.rotulo}" caiu — reconectar via QR na tela do canal.`);
+    }
+  }
+
+  // 4a. Número ativo em driver legado (C2 da R1 do #221): Meta Cloud e Evolution saíram do código
+  //     (Fase 4E), então esse número não envia nem recebe mais nada. Reparear no motor e desativá-lo.
+  for (const n of numeros) {
+    if (n.driver !== DriverWhatsApp.MOTOR) {
+      alertas.push(
+        `Número "${n.rotulo}" ativo em driver legado (${n.driver}) — não envia nem recebe; pareie a linha no motor e desative o número legado.`,
+      );
     }
   }
 
