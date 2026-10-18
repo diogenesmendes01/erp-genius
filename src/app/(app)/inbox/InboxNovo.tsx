@@ -130,12 +130,22 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setVersaoPainel((v) => v + 1);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
   }, [filtros]);
+  // Aviso do atendimento aberto (transferência, convite com envio) ou resync: o painel recarrega e, com ele, o
+  // podeEnviar do compositor (C3 da revisão do #218). Sem trocar o painelSetor: o compositor não pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
+    if (a.tipo === "resync" || (a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
   }, [filtros]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
+
+  // Permissão de envio do compositor: null enquanto o painel do atendimento aberto não chegou; painel que falhou
+  // (buscarPainel devolve null) vira erro com "Tentar de novo", que volta a carregar. Só true envia.
+  const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
+  const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
+  const tentarPainelDeNovo = useCallback(() => { setPainelSetor(null); setVersaoPainel((v) => v + 1); }, []);
+  const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
 
@@ -202,7 +212,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             usuario={usuario}
             fuso={fuso}
             conversa={conversa}
-            podeEnviar={painelSetor?.id === selecionado && painelSetor.dado?.podeEnviar === true}
+            podeEnviar={podeEnviar}
+            falhaPermissao={falhaPermissao}
             destinos={destinos}
             triagem={triagem}
             revisoes={revisoes}
