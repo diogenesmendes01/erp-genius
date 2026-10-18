@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { DriverWhatsApp, StatusTemplate } from "@prisma/client";
-import { Papel } from "@prisma/client";
+import { DriverWhatsApp, Papel, type StatusTemplate } from "@prisma/client";
 import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { UPLOAD_DIR } from "@/lib/uploads";
@@ -193,7 +192,7 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 · D38 — automação 
   // Números legados: a Camada 2 da Meta (template APROVADO) saiu com o driver Meta na Fase 4
   // (Tarefa 5). Hoje META_CLOUD e BAILEYS não têm driver no despachante e FALHAM sem I/O — a
   // fila humana mostra o motivo em vez de o degrau sumir em silêncio.
-  it.each(["META_CLOUD", "BAILEYS"] as const)("%s legado: a cadência FALHA com driver_indisponivel sem tocar o driver", async (driver) => {
+  it.each([DriverWhatsApp.META_CLOUD, DriverWhatsApp.BAILEYS] as const)("%s legado: a cadência FALHA com driver_indisponivel sem tocar o driver", async (driver) => {
     await seedComercial("ATIVA", { driver, template: "APROVADO" });
     const r = await despacharFila();
     expect(r.falhas).toBe(1);

@@ -4,6 +4,7 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { configPadrao, type ConfigAria, type Matriz } from "../config-schema";
+import { provedorSimulado as simuladoBase } from "../provedor/simulado";
 import { ErroProvedorIA, type PedidoIA, type ProvedorIA, type RespostaIA } from "../provedor/tipos";
 import { agendarTurnoAria, processarTurnoAria, reprocessarTurnosPendentes } from "./orquestrador";
 
@@ -17,7 +18,9 @@ const provedorSimulado: ProvedorIA = {
   async gerar(p: PedidoIA): Promise<RespostaIA> {
     const fala = [...p.mensagens].reverse().find((m) => m.papel === "usuario")?.texto.toLowerCase() ?? "";
     const humano = fala.includes("humano") || fala.includes("atendente");
+    // Parte da resposta do provedor simulado real: herda campos novos de RespostaIA (ex.: tokensEscritaCache).
     return {
+      ...(await simuladoBase.gerar(p)),
       texto: JSON.stringify({
         resposta: humano ? "Certo, vou chamar um atendente." : "Temos turmas à noite, quer conhecer?",
         documentoId: null,
@@ -27,7 +30,6 @@ const provedorSimulado: ProvedorIA = {
         fontes: [],
         humor: null,
       }),
-      modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0,
     };
   },
 };
@@ -224,7 +226,7 @@ describe("processarTurnoAria", () => {
 
   it("saida_invalida_vira_handoff", async () => {
     await pronta();
-    const lixo: ProvedorIA = { nome: "simulado", async gerar() { return { texto: "{}", modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0 }; } };
+    const lixo: ProvedorIA = { nome: "simulado", async gerar(p) { return { ...(await simuladoBase.gerar(p)), texto: "{}" }; } };
     expect(await processarTurnoAria(inbound.id, { provedor: lixo })).toMatchObject({ resultado: "HANDOFF" });
   });
 });

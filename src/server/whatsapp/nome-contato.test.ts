@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({ tx: {} as Record<string, Record<string, ReturnType<typeof vi.fn>>> }));
@@ -62,7 +63,7 @@ describe("processarMensagemNormalizada — pushName", () => {
   };
   const mensagem = (fromMe: boolean, nome = "Diogenes Mendes") => processarMensagemNormalizada({
     numeroProviderRef: "linha", contatoWaId: "5511911600554", nomeExibicao: nome,
-    providerMessageId: "M1", corpo: "Bom dia", tipo: "TEXTO", driver: "BAILEYS", fromMe, quando: new Date(),
+    providerMessageId: "M1", corpo: "Bom dia", tipo: "TEXTO", driver: DriverWhatsApp.BAILEYS, fromMe, quando: new Date(),
   });
   beforeEach(() => preparar(null));
 

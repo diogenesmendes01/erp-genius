@@ -25,13 +25,6 @@ type ConfiguracaoAgenda = {
   templateAvisosAgenda: { id: string; corpo: string; idioma: string; categoria: string; statusMeta: string; metaTemplateId: string | null } | null;
 };
 
-function destinosAgenda(aluno: { whatsapp: boolean; telefoneE164: string | null; responsaveis: { responsavelId: string; responsavel: { telefoneE164: string | null } }[] }) {
-  return [
-    ...(aluno.whatsapp && aluno.telefoneE164 ? [{ telefone: aluno.telefoneE164, responsavelId: null }] : []),
-    ...aluno.responsaveis.flatMap((r) => r.responsavel.telefoneE164 ? [{ telefone: r.responsavel.telefoneE164, responsavelId: r.responsavelId }] : []),
-  ];
-}
-
 export function renderizarTemplateAgenda(corpo: string, dados: { nome: string; horarios: string }) {
   const variaveis: string[] = [];
   let encontrouHorario = false;
@@ -93,7 +86,7 @@ export function motivoConfiguracaoAgendaInvalida(config: ConfiguracaoAgenda | nu
   const numero = config?.numeroAvisosAgenda;
   const template = config?.templateAvisosAgenda;
   if (!config?.numeroAvisosAgendaId || !config.templateAvisosAgendaId || !numero || !template) return "configuracao_agenda_ausente";
-  // Só o motor envia aviso de agenda: META_CLOUD não tem driver no despachante (C1 da R1 do #213).
+  // Só o motor envia aviso de agenda: é o único driver do despachante.
   if (!numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") return "numero_agenda_invalido";
   if (template.idioma !== idioma || !renderizarTemplateAgenda(template.corpo, { nome: "x", horarios: "x" })) return "template_agenda_incompativel";
   return null;

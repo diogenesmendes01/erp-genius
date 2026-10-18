@@ -10,6 +10,8 @@ import {
   contextoInclude, podeVerLeadNaThread, notasDoLead, resumirConversa,
   type ConversaResumo, type MensagemThread, type NotaInternaThread,
 } from "@/server/whatsapp/consultas-inbox";
+import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
+import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
 import type { FiltrosInbox } from "./filtros";
 
@@ -18,6 +20,8 @@ export interface ItemListaInbox extends ConversaResumo {
   fixada: boolean; silenciada: boolean; naoLidas: number; grupo: boolean;
   /** Para decidir as ações do cabeçalho (podeExecutar): responsável, dono da linha, setores do número e origem da transferência. */
   responsavelId: string | null; numeroDonoId: string | null; setoresDoNumero: Setor[]; atendimentoOrigemId: string | null;
+  /** Recursos do motor que o número executa agora (`capacidadesDoNumero`: MOTOR ativo e sessão CONECTADO), como `ThreadConversa.capacidades`. */
+  capacidades: RecursoMotor[];
 }
 
 const LIMITE_LISTA = 50;
@@ -116,7 +120,8 @@ async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<Item
       fixada: pref?.fixada ?? false, silenciada: pref?.silenciada ?? false,
       naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId,
       responsavelId: a.responsavelId, numeroDonoId: a.conversa.numero.donoId, setoresDoNumero: setoresDeNumero(a.conversa.numero),
-      atendimentoOrigemId: a.atendimentoOrigemId };
+      atendimentoOrigemId: a.atendimentoOrigemId,
+      capacidades: capacidadesDoNumero({ driver: a.conversa.numero.driver, ativo: a.conversa.numero.ativo, sessao: a.conversa.numero.sessao }) };
   });
 }
 
@@ -167,7 +172,8 @@ export async function listarMensagensPagina(
   const mensagens: MensagemThread[] = pagina.map((m) => ({
     id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath, status: m.status, origem: m.origem,
     autorNome: m.autor?.nome ?? null, templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId }));
+    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
+    propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
   // Notas internas só na primeira carga (sem cursor), e só para quem pode ver o lead (LC-L02).
   const verNotas = !pos && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId

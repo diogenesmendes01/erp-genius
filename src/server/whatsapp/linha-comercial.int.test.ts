@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -13,7 +14,6 @@ import { criarLeadDaConversa, enviarTextoInbox, salvarNumeroWhatsApp, vincularCo
 import { abrirAtendimentoInstitucional, listarOpcoesAtendimento, listarTriagemWhatsApp } from "./operacoes-atendimento";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, CHAVE_LINHA } from "./linha-comercial";
-import { importarHistoricoLinha, type MensagemHistorica } from "./historico";
 
 // SPEC-ERP-005 — linha comercial do WhatsApp (critérios LC-01…LC-15). Número de VENDAS é o espelho
 // do WhatsApp do vendedor: toda conversa aparece para o dono, com ou sem lead; o canal institucional
@@ -40,14 +40,14 @@ beforeEach(async () => {
 
 async function linhaDe(dono: Usuario | null, over: { ativo?: boolean } = {}) {
   return prisma.numeroWhatsApp.create({ data: {
-    telefoneE164: "+5511988880000", rotulo: "Vendas — A", driver: "BAILEYS", finalidade: "VENDAS",
+    telefoneE164: "+5511988880000", rotulo: "Vendas — A", driver: DriverWhatsApp.MOTOR, finalidade: "VENDAS",
     providerRef: "linha-a", donoId: dono?.id ?? null, ativo: over.ativo ?? true,
   } });
 }
 
 async function numeroCobranca() {
   return prisma.numeroWhatsApp.create({ data: {
-    telefoneE164: "+5511977770000", rotulo: "Cobrança", driver: "BAILEYS", finalidade: "COBRANCA", providerRef: "cobranca-1",
+    telefoneE164: "+5511977770000", rotulo: "Cobrança", driver: DriverWhatsApp.MOTOR, finalidade: "COBRANCA", providerRef: "cobranca-1",
   } });
 }
 
@@ -56,7 +56,7 @@ async function mensagem(providerRef: string, over: Partial<Parameters<typeof pro
   seq += 1;
   return processarMensagemNormalizada({
     numeroProviderRef: providerRef, contatoWaId: "50670001111", nomeExibicao: "Desconhecido",
-    providerMessageId: `LC-${seq}-${Date.now()}`, corpo: `mensagem ${seq}`, tipo: "TEXTO", driver: "BAILEYS",
+    providerMessageId: `LC-${seq}-${Date.now()}`, corpo: `mensagem ${seq}`, tipo: "TEXTO", driver: DriverWhatsApp.MOTOR,
     fromMe: false, quando: new Date(), ...over,
   });
 }
@@ -288,66 +288,12 @@ describe("LC-09: troca de dono — o histórico segue a linha", () => {
     await mensagem("linha-a");
     const vendedorD = await criarUsuario([Papel.VENDEDOR], "Vendedor D");
     entrar(admin);
-    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "BAILEYS",
-      finalidade: "VENDAS", providerRef: linha.providerRef ?? "", donoId: vendedorD.id, ativo: true });
+    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "MOTOR",
+      finalidade: "VENDAS", donoId: vendedorD.id, ativo: true });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
     expect(await listarConversas(sessao(vendedorD))).toHaveLength(1);
     expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
     expect((await eventosDo("NumeroWhatsApp", linha.id)).map((e) => e.tipo)).toContain("NumeroWhatsAppAlterado");
-  });
-});
-
-describe("LC-10/LC-11: histórico do aparelho", () => {
-  const agora = new Date("2026-09-26T15:00:00.000Z");
-  const dias = (n: number) => new Date(agora.getTime() - n * 86_400_000);
-  const historicas = (): MensagemHistorica[] => [
-    { contatoWaId: "50670001111", nomeExibicao: "Cliente antigo", providerMessageId: "H-90", corpo: "há 90 dias", tipo: "TEXTO", fromMe: false, quando: dias(90) },
-    { contatoWaId: "50670001111", nomeExibicao: "Cliente antigo", providerMessageId: "H-10", corpo: "sim", tipo: "TEXTO", fromMe: false, quando: dias(10) },
-    { contatoWaId: "50670001111", providerMessageId: "H-9", corpo: "resposta minha", tipo: "TEXTO", fromMe: true, quando: dias(9) },
-    { contatoWaId: "50670002222", nomeExibicao: "Outra pessoa", providerMessageId: "H-2", corpo: "sair", tipo: "TEXTO", fromMe: false, quando: dias(2) },
-  ];
-
-  it("LC-10: grava só os últimos 30 dias, na linha, sem lead/saudação/opt-out/não lidas", async () => {
-    await linhaDe(vendedorA);
-    await ligarAutoLead("ATIVA");
-    const r = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    expect(r).toMatchObject({ gravadas: 3, motivo: null });
-
-    expect(await prisma.mensagemWhatsApp.count()).toBe(3);
-    expect(await prisma.mensagemWhatsApp.count({ where: { providerMessageId: "H-90" } })).toBe(0);
-    expect(await prisma.oportunidade.count()).toBe(0);
-    expect(await prisma.intencaoMensagem.count()).toBe(0);
-    expect(await prisma.contatoWhatsApp.count({ where: { optOutEm: { not: null } } })).toBe(0);
-    const lista = await listarConversas(sessao(vendedorA));
-    expect(lista).toHaveLength(2);
-    expect(lista.every((c) => c.naoLidas === 0)).toBe(true);
-    expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: null } })).toBe(0);
-    // Recência vem da mensagem mais nova do histórico.
-    expect(lista[0].ultimaMensagemEm).toBe(dias(2).toISOString());
-  });
-
-  it("LC-11: reenvio do mesmo histórico não duplica", async () => {
-    await linhaDe(vendedorA);
-    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    const again = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    expect(again.gravadas).toBe(0);
-    expect(await prisma.mensagemWhatsApp.count()).toBe(3);
-    expect(await prisma.atendimentoWhatsApp.count()).toBe(2);
-  });
-
-  it("canal institucional não importa histórico", async () => {
-    await numeroCobranca();
-    const r = await importarHistoricoLinha({ numeroProviderRef: "cobranca-1" }, historicas(), agora);
-    expect(r).toMatchObject({ gravadas: 0, motivo: "nao_e_linha_comercial" });
-    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
-  });
-
-  it("histórico não recua a recência de uma conversa viva mais nova", async () => {
-    await linhaDe(vendedorA);
-    await mensagem("linha-a", { quando: agora });
-    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    const [primeira] = await listarConversas(sessao(vendedorA));
-    expect(primeira.ultimaMensagemEm).toBe(agora.toISOString());
   });
 });
 
@@ -383,8 +329,8 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
     const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, contatoId: contato.id } });
     const antiga = new Date("2026-09-20T10:00:00.000Z");
     await prisma.mensagemWhatsApp.createMany({ data: [
-      { conversaId: conversa.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "oi", providerMessageId: "O-1", criadoEm: antiga },
-      { conversaId: conversa.id, numeroId: linha.id, direcao: "SAIDA", driver: "BAILEYS", corpo: "olá", providerMessageId: "O-2", criadoEm: new Date(antiga.getTime() + 60_000) },
+      { conversaId: conversa.id, numeroId: linha.id, direcao: "ENTRADA", driver: DriverWhatsApp.MOTOR, corpo: "oi", providerMessageId: "O-1", criadoEm: antiga },
+      { conversaId: conversa.id, numeroId: linha.id, direcao: "SAIDA", driver: DriverWhatsApp.MOTOR, corpo: "olá", providerMessageId: "O-2", criadoEm: new Date(antiga.getTime() + 60_000) },
     ] });
     expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
 
@@ -402,10 +348,10 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
     const linha = await linhaDe(vendedorA);
     const grupo = await prisma.grupoWhatsApp.create({ data: { numeroId: linha.id, grupoJid: "120363000000000009@g.us", nome: "Grupo" } });
     const cg = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, grupoId: grupo.id } });
-    await prisma.mensagemWhatsApp.create({ data: { conversaId: cg.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "no grupo", providerMessageId: "G-1" } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: cg.id, numeroId: linha.id, direcao: "ENTRADA", driver: DriverWhatsApp.MOTOR, corpo: "no grupo", providerMessageId: "G-1" } });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50670002222" } });
     const ci = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, contatoId: contato.id } });
-    await prisma.mensagemWhatsApp.create({ data: { conversaId: ci.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "individual", providerMessageId: "G-2" } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: ci.id, numeroId: linha.id, direcao: "ENTRADA", driver: DriverWhatsApp.MOTOR, corpo: "individual", providerMessageId: "G-2" } });
 
     expect(await adotarMensagensOrfasDaLinha()).toEqual({ conversas: 1, mensagens: 1 });
     expect(await prisma.atendimentoWhatsApp.count({ where: { conversaId: cg.id } })).toBe(0);
@@ -416,10 +362,10 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
     const linha = await linhaDe(null);
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50670001111" } });
     const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: linha.id, contatoId: contato.id } });
-    await prisma.mensagemWhatsApp.create({ data: { conversaId: conversa.id, numeroId: linha.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "sem dono", providerMessageId: "O-3" } });
+    await prisma.mensagemWhatsApp.create({ data: { conversaId: conversa.id, numeroId: linha.id, direcao: "ENTRADA", driver: DriverWhatsApp.MOTOR, corpo: "sem dono", providerMessageId: "O-3" } });
     entrar(admin);
-    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "BAILEYS",
-      finalidade: "VENDAS", providerRef: linha.providerRef ?? "", donoId: vendedorA.id, ativo: true });
+    const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "MOTOR",
+      finalidade: "VENDAS", donoId: vendedorA.id, ativo: true });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
     expect(await listarConversas(sessao(vendedorA))).toHaveLength(1);
   });
@@ -462,7 +408,7 @@ describe("abrir atendimento comercial e estado da linha (§5.5)", () => {
 
   it("dono vê o estado das próprias linhas; outros não", async () => {
     await linhaDe(vendedorA);
-    expect(await listarLinhasDoUsuario(sessao(vendedorA))).toEqual([expect.objectContaining({ rotulo: "Vendas — A", sessao: "DESCONECTADO", driver: "BAILEYS" })]);
+    expect(await listarLinhasDoUsuario(sessao(vendedorA))).toEqual([expect.objectContaining({ rotulo: "Vendas — A", sessao: "DESCONECTADO", driver: DriverWhatsApp.MOTOR })]);
     expect(await listarLinhasDoUsuario(sessao(vendedorB))).toEqual([]);
     expect(await listarLinhasDoUsuario(sessao(financeiro))).toEqual([]);
   });

@@ -14,6 +14,8 @@ import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
 import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { comContatoIndividual } from "./grupos";
+import type { RecursoMotor } from "@/components/conversa/recursos-canal";
+import { capacidadesDoNumero } from "./motor/capacidades";
 
 export interface ConversaResumo {
   /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
@@ -31,6 +33,10 @@ export interface MensagemThread {
   /** Favorita do usuário da sessão (tabela pessoal). */
   favorita: boolean;
   clientMessageId: string | null;
+  /** Saída escrita pelo usuário da sessão (editar/apagar só valem para as próprias); ausente conta como falso. */
+  propria?: boolean;
+  /** Apagada para todos pelo motor (`apagadaEm`); o corpo fica guardado. Ausente conta como falso. */
+  apagada?: boolean;
 }
 export interface CobrancaAtivaThread {
   id: string; matriculaId: string; alunoId: string; alunoNome: string; moeda: string; vencimento: ReferenciaVencimentoCivil;
@@ -54,7 +60,8 @@ export interface ThreadConversa {
     nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
     alunoId: string | null; alunoNome: string | null; responsavelId: string | null; responsavelNome: string | null;
     leadId: string | null; leadNome: string | null };
-  janela24h: { aberta: boolean; fechaEm: string | null } | null;
+  /** Recursos do motor que o número executa agora (`recursos={(r) => capacidades.includes(r)}` na tela). */
+  capacidades: RecursoMotor[];
   silencio: { ativo: boolean; ate: string | null }; cobrancaAtiva: CobrancaAtivaThread | null;
   lead: LeadNaThread | null; mensagens: MensagemThread[];
 }
@@ -144,7 +151,6 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const c = a.conversa;
   const { nome, fonte: fonteNome } = nomeEFonteDoAtendimento(a);
   const agora = Date.now();
-  const fechaEm = c.ultimoInboundEm ? new Date(c.ultimoInboundEm.getTime() + 24 * 3600_000) : null;
   const politica = financeiro ? await carregarPoliticaRegua() : null;
   const silencio = silencioPosInbound(a, politica?.silencioPosInboundHoras ?? null, agora);
   const podeEnviar = !!await atendimentoVisivel(usuario, a.id, true);
@@ -164,14 +170,15 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       optOutEm: c.contato.optOutEm?.toISOString() ?? null, alunoId: a.alunoId,
       alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
       leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
-    janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
+    capacidades: capacidadesDoNumero({ driver: c.numero.driver, ativo: c.numero.ativo, sessao: c.numero.sessao }),
     silencio,
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
     lead: verLead && a.lead ? await leadNaThread(a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-      participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId })) };
+      participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
+      propria: m.direcao === "SAIDA" && m.autorId === usuario.id, apagada: !!m.apagadaEm })) };
 }
 
 /** Botões de cadastro da conversa (os do Inbox antigo): criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */
