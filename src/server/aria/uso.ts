@@ -20,6 +20,7 @@ export async function registrarChamadaIA(
         tokensEntrada: 0,
         tokensSaida: 0,
         tokensCache: 0,
+        tokensEscritaCache: 0,
         custoMicroUsd: 0,
         latenciaMs: r.latenciaMs,
         resultado: `ERRO:${r.erro}`,
@@ -34,6 +35,7 @@ export async function registrarChamadaIA(
       tokensEntrada: r.tokensEntrada,
       tokensSaida: r.tokensSaida,
       tokensCache: r.tokensCache,
+      tokensEscritaCache: r.tokensEscritaCache,
       custoMicroUsd: custoMicroUsd(r.modelo, {
         entrada: r.tokensEntrada,
         cache: r.tokensCache,
