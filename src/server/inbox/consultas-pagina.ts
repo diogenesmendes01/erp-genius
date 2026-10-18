@@ -80,13 +80,15 @@ function depoisDoCursor(c: CursorInbox): Prisma.AtendimentoWhatsAppWhereInput {
 /**
  * Página da lista do inbox (keyset). O escopo é sempre a base; filtros só restringem. Fixadas do usuário
  * vêm numa consulta própria, só na primeira página, e ficam fora das páginas por cursor.
+ * `enviar`: a base vira o escopo de ENVIO (aberto, número ativo, convite com envio), para escolher o destino do
+ * encaminhar; a action confere de novo (destinatário atual, opt-out, mesmo número, sessão do motor).
  */
 export async function listarAtendimentosPagina(
-  u: UsuarioSessao, f: FiltrosInbox, cursor: string | null, limite = LIMITE_LISTA,
+  u: UsuarioSessao, f: FiltrosInbox, cursor: string | null, limite = LIMITE_LISTA, opcoes: { enviar?: boolean } = {},
 ): Promise<{ itens: ItemListaInbox[]; proximo: string | null }> {
   const tamanho = Math.min(Math.max(Math.trunc(limite) || LIMITE_LISTA, 1), 200);
   const pos = cursor ? decodificarCursor(cursor) : null;
-  const base: Prisma.AtendimentoWhatsAppWhereInput = { AND: [await escopoAtendimentos(u), ...await condicoesDosFiltros(u, f)] };
+  const base: Prisma.AtendimentoWhatsAppWhereInput = { AND: [await escopoAtendimentos(u, { enviar: opcoes.enviar === true }), ...await condicoesDosFiltros(u, f)] };
   const include = includeLista;
 
   const fixadas = pos ? [] : await prisma.atendimentoWhatsApp.findMany({

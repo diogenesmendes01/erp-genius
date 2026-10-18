@@ -226,6 +226,13 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "Fase 4D",
     efeito: "apaga a mensagem para todos no WhatsApp do contato; não há como desfazer pela tela",
   },
+  {
+    arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx",
+    modulo: "@/server/whatsapp/motor/acoes-mensagem",
+    acao: "encaminharMensagemWhatsApp",
+    achado: "Fase 4D",
+    efeito: "envia a mensagem pelo WhatsApp a outro contato do mesmo número (message.forward); não há como desfazer pela tela",
+  },
 ];
 
 /**

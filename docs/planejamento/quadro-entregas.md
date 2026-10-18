@@ -2,6 +2,16 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox novo — encaminhar e aviso de convite (18/10/2026)
+
+Branch `claude/inbox-encaminhar-convite`. Pendências deixadas pela Fase 4D (#219) e pelo #220.
+
+- **Encaminhar**: o comando entra em `COMANDOS_MENSAGEM_LIGADOS`. Ele exige a capacidade do número (`encaminhar` entra em `RECURSOS_MOTOR`: MOTOR ativo e sessão CONECTADO), o envio liberado (`envioLiberado === true`) e a mensagem não apagada. Abre o diálogo `EncaminharMensagem` (`Modal`), que lista o destino pela lista do Inbox novo (`GET /api/inbox/atendimentos?numeroId=…&envio=1&busca=…`). Com `envio=1`, a lista usa o escopo de envio. Ficam de fora a própria origem, os grupos e os contatos em opt-out. O envio roda no `ConfirmarAcao`, que entra na lista fechada de `confirmacoes-mapa.ts`. A action `encaminharMensagemWhatsApp` já revalidava no destino o envio, o encerramento, o opt-out, o mesmo número e a sessão do motor. Novos testes de integração cobrem o convidado só com leitura, o destino encerrado, a sessão caída e a mensagem apagada.
+- **Aviso no SSE**: `convidarParticipante` e `revogarParticipante` fazem, na mesma transação, um UPDATE sem mudança no `AtendimentoWhatsApp`. O trigger `notificar_inbox` já existente emite `atendimento.atualizado`, sem migration. O ID reservado 20261018500000 não foi usado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (os avisos já existiam). `npm test`: 719 arquivos, 5334 testes verdes.
+- Integração no banco descartável `erp_genius_test_encaminhar`: `src/server/inbox` com 7 arquivos e 67 testes; `src/server/whatsapp` com 53 arquivos e 414 testes. Tudo verde, motor simulado.
+- **Estado**: implementado, aguarda revisão.
+
 ## Decisões do dono 17/10/2026
 
 Registro completo em [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md). Branch `claude/decisoes-dono-17-10`.
