@@ -88,6 +88,7 @@ async function prepararCanal(): Promise<CanalPronto> {
   const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: politica.numeroRemetenteId } });
   if (!numero || !numero.ativo) throw new ErroRegra("O número remetente da cobrança está inativo.");
   const templates = await prisma.templateWhatsApp.findMany({
+    where: { tipo: "MODELO_AUTOMACAO" },
     select: { id: true, nome: true, corpo: true, idioma: true },
   });
   return { politica, numeroId: numero.id, templates: new Map(templates.map((t) => [t.id, t])) };
@@ -733,7 +734,7 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
     if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") {
       throw new ErroRegra("Escolha um número de agenda ativo do motor WhatsApp.");
     }
-    if (!template) throw new ErroRegra("Escolha um template de agenda.");
+    if (!template || template.tipo !== "MODELO_AUTOMACAO") throw new ErroRegra("Escolha um template de agenda.");
     if (/\{[^}]+\}/.test(template.corpo.replace(/\{(nome|horarios)\}/g, "")) || !template.corpo.includes("{horarios}")) {
       throw new ErroRegra("O template de agenda deve usar somente {nome} e {horarios}, incluindo {horarios}.");
     }
@@ -850,7 +851,7 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
         const antes = await tx.templateWhatsApp.findUnique({ where: { id: dados.id } });
-        if (!antes) throw new ErroRegra("Template não encontrado.");
+        if (!antes || antes.tipo !== "MODELO_AUTOMACAO") throw new ErroRegra("Template não encontrado.");
         await tx.templateWhatsApp.update({
           where: { id: dados.id },
           data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },

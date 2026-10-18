@@ -85,8 +85,8 @@ const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
   "src/components/conversa/BalaoMensagem.tsx": ["Opções da mensagem", "i.rotulo"],
   "src/components/conversa/VisualizadorMidia.tsx": ["Abrir imagem", "Reproduzir vídeo", "Abrir"],
   // Compositor: ícones (remover anexo, anexar, emojis, parar e gravar voz) e itens do menu de anexo (role=menuitem,
-  // CLASSE_ITEM_MENU; "(sem nome)" é o item do motor, cujo rótulo vem de ITENS_MOTOR). Enviar passa pelo <Botao>.
-  "src/components/conversa/Compositor.tsx": ["Remover anexo", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz"],
+  // CLASSE_ITEM_MENU; "(sem nome)" são o item do motor, cujo rótulo vem de ITENS_MOTOR, e a sugestão de resposta rápida do atalho /). Enviar passa pelo <Botao>.
+  "src/components/conversa/Compositor.tsx": ["Remover anexo", "(sem nome)", "Anexar", "Documento", "Fotos e vídeos", "Áudio", "(sem nome)", "Emojis", "Parar e revisar áudio", "Gravar mensagem de voz"],
   // Seletor de emoji: abas (role=tab), fichas de categoria (recentes e grupos, no grupo rotulado) e a célula do emoji.
   // Fechar e "Mostrar mais emojis" passam pelo <Botao>.
   "src/components/conversa/SeletorEmoji.tsx": ["Emojis", "GIFs", "Figurinhas", "🕘", "rotulo", "`${e.label} ${e.emoji}`"],

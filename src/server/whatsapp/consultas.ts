@@ -81,7 +81,7 @@ export interface TemplateConfig {
 
 export async function listarTemplatesConfig(): Promise<TemplateConfig[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-  const templates = await prisma.templateWhatsApp.findMany({ orderBy: { nome: "asc" } });
+  const templates = await prisma.templateWhatsApp.findMany({ where: { tipo: "MODELO_AUTOMACAO" }, orderBy: { nome: "asc" } });
   return templates.map((t) => ({
     id: t.id,
     nome: t.nome,
@@ -107,7 +107,7 @@ export async function carregarConfiguracaoAvisosAgenda(): Promise<ConfiguracaoAv
   const [config, numeros, templates] = await Promise.all([
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } }),
     prisma.numeroWhatsApp.findMany({ where: { finalidade: "AGENDA" }, select: { id: true, rotulo: true, driver: true, finalidade: true, providerRef: true, ativo: true }, orderBy: { criadoEm: "asc" } }),
-    prisma.templateWhatsApp.findMany({ select: { id: true, nome: true, idioma: true, categoria: true, statusMeta: true, metaTemplateId: true, corpo: true }, orderBy: { nome: "asc" } }),
+    prisma.templateWhatsApp.findMany({ where: { tipo: "MODELO_AUTOMACAO" }, select: { id: true, nome: true, idioma: true, categoria: true, statusMeta: true, metaTemplateId: true, corpo: true }, orderBy: { nome: "asc" } }),
   ]);
   return { numeroAvisosAgendaId: config?.numeroAvisosAgendaId ?? null, templateAvisosAgendaId: config?.templateAvisosAgendaId ?? null, numeros, templates };
 }

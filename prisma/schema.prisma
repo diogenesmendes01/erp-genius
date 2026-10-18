@@ -2702,6 +2702,7 @@ model TemplateWhatsApp {
   metaTemplateId String?
   tipo           TipoTemplate   @default(MODELO_AUTOMACAO)
   atalho         String?        @unique
+  titulo         String? // só RESPOSTA_RAPIDA
   ariaPodeUsar   Boolean        @default(false)
   setor          FinalidadeAtendimentoWhatsApp?
   arquivadoEm    DateTime?
