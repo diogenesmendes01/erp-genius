@@ -34,7 +34,13 @@ export async function notasDoAtendimento(atendimentoId: string): Promise<{ id: s
     where: { agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, tipo: "NotaInterna" },
     orderBy: { criadoEm: "desc" }, take: 50, include: { autor: { select: { nome: true } } },
   });
-  return notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "", autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
+  // Nota da Aria desfeita fica arquivada: o Evento original permanece, mas a nota sai da lista.
+  const arquivadas = new Set(
+    (await prisma.evento.findMany({ where: { agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, tipo: "NotaInternaArquivada" }, select: { payload: true } }))
+      .map((e) => (e.payload as { eventoId?: unknown } | null)?.eventoId)
+      .filter((v): v is string => typeof v === "string"),
+  );
+  return notas.filter((e) => !arquivadas.has(e.id)).map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "", autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
 }
 
 /** Agenda uma mensagem pelo atendimento (Fase 2, Tarefa 29, reusada): o acesso e o número vêm do atendimento; horário, opt-out e validade ficam em `agendarMensagem`. */
