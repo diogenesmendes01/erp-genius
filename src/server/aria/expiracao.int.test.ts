@@ -13,7 +13,8 @@ const vencida = new Date("2026-10-18T11:00:00.000Z");
 const futura = new Date("2026-10-18T13:00:00.000Z");
 let seq = 0;
 
-async function publicar(acaoExpiracao: "HANDOFF" | "DESCARTAR") {
+async function publicar(acaoExpiracao: "HANDOFF" | "DESCARTAR", estado: "DESLIGADA" | "SHADOW" | "ATIVA" = "ATIVA") {
+  await prisma.agenteIA.upsert({ where: { id: "aria" }, create: { id: "aria", estado }, update: { estado } });
   const dono = await criarUsuario([], "Camila Souza");
   const c = configPadrao();
   const config = { ...c, confianca: { ...c.confianca, acaoExpiracao } };
@@ -92,6 +93,16 @@ describe("expirarSugestoesAria", () => {
     const c = await atendimentoComSugestoes([vencida]);
     await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
     expect(await expirarSugestoesAria(agora)).toEqual({ expiradas: 1, handoffs: 0 });
+  });
+
+  it.each(["DESLIGADA", "SHADOW"] as const)("aria_%s_expira_sem_handoff", async (estado) => {
+    await publicar("HANDOFF", estado);
+    const c = await atendimentoComSugestoes([vencida]);
+    expect(await expirarSugestoesAria(agora)).toEqual({ expiradas: 1, handoffs: 0 });
+    expect((await prisma.acaoAgenteIA.findUniqueOrThrow({ where: { id: c.acoes[0].id } })).status).toBe("EXPIRADA");
+    expect(await prisma.acaoAgenteIA.count({ where: { acao: "HANDOFF" } })).toBe(0);
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).iaPausadaEm).toBeNull();
+    expect(await prisma.evento.count({ where: { tipo: "AriaHandoff" } })).toBe(0);
   });
 
   it("idempotente_na_segunda_passada", async () => {

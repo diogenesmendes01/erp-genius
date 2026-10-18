@@ -4,6 +4,7 @@ import { registrarEvento } from "@/server/_shared/evento";
 import { payloadDaAria } from "./ator";
 import { montarContextoTurno } from "./turno/contexto";
 import { executarHandoff } from "./turno/handoff";
+import { situacaoAria } from "./estado";
 import { versaoPublicada } from "./versoes";
 
 // Expiração das sugestões da Aria (Task 25): SUGERIDA com `expiraEm <= agora` vira EXPIRADA. Se a
@@ -47,8 +48,9 @@ async function expirarUma(tx: Tx, id: string, agora: Date, comHandoff: boolean):
 
 export async function expirarSugestoesAria(agora: Date = new Date()): Promise<{ expiradas: number; handoffs: number }> {
   const total = { expiradas: 0, handoffs: 0 };
-  const config = (await versaoPublicada())?.config;
-  const comHandoff = config?.confianca.acaoExpiracao === "HANDOFF";
+  // Handoff só com a Aria ATIVA: DESLIGADA e SHADOW (que não age de verdade) só expiram a sugestão.
+  const { estado, versao } = await situacaoAria(agora);
+  const comHandoff = estado === "ATIVA" && versao?.config.confianca.acaoExpiracao === "HANDOFF";
   const vencidas = await prisma.acaoAgenteIA.findMany({
     where: { status: "SUGERIDA", expiraEm: { lte: agora } },
     orderBy: [{ expiraEm: "asc" }, { id: "asc" }],
