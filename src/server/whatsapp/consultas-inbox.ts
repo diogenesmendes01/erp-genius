@@ -155,7 +155,7 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const silencio = silencioPosInbound(a, politica?.silencioPosInboundHoras ?? null, agora);
   const podeEnviar = !!await atendimentoVisivel(usuario, a.id, true);
   const linhaComercial = comercial && ehLinhaComercial(c.numero);
-  // LC-L02: ver a conversa pela linha não abre o lead de outra carteira (etapa, notas, copiloto).
+  // LC-L02: ver a conversa pela linha não abre o lead de outra carteira (etapa, notas).
   const verLead = comercial && !!a.leadId && await podeVerLeadNaThread(usuario, a.id, a.leadId, agora);
   return { conversaId: a.id, finalidade: a.finalidade, matricula: financeiro || pedag ? a.matricula : null,
     podeEnviar, linhaComercial,

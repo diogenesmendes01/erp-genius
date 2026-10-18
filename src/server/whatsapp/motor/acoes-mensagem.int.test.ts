@@ -135,6 +135,40 @@ describe("reagir e encaminhar pelo motor", () => {
     expect(r).toEqual({ ok: false, erro: "Encaminhe só entre conversas do mesmo número." });
     expect(acao).not.toHaveBeenCalled();
   });
+  it("encaminhar: o servidor revalida o envio no destino — convidado só com leitura é recusado sem chamar o motor", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002");
+    const fin = await criarUsuario([Papel.FINANCEIRO], "Fin");
+    const convite = (atendimentoId: string, podeEnviar: boolean) => prisma.participanteAtendimentoWhatsApp.create({ data: {
+      atendimentoId, usuarioId: fin.id, concedenteId: autor.id, podeEnviar, motivo: "teste",
+      inicio: new Date(Date.now() - 60_000), fim: new Date(Date.now() + 3600_000) } });
+    await convite(m.atendimentoId!, true);
+    await convite(dest.id, false);
+    const r = await comoUsuario(fin, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }));
+    expect(r).toEqual({ ok: false, erro: "Destino fora do seu escopo." });
+    expect(acao).not.toHaveBeenCalled();
+    await prisma.participanteAtendimentoWhatsApp.updateMany({ where: { atendimentoId: dest.id }, data: { podeEnviar: true } });
+    acao.mockResolvedValue({ key: { id: "FWD1", remoteJid: "50688880002@s.whatsapp.net" } });
+    expect((await comoUsuario(fin, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }))).ok).toBe(true);
+  });
+  it("encaminhar para atendimento encerrado é recusado", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002");
+    await prisma.atendimentoWhatsApp.update({ where: { id: dest.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    const r = await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }));
+    expect(r).toEqual({ ok: false, erro: "Destino fora do seu escopo." });
+    expect(acao).not.toHaveBeenCalled();
+  });
+  it("encaminhar com a sessão do motor caída ou mensagem apagada é recusado sem chamar o motor", async () => {
+    const { autor, m, numero } = await cenario();
+    const dest = await destino(numero.id, autor.id, "+50688880002");
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "DESCONECTADO" } });
+    expect(await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }))).toEqual({ ok: false, erro: MSG_MOTOR_DESCONECTADO });
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "CONECTADO" } });
+    await prisma.mensagemWhatsApp.update({ where: { id: m.id }, data: { apagadaEm: new Date() } });
+    expect(await comoUsuario(autor, () => encaminharMensagemWhatsApp({ mensagemId: m.id, atendimentoDestinoId: dest.id }))).toEqual({ ok: false, erro: "Esta mensagem já foi apagada." });
+    expect(acao).not.toHaveBeenCalled();
+  });
   it("eco celular do encaminhamento antes da resposta é corrigido para HUMANO", async () => {
     const { autor, m, numero } = await cenario();
     const dest = await destino(numero.id, autor.id, "+50688880002");

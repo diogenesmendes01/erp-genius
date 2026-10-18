@@ -17,7 +17,8 @@ describe("capacidadesDoNumero", () => {
     const c = capacidadesDoNumero({ driver: "MOTOR", ativo: true, sessao: "CONECTADO" });
     expect(c).toContain("editar");
     expect(c).toContain("bloquear");
-    expect(c).toHaveLength(14);
+    expect(c).toContain("encaminhar");
+    expect(c).toHaveLength(15);
     expect(c).toEqual([...RECURSOS_MOTOR]);
   });
   it("Meta e Evolution seguem sem recursos", () => {
