@@ -14,6 +14,7 @@ const resp: RespostaIA = {
   tokensEntrada: 1000,
   tokensSaida: 500,
   tokensCache: 10000,
+  tokensEscritaCache: 0,
   latenciaMs: 20,
 };
 
@@ -74,6 +75,10 @@ describe("registrarChamadaIA", () => {
   it("registra_ok_com_custo", async () => {
     const c = await registrarChamadaIA("ATENDIMENTO", resp);
     expect(c).toMatchObject({ resultado: "OK", custoMicroUsd: 9000, provedor: "anthropic" });
+  });
+  it("registra_custo_com_escrita_de_cache", async () => {
+    const c = await registrarChamadaIA("ATENDIMENTO", { ...resp, tokensEscritaCache: 2000 });
+    expect(c.custoMicroUsd).toBe(14000);
   });
   it("registra_recusa_e_erro", async () => {
     expect((await registrarChamadaIA("ATENDIMENTO", { ...resp, recusa: true })).resultado).toBe("RECUSA");

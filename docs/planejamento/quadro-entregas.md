@@ -3129,6 +3129,23 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
   (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
   39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.
 
+## Fase 5A, pendências da revisão do #224 (18/10/2026)
+
+Branch `claude/pendencias-224` (sobre main `f1b4a41c`). Nenhuma chamada real à API; cliente Anthropic mockado nos testes.
+
+- **C1, escrita de cache:** o provedor Anthropic passa a ler `usage.cache_creation_input_tokens` (ausente ou nulo vira 0) em
+  `RespostaIA.tokensEscritaCache`; o simulado devolve 0. `custoMicroUsd` cobra a escrita a 1,25× a entrada (Sonnet 5.5: 2,50 USD/M;
+  Haiku 5.5: 0,125 USD/M) e soma ao total; `registrarChamadaIA` repassa o campo. Sem coluna nova em `ChamadaIA`: o custo gravado já
+  inclui a escrita; guardar a contagem separada fica para quando houver migration da Aria.
+- **C3, modelo validado antes da chamada:** `modeloPermitido()` em `custo.ts`; o provedor Anthropic lança
+  `ErroProvedorIA("MODELO_NAO_PERMITIDO")` antes de chamar o cliente quando o modelo da tarefa está fora de `MODELOS_PERMITIDOS`.
+  Não existe schema de validação da `ConfigIA` (nenhuma tela ou action grava os modelos ainda); validar lá quando ela for criada.
+- **C6:** comentários do copiloto removido ajustados em `globals.css`, `tailwind.config.ts`, `_shared/regras.ts` e
+  `whatsapp/consultas-inbox.ts`.
+- Leitura de cache do Sonnet 5.5 segue 0,20 (decisão pendente do dono).
+- Evidências: `tsc --noEmit` saída 0; `npm run lint` saída 0 (0 erros, 40 avisos, linha de base); `npm test` saída 0, 721 arquivos,
+  5349 testes verdes; integração `src/server/aria` (banco descartável `erp_genius_test_pend224`, `migrate deploy`): saída 0, 2 arquivos,
+  13 testes verdes.
 ## Fase 5, bloco B — configuração da Aria, Tasks 6 a 11 (18/10/2026)
 
 Branch `claude/fase5-b-config` (sobre `claude/fase5-a-fundacao`, main 6d6d33ee + 24af270d). Tasks 6 (schema versionado, predefinições e matriz), 7 (divisão Admin × Gerente Comercial), 8 (rascunho, publicação numerada com diff, descarte e restauração), 9 (estado DESLIGADA/SHADOW/ATIVA, pausa global e supervisão), 10 (base de conhecimento: fontes, trechos e extração de PDF pelo provedor simulado) e 11 (busca textual em português), mais o commit de correção da revisão final. Só provedor simulado; nenhuma chamada real à API.

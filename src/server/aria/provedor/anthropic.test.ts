@@ -11,7 +11,7 @@ const original = process.env.ANTHROPIC_API_KEY;
 const ok = {
   stop_reason: "end_turn",
   content: [{ type: "text", text: "ola" }, { type: "text", text: " mundo" }],
-  usage: { input_tokens: 1200, output_tokens: 80, cache_read_input_tokens: 1000 },
+  usage: { input_tokens: 1200, output_tokens: 80, cache_read_input_tokens: 1000, cache_creation_input_tokens: 300 },
 };
 let create: ReturnType<typeof vi.fn>;
 let provedor: ReturnType<typeof criarProvedorAnthropic>;
@@ -40,8 +40,27 @@ describe("provedor Anthropic", () => {
   });
   it("uso_mapeado", async () => {
     expect(await provedor.gerar(p)).toMatchObject({
-      texto: "ola mundo", tokensEntrada: 1200, tokensSaida: 80, tokensCache: 1000, provedor: "anthropic", recusa: false,
+      texto: "ola mundo", tokensEntrada: 1200, tokensSaida: 80, tokensCache: 1000, tokensEscritaCache: 300, provedor: "anthropic", recusa: false,
     });
+  });
+  it("escrita_de_cache_ausente_ou_nula_vira_zero", async () => {
+    const semCampo = criarProvedorAnthropic(
+      cliente(vi.fn().mockResolvedValue({ ...ok, usage: { input_tokens: 10, output_tokens: 1 } })),
+      M,
+    );
+    expect((await semCampo.gerar(p)).tokensEscritaCache).toBe(0);
+    const nulo = criarProvedorAnthropic(
+      cliente(vi.fn().mockResolvedValue({ ...ok, usage: { input_tokens: 10, output_tokens: 1, cache_creation_input_tokens: null } })),
+      M,
+    );
+    expect((await nulo.gerar(p)).tokensEscritaCache).toBe(0);
+  });
+  it("modelo_nao_permitido_falha_antes_da_chamada", async () => {
+    const r = criarProvedorAnthropic(cliente(create), { conversa: "claude-opus-velho", classificacao: "claude-haiku-5-5" });
+    await expect(r.gerar(p)).rejects.toMatchObject({ name: "ErroProvedorIA", codigo: "MODELO_NAO_PERMITIDO" });
+    expect(create).not.toHaveBeenCalled();
+    await r.gerar({ ...p, tarefa: "classificacao" });
+    expect(create).toHaveBeenCalledTimes(1);
   });
   it("classificacao_haiku_sem_reserva", async () => {
     await provedor.gerar({ ...p, tarefa: "classificacao" });
