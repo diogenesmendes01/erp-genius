@@ -1,6 +1,6 @@
 # Produção do ERP + canal WhatsApp (doc 31 — E5, gaps A1/A5 do doc 28).
-# Sobe: Postgres (banco do app + banco da Evolution) · migrações · app Next standalone ·
-# Evolution API (Baileys) SÓ na rede interna · Caddy (TLS automático) como única borda.
+# Sobe: Postgres (banco do app) · migrações · app Next standalone ·
+# motor WhatsApp (whatsapp-web-baileys, modo serviço) SÓ na rede interna · Caddy (TLS automático) como única borda.
 #
 # Uso (VPS):   cp deploy/env.production.example .env   →   preencher   →
 #              docker compose -f docker-compose.prod.yml up -d --build
@@ -15,13 +15,11 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?defina no .env}
       # ATENÇÃO: a senha entra CRUA nas connection URLs abaixo — use `openssl rand -hex 32`
-      # (URL-safe). Base64 pode conter / + = e quebrar migrations/app/Evolution (PR #52).
+      # (URL-safe). Base64 pode conter / + = e quebrar migrations/app (PR #52).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env}
       POSTGRES_DB: erp
     volumes:
       - db_data:/var/lib/postgresql/data
-      # Cria o banco separado da Evolution no primeiro boot (banco por serviço — A5).
-      - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d erp"]
       interval: 5s
@@ -60,17 +58,10 @@ services:
       IA_MODELO: ${IA_MODELO:-}
       # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção real.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
-      # Driver oficial (Meta Cloud API)
-      META_WA_TOKEN: ${META_WA_TOKEN:-}
-      META_WA_APP_SECRET: ${META_WA_APP_SECRET:-}
-      META_WA_VERIFY_TOKEN: ${META_WA_VERIFY_TOKEN:-}
-      META_WA_WABA_ID: ${META_WA_WABA_ID:-}
-      # Driver Baileys (Evolution na rede interna do compose — nunca a internet)
-      EVOLUTION_URL: http://evolution:8080
-      EVOLUTION_APIKEY: ${EVOLUTION_APIKEY:-}
-      EVOLUTION_WEBHOOK_TOKEN: ${EVOLUTION_WEBHOOK_TOKEN:-}
-      # A Evolution entrega webhooks direto na rede interna (não sai para a internet).
-      EVOLUTION_WEBHOOK_PUBLIC_URL: http://app:3000
+      # Motor WhatsApp na rede interna do compose (nunca a internet).
+      MOTOR_URL: http://motor:4317
+      MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no .env}
+      MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no .env}
     volumes:
       # Mídia do WhatsApp + comprovantes/documentos (entra no backup — doc 31 §backup).
       - uploads:/app/data/uploads
@@ -81,29 +72,22 @@ services:
         condition: service_completed_successfully
     # SEM ports: só o Caddy fala com o app.
 
-  # Baileys via Evolution API (doc 26 §motores): self-hosted, FORA da internet pública —
-  # nenhuma porta publicada; app e Evolution se falam pela rede interna do compose.
-  evolution:
-    image: evoapicloud/evolution-api:v2.3.7
+  # Motor WhatsApp (whatsapp-web-baileys em modo serviço): FORA da internet pública —
+  # nenhuma porta publicada; app e motor se falam pela rede interna do compose.
+  motor:
+    image: ${MOTOR_IMAGE:?defina no .env}
     restart: unless-stopped
     environment:
-      SERVER_PORT: "8080"
-      AUTHENTICATION_API_KEY: ${EVOLUTION_APIKEY:?defina no .env}
-      DATABASE_ENABLED: "true"
-      DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/evolution?schema=public
-      DATABASE_CONNECTION_CLIENT_NAME: evolution
-      CACHE_LOCAL_ENABLED: "true"
-      CACHE_REDIS_ENABLED: "false"
-      # Estado da sessão persiste no banco + volume: queda de container não derruba o QR.
-      DATABASE_SAVE_DATA_INSTANCE: "true"
-      DATABASE_SAVE_DATA_NEW_MESSAGE: "false" # o log de mensagens é NOSSO (MensagemWhatsApp)
-      LOG_LEVEL: ERROR
+      MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no .env}
+      MOTOR_MODE: servico
+      ERP_WEBHOOK_URL: http://app:3000/api/whatsapp/webhook/motor
+      MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no .env}
+      HOST: "0.0.0.0"
+      PORT: "4317"
+      WA_DATA_DIR: /data
     volumes:
-      - evolution_instances:/evolution/instances
-    depends_on:
-      db:
-        condition: service_healthy
+      # PGlite, chave do cofre, credenciais e mídia do motor (entra no backup).
+      - motor_data:/data
 
   # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min — degraus de
   # "+30min" (C1/C2) não sobrevivem a um tick horário (virariam ~"+90min" e estourariam a
@@ -138,8 +122,7 @@ services:
     depends_on:
       - app
 
-  # Única borda pública: TLS automático (Let's Encrypt) para o app — webhook da Meta
-  # exige HTTPS válido. Evolution NÃO passa por aqui.
+  # Única borda pública: TLS automático (Let's Encrypt) para o app — o motor NÃO passa por aqui.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -158,6 +141,6 @@ services:
 volumes:
   db_data:
   uploads:
-  evolution_instances:
+  motor_data:
   caddy_data:
   caddy_config:
