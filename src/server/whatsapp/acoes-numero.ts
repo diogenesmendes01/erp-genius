@@ -24,7 +24,8 @@ export interface SetoresNumeroInput {
 
 /**
  * Define os setores que o número atende e quem faz a triagem (só com 2+ setores;
- * null = ADMINISTRADOR, Q2). NumeroSetorWhatsApp é tabela de configuração: recria-se
+ * null = ADMINISTRADOR, Q2). Grava NumeroSetoresAlterados e, se o responsável mudou, NumeroTriagemAlterada
+ * (mesmos eventos de crm-config/numeros). NumeroSetorWhatsApp é tabela de configuração: recria-se
  * as linhas, e a auditoria fica no Evento.
  */
 export async function salvarSetoresNumero(input: SetoresNumeroInput): Promise<Resultado> {
@@ -35,7 +36,7 @@ export async function salvarSetoresNumero(input: SetoresNumeroInput): Promise<Re
     const triagemResponsavelId = para.length >= 2 ? dados.triagemResponsavelId : null;
 
     await prisma.$transaction(async (tx) => {
-      const numero = await tx.numeroWhatsApp.findUnique({ where: { id: dados.numeroId }, select: { id: true } });
+      const numero = await tx.numeroWhatsApp.findUnique({ where: { id: dados.numeroId }, select: { id: true, triagemResponsavelId: true } });
       if (!numero) throw new ErroRegra("Número não encontrado.");
       if (triagemResponsavelId) {
         const resp = await tx.usuario.findFirst({ where: { id: triagemResponsavelId, ativo: true }, select: { papeis: true } });
@@ -46,13 +47,10 @@ export async function salvarSetoresNumero(input: SetoresNumeroInput): Promise<Re
       await tx.numeroSetorWhatsApp.deleteMany({ where: { numeroId: numero.id } });
       await tx.numeroSetorWhatsApp.createMany({ data: para.map((finalidade) => ({ numeroId: numero.id, finalidade })) });
       await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { triagemResponsavelId } });
-      await registrarEvento(tx, {
-        tipo: "SetoresNumeroAlterados",
-        agregadoTipo: "NumeroWhatsApp",
-        agregadoId: numero.id,
-        autorId: autor.id,
-        payload: { de, para, triagemResponsavelId },
-      });
+      await registrarEvento(tx, { tipo: "NumeroSetoresAlterados", agregadoTipo: "NumeroWhatsApp", agregadoId: numero.id, autorId: autor.id, payload: { de, para } });
+      if (numero.triagemResponsavelId !== triagemResponsavelId) {
+        await registrarEvento(tx, { tipo: "NumeroTriagemAlterada", agregadoTipo: "NumeroWhatsApp", agregadoId: numero.id, autorId: autor.id, payload: { de: numero.triagemResponsavelId, para: triagemResponsavelId } });
+      }
     });
     revalidatePath("/configuracao/whatsapp", "layout");
     revalidatePath("/inbox");
