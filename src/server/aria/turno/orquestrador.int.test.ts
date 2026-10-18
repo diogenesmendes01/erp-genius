@@ -129,6 +129,23 @@ describe("processarTurnoAria", () => {
     expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF" } })).toMatchObject({ payload: expect.objectContaining({ motivo: "ERRO_PROVEDOR" }) });
   });
 
+  it("ativa_sem_chave_vira_handoff_erro_provedor_sem_resposta", async () => {
+    await pronta("ATIVA");
+    const chave = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    try {
+      expect(await processarTurnoAria(inbound.id)).toMatchObject({ resultado: "HANDOFF" });
+    } finally {
+      if (chave !== undefined) process.env.ANTHROPIC_API_KEY = chave;
+    }
+    expect(await prisma.chamadaIA.findFirstOrThrow()).toMatchObject({ resultado: "ERRO:SEM_CHAVE" });
+    expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF" } })).toMatchObject({ payload: expect.objectContaining({ motivo: "ERRO_PROVEDOR" }) });
+    // A unica mensagem ao lead e o aviso de handoff; nenhuma resposta gerada pelo provedor simulado.
+    const respostas = await prisma.acaoAgenteIA.findMany({ where: { acao: "RESPONDER" } });
+    expect(respostas).toHaveLength(1);
+    expect(JSON.stringify(respostas[0].payload)).toContain("Vou chamar uma pessoa da equipe");
+  });
+
   it("shadow_nao_envia_nem_muda", async () => {
     await pronta("SHADOW");
     await processarTurnoAria(inbound.id, { provedor: provedorSimulado });
