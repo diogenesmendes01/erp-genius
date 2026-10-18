@@ -3,17 +3,25 @@ import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
 import { whereBuscaConversas } from "@/server/whatsapp/busca-inbox";
+import { setoresDeNumero } from "@/server/whatsapp/numero-setor";
+import type { Setor } from "@/server/whatsapp/setor";
 import { preferenciasDoUsuario } from "@/server/whatsapp/preferencias-consulta";
 import {
   contextoInclude, podeVerLeadNaThread, notasDoLead, resumirConversa,
   type ConversaResumo, type MensagemThread, type NotaInternaThread,
 } from "@/server/whatsapp/consultas-inbox";
+import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
+import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
 import type { FiltrosInbox } from "./filtros";
 
 export interface ItemListaInbox extends ConversaResumo {
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
   fixada: boolean; silenciada: boolean; naoLidas: number; grupo: boolean;
+  /** Para decidir as ações do cabeçalho (podeExecutar): responsável, dono da linha, setores do número e origem da transferência. */
+  responsavelId: string | null; numeroDonoId: string | null; setoresDoNumero: Setor[]; atendimentoOrigemId: string | null;
+  /** Recursos do motor que o número executa agora (`capacidadesDoNumero`: MOTOR ativo e sessão CONECTADO), como `ThreadConversa.capacidades`. */
+  capacidades: RecursoMotor[];
 }
 
 const LIMITE_LISTA = 50;
@@ -79,8 +87,7 @@ export async function listarAtendimentosPagina(
   const tamanho = Math.min(Math.max(Math.trunc(limite) || LIMITE_LISTA, 1), 200);
   const pos = cursor ? decodificarCursor(cursor) : null;
   const base: Prisma.AtendimentoWhatsAppWhereInput = { AND: [await escopoAtendimentos(u), ...await condicoesDosFiltros(u, f)] };
-  const include = { ...contextoInclude, responsavel: { select: { nome: true } },
-    mensagens: { orderBy: { criadoEm: "desc" as const }, take: 1, select: { corpo: true, tipo: true } } };
+  const include = includeLista;
 
   const fixadas = pos ? [] : await prisma.atendimentoWhatsApp.findMany({
     where: { AND: [base, fixadaDoUsuario(u.id)] }, take: LIMITE_FIXADAS, include,
@@ -96,16 +103,34 @@ export async function listarAtendimentosPagina(
   const ultimo = pagina[pagina.length - 1];
   const proximo = temMais && ultimo ? codificarCursor({ em: ultimo.ultimaMensagemEm?.toISOString() ?? null, id: ultimo.id }) : null;
 
-  const todas = [...fixadas, ...pagina];
-  const prefs = await preferenciasDoUsuario(u.id, todas.map((a) => a.id));
-  const itens = todas.map((a): ItemListaInbox => {
+  const itens = await montarItens(u.id, [...fixadas, ...pagina]);
+  return { itens, proximo };
+}
+
+type LinhaLista = Awaited<ReturnType<typeof prisma.atendimentoWhatsApp.findMany<{ include: typeof includeLista }>>>[number];
+const includeLista = { ...contextoInclude, responsavel: { select: { nome: true } },
+  mensagens: { orderBy: { criadoEm: "desc" as const }, take: 1, select: { corpo: true, tipo: true } } };
+
+async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<ItemListaInbox[]> {
+  const prefs = await preferenciasDoUsuario(usuarioId, todas.map((a) => a.id));
+  return todas.map((a): ItemListaInbox => {
     const pref = prefs.get(a.id);
     return { ...resumirConversa(a), status: a.status, responsavelNome: a.responsavel?.nome ?? null,
       prazoRespostaEm: a.prazoRespostaEm?.toISOString() ?? null,
       fixada: pref?.fixada ?? false, silenciada: pref?.silenciada ?? false,
-      naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId };
+      naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId,
+      responsavelId: a.responsavelId, numeroDonoId: a.conversa.numero.donoId, setoresDoNumero: setoresDeNumero(a.conversa.numero),
+      atendimentoOrigemId: a.atendimentoOrigemId,
+      capacidades: capacidadesDoNumero({ driver: a.conversa.numero.driver, ativo: a.conversa.numero.ativo, sessao: a.conversa.numero.sessao }) };
   });
-  return { itens, proximo };
+}
+
+/** Um atendimento como linha da lista, só se estiver no escopo do usuário (deep link `?c=` fora da primeira página). */
+export async function obterItemListaInbox(u: UsuarioSessao, atendimentoId: string): Promise<ItemListaInbox | null> {
+  const a = await prisma.atendimentoWhatsApp.findFirst({
+    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] }, include: includeLista,
+  });
+  return a ? (await montarItens(u.id, [a]))[0]! : null;
 }
 
 const dataCursor = (m: { criadoEm: Date; id: string }) => codificarCursor({ em: m.criadoEm.toISOString(), id: m.id });
@@ -147,7 +172,8 @@ export async function listarMensagensPagina(
   const mensagens: MensagemThread[] = pagina.map((m) => ({
     id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath, status: m.status, origem: m.origem,
     autorNome: m.autor?.nome ?? null, templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId }));
+    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
+    propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
   // Notas internas só na primeira carga (sem cursor), e só para quem pode ver o lead (LC-L02).
   const verNotas = !pos && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId

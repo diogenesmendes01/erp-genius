@@ -58,7 +58,7 @@ describe("Esqueleto", () => {
 
   it("esqueleto de formato específico fica no grupo da página-índice, não na raiz — senão as rotas filhas herdariam o formato errado", () => {
     const A = "src/app/(app)";
-    for (const [secao, grupo] of [["alunos", "(lista)"], ["leads", "(lista)"], ["financeiro", "(painel)"]]) {
+    for (const [secao, grupo] of [["alunos", "(lista)"], ["financeiro", "(painel)"]]) {
       expect(existsSync(`${A}/${secao}/loading.tsx`), `${secao}/loading.tsx`).toBe(false);
       expect(existsSync(`${A}/${secao}/${grupo}/loading.tsx`)).toBe(true);
       expect(existsSync(`${A}/${secao}/${grupo}/page.tsx`)).toBe(true);

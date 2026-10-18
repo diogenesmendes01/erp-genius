@@ -142,3 +142,25 @@ export async function escopoGrupos(
   }
   return ors.length ? { OR: ors } : { id: "__sem_acesso__" };
 }
+
+/**
+ * Um grupo NOVO (ainda sem linha) no número e na turma pedidos cairia no `escopoGrupos` do usuário? Mesmos
+ * ramos, na mesma ordem: administrador vê tudo; professor, a turma do diário dele; quem vê PEDAGOGICO (fora o
+ * professor), toda turma; grupo sem turma, o número que serve a um setor visível. Quem cria precisa continuar
+ * enxergando o grupo (C6 da R1 do #219).
+ */
+export async function grupoNovoNoEscopo(
+  usuario: Pick<UsuarioSessao, "id" | "papeis">,
+  alvo: { numeroId: string; turmaId: string | null },
+  agora: Date = new Date(),
+): Promise<boolean> {
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return true;
+  const setores = setoresVisiveisNoInbox(usuario.papeis.filter((p) => p !== Papel.PROFESSOR));
+  if (alvo.turmaId) {
+    if (setores.includes("PEDAGOGICO")) return true;
+    if (!usuario.papeis.includes(Papel.PROFESSOR)) return false;
+    return (await prisma.turma.count({ where: { AND: [{ id: alvo.turmaId }, escopoTurmasDocente(usuario.id, agora)] } })) > 0;
+  }
+  if (!GRUPO_SEM_TURMA_PARA_SETORES_DO_NUMERO || !setores.length) return false;
+  return (await prisma.numeroWhatsApp.count({ where: { id: alvo.numeroId, OR: setores.map(whereNumeroServeSetor) } })) > 0;
+}

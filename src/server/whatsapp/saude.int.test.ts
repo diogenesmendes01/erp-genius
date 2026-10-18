@@ -156,6 +156,30 @@ describe("medirSaudeCanal — fila por estado", () => {
     expect(s.alertas.filter((a) => a.includes("caiu"))).toHaveLength(0);
   });
 
+  // C2 da R1 do #221: Meta e Evolution saíram do código; o número legado ativo fica mudo.
+  it.each([DriverWhatsApp.BAILEYS, DriverWhatsApp.META_CLOUD])("número ATIVO em driver legado %s → alerta para reparear no motor", async (driver) => {
+    await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511911110001", rotulo: "Antigo", driver, finalidade: "VENDAS", sessao: "CONECTADO" },
+    });
+
+    const s = await medirSaudeCanal();
+    expect(s.ok).toBe(false);
+    expect(s.alertas).toEqual([
+      `Número "Antigo" ativo em driver legado (${driver}) — não envia nem recebe; pareie a linha no motor e desative o número legado.`,
+    ]);
+  });
+
+  it("número legado DESATIVADO e número MOTOR ativo não geram o alerta de driver legado", async () => {
+    await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511911110002", rotulo: "Antigo", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", ativo: false },
+    });
+    await seedCanal();
+
+    const s = await medirSaudeCanal();
+    expect(s.alertas.filter((a) => a.includes("driver legado"))).toEqual([]);
+    expect(s.ok).toBe(true);
+  });
+
   it("falhas24h conta pela TRANSIÇÃO para FALHOU (atualizadoEm), não pela criação", async () => {
     const agora = new Date();
     // Intenção CRIADA há 3 dias que falhou AGORA: precisa contar.
@@ -273,6 +297,51 @@ describe("medirSaudeCanal — motor", () => {
     await prisma.eventoMotorRecebido.updateMany({ data: { proximaTentativaEm: new Date(agora.getTime() - 60_000) } });
     const s2 = await medirSaudeCanal(agora);
     expect(s2.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(false);
+  });
+
+  it("com dois eventos parados, o alerta mede o MAIS atrasado, não o de menor seq (C4 do #215)", async () => {
+    const agora = new Date();
+    const base = { tipo: "mensagem.status", numeroRef: "n", ocorridoEm: agora, dados: {} };
+    // seq menor: sem backoff, recebido há 20 min (parado, mas menos atrasado).
+    await prisma.eventoMotorRecebido.create({
+      data: { ...base, idEvento: "44444444-4444-4444-8444-444444444444", recebidoEm: new Date(agora.getTime() - 20 * 60_000) },
+    });
+    // seq maior: em backoff com a próxima tentativa vencida há 50 min (o mais atrasado), recebido há pouco mais.
+    await prisma.eventoMotorRecebido.create({
+      data: {
+        ...base,
+        idEvento: "55555555-5555-4555-8555-555555555555",
+        recebidoEm: new Date(agora.getTime() - 55 * 60_000),
+        tentativas: 2,
+        proximaTentativaEm: new Date(agora.getTime() - 50 * 60_000),
+      },
+    });
+    // seq maior ainda: sem backoff, recebido há 35 min — também mais atrasado que o primeiro, menos que o anterior.
+    await prisma.eventoMotorRecebido.create({
+      data: { ...base, idEvento: "66666666-6666-4666-8666-666666666666", recebidoEm: new Date(agora.getTime() - 35 * 60_000) },
+    });
+    const s = await medirSaudeCanal(agora);
+    expect(s.alertas.filter((a) => a.includes("Evento do motor parado"))).toEqual([
+      "Evento do motor parado há 50min sem processamento — o dreno está rodando?",
+    ]);
+
+    // Sem o de backoff, o mais atrasado entre os sem backoff é o recebido há 35 min (seq maior que o de 20 min).
+    await prisma.eventoMotorRecebido.deleteMany({ where: { idEvento: "55555555-5555-4555-8555-555555555555" } });
+    const s2 = await medirSaudeCanal(agora);
+    expect(s2.alertas.some((a) => a.includes("Evento do motor parado há 35min"))).toBe(true);
+
+    // Backoff com a próxima tentativa no futuro não é "parado", mesmo recebido há horas.
+    await prisma.eventoMotorRecebido.create({
+      data: {
+        ...base,
+        idEvento: "77777777-7777-4777-8777-777777777777",
+        recebidoEm: new Date(agora.getTime() - 300 * 60_000),
+        tentativas: 5,
+        proximaTentativaEm: new Date(agora.getTime() + 10 * 60_000),
+      },
+    });
+    const s3 = await medirSaudeCanal(agora);
+    expect(s3.alertas.some((a) => a.includes("Evento do motor parado há 35min"))).toBe(true);
   });
 
   it("motor inalcançável com número MOTOR ativo → eventosMotorFalhos null e alerta", async () => {

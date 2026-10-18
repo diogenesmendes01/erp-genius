@@ -3,11 +3,10 @@ import { Papel } from "@prisma/client";
 
 const m = vi.hoisted(() => ({
   sessao: vi.fn(),
-  aluno: vi.fn(), oportunidade: vi.fn(), empresa: vi.fn(),
+  aluno: vi.fn(), empresa: vi.fn(),
 }));
-vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: m.aluno }, oportunidade: { findFirst: m.oportunidade }, empresa: { findUnique: m.empresa } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findFirst: m.aluno }, empresa: { findUnique: m.empresa } } }));
 vi.mock("@/server/_shared", () => ({ exigirSessao: m.sessao }));
-vi.mock("@/server/_shared/escopo-comercial", () => ({ escopoComercialAtual: async () => ({ vendedorDonoId: { in: ["v1"] } }) }));
 // Espelha o fail-closed real: professor vê as suas turmas; visão ampla vê tudo; resto, nada.
 vi.mock("@/server/alunos/consultas", () => ({
   escopoAlunos: (u: { papeis: string[] }) =>
@@ -15,7 +14,7 @@ vi.mock("@/server/alunos/consultas", () => ({
       : u.papeis.includes("PROFESSOR") ? { alocacoes: "da-turma" } : { id: { in: [] } },
 }));
 
-import { tituloAluno, tituloEmpresa, tituloLead } from "./titulos-registro";
+import { tituloAluno, tituloEmpresa } from "./titulos-registro";
 
 const u = (...papeis: Papel[]) => ({ id: "u1", nome: "U", papeis });
 
@@ -31,22 +30,6 @@ describe("títulos de aba das fichas (E2)", () => {
     expect(await tituloAluno("a2")).toBe("Aluno");
     m.sessao.mockRejectedValueOnce(new Error("sem sessão"));
     expect(await tituloAluno("a1")).toBe("Aluno");
-  });
-
-  it("lead: só papéis comerciais consultam, sempre no escopo da carteira", async () => {
-    m.sessao.mockResolvedValue(u(Papel.PROFESSOR));
-    expect(await tituloLead("l1")).toBe("Lead");
-    expect(m.oportunidade).not.toHaveBeenCalled();
-    m.sessao.mockResolvedValue(u(Papel.VENDEDOR));
-    m.oportunidade.mockResolvedValueOnce({ nome: "Bia" });
-    expect(await tituloLead("l1")).toBe("Bia · Lead");
-    expect(m.oportunidade.mock.calls[0][0].where).toEqual({ AND: [{ id: "l1" }, { vendedorDonoId: { in: ["v1"] } }] });
-    // Cada papel que abre a ficha do lead também lê o título.
-    for (const papel of [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL]) {
-      m.sessao.mockResolvedValue(u(papel));
-      m.oportunidade.mockResolvedValueOnce({ nome: "Caio" });
-      expect(await tituloLead("l2"), papel).toBe("Caio · Lead");
-    }
   });
 
   it("empresa: só financeiro/admin consultam", async () => {

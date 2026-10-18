@@ -89,6 +89,24 @@ describe("gerir grupo pelo motor", () => {
     expect(r).toMatchObject({ ok: false, erro: "Sem permissão para gerir grupos." });
     expect(acao).not.toHaveBeenCalled();
   });
+  it("C6: gerente não cria grupo em número ou turma fora do escopo de grupos, e o motor não é chamado", async () => {
+    const c = await cenario();
+    const fin = await criarNumeroSetor({ telefoneE164: "+5511999990003", setores: ["FINANCEIRO"], finalidade: "COBRANCA" });
+    await prisma.numeroWhatsApp.update({ where: { id: fin.id }, data: { driver: "MOTOR", sessao: "CONECTADO", providerRef: fin.id } });
+    const r1 = await comoUsuario(c.gerente, () => criarGrupoWhatsApp({ numeroId: fin.id, nome: "Grupo fora", participantesE164: ["+50688887777"] }));
+    expect(r1).toMatchObject({ ok: false, erro: "Número ou turma fora do seu escopo." });
+    const catalogo = await seedCatalogoMinimo();
+    const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "A1", ordem: 1 } });
+    const turma = await prisma.turma.create({ data: { nivelId: nivel.id, modalidadeId: catalogo.modalidade.id, professorId: (await criarUsuario([Papel.PROFESSOR])).id } });
+    const r2 = await comoUsuario(c.gerente, () => criarGrupoWhatsApp({ numeroId: c.numero.id, nome: "Turma fora", participantesE164: ["+50688887777"], turmaId: turma.id }));
+    expect(r2).toMatchObject({ ok: false, erro: "Número ou turma fora do seu escopo." });
+    expect(acao).not.toHaveBeenCalled();
+    expect(await prisma.grupoWhatsApp.count()).toBe(0);
+    // No número que serve ao setor dele, sem turma, o mesmo gerente cria (e o grupo cai no escopoGrupos dele).
+    acao.mockResolvedValue({ id: "120363000000000009@g.us", subject: "Comercial" });
+    const r3 = await comoUsuario(c.gerente, () => criarGrupoWhatsApp({ numeroId: c.numero.id, nome: "Comercial", participantesE164: ["+50688887777"] }));
+    expect(r3.ok).toBe(true);
+  });
   it("atendente FINANCEIRO não altera participantes", async () => {
     const c = await cenario();
     const g = await prisma.grupoWhatsApp.create({ data: { numeroId: c.numero.id, grupoJid: "120363000000000002@g.us", nome: "G" } });

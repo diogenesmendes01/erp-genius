@@ -31,7 +31,28 @@ $COMPOSE exec -T app tar -czf - -C /app/data uploads > "$PASTA/uploads.tar.gz"
 
 # 3. Volume do motor (PGlite, chave do cofre, credenciais e mídia). Perder isto não perde as
 #    mensagens do ERP (estão no nosso banco), mas obriga a reconectar o número via QR.
-$COMPOSE exec -T motor tar -czf - -C / data > "$PASTA/motor-data.tar.gz"
+#    O PGlite grava em arquivo: copiar /data com o motor de pé pode sair inconsistente. Por
+#    isso o motor PARA só durante o tar e volta a subir em seguida — também em erro (trap).
+#    O tar roda num container auxiliar que monta o volume do container do motor
+#    (--volumes-from, só leitura): não depende de a imagem do motor ter tar.
+#    O motor fica fora do ar por alguns segundos; o webhook e a fila do ERP reenviam depois.
+IMAGEM_TAR="${IMAGEM_TAR:-alpine:3.20}"
+MOTOR_CID="$($COMPOSE ps -aq motor)"
+[ -n "$MOTOR_CID" ] || { echo "[backup] ERRO: container do motor não encontrado" >&2; exit 1; }
+MOTOR_PARADO=0
+religar_motor() {
+  if [ "$MOTOR_PARADO" = 1 ]; then
+    $COMPOSE start motor >/dev/null && echo "[backup] motor de volta" || echo "[backup] ERRO: motor não voltou — rode: $COMPOSE start motor" >&2
+    MOTOR_PARADO=0
+  fi
+}
+trap religar_motor EXIT INT TERM
+if [ "$(docker inspect -f '{{.State.Running}}' "$MOTOR_CID")" = "true" ]; then
+  $COMPOSE stop motor >/dev/null
+  MOTOR_PARADO=1
+fi
+docker run --rm --volumes-from "$MOTOR_CID:ro" "$IMAGEM_TAR" tar -czf - -C / data > "$PASTA/motor-data.tar.gz"
+religar_motor
 
 # Integridade mínima: nenhum arquivo pode sair vazio.
 for f in erp.dump uploads.tar.gz motor-data.tar.gz; do
@@ -62,7 +83,9 @@ echo "[backup] ok — $(du -sh "$PASTA" | cut -f1) · retenção ${RETENCAO_DIAS
 #      volume do serviço num container efêmero, sem subir o serviço (nem as dependências);
 #      `--entrypoint tar` ignora o entrypoint da imagem (a do motor pode ter um):
 #        $COMPOSE run --rm --no-deps -T --entrypoint tar app       -xzf - -C /app/data   < uploads.tar.gz
-#        $COMPOSE run --rm --no-deps -T --entrypoint tar motor     -xzf - -C /          < motor-data.tar.gz
+#        docker run --rm -i --volumes-from "$($COMPOSE ps -aq motor)" alpine:3.20 tar -xzf - -C / < motor-data.tar.gz
+#      (o motor pelo container auxiliar, como no backup: não depende de tar na imagem do motor;
+#       se o container do motor não existir ainda, `$COMPOSE create motor` antes)
 #   4. só agora subir os serviços (contra dados JÁ restaurados):
 #        $COMPOSE up -d app motor
 #   5. VALIDAR: login + fila de cobrança + thread da inbox + sessão do número.
