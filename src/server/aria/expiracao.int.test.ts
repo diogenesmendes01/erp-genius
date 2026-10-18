@@ -105,6 +105,17 @@ describe("expirarSugestoesAria", () => {
     expect(await prisma.evento.count({ where: { tipo: "AriaHandoff" } })).toBe(0);
   });
 
+  it("aria_ativa_pausada_globalmente_expira_sem_handoff", async () => {
+    await publicar("HANDOFF");
+    await prisma.agenteIA.update({ where: { id: "aria" }, data: { pausadoEm: new Date() } });
+    const c = await atendimentoComSugestoes([vencida]);
+    expect(await expirarSugestoesAria(agora)).toEqual({ expiradas: 1, handoffs: 0 });
+    expect((await prisma.acaoAgenteIA.findUniqueOrThrow({ where: { id: c.acoes[0].id } })).status).toBe("EXPIRADA");
+    expect(await prisma.acaoAgenteIA.count({ where: { acao: "HANDOFF" } })).toBe(0);
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).iaPausadaEm).toBeNull();
+    expect(await prisma.evento.count({ where: { tipo: "AriaHandoff" } })).toBe(0);
+  });
+
   it("idempotente_na_segunda_passada", async () => {
     await publicar("HANDOFF");
     await atendimentoComSugestoes([vencida]);
