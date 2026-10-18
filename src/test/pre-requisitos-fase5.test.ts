@@ -65,9 +65,6 @@ describe("pré-requisitos da Fase 5", () => {
     expect(ler("src/server/whatsapp/inbound.ts")).toMatch(/origem: m\.fromMe \? "CELULAR"/);
     expect(ler("src/server/whatsapp/motor/processar-grupo.ts")).toMatch(/origem: fromMe \? "CELULAR"/);
   });
-  it("fase4e_removeu_legados", () => {
-    for (const f of ["src/server/whatsapp/drivers/meta-cloud.ts", "src/server/whatsapp/drivers/evolution.ts", "src/server/whatsapp/meta-templates.ts", "src/app/api/whatsapp/webhook/evolution/route.ts", "src/app/api/whatsapp/webhook/meta/route.ts"])
-      expect(existsSync(join(raiz, f))).toBe(false);
-  });
+  it("fase4e_trava_de_legados", () => expect(existsSync(join(raiz, "src/server/whatsapp/sem-provedores-legados.test.ts"))).toBe(true));
   it("sdk_com_versao_exata", () => expect(pkg.dependencies["@anthropic-ai/sdk"]).toMatch(/^\d+\.\d+\.\d+$/));
 });

@@ -3023,6 +3023,39 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   - O `npm run test:int` completo fica com o integrador.
 **Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
 
+## Fase 4F — E2E com motor simulado (18/10/2026)
+
+- Branch `claude/fase4-f-e2e` (PR empilhado sobre `claude/fase4-e-remove-legados`), tarefa 27 do plano `04-fase-motor.md`:
+  motor simulado (`src/test/motor-simulado.ts`) e teste de ponta a ponta (`src/server/whatsapp/motor/ponta-a-ponta.int.test.ts`).
+  A tarefa 28 (roteiro com aparelho real) segue com o integrador.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` sobre os 2 arquivos do diff: 1 arquivo, 6 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4E).
+
+**Base trocada para `main` e correções da R1 do #222 (18/10/2026)**
+
+- **Merge do `main`** (`d15e0969`, #221 com a 4E). Conflito só neste quadro (ficam os blocos de cada PR).
+- **C3:** `MotorSimulado.reiniciar()` zera recebidos, enviadas, contador de ids, idempotência por `clientMessageId`,
+  falha e mídia; o `beforeEach` do ponta a ponta chama `sim.reiniciar()`. O primeiro caso lê o `providerMessageId`/`mensagemIdMotor`
+  de `sim.enviadas` em vez de fixar `3EB01`. Caso novo prova o reinício (o mesmo `clientMessageId` recebe id novo, sem cache).
+- **C4:** `RESULTADO_INCERTO` no simulado agora significa "enviou, mas a confirmação se perdeu" (registra a mensagem e responde 502).
+  Caso novo: intenção `FALHOU`/`resultado_incerto`, o despacho não reenvia sozinho, o reenvio com o mesmo `clientMessageId`
+  devolve a mesma mensagem (uma só em `sim.enviadas`) e o eco repetido registra um único `EnvioIncertoConfirmadoPeloMotor`
+  sem criar `MensagemWhatsApp`. A opção `falharEnvio` de `iniciarMotorSimulado` saiu (ninguém a usava; `reiniciar()` volta a `null`).
+- **#221 C2:** `SETUP.md` (§Backup diário), `docs/31` §4 e o cabeçalho de `backup-producao.sh` citam o 503 isolado de
+  "Motor WhatsApp inalcançável" esperado às 03:15, com o motor parado durante o tar. O §4 do doc 31 deixa de citar a Evolution.
+- **`scripts/auditoria/cenarios.test.mjs`:** mock de `drivers/motor` no lugar de `drivers/meta-cloud`/`evolution`, número de teste
+  `MOTOR`. O script já não rodava antes: importava `whatsapp/cron-comercial`, removido na E1 (`53c69b4b`). W03 saiu com o cron
+  comercial; W04 fica no registro do reagendamento; W05 confere que um novo `despacharFila` não reabre a falha.
+  Rodado (`vitest run -c scripts/auditoria/vitest.config.ts`, com banco descartável): 18 verdes, 10 falhas, 1 pulado. As falhas são
+  deriva de API fora do WhatsApp (`registrarPagamento` exige campos novos, alçadas novas de retomada/país, A01/A06); a suíte é de
+  auditoria e pode falhar por desenho. W01, W02, W05 e W07 passam com o motor mockado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 715 arquivos, 5308 testes verdes.
+- Integração (banco descartável): `ponta-a-ponta.int.test.ts` 8 testes verdes; `src/server/whatsapp/motor`: 14 arquivos, 112 testes verdes.
+**Estado**: Implementado; base `main` (não empilhado); correções da R1 aplicadas; aguardando revisão.
+
 ## Fase 5, Task 1: trava de pré-requisitos (18/10/2026)
 
 - Branch: `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, SDK 0.131.0 exato). Teste: `src/test/pre-requisitos-fase5.test.ts` (5 testes verdes), `tsc` saída 0.
@@ -3055,3 +3088,18 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
 - Integração (banco `dev-email`, migration `aria_base` aplicada só nele), recorte dos arquivos tocados e dos que importam `comercial/{acoes,consultas,schema}`: `src/server/aria`, `src/server/comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `whatsapp/{inbox,acesso-atendimento}`, `secretaria/politica`: saída 0; 13 arquivos, 120 testes verdes.
 - Nota: `vitest related` com `src/lib/labels.ts`/`evento.ts` alcança praticamente toda a suíte de integração (passou de 2 h e foi interrompido pelo limite de tempo); a suíte completa fica para o integrador.
+
+**Merge do `main` (#218 a #222, Fases 4D, 4E e 4F) na Fase 5A (18/10/2026)**
+
+- Merges de `d15e0969` (#221) e `95b5ff5f` (#222). Conflito só neste quadro (ficam os blocos de cada PR). O `main` não trouxe migrations
+  novas desde `6d6d33ee`; `20261018010000_aria_base` continua a última e não colide. Nada da 5A citava Meta, Evolution ou drivers legados.
+- Trava `src/test/pre-requisitos-fase5.test.ts` com a 4D ativa: `driverMotor` (`enviarTexto`/`enviarMidia`/`enviarConteudo`), ações do
+  Inbox em `whatsapp/motor/acoes-mensagem.ts` (nome real; plano: `envio-inbox.ts`), inbound `processarMensagemRecebida`/`processarMensagemEnviada`
+  e eco `CELULAR` (`inbound.ts`, `processar-grupo.ts`), mais a presença da trava de legados da 4E. Seguem fora do `main` e anotados na trava:
+  `NotaAtendimento`, `NumeroWhatsApp.perfilNome/privacidade/temporariasSegundos` e `atualizarPerfil`/`atualizarPrivacidade`/`definirTemporarias`
+  em `drivers/motor.ts` (a #222 entregou só o E2E com motor simulado).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 721 arquivos, 5342 testes verdes.
+- Integração (banco descartável, `migrate deploy` com `aria_base`; `migrate diff` sem divergência nas tabelas da Aria): `src/server/aria`,
+  `comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `secretaria/politica`, `whatsapp/{inbox,acesso-atendimento,motor}`
+  (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
+  39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.

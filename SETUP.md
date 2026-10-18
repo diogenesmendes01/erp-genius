@@ -201,6 +201,14 @@ alerta "Número … ativo em driver legado". Para cada número do alerta:
    O número fica inativo (soft delete) e sai do alerta.
 3. Confira `/api/whatsapp/health`: nenhum alerta de driver legado.
 
+### Backup diário e o alerta de motor parado
+
+`scripts/backup-producao.sh` (cron diário às 03:15, retenção 14 dias) para o serviço `motor` só
+durante o `tar` do volume `motor_data` (o PGlite grava em arquivo) e o religa em seguida, também em
+erro. Nesses segundos, um poll do monitor em `/api/whatsapp/health` pode receber **um 503 isolado**
+com o alerta "Motor WhatsApp inalcançável": é esperado e não pede ação. Investigue só se o 503 se
+repetir depois da janela do backup ou aparecer fora desse horário (confira `/var/log/erp-backup.log`).
+
 ### Diferenças em relação ao docker-compose.prod.yml
 
 - **Sem Caddy**: o Traefik do Coolify cuida de TLS e roteamento.
