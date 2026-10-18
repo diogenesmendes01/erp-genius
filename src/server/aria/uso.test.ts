@@ -29,7 +29,7 @@ beforeEach(() => {
 describe("registrarChamadaIA: mapeamento", () => {
   it("grava_tokens_de_escrita_de_cache", async () => {
     await registrarChamadaIA("ATENDIMENTO", resp);
-    expect(dados()).toMatchObject({ tokensCache: 10000, tokensEscritaCache: 2000, custoMicroUsd: 14000 });
+    expect(dados()).toMatchObject({ tokensCache: 10000, tokensEscritaCache: 2000, custoMicroUsd: 13000 });
   });
 
   it("falha_grava_escrita_de_cache_zero", async () => {

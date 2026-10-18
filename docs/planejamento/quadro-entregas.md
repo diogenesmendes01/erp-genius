@@ -3293,6 +3293,26 @@ Branch `claude/fase5-c-turno`, agora com base `main` (não mais empilhada). Merg
 - `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 740 arquivos, 5509 testes.
 - Integração em banco descartável novo: `src/server/aria`, `src/server/whatsapp`, `crm/mensagens-agendadas`: saída 0; 73 arquivos, 621 testes.
 
+## Fase 5: preços oficiais da IA em `custo.ts` (18/10/2026)
+
+Branch `claude/precos-ia-oficiais` (sobre main `1a99b63b`). Nenhuma chamada real à API.
+
+- **Decisão do dono:** usar o preço oficial da Anthropic (`platform.claude.com/docs/en/about-claude/pricing`, consultada em
+  18/10/2026). A Global Constraint do plano 05 que dizia "cache 0,20" para o Sonnet 5.5 fica **superada**; fecha a pendência
+  registrada nos blocos A e nas pendências do #224.
+- **Sonnet 5.5:** leitura de cache de 0,20 para **0,10** USD/M (0,05× a entrada, nota 2 da página). Entrada 2, escrita 2,50 (5 min) /
+  4 (1 h) e saída 10 conferem. Sem faixa de prompt longo.
+- **Haiku 5.5:** leitura de cache 0,01 e escritas 0,125 / 0,20 (fatores 1,25× e 2× de `fatorEscritaCache`) conferem com a faixa de
+  até 100.000 tokens. **Faixa nova** acima de 100.000 tokens de prompt: entrada 0,50, escrita 0,625 / 1, leitura 0,05, saída 2,50.
+  O prompt é o total de tokens de entrada da requisição (input + leitura de cache + escrita de cache); acima do limite a chamada inteira
+  paga a faixa alta. 100.000 fica na faixa baixa; 100.001 vai para a alta. A saída não conta para a faixa.
+- `custo.ts` ganha `precoPorMilhao(modelo, tokensPrompt)` e `LIMITE_PROMPT_HAIKU_FAIXA_BAIXA`; o comentário de preços cita a fonte e a
+  data. Testes ajustados: `custo_sonnet` 9000 → 8000, escrita somada 14000 → 13000 (`custo.test.ts`, `uso.test.ts`, `uso.int.test.ts`
+  `registra_ok_com_custo` e `registra_custo_com_escrita_de_cache`). `inference_geo` US-only (1,1×) não é usado.
+- TDD: os testes novos e ajustados falharam antes da mudança (13 vermelhos) e passaram depois.
+- `tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos (linha de base). `npm test`: saída 0; 740 arquivos, 5522 testes.
+- Integração em banco descartável novo (`migrate deploy`): `npm run test:int -- src/server/aria`: saída 0; 18 arquivos, 190 testes.
+
 ### Fase 5F, Task 38: Configurações › Números (setores, triagem, perfil, privacidade, temporárias) — 2026-10-18
 
 - `src/server/crm-config/{numeros,perfil-numero}.ts` (só ADMINISTRADOR, motor chamado antes de gravar, `Evento` `NumeroSetoresAlterados`, `NumeroTriagemAlterada`, `NumeroPerfilAlterado`, `NumeroPrivacidadeAlterada`, `NumeroTemporariasAlteradas` com `{de, para}`), painel `numeros/PerfilNumeroPainel.tsx`.
