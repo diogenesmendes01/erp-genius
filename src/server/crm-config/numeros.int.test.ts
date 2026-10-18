@@ -12,7 +12,7 @@ import { UPLOAD_DIR, resolverCaminhoUpload } from "@/lib/uploads";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { ErroMotor } from "@/server/whatsapp/motor/cliente";
-import type { ClienteMotorNumero } from "@/server/whatsapp/motor/numero";
+import { ErroMotorParcial, type ClienteMotorNumero } from "@/server/whatsapp/motor/numero";
 import { definirResponsavelTriagem, definirSetoresDoNumero } from "./numeros";
 import { atualizarPerfilNumero, atualizarPrivacidadeNumero, definirTemporariasNumero } from "./perfil-numero";
 
@@ -139,7 +139,7 @@ describe("Configurações › Números", () => {
     expect((await ultimoEvento("NumeroPerfilAlterado")).payload).toMatchObject({ de: { nome: null }, para: { nome: "Escola" } });
   });
 
-  it("foto_jpeg_png_ate_2mb", async () => {
+  it("foto_jpeg_png_ate_128kb", async () => {
     await mkdir(UPLOAD_DIR, { recursive: true });
     const nome = `${randomUUID()}.png`;
     const caminho = resolverCaminhoUpload([nome])!;
@@ -147,12 +147,34 @@ describe("Configurações › Números", () => {
     await writeFile(caminho, Buffer.from("png"));
     const ok = await prisma.registroUpload.create({ data: { url: `/api/files/${nome}`, autorId: admin.id, nome: "f.png", mime: "image/png", tamanho: 3 } });
     const pdf = await prisma.registroUpload.create({ data: { url: `/api/files/${randomUUID()}.pdf`, autorId: admin.id, nome: "f.pdf", mime: "application/pdf", tamanho: 3 } });
-    const grande = await prisma.registroUpload.create({ data: { url: `/api/files/${randomUUID()}.png`, autorId: admin.id, nome: "g.png", mime: "image/png", tamanho: 2 * 1024 * 1024 + 1 } });
+    const grande = await prisma.registroUpload.create({ data: { url: `/api/files/${randomUUID()}.png`, autorId: admin.id, nome: "g.png", mime: "image/png", tamanho: 128 * 1024 + 1 } });
     expect((await atualizarPerfilNumero({ numeroId, fotoUploadId: pdf.id }, deps)).ok).toBe(false);
-    expect((await atualizarPerfilNumero({ numeroId, fotoUploadId: grande.id }, deps)).ok).toBe(false);
+    expect(await atualizarPerfilNumero({ numeroId, fotoUploadId: grande.id }, deps)).toEqual({ ok: false, erro: "A foto pode ter no máximo 128 KB. Reduza a imagem e tente de novo." });
+    expect(motor.atualizarPerfil).not.toHaveBeenCalled();
     expect((await atualizarPerfilNumero({ numeroId, fotoUploadId: ok.id }, deps)).ok).toBe(true);
     expect((await numero()).perfilFotoUploadId).toBe(ok.id);
     expect(motor.atualizarPerfil).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ fotoDataUri: expect.stringMatching(/^data:image\/png;base64,/) }));
+  });
+
+  it("falha_parcial_no_motor_grava_so_o_que_foi_aplicado", async () => {
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    const nome = `${randomUUID()}.png`;
+    const caminho = resolverCaminhoUpload([nome])!;
+    arquivos.push(caminho);
+    await writeFile(caminho, Buffer.from("png"));
+    const foto = await prisma.registroUpload.create({ data: { url: `/api/files/${nome}`, autorId: admin.id, nome: "f.png", mime: "image/png", tamanho: 3 } });
+    const parcial: ClienteMotorNumero = {
+      ...motor,
+      atualizarPerfil: async () => { throw new ErroMotorParcial({ foto: true }, new Error("500")); },
+      atualizarPrivacidade: async () => { throw new ErroMotorParcial({ privacidade: { vistoPorUltimo: "CONTATOS" } }, new Error("500")); },
+    };
+    const r = await atualizarPerfilNumero({ numeroId, nome: "Escola", fotoUploadId: foto.id }, { motor: parcial });
+    expect(r.ok).toBe(false);
+    expect(await numero()).toMatchObject({ perfilNome: null, perfilFotoUploadId: foto.id });
+    expect((await ultimoEvento("NumeroPerfilAlterado")).payload).toMatchObject({ parcial: true, para: { nome: null, fotoUploadId: foto.id } });
+    expect((await atualizarPrivacidadeNumero({ numeroId, privacidade: priv }, { motor: parcial })).ok).toBe(false);
+    expect((await numero()).privacidade).toEqual({ vistoPorUltimo: "CONTATOS" });
+    expect((await ultimoEvento("NumeroPrivacidadeAlterada")).payload).toMatchObject({ parcial: true });
   });
 
   it("privacidade_grava_e_nao_aceita_ninguem_em_grupos", async () => {

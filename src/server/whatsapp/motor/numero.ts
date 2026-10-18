@@ -25,6 +25,16 @@ export interface ClienteMotorNumero {
   definirTemporarias(numeroRef: string, segundos: SegundosTemporarias): Promise<void>;
 }
 
+/**
+ * Uma chamada ao motor falhou depois de outras já aplicadas: `aplicado` diz o que o motor JÁ tem,
+ * para o ERP gravar só essa parte e não ficar dessincronizado.
+ */
+export class ErroMotorParcial extends Error {
+  constructor(readonly aplicado: { foto?: true; privacidade?: Partial<PrivacidadeNumero> }, readonly causa: unknown) {
+    super("aplicacao_parcial_no_motor");
+  }
+}
+
 const VALOR: Record<Visibilidade, string> = { TODOS: "all", CONTATOS: "contacts", NINGUEM: "none" };
 
 /** Quem pode adicionar o número a grupos não tem a opção "ninguém" no WhatsApp. */
@@ -41,19 +51,33 @@ const AJUSTE: Record<keyof PrivacidadeNumero, string> = {
 };
 
 export const clienteMotorNumero: ClienteMotorNumero = {
+  // Foto PRIMEIRO (é a que mais falha: tamanho/formato); falhando ela, nada foi aplicado.
   async atualizarPerfil(ref, p) {
-    if (p.nome !== undefined || p.recado !== undefined) {
-      await executarAcaoMotor(ref, "profile.update", {
-        ...(p.nome !== undefined ? { name: p.nome } : {}),
-        ...(p.recado !== undefined ? { about: p.recado } : {}),
-      });
-    }
     if (p.fotoDataUri) await executarAcaoMotor(ref, "profile.picture", { image: p.fotoDataUri });
+    if (p.nome !== undefined || p.recado !== undefined) {
+      try {
+        await executarAcaoMotor(ref, "profile.update", {
+          ...(p.nome !== undefined ? { name: p.nome } : {}),
+          ...(p.recado !== undefined ? { about: p.recado } : {}),
+        });
+      } catch (e) {
+        if (p.fotoDataUri) throw new ErroMotorParcial({ foto: true }, e);
+        throw e;
+      }
+    }
   },
   async atualizarPrivacidade(ref, p) {
-    for (const campo of Object.keys(AJUSTE) as (keyof PrivacidadeNumero)[]) {
-      const v = p[campo];
-      if (v) await executarAcaoMotor(ref, "privacy.update", { setting: AJUSTE[campo], value: valorPrivacidade(campo, v) });
+    const campos = (Object.keys(AJUSTE) as (keyof PrivacidadeNumero)[]).filter((c) => p[c]);
+    for (const campo of campos) valorPrivacidade(campo, p[campo]!); // valida tudo antes da 1ª chamada
+    const aplicadas: Partial<PrivacidadeNumero> = {};
+    for (const campo of campos) {
+      try {
+        await executarAcaoMotor(ref, "privacy.update", { setting: AJUSTE[campo], value: valorPrivacidade(campo, p[campo]!) });
+      } catch (e) {
+        if (Object.keys(aplicadas).length) throw new ErroMotorParcial({ privacidade: aplicadas }, e);
+        throw e;
+      }
+      aplicadas[campo] = p[campo];
     }
   },
   // Padrão para conversas novas (defaultDisappearing); conversas já abertas não mudam.

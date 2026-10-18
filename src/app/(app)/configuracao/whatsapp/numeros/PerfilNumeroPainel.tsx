@@ -56,10 +56,12 @@ function PainelDoNumero({ n }: { n: PerfilNumeroDados }) {
     const d = await aPerfil.executar(async () => {
       let fotoUploadId: string | undefined;
       if (foto) {
+        // O motor recusa foto acima de 128 KB: avisa antes de enviar, com a mensagem certa.
+        if (foto.size > 128 * 1024) return { ok: false as const, erro: "A foto pode ter no máximo 128 KB. Reduza a imagem e tente de novo." };
         const form = new FormData();
         form.append("file", foto);
         const resp = await fetch("/api/upload", { method: "POST", body: form });
-        if (!resp.ok) return { ok: false as const, erro: "Não foi possível enviar a foto (JPEG ou PNG, até 2 MB)." };
+        if (!resp.ok) return { ok: false as const, erro: "Não foi possível enviar a foto (JPEG ou PNG, até 128 KB)." };
         const { url } = (await resp.json()) as { url: string };
         const id = await uploadIdPorUrl(url);
         if (!id.ok || !id.dado) return { ok: false as const, erro: "Arquivo enviado não encontrado." };
@@ -116,7 +118,7 @@ function PainelDoNumero({ n }: { n: PerfilNumeroDados }) {
           <input className={input + " mt-1"} maxLength={139} value={recado} onChange={(e) => setRecado(e.target.value)} />
         </label>
         <label className="block text-xs text-gray-600 sm:col-span-2">
-          Foto (JPEG ou PNG, até 2 MB)
+          Foto (JPEG ou PNG, até 128 KB)
           <input type="file" accept="image/jpeg,image/png" className="mt-1 block text-sm" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} />
         </label>
       </div>

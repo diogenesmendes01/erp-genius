@@ -141,7 +141,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           });
         }
       }
-      const atendimentoId = await atendimentoDoInbound(tx, conversa.id);
+      const atendimentoId = await atendimentoDoInbound(tx, conversa.id, { atribuir: !m.fromMe });
       if (atendimentoId) {
         await tx.mensagemWhatsApp.update({ where: { id: mensagem.id }, data: { atendimentoId } });
         await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: {

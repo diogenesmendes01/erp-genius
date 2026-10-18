@@ -6,6 +6,7 @@ import { salvarConfigIADaTela } from "@/server/crm-config/acoes-ia";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 export interface ConfigIATela {
   modeloConversa: string;
@@ -30,7 +31,7 @@ export function IaPainel({ chave, config, orcamento, chamadas }: { chave: "confi
   const acao = useAcaoCliente({ idempotente: false });
   const [f, setF] = useState(config);
   const pct = orcamento.limiteUsd > 0 ? Math.min(100, (orcamento.gastoUsd / orcamento.limiteUsd) * 100) : 0;
-  const cor = orcamento.situacao === "ESTOURADO" ? "bg-red-500" : orcamento.situacao === "ALERTA" ? "bg-amber-500" : "bg-green-600";
+  const cor = orcamento.situacao === "ESTOURADO" ? "bg-red-500" : orcamento.situacao === "ALERTA" ? "bg-amber-600" : "bg-green-600";
   const salvar = async () => {
     const d = await acao.executar(() => salvarConfigIADaTela(f));
     if (d?.tipo === "ok") router.refresh();
@@ -89,7 +90,7 @@ export function IaPainel({ chave, config, orcamento, chamadas }: { chave: "confi
 
     <section aria-label="Chamadas recentes" className="rounded-lg border border-gray-200 p-4">
       <h3 className="text-base font-medium">Chamadas recentes</h3>
-      {chamadas.length === 0 ? <p className="mt-2 text-sm text-gray-500">Nenhuma chamada registrada.</p> :
+      {chamadas.length === 0 ? <EstadoVazio>Nenhuma chamada registrada.</EstadoVazio> :
         <div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs">
           <thead><tr className="text-gray-500"><th className="py-1">Quando</th><th>Origem</th><th>Modelo</th><th>Latência</th><th>Tokens</th><th>Resultado</th></tr></thead>
           <tbody>{chamadas.map((c, i) => <tr key={i} className="border-t border-gray-100">

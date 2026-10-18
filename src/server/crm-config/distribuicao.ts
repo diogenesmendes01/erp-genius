@@ -30,10 +30,13 @@ interface EntradaEscolha {
   donoCarteira: string | null;
 }
 
-/** Pura. Carteira vem primeiro; depois rodízio (ordem da lista) ou menor carga (empate pela ordem); MANUAL/sem participantes = fila (null). */
+/**
+ * Pura. A carteira do lead vale SEMPRE e vem antes da regra do setor (inclusive MANUAL e sem
+ * participantes); sem dono, rodízio (ordem da lista) ou menor carga (empate pela ordem); MANUAL/sem participantes = fila (null).
+ */
 export function escolherResponsavel(i: EntradaEscolha): string | null {
-  if (i.regra === "MANUAL" || i.participantes.length === 0) return null;
   if (i.donoCarteira) return i.donoCarteira;
+  if (i.regra === "MANUAL" || i.participantes.length === 0) return null;
   return escolhaDaRegra(i)?.id ?? null;
 }
 
@@ -50,35 +53,41 @@ function escolhaDaRegra(i: EntradaEscolha): { id: string; motivo: MotivoAtribuic
   return null;
 }
 
-const DistribuicaoSchema = z.object({
+export const DistribuicaoSchema = z.object({
   finalidade: z.enum(SETORES as unknown as [FinalidadeAtendimentoWhatsApp, ...FinalidadeAtendimentoWhatsApp[]]),
   regra: z.enum(["RODIZIO", "MENOR_CARGA", "MANUAL"]),
   participantesIds: z.array(z.string().trim().min(1)).max(100),
 });
+export type EntradaDistribuicao = { finalidade: FinalidadeAtendimentoWhatsApp; regra: RegraDistribuicao; participantesIds: string[] };
 
-export async function salvarDistribuicaoSetor(i: { finalidade: FinalidadeAtendimentoWhatsApp; regra: RegraDistribuicao; participantesIds: string[] }): Promise<Resultado> {
+/** Grava a distribuição na transação do chamador; só registra `DistribuicaoAlterada` quando algo mudou. */
+export async function aplicarDistribuicaoSetor(tx: Prisma.TransactionClient, autorId: string, dados: EntradaDistribuicao): Promise<boolean> {
+  const ids = [...new Set(dados.participantesIds)];
+  const usuarios = await tx.usuario.findMany({ where: { id: { in: ids }, ativo: true }, select: { id: true, papeis: true } });
+  for (const id of ids) {
+    const u = usuarios.find((x) => x.id === id);
+    if (!u) throw new ErroRegra("Participante inexistente ou inativo.");
+    if (!setoresDoUsuario(u.papeis).includes(dados.finalidade)) throw new ErroRegra("Participante não pertence a este setor.");
+  }
+  const antes = await tx.prazoRespostaSetor.findUnique({ where: { finalidade: dados.finalidade }, select: { regraDistribuicao: true, participantesIds: true } });
+  if (antes && antes.regraDistribuicao === dados.regra && antes.participantesIds.join("\u0000") === ids.join("\u0000")) return false;
+  await tx.prazoRespostaSetor.upsert({
+    where: { finalidade: dados.finalidade },
+    create: { finalidade: dados.finalidade, minutos: 60, regraDistribuicao: dados.regra, participantesIds: ids },
+    update: { regraDistribuicao: dados.regra, participantesIds: ids },
+  });
+  await registrarEvento(tx, {
+    tipo: "DistribuicaoAlterada", agregadoTipo: "ConfigSetorAtendimento", agregadoId: dados.finalidade, autorId,
+    payload: { finalidade: dados.finalidade, de: antes ?? null, para: { regra: dados.regra, participantesIds: ids } },
+  });
+  return true;
+}
+
+export async function salvarDistribuicaoSetor(i: EntradaDistribuicao): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = DistribuicaoSchema.parse(i);
     const autor = await exigirEdicaoDoSetor(dados.finalidade);
-    const ids = [...new Set(dados.participantesIds)];
-    await prisma.$transaction(async (tx) => {
-      const usuarios = await tx.usuario.findMany({ where: { id: { in: ids }, ativo: true }, select: { id: true, papeis: true } });
-      for (const id of ids) {
-        const u = usuarios.find((x) => x.id === id);
-        if (!u) throw new ErroRegra("Participante inexistente ou inativo.");
-        if (!setoresDoUsuario(u.papeis).includes(dados.finalidade)) throw new ErroRegra("Participante não pertence a este setor.");
-      }
-      const antes = await tx.prazoRespostaSetor.findUnique({ where: { finalidade: dados.finalidade }, select: { regraDistribuicao: true, participantesIds: true } });
-      await tx.prazoRespostaSetor.upsert({
-        where: { finalidade: dados.finalidade },
-        create: { finalidade: dados.finalidade, minutos: 60, regraDistribuicao: dados.regra, participantesIds: ids },
-        update: { regraDistribuicao: dados.regra, participantesIds: ids },
-      });
-      await registrarEvento(tx, {
-        tipo: "DistribuicaoAlterada", agregadoTipo: "ConfigSetorAtendimento", agregadoId: dados.finalidade, autorId: autor.id,
-        payload: { finalidade: dados.finalidade, de: antes ?? null, para: { regra: dados.regra, participantesIds: ids } },
-      });
-    });
+    await prisma.$transaction((tx) => aplicarDistribuicaoSetor(tx, autor.id, dados));
     return undefined;
   });
 }
@@ -96,12 +105,7 @@ export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, aten
   const travada = await tx.$queryRaw<{ ok: number }[]>`SELECT 1 AS ok FROM "PrazoRespostaSetor" WHERE "finalidade" = ${a.finalidade}::"FinalidadeAtendimentoWhatsApp" FOR UPDATE`;
   if (!travada.length) return null;
   const cfg = await tx.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: a.finalidade } });
-  if (cfg.regraDistribuicao === "MANUAL") return null;
-  const ativos = await tx.usuario.findMany({ where: { id: { in: cfg.participantesIds }, ativo: true }, select: { id: true } });
-  const ativosSet = new Set(ativos.map((u) => u.id));
-  const participantes = cfg.participantesIds.filter((id) => ativosSet.has(id));
-  if (!participantes.length) return null;
-
+  // Carteira primeiro (vale também em setor MANUAL ou sem participantes): o lead com dono ativo volta para ele.
   let donoCarteira: string | null = null;
   const leadId = a.leadId ?? a.conversa.contato?.leadId ?? null;
   if (a.finalidade === "COMERCIAL" && leadId) {
@@ -111,7 +115,11 @@ export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, aten
       donoCarteira = dono?.id ?? null;
     }
   }
-  const grupos = await tx.atendimentoWhatsApp.groupBy({
+  const ativos = donoCarteira || cfg.regraDistribuicao === "MANUAL" ? [] : await tx.usuario.findMany({ where: { id: { in: cfg.participantesIds }, ativo: true }, select: { id: true } });
+  const ativosSet = new Set(ativos.map((u) => u.id));
+  const participantes = cfg.participantesIds.filter((id) => ativosSet.has(id));
+  if (!donoCarteira && !participantes.length) return null;
+  const grupos = donoCarteira ? [] : await tx.atendimentoWhatsApp.groupBy({
     by: ["responsavelId"], _count: { _all: true },
     where: { finalidade: a.finalidade, encerradoEm: null, responsavelId: { in: participantes } },
   });
