@@ -153,6 +153,56 @@ describe("processarTurnoAria", () => {
     expect(await prisma.turnoAgenteIA.findFirstOrThrow()).toMatchObject({ resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" });
   });
 
+  it("so_acoes_com_humano_assumindo_durante_a_chamada_nao_mexe_no_crm", async () => {
+    await pronta("ATIVA", matriz({ NOVO: { MOVER_ETAPA: "EXECUTA", AGENDAR_MENSAGEM: "EXECUTA", MARCAR_PERDIDO: "EXECUTA" } }));
+    const amanha = new Date(Date.now() + 24 * 3600_000).toISOString();
+    // Sem resposta de texto: só ações. O atendente assume pelo ERP enquanto o provedor pensa.
+    const provedor: ProvedorIA = {
+      nome: "simulado",
+      async gerar() {
+        await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
+        return {
+          texto: JSON.stringify({
+            resposta: null,
+            documentoId: null,
+            acoes: [
+              { acao: "MOVER_ETAPA", para: "EM_ATENDIMENTO", justificativa: "respondeu" },
+              { acao: "AGENDAR_MENSAGEM", texto: "Oi, passando para lembrar da aula", enviarEmISO: amanha, justificativa: "lembrete" },
+              { acao: "MARCAR_PERDIDO", motivo: "PRECO", justificativa: "x" },
+            ],
+            confianca: 95,
+            handoff: null,
+            fontes: [],
+            humor: null,
+          }),
+          modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0,
+        };
+      },
+    };
+    expect(await processarTurnoAria(inbound.id, { provedor })).toMatchObject({ resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" });
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: c.op.id } })).etapa).toBe("NOVO");
+    expect(await prisma.acaoAgenteIA.count()).toBe(0);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: { in: ["EtapaAlterada", "LeadPerdido", "MensagemAgendada"] } } })).toBe(0);
+  });
+
+  it("midia_sem_legenda_nao_responde_de_novo_a_pergunta_anterior", async () => {
+    await pronta();
+    const contador = provedorContador(provedorSimulado);
+    // A pergunta anterior já foi respondida pela Aria; agora chega uma foto sem legenda.
+    expect(await processarTurnoAria(inbound.id, { provedor: contador })).toMatchObject({ resultado: "RESPONDEU" });
+    await prisma.mensagemWhatsApp.create({
+      data: { atendimentoId: c.at.id, conversaId: c.conversaId, numeroId: c.numero.id, direcao: "SAIDA", origem: "IA", corpo: "Temos turmas à noite, quer conhecer?", driver: "MOTOR", status: "ENVIADA", providerMessageId: `o-${++seq}` },
+    });
+    const foto = await prisma.mensagemWhatsApp.create({
+      data: { atendimentoId: c.at.id, conversaId: c.conversaId, numeroId: c.numero.id, direcao: "ENTRADA", tipo: "IMAGEM", corpo: null, driver: "MOTOR", status: "ENTREGUE", providerMessageId: `o-${++seq}` },
+    });
+    expect(await processarTurnoAria(foto.id, { provedor: contador })).toMatchObject({ resultado: "IGNORADO:SEM_TEXTO" });
+    expect(contador.chamadas).toBe(1);
+    expect(await prisma.intencaoMensagem.count()).toBe(1);
+    expect(await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: foto.id } })).toMatchObject({ resultado: "IGNORADO:SEM_TEXTO" });
+  });
+
   it("ativa_sem_chave_vira_handoff_erro_provedor_sem_resposta", async () => {
     await pronta("ATIVA");
     const chave = process.env.ANTHROPIC_API_KEY;

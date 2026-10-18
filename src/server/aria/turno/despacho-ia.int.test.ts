@@ -11,6 +11,7 @@ import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { configPadrao } from "../config-schema";
+import { aoGravarSaidaHumana } from "../pausa";
 import type { ProvedorIA, RespostaIA } from "../provedor/tipos";
 import { processarTurnoAria } from "./orquestrador";
 
@@ -94,5 +95,85 @@ describe("despacho da resposta da Aria", () => {
     expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ origem: "IA", status: "SIMULADA" });
     expect(await despacharFila()).toMatchObject({ avaliadas: 0, despachadas: 0 });
     expect(enviarTextoMock).not.toHaveBeenCalled();
+  });
+});
+
+// Revisão final do bloco 5C (achado 3): fala da Aria ainda não enviada não sai depois que uma pessoa
+// assume; o aviso do próprio handoff sai.
+describe("falas pendentes da Aria e a pausa no atendimento", () => {
+  const amanha = () => new Date(Date.now() + 24 * 3600_000);
+  const comAgendamento: ProvedorIA = {
+    nome: "simulado",
+    async gerar(p): Promise<RespostaIA> {
+      const fala = [...p.mensagens].reverse().find((m) => m.papel === "usuario")?.texto.toLowerCase() ?? "";
+      const humano = fala.includes("humano");
+      return {
+        texto: JSON.stringify({
+          resposta: humano ? "Certo, vou chamar alguém." : "Combinado, te lembro amanhã.",
+          documentoId: null,
+          acoes: humano ? [] : [{ acao: "AGENDAR_MENSAGEM", texto: "Oi! Passando para lembrar da aula experimental.", enviarEmISO: amanha().toISOString(), justificativa: "lembrete" }],
+          confianca: humano ? 20 : 95,
+          handoff: humano ? { motivo: "PEDIDO_HUMANO" } : null,
+          fontes: [],
+          humor: null,
+        }),
+        modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0,
+      };
+    },
+  };
+  async function cenarioAgendar() {
+    const c = await cenario("ATIVA");
+    const cfg = configPadrao();
+    cfg.matriz = { ...cfg.matriz, NOVO: { ...(cfg.matriz.NOVO ?? {}), RESPONDER: "EXECUTA", AGENDAR_MENSAGEM: "EXECUTA" } };
+    await prisma.versaoAgenteIA.updateMany({ data: { config: cfg } });
+    return c;
+  }
+
+  it("humano_responde_e_cancela_resposta_na_fila_e_mensagem_agendada_da_aria", async () => {
+    const c = await cenarioAgendar();
+    const m = await c.inbound("Pode me lembrar da aula amanhã?");
+    expect(await processarTurnoAria(m.id, { provedor: comAgendamento })).toMatchObject({ resultado: "RESPONDEU" });
+    expect(await prisma.intencaoMensagem.count({ where: { origem: "IA", status: "PENDENTE" } })).toBe(2);
+
+    await prisma.$transaction((tx) => aoGravarSaidaHumana(tx, { atendimentoId: c.at.id, origem: "HUMANO", autorId: null }));
+    const ias = await prisma.intencaoMensagem.findMany({ where: { origem: "IA" } });
+    expect(ias.map((i) => [i.status, i.motivoFalha])).toEqual([
+      ["CANCELADA", "aria_pausada_no_atendimento"],
+      ["CANCELADA", "aria_pausada_no_atendimento"],
+    ]);
+    expect(await prisma.evento.count({ where: { tipo: "FalasDaAriaCanceladas", agregadoId: c.at.id } })).toBe(1);
+    await despacharFila(new Date(amanha().getTime() + 3600_000));
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+  });
+
+  it("despachante_recusa_fala_da_aria_com_atendimento_pausado_por_humano", async () => {
+    const c = await cenarioAgendar();
+    const m = await c.inbound("Quero saber das turmas de inglês");
+    await processarTurnoAria(m.id, { provedor });
+    // Pausa gravada sem passar pelo cancelamento (por exemplo, a intenção já estava sendo reivindicada).
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "CELULAR" } });
+    expect(await despacharFila()).toMatchObject({ despachadas: 0, canceladas: 1 });
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+    expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ status: "CANCELADA", motivoFalha: "aria_pausada_no_atendimento" });
+  });
+
+  it("aviso_de_handoff_sai_e_mensagem_agendada_antes_do_handoff_nao", async () => {
+    const c = await cenarioAgendar();
+    const m1 = await c.inbound("Pode me lembrar da aula amanhã?");
+    expect(await processarTurnoAria(m1.id, { provedor: comAgendamento })).toMatchObject({ resultado: "RESPONDEU" });
+    expect(await despacharFila()).toMatchObject({ despachadas: 1 });
+
+    const m2 = await c.inbound("quero falar com um humano");
+    expect(await processarTurnoAria(m2.id, { provedor: comAgendamento })).toMatchObject({ resultado: "HANDOFF" });
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).iaPausaMotivo).toBe("HANDOFF");
+    // O aviso do handoff sai mesmo com a Aria já pausada pelo próprio handoff.
+    expect(await despacharFila()).toMatchObject({ despachadas: 1, canceladas: 0 });
+    expect(enviarTextoMock).toHaveBeenCalledTimes(2);
+
+    // A mensagem agendada antes do handoff não sai quando chega a hora.
+    await despacharFila(new Date(amanha().getTime() + 3600_000));
+    expect(enviarTextoMock).toHaveBeenCalledTimes(2);
+    const agendada = await prisma.intencaoMensagem.findFirstOrThrow({ where: { agendadaPara: { not: null } } });
+    expect(agendada).toMatchObject({ status: "CANCELADA", motivoFalha: "aria_pausada_no_atendimento" });
   });
 });
