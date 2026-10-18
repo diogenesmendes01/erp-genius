@@ -1005,6 +1005,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "inbox/AcoesMensagem.tsx": [
     "<Botao> Buscar → secundario/sm",
     "<Botao> Encaminhar para → fantasma/sm",
+    "<Botao> Carregar mais → secundario/sm",
     "<Botao> Fechar → fantasma/sm",
     "<Botao> Cancelar → fantasma/sm",
     "<Botao> Salvar edição → primario/sm",
