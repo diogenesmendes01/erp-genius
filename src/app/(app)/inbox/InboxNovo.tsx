@@ -171,7 +171,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ? <PainelSetor painel={painelSetor.dado} />
         : <p className="p-4 text-sm text-gray-600">Carregando detalhes…</p>}
       {painelSetor?.id === atual.id && painelSetor.dado?.acoes && (
-        <AcoesContato key={atual.id} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} fuso={fuso} aoMudar={recarregarLista} />
+        <AcoesContato key={atual.id} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} optOut={atual.optOut} fuso={fuso} aoMudar={recarregarLista} />
       )}
       {!atual.grupo && (
         <OptOutContato key={atual.contatoId} contatoId={atual.contatoId} nome={atual.contatoNome} optOut={atual.optOut}
@@ -202,6 +202,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             usuario={usuario}
             fuso={fuso}
             conversa={conversa}
+            podeEnviar={painelSetor?.id === selecionado && painelSetor.dado?.podeEnviar === true}
             destinos={destinos}
             triagem={triagem}
             revisoes={revisoes}

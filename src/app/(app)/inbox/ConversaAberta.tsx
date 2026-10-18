@@ -11,7 +11,6 @@ import { recursoDisponivel } from "@/components/conversa/recursos-canal";
 import type { ConversaHook } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import { podeExecutar } from "@/server/inbox/permissoes";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
@@ -25,6 +24,8 @@ export interface PropsConversaAberta {
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
   conversa: ConversaHook;
+  /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); falso enquanto carrega. */
+  podeEnviar: boolean;
   destinos?: DestinoTransferencia[];
   /** Triagem do número (a quem `listarTriagemWhatsApp` aceita) e revisão de envio incerto (administrador); nulos para os demais. */
   triagem?: ItemTriagem[] | null;
@@ -43,13 +44,16 @@ export function textoOrigem(setor: Setor | null): string | null {
 /** Comandos do menu da mensagem que esta tela já executa; os outros ficam fora do menu até serem ligados. */
 export const COMANDOS_MENSAGEM_LIGADOS: readonly ComandoMensagem[] = ["copiar"];
 
-/** O compositor só envia com a alçada de envio (podeExecutar) e com o atendimento aberto. */
-export function podeEnviarNaConversa(usuario: { id: string; papeis: Papel[] }, item: ItemListaInbox): boolean {
-  if (item.status === "ENCERRADO") return false;
-  return podeExecutar(usuario, "enviar", { setor: item.finalidade as Setor, responsavelId: item.responsavelId, linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId });
+/**
+ * O compositor só envia com o podeEnviar da thread (o servidor decide por `atendimentoVisivel` com envio: escopo de
+ * envio, convite com envio, destinatário atual) e com o atendimento aberto. `podeExecutar("enviar")` não serve:
+ * libera todo mundo (C6 do #217).
+ */
+export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeEnviar: boolean): boolean {
+  return podeEnviar && item.status !== "ENCERRADO";
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
@@ -115,7 +119,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, destinos, triage
         <Compositor
           atendimentoId={item.id}
           modo="responder"
-          podeEnviar={podeEnviarNaConversa(usuario, item)}
+          podeEnviar={podeEnviarNaConversa(item, podeEnviar)}
           driver={item.driver as never}
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
