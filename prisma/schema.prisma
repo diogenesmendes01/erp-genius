@@ -8625,8 +8625,9 @@ model VersaoAgenteIA {
 model TurnoAgenteIA {
   id               String          @id @default(cuid())
   ancoraMensagemId String          @unique
-  atendimentoId    String
-  atendimento      AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  /// Nulo só no turno TRIAGEM simulado em SHADOW: a mensagem ainda não tem atendimento.
+  atendimentoId    String?
+  atendimento      AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   versaoId         String?
   versao           VersaoAgenteIA? @relation(fields: [versaoId], references: [id], onDelete: Restrict)
   tipo             OrigemChamadaIA
@@ -8645,8 +8646,9 @@ model AcaoAgenteIA {
   id                 String             @id @default(cuid())
   turnoId            String
   turno              TurnoAgenteIA      @relation(fields: [turnoId], references: [id], onDelete: Restrict)
-  atendimentoId      String
-  atendimento        AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  /// Nulo só na CLASSIFICAR_SETOR SIMULADA da triagem em SHADOW (sem atendimento aberto).
+  atendimentoId      String?
+  atendimento        AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
   oportunidadeId     String?
   acao               AcaoAgenteIATipo
   etapaNoMomento     EtapaLead?

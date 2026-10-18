@@ -12,6 +12,8 @@ const base: EntradaShadow = {
   politicaEstado: "ATIVA",
   gestaoEstado: "ATIVA",
   saudacaoEstado: "ATIVA",
+  ia: false,
+  ariaEstado: "ATIVA",
 };
 const shadow = (parcial: Partial<EntradaShadow>) => intencaoEmShadow({ ...base, ...parcial });
 
@@ -78,6 +80,31 @@ describe("intencaoEmShadow", () => {
   it("saudacaoEstado não afeta quem não é reativa", () => {
     expect(shadow({ saudacaoEstado: "DESLIGADA" })).toBe(false);
     expect(shadow({ agenda: true, saudacaoEstado: "DESLIGADA" })).toBe(false);
+  });
+
+  // Revisão final da Fase 5C: a resposta da Aria (origem IA, reativa) não pode ficar presa ao
+  // ensaio da saudação comercial; o ensaio dela é o estado da própria Aria.
+  describe("origem IA", () => {
+    const ia = { ia: true, reativa: true } as const;
+
+    it("Aria ATIVA envia mesmo com a saudação comercial DESLIGADA ou em SHADOW", () => {
+      expect(shadow({ ...ia, saudacaoEstado: "DESLIGADA" })).toBe(false);
+      expect(shadow({ ...ia, saudacaoEstado: "SHADOW" })).toBe(false);
+    });
+
+    it("Aria fora de ATIVA no despacho vira SIMULADA, mesmo com a saudação ATIVA", () => {
+      expect(shadow({ ...ia, ariaEstado: "SHADOW" })).toBe(true);
+      expect(shadow({ ...ia, ariaEstado: "DESLIGADA" })).toBe(true);
+    });
+
+    it("sem WHATSAPP_LIVE a Aria também só simula", () => {
+      expect(shadow({ ...ia, live: false })).toBe(true);
+    });
+
+    it("ariaEstado não afeta quem não é IA", () => {
+      expect(shadow({ reativa: true, ariaEstado: "DESLIGADA" })).toBe(false);
+      expect(shadow({ ariaEstado: "DESLIGADA" })).toBe(false);
+    });
   });
 });
 
