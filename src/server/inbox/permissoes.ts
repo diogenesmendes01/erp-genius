@@ -5,7 +5,9 @@ import { ehGerenteDoSetor, setoresVisiveisNoInbox, type Setor } from "@/server/w
 /** Funções do Inbox sujeitas a alçada (doc 03; plano 03-fase-inbox, Tarefa 14). */
 export type AcaoInbox = "enviar" | "editarApagar" | "encaminhar" | "preferenciaPessoal" | "assumir" | "devolver" | "atribuir" | "transferir" | "convidar" | "encerrar" | "notaInterna" | "agendar" | "grupoGerir" | "bloquear" | "perfilNumero";
 
-export interface ContextoAcao { setor: Setor; responsavelId: string | null; autorMensagemId?: string | null; participante?: boolean }
+export interface ContextoAcao { setor: Setor; responsavelId: string | null; autorMensagemId?: string | null; participante?: boolean;
+  /** Atendimento COMERCIAL de linha de vendas (número VENDAS) e o dono atual da linha: quem assume precisa continuar enxergando o atendimento (LC-D02). */
+  linhaComercial?: boolean; donoLinhaId?: string | null }
 
 const GERENTES: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.GERENTE_PEDAGOGICO];
 
@@ -34,8 +36,11 @@ export function podeExecutar(u: Pick<UsuarioSessao, "id" | "papeis">, acao: Acao
       return !!ctx.autorMensagemId && ctx.autorMensagemId === u.id;
     case "assumir":
       // Só da fila; o professor não atende fila (Tarefa 13).
+      // Em linha de vendas o responsável gravado não dá acesso (escopo.ts): só admin, gerente comercial ou o dono da linha
+      // continuam enxergando o atendimento depois de assumir (mesmo critério de exigirResponsavelEnxerga).
       return ctx.responsavelId === null && setoresVisiveisNoInbox(u.papeis).includes(ctx.setor)
-        && (admin || u.papeis.some((p) => p !== Papel.PROFESSOR));
+        && (admin || u.papeis.some((p) => p !== Papel.PROFESSOR))
+        && (!ctx.linhaComercial || admin || gerenteDoSetor || (ctx.donoLinhaId != null && ctx.donoLinhaId === u.id));
     case "devolver": case "transferir": case "convidar":
       return doResponsavel || gerenteDoSetor;
     case "atribuir":

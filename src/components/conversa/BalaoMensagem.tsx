@@ -38,8 +38,10 @@ function hora(iso: string, fuso: string | null): string {
 
 interface ItemAcao { cmd: ComandoMensagem; rotulo: string; recurso?: RecursoMotor; perigo?: boolean }
 
-export function BalaoMensagem({ m, fuso, aoComando, recursos, menuAberto = false, enquete, pix }: {
+export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAberto = false, enquete, pix }: {
   m: MensagemThread; fuso: string | null; aoComando: (c: ComandoMensagem) => void; recursos: (r: RecursoMotor) => boolean;
+  /** Comandos que quem usa o balão trata; os demais não aparecem no menu. Sem a lista, o menu vem completo. */
+  comandos?: readonly ComandoMensagem[];
   /** Estado inicial do menu (testes de marcação). */
   menuAberto?: boolean;
   /** Dados estruturados quando a thread os traz; sem eles, a mensagem aparece só como texto. */
@@ -60,7 +62,7 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, menuAberto = false
   const saida = m.direcao === "SAIDA";
   const autor = autorDaMensagem(m);
   const st = saida ? STATUS[m.status] ?? STATUS.ENVIADA : null;
-  const itens: ItemAcao[] = [
+  const todos: ItemAcao[] = [
     { cmd: "responder", rotulo: "Responder" },
     ...(m.corpo ? [{ cmd: "copiar" as const, rotulo: "Copiar" }] : []),
     { cmd: "reagir", rotulo: "Reagir", recurso: "reagir" },
@@ -69,6 +71,7 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, menuAberto = false
     ...(saida && m.tipo === "TEXTO" ? [{ cmd: "editar" as const, rotulo: "Editar", recurso: "editar" as const }] : []),
     { cmd: "apagar", rotulo: "Apagar", recurso: "apagar", perigo: true },
   ];
+  const itens = comandos ? todos.filter((i) => comandos.includes(i.cmd)) : todos;
 
   return (
     <div data-mensagem-id={m.id} className={`flex ${saida ? "justify-end" : "justify-start"}`}>
