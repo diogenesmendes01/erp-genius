@@ -9213,8 +9213,11 @@ model TrechoConhecimento {
   fonte   FonteConhecimento @relation(fields: [fonteId], references: [id], onDelete: Restrict)
   ordem   Int
   texto   String
-  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration.
-  busca   Unsupported("tsvector")?
+  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration
+  /// 20261018020000_aria_conhecimento. O dbgenerated e o @@index Gin só existem para o `migrate diff` não
+  /// propor removê-los (o Prisma não gera colunas GENERATED); trava em conhecimento/migracao-busca.test.ts.
+  busca   Unsupported("tsvector")? @default(dbgenerated("to_tsvector('portuguese'::regconfig, texto)"))
 
   @@unique([fonteId, ordem])
+  @@index([busca], type: Gin)
 }

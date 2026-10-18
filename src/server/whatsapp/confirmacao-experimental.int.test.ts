@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { EtapaLead } from "@prisma/client";
 
@@ -19,7 +20,7 @@ beforeEach(async () => {
 
 async function seedNumero() {
   return prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511988887777", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c2", donoId: dono.id },
+    data: { telefoneE164: "+5511988887777", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-c2", donoId: dono.id },
   });
 }
 
@@ -82,7 +83,7 @@ describe("confirmação da experimental por keyword (fallback Baileys — doc 27
       providerMessageId: `MSG-${Math.random().toString(36).slice(2)}`,
       corpo,
       tipo: "TEXTO",
-      driver: "BAILEYS",
+      driver: DriverWhatsApp.BAILEYS,
       fromMe: false,
       quando: new Date(),
     });

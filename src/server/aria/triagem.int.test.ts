@@ -12,9 +12,9 @@ beforeEach(truncarBanco);
 let seq = 0;
 const provedorComConfianca = (setor: string | null, confianca: number): ProvedorIA => ({
   nome: "simulado",
-  async gerar(_p: PedidoIA) {
-    return { texto: JSON.stringify({ setor, confianca }), modelo: "simulado", provedor: "simulado", recusa: false,
-      tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0 };
+  // Parte da resposta do provedor simulado real: herda campos novos de RespostaIA (ex.: tokensEscritaCache).
+  async gerar(p: PedidoIA) {
+    return { ...(await provedorSimulado.gerar(p)), texto: JSON.stringify({ setor, confianca }) };
   },
 });
 
@@ -29,7 +29,7 @@ async function cenario() {
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777", alunoId: aluno.id } });
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
   const msg = (corpo: string) => prisma.mensagemWhatsApp.create({
-    data: { conversaId: conversa.id, numeroId: numero.id, direcao: "ENTRADA", driver: "META_CLOUD", corpo, status: "ENTREGUE", providerMessageId: `t-${++seq}` },
+    data: { conversaId: conversa.id, numeroId: numero.id, direcao: "ENTRADA", driver: "MOTOR", corpo, status: "ENTREGUE", providerMessageId: `t-${++seq}` },
   });
   return { numero, contato, conversa, msg };
 }
@@ -94,13 +94,13 @@ describe("classificarSetorPelaAria", () => {
     await prisma.matricula.deleteMany({ where: { alunoId: c.contato.alunoId! } }).catch(() => undefined);
     const outro = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880000" } });
     const conv = await prisma.conversaWhatsApp.create({ data: { numeroId: c.numero.id, contatoId: outro.id } });
-    const m = await prisma.mensagemWhatsApp.create({ data: { conversaId: conv.id, numeroId: c.numero.id, direcao: "ENTRADA", driver: "META_CLOUD", corpo: "boleto", providerMessageId: "t-x" } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { conversaId: conv.id, numeroId: c.numero.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "boleto", providerMessageId: "t-x" } });
     expect(await classificarSetorPelaAria(m.id, { provedor: provedorSimulado })).toEqual({ triagemHumana: "SETOR_FORA_DO_NUMERO" });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
   it("recusa_fica_na_triagem_humana", async () => {
-    const recusa: ProvedorIA = { nome: "simulado", async gerar() { return { texto: "", modelo: "simulado", provedor: "simulado", recusa: true, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0 }; } };
+    const recusa: ProvedorIA = { nome: "simulado", async gerar(p) { return { ...(await provedorSimulado.gerar(p)), texto: "", recusa: true }; } };
     expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: recusa })).toEqual({ triagemHumana: "RECUSA" });
   });
 
@@ -135,7 +135,7 @@ describe("classificarSetorPelaAria", () => {
   it("grupo_nunca", async () => {
     const grupo = await prisma.grupoWhatsApp.create({ data: { numeroId: c.numero.id, grupoJid: "g1@g.us", nome: "Grupo" } });
     const conv = await prisma.conversaWhatsApp.create({ data: { numeroId: c.numero.id, grupoId: grupo.id } });
-    const msgGrupo = await prisma.mensagemWhatsApp.create({ data: { conversaId: conv.id, numeroId: c.numero.id, direcao: "ENTRADA", driver: "META_CLOUD", corpo: "boleto", providerMessageId: "g-1" } });
+    const msgGrupo = await prisma.mensagemWhatsApp.create({ data: { conversaId: conv.id, numeroId: c.numero.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "boleto", providerMessageId: "g-1" } });
     expect(await classificarSetorPelaAria(msgGrupo.id, { provedor: provedorSimulado })).toEqual({ triagemHumana: "DESLIGADA" });
   });
 
@@ -147,7 +147,7 @@ describe("classificarSetorPelaAria", () => {
         const texto = p.tarefa === "classificacao"
           ? JSON.stringify({ setor: "COMERCIAL", confianca: 95 })
           : JSON.stringify({ resposta: "Temos turmas à noite, quer conhecer?", documentoId: null, acoes: [], confianca: 95, handoff: null, fontes: [], humor: null });
-        return { texto, modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0 };
+        return { ...(await provedorSimulado.gerar(p)), texto };
       },
     };
 

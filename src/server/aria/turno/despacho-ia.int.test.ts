@@ -11,7 +11,8 @@ import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { configPadrao } from "../config-schema";
-import type { ProvedorIA, RespostaIA } from "../provedor/tipos";
+import { provedorSimulado } from "../provedor/simulado";
+import type { PedidoIA, ProvedorIA, RespostaIA } from "../provedor/tipos";
 import { processarTurnoAria } from "./orquestrador";
 
 // Revisão final da Fase 5C (achado 1): a resposta da Aria ATIVA passa pelo despachante de verdade.
@@ -28,10 +29,11 @@ afterEach(() => vi.unstubAllEnvs());
 
 const provedor: ProvedorIA = {
   nome: "simulado",
-  async gerar(): Promise<RespostaIA> {
+  async gerar(p: PedidoIA): Promise<RespostaIA> {
+    // Parte da resposta do provedor simulado real: herda campos novos de RespostaIA (ex.: tokensEscritaCache).
     return {
+      ...(await provedorSimulado.gerar(p)),
       texto: JSON.stringify({ resposta: "Temos turmas à noite, quer conhecer?", documentoId: null, acoes: [], confianca: 95, handoff: null, fontes: [], humor: null }),
-      modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0,
     };
   },
 };

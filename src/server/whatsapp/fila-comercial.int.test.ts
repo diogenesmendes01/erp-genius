@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach } from "vitest";
 import { EtapaLead, type EstadoPolitica } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +17,7 @@ beforeEach(async () => {
 
 async function seedReguaComercial(estado: EstadoPolitica) {
   const numero = await prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511988887777", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-v", donoId: dono.id },
+    data: { telefoneE164: "+5511988887777", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-v", donoId: dono.id },
   });
   const politica = await prisma.politicaComercial.create({
     data: {
@@ -52,7 +53,7 @@ async function seedLeadFrio(numeroId: string, capturadaHaMin: number, etapa: Eta
   });
   // A âncora é o 1º inbound (registra a mensagem de entrada na conversa).
   await prisma.mensagemWhatsApp.create({
-    data: { conversaId: conversa.id, numeroId, direcao: "ENTRADA", corpo: "oi", driver: "BAILEYS", criadoEm: capturadaEm },
+    data: { conversaId: conversa.id, numeroId, direcao: "ENTRADA", corpo: "oi", driver: DriverWhatsApp.BAILEYS, criadoEm: capturadaEm },
   });
   return { lead, contato, conversa };
 }

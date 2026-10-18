@@ -18,6 +18,11 @@ import { capacidadesAria, validarAlteracaoPorPapel, type CapacidadeAria } from "
 // negócio (nada o referencia) e o descarte fica auditado em Evento.
 
 const MSG_CONFIG_MUDOU = "A configuração mudou desde que você abriu. Recarregue para ver a versão atual.";
+const MSG_RASCUNHO_MUDOU =
+  "O rascunho foi alterado por outra pessoa desde que você abriu. Recarregue para ver a versão atual.";
+
+/** Rascunho que o editor tinha aberto (null = não havia rascunho), para o controle de concorrência. */
+export type RascunhoAberto = { id: string; atualizadoEm: Date | string } | null;
 const ID_AGENTE = "aria";
 
 type Tx = Prisma.TransactionClient;
@@ -91,18 +96,40 @@ async function proximoNumero(tx: Tx, excetoId?: string): Promise<number> {
   return (m._max.numero ?? 0) + 1;
 }
 
-/** Grava `config` como rascunho (cria ou substitui o existente). */
+/** Identificador de concorrência do rascunho atual (id + atualizadoEm), para a tela enviar de volta ao salvar. */
+export async function rascunhoAtual(tx?: Tx): Promise<{ id: string; atualizadoEm: Date } | null> {
+  const r = await (tx ?? prisma).versaoAgenteIA.findFirst({
+    where: { status: "RASCUNHO" },
+    select: { id: true, atualizadoEm: true },
+  });
+  return r ? { id: r.id, atualizadoEm: r.atualizadoEm } : null;
+}
+
+function mesmoRascunho(atual: { id: string; atualizadoEm: Date } | null, aberto: RascunhoAberto): boolean {
+  if (!atual || !aberto) return atual === null && aberto === null;
+  const quando = new Date(aberto.atualizadoEm).getTime();
+  return atual.id === aberto.id && atual.atualizadoEm.getTime() === quando;
+}
+
+/**
+ * Grava `config` como rascunho (cria ou substitui o existente), recusando se o rascunho mudou desde que o
+ * editor o abriu (`aberto`). Chamar com o agente travado (travarAgente) para serializar os editores.
+ */
 async function gravarRascunho(
   tx: Tx,
   config: ConfigAria,
   baseVersaoId: string | null,
   autorId: string,
-): Promise<{ id: string; novo: boolean }> {
+  aberto: RascunhoAberto,
+): Promise<{ id: string; novo: boolean; atualizadoEm: Date }> {
   const atual = await tx.versaoAgenteIA.findFirst({ where: { status: "RASCUNHO" } });
+  if (aberto === undefined || !mesmoRascunho(atual, aberto)) throw new ErroRegra(MSG_RASCUNHO_MUDOU);
   const json = config as unknown as Prisma.InputJsonValue;
   if (atual) {
-    await tx.versaoAgenteIA.update({ where: { id: atual.id }, data: { config: json, baseVersaoId } });
-    return { id: atual.id, novo: false };
+    // atualizadoEm estritamente crescente: dois salvamentos no mesmo milissegundo não podem repetir o token.
+    const atualizadoEm = new Date(Math.max(Date.now(), atual.atualizadoEm.getTime() + 1));
+    await tx.versaoAgenteIA.update({ where: { id: atual.id }, data: { config: json, baseVersaoId, atualizadoEm } });
+    return { id: atual.id, novo: false, atualizadoEm };
   }
   const criada = await tx.versaoAgenteIA.create({
     data: {
@@ -113,13 +140,15 @@ async function gravarRascunho(
       criadaPorId: autorId,
     },
   });
-  return { id: criada.id, novo: true };
+  return { id: criada.id, novo: true, atualizadoEm: criada.atualizadoEm };
 }
 
 export async function salvarRascunho(input: {
   config: unknown;
   baseVersaoId: string | null;
-}): Promise<Resultado<{ versaoId: string }>> {
+  /** Rascunho aberto na tela (de `rascunhoAtual` ou do último salvamento); null se não havia. */
+  rascunho: RascunhoAberto;
+}): Promise<Resultado<{ versaoId: string; atualizadoEm: Date }>> {
   return executarAcao(async () => {
     const sessao = await exigirSessao();
     await exigirCapacidade(sessao, "editarComportamento");
@@ -130,7 +159,7 @@ export async function salvarRascunho(input: {
       const pub = await versaoPublicada(tx);
       if ((pub?.id ?? null) !== input.baseVersaoId) throw new ErroRegra(MSG_CONFIG_MUDOU);
       validarAlteracaoPorPapel(u, pub?.config ?? configPadrao(), config);
-      const r = await gravarRascunho(tx, config, pub?.id ?? null, u.id);
+      const r = await gravarRascunho(tx, config, pub?.id ?? null, u.id, input.rascunho);
       await registrarEvento(tx, {
         tipo: "AgenteIARascunhoSalvo",
         agregadoTipo: "VersaoAgenteIA",
@@ -138,7 +167,7 @@ export async function salvarRascunho(input: {
         autorId: u.id,
         payload: { baseVersaoId: pub?.id ?? null },
       });
-      return { versaoId: r.id };
+      return { versaoId: r.id, atualizadoEm: r.atualizadoEm };
     });
   });
 }
@@ -199,7 +228,10 @@ export async function descartarRascunho(): Promise<Resultado> {
   });
 }
 
-export async function restaurarVersao(versaoId: string): Promise<Resultado<{ versaoId: string }>> {
+export async function restaurarVersao(
+  versaoId: string,
+  rascunho: RascunhoAberto,
+): Promise<Resultado<{ versaoId: string; atualizadoEm: Date }>> {
   return executarAcao(async () => {
     const sessao = await exigirSessao();
     await exigirCapacidade(sessao, "editarComportamento");
@@ -211,7 +243,7 @@ export async function restaurarVersao(versaoId: string): Promise<Resultado<{ ver
       const config = ConfigAriaSchema.parse(antiga.config);
       const pub = await versaoPublicada(tx);
       validarAlteracaoPorPapel(u, pub?.config ?? configPadrao(), config);
-      const r = await gravarRascunho(tx, config, pub?.id ?? null, u.id);
+      const r = await gravarRascunho(tx, config, pub?.id ?? null, u.id, rascunho);
       await registrarEvento(tx, {
         tipo: "AgenteIAVersaoRestaurada",
         agregadoTipo: "VersaoAgenteIA",
@@ -219,7 +251,7 @@ export async function restaurarVersao(versaoId: string): Promise<Resultado<{ ver
         autorId: u.id,
         payload: { deVersaoId: antiga.id, deNumero: antiga.numero },
       });
-      return { versaoId: r.id };
+      return { versaoId: r.id, atualizadoEm: r.atualizadoEm };
     });
   });
 }
