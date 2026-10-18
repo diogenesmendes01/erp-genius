@@ -1,4 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+
+// Falha simulada na atribuição (C7 da R2 do #233): erro de banco DENTRO da transação da triagem.
+const falha = vi.hoisted(() => ({ atribuicao: false }));
+vi.mock("@/server/crm-config/distribuicao", async (orig) => {
+  const real = await orig<typeof import("@/server/crm-config/distribuicao")>();
+  return {
+    ...real,
+    atribuirAutomaticamente: async (tx: import("@prisma/client").Prisma.TransactionClient, id: string) => {
+      if (falha.atribuicao) await tx.$executeRawUnsafe("SELECT 1/0");
+      return real.atribuirAutomaticamente(tx, id);
+    },
+  };
+});
 import { prisma } from "@/lib/prisma";
 import { seedCobranca, criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
@@ -7,7 +21,7 @@ import type { PedidoIA, ProvedorIA } from "./provedor";
 import { configPadrao } from "./config-schema";
 import { ancoraTriagem, classificarSetorPelaAria, FRASE_ENCAMINHAMENTO, fraseEncaminhamento } from "./triagem";
 
-beforeEach(truncarBanco);
+beforeEach(async () => { falha.atribuicao = false; await truncarBanco(); });
 
 let seq = 0;
 const provedorComConfianca = (setor: string | null, confianca: number): ProvedorIA => ({
@@ -243,6 +257,42 @@ describe("classificarSetorPelaAria", () => {
     const conv = await prisma.conversaWhatsApp.create({ data: { numeroId: c.numero.id, grupoId: grupo.id } });
     const msgGrupo = await prisma.mensagemWhatsApp.create({ data: { conversaId: conv.id, numeroId: c.numero.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "boleto", providerMessageId: "g-1" } });
     expect(await classificarSetorPelaAria(msgGrupo.id, { provedor: provedorSimulado })).toEqual({ triagemHumana: "DESLIGADA" });
+  });
+
+  describe("rodízio da 5F na abertura pela triagem", () => {
+    let f1: { id: string }, f2: { id: string };
+    beforeEach(async () => {
+      f1 = await criarUsuario([Papel.FINANCEIRO], "F1");
+      f2 = await criarUsuario([Papel.FINANCEIRO], "F2");
+      await prisma.prazoRespostaSetor.upsert({
+        where: { finalidade: "FINANCEIRO" },
+        create: { finalidade: "FINANCEIRO", minutos: 60, regraDistribuicao: "RODIZIO", participantesIds: [f1.id, f2.id] },
+        update: { regraDistribuicao: "RODIZIO", participantesIds: [f1.id, f2.id], ultimoAtribuidoId: null },
+      });
+    });
+
+    it("atendimento_aberto_pela_triagem_recebe_responsavel_pelo_rodizio", async () => {
+      const r = await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
+      expect(r).toMatchObject({ setor: "FINANCEIRO" });
+      const a = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: (r as { atendimentoId: string }).atendimentoId } });
+      expect(a).toMatchObject({ responsavelId: f1.id, status: "EM_ATENDIMENTO" });
+      expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ atendimentoId: a.id, responsavelId: f1.id, motivo: "RODIZIO" });
+      expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "FINANCEIRO" } })).ultimoAtribuidoId).toBe(f1.id);
+      expect((await ultimaIntencao()).corpoRenderizado).toBe(fraseEncaminhamento("FINANCEIRO", "Aria"));
+    });
+
+    it("falha_de_banco_na_atribuicao_nao_quebra_a_transacao_e_o_lead_fica_na_fila_do_setor", async () => {
+      falha.atribuicao = true;
+      const r = await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
+      expect(r).toMatchObject({ setor: "FINANCEIRO" });
+      const atendimentoId = (r as { atendimentoId: string }).atendimentoId;
+      // Atendimento aberto e ligado à mensagem, sem responsável (fila do setor), com o encaminhamento ao lead.
+      expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId } })).toMatchObject({ responsavelId: null, finalidade: "FINANCEIRO" });
+      expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: msgBoleto.id } })).atendimentoId).toBe(atendimentoId);
+      expect(await ultimaIntencao()).toMatchObject({ atendimentoId, origem: "IA", status: "PENDENTE" });
+      expect(await prisma.evento.count({ where: { tipo: "AtendimentoAtribuido" } })).toBe(0);
+      expect(await prisma.evento.count({ where: { tipo: "MensagemClassificada" } })).toBe(1);
+    });
   });
 
   describe("COMERCIAL: a Aria atende em vez de só encaminhar", () => {

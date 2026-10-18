@@ -5,6 +5,7 @@ import { MODOS_FABRICA, POLITICA_COBRANCA_NOME } from "@/server/cobrancas/fabric
 import { REGUA } from "@/server/cobrancas/regua";
 import { setoresDoNumero } from "./numero-setor";
 import { SETORES, papeisDeTriagem, type Setor } from "./setor";
+import { ONDE_MODELO_REGUA } from "./modelos-regua";
 export * from "./consultas-inbox";
 export { escopoNumeros } from "./escopo";
 export interface NumeroConfig {
@@ -81,7 +82,7 @@ export interface TemplateConfig {
 
 export async function listarTemplatesConfig(): Promise<TemplateConfig[]> {
   await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-  const templates = await prisma.templateWhatsApp.findMany({ orderBy: { nome: "asc" } });
+  const templates = await prisma.templateWhatsApp.findMany({ where: ONDE_MODELO_REGUA, orderBy: { nome: "asc" } });
   return templates.map((t) => ({
     id: t.id,
     nome: t.nome,
@@ -107,7 +108,7 @@ export async function carregarConfiguracaoAvisosAgenda(): Promise<ConfiguracaoAv
   const [config, numeros, templates] = await Promise.all([
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } }),
     prisma.numeroWhatsApp.findMany({ where: { finalidade: "AGENDA" }, select: { id: true, rotulo: true, driver: true, finalidade: true, providerRef: true, ativo: true }, orderBy: { criadoEm: "asc" } }),
-    prisma.templateWhatsApp.findMany({ select: { id: true, nome: true, idioma: true, categoria: true, statusMeta: true, metaTemplateId: true, corpo: true }, orderBy: { nome: "asc" } }),
+    prisma.templateWhatsApp.findMany({ where: ONDE_MODELO_REGUA, select: { id: true, nome: true, idioma: true, categoria: true, statusMeta: true, metaTemplateId: true, corpo: true }, orderBy: { nome: "asc" } }),
   ]);
   return { numeroAvisosAgendaId: config?.numeroAvisosAgendaId ?? null, templateAvisosAgendaId: config?.templateAvisosAgendaId ?? null, numeros, templates };
 }

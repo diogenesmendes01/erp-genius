@@ -87,7 +87,7 @@ describe("WhatsApp financeiro por matrícula", () => {
     const c = await seedCobranca({ vencimento: new Date("2026-10-10T12:00:00Z") });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: c.aluno.telefoneE164!, alunoId: c.aluno.id } });
     const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: canal.numero.id, contatoId: contato.id } });
-    const id = await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id));
+    const id = await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id, { atribuir: true }));
     expect(id).not.toBeNull();
     const a = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: id! } });
     expect(a.matriculaId).toBe(c.matricula.id);
@@ -109,9 +109,9 @@ describe("WhatsApp financeiro por matrícula", () => {
   it("não adivinha contrato no inbound sem atendimento ou com dois assuntos abertos", async () => {
     const c = await preparar();
     const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: c.canal.numero.id, contatoId: c.contato.id } });
-    expect(await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id))).toBeNull();
+    expect(await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id, { atribuir: true }))).toBeNull();
     await c.abrir(c.matricula.id); await c.abrir(c.outra.id);
-    expect(await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id))).toBeNull();
+    expect(await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id, { atribuir: true }))).toBeNull();
   });
 
   it("o enfileiramento guarda a matrícula da cobrança e o despacho recusa combinação cruzada", async () => {

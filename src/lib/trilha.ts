@@ -103,7 +103,6 @@ export const ROTULOS_TRILHA: Record<string, string> = {
 
   // Configuração
   "/configuracao/catalogo": "Catálogo",
-  "/configuracao/crm/metas": "Metas comerciais",
   "/configuracao/contratos": "Contratos",
   "/configuracao/contratos/novo": "Novo modelo",
   "/configuracao/contratos/*": "Modelo de contrato",
@@ -115,6 +114,12 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/configuracao/paises": "Países",
   "/configuracao/turmas": "Turmas",
   "/configuracao/usuarios": "Usuários",
+  "/configuracao/crm": "CRM",
+  "/configuracao/crm/distribuicao": "Distribuição e SLA",
+  "/configuracao/crm/tags-campos": "Tags e campos",
+  "/configuracao/crm/respostas": "Respostas rápidas",
+  "/configuracao/crm/metas": "Metas comerciais",
+  "/configuracao/crm/ia": "IA",
   "/configuracao/whatsapp": "WhatsApp",
   "/configuracao/whatsapp/numeros": "Números",
   "/configuracao/whatsapp/templates": "Templates",

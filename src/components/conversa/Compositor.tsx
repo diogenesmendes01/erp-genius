@@ -6,6 +6,7 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
+import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor } from "./respostas-rapidas";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 
 const SeletorEmoji = lazy(() => import("./SeletorEmoji"));
@@ -28,6 +29,10 @@ export interface PropsCompositor {
   aoEnviarTexto(t: string): Promise<Resultado<unknown>>;
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
   aoNota(t: string): Promise<Resultado>;
+  /** Respostas rápidas do atendente (atalho "/"); sem elas o atalho não abre. */
+  respostas?: readonly RespostaDoCompositor[];
+  /** Valores das variáveis das respostas ({nome}, {responsavel}, {curso}). */
+  variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
 
 const chaveRascunho = (id: string, modo: string) => `conversa-rascunho:${id}:${modo}`;
@@ -52,7 +57,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota }: PropsCompositor) {
+export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {} }: PropsCompositor) {
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erro, setErro] = useState("");
@@ -199,6 +204,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   }
 
   const vazio = !texto.trim() && !arquivo;
+  const sugestoes = nota ? [] : respostasDoAtalho(texto, respostas);
   return (
     <div className="border-t border-gray-200 bg-composer px-3 py-2">
       {nota && <p className="mb-2 rounded bg-highlight px-3 py-1.5 text-xs text-gray-800" role="note">{AVISO_NOTA}</p>}
@@ -218,6 +224,18 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
             <SeletorEmoji gif={capacidades.includes("gif")} figurinha={capacidades.includes("figurinha")} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
           </Suspense>
         </div>
+      )}
+      {sugestoes.length > 0 && (
+        // Lista simples de botões (Tab chega a cada um): listbox exigiria foco gerenciado e setas.
+        <ul aria-label="Respostas rápidas" className={`mb-2 ${CLASSE_PAINEL_MENU}`}>
+          {sugestoes.map((s) => (
+            <li key={s.id}>
+              <button type="button" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => { mudar(aplicarVariaveisResposta(s.corpo, variaveisResposta)); entrada.current?.focus(); }}>
+                <strong>{s.atalho}</strong> <span className="text-gray-600">{s.titulo}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
       <div className="relative flex items-end gap-2">
         {!nota && (

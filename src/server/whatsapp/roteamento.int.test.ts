@@ -18,7 +18,7 @@ async function cenario(setores: Setor[], over: { finalidade?: "COBRANCA" | "VEND
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
   return { numero, contato, conversa };
 }
-const rotear = (conversaId: string) => prisma.$transaction((tx) => atendimentoDoInbound(tx, conversaId));
+const rotear = (conversaId: string) => prisma.$transaction((tx) => atendimentoDoInbound(tx, conversaId, { atribuir: true }));
 
 describe("roteamento do inbound por setor do número", () => {
   it("1. atendimento aberto: mantém", async () => {

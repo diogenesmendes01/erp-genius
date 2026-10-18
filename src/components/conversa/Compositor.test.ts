@@ -52,6 +52,20 @@ function digitar(raiz: ReactNode, v: string) {
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 
 describe("Compositor", () => {
+  // C6 da revisão do #233: lista simples de botões (sem role=listbox/option, que exigiria foco e setas).
+  it("respostas rapidas aparecem como lista de botoes e o clique aplica as variaveis", () => {
+    m.g = criarGanchos();
+    const p = props({ respostas: [{ id: "r1", atalho: "/preco", titulo: "Preço", corpo: "Olá {nome}" }], variaveisResposta: { nome: "Ana" } });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    digitar(tela(), "/pre");
+    const marc = renderToStaticMarkup(createElement("div", null, tela() as ReactNode));
+    expect(marc).not.toMatch(/role="(listbox|option)"/);
+    expect(marc).toMatch(/<ul aria-label="Respostas rápidas"[^>]*><li><button type="button"[^>]*><strong>\/preco<\/strong>/);
+    clicarBotao(tela(), "/preco Preço");
+    const ta = elementos(tela()).find((n) => n.type === CampoTexto)!;
+    expect(ta.props.value).toBe("Olá Ana");
+  });
+
   it("modo nota mostra o aviso e nunca chama aoEnviarTexto", async () => {
     m.g = criarGanchos();
     const p = props({ modo: "nota" });
