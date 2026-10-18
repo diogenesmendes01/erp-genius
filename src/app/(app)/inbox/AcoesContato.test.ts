@@ -177,6 +177,26 @@ describe("AcoesContato: interação", () => {
     expect(p.aoMudar).toHaveBeenCalled();
   });
 
+  it("contato em opt-out: o bloco Retomar régua some, o resto da cobrança fica (C7 do #217, como no Inbox antigo)", async () => {
+    m.g = criarGanchos();
+    const p = props({ cobranca }, { optOut: true });
+    expect(elementos(m.g!.renderizar(AcoesContato, p)).find((n) => n.type === CobrancaContato)!.props).toMatchObject({ atendimentoId: "a1", cobranca, optOut: true });
+    m.g = criarGanchos();
+    const tela = () => m.g!.renderizar(CobrancaContato, { atendimentoId: "a1", cobranca, fuso: null, optOut: true, aoMudar: p.aoMudar });
+    expect(() => clicarBotao(tela(), "Retomar régua")).toThrow();
+    expect(marcacao(tela())).not.toContain("Régua automática em silêncio");
+    expect(marcacao(tela())).toContain("Registrar pagamento");
+    clicarBotao(tela(), "Registrar pagamento");
+    expect(elementos(tela()).some((n) => n.type === PagamentoModal)).toBe(true);
+    await esvaziar();
+    expect(acoes.marcarConversaTratada).not.toHaveBeenCalledWith({ conversaId: "a1", motivo: "retomar_regua" });
+  });
+
+  it("InboxNovo passa o opt-out do contato às ações do painel (fonte)", () => {
+    const fonte = readFileSync("src/app/(app)/inbox/InboxNovo.tsx", "utf8");
+    expect(fonte).toMatch(/<AcoesContato[^>]*optOut=\{atual\.optOut\}/);
+  });
+
   it("Registrar pagamento abre o PagamentoModal da cobrança e, no fim, trata a conversa como pagamento", async () => {
     m.g = criarGanchos();
     const p = props({ cobranca });

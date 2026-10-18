@@ -2897,3 +2897,22 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   `Compositor` (upload em `/api/whatsapp/upload` e `enviarMidiaInbox`); ganharam testes de interação.
 - **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
 - **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).
+
+## Pendências não bloqueantes do #215 (C4) e do #217 (C6, C7) (18/10/2026)
+
+- Branch: `claude/pendencias-215-217` (base main 6d6d33ee). Cada item com teste falhando antes da correção.
+- **C4 do #215:** o alerta "Evento do motor parado" passa a medir o evento mais atrasado, não o de menor `seq`. O critério
+  de "parado" não mudou: sem backoff conta desde `recebidoEm`, em backoff conta desde a `proximaTentativaEm` vencida, sempre
+  além do limiar de 15 min. São duas consultas, cada uma ordenada pelo seu relógio, e vale a mais antiga das duas
+  (`saude.ts`). Teste em `saude.int.test.ts` com o evento de `seq` menor menos atrasado.
+- **C6 do #217:** o compositor do Inbox novo decide pelo `podeEnviar` da thread (`atendimentoVisivel(usuario, id, true)`), que
+  `carregarPainel` passa a devolver, e não mais por `podeExecutar("enviar")`, que libera todo mundo.
+  `InboxNovo` passa esse valor do painel do atendimento aberto à `ConversaAberta` (falso enquanto o painel carrega).
+  `podeEnviarNaConversa(item, podeEnviar)` continua barrando ENCERRADO. Testes de componente em `ConversaAberta.test.ts` e
+  de integração em `paineis.int.test.ts`: o responsável envia, o convidado só de leitura não envia, o convidado com envio envia.
+- **C7 do #217:** com o contato em opt-out (`atual.optOut`), o bloco "Retomar régua" some do painel (`AcoesContato`/`CobrancaContato`),
+  como no Inbox antigo. Pagamento e promessa continuam. Teste de interação em `AcoesContato.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (714 arquivos, 5276 testes). Integração com saída 0 em `saude.int.test.ts` (20 testes) e em
+  `src/server/inbox/` (6 arquivos, 61 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
+  foi rodado; fica para o integrador.
