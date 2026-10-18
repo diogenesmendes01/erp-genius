@@ -2910,9 +2910,14 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   `InboxNovo` passa esse valor do painel do atendimento aberto à `ConversaAberta` (falso enquanto o painel carrega).
   `podeEnviarNaConversa(item, podeEnviar)` continua barrando ENCERRADO. Testes de componente em `ConversaAberta.test.ts` e
   de integração em `paineis.int.test.ts`: o responsável envia, o convidado só de leitura não envia, o convidado com envio envia.
+  Revisão: a secretaria responsável recebe `podeEnviar: false` quando o aluno do atendimento não tem o telefone do contato.
+  O envio real recusa no mesmo caso, porque `enviarTextoInbox` usa `conversaVisivel(…, true)`, alias da mesma função
+  `atendimentoVisivel`, e quem recusa é `destinatarioAtualDoAtendimento`. O painel está coerente com o envio.
+  `paineis-envio.int.test.ts` compara o painel com `enviarTextoInbox` em três casos: telefone do aluno igual ao do contato
+  (envia), aluno sem telefone ou com outro telefone (não envia) e secretaria sem aluno (envia).
 - **C7 do #217:** com o contato em opt-out (`atual.optOut`), o bloco "Retomar régua" some do painel (`AcoesContato`/`CobrancaContato`),
   como no Inbox antigo. Pagamento e promessa continuam. Teste de interação em `AcoesContato.test.ts`.
 - Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
   `npm test` com saída 0 (714 arquivos, 5276 testes). Integração com saída 0 em `saude.int.test.ts` (20 testes) e em
-  `src/server/inbox/` (6 arquivos, 61 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
+  `src/server/inbox/` (7 arquivos, 64 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
   foi rodado; fica para o integrador.
