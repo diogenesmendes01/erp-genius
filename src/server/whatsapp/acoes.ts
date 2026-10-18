@@ -441,7 +441,7 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
       return { leadId, criado };
     });
     revalidatePath("/inbox");
-    revalidatePath("/leads");
+    revalidatePath("/funil");
     return resultado;
   });
 }

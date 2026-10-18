@@ -70,7 +70,7 @@ export interface PessoasVinculo {
 
 export const contextoInclude = {
   matricula: { select: { id: true, codigo: true } },
-  conversa: { include: { numero: true, contato: { include: { responsavel: { select: { nome: true } } } } } },
+  conversa: { include: { numero: { include: { setores: { select: { finalidade: true } } } }, contato: { include: { responsavel: { select: { nome: true } } } } } },
   aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
   lead: { select: { id: true, nome: true, etapa: true, temperatura: true, dataExperimental: true } },
 } as const;
@@ -150,17 +150,14 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const agora = Date.now();
   const fechaEm = c.ultimoInboundEm ? new Date(c.ultimoInboundEm.getTime() + 24 * 3600_000) : null;
   const politica = financeiro ? await carregarPoliticaRegua() : null;
-  const silencioAte = a.ultimoInboundEm && politica ? new Date(a.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000) : null;
-  const silencio = !!silencioAte && agora < silencioAte.getTime() && (!a.inboundTratadoEm || a.inboundTratadoEm < a.ultimoInboundEm!);
+  const silencio = silencioPosInbound(a, politica?.silencioPosInboundHoras ?? null, agora);
   const podeEnviar = !!await atendimentoVisivel(usuario, a.id, true);
   const linhaComercial = comercial && ehLinhaComercial(c.numero);
   // LC-L02: ver a conversa pela linha não abre o lead de outra carteira (etapa, notas, copiloto).
   const verLead = comercial && !!a.leadId && await podeVerLeadNaThread(usuario, a.id, a.leadId, agora);
   return { conversaId: a.id, finalidade: a.finalidade, matricula: financeiro || pedag ? a.matricula : null,
     podeEnviar, linhaComercial,
-    podeCriarLead: linhaComercial && !a.leadId && !a.encerradoEm
-      && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR),
-    podeVincular: !pedag && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
+    ...regrasCadastroDoAtendimento(usuario, a, linhaComercial),
     podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
     podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contato.id),
     pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
@@ -173,13 +170,74 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
     capacidades: capacidadesDoNumero({ driver: c.numero.driver, ativo: c.numero.ativo, sessao: c.numero.sessao }),
     janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
-    silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
+    silencio,
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
     lead: verLead && a.lead ? await leadNaThread(a.lead) : null,
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
       participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId })) };
+}
+
+/** Botões de cadastro da conversa (os do Inbox antigo): criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */
+export function regrasCadastroDoAtendimento(
+  usuario: UsuarioSessao, a: { finalidade: string; leadId: string | null; encerradoEm: Date | null }, linhaComercial: boolean,
+): { podeCriarLead: boolean; podeVincular: boolean } {
+  return {
+    podeCriarLead: linhaComercial && !a.leadId && !a.encerradoEm
+      && temPapel(usuario, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR),
+    podeVincular: a.finalidade !== "PEDAGOGICO" && temPapel(usuario, Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR),
+  };
+}
+
+/** Silêncio da régua depois de uma resposta do contato (S4) que ninguém tratou. */
+export function silencioPosInbound(
+  a: { ultimoInboundEm: Date | null; inboundTratadoEm: Date | null }, horas: number | null, agora: number,
+): { ativo: boolean; ate: string | null } {
+  const ate = a.ultimoInboundEm && horas !== null ? new Date(a.ultimoInboundEm.getTime() + horas * 3600_000) : null;
+  const ativo = !!ate && agora < ate.getTime() && (!a.inboundTratadoEm || a.inboundTratadoEm < a.ultimoInboundEm!);
+  return { ativo, ate: ativo ? ate!.toISOString() : null };
+}
+
+/** Ações de cadastro e de cobrança do painel lateral do Inbox novo; mesmas regras e alçadas da thread do Inbox antigo. Sem telefone (regra 5). */
+export interface AcoesContatoInbox {
+  contatoId: string; contatoNome: string;
+  nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
+  alunoId: string | null;
+  /** Oportunidade do atendimento, só para quem a vê (LC-L02); o link é /funil?o=<id>. */
+  leadId: string | null;
+  podeCriarLead: boolean; podeVincular: boolean; podeEditarNome: boolean;
+  /** Só no FINANCEIRO e para FINANCEIRO/SECRETARIA_ACADEMICA (as alçadas de marcarConversaTratada). */
+  cobranca: { silencio: { ativo: boolean; ate: string | null }; ativa: CobrancaAtivaThread | null } | null;
+}
+
+/** null fora do escopo do usuário e em conversa de grupo (sem contato individual). */
+export async function carregarAcoesContatoInbox(usuario: UsuarioSessao, atendimentoId: string): Promise<AcoesContatoInbox | null> {
+  const achado = await prisma.atendimentoWhatsApp.findFirst({
+    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] }, include: contextoInclude,
+  });
+  if (!achado || !achado.conversa.contato) return null;
+  const a = comContatoIndividual(achado);
+  const pedag = a.finalidade === "PEDAGOGICO";
+  const comercial = a.finalidade === "COMERCIAL";
+  const financeiro = a.finalidade === "FINANCEIRO" && temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
+  const c = a.conversa;
+  const agora = Date.now();
+  const { nome, fonte } = nomeEFonteDoAtendimento(a);
+  const linhaComercial = comercial && ehLinhaComercial(c.numero);
+  const verLead = comercial && !!a.leadId && await podeVerLeadNaThread(usuario, a.id, a.leadId, agora);
+  const politica = financeiro ? await carregarPoliticaRegua() : null;
+  return {
+    contatoId: c.contato.id, contatoNome: nome,
+    nomeSalvo: pedag ? null : c.contato.nomeExibicao, nomePerfil: pedag ? null : c.contato.nomePerfil, fonteNome: fonte,
+    alunoId: a.alunoId, leadId: verLead ? a.leadId : null,
+    ...regrasCadastroDoAtendimento(usuario, a, linhaComercial),
+    podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contato.id),
+    cobranca: financeiro ? {
+      silencio: silencioPosInbound(a, politica?.silencioPosInboundHoras ?? null, agora),
+      ativa: a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
+    } : null,
+  };
 }
 
 /**
@@ -222,7 +280,7 @@ async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; 
     notas: await notasDoLead(lead.id) };
 }
 
-async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {
+export async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {
   const contato = await prisma.contatoWhatsApp.findUnique({ where: { id: contatoId } });
   if (!contato) return null;
   const matricula = await prisma.matricula.findFirst({ where: { id: matriculaId, alunoId }, include: INCLUDE_MATRICULA_DESTINO });
