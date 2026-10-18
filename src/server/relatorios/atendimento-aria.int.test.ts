@@ -82,6 +82,25 @@ describe("atendimento e Aria × equipe", () => {
     expect([m.aria.atendimentos, m.equipe.atendimentos]).toEqual([1, 1]);
   });
 
+  it("lado_decidido_pela_primeira_saida_com_varias_mensagens_no_mesmo_atendimento", async () => {
+    const maisUma = async (a: { id: string; conversaId: string }, por: OrigemEnvio, hhmm: string) => {
+      seq += 1;
+      await prisma.mensagemWhatsApp.create({
+        data: { conversaId: a.conversaId, numeroId, atendimentoId: a.id, direcao: "SAIDA", origem: por, corpo: "de novo", driver: "MOTOR", criadoEm: dia(hhmm), providerMessageId: `out-extra${seq}` },
+      });
+    };
+    // IA primeiro e HUMANO depois: conta como Aria
+    const iaDepoisHumano = await atendRespondidoPor("IA");
+    await maisUma(iaDepoisHumano.a, "HUMANO", "11:00");
+    let m = await metricasAriaEquipe(f, tudo);
+    expect([m.aria.atendimentos, m.equipe.atendimentos]).toEqual([1, 0]);
+    // HUMANO primeiro e IA depois: conta como equipe
+    const humanoDepoisIa = await atendRespondidoPor("HUMANO");
+    await maisUma(humanoDepoisIa.a, "IA", "11:00");
+    m = await metricasAriaEquipe(f, tudo);
+    expect([m.aria.atendimentos, m.equipe.atendimentos]).toEqual([1, 1]);
+  });
+
   it("vendedor_nao_ve_lado_da_equipe_inteira", async () => {
     await atendRespondidoPor("HUMANO", { dono: vend1.id });
     await atendRespondidoPor("HUMANO", { dono: vend1.id });
