@@ -14,9 +14,10 @@ export const MOTIVO_ARIA_PAUSADA = "aria_pausada";
 /**
  * Cancela as intenções da Aria (origem IA) ainda não enviadas do atendimento: resposta pendente,
  * mensagem agendada por ela (ADIADA/PENDENTE com agendadaPara). `preservarIntencaoId` é a
- * mensagem do próprio handoff, que precisa sair.
+ * mensagem do próprio handoff, que precisa sair. Interna (trava de auditoria da Task 43): só
+ * `pausarAriaNoAtendimento` a usa, na transação do chamador.
  */
-export async function cancelarIntencoesDaAria(tx: Tx, atendimentoId: string, preservarIntencaoId: string | null = null): Promise<number> {
+async function cancelarIntencoesDaAria(tx: Tx, atendimentoId: string, preservarIntencaoId: string | null = null): Promise<number> {
   const r = await tx.intencaoMensagem.updateMany({
     where: {
       atendimentoId,
