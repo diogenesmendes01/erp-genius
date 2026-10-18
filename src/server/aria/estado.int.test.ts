@@ -81,6 +81,24 @@ describe("estado operacional da Aria", () => {
     expect((await eventosDo("AgenteIA", "aria")).filter((e) => e.tipo === "AriaSupervisaoAlterada")).toHaveLength(2);
   });
 
+  it("gerente_nao_encurta_supervisao", async () => {
+    logado(gerente);
+    const ateDesligar = new Date("9999-12-31T00:00:00Z");
+    expect((await definirSupervisao({ ate: ateDesligar })).ok).toBe(true);
+    const r = await definirSupervisao({ ate: new Date(Date.now() + 60_000) });
+    expect(r.ok).toBe(false);
+    expect((await prisma.agenteIA.findUniqueOrThrow({ where: { id: "aria" } })).supervisaoAte).toEqual(ateDesligar);
+    expect((await eventosDo("AgenteIA", "aria")).filter((e) => e.tipo === "AriaSupervisaoAlterada")).toHaveLength(1);
+    logado(admin);
+    expect((await definirSupervisao({ ate: new Date(Date.now() + 60_000) })).ok).toBe(true);
+  });
+
+  it("gerente_estende_supervisao_vigente", async () => {
+    logado(gerente);
+    expect((await definirSupervisao({ ate: new Date(Date.now() + 864e5) })).ok).toBe(true);
+    expect((await definirSupervisao({ ate: new Date(Date.now() + 2 * 864e5) })).ok).toBe(true);
+  });
+
   it("supervisao_no_passado_e_rejeitada", async () => {
     logado(admin);
     expect((await definirSupervisao({ ate: new Date(Date.now() - 1000) })).ok).toBe(false);
