@@ -43,6 +43,10 @@ jobs:
       - name: Gerar os tipos de rota do Next
         run: npx next typegen
       - name: TypeScript (tsc --noEmit)
+        # O schema do Prisma cresceu com as Fases 4 e 5 e o tsc passou a estourar o heap padrão
+        # do Node (exit 134). 5 GB cabe no runner padrão (7 GB) com folga.
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
         run: npx tsc --noEmit
 
   lint:

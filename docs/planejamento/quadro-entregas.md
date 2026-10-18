@@ -3146,6 +3146,54 @@ Branch `claude/fase5-b-config` (sobre c1f4dead; `git merge origin/main`: já em 
 - `tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5374 testes.
 - Integração (recorte) em banco descartável com todas as migrations: `src/server/aria`, `src/server/uploads` e as suítes que usam `uploads/autorizacao` (`academico/visibilidade`, `matricula/condicoes-horas`, `inbox/regras-inbox`, `financeiro/recebimentos-destinados`): saída 0; 11 arquivos, 127 testes.
 
+### Fase 5E: relatórios e metas (verificação do bloco) — 2026-10-18
+
+Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 725 arquivos, 5336 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- Integração, recorte: `vitest related --run -c vitest.integration.config.ts` sobre os arquivos .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 14 arquivos, 109 testes verdes.
+- Pendente: suíte de integração completa a cargo do integrador no fim da fase.
+
+**Merge do `main` (#224, Fase 5A, já com 4D a 4F) na Fase 5E (18/10/2026)**
+
+- PR #228 passa a ter base `main` (não empilhado). Merge de `f1b4a41c`; conflito só neste quadro (ficam os dois blocos). `botoes-mapa.ts`,
+  `botoes.test.ts` e `enums-rotulos.test.ts` mesclaram sozinhos. A 5E não cita Meta, Evolution, drivers legados nem o Inbox antigo.
+  `20261018030000_metas_comerciais` segue a última migration, depois de `20261018010000_aria_base`; sem colisão.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5377 testes verdes.
+- Integração (banco descartável, `migrate deploy` completo; `migrate diff` só com a deriva preexistente de defaults de timestamp, nada em
+  `MetaComercial`): `src/app/api/relatorios`, `home/consultas`, `metas`, `relatorios`, `aria`, `src/server/inbox`, `whatsapp/motor`: saída 0;
+  31 arquivos, 252 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+**Correções da R1 do PR #228 (18/10/2026)**
+
+- B1: a meta EXPERIMENTAIS_REALIZADAS passa a contar a primeira `ExperimentalRealizada` (check-in do professor) por oportunidade no mês
+  da escola, aceitando também `EtapaAlterada` para EXPERIMENTAL_REALIZADA; respeita escopo e dono. Nas abas de Relatórios só o funil conta
+  experimentais, e já usava os dois eventos; Atividades e Equipe não contam experimentais.
+- C1: a aba Metas da Configuração inclui o Gerente Comercial (única aba dele; o link "Definir metas" fica na aba Equipe de Relatórios);
+  a meta do próprio gerente aparece com o nome dele.
+- C2: `/api/relatorios/exportar` recusa com 403 (mensagem "só para a gestão comercial") as abas Equipe e Aria, os filtros de responsável e
+  de autor e o detalhe por pessoa para quem não é admin nem gerente comercial.
+- C3 (DF5-11): no relatório o vendedor é só ele. Diferente de `escopoComercialAtual`, as coberturas de carteira não entram nos relatórios
+  nem nas metas na v1 (documentado em `relatorios/escopo.ts`, com teste).
+- C4: o nome da etapa no Funil diz que abre as oportunidades que estão nela agora (título, rótulo acessível e nota da tabela).
+- C5: Equipe mostra "Meta dos meses do período" e explica que soma os meses inteiros tocados; VALOR_GANHO usa `valorPrevisto`.
+- B2: resolvido no merge do `main` com o #226 (ver bloco seguinte).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos (linha de base). `npm test`: saída 0; 727 arquivos, 5380 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`: saída 0; 8 arquivos, 68 testes verdes.
+
+**Merge do `main` (#226, Fase 5B) na Fase 5E (18/10/2026)**
+
+- Merge de `86261292`. Conflitos: `prisma/schema.prisma` (ficam `MetricaMeta`/`MetaComercial` da 5E e `TipoFonteConhecimento`,
+  `StatusFonteConhecimento`, `FonteConhecimento`, `TrechoConhecimento` da 5B, com `busca` em `dbgenerated` e `@@index([busca], type: Gin)`)
+  e este quadro (ficam os dois blocos).
+- `prisma validate`: válido. Banco limpo com `migrate deploy`: `20261018010000_aria_base`, `20261018020000_aria_conhecimento` e
+  `20261018030000_metas_comerciais` aplicam em sequência; `migrate diff` banco × schema sem nada em `MetaComercial`, `FonteConhecimento`
+  ou `TrechoConhecimento` (só a deriva preexistente de outras tabelas).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 732 arquivos, 5412 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`, `src/server/aria`, `src/server/uploads`:
+  saída 0; 15 arquivos, 133 testes verdes. O `npm run test:int` completo segue com o integrador.
+
 ## Fase 5, bloco C — turno da Aria, Tasks 12 a 25 (18/10/2026)
 
 Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6d33ee + 24af270d). Tasks 12 a 25 (contexto, decisão, guardas, gatilhos, executores, handoff, expiração, orquestrador e despacho), todas com revisão limpa. Só provedor e motor simulados; nenhuma chamada real à API da Anthropic nem ao WhatsApp.
