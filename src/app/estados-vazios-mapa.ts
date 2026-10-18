@@ -590,6 +590,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum convite ativo que você possa revogar.",
     "compacto · Nenhuma mensagem agendada que você possa cancelar.",
   ],
+  "src/app/(app)/inbox/AcoesMensagem.tsx": [
+    "compacto · Nenhuma conversa deste número em que você possa enviar.",
+  ],
   "src/app/(app)/inbox/AcoesContato.tsx": [
     "compacto · Nenhum encontrado.",
   ],

@@ -44,25 +44,33 @@ const msg: MensagemThread = {
 };
 
 describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do #217 · C4 da R1 do #219)", () => {
-  const TODAS = ["editar", "apagar", "reagir"] as const;
+  const TODAS = ["editar", "apagar", "reagir", "encaminhar"] as const;
   const propria = { ...msg, propria: true };
-  it("comandos ligados: copiar e os do motor que a 4D implementou (reagir, editar, apagar); encaminhar fica fora", () => {
-    expect([...COMANDOS_MENSAGEM_LIGADOS]).toEqual(["copiar", "reagir", "editar", "apagar"]);
+  it("comandos ligados: copiar e os do motor que a 4D implementou (reagir, encaminhar, editar, apagar); responder e favoritar ficam fora", () => {
+    expect([...COMANDOS_MENSAGEM_LIGADOS]).toEqual(["copiar", "reagir", "encaminhar", "editar", "apagar"]);
   });
   it("sem capacidade do número (sessão caída, não MOTOR): só copiar", () => {
     expect(comandosDaMensagem(propria, [], true)).toEqual(["copiar"]);
   });
-  it("com as capacidades e o envio liberado: reagir, editar e apagar na própria mensagem de texto", () => {
-    expect(comandosDaMensagem(propria, TODAS, true)).toEqual(["copiar", "reagir", "editar", "apagar"]);
+  it("com as capacidades e o envio liberado: reagir, encaminhar, editar e apagar na própria mensagem de texto", () => {
+    expect(comandosDaMensagem(propria, TODAS, true)).toEqual(["copiar", "reagir", "encaminhar", "editar", "apagar"]);
+  });
+  it("encaminhar exige a capacidade do número, o envio liberado e mensagem não apagada; vale para recebida e de outra pessoa", () => {
+    expect(comandosDaMensagem(propria, ["encaminhar"], true)).toEqual(["copiar", "encaminhar"]);
+    expect(comandosDaMensagem(propria, ["reagir", "editar", "apagar"], true)).not.toContain("encaminhar");
+    expect(comandosDaMensagem(propria, ["encaminhar"], false)).toEqual(["copiar"]);
+    expect(comandosDaMensagem({ ...propria, apagada: true }, ["encaminhar"], true)).toEqual(["copiar"]);
+    expect(comandosDaMensagem({ ...msg, direcao: "ENTRADA" }, ["encaminhar"], true)).toEqual(["copiar", "encaminhar"]);
+    expect(comandosDaMensagem({ ...msg, propria: false, tipo: "IMAGEM" }, ["encaminhar"], true)).toEqual(["copiar", "encaminhar"]);
   });
   it("cada comando do motor exige a própria capacidade", () => {
     expect(comandosDaMensagem(propria, ["reagir"], true)).toEqual(["copiar", "reagir"]);
     expect(comandosDaMensagem(propria, ["apagar"], true)).toEqual(["copiar", "apagar"]);
   });
-  it("mensagem de outra pessoa ou recebida: só reagir; mídia própria: apagar sem editar", () => {
-    expect(comandosDaMensagem({ ...msg, propria: false }, TODAS, true)).toEqual(["copiar", "reagir"]);
-    expect(comandosDaMensagem({ ...msg, direcao: "ENTRADA" }, TODAS, true)).toEqual(["copiar", "reagir"]);
-    expect(comandosDaMensagem({ ...propria, tipo: "IMAGEM" }, TODAS, true)).toEqual(["copiar", "reagir", "apagar"]);
+  it("mensagem de outra pessoa ou recebida: reagir e encaminhar; mídia própria: apagar sem editar", () => {
+    expect(comandosDaMensagem({ ...msg, propria: false }, TODAS, true)).toEqual(["copiar", "reagir", "encaminhar"]);
+    expect(comandosDaMensagem({ ...msg, direcao: "ENTRADA" }, TODAS, true)).toEqual(["copiar", "reagir", "encaminhar"]);
+    expect(comandosDaMensagem({ ...propria, tipo: "IMAGEM" }, TODAS, true)).toEqual(["copiar", "reagir", "encaminhar", "apagar"]);
   });
   it("sem o envio (escopo de envio do servidor ou encerrado) ou mensagem apagada: só copiar", () => {
     expect(comandosDaMensagem(propria, TODAS, false)).toEqual(["copiar"]);
@@ -73,10 +81,14 @@ describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do
     expect(h).toContain("Copiar");
     for (const r of ["Responder", "Reagir", "Encaminhar", "Favoritar", "Editar", "Apagar"]) expect(h).not.toContain(`aria-label="${r}"`);
   });
-  it("BalaoMensagem com os comandos do motor liberados mostra reagir, editar e apagar, mas não encaminhar", () => {
+  it("BalaoMensagem com os comandos do motor liberados mostra reagir, encaminhar, editar e apagar, mas não responder nem favoritar", () => {
     const h = renderToStaticMarkup(createElement(BalaoMensagem, { m: propria, fuso: null, aoComando: () => {}, recursos: () => true, menuAberto: true, comandos: comandosDaMensagem(propria, TODAS, true) }));
-    for (const r of ["Copiar", "Reagir", "Editar", "Apagar"]) expect(h).toContain(`aria-label="${r}"`);
-    for (const r of ["Responder", "Encaminhar", "Favoritar"]) expect(h).not.toContain(`aria-label="${r}"`);
+    for (const r of ["Copiar", "Reagir", "Encaminhar", "Editar", "Apagar"]) expect(h).toContain(`aria-label="${r}"`);
+    for (const r of ["Responder", "Favoritar"]) expect(h).not.toContain(`aria-label="${r}"`);
+  });
+  it("no menu completo, Encaminhar depende do recurso do motor (sem ele, desabilitado com o aviso)", () => {
+    const h = renderToStaticMarkup(createElement(BalaoMensagem, { m: msg, fuso: null, aoComando: () => {}, recursos: (r) => r !== "encaminhar", menuAberto: true }));
+    expect(h).toMatch(/<button[^>]*aria-label="Encaminhar"[^>]*disabled=""/);
   });
   it("sem `comandos` o balão mantém o menu completo (outros usos)", () => {
     const h = renderToStaticMarkup(createElement(BalaoMensagem, { m: msg, fuso: null, aoComando: () => {}, recursos: () => true, menuAberto: true }));
@@ -85,8 +97,10 @@ describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do
   it("a conversa passa ao balão os comandos da mensagem pelas capacidades e pelo envio, e abre as ações do motor (fonte)", () => {
     const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
     expect(fonte).toMatch(/<BalaoMensagem[\s\S]*?comandos=\{comandosDaMensagem\(m, capacidades, envioLiberado === true\)\}/); // carregando (null) não libera comando
-    expect(fonte).toMatch(/c === "reagir" \|\| c === "editar" \|\| c === "apagar"\) setAcaoMensagem/);
+    expect(fonte).toMatch(/\(c === "reagir" \|\| c === "encaminhar" \|\| c === "editar" \|\| c === "apagar"\) && item\) setAcaoMensagem\(\{ acao: c, m, atendimentoId: item\.id, numeroId: item\.numeroId \}\)/);
     expect(fonte).toMatch(/<AcoesMensagem[\s\S]*?aoMudar=\{\(\) => void conversa\.recarregar\(\)\}/);
+    // O encaminhar recebe a conversa de origem (para excluí-la e para listar só o mesmo número).
+    expect(fonte).toMatch(/<AcoesMensagem[\s\S]*?origem=\{\{ atendimentoId: acaoMensagem\.atendimentoId, numeroId: acaoMensagem\.numeroId \}\}/);
   });
 });
 

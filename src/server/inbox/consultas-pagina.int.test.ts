@@ -282,3 +282,28 @@ describe("obterItemListaInbox (deep link)", () => {
     expect(await obterItemListaInbox(sess(outro), antigo.id)).toBeNull();
   });
 });
+
+describe("lista só com envio (destino do encaminhar, Fase 4D)", () => {
+  it("com `enviar` a lista usa o escopo de envio: fica de fora o convite sem envio e o atendimento encerrado", async () => {
+    const fin = await criarUsuario([Papel.FINANCEIRO]);
+    const comEnvio = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
+    const semEnvio = await criarAtendimento(new Date("2026-10-02T00:00:00Z"));
+    const encerrado = await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    await prisma.atendimentoWhatsApp.update({ where: { id: encerrado.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    const convite = (atendimentoId: string, podeEnviar: boolean) => prisma.participanteAtendimentoWhatsApp.create({ data: {
+      atendimentoId, usuarioId: fin.id, concedenteId: admin.id, podeEnviar, motivo: "teste",
+      inicio: new Date(Date.now() - 60_000), fim: new Date(Date.now() + 3600_000) } });
+    await convite(comEnvio.id, true); await convite(semEnvio.id, false); await convite(encerrado.id, true);
+    const ids = async (o?: { enviar?: boolean }) => (await listarAtendimentosPagina(sess(fin), {}, null, undefined, o)).itens.map((i) => i.id);
+    expect(await ids()).toEqual([comEnvio.id, semEnvio.id, encerrado.id]);
+    expect(await ids({ enviar: true })).toEqual([comEnvio.id]);
+  });
+  it("com `enviar` o número inativo também sai, e os filtros (número, busca) continuam valendo", async () => {
+    const a = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
+    const ids = async (f: Parameters<typeof listarAtendimentosPagina>[1]) => (await listarAtendimentosPagina(sess(admin), f, null, undefined, { enviar: true })).itens.map((i) => i.id);
+    expect(await ids({ numeroId })).toEqual([a.id]);
+    expect(await ids({ numeroId: "outro" })).toEqual([]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
+    expect(await ids({})).toEqual([]);
+  });
+});
