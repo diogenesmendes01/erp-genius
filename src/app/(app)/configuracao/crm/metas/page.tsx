@@ -1,7 +1,5 @@
 import { MetricaMeta, Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { exigirPapelLeitura } from "@/lib/guards";
-import { AcessoNegado } from "@/components/AcessoNegado";
 import { Botao } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { METRICA_META_LABEL } from "@/lib/labels";
@@ -19,8 +17,9 @@ function competenciaAtual(fuso: string): string {
 
 // Metas comerciais do mês (Q9): administrador define para qualquer um e para o geral; gerente, para a equipe.
 export default async function MetasPage({ searchParams }: { searchParams?: Promise<ParametrosUrl> } = {}) {
-  if (!(await exigirPapelLeitura(Papel.GERENTE_COMERCIAL))) return <AcessoNegado recurso="as metas comerciais" />;
-  const usuario = await exigirSessaoPagina(Papel.GERENTE_COMERCIAL);
+  // Seção de Configurações › CRM (Fase 5F): o layout do CRM mostra o acesso negado; aqui o guard único repete
+  // os papéis de secoes.ts (secoes.test.ts trava a igualdade).
+  const usuario = await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
   const ehAdmin = usuario.papeis.includes(Papel.ADMINISTRADOR);
   const escopo = await escopoRelatorio(usuario);
   const competencia = competenciaAtual(await fusoDaEscola());

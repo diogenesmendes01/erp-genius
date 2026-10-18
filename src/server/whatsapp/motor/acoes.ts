@@ -11,7 +11,10 @@ export type AcaoMotor =
   | "group.details"
   | "contact.block"
   | "group.create"
-  | "group.participants";
+  | "group.participants"
+  | "profile.update"
+  | "profile.picture"
+  | "privacy.update";
 
 /** Ações que geram mensagem passam pelo ritmo do motor (podem esperar até esperaMaxMs): timeout de mídia. */
 const ACOES_QUE_GERAM_MENSAGEM = new Set<AcaoMotor>(["message.edit", "message.delete", "message.react", "message.forward"]);

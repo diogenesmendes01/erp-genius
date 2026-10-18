@@ -8,6 +8,7 @@ import { carregarCobrancasDaRegua, decidirEnvioCron } from "./alcance-regua";
 import { driverAceitaAutomacao } from "./canal";
 import { renderizarTemplate, TEXTOS_FABRICA } from "./render";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
+import { ONDE_MODELO_REGUA } from "./modelos-regua";
 
 // CRON DA RÉGUA (doc 26 §Camada 1): reusa o MESMO cérebro e a MESMA projeção da fila
 // humana (montarReguaPorCobranca + proximaAcao) — nunca recalcula "quem dispara" com
@@ -58,7 +59,7 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
 
   const { cobrancas, regua } = await carregarCobrancasDaRegua(agora, politica.degraus);
 
-  const templates = await prisma.templateWhatsApp.findMany();
+  const templates = await prisma.templateWhatsApp.findMany({ where: ONDE_MODELO_REGUA });
   const templatePorId = new Map(templates.map((t) => [t.id, t]));
   const templatePorNome = new Map(templates.map((t) => [t.nome, t]));
 

@@ -44,7 +44,7 @@ describe("atendimento financeiro legado", () => {
       { id: "atendimento-legado", finalidade: "FINANCEIRO", matriculaId: null },
     ]);
 
-    await expect(atendimentoDoInbound(db as never, "conversa-1")).resolves.toBeNull();
+    await expect(atendimentoDoInbound(db as never, "conversa-1", { atribuir: true })).resolves.toBeNull();
     expect(db.conversaWhatsApp.findUnique).not.toHaveBeenCalled();
     expect(db.matricula.findMany).not.toHaveBeenCalled();
   });
