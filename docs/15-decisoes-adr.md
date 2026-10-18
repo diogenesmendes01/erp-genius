@@ -188,3 +188,18 @@ registra `motivoIrreversivel`.
 `ConfigComercial.copilotoAtivo/copilotoQuietudeMinutos`; cria `AgenteIA`, `VersaoAgenteIA` (no máximo
 1 rascunho e 1 publicada, por índice parcial), `TurnoAgenteIA`, `AcaoAgenteIA`, `ChamadaIA`, `ConfigIA`
 e as colunas de pausa em `AtendimentoWhatsApp`.
+
+**Versões da configuração (Task 8).** `VersaoAgenteIA` guarda no máximo 1 `RASCUNHO` e 1 `PUBLICADA`;
+publicar arquiva a anterior (`ARQUIVADA`), nada é apagado.
+- **Descarte do rascunho = única remoção física permitida** (exceção à regra "sem delete físico de
+  dado de negócio"). Motivo: o rascunho ainda não é dado de negócio — nenhum turno, ação, chamada ou
+  evento o referencia (só versões publicadas regem a Aria) e ele existe só como edição em andamento
+  de uma pessoa. Arquivá-lo deixaria versões-fantasma que nunca valeram, brigaria com o índice parcial
+  de 1 rascunho e poluiria a numeração/diff. O descarte fica auditado em `Evento`
+  `AgenteIARascunhoDescartado` na mesma transação (com o número do rascunho).
+- **Gerente não salva nem publica rascunho cuja matriz o Admin alterou.** `validarAlteracaoPorPapel`
+  compara o rascunho com a versão publicada atual (ou `configPadrao()` sem publicada) em salvar,
+  publicar e restaurar. Se o Admin mudou no rascunho algo fora da alçada do Gerente (matriz, limites
+  acima da alçada etc.), o Gerente não consegue salvá-lo nem publicá-lo, mesmo sem ter sido ele quem
+  mudou: assim ele não "assina" nem coloca no ar uma alteração que não poderia fazer. Para seguir,
+  o Admin publica, ou o rascunho é descartado e refeito.

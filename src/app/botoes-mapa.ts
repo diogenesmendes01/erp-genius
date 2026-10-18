@@ -58,6 +58,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/contratos/page.tsx": [
     "<Link> Preparar novo modelo → secundario/md",
   ],
+  "configuracao/crm/metas/page.tsx": [
+    "<Botao> Salvar meta → primario/md",
+  ],
   "configuracao/migracao/PreparacaoMigracaoPainel.tsx": [
     "<button> Lendo… · Ler arquivo → secundario/md",
     "<button> Preparando… · Preparar lote → primario/lg",
@@ -900,6 +903,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> ← Voltar → secundario/lg",
     "<button> Processando… · Salvar matrícula → secundario/lg",
   ],
+  "relatorios/_componentes/Filtros.tsx": [
+    "<button> Filtrar → secundario/md",
+    "<a> Exportar CSV → secundario/md",
+  ],
+  "relatorios/_componentes/PainelDetalhe.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
   "secretaria/CondicoesEncerramento.tsx": [
     "<button> Registrar decisão → secundario/lg",
     "<button> Enviar para aprovação administrativa → secundario/lg",
@@ -993,6 +1003,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Registrar promessa → primario/sm",
   ],
   "inbox/AcoesMensagem.tsx": [
+    "<Botao> Buscar → secundario/sm",
+    "<Botao> Encaminhar para → fantasma/sm",
+    "<Botao> Fechar → fantasma/sm",
     "<Botao> Cancelar → fantasma/sm",
     "<Botao> Salvar edição → primario/sm",
     "<Botao> `Reagir com ${e}` → secundario/sm",

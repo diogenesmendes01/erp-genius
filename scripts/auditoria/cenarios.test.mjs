@@ -16,11 +16,12 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo } from "@/test/integracao";
 import { exigirSessao } from "@/server/_shared/sessao";
 import { criarMatricula, ativarMatricula } from "@/server/matricula/acoes";
-import { ajustarCobranca } from "@/server/ajustes/acoes";
+import { ajustarCobranca, decidirAprovacao } from "@/server/ajustes/acoes";
 import { registrarPagamento } from "@/server/financeiro/acoes";
 import { kpisFinanceiro } from "@/server/financeiro/consultas";
 import { listarAlunos } from "@/server/alunos/consultas";
 import { pausarAluno, reativarAluno, encerrarAluno, trocarTurma } from "@/server/alunos/acoes";
+import { solicitarRetomada, decidirRetomada } from "@/server/retomada/acoes";
 import { criarLead } from "@/server/comercial/acoes";
 import { obterLead, listarLeads } from "@/server/comercial/consultas";
 import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
@@ -88,10 +89,37 @@ async function turma(alunoId) {
     modalidadeId: cat.modalidade.id, nivelId: nivel.id, professorId: professor.id, capacidade: 20,
     status: "ABERTA", dataInicio: maisDias(1), dataFim: maisDias(90),
   } });
+  // Escopo docente atual (escopoTurmasDocente): além de Turma.professorId, exige VinculoDocente vigente.
+  await prisma.vinculoDocente.create({ data: { turmaId: t.id, professorId: professor.id, inicio: new Date(Date.now() - 60000) } });
   if (alunoId) await prisma.alocacaoTurma.create({ data: { alunoId, turmaId: t.id } });
   return t;
 }
-const ativacao = (valorRecebido) => ({ valorRecebido, forma: "DINHEIRO", dataPagamento: new Date().toISOString() });
+// Contrato atual: ativação com valor > 0 exige evidência da destinação (comentario >= 5 caracteres).
+const ativacao = (valorRecebido) => ({
+  valorRecebido, forma: "DINHEIRO", dataPagamento: new Date().toISOString(), comentario: "Recebido em caixa (auditoria)",
+});
+// Contrato atual de registrarPagamento: chave de idempotência (>= 16) e evidência da destinação (>= 5).
+const pagamento = (valorRecebido) => ({
+  valorRecebido, forma: "DINHEIRO", chaveIdempotencia: "auditoria-" + crypto.randomUUID(), comentario: "Recebido em caixa (auditoria)",
+});
+// Pré-condições de ativação (regras atuais): contrato vigente aceito e confirmado pela secretaria
+// (exigirContratoAceito) e cobertura da primeira mensalidade conferida (expandirCoberturaMensal).
+// Montadas direto no banco, como em matricula/comissao-aprovada-em.int.test.ts: estes cenários
+// auditam o dinheiro, não o fluxo de aceite.
+async function contratoConfirmado(matricula) {
+  const primeira = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: matricula.id, tipo: "MENSALIDADE" } });
+  const v = primeira.vencimento;
+  await prisma.cobranca.update({ where: { id: primeira.id }, data: {
+    coberturaInicio: new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), 1)),
+    coberturaFim: new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth() + 1, 0)),
+  } });
+  await prisma.matricula.update({ where: { id: matricula.id }, data: { referenciaCobertura: "MES_CIVIL" } });
+  const sec = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria auditoria");
+  const doc = await prisma.documento.create({ data: { matriculaId: matricula.id, categoria: "CONTRATO", nome: "Contrato aceito", url: "/api/files/contrato-auditoria.pdf" } });
+  await prisma.matricula.update({ where: { id: matricula.id }, data: {
+    contratoOk: true, contratoDocumentoId: doc.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: sec.id,
+  } });
+}
 const ajuste = (cobrancaId, valorPara) => ({
   cobrancaId, valorPara, tipo: "DESCONTO", vigencia: "ESTA_COBRANCA", motivo: "Cenario de auditoria",
 });
@@ -154,9 +182,24 @@ describe("Acesso e alçadas", () => {
     expect(await obterLead(lead.id, fresca)).toBeNull();
   });
   it("A06 busca da inbox bloqueia professor sem papel de atendimento", async () => {
-    await contrato(); logar(professor);
-    const r = await buscarVinculosInbox("Auditoria");
-    expect(r.ok).toBe(false);
+    // A busca deixou de responder erro: fora do escopo devolve listas vazias (fail-closed por resultado).
+    // O critério auditado continua o mesmo: o professor não obtém cadastro de alunos pela inbox.
+    const { aluno, matricula } = await contrato();
+    const numero = await prisma.numeroWhatsApp.create({ data: {
+      telefoneE164: "+50677775555", rotulo: "Secretaria auditoria", driver: "MOTOR", finalidade: "COBRANCA",
+      providerRef: "audit-secretaria", sessao: "CONECTADO",
+    } });
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164, alunoId: aluno.id } });
+    const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
+    const atendimento = await prisma.atendimentoWhatsApp.create({ data: {
+      conversaId: conversa.id, contextoChave: "auditoria-a06", finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: matricula.id,
+    } });
+    const vazado = (r) => r.ok && r.dado.alunos.length + r.dado.responsaveis.length + r.dado.leads.length > 0;
+    // Contraprova: quem tem o papel de atendimento encontra o aluno pela mesma busca.
+    expect(vazado(await buscarVinculosInbox("Auditoria", atendimento.id))).toBe(true);
+    logar(professor);
+    expect(vazado(await buscarVinculosInbox("Auditoria", atendimento.id))).toBe(false);
+    expect(vazado(await buscarVinculosInbox("Auditoria"))).toBe(false);
   });
   it("A07 filtro opcional nao substitui escopo obrigatorio do vendedor", async () => {
     const { lead } = await contrato();
@@ -168,8 +211,12 @@ describe("Acesso e alçadas", () => {
 describe("Dinheiro e ciclo de matricula", () => {
   it("F01 desconto depois de baixa parcial recalcula saldo", async () => {
     const { mensalidade } = await contrato();
-    sucesso(await registrarPagamento(mensalidade.id, { valorRecebido: 40, forma: "DINHEIRO" }));
-    sucesso(await ajustarCobranca(ajuste(mensalidade.id, 80)));
+    sucesso(await registrarPagamento(mensalidade.id, pagamento(40)));
+    // Alçada atual: ajuste pedido pela administração exige aprovação de OUTRA pessoa da direção.
+    expect(sucesso(await ajustarCobranca(ajuste(mensalidade.id, 80)))).toEqual({ aprovacao: true });
+    const pedido = await prisma.aprovacao.findFirstOrThrow({ where: { alvoId: mensalidade.id, status: "PENDENTE" } });
+    logar(await criarUsuario([Papel.ADMINISTRADOR], "Segunda direcao auditoria"));
+    sucesso(await decidirAprovacao(pedido.id, { aprovar: true, motivo: "Aprovado na auditoria" }));
     const c = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } });
     expect({ negociado: Number(c.valorNegociado), recebido: Number(c.valorRecebido), saldo: Number(c.saldo) })
       .toEqual({ negociado: 80, recebido: 40, saldo: 40 });
@@ -177,7 +224,7 @@ describe("Dinheiro e ciclo de matricula", () => {
   it("F02 indicadores contam recebimento parcial e saldo real", async () => {
     const { taxa, mensalidade } = await contrato();
     await prisma.cobranca.update({ where: { id: taxa.id }, data: { status: "CANCELADA" } });
-    sucesso(await registrarPagamento(mensalidade.id, { valorRecebido: 40, forma: "DINHEIRO" }));
+    sucesso(await registrarPagamento(mensalidade.id, pagamento(40)));
     const k = await kpisFinanceiro();
     expect({ recebido: k.recebidoMes, receber: k.aReceber }).toEqual({
       recebido: [{ moeda: "CRC", valor: 40 }], receber: [{ moeda: "CRC", valor: 60 }],
@@ -191,8 +238,8 @@ describe("Dinheiro e ciclo de matricula", () => {
     // Chamadas reais concorrentes, sem interceptar delegates do Prisma.
     // A reproducao depende da intercalacao do banco; um passe nao prova ausencia da corrida.
     const resultados = await Promise.all([
-      registrarPagamento(mensalidade.id, { valorRecebido: 40, forma: "DINHEIRO" }),
-      registrarPagamento(mensalidade.id, { valorRecebido: 30, forma: "DINHEIRO" }),
+      registrarPagamento(mensalidade.id, pagamento(40)),
+      registrarPagamento(mensalidade.id, pagamento(30)),
     ]);
     resultados.forEach(sucesso);
     const c = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } });
@@ -205,25 +252,36 @@ describe("Dinheiro e ciclo de matricula", () => {
   });
   it("F05 ativacao preserva primeira mensalidade ja paga", async () => {
     const { matricula, mensalidade } = await contrato();
-    sucesso(await registrarPagamento(mensalidade.id, { valorRecebido: 100, forma: "DINHEIRO" }));
+    sucesso(await registrarPagamento(mensalidade.id, pagamento(100)));
+    await contratoConfirmado(matricula);
     sucesso(await ativarMatricula(matricula.id, ativacao(100)));
     expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } })).status).toBe("PAGO");
   });
   it("F06 ativacao considera taxa parcialmente paga anteriormente", async () => {
     const { matricula, taxa } = await contrato();
-    sucesso(await registrarPagamento(taxa.id, { valorRecebido: 40, forma: "DINHEIRO" }));
-    expect((await ativarMatricula(matricula.id, ativacao(60))).ok).toBe(true);
+    sucesso(await registrarPagamento(taxa.id, pagamento(40)));
+    await contratoConfirmado(matricula);
+    sucesso(await ativarMatricula(matricula.id, ativacao(60)));
   });
   it("F07 pagamento nao declara contrato assinado sem evidencia", async () => {
     const { matricula } = await contrato();
-    sucesso(await ativarMatricula(matricula.id, ativacao(100)));
-    expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matricula.id } })).contratoOk).toBe(false);
+    // Regra nova (exigirContratoAceito): o recebimento não ativa nem declara contrato; a ativação é
+    // recusada até a secretaria confirmar um contrato vigente.
+    expect((await ativarMatricula(matricula.id, ativacao(100))).ok).toBe(false);
+    const m = await prisma.matricula.findUniqueOrThrow({ where: { id: matricula.id } });
+    expect({ status: m.status, contratoOk: m.contratoOk, confirmadoPor: m.confirmacaoContratoPorId })
+      .toEqual({ status: "AGUARDANDO", contratoOk: false, confirmadoPor: null });
   });
   it("F08 aluno reativado recupera cobrancas futuras", async () => {
     const { aluno, matricula } = await contrato();
     await prisma.matricula.update({ where: { id: matricula.id }, data: { status: "ATIVA" } });
     sucesso(await pausarAluno(aluno.id, { motivo: "Viagem" }));
-    sucesso(await reativarAluno(aluno.id));
+    // Regra nova: a retomada direta foi desativada; exige proposta e aprovação por outra pessoa (FIN/ADM).
+    expect((await reativarAluno(aluno.id)).ok).toBe(false);
+    const { propostaId } = sucesso(await solicitarRetomada(aluno.id, { opcao: "MANTER_VENCIMENTOS", motivo: "Voltou da viagem" }));
+    expect((await decidirRetomada(propostaId, { aprovar: true, motivo: "Aprovo a retomada" })).ok).toBe(false); // mesma pessoa
+    logar(await criarUsuario([Papel.FINANCEIRO], "Financeiro auditoria"));
+    sucesso(await decidirRetomada(propostaId, { aprovar: true, motivo: "Aprovo a retomada" }));
     const futuras = await prisma.cobranca.count({ where: {
       matriculaId: matricula.id, tipo: "MENSALIDADE", status: "PENDENTE", vencimento: { gt: new Date() },
     } });
@@ -243,11 +301,14 @@ describe("Dinheiro e ciclo de matricula", () => {
   });
   it("F11 editar pais preserva tipo de documento dos alunos existentes", async () => {
     const { aluno } = await contrato();
-    sucesso(await editarPais(cat.pais.id, {
-      nome: "Costa Rica editada", codigoISO: "CR", moedaLocal: "CRC", ddi: "+506",
-      fuso: "America/Costa_Rica", idioma: "es", tiposDocumento: [{ nome: "Cedula", validador: "cedula_cr" }],
-    }));
-    expect((await prisma.aluno.findUniqueOrThrow({ where: { id: aluno.id } })).tipoDocumentoId).not.toBeNull();
+    const tipoOriginal = aluno.tipoDocumentoId;
+    const pais = { nome: "Costa Rica editada", codigoISO: "CR", moedaLocal: "CRC", ddi: "+506", fuso: "America/Costa_Rica", idioma: "es" };
+    // Regra nova: tipos são editados por id; omitir um tipo usado por alunos é recusado (não recriado).
+    expect((await editarPais(cat.pais.id, { ...pais, tiposDocumento: [{ nome: "Cedula", validador: "cedula_cr" }] })).ok).toBe(false);
+    expect((await prisma.aluno.findUniqueOrThrow({ where: { id: aluno.id } })).tipoDocumentoId).toBe(tipoOriginal);
+    sucesso(await editarPais(cat.pais.id, { ...pais, tiposDocumento: [{ id: tipoOriginal, nome: "Cedula", validador: "cedula_cr" }] }));
+    expect((await prisma.aluno.findUniqueOrThrow({ where: { id: aluno.id } })).tipoDocumentoId).toBe(tipoOriginal);
+    expect((await prisma.tipoDocumento.findUniqueOrThrow({ where: { id: tipoOriginal } })).nome).toBe("Cedula");
   });
   it("F12 pais pausado nao aceita nova matricula", async () => {
     await prisma.pais.update({ where: { id: cat.pais.id }, data: { status: "PAUSADO" } });
@@ -330,7 +391,7 @@ describe("WhatsApp com drivers falsos e banco real", () => {
       numeroId: c.numero.id, contatoId: c.contato.id, origem: "LOTE", politicaId: politica.id,
       cobrancaId: f.mensalidade.id, passo: "D0", corpoRenderizado: "Pague 100",
     } });
-    sucesso(await registrarPagamento(f.mensalidade.id, { valorRecebido: 100, forma: "DINHEIRO" }));
+    sucesso(await registrarPagamento(f.mensalidade.id, pagamento(100)));
     await despacharFila();
     expect(sendMock).not.toHaveBeenCalled();
   });

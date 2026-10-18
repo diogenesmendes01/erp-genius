@@ -5,7 +5,7 @@ import type { DriverWhatsApp } from "@prisma/client";
  * e o mapa abaixo usam a mesma constante. Fora do motor conectado ficam visíveis e desabilitadas, com o aviso abaixo.
  */
 export const RECURSOS_MOTOR = [
-  "editar", "apagar", "reagir", "enquete", "figurinha", "gif", "localizacao", "cartaoContato",
+  "editar", "apagar", "reagir", "encaminhar", "enquete", "figurinha", "gif", "localizacao", "cartaoContato",
   "responderCitando", "confirmacaoLeitura", "digitando", "grupoEnviar", "grupoGerir", "bloquear",
 ] as const;
 export type RecursoMotor = (typeof RECURSOS_MOTOR)[number];

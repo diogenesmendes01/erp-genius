@@ -19,6 +19,7 @@ const acoes = vi.hoisted(() => ({
   editarMensagemWhatsApp: vi.fn(async () => ({ ok: true as const })),
   apagarMensagemWhatsApp: vi.fn(async () => ({ ok: true as const })),
   reagirMensagemWhatsApp: vi.fn(async () => ({ ok: true as const })),
+  encaminharMensagemWhatsApp: vi.fn(async () => ({ ok: true as const })),
 }));
 vi.mock("@/server/whatsapp/motor/acoes-mensagem", () => acoes);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -27,11 +28,14 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
-import { AcoesMensagem, EditarMensagem, REACOES_RAPIDAS, ReagirMensagem, type PropsAcoesMensagem } from "./AcoesMensagem";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { Modal } from "@/components/Modal";
+import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { AcoesMensagem, EditarMensagem, EncaminharMensagem, REACOES_RAPIDAS, ReagirMensagem, buscarDestinosEncaminhar, type PropsAcoesMensagem } from "./AcoesMensagem";
 
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 const props = (p: Partial<PropsAcoesMensagem> & Pick<PropsAcoesMensagem, "acao">): PropsAcoesMensagem =>
-  ({ mensagem: { id: "m1", corpo: "Olá" }, aoFechar: vi.fn(), aoMudar: vi.fn(), ...p });
+  ({ mensagem: { id: "m1", corpo: "Olá" }, origem: { atendimentoId: "a1", numeroId: "n1" }, aoFechar: vi.fn(), aoMudar: vi.fn(), ...p });
 
 describe("AcoesMensagem", () => {
   it("apagar: a action só roda dentro do ConfirmarAcao e, ao concluir, fecha e recarrega", async () => {
@@ -98,6 +102,92 @@ describe("AcoesMensagem", () => {
 
 it("AcoesMensagem escolhe o diálogo pelo comando", () => {
   m.g = null;
+  expect((AcoesMensagem(props({ acao: "encaminhar" })) as { type: unknown }).type).toBe(EncaminharMensagem);
   expect((AcoesMensagem(props({ acao: "editar" })) as { type: unknown }).type).toBe(EditarMensagem);
   expect((AcoesMensagem(props({ acao: "reagir" })) as { type: unknown }).type).toBe(ReagirMensagem);
+});
+
+describe("EncaminharMensagem (destino entre as conversas do mesmo número com envio)", () => {
+  const destino = (o: Partial<ItemListaInbox>) => ({ id: "x", contatoNome: "X", grupo: false, optOut: false, finalidade: "COMERCIAL", numeroRotulo: "Comercial", ...o }) as ItemListaInbox;
+  const lista = [
+    destino({ id: "a1", contatoNome: "Origem" }),
+    destino({ id: "a2", contatoNome: "Bia" }),
+    destino({ id: "a3", contatoNome: "Grupo da turma", grupo: true }),
+    destino({ id: "a4", contatoNome: "Saiu", optOut: true }),
+    destino({ id: "a5", contatoNome: "Caio", finalidade: "FINANCEIRO" }),
+  ];
+  const resposta = (itens: ItemListaInbox[], ok = true) => vi.fn(async (...args: [string, unknown?]) => { void args; return { ok, json: async () => ({ itens, proximo: null }) }; });
+
+  it("busca na lista do Inbox novo só o mesmo número e com envio (envio=1), sem a origem, grupos e opt-out", async () => {
+    const f = resposta(lista);
+    vi.stubGlobal("fetch", f);
+    const r = await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, " Bia ");
+    expect(f).toHaveBeenCalledWith("/api/inbox/atendimentos?numeroId=n1&envio=1&busca=Bia", { cache: "no-store", credentials: "same-origin" });
+    expect(r!.map((i) => i.id)).toEqual(["a2", "a5"]);
+    await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, "");
+    expect(f).toHaveBeenLastCalledWith("/api/inbox/atendimentos?numeroId=n1&envio=1", { cache: "no-store", credentials: "same-origin" });
+    vi.stubGlobal("fetch", resposta([], false));
+    expect(await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, "")).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it("escolher o destino abre o ConfirmarAcao; a action só roda nele e, ao concluir, fecha e recarrega", async () => {
+    vi.stubGlobal("fetch", resposta(lista));
+    m.g = criarGanchos();
+    const p = props({ acao: "encaminhar" });
+    const tela = () => m.g!.renderizar(EncaminharMensagem, p);
+    expect(elementos(tela()).some((n) => n.type === Modal && n.props.titulo === "Encaminhar mensagem")).toBe(true);
+    const busca = elementos(tela()).find((n) => n.type === "input")!;
+    (busca.props.onChange as (e: unknown) => void)({ target: { value: "a" } });
+    const form = elementos(tela()).find((n) => n.type === "form")!;
+    (form.props.onSubmit as (e: unknown) => void)({ preventDefault() {} });
+    await esvaziar();
+    const rotulos = elementos(tela()).filter((n) => n.type === Botao).map((n) => [n.props.children].flat().join(""));
+    expect(rotulos).toContain("Encaminhar para Bia");
+    expect(rotulos).toContain("Encaminhar para Caio");
+    expect(rotulos.some((r) => /Origem|Grupo da turma|Saiu/.test(r))).toBe(false);
+    clicarBotao(tela(), "Encaminhar para Bia");
+    const confirmar = elementos(tela()).find((n) => n.type === ConfirmarAcao)!;
+    expect(confirmar.props.titulo).toBe("Encaminhar esta mensagem para Bia?");
+    expect(acoes.encaminharMensagemWhatsApp).not.toHaveBeenCalled();
+    await (confirmar.props.acao as () => Promise<unknown>)();
+    expect(acoes.encaminharMensagemWhatsApp).toHaveBeenCalledWith({ mensagemId: "m1", atendimentoDestinoId: "a2" });
+    (confirmar.props.aoConcluir as () => void)();
+    expect(p.aoFechar).toHaveBeenCalled();
+    expect(p.aoMudar).toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("cancelar a confirmação volta para a lista, sem encaminhar", async () => {
+    acoes.encaminharMensagemWhatsApp.mockClear();
+    vi.stubGlobal("fetch", resposta(lista));
+    m.g = criarGanchos();
+    const p = props({ acao: "encaminhar" });
+    const tela = () => m.g!.renderizar(EncaminharMensagem, p);
+    (elementos(tela()).find((n) => n.type === "form")!.props.onSubmit as (e: unknown) => void)({ preventDefault() {} });
+    await esvaziar();
+    clicarBotao(tela(), "Encaminhar para Caio");
+    (elementos(tela()).find((n) => n.type === ConfirmarAcao)!.props.aoCancelar as () => void)();
+    expect(elementos(tela()).some((n) => n.type === ConfirmarAcao)).toBe(false);
+    expect(elementos(tela()).some((n) => n.type === Botao && [n.props.children].flat().join("") === "Encaminhar para Caio")).toBe(true);
+    expect(acoes.encaminharMensagemWhatsApp).not.toHaveBeenCalled();
+    expect(p.aoFechar).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("sem destino: estado vazio; falha da lista: erro na tela", async () => {
+    vi.stubGlobal("fetch", resposta([lista[0]!]));
+    m.g = criarGanchos();
+    const p = props({ acao: "encaminhar" });
+    const tela = () => m.g!.renderizar(EncaminharMensagem, p);
+    (elementos(tela()).find((n) => n.type === "form")!.props.onSubmit as (e: unknown) => void)({ preventDefault() {} });
+    await esvaziar();
+    expect(elementos(tela()).some((n) => n.type === EstadoVazio)).toBe(true);
+    vi.stubGlobal("fetch", resposta([], false));
+    (elementos(tela()).find((n) => n.type === "form")!.props.onSubmit as (e: unknown) => void)({ preventDefault() {} });
+    await esvaziar();
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("Não foi possível carregar as conversas. Tente de novo.");
+    vi.unstubAllGlobals();
+  });
 });
