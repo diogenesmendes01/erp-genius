@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
@@ -146,25 +147,37 @@ describe("medirSaudeCanal — fila por estado", () => {
     expect(s.alertas[0]).toContain("Kill switch");
   });
 
-  it("sessão Baileys caída em número ativo → alerta; número inativo não conta", async () => {
+  it("sessão caída de driver legado não gera alerta: só o motor tem sessão", async () => {
     await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511911110000", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", sessao: "CAIU" },
+      data: { telefoneE164: "+5511911110000", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", sessao: "CAIU" },
     });
+
+    const s = await medirSaudeCanal();
+    expect(s.alertas.filter((a) => a.includes("caiu"))).toHaveLength(0);
+  });
+
+  // C2 da R1 do #221: Meta e Evolution saíram do código; o número legado ativo fica mudo.
+  it.each([DriverWhatsApp.BAILEYS, DriverWhatsApp.META_CLOUD])("número ATIVO em driver legado %s → alerta para reparear no motor", async (driver) => {
     await prisma.numeroWhatsApp.create({
-      data: {
-        telefoneE164: "+5511922220000",
-        rotulo: "Antigo",
-        driver: "BAILEYS",
-        finalidade: "VENDAS",
-        sessao: "CAIU",
-        ativo: false,
-      },
+      data: { telefoneE164: "+5511911110001", rotulo: "Antigo", driver, finalidade: "VENDAS", sessao: "CONECTADO" },
     });
 
     const s = await medirSaudeCanal();
     expect(s.ok).toBe(false);
-    expect(s.alertas.filter((a) => a.includes("caiu"))).toHaveLength(1);
-    expect(s.alertas[0]).toContain("Vendas");
+    expect(s.alertas).toEqual([
+      `Número "Antigo" ativo em driver legado (${driver}) — não envia nem recebe; pareie a linha no motor e desative o número legado.`,
+    ]);
+  });
+
+  it("número legado DESATIVADO e número MOTOR ativo não geram o alerta de driver legado", async () => {
+    await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511911110002", rotulo: "Antigo", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", ativo: false },
+    });
+    await seedCanal();
+
+    const s = await medirSaudeCanal();
+    expect(s.alertas.filter((a) => a.includes("driver legado"))).toEqual([]);
+    expect(s.ok).toBe(true);
   });
 
   it("falhas24h conta pela TRANSIÇÃO para FALHOU (atualizadoEm), não pela criação", async () => {
@@ -201,7 +214,7 @@ describe("medirSaudeCanal — fila por estado", () => {
         numeroId: numero.id,
         direcao: "ENTRADA",
         corpo: "oi",
-        driver: "META_CLOUD",
+        driver: DriverWhatsApp.META_CLOUD,
         providerMessageId: "MSG-SAUDE-1",
       },
     });
@@ -342,7 +355,7 @@ describe("medirSaudeCanal — motor", () => {
   });
 
   it("sem número MOTOR ativo o motor nem é consultado e não há alerta de inalcançável", async () => {
-    await seedCanal({ driver: "BAILEYS" });
+    await seedCanal({ driver: DriverWhatsApp.BAILEYS });
     motor.chamar.mockRejectedValue(new Error("motor_indisponivel"));
     const s = await medirSaudeCanal();
     expect(motor.chamar).not.toHaveBeenCalled();

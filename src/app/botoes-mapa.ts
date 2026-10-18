@@ -154,9 +154,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/whatsapp/TemplatesPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
-    "<button> Sincronizar com a Meta → btnSec",
     "<button> Novo template → btnPri",
-    "<button> Submeter à Meta → btnSec",
     "<button> Editar → btnSec",
     "<button> Salvando… · Salvar template → btnPri",
   ],

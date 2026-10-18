@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -44,7 +45,7 @@ beforeEach(async () => {
   outro = await criarUsuario([Papel.VENDEDOR], "Outro");
   await prisma.usuario.update({ where: { id: vendedor.id }, data: { gerenteComercialId: gerente.id } });
   numeroId = (await prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511955550001", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-ag" },
+    data: { telefoneE164: "+5511955550001", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-ag" },
   })).id;
   pessoaId = (await prisma.pessoa.create({ data: { nome: "Ana" } })).id;
   await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001", pessoaId } });
@@ -59,9 +60,9 @@ beforeEach(async () => {
 
 describe("numerosParaAgendar", () => {
   it("só VENDAS sem dono ou do próprio usuário", async () => {
-    await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550002", rotulo: "Do outro", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "i2", donoId: outro.id } });
-    await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550003", rotulo: "Cobrança", driver: "BAILEYS", finalidade: "COBRANCA", providerRef: "i3" } });
-    await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550004", rotulo: "Meu", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "i4", donoId: vendedor.id } });
+    await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550002", rotulo: "Do outro", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "i2", donoId: outro.id } });
+    await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550003", rotulo: "Cobrança", driver: DriverWhatsApp.BAILEYS, finalidade: "COBRANCA", providerRef: "i3" } });
+    await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550004", rotulo: "Meu", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "i4", donoId: vendedor.id } });
     const u = await exigirSessao();
     const r = await numerosParaAgendar(u);
     expect(r.map((n) => n.rotulo).sort()).toEqual(["Meu", "Vendas"]);
@@ -92,7 +93,7 @@ describe("agendarMensagem", () => {
   });
 
   it("número do outro vendedor ou texto vazio são recusados", async () => {
-    const n = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550009", rotulo: "Do outro", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "i9", donoId: outro.id } });
+    const n = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550009", rotulo: "Do outro", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "i9", donoId: outro.id } });
     expect((await agendarMensagem({ numeroId: n.id, texto: "Oi", agendadaPara: emHoras(2), pessoaId })).ok).toBe(false);
     expect(await agendarMensagem({ numeroId, texto: "  ", agendadaPara: emHoras(2), pessoaId })).toEqual({ ok: false, erro: "Escreva a mensagem." });
   });

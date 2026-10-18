@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { Papel } from "@prisma/client";
@@ -10,7 +11,7 @@ beforeEach(async () => { await truncarBanco(); });
 
 async function cenario() {
   await prisma.prazoRespostaSetor.create({ data: { finalidade: "COMERCIAL", minutos: 15 } });
-  const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+  const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA" });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777" } });
   const dados = { numeroId: numero.id, contatoId: contato.id, finalidade: "SECRETARIA" as const };
   const primeiro = await prisma.$transaction((tx) => garantirAtendimento(tx, dados));
@@ -73,7 +74,7 @@ describe("status, prazo e reabertura (E3.3)", () => {
   });
 
   it("linha VENDAS: COMERCIAL encerrado abre #2 com ou sem reabrir (atendimentoComercialDaLinha já separa)", async () => {
-    const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+    const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA" });
     await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { finalidade: "VENDAS" } });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
     const dados = { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" as const };

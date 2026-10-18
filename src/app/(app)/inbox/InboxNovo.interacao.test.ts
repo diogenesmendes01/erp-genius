@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -39,7 +40,7 @@ import { ConversaAberta } from "./ConversaAberta";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 
 const item = (id: string) => ({
-  id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: `c-${id}`, contatoNome: id,
+  id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: id,
   contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: "2026-10-01T02:30:00.000Z", preview: "Oi",
   linhaComercial: false, status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
 });
