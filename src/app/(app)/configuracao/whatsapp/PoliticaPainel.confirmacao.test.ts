@@ -223,7 +223,7 @@ describe("PoliticaPainel — alcance da ativação (docs/42 L2517)", () => {
 });
 
 describe("PoliticaPainel \u2014 remetente fora do motor", () => {
-  const AVISO = "Só números do motor WhatsApp enviam a política.";
+  const AVISO = "Degraus automáticos exigem número do motor WhatsApp.";
 
   it("remetente de driver legado mostra o aviso", () => {
     const legado = { ...numero, id: "n2", driver: DriverWhatsApp.BAILEYS };

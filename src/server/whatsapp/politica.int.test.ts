@@ -96,7 +96,7 @@ describe("salvarPoliticaRegua", () => {
     expect((await prisma.politicaRegua.findFirstOrThrow()).estado).toBe("SHADOW");
   });
 
-  it("driver legado não arma a política: só o motor envia", async () => {
+  it("META_CLOUD não arma a política: Meta Cloud ainda não tem envio disponível (C1 da R1 do #213)", async () => {
     const oficial = await seedNumero(DriverWhatsApp.META_CLOUD);
     const aprovado = await prisma.templateWhatsApp.create({
       data: { nome: "amigavel", corpo: "Olá {nome}!", statusMeta: "APROVADO" },
@@ -105,7 +105,7 @@ describe("salvarPoliticaRegua", () => {
     input.degraus = input.degraus.map((d) => ({ ...d, templateId: aprovado.id, modo: d.modo === "AUTOMATICO" ? "MANUAL" as const : d.modo }));
     const recusado = await salvarPoliticaRegua(input);
     expect(recusado.ok).toBe(false);
-    expect((recusado as { erro?: string }).erro).toContain("Só números do motor WhatsApp enviam a política");
+    expect((recusado as { erro?: string }).erro).toContain("Meta Cloud ainda não tem envio disponível");
     expect(await prisma.politicaRegua.count()).toBe(0);
 
     // Desligada continua salvando livre (nada é armado).

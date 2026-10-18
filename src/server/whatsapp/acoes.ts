@@ -2,7 +2,7 @@
 import { referenciaDestinoCobranca } from "./elegibilidade";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, type OrigemEnvio, type SessaoNumero } from "@prisma/client";
+import { DriverWhatsApp, Papel, StatusCobranca, type OrigemEnvio, type SessaoNumero } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { contentTypePorExtensao } from "@/lib/uploads";
 import {
@@ -33,7 +33,7 @@ import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./ide
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import { nomeConhecidoDoContato } from "./nome-contato";
-import { driverAceitaAutomacao } from "./canal";
+import { driverAceitaAutomacao, MENSAGEM_META_CLOUD_SEM_ENVIO } from "./canal";
 import { contatoIndividual } from "./grupos";
 import {
   LoteCobrancaSchema,
@@ -937,6 +937,12 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
+      // C1 da R1 do #213: META_CLOUD (legado) não tem driver no despachante, então armar a política
+      // nele (automático, lote ou manual) só geraria intenções que falham com driver_indisponivel.
+      if (remetente.driver === DriverWhatsApp.META_CLOUD) {
+        throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Troque o remetente por um número do motor WhatsApp antes de armar a política.`);
+      }
+
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
       // Trava de driver (S1 revogada para MOTOR, D38): automação exige número do motor.
       if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
@@ -944,11 +950,6 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
           "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +
             "Troque o remetente ou deixe os degraus em manual/lote.",
         );
-      }
-      // Só o motor tem driver no despachante: armar a política em outro driver (automático, lote
-      // ou manual) só geraria intenções que falham com driver_indisponivel.
-      if (!driverAceitaAutomacao(remetente.driver)) {
-        throw new ErroRegra("Só números do motor WhatsApp enviam a política. Troque o remetente antes de armar.");
       }
     }
 

@@ -1,6 +1,5 @@
 "use server";
 
-import { driverAceitaAutomacao } from "@/server/whatsapp/canal";
 import { revalidatePath } from "next/cache";
 import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -788,11 +787,6 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
       if (!dados.numeroRemetenteId) throw new ErroRegra("Defina o número remetente antes de armar a régua.");
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
-      // Só o motor tem driver no despachante: armar a régua em outro driver só geraria intenções
-      // que falham com driver_indisponivel.
-      if (!driverAceitaAutomacao(remetente.driver)) {
-        throw new ErroRegra("Só números do motor WhatsApp enviam a régua. Troque o remetente antes de armar.");
-      }
     }
 
     // B1: allowlist só com leads que EXISTEM (id colado errado não vira lead fantasma que

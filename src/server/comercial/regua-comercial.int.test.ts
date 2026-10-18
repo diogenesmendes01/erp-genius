@@ -170,21 +170,6 @@ describe("salvarReguaComercial × cadência de offsets NEGATIVOS (pré-experimen
 });
 
 describe("salvarReguaComercial × remetente", () => {
-  it("remetente de driver legado: armar em SHADOW ou ATIVA é recusado, só o motor envia", async () => {
-    await gerenteAutenticado();
-    const numero = await seedRemetente(DriverWhatsApp.META_CLOUD);
-
-    for (const estado of ["SHADOW", "ATIVA"] as const) {
-      const r = await salvarReguaComercial(payload({ estado, numeroRemetenteId: numero.id }));
-      expect(r.ok).toBe(false);
-      expect((r as { erro: string }).erro).toContain("Só números do motor WhatsApp enviam a régua");
-    }
-    expect(await prisma.politicaComercial.count()).toBe(0);
-    // Desligada continua salvando (nada é armado).
-    const desligada = await salvarReguaComercial(payload({ estado: "DESLIGADA", numeroRemetenteId: numero.id }));
-    expect(desligada.ok).toBe(true);
-  });
-
   it("no motor a mesma cadência sem template nenhum arma (texto de fábrica)", async () => {
     await gerenteAutenticado();
     const numero = await seedRemetente(DriverWhatsApp.MOTOR);

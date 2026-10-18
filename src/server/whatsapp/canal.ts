@@ -82,6 +82,9 @@ export interface CanalWhatsApp {
   ): Promise<ResultadoEnvio>;
 }
 
+/** Mensagem única para recusar número META_CLOUD (legado) enquanto ele não tiver driver no despachante. */
+export const MENSAGEM_META_CLOUD_SEM_ENVIO = "Meta Cloud ainda não tem envio disponível.";
+
 /**
  * Drivers em que a automação (régua/lote) pode enviar. Só o MOTOR: é o único driver em `DRIVERS`
  * do despachante, então armar automação em outro só falharia no envio.
