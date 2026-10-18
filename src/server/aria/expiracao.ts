@@ -48,9 +48,9 @@ async function expirarUma(tx: Tx, id: string, agora: Date, comHandoff: boolean):
 
 export async function expirarSugestoesAria(agora: Date = new Date()): Promise<{ expiradas: number; handoffs: number }> {
   const total = { expiradas: 0, handoffs: 0 };
-  // Handoff só com a Aria ATIVA: DESLIGADA e SHADOW (que não age de verdade) só expiram a sugestão.
-  const { estado, versao } = await situacaoAria(agora);
-  const comHandoff = estado === "ATIVA" && versao?.config.confianca.acaoExpiracao === "HANDOFF";
+  // Handoff só com a Aria ATIVA e não pausada globalmente: DESLIGADA, SHADOW (que não age de verdade) e pausada só expiram a sugestão.
+  const { estado, pausada, versao } = await situacaoAria(agora);
+  const comHandoff = estado === "ATIVA" && !pausada && versao?.config.confianca.acaoExpiracao === "HANDOFF";
   const vencidas = await prisma.acaoAgenteIA.findMany({
     where: { status: "SUGERIDA", expiraEm: { lte: agora } },
     orderBy: [{ expiraEm: "asc" }, { id: "asc" }],
