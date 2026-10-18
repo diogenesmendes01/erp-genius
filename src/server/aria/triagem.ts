@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { abrirAtendimentoDoSetor } from "@/server/whatsapp/atendimentos";
-import { comSavepoint } from "@/server/whatsapp/savepoint";
+import { comSavepoint, resumoDoErro } from "@/server/whatsapp/savepoint";
 import { setoresDoNumero } from "@/server/whatsapp/numero-setor";
 import { aplicarInbound } from "@/server/whatsapp/status-atendimento";
 import { payloadDaAria } from "./ator";
@@ -176,7 +176,11 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
     const atendimento = await comSavepoint(
       tx, "abrir_setor",
       () => abrirAtendimentoDoSetor(tx, { numeroId: msg.conversa.numeroId, contatoId, contato: msg.conversa.contato! }, setor),
-      () => null,
+      (e) => {
+        // Só ids, setor e códigos do erro (sem telefone nem texto da mensagem): C10 da revisão do #233.
+        console.error("[aria] triagem: abertura do atendimento do setor falhou; mensagem volta à triagem humana:", { mensagemId: msg.id, setor, erro: resumoDoErro(e) });
+        return null;
+      },
     );
     if (!atendimento || atendimento.encerradoEm) return { fora: true as const };
     await tx.mensagemWhatsApp.update({ where: { id: msg.id }, data: { atendimentoId: atendimento.id } });
