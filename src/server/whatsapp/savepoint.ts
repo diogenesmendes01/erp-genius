@@ -21,3 +21,17 @@ export async function comSavepoint<T>(
     return aoFalhar(e);
   }
 }
+
+/**
+ * Resumo do erro para log, sem dados pessoais: só o nome e os códigos (Prisma e Postgres). A mensagem
+ * fica de fora porque o Prisma pode citar valores da consulta (telefone, texto da mensagem).
+ */
+export function resumoDoErro(e: unknown): { nome: string; codigo: string | null; codigoBanco: string | null } {
+  if (!(e instanceof Error)) return { nome: typeof e, codigo: null, codigoBanco: null };
+  const x = e as Error & { code?: unknown; meta?: { code?: unknown } };
+  return {
+    nome: e.name,
+    codigo: typeof x.code === "string" ? x.code : null,
+    codigoBanco: typeof x.meta?.code === "string" ? x.meta.code : null,
+  };
+}
