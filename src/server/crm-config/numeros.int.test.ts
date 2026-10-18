@@ -13,7 +13,7 @@ import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { ErroMotor } from "@/server/whatsapp/motor/cliente";
 import { ErroMotorParcial, type ClienteMotorNumero } from "@/server/whatsapp/motor/numero";
-import { definirResponsavelTriagem, definirSetoresDoNumero } from "./numeros";
+import { salvarSetoresNumero } from "@/server/whatsapp/acoes-numero";
 import { atualizarPerfilNumero, atualizarPrivacidadeNumero, definirTemporariasNumero } from "./perfil-numero";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
@@ -60,8 +60,7 @@ describe("Configurações › Números", () => {
   it("so_admin", async () => {
     logado(gerente);
     const rs = [
-      await definirSetoresDoNumero({ numeroId, setores: ["COMERCIAL"] }),
-      await definirResponsavelTriagem({ numeroId, usuarioId: null }),
+      await salvarSetoresNumero({ numeroId, setores: ["COMERCIAL"], triagemResponsavelId: null }),
       await atualizarPerfilNumero({ numeroId, nome: "Escola" }, deps),
       await atualizarPrivacidadeNumero({ numeroId, privacidade: priv }, deps),
       await definirTemporariasNumero({ numeroId, segundos: 86400, confirmacao: "ativar temporárias" }, deps),
@@ -70,38 +69,42 @@ describe("Configurações › Números", () => {
     expect(chamadas).toEqual([]);
   });
 
+  // Setores e triagem: uma só ação (salvarSetoresNumero, a que a tela usa); C4 da revisão do #233.
+  const setores = (lista: ("COMERCIAL" | "SECRETARIA" | "FINANCEIRO" | "PEDAGOGICO")[], triagemResponsavelId: string | null = null) =>
+    salvarSetoresNumero({ numeroId, setores: lista, triagemResponsavelId });
+
   it("setores_ao_menos_um_e_evento", async () => {
-    expect((await definirSetoresDoNumero({ numeroId, setores: [] })).ok).toBe(false);
-    expect((await definirSetoresDoNumero({ numeroId, setores: ["COMERCIAL", "FINANCEIRO"] })).ok).toBe(true);
+    expect((await setores([])).ok).toBe(false);
+    expect((await setores(["COMERCIAL", "FINANCEIRO"])).ok).toBe(true);
     expect((await ultimoEvento("NumeroSetoresAlterados")).payload).toMatchObject({ de: ["COMERCIAL"], para: ["COMERCIAL", "FINANCEIRO"] });
   });
 
   it("triagem_so_com_mais_de_um_setor_e_usuario_ativo", async () => {
-    expect((await definirResponsavelTriagem({ numeroId, usuarioId: admin.id })).ok).toBe(false);
-    expect((await definirResponsavelTriagem({ numeroId, usuarioId: sec.id })).ok).toBe(false);
-    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "FINANCEIRO"] });
-    expect((await definirResponsavelTriagem({ numeroId, usuarioId: sec.id })).ok).toBe(true);
+    // Com 1 setor a triagem é ignorada (fica com o administrador).
+    expect((await setores(["COMERCIAL"], sec.id)).ok).toBe(true);
+    expect((await numero()).triagemResponsavelId).toBeNull();
+    expect((await setores(["SECRETARIA", "FINANCEIRO"], admin.id)).ok).toBe(false);
+    expect((await setores(["SECRETARIA", "FINANCEIRO"], sec.id)).ok).toBe(true);
     expect((await numero()).triagemResponsavelId).toBe(sec.id);
     expect((await ultimoEvento("NumeroTriagemAlterada")).payload).toMatchObject({ de: null, para: sec.id });
     // voltar a 1 setor limpa a triagem
-    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA"] });
+    await setores(["SECRETARIA"], sec.id);
     expect((await numero()).triagemResponsavelId).toBeNull();
     // usuário inativo
-    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "FINANCEIRO"] });
     await prisma.usuario.update({ where: { id: sec.id }, data: { ativo: false } });
-    expect((await definirResponsavelTriagem({ numeroId, usuarioId: sec.id })).ok).toBe(false);
+    expect((await setores(["SECRETARIA", "FINANCEIRO"], sec.id)).ok).toBe(false);
   });
 
-  it("troca_de_setores_com_2_ou_mais_zera_triagem_que_perdeu_o_papel", async () => {
-    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "FINANCEIRO"] });
-    await definirResponsavelTriagem({ numeroId, usuarioId: sec.id });
-    expect((await definirSetoresDoNumero({ numeroId, setores: ["COMERCIAL", "PEDAGOGICO"] })).ok).toBe(true);
+  it("troca_de_setores_recusa_triagem_que_perdeu_o_papel", async () => {
+    await setores(["SECRETARIA", "FINANCEIRO"], sec.id);
+    expect((await setores(["COMERCIAL", "PEDAGOGICO"], sec.id)).ok).toBe(false);
+    expect((await numero()).triagemResponsavelId).toBe(sec.id);
+    expect((await setores(["COMERCIAL", "PEDAGOGICO"], null)).ok).toBe(true);
     expect((await numero()).triagemResponsavelId).toBeNull();
     expect((await ultimoEvento("NumeroTriagemAlterada")).payload).toEqual({ de: sec.id, para: null });
-    // responsável que segue valido e mantido
-    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "FINANCEIRO"] });
-    await definirResponsavelTriagem({ numeroId, usuarioId: sec.id });
-    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "COMERCIAL"] });
+    // responsável que segue válido é mantido
+    await setores(["SECRETARIA", "FINANCEIRO"], sec.id);
+    await setores(["SECRETARIA", "COMERCIAL"], sec.id);
     expect((await numero()).triagemResponsavelId).toBe(sec.id);
   });
 

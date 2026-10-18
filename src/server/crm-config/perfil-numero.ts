@@ -209,7 +209,7 @@ export interface PerfilNumeroDados {
   conectado: boolean;
   perfilNome: string | null;
   perfilRecado: string | null;
-  privacidade: PrivacidadeNumero | null;
+  privacidade: Partial<PrivacidadeNumero> | null; // pode ser parcial (motor aplicou só parte)
   temporariasSegundos: number;
 }
 
@@ -220,6 +220,6 @@ export async function listarPerfisNumero(): Promise<PerfilNumeroDados[]> {
   return ns.map((n) => ({
     id: n.id, rotulo: n.rotulo, telefoneE164: n.telefoneE164, conectado: n.sessao === "CONECTADO",
     perfilNome: n.perfilNome, perfilRecado: n.perfilRecado,
-    privacidade: (n.privacidade ?? null) as PrivacidadeNumero | null, temporariasSegundos: n.temporariasSegundos,
+    privacidade: (n.privacidade ?? null) as Partial<PrivacidadeNumero> | null, temporariasSegundos: n.temporariasSegundos,
   }));
 }
