@@ -99,6 +99,37 @@ describe("pausa da Aria quando humano responde", () => {
     expect(await eventosTipo(c.a.id, "AriaDevolvida")).toHaveLength(1);
   });
 
+  it("devolver_exige_escopo_de_envio", async () => {
+    const c = await cenario();
+    await enviarComoAtendente(c);
+    // Linha inativa: o responsável ainda LÊ o atendimento, mas não pode enviar por ele.
+    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { ativo: false } });
+    logado(c.responsavel);
+    expect((await devolverParaAria(c.a.id)).ok).toBe(false);
+    expect((await iaPausa(c.a.id)).iaPausadaEm).not.toBeNull();
+    expect(await eventosTipo(c.a.id, "AriaDevolvida")).toHaveLength(0);
+  });
+
+  it("pausa_cancela_intencoes_pendentes_da_aria_e_preserva_as_demais", async () => {
+    const c = await cenario();
+    const at = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.a.id }, include: { conversa: true } });
+    const base = { numeroId: at.conversa.numeroId, contatoId: at.conversa.contatoId!, atendimentoId: c.a.id, tipo: "TEXTO" as const };
+    const iaPendente = await prisma.intencaoMensagem.create({ data: { ...base, origem: "IA", corpoRenderizado: "resposta" } });
+    const iaAdiada = await prisma.intencaoMensagem.create({ data: { ...base, origem: "IA", status: "ADIADA", corpoRenderizado: "agendada pela Aria" } });
+    const iaHandoff = await prisma.intencaoMensagem.create({ data: { ...base, origem: "IA", corpoRenderizado: "vou te passar" } });
+    const humana = await prisma.intencaoMensagem.create({ data: { ...base, origem: "HUMANO", autorId: c.responsavel.id, corpoRenderizado: "oi" } });
+    await prisma.$transaction((tx) => pausarAriaNoAtendimento(tx, c.a.id, "HANDOFF", null, { preservarIntencaoId: iaHandoff.id }));
+    const st = async (id: string) => prisma.intencaoMensagem.findUniqueOrThrow({ where: { id }, select: { status: true, motivoFalha: true } });
+    expect(await st(iaPendente.id)).toEqual({ status: "CANCELADA", motivoFalha: "aria_pausada" });
+    expect(await st(iaAdiada.id)).toEqual({ status: "CANCELADA", motivoFalha: "aria_pausada" });
+    expect(await st(iaHandoff.id)).toMatchObject({ status: "PENDENTE" });
+    expect(await st(humana.id)).toMatchObject({ status: "PENDENTE" });
+    // Já pausada: uma pessoa que responde depois ainda cancela o que restou da Aria.
+    await prisma.$transaction((tx) => aoGravarSaidaHumana(tx, { atendimentoId: c.a.id, origem: "CELULAR", autorId: null }));
+    expect(await st(iaHandoff.id)).toEqual({ status: "CANCELADA", motivoFalha: "aria_pausada" });
+    expect(await st(humana.id)).toMatchObject({ status: "PENDENTE" });
+  });
+
   it("devolver_sem_pausa_nao_faz_nada", async () => {
     const c = await cenario();
     logado(c.responsavel);

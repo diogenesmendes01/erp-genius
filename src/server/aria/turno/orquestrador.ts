@@ -31,6 +31,8 @@ const MAX_TOKENS_CONVERSA = 1024;
 const JANELA_REPROCESSO_MS = 30 * 60_000;
 const ATRASO_REPROCESSO_MS = 2 * 60_000;
 const LOTE_REPROCESSO = 50;
+/** Turno ainda EM_ANDAMENTO depois disto: o processo caiu no meio; vira handoff. */
+export const LIMITE_TURNO_PRESO_MS = 10 * 60_000;
 
 const simplificar = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const RE_PERGUNTA_PRECO = /\b(preco|precos|quanto custa|quanto e|quanto fica|quanto sai|valor|valores|mensalidade|investimento)\b/;
@@ -61,6 +63,7 @@ export async function processarTurnoAria(mensagemId: string, deps: DepsTurno = {
     select: {
       id: true,
       tipo: true,
+      criadoEm: true,
       atendimentoId: true,
       conversa: { select: { grupoId: true, contatoId: true, contato: { select: { optOutEm: true } }, numero: { select: { donoId: true } } } },
       atendimento: { select: { finalidade: true, iaPausadaEm: true, encerradoEm: true } },
@@ -80,13 +83,33 @@ export async function processarTurnoAria(mensagemId: string, deps: DepsTurno = {
   const turno = await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: msg.id }, select: { id: true } });
   const turnoId = turno.id;
 
+  // Rajada (vários inbounds seguidos): só a fala mais nova do atendimento é respondida, com as
+  // anteriores no contexto. Mesma regra do reprocesso; vale também ao fim da chamada ao provedor.
+  const atendimentoId = msg.atendimentoId;
+  const superada = () => falaSuperada(atendimentoId, msg.criadoEm, msg.id);
+  if (await superada()) {
+    await encerrar(turnoId, "IGNORADO:FALA_SUPERADA");
+    return { turnoId, resultado: "IGNORADO:FALA_SUPERADA" };
+  }
+
   try {
-    return await executarTurno(turnoId, msg.atendimentoId, msg, agora, deps.provedor);
+    return await executarTurno(turnoId, atendimentoId, msg, agora, deps.provedor, superada);
   } catch (e) {
     console.error("[aria] turno falhou:", e);
     await encerrar(turnoId, "FALHOU").catch(() => undefined);
     return { turnoId, resultado: "FALHOU" };
   }
+}
+
+/** Há inbound mais novo (não apagado) no mesmo atendimento depois desta âncora. */
+async function falaSuperada(atendimentoId: string, criadoEm: Date, ancoraId: string): Promise<boolean> {
+  const n = await prisma.mensagemWhatsApp.count({
+    where: {
+      atendimentoId, direcao: "ENTRADA", apagadaEm: null, id: { not: ancoraId },
+      OR: [{ criadoEm: { gt: criadoEm } }, { criadoEm, id: { gt: ancoraId } }],
+    },
+  });
+  return n > 0;
 }
 
 interface MsgTurno {
@@ -101,6 +124,7 @@ async function executarTurno(
   msg: MsgTurno,
   agora: Date,
   provedorInjetado?: ProvedorIA,
+  superada: () => Promise<boolean> = async () => false,
 ): Promise<ResultadoTurno> {
   const situacao = await situacaoAria(agora);
   const orcamento = await estadoOrcamento(agora);
@@ -176,6 +200,11 @@ async function executarTurno(
   const saida: SaidaModelo | null = resposta && !recusa ? normalizarSaida(resposta.texto) : null;
   const confianca = saida?.confianca ?? null;
   const fechar = (resultado: string) => encerrar(turnoId, resultado, { confianca, chamadaId, versaoId });
+  // O cliente mandou mais durante a chamada: o turno da fala nova responde; este não age.
+  if (await superada()) {
+    await fechar("IGNORADO:FALA_SUPERADA");
+    return { turnoId, resultado: "IGNORADO:FALA_SUPERADA" };
+  }
 
   const fazerHandoff = async (motivo: MotivoHandoff, tx: Tx, c: ContextoTurno) =>
     executarHandoff(tx, { turnoId, ctx: c, motivo, config, simulado, resumo: null });
@@ -269,10 +298,53 @@ export function agendarTurnoAria(mensagemId: string): void {
   })().catch((e) => console.error("[aria] falha ao agendar turno:", e));
 }
 
-/** Âncoras recentes sem turno há mais de 2 min (inbound perdido ou processo caído); devolve quantas processou. */
+/**
+ * Turnos de atendimento presos em EM_ANDAMENTO há mais de LIMITE_TURNO_PRESO_MS (processo caiu
+ * depois de criar o turno): o cliente ficou sem resposta, então passa a uma pessoa
+ * (handoff TURNO_INTERROMPIDO). O claim (EM_ANDAMENTO -> HANDOFF) evita dois handoffs.
+ */
+async function recuperarTurnosPresos(agora: Date): Promise<number> {
+  const presos = await prisma.turnoAgenteIA.findMany({
+    where: { tipo: "ATENDIMENTO", resultado: "EM_ANDAMENTO", atendimentoId: { not: null }, criadoEm: { lt: new Date(agora.getTime() - LIMITE_TURNO_PRESO_MS) } },
+    orderBy: { criadoEm: "asc" },
+    take: LOTE_REPROCESSO,
+    select: { id: true, atendimentoId: true },
+  });
+  if (presos.length === 0) return 0;
+  const situacao = await situacaoAria(agora);
+  const config: ConfigAria = situacao.versao?.config ?? configPadrao();
+  const simulado = situacao.estado === "SHADOW";
+  let recuperados = 0;
+  for (const t of presos) {
+    try {
+      const resultado = await prisma.$transaction(async (tx) => {
+        const claim = await tx.turnoAgenteIA.updateMany({ where: { id: t.id, resultado: "EM_ANDAMENTO" }, data: { resultado: "HANDOFF" } });
+        if (claim.count !== 1) return null;
+        const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: t.atendimentoId! }, select: { iaPausadaEm: true, encerradoEm: true } });
+        if (at.encerradoEm) return "IGNORADO:ENCERRADO";
+        if (at.iaPausadaEm) return "IGNORADO:PAUSADA_NO_ATENDIMENTO";
+        const ctx = await montarContextoTurno(t.atendimentoId!, tx);
+        const acao = await executarHandoff(tx, { turnoId: t.id, ctx, motivo: "TURNO_INTERROMPIDO", config, simulado, resumo: null });
+        return acao.status === "BLOQUEADA" ? "IGNORADO:PAUSADA_NO_ATENDIMENTO" : "HANDOFF";
+      });
+      if (!resultado) continue;
+      if (resultado !== "HANDOFF") await encerrar(t.id, resultado);
+      recuperados++;
+    } catch (e) {
+      console.error("[aria] recuperação de turno preso falhou:", e);
+    }
+  }
+  return recuperados;
+}
+
+/**
+ * Âncoras recentes sem turno há mais de 2 min (inbound perdido ou processo caído) e turnos presos
+ * em EM_ANDAMENTO (viram handoff); devolve quantos tratou.
+ */
 export async function reprocessarTurnosPendentes(agora: Date = new Date()): Promise<number> {
   const { estado } = await situacaoAria(agora);
   if (estado === "DESLIGADA") return 0;
+  const recuperados = await recuperarTurnosPresos(agora);
   const candidatas = await prisma.mensagemWhatsApp.findMany({
     where: {
       direcao: "ENTRADA",
@@ -286,7 +358,7 @@ export async function reprocessarTurnosPendentes(agora: Date = new Date()): Prom
     take: LOTE_REPROCESSO,
     select: { id: true, atendimentoId: true, criadoEm: true },
   });
-  if (candidatas.length === 0) return 0;
+  if (candidatas.length === 0) return recuperados;
   const comTurno = new Set(
     (await prisma.turnoAgenteIA.findMany({ where: { ancoraMensagemId: { in: candidatas.map((m) => m.id) } }, select: { ancoraMensagemId: true } })).map(
       (t) => t.ancoraMensagemId,
@@ -307,5 +379,5 @@ export async function reprocessarTurnosPendentes(agora: Date = new Date()): Prom
       console.error("[aria] reprocesso falhou:", e);
     }
   }
-  return processadas;
+  return recuperados + processadas;
 }

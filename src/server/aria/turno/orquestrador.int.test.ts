@@ -231,7 +231,65 @@ describe("processarTurnoAria", () => {
   });
 });
 
+describe("rajada de inbound", () => {
+  it("tres_inbounds_seguidos_geram_uma_resposta", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const t = Date.now();
+    const ms = [
+      await c.inbound("oi", new Date(t - 3000)),
+      await c.inbound("quero saber das turmas", new Date(t - 2000)),
+      await c.inbound("de inglês", new Date(t - 1000)),
+    ];
+    const contador = provedorContador(provedorSimulado);
+    const rs = await Promise.all(ms.map((m) => processarTurnoAria(m.id, { provedor: contador })));
+    expect(rs.map((r) => ("resultado" in r ? r.resultado : "DUPLICADO"))).toEqual(["IGNORADO:FALA_SUPERADA", "IGNORADO:FALA_SUPERADA", "RESPONDEU"]);
+    expect(contador.chamadas).toBe(1);
+    expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
+  });
+
+  it("inbound_que_chega_durante_a_chamada_supera_o_turno_em_curso", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const m1 = await c.inbound("oi", new Date(Date.now() - 2000));
+    const atrasado: ProvedorIA = {
+      nome: "simulado",
+      async gerar(p: PedidoIA) {
+        await c.inbound("quero saber das turmas", new Date(Date.now() - 1000));
+        return provedorSimulado.gerar(p);
+      },
+    };
+    expect(await processarTurnoAria(m1.id, { provedor: atrasado })).toMatchObject({ resultado: "IGNORADO:FALA_SUPERADA" });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.acaoAgenteIA.count()).toBe(0);
+  });
+});
+
 describe("reprocessarTurnosPendentes", () => {
+  it("turno_preso_em_andamento_vira_handoff", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const agora = new Date();
+    const m = await c.inbound("Quero saber das turmas", new Date(agora.getTime() - 20 * 60_000));
+    const preso = await prisma.turnoAgenteIA.create({
+      data: { ancoraMensagemId: m.id, atendimentoId: c.at.id, tipo: "ATENDIMENTO", resultado: "EM_ANDAMENTO", criadoEm: new Date(agora.getTime() - 15 * 60_000) },
+    });
+    const m2 = await c.inbound("oi?", new Date(agora.getTime() - 60_000));
+    const emCurso = await prisma.turnoAgenteIA.create({
+      data: { ancoraMensagemId: m2.id, atendimentoId: c.at.id, tipo: "ATENDIMENTO", resultado: "EM_ANDAMENTO", criadoEm: new Date(agora.getTime() - 60_000) },
+    });
+    await reprocessarTurnosPendentes(agora);
+    expect((await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { id: preso.id } })).resultado).toBe("HANDOFF");
+    expect((await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { id: emCurso.id } })).resultado).toBe("EM_ANDAMENTO");
+    expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF", turnoId: preso.id } })).toMatchObject({
+      payload: expect.objectContaining({ motivo: "TURNO_INTERROMPIDO" }),
+    });
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).iaPausaMotivo).toBe("HANDOFF");
+    // Idempotente: o turno já saiu de EM_ANDAMENTO.
+    await reprocessarTurnosPendentes(agora);
+    expect(await prisma.acaoAgenteIA.count({ where: { acao: "HANDOFF" } })).toBe(1);
+  });
+
   it("processa_ancora_antiga_sem_turno_so_a_ultima", async () => {
     const c = await cenario();
     await publicar(c.dono.id, "ATIVA");

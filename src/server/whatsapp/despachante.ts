@@ -22,7 +22,7 @@ import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
 import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/server/comunicacoes-agenda/envio-gate";
 import { aplicarResposta } from "./status-atendimento";
-import { aoGravarSaidaHumana } from "@/server/aria/pausa";
+import { aoGravarSaidaHumana, MOTIVO_ARIA_PAUSADA } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
@@ -696,8 +696,24 @@ type IntencaoParaValidar = {
   avisoAlteracaoAgendaId: string | null;
   acaoAgenteIAId: string | null;
   conteudo?: unknown;
+  criadaEm: Date;
   numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
 };
+
+/**
+ * Defesa em profundidade da pausa (a pausa já cancela as intenções da Aria na mesma transação):
+ * a fala da Aria não sai com a Aria pausada no atendimento (salvo a pausa do próprio handoff,
+ * cuja mensagem precisa sair) nem se uma pessoa falou, ou enfileirou fala, depois dela.
+ */
+async function pessoaAssumiuDepois(atendimentoId: string, criadaEm: Date): Promise<boolean> {
+  const a = await prisma.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { iaPausadaEm: true, iaPausaMotivo: true } });
+  if (a?.iaPausadaEm && a.iaPausaMotivo !== "HANDOFF") return true;
+  const [saidas, filas] = await Promise.all([
+    prisma.mensagemWhatsApp.count({ where: { atendimentoId, direcao: "SAIDA", origem: { in: ["HUMANO", "CELULAR"] }, criadoEm: { gt: criadaEm } } }),
+    prisma.intencaoMensagem.count({ where: { atendimentoId, origem: "HUMANO", criadaEm: { gt: criadaEm }, status: { notIn: ["CANCELADA", "FALHOU"] } } }),
+  ]);
+  return saidas + filas > 0;
+}
 
 async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
   if (!it.numero.ativo) return "numero_remetente_inativo";
@@ -715,6 +731,7 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
   if (it.origem === "IA") {
     // A Aria não tem usuário autor: a intenção vale só ligada à ação da Aria e a um atendimento.
     if (it.autorId || !it.atendimentoId || !it.acaoAgenteIAId || it.cobrancaId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_ia_invalido";
+    if (await pessoaAssumiuDepois(it.atendimentoId, it.criadaEm)) return MOTIVO_ARIA_PAUSADA;
   } else if (it.origem !== "CRON" && it.origem !== "GESTAO") {
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";
