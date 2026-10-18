@@ -30,6 +30,8 @@ export type AgendarMensagemInput = {
   pessoaId?: string;
   /** Agendamento pelo Inbox: o destino é o contato do atendimento e o número é o dele (o acesso vem do atendimento). */
   atendimentoId?: string;
+  /** Quem originou o agendamento; a Aria agenda por `executarAcaoCrm`, dentro da transação dela. */
+  origem?: "HUMANO" | "IA";
 };
 
 const MSG_FUTURO = "Escolha uma data e hora no futuro.";
@@ -45,6 +47,7 @@ const AgendarSchema = z.object({
   leadId: z.string().min(1).optional(),
   pessoaId: z.string().min(1).optional(),
   atendimentoId: z.string().min(1).optional(),
+  origem: z.enum(["HUMANO", "IA"]).default("HUMANO"),
 });
 
 const ehAdmin = (u: UsuarioSessao) => u.papeis.includes(Papel.ADMINISTRADOR);
@@ -105,7 +108,7 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
       if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
       const id = await prisma.$transaction(async (tx) => {
         const m = await tx.intencaoMensagem.create({
-          data: { numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: "TEXTO", corpoRenderizado: d.texto, agendadaPara: quando, validaAte, autorId: autor.id },
+          data: { numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: d.origem, tipo: "TEXTO", corpoRenderizado: d.texto, agendadaPara: quando, validaAte, autorId: autor.id },
         });
         await registrarEvento(tx, { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: autor.id, payload: { intencaoId: m.id, agendadaPara: quando.toISOString(), numeroId: a.numeroId } });
         return m.id;
@@ -152,7 +155,7 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
           numeroId: numero.id,
           atendimentoId: atendimento.id,
           contatoId: contato.id,
-          origem: "HUMANO",
+          origem: d.origem,
           tipo: "TEXTO",
           corpoRenderizado: d.texto,
           agendadaPara: quando,
