@@ -1,5 +1,7 @@
-// Preços por milhão de tokens (USD) = micro-USD por token. O cache do Haiku 5.5 (0,01) é
-// estimativa de 10% da entrada; conferir na tabela pública antes do PR.
+// Preços por milhão de tokens (USD) = micro-USD por token, conforme as Global Constraints do plano.
+// Conferido na tabela pública em 18/10/2026 (quadro, "Fase 5, bloco A"): Haiku 5.5 cache 0,01
+// confirmado (prompts até 100 mil tokens). Sonnet 5.5 cache público é 0,10; aqui fica 0,20 do plano
+// (superestima o gasto, lado seguro do teto) até o dono decidir. Escrita de cache não é cobrada aqui.
 export const MODELOS_PERMITIDOS = ["claude-sonnet-5-5", "claude-haiku-5-5"] as const;
 
 interface Preco {
