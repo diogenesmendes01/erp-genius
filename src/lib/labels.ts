@@ -45,7 +45,12 @@ import {
   TipoMovimentacao,
   CategoriaDocumento,
   StatusFaturaB2B,
-  TipoSugestaoIA,
+  AcaoAgenteIATipo,
+  StatusAcaoAgenteIA,
+  MotivoPausaAtendimentoIA,
+  StatusVersaoAgenteIA,
+  OrigemChamadaIA,
+  AcaoOrcamentoIA,
   ResultadoEnsaioVinculoMigracao,
   StatusTemplate,
   TipoMensagem,
@@ -519,11 +524,58 @@ export const STATUS_FATURA_B2B_LABEL: Readonly<Record<StatusFaturaB2B, string>> 
   CANCELADA: "Cancelada",
 });
 
-export const TIPO_SUGESTAO_IA_LABEL: Readonly<Record<TipoSugestaoIA, string>> = Object.freeze({
-  RESUMO: "Resumo executivo",
-  TEMPERATURA: "Temperatura",
-  SEGMENTO: "Segmento",
-  ETAPA: "Etapa do funil",
+export const ACAO_AGENTE_IA_LABEL: Readonly<Record<AcaoAgenteIATipo, string>> = Object.freeze({
+  RESPONDER: "Responder",
+  ENVIAR_DOCUMENTO: "Enviar documento",
+  ATUALIZAR_CAMPO: "Atualizar campo",
+  TAG: "Aplicar tag",
+  MOVER_ETAPA: "Mover de etapa",
+  MARCAR_PERDIDO: "Marcar como perdido",
+  CRIAR_TAREFA: "Criar tarefa",
+  AGENDAR_MENSAGEM: "Agendar mensagem",
+  NOTA_INTERNA: "Nota interna",
+  CONDICAO_COMERCIAL: "Condição comercial",
+  HANDOFF: "Transferir para humano",
+  CLASSIFICAR_SETOR: "Classificar setor",
+});
+
+export const STATUS_ACAO_AGENTE_IA_LABEL: Readonly<Record<StatusAcaoAgenteIA, string>> = Object.freeze({
+  SUGERIDA: "Sugerida",
+  EXECUTADA: "Executada",
+  APROVADA: "Aprovada",
+  REJEITADA: "Rejeitada",
+  EXPIRADA: "Expirada",
+  DESFEITA: "Desfeita",
+  FALHOU: "Falhou",
+  SIMULADA: "Simulada",
+  BLOQUEADA: "Bloqueada",
+});
+
+export const MOTIVO_PAUSA_IA_LABEL: Readonly<Record<MotivoPausaAtendimentoIA, string>> = Object.freeze({
+  HUMANO_RESPONDEU: "Humano respondeu no ERP",
+  CELULAR: "Resposta pelo celular",
+  MANUAL: "Pausa manual",
+  HANDOFF: "Transferido para humano",
+  OPT_OUT: "Contato pediu para parar",
+});
+
+export const STATUS_VERSAO_AGENTE_IA_LABEL: Readonly<Record<StatusVersaoAgenteIA, string>> = Object.freeze({
+  RASCUNHO: "Rascunho",
+  PUBLICADA: "Publicada",
+  ARQUIVADA: "Arquivada",
+});
+
+export const ORIGEM_CHAMADA_IA_LABEL: Readonly<Record<OrigemChamadaIA, string>> = Object.freeze({
+  ATENDIMENTO: "Atendimento",
+  TRIAGEM: "Triagem de setor",
+  RESUMO: "Resumo",
+  INDEXACAO: "Indexação da base",
+  PLAYGROUND: "Playground",
+});
+
+export const ACAO_ORCAMENTO_IA_LABEL: Readonly<Record<AcaoOrcamentoIA, string>> = Object.freeze({
+  SO_SUGERIR: "Só sugerir (não enviar)",
+  PAUSAR: "Pausar a assistente",
 });
 
 export const STATUS_TEMPLATE_LABEL: Readonly<Record<StatusTemplate, string>> = Object.freeze({

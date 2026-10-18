@@ -160,3 +160,31 @@ código: ao LER campo monetário do Prisma, converta na borda (ver `_shared/deci
 Fechados: card do Kanban com **última ação**, **idade da etapa** e **SLA** (projeção de eventos
 via `listarLeads`); **Perdido filtrável por período** (30/90/todos); linha de **certificado**
 (Costa Rica) na matrícula; botão **"solicitar abertura de turma"** (evento `AberturaTurmaSolicitada`).
+
+### ADR-F5-01 — A Aria (agente de IA) pode enviar mensagem e executar ações no CRM ✅
+**Contexto.** O copiloto (C3, doc 27) era só-leitura: "a IA nunca envia mensagem" e "a IA nunca é
+autora de mutação" (antigos `src/server/ia/tipos.ts:3-5` e `acoes.ts:148` em `f8a9c0e`). O copiloto
+foi removido na Fase 1 e a Fase 5 entrega a Aria (atendimento comercial e triagem de setor).
+
+**Decisão.** Esses dois princípios ficam **revogados** para a Aria, com as salvaguardas abaixo.
+- O modelo **propõe**; o servidor **decide**: lista branca de ações, matriz etapa × ação, faixas de
+  confiança (executa a partir de 80, transfere abaixo de 50), gatilhos determinísticos de handoff,
+  validador de valores e a máquina de estados da oportunidade.
+- Estado `DESLIGADA` (padrão) → `SHADOW` → `ATIVA`; em `SHADOW` nada sai e nada muda no CRM.
+- Só texto e documentos da base; sem figurinha, GIF, editar ou apagar; não responde em grupos; preço
+  só de `PrecoReferencia`; desconto acima do limite passa por `Aprovacao{tipo: DESCONTO}`.
+- Pausa quando humano responde (ERP ou celular); primeira mensagem do atendimento se identifica como
+  assistente virtual; respostas saem como `IntencaoMensagem` reativa `origem: IA` pelo despachante.
+- Orçamento mensal (padrão US$ 100, alerta em 80%, estouro = `SO_SUGERIR` ou `PAUSAR`); só os modelos
+  `claude-sonnet-5-5` e `claude-haiku-5-5`; chave só em `ANTHROPIC_API_KEY`, nunca no banco.
+- Sem `ANTHROPIC_API_KEY` nada chama a rede; testes usam provedor simulado.
+
+**Autoria (DF5-2).** A Aria não é `Usuario`. Mutação feita por ela grava `Evento` com `autorId`
+nulo e `payload.ator = "ARIA"` + `payload.acaoAgenteIAId` (helper `payloadDaAria`,
+`src/server/aria/ator.ts`), ligando o evento ao registro `AcaoAgenteIA`; toda ação é reversível ou
+registra `motivoIrreversivel`.
+
+**Banco.** Migration `20261018010000_aria_base`: remove `SugestaoIA` e
+`ConfigComercial.copilotoAtivo/copilotoQuietudeMinutos`; cria `AgenteIA`, `VersaoAgenteIA` (no máximo
+1 rascunho e 1 publicada, por índice parcial), `TurnoAgenteIA`, `AcaoAgenteIA`, `ChamadaIA`, `ConfigIA`
+e as colunas de pausa em `AtendimentoWhatsApp`.

@@ -3055,3 +3055,51 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 - `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 715 arquivos, 5308 testes verdes.
 - Integração (banco descartável): `ponta-a-ponta.int.test.ts` 8 testes verdes; `src/server/whatsapp/motor`: 14 arquivos, 112 testes verdes.
 **Estado**: Implementado; base `main` (não empilhado); correções da R1 aplicadas; aguardando revisão.
+
+## Fase 5, Task 1: trava de pré-requisitos (18/10/2026)
+
+- Branch: `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, SDK 0.131.0 exato). Teste: `src/test/pre-requisitos-fase5.test.ts` (5 testes verdes), `tsc` saída 0.
+- Nomes reais do main diferentes do plano (trava usa os reais): `Tarefa.leadId` (plano: `oportunidadeId`), `Tag.ativo` (plano: `arquivadaEm`), `PrazoRespostaSetor{finalidade, minutos}` (plano: `ConfigSetorAtendimento{prazoPrimeiraRespostaMin}`).
+- A conferir depois, quando as faixas integrarem: `NotaAtendimento`, `src/server/whatsapp/envio-inbox.ts`, `NumeroWhatsApp.perfilNome/privacidade/temporariasSegundos` e `drivers/motor.ts` (`atualizarPerfil`/`atualizarPrivacidade`/`definirTemporarias`, Fase 4D–4F), `ConfigSetorAtendimento`.
+
+## Fase 5, bloco A — fundação da Aria, Tasks 2 a 5 (18/10/2026)
+
+Branch `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, `@anthropic-ai/sdk` 0.131.0 exato). Tasks 2 (migration `20261018010000_aria_base`, remoção do copiloto, rótulos, autoria `ATOR_ARIA`, ADR-F5-01), 3 (porta `ProvedorIA`, provedor simulado, escolha pela chave), 4 (provedor Anthropic: Sonnet 5.5/Haiku 5.5, saída estruturada, recusa, reserva) e 5 (custo por modelo, `ChamadaIA`, teto mensal). Só provedor simulado e cliente simulado nos testes; nenhuma chamada real à API.
+
+- **Preço conferido na tabela pública** (`platform.claude.com/docs/en/about-claude/pricing`, 18/10/2026), USD por milhão de tokens:
+  - Haiku 5.5 (prompts até 100 mil tokens): entrada 0,10, leitura de cache 0,01, saída 0,50. O 0,01 de `custo.ts` está **confirmado**. Acima de 100 mil tokens a tabela muda (0,50 / 0,05 / 2,50); a triagem não chega perto disso e `custo.ts` usa só a primeira faixa.
+  - Sonnet 5.5: entrada 2 e saída 10 conferem. A **leitura de cache pública é 0,10** (0,05× a entrada), não 0,20 como nas Global Constraints do plano. `custo.ts` mantém 0,20 do plano, o que superestima o gasto com cache e faz o teto mensal disparar mais cedo (lado seguro). **Pendência para o dono:** trocar para 0,10 (ajusta também o teste `custo_sonnet`, que passaria de 9000 para 8000 micro-USD) ou manter.
+  - Escrita de cache (1,25× a entrada em 5 min) não entra no cálculo: `custo.ts` soma só `input_tokens`, `cache_read_input_tokens` e `output_tokens`. Pendência registrada para quando houver medição com a API real (fase à parte).
+- Documentação operacional: `SETUP.md`, `deploy/env.production.example`, `docker-compose.coolify.yml` e `docker-compose.prod.yml` deixam de citar o copiloto e `IA_MODELO` (nada em `src` lê a variável). A `ANTHROPIC_API_KEY` passa a ser descrita como chave da Aria: com ela, a Aria chama a rede e, em `ATIVA`, pode enviar mensagens; os modelos ficam em Configurações › CRM › IA.
+- Evidências (HEAD da correção, sobre `c1b66b68`):
+  - `node_modules/.bin/tsc --noEmit`: saída 0.
+  - `npm test`: saída 0; 720 arquivos, 5301 testes verdes.
+  - `eslint src/server/aria`: saída 0.
+  - Integração, recorte (não é a suíte completa), no banco do perfil `dev-email` com a migration `aria_base` aplicada só nele: `npm run test:int -- src/server/aria src/server/comercial/config-comercial.int.test.ts src/server/whatsapp/acesso-atendimento.int.test.ts`: saída 0; 4 arquivos (`schema-base`, `uso`, `config-comercial`, `acesso-atendimento`), 31 testes verdes.
+  - Por task: Task 2, `ator.test.ts` + `enums-rotulos.test.ts` 130 testes verdes e `vitest related` 431 arquivos/2817 testes verdes; Task 3, `src/server/aria/provedor` 6 testes; Task 4, 13 testes (inclui 401, 429, 500, timeout e conexão); Task 5, `custo.test.ts` 5 testes e `uso.int.test.ts` 8 testes. Todos com saída 0.
+- **Pendente para o integrador antes do merge:** `npm run test:int` completo no `.erp-test-profile` (mais de 2 h; a regra do integrador desta faixa proíbe rodá-lo aqui). Comparar com as falhas preexistentes conhecidas (sensíveis à data e o flake de `portal-aluno/preferencia-fuso`) e registrar aqui código de saída e totais.
+- **Estado**: implementado; aguarda a suíte de integração completa, a decisão do preço de cache do Sonnet 5.5 e o integrador. Não concluído.
+
+### Fase 5A: fundação da Aria (verificação do bloco) — 2026-10-18
+
+Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 720 arquivos, 5301 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- Integração (banco `dev-email`, migration `aria_base` aplicada só nele), recorte dos arquivos tocados e dos que importam `comercial/{acoes,consultas,schema}`: `src/server/aria`, `src/server/comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `whatsapp/{inbox,acesso-atendimento}`, `secretaria/politica`: saída 0; 13 arquivos, 120 testes verdes.
+- Nota: `vitest related` com `src/lib/labels.ts`/`evento.ts` alcança praticamente toda a suíte de integração (passou de 2 h e foi interrompido pelo limite de tempo); a suíte completa fica para o integrador.
+
+**Merge do `main` (#218 a #222, Fases 4D, 4E e 4F) na Fase 5A (18/10/2026)**
+
+- Merges de `d15e0969` (#221) e `95b5ff5f` (#222). Conflito só neste quadro (ficam os blocos de cada PR). O `main` não trouxe migrations
+  novas desde `6d6d33ee`; `20261018010000_aria_base` continua a última e não colide. Nada da 5A citava Meta, Evolution ou drivers legados.
+- Trava `src/test/pre-requisitos-fase5.test.ts` com a 4D ativa: `driverMotor` (`enviarTexto`/`enviarMidia`/`enviarConteudo`), ações do
+  Inbox em `whatsapp/motor/acoes-mensagem.ts` (nome real; plano: `envio-inbox.ts`), inbound `processarMensagemRecebida`/`processarMensagemEnviada`
+  e eco `CELULAR` (`inbound.ts`, `processar-grupo.ts`), mais a presença da trava de legados da 4E. Seguem fora do `main` e anotados na trava:
+  `NotaAtendimento`, `NumeroWhatsApp.perfilNome/privacidade/temporariasSegundos` e `atualizarPerfil`/`atualizarPrivacidade`/`definirTemporarias`
+  em `drivers/motor.ts` (a #222 entregou só o E2E com motor simulado).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 721 arquivos, 5342 testes verdes.
+- Integração (banco descartável, `migrate deploy` com `aria_base`; `migrate diff` sem divergência nas tabelas da Aria): `src/server/aria`,
+  `comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `secretaria/politica`, `whatsapp/{inbox,acesso-atendimento,motor}`
+  (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
+  39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.

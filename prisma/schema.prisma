@@ -413,6 +413,12 @@ model PrazoRespostaSetor {
 
 model AtendimentoWhatsApp {
   id String @id @default(cuid())
+  iaPausadaEm DateTime?
+  iaPausaMotivo MotivoPausaAtendimentoIA?
+  iaRetomadaEm DateTime?
+  iaRetomadaPorId String?
+  turnosAgenteIA TurnoAgenteIA[]
+  acoesAgenteIA AcaoAgenteIA[]
   conversaId String
   conversa ConversaWhatsApp @relation(fields: [conversaId], references: [id], onDelete: Restrict)
   contextoChave String
@@ -840,7 +846,6 @@ model Usuario {
   remarcacoesAgendaReposicaoDocente PropostaRemarcacaoAgendaReposicaoIndividual[] @relation("ProfessorRemarcacaoAgendaReposicao")
   lotesPreparacaoMigracao LotePreparacaoMigracao[] @relation("PreparadorLoteMigracao")
   aplicacoesCadastroMigracao AplicacaoCadastroMigracao[] @relation("ExecutorAplicacaoCadastroMigracao")
-  sugestoesIADecididas SugestaoIA[]     @relation("DecisorSugestoesIA")
   acessoAluno       Aluno?              @relation("AcessoAluno") // Fase 3: portal do aluno
 
   // CRM (2.M3)
@@ -1437,7 +1442,6 @@ model Oportunidade {
   documentos       Documento[]
   contatosWhatsApp ContatoWhatsApp[]
   intencoesWhatsApp IntencaoMensagem[]
-  sugestoesIA      SugestaoIA[]
 
   @@index([telefoneE164])
   @@index([pessoaId])
@@ -2485,6 +2489,7 @@ enum OrigemEnvio {
 }
 
 model MensagemWhatsApp {
+  acaoAgenteIAId String?
   favoritosUsuarios FavoritoMensagemUsuario[]
   atendimentoId String?
   atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
@@ -2571,6 +2576,7 @@ enum StatusIntencao {
 // OUTBOX (doc 26 §fila única): nenhuma automação envia direto — grava intenção;
 // o despachante único aplica os guard-rails e entrega ao driver do número.
 model IntencaoMensagem {
+  acaoAgenteIAId String?
   cicloCobranca Int @default(0)
   atendimentoId String?
   atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
@@ -2803,11 +2809,6 @@ model ConfigComercial {
   // `ExperimentalCheckInVencido` + alerta nas Homes (professor e gerente). Sem o check-in
   // a recuperação de no-show (C2) nunca dispara — o alerta é o que fecha esse ciclo.
   checkInToleranciaMinutos Int @default(30)
-  // C3 (doc 27): IA copiloto SÓ-LEITURA — resume, sugere temperatura/segmento/etapa; um
-  // humano aceita/corrige/descarta. A IA NUNCA fala com o cliente e nasce DESLIGADA.
-  copilotoAtivo            Boolean @default(false)
-  // Gatilho "conversa quieta": ~N min após o último inbound sem resposta do vendedor.
-  copilotoQuietudeMinutos  Int     @default(10)
   // C4 (doc 27): matrícula AUTOMÁTICA — contrato OK + taxa PAGA numa matrícula AGUARDANDO
   // ativam sozinhos (cronograma + comissão + lead MATRICULADO). Nasce DESLIGADA; a turma
   // segue híbrida (o sistema sugere, o consultor confirma — nunca aloca sozinho).
@@ -8531,56 +8532,173 @@ model AplicacaoCoberturaAditivo {
 }
 
 // ============================================================
-// C3 — IA COPILOTO (doc 27): sugestões SÓ-LEITURA sobre o lead. Cada análise (lote) gera
-// até uma sugestão POR TIPO; o vendedor decide uma a uma (aceitar/corrigir/descartar) —
-// é essa decisão que alimenta a MÉTRICA-GATE (taxa de aceitação por tipo), a condição
-// para qualquer auto-aplicação futura. A IA nunca envia mensagem (lei do doc 27).
+// ARIA (Fase 5, ADR-F5-01): agente de IA do Comercial e da triagem de setor. O modelo
+// PROPÕE, o servidor DECIDE. Substitui o antigo copiloto (SugestaoIA), removido.
 // ============================================================
 
-enum TipoSugestaoIA {
-  RESUMO // os 6 campos do resumo executivo (doc 08)
-  TEMPERATURA
-  SEGMENTO
-  ETAPA // só destinos MANUAIS que a máquina de estados aceita (doc 29 regra 7)
+enum StatusVersaoAgenteIA {
+  RASCUNHO
+  PUBLICADA
+  ARQUIVADA
 }
 
-enum StatusSugestaoIA {
-  PENDENTE
-  ACEITA
-  CORRIGIDA // aceita com edição — conta separado na métrica
-  DESCARTADA
-  EXPIRADA // superada por um lote mais novo antes de decisão humana
+enum AcaoAgenteIATipo {
+  RESPONDER
+  ENVIAR_DOCUMENTO
+  ATUALIZAR_CAMPO
+  TAG
+  MOVER_ETAPA
+  MARCAR_PERDIDO
+  CRIAR_TAREFA
+  AGENDAR_MENSAGEM
+  NOTA_INTERNA
+  CONDICAO_COMERCIAL
+  HANDOFF
+  CLASSIFICAR_SETOR
 }
 
-enum GatilhoSugestaoIA {
-  QUIETUDE // conversa quieta ~10min após o último inbound
-  MUDANCA_ETAPA
-  SOB_DEMANDA
+enum StatusAcaoAgenteIA {
+  SUGERIDA
+  EXECUTADA
+  APROVADA
+  REJEITADA
+  EXPIRADA
+  DESFEITA
+  FALHOU
+  SIMULADA
+  BLOQUEADA
 }
 
-model SugestaoIA {
-  id      String            @id @default(cuid())
-  leadId  String
-  lead    Oportunidade              @relation(fields: [leadId], references: [id])
-  loteId  String // agrupa as sugestões geradas numa MESMA análise
-  tipo    TipoSugestaoIA
-  status  StatusSugestaoIA  @default(PENDENTE)
-  gatilho GatilhoSugestaoIA
-  payload Json // { campos sugeridos } — shape por tipo (ver ia/tipos.ts)
-  justificativa String? // por que a IA sugeriu (exibida ao vendedor)
-  modelo  String // "simulado" ou o id do modelo LLM
-  // Idempotência do gatilho QUIETUDE: o inbound que ancorou a análise.
-  ancoraInbound DateTime?
-
-  criadoEm      DateTime  @default(now())
-  decididaEm    DateTime?
-  decididaPorId String?
-  decididaPor   Usuario?  @relation("DecisorSugestoesIA", fields: [decididaPorId], references: [id])
-
-  @@index([leadId, status])
-  @@index([status, criadoEm])
+enum MotivoPausaAtendimentoIA {
+  HUMANO_RESPONDEU
+  CELULAR
+  MANUAL
+  HANDOFF
+  OPT_OUT
 }
 
+enum OrigemChamadaIA {
+  ATENDIMENTO
+  TRIAGEM
+  RESUMO
+  INDEXACAO
+  PLAYGROUND
+}
+
+enum AcaoOrcamentoIA {
+  SO_SUGERIR
+  PAUSAR
+}
+
+/// Singleton (id "aria"): estado global da Aria.
+model AgenteIA {
+  id                String         @id @default("aria")
+  estado            EstadoPolitica @default(DESLIGADA)
+  pausadoEm         DateTime?
+  pausadoPorId      String?
+  motivoPausa       String?
+  supervisaoAte     DateTime?
+  versaoPublicadaId String?        @unique
+  versaoPublicada   VersaoAgenteIA? @relation("VersaoPublicadaAgente", fields: [versaoPublicadaId], references: [id], onDelete: Restrict)
+}
+
+/// No máximo 1 RASCUNHO e 1 PUBLICADA (índices parciais na migration).
+model VersaoAgenteIA {
+  id              String                @id @default(cuid())
+  numero          Int                   @unique
+  status          StatusVersaoAgenteIA
+  config          Json
+  baseVersaoId    String?
+  criadaPorId     String
+  publicadaPorId  String?
+  publicadaEm     DateTime?
+  notaPublicacao  String?
+  criadoEm        DateTime              @default(now())
+  atualizadoEm    DateTime              @updatedAt
+
+  agentePublicado AgenteIA?             @relation("VersaoPublicadaAgente")
+  turnos          TurnoAgenteIA[]
+}
+
+model TurnoAgenteIA {
+  id               String          @id @default(cuid())
+  ancoraMensagemId String          @unique
+  atendimentoId    String
+  atendimento      AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  versaoId         String?
+  versao           VersaoAgenteIA? @relation(fields: [versaoId], references: [id], onDelete: Restrict)
+  tipo             OrigemChamadaIA
+  confianca        Int?
+  resultado        String
+  chamadaId        String?
+  chamada          ChamadaIA?      @relation(fields: [chamadaId], references: [id], onDelete: SetNull)
+  criadoEm         DateTime        @default(now())
+
+  acoes            AcaoAgenteIA[]
+
+  @@index([atendimentoId, criadoEm])
+}
+
+model AcaoAgenteIA {
+  id                 String             @id @default(cuid())
+  turnoId            String
+  turno              TurnoAgenteIA      @relation(fields: [turnoId], references: [id], onDelete: Restrict)
+  atendimentoId      String
+  atendimento        AtendimentoWhatsApp @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  oportunidadeId     String?
+  acao               AcaoAgenteIATipo
+  etapaNoMomento     EtapaLead?
+  modoConfigurado    String
+  status             StatusAcaoAgenteIA
+  confianca          Int
+  payload            Json
+  justificativa      String?
+  fontes             Json?
+  reversivel         Boolean
+  motivoIrreversivel String?
+  intencaoId         String?            @unique
+  eventoId           String?
+  aprovacaoId        String?
+  expiraEm           DateTime?
+  decididaPorId      String?
+  decididaEm         DateTime?
+  desfeitaPorId      String?
+  desfeitaEm         DateTime?
+  criadoEm           DateTime           @default(now())
+
+  @@index([atendimentoId, criadoEm])
+  @@index([status, expiraEm])
+}
+
+model ChamadaIA {
+  id            String          @id @default(cuid())
+  origem        OrigemChamadaIA
+  modelo        String
+  provedor      String
+  tokensEntrada Int
+  tokensSaida   Int
+  tokensCache   Int
+  custoMicroUsd Int
+  latenciaMs    Int
+  resultado     String
+  criadoEm      DateTime        @default(now())
+
+  turnos        TurnoAgenteIA[]
+
+  @@index([criadoEm])
+}
+
+/// Singleton (id "ia"): modelos, orçamento e triagem.
+model ConfigIA {
+  id                  String          @id @default("ia")
+  modeloConversa      String          @default("claude-sonnet-5-5")
+  modeloClassificacao String          @default("claude-haiku-5-5")
+  orcamentoMensalUsd  Decimal         @default(100) @db.Decimal(10, 2)
+  acaoAoEstourar      AcaoOrcamentoIA @default(SO_SUGERIR)
+  limiarTriagem       Int             @default(80)
+  triagemAtiva        Boolean         @default(false)
+  alteradaPorId       String?
+}
 
 // ============================================================
 // B2B — FASE 2 (doc 03): contrato corporativo · fatura única · matrículas em lote ·

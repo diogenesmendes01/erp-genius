@@ -65,9 +65,9 @@ services:
       CRON_SECRET: ${CRON_SECRET:?defina no Coolify}
       # Go-live: só ativar após piloto (doc 31 §rollout).
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
-      # C3 — copiloto IA (vazio = heurística local "simulado").
+      # Aria (ADR-F5-01): vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a
+      # API da Anthropic e, quando ATIVA, pode enviar mensagens. Modelos em Configurações › CRM › IA.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      IA_MODELO: ${IA_MODELO:-}
       # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
       # Motor WhatsApp na rede interna do compose (nunca a internet).

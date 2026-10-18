@@ -108,15 +108,15 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
 
 | Variável | Para quê | Default |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | C3 — copiloto IA (sem a chave roda a heurística local "simulado") | vazio |
-| `IA_MODELO` | Modelo da API Anthropic usado pelo copiloto | `claude-sonnet-5` |
+| `ANTHROPIC_API_KEY` | Aria (Fase 5, ADR-F5-01). Sem a chave, a IA roda o provedor local determinístico "simulado" e nada chama a rede. Com a chave, a Aria chama a API da Anthropic e, quando estiver `ATIVA`, pode responder clientes. Os modelos ficam em Configurações › CRM › IA (não há variável de modelo). | vazio |
 | `PAGAMENTO_SIMULADO` | Habilita o botão de pagar da página `/pagar/[token]` (dev/demo) | vazio |
 
 Rotas públicas novas: `/pagar/[token]` (link de pagamento do gateway simulado) e
 `/certificado/[codigo]` (validação pública de certificado). Portal do aluno em `/portal`
 (papel `ALUNO`; a secretaria cria o acesso na ficha do aluno). O tick do cron
-(`POST /api/whatsapp/cron`, header `x-cron-secret`) agora roda também: cadências C4,
-check-in vencido (B9), copiloto (quietude), gestão (C5) e fechamento mensal de comissões
+(`POST /api/whatsapp/cron`, header `x-cron-secret`) roda as etapas de base: régua de cobrança,
+acesso, início de turmas, reservas, fechamento mensal de comissões, lembretes de tarefas, eventos
+do motor e despacho da fila (as cadências comerciais C4, o copiloto e a gestão C5 saíram do tick)
 — em produção o serviço `cron` do `docker-compose.prod.yml` bate a cada 5 minutos.
 
 ---
@@ -159,8 +159,7 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | `MOTOR_API_KEY` | ✅ | API key ERP → motor (mínimo 32 caracteres) | `openssl rand -hex 32` |
    | `MOTOR_WEBHOOK_SECRET` | ✅ | Segredo do HMAC motor → ERP (mínimo 32 caracteres) | `openssl rand -hex 32` |
    | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
-   | `ANTHROPIC_API_KEY` | | Copiloto IA (opcional; sem ele roda heurística local) | chave da API Anthropic |
-   | `IA_MODELO` | | Modelo do copiloto | `claude-sonnet-5` (default) |
+   | `ANTHROPIC_API_KEY` | | Aria (opcional). Vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a API da Anthropic e, quando `ATIVA`, pode enviar mensagens. Modelos em Configurações › CRM › IA | chave da API Anthropic |
    | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
 
    > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
