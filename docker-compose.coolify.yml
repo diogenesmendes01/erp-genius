@@ -17,9 +17,6 @@ name: erp-genius
 
 services:
   db:
-        condition: service_healthy
-
-  db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
