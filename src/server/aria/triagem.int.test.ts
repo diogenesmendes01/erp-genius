@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
 // Falha simulada na atribuição (C7 da R2 do #233): erro de banco DENTRO da transação da triagem.
@@ -27,10 +27,10 @@ vi.mock("@/server/crm-config/distribuicao", async (orig) => {
 import { prisma } from "@/lib/prisma";
 import { seedCobranca, criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
-import { provedorSimulado } from "./provedor";
+import { ErroProvedorIA, provedorSimulado } from "./provedor";
 import type { PedidoIA, ProvedorIA } from "./provedor";
 import { configPadrao } from "./config-schema";
-import { ancoraTriagem, classificarSetorPelaAria, fraseEncaminhamento } from "./triagem";
+import { ancoraTriagem, classificarSetorPelaAria, FRASE_ENCAMINHAMENTO, fraseEncaminhamento } from "./triagem";
 
 beforeEach(async () => { falha.atribuicao = false; falha.abertura = false; await truncarBanco(); });
 
@@ -86,6 +86,8 @@ describe("classificarSetorPelaAria", () => {
   it("nao_responde_conteudo_so_encaminha", async () => {
     await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
     const i = await ultimaIntencao();
+    expect(FRASE_ENCAMINHAMENTO.FINANCEIRO).toBe("Obrigada! Vou encaminhar sua mensagem para o Financeiro.");
+    expect(fraseEncaminhamento("FINANCEIRO", "Aria", false)).toBe(FRASE_ENCAMINHAMENTO.FINANCEIRO);
     expect(i.corpoRenderizado).toBe(fraseEncaminhamento("FINANCEIRO", "Aria"));
     // Primeira fala da Aria no atendimento: começa pela apresentação obrigatória.
     expect(i.corpoRenderizado).toBe("Oi! Eu sou a Aria, assistente virtual da escola. Obrigada! Vou encaminhar sua mensagem para o Financeiro.");
@@ -152,9 +154,113 @@ describe("classificarSetorPelaAria", () => {
     expect(await classificarSetorPelaAria(msgBoleto.id)).toEqual({ triagemHumana: "DESLIGADA" });
   });
 
-  it("aria_desligada_ou_numero_com_dono_nao_atua", async () => {
-    await prisma.agenteIA.update({ where: { id: "aria" }, data: { estado: "DESLIGADA" } });
-    expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado })).toEqual({ triagemHumana: "DESLIGADA" });
+  describe("quando a Aria não atua (nada muda, nenhuma chamada ao modelo)", () => {
+    const naoChamado = () => {
+      const gerar = vi.fn();
+      return { prov: { nome: "simulado", gerar } as unknown as ProvedorIA, gerar };
+    };
+    async function esperaSemEfeito(id: string, esperado: unknown = { triagemHumana: "DESLIGADA" }) {
+      const { prov, gerar } = naoChamado();
+      expect(await classificarSetorPelaAria(id, { provedor: prov })).toEqual(esperado);
+      expect(gerar).not.toHaveBeenCalled();
+      expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id } })).atendimentoId).toBeNull();
+      expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
+      expect(await prisma.intencaoMensagem.count()).toBe(0);
+      expect(await prisma.turnoAgenteIA.count()).toBe(0);
+    }
+
+    it("aria_desligada", async () => {
+      await prisma.agenteIA.update({ where: { id: "aria" }, data: { estado: "DESLIGADA" } });
+      await esperaSemEfeito(msgBoleto.id);
+    });
+
+    it("aria_pausada", async () => {
+      await prisma.agenteIA.update({ where: { id: "aria" }, data: { pausadoEm: new Date(), motivoPausa: "teste" } });
+      await esperaSemEfeito(msgBoleto.id);
+    });
+
+    it("numero_com_dono_nao_atua", async () => {
+      const dono = await criarUsuario([], "Vendedor");
+      const numero = await criarNumeroSetor({ telefoneE164: "+5511900000666", setores: ["COMERCIAL", "FINANCEIRO"], donoId: dono.id });
+      const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: c.contato.id } });
+      const m = await prisma.mensagemWhatsApp.create({
+        data: { conversaId: conversa.id, numeroId: numero.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "boleto", providerMessageId: "dono-1" },
+      });
+      await esperaSemEfeito(m.id);
+    });
+
+    it("contato_em_opt_out", async () => {
+      await prisma.contatoWhatsApp.update({ where: { id: c.contato.id }, data: { optOutEm: new Date() } });
+      await esperaSemEfeito(msgBoleto.id);
+    });
+
+    it("numero_com_menos_de_dois_setores", async () => {
+      const numero = await criarNumeroSetor({ telefoneE164: "+5511900000777", setores: ["FINANCEIRO"] });
+      const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: c.contato.id } });
+      const m = await prisma.mensagemWhatsApp.create({
+        data: { conversaId: conversa.id, numeroId: numero.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "boleto", providerMessageId: "um-setor" },
+      });
+      await esperaSemEfeito(m.id);
+    });
+
+    it("orcamento_estourado", async () => {
+      await prisma.configIA.update({ where: { id: "ia" }, data: { orcamentoMensalUsd: 0 } });
+      await esperaSemEfeito(msgBoleto.id);
+    });
+  });
+
+  describe("falhas do modelo: a mensagem fica na triagem humana", () => {
+    const semEfeito = async (id: string) => {
+      expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id } })).atendimentoId).toBeNull();
+      expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
+      expect(await prisma.intencaoMensagem.count()).toBe(0);
+    };
+
+    it("erro_do_provedor_registra_a_chamada_com_erro", async () => {
+      const quebrado: ProvedorIA = { nome: "simulado", async gerar() { throw new ErroProvedorIA("TIMEOUT"); } };
+      expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: quebrado })).toEqual({ triagemHumana: "CONFIANCA" });
+      expect(await prisma.chamadaIA.findFirstOrThrow()).toMatchObject({ origem: "TRIAGEM", resultado: "ERRO:TIMEOUT" });
+      await semEfeito(msgBoleto.id);
+    });
+
+    it("saida_invalida_do_modelo", async () => {
+      const lixo: ProvedorIA = { nome: "simulado", async gerar(p) {
+        return { ...(await provedorSimulado.gerar(p)), texto: "não é json" };
+      } };
+      expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: lixo })).toEqual({ triagemHumana: "CONFIANCA" });
+      await semEfeito(msgBoleto.id);
+      expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorComConfianca("INEXISTENTE", 99) })).toEqual({ triagemHumana: "CONFIANCA" });
+      await semEfeito(msgBoleto.id);
+    });
+
+    describe("ATIVA sem chave de API", () => {
+      afterEach(() => vi.unstubAllEnvs());
+      it("nao_cai_no_simulado", async () => {
+        vi.stubEnv("ANTHROPIC_API_KEY", "");
+        expect(await classificarSetorPelaAria(msgBoleto.id)).toEqual({ triagemHumana: "CONFIANCA" });
+        expect(await prisma.chamadaIA.count()).toBe(0);
+        await semEfeito(msgBoleto.id);
+      });
+    });
+  });
+
+  it("corrida_com_atendimento_ja_atribuido_nao_reclassifica", async () => {
+    // Enquanto o modelo responde, um humano tria a mensagem para outro atendimento.
+    let humano = "";
+    const comCorrida: ProvedorIA = {
+      nome: "simulado",
+      async gerar(p: PedidoIA) {
+        const at = await prisma.atendimentoWhatsApp.create({ data: { conversaId: c.conversa.id, contextoChave: "humano", finalidade: "SECRETARIA" } });
+        humano = at.id;
+        await prisma.mensagemWhatsApp.update({ where: { id: msgBoleto.id }, data: { atendimentoId: at.id } });
+        return provedorSimulado.gerar(p);
+      },
+    };
+    expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: comCorrida })).toEqual({ triagemHumana: "DESLIGADA" });
+    expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: msgBoleto.id } })).atendimentoId).toBe(humano);
+    expect(await prisma.atendimentoWhatsApp.count()).toBe(1);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.acaoAgenteIA.count()).toBe(0);
   });
 
   it("grupo_nunca", async () => {

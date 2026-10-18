@@ -13,7 +13,7 @@ import {
   StatusPropostaConciliacaoFinanceiraMigracao, StatusPropostaEntradaFinanceiraHistoricaMigracao,
   StatusPropostaPresencaHistoricaMigracao, StatusReservaSegundaChamada, StatusReservaVaga, StatusSolicitacaoEncerramento,
   StatusTemplate, StatusTurma, TipoAjuste, TipoAprovacao, TipoDestinacaoRecebimento, TipoMensagem, TipoMovimentacao,
-  AcaoAgenteIATipo, StatusAcaoAgenteIA, MotivoPausaAtendimentoIA, StatusVersaoAgenteIA, MetricaMeta, OrigemChamadaIA, AcaoOrcamentoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
+  AcaoAgenteIATipo, StatusAcaoAgenteIA, MotivoPausaAtendimentoIA, EstadoPolitica, StatusFonteConhecimento, StatusVersaoAgenteIA, MetricaMeta, OrigemChamadaIA, AcaoOrcamentoIA, UnidadePermutaServico, Vigencia, StatusEncontroAgenda, StatusPagamentoInformado, ReferenciaCoberturaMensal,
   FinalidadeNumero, FinalidadeAtendimentoWhatsApp, StatusAtendimentoWhatsApp, FormaAgendaOferta, EtapaLead, Papel, OrigemEnvio,
   OrigemCanal, PapelParticipante, DriverWhatsApp,
   CorTag, TipoCampoPersonalizado, AlvoCampoPersonalizado, TelaFiltroSalvo,
@@ -1843,6 +1843,7 @@ const MAPAS_DE_DOMINIO: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/server/matricula/desistencia-documental.ts", nome: "(literal em descricaoEstado)", motivo: "fragmento minúsculo no meio da frase do servidor (\"processo com envio incerto\"), não o nome do estado" },
   { arquivo: "src/server/portal-aluno/envio-resend.ts", nome: "ternário mensagem.finalidade", motivo: "assunto do e-mail por finalidade (\"Seu acesso ao portal da escola\"), frase e não o nome da finalidade" },
   { arquivo: "src/server/whatsapp/drivers/motor.ts", nome: "TIPO_MIDIA", motivo: "valor técnico do payload do motor (\"imagem\", \"audio\"), não rótulo" },
+  { arquivo: "src/server/aria/triagem.ts", nome: "FRASE_ENCAMINHAMENTO", motivo: "frase de encaminhamento enviada ao contato por setor (\"Vou encaminhar sua mensagem para o Financeiro\"), texto do atendimento e não rótulo de tela" },
 ];
 
 describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {
@@ -2108,6 +2109,8 @@ const MAPAS_NOVOS: [nome: string, mapa: Readonly<Record<string, string>>, valore
   ["STATUS_ACAO_AGENTE_IA_LABEL", L.STATUS_ACAO_AGENTE_IA_LABEL, Object.values(StatusAcaoAgenteIA)],
   ["MOTIVO_PAUSA_IA_LABEL", L.MOTIVO_PAUSA_IA_LABEL, Object.values(MotivoPausaAtendimentoIA)],
   ["STATUS_VERSAO_AGENTE_IA_LABEL", L.STATUS_VERSAO_AGENTE_IA_LABEL, Object.values(StatusVersaoAgenteIA)],
+  ["ESTADO_POLITICA_LABEL", L.ESTADO_POLITICA_LABEL, Object.values(EstadoPolitica)],
+  ["STATUS_FONTE_CONHECIMENTO_LABEL", L.STATUS_FONTE_CONHECIMENTO_LABEL, Object.values(StatusFonteConhecimento)],
   ["METRICA_META_LABEL", L.METRICA_META_LABEL, Object.values(MetricaMeta)],
   ["ORIGEM_CHAMADA_IA_LABEL", L.ORIGEM_CHAMADA_IA_LABEL, Object.values(OrigemChamadaIA)],
   ["ACAO_ORCAMENTO_IA_LABEL", L.ACAO_ORCAMENTO_IA_LABEL, Object.values(AcaoOrcamentoIA)],

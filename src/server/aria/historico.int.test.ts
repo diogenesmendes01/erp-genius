@@ -138,6 +138,30 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
+  it("aprovar_agendamento_com_aria_pausada_falha", async () => {
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete da aula", enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    expect(s.status).toBe("SUGERIDA");
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "A Aria está pausada neste atendimento: uma pessoa já assumiu a conversa." });
+    expect((await acao(s)).status).toBe("SUGERIDA");
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
+  it("aprovar_agendamento_depois_de_mudanca_de_preco_falha", async () => {
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "A mensalidade é ₡85.000.", enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    expect(s.status).toBe("SUGERIDA");
+    await prisma.precoReferencia.updateMany({ where: { tipoCobranca: "MENSALIDADE" }, data: { valor: 90000 } });
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "O texto cita um valor que não está mais autorizado." });
+    expect((await acao(s)).status).toBe("SUGERIDA");
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
+  it("aprovar_agendamento_valido_cria_intencao_ia_agendada", async () => {
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "A mensalidade é ₡85.000.", enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    expect((await aprovarAcaoAria(s.id)).ok).toBe(true);
+    expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ origem: "IA", acaoAgenteIAId: s.id, agendadaPara: expect.any(Date) });
+  });
+
   it("desfazer_tag_remove_e_grava_eventos", async () => {
     const e = await exec({ acao: "TAG", tagId: c.tag.id, justificativa: "x" });
     expect((await desfazerAcaoAria(e.id)).ok).toBe(true);

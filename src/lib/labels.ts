@@ -50,6 +50,8 @@ import {
   StatusAcaoAgenteIA,
   MotivoPausaAtendimentoIA,
   StatusVersaoAgenteIA,
+  EstadoPolitica,
+  StatusFonteConhecimento,
   OrigemChamadaIA,
   AcaoOrcamentoIA,
   ResultadoEnsaioVinculoMigracao,
@@ -570,6 +572,18 @@ export const STATUS_VERSAO_AGENTE_IA_LABEL: Readonly<Record<StatusVersaoAgenteIA
   RASCUNHO: "Rascunho",
   PUBLICADA: "Publicada",
   ARQUIVADA: "Arquivada",
+});
+
+export const ESTADO_POLITICA_LABEL: Readonly<Record<EstadoPolitica, string>> = Object.freeze({
+  DESLIGADA: "Desligada",
+  SHADOW: "Sombra",
+  ATIVA: "Ativa",
+});
+
+export const STATUS_FONTE_CONHECIMENTO_LABEL: Readonly<Record<StatusFonteConhecimento, string>> = Object.freeze({
+  PROCESSANDO: "Lendo o documento",
+  PRONTA: "Pronta",
+  ERRO: "Com erro",
 });
 
 export const ORIGEM_CHAMADA_IA_LABEL: Readonly<Record<OrigemChamadaIA, string>> = Object.freeze({

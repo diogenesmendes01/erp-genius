@@ -603,6 +603,7 @@ type Excecao = { arquivo: string; trecho: string; motivo: string };
 const PENDENCIA = "pendência (fatia seguinte do item 4 de docs/43 §6): lista por cursor ainda só para frente; migrar a consulta para página numerada ou cursor nos dois sentidos";
 
 export const EXCECOES_PAGINACAO: readonly Excecao[] = [
+  { arquivo: "src/app/(app)/aria/_componentes/Historico.tsx", trecho: '`/aria?${new URLSearchParams({ aba: "historico", ...Object.fromEntries(Object.entries(filtros).filter(([, v]) => v)), cursor: proximo }).toString()}`', motivo: `${PENDENCIA}: histórico de ações da Aria por cursor (criadoEm|id)` },
   { arquivo: "src/app/(app)/academico/avaliacoes/[alocacaoId]/extras/page.tsx", trecho: "`?${new URLSearchParams({ antesId: d.proximoId })}`", motivo: `${PENDENCIA}: extras de avaliação por antesId` },
   { arquivo: "src/app/(app)/academico/calendario/page.tsx", trecho: "`/academico/calendario?cursor=${encodeURIComponent(versoes[29].id)}`", motivo: `${PENDENCIA}: versões do calendário institucional por cursor` },
   { arquivo: "src/app/(app)/academico/recuperacoes/[realizacaoId]/page.tsx", trecho: "`/academico/recuperacoes/${encodeURIComponent(realizacaoId)}?antesVersao=${d.proximaAntesVersao}`", motivo: `${PENDENCIA}: versões da nota de recuperação por antesVersao` },
@@ -634,6 +635,7 @@ export const EXCECOES_PAGINACAO: readonly Excecao[] = [
 
 /** Cópia literal das âncoras das exceções: mudar a lista sem mudar aqui (ou o contrário) falha. */
 const ANCORAS: readonly string[] = [
+  "src/app/(app)/aria/_componentes/Historico.tsx | `/aria?${new URLSearchParams({ aba: \"historico\", ...Object.fromEntries(Object.entries(filtros).filter(([, v]) => v)), cursor: proximo }).toString()}`",
   "src/app/(app)/academico/avaliacoes/[alocacaoId]/extras/page.tsx | `?${new URLSearchParams({ antesId: d.proximoId })}`",
   "src/app/(app)/academico/calendario/page.tsx | `/academico/calendario?cursor=${encodeURIComponent(versoes[29].id)}`",
   "src/app/(app)/academico/recuperacoes/[realizacaoId]/page.tsx | `/academico/recuperacoes/${encodeURIComponent(realizacaoId)}?antesVersao=${d.proximaAntesVersao}`",

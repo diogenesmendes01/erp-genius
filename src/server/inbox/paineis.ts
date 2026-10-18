@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { temPapel, type UsuarioSessao } from "@/server/_shared";
 import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
-import { carregarAcoesContatoInbox, cobrancaAtivaDoAtendimento, podeVerLeadNaThread, type AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
+import { carregarAcoesContatoInbox, carregarAriaDoAtendimento, type AriaDoAtendimento, cobrancaAtivaDoAtendimento, podeVerLeadNaThread, type AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
 
 export type PainelSetor = DadosSetor & {
   /** Ações de cadastro e cobrança (as do Inbox antigo); null em grupo. Ausente nos testes de marcação antigos. */
   acoes?: AcoesContatoInbox | null;
+  /** Estado da Aria no atendimento (Task 29). Ausente nos testes de marcação antigos. */
+  aria?: AriaDoAtendimento | null;
   /** O podeEnviar da thread (`atendimentoVisivel` com envio, como em carregarThread): decide o compositor (C6 do #217).
    *  Ausente nos testes de marcação antigos; ausente vale como não pode. */
   podeEnviar?: boolean;
@@ -29,8 +31,12 @@ const CATEGORIAS_EXIGIDAS = ["CONTRATO", "COMPROVANTE"] as const;
 export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): Promise<PainelSetor | null> {
   const dados = await carregarDadosSetor(u, atendimentoId);
   if (!dados) return null;
-  const [acoes, envio] = await Promise.all([carregarAcoesContatoInbox(u, atendimentoId), atendimentoVisivel(u, atendimentoId, true)]);
-  return { ...dados, acoes, podeEnviar: !!envio };
+  const [acoes, envio, aria] = await Promise.all([
+    carregarAcoesContatoInbox(u, atendimentoId),
+    atendimentoVisivel(u, atendimentoId, true),
+    carregarAriaDoAtendimento(u, atendimentoId),
+  ]);
+  return { ...dados, acoes, podeEnviar: !!envio, aria };
 }
 
 async function carregarDadosSetor(u: UsuarioSessao, atendimentoId: string): Promise<DadosSetor | null> {

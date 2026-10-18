@@ -9,6 +9,7 @@ import { configPadrao, type ConfigAria, type ModoAcao } from "../config-schema";
 import { versaoPublicada } from "../versoes";
 import { APRESENTACAO, montarContextoTurno, type ContextoTurno } from "./contexto";
 import { avaliarDesconto, solicitarAprovacaoDesconto } from "./desconto";
+import { precosDaOportunidade } from "./precos";
 import type { AcaoProposta, SaidaModelo } from "./tipos";
 import { valoresNaoAutorizados, type ValoresPermitidos } from "./valores";
 
@@ -37,7 +38,7 @@ export const POLITICAS_PADRAO: ConfigAria["politicas"] = {
   validadePropostaDias: 7,
 };
 
-export function permitidos(ctx: ContextoTurno, politicas: ConfigAria["politicas"]): ValoresPermitidos {
+export function permitidos(ctx: Pick<ContextoTurno, "precos">, politicas: ConfigAria["politicas"]): ValoresPermitidos {
   return {
     valores: ctx.precos.map((p) => p.valor),
     percentuais: [
@@ -324,7 +325,7 @@ function dataCivilNoFuso(instante: Date, fuso: string): string {
  * grava a mutação e o Evento da Aria na transação recebida, e devolve o id do Evento. Reusada na
  * aprovação de uma ação SUGERIDA. Lança ErroRegra se o estado mudou e a ação não vale mais.
  */
-export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA): Promise<{ eventoId: string }> {
+export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: ConfigAria["politicas"]): Promise<{ eventoId: string }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload gravado pelo próprio planejar
   const payload = (acao.payload ?? {}) as Record<string, any>;
   // Só a CLASSIFICAR_SETOR SIMULADA (triagem em SHADOW) não tem atendimento, e nunca é aplicada.
@@ -419,12 +420,23 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA): Promise<{ eventoI
       break;
     }
     case "AGENDAR_MENSAGEM": {
-      const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId }, select: { id: true, encerradoEm: true, conversa: { select: { numeroId: true, contatoId: true } } } });
+      // Fala da Aria: como em efetivarRespostaSugerida, trava o atendimento e revalida pausa e valores.
+      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${atendimentoId} FOR UPDATE`;
+      const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({
+        where: { id: atendimentoId },
+        select: { id: true, encerradoEm: true, iaPausadaEm: true, conversa: { select: { numeroId: true, contatoId: true } } },
+      });
+      if (at.iaPausadaEm) throw new ErroRegra("A Aria está pausada neste atendimento: uma pessoa já assumiu a conversa.");
       const contatoId = at.conversa.contatoId;
       const contato = contatoId ? await tx.contatoWhatsApp.findUnique({ where: { id: contatoId }, select: { optOutEm: true } }) : null;
       if (!contatoId || !contato || contato.optOutEm || at.encerradoEm) throw new ErroRegra("O contato não pode receber mensagens.");
       const quando = new Date(payload.agendadaPara);
       if (quando.getTime() <= Date.now()) throw new ErroRegra("O horário agendado já passou.");
+      const pol = politicas ?? (await versaoPublicada(tx))?.config.politicas ?? POLITICAS_PADRAO;
+      const precos = opId ? await precosDaOportunidade(opId, tx) : [];
+      if (valoresNaoAutorizados(String(payload.texto ?? ""), permitidos({ precos }, pol)).length > 0) {
+        throw new ErroRegra("O texto cita um valor que não está mais autorizado.");
+      }
       const m = await tx.intencaoMensagem.create({
         data: {
           numeroId: at.conversa.numeroId,
@@ -540,6 +552,6 @@ export async function executarAcaoCrm(tx: Tx, i: EntradaAcaoCrm): Promise<AcaoAg
   }
 
   const criada = await tx.acaoAgenteIA.create({ data: { ...dados, status: "EXECUTADA" } });
-  await aplicarAcao(tx, criada);
+  await aplicarAcao(tx, criada, config.politicas);
   return tx.acaoAgenteIA.findUniqueOrThrow({ where: { id: criada.id } });
 }
