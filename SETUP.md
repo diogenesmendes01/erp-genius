@@ -155,16 +155,13 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | `POSTGRES_PASSWORD` | ✅ | Senha do banco (URL-safe, sem `/+=`) | `openssl rand -hex 32` |
    | `AUTH_SECRET` | ✅ | Segredo do Auth.js (sessão) | `npx auth secret` ou `openssl rand -base64 32` |
    | `CRON_SECRET` | ✅ | Segredo do cron (header `x-cron-secret`) | `openssl rand -hex 32` |
-   | `EVOLUTION_APIKEY` | ✅ | API key da Evolution (Baileys self-hosted) | `openssl rand -hex 32` |
+   | `MOTOR_IMAGE` | ✅ | Imagem publicada do motor WhatsApp | tag da imagem do `whatsapp-web-baileys` |
+   | `MOTOR_API_KEY` | ✅ | API key ERP → motor (mínimo 32 caracteres) | `openssl rand -hex 32` |
+   | `MOTOR_WEBHOOK_SECRET` | ✅ | Segredo do HMAC motor → ERP (mínimo 32 caracteres) | `openssl rand -hex 32` |
    | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
    | `ANTHROPIC_API_KEY` | | Copiloto IA (opcional; sem ele roda heurística local) | chave da API Anthropic |
    | `IA_MODELO` | | Modelo do copiloto | `claude-sonnet-5` (default) |
    | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
-   | `META_WA_TOKEN` | | Token da Meta Cloud API (driver oficial) | painel Meta Developers |
-   | `META_WA_APP_SECRET` | | App Secret da Meta Cloud API | painel Meta Developers |
-   | `META_WA_VERIFY_TOKEN` | | Token de verificação do webhook Meta | escolha aleatória |
-   | `META_WA_WABA_ID` | | ID da conta WhatsApp Business (WABA) | painel Meta Developers |
-   | `EVOLUTION_WEBHOOK_TOKEN` | | Token do webhook da Evolution | `openssl rand -hex 32` |
 
    > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
    > As marcadas como obrigatórias (`${VAR:?...}`) bloqueiam o deploy se estiverem vazias.
@@ -188,8 +185,7 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
 
 - **Sem Caddy**: o Traefik do Coolify cuida de TLS e roteamento.
 - **Sem portas publicadas**: nenhum serviço tem `ports:` no compose.
-- **Banco da Evolution**: criado por serviço one-shot `db-init` (comando SQL inline),
-  em vez de bind mount `./deploy/initdb`.
+- **Sem `db-init`**: o único banco Postgres é o do app; o motor guarda seus dados no volume `motor_data`.
 - **Domínio**: vem da variável mágica `SERVICE_FQDN_APP_3000` (gerada pelo Coolify).
 - **Healthcheck**: endpoint `/api/ready` (readiness do container com validação de DB
   e Prisma, sem autenticação). `/api/health` continua como pure liveness.
@@ -203,5 +199,5 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
   Se persistir, verifique se o DNS aponta para a VPS e se as portas 80/443 estão abertas.
 - **App não sobe**: veja os logs do Coolify (aba "Logs" do Resource). Variáveis obrigatórias
   ausentes bloqueiam o deploy com erro claro.
-- **Evolution sem conexão**: o serviço `evolution` só é acessível na rede interna do
-  compose. O app se comunica via `http://evolution:8080` (nunca HTTPS público).
+- **Motor sem conexão**: o serviço `motor` só é acessível na rede interna do
+  compose. O app se comunica via `http://motor:4317` (nunca HTTPS público).
