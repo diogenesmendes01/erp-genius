@@ -19,6 +19,44 @@ export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
+  "src/app/(app)/aria/_componentes/Cabecalho.tsx": [
+    "Motivo da pausa · obrigatório · input · dica",
+    "Estado da Aria · opcional · select · dica",
+  ],
+  "src/app/(app)/aria/_componentes/Comportamento.tsx": [
+    "Nome · obrigatório · input · dica",
+    "Função · obrigatório · input",
+    "Instruções · opcional · CampoTexto · dica",
+    "O que priorizar · opcional · CampoTexto · dica",
+    "Nunca fazer · opcional · CampoTexto · dica",
+    "Quando o contato diz · opcional · input",
+    "Responda assim · opcional · CampoTexto",
+    "Evite responder assim (opcional) · opcional · CampoTexto",
+    "Desconto sem aprovação (%) · opcional · input",
+    "Desconto com aprovação (%) · opcional · input · erro: c.politicas[tipo].descontoComAprovacaoPct < c.politicas[tipo].descontoSemAprovacaoPct ? \"Não pode ser menor que o desconto sem aprovação.\" : null",
+    "Parcelas no máximo · opcional · input",
+    "Validade da proposta (dias) · opcional · input",
+  ],
+  "src/app/(app)/aria/_componentes/Confianca.tsx": [
+    "Executa sozinha a partir de (%) · opcional · select · dica",
+    "Transfere para uma pessoa abaixo de (%) · opcional · select · dica",
+    "Sugestões sem resposta expiram depois de · opcional · select",
+    "Quando expirar · opcional · select",
+  ],
+  "src/app/(app)/aria/_componentes/Conhecimento.tsx": [
+    "Nome · obrigatório · input",
+    "Texto · obrigatório · CampoTexto",
+    "Pergunta · opcional · input",
+    "Resposta · opcional · CampoTexto",
+  ],
+  "src/app/(app)/aria/_componentes/Handoff.tsx": [
+    "Palavras-chave · opcional · CampoTexto · dica",
+    "Etapa que dispara a transferência · opcional · select",
+    "Valor da oportunidade a partir do qual transfere · opcional · input",
+    "Para quem transferir · opcional · select",
+    "Fora do horário comercial · opcional · select",
+    "Mensagem para o contato · opcional · CampoTexto · dica",
+  ],
   "src/app/portal-aluno/ativar/page.tsx": [
     "Nova senha · obrigatório · input · dica · erro: errosCampos.senha",
     "Repita a senha · obrigatório · input · dica · erro: errosCampos.confirmacao",

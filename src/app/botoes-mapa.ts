@@ -14,6 +14,53 @@
 // Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
 // o diff do teste mostra o mapa real para a revisão decidir.
 export const MAPA_BOTOES: Record<string, string[]> = {
+  "aria/_componentes/Abas.tsx": [
+    "<Link> → primario|fantasma/md",
+  ],
+  "aria/_componentes/BarraPublicar.tsx": [
+    "<Botao> Descartar → perigo/md",
+    "<Botao> Publicar → primario/md",
+  ],
+  "aria/_componentes/Cabecalho.tsx": [
+    "<Botao> Pausar → secundario/md",
+    "<Botao> Reativar → primario/md",
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Pausar a Aria → primario/md",
+  ],
+  "aria/_componentes/Comportamento.tsx": [
+    "<Botao> Remover → perigo/sm",
+    "<Botao> Adicionar exemplo → secundario/md",
+  ],
+  "aria/_componentes/Confianca.tsx": [
+    "<Botao> Ligar por 24 horas → secundario/md",
+    "<Botao> Ligar por 7 dias → secundario/md",
+    "<Botao> Ligar até eu desligar → secundario/md",
+    "<Botao> Desligar supervisão → primario/md",
+  ],
+  "aria/_componentes/Conhecimento.tsx": [
+    "<Botao> Arquivar → fantasma/sm",
+    "<Botao> Adicionar fonte → primario/md",
+    "<Botao> Remover → perigo/sm",
+    "<Botao> Adicionar pergunta → secundario/md",
+  ],
+  "aria/_componentes/Historico.tsx": [
+    "<Botao> Aprovar → primario/sm",
+    "<Botao> Rejeitar → perigo/sm",
+    "<Botao> Desfazer → secundario/sm",
+    "<Botao> Filtrar → secundario/md",
+  ],
+  "aria/_componentes/Permissoes.tsx": [
+    "<Botao> Supervisão → secundario/sm",
+    "<Botao> Equilibrado → secundario/sm",
+    "<Botao> Autônomo → secundario/sm",
+    "<Botao> nome → fantasma/sm",
+  ],
+  "aria/_componentes/Salvar.tsx": [
+    "<Botao> Salvar rascunho → primario/md",
+  ],
+  "aria/_componentes/VisaoGeral.tsx": [
+    "<Link> key p.dias → primario|fantasma/md",
+  ],
   "configuracao/catalogo/EntradasOfertas.tsx": [
     "<button> Salvando… · Salvar regras da oferta → secundario/md",
   ],
