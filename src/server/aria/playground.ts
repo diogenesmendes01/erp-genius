@@ -111,11 +111,16 @@ export async function testarAria(i: EntradaPlayground): Promise<Resultado<Result
         maxTokens: MAX_TOKENS_CONVERSA,
         esquemaSaida: ESQUEMA_SAIDA_CONVERSA,
       });
-      await registrarChamadaIA("PLAYGROUND", resposta);
     } catch (e) {
       falha = e instanceof ErroProvedorIA ? e.codigo : "DESCONHECIDO";
+    }
+    // O registro fica fora do try do provedor: se o INSERT do sucesso falhar, a chamada já paga não
+    // vira um "erro" sem tokens (subcontaria o orçamento); o erro do banco sobe como erro do banco.
+    if (resposta) {
+      await registrarChamadaIA("PLAYGROUND", resposta);
+    } else {
       await registrarChamadaIA("PLAYGROUND", {
-        erro: falha,
+        erro: falha ?? "DESCONHECIDO",
         modelo: provedor.nome === "simulado" ? "simulado" : cfgIA.modeloConversa,
         latenciaMs: Date.now() - inicio,
       });
@@ -157,10 +162,12 @@ export async function testarAria(i: EntradaPlayground): Promise<Resultado<Result
     }));
     const texto = saida.resposta?.trim() || null;
     const fora = texto ? valoresNaoAutorizados(texto, permitidos(ctx, config.politicas)) : [];
+    // Como no turno real: o executor bloqueia o texto com valor fora da lista e o orquestrador
+    // transfere com VALOR_NAO_AUTORIZADO. O texto bloqueado não volta como fala da Aria.
     return {
-      resposta: texto,
+      resposta: fora.length ? null : texto,
       confianca: saida.confianca,
-      handoff,
+      handoff: fora.length ? (handoff ?? "VALOR_NAO_AUTORIZADO") : handoff,
       acoes,
       fontes: saida.fontes,
       bloqueio: fora.length ? `Valor não autorizado na resposta: ${fora.join(", ")}` : null,

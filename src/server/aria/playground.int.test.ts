@@ -103,6 +103,8 @@ describe("playground da Aria", () => {
     provedorMock.gerar.mockResolvedValue(resposta(saida({ resposta: "A mensalidade é R$ 777 por mês." })));
     const r = await rodar({ ...p, paisId: cat.pais.id });
     expect(r.bloqueio).toContain("777");
+    // Mesmo comportamento do turno real: não sai como fala da Aria e transfere para humano.
+    expect(r).toMatchObject({ resposta: null, handoff: "VALOR_NAO_AUTORIZADO" });
     const sistema = provedorMock.gerar.mock.calls[0][0].sistema as string;
     expect(sistema).toContain("Português · Regular");
   });
@@ -112,6 +114,20 @@ describe("playground da Aria", () => {
     const r = (await rodar(p));
     expect(r).toMatchObject({ resposta: null, handoff: "ERRO_PROVEDOR" });
     expect(await prisma.chamadaIA.count({ where: { origem: "PLAYGROUND", resultado: { startsWith: "ERRO" } } })).toBe(1);
+  });
+
+  it("falha_ao_registrar_sucesso_nao_vira_erro_sem_custo", async () => {
+    provedorMock.gerar.mockResolvedValue(resposta(saida(), { tokensEntrada: 1000, tokensSaida: 500 }));
+    const espiao = vi.spyOn(prisma.chamadaIA, "create").mockRejectedValueOnce(new Error("insert falhou"));
+    try {
+      expect((await testarAria(p)).ok).toBe(false);
+      // Só a tentativa do sucesso: nenhum registro de "erro" sem tokens foi gravado no lugar.
+      expect(espiao).toHaveBeenCalledTimes(1);
+      expect(espiao.mock.calls[0][0]).toMatchObject({ data: { resultado: "OK", tokensEntrada: 1000 } });
+      expect(await prisma.chamadaIA.count({ where: { resultado: { startsWith: "ERRO" } } })).toBe(0);
+    } finally {
+      espiao.mockRestore();
+    }
   });
 
   it("orcamento_estourado_recusa_sem_chamar", async () => {

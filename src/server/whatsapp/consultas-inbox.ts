@@ -15,6 +15,7 @@ import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./no
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { comContatoIndividual } from "./grupos";
 import { capacidadesAria } from "@/server/aria/permissoes-tela";
+import { leadsDecidiveis } from "@/server/aria/escopo-decisao";
 import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 
 export interface ConversaResumo {
@@ -341,16 +342,21 @@ function resumoDaSugestao(a: { acao: AcaoAgenteIATipo; payload: Prisma.JsonValue
 export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendimentoId: string, agora: Date = new Date()): Promise<AriaDoAtendimento | null> {
   const a = await prisma.atendimentoWhatsApp.findFirst({
     where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
-    select: { id: true, iaPausadaEm: true, iaPausaMotivo: true },
+    select: { id: true, leadId: true, iaPausadaEm: true, iaPausaMotivo: true },
   });
   if (!a) return null;
-  const sugestoes = capacidadesAria(usuario).has("decidirHistorico")
+  const candidatas = capacidadesAria(usuario).has("decidirHistorico")
     ? await prisma.acaoAgenteIA.findMany({
         where: { atendimentoId: a.id, status: "SUGERIDA", OR: [{ expiraEm: null }, { expiraEm: { gt: agora } }] },
         orderBy: { criadoEm: "asc" },
-        select: { id: true, acao: true, payload: true, justificativa: true, expiraEm: true },
+        select: { id: true, acao: true, payload: true, justificativa: true, expiraEm: true, oportunidadeId: true },
       })
     : [];
+  // Mesmo critério de aprovarAcaoAria/rejeitarAcaoAria: escopoAtendimentos (setor inteiro para o
+  // Gerente) mostra o atendimento, mas só aparece a sugestão que ele de fato pode decidir.
+  const leadDe = (s: { oportunidadeId: string | null }) => s.oportunidadeId ?? a.leadId;
+  const decidiveis = candidatas.length ? await leadsDecidiveis(prisma, usuario, candidatas.map(leadDe)) : new Set<string | null>();
+  const sugestoes = candidatas.filter((s) => decidiveis.has(leadDe(s)));
   return {
     pausada: a.iaPausadaEm !== null,
     motivo: a.iaPausadaEm !== null ? a.iaPausaMotivo : null,
