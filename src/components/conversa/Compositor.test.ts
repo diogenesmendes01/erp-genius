@@ -16,7 +16,7 @@ vi.mock("react", async (original) => {
   };
 });
 
-import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, type PropsCompositor } from "./Compositor";
+import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -205,6 +205,38 @@ describe("Compositor", () => {
     clicarBotao(tela(), "Enviar");
     await esvaziar();
     expect(p.aoEnviarMidia).toHaveBeenCalledWith("/api/files/whatsapp-out/u1/voz.ogg", "");
+  });
+});
+
+describe("Compositor: permissão de envio carregando, falhou ou negada (C2 da revisão do #218)", () => {
+  const semCampo = (h: string) => expect(h).not.toContain("Digite uma mensagem");
+  it("carregando (podeEnviar null): mostra Carregando…, não o motivo, e não envia", () => {
+    const h = html({ podeEnviar: null });
+    expect(h).toContain(CARREGANDO_ENVIO);
+    expect(h).toMatch(/role="status"/);
+    expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+    semCampo(h);
+  });
+  it("falhou: mensagem de erro em role=alert com Tentar de novo, sem o motivo e sem enviar", () => {
+    const h = html({ podeEnviar: null, falhaPermissao: () => {} });
+    expect(h).toMatch(new RegExp(`role="alert"[^>]*>[\\s\\S]*${FALHA_PERMISSAO_ENVIO}`));
+    expect(h).toContain("Tentar de novo");
+    expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+    expect(h).not.toContain(CARREGANDO_ENVIO);
+    semCampo(h);
+  });
+  it("falhou: Tentar de novo chama falhaPermissao (o <Botao> do design system)", () => {
+    m.g = criarGanchos();
+    const tentar = vi.fn();
+    clicarBotao(m.g.renderizar(Compositor, props({ podeEnviar: null, falhaPermissao: tentar })), "Tentar de novo");
+    expect(tentar).toHaveBeenCalledTimes(1);
+  });
+  it("só false mostra o motivo de falta de permissão", () => {
+    const h = html({ podeEnviar: false });
+    expect(h).toContain(MOTIVO_SEM_ENVIO);
+    expect(h).not.toContain(CARREGANDO_ENVIO);
+    semCampo(h);
+    expect(html({ podeEnviar: true })).toContain("Digite uma mensagem");
   });
 });
 

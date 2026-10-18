@@ -1138,6 +1138,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Copiar código Pix → secundario/sm",
   ],
   "src/components/conversa/Compositor.tsx": [
+    "<Botao> Tentar de novo → secundario/sm",
     "<Botao> Enviar → primario/md",
   ],
   "src/components/conversa/SeletorEmoji.tsx": [

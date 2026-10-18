@@ -2952,3 +2952,26 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp`): 59 arquivos e 473 testes verdes, saída 0.
   - O `npm run test:int` completo fica com o integrador.
 **Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
+## Pendências da revisão do #218 (C2, C3) (18/10/2026)
+
+- **C2:** o compositor do Inbox novo distingue permissão carregando (`podeEnviar: null` → "Carregando…", em `role="status"`),
+  painel que falhou (`falhaPermissao` → erro em `role="alert"` com o `<Botao>` "Tentar de novo", que volta a carregar) e
+  permissão negada (`false` → o motivo). Continua falhando fechado: só `true` envia. Testes em `Compositor.test.ts`,
+  `ConversaAberta.test.ts` e `InboxNovo.interacao.test.ts`.
+- **C3:** um aviso do SSE do atendimento aberto, ou um `resync`, recarrega o painel (`versaoPainel`). Assim o compositor libera
+  quando alguém transfere ou convida com envio. Teste de componente que simula o aviso em `InboxNovo.interacao.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (715 arquivos, 5288 testes). Nenhuma mudança no servidor, então a integração não foi rodada.
+
+**Correções da R1 do #220 (18/10/2026)**
+
+- **B1:** merge do `main` com o #219 (4D). O `Compositor` recebe `podeEnviar: boolean | null`, `falhaPermissao?` e `capacidades`, e
+  não tem mais `driver`. Em `ConversaAberta` o null de carregando vai só ao compositor; `comandosDaMensagem` recebe
+  `envioLiberado === true`, então carregando não libera comando.
+- **C1:** só `atendimento.atualizado` do atendimento aberto e `resync` recarregam o painel; `mensagem.nova` e `mensagem.status`, não.
+  Esses são os tipos reais do SSE (`AvisoInbox`). O convite de participante não gera aviso: a tabela de participantes não tem
+  trigger de `notificar_inbox`. Por isso o convite com envio só libera o compositor depois de um `resync`, de uma ação na
+  tela ou de reabrir a conversa (pendência de servidor).
+- **C2:** se a recarga falha e o painel daquele atendimento já tinha carregado, fica o último painel conhecido. O erro com
+  "Tentar de novo" aparece só na carga inicial. Testes em `InboxNovo.interacao.test.ts`.

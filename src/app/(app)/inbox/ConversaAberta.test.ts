@@ -23,7 +23,7 @@ vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), sile
 import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import { MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
+import { CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import type { ConversaHook } from "@/components/conversa/useConversa";
 import { COMANDOS_MENSAGEM_LIGADOS, ConversaAberta, comandosDaMensagem, podeEnviarNaConversa, type PropsConversaAberta } from "./ConversaAberta";
 
@@ -35,7 +35,7 @@ const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
   responsavelId: "u1", numeroDonoId: null, setoresDoNumero: ["COMERCIAL"], atendimentoOrigemId: null, capacidades: [], ...o,
 });
 const conversaVazia = { mensagens: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
-const propsConversa = (o: Partial<PropsConversaAberta> & { podeEnviar: boolean }): PropsConversaAberta => ({
+const propsConversa = (o: Partial<PropsConversaAberta> & { podeEnviar: boolean | null }): PropsConversaAberta => ({
   item: item(), usuario, fuso: null, conversa: conversaVazia, aoVoltar: () => {}, aoAbrirPainel: () => {}, aoMudar: () => {}, ...o,
 });
 const msg: MensagemThread = {
@@ -84,7 +84,7 @@ describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do
   });
   it("a conversa passa ao balão os comandos da mensagem pelas capacidades e pelo envio, e abre as ações do motor (fonte)", () => {
     const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
-    expect(fonte).toMatch(/<BalaoMensagem[\s\S]*?comandos=\{comandosDaMensagem\(m, capacidades, envioLiberado\)\}/);
+    expect(fonte).toMatch(/<BalaoMensagem[\s\S]*?comandos=\{comandosDaMensagem\(m, capacidades, envioLiberado === true\)\}/); // carregando (null) não libera comando
     expect(fonte).toMatch(/c === "reagir" \|\| c === "editar" \|\| c === "apagar"\) setAcaoMensagem/);
     expect(fonte).toMatch(/<AcoesMensagem[\s\S]*?aoMudar=\{\(\) => void conversa\.recarregar\(\)\}/);
   });
@@ -118,9 +118,22 @@ describe("ConversaAberta: o compositor respeita o podeEnviar do servidor e o sta
     const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true, item: item({ status: "ENCERRADO" }) })));
     expect(h).toContain(MOTIVO_SEM_ENVIO);
   });
-  it("InboxNovo passa à conversa o podeEnviar do painel do atendimento aberto (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/InboxNovo.tsx", "utf8");
-    expect(fonte).toMatch(/<ConversaAberta[\s\S]*?podeEnviar=\{painelSetor\?\.id === selecionado && painelSetor\.dado\?\.podeEnviar === true\}/);
+  it("permissão ainda carregando (null): repassa null; encerrado continua false", () => {
+    expect(podeEnviarNaConversa(item(), null)).toBeNull();
+    expect(podeEnviarNaConversa(item({ status: "ENCERRADO" }), null)).toBe(false);
+  });
+  it("componente: carregando mostra Carregando…, não o motivo (C2 da revisão do #218)", () => {
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: null })));
+    expect(h).toContain(CARREGANDO_ENVIO);
+    expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+  });
+  it("componente: falha no painel mostra o erro com Tentar de novo; encerrado mostra o motivo", () => {
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: null, falhaPermissao: () => {} })));
+    expect(h).toContain(FALHA_PERMISSAO_ENVIO);
+    expect(h).toContain("Tentar de novo");
+    const enc = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: null, falhaPermissao: () => {}, item: item({ status: "ENCERRADO" }) })));
+    expect(enc).toContain(MOTIVO_SEM_ENVIO);
+    expect(enc).not.toContain(FALHA_PERMISSAO_ENVIO);
   });
 });
 
