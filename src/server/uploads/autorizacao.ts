@@ -89,6 +89,28 @@ export async function exigirArquivoVinculavel(usuario: UsuarioArquivo, url: stri
   if (alterado.count !== 1) throw new ErroRegra("O upload foi vinculado por outra operação. Atualize a página.");
 }
 
+/**
+ * Upload "livre" para reuso fora de um objeto (ex.: base de conhecimento da Aria): enviado pelo
+ * próprio usuário, sem vínculo em RegistroUpload (lead/aluno/cobrança/matrícula) e sem nenhuma
+ * referência que lhe dê finalidade (cobrança, informe de pagamento, documento ou mídia de WhatsApp).
+ * Mais restrito que `podeLerArquivo`: arquivo com finalidade nunca é livre, nem para o Administrador.
+ */
+export async function uploadLivreDoAutor(usuario: UsuarioArquivo, registroUploadId: string, tx: Banco = prisma) {
+  if (!usuario?.id || !registroUploadId) return null;
+  const registro = await tx.registroUpload.findUnique({ where: { id: registroUploadId } });
+  if (!registro || registro.autorId !== usuario.id) return null;
+  if (registro.leadId || registro.alunoId || registro.cobrancaId || registro.matriculaId) return null;
+  const url = registro.url;
+  const referencias = await Promise.all([
+    tx.cobranca.count({ where: { comprovanteUrl: url } }),
+    tx.pagamentoInformado.count({ where: { comprovanteUrl: url } }),
+    tx.documento.count({ where: { url } }),
+    tx.mensagemWhatsApp.count({ where: { midiaPath: url } }),
+    tx.intencaoMensagem.count({ where: { midiaPath: url } }),
+  ]);
+  return referencias.some((n) => n > 0) ? null : registro;
+}
+
 /** Leitura depende da finalidade atual e do objeto, inclusive após transferência. */
 export async function podeLerArquivo(usuario: UsuarioArquivo, segmentos: string[]): Promise<boolean> {
   if (!usuario?.id || !usuario.papeis.length) return false;
