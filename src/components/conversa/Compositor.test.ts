@@ -24,7 +24,7 @@ import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
 
 function props(p: Partial<PropsCompositor> = {}): PropsCompositor {
   return {
-    atendimentoId: "at1", modo: "responder", podeEnviar: true, driver: "META_CLOUD",
+    atendimentoId: "at1", modo: "responder", podeEnviar: true, capacidades: [],
     aoEnviarTexto: vi.fn(async () => ({ ok: true as const })),
     aoEnviarMidia: vi.fn(async () => ({ ok: true as const })),
     aoNota: vi.fn(async () => ({ ok: true as const })),
@@ -137,6 +137,17 @@ describe("Compositor", () => {
     expect(h).toContain(AVISO_RECURSO_MOTOR);
     for (const r of ["Contato", "Enquete", "Localização"]) expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
   });
+
+  it("contato, enquete e localização só ficam ativos quando estão nas capacidades da thread", () => {
+    m.g = criarGanchos();
+    const p = props({ capacidades: ["cartaoContato", "enquete", "localizacao"] });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    (elementos(tela()).find((n) => n.props["aria-label"] === "Anexar")!.props.onClick as () => void)();
+    const h = renderToStaticMarkup(createElement("div", null, tela() as ReactNode));
+    expect(h).not.toContain(AVISO_RECURSO_MOTOR);
+    for (const r of ["Contato", "Enquete", "Localização"]) expect(h).not.toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
+  });
+
   // C2 da R1 do #217: anexar arquivo e gravar áudio (os do Inbox antigo) ficam no compositor novo.
   it("anexar: o arquivo escolhido sobe em /api/whatsapp/upload do atendimento e sai pelo aoEnviarMidia com a legenda", async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ url: "/api/files/whatsapp-out/u1/doc.pdf" }) }));
