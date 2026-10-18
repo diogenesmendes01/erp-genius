@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ const aviso = (x: { id: string; conversaId: string }): AvisoInbox => ({ tipo: "m
 beforeEach(async () => {
   await truncarBanco();
   v1 = await criarUsuario([Papel.VENDEDOR]); v2 = await criarUsuario([Papel.VENDEDOR]); fin = await criarUsuario([Papel.FINANCEIRO]);
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Inst", driver: "BAILEYS", finalidade: "VENDAS", donoId: null } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Inst", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", donoId: null } });
   numeroId = numero.id;
   const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: v1.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688888888", leadId: lead.id } });

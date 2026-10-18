@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, DriverWhatsApp } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
@@ -18,7 +18,7 @@ async function contato(extra: { alunoId?: string; responsavelId?: string; telefo
 }
 async function numero(finalidade: "VENDAS" | "COBRANCA", donoId?: string) {
   seq += 1;
-  return prisma.numeroWhatsApp.create({ data: { telefoneE164: `+55119${String(seq).padStart(8, "0")}`, rotulo: `N${seq}`, driver: "BAILEYS", finalidade, providerRef: `ref-${seq}`, donoId: donoId ?? null } });
+  return prisma.numeroWhatsApp.create({ data: { telefoneE164: `+55119${String(seq).padStart(8, "0")}`, rotulo: `N${seq}`, driver: DriverWhatsApp.BAILEYS, finalidade, providerRef: `ref-${seq}`, donoId: donoId ?? null } });
 }
 async function atendimento(numeroId: string, contatoId: string, data: { finalidade: "COMERCIAL" | "FINANCEIRO" | "SECRETARIA" | "PEDAGOGICO" } & Record<string, unknown>) {
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId, contatoId } });
@@ -79,13 +79,13 @@ describe("painel lateral por setor", () => {
     const m = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "MAT-S" } });
     const n = await numero("COBRANCA");
     const a = await atendimento(n.id, (await contato()).id, { finalidade: "SECRETARIA", alunoId: aluno.id, matriculaId: m.id, responsavelId: sec.id });
-    expect(await carregarPainel(sess(sec), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
+    expect(await carregarPainel(sess(sec), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: "MAT-S", documentosPendentes: 2, podeEnviar: false, acoes: expect.objectContaining({ podeVincular: true, cobranca: null }) });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "c", url: "u" } });
     await prisma.documento.create({ data: { matriculaId: m.id, categoria: "COMPROVANTE", nome: "x", url: "u", arquivado: true } });
     expect(await carregarPainel(sess(sec), a.id)).toMatchObject({ documentosPendentes: 1 });
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, sec);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "SECRETARIA", matriculaCodigo: null, documentosPendentes: null, podeEnviar: false, acoes: expect.objectContaining({ podeCriarLead: false, cobranca: null }) });
   });
 
   it("professor no pedagógico vê turma e frequência; sem telefone", async () => {
@@ -104,14 +104,34 @@ describe("painel lateral por setor", () => {
     const n = await numero("VENDAS");
     const a = await atendimento(n.id, (await contato({ alunoId: aluno.id, telefoneE164: "+50680001111" })).id, { finalidade: "PEDAGOGICO", alunoId: aluno.id, matriculaId: m.id, turmaId: turma.id });
     const painel = await carregarPainel(sess(prof), a.id);
-    expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75,
+    expect(painel).toEqual({ setor: "PEDAGOGICO", turma: "Turma Salvador", frequenciaPct: 75, podeEnviar: true,
       acoes: expect.objectContaining({ nomeSalvo: null, nomePerfil: null, podeCriarLead: false, podeVincular: false, podeEditarNome: false, cobranca: null }) });
     expect(JSON.stringify(painel)).not.toMatch(/\+\d{6,}/);
     const vendedorConvidado = await criarUsuario([Papel.VENDEDOR]);
     await participar(a.id, vendedorConvidado, prof);
-    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null,
+    expect(await carregarPainel(sess(vendedorConvidado), a.id)).toEqual({ setor: "PEDAGOGICO", turma: null, frequenciaPct: null, podeEnviar: false,
       acoes: expect.objectContaining({ podeVincular: false, podeEditarNome: false }) });
   });
+  // C6 do #217: o compositor do Inbox novo decide pelo podeEnviar da thread (atendimentoVisivel com envio), não
+  // por podeExecutar("enviar"), que libera todo mundo. O painel devolve esse podeEnviar.
+  it("podeEnviar: responsável envia; convidado só de leitura não; convidado com envio sim", async () => {
+    const dono = await criarUsuario([Papel.VENDEDOR], "Dono da linha");
+    const linha = await numero("VENDAS", dono.id);
+    const a = await atendimento(linha.id, (await contato()).id, { finalidade: "COMERCIAL", responsavelId: dono.id });
+    expect(await carregarPainel(sess(dono), a.id)).toMatchObject({ podeEnviar: true });
+
+    const gerente = await criarUsuario([Papel.GERENTE_PEDAGOGICO]);
+    await participar(a.id, gerente, dono);
+    const painelLeitura = await carregarPainel(sess(gerente), a.id);
+    expect(painelLeitura).not.toBeNull();
+    expect(painelLeitura).toMatchObject({ podeEnviar: false });
+
+    const comEnvio = await criarUsuario([Papel.GERENTE_PEDAGOGICO]);
+    await prisma.participanteAtendimentoWhatsApp.create({ data: { atendimentoId: a.id, usuarioId: comEnvio.id, concedenteId: dono.id,
+      inicio: new Date(Date.now() - 60_000), fim: new Date(Date.now() + 3_600_000), motivo: "teste", podeEnviar: true } });
+    expect(await carregarPainel(sess(comEnvio), a.id)).toMatchObject({ podeEnviar: true });
+  });
+
   // C2 da R1 do #217 (decisão do dono): as ações do Inbox antigo voltam no painel, com as mesmas regras de carregarThread.
   describe("ações de cadastro e cobrança (as do Inbox antigo)", () => {
     it("linha comercial sem oportunidade: vendedor cria; com oportunidade visível, o id vem para o link do funil", async () => {

@@ -1,25 +1,30 @@
 "use client";
 
 import { Suspense, lazy, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import type { DriverWhatsApp } from "@prisma/client";
 import { IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import type { Resultado } from "@/server/_shared/resultado";
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
-import { AVISO_RECURSO_MOTOR, mimeVozAceito, recursoDisponivel, type RecursoMotor } from "./recursos-canal";
+import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 
 const SeletorEmoji = lazy(() => import("./SeletorEmoji"));
 
 export const MOTIVO_SEM_ENVIO = "Você não pode enviar nesta conversa.";
+export const CARREGANDO_ENVIO = "Carregando…";
+export const FALHA_PERMISSAO_ENVIO = "Não foi possível verificar se você pode enviar nesta conversa.";
 export const AVISO_NOTA = "Nota interna: fica só para a equipe e não é enviada ao contato.";
 const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
   atendimentoId: string;
   modo: "responder" | "nota";
-  podeEnviar: boolean;
-  driver: DriverWhatsApp;
+  /** null: a permissão ainda não chegou (carregando). Só false é falta de permissão. Falha fechada: só true envia. */
+  podeEnviar: boolean | null;
+  /** Presente quando a permissão não pôde ser carregada: o compositor mostra o erro e este é o "Tentar de novo". */
+  falhaPermissao?: () => void;
+  /** `ThreadConversa.capacidades`: recursos que o número executa agora (motor ativo e sessão CONECTADO). */
+  capacidades: readonly RecursoMotor[];
   aoEnviarTexto(t: string): Promise<Resultado<unknown>>;
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
   aoNota(t: string): Promise<Resultado>;
@@ -47,7 +52,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTexto, aoEnviarMidia, aoNota }: PropsCompositor) {
+export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota }: PropsCompositor) {
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erro, setErro] = useState("");
@@ -77,6 +82,21 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
     if (gravador.current?.state === "recording") gravador.current.stop();
   }, []);
 
+  if (podeEnviar !== true && falhaPermissao) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 border-t border-gray-200 bg-composer px-4 py-3 text-sm">
+        <p role="alert" className="text-red-700">{FALHA_PERMISSAO_ENVIO}</p>
+        <Botao variante="secundario" tamanho="sm" onClick={falhaPermissao}>Tentar de novo</Botao>
+      </div>
+    );
+  }
+  if (podeEnviar === null) {
+    return (
+      <div className="border-t border-gray-200 bg-composer px-4 py-3 text-sm text-gray-700" role="status">
+        {CARREGANDO_ENVIO}
+      </div>
+    );
+  }
   if (!podeEnviar) {
     return (
       <div className="border-t border-gray-200 bg-composer px-4 py-3 text-sm text-gray-700" role="status">
@@ -195,7 +215,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
       {emoji && (
         <div className="mb-2">
           <Suspense fallback={<div className="p-3 text-sm">Carregando…</div>}>
-            <SeletorEmoji gif={recursoDisponivel(driver, "gif")} figurinha={recursoDisponivel(driver, "figurinha")} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
+            <SeletorEmoji gif={capacidades.includes("gif")} figurinha={capacidades.includes("figurinha")} aoEmoji={inserirEmoji} aoFechar={() => setEmoji(false)} />
           </Suspense>
         </div>
       )}
@@ -211,7 +231,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, driver, aoEnviarTe
                 <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("image/*,video/*")}>Fotos e vídeos</button>
                 <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("audio/*")}>Áudio</button>
                 {ITENS_MOTOR.map((i) => {
-                  const livre = recursoDisponivel(driver, i.recurso);
+                  const livre = capacidades.includes(i.recurso);
                   return (
                     <div key={i.recurso}>
                       <button type="button" role="menuitem" disabled={!livre} className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>

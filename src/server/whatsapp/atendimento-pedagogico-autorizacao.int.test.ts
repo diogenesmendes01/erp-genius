@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -58,7 +59,7 @@ async function contexto() {
   const autorizacaoA = await prisma.autorizacaoComunicacaoAcademica.create({ data: {
     matriculaId: matriculaA.id, responsavelId: responsavel.id, autorizadaPorId: secretaria.id, evidencia: "Autorização pedagógica do contrato A",
   } });
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", finalidade: "VENDAS", driver: "BAILEYS", providerRef: "PED-264" } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", finalidade: "VENDAS", driver: DriverWhatsApp.BAILEYS, providerRef: "PED-264" } });
   const contatoResponsavel = await prisma.contatoWhatsApp.create({ data: { telefoneE164: responsavel.telefoneE164!, responsavelId: responsavel.id, nomeExibicao: responsavel.nome } });
   return { professor, secretaria, admin, aluno, turmaA, turmaB, matriculaA, matriculaB, responsavel, pagador, autorizacaoA, numero, contatoResponsavel };
 }
@@ -118,7 +119,7 @@ describe("Q145: atendimento pedagógico usa matrícula e autorização explícit
     expect(pendenteCancelada).toMatchObject({ status: "CANCELADA", motivoFalha: "atendimento_sem_acesso" });
     expect((await carregarThread(sessao(c.professor), atendimentoA.id))?.podeEnviar).toBe(false);
 
-    await processarMensagemNormalizada({ numeroProviderRef: c.numero.providerRef, contatoWaId: c.responsavel.telefoneE164!.replace(/\D/g, ""), providerMessageId: "inbound-revogado", corpo: "Mensagem após revogação", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() });
+    await processarMensagemNormalizada({ numeroProviderRef: c.numero.providerRef, contatoWaId: c.responsavel.telefoneE164!.replace(/\D/g, ""), providerMessageId: "inbound-revogado", corpo: "Mensagem após revogação", tipo: "TEXTO", driver: DriverWhatsApp.BAILEYS, fromMe: false, quando: new Date() });
     const inbound = await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { numeroId_providerMessageId: { numeroId: c.numero.id, providerMessageId: "inbound-revogado" } } });
     expect(inbound.atendimentoId).toBeNull();
     entrar(c.admin.id);
@@ -148,7 +149,7 @@ describe("Q145: atendimento pedagógico usa matrícula e autorização explícit
     const abriu = await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: direto.chave });
     if (!abriu.ok || !abriu.dado) throw new Error(abriu.ok ? "Abertura direta sem identificador." : abriu.erro);
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: abriu.dado.id }, include: { conversa: { include: { contato: true } } } });
-    const historica = await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: atendimento.conversaId, atendimentoId: atendimento.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Histórico direto anterior à alteração" } });
+    const historica = await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: atendimento.conversaId, atendimentoId: atendimento.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Histórico direto anterior à alteração" } });
     const pendente = await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: atendimento.conversa.contato!.id, atendimentoId: atendimento.id, origem: "HUMANO", autorId: c.professor.id, corpoRenderizado: "Mensagem direta preparada antes da alteração" } });
 
     await alterar(c);
@@ -162,7 +163,7 @@ describe("Q145: atendimento pedagógico usa matrícula e autorização explícit
     expect(enviarMock).not.toHaveBeenCalled();
     expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: pendente.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "atendimento_sem_acesso" });
 
-    await processarMensagemNormalizada({ numeroProviderRef: c.numero.providerRef, contatoWaId: atendimento.conversa.contato!.telefoneE164.replace(/\D/g, ""), providerMessageId: `inbound-direto-${direto.chave}`, corpo: "Inbound do telefone histórico", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() });
+    await processarMensagemNormalizada({ numeroProviderRef: c.numero.providerRef, contatoWaId: atendimento.conversa.contato!.telefoneE164.replace(/\D/g, ""), providerMessageId: `inbound-direto-${direto.chave}`, corpo: "Inbound do telefone histórico", tipo: "TEXTO", driver: DriverWhatsApp.BAILEYS, fromMe: false, quando: new Date() });
     const inbound = await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { numeroId_providerMessageId: { numeroId: c.numero.id, providerMessageId: `inbound-direto-${direto.chave}` } } });
     expect(inbound.atendimentoId).toBeNull();
     expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: historica.id } })).atendimentoId).toBe(atendimento.id);
