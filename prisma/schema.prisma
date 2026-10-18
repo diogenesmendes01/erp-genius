@@ -184,6 +184,7 @@ model RegistroUpload {
   alunoId String?
   cobrancaId String?
   matriculaId String?
+  fontesConhecimento FonteConhecimento[]
 }
 
 model VinculoDocente {
@@ -9171,4 +9172,47 @@ model NotificacaoUsuario {
 
   @@unique([tipo, refId, criadaEm])
   @@index([usuarioId, lidaEm])
+}
+
+enum TipoFonteConhecimento {
+  TEXTO
+  ARQUIVO
+}
+
+enum StatusFonteConhecimento {
+  PROCESSANDO
+  PRONTA
+  ERRO
+}
+
+model FonteConhecimento {
+  id               String                  @id @default(cuid())
+  tipo             TipoFonteConhecimento
+  nome             String
+  registroUploadId String?
+  registroUpload   RegistroUpload?         @relation(fields: [registroUploadId], references: [id], onDelete: Restrict)
+  status           StatusFonteConhecimento
+  erro             String?
+  hashConteudo     String
+  validoAte        DateTime?
+  enviavelAoLead   Boolean                 @default(false)
+  criadoPorId      String
+  criadoEm         DateTime                @default(now())
+  arquivadaEm      DateTime?
+
+  trechos          TrechoConhecimento[]
+
+  @@index([status, arquivadaEm])
+}
+
+model TrechoConhecimento {
+  id      String            @id @default(cuid())
+  fonteId String
+  fonte   FonteConhecimento @relation(fields: [fonteId], references: [id], onDelete: Restrict)
+  ordem   Int
+  texto   String
+  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration.
+  busca   Unsupported("tsvector")?
+
+  @@unique([fonteId, ordem])
 }
