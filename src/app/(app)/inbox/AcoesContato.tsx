@@ -24,6 +24,8 @@ export interface PropsAcoesContato {
   atendimentoId: string;
   acoes: AcoesContatoInbox;
   fuso: string | null;
+  /** Contato em opt-out: sem "Retomar régua" (a régua não volta a falar com quem pediu para sair), como no Inbox antigo. */
+  optOut?: boolean;
   /** Uma ação concluiu: a tela recarrega lista e painel. */
   aoMudar?: () => void;
 }
@@ -46,7 +48,7 @@ export function avisoCadastroDoNome(a: Pick<AcoesContatoInbox, "fonteNome" | "al
 
 type Aberto = null | "nome" | "vincular";
 
-export function AcoesContato({ atendimentoId, acoes, fuso, aoMudar }: PropsAcoesContato) {
+export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMudar }: PropsAcoesContato) {
   const [aberto, setAberto] = useState<Aberto>(null);
   const criar = useAcaoCliente({ idempotente: false });
 
@@ -77,7 +79,7 @@ export function AcoesContato({ atendimentoId, acoes, fuso, aoMudar }: PropsAcoes
           {aberto === "vincular" && <VincularContato atendimentoId={atendimentoId} acoes={acoes} aoFechar={() => setAberto(null)} aoMudar={aoMudar} />}
         </section>
       )}
-      {acoes.cobranca && <CobrancaContato atendimentoId={atendimentoId} cobranca={acoes.cobranca} fuso={fuso} aoMudar={aoMudar} />}
+      {acoes.cobranca && <CobrancaContato atendimentoId={atendimentoId} cobranca={acoes.cobranca} fuso={fuso} optOut={optOut} aoMudar={aoMudar} />}
     </>
   );
 }
@@ -185,7 +187,7 @@ export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { a
   );
 }
 
-export function CobrancaContato({ atendimentoId, cobranca, fuso, aoMudar }: { atendimentoId: string; cobranca: NonNullable<AcoesContatoInbox["cobranca"]>; fuso: string | null; aoMudar?: () => void }) {
+export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false, aoMudar }: { atendimentoId: string; cobranca: NonNullable<AcoesContatoInbox["cobranca"]>; fuso: string | null; optOut?: boolean; aoMudar?: () => void }) {
   const [pagar, setPagar] = useState(false);
   const [promessa, setPromessa] = useState(false);
   const [data, setData] = useState("");
@@ -216,7 +218,7 @@ export function CobrancaContato({ atendimentoId, cobranca, fuso, aoMudar }: { at
 
   return (
     <section aria-label="Cobrança" className="space-y-2 border-t p-4 text-sm">
-      {cobranca.silencio.ativo && (
+      {!optOut && cobranca.silencio.ativo && (
         <div className="space-y-2 rounded bg-highlight p-2 text-xs text-gray-800">
           <p>Régua automática em silêncio até {formatarInstanteExibicao(cobranca.silencio.ate!, fuso, "UTC").texto}: o contato respondeu e ninguém tratou (S4).</p>
           <Botao tamanho="sm" variante="secundario" ocupado={retomar.ocupado} onClick={() => void retomarRegua()}>Retomar régua</Botao>

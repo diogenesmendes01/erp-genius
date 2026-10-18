@@ -118,7 +118,7 @@ export async function criarNumeroSetor(dados: {
     data: {
       telefoneE164: dados.telefoneE164,
       rotulo: `Número ${dados.telefoneE164}`,
-      driver: "META_CLOUD",
+      driver: "MOTOR",
       finalidade: dados.finalidade ?? "VENDAS",
       providerRef: `ref-${dados.telefoneE164}`,
       donoId: dados.donoId ?? null,
