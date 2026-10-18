@@ -153,3 +153,18 @@ describe("linha de VENDAS: a posse vem do dono da linha (B1 da R1 do #207)", () 
     expect(await atendimentoVisivel(sessao(v1), a.id)).not.toBeNull();
   });
 });
+
+describe("mensagem de recusa segue o motivo (C1 da revisão da 3C)", () => {
+  it("fora de linha de vendas a recusa não fala de linha de vendas", async () => {
+    const { v1, v2, gc, numero, contato } = await cenario();
+    // Lead da carteira de v1 num número institucional: v2 não o enxerga (o responsável gravado não abre a carteira alheia).
+    const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688880009", vendedorDonoId: v1.id } });
+    const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id, reabrir: true }));
+    comoUsuario(gc);
+    const r = await atribuirAtendimento({ atendimentoId: a.id, usuarioId: v2.id });
+    expect(r.ok).toBe(false);
+    expect(r.ok ? "" : r.erro).not.toContain("linha de vendas");
+    expect(r.ok ? "" : r.erro).toContain("não teria acesso");
+    expect(await ler(a.id)).toMatchObject({ responsavelId: a.responsavelId });
+  });
+});

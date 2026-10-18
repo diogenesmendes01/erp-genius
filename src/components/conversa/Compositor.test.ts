@@ -16,7 +16,7 @@ vi.mock("react", async (original) => {
   };
 });
 
-import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, type PropsCompositor } from "./Compositor";
+import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -146,6 +146,97 @@ describe("Compositor", () => {
     const h = renderToStaticMarkup(createElement("div", null, tela() as ReactNode));
     expect(h).not.toContain(AVISO_RECURSO_MOTOR);
     for (const r of ["Contato", "Enquete", "Localização"]) expect(h).not.toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
+  });
+
+  // C2 da R1 do #217: anexar arquivo e gravar áudio (os do Inbox antigo) ficam no compositor novo.
+  it("anexar: o arquivo escolhido sobe em /api/whatsapp/upload do atendimento e sai pelo aoEnviarMidia com a legenda", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ url: "/api/files/whatsapp-out/u1/doc.pdf" }) }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("FormData", class { campos: [string, unknown][] = []; append(k: string, v: unknown) { this.campos.push([k, v]); } });
+    m.g = criarGanchos();
+    const p = props();
+    const tela = () => m.g!.renderizar(Compositor, p);
+    const arquivo = { name: "contrato.pdf", size: 2048, type: "application/pdf" };
+    const seletor = elementos(tela()).find((n) => n.type === "input" && n.props["aria-label"] === "Escolher arquivo")!;
+    (seletor.props.onChange as (e: unknown) => void)({ target: { files: [arquivo], value: "x" } });
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("contrato.pdf");
+    digitar(tela(), "segue o contrato");
+    clicarBotao(tela(), "Enviar");
+    await esvaziar();
+    expect(fetchMock).toHaveBeenCalledWith("/api/whatsapp/upload", expect.objectContaining({ method: "POST" }));
+    const corpo = (fetchMock.mock.calls[0] as unknown as [string, { body: { campos: [string, unknown][] } }])[1].body.campos;
+    expect(corpo).toEqual([["file", arquivo], ["atendimentoId", "at1"]]);
+    expect(p.aoEnviarMidia).toHaveBeenCalledWith("/api/files/whatsapp-out/u1/doc.pdf", "segue o contrato");
+    expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+  });
+
+  it("anexar: arquivo acima de 10MB não sobe e mostra o motivo", () => {
+    m.g = criarGanchos();
+    const p = props();
+    const tela = () => m.g!.renderizar(Compositor, p);
+    const seletor = elementos(tela()).find((n) => n.type === "input" && n.props["aria-label"] === "Escolher arquivo")!;
+    (seletor.props.onChange as (e: unknown) => void)({ target: { files: [{ name: "grande.mp4", size: 11 * 1024 * 1024 }], value: "x" } });
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("Arquivo vazio ou acima de 10MB.");
+  });
+
+  it("gravar áudio: a gravação vira o anexo mensagem-de-voz e sai pelo aoEnviarMidia", async () => {
+    const fluxo = { getTracks: () => [{ stop: vi.fn() }] };
+    let gravador: { start(): void; stop(): void; ondataavailable?: (e: unknown) => void; onstop?: () => void; mimeType: string; state: string } | null = null;
+    class GravadorFalso {
+      static isTypeSupported = (t: string) => t === "audio/ogg;codecs=opus";
+      mimeType: string; state = "inactive"; ondataavailable?: (e: unknown) => void; onstop?: () => void;
+      constructor(_f: unknown, o: { mimeType: string }) { this.mimeType = o.mimeType; gravador = this as never; }
+      start() { this.state = "recording"; }
+      stop() { this.state = "inactive"; this.ondataavailable?.({ data: { size: 10 } }); this.onstop?.(); }
+    }
+    vi.stubGlobal("MediaRecorder", GravadorFalso);
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => fluxo) } });
+    vi.stubGlobal("Blob", class { constructor(public partes: unknown[], public o: unknown) {} });
+    vi.stubGlobal("File", class { size = 10; constructor(_p: unknown[], public name: string, public o: { type: string }) {} });
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ url: "/api/files/whatsapp-out/u1/voz.ogg" }) })));
+    vi.stubGlobal("FormData", class { append() {} });
+    m.g = criarGanchos();
+    const p = props();
+    const tela = () => m.g!.renderizar(Compositor, p);
+    await (elementos(tela()).find((n) => n.props["aria-label"] === "Gravar mensagem de voz")!.props.onClick as () => Promise<void>)();
+    expect(gravador!.state).toBe("recording");
+    (elementos(tela()).find((n) => n.props["aria-label"] === "Parar e revisar áudio")!.props.onClick as () => void)();
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain("mensagem-de-voz.ogg");
+    clicarBotao(tela(), "Enviar");
+    await esvaziar();
+    expect(p.aoEnviarMidia).toHaveBeenCalledWith("/api/files/whatsapp-out/u1/voz.ogg", "");
+  });
+});
+
+describe("Compositor: permissão de envio carregando, falhou ou negada (C2 da revisão do #218)", () => {
+  const semCampo = (h: string) => expect(h).not.toContain("Digite uma mensagem");
+  it("carregando (podeEnviar null): mostra Carregando…, não o motivo, e não envia", () => {
+    const h = html({ podeEnviar: null });
+    expect(h).toContain(CARREGANDO_ENVIO);
+    expect(h).toMatch(/role="status"/);
+    expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+    semCampo(h);
+  });
+  it("falhou: mensagem de erro em role=alert com Tentar de novo, sem o motivo e sem enviar", () => {
+    const h = html({ podeEnviar: null, falhaPermissao: () => {} });
+    expect(h).toMatch(new RegExp(`role="alert"[^>]*>[\\s\\S]*${FALHA_PERMISSAO_ENVIO}`));
+    expect(h).toContain("Tentar de novo");
+    expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+    expect(h).not.toContain(CARREGANDO_ENVIO);
+    semCampo(h);
+  });
+  it("falhou: Tentar de novo chama falhaPermissao (o <Botao> do design system)", () => {
+    m.g = criarGanchos();
+    const tentar = vi.fn();
+    clicarBotao(m.g.renderizar(Compositor, props({ podeEnviar: null, falhaPermissao: tentar })), "Tentar de novo");
+    expect(tentar).toHaveBeenCalledTimes(1);
+  });
+  it("só false mostra o motivo de falta de permissão", () => {
+    const h = html({ podeEnviar: false });
+    expect(h).toContain(MOTIVO_SEM_ENVIO);
+    expect(h).not.toContain(CARREGANDO_ENVIO);
+    semCampo(h);
+    expect(html({ podeEnviar: true })).toContain("Digite uma mensagem");
   });
 });
 

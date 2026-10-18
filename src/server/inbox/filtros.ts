@@ -16,9 +16,9 @@ export function lerFiltrosInbox(p: Record<string, string | string[] | undefined>
   const f: FiltrosInbox = {};
   const setor = um(p.setor);
   if ((SETORES as readonly string[]).includes(setor)) f.setor = setor as Setor;
-  const numeroId = um(p.numeroId).slice(0, 64);
+  const numeroId = (um(p.numeroId) || um(p.numero)).slice(0, 64);
   if (numeroId) f.numeroId = numeroId;
-  const responsavel = um(p.responsavel).slice(0, 64);
+  const responsavel = (um(p.responsavel) || um(p.resp)).slice(0, 64);
   if (responsavel) f.responsavel = responsavel;
   const status = um(p.status);
   if ((STATUS as readonly string[]).includes(status)) f.status = status as StatusAtendimentoWhatsApp;

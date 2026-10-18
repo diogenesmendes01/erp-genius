@@ -112,7 +112,7 @@ it("avisa somente as duas matrículas vinculadas à turma e renderiza a troca do
   expect(avisos.every((aviso) => aviso.canal === "EMAIL" && aviso.itens.map((item) => item.encontroId).includes(encontroId))).toBe(true);
   expect(await prisma.avisoAlteracaoAgenda.count()).toBe(2);
 
-  const transporte = vi.fn(async (_entrada: { canal: "EMAIL" | "WHATSAPP"; destinatario: string; avisoId: string; encontrosIds: string[] }) => ({ situacao: "ACEITO" as const, provedorId: "aceite-no-provedor" }));
+  const transporte = vi.fn<(entrada: { canal: "EMAIL" | "WHATSAPP"; destinatario: string; avisoId: string; encontrosIds: string[] }) => Promise<{ situacao: "ACEITO"; provedorId: string }>>(async () => ({ situacao: "ACEITO" as const, provedorId: "aceite-no-provedor" }));
   await Promise.all(avisos.map((aviso) => despacharAvisoAlteracaoAgendaInterna(aviso.id, transporte)));
   expect(transporte).toHaveBeenCalledTimes(2);
   expect(transporte.mock.calls.map(([entrada]) => entrada).every((entrada) => entrada.canal === "EMAIL" && entrada.encontrosIds.includes(encontroId))).toBe(true);
@@ -280,7 +280,7 @@ it("registra recusa como falha e conserva a incerteza sem reenvio automático", 
   await expect(despacharAvisoAlteracaoAgendaInterna(segundo.id, async () => ({ situacao: "INCERTO" as const }))).resolves.toMatchObject({ enviado: false, incerto: true });
   expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: primeiro.id } })).toMatchObject({ situacao: "FALHOU" });
   expect(await prisma.avisoAlteracaoAgenda.findUniqueOrThrow({ where: { id: segundo.id } })).toMatchObject({ situacao: "INCERTO" });
-  const transporte = vi.fn(async (_entrada: { canal: "EMAIL" | "WHATSAPP"; destinatario: string; avisoId: string; encontrosIds: string[] }) => ({ situacao: "ACEITO" as const, provedorId: "nao-deve-chamar" }));
+  const transporte = vi.fn<(entrada: { canal: "EMAIL" | "WHATSAPP"; destinatario: string; avisoId: string; encontrosIds: string[] }) => Promise<{ situacao: "ACEITO"; provedorId: string }>>(async () => ({ situacao: "ACEITO" as const, provedorId: "nao-deve-chamar" }));
   await despacharAvisoAlteracaoAgendaInterna(segundo.id, transporte);
   expect(transporte).not.toHaveBeenCalled();
 });

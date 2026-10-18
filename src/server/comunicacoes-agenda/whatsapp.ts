@@ -25,13 +25,6 @@ type ConfiguracaoAgenda = {
   templateAvisosAgenda: { id: string; corpo: string; idioma: string; categoria: string; statusMeta: string; metaTemplateId: string | null } | null;
 };
 
-function destinosAgenda(aluno: { whatsapp: boolean; telefoneE164: string | null; responsaveis: { responsavelId: string; responsavel: { telefoneE164: string | null } }[] }) {
-  return [
-    ...(aluno.whatsapp && aluno.telefoneE164 ? [{ telefone: aluno.telefoneE164, responsavelId: null }] : []),
-    ...aluno.responsaveis.flatMap((r) => r.responsavel.telefoneE164 ? [{ telefone: r.responsavel.telefoneE164, responsavelId: r.responsavelId }] : []),
-  ];
-}
-
 export function renderizarTemplateAgenda(corpo: string, dados: { nome: string; horarios: string }) {
   const variaveis: string[] = [];
   let encontrouHorario = false;
