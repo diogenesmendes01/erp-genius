@@ -171,6 +171,9 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
     if (atual.atendimentoId) return null;
     let atendimento;
     try {
+      // TODO(5F, #233): o rodízio (`atribuirAutomaticamente`) da 5F roda só dentro de
+      // `atendimentoDoInbound`; este caminho abre o atendimento direto por `abrirAtendimentoDoSetor`
+      // e ficaria fora dele. Quem entrar por último no main (5C ou 5F) aplica o rodízio aqui também.
       atendimento = await abrirAtendimentoDoSetor(
         tx, { numeroId: msg.conversa.numeroId, contatoId, contato: msg.conversa.contato! }, setor,
       );

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { TipoMensagem } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
@@ -51,9 +52,9 @@ async function cenario() {
     garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: op.id }),
   );
   const conversaId = (await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: at.id }, select: { conversaId: true } })).conversaId;
-  const inbound = (corpo: string, criadoEm = new Date()) =>
+  const inbound = (corpo: string | null, criadoEm = new Date(), tipo: TipoMensagem = "TEXTO") =>
     prisma.mensagemWhatsApp.create({
-      data: { atendimentoId: at.id, conversaId, numeroId: numero.id, direcao: "ENTRADA", corpo, driver: "MOTOR", status: "ENTREGUE", providerMessageId: `o-${++seq}`, criadoEm },
+      data: { atendimentoId: at.id, conversaId, numeroId: numero.id, direcao: "ENTRADA", corpo, tipo, driver: "MOTOR", status: "ENTREGUE", providerMessageId: `o-${++seq}`, criadoEm },
     });
   return { cat, dono, numero, op, contato, at, conversaId, inbound };
 }
@@ -248,6 +249,24 @@ describe("rajada de inbound", () => {
     expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
   });
 
+  // B4: fala nova que a Aria não responderia (SEM_TEXTO) não supera a anterior; senão ninguém responde.
+  for (const [rotulo, tipo] of [["figurinha", "FIGURINHA"], ["audio", "AUDIO"], ["localizacao", "LOCALIZACAO"], ["texto", "TEXTO"]] as const) {
+    it(`texto_mais_${rotulo}_gera_uma_resposta`, async () => {
+      const c = await cenario();
+      await publicar(c.dono.id, "ATIVA");
+      const t = Date.now();
+      const m1 = await c.inbound("Quero saber das turmas", new Date(t - 2000));
+      const m2 = await c.inbound(tipo === "TEXTO" ? "de inglês" : null, new Date(t - 1000), tipo);
+      const contador = provedorContador(provedorSimulado);
+      const r1 = await processarTurnoAria(m1.id, { provedor: contador });
+      const r2 = await processarTurnoAria(m2.id, { provedor: contador });
+      const resultados = [r1, r2].map((r) => ("resultado" in r ? r.resultado : "DUPLICADO"));
+      expect(resultados).toEqual(tipo === "TEXTO" ? ["IGNORADO:FALA_SUPERADA", "RESPONDEU"] : ["RESPONDEU", "IGNORADO:SEM_TEXTO"]);
+      expect(contador.chamadas).toBe(1);
+      expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
+    });
+  }
+
   it("inbound_que_chega_durante_a_chamada_supera_o_turno_em_curso", async () => {
     const c = await cenario();
     await publicar(c.dono.id, "ATIVA");
@@ -306,6 +325,18 @@ describe("reprocessarTurnosPendentes", () => {
     expect((await prisma.turnoAgenteIA.findFirstOrThrow()).ancoraMensagemId).toBe(ultima.id);
     expect(antiga.id).not.toBe(ultima.id);
     expect(await reprocessarTurnosPendentes(agora)).toBe(0);
+    vi.unstubAllEnvs();
+  });
+
+  it("reprocesso_nao_pula_ancora_seguida_de_figurinha", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const agora = new Date();
+    const texto = await c.inbound("Quero saber das turmas", new Date(agora.getTime() - 6 * 60_000));
+    await c.inbound(null, new Date(agora.getTime() - 5 * 60_000), "FIGURINHA");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    expect(await reprocessarTurnosPendentes(agora)).toBe(1);
+    expect((await prisma.turnoAgenteIA.findFirstOrThrow()).ancoraMensagemId).toBe(texto.id);
     vi.unstubAllEnvs();
   });
 

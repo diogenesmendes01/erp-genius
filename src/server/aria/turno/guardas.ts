@@ -35,7 +35,8 @@ export type MotivoBloqueio =
   | "FALA_SUPERADA";
 
 // Texto puro, ou mídia que pode carregar legenda (a legenda vira o texto do turno).
-const TIPOS_COM_TEXTO: ReadonlySet<TipoMensagem> = new Set(["TEXTO", "IMAGEM", "VIDEO", "DOCUMENTO"]);
+// Também define o que conta como "fala mais nova" na rajada: só inbound que a Aria responderia.
+export const TIPOS_COM_TEXTO: ReadonlySet<TipoMensagem> = new Set(["TEXTO", "IMAGEM", "VIDEO", "DOCUMENTO"]);
 
 /** Leis de código: primeiro motivo que impede a Aria de atuar, ou null. GRUPO vence todas. */
 export function motivoParaNaoAtuar(s: SituacaoGuarda): MotivoBloqueio | null {
