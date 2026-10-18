@@ -74,15 +74,15 @@ describe("estadoOrcamento", () => {
 describe("registrarChamadaIA", () => {
   it("registra_ok_com_custo", async () => {
     const c = await registrarChamadaIA("ATENDIMENTO", resp);
-    expect(c).toMatchObject({ resultado: "OK", custoMicroUsd: 9000, provedor: "anthropic" });
+    expect(c).toMatchObject({ resultado: "OK", custoMicroUsd: 8000, provedor: "anthropic" });
   });
   it("registra_custo_com_escrita_de_cache", async () => {
     const c = await registrarChamadaIA("ATENDIMENTO", { ...resp, tokensEscritaCache: 2000 });
-    expect(c.custoMicroUsd).toBe(14000);
+    expect(c.custoMicroUsd).toBe(13000);
     expect(await prisma.chamadaIA.findUniqueOrThrow({ where: { id: c.id } })).toMatchObject({
       tokensCache: 10000,
       tokensEscritaCache: 2000,
-      custoMicroUsd: 14000,
+      custoMicroUsd: 13000,
     });
   });
   it("escrita_de_cache_padrao_zero_e_erro_grava_zero", async () => {
