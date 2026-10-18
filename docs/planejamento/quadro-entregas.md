@@ -2790,3 +2790,14 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
 - Integração (perfil `integracao`): `vitest related` varria quase toda a suíte e foi interrompido; rodados os 37 `*.int.test.ts` do diff:
   37 arquivos, 326 testes verdes. Sem falhas novas.
 **Estado**: Implementado; aguardando revisão e merge (depois da 4D).
+
+## Fase 4F — E2E com motor simulado (18/10/2026)
+
+- Branch `claude/fase4-f-e2e` (PR empilhado sobre `claude/fase4-e-remove-legados`), tarefa 27 do plano `04-fase-motor.md`:
+  motor simulado (`src/test/motor-simulado.ts`) e teste de ponta a ponta (`src/server/whatsapp/motor/ponta-a-ponta.int.test.ts`).
+  A tarefa 28 (roteiro com aparelho real) segue com o integrador.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` sobre os 2 arquivos do diff: 1 arquivo, 6 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4E).
