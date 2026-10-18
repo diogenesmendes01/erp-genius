@@ -65,6 +65,20 @@ async function render(o: { papel: string; aba?: string; semDadosAnteriores?: boo
   return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ ...(o.aba ? { aba: o.aba } : {}), ...o.sp }) }));
 }
 
+/** Variação de cada KPI pelo rótulo, lida do `<span data-variacao>` do cartão. */
+function variacoes(html: string): Record<string, string> {
+  const r: Record<string, string> = {};
+  for (const m of html.matchAll(/<p class="text-xs text-gray-600">([^<]+)<\/p><p class="text-lg font-medium">.*?<span data-variacao="">([^<]*)<\/span>/g)) r[m[1]] = m[2];
+  return r;
+}
+
+/** Query do link "Exportar CSV". */
+function linkExportar(html: string): URLSearchParams {
+  const m = html.match(/href="\/api\/relatorios\/exportar\?([^"]*)"/);
+  expect(m, "link de exportação").not.toBeNull();
+  return new URLSearchParams(m![1].replaceAll("&amp;", "&"));
+}
+
 describe("/relatorios (página)", () => {
   beforeEach(() => {
     mocks.exporta = false;
@@ -93,10 +107,16 @@ describe("/relatorios (página)", () => {
   it("vendedor_com_aba_aria_na_url_cai_na_visao", async () => expect(await render({ papel: "VENDEDOR", aba: "aria" })).toContain('aria-current="page">Visão geral'));
 
   it("kpi_mostra_variacao_e_traco", async () => {
-    expect(await render({ papel: "ADMINISTRADOR", semDadosAnteriores: true })).toContain("—");
+    const semBase = await render({ papel: "ADMINISTRADOR", semDadosAnteriores: true });
+    const v = variacoes(semBase);
+    // Período anterior zerado/vazio: a variação desses KPIs é o traço, nunca Infinity/NaN.
+    for (const rotulo of ["Valor em pipeline", "Oportunidades abertas", "Criadas no período", "Ganhas", "Conversão"]) expect(v[rotulo], rotulo).toBe("—");
+    expect(semBase).not.toMatch(/Infinity|NaN/);
     mocks.chamadas.length = 0;
     inicioAtual = null;
-    expect(await render({ papel: "ADMINISTRADOR" })).toContain("+50%");
+    const comBase = await render({ papel: "ADMINISTRADOR" });
+    expect(variacoes(comBase)["Valor em pipeline"]).toBe("+50%");
+    expect(comBase).not.toMatch(/Infinity|NaN/);
   });
 
   it("cada_metrica_e_chamada_com_o_periodo_e_com_o_anterior", async () => {
@@ -131,6 +151,28 @@ describe("/relatorios (página)", () => {
   it("periodo_invalido_volta_a_30_dias_com_aviso", async () => {
     const html = await render({ papel: "ADMINISTRADOR", sp: { periodo: "PERSONALIZADO", de: "2026-13-40", ate: "2026-10-01" } });
     expect(html).toContain("Período inválido");
+  });
+
+  it("periodo_invalido_exporta_o_periodo_efetivo_30d_sem_de_ate", async () => {
+    mocks.exporta = true;
+    for (const sp of [{ periodo: "PERSONALIZADO", de: "2026-13-40", ate: "2026-10-01" }, { periodo: "PERSONALIZADO", ate: "2026-10-01" }, { periodo: "PERSONALIZADO" }] as Record<string, string>[]) {
+      const html = await render({ papel: "ADMINISTRADOR", sp });
+      expect(html).toContain("Período inválido");
+      const q = linkExportar(html);
+      expect(q.get("periodo"), JSON.stringify(sp)).toBe("30D");
+      expect(q.has("de")).toBe(false);
+      expect(q.has("ate")).toBe(false);
+      expect(html).not.toContain("undefined");
+    }
+  });
+
+  it("periodo_personalizado_valido_exporta_de_e_ate", async () => {
+    mocks.exporta = true;
+    const q = linkExportar(await render({ papel: "ADMINISTRADOR", sp: { periodo: "PERSONALIZADO", de: "2026-09-01", ate: "2026-09-30", origem: "WHATSAPP" } }));
+    expect(q.get("periodo")).toBe("PERSONALIZADO");
+    expect(q.get("de")).toBe("2026-09-01");
+    expect(q.get("ate")).toBe("2026-09-30");
+    expect(q.get("origem")).toBe("WHATSAPP");
   });
 
   it("painel_de_detalhe_em_folha_inteira_no_celular", async () => {

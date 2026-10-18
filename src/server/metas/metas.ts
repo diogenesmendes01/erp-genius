@@ -64,6 +64,10 @@ export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
         autorId: autor.id,
         payload: { ...chave, de: atual ? numero(atual.valor) : null, para: valor },
       });
+    }).catch((e: unknown) => {
+      // Corrida no índice único parcial: outra pessoa criou a mesma meta entre o findFirst e o create.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new ErroRegra("Esta meta acabou de ser salva por outra pessoa. Confira a tabela e salve de novo se quiser mudar o valor.");
+      throw e;
     });
   });
 }
