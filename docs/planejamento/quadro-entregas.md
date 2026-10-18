@@ -3117,3 +3117,9 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - Dados em `PrazoRespostaSetor` (colunas da migration `crm_configuracoes`); nenhuma migration nova. Linha criada ao salvar com prazo 60 min quando não existia.
 - Gancho: `atendimentoDoInbound` (`whatsapp/atendimentos.ts`) chama `atribuirAutomaticamente` no 1º inbound de atendimento sem responsável (MANUAL, sem participantes ativos ou setor sem linha = fila). Carteira = `Oportunidade.vendedorDonoId` do lead (só COMERCIAL) e vale antes da regra; carteira não move `ultimoAtribuidoId`.
 - Papéis: Admin todos os setores; Gerente Comercial só COMERCIAL; Gerente Pedagógico só PEDAGOGICO (a página da seção continua só Admin/Gerente Comercial). Participante precisa ser ativo e ter o setor pelo papel (`setoresDoUsuario`).
+
+### Fase 5F, Task 40: Tags e campos personalizados — 2026-10-18
+
+- `src/server/crm-config/tags-campos.ts` (`salvarTag`, `arquivarTag`, `salvarCampo`, `arquivarCampo`), `acoes-tags-campos.ts` (fronteira Server Action) e tela `configuracao/crm/tags-campos` (`TagsCamposPainel.tsx`). Eventos `TagSalva`/`TagArquivada` (agregado `Tag`) e `CampoSalvo`/`CampoArquivado` (agregado `CampoPersonalizado`), todos com `{de, para}`.
+- Adaptação ao schema real: o tipo "LISTA" do brief é `SELECAO`; a cor é o enum `CorTag` (não existe hex no modelo); arquivar tag = `ativo=false`, arquivar campo = `arquivadoEm`. Nome único ignora caixa e acento (comparação em código, por alvo nos campos). Trocar tipo/alvo com valores preenchidos é bloqueado. Arquivar campo exige digitar o nome e não apaga valores. Papéis: Admin e Gerente Comercial.
+- Nenhuma migration nova.
