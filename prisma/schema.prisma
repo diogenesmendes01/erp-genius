@@ -8673,17 +8673,19 @@ model AcaoAgenteIA {
 }
 
 model ChamadaIA {
-  id            String          @id @default(cuid())
-  origem        OrigemChamadaIA
-  modelo        String
-  provedor      String
-  tokensEntrada Int
-  tokensSaida   Int
-  tokensCache   Int
-  custoMicroUsd Int
-  latenciaMs    Int
-  resultado     String
-  criadoEm      DateTime        @default(now())
+  id                 String          @id @default(cuid())
+  origem             OrigemChamadaIA
+  modelo             String
+  provedor           String
+  tokensEntrada      Int
+  tokensSaida        Int
+  tokensCache        Int
+  /// cache_creation_input_tokens (fora de tokensEntrada); já entra em custoMicroUsd.
+  tokensEscritaCache Int             @default(0)
+  custoMicroUsd      Int
+  latenciaMs         Int
+  resultado          String
+  criadoEm           DateTime        @default(now())
 
   turnos        TurnoAgenteIA[]
 

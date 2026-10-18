@@ -2,6 +2,17 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Pendências da revisão do #227 e do #231 (18/10/2026)
+
+Branch `claude/pendencias-227-231`. Três pendências de revisão de PRs já mergeados.
+
+- **#231 C1, aviso direcionado no `npm test`**: o caminho de permissão do aviso com `paraUsuarioId` só tinha cobertura em `*.int.test.ts`. Agora `src/server/inbox/eventos-sse.test.ts` (prisma e escopo mockados, ambos "fora do escopo") cobre: o destinatário recebe sem consultar o escopo; outro usuário não recebe, nem com o atendimento no escopo dele; `mensagem.nova` e `mensagem.status` com `paraUsuarioId` são barrados; o aviso comum fora do escopo é barrado; `formatarSSE` não emite `paraUsuarioId` nem o id do destinatário. Só teste; o código já fazia isso.
+- **#227 C1, escrita de cache registrada**: a coluna `ChamadaIA.tokensEscritaCache Int @default(0)` (migration `20261018070000_chamada_ia_escrita_cache`, só `ADD COLUMN ... DEFAULT 0`) é gravada por `registrarChamadaIA` (0 nas falhas). O valor já entrava em `custoMicroUsd`. Testes: `src/server/aria/uso.test.ts` (mapeamento com prisma mockado) e `uso.int.test.ts` (coluna lida do banco, padrão 0).
+- **#227 C2, fator conforme o ttl**: `fatorEscritaCache(ttl)` devolve 1,25× para o cache efêmero de 5 min (sem `ttl` ou `"5m"`) e 2× para `ttl: "1h"`. O `cache_control` do sistema virou `CACHE_CONTROL_SISTEMA` em `custo.ts`, usado por `provedor/anthropic.ts`, e o fator sai do `ttl` dele: trocar o ttl muda o custo junto. Hoje segue sem ttl (1,25×). Testes em `custo.test.ts`.
+- `tsc --noEmit`: saída 0. `eslint .`: 0 erros (40 avisos já existentes, nenhum nos arquivos tocados). `npm test`: 734 arquivos, 5454 testes verdes.
+- Banco descartável `erp_genius_test_pend227`: todas as migrations aplicadas em sequência num banco limpo, e `ChamadaIA` sem diferença em relação ao schema. Integração de `src/server/aria` e `src/server/inbox`: 13 arquivos, 127 testes verdes.
+- **Estado**: implementado, aguarda revisão.
+
 ## Inbox novo — pendências da revisão do #223 (18/10/2026)
 
 Branch `claude/pendencias-223`. Duas pendências da revisão do #223 (mergeado em 31304a7e).
