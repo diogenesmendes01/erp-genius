@@ -1,0 +1,95 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+
+const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
+import { prisma } from "@/lib/prisma";
+import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
+import { criarNumeroSetor } from "@/test/integracao-whatsapp";
+import { atendimentoDoInbound } from "@/server/whatsapp/atendimentos";
+import { salvarDistribuicaoSetor } from "./distribuicao";
+import { salvarSlaSetor } from "./sla";
+
+type U = Awaited<ReturnType<typeof criarUsuario>>;
+let admin: U, gerente: U, financeiro: U, v1: U, v2: U;
+let numeroId: string;
+let seq = 0;
+const logado = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
+const sla = { finalidade: "COMERCIAL", prazoPrimeiraRespostaMin: 30, alertarResponsavel: true, alertarGerente: false, contarSoNoHorario: true } as const;
+const config = async (finalidade: "COMERCIAL", regra: "RODIZIO" | "MENOR_CARGA" | "MANUAL", ids: string[]) => {
+  logado(admin);
+  expect((await salvarDistribuicaoSetor({ finalidade, regra, participantesIds: ids })).ok).toBe(true);
+};
+async function novoInboundComercial(leadId?: string) {
+  seq += 1;
+  const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: `+5069000${String(seq).padStart(4, "0")}`, ...(leadId ? { leadId } : {}) } });
+  const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId, contatoId: contato.id } });
+  const id = await prisma.$transaction((tx) => atendimentoDoInbound(tx, conversa.id));
+  return prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: id! } });
+}
+const eventos = async () => (await eventosDo("ConfigSetorAtendimento", "COMERCIAL"));
+const ultimoEvento = async (tipo: string) => (await eventos()).filter((e) => e.tipo === tipo).at(-1)!;
+
+beforeEach(async () => {
+  await truncarBanco();
+  admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+  gerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
+  financeiro = await criarUsuario([Papel.FINANCEIRO], "Fin");
+  v1 = await criarUsuario([Papel.VENDEDOR], "V1");
+  v2 = await criarUsuario([Papel.VENDEDOR], "V2");
+  numeroId = (await criarNumeroSetor({ telefoneE164: "+5511900000039", setores: ["COMERCIAL"] })).id;
+  logado(admin);
+});
+
+describe("Distribuição e SLA por setor", () => {
+  it("participante_de_outro_setor_rejeitado", async () => {
+    logado(admin);
+    expect((await salvarDistribuicaoSetor({ finalidade: "COMERCIAL", regra: "RODIZIO", participantesIds: [financeiro.id] })).ok).toBe(false);
+  });
+
+  it("gerente_comercial_so_o_proprio_setor", async () => {
+    logado(gerente);
+    expect((await salvarSlaSetor({ ...sla, finalidade: "FINANCEIRO" })).ok).toBe(false);
+    expect((await salvarSlaSetor({ ...sla, finalidade: "COMERCIAL" })).ok).toBe(true);
+    expect((await ultimoEvento("SlaAlterado")).payload).toMatchObject({ para: { minutos: 30 } });
+  });
+
+  it("vendedor_nao_configura", async () => {
+    logado(v1);
+    expect((await salvarSlaSetor(sla)).ok).toBe(false);
+  });
+
+  it("atribuicao_automatica_grava_motivo", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
+    expect((await ultimoEvento("DistribuicaoAlterada"))).toBeTruthy();
+    const a1 = await novoInboundComercial();
+    const a2 = await novoInboundComercial();
+    const a3 = await novoInboundComercial();
+    expect([a1.responsavelId, a2.responsavelId, a3.responsavelId]).toEqual([v1.id, v2.id, v1.id]);
+    expect(a1.status).toBe("EM_ATENDIMENTO");
+    expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ motivo: "RODIZIO" });
+  });
+
+  it("menor_carga_e_manual", async () => {
+    await config("COMERCIAL", "MENOR_CARGA", [v1.id, v2.id]);
+    const a1 = await novoInboundComercial();
+    const a2 = await novoInboundComercial();
+    expect(a1.responsavelId).toBe(v1.id);
+    expect(a2.responsavelId).toBe(v2.id);
+    expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ motivo: "MENOR_CARGA" });
+    await config("COMERCIAL", "MANUAL", []);
+    const a3 = await novoInboundComercial();
+    expect(a3.responsavelId).toBeNull();
+    expect(a3.status).toBe("ABERTO_SEM_RESPONSAVEL");
+  });
+
+  it("carteira_do_lead_vem_primeiro", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id]);
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: v2.id, etapa: "NOVO" } });
+    const a = await novoInboundComercial(lead.id);
+    expect(a.responsavelId).toBe(v2.id);
+    expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ motivo: "CARTEIRA" });
+  });
+});

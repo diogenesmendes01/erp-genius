@@ -8,6 +8,7 @@ import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./li
 import { comContatoIndividual } from "./grupos";
 import { setoresDoNumero } from "./numero-setor";
 import { registrarEvento } from "@/server/_shared";
+import { atribuirAutomaticamente } from "@/server/crm-config/distribuicao";
 import { MSG_FINANCEIRO_EXIGE_MATRICULA, MSG_MATRICULA_DE_OUTRO_ALUNO, MSG_MATRICULA_EXIGE_ALUNO } from "./erro-regra-atendimento";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
@@ -90,6 +91,13 @@ export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: 
  * Canal institucional: não adivinha o assunto quando há mais de um atendimento aberto — fica na triagem.
  */
 export async function atendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
+  const id = await resolverAtendimentoDoInbound(tx, conversaId);
+  // Abertura sem responsável: a distribuição do setor (Fase 5F) atribui no 1º inbound; sem regra, fica na fila.
+  if (id) await atribuirAutomaticamente(tx, id);
+  return id;
+}
+
+async function resolverAtendimentoDoInbound(tx: Prisma.TransactionClient, conversaId: string): Promise<string | null> {
   const abertos = await tx.atendimentoWhatsApp.findMany({ where: { conversaId, encerradoEm: null }, include: { conversa: { include: { contato: true } } }, take: 2 });
   // Assunto institucional aberto: o roteamento institucional vale mesmo num número de VENDAS (LC-I01).
   if (abertos.every((a) => a.finalidade === "COMERCIAL")) {

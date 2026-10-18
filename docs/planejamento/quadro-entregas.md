@@ -3110,3 +3110,10 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - Cliente do motor em `src/server/whatsapp/motor/numero.ts` (`atualizarPerfil`, `atualizarPrivacidade`, `definirTemporarias`, injetável). O contrato /v1 do motor TEM os endpoints (`profile.update`, `profile.picture`, `privacy.update` incl. `defaultDisappearing`), então não há pendência no repositório do motor, exceto: a foto aceita no máximo 128 KB decodificados no motor (o ERP aceita até 2 MB pelo brief; acima de 128 KB o motor recusa e nada é salvo) e "adicionar a grupos" não tem a opção "ninguém" no WhatsApp.
 - As colunas `perfilNome/perfilRecado/perfilFotoUploadId/privacidade/temporariasSegundos` já vieram na migration `20261018040000_crm_configuracoes` (Task 37); nenhuma migration nova.
 - Temporárias = padrão para conversas novas (`defaultDisappearing`); conversas já abertas não mudam.
+
+### Fase 5F, Task 39: Distribuição e SLA por setor — 2026-10-18
+
+- `src/server/crm-config/distribuicao.ts` (`escolherResponsavel` pura, `salvarDistribuicaoSetor`, `atribuirAutomaticamente` com `SELECT … FOR UPDATE` na linha do setor), `sla.ts` (`salvarSlaSetor`), `acoes-distribuicao.ts` (fronteira Server Action da tela) e tela `configuracao/crm/distribuicao` (`SetorPainel.tsx`). Eventos no agregado `ConfigSetorAtendimento`: `DistribuicaoAlterada`, `SlaAlterado`, `AtendimentoAtribuido {motivo}`.
+- Dados em `PrazoRespostaSetor` (colunas da migration `crm_configuracoes`); nenhuma migration nova. Linha criada ao salvar com prazo 60 min quando não existia.
+- Gancho: `atendimentoDoInbound` (`whatsapp/atendimentos.ts`) chama `atribuirAutomaticamente` no 1º inbound de atendimento sem responsável (MANUAL, sem participantes ativos ou setor sem linha = fila). Carteira = `Oportunidade.vendedorDonoId` do lead (só COMERCIAL) e vale antes da regra; carteira não move `ultimoAtribuidoId`.
+- Papéis: Admin todos os setores; Gerente Comercial só COMERCIAL; Gerente Pedagógico só PEDAGOGICO (a página da seção continua só Admin/Gerente Comercial). Participante precisa ser ativo e ter o setor pelo papel (`setoresDoUsuario`).
