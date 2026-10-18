@@ -232,7 +232,7 @@ export function PoliticaPainel({
             </select>
             {remetente && remetente.driver !== "MOTOR" && (
               <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
-                <IconAlertTriangle className="h-3 w-3" /> Só números do motor WhatsApp enviam a política. Escolha um número do motor para armar.
+                <IconAlertTriangle className="h-3 w-3" /> Degraus automáticos exigem número do motor WhatsApp.
               </span>
             )}
           </label>
