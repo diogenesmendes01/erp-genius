@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, DriverWhatsApp } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
@@ -18,7 +18,7 @@ async function contato(extra: { alunoId?: string; responsavelId?: string; telefo
 }
 async function numero(finalidade: "VENDAS" | "COBRANCA", donoId?: string) {
   seq += 1;
-  return prisma.numeroWhatsApp.create({ data: { telefoneE164: `+55119${String(seq).padStart(8, "0")}`, rotulo: `N${seq}`, driver: "BAILEYS", finalidade, providerRef: `ref-${seq}`, donoId: donoId ?? null } });
+  return prisma.numeroWhatsApp.create({ data: { telefoneE164: `+55119${String(seq).padStart(8, "0")}`, rotulo: `N${seq}`, driver: DriverWhatsApp.BAILEYS, finalidade, providerRef: `ref-${seq}`, donoId: donoId ?? null } });
 }
 async function atendimento(numeroId: string, contatoId: string, data: { finalidade: "COMERCIAL" | "FINANCEIRO" | "SECRETARIA" | "PEDAGOGICO" } & Record<string, unknown>) {
   const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId, contatoId } });

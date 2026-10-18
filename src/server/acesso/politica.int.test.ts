@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -134,7 +135,7 @@ describe("equipe e cobertura temporária (AC02/AC07/AC08)", () => {
     const cat = await seedCatalogoMinimo();
     const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluno", paisId: cat.pais.id } });
     const m = await prisma.matricula.create({ data: { alunoId: aluno.id, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", comissoes: { create: { vendedorId: titular.id, percentual: 10, valor: 20, moeda: "CRC" } } } });
-    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511987654321", rotulo: "Comercial", driver: "BAILEYS", finalidade: "VENDAS" } });
+    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511987654321", rotulo: "Comercial", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS" } });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688888888", leadId: lead.id } });
     const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
     const intencao = await prisma.intencaoMensagem.create({ data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: atendimento.id, origem: "HUMANO", autorId: titular.id, corpoRenderizado: "Mensagem anterior" } });
@@ -153,7 +154,7 @@ describe("equipe e cobertura temporária (AC02/AC07/AC08)", () => {
   });
 
   it("reatribuição não tira o atendimento de AGUARDANDO_CLIENTE", async () => {
-    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511987654322", rotulo: "Comercial", driver: "BAILEYS", finalidade: "VENDAS", donoId: titular.id } });
+    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511987654322", rotulo: "Comercial", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", donoId: titular.id } });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688888889", leadId: lead.id } });
     const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
     expect(atendimento).toMatchObject({ responsavelId: titular.id, status: "EM_ATENDIMENTO" });

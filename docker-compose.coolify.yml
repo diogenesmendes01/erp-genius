@@ -16,32 +16,6 @@
 name: erp-genius
 
 services:
-  # Banco init: cria o banco "evolution" ANTES do serviço db subir de vez (one-shot).
-  # Em VPS avulsa isso vinha de ./deploy/initdb (bind mount), mas no Coolify Git deploy
-  # o bind mount relativo pode falhar. Solução: comando SQL inline via psql.
-  # Idempotente: SELECT + \gexec só executa CREATE se o banco não existe (testado real).
-  db-init:
-    image: postgres:16-alpine
-    restart: "no"
-    environment:
-      PGUSER: ${POSTGRES_USER:?defina no Coolify}
-      PGPASSWORD: ${POSTGRES_PASSWORD:?defina no Coolify}
-      PGHOST: db
-      PGDATABASE: postgres
-    # \gexec executa o resultado do SELECT como comando; se o banco já existe, nada roda.
-    # ON_ERROR_STOP=1 faz falhar em erro real (senha/host). Idempotente: exit 0 nas duas execuções.
-    command:
-      - sh
-      - -c
-      - |
-        until pg_isready -h db -U "$$PGUSER"; do sleep 1; done
-        psql -h db -U "$$PGUSER" -d postgres -v ON_ERROR_STOP=1 <<'SQL'
-        SELECT 'CREATE DATABASE evolution' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'evolution')\gexec
-        SQL
-    depends_on:
-      db:
-        condition: service_healthy
-
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -70,8 +44,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      db-init:
-        condition: service_completed_successfully
     restart: "no"
 
   app:
@@ -98,16 +70,10 @@ services:
       IA_MODELO: ${IA_MODELO:-}
       # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
-      # Driver Meta Cloud API.
-      META_WA_TOKEN: ${META_WA_TOKEN:-}
-      META_WA_APP_SECRET: ${META_WA_APP_SECRET:-}
-      META_WA_VERIFY_TOKEN: ${META_WA_VERIFY_TOKEN:-}
-      META_WA_WABA_ID: ${META_WA_WABA_ID:-}
-      # Driver Baileys (Evolution na rede interna).
-      EVOLUTION_URL: http://evolution:8080
-      EVOLUTION_APIKEY: ${EVOLUTION_APIKEY:-}
-      EVOLUTION_WEBHOOK_TOKEN: ${EVOLUTION_WEBHOOK_TOKEN:-}
-      EVOLUTION_WEBHOOK_PUBLIC_URL: http://app:3000
+      # Motor WhatsApp na rede interna do compose (nunca a internet).
+      MOTOR_URL: http://motor:4317
+      MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no Coolify}
+      MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no Coolify}
     volumes:
       # Mídia WhatsApp + comprovantes (entra no backup).
       - uploads:/app/data/uploads
@@ -129,30 +95,22 @@ services:
       start_period: 60s
     # SEM ports: só o Traefik do Coolify fala com o app.
 
-  # Baileys via Evolution API — self-hosted, FORA da internet pública (rede interna).
-  evolution:
-    image: evoapicloud/evolution-api:v2.3.7
+  # Motor WhatsApp (whatsapp-web-baileys em modo serviço) — FORA da internet pública (rede interna).
+  motor:
+    image: ${MOTOR_IMAGE:?defina no Coolify}
     restart: unless-stopped
     environment:
-      SERVER_PORT: "8080"
-      AUTHENTICATION_API_KEY: ${EVOLUTION_APIKEY:?defina no Coolify}
-      DATABASE_ENABLED: "true"
-      DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/evolution?schema=public
-      DATABASE_CONNECTION_CLIENT_NAME: evolution
-      CACHE_LOCAL_ENABLED: "true"
-      CACHE_REDIS_ENABLED: "false"
-      DATABASE_SAVE_DATA_INSTANCE: "true"
-      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
-      LOG_LEVEL: ERROR
+      MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no Coolify}
+      MOTOR_MODE: servico
+      ERP_WEBHOOK_URL: http://app:3000/api/whatsapp/webhook/motor
+      MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no Coolify}
+      HOST: "0.0.0.0"
+      PORT: "4317"
+      WA_DATA_DIR: /data
     volumes:
-      - evolution_instances:/evolution/instances
-    depends_on:
-      db:
-        condition: service_healthy
-      db-init:
-        condition: service_completed_successfully
-    # SEM ports: Evolution não sai para a internet.
+      # PGlite, chave do cofre, credenciais e mídia do motor (entra no backup).
+      - motor_data:/data
+    # SEM ports: o motor não sai para a internet.
 
   # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min.
   cron:
@@ -184,4 +142,4 @@ services:
 volumes:
   db_data:
   uploads:
-  evolution_instances:
+  motor_data:

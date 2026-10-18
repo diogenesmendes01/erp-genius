@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Papel } from "@prisma/client";
+import { Papel, DriverWhatsApp } from "@prisma/client";
 
 const { authMock, enviarMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
-vi.mock("@/server/whatsapp/drivers/evolution", () => ({ driverEvolution: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 // Fase 4B: o despachante só envia pelo motor (META_CLOUD e BAILEYS não têm driver); o motor fica simulado.
 vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 
@@ -71,7 +69,7 @@ async function turma() {
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluna", paisId: cat.pais.id, telefoneE164: "+50680001111", whatsapp: true, email: "privado@example.test" } });
   const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", codigo: "CT-1" } });
   await prisma.alocacaoTurma.create({ data: { turmaId: t.id, alunoId: aluno.id, matriculaId: matricula.id } });
-  const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+  const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA" });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id, nomeExibicao: aluno.telefoneE164 } });
   const pedagogico = await abrir(numero.id, contato.id, { finalidade: "PEDAGOGICO", alunoId: aluno.id, turmaId: t.id, matriculaId: matricula.id });
   const financeiro = await abrir(numero.id, contato.id, { finalidade: "FINANCEIRO", alunoId: aluno.id, matriculaId: matricula.id, responsavelId: fin.id });
@@ -108,10 +106,10 @@ describe("§4.4 — regras do Inbox", () => {
 
   it("03 linha comercial: dono e gerente veem toda a linha; a cobertura não dá acesso; o painel do lead segue a carteira", async () => {
     await prisma.usuario.update({ where: { id: vend.id }, data: { gerenteComercialId: gerente.id } });
-    const linha = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511988880000", rotulo: "Vendas A", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "linha-a", donoId: vend.id } });
+    const linha = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511988880000", rotulo: "Vendas A", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "linha-a", donoId: vend.id } });
     const alheio = await prisma.oportunidade.create({ data: { nome: "Lead do outro", telefoneE164: "+50670001111", vendedorDonoId: vend2.id } });
     await prisma.contatoWhatsApp.create({ data: { telefoneE164: alheio.telefoneE164!, leadId: alheio.id } });
-    await processarMensagemNormalizada({ numeroProviderRef: "linha-a", contatoWaId: "50670001111", nomeExibicao: "Alheio", providerMessageId: "R3-1", corpo: "Oi", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() });
+    await processarMensagemNormalizada({ numeroProviderRef: "linha-a", contatoWaId: "50670001111", nomeExibicao: "Alheio", providerMessageId: "R3-1", corpo: "Oi", tipo: "TEXTO", driver: DriverWhatsApp.BAILEYS, fromMe: false, quando: new Date() });
     const a = await prisma.atendimentoWhatsApp.findFirstOrThrow({ where: { conversa: { numeroId: linha.id } } });
     expect(await atendimentoVisivel(sessao(vend), a.id)).not.toBeNull();
     expect(await atendimentoVisivel(sessao(gerente), a.id)).not.toBeNull();
@@ -204,7 +202,7 @@ describe("§4.4 — regras do Inbox", () => {
     const { numero, contato, a } = await comercial();
     const outro = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880002" } });
     const origem = await abrir(numero.id, outro.id, { responsavelId: vend.id });
-    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.conversaId, atendimentoId: origem.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Olá" } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.conversaId, atendimentoId: origem.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Olá" } });
     como(vend);
     expect((await registrarOptOutContato(contato.id)).ok).toBe(true);
     expect((await enviarTextoInbox({ conversaId: a.id, texto: "oi" })).ok).toBe(false);
@@ -255,14 +253,14 @@ describe("§4.4 — regras do Inbox", () => {
   });
 
   it("13 conversa viva cancela automação (não em grupo)", async () => {
-    const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA", janela: [0, 24] });
+    const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA", janela: [0, 24] });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777" } });
     const cron = await prisma.intencaoMensagem.create({ data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", corpoRenderizado: "lembrete", criadaEm: new Date(Date.now() - 60_000) } });
     // Mensagem de grupo do mesmo telefone não conta como conversa viva.
     await prisma.$transaction((tx) => gravarMensagemGrupo(tx, { numeroId: numero.id, grupoJid: "120363000000000001@g.us", nomeGrupo: "Turma A",
-      participanteJid: "50688887777@s.whatsapp.net", participanteE164: "+50688887777", participanteNome: null, providerMessageId: "g-1", tipo: "TEXTO", corpo: "Bom dia", quando: new Date(), driver: "BAILEYS" }));
+      participanteJid: "50688887777@s.whatsapp.net", participanteE164: "+50688887777", participanteNome: null, providerMessageId: "g-1", tipo: "TEXTO", corpo: "Bom dia", quando: new Date(), driver: DriverWhatsApp.BAILEYS }));
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: cron.id } })).status).toBe("PENDENTE");
-    await processarMensagemNormalizada({ numeroProviderRef: numero.providerRef, contatoWaId: "50688887777", providerMessageId: "R13-1", corpo: "Oi, tudo bem?", tipo: "TEXTO", driver: "BAILEYS", fromMe: false, quando: new Date() });
+    await processarMensagemNormalizada({ numeroProviderRef: numero.providerRef, contatoWaId: "50688887777", providerMessageId: "R13-1", corpo: "Oi, tudo bem?", tipo: "TEXTO", driver: DriverWhatsApp.BAILEYS, fromMe: false, quando: new Date() });
     expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: cron.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "conversa_viva" });
   });
 
@@ -290,7 +288,7 @@ describe("§4.4 — regras do Inbox", () => {
   it("15 ambíguo vai para a triagem do número", async () => {
     const recepcao = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Recepção");
     const numero = await criarNumeroSetor({ telefoneE164: "+5511900000101", setores: ["COMERCIAL", "SECRETARIA"], finalidade: "COBRANCA", triagemResponsavelId: recepcao.id });
-    await processarMensagemNormalizada({ numeroProviderRef: numero.providerRef, contatoWaId: "50688889999", providerMessageId: "R15-1", corpo: "Quero informações", tipo: "TEXTO", driver: "META_CLOUD", fromMe: false, quando: new Date() });
+    await processarMensagemNormalizada({ numeroProviderRef: numero.providerRef, contatoWaId: "50688889999", providerMessageId: "R15-1", corpo: "Quero informações", tipo: "TEXTO", driver: DriverWhatsApp.MOTOR, fromMe: false, quando: new Date() });
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow();
     expect(m.atendimentoId).toBeNull();
     como(recepcao);
@@ -341,14 +339,14 @@ describe("§4.4 — regras do Inbox", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect((await enviarMidiaInbox({ conversaId: a.id, url: `/api/files/whatsapp-out/${vend.id}/foto.jpg` })).ok).toBe(true);
     // Download: a mídia recebida só é lida por quem enxerga o atendimento.
-    await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", tipo: "IMAGEM", midiaPath: "/api/files/whatsapp/entrada-18.jpg" } });
+    await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, tipo: "IMAGEM", midiaPath: "/api/files/whatsapp/entrada-18.jpg" } });
     expect(await podeLerArquivo({ id: vend.id, papeis: vend.papeis }, ["whatsapp", "entrada-18.jpg"])).toBe(true);
     expect(await podeLerArquivo({ id: fin.id, papeis: fin.papeis }, ["whatsapp", "entrada-18.jpg"])).toBe(false);
     expect(await podeLerArquivo({ id: vend2.id, papeis: vend2.papeis }, ["whatsapp", "entrada-18.jpg"])).toBe(false);
   });
 
   it("19 não lida nunca fica inalcançável", async () => {
-    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990000", rotulo: "Sec", driver: "BAILEYS", finalidade: "COBRANCA" } });
+    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990000", rotulo: "Sec", driver: DriverWhatsApp.BAILEYS, finalidade: "COBRANCA" } });
     const nova = async (tel: string, em: Date, naoLidas: number) => {
       const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: tel } });
       const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
@@ -376,7 +374,7 @@ describe("§4.4 — regras do Inbox", () => {
     const { numero, contato, a } = await comercial();
     const destinoMsg = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880055" } });
     const b = await abrir(numero.id, destinoMsg.id, { responsavelId: vend.id });
-    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Olá" } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Olá" } });
     // Fila do setor SECRETARIA: assumir, devolver, atribuir.
     const filaSec = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880066" } });
     const s = await abrir(numero.id, filaSec.id, { finalidade: "SECRETARIA" });

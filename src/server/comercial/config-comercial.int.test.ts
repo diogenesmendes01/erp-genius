@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -89,7 +90,7 @@ describe("carregarSaudacoesSimuladas (ensaio observável — review PR #53)", ()
     const lead = await prisma.oportunidade.create({ data: { nome: "Ana", vendedorDonoId: vendedor.id } });
     authMock.mockResolvedValue({ user: { id: gerente.id } });
     const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-s" },
+      data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-s" },
     });
     const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50611112222", nomeExibicao: "Ana" } });
     await prisma.intencaoMensagem.create({
