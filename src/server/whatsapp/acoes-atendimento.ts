@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel } from "@prisma/client";
+import { Papel, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
@@ -237,12 +237,22 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
       const p = await tx.participanteAtendimentoWhatsApp.create({
         data: { atendimentoId: a.id, usuarioId: dados.usuarioId, concedenteId: u.id, inicio: agora, fim, podeEnviar: dados.podeEnviar, motivo: dados.motivo },
       });
+      await avisarMudancaDeEscopo(tx, a.id);
       await registrarEvento(tx, { tipo: "ParticipanteConvidado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: u.id, payload: { participanteId: p.id, usuarioId: dados.usuarioId, podeEnviar: dados.podeEnviar, fim: fim.toISOString(), motivo: dados.motivo } });
       return p.id;
     });
     revalidatePath("/inbox");
     return { participanteId };
   });
+}
+
+/**
+ * Convite e revogação só gravam em ParticipanteAtendimentoWhatsApp, que não tem o trigger `notificar_inbox`. Um
+ * UPDATE sem mudança no AtendimentoWhatsApp, na mesma transação, dispara o `atendimento.atualizado` (o trigger é
+ * FOR EACH ROW sem WHEN; o NOTIFY só sai no commit): o convidado vê o compositor liberar (ou travar) sem reabrir.
+ */
+async function avisarMudancaDeEscopo(tx: Prisma.TransactionClient, atendimentoId: string): Promise<void> {
+  await tx.$executeRaw`UPDATE "AtendimentoWhatsApp" SET "id" = "id" WHERE "id" = ${atendimentoId}`;
 }
 
 /** Revoga na hora (revogadoEm = agora, sem delete). Quem revoga: o concedente, o gerente do setor ou o administrador. */
@@ -258,6 +268,7 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
       const agora = new Date();
       const r = await tx.participanteAtendimentoWhatsApp.updateMany({ where: { id, revogadoEm: null }, data: { revogadoEm: agora } });
       if (r.count !== 1) throw new ErroRegra("Este convite já foi revogado.");
+      await avisarMudancaDeEscopo(tx, p.atendimento.id);
       // Como devolver/atribuir: o que o revogado deixou pendente ou agendado fica CANCELADA, a menos que ele
       // ainda possa enviar neste atendimento por outro vínculo (responsável, gerente, outro convite).
       const aindaEnvia = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: p.atendimento.id }, await escopoAtendimentos(p.usuario, { enviar: true, agora })] } });

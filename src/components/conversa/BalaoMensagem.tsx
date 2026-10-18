@@ -66,7 +66,7 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
     { cmd: "responder", rotulo: "Responder" },
     ...(m.corpo ? [{ cmd: "copiar" as const, rotulo: "Copiar" }] : []),
     { cmd: "reagir", rotulo: "Reagir", recurso: "reagir" },
-    { cmd: "encaminhar", rotulo: "Encaminhar" },
+    { cmd: "encaminhar", rotulo: "Encaminhar", recurso: "encaminhar" },
     { cmd: "favoritar", rotulo: m.favorita ? "Remover dos favoritos" : "Favoritar" },
     ...(saida && m.tipo === "TEXTO" ? [{ cmd: "editar" as const, rotulo: "Editar", recurso: "editar" as const }] : []),
     { cmd: "apagar", rotulo: "Apagar", recurso: "apagar", perigo: true },
