@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CategoriaDocumento, Papel } from "@prisma/client";
 const db = vi.hoisted(() => ({
-  cobranca: { findFirst: vi.fn(), findUnique: vi.fn() }, pagamentoInformado: { findFirst: vi.fn() },
-  registroUpload: { findUnique: vi.fn(), updateMany: vi.fn() }, documento: { findFirst: vi.fn() },
+  cobranca: { findFirst: vi.fn(), findUnique: vi.fn(), count: vi.fn() }, pagamentoInformado: { findFirst: vi.fn(), count: vi.fn() },
+  registroUpload: { findUnique: vi.fn(), updateMany: vi.fn() }, documento: { findFirst: vi.fn(), count: vi.fn() },
   oportunidade: { findFirst: vi.fn() }, matricula: { findUnique: vi.fn(), count: vi.fn() }, aluno: { findUnique: vi.fn() }, coberturaCarteira: { findMany: vi.fn() }, usuario: { findMany: vi.fn() },
-  mensagemWhatsApp: { findFirst: vi.fn() }, intencaoMensagem: { findFirst: vi.fn() },
+  mensagemWhatsApp: { findFirst: vi.fn(), count: vi.fn() }, intencaoMensagem: { findFirst: vi.fn(), count: vi.fn() },
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
 vi.mock("@/server/whatsapp/escopo", () => ({ escopoAtendimentos: async () => ({ id: "atendimento-autorizado" }) }));
-import { exigirArquivoVinculavel, podeLerArquivo, urlCanonica } from "./autorizacao";
+import { exigirArquivoVinculavel, podeLerArquivo, uploadLivreDoAutor, urlCanonica } from "./autorizacao";
 const segmentos = ["arquivo.pdf"];
 const url = "/api/files/arquivo.pdf";
 const u = (...papeis: Papel[]) => ({ id: "autor", papeis });
@@ -24,6 +24,7 @@ beforeEach(() => {
   db.cobranca.findUnique.mockResolvedValue({ matricula: { id: "matricula", alunoId: "aluno", leadId: "lead" } });
   db.matricula.findUnique.mockResolvedValue({ alunoId: "aluno", secretariaAssumiuEm: new Date() });
   db.registroUpload.updateMany.mockResolvedValue({ count: 1 });
+  for (const m of [db.cobranca, db.pagamentoInformado, db.documento, db.mensagemWhatsApp, db.intencaoMensagem]) m.count.mockResolvedValue(0);
 });
 
 describe("download privado por finalidade", () => {
@@ -143,4 +144,38 @@ it("comprovante por matrícula não recategoriza documento administrativo existe
   db.registroUpload.findUnique.mockResolvedValue({ ...registro(), matriculaId: "matricula", categoriaDocumento: CategoriaDocumento.COMPROVANTE });
   db.documento.findFirst.mockResolvedValue({ matriculaId: "matricula", leadId: null, categoria: CategoriaDocumento.CONTRATO });
   expect(await podeLerArquivo(u(Papel.FINANCEIRO), segmentos)).toBe(false);
+});
+
+describe("upload livre do autor (base de conhecimento da Aria)", () => {
+  it("aceita upload do próprio autor sem vínculo nem referência", async () => {
+    db.registroUpload.findUnique.mockResolvedValue(registro());
+    expect(await uploadLivreDoAutor(u(Papel.ADMINISTRADOR), "upload")).toEqual(registro());
+    expect(db.registroUpload.findUnique).toHaveBeenCalledWith({ where: { id: "upload" } });
+    expect(db.cobranca.count).toHaveBeenCalledWith({ where: { comprovanteUrl: url } });
+    expect(db.pagamentoInformado.count).toHaveBeenCalledWith({ where: { comprovanteUrl: url } });
+    expect(db.documento.count).toHaveBeenCalledWith({ where: { url } });
+    expect(db.mensagemWhatsApp.count).toHaveBeenCalledWith({ where: { midiaPath: url } });
+    expect(db.intencaoMensagem.count).toHaveBeenCalledWith({ where: { midiaPath: url } });
+  });
+  it("upload de outro autor não é livre, nem para o Administrador", async () => {
+    db.registroUpload.findUnique.mockResolvedValue({ ...registro(), autorId: "outro" });
+    expect(await uploadLivreDoAutor(u(Papel.ADMINISTRADOR), "upload")).toBeNull();
+  });
+  it("registro inexistente, usuário sem id ou id vazio → null", async () => {
+    expect(await uploadLivreDoAutor(u(Papel.ADMINISTRADOR), "upload")).toBeNull();
+    expect(await uploadLivreDoAutor({ id: "", papeis: [Papel.ADMINISTRADOR] }, "upload")).toBeNull();
+    expect(await uploadLivreDoAutor(u(Papel.ADMINISTRADOR), "")).toBeNull();
+  });
+  it.each(["leadId", "alunoId", "cobrancaId", "matriculaId"] as const)("vínculo por %s tira o upload do uso livre", async (chave) => {
+    db.registroUpload.findUnique.mockResolvedValue({ ...registro(), [chave]: "vinculado" });
+    expect(await uploadLivreDoAutor(u(Papel.ADMINISTRADOR), "upload")).toBeNull();
+  });
+  it.each([
+    ["comprovante de cobrança", "cobranca"], ["informe de pagamento", "pagamentoInformado"], ["documento", "documento"],
+    ["mídia de mensagem WhatsApp", "mensagemWhatsApp"], ["mídia de intenção de mensagem", "intencaoMensagem"],
+  ] as const)("referência como %s tira o upload do uso livre", async (_rotulo, modelo) => {
+    db.registroUpload.findUnique.mockResolvedValue(registro());
+    db[modelo].count.mockResolvedValue(1);
+    expect(await uploadLivreDoAutor(u(Papel.ADMINISTRADOR), "upload")).toBeNull();
+  });
 });
