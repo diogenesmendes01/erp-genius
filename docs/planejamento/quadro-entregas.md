@@ -2953,3 +2953,13 @@ Branch `claude/fase5-b-config` (HEAD 9745f787), PR em rascunho empilhado sobre `
 - `npm test`: saída 0; 723 arquivos, 5328 testes verdes.
 - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
 - `vitest related --run -c vitest.integration.config.ts` sobre os 15 .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 4 arquivos, 33 testes verdes (recorte, não a suíte completa).
+
+## Fase 5, bloco C — turno da Aria, Tasks 12 a 25 (18/10/2026)
+
+Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6d33ee + 24af270d). Tasks 12 a 25 (contexto, decisão, guardas, gatilhos, executores, handoff, expiração, orquestrador e despacho), todas com revisão limpa. Só provedor e motor simulados; nenhuma chamada real à API da Anthropic nem ao WhatsApp.
+
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 729 arquivos, 5383 testes verdes (linha de base ~714/~5270).
+- `npm run lint`: saída 0; 0 erros, 44 avisos (linha de base 43; os avisos são do tipo `no-unused-vars`).
+- Integração, banco do perfil `tester` (`tester34`), recorte: `vitest related` sobre os 41 .ts do diff contra `claude/fase5-b-config` alcança praticamente toda a suíte (passou de 38 min e foi interrompido). Em seu lugar, `vitest run -c vitest.integration.config.ts` nos 12 `*.int.test.ts` do diff mais `src/server/aria`, `whatsapp/{despachante,inbound,atendimentos}` e `crm/mensagens-agendadas`: saída 0; 23 arquivos, 208 testes verdes.
+- Pendente para o integrador: `npm run test:int` completo, comparando com as falhas preexistentes conhecidas.
