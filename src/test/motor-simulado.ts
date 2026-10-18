@@ -15,15 +15,29 @@ export interface RecebidoMotor {
   cabecalhos: Record<string, string>;
 }
 
+export interface EnviadaMotor {
+  clientMessageId: string | undefined;
+  providerMessageId: string;
+  mensagemIdMotor: string;
+}
+
 export interface MotorSimulado {
   url: string;
   recebidos: RecebidoMotor[];
-  /** Falha atual do envio (null = envia normalmente). Pode ser trocada no meio do teste. */
+  /** Mensagens que o simulado "entregou" ao WhatsApp, uma por clientMessageId (reenvio idempotente não soma). */
+  enviadas: EnviadaMotor[];
+  /**
+   * Falha atual do envio (null = envia normalmente). Pode ser trocada no meio do teste.
+   * `NAO_ENVIADO` (409): nada saiu. `RESULTADO_INCERTO` (502): a mensagem SAIU, só a confirmação
+   * se perdeu; um reenvio com o mesmo clientMessageId devolve a mesma mensagem, sem duplicar.
+   */
   falharEnvio: FalhaEnvio | null;
   /** Bytes devolvidos por `GET /v1/numeros/:id/midia/:mensagemId`. */
   midia: { bytes: Buffer; mime: string };
   /** Assina (HMAC do `outbox.ts`) e entrega o evento à rota do webhook. `idEvento` repete um evento. */
   emitir(tipo: string, numeroId: string, dados: unknown, opcoes?: { idEvento?: string }): Promise<Response>;
+  /** Volta ao estado inicial: limpa recebidos/enviadas, zera o contador de ids e a idempotência, sem falha e com a mídia padrão. */
+  reiniciar(): void;
   fechar(): Promise<void>;
 }
 
@@ -39,16 +53,24 @@ async function lerCorpo(req: IncomingMessage): Promise<Buffer> {
   return Buffer.concat(partes);
 }
 
-export async function iniciarMotorSimulado(opcoes: { falharEnvio?: FalhaEnvio } = {}): Promise<MotorSimulado> {
-  const recebidos: RecebidoMotor[] = [];
-  const porClientId = new Map<string, { providerMessageId: string; mensagemIdMotor: string }>();
+export async function iniciarMotorSimulado(): Promise<MotorSimulado> {
+  const porClientId = new Map<string, EnviadaMotor>();
   let contador = 0;
 
   const sim: MotorSimulado = {
     url: "",
-    recebidos,
-    falharEnvio: opcoes.falharEnvio ?? null,
+    recebidos: [],
+    enviadas: [],
+    falharEnvio: null,
     midia: { bytes: PNG_1X1, mime: "image/png" },
+    reiniciar() {
+      sim.recebidos.length = 0;
+      sim.enviadas.length = 0;
+      porClientId.clear();
+      contador = 0;
+      sim.falharEnvio = null;
+      sim.midia = { bytes: PNG_1X1, mime: "image/png" };
+    },
     async emitir(tipo, numeroId, dados, op = {}) {
       const corpo = JSON.stringify({
         idEvento: op.idEvento ?? randomUUID(),
@@ -93,7 +115,7 @@ export async function iniciarMotorSimulado(opcoes: { falharEnvio?: FalhaEnvio } 
         /* corpo cru */
       }
     }
-    recebidos.push({ rota, corpo, cabecalhos });
+    sim.recebidos.push({ rota, corpo, cabecalhos });
 
     if (!/^Bearer .{32,}$/.test(cabecalhos.authorization ?? "")) return json(401, { code: "NAO_AUTORIZADO" });
 
@@ -114,14 +136,16 @@ export async function iniciarMotorSimulado(opcoes: { falharEnvio?: FalhaEnvio } 
         corpo && typeof corpo === "object"
           ? (corpo as { clientMessageId?: string }).clientMessageId
           : /"clientMessageId":"([^"]+)"/.exec(bruto.toString("latin1"))?.[1];
-      if (sim.falharEnvio === "RESULTADO_INCERTO") return json(502, { code: "RESULTADO_INCERTO", motivo: "timeout_confirmacao" });
       if (sim.falharEnvio === "NAO_ENVIADO") return json(409, { code: "NAO_ENVIADO", motivo: "numero_desconectado" });
-      const anterior = clientMessageId ? porClientId.get(clientMessageId) : undefined;
-      if (anterior) return json(200, anterior);
-      contador += 1;
-      const resposta = { providerMessageId: `3EB0${contador}`, mensagemIdMotor: `c:3EB0${contador}` };
-      if (clientMessageId) porClientId.set(clientMessageId, resposta);
-      return json(200, resposta);
+      let enviada = clientMessageId ? porClientId.get(clientMessageId) : undefined;
+      if (!enviada) {
+        contador += 1;
+        enviada = { clientMessageId, providerMessageId: `3EB0${contador}`, mensagemIdMotor: `c:3EB0${contador}` };
+        if (clientMessageId) porClientId.set(clientMessageId, enviada);
+        sim.enviadas.push(enviada);
+      }
+      if (sim.falharEnvio === "RESULTADO_INCERTO") return json(502, { code: "RESULTADO_INCERTO", motivo: "timeout_confirmacao" });
+      return json(200, { providerMessageId: enviada.providerMessageId, mensagemIdMotor: enviada.mensagemIdMotor });
     }
     return json(404, { code: "NAO_ENCONTRADO" });
   });
