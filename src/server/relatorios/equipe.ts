@@ -15,7 +15,12 @@ export interface DesempenhoUsuario {
   primeiraRespostaMediaMin: number | null;
   tarefasConcluidas: number;
   comissao: ValorPorMoeda[];
-  /** Realização da meta mensal do vendedor (matrículas, ou valor ganho se só houver essa); null sem meta. */
+  /**
+   * Realização da meta do vendedor (matrículas, ou valor ganho se só houver essa); null sem meta. Metas são
+   * mensais: com o período tocando mais de um mês, soma as metas e o realizado dos meses INTEIROS tocados (não
+   * recorta pelos dias do filtro). VALOR_GANHO compara com a soma de `valorPrevisto` das oportunidades que
+   * entraram em Matriculado (ver metas.ts).
+   */
   meta: { pct: number | null };
 }
 

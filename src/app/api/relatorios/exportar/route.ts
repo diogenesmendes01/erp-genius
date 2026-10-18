@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Temperatura } from "@prisma/client";
+import { Papel, Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessao, ErroAutenticacao, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { exigirCapacidade } from "@/server/_shared/capacidades";
@@ -97,7 +97,7 @@ async function tabela(aba: Aba, f: FiltrosDetalhe, e: EscopoRelatorio, chave: st
   if (aba === "equipe") {
     const m = await desempenhoEquipe(f, e);
     return {
-      colunas: ["Nome", "Oportunidades", "Ganhas", "Conversão (%)", "Valor ganho", "Primeira resposta média (min)", "Tarefas concluídas", "Comissão", "Meta (%)"],
+      colunas: ["Nome", "Oportunidades", "Ganhas", "Conversão (%)", "Valor ganho", "Primeira resposta média (min)", "Tarefas concluídas", "Comissão", "Meta dos meses do período (%)"],
       linhas: m.map((x) => [x.nome, x.oportunidades, x.ganhas, pct(x.conversao), moedas(x.valorGanho), x.primeiraRespostaMediaMin, x.tarefasConcluidas, moedas(x.comissao), x.meta.pct]),
     };
   }
@@ -125,6 +125,29 @@ async function tabela(aba: Aba, f: FiltrosDetalhe, e: EscopoRelatorio, chave: st
   };
 }
 
+/** Abas e filtros que a tela de Relatórios só mostra à gestão comercial (admin e gerente). */
+const ABAS_GESTAO: readonly Aba[] = ["equipe", "aria"];
+const ehGestao = (papeis: Papel[]) => papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.GERENTE_COMERCIAL);
+
+/**
+ * O vendedor exporta só o que a tela oferece a ele: sem as abas Equipe e Aria, sem filtro de responsável ou de
+ * autor e sem o detalhe por pessoa. O escopo já o limitaria às próprias oportunidades, mas a URL não pode abrir
+ * recortes que a tela esconde.
+ */
+function exigirRecorteDaTela(papeis: Papel[], aba: Aba, f: FiltrosDetalhe, chave: string | null) {
+  if (ehGestao(papeis)) return;
+  const motivo = ABAS_GESTAO.includes(aba)
+    ? "Esta aba"
+    : f.responsavelId
+      ? "O filtro por responsável"
+      : f.autor
+        ? "O filtro por autor"
+        : aba === "detalhe" && chave?.startsWith("responsavel:")
+          ? "O detalhe por pessoa"
+          : null;
+  if (motivo) throw new ErroPermissao(`${motivo} do relatório é só para a gestão comercial.`);
+}
+
 const mesmoEscopo = (a: EscopoRelatorio, b: EscopoRelatorio) =>
   a.tipo === b.tipo && (a.tipo === "TUDO" || JSON.stringify([...a.ids].sort()) === JSON.stringify([...(b as { ids: string[] }).ids].sort()));
 
@@ -138,6 +161,7 @@ export async function GET(req: Request) {
     const chave = p.get("chave");
     const escopo = await escopoRelatorio(usuario);
     const f = lerFiltros(p, await fusoDaEscola());
+    exigirRecorteDaTela(usuario.papeis, aba, f, chave);
     const { colunas, linhas } = await tabela(aba, f, escopo, chave);
     const csv = gerarCsv(colunas, linhas);
 
@@ -145,6 +169,7 @@ export async function GET(req: Request) {
     const atual = await exigirSessao();
     await exigirCapacidade(atual, "dados.exportar_leads");
     if (atual.id !== usuario.id) throw new ErroPermissao();
+    exigirRecorteDaTela(atual.papeis, aba, f, chave);
     const escopoAtual = await escopoRelatorio(atual);
     if (!mesmoEscopo(escopo, escopoAtual)) throw new ErroPermissao("O acesso aos registros mudou durante a exportação. Gere um novo arquivo.");
     if (aba === "detalhe") {

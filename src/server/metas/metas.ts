@@ -72,11 +72,19 @@ export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
   });
 }
 
-/** Etapa cuja primeira entrada (evento `EtapaAlterada`) conta como realizado de cada métrica. */
-const ETAPA_REALIZADO: Record<MetricaMeta, string> = {
-  MATRICULAS: "MATRICULADO",
-  VALOR_GANHO: "MATRICULADO",
-  EXPERIMENTAIS_REALIZADAS: "EXPERIMENTAL_REALIZADA",
+/**
+ * Eventos do agregado Lead que marcam a entrada de cada métrica; o realizado é a PRIMEIRA ocorrência por
+ * oportunidade, contada no mês (fuso institucional) em que aconteceu.
+ * - MATRICULAS / VALOR_GANHO: `EtapaAlterada` para MATRICULADO. VALOR_GANHO soma `valorPrevisto` da
+ *   oportunidade (não há valor fechado por matrícula na v1), na moeda local do país.
+ * - EXPERIMENTAIS_REALIZADAS: o check-in do professor grava `ExperimentalRealizada` (comercial/acoes.ts);
+ *   aceita também `EtapaAlterada` para EXPERIMENTAL_REALIZADA, se existir no histórico. Mesmo critério de
+ *   entrada da etapa do funil (relatorios/funil.ts), sem contar etapas puladas.
+ */
+const ENTRADA_REALIZADO: Record<MetricaMeta, { chave: string; etapa: string; tipoProprio: string | null }> = {
+  MATRICULAS: { chave: "MATRICULADO", etapa: "MATRICULADO", tipoProprio: null },
+  VALOR_GANHO: { chave: "MATRICULADO", etapa: "MATRICULADO", tipoProprio: null },
+  EXPERIMENTAIS_REALIZADAS: { chave: "EXPERIMENTAL_REALIZADA", etapa: "EXPERIMENTAL_REALIZADA", tipoProprio: "ExperimentalRealizada" },
 };
 
 function intervalosDosMeses(competencias: string[], fuso: string): { inicio: Date; fim: Date }[] {
@@ -95,16 +103,18 @@ interface Realizado {
   valor: number;
 }
 
-async function realizadoDe(etapa: string, intervalos: { inicio: Date; fim: Date }[], escopo: EscopoRelatorio): Promise<Realizado[]> {
+async function realizadoDe(entrada: { etapa: string; tipoProprio: string | null }, intervalos: { inicio: Date; fim: Date }[], escopo: EscopoRelatorio): Promise<Realizado[]> {
   const meses = Prisma.join(intervalos.map((p) => Prisma.sql`(g.em >= ${instanteUtc(p.inicio)} AND g.em < ${instanteUtc(p.fim)})`), " OR ");
   const donos = escopo.tipo === "TUDO" ? Prisma.empty : Prisma.sql`AND l."vendedorDonoId" IN (${escopo.ids.length ? Prisma.join(escopo.ids) : Prisma.sql`NULL`})`;
+  const proprio = entrada.tipoProprio ? Prisma.sql` OR ev.tipo = ${entrada.tipoProprio}` : Prisma.empty;
   const linhas = await prisma.$queryRaw<{ dono: string | null; moeda: string | null; n: bigint; valor: number }[]>(Prisma.sql`
     SELECT l."vendedorDonoId" AS dono, p."moedaLocal" AS moeda, COUNT(*) AS n, COALESCE(SUM(l."valorPrevisto"), 0)::float8 AS valor
     FROM "Lead" l
     JOIN (
       SELECT ev."agregadoId" AS lid, MIN(ev."criadoEm") AS em
       FROM "Evento" ev
-      WHERE ev."agregadoTipo" = 'Lead' AND ev.tipo = 'EtapaAlterada' AND ev.payload ->> 'para' = ${etapa}
+      WHERE ev."agregadoTipo" = 'Lead'
+        AND ((ev.tipo = 'EtapaAlterada' AND ev.payload ->> 'para' = ${entrada.etapa})${proprio})
       GROUP BY ev."agregadoId"
     ) g ON g.lid = l.id
     LEFT JOIN "Pais" p ON p.id = l."paisId"
@@ -138,13 +148,15 @@ export async function progressoMetas(i: { competencias: string[]; escopo: Escopo
   }
 
   const intervalos = intervalosDosMeses(competencias, await fusoDaEscola());
-  const etapas = [...new Set([...agrupadas.values()].map((g) => ETAPA_REALIZADO[g.metrica]))];
   const porEtapa = new Map<string, Realizado[]>();
-  for (const e of etapas) porEtapa.set(e, await realizadoDe(e, intervalos, i.escopo));
+  for (const g of agrupadas.values()) {
+    const entrada = ENTRADA_REALIZADO[g.metrica];
+    if (!porEtapa.has(entrada.chave)) porEtapa.set(entrada.chave, await realizadoDe(entrada, intervalos, i.escopo));
+  }
 
   const resultado = [...agrupadas.values()];
   for (const g of resultado) {
-    const linhas = (porEtapa.get(ETAPA_REALIZADO[g.metrica]) ?? []).filter((r) => g.usuarioId === null || r.dono === g.usuarioId);
+    const linhas = (porEtapa.get(ENTRADA_REALIZADO[g.metrica].chave) ?? []).filter((r) => g.usuarioId === null || r.dono === g.usuarioId);
     let realizado: number;
     if (g.metrica === MetricaMeta.VALOR_GANHO) realizado = linhas.filter((r) => r.moeda === g.moeda).reduce((s, r) => s + r.valor, 0);
     else realizado = linhas.reduce((s, r) => s + r.n, 0);

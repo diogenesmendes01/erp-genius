@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { ErroPermissao } from "@/server/_shared/sessao";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { escopoRelatorio, filtroOportunidade } from "./escopo";
 
 let admin: Awaited<ReturnType<typeof criarUsuario>>;
@@ -32,6 +33,14 @@ describe("escopo dos relatórios", () => {
     expect(e.ids).not.toContain(vendDeOutro.id);
   });
   it("vendedor_so_ele", async () => expect(await escopoRelatorio(vend1)).toEqual({ tipo: "USUARIOS", ids: [vend1.id] }));
+  it("vendedor_cobrindo_carteira_continua_so_ele_nos_relatorios", async () => {
+    // DF5-11: a cobertura amplia o acesso operacional (escopoComercialAtual), mas não entra nos relatórios na v1.
+    await prisma.coberturaCarteira.create({
+      data: { titularId: vend2.id, substitutoId: vend1.id, concedenteId: gerente.id, inicio: new Date(Date.now() - 86_400_000), fim: new Date(Date.now() + 86_400_000), motivo: "Férias" },
+    });
+    expect(await escopoComercialAtual(vend1)).toEqual({ vendedorDonoId: { in: [vend1.id, vend2.id] } });
+    expect(await escopoRelatorio(vend1)).toEqual({ tipo: "USUARIOS", ids: [vend1.id] });
+  });
   it("financeiro_sem_acesso", async () => await expect(escopoRelatorio(financeiro)).rejects.toThrow(ErroPermissao));
   it("papeis_sao_lidos_frescos_do_banco_e_inativo_e_negado", async () => {
     // o objeto da sessão diz ADMINISTRADOR, mas o banco já rebaixou o usuário

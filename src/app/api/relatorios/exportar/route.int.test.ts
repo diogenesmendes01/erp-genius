@@ -92,4 +92,27 @@ describe("GET /api/relatorios/exportar", () => {
     expect((await req("?aba=detalhe&chave=abertas")).status).toBe(403);
     expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
   });
+
+  it("vendedor_nao_exporta_o_que_a_tela_nao_oferece", async () => {
+    await prisma.usuario.update({ where: { id: vend1.id }, data: { permissoes: ["dados.exportar_leads"] } });
+    const outro = await criarUsuario([Papel.VENDEDOR], "V2");
+    logado(vend1);
+    for (const q of ["?aba=equipe", "?aba=aria", `?aba=funil&responsavel=${outro.id}`, "?aba=atividades&autor=ARIA", `?aba=detalhe&chave=responsavel:${vend1.id}`]) {
+      const r = await req(q);
+      expect(r.status, q).toBe(403);
+      expect((await r.json()).erro, q).toMatch(/gestão comercial/);
+    }
+    expect(await prisma.evento.count({ where: { tipo: "DadosExportados" } })).toBe(0);
+    // O que a tela oferece ao vendedor continua exportando.
+    for (const q of ["?aba=pipeline", "?aba=funil", "?aba=atendimento", "?aba=atividades", "?aba=detalhe&chave=abertas"]) expect((await req(q)).status, q).toBe(200);
+  });
+
+  it("gerente_exporta_equipe_e_filtra_por_responsavel", async () => {
+    const gerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "G");
+    await prisma.usuario.update({ where: { id: gerente.id }, data: { permissoes: ["dados.exportar_leads"] } });
+    await prisma.usuario.update({ where: { id: vend1.id }, data: { gerenteComercialId: gerente.id } });
+    logado(gerente);
+    for (const q of ["?aba=equipe", "?aba=aria", `?aba=funil&responsavel=${vend1.id}`, "?aba=atividades&autor=EQUIPE"]) expect((await req(q)).status, q).toBe(200);
+  });
 });
+

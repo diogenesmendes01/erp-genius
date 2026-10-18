@@ -15,6 +15,7 @@ export function AbaFunil({ dados, anterior, params }: { dados: Dados; anterior: 
     <div className="space-y-5">
       <section aria-labelledby="funil-etapas" className="space-y-1 text-sm">
         <h2 id="funil-etapas" className="font-medium">Funil por etapa</h2>
+        <p className="text-xs text-gray-600">O nome da etapa abre as oportunidades que estão nela agora.</p>
         <div className="overflow-x-auto rounded-lg border border-border-soft">
           <table className="w-full min-w-[36rem] text-sm">
             <thead>
@@ -31,7 +32,15 @@ export function AbaFunil({ dados, anterior, params }: { dados: Dados; anterior: 
               {dados.etapas.map((e) => (
                 <tr key={e.etapa}>
                   <th scope="row" className="p-2 text-left font-normal">
-                    <Link href={hrefRelatorio(params, { detalhe: "etapa:" + e.etapa, busca: null })} className={link}>{rotular(ETAPA_LABEL, e.etapa)}</Link>
+                    {/* O painel da etapa é o retrato atual (coluna "Agora"), não as que chegaram no período. */}
+                    <Link
+                      href={hrefRelatorio(params, { detalhe: "etapa:" + e.etapa, busca: null })}
+                      className={link}
+                      title="Ver oportunidades agora nesta etapa"
+                      aria-label={`${rotular(ETAPA_LABEL, e.etapa)}: ver oportunidades agora nesta etapa`}
+                    >
+                      {rotular(ETAPA_LABEL, e.etapa)}
+                    </Link>
                   </th>
                   <td className="p-2">{fmtInteiro(e.chegaram)}</td>
                   <td className="p-2">{variacaoTexto(e.chegaram, antes.get(e.etapa)?.chegaram ?? null)}</td>

@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   salvarMeta: vi.fn(),
+  findMany: vi.fn<(args?: unknown) => Promise<{ id: string; nome: string }[]>>(async () => []),
+  progressoMetas: vi.fn<(args?: unknown) => Promise<unknown[]>>(async () => []),
   revalidatePath: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw Object.assign(new Error("NEXT_REDIRECT"), { url });
@@ -13,10 +15,10 @@ vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: async () => true }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => ({ id: "g1", nome: "G", papeis: ["GERENTE_COMERCIAL"], permissoes: [] }) }));
-vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findMany: async () => [] } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findMany: mocks.findMany } } }));
 vi.mock("@/server/relatorios/escopo", () => ({ escopoRelatorio: async () => ({ tipo: "USUARIOS", ids: ["g1"] }) }));
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
-vi.mock("@/server/metas/metas", () => ({ progressoMetas: async () => [], salvarMeta: mocks.salvarMeta }));
+vi.mock("@/server/metas/metas", () => ({ progressoMetas: mocks.progressoMetas, salvarMeta: mocks.salvarMeta }));
 
 import Page from "./page";
 import { definirMeta } from "./acoes";
@@ -64,5 +66,24 @@ describe("/configuracao/crm/metas", () => {
     const limpo = renderToStaticMarkup(await Page());
     expect(limpo).not.toContain('role="alert"');
     expect(limpo).not.toContain("Meta salva.");
+  });
+
+  it("meta_do_proprio_gerente_aparece_com_o_nome_dele", async () => {
+    mocks.progressoMetas.mockResolvedValueOnce([
+      { usuarioId: "g1", metrica: "MATRICULAS", meta: 10, realizado: 2, pct: 0.2, moeda: null },
+      { usuarioId: "v1", metrica: "MATRICULAS", meta: 5, realizado: 1, pct: 0.2, moeda: null },
+    ]);
+    mocks.findMany.mockImplementationOnce(async (args?: unknown) => {
+      // A consulta de nomes do gerente precisa trazer ele mesmo, além da equipe.
+      expect(JSON.stringify(args)).toContain('"id":"g1"');
+      return [{ id: "g1", nome: "G" }, { id: "v1", nome: "Vera" }];
+    });
+    const html = renderToStaticMarkup(await Page());
+    expect(html).toContain('<td class="py-1">G</td>');
+    expect(html).toContain('<td class="py-1">Vera</td>');
+    expect(html).not.toContain(">Vendedor<");
+    // O próprio gerente segue como "Eu" no seletor, sem repetir o nome.
+    expect(html).toContain('<option value="g1" selected="">Eu</option>');
+    expect(html).not.toContain('<option value="g1">G</option>');
   });
 });

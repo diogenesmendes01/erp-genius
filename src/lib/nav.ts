@@ -68,6 +68,7 @@ export const NAV: NavItem[] = [
   },
   {
     // O GC não tem seção de configuração desde a E1; as sub-abas (tabs.ts) filtram o que cada papel vê.
+    // A única aba dele é Metas (Fase 5E), aberta pelo link "Definir metas" da aba Equipe de Relatórios.
     href: "/configuracao",
     label: "Configuração",
     icon: "Settings",
