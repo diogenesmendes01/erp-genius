@@ -3251,3 +3251,13 @@ Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6
 - `npm run lint`: saída 0; 0 erros, 44 avisos (linha de base 43; os avisos são do tipo `no-unused-vars`).
 - Integração, banco do perfil `tester` (`tester34`), recorte: `vitest related` sobre os 41 .ts do diff contra `claude/fase5-b-config` alcança praticamente toda a suíte (passou de 38 min e foi interrompido). Em seu lugar, `vitest run -c vitest.integration.config.ts` nos 12 `*.int.test.ts` do diff mais `src/server/aria`, `whatsapp/{despachante,inbound,atendimentos}` e `crm/mensagens-agendadas`: saída 0; 23 arquivos, 208 testes verdes.
 - Pendente para o integrador: `npm run test:int` completo, comparando com as falhas preexistentes conhecidas.
+
+### Fase 5C: merge do `main` (até 9b01b45f) e R1 do PR #229 — 2026-10-18
+
+Branch `claude/fase5-c-turno`, agora com base `main` (não mais empilhada). Merges de 86261292 (#226), c9f14e91 (#228) e 9b01b45f (#227, #230); conflitos só no quadro e em `IntencaoParaValidar` (`despachante.ts`, ficam `acaoAgenteIAId` e `conteudo`).
+- **C1** migration da 5C renomeada para `20261018060000_aria_triagem_shadow_sem_atendimento` (030000 é de `metas_comerciais`; 040000/050000 reservados à 5F). Banco limpo aplica todas em sequência.
+- **B2** dublês de provedor da 5C partem de `provedorSimulado.gerar(p)` (tsc 0 com `tokensEscritaCache` obrigatório). `triagem.int.test.ts` usa `driver: "MOTOR"`. Contexto do turno: teste de fonte vencida fora dos trechos.
+- **B3** `pausarAriaNoAtendimento` cancela as intenções PENDENTE/ADIADA de origem IA (`aria_pausada`), inclusive já pausada; handoff preserva a própria mensagem. Despachante (origem IA) cancela com `aria_pausada` se o atendimento está pausado (fora a pausa do handoff) ou se houve fala/fila humana depois (conferido por mutação).
+- **C2** rajada: âncora com inbound mais novo vira `IGNORADO:FALA_SUPERADA` (antes e depois da chamada ao provedor). **C3** turnos EM_ANDAMENTO há mais de 10 min viram handoff `TURNO_INTERROMPIDO` no reprocesso. **C4** sai o parâmetro `origem` de `agendarMensagem`. **C5** `devolverParaAria` exige escopo de envio. **C7** sem `_p`.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 738 arquivos, 5492 testes.
+- Integração em banco descartável novo: `src/server/aria`, `src/server/whatsapp`, `crm/mensagens-agendadas`, `metas`: saída 0; 74 arquivos, 629 testes. `npm run test:int` completo segue com o integrador.
