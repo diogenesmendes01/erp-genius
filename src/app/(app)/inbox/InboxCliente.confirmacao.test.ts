@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreadConversa } from "@/server/whatsapp/consultas";
@@ -40,9 +41,9 @@ import { confirmarNoDialogo } from "@/test/confirmacao-tela";
 const thread = {
   conversaId: "atendimento", finalidade: "FINANCEIRO", matricula: null, podeEnviar: true, podeVincular: true, podeReautorizar: true, podeEditarNome: false,
   linhaComercial: false, podeCriarLead: false, pendenciaDestinatario: null,
-  numero: { id: "numero", rotulo: "Escola", driver: "META_CLOUD", finalidade: "COBRANCA", sessao: "s", ativo: true },
+  numero: { id: "numero", rotulo: "Escola", driver: DriverWhatsApp.META_CLOUD, finalidade: "COBRANCA", sessao: "s", ativo: true },
   contato: { id: "contato-1", nome: "Carla Souza", telefone: "+50688887777", optOutEm: null, alunoId: null, alunoNome: null, responsavelId: null, responsavelNome: null, leadId: null, leadNome: null, nomeSalvo: null, nomePerfil: null, fonteNome: "perfil" },
-  janela24h: null, silencio: { ativo: false, ate: null }, cobrancaAtiva: null, lead: null, mensagens: [],
+  silencio: { ativo: false, ate: null }, cobrancaAtiva: null, lead: null, mensagens: [],
 } as unknown as ThreadConversa;
 const callbacks = { onErro: vi.fn(), onNota: vi.fn(), onFechar: vi.fn(), onFeito: vi.fn() };
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);

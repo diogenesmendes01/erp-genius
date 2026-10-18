@@ -18,7 +18,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { STATUS_INTENCAO_LABEL, TIPO_MENSAGEM_LABEL, rotular } from "@/lib/labels";
+import { DRIVER_WHATSAPP_LABEL, STATUS_INTENCAO_LABEL, TIPO_MENSAGEM_LABEL, rotular } from "@/lib/labels";
 import type { ConversaResumo, LinhaDoUsuario, PessoasVinculo, ThreadConversa } from "@/server/whatsapp/consultas";
 import { LIMITE_CONVERSAS, hrefInbox, type CanalInbox } from "@/server/whatsapp/busca-inbox";
 import {
@@ -379,19 +379,8 @@ export function Thread({
             </div>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
               <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-gray-600">
-                {thread.numero.rotulo} · {thread.numero.driver === "META_CLOUD" ? "oficial" : "baileys"}
+                {thread.numero.rotulo} · {rotular(DRIVER_WHATSAPP_LABEL, thread.numero.driver)}
               </span>
-              {/* Indicador da janela de 24h — só em número oficial (doc 26 §Camada 3). */}
-              {thread.janela24h &&
-                (thread.janela24h.aberta ? (
-                  <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-green-700">
-                    janela 24h aberta até {horaCurta(thread.janela24h.fechaEm!, preferenciaFusoExibicao)}
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700">
-                    janela 24h fechada — texto livre pode ser recusado (use template)
-                  </span>
-                ))}
               {vinculos.map((v) =>
                 v.href ? (
                   <Link key={v.label} href={v.href} className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700 hover:underline">
@@ -1092,14 +1081,13 @@ const SESSAO_LINHA: Record<string, { label: string; cls: string }> = {
 };
 
 function EstadoLinhas({ linhas }: { linhas: LinhaDoUsuario[] }) {
-  // Número oficial (Meta) não tem sessão de aparelho: está sempre disponível enquanto ativo.
-  const foraDoAr = linhas.filter((l) => l.driver === "BAILEYS" && l.sessao !== "CONECTADO");
+  const foraDoAr = linhas.filter((l) => l.sessao !== "CONECTADO");
   return (
     <div className={"mb-3 rounded-md px-3 py-2 text-xs " + (foraDoAr.length ? "bg-amber-50 text-amber-800" : "bg-surface-muted text-gray-600")}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{linhas.length > 1 ? "Suas linhas" : "Sua linha"}:</span>
         {linhas.map((l) => {
-          const estado = l.driver === "BAILEYS" ? SESSAO_LINHA[l.sessao] ?? SESSAO_LINHA.DESCONECTADO : SESSAO_LINHA.CONECTADO;
+          const estado = SESSAO_LINHA[l.sessao] ?? SESSAO_LINHA.DESCONECTADO;
           return (
             <span key={l.id} className="flex items-center gap-1">
               {l.rotulo} <span className="text-gray-400">{l.telefoneE164}</span>

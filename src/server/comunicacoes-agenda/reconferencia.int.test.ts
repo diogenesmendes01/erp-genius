@@ -7,7 +7,6 @@ vi.mock("@/server/_shared", async (importOriginal) => {
   return { ...real, exigirSessaoComPapel: vi.fn(async () => ({ id: sessao.id, nome: "Secretaria", papeis: ["SECRETARIA_ACADEMICA"] })) };
 });
 vi.mock("@/server/email/resend", () => ({ enviarEmailResend: enviarEmail }));
-vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: vi.fn(), enviarMidia: vi.fn(), enviarTemplate } }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";

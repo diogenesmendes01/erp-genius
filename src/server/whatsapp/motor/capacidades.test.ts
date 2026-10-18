@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import { recursoDisponivel } from "@/components/conversa/recursos-canal";
 import { RECURSOS_MOTOR } from "@/components/conversa/recursos-canal";
@@ -20,8 +21,8 @@ describe("capacidadesDoNumero", () => {
     expect(c).toEqual([...RECURSOS_MOTOR]);
   });
   it("Meta e Evolution seguem sem recursos", () => {
-    expect(capacidadesDoNumero({ driver: "META_CLOUD", ativo: true, sessao: "CONECTADO" })).toEqual([]);
-    expect(capacidadesDoNumero({ driver: "BAILEYS", ativo: true, sessao: "CONECTADO" })).toEqual([]);
+    expect(capacidadesDoNumero({ driver: DriverWhatsApp.META_CLOUD, ativo: true, sessao: "CONECTADO" })).toEqual([]);
+    expect(capacidadesDoNumero({ driver: DriverWhatsApp.BAILEYS, ativo: true, sessao: "CONECTADO" })).toEqual([]);
   });
   it("recursoDisponivel('MOTOR', 'bloquear') é true", () => expect(recursoDisponivel("MOTOR", "bloquear")).toBe(true));
 });
@@ -41,6 +42,6 @@ describe("exigirMotorConectado", () => {
     expect(recusa({ driver: "MOTOR", ativo: false, sessao: "CONECTADO" })).toBe(MSG_NUMERO_INATIVO);
   });
   it("recusa driver que não é MOTOR", () => {
-    expect(recusa({ driver: "META_CLOUD", ativo: true, sessao: "CONECTADO" })).toBe("Este canal não executa esta ação.");
+    expect(recusa({ driver: DriverWhatsApp.META_CLOUD, ativo: true, sessao: "CONECTADO" })).toBe("Este canal não executa esta ação.");
   });
 });

@@ -8,22 +8,6 @@ import { chamarMotor, ErroMotor } from "./motor/cliente";
 // número. O motor gerencia a sessão (1 por número, numeroId = NumeroWhatsApp.providerRef = id);
 // desconexão degrada para "acumula na fila + alerta" — a fila já segura sozinha. Este módulo NÃO é
 // a porta de mensagens (canal.ts): é gestão de sessão — só as ações de config e os webhooks usam.
-// Os helpers da Evolution (sessaoDeEstadoEvolution, aplicarEstadoSessaoPorInstancia) ficam só para
-// o webhook legado.
-
-/** connection.update da Evolution → enum SessaoNumero. */
-export function sessaoDeEstadoEvolution(state: string | null | undefined): SessaoNumero | null {
-  switch (state) {
-    case "open":
-      return "CONECTADO";
-    case "connecting":
-      return "AGUARDANDO_QR";
-    case "close":
-      return "CAIU";
-    default:
-      return null;
-  }
-}
 
 /**
  * Aplica um estado de sessão ao número e grava os EVENTOS de domínio nas transições
@@ -61,21 +45,6 @@ export async function aplicarEstadoSessao(
       });
     }
   });
-}
-
-/** Idem, mas resolvendo o número pela instância (webhooks da Evolution). */
-export async function aplicarEstadoSessaoPorInstancia(
-  instancia: string,
-  state: string | null | undefined,
-): Promise<void> {
-  const nova = sessaoDeEstadoEvolution(state);
-  if (!nova) return;
-  const numero = await prisma.numeroWhatsApp.findFirst({
-    where: { providerRef: instancia, driver: "BAILEYS" },
-    select: { id: true },
-  });
-  if (!numero) return;
-  await aplicarEstadoSessao(numero.id, nova, "webhook");
 }
 
 export interface ResultadoConexao {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Papel } from "@prisma/client";
+import { DriverWhatsApp, Papel } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
@@ -43,10 +43,10 @@ function inputFabrica(over: Partial<PoliticaReguaInput> = {}): PoliticaReguaInpu
   };
 }
 
-async function seedNumero(driver: "META_CLOUD" | "BAILEYS" | "MOTOR") {
+async function seedNumero(driver: DriverWhatsApp) {
   return prisma.numeroWhatsApp.create({
     data: {
-      telefoneE164: driver === "META_CLOUD" ? "+5511999990000" : driver === "MOTOR" ? "+5511977770000" : "+5511988880000",
+      telefoneE164: driver === DriverWhatsApp.META_CLOUD ? "+5511999990000" : driver === DriverWhatsApp.MOTOR ? "+5511977770000" : "+5511988880000",
       rotulo: `Teste ${driver}`,
       driver,
       finalidade: "COBRANCA",
@@ -83,7 +83,7 @@ describe("salvarPoliticaRegua", () => {
     expect(semRemetente.ok).toBe(false);
     expect((semRemetente as { erro?: string }).erro).toContain("remetente");
 
-    const baileys = await seedNumero("BAILEYS");
+    const baileys = await seedNumero(DriverWhatsApp.BAILEYS);
     const travado = await salvarPoliticaRegua(inputFabrica({ estado: "SHADOW", numeroRemetenteId: baileys.id }));
     expect(travado.ok).toBe(false);
     expect((travado as { erro?: string }).erro).toContain("Trava do cron");
@@ -96,8 +96,8 @@ describe("salvarPoliticaRegua", () => {
     expect((await prisma.politicaRegua.findFirstOrThrow()).estado).toBe("SHADOW");
   });
 
-  it("META_CLOUD não arma a política: Meta Cloud ainda não tem envio disponível (C1 da R1 do #213)", async () => {
-    const oficial = await seedNumero("META_CLOUD");
+  it("driver legado não arma a política: só o motor envia", async () => {
+    const oficial = await seedNumero(DriverWhatsApp.META_CLOUD);
     const aprovado = await prisma.templateWhatsApp.create({
       data: { nome: "amigavel", corpo: "Olá {nome}!", statusMeta: "APROVADO" },
     });
@@ -105,7 +105,7 @@ describe("salvarPoliticaRegua", () => {
     input.degraus = input.degraus.map((d) => ({ ...d, templateId: aprovado.id, modo: d.modo === "AUTOMATICO" ? "MANUAL" as const : d.modo }));
     const recusado = await salvarPoliticaRegua(input);
     expect(recusado.ok).toBe(false);
-    expect((recusado as { erro?: string }).erro).toContain("Meta Cloud ainda não tem envio disponível");
+    expect((recusado as { erro?: string }).erro).toContain("Só números do motor WhatsApp enviam a política");
     expect(await prisma.politicaRegua.count()).toBe(0);
 
     // Desligada continua salvando livre (nada é armado).
@@ -122,7 +122,7 @@ describe("salvarPoliticaRegua", () => {
 });
 
 describe("salvarConfiguracaoAvisosAgenda", () => {
-  async function seedAgenda(driver: "META_CLOUD" | "MOTOR") {
+  async function seedAgenda(driver: DriverWhatsApp) {
     const numero = await prisma.numeroWhatsApp.create({
       data: { telefoneE164: driver === "MOTOR" ? "+50675550001" : "+50675550002", rotulo: `Agenda ${driver}`, driver, finalidade: "AGENDA", providerRef: "ref-agenda" },
     });
@@ -132,11 +132,11 @@ describe("salvarConfiguracaoAvisosAgenda", () => {
     return { numero, template };
   }
 
-  it("META_CLOUD é recusado: Meta Cloud ainda não tem envio disponível (C1 da R1 do #213)", async () => {
-    const { numero, template } = await seedAgenda("META_CLOUD");
+  it("driver legado é recusado: só o motor envia aviso de agenda", async () => {
+    const { numero, template } = await seedAgenda(DriverWhatsApp.META_CLOUD);
     const r = await salvarConfiguracaoAvisosAgenda({ numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id });
     expect(r.ok).toBe(false);
-    expect((r as { erro?: string }).erro).toContain("Meta Cloud ainda não tem envio disponível");
+    expect((r as { erro?: string }).erro).toContain("número de agenda ativo do motor WhatsApp");
     expect(await prisma.configuracaoOperacional.count()).toBe(0);
   });
 

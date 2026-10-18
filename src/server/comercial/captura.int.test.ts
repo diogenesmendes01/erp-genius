@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -21,7 +22,7 @@ async function seedNumeroVendas() {
     data: {
       telefoneE164: "+5511988887777",
       rotulo: "Vendas — teste",
-      driver: "BAILEYS",
+      driver: DriverWhatsApp.BAILEYS,
       finalidade: "VENDAS",
       providerRef: "inst-vendas",
       donoId: dono.id,
@@ -48,7 +49,7 @@ async function inbound(numero: { providerRef: string | null }, over: Partial<Par
     providerMessageId: `MSG-${Math.random().toString(36).slice(2)}`,
     corpo: "Olá, quero informações",
     tipo: "TEXTO",
-    driver: "BAILEYS",
+    driver: DriverWhatsApp.BAILEYS,
     fromMe: false,
     quando: new Date(),
     ...over,

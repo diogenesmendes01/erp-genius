@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -26,7 +27,7 @@ async function cenario(opcoes: { linhaVendas?: boolean; donoDaLinha?: "v1" } = {
   const gc = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
   const fin = await criarUsuario([Papel.FINANCEIRO], "Fin");
   const numero = opcoes.linhaVendas
-    ? await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990001", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", donoId: opcoes.donoDaLinha === "v1" ? v1.id : null } })
+    ? await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990001", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", donoId: opcoes.donoDaLinha === "v1" ? v1.id : null } })
     : await criarNumeroSetor({ telefoneE164: "+5511999990001", setores: ["COMERCIAL"], finalidade: "AGENDA", donoId: null });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" }));

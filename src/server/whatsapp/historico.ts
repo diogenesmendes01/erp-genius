@@ -4,7 +4,7 @@ import { acharNumero } from "./inbound";
 import { garantirContato, telefoneDeWaId } from "./identidade";
 import { atendimentoDaLinhaParaInbound, ehLinhaComercial } from "./linha-comercial";
 
-// IMPORTAÇÃO DO HISTÓRICO DA LINHA (SPEC-ERP-005 §5.4, LC-D04). Ao conectar uma linha BAILEYS, o
+// IMPORTAÇÃO DO HISTÓRICO DA LINHA (SPEC-ERP-005 §5.4, LC-D04). Ao conectar uma linha do motor, o
 // aparelho manda o histórico recente; gravamos só conversas 1:1 dos últimos 30 dias.
 // SEM EFEITOS COLATERAIS: é passado, não conversa viva — não captura lead, não saúda, não confirma
 // experimental, não aplica opt-out por palavra, não cancela intenções e não soma não lidas.
@@ -39,7 +39,7 @@ export async function importarHistoricoLinha(
   mensagens: MensagemHistorica[],
   agora: Date = new Date(),
 ): Promise<ResultadoHistorico> {
-  const numero = await acharNumero({ numeroProviderRef: ref.numeroProviderRef, driver: "BAILEYS" });
+  const numero = await acharNumero({ numeroProviderRef: ref.numeroProviderRef, driver: "MOTOR" });
   if (!numero) return { gravadas: 0, ignoradas: mensagens.length, motivo: "numero_desconhecido" };
   // Canal institucional não importa histórico: o aparelho mistura assuntos que a escola separa.
   if (!ehLinhaComercial(numero) || !numero.ativo) return { gravadas: 0, ignoradas: mensagens.length, motivo: "nao_e_linha_comercial" };
@@ -82,7 +82,7 @@ export async function importarHistoricoLinha(
             midiaPath: null, // mídia do histórico entra sem binário (tipo e legenda preservados)
             status: m.fromMe ? "ENVIADA" as const : "ENTREGUE" as const,
             statusEm: m.quando,
-            driver: "BAILEYS" as const,
+            driver: "MOTOR" as const,
             origem: null,
             providerMessageId: m.providerMessageId,
             criadoEm: m.quando,

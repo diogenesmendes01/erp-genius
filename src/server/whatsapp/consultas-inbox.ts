@@ -56,7 +56,6 @@ export interface ThreadConversa {
     nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
     alunoId: string | null; alunoNome: string | null; responsavelId: string | null; responsavelNome: string | null;
     leadId: string | null; leadNome: string | null };
-  janela24h: { aberta: boolean; fechaEm: string | null } | null;
   /** Recursos do motor que o número executa agora (`recursos={(r) => capacidades.includes(r)}` na tela). */
   capacidades: RecursoMotor[];
   silencio: { ativo: boolean; ate: string | null }; cobrancaAtiva: CobrancaAtivaThread | null;
@@ -148,7 +147,6 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
   const c = a.conversa;
   const { nome, fonte: fonteNome } = nomeEFonteDoAtendimento(a);
   const agora = Date.now();
-  const fechaEm = c.ultimoInboundEm ? new Date(c.ultimoInboundEm.getTime() + 24 * 3600_000) : null;
   const politica = financeiro ? await carregarPoliticaRegua() : null;
   const silencioAte = a.ultimoInboundEm && politica ? new Date(a.ultimoInboundEm.getTime() + politica.silencioPosInboundHoras * 3600_000) : null;
   const silencio = !!silencioAte && agora < silencioAte.getTime() && (!a.inboundTratadoEm || a.inboundTratadoEm < a.ultimoInboundEm!);
@@ -172,7 +170,6 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
       alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
       leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
     capacidades: capacidadesDoNumero({ driver: c.numero.driver, ativo: c.numero.ativo, sessao: c.numero.sessao }),
-    janela24h: c.numero.driver === "META_CLOUD" ? { aberta: !!fechaEm && agora < fechaEm.getTime(), fechaEm: fechaEm?.toISOString() ?? null } : null,
     silencio: { ativo: silencio, ate: silencio ? silencioAte!.toISOString() : null },
     cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
     lead: verLead && a.lead ? await leadNaThread(a.lead) : null,

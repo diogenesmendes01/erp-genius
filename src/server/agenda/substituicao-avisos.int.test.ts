@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const { authMock, enviarEmailMock, enviarTemplateMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarEmailMock: vi.fn(), enviarTemplateMock: vi.fn() }));
@@ -89,9 +90,9 @@ beforeEach(async () => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-// O número da agenda é MOTOR (D38). META_CLOUD só para exercitar a configuração inválida
-// (Meta Cloud ainda não tem envio, C1 da R1 do #213), que barra o aviso antes do despachante.
-async function configurarCanalAgenda(driver: "MOTOR" | "META_CLOUD" = "MOTOR") {
+// O número da agenda é MOTOR (D38). Driver legado só para exercitar a configuração inválida
+// (driver sem envio), que barra o aviso antes do despachante.
+async function configurarCanalAgenda(driver: DriverWhatsApp = DriverWhatsApp.MOTOR) {
   const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver, finalidade: "AGENDA", providerRef: driver === "MOTOR" ? "n-agenda" : "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_docente", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "waba-template-agenda" } });
   await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
@@ -380,7 +381,7 @@ it("cron geral retém o aviso de agenda com o envio de agenda desligado e envia 
 });
 
 it("template revogado antes da preparação deixa o aviso pendente sem chamar o driver", async () => {
-  await ativarWhatsappDaPrimeira(); const { template } = await configurarCanalAgenda("META_CLOUD");
+  await ativarWhatsappDaPrimeira(); const { template } = await configurarCanalAgenda(DriverWhatsApp.META_CLOUD);
   await prisma.templateWhatsApp.update({ where: { id: template.id }, data: { statusMeta: "RASCUNHO" } });
   expect(await decidir(true)).toMatchObject({ ok: true });
   vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true"); vi.stubEnv("WHATSAPP_LIVE", "1");

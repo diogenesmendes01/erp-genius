@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -127,12 +128,12 @@ describe("ciclo do número no motor", () => {
 
   it("editar número legado preserva driver e providerRef e não o cadastra no motor", async () => {
     const legado = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511999990010", rotulo: "Antigo", driver: "META_CLOUD", providerRef: "phone-number-id-123", finalidade: "COBRANCA" },
+      data: { telefoneE164: "+5511999990010", rotulo: "Antigo", driver: DriverWhatsApp.META_CLOUD, providerRef: "phone-number-id-123", finalidade: "COBRANCA" },
     });
     const r = await salvarNumeroWhatsApp({ id: legado.id, telefoneE164: "+5511999990010", rotulo: "Renomeado", finalidade: "COBRANCA" });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
     const depois = await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: legado.id } });
-    expect(depois).toMatchObject({ driver: "META_CLOUD", providerRef: "phone-number-id-123", rotulo: "Renomeado" });
+    expect(depois).toMatchObject({ driver: DriverWhatsApp.META_CLOUD, providerRef: "phone-number-id-123", rotulo: "Renomeado" });
     expect(chamar).not.toHaveBeenCalled();
   });
 
