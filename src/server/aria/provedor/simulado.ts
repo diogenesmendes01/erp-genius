@@ -58,6 +58,7 @@ export const provedorSimulado: ProvedorIA = {
       tokensEntrada: 0,
       tokensSaida: 0,
       tokensCache: 0,
+      tokensEscritaCache: 0,
       latenciaMs: 0,
     };
   },

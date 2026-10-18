@@ -65,7 +65,7 @@
   --danger-solid: #ea0038;
   --success-solid: #1b8755;
 
-  /* IA (sugestões do copiloto — doc 27 C3): identidade visual própria, deliberadamente
+  /* IA (conteúdo gerado pela Aria): identidade visual própria, deliberadamente
      distinta do resto da UI, para o operador reconhecer "isto foi gerado por IA" de
      relance. Mesmo padrão bg/text que os outros semânticos (inverte no dark);
      --ai-solid é o botão primário de aceitar sugestão, não inverte (mesmo valor e texto branco nos
