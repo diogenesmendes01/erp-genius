@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -95,13 +96,13 @@ async function cenario({ comAgendaPublicada = true }: { comAgendaPublicada?: boo
   } });
   if (encontro) await prisma.encontroAgenda.update({ where: { id: encontro.id }, data: { status: "MINISTRADO" } });
   const aulaId = diario.id;
-  const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+  const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA" });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id } });
   const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "PEDAGOGICO", alunoId: aluno.id, matriculaId: matricula.id, turmaId: origem.id }));
   const segmentosMidia = ["whatsapp", "atividade-origem.pdf"];
   await prisma.mensagemWhatsApp.create({ data: {
     numeroId: numero.id, conversaId: atendimento.conversaId, atendimentoId: atendimento.id,
-    direcao: "ENTRADA", driver: "BAILEYS", tipo: "DOCUMENTO", corpo: "Atividade da turma de origem", midiaPath: `/api/files/${segmentosMidia.join("/")}`,
+    direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, tipo: "DOCUMENTO", corpo: "Atividade da turma de origem", midiaPath: `/api/files/${segmentosMidia.join("/")}`,
   } });
   entrar(secretaria.id);
   const solicitacaoId = sucesso(await solicitarMudancaAcademica(aluno.id, { turmaDestinoId: destino.id, motivo: "Avaliar mudança de nível após desempenho demonstrado", horarioCompativel: true })).solicitacaoId;

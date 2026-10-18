@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
@@ -9,7 +10,7 @@ beforeEach(async () => {
 
 async function seed(agendadaPara: Date | null, status: "PENDENTE" | "ADIADA" = "PENDENTE") {
   const numero = await prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511955550101", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-da" },
+    data: { telefoneE164: "+5511955550101", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-da" },
   });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688887777" } });
   return prisma.intencaoMensagem.create({

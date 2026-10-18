@@ -91,13 +91,6 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "L2517",
     efeito: "ativa a régua de cobrança (estado ATIVA: mensagens reais aos clientes)",
   },
-  {
-    arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx",
-    modulo: "@/server/whatsapp/acoes",
-    acao: "salvarTemplateWhatsApp",
-    achado: "L2518",
-    efeito: "salva template aprovado, que volta a rascunho e tira do ar os degraus que o usam",
-  },
   // Fatia B (#169).
   {
     arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx",
@@ -212,6 +205,20 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "F2-T35",
     efeito: "estorna a comissão: o valor sai dos totais a pagar e não há reativação pela tela",
   },
+  {
+    arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx",
+    modulo: "@/server/whatsapp/acoes",
+    acao: "desconectarNumero",
+    achado: "Fase 4D",
+    efeito: "faz logout do número no motor: o número para de enviar e receber até novo pareamento por QR ou código",
+  },
+  {
+    arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx",
+    modulo: "@/server/whatsapp/motor/acoes-mensagem",
+    acao: "apagarMensagemWhatsApp",
+    achado: "Fase 4D",
+    efeito: "apaga a mensagem para todos no WhatsApp do contato; não há como desfazer pela tela",
+  },
 ];
 
 /**
@@ -227,11 +234,6 @@ export const EXCECOES_CONFIRMACAO: ExcecaoConfirmacao[] = [
     arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx",
     trecho: "salvarPoliticaRegua(dadosPolitica())",
     motivo: "salvar sem passar a régua de desligada/ensaio para ATIVA não liga envio novo; a ativação (`ativando`) abre o ConfirmarAcao",
-  },
-  {
-    arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx",
-    trecho: "salvarTemplateWhatsApp(dados)",
-    motivo: "template novo, em rascunho, em revisão ou rejeitado não derruba degrau nenhum ao salvar; o aprovado abre o ConfirmarAcao",
   },
   // Fatia B (#169): a mesma action serve à ida irreversível (confirmada) e à volta, que tem caminho pela tela.
   {

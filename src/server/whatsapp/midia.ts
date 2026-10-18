@@ -167,75 +167,8 @@ export async function lerMidiaParaEnvio(midiaPath: string): Promise<MidiaParaEnv
 }
 
 // ---------------------------------------------------------------------------
-// Download inbound por driver (chamado pelos WEBHOOKS, antes de gravar o log)
+// Download inbound pelo motor (chamado pelos tradutores de evento, antes de gravar o log)
 // ---------------------------------------------------------------------------
-
-const GRAPH_BASE = process.env.META_WA_GRAPH_URL ?? "https://graph.facebook.com/v21.0";
-
-/**
- * Baixa a mídia de uma mensagem da Cloud API (2 passos: GET /<media_id> → url efêmera →
- * GET url com o mesmo Bearer). Falha silenciosa → null (mensagem entra sem binário).
- */
-export async function baixarMidiaMeta(mediaId: string): Promise<{ bytes: Buffer; mime: string } | null> {
-  const token = process.env.META_WA_TOKEN;
-  if (!token) return null;
-  try {
-    const meta = await fetch(`${GRAPH_BASE}/${mediaId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!meta.ok) return null;
-    const info = (await meta.json()) as { url?: string; mime_type?: string; file_size?: number };
-    if (!info.url) return null;
-    if (info.file_size && info.file_size > MAX_BYTES) return null;
-
-    const arquivo = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!arquivo.ok) return null;
-    const bytes = Buffer.from(await arquivo.arrayBuffer());
-    return { bytes, mime: info.mime_type ?? arquivo.headers.get("content-type") ?? "" };
-  } catch (e) {
-    console.error("[whatsapp midia] falha ao baixar da Meta:", e);
-    return null;
-  }
-}
-
-/**
- * Obtém o binário de uma mensagem Baileys via Evolution (o webhook pode já trazer o
- * base64 quando a instância está configurada com `base64: true` — aí nem chamamos a API).
- */
-export async function baixarMidiaEvolution(
-  instancia: string,
-  providerMessageId: string,
-  base64DoWebhook?: string | null,
-  mimeDoWebhook?: string | null,
-): Promise<{ bytes: Buffer; mime: string } | null> {
-  try {
-    if (base64DoWebhook) {
-      const bytes = Buffer.from(base64DoWebhook, "base64");
-      if (bytes.byteLength > MAX_BYTES) return null;
-      return { bytes, mime: mimeDoWebhook ?? "" };
-    }
-    const base = process.env.EVOLUTION_URL;
-    const apikey = process.env.EVOLUTION_APIKEY;
-    if (!base || !apikey) return null;
-    const resposta = await fetch(
-      `${base.replace(/\/$/, "")}/chat/getBase64FromMediaMessage/${instancia}`,
-      {
-        method: "POST",
-        headers: { apikey, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: { key: { id: providerMessageId } }, convertToMp4: false }),
-      },
-    );
-    if (!resposta.ok) return null;
-    const json = (await resposta.json()) as { base64?: string; mimetype?: string };
-    if (!json.base64) return null;
-    const bytes = Buffer.from(json.base64, "base64");
-    if (bytes.byteLength > MAX_BYTES) return null;
-    return { bytes, mime: json.mimetype ?? mimeDoWebhook ?? "" };
-  } catch (e) {
-    console.error("[whatsapp midia] falha ao baixar da Evolution:", e);
-    return null;
-  }
-}
 
 /**
  * Baixa do motor os bytes de uma mídia recebida. Qualquer falha (arquivo grande demais,
