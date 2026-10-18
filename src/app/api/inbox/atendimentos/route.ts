@@ -24,5 +24,7 @@ export async function GET(req: Request) {
   const bruto = params.get("cursor");
   const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
   if (bruto && !cursor) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
-  return NextResponse.json(await listarAtendimentosPagina(usuario, filtros, cursor), { headers: { "Cache-Control": "no-store" } });
+  // `envio=1`: só os atendimentos em que o usuário pode enviar (destino do encaminhar).
+  const enviar = params.get("envio") === "1";
+  return NextResponse.json(await listarAtendimentosPagina(usuario, filtros, cursor, undefined, { enviar }), { headers: { "Cache-Control": "no-store" } });
 }
