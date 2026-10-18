@@ -73,6 +73,13 @@ describe("salvarMeta", () => {
     logado(vend1);
     expect((await salvarMeta(m())).ok).toBe(false);
   });
+  it("corrida_na_mesma_meta_nunca_vira_erro_inesperado", async () => {
+    logado(admin);
+    const rs = await Promise.all(Array.from({ length: 4 }, (_, i) => salvarMeta({ ...m(), valor: 10 + i })));
+    for (const r of rs) if (!r.ok) expect(r.erro).toMatch(/acabou de ser salva por outra pessoa/);
+    expect(rs.some((r) => r.ok)).toBe(true);
+    expect(await prisma.metaComercial.count({ where: { competencia: "2026-11", usuarioId: vend1.id, metrica: "MATRICULAS" } })).toBe(1);
+  });
   it("valor_ganho_exige_moeda", async () => {
     logado(admin);
     expect((await salvarMeta({ ...m(), metrica: "VALOR_GANHO", moeda: undefined })).ok).toBe(false);

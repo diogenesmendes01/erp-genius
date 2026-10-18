@@ -38,6 +38,14 @@ function rotuloDetalhe(chave: string): string {
   return "Oportunidades";
 }
 
+/** Monta a query da exportação a partir do período efetivo; só leva `de`/`ate` no personalizado válido. */
+function linkExportacao(aba: string, tipo: string, de: string, ate: string, extras: Record<string, string | undefined>): string {
+  const q = new URLSearchParams({ aba, periodo: tipo });
+  if (tipo === "PERSONALIZADO") { q.set("de", de); q.set("ate", ate); }
+  for (const [k, v] of Object.entries(extras)) if (v) q.set(k, v);
+  return q.toString();
+}
+
 export default async function RelatoriosPage({ searchParams }: { searchParams?: Promise<ParametrosUrl> } = {}) {
   const usuario = await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR);
   const sp = (await searchParams) ?? {};
@@ -60,6 +68,9 @@ export default async function RelatoriosPage({ searchParams }: { searchParams?: 
     erroPeriodo = erro instanceof Error ? erro.message : "Período inválido.";
     periodo = periodoDoFiltro({ tipo: "30D" }, fuso);
   }
+
+  // Período que a tela de fato mostra: com período personalizado inválido, cai em 30D (sem `de`/`ate`).
+  const tipoEfetivo = erroPeriodo ? "30D" : tipo;
 
   const pessoas = ehGestao ? await listarResponsaveis(escopo) : [];
   const filtroResponsavel = ehGestao ? lerOpcao(sp, "responsavel", pessoas.map((r) => r.id)) ?? undefined : undefined;
@@ -104,7 +115,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams?: 
 
   const exporta = (await podeExportar(usuario)) ? ABAS.find((a) => a.id === aba)!.exporta : null;
   const exportarHref = exporta
-    ? `/api/relatorios/exportar?${new URLSearchParams({ aba: exporta, periodo: tipo, ...(tipo === "PERSONALIZADO" ? { de, ate } : {}), ...(filtroResponsavel ? { responsavel: filtroResponsavel } : {}), ...(origem ? { origem } : {}), ...(temperatura ? { temperatura } : {}), ...(autor ? { autor } : {}) })}`
+    ? `/api/relatorios/exportar?${linkExportacao(exporta, tipoEfetivo, de, ate, { responsavel: filtroResponsavel, origem, temperatura, autor })}`
     : null;
 
   const dia = new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, day: "2-digit", month: "2-digit", year: "numeric" });
