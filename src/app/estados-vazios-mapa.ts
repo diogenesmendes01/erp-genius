@@ -610,6 +610,29 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/oportunidades/[id]/contratacao/page.tsx": [
     "bloco · {c.podeCadastrarNovo ? \"Não há cadastro com o contato da negociação. Você poderá preencher os dados ",
   ],
+  "src/app/(app)/relatorios/_componentes/AbaAria.tsx": [
+    "bloco · Nenhum atendimento comercial com resposta neste período e com estes filtros.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaAtividades.tsx": [
+    "compacto · Nenhuma tarefa no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaConversas.tsx": [
+    "compacto · Nenhuma mensagem enviada no período.",
+    "compacto · Nenhuma mensagem recebida no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaEquipe.tsx": [
+    "bloco · Nenhuma pessoa da equipe neste recorte.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaFunil.tsx": [
+    "bloco · Nenhuma oportunidade no funil neste período e com estes filtros.",
+    "compacto · Nenhuma perda no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaVisao.tsx": [
+    "compacto · Nenhuma variação de 10% ou mais nos indicadores.",
+  ],
+  "src/app/(app)/relatorios/_componentes/PainelDetalhe.tsx": [
+    "compacto · Nenhuma oportunidade aqui.",
+  ],
   "src/app/(app)/matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx": [
     "compacto · Não há responsável pedagógico vinculado a esta matrícula.",
     "compacto · Nenhuma autorização registrada.",
