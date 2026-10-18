@@ -3356,3 +3356,8 @@ Merge do `main` em `1a99b63b` (#229). Conflitos: este quadro (os dois lados) e `
 - **C10 (R3 do #229):** em `aria/turno/contexto.ts`, `ultimaFala` é o último inbound com `texto.trim()` não vazio; áudio, figurinha ou imagem sem legenda depois do texto não apagam a busca nas FONTES. Teste `ultima_fala_ignora_inbound_sem_texto`.
 - Migrations num banco limpo, em sequência: 010000, 020000, 030000, 040000, 050000, 070000, 080000 (`aria_triagem_shadow_sem_atendimento`).
 - Evidências (banco descartável, `migrate deploy`): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` 0 erros e 40 avisos (linha de base); `npm test` 747 arquivos, 5542 testes verdes; integração `src/server/{aria,whatsapp,crm-config}`: 77 arquivos, 659 testes verdes. A suíte completa segue com o integrador.
+
+### CI: job `build` (next build) — 2026-10-18
+
+- Novo job `build` no `.github/workflows/ci.yml`: `npm ci`, `prisma generate` e `npm run build`, com o `DATABASE_URL` de teste do workflow e `NODE_OPTIONS=--max-old-space-size=5120`. Motivo: o #234 quebrou o build de produção (componentes "use client" importando módulos de servidor com Prisma) sem que typecheck, lint ou testes acusassem.
+- Evidência: `npm run build` no `origin/main` (8cbf1672) com a env mínima do CI: saída 0, ~3 min.
