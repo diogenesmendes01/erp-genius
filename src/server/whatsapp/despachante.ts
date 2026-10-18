@@ -687,6 +687,21 @@ type IntencaoParaValidar = {
   numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
 };
 
+/**
+ * Fala da Aria num atendimento com a Aria pausada não sai (uma pessoa assumiu). Única exceção: o
+ * aviso do próprio handoff, gravado antes da pausa HANDOFF, ou seja, a resposta imediata de um
+ * turno que fez handoff EXECUTADO. Mensagem agendada (AGENDAR_MENSAGEM) nunca é exceção.
+ */
+async function ariaPausadaParaIntencao(atendimentoId: string, acaoAgenteIAId: string): Promise<boolean> {
+  const at = await prisma.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { iaPausadaEm: true, iaPausaMotivo: true } });
+  if (!at?.iaPausadaEm) return false;
+  if (at.iaPausaMotivo !== "HANDOFF") return true;
+  const acao = await prisma.acaoAgenteIA.findUnique({ where: { id: acaoAgenteIAId }, select: { acao: true, turnoId: true } });
+  if (!acao || (acao.acao !== "RESPONDER" && acao.acao !== "ENVIAR_DOCUMENTO")) return true;
+  const handoff = await prisma.acaoAgenteIA.count({ where: { turnoId: acao.turnoId, acao: "HANDOFF", status: "EXECUTADA" } });
+  return handoff === 0;
+}
+
 async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
   if (!it.numero.ativo) return "numero_remetente_inativo";
   if (it.contato.optOutEm) return "opt_out";
@@ -700,6 +715,7 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
   if (it.origem === "IA") {
     // A Aria não tem usuário autor: a intenção vale só ligada à ação da Aria e a um atendimento.
     if (it.autorId || !it.atendimentoId || !it.acaoAgenteIAId || it.cobrancaId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_ia_invalido";
+    if (await ariaPausadaParaIntencao(it.atendimentoId, it.acaoAgenteIAId)) return "aria_pausada_no_atendimento";
   } else if (it.origem !== "CRON" && it.origem !== "GESTAO") {
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";

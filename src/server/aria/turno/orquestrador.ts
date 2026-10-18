@@ -61,6 +61,7 @@ export async function processarTurnoAria(mensagemId: string, deps: DepsTurno = {
     select: {
       id: true,
       tipo: true,
+      corpo: true,
       atendimentoId: true,
       conversa: { select: { grupoId: true, contatoId: true, contato: { select: { optOutEm: true } }, numero: { select: { donoId: true } } } },
       atendimento: { select: { finalidade: true, iaPausadaEm: true, encerradoEm: true } },
@@ -91,6 +92,7 @@ export async function processarTurnoAria(mensagemId: string, deps: DepsTurno = {
 
 interface MsgTurno {
   tipo: SituacaoGuarda["mensagemTipo"];
+  corpo: string | null;
   conversa: { contato: { optOutEm: Date | null } | null; numero: { donoId: string | null } };
   atendimento: { finalidade: SituacaoGuarda["finalidade"]; iaPausadaEm: Date | null; encerradoEm: Date | null } | null;
 }
@@ -125,6 +127,12 @@ async function executarTurno(
   }
   const config: ConfigAria = versao?.config ?? configPadrao();
   const versaoId = versao?.id ?? null;
+  // Âncora sem texto (foto, vídeo ou documento sem legenda): o prompt terminaria na fala anterior do
+  // cliente, já respondida, e a Aria responderia de novo à pergunta antiga. Nada a responder aqui.
+  if (!msg.corpo?.trim()) {
+    await encerrar(turnoId, "IGNORADO:SEM_TEXTO", { versaoId });
+    return { turnoId, resultado: "IGNORADO:SEM_TEXTO" };
+  }
   const simulado = situacao.estado === "SHADOW";
   const soSugerir = forcarSoSugerir(guarda);
 
@@ -217,6 +225,11 @@ async function executarTurno(
   if (!textoResposta && saida.acoes.length === 0) return soHandoff("CONFIANCA");
 
   const r = await prisma.$transaction(async (tx) => {
+    // Corrida com humano: trava o atendimento e relê a pausa antes de qualquer resposta ou ação no
+    // CRM (o turno pode trazer só ações). Quem assumiu durante a chamada ao provedor fica com a conversa.
+    await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${atendimentoId} FOR UPDATE`;
+    const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId }, select: { iaPausadaEm: true } });
+    if (atual.iaPausadaEm) return "PAUSADA" as const;
     let resultado: "RESPONDEU" | "SUGERIU" | null = null;
     let ctxSeguinte = ctx;
     if (textoResposta && dResposta && dResposta.destino !== "NEGAR") {
