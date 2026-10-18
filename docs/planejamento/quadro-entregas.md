@@ -2930,3 +2930,12 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
 - Integração (banco `dev-email`, migration `aria_base` aplicada só nele), recorte dos arquivos tocados e dos que importam `comercial/{acoes,consultas,schema}`: `src/server/aria`, `src/server/comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `whatsapp/{inbox,acesso-atendimento}`, `secretaria/politica`: saída 0; 13 arquivos, 120 testes verdes.
 - Nota: `vitest related` com `src/lib/labels.ts`/`evento.ts` alcança praticamente toda a suíte de integração (passou de 2 h e foi interrompido pelo limite de tempo); a suíte completa fica para o integrador.
+
+### Fase 5E: relatórios e metas (verificação do bloco) — 2026-10-18
+
+Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 725 arquivos, 5336 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- Integração, recorte: `vitest related --run -c vitest.integration.config.ts` sobre os arquivos .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 14 arquivos, 109 testes verdes.
+- Pendente: suíte de integração completa a cargo do integrador no fim da fase.
