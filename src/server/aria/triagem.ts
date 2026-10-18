@@ -9,21 +9,34 @@ import { payloadDaAria } from "./ator";
 import { situacaoAria } from "./estado";
 import { chaveConfigurada, escolherProvedor, ErroProvedorIA, type ProvedorIA, type RespostaIA } from "./provedor";
 import { estadoOrcamento, registrarChamadaIA } from "./uso";
-import { ocultarDadosPessoais } from "./turno/contexto";
+import { SETOR_ATENDIMENTO_LABEL } from "@/lib/labels";
+import { configPadrao } from "./config-schema";
+import { APRESENTACAO, ocultarDadosPessoais } from "./turno/contexto";
+import { processarTurnoAria } from "./turno/orquestrador";
 
-/** Frase fixa: a Aria só encaminha; nunca responde o conteúdo da mensagem. */
-export const FRASE_ENCAMINHAMENTO: Record<FinalidadeAtendimentoWhatsApp, string> = {
-  COMERCIAL: "Obrigada! Vou encaminhar sua mensagem para o Comercial.",
-  FINANCEIRO: "Obrigada! Vou encaminhar sua mensagem para o Financeiro.",
-  SECRETARIA: "Obrigada! Vou encaminhar sua mensagem para a Secretaria.",
-  PEDAGOGICO: "Obrigada! Vou encaminhar sua mensagem para o Pedagógico.",
-};
+/**
+ * Frase fixa de encaminhamento a um setor que a Aria não atende: ela só encaminha, nunca responde
+ * o conteúdo. Como primeira fala da Aria no atendimento, começa pela apresentação obrigatória.
+ * O COMERCIAL não recebe frase: a Aria atende o Comercial e o turno de atendimento responde.
+ */
+export function fraseEncaminhamento(setor: FinalidadeAtendimentoWhatsApp, nomeAria: string, apresentar = true): string {
+  const artigo = setor === "SECRETARIA" ? "a" : "o";
+  const frase = `Obrigada! Vou encaminhar sua mensagem para ${artigo} ${SETOR_ATENDIMENTO_LABEL[setor]}.`;
+  return apresentar ? `${APRESENTACAO(nomeAria)} ${frase}` : frase;
+}
+
+/**
+ * Âncora do turno TRIAGEM: separada da âncora do turno ATENDIMENTO (a própria mensagem), para que a
+ * mensagem classificada como COMERCIAL ainda ganhe o seu turno de atendimento (`@unique`).
+ */
+export const ancoraTriagem = (mensagemId: string) => `triagem:${mensagemId}`;
 
 export type ResultadoTriagem =
   | { setor: FinalidadeAtendimentoWhatsApp; atendimentoId: string }
   | { triagemHumana: "CONFIANCA" | "SETOR_FORA_DO_NUMERO" | "RECUSA" | "DESLIGADA" };
 
 export interface DepsTriagem {
+  /** Provedor da classificação e, no COMERCIAL, do turno de atendimento encadeado. */
   provedor?: ProvedorIA;
 }
 
@@ -64,7 +77,8 @@ function lerSaida(r: RespostaIA): z.infer<typeof SaidaTriagem> | null {
 
 /**
  * Classifica o setor de uma mensagem sem atendimento num número multissetor e, com confiança
- * suficiente, abre o atendimento do setor e enfileira a frase fixa de encaminhamento.
+ * suficiente, abre o atendimento do setor e enfileira a frase fixa de encaminhamento; no COMERCIAL
+ * não há frase: a mensagem segue para o turno de atendimento da Aria (com a apresentação).
  * Qualquer outro caso devolve `triagemHumana` e a mensagem segue na triagem humana.
  * Em SHADOW só registra a chamada, o turno TRIAGEM e a ação CLASSIFICAR_SETOR SIMULADA (sem atendimento)
  * e um Evento de simulação: nada muda no CRM e nada sai.
@@ -128,12 +142,12 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
     const contatoIdShadow = msg.conversa.contatoId;
     await prisma.$transaction(async (tx) => {
       const criado = await tx.turnoAgenteIA.createMany({
-        data: [{ ancoraMensagemId: msg.id, atendimentoId: null, versaoId: situacao.versao?.id ?? null, tipo: "TRIAGEM",
+        data: [{ ancoraMensagemId: ancoraTriagem(msg.id), atendimentoId: null, versaoId: situacao.versao?.id ?? null, tipo: "TRIAGEM",
           confianca: saida.confianca, resultado: "SIMULOU", chamadaId: chamada.id }],
         skipDuplicates: true,
       });
       if (criado.count === 0) return; // mesma mensagem já triada: não duplica a simulação
-      const turno = await tx.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: msg.id }, select: { id: true } });
+      const turno = await tx.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: ancoraTriagem(msg.id) }, select: { id: true } });
       const acao = await tx.acaoAgenteIA.create({
         data: {
           turnoId: turno.id, atendimentoId: null, acao: "CLASSIFICAR_SETOR", modoConfigurado: "SHADOW",
@@ -171,7 +185,7 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
     await aplicarInbound(tx, atendimento.id, msg.criadoEm);
 
     const turno = await tx.turnoAgenteIA.create({
-      data: { ancoraMensagemId: msg.id, atendimentoId: atendimento.id, versaoId: situacao.versao?.id ?? null, tipo: "TRIAGEM",
+      data: { ancoraMensagemId: ancoraTriagem(msg.id), atendimentoId: atendimento.id, versaoId: situacao.versao?.id ?? null, tipo: "TRIAGEM",
         confianca: saida.confianca, resultado: "CLASSIFICOU", chamadaId: chamada.id },
     });
     const acao = await tx.acaoAgenteIA.create({
@@ -181,22 +195,37 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
         reversivel: false, motivoIrreversivel: "Classificação já encaminhou a conversa ao setor",
       },
     });
-    const intencao = await tx.intencaoMensagem.create({
-      data: {
-        numeroId: msg.conversa.numeroId, contatoId, atendimentoId: atendimento.id, leadId: msg.conversa.contato!.leadId,
-        origem: "IA", reativa: true, status: "PENDENTE", tipo: "TEXTO",
-        corpoRenderizado: FRASE_ENCAMINHAMENTO[setor], acaoAgenteIAId: acao.id,
-      },
-    });
-    await tx.acaoAgenteIA.update({ where: { id: acao.id }, data: { intencaoId: intencao.id } });
+    let intencaoId: string | null = null;
+    if (setor !== "COMERCIAL") {
+      const jaApresentou = await tx.mensagemWhatsApp.count({ where: { atendimentoId: atendimento.id, direcao: "SAIDA", origem: "IA" } });
+      const intencao = await tx.intencaoMensagem.create({
+        data: {
+          numeroId: msg.conversa.numeroId, contatoId, atendimentoId: atendimento.id, leadId: msg.conversa.contato!.leadId,
+          origem: "IA", reativa: true, status: "PENDENTE", tipo: "TEXTO",
+          corpoRenderizado: fraseEncaminhamento(setor, situacao.versao?.config.nome ?? configPadrao().nome, jaApresentou === 0),
+          acaoAgenteIAId: acao.id,
+        },
+      });
+      intencaoId = intencao.id;
+      await tx.acaoAgenteIA.update({ where: { id: acao.id }, data: { intencaoId } });
+    }
     await registrarEvento(tx, {
       tipo: "MensagemClassificada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimento.id, autorId: null,
-      payload: payloadDaAria(acao.id, { mensagemId: msg.id, finalidade: setor, confianca: saida.confianca, intencaoId: intencao.id }),
+      payload: payloadDaAria(acao.id, { mensagemId: msg.id, finalidade: setor, confianca: saida.confianca, intencaoId }),
     });
     return { setor, atendimentoId: atendimento.id };
   });
   if (!r) return desligada;
   if ("fora" in r) return { triagemHumana: "SETOR_FORA_DO_NUMERO" };
+  if (r.setor === "COMERCIAL") {
+    // A Aria atende o Comercial: o turno de atendimento (âncora = a própria mensagem) responde já com
+    // a apresentação. Se falhar aqui, o reprocesso do cron pega a mensagem (ela não tem turno ATENDIMENTO).
+    try {
+      await processarTurnoAria(msg.id, { provedor: deps.provedor });
+    } catch (e) {
+      console.error("[aria] turno após a triagem falhou:", e);
+    }
+  }
   return r;
 }
 

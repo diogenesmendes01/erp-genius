@@ -48,6 +48,8 @@ export function montarNotaResumo(resumo: ResumoHandoff | null, campos: string[])
  * Passa o atendimento a uma pessoa: define o destino (responsável da oportunidade, usuário fixo ou fila),
  * avisa o lead, anota o resumo, pausa a Aria e grava o Evento, tudo na transação recebida.
  * Em SHADOW (simulado) nada muda no atendimento: só a ação SIMULADA (e a intenção SIMULADA).
+ * Se uma pessoa assumiu durante o turno (a Aria já está pausada no atendimento), o handoff não
+ * acontece: nada sai, responsável e status ficam como a pessoa deixou e a ação fica BLOQUEADA.
  */
 export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAgenteIA> {
   const h = i.config.handoff;
@@ -84,6 +86,25 @@ export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAg
     nomeAria: i.config.nome,
     politicas: i.config.politicas,
   });
+  if ("bloqueada" in msg && msg.bloqueada === "PAUSADA_DURANTE_TURNO") {
+    // Corrida com humano (atendente respondeu pelo ERP ou celular enquanto o provedor pensava):
+    // quem assumiu fica com o atendimento; só registra que o handoff não foi feito.
+    return tx.acaoAgenteIA.create({
+      data: {
+        turnoId: i.turnoId,
+        atendimentoId: i.ctx.atendimentoId,
+        oportunidadeId: i.ctx.oportunidade?.id ?? null,
+        acao: "HANDOFF",
+        etapaNoMomento: i.ctx.oportunidade?.etapa ?? null,
+        modoConfigurado: i.simulado ? "SHADOW" : "SEMPRE",
+        status: "BLOQUEADA",
+        confianca: 100,
+        payload: { motivo: i.motivo, motivoBloqueio: "PAUSADA_DURANTE_TURNO" },
+        reversivel: false,
+        motivoIrreversivel: "Ação bloqueada: nada foi alterado",
+      },
+    });
+  }
   const intencaoId = "acao" in msg ? (msg.acao.intencaoId ?? null) : null;
 
   const nota = montarNotaResumo(i.resumo, h.camposResumo);

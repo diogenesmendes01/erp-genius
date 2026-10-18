@@ -129,6 +129,30 @@ describe("processarTurnoAria", () => {
     expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF" } })).toMatchObject({ payload: expect.objectContaining({ motivo: "ERRO_PROVEDOR" }) });
   });
 
+  it("humano_assume_durante_a_chamada_e_o_handoff_nao_tira_o_atendimento_dele", async () => {
+    await pronta();
+    const atendente = await criarUsuario([], "Bruno Atendente");
+    // Enquanto o provedor responde (e falha), o atendente responde pelo celular e fica com o atendimento.
+    const provedor: ProvedorIA = {
+      nome: "anthropic",
+      async gerar() {
+        await prisma.atendimentoWhatsApp.update({
+          where: { id: c.at.id },
+          data: { iaPausadaEm: new Date(), iaPausaMotivo: "CELULAR", responsavelId: atendente.id, status: "EM_ATENDIMENTO" },
+        });
+        throw new ErroProvedorIA("429");
+      },
+    };
+    expect(await processarTurnoAria(inbound.id, { provedor })).toMatchObject({ resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" });
+    expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).toMatchObject({
+      responsavelId: atendente.id, status: "EM_ATENDIMENTO", iaPausaMotivo: "CELULAR",
+    });
+    expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF" } })).toMatchObject({ status: "BLOQUEADA" });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: "AriaHandoff" } })).toBe(0);
+    expect(await prisma.turnoAgenteIA.findFirstOrThrow()).toMatchObject({ resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" });
+  });
+
   it("ativa_sem_chave_vira_handoff_erro_provedor_sem_resposta", async () => {
     await pronta("ATIVA");
     const chave = process.env.ANTHROPIC_API_KEY;
