@@ -5,8 +5,7 @@ import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ACAO_AGENTE_IA_LABEL, MOTIVO_PAUSA_IA_LABEL } from "@/lib/labels";
-import { aprovarAcaoAria, rejeitarAcaoAria } from "@/server/aria/historico";
-import { devolverParaAria } from "@/server/aria/pausa";
+import { aprovarAcaoAria, devolverParaAria, rejeitarAcaoAria } from "@/server/aria/acoes";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 
 export function textoPausaAria(motivo: MotivoPausaAtendimentoIA | null): string {

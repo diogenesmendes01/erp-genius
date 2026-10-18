@@ -5,7 +5,8 @@ import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { ConfigAria } from "@/server/aria/config-schema";
-import { salvarRascunho, type RascunhoAberto } from "@/server/aria/versoes";
+import { salvarRascunho } from "@/server/aria/acoes";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 
 type Props = {
   montar: () => ConfigAria;

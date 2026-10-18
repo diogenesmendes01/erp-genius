@@ -11,7 +11,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL, STATUS_ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 import { ETAPAS_ARIA } from "@/server/aria/matriz";
 import { ACOES_MATRIZ } from "@/server/aria/matriz";
-import { aprovarAcaoAria, desfazerAcaoAria, rejeitarAcaoAria } from "@/server/aria/historico";
+import { aprovarAcaoAria, desfazerAcaoAria, rejeitarAcaoAria } from "@/server/aria/acoes";
 import type { ItemHistoricoAria } from "@/server/aria/consultas";
 
 type Props = {
