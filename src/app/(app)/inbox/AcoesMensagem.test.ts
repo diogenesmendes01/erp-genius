@@ -31,7 +31,7 @@ import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Modal } from "@/components/Modal";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import { AcoesMensagem, EditarMensagem, EncaminharMensagem, REACOES_RAPIDAS, ReagirMensagem, buscarDestinosEncaminhar, type PropsAcoesMensagem } from "./AcoesMensagem";
+import { AcoesMensagem, ERRO_LISTA_DESTINOS, EditarMensagem, EncaminharMensagem, REACOES_RAPIDAS, ReagirMensagem, buscarDestinosEncaminhar, type PropsAcoesMensagem } from "./AcoesMensagem";
 
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 const props = (p: Partial<PropsAcoesMensagem> & Pick<PropsAcoesMensagem, "acao">): PropsAcoesMensagem =>
@@ -123,11 +123,72 @@ describe("EncaminharMensagem (destino entre as conversas do mesmo número com en
     vi.stubGlobal("fetch", f);
     const r = await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, " Bia ");
     expect(f).toHaveBeenCalledWith("/api/inbox/atendimentos?numeroId=n1&envio=1&busca=Bia", { cache: "no-store", credentials: "same-origin" });
-    expect(r!.map((i) => i.id)).toEqual(["a2", "a5"]);
+    expect(r!.itens.map((i) => i.id)).toEqual(["a2", "a5"]);
+    expect(r!.proximo).toBeNull();
     await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, "");
     expect(f).toHaveBeenLastCalledWith("/api/inbox/atendimentos?numeroId=n1&envio=1", { cache: "no-store", credentials: "same-origin" });
     vi.stubGlobal("fetch", resposta([], false));
     expect(await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, "")).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it("C2 da revisão do #223: segue o cursor `proximo` da lista, mantendo a busca", async () => {
+    const f = vi.fn(async (...args: [string, unknown?]) => { void args; return { ok: true, json: async () => ({ itens: [lista[1]!], proximo: "cur2" }) }; });
+    vi.stubGlobal("fetch", f);
+    const r = await buscarDestinosEncaminhar({ atendimentoId: "a1", numeroId: "n1" }, "Bia", "cur1");
+    expect(f).toHaveBeenCalledWith("/api/inbox/atendimentos?numeroId=n1&envio=1&busca=Bia&cursor=cur1", { cache: "no-store", credentials: "same-origin" });
+    expect(r).toEqual({ itens: [lista[1]], proximo: "cur2" });
+    vi.unstubAllGlobals();
+  });
+
+  it("C2 da revisão do #223: \"Carregar mais\" busca a próxima página da mesma busca e acrescenta os destinos", async () => {
+    const paginas: Record<string, { itens: ItemListaInbox[]; proximo: string | null }> = {
+      // Primeira página só com o que o cliente descarta (origem, grupo, opt-out): sem estado vazio enquanto há mais.
+      "": { itens: [lista[0]!, lista[2]!, lista[3]!], proximo: "p2" },
+      p2: { itens: [lista[1]!, lista[1]!], proximo: "p3" },
+      p3: { itens: [lista[4]!, lista[1]!], proximo: null },
+    };
+    const f = vi.fn(async (url: string) => {
+      const q = new URL(url, "http://x").searchParams;
+      return { ok: true, json: async () => paginas[q.get("cursor") ?? ""]! };
+    });
+    vi.stubGlobal("fetch", f);
+    m.g = criarGanchos();
+    const tela = () => m.g!.renderizar(EncaminharMensagem, props({ acao: "encaminhar" }));
+    (elementos(tela()).find((n) => n.type === "input")!.props.onChange as (e: unknown) => void)({ target: { value: "a" } });
+    (elementos(tela()).find((n) => n.type === "form")!.props.onSubmit as (e: unknown) => void)({ preventDefault() {} });
+    await esvaziar();
+    const rotulos = () => elementos(tela()).filter((n) => n.type === Botao).map((n) => [n.props.children].flat().join(""));
+    expect(elementos(tela()).some((n) => n.type === EstadoVazio)).toBe(false);
+    expect(rotulos()).toContain("Carregar mais");
+    // A busca digitada depois não muda a página seguinte: o cursor é da busca aplicada.
+    (elementos(tela()).find((n) => n.type === "input")!.props.onChange as (e: unknown) => void)({ target: { value: "outra" } });
+    clicarBotao(tela(), "Carregar mais");
+    await esvaziar();
+    expect(f).toHaveBeenLastCalledWith("/api/inbox/atendimentos?numeroId=n1&envio=1&busca=a&cursor=p2", { cache: "no-store", credentials: "same-origin" });
+    expect(rotulos().filter((r) => r.startsWith("Encaminhar para"))).toEqual(["Encaminhar para Bia"]);
+    clicarBotao(tela(), "Carregar mais");
+    await esvaziar();
+    expect(rotulos().filter((r) => r.startsWith("Encaminhar para"))).toEqual(["Encaminhar para Bia", "Encaminhar para Caio"]);
+    expect(rotulos()).not.toContain("Carregar mais");
+    vi.unstubAllGlobals();
+  });
+
+  it("C2 da revisão do #223: falha ao carregar mais mostra o erro e mantém a lista e o botão", async () => {
+    let falhar = false;
+    vi.stubGlobal("fetch", vi.fn(async () => (falhar ? { ok: false, json: async () => ({}) } : { ok: true, json: async () => ({ itens: [lista[1]!], proximo: "p2" }) })));
+    m.g = criarGanchos();
+    const tela = () => m.g!.renderizar(EncaminharMensagem, props({ acao: "encaminhar" }));
+    (elementos(tela()).find((n) => n.type === "form")!.props.onSubmit as (e: unknown) => void)({ preventDefault() {} });
+    await esvaziar();
+    falhar = true;
+    clicarBotao(tela(), "Carregar mais");
+    await esvaziar();
+    const rotulos = elementos(tela()).filter((n) => n.type === Botao).map((n) => [n.props.children].flat().join(""));
+    expect(rotulos).toContain("Encaminhar para Bia");
+    expect(rotulos).toContain("Carregar mais");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    expect(renderToStaticMarkup(createElement("div", null, tela() as ReactNode))).toContain(ERRO_LISTA_DESTINOS);
     vi.unstubAllGlobals();
   });
 
