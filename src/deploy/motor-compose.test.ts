@@ -17,6 +17,14 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
     const t = ler(arq);
     const motor = secao(t, "motor");
     const app = secao(t, "app");
+    it("estrutura: serviços sem chave duplicada e cada um com image ou build", () => {
+      const bloco = t.match(/^services:\n((?:(?:[ \t]+.*)?\n)*?)(?=^[^\s#]|(?![\s\S]))/m)?.[1] ?? "";
+      const nomes = [...bloco.matchAll(/^  ([A-Za-z0-9_-]+):\s*$/gm)].map((m) => m[1]);
+      expect(nomes.length).toBeGreaterThan(0);
+      expect(new Set(nomes).size).toBe(nomes.length);
+      for (const n of nomes) expect(secao(t, n), `serviço ${n}`).toMatch(/^    (image|build):/m);
+      expect(secao(t, "db")).toMatch(/^    healthcheck:/m);
+    });
     it("sem Evolution", () => expect(t).not.toMatch(/evolution|EVOLUTION_|META_WA_/i));
     it("imagem obrigatória e reinício automático", () => {
       expect(motor).toContain("image: ${MOTOR_IMAGE:?defina");
