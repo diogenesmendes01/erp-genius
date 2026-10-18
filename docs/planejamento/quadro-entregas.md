@@ -3112,3 +3112,13 @@ Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase
 - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
 - Integração, recorte: `vitest related --run -c vitest.integration.config.ts` sobre os arquivos .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 14 arquivos, 109 testes verdes.
 - Pendente: suíte de integração completa a cargo do integrador no fim da fase.
+
+**Merge do `main` (#224, Fase 5A, já com 4D a 4F) na Fase 5E (18/10/2026)**
+
+- PR #228 passa a ter base `main` (não empilhado). Merge de `f1b4a41c`; conflito só neste quadro (ficam os dois blocos). `botoes-mapa.ts`,
+  `botoes.test.ts` e `enums-rotulos.test.ts` mesclaram sozinhos. A 5E não cita Meta, Evolution, drivers legados nem o Inbox antigo.
+  `20261018030000_metas_comerciais` segue a última migration, depois de `20261018010000_aria_base`; sem colisão.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5377 testes verdes.
+- Integração (banco descartável, `migrate deploy` completo; `migrate diff` só com a deriva preexistente de defaults de timestamp, nada em
+  `MetaComercial`): `src/app/api/relatorios`, `home/consultas`, `metas`, `relatorios`, `aria`, `src/server/inbox`, `whatsapp/motor`: saída 0;
+  31 arquivos, 252 testes verdes. O `npm run test:int` completo segue com o integrador.
