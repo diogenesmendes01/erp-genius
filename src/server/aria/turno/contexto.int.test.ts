@@ -118,6 +118,24 @@ describe("contexto do turno", () => {
     expect(ctx.trechos).toEqual([{ id: tr.id, texto: "As turmas noturnas começam às 19h." }]);
     expect(ctx.faq.map((x) => x.id)).toEqual(["1"]);
   });
+
+  // C10 da R3 do #229: texto seguido de áudio/figurinha/imagem sem legenda (corpo vazio) continua
+  // buscando FONTES pela última fala com texto.
+  it("ultima_fala_ignora_inbound_sem_texto", async () => {
+    const c = await cenario();
+    const f = await prisma.fonteConhecimento.create({
+      data: { tipo: "TEXTO", nome: "Horários", status: "PRONTA", hashConteudo: "h-ctx-c10", criadoPorId: c.dono.id },
+    });
+    const tr = await prisma.trechoConhecimento.create({ data: { fonteId: f.id, ordem: 0, texto: "As turmas noturnas começam às 19h." } });
+    const config = { ...configPadrao(), fontesAtivas: [f.id] };
+    await prisma.versaoAgenteIA.create({ data: { numero: 1, status: "PUBLICADA", config, criadaPorId: c.dono.id, publicadaPorId: c.dono.id, publicadaEm: new Date() } });
+    const t0 = Date.now() - 60_000;
+    await msg(c, "ENTRADA", "tem turma noturna?", null, new Date(t0));
+    await msg(c, "ENTRADA", "", null, new Date(t0 + 1_000));
+    await msg(c, "ENTRADA", "   ", null, new Date(t0 + 2_000));
+    const ctx = await montarContextoTurno(c.at.id);
+    expect(ctx.trechos).toEqual([{ id: tr.id, texto: "As turmas noturnas começam às 19h." }]);
+  });
 });
 
 describe("montarSistema", () => {

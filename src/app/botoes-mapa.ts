@@ -58,8 +58,27 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/contratos/page.tsx": [
     "<Link> Preparar novo modelo → secundario/md",
   ],
+  "configuracao/crm/distribuicao/SetorPainel.tsx": [
+    "<button> Salvando… · Salvar setor → primario/md",
+  ],
+  "configuracao/crm/ia/IaPainel.tsx": [
+    "<button> Salvar → primario/md",
+  ],
   "configuracao/crm/metas/page.tsx": [
     "<Botao> Salvar meta → primario/md",
+  ],
+  "configuracao/crm/respostas/RespostasPainel.tsx": [
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar resposta · Criar resposta → primario/md",
+  ],
+  "configuracao/crm/tags-campos/TagsCamposPainel.tsx": [
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar tag · Criar tag → primario/md",
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar campo · Criar campo → primario/md",
   ],
   "configuracao/migracao/PreparacaoMigracaoPainel.tsx": [
     "<button> Lendo… · Ler arquivo → secundario/md",
@@ -148,6 +167,12 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Fechar → btnSec",
     "<button> Atualizar QR → btnSec",
     "<button> Gerar código → btnSec",
+  ],
+  "configuracao/whatsapp/numeros/PerfilNumeroPainel.tsx": [
+    "const btn → primario/sm",
+    "<button> Salvando… · Salvar perfil → btn",
+    "<button> Salvando… · Salvar privacidade → btn",
+    "<button> Salvando… · Salvar temporárias → btn",
   ],
   "configuracao/whatsapp/PoliticaPainel.tsx": [
     "const btnPri → primario/md",

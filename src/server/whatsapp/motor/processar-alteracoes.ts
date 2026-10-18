@@ -163,7 +163,7 @@ export async function processarChamadaRecebida(env: EnvelopeMotor): Promise<Resu
     });
     // Aparece na conversa, mas não soma não lidas nem cancela automação.
     await tx.conversaWhatsApp.update({ where: { id: conversa.id }, data: { ultimaMensagemEm: quando } });
-    const atendimentoId = await atendimentoDoInbound(tx, conversa.id);
+    const atendimentoId = await atendimentoDoInbound(tx, conversa.id, { atribuir: false });
     if (atendimentoId) {
       await tx.mensagemWhatsApp.update({ where: { id: mensagem.id }, data: { atendimentoId } });
       await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: { ultimaMensagemEm: quando } });
