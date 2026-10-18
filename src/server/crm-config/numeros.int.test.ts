@@ -92,6 +92,19 @@ describe("Configurações › Números", () => {
     expect((await definirResponsavelTriagem({ numeroId, usuarioId: sec.id })).ok).toBe(false);
   });
 
+  it("troca_de_setores_com_2_ou_mais_zera_triagem_que_perdeu_o_papel", async () => {
+    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "FINANCEIRO"] });
+    await definirResponsavelTriagem({ numeroId, usuarioId: sec.id });
+    expect((await definirSetoresDoNumero({ numeroId, setores: ["COMERCIAL", "PEDAGOGICO"] })).ok).toBe(true);
+    expect((await numero()).triagemResponsavelId).toBeNull();
+    expect((await ultimoEvento("NumeroTriagemAlterada")).payload).toEqual({ de: sec.id, para: null });
+    // responsável que segue valido e mantido
+    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "FINANCEIRO"] });
+    await definirResponsavelTriagem({ numeroId, usuarioId: sec.id });
+    await definirSetoresDoNumero({ numeroId, setores: ["SECRETARIA", "COMERCIAL"] });
+    expect((await numero()).triagemResponsavelId).toBe(sec.id);
+  });
+
   it("temporarias_desligadas_por_padrao", async () => expect((await numero()).temporariasSegundos).toBe(0));
 
   it("ligar_temporarias_exige_digitar", async () => {

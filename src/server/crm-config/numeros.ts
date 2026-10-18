@@ -16,8 +16,8 @@ const SetoresSchema = z.object({
 });
 
 /**
- * Define os setores que o número atende (só ADMINISTRADOR). Com menos de 2 setores a triagem
- * deixa de existir e o responsável volta a null (= administrador, Q2): vira `NumeroTriagemAlterada`.
+ * Define os setores que o número atende (só ADMINISTRADOR). Com menos de 2 setores, ou se o responsável
+ * atual deixa de ter papel de algum dos setores restantes, o responsável volta a null (= administrador, Q2): vira `NumeroTriagemAlterada`.
  */
 export async function definirSetoresDoNumero(i: { numeroId: string; setores: Setor[] }): Promise<Resultado> {
   return executarAcao(async () => {
@@ -31,7 +31,12 @@ export async function definirSetoresDoNumero(i: { numeroId: string; setores: Set
       await tx.numeroSetorWhatsApp.deleteMany({ where: { numeroId: numero.id } });
       await tx.numeroSetorWhatsApp.createMany({ data: para.map((finalidade) => ({ numeroId: numero.id, finalidade })) });
       await registrarEvento(tx, { tipo: "NumeroSetoresAlterados", agregadoTipo: "NumeroWhatsApp", agregadoId: numero.id, autorId: autor.id, payload: { de, para } });
-      if (para.length < 2 && numero.triagemResponsavelId) {
+      let invalida = para.length < 2;
+      if (!invalida) {
+        const resp = await tx.usuario.findFirst({ where: { id: numero.triagemResponsavelId ?? "", ativo: true }, select: { papeis: true } });
+        invalida = !resp || !podeTriarSetores(resp.papeis, para);
+      }
+      if (invalida && numero.triagemResponsavelId) {
         await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { triagemResponsavelId: null } });
         await registrarEvento(tx, { tipo: "NumeroTriagemAlterada", agregadoTipo: "NumeroWhatsApp", agregadoId: numero.id, autorId: autor.id, payload: { de: numero.triagemResponsavelId, para: null } });
       }
