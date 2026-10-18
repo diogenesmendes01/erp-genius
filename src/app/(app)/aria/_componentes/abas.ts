@@ -11,6 +11,7 @@ export const ROTULO_ABA: Record<AbaAria, string> = {
   handoff: "Handoff",
   confianca: "Confiança",
   historico: "Histórico",
+  playground: "Playground",
 };
 
 /** Abas que editam a configuração: só no computador (no celular ficam pausa, visão geral e histórico). */

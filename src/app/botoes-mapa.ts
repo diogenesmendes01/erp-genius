@@ -43,6 +43,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Remover → perigo/sm",
     "<Botao> Adicionar pergunta → secundario/md",
   ],
+  "aria/_componentes/Playground.tsx": [
+    "<Botao> Testar → primario/md",
+    "<Botao> Limpar conversa → secundario/md",
+  ],
   "aria/_componentes/Historico.tsx": [
     "<Botao> Aprovar → primario/sm",
     "<Botao> Rejeitar → perigo/sm",

@@ -10,7 +10,7 @@ import type { AcaoAgenteIATipo, EstadoPolitica, EtapaLead, StatusFonteConhecimen
 // Dados da página /aria (Task 27): tudo que a tela lê em uma chamada. Só leitura; as mutações são
 // as Server Actions de versoes/estado/historico/conhecimento.
 
-export const ABAS_ARIA = ["visao", "comportamento", "permissoes", "conhecimento", "handoff", "confianca", "historico"] as const;
+export const ABAS_ARIA = ["visao", "comportamento", "permissoes", "conhecimento", "handoff", "confianca", "historico", "playground"] as const;
 export type AbaAria = (typeof ABAS_ARIA)[number];
 
 export type FonteTela = { id: string; nome: string; tipo: "TEXTO" | "ARQUIVO"; status: StatusFonteConhecimento; erro: string | null; enviavelAoLead: boolean; desatualizada: boolean };
@@ -29,6 +29,8 @@ export type DadosTelaAria = {
   visao: VisaoGeralAria | null;
   historico: { itens: ItemHistoricoAria[]; proximo: string | null } | null;
   fontes: FonteTela[] | null;
+  /** Países para o playground (só na aba dele). */
+  paises: { id: string; nome: string }[] | null;
 };
 
 export type FiltrosTelaAria = {
@@ -52,11 +54,14 @@ export async function carregarTelaAria(u: UsuarioSessao, aba: AbaAria, f: Filtro
   const config = rascunho?.config ?? publicada?.config ?? configPadrao();
   const diff = rascunho ? diffConfig(publicada?.config ?? configPadrao(), rascunho.config) : [];
 
-  const [visao, historico, fontes] = await Promise.all([
+  const [visao, historico, fontes, paises] = await Promise.all([
     aba === "visao" ? visaoGeralAria({ dias: f.dias }) : null,
     aba === "historico" ? historicoAria({ busca: f.busca, acao: f.acao, etapa: f.etapa, resultado: f.resultado, cursor: f.cursor }) : null,
     aba === "conhecimento" && cap.has("ver")
       ? prisma.fonteConhecimento.findMany({ where: { arquivadaEm: null }, orderBy: { criadoEm: "desc" }, take: 200 })
+      : null,
+    aba === "playground" && cap.has("ver")
+      ? prisma.pais.findMany({ where: { status: "ATIVO" }, orderBy: { nome: "asc" }, select: { id: true, nome: true } })
       : null,
   ]);
   return {
@@ -70,6 +75,7 @@ export async function carregarTelaAria(u: UsuarioSessao, aba: AbaAria, f: Filtro
     diff,
     visao,
     historico,
+    paises,
     fontes: fontes?.map((x) => ({
       id: x.id, nome: x.nome, tipo: x.tipo, status: x.status, erro: x.erro, enviavelAoLead: x.enviavelAoLead, desatualizada: !!x.validoAte && x.validoAte.getTime() < Date.now(),
     })) ?? null,

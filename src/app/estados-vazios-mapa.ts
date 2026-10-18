@@ -139,6 +139,11 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/aria/_componentes/Historico.tsx": [
     "bloco · Nenhuma ação da Aria com esses filtros.",
   ],
+  "src/app/(app)/aria/_componentes/Playground.tsx": [
+    "compacto · Escreva como se fosse o cliente. {nome} responde sem enviar nada.",
+    "compacto · Nenhuma.",
+    "compacto · Nenhuma.",
+  ],
   "src/app/(app)/aria/_componentes/VisaoGeral.tsx": [
     "compacto · Nenhuma conversa no período.",
   ],

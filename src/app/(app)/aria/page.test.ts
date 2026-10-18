@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: 
 vi.mock("@/server/aria/tela", async (original) => ({ ...(await original<typeof import("@/server/aria/tela")>()), carregarTelaAria: mocks.carregar }));
 vi.mock("@/server/aria/versoes", () => ({ salvarRascunho: vi.fn(), publicarRascunho: vi.fn(), descartarRascunho: vi.fn() }));
 vi.mock("@/server/aria/estado", () => ({ definirEstadoAria: vi.fn(), pausarAria: vi.fn(), reativarAria: vi.fn(), definirSupervisao: vi.fn() }));
+vi.mock("@/server/aria/playground", () => ({ testarAria: vi.fn() }));
 vi.mock("@/server/aria/historico", () => ({ aprovarAcaoAria: vi.fn(), rejeitarAcaoAria: vi.fn(), desfazerAcaoAria: vi.fn() }));
 vi.mock("@/server/aria/conhecimento/fontes", () => ({ criarFonteTexto: vi.fn(), arquivarFonte: vi.fn() }));
 
@@ -27,7 +28,7 @@ function dados(extra: Record<string, unknown> = {}) {
   return {
     estado: "ATIVA", pausada: false, motivoPausa: null, supervisao: false,
     publicada: { id: "v1", numero: 1, config }, rascunho: null, config, diff: [],
-    visao, historico: { itens: [], proximo: null }, fontes: [], ...extra,
+    visao, historico: { itens: [], proximo: null }, fontes: [], paises: null, ...extra,
   };
 }
 async function render(o: { papel: string; aba?: string; pausada?: boolean; publicada?: null }) {
@@ -95,6 +96,14 @@ describe("/aria (página)", () => {
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     expect(html).toContain("Alterações não publicadas");
     expect(await render({ papel: "ADMINISTRADOR" })).not.toContain("Alterações não publicadas");
+  });
+
+  it("playground_mostra_selo_de_simulacao", async () => {
+    mocks.usuario.valor = { id: "u1", nome: "U", papeis: ["ADMINISTRADOR"], permissoes: [] };
+    mocks.carregar.mockResolvedValue(dados({ paises: [{ id: "p1", nome: "Costa Rica" }] }));
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ aba: "playground" }) }));
+    expect(html).toContain("SIMULAÇÃO · nada é enviado nem alterado");
+    expect(html).toContain("Costa Rica");
   });
 
   it("historico_mostra_quem_decidiu", async () => {
