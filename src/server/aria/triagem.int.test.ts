@@ -108,6 +108,15 @@ describe("classificarSetorPelaAria", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
     expect(await prisma.evento.count({ where: { tipo: "AriaTriagemSimulada" } })).toBe(1);
+    const turno = await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: msgBoleto.id } });
+    expect(turno).toMatchObject({ tipo: "TRIAGEM", atendimentoId: null, resultado: "SIMULOU" });
+    expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { turnoId: turno.id } })).toMatchObject({
+      acao: "CLASSIFICAR_SETOR", status: "SIMULADA", modoConfigurado: "SHADOW", atendimentoId: null,
+      intencaoId: null, payload: { mensagemId: msgBoleto.id, finalidade: "FINANCEIRO" },
+    });
+    // Repetir a triagem da mesma mensagem não duplica a simulação.
+    await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
+    expect(await prisma.acaoAgenteIA.count({ where: { status: "SIMULADA" } })).toBe(1);
   });
 
   it("desligada_por_padrao", async () => {

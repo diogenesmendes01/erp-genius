@@ -66,7 +66,8 @@ function lerSaida(r: RespostaIA): z.infer<typeof SaidaTriagem> | null {
  * Classifica o setor de uma mensagem sem atendimento num número multissetor e, com confiança
  * suficiente, abre o atendimento do setor e enfileira a frase fixa de encaminhamento.
  * Qualquer outro caso devolve `triagemHumana` e a mensagem segue na triagem humana.
- * Em SHADOW só registra a chamada e um Evento de simulação: nada muda no CRM e nada sai.
+ * Em SHADOW só registra a chamada, o turno TRIAGEM e a ação CLASSIFICAR_SETOR SIMULADA (sem atendimento)
+ * e um Evento de simulação: nada muda no CRM e nada sai.
  */
 export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTriagem = {}): Promise<ResultadoTriagem> {
   const msg = await prisma.mensagemWhatsApp.findUnique({
@@ -123,13 +124,28 @@ export async function classificarSetorPelaAria(mensagemId: string, deps: DepsTri
   if (!setoresNumero.includes(setor)) return { triagemHumana: "SETOR_FORA_DO_NUMERO" };
 
   if (situacao.estado === "SHADOW") {
+    // Só registra: turno TRIAGEM e ação CLASSIFICAR_SETOR SIMULADA sem atendimento (nada muda no CRM).
     const contatoIdShadow = msg.conversa.contatoId;
-    await prisma.$transaction((tx) =>
-      registrarEvento(tx, {
+    await prisma.$transaction(async (tx) => {
+      const criado = await tx.turnoAgenteIA.createMany({
+        data: [{ ancoraMensagemId: msg.id, atendimentoId: null, versaoId: situacao.versao?.id ?? null, tipo: "TRIAGEM",
+          confianca: saida.confianca, resultado: "SIMULOU", chamadaId: chamada.id }],
+        skipDuplicates: true,
+      });
+      if (criado.count === 0) return; // mesma mensagem já triada: não duplica a simulação
+      const turno = await tx.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: msg.id }, select: { id: true } });
+      const acao = await tx.acaoAgenteIA.create({
+        data: {
+          turnoId: turno.id, atendimentoId: null, acao: "CLASSIFICAR_SETOR", modoConfigurado: "SHADOW",
+          status: "SIMULADA", confianca: saida.confianca, payload: { mensagemId: msg.id, finalidade: setor },
+          reversivel: false, motivoIrreversivel: "Classificação já encaminhou a conversa ao setor",
+        },
+      });
+      await registrarEvento(tx, {
         tipo: "AriaTriagemSimulada", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoIdShadow, autorId: null,
-        payload: payloadDaAria("SHADOW", { mensagemId: msg.id, finalidade: setor, confianca: saida.confianca, chamadaId: chamada.id }),
-      }),
-    );
+        payload: payloadDaAria(acao.id, { mensagemId: msg.id, finalidade: setor, confianca: saida.confianca, chamadaId: chamada.id }),
+      });
+    });
     return desligada;
   }
 
