@@ -95,6 +95,10 @@ export interface EntradaShadow {
   politicaEstado: EstadoPolitica;
   gestaoEstado: EstadoPolitica;
   saudacaoEstado: EstadoPolitica;
+  /** origem === IA (resposta, handoff ou encaminhamento da Aria). */
+  ia: boolean;
+  /** Estado da própria Aria (AgenteIA.estado): o ensaio dela, nunca o da saudação comercial. */
+  ariaEstado: EstadoPolitica;
 }
 
 /**
@@ -104,6 +108,8 @@ export interface EntradaShadow {
  *
  * - Sem WHATSAPP_LIVE tudo é simulado, inclusive origem HUMANO.
  * - Gestão olha só o seu shadow (gestaoEstado); a saudação reativa, o saudacaoEstado.
+ * - Origem IA (reativa) olha só o estado da Aria: em SHADOW a intenção já nasce SIMULADA na
+ *   origem, e uma PENDENTE só sai com a Aria ATIVA no momento do despacho.
  * - O resto da automação (cobrança, comercial, lote) olha o estado da sua política.
  * - Aviso de agenda NÃO usa o ensaio da política de cobrança: o gate dele é
  *   COMUNICACOES_AGENDA_ENVIO_ENABLED (conferido antes do shadow, em `decidirEnvio`) mais
@@ -114,7 +120,7 @@ export function intencaoEmShadow(e: EntradaShadow): boolean {
     !e.live ||
     (e.gestao && e.gestaoEstado !== "ATIVA") ||
     (!e.agenda && e.automatica && !e.reativa && !e.gestao && e.politicaEstado !== "ATIVA") ||
-    (e.reativa && e.saudacaoEstado !== "ATIVA")
+    (e.ia ? e.ariaEstado !== "ATIVA" : e.reativa && e.saudacaoEstado !== "ATIVA")
   );
 }
 
@@ -156,6 +162,8 @@ export async function despacharFila(
   const saudacaoEstado = configComercial?.saudacaoEstado ?? "DESLIGADA";
   // C5: shadow PRÓPRIO das mensagens de GESTÃO (alerta SLA/relatório do gestor).
   const gestaoEstado = configComercial?.gestaoEstado ?? "DESLIGADA";
+  // Shadow PRÓPRIO da Aria (origem IA): o estado do agente, não o ensaio da saudação comercial.
+  const ariaEstado = (await prisma.agenteIA.findUnique({ where: { id: "aria" }, select: { estado: true } }))?.estado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
@@ -476,6 +484,7 @@ export async function despacharFila(
     const decisao = decidirEnvio({
       live, agenda, automatica, reativa, gestao,
       politicaEstado: politica.estado, gestaoEstado, saudacaoEstado,
+      ia: it.origem === "IA", ariaEstado,
       envioAgendaHabilitado: envioAvisosAgendaHabilitado(),
     });
     if (decisao === "RETER_AGENDA") {
@@ -674,6 +683,7 @@ type IntencaoParaValidar = {
   leadId: string | null; ocorrenciaComercial: string | null; passoComercial: string | null;
   politicaComercial: { chave: string; estado: string; numeroRemetenteId: string | null } | null;
   avisoAlteracaoAgendaId: string | null;
+  acaoAgenteIAId: string | null;
   numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
 };
 
@@ -687,7 +697,10 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
     if (!config || config.gestaoEstado === "DESLIGADA" || config.gestaoNumeroId !== it.numeroId || config.gestaoTelefoneE164 !== it.contato.telefoneE164) return "configuracao_gestao_alterada";
     if (it.autorId || it.atendimentoId || it.cobrancaId || it.leadId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_gestao_invalido";
   }
-  if (it.origem !== "CRON" && it.origem !== "GESTAO") {
+  if (it.origem === "IA") {
+    // A Aria não tem usuário autor: a intenção vale só ligada à ação da Aria e a um atendimento.
+    if (it.autorId || !it.atendimentoId || !it.acaoAgenteIAId || it.cobrancaId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_ia_invalido";
+  } else if (it.origem !== "CRON" && it.origem !== "GESTAO") {
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";
     if (it.cobrancaId && !autor.papeis.some((p) => [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA].includes(p as "ADMINISTRADOR" | "FINANCEIRO" | "SECRETARIA_ACADEMICA"))) return "autor_sem_acesso";

@@ -5,6 +5,7 @@ import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { configPadrao, type ConfigAria } from "../config-schema";
 import { montarContextoTurno } from "./contexto";
+import { pausarAriaNoAtendimento } from "../pausa";
 import { executarHandoff } from "./handoff";
 import type { MotivoHandoff } from "./tipos";
 
@@ -137,5 +138,20 @@ describe("executarHandoff", () => {
     expect(await atendimento(c)).toMatchObject({ responsavelId: null, iaPausadaEm: null, status: "ABERTO_SEM_RESPONSAVEL" });
     expect((await ultimaIntencao()).status).toBe("SIMULADA");
     expect(await prisma.evento.count({ where: { tipo: { in: ["AriaHandoff", "NotaInterna", "AriaPausadaNoAtendimento"] } } })).toBe(0);
+  });
+
+  it("humano_assumiu_durante_o_turno_nao_mexe_no_atendimento", async () => {
+    const c = await cenario(true);
+    const atendente = await criarUsuario([], "Bruno Atendente");
+    // O atendente respondeu pelo celular enquanto o provedor pensava: Aria pausada e ele responsável.
+    await prisma.$transaction(async (tx) => {
+      await pausarAriaNoAtendimento(tx, c.at.id, "CELULAR", null);
+      await tx.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { responsavelId: atendente.id, status: "EM_ATENDIMENTO" } });
+    });
+    const r = await handoff(c, "ERRO_PROVEDOR", { resumo: { motivo: "a", resumo: "b", proximoPasso: "c" } });
+    expect(r).toMatchObject({ acao: "HANDOFF", status: "BLOQUEADA", payload: { motivo: "ERRO_PROVEDOR", motivoBloqueio: "PAUSADA_DURANTE_TURNO" } });
+    expect(await atendimento(c)).toMatchObject({ responsavelId: atendente.id, status: "EM_ATENDIMENTO", iaPausaMotivo: "CELULAR" });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: { in: ["AriaHandoff", "NotaInterna"] } } })).toBe(0);
   });
 });

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { seedCobranca, criarNumeroSetor } from "@/test/integracao-whatsapp";
-import { truncarBanco } from "@/test/integracao";
+import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { provedorSimulado } from "./provedor";
 import type { PedidoIA, ProvedorIA } from "./provedor";
-import { classificarSetorPelaAria, FRASE_ENCAMINHAMENTO } from "./triagem";
+import { configPadrao } from "./config-schema";
+import { ancoraTriagem, classificarSetorPelaAria, fraseEncaminhamento } from "./triagem";
 
 beforeEach(truncarBanco);
 
@@ -52,7 +53,7 @@ describe("classificarSetorPelaAria", () => {
     const m = await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: msgBoleto.id } });
     expect(m.atendimentoId).toBe((r as { atendimentoId: string }).atendimentoId);
     expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: m.atendimentoId! } })).toMatchObject({ finalidade: "FINANCEIRO", naoLidas: 1 });
-    expect(await prisma.turnoAgenteIA.findFirstOrThrow()).toMatchObject({ tipo: "TRIAGEM", ancoraMensagemId: msgBoleto.id });
+    expect(await prisma.turnoAgenteIA.findFirstOrThrow()).toMatchObject({ tipo: "TRIAGEM", ancoraMensagemId: ancoraTriagem(msgBoleto.id) });
     expect(await prisma.acaoAgenteIA.findFirstOrThrow()).toMatchObject({ acao: "CLASSIFICAR_SETOR", status: "EXECUTADA", reversivel: false });
     expect(await prisma.chamadaIA.findFirstOrThrow()).toMatchObject({ origem: "TRIAGEM" });
   });
@@ -60,7 +61,9 @@ describe("classificarSetorPelaAria", () => {
   it("nao_responde_conteudo_so_encaminha", async () => {
     await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado });
     const i = await ultimaIntencao();
-    expect(i.corpoRenderizado).toBe(FRASE_ENCAMINHAMENTO.FINANCEIRO);
+    expect(i.corpoRenderizado).toBe(fraseEncaminhamento("FINANCEIRO", "Aria"));
+    // Primeira fala da Aria no atendimento: começa pela apresentação obrigatória.
+    expect(i.corpoRenderizado).toBe("Oi! Eu sou a Aria, assistente virtual da escola. Obrigada! Vou encaminhar sua mensagem para o Financeiro.");
     expect(i).toMatchObject({ origem: "IA", reativa: true, status: "PENDENTE" });
   });
 
@@ -108,7 +111,7 @@ describe("classificarSetorPelaAria", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
     expect(await prisma.evento.count({ where: { tipo: "AriaTriagemSimulada" } })).toBe(1);
-    const turno = await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: msgBoleto.id } });
+    const turno = await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: ancoraTriagem(msgBoleto.id) } });
     expect(turno).toMatchObject({ tipo: "TRIAGEM", atendimentoId: null, resultado: "SIMULOU" });
     expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { turnoId: turno.id } })).toMatchObject({
       acao: "CLASSIFICAR_SETOR", status: "SIMULADA", modoConfigurado: "SHADOW", atendimentoId: null,
@@ -134,5 +137,40 @@ describe("classificarSetorPelaAria", () => {
     const conv = await prisma.conversaWhatsApp.create({ data: { numeroId: c.numero.id, grupoId: grupo.id } });
     const msgGrupo = await prisma.mensagemWhatsApp.create({ data: { conversaId: conv.id, numeroId: c.numero.id, direcao: "ENTRADA", driver: "META_CLOUD", corpo: "boleto", providerMessageId: "g-1" } });
     expect(await classificarSetorPelaAria(msgGrupo.id, { provedor: provedorSimulado })).toEqual({ triagemHumana: "DESLIGADA" });
+  });
+
+  describe("COMERCIAL: a Aria atende em vez de só encaminhar", () => {
+    // Classifica como COMERCIAL e, no turno de atendimento, responde com confiança alta.
+    const provedorComercial: ProvedorIA = {
+      nome: "simulado",
+      async gerar(p: PedidoIA) {
+        const texto = p.tarefa === "classificacao"
+          ? JSON.stringify({ setor: "COMERCIAL", confianca: 95 })
+          : JSON.stringify({ resposta: "Temos turmas à noite, quer conhecer?", documentoId: null, acoes: [], confianca: 95, handoff: null, fontes: [], humor: null });
+        return { texto, modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0 };
+      },
+    };
+
+    it("sem_frase_fixa_e_turno_de_atendimento_responde_com_apresentacao", async () => {
+      const autor = await criarUsuario([], "Admin");
+      const config = { ...configPadrao(), nome: "Lia" };
+      await prisma.versaoAgenteIA.create({ data: { numero: 1, status: "PUBLICADA", config, criadaPorId: autor.id, publicadaPorId: autor.id, publicadaEm: new Date() } });
+      const m = await c.msg("Quero conhecer os cursos de inglês");
+      const r = await classificarSetorPelaAria(m.id, { provedor: provedorComercial });
+      expect(r).toMatchObject({ setor: "COMERCIAL" });
+      const atendimentoId = (r as { atendimentoId: string }).atendimentoId;
+
+      const turnos = await prisma.turnoAgenteIA.findMany({ orderBy: { criadoEm: "asc" } });
+      expect(turnos.map((t) => [t.tipo, t.ancoraMensagemId])).toEqual([["TRIAGEM", ancoraTriagem(m.id)], ["ATENDIMENTO", m.id]]);
+      expect(turnos[1]).toMatchObject({ atendimentoId, resultado: "RESPONDEU" });
+
+      // Uma única fala ao lead: a resposta da Aria, começando pela apresentação; nenhuma frase de encaminhamento.
+      const intencoes = await prisma.intencaoMensagem.findMany();
+      expect(intencoes).toHaveLength(1);
+      expect(intencoes[0]).toMatchObject({ origem: "IA", reativa: true, status: "PENDENTE", atendimentoId });
+      expect(intencoes[0].corpoRenderizado).toBe("Oi! Eu sou a Lia, assistente virtual da escola. Temos turmas à noite, quer conhecer?");
+      expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "CLASSIFICAR_SETOR" } })).toMatchObject({ status: "EXECUTADA", intencaoId: null });
+      expect((await ultimoEvento("MensagemClassificada")).payload).toMatchObject({ finalidade: "COMERCIAL", intencaoId: null });
+    });
   });
 });

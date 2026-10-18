@@ -179,8 +179,14 @@ async function executarTurno(
 
   const fazerHandoff = async (motivo: MotivoHandoff, tx: Tx, c: ContextoTurno) =>
     executarHandoff(tx, { turnoId, ctx: c, motivo, config, simulado, resumo: null });
+  const pausadaNoAtendimento = async (): Promise<ResultadoTurno> => {
+    await fechar("IGNORADO:PAUSADA_NO_ATENDIMENTO");
+    return { turnoId, resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" };
+  };
   const soHandoff = async (motivo: MotivoHandoff): Promise<ResultadoTurno> => {
-    await prisma.$transaction((tx) => fazerHandoff(motivo, tx, ctx));
+    const acao = await prisma.$transaction((tx) => fazerHandoff(motivo, tx, ctx));
+    // Uma pessoa assumiu durante a chamada ao provedor: o handoff não mexeu no atendimento.
+    if (acao.status === "BLOQUEADA") return pausadaNoAtendimento();
     await fechar("HANDOFF");
     return { turnoId, resultado: "HANDOFF" };
   };
@@ -223,8 +229,8 @@ async function executarTurno(
       if ("bloqueada" in out && out.bloqueada === "DOCUMENTO_NAO_ENVIAVEL") out = await env(null);
       if ("bloqueada" in out) {
         if (out.bloqueada === "PAUSADA_DURANTE_TURNO") return "PAUSADA" as const;
-        await fazerHandoff(out.bloqueada === "VALOR_NAO_AUTORIZADO" ? out.bloqueada : "FORA_POLITICA", tx, ctx);
-        return "HANDOFF" as const;
+        const h = await fazerHandoff(out.bloqueada === "VALOR_NAO_AUTORIZADO" ? out.bloqueada : "FORA_POLITICA", tx, ctx);
+        return h.status === "BLOQUEADA" ? ("PAUSADA" as const) : ("HANDOFF" as const);
       }
       resultado = dResposta.destino === "EXECUTAR" ? "RESPONDEU" : "SUGERIU";
       ctxSeguinte = { ...ctx, primeiraDaAria: false };
@@ -242,16 +248,13 @@ async function executarTurno(
       if (acao.status === "BLOQUEADA" && motivo === "FORA_POLITICA") foraPolitica = true;
     }
     if (foraPolitica && config.handoff.gatilhos.foraPolitica) {
-      await fazerHandoff("FORA_POLITICA", tx, ctxSeguinte);
-      return "HANDOFF" as const;
+      const h = await fazerHandoff("FORA_POLITICA", tx, ctxSeguinte);
+      return h.status === "BLOQUEADA" ? ("PAUSADA" as const) : ("HANDOFF" as const);
     }
     return resultado ?? (sugeriu ? "SUGERIU" : executou ? "RESPONDEU" : "SUGERIU");
   });
 
-  if (r === "PAUSADA") {
-    await fechar("IGNORADO:PAUSADA_NO_ATENDIMENTO");
-    return { turnoId, resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" };
-  }
+  if (r === "PAUSADA") return pausadaNoAtendimento();
   await fechar(r);
   return { turnoId, resultado: r };
 }
