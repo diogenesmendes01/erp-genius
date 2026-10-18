@@ -6,9 +6,10 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { ETAPA_LABEL } from "@/lib/labels";
 import { ETAPAS_ARIA, type ConfigAria } from "@/server/aria/config-schema";
 import { CONTROLE, Interruptor, emLinhas } from "./Campos";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
-type Props = { config: ConfigAria; baseVersaoId: string | null; podeEditar: boolean };
+type Props = { config: ConfigAria; baseVersaoId: string | null; rascunho: RascunhoAberto; podeEditar: boolean };
 type Gatilhos = ConfigAria["handoff"]["gatilhos"];
 
 const GATILHOS: { chave: keyof Gatilhos; rotulo: string; descricao: string }[] = [
@@ -27,7 +28,7 @@ const DESTINOS: { valor: ConfigAria["handoff"]["destino"]; rotulo: string }[] = 
   { valor: "USUARIO", rotulo: "Uma pessoa específica" },
 ];
 
-export function Handoff({ config, baseVersaoId, podeEditar }: Props) {
+export function Handoff({ config, baseVersaoId, rascunho, podeEditar }: Props) {
   const [c, setC] = useState<ConfigAria>(config);
   const h = c.handoff;
   const alterado = JSON.stringify(c) !== JSON.stringify(config);
@@ -87,7 +88,7 @@ export function Handoff({ config, baseVersaoId, podeEditar }: Props) {
         {(campo) => <CampoTexto {...campo} className={CONTROLE} rows={3} maxLength={500} value={h.mensagem} readOnly={ro} onChange={(e) => setH({ mensagem: e.target.value })} />}
       </Campo>
 
-      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} alterado={alterado} />}
+      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
     </section>
   );
 }

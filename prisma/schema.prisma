@@ -497,6 +497,7 @@ enum Papel {
 }
 
 model Usuario {
+  metasComerciais MetaComercial[] @relation("MetaDoUsuario")
   tarefasResponsavel Tarefa[] @relation("ResponsavelTarefa")
   tarefasCriadas Tarefa[] @relation("CriadorTarefa")
   tarefasConcluidas Tarefa[] @relation("ConcluidaPorTarefa")
@@ -8674,17 +8675,19 @@ model AcaoAgenteIA {
 }
 
 model ChamadaIA {
-  id            String          @id @default(cuid())
-  origem        OrigemChamadaIA
-  modelo        String
-  provedor      String
-  tokensEntrada Int
-  tokensSaida   Int
-  tokensCache   Int
-  custoMicroUsd Int
-  latenciaMs    Int
-  resultado     String
-  criadoEm      DateTime        @default(now())
+  id                 String          @id @default(cuid())
+  origem             OrigemChamadaIA
+  modelo             String
+  provedor           String
+  tokensEntrada      Int
+  tokensSaida        Int
+  tokensCache        Int
+  /// cache_creation_input_tokens (fora de tokensEntrada); já entra em custoMicroUsd.
+  tokensEscritaCache Int             @default(0)
+  custoMicroUsd      Int
+  latenciaMs         Int
+  resultado          String
+  criadoEm           DateTime        @default(now())
 
   turnos        TurnoAgenteIA[]
 
@@ -9176,6 +9179,31 @@ model NotificacaoUsuario {
   @@index([usuarioId, lidaEm])
 }
 
+// Metas comerciais mensais (Q9): por vendedor (usuarioId) ou geral/equipe (usuarioId NULL).
+// competencia = "AAAA-MM" (fuso institucional). moeda só em VALOR_GANHO. Unicidade com NULL
+// é garantida pelos índices únicos parciais da migration (Postgres trata NULL como distinto).
+enum MetricaMeta {
+  MATRICULAS
+  VALOR_GANHO
+  EXPERIMENTAIS_REALIZADAS
+}
+
+model MetaComercial {
+  id           String      @id @default(cuid())
+  competencia  String
+  usuarioId    String?
+  usuario      Usuario?    @relation("MetaDoUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
+  metrica      MetricaMeta
+  valor        Decimal     @db.Decimal(12, 2)
+  moeda        String?
+  criadaPorId  String
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  @@unique([competencia, usuarioId, metrica, moeda])
+  @@index([competencia])
+}
+
 enum TipoFonteConhecimento {
   TEXTO
   ARQUIVO
@@ -9213,8 +9241,11 @@ model TrechoConhecimento {
   fonte   FonteConhecimento @relation(fields: [fonteId], references: [id], onDelete: Restrict)
   ordem   Int
   texto   String
-  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration.
-  busca   Unsupported("tsvector")?
+  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration
+  /// 20261018020000_aria_conhecimento. O dbgenerated e o @@index Gin só existem para o `migrate diff` não
+  /// propor removê-los (o Prisma não gera colunas GENERATED); trava em conhecimento/migracao-busca.test.ts.
+  busca   Unsupported("tsvector")? @default(dbgenerated("to_tsvector('portuguese'::regconfig, texto)"))
 
   @@unique([fonteId, ordem])
+  @@index([busca], type: Gin)
 }

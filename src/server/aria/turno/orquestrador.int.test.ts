@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { TipoMensagem } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { configPadrao, type ConfigAria, type Matriz } from "../config-schema";
+import { provedorSimulado as simuladoBase } from "../provedor/simulado";
 import { ErroProvedorIA, type PedidoIA, type ProvedorIA, type RespostaIA } from "../provedor/tipos";
 import { agendarTurnoAria, processarTurnoAria, reprocessarTurnosPendentes } from "./orquestrador";
 
@@ -17,7 +19,9 @@ const provedorSimulado: ProvedorIA = {
   async gerar(p: PedidoIA): Promise<RespostaIA> {
     const fala = [...p.mensagens].reverse().find((m) => m.papel === "usuario")?.texto.toLowerCase() ?? "";
     const humano = fala.includes("humano") || fala.includes("atendente");
+    // Parte da resposta do provedor simulado real: herda campos novos de RespostaIA (ex.: tokensEscritaCache).
     return {
+      ...(await simuladoBase.gerar(p)),
       texto: JSON.stringify({
         resposta: humano ? "Certo, vou chamar um atendente." : "Temos turmas à noite, quer conhecer?",
         documentoId: null,
@@ -27,7 +31,6 @@ const provedorSimulado: ProvedorIA = {
         fontes: [],
         humor: null,
       }),
-      modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0,
     };
   },
 };
@@ -49,9 +52,9 @@ async function cenario() {
     garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: op.id }),
   );
   const conversaId = (await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: at.id }, select: { conversaId: true } })).conversaId;
-  const inbound = (corpo: string, criadoEm = new Date()) =>
+  const inbound = (corpo: string | null, criadoEm = new Date(), tipo: TipoMensagem = "TEXTO") =>
     prisma.mensagemWhatsApp.create({
-      data: { atendimentoId: at.id, conversaId, numeroId: numero.id, direcao: "ENTRADA", corpo, driver: "MOTOR", status: "ENTREGUE", providerMessageId: `o-${++seq}`, criadoEm },
+      data: { atendimentoId: at.id, conversaId, numeroId: numero.id, direcao: "ENTRADA", corpo, tipo, driver: "MOTOR", status: "ENTREGUE", providerMessageId: `o-${++seq}`, criadoEm },
     });
   return { cat, dono, numero, op, contato, at, conversaId, inbound };
 }
@@ -159,9 +162,10 @@ describe("processarTurnoAria", () => {
     // Sem resposta de texto: só ações. O atendente assume pelo ERP enquanto o provedor pensa.
     const provedor: ProvedorIA = {
       nome: "simulado",
-      async gerar() {
+      async gerar(p: PedidoIA) {
         await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
         return {
+          ...(await simuladoBase.gerar(p)),
           texto: JSON.stringify({
             resposta: null,
             documentoId: null,
@@ -175,7 +179,6 @@ describe("processarTurnoAria", () => {
             fontes: [],
             humor: null,
           }),
-          modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0,
         };
       },
     };
@@ -274,12 +277,88 @@ describe("processarTurnoAria", () => {
 
   it("saida_invalida_vira_handoff", async () => {
     await pronta();
-    const lixo: ProvedorIA = { nome: "simulado", async gerar() { return { texto: "{}", modelo: "simulado", provedor: "simulado", recusa: false, tokensEntrada: 0, tokensSaida: 0, tokensCache: 0, latenciaMs: 0 }; } };
+    const lixo: ProvedorIA = { nome: "simulado", async gerar(p) { return { ...(await simuladoBase.gerar(p)), texto: "{}" }; } };
     expect(await processarTurnoAria(inbound.id, { provedor: lixo })).toMatchObject({ resultado: "HANDOFF" });
   });
 });
 
+describe("rajada de inbound", () => {
+  it("tres_inbounds_seguidos_geram_uma_resposta", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const t = Date.now();
+    const ms = [
+      await c.inbound("oi", new Date(t - 3000)),
+      await c.inbound("quero saber das turmas", new Date(t - 2000)),
+      await c.inbound("de inglês", new Date(t - 1000)),
+    ];
+    const contador = provedorContador(provedorSimulado);
+    const rs = await Promise.all(ms.map((m) => processarTurnoAria(m.id, { provedor: contador })));
+    expect(rs.map((r) => ("resultado" in r ? r.resultado : "DUPLICADO"))).toEqual(["IGNORADO:FALA_SUPERADA", "IGNORADO:FALA_SUPERADA", "RESPONDEU"]);
+    expect(contador.chamadas).toBe(1);
+    expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
+  });
+
+  // B4: fala nova que a Aria não responderia (SEM_TEXTO) não supera a anterior; senão ninguém responde.
+  for (const [rotulo, tipo] of [["figurinha", "FIGURINHA"], ["audio", "AUDIO"], ["localizacao", "LOCALIZACAO"], ["texto", "TEXTO"]] as const) {
+    it(`texto_mais_${rotulo}_gera_uma_resposta`, async () => {
+      const c = await cenario();
+      await publicar(c.dono.id, "ATIVA");
+      const t = Date.now();
+      const m1 = await c.inbound("Quero saber das turmas", new Date(t - 2000));
+      const m2 = await c.inbound(tipo === "TEXTO" ? "de inglês" : null, new Date(t - 1000), tipo);
+      const contador = provedorContador(provedorSimulado);
+      const r1 = await processarTurnoAria(m1.id, { provedor: contador });
+      const r2 = await processarTurnoAria(m2.id, { provedor: contador });
+      const resultados = [r1, r2].map((r) => ("resultado" in r ? r.resultado : "DUPLICADO"));
+      expect(resultados).toEqual(tipo === "TEXTO" ? ["IGNORADO:FALA_SUPERADA", "RESPONDEU"] : ["RESPONDEU", "IGNORADO:SEM_TEXTO"]);
+      expect(contador.chamadas).toBe(1);
+      expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
+    });
+  }
+
+  it("inbound_que_chega_durante_a_chamada_supera_o_turno_em_curso", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const m1 = await c.inbound("oi", new Date(Date.now() - 2000));
+    const atrasado: ProvedorIA = {
+      nome: "simulado",
+      async gerar(p: PedidoIA) {
+        await c.inbound("quero saber das turmas", new Date(Date.now() - 1000));
+        return provedorSimulado.gerar(p);
+      },
+    };
+    expect(await processarTurnoAria(m1.id, { provedor: atrasado })).toMatchObject({ resultado: "IGNORADO:FALA_SUPERADA" });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.acaoAgenteIA.count()).toBe(0);
+  });
+});
+
 describe("reprocessarTurnosPendentes", () => {
+  it("turno_preso_em_andamento_vira_handoff", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const agora = new Date();
+    const m = await c.inbound("Quero saber das turmas", new Date(agora.getTime() - 20 * 60_000));
+    const preso = await prisma.turnoAgenteIA.create({
+      data: { ancoraMensagemId: m.id, atendimentoId: c.at.id, tipo: "ATENDIMENTO", resultado: "EM_ANDAMENTO", criadoEm: new Date(agora.getTime() - 15 * 60_000) },
+    });
+    const m2 = await c.inbound("oi?", new Date(agora.getTime() - 60_000));
+    const emCurso = await prisma.turnoAgenteIA.create({
+      data: { ancoraMensagemId: m2.id, atendimentoId: c.at.id, tipo: "ATENDIMENTO", resultado: "EM_ANDAMENTO", criadoEm: new Date(agora.getTime() - 60_000) },
+    });
+    await reprocessarTurnosPendentes(agora);
+    expect((await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { id: preso.id } })).resultado).toBe("HANDOFF");
+    expect((await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { id: emCurso.id } })).resultado).toBe("EM_ANDAMENTO");
+    expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF", turnoId: preso.id } })).toMatchObject({
+      payload: expect.objectContaining({ motivo: "TURNO_INTERROMPIDO" }),
+    });
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: c.at.id } })).iaPausaMotivo).toBe("HANDOFF");
+    // Idempotente: o turno já saiu de EM_ANDAMENTO.
+    await reprocessarTurnosPendentes(agora);
+    expect(await prisma.acaoAgenteIA.count({ where: { acao: "HANDOFF" } })).toBe(1);
+  });
+
   it("processa_ancora_antiga_sem_turno_so_a_ultima", async () => {
     const c = await cenario();
     await publicar(c.dono.id, "ATIVA");
@@ -296,6 +375,18 @@ describe("reprocessarTurnosPendentes", () => {
     expect((await prisma.turnoAgenteIA.findFirstOrThrow()).ancoraMensagemId).toBe(ultima.id);
     expect(antiga.id).not.toBe(ultima.id);
     expect(await reprocessarTurnosPendentes(agora)).toBe(0);
+    vi.unstubAllEnvs();
+  });
+
+  it("reprocesso_nao_pula_ancora_seguida_de_figurinha", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const agora = new Date();
+    const texto = await c.inbound("Quero saber das turmas", new Date(agora.getTime() - 6 * 60_000));
+    await c.inbound(null, new Date(agora.getTime() - 5 * 60_000), "FIGURINHA");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    expect(await reprocessarTurnosPendentes(agora)).toBe(1);
+    expect((await prisma.turnoAgenteIA.findFirstOrThrow()).ancoraMensagemId).toBe(texto.id);
     vi.unstubAllEnvs();
   });
 

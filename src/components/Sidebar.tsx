@@ -19,6 +19,7 @@ import {
   IconLayoutKanban,
   IconBuilding,
   IconChecklist,
+  IconChartBar,
   IconSparkles,
   type IconProps,
 } from "@tabler/icons-react";
@@ -40,6 +41,7 @@ const ICONS: Record<string, Icone> = {
   MessageCircle: IconMessageCircle,
   Building: IconBuilding,
   Checklist: IconChecklist,
+  ChartBar: IconChartBar,
   Sparkles: IconSparkles,
 };
 

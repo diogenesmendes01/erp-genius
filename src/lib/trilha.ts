@@ -13,6 +13,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/aria": "Agente de IA",
   "/carteira": "Carteira",
   "/comissoes": "Comissões",
+  "/relatorios": "Relatórios",
   "/configuracao": "Configuração",
   "/contatos": "Contatos",
   "/diario": "Diário de aulas",
@@ -102,6 +103,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
 
   // Configuração
   "/configuracao/catalogo": "Catálogo",
+  "/configuracao/crm/metas": "Metas comerciais",
   "/configuracao/contratos": "Contratos",
   "/configuracao/contratos/novo": "Novo modelo",
   "/configuracao/contratos/*": "Modelo de contrato",

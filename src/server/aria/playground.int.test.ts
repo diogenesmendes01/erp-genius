@@ -12,7 +12,7 @@ vi.mock("./provedor", async (orig) => ({
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { configPadrao } from "./config-schema";
-import { publicarRascunho, salvarRascunho } from "./versoes";
+import { publicarRascunho, rascunhoAtual, salvarRascunho } from "./versoes";
 import { testarAria } from "./playground";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
@@ -41,7 +41,7 @@ async function contarTudo() {
 }
 async function rascunhoComNome(nome: string) {
   const base = (await prisma.versaoAgenteIA.findFirst({ where: { status: "PUBLICADA" } }))?.id ?? null;
-  expect((await salvarRascunho({ config: { ...configPadrao(), nome }, baseVersaoId: base })).ok).toBe(true);
+  expect((await salvarRascunho({ config: { ...configPadrao(), nome }, baseVersaoId: base, rascunho: await rascunhoAtual() })).ok).toBe(true);
 }
 
 beforeEach(async () => {
@@ -76,7 +76,7 @@ describe("playground da Aria", () => {
 
   it("usa_a_publicada_quando_nao_pedem_rascunho", async () => {
     await rascunhoComNome("Lia");
-    expect((await publicarRascunho({})).ok).toBe(true);
+    expect((await publicarRascunho({ rascunho: await rascunhoAtual() })).ok).toBe(true);
     await rascunhoComNome("Bia");
     expect((await rodar(p)).resposta).toContain("Eu sou a Lia");
     expect((await rodar({ ...p, usarRascunho: true })).resposta).toContain("Eu sou a Bia");

@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,7 @@ beforeEach(async () => {
   await truncarBanco();
   admin = await criarUsuario([Papel.ADMINISTRADOR]);
   outro = await criarUsuario([Papel.VENDEDOR]);
-  numeroId = (await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990000", rotulo: "Sec", driver: "BAILEYS", finalidade: "COBRANCA" } })).id;
+  numeroId = (await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999990000", rotulo: "Sec", driver: DriverWhatsApp.BAILEYS, finalidade: "COBRANCA" } })).id;
 });
 afterAll(() => prisma.$disconnect());
 
@@ -35,6 +36,18 @@ describe("lista paginada por cursor", () => {
     await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: outro.id, atendimentoOrigemId: null } });
     const [depois] = (await listarAtendimentosPagina(sess(admin), {}, null)).itens;
     expect(depois).toMatchObject({ responsavelId: outro.id, setoresDoNumero: ["COMERCIAL", "SECRETARIA"] });
+  });
+
+  it("capacidades do item: só MOTOR ativo com sessão CONECTADO libera os recursos do motor", async () => {
+    await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    const capacidades = async () => (await listarAtendimentosPagina(sess(admin), {}, null)).itens[0]!.capacidades;
+    expect(await capacidades()).toEqual([]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { driver: "MOTOR", sessao: "DESCONECTADO" } });
+    expect(await capacidades()).toEqual([]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { sessao: "CONECTADO" } });
+    expect(await capacidades()).toEqual(expect.arrayContaining(["editar", "apagar", "reagir", "gif", "figurinha"]));
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
+    expect(await capacidades()).toEqual([]);
   });
 
   it("cursor estável com empate e inserção concorrente", async () => {
@@ -95,7 +108,7 @@ describe("lista paginada por cursor", () => {
     const comNova = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
     const semNova = await criarAtendimento(new Date("2026-10-02T00:00:00Z"));
     const msg = (a: { id: string; conversaId: string }, criadoEm: Date, direcao: "ENTRADA" | "SAIDA") =>
-      prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao, driver: "BAILEYS", corpo: "x", criadoEm } });
+      prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao, driver: DriverWhatsApp.BAILEYS, corpo: "x", criadoEm } });
     await msg(comNova, new Date("2026-10-02T00:00:00Z"), "ENTRADA");
     await msg(semNova, new Date("2026-10-02T00:00:00Z"), "SAIDA");
     await msg(semNova, new Date("2026-09-30T00:00:00Z"), "ENTRADA");
@@ -118,7 +131,7 @@ describe("lista paginada por cursor", () => {
   it("C4: ramos do contador compartilhado e da marcada como não lida, sempre pela preferência DO usuário", async () => {
     const outroAdm = await criarUsuario([Papel.ADMINISTRADOR]);
     const entrada = (a: { id: string; conversaId: string }, criadoEm: Date) =>
-      prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "x", criadoEm } });
+      prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "x", criadoEm } });
     const pref = (usuarioId: string, conversaId: string, data: { lidaAte?: Date; marcadaNaoLida?: boolean; fixadaEm?: Date }) =>
       prisma.preferenciaConversaUsuario.create({ data: { usuarioId, conversaId, ...data } });
     const ultimaEntrada = new Date("2026-10-02T00:00:00Z"), depoisDela = new Date("2026-10-03T00:00:00Z");
@@ -201,7 +214,7 @@ describe("thread paginada", () => {
     const ids: string[] = [];
     for (let i = 0; i < 150; i++) {
       // 3 mensagens por instante: o desempate por id precisa funcionar.
-      const m = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA", driver: "BAILEYS", corpo: `m${i}`, criadoEm: new Date(t0 + Math.floor(i / 3) * 1000) } });
+      const m = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: `m${i}`, criadoEm: new Date(t0 + Math.floor(i / 3) * 1000) } });
       ids.push(m.id);
     }
     const esperado = (await prisma.mensagemWhatsApp.findMany({ where: { atendimentoId: a.id }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { id: true } })).map((m) => m.id);
@@ -230,7 +243,7 @@ describe("thread paginada", () => {
     expect(new Set(juntas).size).toBe(juntas.length);
     expect(juntas.at(-1)).toBe(esperado.at(-1));
     // Após mensagem.nova: pedir `depois` do cursor da última devolve só as novas.
-    const nova = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA", driver: "BAILEYS", corpo: "nova", criadoEm: new Date(t0 + 999_000) } });
+    const nova = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "nova", criadoEm: new Date(t0 + 999_000) } });
     const novas = (await listarMensagensPagina(sess(admin), a.id, { depois: p1.depois! }))!;
     expect(novas.mensagens.map((m) => m.id)).toEqual([nova.id]);
     expect(novas.temMais).toBe(false);
@@ -249,7 +262,7 @@ describe("thread paginada", () => {
 
   it("favorita é do usuário, participante e clientMessageId vêm no item", async () => {
     const a = await criarAtendimento(new Date());
-    const m = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "SAIDA", driver: "BAILEYS", corpo: "oi", clientMessageId: "cmid-1", participanteNome: "Fulano" } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "SAIDA", driver: DriverWhatsApp.BAILEYS, corpo: "oi", clientMessageId: "cmid-1", participanteNome: "Fulano" } });
     await prisma.favoritoMensagemUsuario.create({ data: { usuarioId: admin.id, mensagemId: m.id } });
     const adm2 = await criarUsuario([Papel.ADMINISTRADOR]);
     expect((await listarMensagensPagina(sess(admin), a.id, {}))!.mensagens[0]).toMatchObject({ favorita: true, clientMessageId: "cmid-1", participanteNome: "Fulano" });
@@ -265,8 +278,33 @@ describe("obterItemListaInbox (deep link)", () => {
     expect(p1.itens.map((i) => i.id)).not.toContain(antigo.id);
     const item = await obterItemListaInbox(sess(admin), antigo.id);
     expect(item?.id).toBe(antigo.id);
-    expect(item?.driver).toBe("BAILEYS");
+    expect(item?.driver).toBe(DriverWhatsApp.BAILEYS);
     expect(await obterItemListaInbox(sess(admin), "inexistente")).toBeNull();
     expect(await obterItemListaInbox(sess(outro), antigo.id)).toBeNull();
+  });
+});
+
+describe("lista só com envio (destino do encaminhar, Fase 4D)", () => {
+  it("com `enviar` a lista usa o escopo de envio: fica de fora o convite sem envio e o atendimento encerrado", async () => {
+    const fin = await criarUsuario([Papel.FINANCEIRO]);
+    const comEnvio = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
+    const semEnvio = await criarAtendimento(new Date("2026-10-02T00:00:00Z"));
+    const encerrado = await criarAtendimento(new Date("2026-10-01T00:00:00Z"));
+    await prisma.atendimentoWhatsApp.update({ where: { id: encerrado.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    const convite = (atendimentoId: string, podeEnviar: boolean) => prisma.participanteAtendimentoWhatsApp.create({ data: {
+      atendimentoId, usuarioId: fin.id, concedenteId: admin.id, podeEnviar, motivo: "teste",
+      inicio: new Date(Date.now() - 60_000), fim: new Date(Date.now() + 3600_000) } });
+    await convite(comEnvio.id, true); await convite(semEnvio.id, false); await convite(encerrado.id, true);
+    const ids = async (o?: { enviar?: boolean }) => (await listarAtendimentosPagina(sess(fin), {}, null, undefined, o)).itens.map((i) => i.id);
+    expect(await ids()).toEqual([comEnvio.id, semEnvio.id, encerrado.id]);
+    expect(await ids({ enviar: true })).toEqual([comEnvio.id]);
+  });
+  it("com `enviar` o número inativo também sai, e os filtros (número, busca) continuam valendo", async () => {
+    const a = await criarAtendimento(new Date("2026-10-03T00:00:00Z"));
+    const ids = async (f: Parameters<typeof listarAtendimentosPagina>[1]) => (await listarAtendimentosPagina(sess(admin), f, null, undefined, { enviar: true })).itens.map((i) => i.id);
+    expect(await ids({ numeroId })).toEqual([a.id]);
+    expect(await ids({ numeroId: "outro" })).toEqual([]);
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { ativo: false } });
+    expect(await ids({})).toEqual([]);
   });
 });

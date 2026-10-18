@@ -6,17 +6,19 @@ import { Botao } from "@/components/Botao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { descartarRascunho, publicarRascunho } from "@/server/aria/versoes";
+import { descartarRascunho, publicarRascunho, type RascunhoAberto } from "@/server/aria/versoes";
 
 type Props = {
   /** Caminhos alterados do rascunho em relação à versão publicada (ex.: "confianca.executaAPartirDe"). */
   diff: string[];
+  /** Rascunho aberto na tela: publicar e descartar recusam se outra pessoa o alterou desde então. */
+  rascunho: RascunhoAberto;
   podePublicar: boolean;
   podeDescartar: boolean;
 };
 
 /** Barra fixa acima da tabbar do celular; só existe quando há rascunho com alterações. */
-export function BarraPublicar({ diff, podePublicar, podeDescartar }: Props) {
+export function BarraPublicar({ diff, rascunho, podePublicar, podeDescartar }: Props) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
   const [confirmando, setConfirmando] = useState<"publicar" | "descartar" | null>(null);
@@ -38,7 +40,7 @@ export function BarraPublicar({ diff, podePublicar, podeDescartar }: Props) {
           titulo="Publicar as alterações?"
           confirmacao="a publicação"
           idempotente={false}
-          acao={() => publicarRascunho({})}
+          acao={() => publicarRascunho({ rascunho })}
           aoConcluir={() => { setConfirmando(null); acao.setSucesso("Versão publicada. A Aria já usa as novas regras."); router.refresh(); }}
           aoCancelar={() => setConfirmando(null)}
         >
@@ -50,7 +52,7 @@ export function BarraPublicar({ diff, podePublicar, podeDescartar }: Props) {
           titulo="Descartar as alterações?"
           confirmacao="o descarte"
           idempotente={false}
-          acao={() => descartarRascunho()}
+          acao={() => descartarRascunho(rascunho)}
           aoConcluir={() => { setConfirmando(null); acao.setSucesso("Alterações descartadas."); router.refresh(); }}
           aoCancelar={() => setConfirmando(null)}
         >

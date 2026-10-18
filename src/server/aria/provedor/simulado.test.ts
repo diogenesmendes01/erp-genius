@@ -14,7 +14,7 @@ describe("provedorSimulado", () => {
     const a = await provedorSimulado.gerar(pedido("Quanto custa a mensalidade?"));
     expect(a).toEqual(await provedorSimulado.gerar(pedido("Quanto custa a mensalidade?")));
     expect(() => JSON.parse(a.texto)).not.toThrow();
-    expect(a).toMatchObject({ modelo: "simulado", recusa: false });
+    expect(a).toMatchObject({ modelo: "simulado", recusa: false, tokensCache: 0, tokensEscritaCache: 0 });
     expect(JSON.parse(a.texto)).toMatchObject({ acoes: [], confianca: 60, handoff: null, fontes: [] });
   });
   it("simulado_pedido_humano_vira_handoff", async () => {

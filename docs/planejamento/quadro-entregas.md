@@ -2,6 +2,59 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Pendências da revisão do #227 e do #231 (18/10/2026)
+
+Branch `claude/pendencias-227-231`. Três pendências de revisão de PRs já mergeados.
+
+- **#231 C1, aviso direcionado no `npm test`**: o caminho de permissão do aviso com `paraUsuarioId` só tinha cobertura em `*.int.test.ts`. Agora `src/server/inbox/eventos-sse.test.ts` (prisma e escopo mockados, ambos "fora do escopo") cobre: o destinatário recebe sem consultar o escopo; outro usuário não recebe, nem com o atendimento no escopo dele; `mensagem.nova` e `mensagem.status` com `paraUsuarioId` são barrados; o aviso comum fora do escopo é barrado; `formatarSSE` não emite `paraUsuarioId` nem o id do destinatário. Só teste; o código já fazia isso.
+- **#227 C1, escrita de cache registrada**: a coluna `ChamadaIA.tokensEscritaCache Int @default(0)` (migration `20261018070000_chamada_ia_escrita_cache`, só `ADD COLUMN ... DEFAULT 0`) é gravada por `registrarChamadaIA` (0 nas falhas). O valor já entrava em `custoMicroUsd`. Testes: `src/server/aria/uso.test.ts` (mapeamento com prisma mockado) e `uso.int.test.ts` (coluna lida do banco, padrão 0).
+- **#227 C2, fator conforme o ttl**: `fatorEscritaCache(ttl)` devolve 1,25× para o cache efêmero de 5 min (sem `ttl` ou `"5m"`) e 2× para `ttl: "1h"`. O `cache_control` do sistema virou `CACHE_CONTROL_SISTEMA` em `custo.ts`, usado por `provedor/anthropic.ts`, e o fator sai do `ttl` dele: trocar o ttl muda o custo junto. Hoje segue sem ttl (1,25×). Testes em `custo.test.ts`.
+- `tsc --noEmit`: saída 0. `eslint .`: 0 erros (40 avisos já existentes, nenhum nos arquivos tocados). `npm test`: 734 arquivos, 5454 testes verdes.
+- Banco descartável `erp_genius_test_pend227`: todas as migrations aplicadas em sequência num banco limpo, e `ChamadaIA` sem diferença em relação ao schema. Integração de `src/server/aria` e `src/server/inbox`: 13 arquivos, 127 testes verdes.
+- **Estado**: implementado, aguarda revisão.
+
+## Inbox novo — pendências da revisão do #223 (18/10/2026)
+
+Branch `claude/pendencias-223`. Duas pendências da revisão do #223 (mergeado em 31304a7e).
+
+- **C1, a revogação chega ao ex-convidado**: depois da revogação o ex-convidado sai do `escopoAtendimentos`, e o filtro do SSE descartava o `atendimento.atualizado`. Agora `revogarParticipante` também emite, na mesma transação, um `pg_notify` direcionado. Ele leva só ids (`tipo`, `atendimentoId`, `mensagemId: null`, `conversaId`) e `paraUsuarioId` = o revogado. `criarFiltroDeAvisos` deixa esse aviso passar só para esse usuário, sem consultar o escopo, e só no tipo `atendimento.atualizado`. Os demais usuários não recebem o aviso direcionado, e `formatarSSE` não repassa o `paraUsuarioId`. No cliente, a recarga do painel que volta 404 (fora do escopo) mantém o último painel com `podeEnviar: false` e sem ações, e o compositor trava sem reabrir. Um 404 na carga inicial continua como erro com "Tentar de novo". Sem migration.
+- **C2, paginação do encaminhar**: `buscarDestinosEncaminhar` aceita o `cursor` e devolve `{ itens, proximo }`. O diálogo mostra "Carregar mais" (o padrão da lista do Inbox novo) enquanto houver `proximo`. O botão segue a busca aplicada, acrescenta sem repetir linhas e mantém a lista se a página falhar. Uma página que fica vazia depois do filtro de origem, grupo e opt-out não mostra o estado vazio enquanto houver próxima página.
+- Testes: integração em `participantes-aviso.int.test.ts` (o ex-convidado recebe só o aviso direcionado, um terceiro fora do escopo não recebe nada e o responsável recebe só o aviso comum) e em `eventos-sse.int.test.ts` (o filtro do aviso direcionado e o quadro sem o destinatário). Componente em `InboxNovo.interacao.test.ts` (404 na recarga e na carga inicial) e em `AcoesMensagem.test.ts` (cursor, "Carregar mais" e falha ao carregar mais).
+- `tsc --noEmit`: saída 0. `eslint .`: 0 erros (40 avisos, já existentes, nenhum nos arquivos tocados). `npm test`: 732 arquivos, 5423 testes verdes.
+- Integração no banco descartável `erp_genius_test_pend223`: `src/server/inbox` (7 arquivos) e os 8 arquivos de atendimento e participante de `src/server/whatsapp`, ao todo 15 arquivos e 114 testes verdes. `src/app/api/inbox` não tem `.int.test.ts`; os testes de rota dela rodam no `npm test`.
+- **Estado**: implementado, aguarda revisão.
+
+## Pendências do #226 (Fase 5B), revisão R2 — N2 (18/10/2026)
+
+Branch `claude/pendencias-226`. A regra `uploadLivreDoAutor` (`src/server/uploads/autorizacao.ts`), que libera um upload para a base de conhecimento da Aria, só tinha cobertura em `*.int.test.ts`, fora do CI. Agora `autorizacao.test.ts` (prisma mockado, roda no `npm test`) cobre: upload de outro autor → `null`; vínculo por lead, aluno, cobrança ou matrícula → `null`; referência como comprovante de cobrança, informe de pagamento, documento, mídia de mensagem ou de intenção de WhatsApp → `null`; upload livre do próprio autor → aceito. Cinco mutações da regra (autoria, vínculos, matrícula, referências, intenção) fazem o teste falhar.
+
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (40 avisos já existentes). `npm test`: 726 arquivos, 5386 testes verdes.
+- **Estado**: só teste; nenhuma mudança de código de produção. Aguarda o merge.
+## Auditoria de regras atualizada para as APIs atuais (18/10/2026)
+
+Branch `claude/auditoria-atualizada`, base `main` (após o #222). A suíte `scripts/auditoria/cenarios.test.mjs` passou de 18 verdes, 10 falhas e 1 pulado para **28 verdes e 1 pulado (F03, inconclusivo por mocks, como antes)**. Nenhuma das 10 falhas era defeito do produto: todas vinham de contrato de API ou regra nova intencional. Nenhum critério auditado foi afrouxado.
+
+- **F01, F02, F05, F06, W06**: `registrarPagamento` exige `chaveIdempotencia` (16 caracteres ou mais) e evidência da destinação (`comentario`, 5 caracteres ou mais). O helper `pagamento()` passou a enviar os dois campos.
+- **F01**: um ajuste pedido pela administração agora gera `Aprovacao` (alçada nova). O cenário confere `{ aprovacao: true }` e faz uma segunda pessoa da direção aprovar (`decidirAprovacao`) antes de medir o saldo.
+- **F05, F06**: a ativação exige um contrato vigente confirmado pela secretaria e a cobertura da primeira mensalidade conferida. O helper `contratoConfirmado()` monta essas pré-condições no banco, como faz `comissao-aprovada-em.int.test.ts`. A ativação também exige evidência (`comentario`).
+- **F07** (regra nova): o recebimento já não ativa a matrícula sem contrato confirmado. O cenário prova que a ativação é recusada e que a matrícula continua `AGUARDANDO`, com `contratoOk=false` e sem quem confirmou.
+- **F08** (regra nova): a retomada direta foi desativada. O cenário prova que `reativarAluno` recusa e que a própria solicitante não aprova a retomada. A retomada passa por `solicitarRetomada` e pela aprovação de outra pessoa do Financeiro (`decidirRetomada`), e a cobrança futura volta a `PENDENTE`.
+- **F11** (regra nova): os tipos de documento são editados por id. O cenário prova que excluir um tipo em uso é recusado e que renomear pelo id preserva o `tipoDocumentoId` do aluno.
+- **A01** (e C03): o escopo docente exige `VinculoDocente` vigente. O helper `turma()` cria esse vínculo, e o C03 deixou de passar sem testar nada.
+- **A06** (contrato novo): a busca fora do escopo devolve listas vazias em vez de um erro. O cenário usa um atendimento real da secretaria e faz uma contraprova: o administrador encontra o aluno e o professor não, com ou sem o `atendimentoId`.
+- O `vitest.config.ts` da auditoria passou a usar o banco do perfil de teste (`DATABASE_URL_TESTE`, o mesmo do `globalSetup`) e a apagar `MOTOR_URL` e `MOTOR_API_KEY`.
+- Verificação: auditoria com 28 verdes e 1 pulado (banco descartável). `tsc --noEmit` com saída 0. `npm run lint`: 0 erros e 40 avisos. `npm test`: 715 arquivos e 5308 testes verdes.
+- **Estado**: implementado; aguardando revisão.
+## Inbox novo — encaminhar e aviso de convite (18/10/2026)
+
+Branch `claude/inbox-encaminhar-convite`. Pendências deixadas pela Fase 4D (#219) e pelo #220.
+
+- **Encaminhar**: o comando entra em `COMANDOS_MENSAGEM_LIGADOS`. Ele exige a capacidade do número (`encaminhar` entra em `RECURSOS_MOTOR`: MOTOR ativo e sessão CONECTADO), o envio liberado (`envioLiberado === true`) e a mensagem não apagada. Abre o diálogo `EncaminharMensagem` (`Modal`), que lista o destino pela lista do Inbox novo (`GET /api/inbox/atendimentos?numeroId=…&envio=1&busca=…`). Com `envio=1`, a lista usa o escopo de envio. Ficam de fora a própria origem, os grupos e os contatos em opt-out. O envio roda no `ConfirmarAcao`, que entra na lista fechada de `confirmacoes-mapa.ts`. A action `encaminharMensagemWhatsApp` já revalidava no destino o envio, o encerramento, o opt-out, o mesmo número e a sessão do motor. Novos testes de integração cobrem o convidado só com leitura, o destino encerrado, a sessão caída e a mensagem apagada.
+- **Aviso no SSE**: `convidarParticipante` e `revogarParticipante` fazem, na mesma transação, um UPDATE sem mudança no `AtendimentoWhatsApp`. O trigger `notificar_inbox` já existente emite `atendimento.atualizado`, sem migration. O ID reservado 20261018500000 não foi usado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros (os avisos já existiam). `npm test`: 719 arquivos, 5334 testes verdes.
+- Integração no banco descartável `erp_genius_test_encaminhar`: `src/server/inbox` com 7 arquivos e 67 testes; `src/server/whatsapp` com 53 arquivos e 414 testes. Tudo verde, motor simulado.
+- **Estado**: implementado, aguarda revisão.
+
 ## Decisões do dono 17/10/2026
 
 Registro completo em [decisoes-dono-2026-10-17.md](decisoes-dono-2026-10-17.md). Branch `claude/decisoes-dono-17-10`.
@@ -2898,6 +2951,164 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 - **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
 - **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).
 
+## Pendências não bloqueantes do #215 (C4) e do #217 (C6, C7) (18/10/2026)
+
+- Branch: `claude/pendencias-215-217` (base main 6d6d33ee). Cada item com teste falhando antes da correção.
+- **C4 do #215:** o alerta "Evento do motor parado" passa a medir o evento mais atrasado, não o de menor `seq`. O critério
+  de "parado" não mudou: sem backoff conta desde `recebidoEm`, em backoff conta desde a `proximaTentativaEm` vencida, sempre
+  além do limiar de 15 min. São duas consultas, cada uma ordenada pelo seu relógio, e vale a mais antiga das duas
+  (`saude.ts`). Teste em `saude.int.test.ts` com o evento de `seq` menor menos atrasado.
+- **C6 do #217:** o compositor do Inbox novo decide pelo `podeEnviar` da thread (`atendimentoVisivel(usuario, id, true)`), que
+  `carregarPainel` passa a devolver, e não mais por `podeExecutar("enviar")`, que libera todo mundo.
+  `InboxNovo` passa esse valor do painel do atendimento aberto à `ConversaAberta` (falso enquanto o painel carrega).
+  `podeEnviarNaConversa(item, podeEnviar)` continua barrando ENCERRADO. Testes de componente em `ConversaAberta.test.ts` e
+  de integração em `paineis.int.test.ts`: o responsável envia, o convidado só de leitura não envia, o convidado com envio envia.
+  Revisão: a secretaria responsável recebe `podeEnviar: false` quando o aluno do atendimento não tem o telefone do contato.
+  O envio real recusa no mesmo caso, porque `enviarTextoInbox` usa `conversaVisivel(…, true)`, alias da mesma função
+  `atendimentoVisivel`, e quem recusa é `destinatarioAtualDoAtendimento`. O painel está coerente com o envio.
+  `paineis-envio.int.test.ts` compara o painel com `enviarTextoInbox` em três casos: telefone do aluno igual ao do contato
+  (envia), aluno sem telefone ou com outro telefone (não envia) e secretaria sem aluno (envia).
+- **C7 do #217:** com o contato em opt-out (`atual.optOut`), o bloco "Retomar régua" some do painel (`AcoesContato`/`CobrancaContato`),
+  como no Inbox antigo. Pagamento e promessa continuam. Teste de interação em `AcoesContato.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (714 arquivos, 5276 testes). Integração com saída 0 em `saude.int.test.ts` (20 testes) e em
+  `src/server/inbox/` (7 arquivos, 64 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
+  foi rodado; fica para o integrador.
+
+## Fase 4D — verificação final do bloco (18/10/2026)
+
+- Branch `claude/fase4-d-inbox-motor` (PR empilhado sobre `claude/fase4-c-webhook`), tarefas 18 a 24b do plano `04-fase-motor.md`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 714 arquivos e 5245 testes (linha de base da 4C: 711/5220).
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` ficou varrendo a suíte inteira (`evento.ts`/`schema.ts` alcançam quase tudo) e foi
+  interrompido; rodados os 7 `*.int.test.ts` do diff (`acoes-numero`, `linha-comercial`, `motor/acoes-admin`, `motor/acoes-mensagem`,
+  `motor/conteudo`, `motor/grupo-envio`, `motor/presenca`): 89 testes verdes; e `despachante-motor/comercial/agendada` + `inbox`:
+  43 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4C).
+
+**Base trocada para `main` e correções da R1 do #219 (18/10/2026)**
+
+- **Merges do `main`:** dois merges, `2e4efada` (#216 e #217) e o de `ad4142cd` (#218).
+  - Conflitos: este quadro (ficam os blocos de cada PR), `Compositor.test.ts` (testes de anexo e áudio do #217 junto com os de capacidades da 4D) e `ConversaAberta.tsx` (o `podeEnviar` do painel do #218 junto com as capacidades da 4D).
+  - A 4D não mexia no Inbox antigo removido pela 3F. Sem migration nova.
+- **B1:** o Inbox novo decide os recursos do motor por `ItemListaInbox.capacidades`, calculado com `capacidadesDoNumero` como em `ThreadConversa.capacidades`. Antes decidia por `recursoDisponivel(item.driver)`, que libera MOTOR com a sessão caída. O compositor recebe `capacidades`.
+- **C4:** `COMANDOS_MENSAGEM_LIGADOS = ["copiar", "reagir", "editar", "apagar"]`, filtrados por mensagem em `comandosDaMensagem`.
+  - Cada comando exige a capacidade do número, o envio liberado e a mensagem não apagada. Editar e apagar valem só na própria mensagem de saída, e editar só em texto. `MensagemThread` ganha `propria` e `apagada`.
+  - Os diálogos ficam em `inbox/AcoesMensagem.tsx`. Apagar roda em `ConfirmarAcao` e entrou na lista fechada.
+  - Encaminhar fica fora: falta a escolha da conversa de destino.
+- **C6:** `criarGrupoWhatsApp` confere `grupoNovoNoEscopo`, que tem os mesmos ramos de `escopoGrupos`. Teste em `motor/acoes-admin.int.test.ts`.
+- Verificação num banco descartável `erp_genius_test_fix219` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: 0 erros e 43 avisos já existentes.
+  - `npm test`: 718 arquivos e 5314 testes verdes, saída 0.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp`): 59 arquivos e 473 testes verdes, saída 0.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
+## Pendências da revisão do #218 (C2, C3) (18/10/2026)
+
+- **C2:** o compositor do Inbox novo distingue permissão carregando (`podeEnviar: null` → "Carregando…", em `role="status"`),
+  painel que falhou (`falhaPermissao` → erro em `role="alert"` com o `<Botao>` "Tentar de novo", que volta a carregar) e
+  permissão negada (`false` → o motivo). Continua falhando fechado: só `true` envia. Testes em `Compositor.test.ts`,
+  `ConversaAberta.test.ts` e `InboxNovo.interacao.test.ts`.
+- **C3:** um aviso do SSE do atendimento aberto, ou um `resync`, recarrega o painel (`versaoPainel`). Assim o compositor libera
+  quando alguém transfere ou convida com envio. Teste de componente que simula o aviso em `InboxNovo.interacao.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (715 arquivos, 5288 testes). Nenhuma mudança no servidor, então a integração não foi rodada.
+
+**Correções da R1 do #220 (18/10/2026)**
+
+- **B1:** merge do `main` com o #219 (4D). O `Compositor` recebe `podeEnviar: boolean | null`, `falhaPermissao?` e `capacidades`, e
+  não tem mais `driver`. Em `ConversaAberta` o null de carregando vai só ao compositor; `comandosDaMensagem` recebe
+  `envioLiberado === true`, então carregando não libera comando.
+- **C1:** só `atendimento.atualizado` do atendimento aberto e `resync` recarregam o painel; `mensagem.nova` e `mensagem.status`, não.
+  Esses são os tipos reais do SSE (`AvisoInbox`). O convite de participante não gera aviso: a tabela de participantes não tem
+  trigger de `notificar_inbox`. Por isso o convite com envio só libera o compositor depois de um `resync`, de uma ação na
+  tela ou de reabrir a conversa (pendência de servidor).
+- **C2:** se a recarga falha e o painel daquele atendimento já tinha carregado, fica o último painel conhecido. O erro com
+  "Tentar de novo" aparece só na carga inicial. Testes em `InboxNovo.interacao.test.ts`.
+
+## Fase 4E — remove Meta/Evolution e sobe o motor (18/10/2026)
+
+- Branch `claude/fase4-e-remove-legados` (PR #221; nasceu empilhado sobre a 4D e hoje tem base `main`), tarefas 25 e 26 do plano `04-fase-motor.md`:
+  remoção dos drivers, webhooks e templates de Meta e Evolution; deploy com o serviço do motor no lugar do Evolution.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` varria quase toda a suíte e foi interrompido; rodados os 37 `*.int.test.ts` do diff:
+  37 arquivos, 326 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4D).
+
+**Base trocada para `main` e correções da R1 do #221 (18/10/2026)**
+
+- **Merge do `main`** (`3e909715`: #216, #217, #218, #219 com a 4D e #220). Conflitos:
+  - `InboxCliente.tsx`, `InboxCliente.test.ts` e `InboxCliente.confirmacao.test.ts`: fica a remoção da 3F.
+  - `consultas-inbox.ts`: fica a refatoração do `main` (`silencioPosInbound`, `regrasCadastroDoAtendimento`, `propria`/`apagada`);
+    sai `janela24h`, que dependia de `META_CLOUD`. O Inbox novo (`InboxNovo*`, `AcoesAtendimento*`) não lê `janela24h`.
+  - este quadro (ficam os blocos de cada PR).
+  - Sem migration nova no `main` nem nesta branch.
+- **B1, além do diff original:** os testes que o `main` trouxe (`AcoesAtendimento.test.ts`, `InboxNovo.test.ts`,
+  `InboxNovo.interacao.test.ts`, `consultas-pagina`, `opcoes-filtro`, `paineis` e `regras-inbox.int.test.ts`) passam a usar
+  `DriverWhatsApp.*` no lugar das strings `"BAILEYS"`/`"META_CLOUD"` (trava `sem-provedores-legados.test.ts`).
+  `regras-inbox.int.test.ts` deixa de mockar `drivers/meta-cloud` e `drivers/evolution`, apagados. A regra 15 desse arquivo
+  passa a receber a mensagem com `driver: MOTOR`: `criarNumeroSetor` cria número MOTOR desde a 4E, e o inbound acha o número
+  pelo driver (com `META_CLOUD` a mensagem não era gravada e o teste falhava depois do merge).
+- **C1:** `scripts/backup-producao.sh` para o motor só durante o tar de `/data` (PGlite em arquivo) e o religa em seguida,
+  também em erro (`trap religar_motor EXIT INT TERM`). O tar roda num container auxiliar (`alpine:3.20`, `IMAGEM_TAR`) com
+  `--volumes-from` do container do motor, sem depender de tar na imagem do motor. O restore usa o mesmo container auxiliar.
+  Teste em `src/deploy/motor-compose.test.ts`. Nada foi rodado contra um ambiente real.
+- **C2:** a saúde do canal (`saude.ts`) alerta cada `NumeroWhatsApp` ativo com driver legado (`BAILEYS` ou `META_CLOUD`; o
+  enum não tem `EVOLUTION`). Testes de integração em `saude.int.test.ts`. Passo de migração em `SETUP.md` ("Números legados"):
+  reparear a linha no motor (converter o registro para `MOTOR` e conectar por QR ou código) ou desativar o número legado.
+- **C3:** `importarHistoricoLinha` (`src/server/whatsapp/historico.ts`) ficou sem chamador: o motor não manda histórico por
+  nenhuma rota. Saem o módulo, `historico.test.ts` e o bloco LC-10/LC-11 de `linha-comercial.int.test.ts`. Se o motor
+  passar a enviar o histórico do aparelho, a importação volta com a rota que a chamar.
+- **C4:** sem avisos do eslint nos arquivos alterados: sai `destinosAgenda` (sem uso) de `comunicacoes-agenda/whatsapp.ts`, e
+  `substituicao-avisos.int.test.ts` tipa o transporte com `vi.fn<...>` em vez do parâmetro `_entrada` sem uso.
+- Verificação num banco descartável `erp_genius_test_fix221` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: saída 0, 0 erros e 40 avisos (nenhum nos arquivos alterados).
+  - `npm test`: saída 0, 715 arquivos e 5308 testes.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp` e os `*.int.test.ts`
+    tocados pelo PR e pelo merge): 69 arquivos e 544 testes verdes. Na primeira
+    rodada só a regra 15 de `regras-inbox` falhou (acima); corrigida, o arquivo rodou de novo isolado: 21 testes verdes.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
+## Fase 4F — E2E com motor simulado (18/10/2026)
+
+- Branch `claude/fase4-f-e2e` (PR empilhado sobre `claude/fase4-e-remove-legados`), tarefa 27 do plano `04-fase-motor.md`:
+  motor simulado (`src/test/motor-simulado.ts`) e teste de ponta a ponta (`src/server/whatsapp/motor/ponta-a-ponta.int.test.ts`).
+  A tarefa 28 (roteiro com aparelho real) segue com o integrador.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` sobre os 2 arquivos do diff: 1 arquivo, 6 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4E).
+
+**Base trocada para `main` e correções da R1 do #222 (18/10/2026)**
+
+- **Merge do `main`** (`d15e0969`, #221 com a 4E). Conflito só neste quadro (ficam os blocos de cada PR).
+- **C3:** `MotorSimulado.reiniciar()` zera recebidos, enviadas, contador de ids, idempotência por `clientMessageId`,
+  falha e mídia; o `beforeEach` do ponta a ponta chama `sim.reiniciar()`. O primeiro caso lê o `providerMessageId`/`mensagemIdMotor`
+  de `sim.enviadas` em vez de fixar `3EB01`. Caso novo prova o reinício (o mesmo `clientMessageId` recebe id novo, sem cache).
+- **C4:** `RESULTADO_INCERTO` no simulado agora significa "enviou, mas a confirmação se perdeu" (registra a mensagem e responde 502).
+  Caso novo: intenção `FALHOU`/`resultado_incerto`, o despacho não reenvia sozinho, o reenvio com o mesmo `clientMessageId`
+  devolve a mesma mensagem (uma só em `sim.enviadas`) e o eco repetido registra um único `EnvioIncertoConfirmadoPeloMotor`
+  sem criar `MensagemWhatsApp`. A opção `falharEnvio` de `iniciarMotorSimulado` saiu (ninguém a usava; `reiniciar()` volta a `null`).
+- **#221 C2:** `SETUP.md` (§Backup diário), `docs/31` §4 e o cabeçalho de `backup-producao.sh` citam o 503 isolado de
+  "Motor WhatsApp inalcançável" esperado às 03:15, com o motor parado durante o tar. O §4 do doc 31 deixa de citar a Evolution.
+- **`scripts/auditoria/cenarios.test.mjs`:** mock de `drivers/motor` no lugar de `drivers/meta-cloud`/`evolution`, número de teste
+  `MOTOR`. O script já não rodava antes: importava `whatsapp/cron-comercial`, removido na E1 (`53c69b4b`). W03 saiu com o cron
+  comercial; W04 fica no registro do reagendamento; W05 confere que um novo `despacharFila` não reabre a falha.
+  Rodado (`vitest run -c scripts/auditoria/vitest.config.ts`, com banco descartável): 18 verdes, 10 falhas, 1 pulado. As falhas são
+  deriva de API fora do WhatsApp (`registrarPagamento` exige campos novos, alçadas novas de retomada/país, A01/A06); a suíte é de
+  auditoria e pode falhar por desenho. W01, W02, W05 e W07 passam com o motor mockado.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 715 arquivos, 5308 testes verdes.
+- Integração (banco descartável): `ponta-a-ponta.int.test.ts` 8 testes verdes; `src/server/whatsapp/motor`: 14 arquivos, 112 testes verdes.
+**Estado**: Implementado; base `main` (não empilhado); correções da R1 aplicadas; aguardando revisão.
+
 ## Fase 5, Task 1: trava de pré-requisitos (18/10/2026)
 
 - Branch: `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, SDK 0.131.0 exato). Teste: `src/test/pre-requisitos-fase5.test.ts` (5 testes verdes), `tsc` saída 0.
@@ -2931,6 +3142,38 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - Integração (banco `dev-email`, migration `aria_base` aplicada só nele), recorte dos arquivos tocados e dos que importam `comercial/{acoes,consultas,schema}`: `src/server/aria`, `src/server/comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `whatsapp/{inbox,acesso-atendimento}`, `secretaria/politica`: saída 0; 13 arquivos, 120 testes verdes.
 - Nota: `vitest related` com `src/lib/labels.ts`/`evento.ts` alcança praticamente toda a suíte de integração (passou de 2 h e foi interrompido pelo limite de tempo); a suíte completa fica para o integrador.
 
+**Merge do `main` (#218 a #222, Fases 4D, 4E e 4F) na Fase 5A (18/10/2026)**
+
+- Merges de `d15e0969` (#221) e `95b5ff5f` (#222). Conflito só neste quadro (ficam os blocos de cada PR). O `main` não trouxe migrations
+  novas desde `6d6d33ee`; `20261018010000_aria_base` continua a última e não colide. Nada da 5A citava Meta, Evolution ou drivers legados.
+- Trava `src/test/pre-requisitos-fase5.test.ts` com a 4D ativa: `driverMotor` (`enviarTexto`/`enviarMidia`/`enviarConteudo`), ações do
+  Inbox em `whatsapp/motor/acoes-mensagem.ts` (nome real; plano: `envio-inbox.ts`), inbound `processarMensagemRecebida`/`processarMensagemEnviada`
+  e eco `CELULAR` (`inbound.ts`, `processar-grupo.ts`), mais a presença da trava de legados da 4E. Seguem fora do `main` e anotados na trava:
+  `NotaAtendimento`, `NumeroWhatsApp.perfilNome/privacidade/temporariasSegundos` e `atualizarPerfil`/`atualizarPrivacidade`/`definirTemporarias`
+  em `drivers/motor.ts` (a #222 entregou só o E2E com motor simulado).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: 721 arquivos, 5342 testes verdes.
+- Integração (banco descartável, `migrate deploy` com `aria_base`; `migrate diff` sem divergência nas tabelas da Aria): `src/server/aria`,
+  `comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `secretaria/politica`, `whatsapp/{inbox,acesso-atendimento,motor}`
+  (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
+  39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+## Fase 5A, pendências da revisão do #224 (18/10/2026)
+
+Branch `claude/pendencias-224` (sobre main `f1b4a41c`). Nenhuma chamada real à API; cliente Anthropic mockado nos testes.
+
+- **C1, escrita de cache:** o provedor Anthropic passa a ler `usage.cache_creation_input_tokens` (ausente ou nulo vira 0) em
+  `RespostaIA.tokensEscritaCache`; o simulado devolve 0. `custoMicroUsd` cobra a escrita a 1,25× a entrada (Sonnet 5.5: 2,50 USD/M;
+  Haiku 5.5: 0,125 USD/M) e soma ao total; `registrarChamadaIA` repassa o campo. Sem coluna nova em `ChamadaIA`: o custo gravado já
+  inclui a escrita; guardar a contagem separada fica para quando houver migration da Aria.
+- **C3, modelo validado antes da chamada:** `modeloPermitido()` em `custo.ts`; o provedor Anthropic lança
+  `ErroProvedorIA("MODELO_NAO_PERMITIDO")` antes de chamar o cliente quando o modelo da tarefa está fora de `MODELOS_PERMITIDOS`.
+  Não existe schema de validação da `ConfigIA` (nenhuma tela ou action grava os modelos ainda); validar lá quando ela for criada.
+- **C6:** comentários do copiloto removido ajustados em `globals.css`, `tailwind.config.ts`, `_shared/regras.ts` e
+  `whatsapp/consultas-inbox.ts`.
+- Leitura de cache do Sonnet 5.5 segue 0,20 (decisão pendente do dono).
+- Evidências: `tsc --noEmit` saída 0; `npm run lint` saída 0 (0 erros, 40 avisos, linha de base); `npm test` saída 0, 721 arquivos,
+  5349 testes verdes; integração `src/server/aria` (banco descartável `erp_genius_test_pend224`, `migrate deploy`): saída 0, 2 arquivos,
+  13 testes verdes.
 ## Fase 5, bloco B — configuração da Aria, Tasks 6 a 11 (18/10/2026)
 
 Branch `claude/fase5-b-config` (sobre `claude/fase5-a-fundacao`, main 6d6d33ee + 24af270d). Tasks 6 (schema versionado, predefinições e matriz), 7 (divisão Admin × Gerente Comercial), 8 (rascunho, publicação numerada com diff, descarte e restauração), 9 (estado DESLIGADA/SHADOW/ATIVA, pausa global e supervisão), 10 (base de conhecimento: fontes, trechos e extração de PDF pelo provedor simulado) e 11 (busca textual em português), mais o commit de correção da revisão final. Só provedor simulado; nenhuma chamada real à API.
@@ -2954,6 +3197,73 @@ Branch `claude/fase5-b-config` (HEAD 9745f787), PR em rascunho empilhado sobre `
 - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
 - `vitest related --run -c vitest.integration.config.ts` sobre os 15 .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 4 arquivos, 33 testes verdes (recorte, não a suíte completa).
 
+### Fase 5B: merge do `main` (f1b4a41c) — 2026-10-18
+
+Branch `claude/fase5-b-config` (sobre d11663d3). Conflito só neste quadro (ficam os blocos de cada lado). Nada da Aria cita Meta, Evolution ou drivers legados; nenhuma migration nova colide com `20261018020000_aria_conhecimento`.
+- `prisma validate`: válido. `node_modules/.bin/tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos.
+- `npm test`: saída 0; 724 arquivos, 5369 testes verdes.
+- Integração em banco descartável novo (`migrate deploy` de todas as migrations: saída 0), recorte (não é a suíte completa): `src/server/aria`, `whatsapp`, `inbox`, `comunicacoes-agenda`, `comercial`, `crm/{funil,pessoas,oportunidades,mensagens-agendadas}`, `academico/visibilidade`, `acesso/politica`, `agenda/substituicao-avisos`, `secretaria/politica`: saída 0; 83 arquivos, 645 testes verdes.
+- `prisma migrate diff` banco × schema: as divergências são antigas (nomes de índices/FKs e defaults de data em outras áreas), salvo `TrechoConhecimento.busca` (coluna gerada `tsvector` e índice GIN em SQL manual, que o Prisma não representa). **Pendência:** um `migrate dev` futuro tentará removê-los; revisar antes de gerar a próxima migration.
+- **Pendente antes do merge:** `npm run test:int` completo pelo integrador; confirmação do dono sobre a matriz; PR #223 segue aberto no `main`.
+
+### Fase 5B: correções da R1 do PR #226 — 2026-10-18
+
+Branch `claude/fase5-b-config` (sobre c1f4dead; `git merge origin/main`: já em dia com f1b4a41c). TDD: cada teste novo falhou antes da correção.
+- **B1** `criarFonteArquivo` só aceita upload "livre" do próprio autor (`uploadLivreDoAutor` em `uploads/autorizacao.ts`): sem vínculo a lead/aluno/cobrança/matrícula e sem referência em cobrança, informe de pagamento, documento ou mídia de WhatsApp; fora disso, "Arquivo não encontrado." antes de qualquer leitura do disco. `podeLerArquivo` não serve de porta aqui: nega todo upload sem referência (o caso legítimo); a regra adotada é mais restrita para qualquer arquivo com finalidade, inclusive para o Administrador.
+- **B2** mock do provedor no teste parte de `provedorSimulado.gerar(p)` (compatível com o #227).
+- **C2** `buscarTrechos` ignora fontes vencidas; criação recusa `validoAte` no passado ou inválido. **C3** `salvarRascunho`/`restaurarVersao` exigem o rascunho aberto (`id` + `atualizadoEm`, de `rascunhoAtual()` ou do último salvamento) e recusam se mudou. **C4** teste unitário (prisma dublê) liga `definirEstadoAria`/`publicarRascunho` às capacidades (conferido por mutação). **C5** `busca` declarada com `dbgenerated` + `@@index([busca], type: Gin)`; `prisma migrate diff` banco × schema perdeu as duas linhas de `TrechoConhecimento` e não ganhou nenhuma; trava em `conhecimento/migracao-busca.test.ts`. **C6** tetos: 200 mil caracteres por fonte, PDF de 10 MB, 400 trechos por fonte.
+- **Atenção bloco C:** a assinatura de `salvarRascunho` (campo `rascunho`) e de `restaurarVersao(versaoId, rascunho)` mudou.
+- `tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5374 testes.
+- Integração (recorte) em banco descartável com todas as migrations: `src/server/aria`, `src/server/uploads` e as suítes que usam `uploads/autorizacao` (`academico/visibilidade`, `matricula/condicoes-horas`, `inbox/regras-inbox`, `financeiro/recebimentos-destinados`): saída 0; 11 arquivos, 127 testes.
+
+### Fase 5E: relatórios e metas (verificação do bloco) — 2026-10-18
+
+Branch `claude/fase5-e-relatorios` (Tasks 30 a 36), empilhada sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 725 arquivos, 5336 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- Integração, recorte: `vitest related --run -c vitest.integration.config.ts` sobre os arquivos .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 14 arquivos, 109 testes verdes.
+- Pendente: suíte de integração completa a cargo do integrador no fim da fase.
+
+**Merge do `main` (#224, Fase 5A, já com 4D a 4F) na Fase 5E (18/10/2026)**
+
+- PR #228 passa a ter base `main` (não empilhado). Merge de `f1b4a41c`; conflito só neste quadro (ficam os dois blocos). `botoes-mapa.ts`,
+  `botoes.test.ts` e `enums-rotulos.test.ts` mesclaram sozinhos. A 5E não cita Meta, Evolution, drivers legados nem o Inbox antigo.
+  `20261018030000_metas_comerciais` segue a última migration, depois de `20261018010000_aria_base`; sem colisão.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5377 testes verdes.
+- Integração (banco descartável, `migrate deploy` completo; `migrate diff` só com a deriva preexistente de defaults de timestamp, nada em
+  `MetaComercial`): `src/app/api/relatorios`, `home/consultas`, `metas`, `relatorios`, `aria`, `src/server/inbox`, `whatsapp/motor`: saída 0;
+  31 arquivos, 252 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+**Correções da R1 do PR #228 (18/10/2026)**
+
+- B1: a meta EXPERIMENTAIS_REALIZADAS passa a contar a primeira `ExperimentalRealizada` (check-in do professor) por oportunidade no mês
+  da escola, aceitando também `EtapaAlterada` para EXPERIMENTAL_REALIZADA; respeita escopo e dono. Nas abas de Relatórios só o funil conta
+  experimentais, e já usava os dois eventos; Atividades e Equipe não contam experimentais.
+- C1: a aba Metas da Configuração inclui o Gerente Comercial (única aba dele; o link "Definir metas" fica na aba Equipe de Relatórios);
+  a meta do próprio gerente aparece com o nome dele.
+- C2: `/api/relatorios/exportar` recusa com 403 (mensagem "só para a gestão comercial") as abas Equipe e Aria, os filtros de responsável e
+  de autor e o detalhe por pessoa para quem não é admin nem gerente comercial.
+- C3 (DF5-11): no relatório o vendedor é só ele. Diferente de `escopoComercialAtual`, as coberturas de carteira não entram nos relatórios
+  nem nas metas na v1 (documentado em `relatorios/escopo.ts`, com teste).
+- C4: o nome da etapa no Funil diz que abre as oportunidades que estão nela agora (título, rótulo acessível e nota da tabela).
+- C5: Equipe mostra "Meta dos meses do período" e explica que soma os meses inteiros tocados; VALOR_GANHO usa `valorPrevisto`.
+- B2: resolvido no merge do `main` com o #226 (ver bloco seguinte).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos (linha de base). `npm test`: saída 0; 727 arquivos, 5380 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`: saída 0; 8 arquivos, 68 testes verdes.
+
+**Merge do `main` (#226, Fase 5B) na Fase 5E (18/10/2026)**
+
+- Merge de `86261292`. Conflitos: `prisma/schema.prisma` (ficam `MetricaMeta`/`MetaComercial` da 5E e `TipoFonteConhecimento`,
+  `StatusFonteConhecimento`, `FonteConhecimento`, `TrechoConhecimento` da 5B, com `busca` em `dbgenerated` e `@@index([busca], type: Gin)`)
+  e este quadro (ficam os dois blocos).
+- `prisma validate`: válido. Banco limpo com `migrate deploy`: `20261018010000_aria_base`, `20261018020000_aria_conhecimento` e
+  `20261018030000_metas_comerciais` aplicam em sequência; `migrate diff` banco × schema sem nada em `MetaComercial`, `FonteConhecimento`
+  ou `TrechoConhecimento` (só a deriva preexistente de outras tabelas).
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 732 arquivos, 5412 testes verdes.
+- Integração (banco descartável): `metas`, `relatorios`, `src/app/api/relatorios`, `home/consultas`, `src/server/aria`, `src/server/uploads`:
+  saída 0; 15 arquivos, 133 testes verdes. O `npm run test:int` completo segue com o integrador.
+
 ## Fase 5, bloco C — turno da Aria, Tasks 12 a 25 (18/10/2026)
 
 Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6d33ee + 24af270d). Tasks 12 a 25 (contexto, decisão, guardas, gatilhos, executores, handoff, expiração, orquestrador e despacho), todas com revisão limpa. Só provedor e motor simulados; nenhuma chamada real à API da Anthropic nem ao WhatsApp.
@@ -2963,6 +3273,25 @@ Branch `claude/fase5-c-turno` (empilhada sobre `claude/fase5-b-config`; main 6d6
 - `npm run lint`: saída 0; 0 erros, 44 avisos (linha de base 43; os avisos são do tipo `no-unused-vars`).
 - Integração, banco do perfil `tester` (`tester34`), recorte: `vitest related` sobre os 41 .ts do diff contra `claude/fase5-b-config` alcança praticamente toda a suíte (passou de 38 min e foi interrompido). Em seu lugar, `vitest run -c vitest.integration.config.ts` nos 12 `*.int.test.ts` do diff mais `src/server/aria`, `whatsapp/{despachante,inbound,atendimentos}` e `crm/mensagens-agendadas`: saída 0; 23 arquivos, 208 testes verdes.
 - Pendente para o integrador: `npm run test:int` completo, comparando com as falhas preexistentes conhecidas.
+
+### Fase 5C: merge do `main` (até 9b01b45f) e R1 do PR #229 — 2026-10-18
+
+Branch `claude/fase5-c-turno`, agora com base `main` (não mais empilhada). Merges de 86261292 (#226), c9f14e91 (#228) e 9b01b45f (#227, #230); conflitos só no quadro e em `IntencaoParaValidar` (`despachante.ts`, ficam `acaoAgenteIAId` e `conteudo`).
+- **C1** migration da 5C renomeada para `20261018060000_aria_triagem_shadow_sem_atendimento` (030000 é de `metas_comerciais`; 040000/050000 reservados à 5F) e, na R2, para `20261018080000_` (o #232 trouxe `20261018070000_chamada_ia_escrita_cache`). Banco limpo aplica todas em sequência.
+- **B2** dublês de provedor da 5C partem de `provedorSimulado.gerar(p)` (tsc 0 com `tokensEscritaCache` obrigatório). `triagem.int.test.ts` usa `driver: "MOTOR"`. Contexto do turno: teste de fonte vencida fora dos trechos.
+- **B3** `pausarAriaNoAtendimento` cancela as intenções PENDENTE/ADIADA de origem IA (`aria_pausada`), inclusive já pausada; handoff preserva a própria mensagem. Despachante (origem IA) cancela com `aria_pausada` se o atendimento está pausado (fora a pausa do handoff) ou se houve fala/fila humana depois (conferido por mutação).
+- **C2** rajada: âncora com inbound mais novo vira `IGNORADO:FALA_SUPERADA` (antes e depois da chamada ao provedor). **C3** turnos EM_ANDAMENTO há mais de 10 min viram handoff `TURNO_INTERROMPIDO` no reprocesso. **C4** sai o parâmetro `origem` de `agendarMensagem`. **C5** `devolverParaAria` exige escopo de envio. **C7** sem `_p`.
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 738 arquivos, 5492 testes.
+- Integração em banco descartável novo: `src/server/aria`, `src/server/whatsapp`, `crm/mensagens-agendadas`, `metas`: saída 0; 74 arquivos, 629 testes. `npm run test:int` completo segue com o integrador.
+
+### Fase 5C: R2 do PR #229 e merge do `main` (cb9ca307) — 2026-10-18
+
+- Merges de fd094fc0 (#231) e cb9ca307 (#232), sem conflitos.
+- **B4** a rajada (C2) e o reprocesso só contam como "fala mais nova" inbound de tipo que a Aria responde (`TIPOS_COM_TEXTO`, exportado de `guardas.ts`); texto + figurinha/áudio/localização responde uma vez ao texto; texto + texto segue respondendo só ao último. O reprocesso também não cria turno para inbound sem texto.
+- **C1** migration da 5C em `20261018080000_aria_triagem_shadow_sem_atendimento`; banco limpo aplica 010000, 020000, 030000, 070000 e 080000 em sequência.
+- **C9 (pendência entre 5C e 5F):** a triagem da Aria abre atendimento por `abrirAtendimentoDoSetor` (`aria/triagem.ts`), fora de `atendimentoDoInbound`, onde o #233 (5F) põe `atribuirAutomaticamente`. TODO no código; **quem entrar por último no `main` (5C ou 5F) aplica o rodízio nesse caminho também.**
+- `tsc --noEmit`: saída 0. `npm run lint`: 0 erros, 40 avisos. `npm test`: saída 0; 740 arquivos, 5509 testes.
+- Integração em banco descartável novo: `src/server/aria`, `src/server/whatsapp`, `crm/mensagens-agendadas`: saída 0; 73 arquivos, 621 testes.
 
 ## Fase 5, bloco D — tela da Aria, playground e Aria no Inbox, Tasks 26 a 29 (18/10/2026)
 

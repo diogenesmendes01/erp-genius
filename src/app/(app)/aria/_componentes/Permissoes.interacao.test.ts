@@ -25,7 +25,7 @@ type Props = Parameters<typeof Permissoes>[0];
 
 function montar(extra: Partial<Props> = {}) {
   m.ganchos = criarGanchos();
-  const props: Props = { config: configPadrao(), baseVersaoId: "v1", podeEditar: true, ...extra };
+  const props: Props = { config: configPadrao(), baseVersaoId: "v1", rascunho: null, podeEditar: true, ...extra };
   const arvore = (): ReactNode => m.ganchos!.renderizar(Permissoes, props);
   const celulas = () => elementos(arvore()).filter((n) => n.props["data-etapa"] !== undefined);
   const celula = (etapa: string, acao: string): No => {

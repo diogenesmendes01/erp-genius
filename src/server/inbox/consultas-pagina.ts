@@ -10,6 +10,8 @@ import {
   contextoInclude, podeVerLeadNaThread, notasDoLead, resumirConversa,
   type ConversaResumo, type MensagemThread, type NotaInternaThread,
 } from "@/server/whatsapp/consultas-inbox";
+import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
+import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
 import type { FiltrosInbox } from "./filtros";
 
@@ -18,6 +20,8 @@ export interface ItemListaInbox extends ConversaResumo {
   fixada: boolean; silenciada: boolean; naoLidas: number; grupo: boolean;
   /** Para decidir as ações do cabeçalho (podeExecutar): responsável, dono da linha, setores do número e origem da transferência. */
   responsavelId: string | null; numeroDonoId: string | null; setoresDoNumero: Setor[]; atendimentoOrigemId: string | null;
+  /** Recursos do motor que o número executa agora (`capacidadesDoNumero`: MOTOR ativo e sessão CONECTADO), como `ThreadConversa.capacidades`. */
+  capacidades: RecursoMotor[];
 }
 
 const LIMITE_LISTA = 50;
@@ -76,13 +80,15 @@ function depoisDoCursor(c: CursorInbox): Prisma.AtendimentoWhatsAppWhereInput {
 /**
  * Página da lista do inbox (keyset). O escopo é sempre a base; filtros só restringem. Fixadas do usuário
  * vêm numa consulta própria, só na primeira página, e ficam fora das páginas por cursor.
+ * `enviar`: a base vira o escopo de ENVIO (aberto, número ativo, convite com envio), para escolher o destino do
+ * encaminhar; a action confere de novo (destinatário atual, opt-out, mesmo número, sessão do motor).
  */
 export async function listarAtendimentosPagina(
-  u: UsuarioSessao, f: FiltrosInbox, cursor: string | null, limite = LIMITE_LISTA,
+  u: UsuarioSessao, f: FiltrosInbox, cursor: string | null, limite = LIMITE_LISTA, opcoes: { enviar?: boolean } = {},
 ): Promise<{ itens: ItemListaInbox[]; proximo: string | null }> {
   const tamanho = Math.min(Math.max(Math.trunc(limite) || LIMITE_LISTA, 1), 200);
   const pos = cursor ? decodificarCursor(cursor) : null;
-  const base: Prisma.AtendimentoWhatsAppWhereInput = { AND: [await escopoAtendimentos(u), ...await condicoesDosFiltros(u, f)] };
+  const base: Prisma.AtendimentoWhatsAppWhereInput = { AND: [await escopoAtendimentos(u, { enviar: opcoes.enviar === true }), ...await condicoesDosFiltros(u, f)] };
   const include = includeLista;
 
   const fixadas = pos ? [] : await prisma.atendimentoWhatsApp.findMany({
@@ -116,7 +122,8 @@ async function montarItens(usuarioId: string, todas: LinhaLista[]): Promise<Item
       fixada: pref?.fixada ?? false, silenciada: pref?.silenciada ?? false,
       naoLidas: pref?.naoLidas ?? a.naoLidas, grupo: !!a.conversa.grupoId,
       responsavelId: a.responsavelId, numeroDonoId: a.conversa.numero.donoId, setoresDoNumero: setoresDeNumero(a.conversa.numero),
-      atendimentoOrigemId: a.atendimentoOrigemId };
+      atendimentoOrigemId: a.atendimentoOrigemId,
+      capacidades: capacidadesDoNumero({ driver: a.conversa.numero.driver, ativo: a.conversa.numero.ativo, sessao: a.conversa.numero.sessao }) };
   });
 }
 
@@ -167,7 +174,8 @@ export async function listarMensagensPagina(
   const mensagens: MensagemThread[] = pagina.map((m) => ({
     id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath, status: m.status, origem: m.origem,
     autorNome: m.autor?.nome ?? null, templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId }));
+    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
+    propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
   // Notas internas só na primeira carga (sem cursor), e só para quem pode ver o lead (LC-L02).
   const verNotas = !pos && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId

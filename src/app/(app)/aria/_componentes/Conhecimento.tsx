@@ -14,11 +14,12 @@ import { arquivarFonte, criarFonteTexto } from "@/server/aria/conhecimento/fonte
 import type { ConfigAria } from "@/server/aria/config-schema";
 import type { FonteTela } from "@/server/aria/tela";
 import { CONTROLE, Interruptor } from "./Campos";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
-type Props = { config: ConfigAria; baseVersaoId: string | null; podeEditar: boolean; fontes: FonteTela[] };
+type Props = { config: ConfigAria; baseVersaoId: string | null; rascunho: RascunhoAberto; podeEditar: boolean; fontes: FonteTela[] };
 
-export function Conhecimento({ config, baseVersaoId, podeEditar, fontes }: Props) {
+export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fontes }: Props) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
   const [c, setC] = useState<ConfigAria>(config);
@@ -127,7 +128,7 @@ export function Conhecimento({ config, baseVersaoId, podeEditar, fontes }: Props
         <p className="mt-2 text-xs text-gray-600">As mudanças em perguntas, respostas e fontes ativas entram na próxima publicação.</p>
       </div>
 
-      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} alterado={alterado} />}
+      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
 
       {arquivando && (
         <ConfirmarAcao

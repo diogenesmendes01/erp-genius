@@ -17,6 +17,8 @@ export interface RespostaIA {
   tokensEntrada: number;
   tokensSaida: number;
   tokensCache: number;
+  /** cache_creation_input_tokens: escrita de cache, fora de tokensEntrada. */
+  tokensEscritaCache: number;
   latenciaMs: number;
 }
 

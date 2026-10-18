@@ -9,6 +9,7 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
 import { carregarAriaDoAtendimento } from "./consultas-inbox";
+import { podeDevolverParaAria } from "@/server/aria/pausa";
 
 async function cenario(o: { semLead?: boolean } = {}) {
   const gerente = await criarUsuario([Papel.GERENTE_COMERCIAL]);
@@ -26,7 +27,7 @@ async function cenario(o: { semLead?: boolean } = {}) {
   const sugerir = (o: { status?: "SUGERIDA" | "APROVADA"; expiraEm: Date | null; texto?: string; oportunidadeId?: string }) => prisma.acaoAgenteIA.create({
     data: { turnoId: turno.id, atendimentoId: a.id, oportunidadeId: o.oportunidadeId ?? null, acao: "RESPONDER", modoConfigurado: "SUGERIR", status: o.status ?? "SUGERIDA", confianca: 70, payload: { texto: o.texto ?? "Olá!" }, reversivel: false, expiraEm: o.expiraEm },
   });
-  return { vendedor, gerente, a, lead, sugerir };
+  return { vendedor, gerente, a, lead, numero, sugerir };
 }
 
 describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
@@ -34,7 +35,7 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
 
   it("pausa e motivo vêm do atendimento; sem pausa o motivo é nulo", async () => {
     const c = await cenario();
-    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, sugestoes: [] });
+    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [] });
     await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "CELULAR" } });
     expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toMatchObject({ pausada: true, motivo: "CELULAR" });
   });
@@ -51,7 +52,7 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
   it("vendedor vê a pausa mas não recebe sugestões; fora do escopo devolve null", async () => {
     const c = await cenario();
     await c.sugerir({ expiraEm: new Date(Date.now() + 3_600_000) });
-    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toEqual({ pausada: false, motivo: null, sugestoes: [] });
+    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [] });
     const estranho = await criarUsuario([Papel.FINANCEIRO]);
     expect(await carregarAriaDoAtendimento(estranho, c.a.id)).toBeNull();
   });
@@ -73,8 +74,20 @@ describe("Aria no detalhe do atendimento (consulta do Inbox)", () => {
   it("atendimento sem lead: gerente vê o atendimento sem sugestões; Admin as vê", async () => {
     const c = await cenario({ semLead: true });
     const s = await c.sugerir({ expiraEm: new Date(Date.now() + 3_600_000) });
-    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, sugestoes: [] });
+    expect(await carregarAriaDoAtendimento(c.gerente, c.a.id)).toEqual({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [] });
     const admin = await criarUsuario([Papel.ADMINISTRADOR]);
     expect((await carregarAriaDoAtendimento(admin, c.a.id))?.sugestoes.map((x) => x.id)).toEqual([s.id]);
+  });
+
+  it("podeDevolver só com a Aria pausada e escopo de envio (mesma regra de devolverParaAria)", async () => {
+    const c = await cenario();
+    expect((await carregarAriaDoAtendimento(c.vendedor, c.a.id))?.podeDevolver).toBe(false);
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
+    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toMatchObject({ pausada: true, podeDevolver: true });
+    expect(await podeDevolverParaAria(prisma, c.vendedor, c.a.id)).toBe(true);
+    // Linha inativa: o vendedor ainda LÊ o atendimento (vê a pausa), mas não pode enviar por ele.
+    await prisma.numeroWhatsApp.update({ where: { id: c.numero.id }, data: { ativo: false } });
+    expect(await carregarAriaDoAtendimento(c.vendedor, c.a.id)).toMatchObject({ pausada: true, podeDevolver: false });
+    expect(await podeDevolverParaAria(prisma, c.vendedor, c.a.id)).toBe(false);
   });
 });

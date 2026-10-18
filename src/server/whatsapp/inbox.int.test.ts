@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { EtapaLead, Papel, Temperatura } from "@prisma/client";
 
@@ -39,7 +40,7 @@ async function seedConversaVendas(donoId: string | null) {
     data: {
       telefoneE164: "+5511988880000",
       rotulo: "Vendas (teste)",
-      driver: "BAILEYS",
+      driver: DriverWhatsApp.BAILEYS,
       finalidade: "VENDAS",
       providerRef: "inst-teste",
       donoId,
@@ -134,7 +135,7 @@ describe("opt-out (S10)", () => {
       providerMessageId: "MSG-OPTOUT-1",
       corpo: "SAIR",
       tipo: "TEXTO",
-      driver: "BAILEYS",
+      driver: DriverWhatsApp.BAILEYS,
       fromMe: false,
       quando: new Date(),
     });
@@ -154,7 +155,7 @@ describe("opt-out (S10)", () => {
       providerMessageId: "MSG-OPTOUT-2",
       corpo: "vou parar de atrasar, prometo",
       tipo: "TEXTO",
-      driver: "BAILEYS",
+      driver: DriverWhatsApp.BAILEYS,
       fromMe: false,
       quando: new Date(),
     });
@@ -305,7 +306,7 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
       matriculaId: segundaMatricula.id,
     }));
     await prisma.mensagemWhatsApp.create({
-      data: { conversaId: segundaConversa.id, atendimentoId: atendimento.id, numeroId: primeiroNumero.id, direcao: "ENTRADA", corpo: "Segunda cobrança", driver: "META_CLOUD" },
+      data: { conversaId: segundaConversa.id, atendimentoId: atendimento.id, numeroId: primeiroNumero.id, direcao: "ENTRADA", corpo: "Segunda cobrança", driver: DriverWhatsApp.META_CLOUD },
     });
 
     const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, atendimento.id);
@@ -340,8 +341,8 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
     }));
     await prisma.mensagemWhatsApp.createMany({
       data: [
-        { conversaId: conversaCobranca.id, atendimentoId: atendimentoCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "primeira", driver: "META_CLOUD", criadoEm: antes },
-        { conversaId: conversaCobranca.id, atendimentoId: atendimentoCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "última", driver: "META_CLOUD" },
+        { conversaId: conversaCobranca.id, atendimentoId: atendimentoCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "primeira", driver: DriverWhatsApp.META_CLOUD, criadoEm: antes },
+        { conversaId: conversaCobranca.id, atendimentoId: atendimentoCobranca.id, numeroId: numeroCobranca.id, direcao: "ENTRADA", corpo: "última", driver: DriverWhatsApp.META_CLOUD },
       ],
     });
 
@@ -424,7 +425,7 @@ describe("roteamento de webhook por driver (P2-6)", () => {
       data: {
         telefoneE164: "+5511977770000",
         rotulo: "Cobrança Meta (teste)",
-        driver: "META_CLOUD",
+        driver: DriverWhatsApp.META_CLOUD,
         finalidade: "COBRANCA",
         providerRef: numeroBaileys.providerRef, // colisão de referência ENTRE drivers
       },
@@ -436,7 +437,7 @@ describe("roteamento de webhook por driver (P2-6)", () => {
       providerMessageId: "MSG-DRIVER-1",
       corpo: "oi",
       tipo: "TEXTO",
-      driver: "META_CLOUD",
+      driver: DriverWhatsApp.META_CLOUD,
       fromMe: false,
       quando: new Date(),
     });
@@ -449,7 +450,7 @@ describe("roteamento de webhook por driver (P2-6)", () => {
       numeroProviderRef: numeroBaileys.providerRef,
       providerMessageId: "MSG-DRIVER-1",
       status: "LIDA",
-      driver: "BAILEYS",
+      driver: DriverWhatsApp.BAILEYS,
       quando: new Date(),
     });
     expect(ignorado).toBe("sem_mensagem");

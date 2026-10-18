@@ -6,11 +6,13 @@ import { Aviso } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
 import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL } from "@/lib/labels";
 import { ACOES_MATRIZ, ETAPAS_ARIA, PREDEFINICOES, type ConfigAria, type Matriz, type ModoAcao } from "@/server/aria/config-schema";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
 type Props = {
   config: ConfigAria;
   baseVersaoId: string | null;
+  rascunho: RascunhoAberto;
   /** Só quem tem `editarMatriz` (Administrador). */
   podeEditar: boolean;
 };
@@ -26,7 +28,7 @@ const COR: Record<ModoAcao, string> = {
 // Ações com decisão própria (handoff e triagem de setor) ficam fora da matriz.
 const modoDe = (m: Matriz, etapa: EtapaLead, acao: AcaoAgenteIATipo): ModoAcao => m[etapa]?.[acao] ?? "NAO_FAZ";
 
-export function Permissoes({ config, baseVersaoId, podeEditar }: Props) {
+export function Permissoes({ config, baseVersaoId, rascunho, podeEditar }: Props) {
   const [matriz, setMatriz] = useState<Matriz>(config.matriz);
   const alterado = JSON.stringify(matriz) !== JSON.stringify(config.matriz);
 
@@ -104,7 +106,7 @@ export function Permissoes({ config, baseVersaoId, podeEditar }: Props) {
           </tbody>
         </table>
       </div>
-      {podeEditar && <Salvar montar={() => ({ ...config, matriz })} baseVersaoId={baseVersaoId} alterado={alterado} />}
+      {podeEditar && <Salvar montar={() => ({ ...config, matriz })} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
     </section>
   );
 }

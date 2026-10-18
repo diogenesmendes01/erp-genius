@@ -23,22 +23,28 @@ const msgIA: MensagemThread = {
 
 describe("Aria no painel do atendimento (Task 29)", () => {
   it("mostra_motivo_e_devolver", () => {
-    const h = montar({ pausada: true, motivo: "CELULAR", sugestoes: [] });
+    const h = montar({ pausada: true, motivo: "CELULAR", podeDevolver: true, sugestoes: [] });
     expect(texto(h)).toContain("Aria pausada · Resposta pelo celular");
     expect(botao(h, "Devolver para Aria")).toBe(true);
   });
+  it("sem_escopo_de_envio_ve_a_pausa_sem_devolver", () => {
+    // Mesma regra do servidor (devolverParaAria exige o escopo de envio): quem só lê vê a pausa, sem o botão.
+    const h = montar({ pausada: true, motivo: "HUMANO_RESPONDEU", podeDevolver: false, sugestoes: [] });
+    expect(texto(h)).toContain("Aria pausada");
+    expect(h).not.toContain("Devolver para Aria");
+  });
   it("pausada_sem_motivo_nao_quebra", () => {
-    expect(texto(montar({ pausada: true, motivo: null, sugestoes: [] }))).toContain("Aria pausada");
+    expect(texto(montar({ pausada: true, motivo: null, podeDevolver: true, sugestoes: [] }))).toContain("Aria pausada");
   });
   it("sugestoes_com_aprovar_e_rejeitar", () => {
-    const h = montar({ pausada: false, motivo: null, sugestoes: [sug] });
+    const h = montar({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [sug] });
     expect(botao(h, "Aprovar")).toBe(true);
     expect(botao(h, "Rejeitar")).toBe(true);
     expect(texto(h)).toContain("Oi, posso ajudar com a matrícula.");
     expect(h).not.toContain("Devolver para Aria");
   });
   it("sem_pausa_e_sem_sugestao_nao_mostra_nada", () => {
-    expect(montar({ pausada: false, motivo: null, sugestoes: [] })).toBe("");
+    expect(montar({ pausada: false, motivo: null, podeDevolver: false, sugestoes: [] })).toBe("");
   });
   it("mensagem_da_aria_identificada", () => {
     const h = renderToStaticMarkup(createElement(BalaoMensagem, { m: msgIA, fuso: null, aoComando: () => {}, recursos: () => true }));

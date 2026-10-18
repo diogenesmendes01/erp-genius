@@ -15,7 +15,9 @@ export const MOTIVOS_HANDOFF = [
   "SEM_PERMISSAO",
   "ERRO_PROVEDOR",
 ] as const;
-export type MotivoHandoff = (typeof MOTIVOS_HANDOFF)[number];
+/** Motivos que só o sistema usa (fora do esquema de saída do modelo). */
+export type MotivoHandoffSistema = "TURNO_INTERROMPIDO";
+export type MotivoHandoff = (typeof MOTIVOS_HANDOFF)[number] | MotivoHandoffSistema;
 
 const ETAPAS = [
   "NOVO",

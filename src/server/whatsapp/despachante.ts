@@ -11,7 +11,7 @@ import {
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { randomUUID } from "node:crypto";
-import { driverAceitaAutomacao, ErroDriver, type CanalWhatsApp, type NumeroCanal, type OpcoesEnvio } from "./canal";
+import { driverAceitaAutomacao, ErroDriver, type CanalWhatsApp, type ConteudoEspecial, type EnvioMidia, type NumeroCanal, type OpcoesEnvio } from "./canal";
 import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
 import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
@@ -22,7 +22,7 @@ import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
 import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/server/comunicacoes-agenda/envio-gate";
 import { aplicarResposta } from "./status-atendimento";
-import { aoGravarSaidaHumana } from "@/server/aria/pausa";
+import { aoGravarSaidaHumana, MOTIVO_ARIA_PAUSADA } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
@@ -565,7 +565,18 @@ export async function despacharFila(
       const driver = driverDoNumero(it.numero.driver);
       const opcoesEnvio: OpcoesEnvio = { clientMessageId, origem: it.origem };
       let envio;
-      if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
+      if (it.conteudo) {
+        // Conteúdo especial (enquete, figurinha, GIF, localização, contato): só drivers que o suportam.
+        if (!driver.enviarConteudo) throw new ErroDriver("conteudo_nao_suportado");
+        const conteudo = it.conteudo as unknown as ConteudoEspecial;
+        let midiaConteudo: EnvioMidia | null = null;
+        if (conteudo.tipo === "FIGURINHA" || conteudo.tipo === "GIF") {
+          if (!it.midiaPath) throw new ErroDriver("midia_ausente");
+          const lida = await lerMidiaParaEnvio(it.midiaPath);
+          midiaConteudo = { tipo: it.tipo === "FIGURINHA" ? "IMAGEM" : "VIDEO", mime: lida.mime, nomeArquivo: lida.nomeArquivo, dadosBase64: lida.dadosBase64, legenda: null };
+        }
+        envio = await driver.enviarConteudo(numeroCanal, it.contato.telefoneE164, conteudo, midiaConteudo, opcoesEnvio);
+      } else if ((it.tipo === "IMAGEM" || it.tipo === "AUDIO" || it.tipo === "VIDEO" || it.tipo === "DOCUMENTO") && it.midiaPath) {
         // Mídia da inbox (E3): lê do storage privado e entrega ao driver do número.
         const midia = await lerMidiaParaEnvio(it.midiaPath);
         envio = await driver.enviarMidia(numeroCanal, it.contato.telefoneE164, {
@@ -684,27 +695,32 @@ type IntencaoParaValidar = {
   politicaComercial: { chave: string; estado: string; numeroRemetenteId: string | null } | null;
   avisoAlteracaoAgendaId: string | null;
   acaoAgenteIAId: string | null;
+  conteudo?: unknown;
+  criadaEm: Date;
   numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
 };
 
 /**
- * Fala da Aria num atendimento com a Aria pausada não sai (uma pessoa assumiu). Única exceção: o
- * aviso do próprio handoff, gravado antes da pausa HANDOFF, ou seja, a resposta imediata de um
- * turno que fez handoff EXECUTADO. Mensagem agendada (AGENDAR_MENSAGEM) nunca é exceção.
+ * Defesa em profundidade da pausa (a pausa já cancela as intenções da Aria na mesma transação):
+ * a fala da Aria não sai com a Aria pausada no atendimento (salvo a pausa do próprio handoff,
+ * cuja mensagem precisa sair) nem se uma pessoa falou, ou enfileirou fala, depois dela.
  */
-async function ariaPausadaParaIntencao(atendimentoId: string, acaoAgenteIAId: string): Promise<boolean> {
-  const at = await prisma.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { iaPausadaEm: true, iaPausaMotivo: true } });
-  if (!at?.iaPausadaEm) return false;
-  if (at.iaPausaMotivo !== "HANDOFF") return true;
-  const acao = await prisma.acaoAgenteIA.findUnique({ where: { id: acaoAgenteIAId }, select: { acao: true, turnoId: true } });
-  if (!acao || (acao.acao !== "RESPONDER" && acao.acao !== "ENVIAR_DOCUMENTO")) return true;
-  const handoff = await prisma.acaoAgenteIA.count({ where: { turnoId: acao.turnoId, acao: "HANDOFF", status: "EXECUTADA" } });
-  return handoff === 0;
+async function pessoaAssumiuDepois(atendimentoId: string, criadaEm: Date): Promise<boolean> {
+  const a = await prisma.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { iaPausadaEm: true, iaPausaMotivo: true } });
+  if (a?.iaPausadaEm && a.iaPausaMotivo !== "HANDOFF") return true;
+  const [saidas, filas] = await Promise.all([
+    prisma.mensagemWhatsApp.count({ where: { atendimentoId, direcao: "SAIDA", origem: { in: ["HUMANO", "CELULAR"] }, criadoEm: { gt: criadaEm } } }),
+    prisma.intencaoMensagem.count({ where: { atendimentoId, origem: "HUMANO", criadaEm: { gt: criadaEm }, status: { notIn: ["CANCELADA", "FALHOU"] } } }),
+  ]);
+  return saidas + filas > 0;
 }
 
 async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
   if (!it.numero.ativo) return "numero_remetente_inativo";
   if (it.contato.optOutEm) return "opt_out";
+  // A Aria (IA) não manda figurinha nem GIF; vale antes do ensaio (SHADOW), que não pode simular o que é proibido.
+  const tipoConteudo = (it.conteudo as { tipo?: string } | null | undefined)?.tipo;
+  if (it.origem === "IA" && (tipoConteudo === "FIGURINHA" || tipoConteudo === "GIF")) return "ia_conteudo_nao_permitido";
   const motivoAgenda = await motivoAvisoAgendaInvalido(it);
   if (motivoAgenda) return motivoAgenda;
   if (it.origem === "GESTAO") {
@@ -715,7 +731,7 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
   if (it.origem === "IA") {
     // A Aria não tem usuário autor: a intenção vale só ligada à ação da Aria e a um atendimento.
     if (it.autorId || !it.atendimentoId || !it.acaoAgenteIAId || it.cobrancaId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_ia_invalido";
-    if (await ariaPausadaParaIntencao(it.atendimentoId, it.acaoAgenteIAId)) return "aria_pausada_no_atendimento";
+    if (await pessoaAssumiuDepois(it.atendimentoId, it.criadaEm)) return MOTIVO_ARIA_PAUSADA;
   } else if (it.origem !== "CRON" && it.origem !== "GESTAO") {
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";
@@ -867,4 +883,45 @@ async function falharClaim(id: string, motivo: string): Promise<void> {
     where: { id, status: "ENVIANDO" },
     data: { status: "FALHOU", motivoFalha: motivo },
   });
+}
+
+/**
+ * Envio humano para GRUPO (E3.5): grupo não tem atendimento nem intenção, então a mensagem `NA_FILA`
+ * com `clientMessageId` é despachada direto, pelo mesmo driver. Sem `WHATSAPP_LIVE=1` nada sai
+ * (`SIMULADA`, a mensagem continua `NA_FILA`). Grupo não recebe automação: só origem HUMANO.
+ */
+export async function despacharMensagemGrupo(mensagemId: string, agora: Date = new Date()): Promise<"ENVIADA" | "FALHOU" | "SIMULADA"> {
+  const m = await prisma.mensagemWhatsApp.findUnique({
+    where: { id: mensagemId },
+    include: { numero: true, conversa: { include: { grupo: true } } },
+  });
+  if (!m || m.direcao !== "SAIDA" || m.status !== "NA_FILA" || !m.clientMessageId || !m.conversa.grupo || m.origem !== "HUMANO") {
+    throw new Error("Mensagem de grupo inválida para despacho.");
+  }
+  if (process.env.WHATSAPP_LIVE !== "1") return "SIMULADA";
+
+  // Mensagem é tabela operacional, não agregado de Evento (evento.ts); o motivo da falha fica no log do servidor.
+  const falhar = async (motivo: string) => {
+    await prisma.mensagemWhatsApp.updateMany({ where: { id: m.id, status: "NA_FILA" }, data: { status: "FALHOU", statusEm: agora } });
+    console.warn(`[whatsapp] envio ao grupo ${m.conversa.grupo!.id} falhou: ${motivo}`);
+    return "FALHOU" as const;
+  };
+
+  if (!m.numero.ativo) return falhar("numero_remetente_inativo");
+  if (!DRIVERS[m.numero.driver]) return falhar("driver_indisponivel");
+  try {
+    const canal = driverDoNumero(m.numero.driver);
+    const r = await canal.enviarTexto(
+      { id: m.numero.id, telefoneE164: m.numero.telefoneE164, driver: m.numero.driver, providerRef: m.numero.providerRef },
+      m.conversa.grupo.grupoJid, m.corpo ?? "", { clientMessageId: m.clientMessageId, origem: "HUMANO" },
+    );
+    // O eco `origem: "erp"` pode ter chegado antes: só completa o que falta.
+    await prisma.mensagemWhatsApp.updateMany({
+      where: { id: m.id, status: "NA_FILA" },
+      data: { status: "ENVIADA", statusEm: agora, providerMessageId: r.providerMessageId, mensagemIdMotor: r.mensagemIdMotor ?? null },
+    });
+    return "ENVIADA";
+  } catch (e) {
+    return falhar(e instanceof ErroDriver ? e.motivo : "erro_desconhecido");
+  }
 }

@@ -38,7 +38,6 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", modulo: "@/server/empresas/acoes", acao: "cancelarFaturaB2B", achado: "L2281" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "acionarKillSwitchRegua", achado: "L2516" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "salvarPoliticaRegua", achado: "L2517" },
-  { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "salvarTemplateWhatsApp", achado: "L2518" },
   // Fatia B (#169).
   { arquivo: "src/app/(app)/financeiro/FilaCobranca.tsx", modulo: "@/server/whatsapp/acoes", acao: "aprovarLoteCobranca", achado: "L2018" },
   { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", modulo: "@/server/paises/acoes", acao: "alterarStatusPais", achado: "L2428" },
@@ -56,12 +55,14 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/contatos/FichaContato.tsx", modulo: "@/server/crm/contatos-acoes", acao: "registrarOptOutDaFicha", achado: "F2-T24" },
   { arquivo: "src/app/(app)/contatos/MesclarContatos.tsx", modulo: "@/server/crm/contatos-acoes", acao: "mesclarContatosDaLista", achado: "F2-T24" },
   { arquivo: "src/app/(app)/comissoes/EstornarComissao.tsx", modulo: "@/server/crm/comissoes-estorno-acao", acao: "estornarComissaoDoPainel", achado: "F2-T35" },
+  { arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "desconectarNumero", achado: "Fase 4D" },
+  { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", modulo: "@/server/whatsapp/motor/acoes-mensagem", acao: "apagarMensagemWhatsApp", achado: "Fase 4D" },
+  { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", modulo: "@/server/whatsapp/motor/acoes-mensagem", acao: "encaminharMensagemWhatsApp", achado: "Fase 4D" },
 ];
 
 /** Cópia literal das exceções (arquivo, trecho exato). */
 const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [
   { arquivo: "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx", trecho: "salvarPoliticaRegua(dadosPolitica())" },
-  { arquivo: "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx", trecho: "salvarTemplateWhatsApp(dados)" },
   // Fatia B (#169).
   { arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx", trecho: "alterarStatusPais(id, alvo)" },
   { arquivo: "src/app/(app)/home/HomeProfessor.tsx", trecho: "checkinExperimental(id, true)" },
