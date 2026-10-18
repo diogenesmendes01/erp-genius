@@ -58,6 +58,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/contratos/page.tsx": [
     "<Link> Preparar novo modelo → secundario/md",
   ],
+  "configuracao/crm/metas/page.tsx": [
+    "<Botao> Salvar meta → primario/md",
+  ],
   "configuracao/migracao/PreparacaoMigracaoPainel.tsx": [
     "<button> Lendo… · Ler arquivo → secundario/md",
     "<button> Preparando… · Preparar lote → primario/lg",
@@ -899,6 +902,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Sem turma compatível? Solicitar abertura ao Gerente Pedagógi → fantasma/sm",
     "<button> ← Voltar → secundario/lg",
     "<button> Processando… · Salvar matrícula → secundario/lg",
+  ],
+  "relatorios/_componentes/Filtros.tsx": [
+    "<button> Filtrar → secundario/md",
+    "<a> Exportar CSV → secundario/md",
+  ],
+  "relatorios/_componentes/PainelDetalhe.tsx": [
+    "<button> Buscar → secundario/md",
   ],
   "secretaria/CondicoesEncerramento.tsx": [
     "<button> Registrar decisão → secundario/lg",

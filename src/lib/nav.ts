@@ -17,6 +17,7 @@ export const NAV: NavItem[] = [
   { href: "/diario", label: "Diário de aulas", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.PROFESSOR] },
   { href: "/home", label: "Home", icon: "Home", papeis: "all" },
   { href: "/funil", label: "Funil", icon: "KanbanSquare", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
+  { href: "/relatorios", label: "Relatórios", icon: "ChartBar", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
   { href: "/carteira", label: "Carteira", icon: "Briefcase", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR] },
   { href: "/contatos", label: "Contatos", icon: "Users", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR, Papel.SECRETARIA_ACADEMICA] },
   {
@@ -67,6 +68,7 @@ export const NAV: NavItem[] = [
   },
   {
     // O GC não tem seção de configuração desde a E1; as sub-abas (tabs.ts) filtram o que cada papel vê.
+    // A única aba dele é Metas (Fase 5E), aberta pelo link "Definir metas" da aba Equipe de Relatórios.
     href: "/configuracao",
     label: "Configuração",
     icon: "Settings",

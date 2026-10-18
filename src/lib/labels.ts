@@ -1,4 +1,5 @@
 import {
+  MetricaMeta,
   TipoTarefa,
   StatusTarefa,
   PrioridadeTarefa,
@@ -115,6 +116,12 @@ export const ETAPA_LABEL: Record<EtapaLead, string> = {
 };
 
 // Rótulos legíveis dos papéis (ver docs/07; ALUNO = portal — Fase 3). Vieram de lib/roles.ts, que os reexporta.
+export const METRICA_META_LABEL: Readonly<Record<MetricaMeta, string>> = Object.freeze({
+  MATRICULAS: "Matrículas",
+  VALOR_GANHO: "Valor ganho",
+  EXPERIMENTAIS_REALIZADAS: "Experimentais realizadas",
+});
+
 export const PAPEL_LABEL: Readonly<Record<Papel, string>> = Object.freeze({
   ADMINISTRADOR: "Administrador",
   GERENTE_COMERCIAL: "Gerente comercial",
