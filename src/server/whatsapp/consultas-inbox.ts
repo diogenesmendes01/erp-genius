@@ -1,4 +1,4 @@
-import { Papel, type EtapaLead, type Prisma } from "@prisma/client";
+import { Papel, type AcaoAgenteIATipo, type EtapaLead, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { temPapel, transicaoManualPermitida, type UsuarioSessao } from "@/server/_shared";
@@ -14,6 +14,8 @@ import { contatoCorrespondeDestinoFinanceiro } from "./destinatario-atual";
 import { nomeDoAtendimento, nomeEFonteDoAtendimento, type FonteNome } from "./nome-contato";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil, type ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
 import { comContatoIndividual } from "./grupos";
+import { capacidadesAria } from "@/server/aria/permissoes-tela";
+import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 
 export interface ConversaResumo {
   /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
@@ -319,4 +321,39 @@ export async function contatoSoNoAlcance(usuario: UsuarioSessao, contatoId: stri
   if (temPapel(usuario, Papel.ADMINISTRADOR)) return true;
   const fora = await prisma.atendimentoWhatsApp.count({ where: { conversa: { contatoId }, NOT: await escopoAtendimentos(usuario) } });
   return fora === 0;
+}
+
+/** Estado da Aria no detalhe do atendimento (Task 29): pausa e sugestões pendentes de `AcaoAgenteIA` (fonte única). */
+export interface AriaDoAtendimento {
+  pausada: boolean;
+  motivo: MotivoPausaAtendimentoIA | null;
+  sugestoes: { id: string; acao: AcaoAgenteIATipo; resumo: string; expiraEm: string }[];
+}
+
+const RESUMO_MAX = 200;
+function resumoDaSugestao(a: { acao: AcaoAgenteIATipo; payload: Prisma.JsonValue; justificativa: string | null }): string {
+  const p = (a.payload && typeof a.payload === "object" && !Array.isArray(a.payload) ? a.payload : {}) as Record<string, unknown>;
+  const bruto = typeof p.texto === "string" && p.texto.trim() ? p.texto : a.justificativa?.trim() || ACAO_AGENTE_IA_LABEL[a.acao];
+  return bruto.length > RESUMO_MAX ? `${bruto.slice(0, RESUMO_MAX - 1)}…` : bruto;
+}
+
+/** null fora do escopo do usuário. Só quem decide o histórico da Aria recebe as sugestões; sugestão vencida não entra. */
+export async function carregarAriaDoAtendimento(usuario: UsuarioSessao, atendimentoId: string, agora: Date = new Date()): Promise<AriaDoAtendimento | null> {
+  const a = await prisma.atendimentoWhatsApp.findFirst({
+    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
+    select: { id: true, iaPausadaEm: true, iaPausaMotivo: true },
+  });
+  if (!a) return null;
+  const sugestoes = capacidadesAria(usuario).has("decidirHistorico")
+    ? await prisma.acaoAgenteIA.findMany({
+        where: { atendimentoId: a.id, status: "SUGERIDA", OR: [{ expiraEm: null }, { expiraEm: { gt: agora } }] },
+        orderBy: { criadoEm: "asc" },
+        select: { id: true, acao: true, payload: true, justificativa: true, expiraEm: true },
+      })
+    : [];
+  return {
+    pausada: a.iaPausadaEm !== null,
+    motivo: a.iaPausadaEm !== null ? a.iaPausaMotivo : null,
+    sugestoes: sugestoes.map((s) => ({ id: s.id, acao: s.acao, resumo: resumoDaSugestao(s), expiraEm: (s.expiraEm ?? agora).toISOString() })),
+  };
 }

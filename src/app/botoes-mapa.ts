@@ -1050,6 +1050,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Remover opt-out → perigo/sm",
     "<Botao> Registrar opt-out → secundario/sm",
   ],
+  "inbox/PainelAria.tsx": [
+    "<Botao> Devolver para Aria → secundario/sm",
+    "<Botao> Aprovar → primario/sm",
+    "<Botao> Rejeitar → perigo/sm",
+  ],
   "inbox/PainelTriagem.tsx": [
     "<button> Classificar esta mensagem → secundario/md",
     "<button> Registrar revisão → secundario/md",
