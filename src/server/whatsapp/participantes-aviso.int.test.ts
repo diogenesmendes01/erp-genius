@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { assinarInbox, iniciarEscuta, type AvisoInbox } from "@/server/inbox/barramento";
-import { criarFiltroDeAvisos } from "@/server/inbox/eventos-sse";
+import { criarFiltroDeAvisos, formatarSSE } from "@/server/inbox/eventos-sse";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { garantirAtendimento } from "./atendimentos";
 import { convidarParticipante, revogarParticipante } from "./acoes-atendimento";
@@ -60,6 +60,38 @@ describe("convite e revogação de participante avisam o SSE (atendimento.atuali
     expect((await revogarParticipante(conv.dado!.participanteId)).ok).toBe(true);
     await vi.waitFor(() => expect(r).toContainEqual({ tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId }), { timeout: 2000 });
     sair();
+  });
+
+  it("C1 da revisão do #223: a revogação chega ao ex-convidado por um aviso direcionado, sem vazar a terceiros", async () => {
+    const { v1, fin, a } = await cenario();
+    const outro = await criarUsuario([Papel.FINANCEIRO], "Fin Dois");
+    comoUsuario(v1);
+    const conv = await convidarParticipante({ atendimentoId: a.id, usuarioId: fin.id, podeEnviar: true, fim: emDias(2), motivo: "Dúvida sobre boleto" });
+    if (!conv.ok) throw new Error(conv.erro);
+    await pausa(300);
+    const filtroFin = criarFiltroDeAvisos(sessao(fin));
+    const filtroOutro = criarFiltroDeAvisos(sessao(outro));
+    const filtroV1 = criarFiltroDeAvisos(sessao(v1));
+    const { r, sair } = escutar();
+    expect((await revogarParticipante(conv.dado!.participanteId)).ok).toBe(true);
+    const direcionado: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId, paraUsuarioId: fin.id };
+    await vi.waitFor(() => expect(r).toContainEqual(direcionado), { timeout: 2000 });
+    await pausa(200);
+    sair();
+    const daRevogacao = r.filter((x) => x.atendimentoId === a.id);
+    // O ex-convidado (já fora do escopo) recebe o aviso direcionado e nada além dele.
+    const paraFin: AvisoInbox[] = [];
+    for (const x of daRevogacao) if (await filtroFin(x)) paraFin.push(x);
+    expect(paraFin).toEqual([direcionado]);
+    // Terceiro fora do escopo: nada. O responsável recebe o aviso comum, não o direcionado ao outro usuário.
+    for (const x of daRevogacao) expect(await filtroOutro(x)).toBe(false);
+    const paraV1: AvisoInbox[] = [];
+    for (const x of daRevogacao) if (await filtroV1(x)) paraV1.push(x);
+    expect(paraV1.length).toBeGreaterThan(0);
+    expect(paraV1.every((x) => x.paraUsuarioId === undefined)).toBe(true);
+    // O aviso só carrega ids, e o quadro SSE não repassa o destinatário.
+    expect(Object.keys(direcionado).sort()).toEqual(["atendimentoId", "conversaId", "mensagemId", "paraUsuarioId", "tipo"]);
+    expect(formatarSSE(direcionado)).toBe(`event: atendimento.atualizado\ndata: ${JSON.stringify({ tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId })}\n\n`);
   });
 
   it("convite recusado (rollback) não avisa", async () => {

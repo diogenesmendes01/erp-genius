@@ -60,6 +60,14 @@ describe("filtro de avisos do SSE", () => {
     expect(await filtro({ ...aviso(a), tipo: "atendimento.atualizado" })).toBe(false);
     expect(await filtro(aviso(a))).toBe(false);
   });
+  it("C1 da revisão do #223: aviso direcionado passa só para o destinatário, sem consultar o escopo", async () => {
+    const direcionado: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId, paraUsuarioId: fin.id };
+    expect(await criarFiltroDeAvisos(sess(fin))(direcionado)).toBe(true);
+    expect(await criarFiltroDeAvisos(sess(v1))(direcionado)).toBe(false);
+    expect(await criarFiltroDeAvisos(sess(v2))(direcionado)).toBe(false);
+    // Só atendimento.atualizado é direcionado: outro tipo com destinatário segue o escopo.
+    expect(await criarFiltroDeAvisos(sess(fin))({ ...direcionado, tipo: "mensagem.nova", mensagemId: "m1" })).toBe(false);
+  });
   it("C5: resync passa para qualquer usuário, sem consultar atendimento", async () => {
     expect(await criarFiltroDeAvisos(sess(fin))({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" })).toBe(true);
     expect(formatarSSE({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" })).toMatch(/^event: resync\n/);
@@ -79,5 +87,8 @@ describe("filtro de avisos do SSE", () => {
 describe("formato SSE", () => {
   it("event + data + linha em branco", () => {
     expect(formatarSSE(aviso(a))).toBe(`event: mensagem.nova\ndata: ${JSON.stringify(aviso(a))}\n\n`);
+  });
+  it("o destinatário de um aviso direcionado não sai no quadro", () => {
+    expect(formatarSSE({ ...aviso(a), tipo: "atendimento.atualizado", mensagemId: null, paraUsuarioId: "u9" })).not.toContain("u9");
   });
 });

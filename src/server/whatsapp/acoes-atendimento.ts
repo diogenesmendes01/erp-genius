@@ -5,6 +5,7 @@ import { Papel, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { CANAL_INBOX, type AvisoInbox } from "@/server/inbox/barramento";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
 import { escopoAtendimentos } from "./escopo";
@@ -255,13 +256,23 @@ async function avisarMudancaDeEscopo(tx: Prisma.TransactionClient, atendimentoId
   await tx.$executeRaw`UPDATE "AtendimentoWhatsApp" SET "id" = "id" WHERE "id" = ${atendimentoId}`;
 }
 
+/**
+ * Depois da revogação o ex-convidado está fora do escopo, e o filtro do SSE descartaria o `atendimento.atualizado`
+ * comum: este aviso direcionado (só ids, nenhum conteúdo da conversa) passa só para ele, o painel recarrega com 404
+ * e o compositor trava sem reabrir (C1 da revisão do #223). O NOTIFY, como o do trigger, só sai no commit.
+ */
+async function avisarRevogado(tx: Prisma.TransactionClient, atendimento: { id: string; conversaId: string }, usuarioId: string): Promise<void> {
+  const aviso: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: atendimento.id, mensagemId: null, conversaId: atendimento.conversaId, paraUsuarioId: usuarioId };
+  await tx.$executeRaw`SELECT pg_notify(${CANAL_INBOX}, ${JSON.stringify(aviso)})`;
+}
+
 /** Revoga na hora (revogadoEm = agora, sem delete). Quem revoga: o concedente, o gerente do setor ou o administrador. */
 export async function revogarParticipante(participanteId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const id = IdSchema.parse(participanteId);
     await prisma.$transaction(async (tx) => {
-      const p = await tx.participanteAtendimentoWhatsApp.findUnique({ where: { id }, include: { atendimento: { select: { id: true, finalidade: true } }, usuario: { select: { id: true, papeis: true } } } });
+      const p = await tx.participanteAtendimentoWhatsApp.findUnique({ where: { id }, include: { atendimento: { select: { id: true, finalidade: true, conversaId: true } }, usuario: { select: { id: true, papeis: true } } } });
       if (!p) throw new ErroRegra("Participante não encontrado.");
       const permitido = p.concedenteId === u.id || u.papeis.includes(Papel.ADMINISTRADOR) || ehGerenteDoSetor(u.papeis, p.atendimento.finalidade);
       if (!permitido) throw new ErroRegra(MSG_SEM_ALCADA);
@@ -269,6 +280,7 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
       const r = await tx.participanteAtendimentoWhatsApp.updateMany({ where: { id, revogadoEm: null }, data: { revogadoEm: agora } });
       if (r.count !== 1) throw new ErroRegra("Este convite já foi revogado.");
       await avisarMudancaDeEscopo(tx, p.atendimento.id);
+      await avisarRevogado(tx, p.atendimento, p.usuarioId);
       // Como devolver/atribuir: o que o revogado deixou pendente ou agendado fica CANCELADA, a menos que ele
       // ainda possa enviar neste atendimento por outro vínculo (responsável, gerente, outro convite).
       const aindaEnvia = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: p.atendimento.id }, await escopoAtendimentos(p.usuario, { enviar: true, agora })] } });

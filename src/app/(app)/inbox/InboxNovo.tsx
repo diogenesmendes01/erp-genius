@@ -77,9 +77,11 @@ export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaIn
 }
 
 /** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
-async function buscarPainel(id: string): Promise<DadosPainelSetor | null> {
+/** Painel do atendimento; "sem-acesso" no 404 (fora do escopo, ex.: convite revogado); null em outra falha. */
+async function buscarPainel(id: string): Promise<DadosPainelSetor | "sem-acesso" | null> {
   try {
     const r = await fetch(`/api/inbox/atendimentos/${encodeURIComponent(id)}/painel`, { cache: "no-store", credentials: "same-origin" });
+    if (r.status === 404) return "sem-acesso";
     return r.ok ? await r.json() as DadosPainelSetor : null;
   } catch { return null; }
 }
@@ -123,8 +125,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     // Recarga que falha (rede, 5xx) com um painel deste atendimento já carregado mantém o último conhecido: o
     // compositor não troca o campo pelo erro no meio da digitação nem esconde uma gravação (C2 da R1 do #220).
     // O erro com "Tentar de novo" fica para a carga inicial; o servidor continua decidindo cada envio.
-    void buscarPainel(selecionado).then((dado) => {
-      if (ativo) setPainelSetor((ant) => (!dado && ant?.id === selecionado && ant.dado ? ant : { id: selecionado, dado }));
+    // 404 numa recarga (acesso revogado, avisado pelo SSE): o último painel fica, com o compositor travado e sem ações
+    // (C1 da revisão do #223). 404 na carga inicial segue como erro.
+    void buscarPainel(selecionado).then((r) => {
+      if (!ativo) return;
+      setPainelSetor((ant) => {
+        const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
+        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false } : null };
+        return !r && conhecido ? ant! : { id: selecionado, dado: r };
+      });
     });
     return () => { ativo = false; };
   }, [selecionado, versaoPainel]);
