@@ -8,13 +8,40 @@ import { escopoAtendimentos } from "../whatsapp/escopo";
 
 type Tx = Prisma.TransactionClient;
 
-/** true se pausou agora; false se já estava pausado (idempotente, sem novo Evento). */
+/** Motivo gravado nas intenções da Aria canceladas porque ela saiu da conversa. */
+export const MOTIVO_ARIA_PAUSADA = "aria_pausada";
+
+/**
+ * Cancela as intenções da Aria (origem IA) ainda não enviadas do atendimento: resposta pendente,
+ * mensagem agendada por ela (ADIADA/PENDENTE com agendadaPara). `preservarIntencaoId` é a
+ * mensagem do próprio handoff, que precisa sair.
+ */
+export async function cancelarIntencoesDaAria(tx: Tx, atendimentoId: string, preservarIntencaoId: string | null = null): Promise<number> {
+  const r = await tx.intencaoMensagem.updateMany({
+    where: {
+      atendimentoId,
+      origem: "IA",
+      status: { in: ["PENDENTE", "ADIADA"] },
+      ...(preservarIntencaoId ? { id: { not: preservarIntencaoId } } : {}),
+    },
+    data: { status: "CANCELADA", motivoFalha: MOTIVO_ARIA_PAUSADA, despacharAposEm: null },
+  });
+  return r.count;
+}
+
+/**
+ * true se pausou agora; false se já estava pausado (idempotente, sem novo Evento).
+ * Em qualquer caso cancela, na mesma transação, as intenções pendentes da Aria no atendimento
+ * (uma pessoa assumiu: nada da Aria pode sair depois), exceto `preservarIntencaoId`.
+ */
 export async function pausarAriaNoAtendimento(
   tx: Tx,
   atendimentoId: string,
   motivo: MotivoPausaAtendimentoIA,
   autorId: string | null,
+  opcoes: { preservarIntencaoId?: string | null } = {},
 ): Promise<boolean> {
+  await cancelarIntencoesDaAria(tx, atendimentoId, opcoes.preservarIntencaoId ?? null);
   const r = await tx.atendimentoWhatsApp.updateMany({
     where: { id: atendimentoId, iaPausadaEm: null },
     data: { iaPausadaEm: new Date(), iaPausaMotivo: motivo },
@@ -44,7 +71,8 @@ export async function devolverParaAria(atendimentoId: string): Promise<Resultado
   return executarAcao(async () => {
     const u = await exigirSessao();
     await prisma.$transaction(async (tx) => {
-      const visivel = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u)] } });
+      // Devolver põe a Aria para FALAR com o contato: exige o escopo de envio, não só o de leitura.
+      const visivel = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { enviar: true })] } });
       if (visivel !== 1) throw new ErroRegra("Atendimento fora do seu escopo.");
       const r = await tx.atendimentoWhatsApp.updateMany({
         where: { id: atendimentoId, iaPausadaEm: { not: null } },

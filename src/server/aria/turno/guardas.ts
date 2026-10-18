@@ -30,7 +30,9 @@ export type MotivoBloqueio =
   | "OPT_OUT"
   | "OUTRO_SETOR"
   | "LINHA_COM_DONO"
-  | "SEM_TEXTO";
+  | "SEM_TEXTO"
+  /** Rajada: chegou fala mais nova do cliente no atendimento; o turno dela responde ao conjunto. */
+  | "FALA_SUPERADA";
 
 // Texto puro, ou mídia que pode carregar legenda (a legenda vira o texto do turno).
 const TIPOS_COM_TEXTO: ReadonlySet<TipoMensagem> = new Set(["TEXTO", "IMAGEM", "VIDEO", "DOCUMENTO"]);

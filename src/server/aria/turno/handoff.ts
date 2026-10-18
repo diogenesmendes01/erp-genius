@@ -130,7 +130,8 @@ export async function executarHandoff(tx: Tx, i: EntradaHandoff): Promise<AcaoAg
     where: { id: i.ctx.atendimentoId },
     data: { responsavelId: destinoId, status: proximoStatus(at.status, destinoId ? "ASSUMIDO" : "DEVOLVIDO", !!destinoId) },
   });
-  await pausarAriaNoAtendimento(tx, i.ctx.atendimentoId, "HANDOFF", null);
+  // A pausa cancela o que a Aria ainda tinha na fila, menos a mensagem deste handoff.
+  await pausarAriaNoAtendimento(tx, i.ctx.atendimentoId, "HANDOFF", null, { preservarIntencaoId: intencaoId });
   if (nota) {
     await registrarEvento(tx, {
       tipo: "NotaInterna",
