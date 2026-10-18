@@ -19,6 +19,7 @@ import {
   IconLayoutKanban,
   IconBuilding,
   IconChecklist,
+  IconSparkles,
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
@@ -39,6 +40,7 @@ const ICONS: Record<string, Icone> = {
   MessageCircle: IconMessageCircle,
   Building: IconBuilding,
   Checklist: IconChecklist,
+  Sparkles: IconSparkles,
 };
 
 /**
