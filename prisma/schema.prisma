@@ -404,10 +404,27 @@ enum StatusAtendimentoWhatsApp {
   ENCERRADO
 }
 
+enum RegraDistribuicao {
+  RODIZIO
+  MENOR_CARGA
+  MANUAL
+}
+
+enum TipoTemplate {
+  MODELO_AUTOMACAO
+  RESPOSTA_RAPIDA
+}
+
 // Prazo de primeira resposta por setor, em minutos (valores provisórios, Q3).
 model PrazoRespostaSetor {
   finalidade FinalidadeAtendimentoWhatsApp @id
   minutos Int
+  regraDistribuicao RegraDistribuicao @default(MANUAL)
+  participantesIds String[] @default([])
+  alertarResponsavel Boolean @default(true)
+  alertarGerente Boolean @default(false)
+  contarSoNoHorario Boolean @default(true)
+  ultimoAtribuidoId String?
   atualizadoEm DateTime @updatedAt
 }
 
@@ -2350,6 +2367,11 @@ model NumeroWhatsApp {
   triagemResponsavel   Usuario?         @relation("TriagemNumeroWhatsApp", fields: [triagemResponsavelId], references: [id], onDelete: SetNull)
   ativo        Boolean          @default(true)
   criadoEm     DateTime         @default(now())
+  perfilNome   String?
+  perfilRecado String?
+  perfilFotoUploadId String?
+  privacidade  Json?
+  temporariasSegundos Int       @default(0) // mensagens temporárias: desligadas por padrão
 
   setores             NumeroSetorWhatsApp[]
   conversas           ConversaWhatsApp[]
@@ -2678,6 +2700,11 @@ model TemplateWhatsApp {
   categoria      String         @default("utility")
   statusMeta     StatusTemplate @default(RASCUNHO)
   metaTemplateId String?
+  tipo           TipoTemplate   @default(MODELO_AUTOMACAO)
+  atalho         String?        @unique
+  ariaPodeUsar   Boolean        @default(false)
+  setor          FinalidadeAtendimentoWhatsApp?
+  arquivadoEm    DateTime?
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
 
