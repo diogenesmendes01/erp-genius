@@ -3123,3 +3123,9 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - `src/server/crm-config/tags-campos.ts` (`salvarTag`, `arquivarTag`, `salvarCampo`, `arquivarCampo`), `acoes-tags-campos.ts` (fronteira Server Action) e tela `configuracao/crm/tags-campos` (`TagsCamposPainel.tsx`). Eventos `TagSalva`/`TagArquivada` (agregado `Tag`) e `CampoSalvo`/`CampoArquivado` (agregado `CampoPersonalizado`), todos com `{de, para}`.
 - Adaptação ao schema real: o tipo "LISTA" do brief é `SELECAO`; a cor é o enum `CorTag` (não existe hex no modelo); arquivar tag = `ativo=false`, arquivar campo = `arquivadoEm`. Nome único ignora caixa e acento (comparação em código, por alvo nos campos). Trocar tipo/alvo com valores preenchidos é bloqueado. Arquivar campo exige digitar o nome e não apaga valores. Papéis: Admin e Gerente Comercial.
 - Nenhuma migration nova.
+
+### Fase 5F, Tasks 41 e 42 e fechamento do bloco — 2026-10-18
+
+- Task 41: respostas rápidas sobre `TemplateWhatsApp` (atalho, setor, uso pela Aria). Task 42: provedor de IA, modelos por tarefa, orçamento e triagem (só Admin), com provedor simulado; nenhuma chamada real à API da Anthropic. Correções da revisão final no commit `09c4cb68`.
+- Branch `claude/fase5-f-config-crm`, empilhada sobre `claude/fase5-a-fundacao` (Tasks 37 a 42).
+- Verificação em `/home/claude/wt/fase5f`: `tsc --noEmit` saída 0; `npm run lint` 0 erros e 40 avisos antigos; `npm test` 726 arquivos, 5365 testes verdes; integração relacionada (`vitest related -c vitest.integration.config.ts` sobre os 61 arquivos .ts/.tsx do diff): `vitest related` ficou inviável (o diff toca `trilha.ts` e consultas compartilhadas, que arrastam centenas de arquivos; interrompido por mim após 6 arquivos sem falha); rodados direto os 8 `*.int.test.ts` do bloco (`src/server/crm-config/*` e `whatsapp/{acoes-numero,financeiro-matricula,roteamento}`): 8 arquivos, 72 testes verdes. A suíte de integração completa segue com o integrador.
