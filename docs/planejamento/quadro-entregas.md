@@ -2945,3 +2945,11 @@ Branch `claude/fase5-b-config` (sobre `claude/fase5-a-fundacao`, main 6d6d33ee +
   - Integração, recorte (não é a suíte completa), banco do perfil `tester`: `npm run test:int -- src/server/aria`: saída 0; 6 arquivos, 45 testes verdes. `vitest related` sobre `aria/estado.ts` e `aria/conhecimento/busca.ts`: saída 0; 2 arquivos, 15 testes.
 - **Pendente para o integrador antes do merge:** `npm run test:int` completo (mais de 2 h, proibido nesta faixa), comparando com as falhas preexistentes conhecidas (sensíveis à data e o flake de `portal-aluno/preferencia-fuso`); confirmação do dono sobre a matriz.
 - **Estado**: implementado; aguarda a suíte completa, a confirmação da matriz e o integrador. Não concluído.
+
+### Fase 5B: verificação final do bloco antes do PR — 2026-10-18
+
+Branch `claude/fase5-b-config` (HEAD 9745f787), PR em rascunho empilhado sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 723 arquivos, 5328 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- `vitest related --run -c vitest.integration.config.ts` sobre os 15 .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 4 arquivos, 33 testes verdes (recorte, não a suíte completa).
