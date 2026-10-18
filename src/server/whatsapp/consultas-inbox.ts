@@ -33,6 +33,10 @@ export interface MensagemThread {
   /** Favorita do usuário da sessão (tabela pessoal). */
   favorita: boolean;
   clientMessageId: string | null;
+  /** Saída escrita pelo usuário da sessão (editar/apagar só valem para as próprias); ausente conta como falso. */
+  propria?: boolean;
+  /** Apagada para todos pelo motor (`apagadaEm`); o corpo fica guardado. Ausente conta como falso. */
+  apagada?: boolean;
 }
 export interface CobrancaAtivaThread {
   id: string; matriculaId: string; alunoId: string; alunoNome: string; moeda: string; vencimento: ReferenciaVencimentoCivil;
@@ -176,7 +180,8 @@ export async function carregarThread(usuario: UsuarioSessao, atendimentoId: stri
     mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
       midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
       templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-      participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId })) };
+      participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
+      propria: m.direcao === "SAIDA" && m.autorId === usuario.id, apagada: !!m.apagadaEm })) };
 }
 
 /** Botões de cadastro da conversa (os do Inbox antigo): criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */

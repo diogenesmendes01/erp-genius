@@ -994,6 +994,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Promessa de pagamento → secundario/sm",
     "<Botao> Registrar promessa → primario/sm",
   ],
+  "inbox/AcoesMensagem.tsx": [
+    "<Botao> Cancelar → fantasma/sm",
+    "<Botao> Salvar edição → primario/sm",
+    "<Botao> `Reagir com ${e}` → secundario/sm",
+    "<Botao> Remover minha reação → perigo/sm",
+    "<Botao> Fechar → fantasma/sm",
+  ],
   "inbox/NovoAtendimento.tsx": [
     "<button> Abrir atendimento → primario/lg",
   ],

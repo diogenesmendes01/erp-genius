@@ -172,7 +172,8 @@ export async function listarMensagensPagina(
   const mensagens: MensagemThread[] = pagina.map((m) => ({
     id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath, status: m.status, origem: m.origem,
     autorNome: m.autor?.nome ?? null, templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId }));
+    participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
+    propria: m.direcao === "SAIDA" && m.autorId === u.id, apagada: !!m.apagadaEm }));
   const primeira = pagina[0], ultima = pagina[pagina.length - 1];
   // Notas internas só na primeira carga (sem cursor), e só para quem pode ver o lead (LC-L02).
   const verNotas = !pos && atendimento.finalidade === "COMERCIAL" && !!atendimento.leadId

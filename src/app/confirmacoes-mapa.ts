@@ -219,6 +219,13 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "Fase 4D",
     efeito: "faz logout do número no motor: o número para de enviar e receber até novo pareamento por QR ou código",
   },
+  {
+    arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx",
+    modulo: "@/server/whatsapp/motor/acoes-mensagem",
+    acao: "apagarMensagemWhatsApp",
+    achado: "Fase 4D",
+    efeito: "apaga a mensagem para todos no WhatsApp do contato; não há como desfazer pela tela",
+  },
 ];
 
 /**

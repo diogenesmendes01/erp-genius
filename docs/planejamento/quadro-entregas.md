@@ -2898,6 +2898,30 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 - **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
 - **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).
 
+## Pendências não bloqueantes do #215 (C4) e do #217 (C6, C7) (18/10/2026)
+
+- Branch: `claude/pendencias-215-217` (base main 6d6d33ee). Cada item com teste falhando antes da correção.
+- **C4 do #215:** o alerta "Evento do motor parado" passa a medir o evento mais atrasado, não o de menor `seq`. O critério
+  de "parado" não mudou: sem backoff conta desde `recebidoEm`, em backoff conta desde a `proximaTentativaEm` vencida, sempre
+  além do limiar de 15 min. São duas consultas, cada uma ordenada pelo seu relógio, e vale a mais antiga das duas
+  (`saude.ts`). Teste em `saude.int.test.ts` com o evento de `seq` menor menos atrasado.
+- **C6 do #217:** o compositor do Inbox novo decide pelo `podeEnviar` da thread (`atendimentoVisivel(usuario, id, true)`), que
+  `carregarPainel` passa a devolver, e não mais por `podeExecutar("enviar")`, que libera todo mundo.
+  `InboxNovo` passa esse valor do painel do atendimento aberto à `ConversaAberta` (falso enquanto o painel carrega).
+  `podeEnviarNaConversa(item, podeEnviar)` continua barrando ENCERRADO. Testes de componente em `ConversaAberta.test.ts` e
+  de integração em `paineis.int.test.ts`: o responsável envia, o convidado só de leitura não envia, o convidado com envio envia.
+  Revisão: a secretaria responsável recebe `podeEnviar: false` quando o aluno do atendimento não tem o telefone do contato.
+  O envio real recusa no mesmo caso, porque `enviarTextoInbox` usa `conversaVisivel(…, true)`, alias da mesma função
+  `atendimentoVisivel`, e quem recusa é `destinatarioAtualDoAtendimento`. O painel está coerente com o envio.
+  `paineis-envio.int.test.ts` compara o painel com `enviarTextoInbox` em três casos: telefone do aluno igual ao do contato
+  (envia), aluno sem telefone ou com outro telefone (não envia) e secretaria sem aluno (envia).
+- **C7 do #217:** com o contato em opt-out (`atual.optOut`), o bloco "Retomar régua" some do painel (`AcoesContato`/`CobrancaContato`),
+  como no Inbox antigo. Pagamento e promessa continuam. Teste de interação em `AcoesContato.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (714 arquivos, 5276 testes). Integração com saída 0 em `saude.int.test.ts` (20 testes) e em
+  `src/server/inbox/` (7 arquivos, 64 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
+  foi rodado; fica para o integrador.
+
 ## Fase 4D — verificação final do bloco (18/10/2026)
 
 - Branch `claude/fase4-d-inbox-motor` (PR empilhado sobre `claude/fase4-c-webhook`), tarefas 18 a 24b do plano `04-fase-motor.md`.
@@ -2909,3 +2933,22 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
   `motor/conteudo`, `motor/grupo-envio`, `motor/presenca`): 89 testes verdes; e `despachante-motor/comercial/agendada` + `inbox`:
   43 testes verdes. Sem falhas novas.
 **Estado**: Implementado; aguardando revisão e merge (depois da 4C).
+
+**Base trocada para `main` e correções da R1 do #219 (18/10/2026)**
+
+- **Merges do `main`:** dois merges, `2e4efada` (#216 e #217) e o de `ad4142cd` (#218).
+  - Conflitos: este quadro (ficam os blocos de cada PR), `Compositor.test.ts` (testes de anexo e áudio do #217 junto com os de capacidades da 4D) e `ConversaAberta.tsx` (o `podeEnviar` do painel do #218 junto com as capacidades da 4D).
+  - A 4D não mexia no Inbox antigo removido pela 3F. Sem migration nova.
+- **B1:** o Inbox novo decide os recursos do motor por `ItemListaInbox.capacidades`, calculado com `capacidadesDoNumero` como em `ThreadConversa.capacidades`. Antes decidia por `recursoDisponivel(item.driver)`, que libera MOTOR com a sessão caída. O compositor recebe `capacidades`.
+- **C4:** `COMANDOS_MENSAGEM_LIGADOS = ["copiar", "reagir", "editar", "apagar"]`, filtrados por mensagem em `comandosDaMensagem`.
+  - Cada comando exige a capacidade do número, o envio liberado e a mensagem não apagada. Editar e apagar valem só na própria mensagem de saída, e editar só em texto. `MensagemThread` ganha `propria` e `apagada`.
+  - Os diálogos ficam em `inbox/AcoesMensagem.tsx`. Apagar roda em `ConfirmarAcao` e entrou na lista fechada.
+  - Encaminhar fica fora: falta a escolha da conversa de destino.
+- **C6:** `criarGrupoWhatsApp` confere `grupoNovoNoEscopo`, que tem os mesmos ramos de `escopoGrupos`. Teste em `motor/acoes-admin.int.test.ts`.
+- Verificação num banco descartável `erp_genius_test_fix219` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: 0 erros e 43 avisos já existentes.
+  - `npm test`: 718 arquivos e 5314 testes verdes, saída 0.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp`): 59 arquivos e 473 testes verdes, saída 0.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
