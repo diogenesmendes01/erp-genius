@@ -4,6 +4,18 @@ import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+// Falha simulada na atribuição (C9 da revisão do #233): erro de banco DENTRO da transação do inbound.
+const falha = vi.hoisted(() => ({ atribuicao: false }));
+vi.mock("@/server/crm-config/distribuicao", async (orig) => {
+  const real = await orig<typeof import("@/server/crm-config/distribuicao")>();
+  return {
+    ...real,
+    atribuirAutomaticamente: async (tx: import("@prisma/client").Prisma.TransactionClient, id: string) => {
+      if (falha.atribuicao) await tx.$executeRawUnsafe("SELECT 1/0");
+      return real.atribuirAutomaticamente(tx, id);
+    },
+  };
+});
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
@@ -34,6 +46,7 @@ const eventos = async () => (await eventosDo("ConfigSetorAtendimento", "COMERCIA
 const ultimoEvento = async (tipo: string) => (await eventos()).filter((e) => e.tipo === tipo).at(-1)!;
 
 beforeEach(async () => {
+  falha.atribuicao = false;
   await truncarBanco();
   admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
   gerente = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
@@ -166,5 +179,27 @@ describe("Distribuição e SLA por setor", () => {
     const semAtribuir = await abrir(false);
     expect(semAtribuir.responsavelId).toBeNull();
     expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } })).ultimoAtribuidoId).toBe(v2.id);
+  });
+
+  it("falha_de_banco_na_atribuicao_do_inbound_nao_derruba_a_transacao_e_fica_na_fila_do_setor", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
+    falha.atribuicao = true;
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const numero = await prisma.numeroWhatsApp.findUniqueOrThrow({ where: { id: numeroId } });
+      expect(await processarMensagemNormalizada({
+        numeroProviderRef: numero.providerRef, contatoWaId: "50691110002", providerMessageId: "wamid.falha.atribuicao",
+        corpo: "Oi, quero saber dos cursos", tipo: "TEXTO", driver: "MOTOR", fromMe: false, quando: new Date(),
+      })).toBe("gravada");
+      // A mensagem foi gravada e ligada ao atendimento, que ficou na fila do setor, sem responsável.
+      const m = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "wamid.falha.atribuicao" } });
+      expect(m.atendimentoId).not.toBeNull();
+      expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: m.atendimentoId! } })).toMatchObject({ finalidade: "COMERCIAL", responsavelId: null });
+      expect((await eventos()).some((e) => e.tipo === "AtendimentoAtribuido")).toBe(false);
+      expect((await prisma.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: "COMERCIAL" } })).ultimoAtribuidoId).toBeNull();
+      expect(log).toHaveBeenCalledWith(expect.stringContaining("[distribuicao]"), expect.objectContaining({ atendimentoId: m.atendimentoId }));
+    } finally {
+      log.mockRestore();
+    }
   });
 });
