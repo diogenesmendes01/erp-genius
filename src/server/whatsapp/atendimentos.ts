@@ -9,7 +9,7 @@ import { comContatoIndividual } from "./grupos";
 import { setoresDoNumero } from "./numero-setor";
 import { registrarEvento } from "@/server/_shared";
 import { atribuirAutomaticamente } from "@/server/crm-config/distribuicao";
-import { comSavepoint } from "./savepoint";
+import { comSavepoint, resumoDoErro } from "./savepoint";
 import { MSG_FINANCEIRO_EXIGE_MATRICULA, MSG_MATRICULA_DE_OUTRO_ALUNO, MSG_MATRICULA_EXIGE_ALUNO } from "./erro-regra-atendimento";
 
 export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
@@ -98,7 +98,14 @@ export async function atendimentoDoInbound(
   // Abertura sem responsável: a distribuição do setor (Fase 5F) atribui só no 1º inbound DO CONTATO.
   // Mensagem `fromMe` (celular da escola) e chamada recebida passam `atribuir: false` para não
   // consumir a vez do rodízio nem dar o atendimento a outra pessoa; sem regra, fica na fila.
-  if (id && opcoes.atribuir) await atribuirAutomaticamente(tx, id);
+  // Num SAVEPOINT, como na abertura pela triagem: um erro de banco no rodízio não derruba a transação do
+  // inbound; o atendimento fica na fila do setor, sem responsável (C9 da revisão do #233).
+  if (id && opcoes.atribuir) {
+    await comSavepoint(tx, "atribuir_setor", () => atribuirAutomaticamente(tx, id), (e) => {
+      console.error("[distribuicao] atribuição automática no inbound falhou; atendimento fica na fila do setor:", { atendimentoId: id, erro: resumoDoErro(e) });
+      return null;
+    });
+  }
   return id;
 }
 
