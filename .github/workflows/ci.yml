@@ -1,4 +1,4 @@
-# CI: typecheck, lint e testes unitários em cada PR para a main e em cada push na main.
+# CI: typecheck, lint, testes unitários e build de produção em cada PR para a main e em cada push na main.
 # Só CI — deploy (CD) fica fora deste workflow.
 name: CI
 
@@ -90,3 +90,26 @@ jobs:
         run: npx next typegen
       - name: Testes unitários (npm test — vitest, config padrão, sem *.int.test.ts)
         run: npm test
+
+  build:
+    # Build de produção do Next (o mesmo `npm run build` do Dockerfile). Pega o que tsc, lint e testes não
+    # pegam: no #234, componentes "use client" importavam módulos de servidor com Prisma e só o
+    # `next build` quebrava. Usa o DATABASE_URL de teste do topo; nenhuma página conecta em banco no build.
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Build de produção (npm run build — next build)
+        # O next build roda o checker de tipos e esbarra no mesmo heap do typecheck.
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
+        run: npm run build
