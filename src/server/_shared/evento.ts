@@ -56,7 +56,15 @@ export type AgregadoTipo =
   | "Tarefa"
   | "Tag"
   | "CampoPersonalizado"
-  | "FiltroSalvo";
+  | "FiltroSalvo"
+  // Fase 5 (ADR-F5-01): Aria, relatórios e configurações do CRM.
+  | "AgenteIA"
+  | "VersaoAgenteIA"
+  | "AcaoAgenteIA"
+  | "FonteConhecimento"
+  | "ConfigIA"
+  | "MetaComercial"
+  | "ConfigSetorAtendimento";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
