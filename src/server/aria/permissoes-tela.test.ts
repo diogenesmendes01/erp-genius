@@ -37,6 +37,16 @@ describe("permissoes-tela", () => {
   });
   it("gerente_sem_alcada_nao_sobe_desconto", () =>
     expect(() => validarAlteracaoPorPapel(gerente, base, comDesconto(base, "MATRICULA", 25))).toThrow(ErroPermissao));
+  it("gerente_desconto_sem_aprovacao_tambem_respeita_alcada", () => {
+    const sem = (c: ConfigAria, t: "MATRICULA" | "MENSALIDADE", pct: number): ConfigAria => ({
+      ...c, politicas: { ...c.politicas, [t]: { ...c.politicas[t], descontoSemAprovacaoPct: pct } },
+    });
+    expect(() => validarAlteracaoPorPapel(gerente, base, sem(base, "MATRICULA", 20))).toThrow(ErroPermissao);
+    expect(() => validarAlteracaoPorPapel(gerente, base, sem(base, "MENSALIDADE", 11))).toThrow(ErroPermissao);
+    const g = { ...gerente, limiteDescontoMensalidadePct: 15, limiteDescontoTaxaPct: 15 };
+    expect(() => validarAlteracaoPorPapel(g, base, sem(base, "MENSALIDADE", 15))).not.toThrow();
+    expect(() => validarAlteracaoPorPapel(g, base, sem(base, "MENSALIDADE", 16))).toThrow(ErroPermissao);
+  });
   it("admin_pode_tudo", () =>
     expect(() => validarAlteracaoPorPapel({ ...admin, limiteDescontoTaxaPct: null, limiteDescontoMensalidadePct: null }, base, { ...comConfianca(base, { executaAPartirDe: 60 }), matriz: PREDEFINICOES.AUTONOMO })).not.toThrow());
   it("vendedor_nao_altera", () =>

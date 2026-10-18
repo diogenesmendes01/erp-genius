@@ -67,9 +67,16 @@ export function validarAlteracaoPorPapel(
     MENSALIDADE: u.limiteDescontoMensalidadePct ?? 0,
   } as const;
   for (const tipo of ["MATRICULA", "MENSALIDADE"] as const) {
-    const novo = depois.politicas[tipo].descontoComAprovacaoPct;
-    if (novo !== antes.politicas[tipo].descontoComAprovacaoPct && novo > tetos[tipo]) {
-      throw new ErroPermissao(`O desconto com aprovação de ${tipo === "MATRICULA" ? "matrícula" : "mensalidade"} excede a sua alçada.`);
+    const rotulo = tipo === "MATRICULA" ? "matrícula" : "mensalidade";
+    const campos = [
+      ["descontoComAprovacaoPct", "com aprovação"],
+      ["descontoSemAprovacaoPct", "sem aprovação"],
+    ] as const;
+    for (const [campo, desc] of campos) {
+      const novo = depois.politicas[tipo][campo];
+      if (novo !== antes.politicas[tipo][campo] && novo > tetos[tipo]) {
+        throw new ErroPermissao(`O desconto ${desc} de ${rotulo} excede a sua alçada.`);
+      }
     }
   }
 }
