@@ -8,7 +8,7 @@ import { montarContextoTurno, montarSistema, ocultarDadosPessoais, type Contexto
 import { destinoDaAcao } from "./decisao";
 import { executarAcaoCrm, executarResposta } from "./executor";
 import { gatilhoDeHandoff } from "./gatilhos";
-import { forcarSoSugerir, motivoParaNaoAtuar, type MotivoBloqueio, type SituacaoGuarda } from "./guardas";
+import { forcarSoSugerir, motivoParaNaoAtuar, TIPOS_COM_TEXTO, type MotivoBloqueio, type SituacaoGuarda } from "./guardas";
 import { executarHandoff } from "./handoff";
 import { ESQUEMA_SAIDA_CONVERSA, normalizarSaida, type MotivoHandoff, type SaidaModelo } from "./tipos";
 
@@ -101,11 +101,14 @@ export async function processarTurnoAria(mensagemId: string, deps: DepsTurno = {
   }
 }
 
-/** Há inbound mais novo (não apagado) no mesmo atendimento depois desta âncora. */
+/** Só inbound que a Aria responderia supera outro (áudio/figurinha param em SEM_TEXTO e não respondem por ela). */
+const tiposQueSuperam = () => ({ in: [...TIPOS_COM_TEXTO] });
+
+/** Há inbound mais novo (não apagado, de tipo que a Aria responde) no mesmo atendimento depois desta âncora. */
 async function falaSuperada(atendimentoId: string, criadoEm: Date, ancoraId: string): Promise<boolean> {
   const n = await prisma.mensagemWhatsApp.count({
     where: {
-      atendimentoId, direcao: "ENTRADA", apagadaEm: null, id: { not: ancoraId },
+      atendimentoId, direcao: "ENTRADA", apagadaEm: null, id: { not: ancoraId }, tipo: tiposQueSuperam(),
       OR: [{ criadoEm: { gt: criadoEm } }, { criadoEm, id: { gt: ancoraId } }],
     },
   });
@@ -349,6 +352,7 @@ export async function reprocessarTurnosPendentes(agora: Date = new Date()): Prom
     where: {
       direcao: "ENTRADA",
       apagadaEm: null,
+      tipo: tiposQueSuperam(),
       atendimentoId: { not: null },
       criadoEm: { gte: new Date(agora.getTime() - JANELA_REPROCESSO_MS), lte: new Date(agora.getTime() - ATRASO_REPROCESSO_MS) },
       atendimento: { finalidade: "COMERCIAL", encerradoEm: null, iaPausadaEm: null },
@@ -369,7 +373,7 @@ export async function reprocessarTurnosPendentes(agora: Date = new Date()): Prom
     if (comTurno.has(m.id)) continue;
     // Só a última fala do cliente: uma pergunta antiga não deve ser respondida fora de hora.
     const posterior = await prisma.mensagemWhatsApp.count({
-      where: { atendimentoId: m.atendimentoId, direcao: "ENTRADA", apagadaEm: null, criadoEm: { gt: m.criadoEm } },
+      where: { atendimentoId: m.atendimentoId, direcao: "ENTRADA", apagadaEm: null, tipo: tiposQueSuperam(), criadoEm: { gt: m.criadoEm } },
     });
     if (posterior > 0) continue;
     try {
