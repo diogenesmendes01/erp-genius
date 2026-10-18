@@ -26,8 +26,10 @@ export interface PropsConversaAberta {
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
   conversa: ConversaHook;
-  /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); falso enquanto carrega. */
-  podeEnviar: boolean;
+  /** O podeEnviar da thread, vindo do painel do atendimento (`atendimentoVisivel` com envio); null enquanto carrega. */
+  podeEnviar: boolean | null;
+  /** O painel não carregou: "Tentar de novo" do compositor (C2 da revisão do #218). */
+  falhaPermissao?: () => void;
   destinos?: DestinoTransferencia[];
   /** Triagem do número (a quem `listarTriagemWhatsApp` aceita) e revisão de envio incerto (administrador); nulos para os demais. */
   triagem?: ItemTriagem[] | null;
@@ -75,11 +77,11 @@ export function comandosDaMensagem(
  * envio, convite com envio, destinatário atual) e com o atendimento aberto. `podeExecutar("enviar")` não serve:
  * libera todo mundo (C6 do #217).
  */
-export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeEnviar: boolean): boolean {
-  return podeEnviar && item.status !== "ENCERRADO";
+export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeEnviar: boolean | null): boolean | null {
+  return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
@@ -92,7 +94,8 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, dest
   const transferido = origemId && origem.de === origemId ? textoOrigem(origem.setor) : null;
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread } | null>(null);
   const capacidades = item?.capacidades ?? [];
-  const envioLiberado = !!item && podeEnviarNaConversa(item, podeEnviar);
+  // null (carregando) só chega ao compositor; os comandos da mensagem exigem o envio confirmado.
+  const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
 
   return (
     <>
@@ -139,7 +142,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, dest
           estimatedHeight={72}
           scrollRef={rolagem}
           renderItem={(m) => (
-            <BalaoMensagem m={m} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado)} recursos={(r) => capacidades.includes(r)}
+            <BalaoMensagem m={m} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
               aoComando={(c) => {
                 if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo);
                 else if (c === "reagir" || c === "editar" || c === "apagar") setAcaoMensagem({ acao: c, m });
@@ -152,6 +155,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, dest
           atendimentoId={item.id}
           modo="responder"
           podeEnviar={envioLiberado}
+          falhaPermissao={item.status === "ENCERRADO" ? undefined : falhaPermissao}
           capacidades={capacidades}
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
