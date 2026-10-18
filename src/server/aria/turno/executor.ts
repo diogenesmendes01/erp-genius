@@ -7,7 +7,7 @@ import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { payloadDaAria } from "../ator";
 import { configPadrao, type ConfigAria, type ModoAcao } from "../config-schema";
 import { versaoPublicada } from "../versoes";
-import { APRESENTACAO, type ContextoTurno } from "./contexto";
+import { APRESENTACAO, montarContextoTurno, type ContextoTurno } from "./contexto";
 import { avaliarDesconto, solicitarAprovacaoDesconto } from "./desconto";
 import type { AcaoProposta, SaidaModelo } from "./tipos";
 import { valoresNaoAutorizados, type ValoresPermitidos } from "./valores";
@@ -30,14 +30,14 @@ export interface EntradaResposta {
   politicas?: ConfigAria["politicas"];
 }
 
-const POLITICAS_PADRAO: ConfigAria["politicas"] = {
+export const POLITICAS_PADRAO: ConfigAria["politicas"] = {
   MATRICULA: { descontoSemAprovacaoPct: 10, descontoComAprovacaoPct: 20 },
   MENSALIDADE: { descontoSemAprovacaoPct: 10, descontoComAprovacaoPct: 20 },
   parcelasMax: 10,
   validadePropostaDias: 7,
 };
 
-function permitidos(ctx: ContextoTurno, politicas: ConfigAria["politicas"]): ValoresPermitidos {
+export function permitidos(ctx: ContextoTurno, politicas: ConfigAria["politicas"]): ValoresPermitidos {
   return {
     valores: ctx.precos.map((p) => p.valor),
     percentuais: [
@@ -48,6 +48,32 @@ function permitidos(ctx: ContextoTurno, politicas: ConfigAria["politicas"]): Val
     ],
     parcelas: Array.from({ length: politicas.parcelasMax }, (_, i) => i + 1),
   };
+}
+
+/** URL interna do documento da base se ele ainda pode ser enviado ao lead; senão null. */
+async function urlDocumentoEnviavel(tx: Tx, documentoId: string): Promise<string | null> {
+  const fonte = await tx.fonteConhecimento.findUnique({
+    where: { id: documentoId },
+    select: {
+      tipo: true,
+      status: true,
+      enviavelAoLead: true,
+      arquivadaEm: true,
+      validoAte: true,
+      registroUpload: { select: { url: true } },
+    },
+  });
+  const url = fonte?.registroUpload?.url ?? null;
+  const enviavel =
+    !!fonte &&
+    fonte.tipo === "ARQUIVO" &&
+    fonte.status === "PRONTA" &&
+    fonte.enviavelAoLead &&
+    !fonte.arquivadaEm &&
+    (!fonte.validoAte || fonte.validoAte.getTime() > Date.now()) &&
+    !!url &&
+    url.startsWith("/api/files/");
+  return enviavel ? url : null;
 }
 
 /** Responde (ou sugere resposta) como IntencaoMensagem reativa de origem IA, dentro da transação recebida. */
@@ -66,29 +92,8 @@ export async function executarResposta(tx: Tx, i: EntradaResposta): Promise<{ ac
 
   let midiaPath: string | null = null;
   if (i.documentoId) {
-    const fonte = await tx.fonteConhecimento.findUnique({
-      where: { id: i.documentoId },
-      select: {
-        tipo: true,
-        status: true,
-        enviavelAoLead: true,
-        arquivadaEm: true,
-        validoAte: true,
-        registroUpload: { select: { url: true } },
-      },
-    });
-    const url = fonte?.registroUpload?.url ?? null;
-    const enviavel =
-      !!fonte &&
-      fonte.tipo === "ARQUIVO" &&
-      fonte.status === "PRONTA" &&
-      fonte.enviavelAoLead &&
-      !fonte.arquivadaEm &&
-      (!fonte.validoAte || fonte.validoAte.getTime() > Date.now()) &&
-      !!url &&
-      url.startsWith("/api/files/");
-    if (!enviavel) return { bloqueada: "DOCUMENTO_NAO_ENVIAVEL" };
-    midiaPath = url;
+    midiaPath = await urlDocumentoEnviavel(tx, i.documentoId);
+    if (!midiaPath) return { bloqueada: "DOCUMENTO_NAO_ENVIAVEL" };
   }
 
   const corpo = i.ctx.primeiraDaAria ? `${APRESENTACAO(i.nomeAria)} ${i.texto}` : i.texto;
@@ -139,6 +144,55 @@ export async function executarResposta(tx: Tx, i: EntradaResposta): Promise<{ ac
     });
   }
   return { acao: ligada };
+}
+
+/**
+ * Aprovação de uma resposta SUGERIDA (Task 24): revalida pausa, valores e documento no momento da
+ * decisão e cria a IntencaoMensagem reativa de origem IA ligada à ação já gravada.
+ */
+export async function efetivarRespostaSugerida(tx: Tx, acao: AcaoAgenteIA, politicas?: ConfigAria["politicas"]): Promise<{ eventoId: string }> {
+  if (!acao.atendimentoId) throw new ErroRegra("A ação não tem atendimento.");
+  const atendimentoId = acao.atendimentoId;
+  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${atendimentoId} FOR UPDATE`;
+  const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId }, select: { iaPausadaEm: true, encerradoEm: true } });
+  if (at.iaPausadaEm) throw new ErroRegra("A Aria está pausada neste atendimento: uma pessoa já assumiu a conversa.");
+  if (at.encerradoEm) throw new ErroRegra("O atendimento já foi encerrado.");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload gravado por executarResposta
+  const payload = (acao.payload ?? {}) as Record<string, any>;
+  const texto = String(payload.texto ?? "");
+  const documentoId: string | null = payload.documentoId ?? null;
+  const ctx = await montarContextoTurno(atendimentoId, tx);
+  const pol = politicas ?? (await versaoPublicada(tx))?.config.politicas ?? POLITICAS_PADRAO;
+  if (valoresNaoAutorizados(texto, permitidos(ctx, pol)).length > 0) throw new ErroRegra("O texto cita um valor que não está mais autorizado.");
+  let midiaPath: string | null = null;
+  if (documentoId) {
+    midiaPath = await urlDocumentoEnviavel(tx, documentoId);
+    if (!midiaPath) throw new ErroRegra("O documento não pode mais ser enviado ao lead.");
+  }
+  const intencao = await tx.intencaoMensagem.create({
+    data: {
+      numeroId: ctx.numeroId,
+      contatoId: ctx.contatoId,
+      atendimentoId,
+      leadId: ctx.oportunidade?.id ?? null,
+      origem: "IA",
+      reativa: true,
+      status: "PENDENTE",
+      tipo: documentoId ? "DOCUMENTO" : "TEXTO",
+      midiaPath,
+      corpoRenderizado: texto,
+      acaoAgenteIAId: acao.id,
+    },
+  });
+  await tx.acaoAgenteIA.update({ where: { id: acao.id }, data: { intencaoId: intencao.id } });
+  const evento = await registrarEvento(tx, {
+    tipo: "AriaRespondeu",
+    agregadoTipo: "AtendimentoWhatsApp",
+    agregadoId: atendimentoId,
+    autorId: null,
+    payload: payloadDaAria(acao.id, { intencaoId: intencao.id, documento: !!documentoId, aprovada: true }),
+  });
+  return { eventoId: evento.id };
 }
 
 // ---------------------------------------------------------------------------------------------
