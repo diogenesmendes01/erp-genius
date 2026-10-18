@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { atendimentoVisivel } from "../atendimentos";
 import { despacharFila, despacharMensagemGrupo } from "../despachante";
-import { escopoGrupos } from "../escopo";
+import { escopoGrupos, grupoNovoNoEscopo } from "../escopo";
 import { randomUUID } from "node:crypto";
 import { contentTypePorExtensao } from "@/lib/uploads";
 import { midiaSaidaDoAutor } from "../midia";
@@ -351,6 +351,8 @@ export async function criarGrupoWhatsApp(input: { numeroId: string; nome: string
     if (numero.driver !== "MOTOR") throw new ErroRegra("Este canal não cria grupos.");
     exigirMotorConectado(numero);
     if (dados.turmaId && !(await prisma.turma.findUnique({ where: { id: dados.turmaId }, select: { id: true } }))) throw new ErroRegra("Turma não encontrada.");
+    // Mesmo critério do escopoGrupos (o de alterarParticipantesGrupo): o grupo criado tem de ficar no escopo de quem cria.
+    if (!(await grupoNovoNoEscopo(u, { numeroId: numero.id, turmaId: dados.turmaId ?? null }))) throw new ErroRegra("Número ou turma fora do seu escopo.");
     let criado: { id?: string; subject?: string } | undefined;
     try {
       criado = await executarAcaoMotor(numero.providerRef ?? numero.id, "group.create", { subject: dados.nome, participants: dados.participantesE164.map(jidDe) });
