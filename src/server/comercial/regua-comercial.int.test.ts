@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Papel, type DriverWhatsApp, type StatusTemplate } from "@prisma/client";
+import { DriverWhatsApp, Papel, type StatusTemplate } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
@@ -68,7 +68,7 @@ async function seedTemplates(statusMeta: StatusTemplate) {
 describe("salvarReguaComercial × ordem canônica da cadência", () => {
   it("cadência completa e crescente é aceita e materializa os 5 degraus", async () => {
     await gerenteAutenticado();
-    const numero = await seedRemetente("BAILEYS");
+    const numero = await seedRemetente(DriverWhatsApp.MOTOR);
 
     const r = await salvarReguaComercial(payload({ numeroRemetenteId: numero.id }));
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
@@ -143,7 +143,7 @@ describe("salvarReguaComercial × cadência de offsets NEGATIVOS (pré-experimen
 
   it("offsets de fábrica (-1440 então -120) são aceitos e materializam os 2 degraus", async () => {
     await gerenteAutenticado();
-    const numero = await seedRemetente("BAILEYS");
+    const numero = await seedRemetente(DriverWhatsApp.MOTOR);
 
     const r = await salvarReguaComercial(
       payload({ chave: CHAVE_PRE_EXPERIMENTAL, numeroRemetenteId: numero.id, degraus: cadenciaPreExperimental() }),
@@ -169,43 +169,33 @@ describe("salvarReguaComercial × cadência de offsets NEGATIVOS (pré-experimen
   });
 });
 
-describe("salvarReguaComercial × template aprovado no remetente OFICIAL", () => {
-  it("META_CLOUD sem template nos degraus ativos: armar em SHADOW é recusado", async () => {
+describe("salvarReguaComercial × remetente", () => {
+  it("remetente de driver legado: armar em SHADOW ou ATIVA é recusado, só o motor envia", async () => {
     await gerenteAutenticado();
-    const numero = await seedRemetente("META_CLOUD");
+    const numero = await seedRemetente(DriverWhatsApp.META_CLOUD);
 
-    const r = await salvarReguaComercial(payload({ estado: "SHADOW", numeroRemetenteId: numero.id }));
-    expect(r.ok).toBe(false);
-    expect((r as { erro: string }).erro).toContain("aprovado na Meta");
+    for (const estado of ["SHADOW", "ATIVA"] as const) {
+      const r = await salvarReguaComercial(payload({ estado, numeroRemetenteId: numero.id }));
+      expect(r.ok).toBe(false);
+      expect((r as { erro: string }).erro).toContain("Só números do motor WhatsApp enviam a régua");
+    }
     expect(await prisma.politicaComercial.count()).toBe(0);
+    // Desligada continua salvando (nada é armado).
+    const desligada = await salvarReguaComercial(payload({ estado: "DESLIGADA", numeroRemetenteId: numero.id }));
+    expect(desligada.ok).toBe(true);
   });
 
-  it("META_CLOUD com templates ainda EM_REVISAO: armar em ATIVA é recusado", async () => {
+  it("no motor a mesma cadência sem template nenhum arma (texto de fábrica)", async () => {
     await gerenteAutenticado();
-    const numero = await seedRemetente("META_CLOUD");
-    const templates = await seedTemplates("EM_REVISAO");
-    const degraus = cadenciaFabrica().map((d) => ({ ...d, templateId: templates.get(d.passo) }));
+    const numero = await seedRemetente(DriverWhatsApp.MOTOR);
 
-    const r = await salvarReguaComercial(payload({ estado: "ATIVA", numeroRemetenteId: numero.id, degraus }));
-    expect(r.ok).toBe(false);
-    expect((r as { erro: string }).erro).toContain("aprovado na Meta");
-    expect(await prisma.politicaComercial.count()).toBe(0);
-  });
-
-  it("contra-prova: com todos os templates APROVADOS, a régua arma no oficial", async () => {
-    await gerenteAutenticado();
-    const numero = await seedRemetente("META_CLOUD");
-    const templates = await seedTemplates("APROVADO");
-    const degraus = cadenciaFabrica().map((d) => ({ ...d, templateId: templates.get(d.passo) }));
-
-    const r = await salvarReguaComercial(payload({ estado: "ATIVA", numeroRemetenteId: numero.id, degraus }));
+    const r = await salvarReguaComercial(payload({ estado: "ATIVA", numeroRemetenteId: numero.id }));
     expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
-    expect((await prisma.politicaComercial.findUniqueOrThrow({ where: { chave: CHAVE_LEAD_NOVO } })).estado).toBe("ATIVA");
   });
 
-  it("degrau INATIVO sem template não trava o oficial (a exigência é só dos ativos)", async () => {
+  it("degrau INATIVO sem template não trava o motor", async () => {
     await gerenteAutenticado();
-    const numero = await seedRemetente("META_CLOUD");
+    const numero = await seedRemetente(DriverWhatsApp.MOTOR);
     const templates = await seedTemplates("APROVADO");
     const degraus = cadenciaFabrica().map((d) =>
       d.passo === "+7d" ? { ...d, ativo: false } : { ...d, templateId: templates.get(d.passo) },
@@ -216,13 +206,5 @@ describe("salvarReguaComercial × template aprovado no remetente OFICIAL", () =>
     // O degrau desligado sai da política CARREGADA (o motor não o enxerga), mas continua gravado.
     const politica = await carregarPoliticaComercial();
     expect(politica.degraus.map((d) => d.passo)).not.toContain("+7d");
-  });
-
-  it("no BAILEYS a mesma cadência sem template nenhum arma (texto livre — Camada 2 não vale)", async () => {
-    await gerenteAutenticado();
-    const numero = await seedRemetente("BAILEYS");
-
-    const r = await salvarReguaComercial(payload({ estado: "ATIVA", numeroRemetenteId: numero.id }));
-    expect(r.ok, r.ok ? "" : `falhou: ${(r as { erro?: string }).erro}`).toBe(true);
   });
 });

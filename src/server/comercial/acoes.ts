@@ -1,5 +1,6 @@
 "use server";
 
+import { driverAceitaAutomacao } from "@/server/whatsapp/canal";
 import { revalidatePath } from "next/cache";
 import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -787,24 +788,10 @@ export async function salvarReguaComercial(input: ReguaComercialInput): Promise<
       if (!dados.numeroRemetenteId) throw new ErroRegra("Defina o número remetente antes de armar a régua.");
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
-      // Remetente OFICIAL: TODO degrau ativo precisa de template APROVADO na Meta (review
-      // PR #55 P1). +3d/+7d caem fora da janela de 24h — sem template aprovado o envio falha
-      // na API. A régua não pode ser armada num estado que só quebra na hora do disparo.
-      if (remetente.driver === "META_CLOUD") {
-        const ativos = dados.degraus.filter((d) => d.ativo);
-        const ids = ativos.map((d) => d.templateId).filter((id): id is string => !!id);
-        const templates = ids.length
-          ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids } }, select: { id: true, statusMeta: true } })
-          : [];
-        const statusPorId = new Map(templates.map((t) => [t.id, t.statusMeta]));
-        const semAprovacao = ativos.filter((d) => !d.templateId || statusPorId.get(d.templateId) !== "APROVADO");
-        if (semAprovacao.length > 0) {
-          throw new ErroRegra(
-            `No número oficial, todo degrau ativo precisa de template aprovado na Meta. Pendentes: ${semAprovacao
-              .map((d) => d.passo)
-              .join(", ")}.`,
-          );
-        }
+      // Só o motor tem driver no despachante: armar a régua em outro driver só geraria intenções
+      // que falham com driver_indisponivel.
+      if (!driverAceitaAutomacao(remetente.driver)) {
+        throw new ErroRegra("Só números do motor WhatsApp enviam a régua. Troque o remetente antes de armar.");
       }
     }
 

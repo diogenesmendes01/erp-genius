@@ -8,7 +8,7 @@ export interface NumeroCanal {
   id: string;
   telefoneE164: string;
   driver: DriverWhatsApp;
-  /** META_CLOUD: phone_number_id · BAILEYS: nome da instância Evolution. */
+  /** MOTOR: id do número no motor (`NumeroWhatsApp.id`). */
   providerRef: string | null;
 }
 
@@ -82,12 +82,9 @@ export interface CanalWhatsApp {
   ): Promise<ResultadoEnvio>;
 }
 
-/** Mensagem única para recusar número META_CLOUD enquanto ele não tiver driver no despachante. */
-export const MENSAGEM_META_CLOUD_SEM_ENVIO = "Meta Cloud ainda não tem envio disponível.";
-
 /**
- * Drivers em que a automação (régua/lote) pode enviar. Só o MOTOR: META_CLOUD não tem driver em
- * `DRIVERS` do despachante (revisão R1 do #213, C1), então armar automação nele só falharia no envio.
+ * Drivers em que a automação (régua/lote) pode enviar. Só o MOTOR: é o único driver em `DRIVERS`
+ * do despachante, então armar automação em outro só falharia no envio.
  */
 export function driverAceitaAutomacao(driver: DriverWhatsApp): boolean {
   return driver === "MOTOR";

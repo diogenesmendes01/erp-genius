@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { mkdir, readFile, rm, writeFile } from "fs/promises";
@@ -27,7 +28,7 @@ async function cenario() {
   const origem = await abrir("+50688880001", v1.id);
   const meu2 = await abrir("+50688880002", v1.id);
   const deOutro = await abrir("+50688880003", v2.id);
-  const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Olá, segue a proposta" } });
+  const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Olá, segue a proposta" } });
   return { v1, v2, numero, origem, meu2, deOutro, m };
 }
 
@@ -75,7 +76,7 @@ describe("encaminhar mensagem como cópia", () => {
     const dirIn = path.join(UPLOAD_DIR, "whatsapp");
     await mkdir(dirIn, { recursive: true });
     await writeFile(path.join(dirIn, nome), Buffer.from("conteudo-da-imagem"));
-    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: "BAILEYS", tipo: "IMAGEM", corpo: "foto", midiaPath: `/api/files/whatsapp/${nome}` } });
+    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, tipo: "IMAGEM", corpo: "foto", midiaPath: `/api/files/whatsapp/${nome}` } });
     comoUsuario(v1);
     try {
       const r = await encaminharMensagem({ mensagemId: midia.id, destinoAtendimentoIds: [meu2.a.id] });
@@ -93,7 +94,7 @@ describe("encaminhar mensagem como cópia", () => {
 
   it("mídia que sumiu do storage recusa o encaminhamento sem criar intenção", async () => {
     const { v1, numero, origem, meu2 } = await cenario();
-    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: "BAILEYS", tipo: "IMAGEM", corpo: "foto", midiaPath: "/api/files/whatsapp/nao-existe.jpg" } });
+    const midia = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: origem.a.conversaId, atendimentoId: origem.a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, tipo: "IMAGEM", corpo: "foto", midiaPath: "/api/files/whatsapp/nao-existe.jpg" } });
     comoUsuario(v1);
     expect((await encaminharMensagem({ mensagemId: midia.id, destinoAtendimentoIds: [meu2.a.id] })).ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(0);

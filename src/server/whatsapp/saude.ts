@@ -199,14 +199,7 @@ export async function medirSaudeCanal(agora: Date = new Date()): Promise<SaudeCa
     );
   }
 
-  // 4. Sessão Baileys caída em número ativo: fila acumula até reconectar (doc 26 §sessão).
-  for (const n of numeros) {
-    if (n.driver === "BAILEYS" && n.sessao === "CAIU") {
-      alertas.push(`Sessão do número "${n.rotulo}" caiu — reconectar via QR na tela do canal.`);
-    }
-  }
-
-  // 4b. Sessão do motor caída.
+  // 4. Sessão do motor caída: fila acumula até reconectar (doc 26 §sessão).
   for (const n of numeros) {
     if (n.driver === "MOTOR" && n.sessao === "CAIU") {
       alertas.push(`Sessão do número "${n.rotulo}" caiu — reconectar via QR na tela do canal.`);

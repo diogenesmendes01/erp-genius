@@ -30,16 +30,10 @@ import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial
 import { criarLeadDeInboundWhatsApp, resolverPessoaPorTelefone } from "@/server/comercial/captura";
 import { enfileirarIntencaoCobranca } from "./fila";
 import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
-import {
-  ErroMeta,
-  sincronizarTemplatesWaba,
-  submeterTemplateNaMeta,
-  type ResultadoSync,
-} from "./meta-templates";
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
 import { nomeConhecidoDoContato } from "./nome-contato";
-import { driverAceitaAutomacao, MENSAGEM_META_CLOUD_SEM_ENVIO } from "./canal";
+import { driverAceitaAutomacao } from "./canal";
 import { contatoIndividual } from "./grupos";
 import {
   LoteCobrancaSchema,
@@ -726,7 +720,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
 
 /**
  * Configura o caminho proativo de agenda (D38): número AGENDA do motor com o texto do template,
- * ou número Meta Cloud (futuro) com template utility aprovado. BAILEYS legado é recusado.
+ * Número de outro driver é recusado.
  */
 export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAgendaInput): Promise<Resultado> {
   return executarAcao(async () => {
@@ -736,10 +730,6 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
       prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroAvisosAgendaId } }),
       prisma.templateWhatsApp.findUnique({ where: { id: dados.templateAvisosAgendaId } }),
     ]);
-    // C1 da R1 do #213: META_CLOUD não tem driver no despachante; só o motor envia aviso de agenda.
-    if (numero?.driver === "META_CLOUD") {
-      throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Escolha um número de agenda do motor WhatsApp.`);
-    }
     if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") {
       throw new ErroRegra("Escolha um número de agenda ativo do motor WhatsApp.");
     }
@@ -861,21 +851,9 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
       if (dados.id) {
         const antes = await tx.templateWhatsApp.findUnique({ where: { id: dados.id } });
         if (!antes) throw new ErroRegra("Template não encontrado.");
-        // Nome+idioma são a identidade na Meta: só muda quem nunca foi submetido
-        // (review PR #51 P2-4 — a edição na Meta não aceita trocar nem name nem language).
-        if (dados.nome !== antes.nome && antes.metaTemplateId) {
-          throw new ErroRegra("Template já submetido à Meta não pode mudar de nome — crie um novo.");
-        }
-        if (dados.idioma !== antes.idioma && antes.metaTemplateId) {
-          throw new ErroRegra("Template já submetido à Meta não pode mudar de idioma — crie um novo.");
-        }
-        const mudouConteudo =
-          dados.corpo !== antes.corpo || dados.idioma !== antes.idioma || dados.categoria !== antes.categoria;
-        // Edição de aprovado volta ao rascunho (doc 26 §Camada 2): precisa re-submeter.
-        const statusMeta = mudouConteudo && antes.statusMeta === "APROVADO" ? "RASCUNHO" : antes.statusMeta;
         await tx.templateWhatsApp.update({
           where: { id: dados.id },
-          data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria, statusMeta },
+          data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },
         });
         await registrarEvento(tx, {
           tipo: "TemplateAlterado",
@@ -883,8 +861,8 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
           agregadoId: dados.id,
           autorId: autor.id,
           payload: {
-            antes: { corpo: antes.corpo, idioma: antes.idioma, categoria: antes.categoria, statusMeta: antes.statusMeta },
-            depois: { corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria, statusMeta },
+            antes: { corpo: antes.corpo, idioma: antes.idioma, categoria: antes.categoria },
+            depois: { corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },
           },
         });
         return dados.id;
@@ -907,55 +885,6 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
 
     revalidatePath("/configuracao/whatsapp", "layout");
     return { id };
-  });
-}
-
-/** Submete o template à revisão da Meta (Marco 2). Status final volta pelo webhook. */
-export async function submeterTemplateMeta(templateId: string): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const template = await prisma.templateWhatsApp.findUnique({ where: { id: templateId } });
-    if (!template) throw new ErroRegra("Template não encontrado.");
-    if (template.statusMeta === "EM_REVISAO") throw new ErroRegra("Template já está em revisão na Meta.");
-    if (template.statusMeta === "APROVADO") throw new ErroRegra("Template já aprovado — edite-o para re-submeter.");
-
-    let metaTemplateId: string;
-    try {
-      ({ metaTemplateId } = await submeterTemplateNaMeta(template));
-    } catch (e) {
-      if (e instanceof ErroMeta) throw new ErroRegra(`Meta recusou a submissão: ${e.message}`);
-      throw e;
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.templateWhatsApp.update({
-        where: { id: templateId },
-        data: { statusMeta: "EM_REVISAO", metaTemplateId },
-      });
-      await registrarEvento(tx, {
-        tipo: "TemplateSubmetido",
-        agregadoTipo: "TemplateWhatsApp",
-        agregadoId: templateId,
-        autorId: autor.id,
-        payload: { metaTemplateId },
-      });
-    });
-    revalidatePath("/configuracao/whatsapp", "layout");
-  });
-}
-
-/** Mapeador (Marco 1): sincroniza a WABA → status/ids locais + importa aprovados. */
-export async function sincronizarTemplatesMeta(): Promise<Resultado<ResultadoSync>> {
-  return executarAcao(async () => {
-    await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    try {
-      const r = await sincronizarTemplatesWaba();
-      revalidatePath("/configuracao/whatsapp", "layout");
-      return r;
-    } catch (e) {
-      if (e instanceof ErroMeta) throw new ErroRegra(`Sincronização falhou: ${e.message}`);
-      throw e;
-    }
   });
 }
 
@@ -1008,12 +937,6 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
-      // C1 da R1 do #213: META_CLOUD não tem driver no despachante, então armar a política nele
-      // (automático, lote ou manual) só geraria intenções que falham com driver_indisponivel.
-      if (remetente.driver === "META_CLOUD") {
-        throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Troque o remetente por um número do motor WhatsApp antes de armar a política.`);
-      }
-
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
       // Trava de driver (S1 revogada para MOTOR, D38): automação exige número do motor.
       if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
@@ -1021,6 +944,11 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
           "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +
             "Troque o remetente ou deixe os degraus em manual/lote.",
         );
+      }
+      // Só o motor tem driver no despachante: armar a política em outro driver (automático, lote
+      // ou manual) só geraria intenções que falham com driver_indisponivel.
+      if (!driverAceitaAutomacao(remetente.driver)) {
+        throw new ErroRegra("Só números do motor WhatsApp enviam a política. Troque o remetente antes de armar.");
       }
     }
 

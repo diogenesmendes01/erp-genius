@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, eventosDo } from "@/test/integracao";
@@ -111,7 +112,7 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
 
   it("BAILEYS legado continua barrado: número remetente Baileys → cron não roda", async () => {
     const agora = agoraAs(10);
-    await seedCanal({ driver: "BAILEYS" });
+    await seedCanal({ driver: DriverWhatsApp.BAILEYS });
     await seedCobranca({ vencimento: diasDepois(agora, 7) });
 
     const r = await rodarCronRegua(agora);

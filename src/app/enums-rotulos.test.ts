@@ -1845,9 +1845,7 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
 const MAPAS_DE_DOMINIO: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/server/matricula/desistencia-documental.ts", nome: "(literal em descricaoEstado)", motivo: "fragmento minúsculo no meio da frase do servidor (\"processo com envio incerto\"), não o nome do estado" },
   { arquivo: "src/server/portal-aluno/envio-resend.ts", nome: "ternário mensagem.finalidade", motivo: "assunto do e-mail por finalidade (\"Seu acesso ao portal da escola\"), frase e não o nome da finalidade" },
-  { arquivo: "src/server/whatsapp/drivers/evolution.ts", nome: "MEDIATYPE", motivo: "valor técnico do payload da Evolution API (\"image\", \"video\"), não rótulo" },
   { arquivo: "src/server/whatsapp/drivers/motor.ts", nome: "TIPO_MIDIA", motivo: "valor técnico do payload do motor (\"imagem\", \"audio\"), não rótulo" },
-  { arquivo: "src/server/whatsapp/drivers/meta-cloud.ts", nome: "CAMPO_MIDIA", motivo: "campo técnico do payload da Cloud API da Meta (\"image\", \"audio\"), não rótulo" },
 ];
 
 describe("(ii) mapa de rótulo de enum só em src/lib/labels.ts", () => {

@@ -114,12 +114,12 @@ describe("importarHistoricoLinha — sem efeitos colaterais (LC-10)", () => {
   it("grava só a janela, no atendimento da linha, sem duplicar e sem não lidas", async () => {
     const r = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, [msg("H-90", 90), msg("H-10", 10), msg("H-9", 9, { fromMe: true, corpo: "resposta" })], agora);
     expect(r).toEqual({ gravadas: 2, ignoradas: 1, motivo: null });
-    expect(m.acharNumero).toHaveBeenCalledWith({ numeroProviderRef: "linha-a", driver: "BAILEYS" });
+    expect(m.acharNumero).toHaveBeenCalledWith({ numeroProviderRef: "linha-a", driver: "MOTOR" });
 
     const { data, skipDuplicates } = tx.mensagemWhatsApp.createMany.mock.calls[0][0];
     expect(skipDuplicates).toBe(true); // LC-11: reenvio não duplica
     expect(data.map((d: { providerMessageId: string }) => d.providerMessageId)).toEqual(["H-10", "H-9"]);
-    expect(data[0]).toMatchObject({ atendimentoId: "atendimento-linha", direcao: "ENTRADA", status: "ENTREGUE", origem: null, midiaPath: null, driver: "BAILEYS" });
+    expect(data[0]).toMatchObject({ atendimentoId: "atendimento-linha", direcao: "ENTRADA", status: "ENTREGUE", origem: null, midiaPath: null, driver: "MOTOR" });
     expect(data[1]).toMatchObject({ direcao: "SAIDA", status: "ENVIADA" });
 
     // Recência só avança; nada de não lidas, último inbound ou opt-out.
