@@ -22,6 +22,7 @@ import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
 import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/server/comunicacoes-agenda/envio-gate";
 import { aplicarResposta } from "./status-atendimento";
+import { aoGravarSaidaHumana } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
@@ -607,6 +608,7 @@ export async function despacharFila(
         if (it.atendimentoId) {
           await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
           if (it.origem === "HUMANO") await aplicarResposta(tx, it.atendimentoId, agora);
+          await aoGravarSaidaHumana(tx, { atendimentoId: it.atendimentoId, origem: it.origem, autorId: it.autorId });
         }
         if (it.cobrancaId && it.passo) {
           await registrarEventoCobrancaEnviada(tx, {
