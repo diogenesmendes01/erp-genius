@@ -69,7 +69,7 @@ const config: Config = {
         blue: { 50: "var(--info-bg)", 100: "var(--info-bg)", 200: "var(--info-bg)", 600: "var(--info-text)", 700: "var(--info-text)" },
         indigo: { 100: "var(--info-bg)", 700: "var(--info-text)" },
         orange: { 100: "var(--warning-bg)", 700: "var(--warning-text)" },
-        // IA (sugestões do copiloto — doc 27 C3): identidade própria, distinta do resto
+        // IA (conteúdo gerado pela Aria): identidade própria, distinta do resto
         // da paleta semântica. Ver globals.css.
         ai: {
           50: "var(--ai-bg)",
