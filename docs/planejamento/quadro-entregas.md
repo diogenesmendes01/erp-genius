@@ -2767,3 +2767,15 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   contrato: `mensagem.recebida` com texto longo (~260 KB no pior caso UTF-8). Testes em `route.test.ts`.
 - **C2:** segue em aberto (os `*.int.test.ts` não rodam no CI).
 **Estado**: Implementado; correções da R1 aplicadas; aguardando o integrador.
+
+## Fase 4D — verificação final do bloco (18/10/2026)
+
+- Branch `claude/fase4-d-inbox-motor` (PR empilhado sobre `claude/fase4-c-webhook`), tarefas 18 a 24b do plano `04-fase-motor.md`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 714 arquivos e 5245 testes (linha de base da 4C: 711/5220).
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` ficou varrendo a suíte inteira (`evento.ts`/`schema.ts` alcançam quase tudo) e foi
+  interrompido; rodados os 7 `*.int.test.ts` do diff (`acoes-numero`, `linha-comercial`, `motor/acoes-admin`, `motor/acoes-mensagem`,
+  `motor/conteudo`, `motor/grupo-envio`, `motor/presenca`): 89 testes verdes; e `despachante-motor/comercial/agendada` + `inbox`:
+  43 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4C).
