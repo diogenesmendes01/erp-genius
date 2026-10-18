@@ -185,6 +185,7 @@ export function FunilCliente({
           historico={aberta.historico}
           capacidades={capacidades}
           vendedores={vendedores}
+          paises={paises}
           aoFechar={fechar}
           fuso={fuso}
         />

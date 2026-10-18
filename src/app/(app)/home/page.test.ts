@@ -27,7 +27,7 @@ describe("HomePage", () => {
     mocks.sessao.mockResolvedValue({ id: "vend", nome: "Vend Silva", papeis: ["VENDEDOR"] });
     const html = renderToStaticMarkup(await Page());
     expect(html).toContain("Olá, Vend");
-    expect(html).toContain('href="/leads"');
+    expect(html).toContain('href="/funil"');
     expect(mocks.gerente).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
     vi.clearAllMocks();

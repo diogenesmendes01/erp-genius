@@ -34,3 +34,18 @@ describe("matriz de permissões do Inbox (doc 03)", () => {
   ])("%s %s %o → %s", (papel, acao, ctx, esperado) =>
     expect(podeExecutar({ id: "v1", papeis: [papel] }, acao as AcaoInbox, { setor: "COMERCIAL", responsavelId: null, ...ctx } as ContextoAcao)).toBe(esperado));
 });
+
+describe("assumir em linha de vendas (C3 da revisão da 3C)", () => {
+  const linha = (papel: Papel, id: string, donoLinhaId: string | null) =>
+    podeExecutar({ id, papeis: [papel] }, "assumir", { setor: "COMERCIAL", responsavelId: null, linhaComercial: true, donoLinhaId });
+  it("vendedor que não é o dono da linha não vê 'Assumir'; o dono, o gerente e o admin veem", () => {
+    expect(linha(Papel.VENDEDOR, "v1", null)).toBe(false);
+    expect(linha(Papel.VENDEDOR, "v1", "outro")).toBe(false);
+    expect(linha(Papel.VENDEDOR, "v1", "v1")).toBe(true);
+    expect(linha(Papel.GERENTE_COMERCIAL, "g1", null)).toBe(true);
+    expect(linha(Papel.ADMINISTRADOR, "a1", null)).toBe(true);
+  });
+  it("fora de linha de vendas o vendedor assume da fila como antes", () => {
+    expect(podeExecutar({ id: "v1", papeis: [Papel.VENDEDOR] }, "assumir", { setor: "COMERCIAL", responsavelId: null, linhaComercial: false, donoLinhaId: null })).toBe(true);
+  });
+});

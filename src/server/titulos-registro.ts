@@ -2,7 +2,6 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { exigirSessao, type UsuarioSessao } from "@/server/_shared";
-import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { escopoAlunos } from "@/server/alunos/consultas";
 
 // Título de aba das fichas (docs/42-auditoria-frontend-ux.md, E2): todas as abas se chamavam
@@ -23,15 +22,6 @@ export async function tituloAluno(id: string): Promise<string> {
   if (!usuario) return "Aluno";
   const aluno = await prisma.aluno.findFirst({ where: { AND: [{ id }, escopoAlunos(usuario)] }, select: { primeiroNome: true, sobrenome: true } });
   return aluno ? `${nomeCompleto(aluno)} · Aluno` : "Aluno";
-}
-
-const PAPEIS_LEAD: Papel[] = [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR];
-
-export async function tituloLead(id: string): Promise<string> {
-  const usuario = await usuarioOuNull();
-  if (!usuario || !usuario.papeis.some((p) => PAPEIS_LEAD.includes(p))) return "Lead";
-  const lead = await prisma.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario)] }, select: { nome: true } });
-  return lead ? `${lead.nome} · Lead` : "Lead";
 }
 
 export async function tituloEmpresa(id: string): Promise<string> {

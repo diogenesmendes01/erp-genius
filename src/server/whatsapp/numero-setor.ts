@@ -31,7 +31,11 @@ export async function setoresDoNumero(
     where: { id: numeroId },
     select: { finalidade: true, setores: { select: { finalidade: true } } },
   });
-  if (!numero) return [];
+  return numero ? setoresDeNumero(numero) : [];
+}
+
+/** Mesma regra de `setoresDoNumero` sobre um número já carregado (com `setores`). */
+export function setoresDeNumero(numero: { finalidade: FinalidadeNumero; setores: { finalidade: Setor }[] }): Setor[] {
   const cadastrados = new Set<Setor>(numero.setores.map((s) => s.finalidade));
   if (cadastrados.size > 0) return SETORES.filter((s) => cadastrados.has(s));
   return SETORES.filter((s) => LEGADO[s].includes(numero.finalidade));

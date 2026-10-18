@@ -207,9 +207,7 @@ export const EXCECOES_IDENTIFICACAO: ExcecaoIdentificacao[] = [
 ];
 
 /** Telas de detalhe: página de src/app/(app) com segmento dinâmico, fora de /matriculas/[id] (o layout identifica). */
-// Páginas que só redirecionam (não mostram registro nenhum). Saem com a Tarefa 37.
-const REDIRECIONAMENTOS_TEMPORARIOS = ["src/app/(app)/leads/[id]/contratacao/page.tsx"];
-export const ehTelaDeDetalhe = (arquivo: string) => arquivo.startsWith("src/app/(app)/") && arquivo.endsWith("/page.tsx") && /\/\[[^\]]+\]\//.test(arquivo) && !arquivo.startsWith("src/app/(app)/matriculas/[id]/") && !REDIRECIONAMENTOS_TEMPORARIOS.includes(arquivo);
+export const ehTelaDeDetalhe = (arquivo: string) => arquivo.startsWith("src/app/(app)/") && arquivo.endsWith("/page.tsx") && /\/\[[^\]]+\]\//.test(arquivo) && !arquivo.startsWith("src/app/(app)/matriculas/[id]/");
 
 /** Sinais da página e dos componentes locais que ela importa (import relativo, um nível). */
 export function sinaisDaTela(arquivo: string, ler: (caminho: string) => string | null): SinaisDeIdentificacao & { fontes: string[] } {
