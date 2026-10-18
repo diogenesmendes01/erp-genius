@@ -273,6 +273,9 @@ function dataCivilNoFuso(instante: Date, fuso: string): string {
 export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA): Promise<{ eventoId: string }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload gravado pelo próprio planejar
   const payload = (acao.payload ?? {}) as Record<string, any>;
+  // Só a CLASSIFICAR_SETOR SIMULADA (triagem em SHADOW) não tem atendimento, e nunca é aplicada.
+  const atendimentoId = acao.atendimentoId;
+  if (!atendimentoId) throw new ErroRegra("A ação não tem atendimento.");
   const opId = acao.oportunidadeId;
   const resultado: Payload = {};
   let aprovacaoId: string | null = null;
@@ -362,7 +365,7 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA): Promise<{ eventoI
       break;
     }
     case "AGENDAR_MENSAGEM": {
-      const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: acao.atendimentoId }, select: { id: true, encerradoEm: true, conversa: { select: { numeroId: true, contatoId: true } } } });
+      const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: atendimentoId }, select: { id: true, encerradoEm: true, conversa: { select: { numeroId: true, contatoId: true } } } });
       const contatoId = at.conversa.contatoId;
       const contato = contatoId ? await tx.contatoWhatsApp.findUnique({ where: { id: contatoId }, select: { optOutEm: true } }) : null;
       if (!contatoId || !contato || contato.optOutEm || at.encerradoEm) throw new ErroRegra("O contato não pode receber mensagens.");
@@ -395,7 +398,7 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA): Promise<{ eventoI
       evento = await registrarEvento(tx, {
         tipo: "NotaInterna",
         agregadoTipo: "AtendimentoWhatsApp",
-        agregadoId: acao.atendimentoId,
+        agregadoId: atendimentoId,
         autorId: null,
         payload: payloadDaAria(acao.id, { nota: payload.texto }),
       });
