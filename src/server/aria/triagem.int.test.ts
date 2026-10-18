@@ -2,7 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
 // Falha simulada na atribuição (C7 da R2 do #233): erro de banco DENTRO da transação da triagem.
-const falha = vi.hoisted(() => ({ atribuicao: false }));
+const falha = vi.hoisted(() => ({ atribuicao: false, abertura: false }));
+// Falha simulada na abertura do atendimento do setor (C10 da revisão do #233): o erro tem de ir para o log.
+vi.mock("@/server/whatsapp/atendimentos", async (orig) => {
+  const real = await orig<typeof import("@/server/whatsapp/atendimentos")>();
+  return {
+    ...real,
+    abrirAtendimentoDoSetor: async (...args: Parameters<typeof real.abrirAtendimentoDoSetor>) => {
+      if (falha.abertura) await args[0].$executeRawUnsafe("SELECT 1/0");
+      return real.abrirAtendimentoDoSetor(...args);
+    },
+  };
+});
 vi.mock("@/server/crm-config/distribuicao", async (orig) => {
   const real = await orig<typeof import("@/server/crm-config/distribuicao")>();
   return {
@@ -21,7 +32,7 @@ import type { PedidoIA, ProvedorIA } from "./provedor";
 import { configPadrao } from "./config-schema";
 import { ancoraTriagem, classificarSetorPelaAria, fraseEncaminhamento } from "./triagem";
 
-beforeEach(async () => { falha.atribuicao = false; await truncarBanco(); });
+beforeEach(async () => { falha.atribuicao = false; falha.abertura = false; await truncarBanco(); });
 
 let seq = 0;
 const provedorComConfianca = (setor: string | null, confianca: number): ProvedorIA => ({
@@ -187,6 +198,22 @@ describe("classificarSetorPelaAria", () => {
       expect(await prisma.evento.count({ where: { tipo: "AtendimentoAtribuido" } })).toBe(0);
       expect(await prisma.evento.count({ where: { tipo: "MensagemClassificada" } })).toBe(1);
     });
+  });
+
+  it("falha_na_abertura_do_setor_vai_para_o_log_sem_dados_pessoais_e_volta_a_triagem_humana", async () => {
+    falha.abertura = true;
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(await classificarSetorPelaAria(msgBoleto.id, { provedor: provedorSimulado })).toEqual({ triagemHumana: "SETOR_FORA_DO_NUMERO" });
+      expect((await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { id: msgBoleto.id } })).atendimentoId).toBeNull();
+      const chamada = log.mock.calls.find((a) => String(a[0]).includes("[aria]"));
+      expect(chamada).toEqual([expect.stringContaining("abertura"), expect.objectContaining({ mensagemId: msgBoleto.id, setor: "FINANCEIRO" })]);
+      const texto = JSON.stringify(chamada);
+      expect(texto).not.toContain("boleto");
+      expect(texto).not.toContain(c.contato.telefoneE164);
+    } finally {
+      log.mockRestore();
+    }
   });
 
   describe("COMERCIAL: a Aria atende em vez de só encaminhar", () => {
