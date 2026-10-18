@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -10,7 +11,7 @@ import { InboxNovo, mesclarPrimeiraPagina, paramsDosFiltros } from "./InboxNovo"
 import { lerFiltrosInbox, type FiltrosInbox } from "@/server/inbox/filtros";
 
 const item = (id: string, nome: string) => ({
-  id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: "META_CLOUD", contatoId: `c-${id}`, contatoNome: nome,
+  id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: nome,
   contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: 2, ultimaMensagemEm: "2026-10-01T02:30:00.000Z", preview: "Oi",
   linhaComercial: false, status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
 });

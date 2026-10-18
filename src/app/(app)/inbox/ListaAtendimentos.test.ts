@@ -16,7 +16,7 @@ const base: ItemListaInbox = {
   contatoId: "c1", contatoNome: "Maria Souza", contatoTelefone: "+5511999990000", optOut: false, vinculo: null,
   naoLidas: 0, ultimaMensagemEm: "2026-10-01T12:00:00.000Z", preview: "Oi", linhaComercial: false,
   status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
-  responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null,
+  responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null, capacidades: [],
 };
 const html = (p: Partial<ItemListaInbox> = {}, extra: Record<string, unknown> = {}) =>
   renderToStaticMarkup(createElement(ListaAtendimentos, {

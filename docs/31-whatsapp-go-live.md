@@ -171,9 +171,12 @@ repetidos — gap A8; o handler já responde 200 mesmo com erro interno, mas o m
 o app fora do ar).
 
 ## 4. Backup (gap A6) — o banco é o arquivo único das conversas
-`scripts/backup-producao.sh` (diário via cron, retenção 14d): dumps `erp` + `evolution`
-(formato custom) + tar de `data/uploads` (mídia/comprovantes) + tar das instâncias da
-Evolution (auth state Baileys — perder = re-parear QR, mensagens não se perdem).
+`scripts/backup-producao.sh` (diário via cron às 03:15, retenção 14d): dump do `erp`
+(formato custom) + tar de `data/uploads` (mídia/comprovantes) + tar do volume do motor
+(`/data`: PGlite, cofre e credenciais — perder = re-parear QR, mensagens não se perdem).
+O motor fica parado só durante esse tar; um **503 isolado** de "Motor WhatsApp inalcançável"
+em `/api/whatsapp/health` nesse horário é esperado (ver `SETUP.md` §backup). Só um 503 que se
+repete depois da janela pede investigação.
 **Backup sem teste de restore não é backup**: antes do go-live, executar o restore
 comentado no rodapé do script num compose limpo e conferir login + fila + thread.
 Guardar cópia fora da VPS (rsync/rclone para storage externo).

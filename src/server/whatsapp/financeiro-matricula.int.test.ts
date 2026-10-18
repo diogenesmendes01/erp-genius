@@ -1,10 +1,9 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 const { authMock, enviarMock } = vi.hoisted(() => ({ authMock: vi.fn(), enviarMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("./drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
-vi.mock("./drivers/evolution", () => ({ driverEvolution: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
@@ -39,8 +38,8 @@ describe("WhatsApp financeiro por matrícula", () => {
     expect(a.id).not.toBe(b.id); expect(a.conversaId).toBe(b.conversaId);
     expect((await c.abrir(c.matricula.id)).id).toBe(a.id);
     await prisma.mensagemWhatsApp.createMany({ data: [
-      { numeroId: c.canal.numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "META_CLOUD", corpo: "Contrato A" },
-      { numeroId: c.canal.numero.id, conversaId: b.conversaId, atendimentoId: b.id, direcao: "ENTRADA", driver: "META_CLOUD", corpo: "Contrato B" },
+      { numeroId: c.canal.numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.META_CLOUD, corpo: "Contrato A" },
+      { numeroId: c.canal.numero.id, conversaId: b.conversaId, atendimentoId: b.id, direcao: "ENTRADA", driver: DriverWhatsApp.META_CLOUD, corpo: "Contrato B" },
     ] });
     const ta = await carregarThread(c.sessao, a.id); const tb = await carregarThread(c.sessao, b.id);
     expect(ta?.matricula?.id).toBe(c.matricula.id);

@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { receberTx } from "@/server/financeiro/recebimentos";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
@@ -29,7 +30,7 @@ async function comercial() {
   const outro = await criarUsuario([Papel.VENDEDOR]);
   // Linha SEM dono: aqui o acesso vem só da carteira. Dono da linha vê a conversa (SPEC-ERP-005
   // LC-D01) — coberto em linha-comercial.int.test.ts.
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", driver: "BAILEYS", finalidade: "VENDAS", donoId: null } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Institucional", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", donoId: null } });
   const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead.id }));
@@ -114,9 +115,9 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
   it("PRO+FIN recebe só mensagens pedagógicas nesse assunto; telefone não aparece no payload", async () => {
     const c = await turma();
     await prisma.mensagemWhatsApp.createMany({ data: [
-      { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, atendimentoId: c.pedagogico.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Tarefa de hoje" },
-      { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, atendimentoId: c.financeiro.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Dívida de 900" },
-      { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Legado financeiro" },
+      { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, atendimentoId: c.pedagogico.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Tarefa de hoje" },
+      { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, atendimentoId: c.financeiro.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Dívida de 900" },
+      { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Legado financeiro" },
     ] });
     const thread = await carregarThread(sessao(c.pro), c.pedagogico.id);
     expect(thread?.mensagens.map((m) => m.corpo)).toEqual(["Tarefa de hoje"]);
@@ -140,7 +141,7 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
   });
   it("mensagem legada só entra no contexto por classificação administrativa auditada", async () => {
     const c = await turma();
-    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, direcao: "ENTRADA", driver: "BAILEYS", corpo: "Revisar tarefa" } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Revisar tarefa" } });
     authMock.mockResolvedValue({ user: { id: c.pro.id } });
     expect((await classificarMensagemWhatsApp({ mensagemId: m.id, atendimentoId: c.pedagogico.id, motivo: "Conteúdo revisado como pedagógico" })).ok).toBe(false);
     const adm = await criarUsuario([Papel.ADMINISTRADOR]); authMock.mockResolvedValue({ user: { id: adm.id } });
@@ -164,7 +165,7 @@ describe("W01–W07: intenção velha nunca chama o driver", () => {
   });
   it("W03: saída fromMe encerra o cron e o despacho pendente", async () => {
     const c = await filaComercial();
-    await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: c.a.conversaId, direcao: "SAIDA", origem: null, driver: "BAILEYS", corpo: "Resposta pelo celular" } });
+    await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: c.a.conversaId, direcao: "SAIDA", origem: null, driver: DriverWhatsApp.BAILEYS, corpo: "Resposta pelo celular" } });
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
   });
   it("W04: REAGENDAR cancela e não renasce para a agenda anterior", async () => {

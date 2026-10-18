@@ -64,14 +64,9 @@ export const NumeroWhatsAppSchema = z.object({
   id: z.string().min(1).optional(),
   telefoneE164,
   rotulo: z.string().trim().min(2, "Dê um rótulo ao número (ex.: Cobrança)." ).max(60),
-  driver: z.enum(["META_CLOUD", "BAILEYS"]),
+  // Só o motor aceita número novo; o providerRef é o próprio id (definido ao salvar).
+  driver: z.literal("MOTOR").default("MOTOR"),
   finalidade: z.enum(["COBRANCA", "VENDAS", "AGENDA"]),
-  providerRef: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .transform((v) => (v ? v : null)),
   donoId: z
     .string()
     .trim()

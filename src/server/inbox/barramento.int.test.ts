@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
@@ -9,7 +10,7 @@ let a: { id: string; conversaId: string }; let numeroId: string;
 beforeAll(async () => { await iniciarEscuta(process.env.DATABASE_URL!); });
 beforeEach(async () => {
   await truncarBanco();
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Inst", driver: "BAILEYS", finalidade: "VENDAS" } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511999999999", rotulo: "Inst", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS" } });
   numeroId = numero.id;
   const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888" } });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688888888", leadId: lead.id } });
@@ -17,7 +18,7 @@ beforeEach(async () => {
 });
 afterAll(() => prisma.$disconnect());
 
-const criarMensagemEntrada = (corpo: string) => prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo } });
+const criarMensagemEntrada = (corpo: string) => prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo } });
 const escutar = () => { const r: AvisoInbox[] = []; const sair = assinarInbox((x) => r.push(x)); return { r, sair }; };
 const pausa = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
@@ -34,7 +35,7 @@ describe("barramento do inbox", () => {
   it("rollback não avisa", async () => {
     const { r, sair } = escutar();
     await expect(prisma.$transaction(async (tx) => {
-      await tx.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: "BAILEYS", corpo: "x" } });
+      await tx.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "x" } });
       throw new Error("desfaz");
     })).rejects.toThrow("desfaz");
     await pausa(500); expect(r).toEqual([]); sair();
@@ -49,7 +50,7 @@ describe("barramento do inbox", () => {
     sair();
   });
   it("reclassificar a mensagem (atendimentoId) → atendimento.atualizado", async () => {
-    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, direcao: "ENTRADA", driver: "BAILEYS", corpo: "oi" } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId, conversaId: a.conversaId, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "oi" } });
     await pausa(300);
     const { r, sair } = escutar();
     await prisma.mensagemWhatsApp.update({ where: { id: m.id }, data: { atendimentoId: a.id } });
