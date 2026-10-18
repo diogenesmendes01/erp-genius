@@ -721,8 +721,6 @@ export async function salvarConfigComercial(input: ConfigComercialInput): Promis
                 autoLeadAtivo: antes.autoLeadAtivo,
                 saudacaoEstado: antes.saudacaoEstado,
                 saudacaoTexto: antes.saudacaoTexto,
-                copilotoAtivo: antes.copilotoAtivo,
-                copilotoQuietudeMinutos: antes.copilotoQuietudeMinutos,
                 matriculaAutomaticaAtiva: antes.matriculaAutomaticaAtiva,
                 gestaoEstado: antes.gestaoEstado,
                 gestaoTelefoneE164: antes.gestaoTelefoneE164,

@@ -28,9 +28,7 @@ describe("salvarConfigComercial", () => {
       autoLeadAtivo: false,
       saudacaoEstado: "DESLIGADA",
       saudacaoTexto: expect.any(String),
-      // C3/C4: copiloto e matrícula automática também nascem desligados (regra de ouro).
-      copilotoAtivo: false,
-      copilotoQuietudeMinutos: 10,
+      // C4: matrícula automática também nasce desligada (regra de ouro).
       matriculaAutomaticaAtiva: false,
       gestaoEstado: "DESLIGADA",
       gestaoTelefoneE164: null,
@@ -51,8 +49,6 @@ describe("salvarConfigComercial", () => {
       autoLeadAtivo: true,
       saudacaoEstado: "ATIVA",
       saudacaoTexto: "Oi! Já te respondo.",
-      copilotoAtivo: false,
-      copilotoQuietudeMinutos: 10,
       matriculaAutomaticaAtiva: false,
       gestaoEstado: "DESLIGADA",
       gestaoTelefoneE164: null,
