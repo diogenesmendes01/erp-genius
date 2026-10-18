@@ -9,19 +9,28 @@ import { payloadDaAria } from "./ator";
 import { situacaoAria } from "./estado";
 import { chaveConfigurada, escolherProvedor, ErroProvedorIA, type ProvedorIA, type RespostaIA } from "./provedor";
 import { estadoOrcamento, registrarChamadaIA } from "./uso";
-import { SETOR_ATENDIMENTO_LABEL } from "@/lib/labels";
 import { configPadrao } from "./config-schema";
 import { APRESENTACAO, ocultarDadosPessoais } from "./turno/contexto";
 import { processarTurnoAria } from "./turno/orquestrador";
 
 /**
- * Frase fixa de encaminhamento a um setor que a Aria não atende: ela só encaminha, nunca responde
- * o conteúdo. Como primeira fala da Aria no atendimento, começa pela apresentação obrigatória.
- * O COMERCIAL não recebe frase: a Aria atende o Comercial e o turno de atendimento responde.
+ * Frase fixa de encaminhamento a um setor que a Aria não atende (sem a apresentação): ela só
+ * encaminha, nunca responde o conteúdo. O COMERCIAL não a usa: a Aria atende o Comercial e o turno
+ * de atendimento responde; a entrada existe só para o Record ser total.
+ */
+export const FRASE_ENCAMINHAMENTO: Readonly<Record<FinalidadeAtendimentoWhatsApp, string>> = Object.freeze({
+  COMERCIAL: "Obrigada! Vou encaminhar sua mensagem para o Comercial.",
+  FINANCEIRO: "Obrigada! Vou encaminhar sua mensagem para o Financeiro.",
+  SECRETARIA: "Obrigada! Vou encaminhar sua mensagem para a Secretaria.",
+  PEDAGOGICO: "Obrigada! Vou encaminhar sua mensagem para o Pedagógico.",
+});
+
+/**
+ * Frase enviada ao contato: como primeira fala da Aria no atendimento, começa pela apresentação
+ * obrigatória (restrição global); nas seguintes, é a frase fixa pura.
  */
 export function fraseEncaminhamento(setor: FinalidadeAtendimentoWhatsApp, nomeAria: string, apresentar = true): string {
-  const artigo = setor === "SECRETARIA" ? "a" : "o";
-  const frase = `Obrigada! Vou encaminhar sua mensagem para ${artigo} ${SETOR_ATENDIMENTO_LABEL[setor]}.`;
+  const frase = FRASE_ENCAMINHAMENTO[setor];
   return apresentar ? `${APRESENTACAO(nomeAria)} ${frase}` : frase;
 }
 
