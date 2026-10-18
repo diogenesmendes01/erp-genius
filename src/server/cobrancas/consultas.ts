@@ -331,7 +331,7 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   // Canal WhatsApp (E2): templates p/ renderizar a mensagem sugerida no servidor,
   // última intenção por cobrança (estado do braço) e inbound por destino ("respondeu").
   const ids = cobrancas.map((c) => c.id);
-  const templates = await prisma.templateWhatsApp.findMany();
+  const templates = await prisma.templateWhatsApp.findMany({ where: { tipo: "MODELO_AUTOMACAO" } });
   const templatePorId = new Map(templates.map((t) => [t.id, t]));
   const templatePorNome = new Map(templates.map((t) => [t.nome, t]));
 

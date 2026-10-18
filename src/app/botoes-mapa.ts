@@ -61,6 +61,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/crm/distribuicao/SetorPainel.tsx": [
     "<button> Salvando… · Salvar setor → primario/md",
   ],
+  "configuracao/crm/respostas/RespostasPainel.tsx": [
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar resposta · Criar resposta → primario/md",
+  ],
   "configuracao/crm/tags-campos/TagsCamposPainel.tsx": [
     "<button> Editar → secundario/sm",
     "<button> Arquivar → secundario/sm",

@@ -13,6 +13,7 @@ import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/li
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
+import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-respostas";
 import { registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia } from "@/server/whatsapp/consultas-acoes-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
@@ -93,6 +94,12 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
   }, [origemId]);
   const transferido = origemId && origem.de === origemId ? textoOrigem(origem.setor) : null;
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread } | null>(null);
+  const [respostas, setRespostas] = useState<{ id: string; atalho: string; titulo: string; corpo: string }[]>([]);
+  useEffect(() => {
+    let ativo = true;
+    void respostasRapidasDoCompositor().then((r) => { if (ativo) setRespostas(r); }).catch(() => undefined);
+    return () => { ativo = false; };
+  }, []);
   const capacidades = item?.capacidades ?? [];
   // null (carregando) só chega ao compositor; os comandos da mensagem exigem o envio confirmado.
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
@@ -160,6 +167,8 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
           aoEnviarTexto={(texto) => enviarTextoInbox({ conversaId: item.id, texto })}
           aoEnviarMidia={(url, legenda) => enviarMidiaInbox({ conversaId: item.id, url, legenda })}
           aoNota={(nota) => registrarNotaAtendimento({ atendimentoId: item.id, nota })}
+          respostas={respostas}
+          variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />
       ) : <p className="border-t p-3 text-sm text-gray-600">{MOTIVO_SEM_ENVIO}</p>}
       {acaoMensagem && (

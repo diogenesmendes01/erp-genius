@@ -58,7 +58,7 @@ export async function rodarCronRegua(agora: Date = new Date()): Promise<Resultad
 
   const { cobrancas, regua } = await carregarCobrancasDaRegua(agora, politica.degraus);
 
-  const templates = await prisma.templateWhatsApp.findMany();
+  const templates = await prisma.templateWhatsApp.findMany({ where: { tipo: "MODELO_AUTOMACAO" } });
   const templatePorId = new Map(templates.map((t) => [t.id, t]));
   const templatePorNome = new Map(templates.map((t) => [t.nome, t]));
 
