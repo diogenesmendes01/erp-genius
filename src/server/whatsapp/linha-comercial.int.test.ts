@@ -14,7 +14,6 @@ import { criarLeadDaConversa, enviarTextoInbox, salvarNumeroWhatsApp, vincularCo
 import { abrirAtendimentoInstitucional, listarOpcoesAtendimento, listarTriagemWhatsApp } from "./operacoes-atendimento";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, CHAVE_LINHA } from "./linha-comercial";
-import { importarHistoricoLinha, type MensagemHistorica } from "./historico";
 
 // SPEC-ERP-005 — linha comercial do WhatsApp (critérios LC-01…LC-15). Número de VENDAS é o espelho
 // do WhatsApp do vendedor: toda conversa aparece para o dono, com ou sem lead; o canal institucional
@@ -295,60 +294,6 @@ describe("LC-09: troca de dono — o histórico segue a linha", () => {
     expect(await listarConversas(sessao(vendedorD))).toHaveLength(1);
     expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
     expect((await eventosDo("NumeroWhatsApp", linha.id)).map((e) => e.tipo)).toContain("NumeroWhatsAppAlterado");
-  });
-});
-
-describe("LC-10/LC-11: histórico do aparelho", () => {
-  const agora = new Date("2026-09-26T15:00:00.000Z");
-  const dias = (n: number) => new Date(agora.getTime() - n * 86_400_000);
-  const historicas = (): MensagemHistorica[] => [
-    { contatoWaId: "50670001111", nomeExibicao: "Cliente antigo", providerMessageId: "H-90", corpo: "há 90 dias", tipo: "TEXTO", fromMe: false, quando: dias(90) },
-    { contatoWaId: "50670001111", nomeExibicao: "Cliente antigo", providerMessageId: "H-10", corpo: "sim", tipo: "TEXTO", fromMe: false, quando: dias(10) },
-    { contatoWaId: "50670001111", providerMessageId: "H-9", corpo: "resposta minha", tipo: "TEXTO", fromMe: true, quando: dias(9) },
-    { contatoWaId: "50670002222", nomeExibicao: "Outra pessoa", providerMessageId: "H-2", corpo: "sair", tipo: "TEXTO", fromMe: false, quando: dias(2) },
-  ];
-
-  it("LC-10: grava só os últimos 30 dias, na linha, sem lead/saudação/opt-out/não lidas", async () => {
-    await linhaDe(vendedorA);
-    await ligarAutoLead("ATIVA");
-    const r = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    expect(r).toMatchObject({ gravadas: 3, motivo: null });
-
-    expect(await prisma.mensagemWhatsApp.count()).toBe(3);
-    expect(await prisma.mensagemWhatsApp.count({ where: { providerMessageId: "H-90" } })).toBe(0);
-    expect(await prisma.oportunidade.count()).toBe(0);
-    expect(await prisma.intencaoMensagem.count()).toBe(0);
-    expect(await prisma.contatoWhatsApp.count({ where: { optOutEm: { not: null } } })).toBe(0);
-    const lista = await listarConversas(sessao(vendedorA));
-    expect(lista).toHaveLength(2);
-    expect(lista.every((c) => c.naoLidas === 0)).toBe(true);
-    expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: null } })).toBe(0);
-    // Recência vem da mensagem mais nova do histórico.
-    expect(lista[0].ultimaMensagemEm).toBe(dias(2).toISOString());
-  });
-
-  it("LC-11: reenvio do mesmo histórico não duplica", async () => {
-    await linhaDe(vendedorA);
-    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    const again = await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    expect(again.gravadas).toBe(0);
-    expect(await prisma.mensagemWhatsApp.count()).toBe(3);
-    expect(await prisma.atendimentoWhatsApp.count()).toBe(2);
-  });
-
-  it("canal institucional não importa histórico", async () => {
-    await numeroCobranca();
-    const r = await importarHistoricoLinha({ numeroProviderRef: "cobranca-1" }, historicas(), agora);
-    expect(r).toMatchObject({ gravadas: 0, motivo: "nao_e_linha_comercial" });
-    expect(await prisma.mensagemWhatsApp.count()).toBe(0);
-  });
-
-  it("histórico não recua a recência de uma conversa viva mais nova", async () => {
-    await linhaDe(vendedorA);
-    await mensagem("linha-a", { quando: agora });
-    await importarHistoricoLinha({ numeroProviderRef: "linha-a" }, historicas(), agora);
-    const [primeira] = await listarConversas(sessao(vendedorA));
-    expect(primeira.ultimaMensagemEm).toBe(agora.toISOString());
   });
 });
 

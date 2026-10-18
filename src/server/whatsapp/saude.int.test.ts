@@ -156,6 +156,30 @@ describe("medirSaudeCanal — fila por estado", () => {
     expect(s.alertas.filter((a) => a.includes("caiu"))).toHaveLength(0);
   });
 
+  // C2 da R1 do #221: Meta e Evolution saíram do código; o número legado ativo fica mudo.
+  it.each([DriverWhatsApp.BAILEYS, DriverWhatsApp.META_CLOUD])("número ATIVO em driver legado %s → alerta para reparear no motor", async (driver) => {
+    await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511911110001", rotulo: "Antigo", driver, finalidade: "VENDAS", sessao: "CONECTADO" },
+    });
+
+    const s = await medirSaudeCanal();
+    expect(s.ok).toBe(false);
+    expect(s.alertas).toEqual([
+      `Número "Antigo" ativo em driver legado (${driver}) — não envia nem recebe; pareie a linha no motor e desative o número legado.`,
+    ]);
+  });
+
+  it("número legado DESATIVADO e número MOTOR ativo não geram o alerta de driver legado", async () => {
+    await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511911110002", rotulo: "Antigo", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", ativo: false },
+    });
+    await seedCanal();
+
+    const s = await medirSaudeCanal();
+    expect(s.alertas.filter((a) => a.includes("driver legado"))).toEqual([]);
+    expect(s.ok).toBe(true);
+  });
+
   it("falhas24h conta pela TRANSIÇÃO para FALHOU (atualizadoEm), não pela criação", async () => {
     const agora = new Date();
     // Intenção CRIADA há 3 dias que falhou AGORA: precisa contar.

@@ -78,8 +78,23 @@ describe("scripts/backup-producao.sh", () => {
   const t = ler("scripts/backup-producao.sh");
   it("cobre o volume do motor e não cita evolution", () => {
     expect(t).not.toMatch(/evolution/i);
-    expect(t).toContain("$COMPOSE exec -T motor tar -czf - -C / data");
     expect(t).toContain("motor-data.tar.gz");
     expect(t).not.toContain("evolution.dump");
+  });
+  // C1 da R1 do #221: PGlite em arquivo não pode ser copiado com o motor gravando.
+  it("para o motor só durante o tar e religa também em erro (trap)", () => {
+    const iParar = t.indexOf("$COMPOSE stop motor");
+    const iTar = t.indexOf('tar -czf - -C / data > "$PASTA/motor-data.tar.gz"');
+    expect(iParar).toBeGreaterThan(-1);
+    expect(iTar).toBeGreaterThan(iParar);
+    expect(t).toMatch(/^trap religar_motor EXIT INT TERM$/m);
+    expect(t.indexOf("trap religar_motor")).toBeLessThan(iParar);
+    expect(t.slice(iTar)).toMatch(/^religar_motor$/m);
+    expect(t).toContain("$COMPOSE start motor");
+  });
+  it("o tar do motor roda num container auxiliar montando o volume, não na imagem do motor", () => {
+    expect(t).not.toContain("exec -T motor tar");
+    expect(t).toContain('docker run --rm --volumes-from "$MOTOR_CID:ro" "$IMAGEM_TAR" tar -czf - -C / data');
+    expect(t).not.toContain("--entrypoint tar motor");
   });
 });

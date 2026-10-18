@@ -2978,7 +2978,7 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 
 ## Fase 4E — remove Meta/Evolution e sobe o motor (18/10/2026)
 
-- Branch `claude/fase4-e-remove-legados` (PR empilhado sobre `claude/fase4-d-inbox-motor`), tarefas 25 e 26 do plano `04-fase-motor.md`:
+- Branch `claude/fase4-e-remove-legados` (PR #221; nasceu empilhado sobre a 4D e hoje tem base `main`), tarefas 25 e 26 do plano `04-fase-motor.md`:
   remoção dos drivers, webhooks e templates de Meta e Evolution; deploy com o serviço do motor no lugar do Evolution.
 - `node_modules/.bin/tsc --noEmit`: saída 0.
 - `npm test`: saída 0, 711 arquivos e 5232 testes.
@@ -2986,3 +2986,39 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 - Integração (perfil `integracao`): `vitest related` varria quase toda a suíte e foi interrompido; rodados os 37 `*.int.test.ts` do diff:
   37 arquivos, 326 testes verdes. Sem falhas novas.
 **Estado**: Implementado; aguardando revisão e merge (depois da 4D).
+
+**Base trocada para `main` e correções da R1 do #221 (18/10/2026)**
+
+- **Merge do `main`** (`3e909715`: #216, #217, #218, #219 com a 4D e #220). Conflitos:
+  - `InboxCliente.tsx`, `InboxCliente.test.ts` e `InboxCliente.confirmacao.test.ts`: fica a remoção da 3F.
+  - `consultas-inbox.ts`: fica a refatoração do `main` (`silencioPosInbound`, `regrasCadastroDoAtendimento`, `propria`/`apagada`);
+    sai `janela24h`, que dependia de `META_CLOUD`. O Inbox novo (`InboxNovo*`, `AcoesAtendimento*`) não lê `janela24h`.
+  - este quadro (ficam os blocos de cada PR).
+  - Sem migration nova no `main` nem nesta branch.
+- **B1, além do diff original:** os testes que o `main` trouxe (`AcoesAtendimento.test.ts`, `InboxNovo.test.ts`,
+  `InboxNovo.interacao.test.ts`, `consultas-pagina`, `opcoes-filtro`, `paineis` e `regras-inbox.int.test.ts`) passam a usar
+  `DriverWhatsApp.*` no lugar das strings `"BAILEYS"`/`"META_CLOUD"` (trava `sem-provedores-legados.test.ts`).
+  `regras-inbox.int.test.ts` deixa de mockar `drivers/meta-cloud` e `drivers/evolution`, apagados. A regra 15 desse arquivo
+  passa a receber a mensagem com `driver: MOTOR`: `criarNumeroSetor` cria número MOTOR desde a 4E, e o inbound acha o número
+  pelo driver (com `META_CLOUD` a mensagem não era gravada e o teste falhava depois do merge).
+- **C1:** `scripts/backup-producao.sh` para o motor só durante o tar de `/data` (PGlite em arquivo) e o religa em seguida,
+  também em erro (`trap religar_motor EXIT INT TERM`). O tar roda num container auxiliar (`alpine:3.20`, `IMAGEM_TAR`) com
+  `--volumes-from` do container do motor, sem depender de tar na imagem do motor. O restore usa o mesmo container auxiliar.
+  Teste em `src/deploy/motor-compose.test.ts`. Nada foi rodado contra um ambiente real.
+- **C2:** a saúde do canal (`saude.ts`) alerta cada `NumeroWhatsApp` ativo com driver legado (`BAILEYS` ou `META_CLOUD`; o
+  enum não tem `EVOLUTION`). Testes de integração em `saude.int.test.ts`. Passo de migração em `SETUP.md` ("Números legados"):
+  reparear a linha no motor (converter o registro para `MOTOR` e conectar por QR ou código) ou desativar o número legado.
+- **C3:** `importarHistoricoLinha` (`src/server/whatsapp/historico.ts`) ficou sem chamador: o motor não manda histórico por
+  nenhuma rota. Saem o módulo, `historico.test.ts` e o bloco LC-10/LC-11 de `linha-comercial.int.test.ts`. Se o motor
+  passar a enviar o histórico do aparelho, a importação volta com a rota que a chamar.
+- **C4:** sem avisos do eslint nos arquivos alterados: sai `destinosAgenda` (sem uso) de `comunicacoes-agenda/whatsapp.ts`, e
+  `substituicao-avisos.int.test.ts` tipa o transporte com `vi.fn<...>` em vez do parâmetro `_entrada` sem uso.
+- Verificação num banco descartável `erp_genius_test_fix221` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: saída 0, 0 erros e 40 avisos (nenhum nos arquivos alterados).
+  - `npm test`: saída 0, 715 arquivos e 5308 testes.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp` e os `*.int.test.ts`
+    tocados pelo PR e pelo merge): 69 arquivos e 544 testes verdes. Na primeira
+    rodada só a regra 15 de `regras-inbox` falhou (acima); corrigida, o arquivo rodou de novo isolado: 21 testes verdes.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.

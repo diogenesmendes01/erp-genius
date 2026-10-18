@@ -181,6 +181,27 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
 5. **Deploy automático**:
    - Cada merge no branch `main` dispara um novo deploy (webhook Git do Coolify).
 
+### Números legados (Meta Cloud / Evolution) depois da Fase 4E
+
+Meta Cloud e Evolution saíram do código: um número ativo com driver `META_CLOUD` ou `BAILEYS`
+não envia nem recebe mais nada. A saúde do canal (`/api/whatsapp/health`) acusa cada um com o
+alerta "Número … ativo em driver legado". Para cada número do alerta:
+
+1. **Reparear a linha no motor.** O telefone é único em `NumeroWhatsApp`, então a mesma linha não
+   pode ser cadastrada de novo como número novo. O integrador converte o registro (as conversas e o
+   histórico ficam no mesmo número), com o app de pé e o motor no ar:
+
+   ```sql
+   UPDATE "NumeroWhatsApp"
+      SET driver = 'MOTOR', "providerRef" = id, sessao = 'DESCONECTADO'
+    WHERE id = '<id do número legado>';
+   ```
+
+   Depois, em **Configuração → WhatsApp → Números**, use **Conectar** (QR ou código de pareamento).
+2. **Desativar o número legado** que não vai para o motor: **Editar** → desmarcar **Número ativo**.
+   O número fica inativo (soft delete) e sai do alerta.
+3. Confira `/api/whatsapp/health`: nenhum alerta de driver legado.
+
 ### Diferenças em relação ao docker-compose.prod.yml
 
 - **Sem Caddy**: o Traefik do Coolify cuida de TLS e roteamento.
