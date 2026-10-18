@@ -23,7 +23,9 @@ vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), sile
 import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import { COMANDOS_MENSAGEM_LIGADOS, podeEnviarNaConversa } from "./ConversaAberta";
+import { MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
+import type { ConversaHook } from "@/components/conversa/useConversa";
+import { COMANDOS_MENSAGEM_LIGADOS, ConversaAberta, podeEnviarNaConversa, type PropsConversaAberta } from "./ConversaAberta";
 
 const usuario = { id: "u1", papeis: [Papel.VENDEDOR] };
 const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
@@ -31,6 +33,10 @@ const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
   contatoTelefone: "+5511999990000", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null, linhaComercial: false,
   status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
   responsavelId: "u1", numeroDonoId: null, setoresDoNumero: ["COMERCIAL"], atendimentoOrigemId: null, ...o,
+});
+const conversaVazia = { mensagens: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
+const propsConversa = (o: Partial<PropsConversaAberta> & { podeEnviar: boolean }): PropsConversaAberta => ({
+  item: item(), usuario, fuso: null, conversa: conversaVazia, aoVoltar: () => {}, aoAbrirPainel: () => {}, aoMudar: () => {}, ...o,
 });
 const msg: MensagemThread = {
   id: "m1", direcao: "SAIDA", tipo: "TEXTO", corpo: "Olá", midiaPath: null, status: "ENVIADA", origem: "HUMANO",
@@ -56,24 +62,37 @@ describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do
   });
 });
 
-describe("ConversaAberta: o compositor respeita a alçada e o status (C4 da R1 do #217)", () => {
-  it("atendimento aberto e alçada de envio: pode enviar", () => {
-    permissao.enviar = true; permissao.chamadas = [];
-    expect(podeEnviarNaConversa(usuario, item())).toBe(true);
-    expect(permissao.chamadas).toContainEqual([usuario, "enviar", { setor: "COMERCIAL", responsavelId: "u1", linhaComercial: false, donoLinhaId: null }]);
+describe("ConversaAberta: o compositor respeita o podeEnviar do servidor e o status (C4 da R1 do #217 · C6 do #217)", () => {
+  it("atendimento aberto e o servidor libera o envio: pode enviar", () => {
+    expect(podeEnviarNaConversa(item(), true)).toBe(true);
   });
-  it("sem a alçada de envio (podeExecutar nega): não envia", () => {
-    permissao.enviar = false;
-    expect(podeEnviarNaConversa(usuario, item())).toBe(false);
-    permissao.enviar = true;
+  it("o servidor nega o envio (convidado sem envio, destinatário a conferir): não envia", () => {
+    expect(podeEnviarNaConversa(item(), false)).toBe(false);
   });
-  it("atendimento encerrado não envia, mesmo com a alçada", () => {
-    expect(podeEnviarNaConversa(usuario, item({ status: "ENCERRADO" }))).toBe(false);
+  it("atendimento encerrado não envia, mesmo com o envio liberado", () => {
+    expect(podeEnviarNaConversa(item({ status: "ENCERRADO" }), true)).toBe(false);
   });
-  it("o compositor não usa mais `podeEnviar` fixo (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/ConversaAberta.tsx", "utf8");
-    expect(fonte).not.toMatch(/\bpodeEnviar\s*\n/);
-    expect(fonte).toMatch(/podeEnviar=\{podeEnviarNaConversa\(usuario, item\)\}/);
+  it("a decisão não passa por podeExecutar(\"enviar\"), que libera todo mundo", () => {
+    permissao.chamadas = [];
+    podeEnviarNaConversa(item(), true);
+    podeEnviarNaConversa(item(), false);
+    expect(permissao.chamadas.filter((c) => c[1] === "enviar")).toEqual([]);
+  });
+  it("componente: convidado sem envio (podeEnviar false) vê o aviso no lugar do compositor", () => {
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: false })));
+    expect(h).toContain(MOTIVO_SEM_ENVIO);
+  });
+  it("componente: com o envio liberado e o atendimento aberto o compositor aparece", () => {
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true })));
+    expect(h).not.toContain(MOTIVO_SEM_ENVIO);
+  });
+  it("componente: encerrado esconde o compositor mesmo com o envio liberado", () => {
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true, item: item({ status: "ENCERRADO" }) })));
+    expect(h).toContain(MOTIVO_SEM_ENVIO);
+  });
+  it("InboxNovo passa à conversa o podeEnviar do painel do atendimento aberto (fonte)", () => {
+    const fonte = readFileSync("src/app/(app)/inbox/InboxNovo.tsx", "utf8");
+    expect(fonte).toMatch(/<ConversaAberta[\s\S]*?podeEnviar=\{painelSetor\?\.id === selecionado && painelSetor\.dado\?\.podeEnviar === true\}/);
   });
 });
 
