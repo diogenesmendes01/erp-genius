@@ -2,7 +2,8 @@
 // Conferido na tabela pública em 18/10/2026 (quadro, "Fase 5, bloco A"): Haiku 5.5 cache 0,01
 // confirmado (prompts até 100 mil tokens). Sonnet 5.5 cache público é 0,10; aqui fica 0,20 do plano
 // (superestima o gasto, lado seguro do teto) até o dono decidir. Escrita de cache (cache_creation_input_tokens,
-// fora de input_tokens) é cobrada a 1,25× a entrada: Sonnet 5.5 2,50; Haiku 5.5 0,125.
+// fora de input_tokens) é cobrada a 1,25× a entrada no cache efêmero de 5 min (Sonnet 5.5 2,50; Haiku 5.5 0,125)
+// e a 2× com ttl "1h" (Sonnet 5.5 4; Haiku 5.5 0,20). Ver fatorEscritaCache.
 export const MODELOS_PERMITIDOS = ["claude-sonnet-5-5", "claude-haiku-5-5"] as const;
 
 export type ModeloPermitido = (typeof MODELOS_PERMITIDOS)[number];
@@ -11,7 +12,22 @@ export function modeloPermitido(modelo: string): modelo is ModeloPermitido {
   return (MODELOS_PERMITIDOS as readonly string[]).includes(modelo);
 }
 
-const FATOR_ESCRITA_CACHE = 1.25;
+export type TtlCache = "5m" | "1h";
+
+/**
+ * `cache_control` do bloco de sistema (provedor/anthropic.ts). Sem `ttl` é o cache efêmero de 5 min. Fonte única:
+ * o fator de escrita de cache sai daqui, então trocar para `ttl: "1h"` muda o custo junto.
+ */
+export const CACHE_CONTROL_SISTEMA: { readonly type: "ephemeral"; readonly ttl?: TtlCache } = Object.freeze({
+  type: "ephemeral",
+});
+
+/** Multiplicador da entrada na escrita de cache: 1,25× no efêmero de 5 min (sem ttl ou "5m"); 2× com ttl "1h". */
+export function fatorEscritaCache(ttl: TtlCache | undefined): number {
+  return ttl === "1h" ? 2 : 1.25;
+}
+
+const FATOR_ESCRITA_CACHE = fatorEscritaCache(CACHE_CONTROL_SISTEMA.ttl);
 
 interface Preco {
   entrada: number;

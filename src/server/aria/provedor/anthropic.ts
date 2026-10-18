@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { modeloPermitido } from "./custo";
+import { CACHE_CONTROL_SISTEMA, modeloPermitido } from "./custo";
 import { ErroProvedorIA, type ModelosIA, type PedidoIA, type ProvedorIA, type RespostaIA } from "./tipos";
 
 // Porta mínima do SDK: o SDK 0.131.0 não tipa os campos de reserva/output_config
@@ -67,7 +67,7 @@ export function criarProvedorAnthropic(cliente: ClienteMensagens, modelos: Model
       const req: Record<string, unknown> = {
         model: modelo,
         max_tokens: p.maxTokens,
-        system: [{ type: "text", text: p.sistema, cache_control: { type: "ephemeral" } }],
+        system: [{ type: "text", text: p.sistema, cache_control: CACHE_CONTROL_SISTEMA }],
         messages: montarMensagens(p),
         output_config: outputConfig,
       };
