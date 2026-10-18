@@ -2930,3 +2930,18 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
 - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
 - Integração (banco `dev-email`, migration `aria_base` aplicada só nele), recorte dos arquivos tocados e dos que importam `comercial/{acoes,consultas,schema}`: `src/server/aria`, `src/server/comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `whatsapp/{inbox,acesso-atendimento}`, `secretaria/politica`: saída 0; 13 arquivos, 120 testes verdes.
 - Nota: `vitest related` com `src/lib/labels.ts`/`evento.ts` alcança praticamente toda a suíte de integração (passou de 2 h e foi interrompido pelo limite de tempo); a suíte completa fica para o integrador.
+
+## Fase 5, bloco B — configuração da Aria, Tasks 6 a 11 (18/10/2026)
+
+Branch `claude/fase5-b-config` (sobre `claude/fase5-a-fundacao`, main 6d6d33ee + 24af270d). Tasks 6 (schema versionado, predefinições e matriz), 7 (divisão Admin × Gerente Comercial), 8 (rascunho, publicação numerada com diff, descarte e restauração), 9 (estado DESLIGADA/SHADOW/ATIVA, pausa global e supervisão), 10 (base de conhecimento: fontes, trechos e extração de PDF pelo provedor simulado) e 11 (busca textual em português), mais o commit de correção da revisão final. Só provedor simulado; nenhuma chamada real à API.
+
+- **Migration** `20261018020000_aria_conhecimento`: ID reservado pelo integrador para `<ID-F5-02> aria_conhecimento` (registro de 18/10 em `planejamento/execucao-ledger.md`: `020000 aria_conhecimento`). Aplicada só no banco do perfil `tester` (`prisma migrate status`: em dia, 455 migrations).
+- **Correções da revisão final:** Gerente não encurta supervisão em vigor (DF5-13; teste `gerente_nao_encurta_supervisao`); ADR-F5-01 registra o descarte do rascunho como única remoção física e a regra de que o Gerente não salva nem publica rascunho que o Admin alterou fora da alçada dele; testes de `busca` com controle positivo (conferido por mutação: tirar o filtro de `status` ou de `arquivadaEm` derruba `ignora_fonte_arquivada_e_nao_pronta`).
+- **Pendência para o dono (matriz):** a tabela de predefinições do plano (Task 6, Step 3) traz `CONDICAO_COMERCIAL` EQUILIBRADO `ooossooo` e AUTONOMO `oooeeooo` (etapas EXPERIMENTAL_*), mas o teste do próprio plano exige `EQUILIBRADO.PROPOSTA = SUGERE`. O código segue o teste: EQUILIBRADO `ooooosso` e AUTONOMO `oooooeeo` (PROPOSTA e AGUARDANDO_MATRICULA). Condição comercial em experimental não faz sentido de negócio, então a tabela do plano parece deslocada. Até o dono confirmar e o integrador corrigir a tabela do plano, a referência dos blocos C e D é `src/server/aria/matriz.ts`.
+- Evidências (HEAD da correção):
+  - `node_modules/.bin/tsc --noEmit`: saída 0 (linha de base: 0).
+  - `npm test`: saída 0; 723 arquivos, 5328 testes verdes (linha de base do bloco A: 720/5301).
+  - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+  - Integração, recorte (não é a suíte completa), banco do perfil `tester`: `npm run test:int -- src/server/aria`: saída 0; 6 arquivos, 45 testes verdes. `vitest related` sobre `aria/estado.ts` e `aria/conhecimento/busca.ts`: saída 0; 2 arquivos, 15 testes.
+- **Pendente para o integrador antes do merge:** `npm run test:int` completo (mais de 2 h, proibido nesta faixa), comparando com as falhas preexistentes conhecidas (sensíveis à data e o flake de `portal-aluno/preferencia-fuso`); confirmação do dono sobre a matriz.
+- **Estado**: implementado; aguarda a suíte completa, a confirmação da matriz e o integrador. Não concluído.

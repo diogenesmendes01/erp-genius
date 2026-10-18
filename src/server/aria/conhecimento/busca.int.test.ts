@@ -36,15 +36,28 @@ describe("busca nos trechos", () => {
 
   it("ignora_fonte_arquivada_e_nao_pronta", async () => {
     const arquivada = await fonte("A", "A turma começa cedo.");
-    await prisma.fonteConhecimento.update({ where: { id: arquivada }, data: { arquivadaEm: new Date() } });
     const processando = await fonte("B", "A turma começa tarde.", "PROCESSANDO");
-    expect(await buscarTrechos("turma", [arquivada, processando])).toEqual([]);
+    const erro = await fonte("C", "A turma começa à tarde.", "ERRO");
+    const controle = await fonte("D", "A turma começa ao meio-dia.");
+    // Controle positivo: antes de arquivar, a mesma consulta acha a fonte.
+    expect(await buscarTrechos("turma", [arquivada])).toHaveLength(1);
+    await prisma.fonteConhecimento.update({ where: { id: arquivada }, data: { arquivadaEm: new Date() } });
+    const r = await buscarTrechos("turma", [arquivada, processando, erro, controle]);
+    expect(r.map((t) => t.fonteId)).toEqual([controle]);
+    // Voltando a PRONTA, a fonte em processamento passa a aparecer (a consulta casa com o texto).
+    await prisma.fonteConhecimento.update({ where: { id: processando }, data: { status: "PRONTA" } });
+    expect((await buscarTrechos("turma", [processando])).map((t) => t.fonteId)).toEqual([processando]);
   });
 
   it("consulta_com_aspas_e_simbolos_nao_quebra", async () => {
     const fonteId = await fonte("Horários", "As turmas noturnas.");
     expect(await buscarTrechos("'); DROP TABLE x; --", [fonteId])).toEqual([]);
+    expect(await buscarTrechos(`"turmas noturnas" ; ) ' --`, [fonteId])).toHaveLength(1);
     expect(await prisma.trechoConhecimento.count()).toBe(1);
+    // A busca continua funcionando depois da consulta maliciosa.
+    const r = await buscarTrechos("turma noturna", [fonteId]);
+    expect(r).toHaveLength(1);
+    expect(r[0].fonteId).toBe(fonteId);
   });
 
   it("respeita_limite_e_ordena_por_rank", async () => {

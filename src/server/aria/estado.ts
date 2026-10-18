@@ -132,6 +132,15 @@ export async function definirSupervisao(input: { ate: Date | null }): Promise<Re
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
       const atual = await tx.agenteIA.findUniqueOrThrow({ where: { id: ID_AGENTE } });
+      // Encurtar uma supervisão vigente equivale a desligá-la (DF5-13): só quem pode desligar.
+      if (
+        input.ate !== null &&
+        atual.supervisaoAte !== null &&
+        atual.supervisaoAte.getTime() > Date.now() &&
+        input.ate.getTime() < atual.supervisaoAte.getTime()
+      ) {
+        await exigir(u, "desligarSupervisao", "Só o Administrador encurta a supervisão em vigor.");
+      }
       await tx.agenteIA.update({ where: { id: ID_AGENTE }, data: { supervisaoAte: input.ate } });
       await registrarEvento(tx, {
         tipo: "AriaSupervisaoAlterada",
