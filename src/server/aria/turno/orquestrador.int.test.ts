@@ -156,6 +156,56 @@ describe("processarTurnoAria", () => {
     expect(await prisma.turnoAgenteIA.findFirstOrThrow()).toMatchObject({ resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" });
   });
 
+  it("so_acoes_com_humano_assumindo_durante_a_chamada_nao_mexe_no_crm", async () => {
+    await pronta("ATIVA", matriz({ NOVO: { MOVER_ETAPA: "EXECUTA", AGENDAR_MENSAGEM: "EXECUTA", MARCAR_PERDIDO: "EXECUTA" } }));
+    const amanha = new Date(Date.now() + 24 * 3600_000).toISOString();
+    // Sem resposta de texto: só ações. O atendente assume pelo ERP enquanto o provedor pensa.
+    const provedor: ProvedorIA = {
+      nome: "simulado",
+      async gerar(p: PedidoIA) {
+        await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
+        return {
+          ...(await simuladoBase.gerar(p)),
+          texto: JSON.stringify({
+            resposta: null,
+            documentoId: null,
+            acoes: [
+              { acao: "MOVER_ETAPA", para: "EM_ATENDIMENTO", justificativa: "respondeu" },
+              { acao: "AGENDAR_MENSAGEM", texto: "Oi, passando para lembrar da aula", enviarEmISO: amanha, justificativa: "lembrete" },
+              { acao: "MARCAR_PERDIDO", motivo: "PRECO", justificativa: "x" },
+            ],
+            confianca: 95,
+            handoff: null,
+            fontes: [],
+            humor: null,
+          }),
+        };
+      },
+    };
+    expect(await processarTurnoAria(inbound.id, { provedor })).toMatchObject({ resultado: "IGNORADO:PAUSADA_NO_ATENDIMENTO" });
+    expect((await prisma.oportunidade.findUniqueOrThrow({ where: { id: c.op.id } })).etapa).toBe("NOVO");
+    expect(await prisma.acaoAgenteIA.count()).toBe(0);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(await prisma.evento.count({ where: { tipo: { in: ["EtapaAlterada", "LeadPerdido", "MensagemAgendada"] } } })).toBe(0);
+  });
+
+  it("midia_sem_legenda_nao_responde_de_novo_a_pergunta_anterior", async () => {
+    await pronta();
+    const contador = provedorContador(provedorSimulado);
+    // A pergunta anterior já foi respondida pela Aria; agora chega uma foto sem legenda.
+    expect(await processarTurnoAria(inbound.id, { provedor: contador })).toMatchObject({ resultado: "RESPONDEU" });
+    await prisma.mensagemWhatsApp.create({
+      data: { atendimentoId: c.at.id, conversaId: c.conversaId, numeroId: c.numero.id, direcao: "SAIDA", origem: "IA", corpo: "Temos turmas à noite, quer conhecer?", driver: "MOTOR", status: "ENVIADA", providerMessageId: `o-${++seq}` },
+    });
+    const foto = await prisma.mensagemWhatsApp.create({
+      data: { atendimentoId: c.at.id, conversaId: c.conversaId, numeroId: c.numero.id, direcao: "ENTRADA", tipo: "IMAGEM", corpo: null, driver: "MOTOR", status: "ENTREGUE", providerMessageId: `o-${++seq}` },
+    });
+    expect(await processarTurnoAria(foto.id, { provedor: contador })).toMatchObject({ resultado: "IGNORADO:SEM_TEXTO" });
+    expect(contador.chamadas).toBe(1);
+    expect(await prisma.intencaoMensagem.count()).toBe(1);
+    expect(await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: foto.id } })).toMatchObject({ resultado: "IGNORADO:SEM_TEXTO" });
+  });
+
   it("ativa_sem_chave_vira_handoff_erro_provedor_sem_resposta", async () => {
     await pronta("ATIVA");
     const chave = process.env.ANTHROPIC_API_KEY;
@@ -250,22 +300,52 @@ describe("rajada de inbound", () => {
   });
 
   // B4: fala nova que a Aria não responderia (SEM_TEXTO) não supera a anterior; senão ninguém responde.
-  for (const [rotulo, tipo] of [["figurinha", "FIGURINHA"], ["audio", "AUDIO"], ["localizacao", "LOCALIZACAO"], ["texto", "TEXTO"]] as const) {
+  // B2 (R2 #234): imagem/vídeo/documento sem legenda (corpo nulo ou só espaços) também param em SEM_TEXTO.
+  // Com legenda, a mídia é fala nova e supera o texto anterior.
+  const casos: [string, TipoMensagem, string | null, boolean][] = [
+    ["figurinha", "FIGURINHA", null, false],
+    ["audio", "AUDIO", null, false],
+    ["localizacao", "LOCALIZACAO", null, false],
+    ["imagem_sem_legenda", "IMAGEM", null, false],
+    ["video_sem_legenda", "VIDEO", "", false],
+    ["documento_sem_legenda", "DOCUMENTO", "   ", false],
+    ["imagem_com_legenda", "IMAGEM", "essa turma tem vaga?", true],
+    ["texto", "TEXTO", "de inglês", true],
+  ];
+  for (const [rotulo, tipo, corpo, supera] of casos) {
     it(`texto_mais_${rotulo}_gera_uma_resposta`, async () => {
       const c = await cenario();
       await publicar(c.dono.id, "ATIVA");
       const t = Date.now();
       const m1 = await c.inbound("Quero saber das turmas", new Date(t - 2000));
-      const m2 = await c.inbound(tipo === "TEXTO" ? "de inglês" : null, new Date(t - 1000), tipo);
+      const m2 = await c.inbound(corpo, new Date(t - 1000), tipo);
       const contador = provedorContador(provedorSimulado);
       const r1 = await processarTurnoAria(m1.id, { provedor: contador });
       const r2 = await processarTurnoAria(m2.id, { provedor: contador });
       const resultados = [r1, r2].map((r) => ("resultado" in r ? r.resultado : "DUPLICADO"));
-      expect(resultados).toEqual(tipo === "TEXTO" ? ["IGNORADO:FALA_SUPERADA", "RESPONDEU"] : ["RESPONDEU", "IGNORADO:SEM_TEXTO"]);
+      expect(resultados).toEqual(supera ? ["IGNORADO:FALA_SUPERADA", "RESPONDEU"] : ["RESPONDEU", "IGNORADO:SEM_TEXTO"]);
       expect(contador.chamadas).toBe(1);
       expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
     });
   }
+
+  it("foto_sem_legenda_durante_a_chamada_nao_supera_o_turno_em_curso", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const m1 = await c.inbound("Quero saber das turmas", new Date(Date.now() - 2000));
+    let foto: { id: string } | null = null;
+    const contador = provedorContador({
+      nome: "simulado",
+      async gerar(p: PedidoIA) {
+        foto ??= await c.inbound(null, new Date(Date.now() - 1000), "IMAGEM");
+        return provedorSimulado.gerar(p);
+      },
+    });
+    expect(await processarTurnoAria(m1.id, { provedor: contador })).toMatchObject({ resultado: "RESPONDEU" });
+    expect(await processarTurnoAria(foto!.id, { provedor: contador })).toMatchObject({ resultado: "IGNORADO:SEM_TEXTO" });
+    expect(contador.chamadas).toBe(1);
+    expect(await prisma.intencaoMensagem.count({ where: { origem: "IA" } })).toBe(1);
+  });
 
   it("inbound_que_chega_durante_a_chamada_supera_o_turno_em_curso", async () => {
     const c = await cenario();
@@ -337,6 +417,22 @@ describe("reprocessarTurnosPendentes", () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "");
     expect(await reprocessarTurnosPendentes(agora)).toBe(1);
     expect((await prisma.turnoAgenteIA.findFirstOrThrow()).ancoraMensagemId).toBe(texto.id);
+    vi.unstubAllEnvs();
+  });
+
+  it("reprocesso_nao_pula_ancora_seguida_de_foto_sem_legenda", async () => {
+    const c = await cenario();
+    await publicar(c.dono.id, "ATIVA");
+    const agora = new Date();
+    const texto = await c.inbound("Quero saber das turmas", new Date(agora.getTime() - 6 * 60_000));
+    const foto = await c.inbound(null, new Date(agora.getTime() - 5 * 60_000), "IMAGEM");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    // O texto não é pulado: ganha turno e é atendido (ATIVA sem chave: handoff ERRO_PROVEDOR, uma
+    // pessoa assume). A foto não chama o provedor de novo (fica pausada pelo handoff).
+    expect(await reprocessarTurnosPendentes(agora)).toBe(2);
+    expect(await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: texto.id } })).toMatchObject({ resultado: "HANDOFF" });
+    expect((await prisma.turnoAgenteIA.findUniqueOrThrow({ where: { ancoraMensagemId: foto.id } })).resultado).toMatch(/^IGNORADO:/);
+    expect(await prisma.chamadaIA.count()).toBe(1);
     vi.unstubAllEnvs();
   });
 

@@ -19,7 +19,7 @@ vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: async () => 
 // - nenhum <button> com padding e borda/fundo escreve as classes à mão em vez de botaoClasses;
 // - a variante e o tamanho decididos para cada botão na migração ficam travados (botoes-mapa.ts).
 // A análise é pelo AST do TypeScript (qualquer forma de className), não por regex de atributo.
-const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/home", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado", "src/app/(app)/funil", "src/app/(app)/oportunidades", "src/app/(app)/carteira", "src/app/(app)/tarefas", "src/app/(app)/contatos", "src/app/(app)/relatorios"];
+const AREAS_MIGRADAS = ["src/app/(app)/configuracao", "src/app/(app)/diario", "src/app/(app)/academico", "src/app/(app)/alunos", "src/app/(app)/financeiro", "src/app/(app)/matriculas", "src/app/(app)/secretaria", "src/app/(app)/empresas", "src/app/(app)/inbox", "src/app/(app)/home", "src/app/(app)/comissoes", "src/app/(app)/preferencias", "src/app/(app)/acesso-negado", "src/app/(app)/funil", "src/app/(app)/oportunidades", "src/app/(app)/carteira", "src/app/(app)/tarefas", "src/app/(app)/contatos", "src/app/(app)/relatorios", "src/app/(app)/aria"];
 
 /**
  * Telas públicas fora do shell (docs/43 §6 item 8): login da equipe, pagamento por link e o acesso ao portal do
@@ -65,6 +65,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/aria/_componentes/Campos.tsx": ["Ligado · Desligado"], // interruptor (role=switch): liga/desliga, é estado e não ação
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx": ["Remover documento"], // ícone de lixeira
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": ["key d.n"], // chip de dia da semana
   "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx": ["Fechar"], // ícone de fechar
@@ -1642,6 +1643,9 @@ export function coresNosDescendentes(botao: ts.JsxElement): string[] {
 type FonteDoRotulo = { componente: string; atributo: string; propriedade?: string };
 const ROTULOS_DINAMICOS: { arquivo: string; nome: string; vezes: number; motivo: string; fontes?: FonteDoRotulo }[] = [
   { arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/Formularios.tsx", nome: "Registrando…", vezes: 1, fontes: { componente: "Formulario", atributo: "titulo" }, motivo: "envio do formulário genérico; o rótulo é o título passado pelos usos (este arquivo e os que o importam): 'Registrar …', 'Reservar …', 'Propor …', 'Guardar …', 'Decidir …', 'Solicitar …'" },
+  { arquivo: "src/app/(app)/aria/_componentes/Abas.tsx", nome: "(sem nome)", vezes: 1, motivo: "link de aba da Aria: o rótulo vem de ROTULO_ABA (Visão geral, Comportamento, Permissões…) a cada item do mapa" },
+  { arquivo: "src/app/(app)/aria/_componentes/VisaoGeral.tsx", nome: "key p.dias", vezes: 1, motivo: "link de período da visão geral: o rótulo vem da lista PERIODOS (Hoje, 7 dias, 30 dias)" },
+  { arquivo: "src/app/(app)/aria/_componentes/Permissoes.tsx", nome: "nome", vezes: 1, motivo: "célula da matriz etapa × ação: o texto visível é o modo atual (Executa, Sugere ou Não faz), que cicla a cada clique" },
   { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", nome: "`Reagir com ${e}`", vezes: 1, motivo: "um botão por emoji de REACOES_RAPIDAS (lista fixa no mesmo arquivo): 'Reagir com 👍', 'Reagir com ❤️'…" },
   { arquivo: "src/components/EstadoRota.tsx", nome: "(sem nome)", vezes: 2, fontes: { componente: "EstadoRota", atributo: "acao", propriedade: "rotulo" }, motivo: "ação da tela de erro/não encontrado (link ou botão): 'Tentar de novo', 'Voltar ao início' — vem do chamador" },
 ];

@@ -20,6 +20,7 @@ import {
   IconBuilding,
   IconChecklist,
   IconChartBar,
+  IconSparkles,
   type IconProps,
 } from "@tabler/icons-react";
 import { navParaPapeis, hrefAtivoMaisLongo } from "@/lib/nav";
@@ -41,6 +42,7 @@ const ICONS: Record<string, Icone> = {
   Building: IconBuilding,
   Checklist: IconChecklist,
   ChartBar: IconChartBar,
+  Sparkles: IconSparkles,
 };
 
 /**
