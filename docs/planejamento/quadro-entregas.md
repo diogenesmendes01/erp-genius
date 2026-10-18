@@ -2898,6 +2898,131 @@ completo e `npm run test:int` no `.erp-test-profile`, os dois com saída 0. Não
 - **C3:** o menu da mensagem mostra só os comandos que a conversa executa (`COMANDOS_MENSAGEM_LIGADOS = ["copiar"]`).
 - **C4:** o compositor usa `podeEnviarNaConversa` (`podeExecutar(usuario, "enviar", …)` e atendimento ENCERRADO não envia).
 
+## Pendências não bloqueantes do #215 (C4) e do #217 (C6, C7) (18/10/2026)
+
+- Branch: `claude/pendencias-215-217` (base main 6d6d33ee). Cada item com teste falhando antes da correção.
+- **C4 do #215:** o alerta "Evento do motor parado" passa a medir o evento mais atrasado, não o de menor `seq`. O critério
+  de "parado" não mudou: sem backoff conta desde `recebidoEm`, em backoff conta desde a `proximaTentativaEm` vencida, sempre
+  além do limiar de 15 min. São duas consultas, cada uma ordenada pelo seu relógio, e vale a mais antiga das duas
+  (`saude.ts`). Teste em `saude.int.test.ts` com o evento de `seq` menor menos atrasado.
+- **C6 do #217:** o compositor do Inbox novo decide pelo `podeEnviar` da thread (`atendimentoVisivel(usuario, id, true)`), que
+  `carregarPainel` passa a devolver, e não mais por `podeExecutar("enviar")`, que libera todo mundo.
+  `InboxNovo` passa esse valor do painel do atendimento aberto à `ConversaAberta` (falso enquanto o painel carrega).
+  `podeEnviarNaConversa(item, podeEnviar)` continua barrando ENCERRADO. Testes de componente em `ConversaAberta.test.ts` e
+  de integração em `paineis.int.test.ts`: o responsável envia, o convidado só de leitura não envia, o convidado com envio envia.
+  Revisão: a secretaria responsável recebe `podeEnviar: false` quando o aluno do atendimento não tem o telefone do contato.
+  O envio real recusa no mesmo caso, porque `enviarTextoInbox` usa `conversaVisivel(…, true)`, alias da mesma função
+  `atendimentoVisivel`, e quem recusa é `destinatarioAtualDoAtendimento`. O painel está coerente com o envio.
+  `paineis-envio.int.test.ts` compara o painel com `enviarTextoInbox` em três casos: telefone do aluno igual ao do contato
+  (envia), aluno sem telefone ou com outro telefone (não envia) e secretaria sem aluno (envia).
+- **C7 do #217:** com o contato em opt-out (`atual.optOut`), o bloco "Retomar régua" some do painel (`AcoesContato`/`CobrancaContato`),
+  como no Inbox antigo. Pagamento e promessa continuam. Teste de interação em `AcoesContato.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (714 arquivos, 5276 testes). Integração com saída 0 em `saude.int.test.ts` (20 testes) e em
+  `src/server/inbox/` (7 arquivos, 64 testes), rodada num banco descartável próprio. O `npm run test:int` completo não
+  foi rodado; fica para o integrador.
+
+## Fase 4D — verificação final do bloco (18/10/2026)
+
+- Branch `claude/fase4-d-inbox-motor` (PR empilhado sobre `claude/fase4-c-webhook`), tarefas 18 a 24b do plano `04-fase-motor.md`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 714 arquivos e 5245 testes (linha de base da 4C: 711/5220).
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` ficou varrendo a suíte inteira (`evento.ts`/`schema.ts` alcançam quase tudo) e foi
+  interrompido; rodados os 7 `*.int.test.ts` do diff (`acoes-numero`, `linha-comercial`, `motor/acoes-admin`, `motor/acoes-mensagem`,
+  `motor/conteudo`, `motor/grupo-envio`, `motor/presenca`): 89 testes verdes; e `despachante-motor/comercial/agendada` + `inbox`:
+  43 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4C).
+
+**Base trocada para `main` e correções da R1 do #219 (18/10/2026)**
+
+- **Merges do `main`:** dois merges, `2e4efada` (#216 e #217) e o de `ad4142cd` (#218).
+  - Conflitos: este quadro (ficam os blocos de cada PR), `Compositor.test.ts` (testes de anexo e áudio do #217 junto com os de capacidades da 4D) e `ConversaAberta.tsx` (o `podeEnviar` do painel do #218 junto com as capacidades da 4D).
+  - A 4D não mexia no Inbox antigo removido pela 3F. Sem migration nova.
+- **B1:** o Inbox novo decide os recursos do motor por `ItemListaInbox.capacidades`, calculado com `capacidadesDoNumero` como em `ThreadConversa.capacidades`. Antes decidia por `recursoDisponivel(item.driver)`, que libera MOTOR com a sessão caída. O compositor recebe `capacidades`.
+- **C4:** `COMANDOS_MENSAGEM_LIGADOS = ["copiar", "reagir", "editar", "apagar"]`, filtrados por mensagem em `comandosDaMensagem`.
+  - Cada comando exige a capacidade do número, o envio liberado e a mensagem não apagada. Editar e apagar valem só na própria mensagem de saída, e editar só em texto. `MensagemThread` ganha `propria` e `apagada`.
+  - Os diálogos ficam em `inbox/AcoesMensagem.tsx`. Apagar roda em `ConfirmarAcao` e entrou na lista fechada.
+  - Encaminhar fica fora: falta a escolha da conversa de destino.
+- **C6:** `criarGrupoWhatsApp` confere `grupoNovoNoEscopo`, que tem os mesmos ramos de `escopoGrupos`. Teste em `motor/acoes-admin.int.test.ts`.
+- Verificação num banco descartável `erp_genius_test_fix219` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: 0 erros e 43 avisos já existentes.
+  - `npm test`: 718 arquivos e 5314 testes verdes, saída 0.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp`): 59 arquivos e 473 testes verdes, saída 0.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
+## Pendências da revisão do #218 (C2, C3) (18/10/2026)
+
+- **C2:** o compositor do Inbox novo distingue permissão carregando (`podeEnviar: null` → "Carregando…", em `role="status"`),
+  painel que falhou (`falhaPermissao` → erro em `role="alert"` com o `<Botao>` "Tentar de novo", que volta a carregar) e
+  permissão negada (`false` → o motivo). Continua falhando fechado: só `true` envia. Testes em `Compositor.test.ts`,
+  `ConversaAberta.test.ts` e `InboxNovo.interacao.test.ts`.
+- **C3:** um aviso do SSE do atendimento aberto, ou um `resync`, recarrega o painel (`versaoPainel`). Assim o compositor libera
+  quando alguém transfere ou convida com envio. Teste de componente que simula o aviso em `InboxNovo.interacao.test.ts`.
+- Verificação: `tsc --noEmit` com saída 0; `eslint .` com saída 0 (0 erros, 43 avisos, nenhum nos arquivos tocados);
+  `npm test` com saída 0 (715 arquivos, 5288 testes). Nenhuma mudança no servidor, então a integração não foi rodada.
+
+**Correções da R1 do #220 (18/10/2026)**
+
+- **B1:** merge do `main` com o #219 (4D). O `Compositor` recebe `podeEnviar: boolean | null`, `falhaPermissao?` e `capacidades`, e
+  não tem mais `driver`. Em `ConversaAberta` o null de carregando vai só ao compositor; `comandosDaMensagem` recebe
+  `envioLiberado === true`, então carregando não libera comando.
+- **C1:** só `atendimento.atualizado` do atendimento aberto e `resync` recarregam o painel; `mensagem.nova` e `mensagem.status`, não.
+  Esses são os tipos reais do SSE (`AvisoInbox`). O convite de participante não gera aviso: a tabela de participantes não tem
+  trigger de `notificar_inbox`. Por isso o convite com envio só libera o compositor depois de um `resync`, de uma ação na
+  tela ou de reabrir a conversa (pendência de servidor).
+- **C2:** se a recarga falha e o painel daquele atendimento já tinha carregado, fica o último painel conhecido. O erro com
+  "Tentar de novo" aparece só na carga inicial. Testes em `InboxNovo.interacao.test.ts`.
+
+## Fase 4E — remove Meta/Evolution e sobe o motor (18/10/2026)
+
+- Branch `claude/fase4-e-remove-legados` (PR #221; nasceu empilhado sobre a 4D e hoje tem base `main`), tarefas 25 e 26 do plano `04-fase-motor.md`:
+  remoção dos drivers, webhooks e templates de Meta e Evolution; deploy com o serviço do motor no lugar do Evolution.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0, 711 arquivos e 5232 testes.
+- `npm run lint`: saída 0, 0 erros e 43 avisos (já existentes).
+- Integração (perfil `integracao`): `vitest related` varria quase toda a suíte e foi interrompido; rodados os 37 `*.int.test.ts` do diff:
+  37 arquivos, 326 testes verdes. Sem falhas novas.
+**Estado**: Implementado; aguardando revisão e merge (depois da 4D).
+
+**Base trocada para `main` e correções da R1 do #221 (18/10/2026)**
+
+- **Merge do `main`** (`3e909715`: #216, #217, #218, #219 com a 4D e #220). Conflitos:
+  - `InboxCliente.tsx`, `InboxCliente.test.ts` e `InboxCliente.confirmacao.test.ts`: fica a remoção da 3F.
+  - `consultas-inbox.ts`: fica a refatoração do `main` (`silencioPosInbound`, `regrasCadastroDoAtendimento`, `propria`/`apagada`);
+    sai `janela24h`, que dependia de `META_CLOUD`. O Inbox novo (`InboxNovo*`, `AcoesAtendimento*`) não lê `janela24h`.
+  - este quadro (ficam os blocos de cada PR).
+  - Sem migration nova no `main` nem nesta branch.
+- **B1, além do diff original:** os testes que o `main` trouxe (`AcoesAtendimento.test.ts`, `InboxNovo.test.ts`,
+  `InboxNovo.interacao.test.ts`, `consultas-pagina`, `opcoes-filtro`, `paineis` e `regras-inbox.int.test.ts`) passam a usar
+  `DriverWhatsApp.*` no lugar das strings `"BAILEYS"`/`"META_CLOUD"` (trava `sem-provedores-legados.test.ts`).
+  `regras-inbox.int.test.ts` deixa de mockar `drivers/meta-cloud` e `drivers/evolution`, apagados. A regra 15 desse arquivo
+  passa a receber a mensagem com `driver: MOTOR`: `criarNumeroSetor` cria número MOTOR desde a 4E, e o inbound acha o número
+  pelo driver (com `META_CLOUD` a mensagem não era gravada e o teste falhava depois do merge).
+- **C1:** `scripts/backup-producao.sh` para o motor só durante o tar de `/data` (PGlite em arquivo) e o religa em seguida,
+  também em erro (`trap religar_motor EXIT INT TERM`). O tar roda num container auxiliar (`alpine:3.20`, `IMAGEM_TAR`) com
+  `--volumes-from` do container do motor, sem depender de tar na imagem do motor. O restore usa o mesmo container auxiliar.
+  Teste em `src/deploy/motor-compose.test.ts`. Nada foi rodado contra um ambiente real.
+- **C2:** a saúde do canal (`saude.ts`) alerta cada `NumeroWhatsApp` ativo com driver legado (`BAILEYS` ou `META_CLOUD`; o
+  enum não tem `EVOLUTION`). Testes de integração em `saude.int.test.ts`. Passo de migração em `SETUP.md` ("Números legados"):
+  reparear a linha no motor (converter o registro para `MOTOR` e conectar por QR ou código) ou desativar o número legado.
+- **C3:** `importarHistoricoLinha` (`src/server/whatsapp/historico.ts`) ficou sem chamador: o motor não manda histórico por
+  nenhuma rota. Saem o módulo, `historico.test.ts` e o bloco LC-10/LC-11 de `linha-comercial.int.test.ts`. Se o motor
+  passar a enviar o histórico do aparelho, a importação volta com a rota que a chamar.
+- **C4:** sem avisos do eslint nos arquivos alterados: sai `destinosAgenda` (sem uso) de `comunicacoes-agenda/whatsapp.ts`, e
+  `substituicao-avisos.int.test.ts` tipa o transporte com `vi.fn<...>` em vez do parâmetro `_entrada` sem uso.
+- Verificação num banco descartável `erp_genius_test_fix221` (`migrate deploy`, apagado no fim):
+  - `tsc --noEmit`: saída 0.
+  - `npm run lint`: saída 0, 0 erros e 40 avisos (nenhum nos arquivos alterados).
+  - `npm test`: saída 0, 715 arquivos e 5308 testes.
+  - Integração (`src/server/whatsapp`, `src/server/inbox`, `src/app/api/inbox`, `src/app/api/whatsapp` e os `*.int.test.ts`
+    tocados pelo PR e pelo merge): 69 arquivos e 544 testes verdes. Na primeira
+    rodada só a regra 15 de `regras-inbox` falhou (acima); corrigida, o arquivo rodou de novo isolado: 21 testes verdes.
+  - O `npm run test:int` completo fica com o integrador.
+**Estado**: Implementado; base `main`; correções da R1 aplicadas; aguardando revisão.
+
 ## Fase 5, Task 1: trava de pré-requisitos (18/10/2026)
 
 - Branch: `claude/fase5-a-fundacao` (main 6d6d33ee + 24af270d, SDK 0.131.0 exato). Teste: `src/test/pre-requisitos-fase5.test.ts` (5 testes verdes), `tsc` saída 0.

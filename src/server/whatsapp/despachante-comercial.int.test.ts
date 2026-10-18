@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach } from "vitest";
 import type { EstadoPolitica } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -28,7 +29,7 @@ interface SeedComercial {
 
 async function seedComercial(over: SeedComercial = {}) {
   const numero = await prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511955554444", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-dc" },
+    data: { telefoneE164: "+5511955554444", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-dc" },
   });
   const pais = over.fusoLead
     ? await prisma.pais.create({
@@ -202,7 +203,7 @@ describe("teto por contato/dia × saudação reativa (review PR #55 P2)", () => 
         direcao: "SAIDA",
         corpo: "Oi Ana! Já te respondo.",
         status: "ENVIADA",
-        driver: "BAILEYS",
+        driver: DriverWhatsApp.BAILEYS,
         origem: "CRON",
         criadoEm: agoraAs(10),
       },

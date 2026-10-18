@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
@@ -10,7 +11,7 @@ import { LIMITE_CONVERSAS } from "./busca-inbox";
 
 const base = {
   finalidade: "COMERCIAL", matricula: null, alunoId: null, leadId: null, aluno: null, lead: null,
-  conversa: { numeroId: "numero", numero: { rotulo: "Escola", driver: "META_CLOUD" }, contatoId: "contato", contato: { nomeExibicao: "Contato", telefoneE164: "+506", optOutEm: null } },
+  conversa: { numeroId: "numero", numero: { rotulo: "Escola", driver: DriverWhatsApp.META_CLOUD }, contatoId: "contato", contato: { nomeExibicao: "Contato", telefoneE164: "+506", optOutEm: null } },
   mensagens: [],
 };
 

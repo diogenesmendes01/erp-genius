@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const estadoSessao = vi.hoisted(() => ({ id: "" }));
@@ -7,7 +8,6 @@ vi.mock("@/server/_shared", async (importOriginal) => {
   return { ...real, exigirSessaoComPapel: vi.fn(async () => ({ id: estadoSessao.id, nome: "Secretaria de teste", papeis: ["SECRETARIA_ACADEMICA"] })) };
 });
 vi.mock("@/server/email/resend", () => ({ enviarEmailResend: enviarEmail }));
-vi.mock("@/server/whatsapp/drivers/meta-cloud", () => ({ driverMetaCloud: { enviarTexto: vi.fn(), enviarMidia: vi.fn(), enviarTemplate } }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
@@ -40,7 +40,7 @@ async function criarAvisosEpendencia() {
   alocacaoId = (await prisma.alocacaoTurma.create({ data: { alunoId, matriculaId, turmaId: turma.id, criadoEm: new Date("2099-09-01T00:00:00.000Z") } })).id;
   const encontro = await prisma.encontroAgenda.create({ data: { turmaId: turma.id, professorId: titularId, preparadorId: secretariaId, inicio: new Date("2099-10-01T10:00:00.000Z"), fim: new Date("2099-10-01T11:00:00.000Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula regular", chaveIdempotencia: "reconf-encontro", entradaHash: "fixture" } });
   encontroId = encontro.id;
-  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: "META_CLOUD", finalidade: "AGENDA", providerRef: "phone-agenda" } });
+  const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675555555", rotulo: "Agenda", driver: DriverWhatsApp.META_CLOUD, finalidade: "AGENDA", providerRef: "phone-agenda" } });
   const template = await prisma.templateWhatsApp.create({ data: { nome: "agenda_reconf", corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: "agenda-reconf" } });
   await prisma.configuracaoOperacional.create({ data: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } });
   estadoSessao.id = secretariaId;

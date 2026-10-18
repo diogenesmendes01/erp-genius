@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { Papel } from "@prisma/client";
+import { Papel, DriverWhatsApp } from "@prisma/client";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), revogarParticipante: vi.fn(), transferirAtendimento: vi.fn() }));
@@ -91,7 +91,7 @@ describe("ConversaAberta", () => {
     expect(textoOrigem(null)).toBeNull();
   });
   it("cabeçalho com setor, número, status e responsável, e as ações", () => {
-    const item = { id: "a1", numeroId: "n1", numeroRotulo: "Cobrança", finalidade: "FINANCEIRO", driver: "BAILEYS", contatoId: "c1", contatoNome: "Maria Souza", contatoTelefone: "+5511999990000",
+    const item = { id: "a1", numeroId: "n1", numeroRotulo: "Cobrança", finalidade: "FINANCEIRO", driver: DriverWhatsApp.BAILEYS, contatoId: "c1", contatoNome: "Maria Souza", contatoTelefone: "+5511999990000",
       optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: null, preview: null, linhaComercial: false, status: "ABERTO_SEM_RESPONSAVEL", responsavelNome: null, prazoRespostaEm: null,
       fixada: false, silenciada: false, grupo: false, responsavelId: null, numeroDonoId: null, setoresDoNumero: ["FINANCEIRO"], atendimentoOrigemId: null };
     const conversa = { mensagens: [], notas: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: vi.fn() };

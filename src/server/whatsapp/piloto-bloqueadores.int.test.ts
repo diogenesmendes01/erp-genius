@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { EtapaLead, type EstadoPolitica } from "@prisma/client";
 
@@ -24,7 +25,7 @@ beforeEach(async () => {
 
 async function seedNumero() {
   return prisma.numeroWhatsApp.create({
-    data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-piloto", donoId: dono.id },
+    data: { telefoneE164: "+5511900001111", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "inst-piloto", donoId: dono.id },
   });
 }
 
@@ -179,7 +180,7 @@ describe("B7 — revalidação de estado no DESPACHO (não só no enqueue)", () 
         tipo: "TEXTO",
         corpo: "resposta do celular",
         status: "ENVIADA",
-        driver: "BAILEYS",
+        driver: DriverWhatsApp.BAILEYS,
         origem: null, // fromMe fora do ERP
         providerMessageId: "wamid-fromme-2",
         criadoEm: new Date(capturadaEm.getTime() + 40 * 60_000),

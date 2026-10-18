@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { Papel } from "@prisma/client";
@@ -26,10 +27,10 @@ vi.mock("@/server/_shared/sessao", async (importOriginal) => {
 beforeEach(async () => { await truncarBanco(); });
 
 async function cenario() {
-  const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+  const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA" });
   const dadosGrupo = { numeroId: numero.id, grupoJid: "120363000000000001@g.us", nomeGrupo: "Turma A",
     participanteJid: "50688887777@s.whatsapp.net", participanteE164: "+50688887777" as string | null, participanteNome: null as string | null,
-    providerMessageId: "g-1", tipo: "TEXTO" as const, corpo: "Bom dia, pessoal", quando: new Date("2026-10-16T12:00:00Z"), driver: "BAILEYS" as const };
+    providerMessageId: "g-1", tipo: "TEXTO" as const, corpo: "Bom dia, pessoal", quando: new Date("2026-10-16T12:00:00Z"), driver: DriverWhatsApp.BAILEYS };
   return { numero, dadosGrupo };
 }
 

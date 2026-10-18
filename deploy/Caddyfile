@@ -1,5 +1,5 @@
 # Borda pública do ERP (doc 31). TLS automático via Let's Encrypt — basta o DNS do
-# domínio apontar para a VPS. Só o app é exposto; Evolution/Postgres ficam na rede interna.
+# domínio apontar para a VPS. Só o app é exposto; Motor/Postgres ficam na rede interna.
 {$DOMINIO_APP} {
 	encode gzip
 	reverse_proxy app:3000
