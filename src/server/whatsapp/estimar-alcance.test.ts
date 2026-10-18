@@ -66,7 +66,7 @@ describe("estimarAlcanceRegua", () => {
       { passo: "D-3", offsetDias: -3, modo: "LOTE", ativo: true },
       { passo: "D0", offsetDias: 0, modo: "AUTOMATICO", ativo: false },
     ]));
-    expect(m.templates).toHaveBeenCalledWith({ where: { id: { in: ["t-vencida"] } }, select: { id: true, nome: true } });
+    expect(m.templates).toHaveBeenCalledWith({ where: { id: { in: ["t-vencida"] }, tipo: "MODELO_AUTOMACAO" }, select: { id: true, nome: true } });
     const politica = m.contar.mock.calls[0][0] as { degraus: { passo: string; template: string }[]; modoPorPasso: Map<string, string> };
     expect(politica.degraus.map((d) => d.passo)).toEqual(["D-3", "D+3", "D+15"]);
     expect(politica.degraus.find((d) => d.passo === "D+3")?.template).toBe("vencida");

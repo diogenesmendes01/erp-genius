@@ -24,6 +24,8 @@ vi.mock("@/server/whatsapp/consultas", () => ({
   listarNumerosConfig: mocks.numeros, listarResponsaveisTriagem: mocks.responsaveis, listarTemplatesConfig: mocks.templates,
   carregarPoliticaConfig: mocks.politica, carregarConfiguracaoAvisosAgenda: mocks.avisos,
 }));
+vi.mock("@/server/crm-config/perfil-numero", () => ({ listarPerfisNumero: vi.fn().mockResolvedValue([]) }));
+vi.mock("./numeros/PerfilNumeroPainel", () => ({ PerfilNumeroPainel: () => null }));
 vi.mock("./NumerosPainel", () => ({ NumerosPainel: () => createElement("p", null, "admin números") }));
 vi.mock("./TemplatesPainel", () => ({ TemplatesPainel: () => createElement("p", null, "admin templates") }));
 vi.mock("./PoliticaPainel", () => ({ PoliticaPainel: () => createElement("p", null, "admin política") }));
