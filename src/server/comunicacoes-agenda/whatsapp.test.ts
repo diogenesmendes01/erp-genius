@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import { motivoConfiguracaoAgendaInvalida } from "./whatsapp";
 
@@ -17,10 +18,10 @@ describe("motivoConfiguracaoAgendaInvalida", () => {
     expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: "MOTOR" }, { statusMeta: "RASCUNHO", metaTemplateId: null, corpo: "Olá {nome}" }), "es")).toBe("template_agenda_incompativel");
   });
   it("META_CLOUD é inválido mesmo com template aprovado utility (sem envio disponível, C1 da R1 do #213)", () => {
-    expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: "META_CLOUD" }, { statusMeta: "RASCUNHO", metaTemplateId: null }), "es")).toBe("numero_agenda_invalido");
-    expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: "META_CLOUD" }, { statusMeta: "APROVADO", metaTemplateId: "m1", categoria: "utility" }), "es")).toBe("numero_agenda_invalido");
+    expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: DriverWhatsApp.META_CLOUD }, { statusMeta: "RASCUNHO", metaTemplateId: null }), "es")).toBe("numero_agenda_invalido");
+    expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: DriverWhatsApp.META_CLOUD }, { statusMeta: "APROVADO", metaTemplateId: "m1", categoria: "utility" }), "es")).toBe("numero_agenda_invalido");
   });
   it("BAILEYS legado é inválido", () => {
-    expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: "BAILEYS" }, { statusMeta: "APROVADO", metaTemplateId: "m1", categoria: "utility" }), "es")).toBe("numero_agenda_invalido");
+    expect(motivoConfiguracaoAgendaInvalida(cfg({ driver: DriverWhatsApp.BAILEYS }, { statusMeta: "APROVADO", metaTemplateId: "m1", categoria: "utility" }), "es")).toBe("numero_agenda_invalido");
   });
 });

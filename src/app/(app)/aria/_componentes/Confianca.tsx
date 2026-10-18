@@ -9,11 +9,13 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { ConfigAria } from "@/server/aria/config-schema";
 import { definirSupervisao } from "@/server/aria/estado";
 import { CONTROLE } from "./Campos";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
 type Props = {
   config: ConfigAria;
   baseVersaoId: string | null;
+  rascunho: RascunhoAberto;
   podeEditar: boolean;
   /** `editarConfianca`: expiração das sugestões e afrouxar as faixas (só Administrador). */
   podeEditarExpiracao: boolean;
@@ -27,7 +29,7 @@ const SEM_FIM = new Date("9999-12-31T00:00:00Z");
 const EXPIRACOES = [30, 60, 120, 240] as const;
 const faixa = (de: number, ate: number) => Array.from({ length: (ate - de) / 5 + 1 }, (_, i) => de + i * 5);
 
-export function Confianca({ config, baseVersaoId, podeEditar, podeEditarExpiracao, supervisao, podeLigarSupervisao, podeDesligarSupervisao }: Props) {
+export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEditarExpiracao, supervisao, podeLigarSupervisao, podeDesligarSupervisao }: Props) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
   const [c, setC] = useState<ConfigAria>(config);
@@ -83,7 +85,7 @@ export function Confianca({ config, baseVersaoId, podeEditar, podeEditarExpiraca
           )}
         </Campo>
       </div>
-      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} alterado={alterado} />}
+      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
 
       <div className="rounded-md border border-border-soft p-3">
         <h3 className="text-base font-semibold text-gray-900">Modo supervisão</h3>

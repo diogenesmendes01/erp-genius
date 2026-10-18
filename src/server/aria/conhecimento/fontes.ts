@@ -4,6 +4,7 @@ import path from "node:path";
 import type { StatusFonteConhecimento } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolverCaminhoUpload } from "@/lib/uploads";
+import { uploadLivreDoAutor } from "@/server/uploads/autorizacao";
 import {
   ErroPermissao,
   ErroRegra,
@@ -22,6 +23,13 @@ import { dividirEmTrechos, EXTENSOES_ACEITAS } from "./trechos";
 
 const PREFIXO_UPLOAD = "/api/files/";
 const MAX_TOKENS_EXTRACAO = 16000;
+// Tetos (C6): texto da fonte, PDF enviado ao provedor e trechos gravados por fonte. Com 200 mil
+// caracteres o divisor gera no máximo ~340 trechos; o teto de trechos é a defesa final.
+export const MAX_CARACTERES_FONTE = 200_000;
+export const MAX_BYTES_PDF = 10 * 1024 * 1024;
+export const MAX_TRECHOS_FONTE = 400;
+const MSG_TEXTO_GRANDE = "O texto da fonte aceita até 200 mil caracteres.";
+const MSG_VALIDADE = "A validade da fonte precisa ser uma data futura.";
 const SISTEMA_EXTRACAO =
   "Extraia todo o texto legível do documento PDF, preservando a ordem e os parágrafos. " +
   "Responda somente com o JSON do esquema, sem comentários.";
@@ -54,8 +62,18 @@ interface Gravacao {
   criadoPorId: string;
 }
 
+function exigirValidadeFutura(validoAte: Date | undefined): void {
+  if (validoAte === undefined || validoAte === null) return;
+  if (!(validoAte instanceof Date) || Number.isNaN(validoAte.getTime()) || validoAte.getTime() <= Date.now()) {
+    throw new ErroRegra(MSG_VALIDADE);
+  }
+}
+
 async function gravarFonte(g: Gravacao): Promise<{ id: string }> {
   const trechos = g.status === "PRONTA" ? dividirEmTrechos(g.texto) : [];
+  if (trechos.length > MAX_TRECHOS_FONTE) {
+    throw new ErroRegra(`A fonte gera mais de ${MAX_TRECHOS_FONTE} trechos. Divida o conteúdo em fontes menores.`);
+  }
   return prisma.$transaction(async (tx) => {
     const fonte = await tx.fonteConhecimento.create({
       data: {
@@ -105,6 +123,8 @@ export async function criarFonteTexto(input: {
     if (!nome) throw new ErroRegra("Informe o nome da fonte.");
     if (nome.length > 120) throw new ErroRegra("O nome da fonte aceita até 120 caracteres.");
     if (!input.texto?.trim()) throw new ErroRegra("Informe o texto da fonte.");
+    if (input.texto.length > MAX_CARACTERES_FONTE) throw new ErroRegra(MSG_TEXTO_GRANDE);
+    exigirValidadeFutura(input.validoAte);
     return gravarFonte({
       tipo: "TEXTO",
       nome,
@@ -154,6 +174,9 @@ async function extrairPdf(buffer: Buffer, provedorInjetado?: ProvedorIA): Promis
     return { erro: "A resposta de extração do PDF veio em formato inválido." };
   }
   if (!texto.trim()) return { erro: "Não foi possível extrair texto deste PDF (documento vazio ou apenas imagem)." };
+  if (texto.length > MAX_CARACTERES_FONTE) {
+    return { erro: "O texto extraído do PDF passa de 200 mil caracteres. Divida o documento em partes menores." };
+  }
   return { texto };
 }
 
@@ -163,7 +186,10 @@ export async function criarFonteArquivo(
 ): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirEdicao();
-    const upload = await prisma.registroUpload.findUnique({ where: { id: input.registroUploadId } });
+    exigirValidadeFutura(input.validoAte);
+    // Autorização por objeto (B1): o texto vira trecho (até enviável ao lead), então só serve upload do
+    // próprio autor, sem vínculo nem finalidade. Arquivo de outro objeto responde como inexistente.
+    const upload = await uploadLivreDoAutor({ id: u.id, papeis: u.papeis }, input.registroUploadId);
     if (!upload) throw new ErroRegra("Arquivo não encontrado.");
     const ext = path.extname(upload.nome).toLowerCase();
     if (!(EXTENSOES_ACEITAS as readonly string[]).includes(ext)) {
@@ -188,9 +214,11 @@ export async function criarFonteArquivo(
 
     let extracao: Extracao;
     if (ext === ".pdf") {
+      if (buffer.length > MAX_BYTES_PDF) throw new ErroRegra("O PDF aceita até 10 MB.");
       extracao = await extrairPdf(buffer, deps?.provedor);
     } else {
       const texto = buffer.toString("utf8").replace(/^\uFEFF/, "");
+      if (texto.length > MAX_CARACTERES_FONTE) throw new ErroRegra(MSG_TEXTO_GRANDE);
       extracao = texto.trim() ? { texto } : { erro: "O arquivo está vazio." };
     }
     if ("erro" in extracao) {

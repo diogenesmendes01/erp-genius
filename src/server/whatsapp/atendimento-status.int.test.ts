@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { readdirSync, readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Papel } from "@prisma/client";
@@ -14,7 +15,7 @@ async function cenario() {
   const vendedor = await criarUsuario([Papel.VENDEDOR]);
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Aluna", paisId: catalogo.pais.id, telefoneE164: "+50680001111", whatsapp: true } });
   const matricula = await prisma.matricula.create({ data: { alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC" } });
-  const { numero } = await seedCanal({ driver: "BAILEYS", estado: "ATIVA" });
+  const { numero } = await seedCanal({ driver: DriverWhatsApp.BAILEYS, estado: "ATIVA" });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: aluno.telefoneE164!, alunoId: aluno.id, nomeExibicao: aluno.telefoneE164 } });
   const lead = await prisma.oportunidade.create({ data: { nome: "Maria", telefoneE164: "+50688888888", vendedorDonoId: vendedor.id } });
   const contatoLead = await prisma.contatoWhatsApp.create({ data: { telefoneE164: lead.telefoneE164!, leadId: lead.id } });

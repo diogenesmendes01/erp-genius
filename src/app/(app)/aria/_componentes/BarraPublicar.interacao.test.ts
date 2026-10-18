@@ -14,17 +14,19 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/server/aria/versoes", () => ({ publicarRascunho: vi.fn(), descartarRascunho: vi.fn() }));
+const versoes = vi.hoisted(() => ({ publicarRascunho: vi.fn(), descartarRascunho: vi.fn() }));
+vi.mock("@/server/aria/versoes", () => versoes);
 
 import { BarraPublicar } from "./BarraPublicar";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { criarGanchos, elementos, texto } from "@/test/tela-sem-dom";
 
 type Props = Parameters<typeof BarraPublicar>[0];
+const ABERTO = { id: "r1", atualizadoEm: "2026-10-18T12:00:00.000Z" };
 
 function montar(extra: Partial<Props> = {}) {
   m.ganchos = criarGanchos();
-  const props: Props = { diff: [], podePublicar: true, podeDescartar: true, ...extra };
+  const props: Props = { diff: [], rascunho: ABERTO, podePublicar: true, podeDescartar: true, ...extra };
   const arvore = (): ReactNode => m.ganchos!.renderizar(BarraPublicar, props);
   return {
     arvore,
@@ -63,5 +65,31 @@ describe("BarraPublicar", () => {
   it("gerente_sem_publicar_nao_ve_o_botao", () => {
     const t = montar({ diff: ["nome"], podePublicar: false });
     expect(() => t.clicar("Publicar")).toThrow();
+  });
+
+  it("publicar_e_descartar_enviam_o_rascunho_aberto", async () => {
+    versoes.publicarRascunho.mockResolvedValue({ ok: true, dado: { numero: 2 } });
+    versoes.descartarRascunho.mockResolvedValue({ ok: true });
+    const t = montar({ diff: ["nome"] });
+    t.clicar("Publicar");
+    await (t.confirmacao()!.props.acao as () => Promise<unknown>)();
+    expect(versoes.publicarRascunho).toHaveBeenCalledWith({ rascunho: ABERTO });
+    (t.confirmacao()!.props.aoCancelar as () => void)();
+    t.clicar("Descartar");
+    await (t.confirmacao()!.props.acao as () => Promise<unknown>)();
+    expect(versoes.descartarRascunho).toHaveBeenCalledWith(ABERTO);
+  });
+
+  it("recusa_por_rascunho_alterado_chega_ao_dialogo", async () => {
+    // O ConfirmarAcao mostra o erro da action dentro do diálogo (ConfirmarAcao.interacao.test.ts).
+    const msg = "O rascunho foi alterado por outra pessoa desde que você abriu. Recarregue para ver a versão atual.";
+    versoes.publicarRascunho.mockResolvedValue({ ok: false, erro: msg });
+    versoes.descartarRascunho.mockResolvedValue({ ok: false, erro: msg });
+    const t = montar({ diff: ["nome"] });
+    t.clicar("Publicar");
+    expect(await (t.confirmacao()!.props.acao as () => Promise<unknown>)()).toEqual({ ok: false, erro: msg });
+    (t.confirmacao()!.props.aoCancelar as () => void)();
+    t.clicar("Descartar");
+    expect(await (t.confirmacao()!.props.acao as () => Promise<unknown>)()).toEqual({ ok: false, erro: msg });
   });
 });

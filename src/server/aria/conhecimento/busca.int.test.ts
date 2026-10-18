@@ -49,6 +49,19 @@ describe("busca nos trechos", () => {
     expect((await buscarTrechos("turma", [processando])).map((t) => t.fonteId)).toEqual([processando]);
   });
 
+  it("ignora_fonte_vencida", async () => {
+    const vencida = await fonte("V", "A turma começa cedo.");
+    const vigente = await fonte("F", "A turma começa tarde.");
+    const semValidade = await fonte("S", "A turma começa ao meio-dia.");
+    await prisma.fonteConhecimento.update({ where: { id: vencida }, data: { validoAte: new Date(Date.now() + 60_000) } });
+    // Controle positivo: dentro da validade a fonte aparece.
+    expect((await buscarTrechos("turma", [vencida])).map((t) => t.fonteId)).toEqual([vencida]);
+    await prisma.fonteConhecimento.update({ where: { id: vencida }, data: { validoAte: new Date(Date.now() - 1000) } });
+    await prisma.fonteConhecimento.update({ where: { id: vigente }, data: { validoAte: new Date(Date.now() + 864e5) } });
+    const r = await buscarTrechos("turma", [vencida, vigente, semValidade], 10);
+    expect(r.map((t) => t.fonteId).sort()).toEqual([vigente, semValidade].sort());
+  });
+
   it("consulta_com_aspas_e_simbolos_nao_quebra", async () => {
     const fonteId = await fonte("Horários", "As turmas noturnas.");
     expect(await buscarTrechos("'); DROP TABLE x; --", [fonteId])).toEqual([]);

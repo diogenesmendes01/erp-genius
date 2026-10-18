@@ -24,6 +24,7 @@ import LoadingCarteira from "@/app/(app)/carteira/loading";
 import LoadingContatos from "@/app/(app)/contatos/loading";
 import LoadingAria from "@/app/(app)/aria/loading";
 import LoadingComissoes from "@/app/(app)/comissoes/loading";
+import LoadingRelatorios from "@/app/(app)/relatorios/loading";
 import LoadingInbox from "@/app/(app)/inbox/loading";
 import LoadingFinanceiro from "@/app/(app)/financeiro/(painel)/loading";
 import LoadingContinuidade from "@/app/(app)/financeiro/continuidade/loading";
@@ -51,6 +52,7 @@ import ErroCarteira from "@/app/(app)/carteira/error";
 import ErroContatos from "@/app/(app)/contatos/error";
 import ErroAria from "@/app/(app)/aria/error";
 import ErroComissoes from "@/app/(app)/comissoes/error";
+import ErroRelatorios from "@/app/(app)/relatorios/error";
 import ErroInbox from "@/app/(app)/inbox/error";
 import ErroOportunidades from "@/app/(app)/oportunidades/error";
 import ErroMatricula from "@/app/(app)/matriculas/[id]/error";
@@ -71,6 +73,7 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/(app)/contatos": { Componente: LoadingContatos, titulos: 1, rotulo: "Carregando contatos" },
   "src/app/(app)/aria": { Componente: LoadingAria, titulos: 1, rotulo: "Carregando Agente de IA" },
   "src/app/(app)/comissoes": { Componente: LoadingComissoes, titulos: 1, rotulo: "Carregando comissões" },
+  "src/app/(app)/relatorios": { Componente: LoadingRelatorios, titulos: 1, rotulo: "Carregando relatórios" },
   "src/app/(app)/inbox": { Componente: LoadingInbox, titulos: 1, rotulo: "Carregando conversas" },
   "src/app/(app)/financeiro/(painel)": { Componente: LoadingFinanceiro, titulos: 0, rotulo: "Carregando financeiro" },
   "src/app/(app)/financeiro/continuidade": { Componente: LoadingContinuidade, titulos: 0, rotulo: "Carregando fila de continuidade mensal…" },
@@ -149,6 +152,7 @@ const ERROS: Record<Rota<typeof ROTAS_COM_ERROR>, CasoErro> = {
   "src/app/(app)/alunos": { Componente: ErroAlunos, caminho: "/alunos/a1", titulo: "Não foi possível carregar os alunos", voltar: "/alunos" },
   "src/app/(app)/aria": { Componente: ErroAria, caminho: "/aria", titulo: "Não foi possível carregar o Agente de IA", voltar: "/home" },
   "src/app/(app)/comissoes": { Componente: ErroComissoes, caminho: "/comissoes", titulo: "Não foi possível carregar as comissões", voltar: "/home" },
+  "src/app/(app)/relatorios": { Componente: ErroRelatorios, caminho: "/relatorios", titulo: "Não foi possível carregar os relatórios", voltar: "/home" },
   "src/app/(app)/configuracao": { Componente: ErroConfiguracao, caminho: "/configuracao/migracao/l1", titulo: "Não foi possível carregar esta configuração", voltar: "/configuracao" },
   "src/app/(app)/diario": { Componente: ErroDiario, caminho: "/diario/reposicoes/r1/troca-fonte", titulo: "Não foi possível carregar o diário de aulas", voltar: "/diario" },
   "src/app/(app)/empresas": { Componente: ErroEmpresas, caminho: "/empresas/e1", titulo: "Não foi possível carregar as empresas", voltar: "/empresas" },

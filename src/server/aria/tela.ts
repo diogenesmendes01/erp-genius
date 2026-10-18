@@ -21,7 +21,8 @@ export type DadosTelaAria = {
   motivoPausa: string | null;
   supervisao: boolean;
   publicada: { id: string; numero: number; config: ConfigAria } | null;
-  rascunho: { id: string; config: ConfigAria } | null;
+  /** Rascunho em edição; `atualizadoEm` (ISO) é o token de concorrência que a tela devolve ao salvar, publicar e descartar. */
+  rascunho: { id: string; atualizadoEm: string; config: ConfigAria } | null;
   /** Configuração em edição: rascunho, senão a publicada, senão o padrão. */
   config: ConfigAria;
   /** Caminhos alterados do rascunho em relação à publicada (ou ao padrão, se nunca publicada). */
@@ -49,7 +50,9 @@ export async function carregarTelaAria(u: UsuarioSessao, aba: AbaAria, f: Filtro
     prisma.agenteIA.findUnique({ where: { id: "aria" }, select: { motivoPausa: true } }),
     prisma.versaoAgenteIA.findFirst({ where: { status: "RASCUNHO" } }),
   ]);
-  const rascunho = rascunhoDb ? { id: rascunhoDb.id, config: ConfigAriaSchema.parse(rascunhoDb.config) } : null;
+  const rascunho = rascunhoDb
+    ? { id: rascunhoDb.id, atualizadoEm: rascunhoDb.atualizadoEm.toISOString(), config: ConfigAriaSchema.parse(rascunhoDb.config) }
+    : null;
   const publicada = sit.versao;
   const config = rascunho?.config ?? publicada?.config ?? configPadrao();
   const diff = rascunho ? diffConfig(publicada?.config ?? configPadrao(), rascunho.config) : [];

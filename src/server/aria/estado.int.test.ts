@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { configPadrao } from "./config-schema";
 import { definirEstadoAria, definirSupervisao, pausarAria, reativarAria, situacaoAria } from "./estado";
-import { publicarRascunho, salvarRascunho } from "./versoes";
+import { publicarRascunho, rascunhoAtual, salvarRascunho } from "./versoes";
 
 type Usuario = Awaited<ReturnType<typeof criarUsuario>>;
 let admin: Usuario;
@@ -18,8 +18,8 @@ const logado = (u: Usuario) => authMock.mockResolvedValue({ user: { id: u.id } }
 
 async function publicarComPadrao() {
   logado(admin);
-  expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null })).ok).toBe(true);
-  expect((await publicarRascunho({})).ok).toBe(true);
+  expect((await salvarRascunho({ config: configPadrao(), baseVersaoId: null, rascunho: await rascunhoAtual() })).ok).toBe(true);
+  expect((await publicarRascunho({ rascunho: await rascunhoAtual() })).ok).toBe(true);
 }
 
 beforeEach(async () => {

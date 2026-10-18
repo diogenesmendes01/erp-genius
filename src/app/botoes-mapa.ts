@@ -109,6 +109,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/contratos/page.tsx": [
     "<Link> Preparar novo modelo → secundario/md",
   ],
+  "configuracao/crm/metas/page.tsx": [
+    "<Botao> Salvar meta → primario/md",
+  ],
   "configuracao/migracao/PreparacaoMigracaoPainel.tsx": [
     "<button> Lendo… · Ler arquivo → secundario/md",
     "<button> Preparando… · Preparar lote → primario/lg",
@@ -188,12 +191,14 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
     "<button> Novo número → btnPri",
-    "<button> Conectar QR → btnSec",
+    "<button> Conectar → btnSec",
+    "<button> Desconectar → btnSec",
     "<button> Editar → btnSec",
     "<button> Salvando… · Salvar número → btnPri",
     "<button> Salvando… · Salvar setores → btnPri",
     "<button> Fechar → btnSec",
     "<button> Atualizar QR → btnSec",
+    "<button> Gerar código → btnSec",
   ],
   "configuracao/whatsapp/PoliticaPainel.tsx": [
     "const btnPri → primario/md",
@@ -203,9 +208,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/whatsapp/TemplatesPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
-    "<button> Sincronizar com a Meta → btnSec",
     "<button> Novo template → btnPri",
-    "<button> Submeter à Meta → btnSec",
     "<button> Editar → btnSec",
     "<button> Salvando… · Salvar template → btnPri",
   ],
@@ -951,6 +954,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> ← Voltar → secundario/lg",
     "<button> Processando… · Salvar matrícula → secundario/lg",
   ],
+  "relatorios/_componentes/Filtros.tsx": [
+    "<button> Filtrar → secundario/md",
+    "<a> Exportar CSV → secundario/md",
+  ],
+  "relatorios/_componentes/PainelDetalhe.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
   "secretaria/CondicoesEncerramento.tsx": [
     "<button> Registrar decisão → secundario/lg",
     "<button> Enviar para aprovação administrativa → secundario/lg",
@@ -1042,6 +1052,17 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Registrar pagamento → secundario/sm",
     "<Botao> Promessa de pagamento → secundario/sm",
     "<Botao> Registrar promessa → primario/sm",
+  ],
+  "inbox/AcoesMensagem.tsx": [
+    "<Botao> Buscar → secundario/sm",
+    "<Botao> Encaminhar para → fantasma/sm",
+    "<Botao> Carregar mais → secundario/sm",
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Cancelar → fantasma/sm",
+    "<Botao> Salvar edição → primario/sm",
+    "<Botao> `Reagir com ${e}` → secundario/sm",
+    "<Botao> Remover minha reação → perigo/sm",
+    "<Botao> Fechar → fantasma/sm",
   ],
   "inbox/NovoAtendimento.tsx": [
     "<button> Abrir atendimento → primario/lg",
@@ -1185,6 +1206,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Botao> Copiar código Pix → secundario/sm",
   ],
   "src/components/conversa/Compositor.tsx": [
+    "<Botao> Tentar de novo → secundario/sm",
     "<Botao> Enviar → primario/md",
   ],
   "src/components/conversa/SeletorEmoji.tsx": [

@@ -7,9 +7,10 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import type { ConfigAria } from "@/server/aria/config-schema";
 import { CONTROLE, emLinhas } from "./Campos";
+import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
-type Props = { config: ConfigAria; baseVersaoId: string | null; podeEditar: boolean };
+type Props = { config: ConfigAria; baseVersaoId: string | null; rascunho: RascunhoAberto; podeEditar: boolean };
 
 const TONS: { valor: ConfigAria["tons"][number]; rotulo: string }[] = [
   { valor: "AMIGAVEL", rotulo: "Amigável" },
@@ -26,7 +27,7 @@ const TAMANHOS: { valor: ConfigAria["tamanho"]; rotulo: string }[] = [
 ];
 const LIMITE_INSTRUCOES = 2500;
 
-export function Comportamento({ config, baseVersaoId, podeEditar }: Props) {
+export function Comportamento({ config, baseVersaoId, rascunho, podeEditar }: Props) {
   const [c, setC] = useState<ConfigAria>(config);
   const [novo, setNovo] = useState({ fala: "", assim: "", evite: "" });
   const alterado = JSON.stringify(c) !== JSON.stringify(config);
@@ -155,7 +156,7 @@ export function Comportamento({ config, baseVersaoId, podeEditar }: Props) {
         </div>
       </div>
 
-      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} alterado={alterado} />}
+      {podeEditar && <Salvar montar={() => c} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
     </section>
   );
 }

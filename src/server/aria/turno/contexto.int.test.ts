@@ -99,9 +99,14 @@ describe("contexto do turno", () => {
       data: { tipo: "TEXTO", nome: "Horários", status: "PRONTA", hashConteudo: "h-ctx", criadoPorId: c.dono.id },
     });
     const tr = await prisma.trechoConhecimento.create({ data: { fonteId: f.id, ordem: 0, texto: "As turmas noturnas começam às 19h." } });
+    // Fonte ativa mas vencida (validoAte no passado) não entra no contexto do turno.
+    const vencida = await prisma.fonteConhecimento.create({
+      data: { tipo: "TEXTO", nome: "Horários antigos", status: "PRONTA", hashConteudo: "h-ctx-venc", criadoPorId: c.dono.id, validoAte: new Date(Date.now() - 86_400_000) },
+    });
+    await prisma.trechoConhecimento.create({ data: { fonteId: vencida.id, ordem: 0, texto: "As turmas noturnas começam às 18h." } });
     const config = {
       ...configPadrao(),
-      fontesAtivas: [f.id],
+      fontesAtivas: [f.id, vencida.id],
       faq: [
         { id: "1", pergunta: "Tem teste?", resposta: "Sim", ativa: true },
         { id: "2", pergunta: "Inativa", resposta: "x", ativa: false },

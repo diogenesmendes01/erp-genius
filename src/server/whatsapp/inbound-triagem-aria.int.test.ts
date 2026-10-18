@@ -19,7 +19,7 @@ beforeEach(async () => {
 
 const base = (numero: string, id: string, extra: Partial<InboundNormalizado> = {}): InboundNormalizado => ({
   numeroTelefoneE164: numero, contatoWaId: "50688887777", providerMessageId: id, corpo: "preciso do boleto",
-  tipo: "TEXTO", driver: "META_CLOUD", fromMe: false, quando: new Date(), ...extra,
+  tipo: "TEXTO", driver: "MOTOR", fromMe: false, quando: new Date(), ...extra,
 });
 
 describe("gancho agendarTriagemAria em inbound.ts", () => {

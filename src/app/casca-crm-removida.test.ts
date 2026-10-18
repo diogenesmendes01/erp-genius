@@ -19,8 +19,8 @@ describe("casca do CRM removida (E1)", () => {
     const achados = fontes.flatMap((f) => IMPORTS_PROIBIDOS.filter((m) => readFileSync(f, "utf8").includes(`"${m}"`)).map((m) => `${f} → ${m}`));
     expect(achados).toEqual([]);
   });
-  it("Gerente Comercial não chega à Configuração por menu nem por aba", () => {
-    expect(tabsParaPapeis([Papel.GERENTE_COMERCIAL])).toEqual([]);
+  it("Gerente Comercial não chega à Configuração por menu; por aba, só às Metas (Fase 5E)", () => {
+    expect(tabsParaPapeis([Papel.GERENTE_COMERCIAL]).map((t) => t.href)).toEqual(["/configuracao/crm/metas"]);
     expect(navParaPapeis([Papel.GERENTE_COMERCIAL]).map((i) => i.href)).not.toContain("/configuracao");
   });
 });

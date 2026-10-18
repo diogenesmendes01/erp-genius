@@ -78,9 +78,11 @@ export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaIn
 }
 
 /** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
-async function buscarPainel(id: string): Promise<DadosPainelSetor | null> {
+/** Painel do atendimento; "sem-acesso" no 404 (fora do escopo, ex.: convite revogado); null em outra falha. */
+async function buscarPainel(id: string): Promise<DadosPainelSetor | "sem-acesso" | null> {
   try {
     const r = await fetch(`/api/inbox/atendimentos/${encodeURIComponent(id)}/painel`, { cache: "no-store", credentials: "same-origin" });
+    if (r.status === 404) return "sem-acesso";
     return r.ok ? await r.json() as DadosPainelSetor : null;
   } catch { return null; }
 }
@@ -121,7 +123,19 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   useEffect(() => {
     if (!selecionado) return;
     let ativo = true;
-    void buscarPainel(selecionado).then((dado) => { if (ativo) setPainelSetor({ id: selecionado, dado }); });
+    // Recarga que falha (rede, 5xx) com um painel deste atendimento já carregado mantém o último conhecido: o
+    // compositor não troca o campo pelo erro no meio da digitação nem esconde uma gravação (C2 da R1 do #220).
+    // O erro com "Tentar de novo" fica para a carga inicial; o servidor continua decidindo cada envio.
+    // 404 numa recarga (acesso revogado, avisado pelo SSE): o último painel fica, com o compositor travado e sem ações
+    // (C1 da revisão do #223). 404 na carga inicial segue como erro.
+    void buscarPainel(selecionado).then((r) => {
+      if (!ativo) return;
+      setPainelSetor((ant) => {
+        const conhecido = ant?.id === selecionado && ant.dado ? ant.dado : null;
+        if (r === "sem-acesso") return { id: selecionado, dado: conhecido ? { ...conhecido, acoes: null, podeEnviar: false } : null };
+        return !r && conhecido ? ant! : { id: selecionado, dado: r };
+      });
+    });
     return () => { ativo = false; };
   }, [selecionado, versaoPainel]);
 
@@ -131,12 +145,24 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setVersaoPainel((v) => v + 1);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
   }, [filtros]);
+  // Aviso que pode mudar a permissão do atendimento aberto (`atendimento.atualizado`: transferência, responsável,
+  // status) ou resync: o painel recarrega e, com ele, o podeEnviar do compositor (C3 da revisão do #218). Mensagem
+  // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
+  // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
+    if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
   }, [filtros]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
+
+  // Permissão de envio do compositor: null enquanto o painel do atendimento aberto não chegou; painel que falhou
+  // (buscarPainel devolve null) vira erro com "Tentar de novo", que volta a carregar. Só true envia.
+  const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
+  const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
+  const tentarPainelDeNovo = useCallback(() => { setPainelSetor(null); setVersaoPainel((v) => v + 1); }, []);
+  const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
 
@@ -175,7 +201,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         <PainelAria key={atual.id} atendimentoId={atual.id} aria={painelSetor.dado.aria} fuso={fuso} aoMudar={recarregarLista} />
       )}
       {painelSetor?.id === atual.id && painelSetor.dado?.acoes && (
-        <AcoesContato key={atual.id} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} fuso={fuso} aoMudar={recarregarLista} />
+        <AcoesContato key={atual.id} atendimentoId={atual.id} acoes={painelSetor.dado.acoes} optOut={atual.optOut} fuso={fuso} aoMudar={recarregarLista} />
       )}
       {!atual.grupo && (
         <OptOutContato key={atual.contatoId} contatoId={atual.contatoId} nome={atual.contatoNome} optOut={atual.optOut}
@@ -206,6 +232,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             usuario={usuario}
             fuso={fuso}
             conversa={conversa}
+            podeEnviar={podeEnviar}
+            falhaPermissao={falhaPermissao}
             destinos={destinos}
             triagem={triagem}
             revisoes={revisoes}

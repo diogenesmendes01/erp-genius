@@ -48,6 +48,8 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
   ]);
   const { config } = dados;
   const baseVersaoId = dados.publicada?.id ?? null;
+  // Token do rascunho aberto (id + atualizadoEm): as ações recusam se outra pessoa o alterou desde então.
+  const rascunho = dados.rascunho ? { id: dados.rascunho.id, atualizadoEm: dados.rascunho.atualizadoEm } : null;
   const podeEditar = cap.has("editarComportamento");
   const edicao = ABAS_DE_EDICAO.includes(aba);
 
@@ -76,14 +78,15 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
         {edicao && <AvisoEdicaoNoComputador />}
         <div className={edicao ? "max-md:hidden" : undefined}>
           {aba === "visao" && dados.visao && <VisaoGeral visao={dados.visao} dias={dias} nome={config.nome} />}
-          {aba === "comportamento" && <Comportamento config={config} baseVersaoId={baseVersaoId} podeEditar={podeEditar} />}
-          {aba === "permissoes" && <Permissoes config={config} baseVersaoId={baseVersaoId} podeEditar={cap.has("editarMatriz")} />}
-          {aba === "conhecimento" && <Conhecimento config={config} baseVersaoId={baseVersaoId} podeEditar={podeEditar} fontes={dados.fontes ?? []} />}
-          {aba === "handoff" && <Handoff config={config} baseVersaoId={baseVersaoId} podeEditar={podeEditar} />}
+          {aba === "comportamento" && <Comportamento config={config} baseVersaoId={baseVersaoId} rascunho={rascunho} podeEditar={podeEditar} />}
+          {aba === "permissoes" && <Permissoes config={config} baseVersaoId={baseVersaoId} rascunho={rascunho} podeEditar={cap.has("editarMatriz")} />}
+          {aba === "conhecimento" && <Conhecimento config={config} baseVersaoId={baseVersaoId} rascunho={rascunho} podeEditar={podeEditar} fontes={dados.fontes ?? []} />}
+          {aba === "handoff" && <Handoff config={config} baseVersaoId={baseVersaoId} rascunho={rascunho} podeEditar={podeEditar} />}
           {aba === "confianca" && (
             <Confianca
               config={config}
               baseVersaoId={baseVersaoId}
+              rascunho={rascunho}
               podeEditar={podeEditar}
               podeEditarExpiracao={cap.has("editarConfianca")}
               supervisao={dados.supervisao}
@@ -104,7 +107,7 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
         {aba === "playground" && <Playground paises={dados.paises ?? []} temRascunho={!!dados.rascunho} nome={config.nome} />}
       </div>
 
-      <BarraPublicar diff={dados.diff} podePublicar={cap.has("publicar")} podeDescartar={podeEditar} />
+      <BarraPublicar diff={dados.diff} rascunho={rascunho} podePublicar={cap.has("publicar")} podeDescartar={podeEditar} />
     </div>
   );
 }

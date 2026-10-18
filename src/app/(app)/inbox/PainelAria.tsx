@@ -13,7 +13,7 @@ export function textoPausaAria(motivo: MotivoPausaAtendimentoIA | null): string 
   return motivo ? `Aria pausada · ${MOTIVO_PAUSA_IA_LABEL[motivo]}` : "Aria pausada";
 }
 
-/** Bloco "Aria" do painel do atendimento: pausa com "Devolver para Aria" e sugestões a aprovar ou rejeitar. */
+/** Bloco "Aria" do painel do atendimento: pausa com "Devolver para Aria" (só com escopo de envio) e sugestões a aprovar ou rejeitar. */
 export function PainelAria({ atendimentoId, aria, fuso, aoMudar }: { atendimentoId: string; aria: AriaDoAtendimento | null | undefined; fuso: string | null; aoMudar(): void }) {
   const acao = useAcaoCliente({ idempotente: false });
   if (!aria || (!aria.pausada && aria.sugestoes.length === 0)) return null;
@@ -32,7 +32,9 @@ export function PainelAria({ atendimentoId, aria, fuso, aoMudar }: { atendimento
       {aria.pausada && (
         <div className="space-y-2">
           <p className="text-gray-700">{textoPausaAria(aria.motivo)}</p>
-          <Botao tamanho="sm" variante="secundario" disabled={acao.ocupado} onClick={() => decidir(() => devolverParaAria(atendimentoId), "Aria retomou o atendimento.")}>Devolver para Aria</Botao>
+          {aria.podeDevolver && (
+            <Botao tamanho="sm" variante="secundario" disabled={acao.ocupado} onClick={() => decidir(() => devolverParaAria(atendimentoId), "Aria retomou o atendimento.")}>Devolver para Aria</Botao>
+          )}
         </div>
       )}
       {aria.sugestoes.length > 0 && (
