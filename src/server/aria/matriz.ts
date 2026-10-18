@@ -57,6 +57,9 @@ const TABELA: Partial<Record<AcaoAgenteIATipo, ReturnType<typeof resp>>> = {
   MOVER_ETAPA: resp("ssssssss", "eeessoos", "eeeeeeee"),
   MARCAR_PERDIDO: resp("ssssssss", "eeessoos", "eeeeeeee"),
   AGENDAR_MENSAGEM: resp("ssssssss", "eeessses", "eeeeeeee"),
+  // Desvio deliberado da tabela do plano ("ooossooo"/"oooeeooo"), que contradiz o teste
+  // predefinicao_equilibrado (PROPOSTA = SUGERE): condição comercial só nasce em PROPOSTA e
+  // AGUARDANDO_MATRICULA (posições 5 e 6 de ETAPAS_ARIA). Pendente de confirmação do dono do plano.
   CONDICAO_COMERCIAL: resp("oooooooo", "ooooosso", "oooooeeo"),
 };
 
