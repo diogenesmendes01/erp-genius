@@ -184,6 +184,7 @@ model RegistroUpload {
   alunoId String?
   cobrancaId String?
   matriculaId String?
+  fontesConhecimento FonteConhecimento[]
 }
 
 model VinculoDocente {
@@ -9171,4 +9172,50 @@ model NotificacaoUsuario {
 
   @@unique([tipo, refId, criadaEm])
   @@index([usuarioId, lidaEm])
+}
+
+enum TipoFonteConhecimento {
+  TEXTO
+  ARQUIVO
+}
+
+enum StatusFonteConhecimento {
+  PROCESSANDO
+  PRONTA
+  ERRO
+}
+
+model FonteConhecimento {
+  id               String                  @id @default(cuid())
+  tipo             TipoFonteConhecimento
+  nome             String
+  registroUploadId String?
+  registroUpload   RegistroUpload?         @relation(fields: [registroUploadId], references: [id], onDelete: Restrict)
+  status           StatusFonteConhecimento
+  erro             String?
+  hashConteudo     String
+  validoAte        DateTime?
+  enviavelAoLead   Boolean                 @default(false)
+  criadoPorId      String
+  criadoEm         DateTime                @default(now())
+  arquivadaEm      DateTime?
+
+  trechos          TrechoConhecimento[]
+
+  @@index([status, arquivadaEm])
+}
+
+model TrechoConhecimento {
+  id      String            @id @default(cuid())
+  fonteId String
+  fonte   FonteConhecimento @relation(fields: [fonteId], references: [id], onDelete: Restrict)
+  ordem   Int
+  texto   String
+  /// Coluna gerada (to_tsvector('portuguese', texto)) + índice GIN, criados por SQL manual na migration
+  /// 20261018020000_aria_conhecimento. O dbgenerated e o @@index Gin só existem para o `migrate diff` não
+  /// propor removê-los (o Prisma não gera colunas GENERATED); trava em conhecimento/migracao-busca.test.ts.
+  busca   Unsupported("tsvector")? @default(dbgenerated("to_tsvector('portuguese'::regconfig, texto)"))
+
+  @@unique([fonteId, ordem])
+  @@index([busca], type: Gin)
 }

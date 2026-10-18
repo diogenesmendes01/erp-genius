@@ -3103,3 +3103,45 @@ Branch `claude/fase5-a-fundacao` (Tasks 1 a 5, sobre main 6d6d33ee + 24af270d).
   `comercial`, `crm/{funil,pessoas,oportunidades}`, `acesso/politica`, `secretaria/politica`, `whatsapp/{inbox,acesso-atendimento,motor}`
   (inclui `ponta-a-ponta`), `src/server/inbox`, `despachante-{motor,comercial}`, `whatsapp/{acoes,acoes-numero,triagem-numero}`: saída 0;
   39 arquivos, 340 testes verdes. O `npm run test:int` completo segue com o integrador.
+
+## Fase 5, bloco B — configuração da Aria, Tasks 6 a 11 (18/10/2026)
+
+Branch `claude/fase5-b-config` (sobre `claude/fase5-a-fundacao`, main 6d6d33ee + 24af270d). Tasks 6 (schema versionado, predefinições e matriz), 7 (divisão Admin × Gerente Comercial), 8 (rascunho, publicação numerada com diff, descarte e restauração), 9 (estado DESLIGADA/SHADOW/ATIVA, pausa global e supervisão), 10 (base de conhecimento: fontes, trechos e extração de PDF pelo provedor simulado) e 11 (busca textual em português), mais o commit de correção da revisão final. Só provedor simulado; nenhuma chamada real à API.
+
+- **Migration** `20261018020000_aria_conhecimento`: ID reservado pelo integrador para `<ID-F5-02> aria_conhecimento` (registro de 18/10 em `planejamento/execucao-ledger.md`: `020000 aria_conhecimento`). Aplicada só no banco do perfil `tester` (`prisma migrate status`: em dia, 455 migrations).
+- **Correções da revisão final:** Gerente não encurta supervisão em vigor (DF5-13; teste `gerente_nao_encurta_supervisao`); ADR-F5-01 registra o descarte do rascunho como única remoção física e a regra de que o Gerente não salva nem publica rascunho que o Admin alterou fora da alçada dele; testes de `busca` com controle positivo (conferido por mutação: tirar o filtro de `status` ou de `arquivadaEm` derruba `ignora_fonte_arquivada_e_nao_pronta`).
+- **Pendência para o dono (matriz):** a tabela de predefinições do plano (Task 6, Step 3) traz `CONDICAO_COMERCIAL` EQUILIBRADO `ooossooo` e AUTONOMO `oooeeooo` (etapas EXPERIMENTAL_*), mas o teste do próprio plano exige `EQUILIBRADO.PROPOSTA = SUGERE`. O código segue o teste: EQUILIBRADO `ooooosso` e AUTONOMO `oooooeeo` (PROPOSTA e AGUARDANDO_MATRICULA). Condição comercial em experimental não faz sentido de negócio, então a tabela do plano parece deslocada. Até o dono confirmar e o integrador corrigir a tabela do plano, a referência dos blocos C e D é `src/server/aria/matriz.ts`.
+- Evidências (HEAD da correção):
+  - `node_modules/.bin/tsc --noEmit`: saída 0 (linha de base: 0).
+  - `npm test`: saída 0; 723 arquivos, 5328 testes verdes (linha de base do bloco A: 720/5301).
+  - `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+  - Integração, recorte (não é a suíte completa), banco do perfil `tester`: `npm run test:int -- src/server/aria`: saída 0; 6 arquivos, 45 testes verdes. `vitest related` sobre `aria/estado.ts` e `aria/conhecimento/busca.ts`: saída 0; 2 arquivos, 15 testes.
+- **Pendente para o integrador antes do merge:** `npm run test:int` completo (mais de 2 h, proibido nesta faixa), comparando com as falhas preexistentes conhecidas (sensíveis à data e o flake de `portal-aluno/preferencia-fuso`); confirmação do dono sobre a matriz.
+- **Estado**: implementado; aguarda a suíte completa, a confirmação da matriz e o integrador. Não concluído.
+
+### Fase 5B: verificação final do bloco antes do PR — 2026-10-18
+
+Branch `claude/fase5-b-config` (HEAD 9745f787), PR em rascunho empilhado sobre `claude/fase5-a-fundacao`.
+- `node_modules/.bin/tsc --noEmit`: saída 0.
+- `npm test`: saída 0; 723 arquivos, 5328 testes verdes.
+- `npm run lint`: saída 0; 0 erros, 43 avisos (iguais à linha de base).
+- `vitest related --run -c vitest.integration.config.ts` sobre os 15 .ts/.tsx do diff contra `claude/fase5-a-fundacao`: saída 0; 4 arquivos, 33 testes verdes (recorte, não a suíte completa).
+
+### Fase 5B: merge do `main` (f1b4a41c) — 2026-10-18
+
+Branch `claude/fase5-b-config` (sobre d11663d3). Conflito só neste quadro (ficam os blocos de cada lado). Nada da Aria cita Meta, Evolution ou drivers legados; nenhuma migration nova colide com `20261018020000_aria_conhecimento`.
+- `prisma validate`: válido. `node_modules/.bin/tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos.
+- `npm test`: saída 0; 724 arquivos, 5369 testes verdes.
+- Integração em banco descartável novo (`migrate deploy` de todas as migrations: saída 0), recorte (não é a suíte completa): `src/server/aria`, `whatsapp`, `inbox`, `comunicacoes-agenda`, `comercial`, `crm/{funil,pessoas,oportunidades,mensagens-agendadas}`, `academico/visibilidade`, `acesso/politica`, `agenda/substituicao-avisos`, `secretaria/politica`: saída 0; 83 arquivos, 645 testes verdes.
+- `prisma migrate diff` banco × schema: as divergências são antigas (nomes de índices/FKs e defaults de data em outras áreas), salvo `TrechoConhecimento.busca` (coluna gerada `tsvector` e índice GIN em SQL manual, que o Prisma não representa). **Pendência:** um `migrate dev` futuro tentará removê-los; revisar antes de gerar a próxima migration.
+- **Pendente antes do merge:** `npm run test:int` completo pelo integrador; confirmação do dono sobre a matriz; PR #223 segue aberto no `main`.
+
+### Fase 5B: correções da R1 do PR #226 — 2026-10-18
+
+Branch `claude/fase5-b-config` (sobre c1f4dead; `git merge origin/main`: já em dia com f1b4a41c). TDD: cada teste novo falhou antes da correção.
+- **B1** `criarFonteArquivo` só aceita upload "livre" do próprio autor (`uploadLivreDoAutor` em `uploads/autorizacao.ts`): sem vínculo a lead/aluno/cobrança/matrícula e sem referência em cobrança, informe de pagamento, documento ou mídia de WhatsApp; fora disso, "Arquivo não encontrado." antes de qualquer leitura do disco. `podeLerArquivo` não serve de porta aqui: nega todo upload sem referência (o caso legítimo); a regra adotada é mais restrita para qualquer arquivo com finalidade, inclusive para o Administrador.
+- **B2** mock do provedor no teste parte de `provedorSimulado.gerar(p)` (compatível com o #227).
+- **C2** `buscarTrechos` ignora fontes vencidas; criação recusa `validoAte` no passado ou inválido. **C3** `salvarRascunho`/`restaurarVersao` exigem o rascunho aberto (`id` + `atualizadoEm`, de `rascunhoAtual()` ou do último salvamento) e recusam se mudou. **C4** teste unitário (prisma dublê) liga `definirEstadoAria`/`publicarRascunho` às capacidades (conferido por mutação). **C5** `busca` declarada com `dbgenerated` + `@@index([busca], type: Gin)`; `prisma migrate diff` banco × schema perdeu as duas linhas de `TrechoConhecimento` e não ganhou nenhuma; trava em `conhecimento/migracao-busca.test.ts`. **C6** tetos: 200 mil caracteres por fonte, PDF de 10 MB, 400 trechos por fonte.
+- **Atenção bloco C:** a assinatura de `salvarRascunho` (campo `rascunho`) e de `restaurarVersao(versaoId, rascunho)` mudou.
+- `tsc --noEmit`: saída 0. `npm run lint`: saída 0; 0 erros, 40 avisos. `npm test`: saída 0; 726 arquivos, 5374 testes.
+- Integração (recorte) em banco descartável com todas as migrations: `src/server/aria`, `src/server/uploads` e as suítes que usam `uploads/autorizacao` (`academico/visibilidade`, `matricula/condicoes-horas`, `inbox/regras-inbox`, `financeiro/recebimentos-destinados`): saída 0; 11 arquivos, 127 testes.
