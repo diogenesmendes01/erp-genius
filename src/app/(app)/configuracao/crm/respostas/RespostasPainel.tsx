@@ -16,8 +16,14 @@ const SETORES: { v: Setor; t: string }[] = [
   { v: "COMERCIAL", t: "Comercial" }, { v: "FINANCEIRO", t: "Financeiro" }, { v: "SECRETARIA", t: "Secretaria" }, { v: "PEDAGOGICO", t: "Pedagógico" },
 ];
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
-/** ariaPodeUsar é gravado, mas o turno da Aria (Fase 5C) ainda não lê as respostas: pendência no quadro. */
-export const AVISO_ARIA_EM_BREVE = "Em breve: a Aria passa a usar as respostas marcadas quando o atendimento automático entrar.";
+/**
+ * ariaPodeUsar é lido pelo turno da Aria (`montarContextoTurno` via `respostasParaAria`): as respostas
+ * marcadas, ativas, do setor do atendimento e as gerais entram no prompt como referência, e os preços
+ * citados nelas passam na guarda de valores (percentuais e parcelas seguem a política da Aria). Hoje a
+ * Aria só atua no Comercial (`turno/guardas.ts`), então marcadas de outros setores ainda não têm efeito.
+ */
+export const AVISO_ARIA =
+  "A Aria usa as respostas marcadas como referência, inclusive os preços citados no texto. Hoje a Aria só atua no Comercial: valem as respostas do Comercial e as gerais; respostas de outros setores marcadas ainda não têm efeito.";
 const VARIAVEIS = ["{nome}", "{responsavel}", "{curso}"];
 
 export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: RespostaLinha[]; setoresPermitidos: Setor[] }) {
@@ -64,7 +70,7 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
         <CampoTexto className={input} rows={4} value={corpo} onChange={(e) => setCorpo(e.target.value)} />
       </label>
       <label className="mt-3 flex items-center gap-1 text-sm"><input type="checkbox" checked={aria} onChange={(e) => setAria(e.target.checked)} />A Aria pode usar esta resposta</label>
-      <p className="mt-1 text-xs text-gray-500">{AVISO_ARIA_EM_BREVE}</p>
+      <p className="mt-1 text-xs text-gray-500">{AVISO_ARIA}</p>
       <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarRespostaRapidaDaTela({ id, atalho, titulo, corpo, setor: setor || null, ariaPodeUsar: aria }), limpar)}>{acao.ocupado ? "Salvando…" : id ? "Salvar resposta" : "Criar resposta"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />

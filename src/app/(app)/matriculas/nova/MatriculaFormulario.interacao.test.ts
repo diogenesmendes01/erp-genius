@@ -18,6 +18,7 @@ vi.mock("@/server/turmas/acoes", () => ({ solicitarAberturaTurma: m.abrir }));
 
 import { MatriculaFormulario, errosDoPasso2, type DadosPasso2 } from "./MatriculaFormulario";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { campos, clicar, criarGanchos, documentoQueRegistraFoco, elementos, errosDosCampos, preencher } from "@/test/tela-sem-dom";
 
 const props = {
@@ -227,6 +228,23 @@ describe("matrícula nova — passo 2 pela tela", () => {
     clicar(tela(), "← Voltar");
     expect(temCampo(tela(), "matricula-nome")).toBe(true);
     expect(errosDoServidor(tela())).toEqual([]);
+  });
+
+  it("resultado incerto: o reenvio manda a mesma chave de idempotência até o sucesso (#166)", async () => {
+    irAoPasso2();
+    preencherPasso2();
+    m.criar.mockRejectedValueOnce(new Error("rede caiu"));
+    await clicar(tela(), "Salvar matrícula");
+    expect(errosDoServidor(tela())).toEqual([MSG_RESULTADO_INCERTO]);
+    m.criar.mockResolvedValueOnce({ ok: false, erro: "Turma sem vaga." });
+    await clicar(tela(), "Salvar matrícula");
+    m.criar.mockResolvedValueOnce({ ok: true, dado: { id: "mat", alunoId: "al" } });
+    await clicar(tela(), "Salvar matrícula");
+    const chaves = m.criar.mock.calls.map((c) => (c[0] as { chaveIdempotencia?: string }).chaveIdempotencia);
+    expect(chaves[0]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(chaves[1]).toBe(chaves[0]);
+    expect(chaves[2]).toBe(chaves[0]);
+    expect(m.push).toHaveBeenCalledWith("/alunos");
   });
 
   it("sucesso: vai para a lista de alunos", async () => {
