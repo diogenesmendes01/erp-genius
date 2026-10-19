@@ -25,6 +25,8 @@ vi.mock("@/server/comercial/acoes", () => ({ criarLead: criarLeadMock, moverEtap
 
 import { NovaOportunidade } from "./NovaOportunidade";
 import { Campo } from "@/components/Campo";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { criarGanchos, controle, elementos, texto, type No } from "@/test/tela-sem-dom";
 
 type Props = Parameters<typeof NovaOportunidade>[0];
@@ -45,6 +47,7 @@ function montar(extra: Partial<Props>) {
   };
   return {
     texto: () => texto(arvore()),
+    erro: () => elementos(arvore()).find((n) => n.type === FeedbackAcao)?.props.erro,
     tem: (rotulo: string) => elementos(arvore()).some((n) => n.type === Campo && texto(n.props.rotulo).trim() === rotulo),
     async digitar(rotulo: string, valor: string, esperaMs = 400) {
       (controle(campoPor(rotulo)).props.onChange as (e: unknown) => void)({ target: { value: valor } });
@@ -77,6 +80,18 @@ describe("NovaOportunidade", () => {
     await t.clicar("Usar cadastro");
     await t.clicar("Criar oportunidade");
     expect(criarLeadMock).toHaveBeenCalledWith(expect.objectContaining({ pessoaId: "p1" }));
+  });
+  it("resultado incerto: o reenvio manda a mesma chave de idempotência (#166)", async () => {
+    criarLeadMock.mockRejectedValueOnce(new Error("rede caiu"));
+    const t = montar({});
+    await t.digitar("Nome", "Bia Lima");
+    await t.clicar("Criar oportunidade");
+    expect(t.erro()).toBe(MSG_RESULTADO_INCERTO);
+    await t.clicar("Criar oportunidade");
+    const [primeira, segunda] = criarLeadMock.mock.calls.map((c) => (c[0] as { chaveIdempotencia?: string }).chaveIdempotencia);
+    expect(primeira).toMatch(/^[0-9a-f-]{36}$/);
+    expect(segunda).toBe(primeira);
+    expect(criarLeadMock).toHaveBeenCalledTimes(2);
   });
   it("etapas oferecidas são só as de entrada", () => {
     expect(montar({}).opcoes("Etapa")).toEqual(["Novo", "1º contato", "Qualificado"]);
