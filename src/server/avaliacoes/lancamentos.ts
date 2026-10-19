@@ -4,7 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
-import { DataHoraAvaliacaoSchema, instanteAvaliacaoLocal } from "./tempo";
+import { DataHoraAvaliacaoSchema, MSG_LANCAMENTO_SEM_FUSO, instanteAvaliacaoLocal } from "./tempo";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { docenteAtual } from "@/server/diario/permissoes";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { notaVigente } from "./nota-vigente";
@@ -21,6 +22,8 @@ export async function salvarLancamentoAvaliacao(input: z.input<typeof SalvarLanc
 export async function salvarLancamentoAvaliacaoLocal(input: Omit<z.input<typeof SalvarLancamentoSchema>, "realizadaEm"> & { realizadaLocal: string; fuso: string }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
+    // D10: sem o fuso da escola, o lançamento com data e hora locais não é aceito (a tela também o esconde).
+    if (!(await consultarFusoInstitucional())) throw new ErroRegra(MSG_LANCAMENTO_SEM_FUSO);
     const { realizadaLocal, fuso, ...d } = SalvarLancamentoSchema.omit({ realizadaEm: true }).extend({ realizadaLocal: DataHoraAvaliacaoSchema, fuso: FusoInstitucionalSchema }).strict().parse(input);
     let realizadaEm: string;
     try { realizadaEm = instanteAvaliacaoLocal(realizadaLocal, fuso).toISOString(); }

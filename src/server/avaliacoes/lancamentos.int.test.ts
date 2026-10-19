@@ -54,7 +54,7 @@ import { consultarProrrogacoesRecuperacao } from "./recuperacao-prorrogacao-cons
 import { designarProfessorRecuperacao } from "./recuperacao-designacao";
 import { consultarDesignacaoRecuperacao } from "./recuperacao-designacao-consulta";
 import { listarTentativasRecuperacaoDesignadas, consultarTentativaRecuperacaoDesignada } from "./recuperacao-fila-docente";
-import { dataHoraAvaliacaoLocal } from "./tempo";
+import { MSG_LANCAMENTO_SEM_FUSO, dataHoraAvaliacaoLocal } from "./tempo";
 import { HABILIDADES } from "./calculo";
 import { proporExtraRecuperacao, decidirExtraRecuperacao, consultarExtrasRecuperacao } from "./extra-recuperacao";
 import { estadoExtraRecuperacaoTx, quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
@@ -2634,7 +2634,17 @@ it("correção exige origem oficial, mudança válida e atribuição docente vig
   expect(await prisma.propostaCorrecaoNota.count()).toBe(1);
 });
 
+it("entrada local sem fuso da escola é recusada com a mensagem que leva à configuração (D10)", async () => {
+  expect(await prisma.configuracaoOperacional.count()).toBe(0); // o banco de cada teste começa sem configuração
+  const { realizadaEm: _r, ...base } = entrada();
+  void _r;
+  expect(await salvarLancamentoAvaliacaoLocal({ ...base, realizadaLocal: "2026-01-10T04:00", fuso: "America/Costa_Rica" }))
+    .toEqual({ ok: false, erro: MSG_LANCAMENTO_SEM_FUSO });
+  expect(await prisma.versaoLancamentoAvaliacao.count()).toBe(0);
+});
+
 it("entrada local converte no servidor e conserva idempotência e autorização", async () => {
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
   const { realizadaEm, ...base } = entrada();
   const local = { ...base, realizadaLocal: "2026-01-10T04:00", fuso: "America/Costa_Rica" };
   const r = await salvarLancamentoAvaliacaoLocal(local);

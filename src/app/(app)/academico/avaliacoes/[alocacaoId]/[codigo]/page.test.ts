@@ -16,6 +16,7 @@ vi.mock("../../Identificacao", () => ({ IdentificacaoAvaliacao: () => null }));
 import Page from "./page";
 import { LancarNotas } from "./Formularios";
 import { identidadeNoReact } from "@/test/tela-sem-dom";
+import { MSG_LANCAMENTO_SEM_FUSO } from "@/server/avaliacoes/tempo";
 
 const dado = {
   contexto: {
@@ -46,7 +47,8 @@ describe("lançamentos de avaliação", () => {
     mocks.sessao.mockResolvedValue({ id: "professor" });
     mocks.consultar.mockResolvedValue({ ok: true, dado });
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
-    mocks.fuso.mockResolvedValue(null);
+    // Com a escola sem fuso o lançamento é bloqueado (D10); o padrão destes testes é a escola configurada.
+    mocks.fuso.mockResolvedValue("America/Sao_Paulo");
   });
 
   it("usa a preferência somente no histórico e conserva UTC como entrada explícita", async () => {
@@ -59,7 +61,8 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("anterior=2026-10-01T02:30");
     expect(html).toContain('href="?fuso=UTC&amp;pagina=2"');
     expect(html).toContain('href="/academico/avaliacoes/alocacao/final/designacao"');
-    expect(mocks.fuso).not.toHaveBeenCalled();
+    // O fuso da escola é sempre conferido, mesmo com fuso na URL: sem ele, não há lançamento (D10).
+    expect(mocks.fuso).toHaveBeenCalledTimes(1);
   });
 
   it("recorre ao fuso informado para o histórico sem preferência e preserva São Paulo na entrada", async () => {
@@ -69,7 +72,7 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("Fuso de exibição do histórico: America/Sao_Paulo (origem UTC).");
     expect(html).toContain("entrada=America/Sao_Paulo");
     expect(html).toContain("anterior=2026-09-30T23:30");
-    expect(mocks.fuso).not.toHaveBeenCalled();
+    expect(mocks.fuso).toHaveBeenCalledTimes(1);
   });
 
   it("não consulta lançamentos, preferência ou fuso institucional quando a guarda falha", async () => {
@@ -94,18 +97,33 @@ describe("lançamentos de avaliação", () => {
     expect(html).toContain("entrada=America/Sao_Paulo");
   });
 
-  it("sem fuso na URL e sem fuso institucional configurado, recorre a UTC — e avisa na tela, com o caminho para configurar", async () => {
+  // D10 (decisão do dono, 19/10/2026; C7 da #170): em UTC a data da avaliação pode cair no dia errado. Sem fuso da
+  // escola, o formulário de lançamento não aparece; a tela diz por quê e leva à configuração. O histórico continua.
+  it("sem fuso institucional configurado, bloqueia o lançamento e leva à configuração do fuso", async () => {
     mocks.fuso.mockResolvedValue(null);
     const html = renderToStaticMarkup(await renderizar({}));
-    expect(html).toContain("entrada=UTC");
-    expect(html).toContain("Fuso da escola não configurado; horários exibidos em UTC.");
+    expect(html).not.toContain("lancar-notas");
+    expect(html).toContain(MSG_LANCAMENTO_SEM_FUSO);
     expect(html).toContain('href="/configuracao/operacao"');
+    expect(html).toContain("Configurar o fuso da escola");
+    expect(html).toContain("Histórico de lançamentos");
+    expect(html).toContain("Versão 1");
   });
 
-  it("com fuso da escola (ou fuso escolhido na URL), não há aviso de UTC", async () => {
-    mocks.fuso.mockResolvedValue("America/Sao_Paulo");
-    expect(renderToStaticMarkup(await renderizar({}))).not.toContain("Fuso da escola não configurado");
-    expect(renderToStaticMarkup(await renderizar({ fuso: "UTC" }))).not.toContain("Fuso da escola não configurado");
+  it("um fuso escolhido na URL não libera o lançamento quando a escola não tem fuso", async () => {
+    mocks.fuso.mockResolvedValue(null);
+    const html = renderToStaticMarkup(await renderizar({ fuso: "America/Sao_Paulo" }));
+    expect(html).not.toContain("lancar-notas");
+    expect(html).toContain(MSG_LANCAMENTO_SEM_FUSO);
+  });
+
+  it("com fuso da escola, o lançamento aparece e não há aviso de bloqueio nem de UTC", async () => {
+    for (const busca of [{}, { fuso: "UTC" }]) {
+      const html = renderToStaticMarkup(await renderizar(busca));
+      expect(html).toContain("lancar-notas");
+      expect(html).not.toContain(MSG_LANCAMENTO_SEM_FUSO);
+      expect(html).not.toContain("Fuso da escola não configurado");
+    }
   });
 
   // docs/43 §6 item 3 (docs/42 L1314): antes, a key do LancarNotas tinha a versão e o fuso, e o formulário só
