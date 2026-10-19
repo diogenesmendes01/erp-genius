@@ -24,6 +24,9 @@ describe("opções ainda sem efeito avisam na tela", () => {
     const html = renderToStaticMarkup(createElement(RespostasPainel, { respostas: [], setoresPermitidos: ["COMERCIAL"] }));
     expect(AVISO_ARIA).not.toMatch(/em breve/i);
     expect(AVISO_ARIA).toMatch(/setor/i);
+    // C3 da R1 do #238: hoje a Aria só atua no Comercial; marcada em outro setor ainda não tem efeito.
+    expect(AVISO_ARIA).toMatch(/só atua no Comercial/);
+    expect(AVISO_ARIA).toMatch(/outros setores.*ainda não têm efeito/);
     expect(html).toContain(AVISO_ARIA);
   });
 });
