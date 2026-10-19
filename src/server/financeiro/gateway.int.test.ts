@@ -134,6 +134,36 @@ describe("review PR #60 rodada 2 — financeiro", () => {
   });
 });
 
+describe("fechamento automático no mês civil da ESCOLA (Q176 · ref. #164)", () => {
+  // Relógio fixo: a competência e o corte viram à meia-noite do dia 1 no fuso da escola (padrão
+  // America/Sao_Paulo), nunca no relógio do servidor (UTC em produção). Verde com TZ=UTC e TZ=America/Sao_Paulo.
+  async function ligarComAprovacaoEm(aprovadaEm: Date) {
+    const { matriculaId } = await seedMatriculaAguardando();
+    await prisma.configFinanceiro.upsert({
+      where: { id: "financeiro" },
+      create: { id: "financeiro", fechamentoComissaoAutomatico: true },
+      update: { fechamentoComissaoAutomatico: true },
+    });
+    await prisma.comissao.updateMany({ where: { matriculaId }, data: { status: StatusComissao.APROVADA, aprovadaEm } });
+  }
+
+  it("às 23h30 de Brasília do dia 31 (02h30 UTC do dia 1), ainda é o mês corrente: não fecha a aprovação do próprio mês", async () => {
+    await ligarComAprovacaoEm(new Date("2026-10-31T15:00:00.000Z")); // 31/10, 12h de Brasília
+    const r = await rodarFechamentoComissoes(new Date("2026-11-01T02:30:00.000Z")); // 31/10, 23h30 de Brasília
+    expect(r.mes).toBe("2026-10");
+    expect(r.pagas).toBe(0);
+    expect(await prisma.comissao.count({ where: { status: StatusComissao.APROVADA } })).toBe(1);
+  });
+
+  it("contra-prova: à 00h30 de Brasília do dia 1, a aprovação das 23h30 da véspera entra no fechamento", async () => {
+    await ligarComAprovacaoEm(new Date("2026-11-01T02:30:00.000Z")); // 31/10, 23h30 de Brasília
+    const r = await rodarFechamentoComissoes(new Date("2026-11-01T03:30:00.000Z")); // 01/11, 00h30 de Brasília
+    expect(r.mes).toBe("2026-11");
+    expect(r.executou).toBe(true);
+    expect(r.pagas).toBe(1);
+  });
+});
+
 describe("reconciliação de identidade da cobrança", () => {
   it("competência não bloqueia períodos diferentes e não substitui a identidade da emissão", async () => {
     const { matriculaId } = await seedMatriculaAguardando();
