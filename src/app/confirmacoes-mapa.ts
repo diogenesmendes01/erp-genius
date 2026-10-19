@@ -151,21 +151,21 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
   {
     arquivo: "src/app/(app)/configuracao/usuarios/UsuariosPainel.tsx",
     modulo: "@/server/acesso/acoes",
-    acao: "alternarUsuarioAtivo",
+    acao: "definirUsuarioAtivo",
     achado: "L2413",
     efeito: "desativa o usuário: a pessoa perde o acesso ao sistema na hora",
   },
   {
     arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx",
     modulo: "@/server/catalogo/acoes",
-    acao: "alternarIdiomaAtivo",
+    acao: "definirIdiomaAtivo",
     achado: "L2340",
     efeito: "desativa o idioma usado pelos produtos do catálogo",
   },
   {
     arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx",
     modulo: "@/server/catalogo/acoes",
-    acao: "alternarPrecoAtivo",
+    acao: "definirPrecoAtivo",
     achado: "L2340",
     efeito: "desativa o preço de referência; a combinação pode ficar sem preço para novas matrículas",
   },
@@ -292,17 +292,17 @@ export const EXCECOES_CONFIRMACAO: ExcecaoConfirmacao[] = [
   },
   {
     arquivo: "src/app/(app)/configuracao/usuarios/UsuariosPainel.tsx",
-    trecho: "alternarUsuarioAtivo(id)",
+    trecho: "definirUsuarioAtivo(id, true)",
     motivo: "ativar devolve o acesso e tem volta na própria linha; desativar abre o ConfirmarAcao",
   },
   {
     arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx",
-    trecho: "alternarIdiomaAtivo(id)",
+    trecho: "definirIdiomaAtivo(id, true)",
     motivo: "ativar o idioma tem volta na própria linha; desativar abre o ConfirmarAcao",
   },
   {
     arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx",
-    trecho: "alternarPrecoAtivo(id)",
+    trecho: "definirPrecoAtivo(id, true)",
     motivo: "reativar um preço do histórico tem volta na própria linha; desativar o ativo abre o ConfirmarAcao",
   },
   {

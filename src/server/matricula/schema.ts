@@ -8,6 +8,7 @@ import {
   codigoISO,
   codigoISOOpcional,
   paraDataLocal,
+  ChaveIdempotenciaSchema,
 } from "@/server/_shared/validacao";
 
 // Matrícula manual (ver docs/05, docs/09). Pré-preenchida pelo lead → confirmar + completar.
@@ -90,6 +91,8 @@ export const MatriculaSchema = z.object({
   justificativaSemPreco: z.string().trim().optional(),
   // Comissão
   comissaoPct: z.never().optional(), // calculada no servidor pela política vigente
+  // Idempotência (#166): a tela manda a mesma chave até o sucesso; o reenvio devolve a matrícula já criada.
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 }).refine((d) => !d.cobertura || !!d.primeiroVencimento, {
   message: "Informe o vencimento acordado da primeira mensalidade.", path: ["primeiroVencimento"],
 }).refine((d) => d.pagador === "ALUNO" || !!d.responsavelNome?.trim(), {
