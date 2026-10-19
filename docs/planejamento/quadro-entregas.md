@@ -3400,6 +3400,20 @@ Branch `claude/fase5-g-auditoria`, base `main` 04145a58 + merge de 8cbf1672 (#23
 - Novo job `build` no `.github/workflows/ci.yml`: `npm ci`, `prisma generate` e `npm run build`, com o `DATABASE_URL` de teste do workflow e `NODE_OPTIONS=--max-old-space-size=5120`. Motivo: no #234, componentes "use client" importando módulos de servidor com Prisma quebravam o build de produção sem que typecheck, lint ou testes acusassem.
 - Evidência: `npm run build` no `origin/main` (8cbf1672) com a env mínima do CI: saída 0, ~3 min.
 
+### Q176: régua de cobrança e D+30 no fuso da escola (B1 da triagem, lote "servidor sem migration" da #164) — 2026-10-19
+
+Branch `claude/regua-fuso-escola`, base `main` 78edb2a0. É só a Q176. O resto da #62 continua pendente na #164.
+- **Problema:** a régua contava os dias pelo relógio do servidor (`inicioDoDia` com `getFullYear/getMonth/getDate`). Em produção o processo roda em UTC, então o dia virava às 21h de Brasília, e lembrete, cobrança e D+30 podiam sair um dia antes.
+- **`cobrancas/regua.ts`:** `diferencaEmDias` foi substituída por `diasCivisDesde(agora, gravada, fuso)`. "Hoje" passa a ser a data civil da escola (`dataCivilInstitucional`). O dia de uma data gravada sai de `diaCivilGravado`, o maior entre o dia UTC e o dia da escola, e isso cobre as três convenções de gravação: meio-dia da escola, meia-noite da escola e meia-noite UTC do legado. `proximaAcao(entrada, hoje, fuso, politica?)` usa essa conta para os dias de atraso e para a promessa vigente. `promessaNoPassado(ate, agora, fuso)` é a regra da promessa.
+- **D+30:** `cobrancaGeraRestricaoAutomatica(…, agora, fuso)`. `reavaliarAcessoAutomaticoMatriculaTx` (`cobrancas/acesso-aulas.ts`) e `autorizarReproducaoGravacaoTx` (`gravacoes/autorizacao.ts`) leem o fuso com `fusoDaEscola(tx)`.
+- **Fila e ficha:** `montarReguaPorCobranca` lê `fusoDaEscola()`, ou recebe o fuso de quem chama. Isso vale para a fila, a ficha financeira, o cron da régua e o enfileiramento manual. Na fila, "Recebido hoje" passa a começar à meia-noite da escola (`instanteDaGrade`).
+- **Promessa de pagamento:** em `registrarPromessaPagamento`, "não pode ser no passado" compara com o dia da escola, e a data passa a ser gravada ao meio-dia da escola. Data civil inexistente, como 31/02, agora é recusada; antes rolava para o mês seguinte.
+- `fusoDaEscola(cliente?)` (`relatorios/atendimento.ts`) aceita a transação de quem já está dentro de uma. O padrão continua America/Sao_Paulo.
+- **Testes (TDD, com relógio fixo):** às 23h30 de Brasília (02h30 UTC do dia seguinte), o D0 e o D-3 ainda não saem, a promessa ainda vale e o D+30 ainda não restringe; à 00h30 saem. Há também casos para as três convenções de gravação e para "recebido hoje" com `vi.setSystemTime`. Os testes da régua deixaram de usar datas no relógio local do processo. Antes da correção, em UTC, os casos das 23h30 do D+30 falhavam e reproduziam o bug.
+- **Fora do escopo** (mesmo tipo de problema, mas fora do fluxo da régua): o teto de mensagens por contato/dia do despachante (`whatsapp/despachante.ts`, `inicioDia`) e o corte mensal do fechamento automático de comissões (`financeiro/cron-financeiro.ts`) ainda usam o relógio do servidor.
+- Nenhuma migration nova.
+- Evidências (banco descartável `erp_genius_test_regua`, `migrate deploy`, apagado ao fim): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` 0 erros, 40 avisos; `npm test` saída 0 com TZ=UTC e com TZ=America/Sao_Paulo, 754 arquivos e 5612 testes em cada; `npm run build` saída 0; integração em `cobrancas`, `gravacoes/{autorizacao,troca-fonte-reposicao}`, `whatsapp/{ciclo-cobranca,acoes,cron,motor/ponta-a-ponta}`, `retomada/fluxo` e `financeiro/gateway` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0, 11 arquivos, 120 testes.
+
 ### Aria usa as respostas rápidas liberadas — 2026-10-19
 
 Branch `claude/aria-respostas-rapidas`, base `main` 78edb2a0. Decisão do dono: ligar `TemplateWhatsApp.ariaPodeUsar` ao turno da Aria (pendência do C2 da R1 do #233).

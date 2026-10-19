@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { proximaAcao, proximaAcaoAncora, selecionarDegrau, REGUA, type DegrauAncora } from "./regua";
 
+const FUSO = "America/Sao_Paulo";
+/** Meio-dia de Brasília (15h UTC): o mesmo dia civil com TZ=UTC e America/Sao_Paulo. */
+const diaEscola = (ano: number, mes0a11: number, dia: number) => new Date(Date.UTC(ano, mes0a11, dia, 15));
+
 // Motor generalizado por âncora (doc 27 §Tese · doc 29 regra 1). A régua "lead novo sem
 // resposta" (doc 08: D0·+30min·+4h·+24h·+3d·+7d) usa o MESMO núcleo da cobrança, em MINUTOS.
 
@@ -127,22 +131,22 @@ describe("corte de progresso forward-only (review PR #54)", () => {
   });
 
   it("cobrança: enviado o D+3 num backlog, o recálculo NÃO volta pro D0/D-7", () => {
-    const hoje = new Date(2026, 6, 18);
-    const vencimento = new Date(2026, 6, 13); // diasAtraso = 5
+    const hoje = diaEscola(2026, 6, 18);
+    const vencimento = diaEscola(2026, 6, 13); // diasAtraso = 5
     // Sem nada feito, o backlog escolhe o mais avançado que chegou (D+3, offset 3 ≤ 5).
-    const p1 = proximaAcao({ vencimento, quitada: false, passosFeitos: [] }, hoje);
+    const p1 = proximaAcao({ vencimento, quitada: false, passosFeitos: [] }, hoje, FUSO);
     expect(p1.degrau?.passo).toBe("D+3");
     // Feito o D+3, recalcular: D0/D-3/D-7 estão ATRÁS do corte → nada devido (D+7 só aos 7).
-    const p2 = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje);
+    const p2 = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, FUSO);
     expect(p2.estado).toBe("futuro");
     expect(p2.degrau).toBeNull();
   });
 
   it("cobrança: régua feita em ordem completa → concluída (contra-prova, comportamento preservado)", () => {
-    const hoje = new Date(2026, 6, 18);
-    const vencimento = new Date(2026, 6, 3); // diasAtraso = 15 (D+15)
+    const hoje = diaEscola(2026, 6, 18);
+    const vencimento = diaEscola(2026, 6, 3); // diasAtraso = 15 (D+15)
     const todos = REGUA.map((d) => d.passo);
-    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: todos }, hoje);
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: todos }, hoje, FUSO);
     expect(r.estado).toBe("concluida");
   });
 });
@@ -151,12 +155,12 @@ describe("corte de progresso forward-only (review PR #54)", () => {
 // executado, ou trocar seu offset, não pode devolver a régua para trás. O corte é ancorado
 // na ORDEM IMUTÁVEL dos passos (lei de código), não no offset atual da config.
 describe("corte de progresso sobrevive à edição da política (review PR #54, 2ª passada)", () => {
-  const hoje = new Date(2026, 6, 18);
-  const vencimento = new Date(2026, 6, 13); // diasAtraso = 5 (repro do review)
+  const hoje = diaEscola(2026, 6, 18);
+  const vencimento = diaEscola(2026, 6, 13); // diasAtraso = 5 (repro do review)
 
   it("cobrança: D+3 feito e depois REMOVIDO/desativado da política → NÃO volta pro D0", () => {
     const politicaSemD3 = REGUA.filter((d) => d.passo !== "D+3");
-    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, politicaSemD3);
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, FUSO, politicaSemD3);
     expect(r.estado).toBe("futuro"); // D0/D-3/D-7 superados; D+7 ainda não chegou
     expect(r.degrau).toBeNull();
   });
@@ -167,15 +171,15 @@ describe("corte de progresso sobrevive à edição da política (review PR #54, 
       { ...REGUA[3], offsetDias: -10 }, // D+3 movido p/ -10 DEPOIS do envio
       ...REGUA.filter((d) => d.passo !== "D+3"),
     ];
-    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, politicaEditada);
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, hoje, FUSO, politicaEditada);
     expect(r.estado).toBe("futuro"); // corte pela ordem canônica: D-7..D0 atrás do D+3
     expect(r.degrau).toBeNull();
   });
 
   it("cobrança: com o degrau removido, a régua segue PARA FRENTE quando o próximo chega", () => {
     const politicaSemD3 = REGUA.filter((d) => d.passo !== "D+3");
-    const em7dias = new Date(2026, 6, 20); // diasAtraso = 7
-    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, em7dias, politicaSemD3);
+    const em7dias = diaEscola(2026, 6, 20); // diasAtraso = 7
+    const r = proximaAcao({ vencimento, quitada: false, passosFeitos: ["D+3"] }, em7dias, FUSO, politicaSemD3);
     expect(r.degrau?.passo).toBe("D+7");
   });
 
