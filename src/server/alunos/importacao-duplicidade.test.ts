@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Deduplicação da importação de alunos (docs/42 L224; docs/43 §6 item 9). Sem banco: o Prisma é mockado e o
-// teste confere o `where`/`take`/`select` da leitura dos candidatos; as chaves e o índice são puros.
+// teste confere o `where`/`take`/`cursor`/`select` da leitura dos candidatos; as chaves e o índice são puros.
 
 const m = vi.hoisted(() => ({ alunos: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { aluno: { findMany: m.alunos } } }));
 
 import {
   IndiceDuplicidade,
-  TETO_CANDIDATOS_DUPLICIDADE,
+  LOTE_CANDIDATOS_DUPLICIDADE,
   carregarCadastradosParaDuplicidade,
   chavesDeIdentidade,
   documentoComparavel,
@@ -47,6 +47,14 @@ describe("chaves de identidade", () => {
     ana.registrar(chavesDeIdentidade(pessoa({ primeiroNome: "Ana", sobrenome: "Rojas", ...comum })), { tipo: "planilha", linha: 2 });
     expect(ana.procurar(chavesDeIdentidade(pessoa({ primeiroNome: "Bruno", sobrenome: "Rojas", ...comum })))).toBeNull();
     expect(ana.procurar(chavesDeIdentidade(pessoa({ primeiroNome: "Ana", sobrenome: "Rojas", email: "familia@example.test" })))).toEqual({ origem: { tipo: "planilha", linha: 2 }, criterio: "email" });
+  });
+
+  it("nome + e-mail, telefone ou nascimento só valem dentro do mesmo país, como o documento (#180 C2)", () => {
+    const comum = { email: "maria@example.test", telefoneE164: "+50688887777", nascimento: new Date(2010, 3, 12, 12) };
+    const i = new IndiceDuplicidade();
+    i.registrar(chavesDeIdentidade(pessoa({ paisId: "cr", ...comum })), { tipo: "planilha", linha: 2 });
+    expect(i.procurar(chavesDeIdentidade(pessoa({ paisId: "pa", ...comum })))).toBeNull();
+    expect(i.procurar(chavesDeIdentidade(pessoa({ paisId: "cr", ...comum })))?.criterio).toBe("email");
   });
 
   it("nome sem acento, sem caixa e com espaços normalizados", () => {
@@ -95,22 +103,49 @@ describe("motivo mostrado ao operador", () => {
 });
 
 describe("carregarCadastradosParaDuplicidade", () => {
-  it("uma consulta com teto: documento como veio e sem pontuação, e-mail sem caixa, telefone, primeiro nome com nascimento", async () => {
+  it("lê em lotes pelo id: documento como veio e sem pontuação, e-mail sem caixa, telefone, dia do nascimento, nos países da planilha", async () => {
     await carregarCadastradosParaDuplicidade([
       pessoa({ documento: "1-2345-6789", email: " Maria@Example.test " }),
-      pessoa({ primeiroNome: "Bruno", telefoneE164: "+50688887777", nascimento: new Date(2001, 0, 2, 12) }),
+      pessoa({ primeiroNome: "Bruno", paisId: "br", telefoneE164: "+50688887777", nascimento: new Date(2001, 0, 2, 12) }),
     ]);
     expect(m.alunos).toHaveBeenCalledTimes(1);
     const args = m.alunos.mock.calls[0][0];
-    expect(args.take).toBe(TETO_CANDIDATOS_DUPLICIDADE);
+    expect(args.take).toBe(LOTE_CANDIDATOS_DUPLICIDADE);
     expect(args.orderBy).toEqual({ id: "asc" });
-    expect(args.where).toEqual({ OR: [
+    expect(args.cursor).toBeUndefined();
+    expect(args.where).toEqual({ paisId: { in: ["cr", "br"] }, OR: [
       { documento: { in: ["1-2345-6789", "123456789"] } },
       { email: { in: ["maria@example.test"], mode: "insensitive" } },
       { telefoneE164: { in: ["+50688887777"] } },
-      { primeiroNome: { in: ["Bruno"], mode: "insensitive" }, nascimento: { not: null } },
+      { nascimento: { gte: new Date("2001-01-02T00:00:00.000Z"), lt: new Date("2001-01-03T00:00:00.000Z") } },
     ] });
-    expect(Object.keys(args.select).sort()).toEqual(["codigo", "documento", "email", "nascimento", "paisId", "primeiroNome", "sobrenome", "telefoneE164"]);
+    expect(Object.keys(args.select).sort()).toEqual(["codigo", "documento", "email", "id", "nascimento", "paisId", "primeiroNome", "sobrenome", "telefoneE164"]);
+  });
+
+  it("acento: o candidato vem pelo dia do nascimento, não pelo primeiro nome — \"Jose\" na planilha acha \"José\" no cadastro (#180 C2)", async () => {
+    m.alunos.mockResolvedValue([{ id: "a1", paisId: "cr", primeiroNome: "José", sobrenome: "Pérez", codigo: "A-000001", documento: null, email: null, telefoneE164: null, nascimento: new Date("2005-06-07T00:00:00.000Z") }]);
+    const jose = pessoa({ primeiroNome: "Jose", sobrenome: "Perez", nascimento: new Date(2005, 5, 7, 12) });
+    const i = await carregarCadastradosParaDuplicidade([jose]);
+    const where = m.alunos.mock.calls[0][0].where;
+    expect(JSON.stringify(where)).not.toContain("primeiroNome");
+    expect(i.procurar(chavesDeIdentidade(jose))).toEqual({ origem: { tipo: "cadastro", nome: "José Pérez", codigo: "A-000001" }, criterio: "nascimento" });
+  });
+
+  it("sem teto: quando um lote vem cheio, lê o próximo depois do último id, até acabar (#180 C2)", async () => {
+    const enchimento = Array.from({ length: LOTE_CANDIDATOS_DUPLICIDADE }, (_, k) => ({
+      id: `a${String(k).padStart(6, "0")}`, paisId: "cr", primeiroNome: `Outro${k}`, sobrenome: null, codigo: null, documento: null, email: "maria@example.test", telefoneE164: null, nascimento: null,
+    }));
+    m.alunos
+      .mockResolvedValueOnce(enchimento)
+      .mockResolvedValueOnce([{ id: "z1", paisId: "cr", primeiroNome: "María", sobrenome: "González Rojas", codigo: "A-009999", documento: null, email: "maria@example.test", telefoneE164: null, nascimento: null }]);
+    const maria = pessoa({ email: "maria@example.test" });
+    const i = await carregarCadastradosParaDuplicidade([maria]);
+    expect(m.alunos).toHaveBeenCalledTimes(2);
+    const segundo = m.alunos.mock.calls[1][0];
+    expect(segundo.cursor).toEqual({ id: enchimento.at(-1)!.id });
+    expect(segundo.skip).toBe(1);
+    expect(segundo.where).toEqual(m.alunos.mock.calls[0][0].where);
+    expect(i.procurar(chavesDeIdentidade(maria))?.origem).toEqual({ tipo: "cadastro", nome: "María González Rojas", codigo: "A-009999" });
   });
 
   it("sem campo que identifique (só nome e país): não consulta", async () => {
@@ -120,7 +155,7 @@ describe("carregarCadastradosParaDuplicidade", () => {
   });
 
   it("o cadastrado encontrado vira origem com nome e código; documento formatado diferente ainda casa", async () => {
-    m.alunos.mockResolvedValue([{ paisId: "cr", primeiroNome: "Ana", sobrenome: "Rojas", codigo: "A-000123", documento: "1 2345 6789", email: null, telefoneE164: null, nascimento: null }]);
+    m.alunos.mockResolvedValue([{ id: "a1", paisId: "cr", primeiroNome: "Ana", sobrenome: "Rojas", codigo: "A-000123", documento: "1 2345 6789", email: null, telefoneE164: null, nascimento: null }]);
     const i = await carregarCadastradosParaDuplicidade([pessoa({ documento: "1-2345-6789" })]);
     expect(i.procurar(chavesDeIdentidade(pessoa({ documento: "1-2345-6789" })))).toEqual({
       origem: { tipo: "cadastro", nome: "Ana Rojas", codigo: "A-000123" }, criterio: "documento",

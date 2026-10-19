@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { TipoCobranca } from "@prisma/client";
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
-import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
+import { criarPreco, definirPrecoAtivo } from "@/server/catalogo/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -44,8 +44,9 @@ export function PrecosPainel({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  // Sem chave de idempotência: criarPreco cria um preço novo (e aposenta o ativo) a cada chamada e
-  // alternarPrecoAtivo inverte o estado atual — a falha de rede manda conferir a página antes de repetir.
+  // Sem chave de idempotência: criarPreco cria um preço novo (e aposenta o ativo) a cada chamada — a falha de rede
+  // manda conferir a página antes de repetir. definirPrecoAtivo recebe o estado-alvo (B4, #175 C2): repeti-lo não
+  // desfaz nada.
   const acao = useAcaoCliente({ idempotente: false });
   // Onde mostrar o resultado: no formulário de novo preço ou na linha do preço alternado.
   const [origem, setOrigem] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export function PrecosPainel({
 
   async function reativar(id: string) {
     setOrigem(id);
-    const d = await acao.executar(() => alternarPrecoAtivo(id), "Preço reativado.");
+    const d = await acao.executar(() => definirPrecoAtivo(id, true), "Preço reativado.");
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -250,8 +251,8 @@ export function PrecosPainel({
         <ConfirmarAcao
           titulo={`Desativar o preço de ${desativando.produto.idioma.nome} · ${desativando.produto.modalidade.nome} em ${desativando.pais.nome}?`}
           confirmacao="desativação do preço"
-          idempotente={false}
-          acao={() => alternarPrecoAtivo(desativando.id)}
+          idempotente
+          acao={() => definirPrecoAtivo(desativando.id, false)}
           aoConcluir={() => desativado(desativando)}
           aoCancelar={() => setDesativando(null)}
         >

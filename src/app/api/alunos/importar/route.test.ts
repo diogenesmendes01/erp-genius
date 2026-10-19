@@ -97,7 +97,7 @@ describe("POST /api/alunos/importar — deduplicação", () => {
     expect(corpo).toMatchObject({ criados: 2, ignorados: [] });
   });
 
-  it("uma consulta só aos cadastrados, com os candidatos da planilha e teto", async () => {
+  it("uma consulta só aos cadastrados, em lotes, com os candidatos da planilha (nascimento pelo dia, sem o primeiro nome)", async () => {
     await enviar([
       ["Ana", "Rojas", "Costa Rica", "1-2345-6789", "", "", "2001-02-03"],
       ["Bruno", "Mora", "Costa Rica", "", "bruno@example.test", "", ""],
@@ -108,7 +108,7 @@ describe("POST /api/alunos/importar — deduplicação", () => {
     expect(args.where.OR).toEqual(expect.arrayContaining([
       { documento: { in: ["1-2345-6789", "123456789"] } },
       { email: { in: ["bruno@example.test"], mode: "insensitive" } },
-      { primeiroNome: { in: ["Ana"], mode: "insensitive" }, nascimento: { not: null } },
+      { nascimento: { gte: new Date("2001-02-03T00:00:00.000Z"), lt: new Date("2001-02-04T00:00:00.000Z") } },
     ]));
   });
 
