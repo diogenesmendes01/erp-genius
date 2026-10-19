@@ -177,8 +177,8 @@ export async function exigirSessaoPagina(...alvo: Papel[]): Promise<UsuarioSessa
     redirect(await loginComVolta());
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
   }
-  // Usuário só-portal (review PR #60): a única página dele é o /portal — qualquer outra
-  // rota interna redireciona para lá (fail-closed; a UX de "só tenho portal" é o portal).
+  // Usuário só-portal (review PR #60): qualquer rota interna redireciona para o /portal (fail-closed). O /portal
+  // explica que a área do aluno tem acesso próprio e leva à entrada dela (C4 da #170).
   if (apenasPortal(usuario)) {
     if (!alvo.includes(Papel.ALUNO)) redirect("/portal");
     return usuario;
