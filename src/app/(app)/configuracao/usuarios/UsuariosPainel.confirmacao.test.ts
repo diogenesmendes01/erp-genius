@@ -20,14 +20,14 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
-vi.mock("@/server/acesso/acoes", () => ({ alternarUsuarioAtivo: m.alternar }));
+vi.mock("@/server/acesso/acoes", () => ({ definirUsuarioAtivo: m.alternar }));
 vi.mock("./UsuarioFormulario", () => ({ UsuarioFormulario: () => null }));
 
 import { UsuariosPainel, type UsuarioRow } from "./UsuariosPainel";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { PAPEL_LABEL } from "@/lib/labels";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { criarGanchos, elementos, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
 import { confirmarNoDialogo } from "@/test/confirmacao-tela";
 
@@ -60,7 +60,7 @@ describe("UsuariosPainel — desativar passa pela confirmação", () => {
     expect(m.alternar).not.toHaveBeenCalled(); // renderizar a confirmação não executa
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.alternar).toHaveBeenCalledTimes(1);
-    expect(m.alternar).toHaveBeenCalledWith("u-ana");
+    expect(m.alternar).toHaveBeenCalledWith("u-ana", false);
     (c.props.aoConcluir as () => void)();
     const t = tela();
     expect(confirmacoes(t)).toHaveLength(0);
@@ -80,14 +80,21 @@ describe("UsuariosPainel — desativar passa pela confirmação", () => {
     m.alternar.mockResolvedValueOnce({ ok: false, erro: "Você não pode desativar a si mesmo." });
     expect(await confirmarNoDialogo(confirmacoes(tela())[0], usar)).toEqual({ erro: "Você não pode desativar a si mesmo.", confirmarDisponivel: true });
     m.alternar.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO);
     expect(confirmacoes(tela())).toHaveLength(1);
     expect(m.refresh).not.toHaveBeenCalled();
   });
 
   it("ativar continua direto", async () => {
     await (botaoDe(tela(), "Ativar").props.onClick as () => Promise<void>)();
-    expect(m.alternar).toHaveBeenCalledWith("u-bia");
+    expect(m.alternar).toHaveBeenCalledWith("u-bia", true);
     expect(confirmacoes(tela())).toHaveLength(0);
+  });
+
+  it("falha de rede ao ativar manda reenviar: com o estado-alvo, repetir não desfaz (B4, #175 C2)", async () => {
+    m.alternar.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await (botaoDe(tela(), "Ativar").props.onClick as () => Promise<void>)();
+    const erros = elementos(tela()).filter((n: No) => n.type === FeedbackAcao).map((n: No) => n.props.erro);
+    expect(erros).toContain(MSG_RESULTADO_INCERTO);
   });
 });

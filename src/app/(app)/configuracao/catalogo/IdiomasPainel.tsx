@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
-import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
+import { criarIdioma, definirIdiomaAtivo } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -23,8 +23,8 @@ const inputCls =
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  // Sem chave de idempotência: criarIdioma cria outro registro a cada chamada e alternarIdiomaAtivo
-  // inverte o estado atual — a falha de rede manda conferir a página antes de repetir.
+  // Sem chave de idempotência: criarIdioma cria outro registro a cada chamada — a falha de rede manda conferir a
+  // página antes de repetir. definirIdiomaAtivo recebe o estado-alvo (B4, #175 C2): repeti-lo não desfaz nada.
   const acao = useAcaoCliente({ idempotente: false });
   // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
   const [origem, setOrigem] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
 
   async function ativar(id: string) {
     setOrigem(id);
-    const d = await acao.executar(() => alternarIdiomaAtivo(id), "Idioma ativado.");
+    const d = await acao.executar(() => definirIdiomaAtivo(id, true), "Idioma ativado.");
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -129,8 +129,8 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         <ConfirmarAcao
           titulo={`Desativar ${desativando.nome}?`}
           confirmacao="desativação do idioma"
-          idempotente={false}
-          acao={() => alternarIdiomaAtivo(desativando.id)}
+          idempotente
+          acao={() => definirIdiomaAtivo(desativando.id, false)}
           aoConcluir={() => desativado(desativando)}
           aoCancelar={() => setDesativando(null)}
         >
