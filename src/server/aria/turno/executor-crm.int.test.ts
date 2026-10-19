@@ -123,6 +123,22 @@ describe("executor: ações no CRM", () => {
     expect(valor.status).toBe("BLOQUEADA");
   });
 
+  it("agendar_mensagem_com_valor_de_resposta_rapida_liberada_passa_ao_executar_e_ao_aplicar_a_sugestao", async () => {
+    const rr = await prisma.templateWhatsApp.create({
+      data: { nome: "rr:/material", atalho: "/material", titulo: "Material", corpo: "O material custa ₡15.000.", tipo: "RESPOSTA_RAPIDA", setor: "COMERCIAL", ariaPodeUsar: true },
+    });
+    const texto = "Lembrete: o material custa ₡15.000.";
+    expect((await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: amanha(), justificativa: "x" })).status).toBe("EXECUTADA");
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    expect(s.status).toBe("SUGERIDA");
+    await prisma.$transaction((tx) => aplicarAcao(tx, s));
+    expect(await prisma.intencaoMensagem.count({ where: { corpoRenderizado: texto } })).toBe(2);
+    // A resposta deixou de ser liberada: a sugestão antiga perde a autorização do valor.
+    const s2 = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    await prisma.templateWhatsApp.update({ where: { id: rr.id }, data: { ariaPodeUsar: false } });
+    await expect(prisma.$transaction((tx) => aplicarAcao(tx, s2))).rejects.toThrow(/valor/);
+  });
+
   it("negar_nao_muda_nada", async () => {
     const a = await exec({ acao: "TAG", tagId: c.tag.id, justificativa: "x" }, "NEGAR");
     expect(a.status).toBe("BLOQUEADA");

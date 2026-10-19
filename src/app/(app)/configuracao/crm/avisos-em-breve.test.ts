@@ -7,7 +7,7 @@ vi.mock("@/server/crm-config/acoes-distribuicao", () => ({ salvarConfigSetorDaTe
 vi.mock("@/server/crm-config/acoes-respostas", () => ({ arquivarRespostaRapidaDaTela: vi.fn(), salvarRespostaRapidaDaTela: vi.fn() }));
 
 import { AVISO_SLA_EM_BREVE, SetorPainel } from "./distribuicao/SetorPainel";
-import { AVISO_ARIA_EM_BREVE, RespostasPainel } from "./respostas/RespostasPainel";
+import { AVISO_ARIA, RespostasPainel } from "./respostas/RespostasPainel";
 
 // C2 da revisão do #233: opções gravadas sem consumidor ainda aparecem como "em breve" na tela.
 describe("opções ainda sem efeito avisam na tela", () => {
@@ -19,9 +19,14 @@ describe("opções ainda sem efeito avisam na tela", () => {
     expect(AVISO_SLA_EM_BREVE).toMatch(/em breve/i);
     expect(html).toContain(AVISO_SLA_EM_BREVE);
   });
-  it("uso_pela_aria_marcado_em_breve", () => {
+  // A Aria passou a ler as respostas marcadas: o aviso deixa de ser "em breve" e explica o efeito.
+  it("uso_pela_aria_explica_o_efeito", () => {
     const html = renderToStaticMarkup(createElement(RespostasPainel, { respostas: [], setoresPermitidos: ["COMERCIAL"] }));
-    expect(AVISO_ARIA_EM_BREVE).toMatch(/em breve/i);
-    expect(html).toContain(AVISO_ARIA_EM_BREVE);
+    expect(AVISO_ARIA).not.toMatch(/em breve/i);
+    expect(AVISO_ARIA).toMatch(/setor/i);
+    // C3 da R1 do #238: hoje a Aria só atua no Comercial; marcada em outro setor ainda não tem efeito.
+    expect(AVISO_ARIA).toMatch(/só atua no Comercial/);
+    expect(AVISO_ARIA).toMatch(/outros setores.*ainda não têm efeito/);
+    expect(html).toContain(AVISO_ARIA);
   });
 });

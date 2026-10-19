@@ -18,6 +18,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
+import { hashEntrada, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import {
   exigirSessao,
   exigirPapel,
@@ -84,6 +85,8 @@ async function criarMatriculaTx(
   tx: Prisma.TransactionClient,
   autor: UsuarioSessao,
   input: MatriculaInput,
+  /** Idempotência (#166): gravada no payload do `MatriculaCriada`, onde `criarMatricula` a procura. */
+  marca: MarcaIdempotencia | null = null,
 ): Promise<{ id: string; alunoId: string; leadId: string | null; aguardaPreco: boolean }> {
   const dados = MatriculaSchema.parse(input);
 
@@ -404,7 +407,7 @@ async function criarMatriculaTx(
     agregadoTipo: "Matricula",
     agregadoId: matricula.id,
     autorId: autor.id,
-    payload: { codigo: codMatricula, alunoId: aluno.id, produtoId: produto.id, leadId, referencias: { taxa: { id: precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.id ?? null, valor: refTaxa }, mensalidade: { id: precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.id ?? null, valor: refMens } } },
+    payload: { codigo: codMatricula, alunoId: aluno.id, produtoId: produto.id, leadId, aguardaPreco, ...marca, referencias: { taxa: { id: precos.find((p) => p.tipoCobranca === TipoCobranca.MATRICULA)?.id ?? null, valor: refTaxa }, mensalidade: { id: precos.find((p) => p.tipoCobranca === TipoCobranca.MENSALIDADE)?.id ?? null, valor: refMens } } },
   });
   await registrarEvento(tx, {
     tipo: "AlunoMatriculado",
@@ -623,8 +626,24 @@ export async function criarMatricula(
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_CRIAR);
+    // Idempotência (#166): reenvio com a mesma chave (duplo clique, retry de rede, F5 no POST) devolve a
+    // matrícula já criada, sem segundo aluno, cobrança, comissão ou Evento.
+    const { chaveIdempotencia, ...dados } = MatriculaSchema.parse(input);
+    const marca = chaveIdempotencia ? { chaveIdempotencia, entradaHash: hashEntrada(dados) } : null;
 
-    const res = await prisma.$transaction((tx) => criarMatriculaTx(tx, autor, input));
+    const res = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetida = await repeticaoIdempotente(tx, {
+          tipo: "MatriculaCriada", agregadoTipo: "Matricula", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se a matrícula já aparece antes de repetir.",
+        });
+        if (repetida) {
+          const payload = repetida.payload as { alunoId: string; aguardaPreco?: boolean };
+          return { id: repetida.agregadoId, alunoId: payload.alunoId, aguardaPreco: payload.aguardaPreco === true };
+        }
+      }
+      return criarMatriculaTx(tx, autor, input, marca);
+    });
     revalidar();
     return { id: res.id, alunoId: res.alunoId, aguardaPreco: res.aguardaPreco };
   });

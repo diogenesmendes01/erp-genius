@@ -42,7 +42,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 ## Comercial (agregado `Lead`)
 | Evento | Gatilho | Quem | Payload (essencial) |
 |---|---|---|---|
-| `LeadCriado` | Lead entra no sistema — formulário OU **auto-captura no 1º inbound de um número de vendas** (fase doc 27 C1; autor `null` = sistema, `payload.origem="whatsapp_inbound"`) | Sistema/Vendedor | `{ codigo, nome, origem, segmento?, b2b }` |
+| `LeadCriado` | Lead entra no sistema — formulário OU **auto-captura no 1º inbound de um número de vendas** (fase doc 27 C1; autor `null` = sistema, `payload.origem="whatsapp_inbound"`) | Sistema/Vendedor | `{ codigo, nome, origem, segmento?, b2b, chaveIdempotencia?, entradaHash? }` (a chave vem da tela "Nova oportunidade"; #166) |
 | `LeadAtribuido` | Define/troca o dono (auto-captura: dono = dono do número, `via="whatsapp_inbound"`) | Sistema/Gerente | `{ de, para, motivo?, via? }` |
 | `EtapaAlterada` | Muda a etapa do funil (manual no Kanban e também no fluxo de matrícula: → Aguardando matrícula / Matriculado) | Vendedor/Secretaria | `{ de, para }` |
 | `ExperimentalAgendada` | Agenda aula experimental | Vendedor | `{ data }` |
@@ -67,7 +67,7 @@ histórico do aluno, motivos de perda/encerramento). Regra de ouro:
 ## Matrícula (agregado `Matricula`)
 | Evento | Gatilho | Quem | Payload |
 |---|---|---|---|
-| `MatriculaCriada` | "Converter em matrícula" (rascunho) | Vendedor | `{ codigo, alunoId, produtoId, leadId }` |
+| `MatriculaCriada` | "Converter em matrícula" (rascunho) | Vendedor | `{ codigo, alunoId, produtoId, leadId, aguardaPreco, chaveIdempotencia?, entradaHash? }` (a chave vem da tela "Nova matrícula"; #166) |
 | `MatriculaAtivada` | `contratoOk && pagamentoTaxaOk && primeiraMensalidadeOk` | Financeiro/Secretaria | `{ ativadaEm, forma }` |
 | `CobrancaGerada` | Cronograma (meses 2..N) gerado na ativação | Financeiro/Secretaria | `{ quantidade, tipo }` |
 | `ComissaoGerada` | Criação da matrícula (comissão Pendente) | Vendedor/Sistema | `{ vendedorId, percentual }` |

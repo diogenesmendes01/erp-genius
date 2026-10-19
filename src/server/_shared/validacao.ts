@@ -169,3 +169,9 @@ export function calcularDocumentoValido(
   if (!valor) return false;
   return tiposDocumento.some((t) => validarDocumento(t.validador, valor));
 }
+
+/**
+ * Chave de idempotência de uma tentativa, gerada pela tela (`crypto.randomUUID()`) e reenviada igual até o
+ * sucesso (#166). Mesmo limite das ações que já têm coluna própria (`contratos/modelo-schema.ts`).
+ */
+export const ChaveIdempotenciaSchema = z.string().trim().min(8, "Chave de idempotência inválida.").max(100, "Chave de idempotência inválida.");
