@@ -854,4 +854,5 @@ export const ORIGEM_TAREFA_LABEL: Readonly<Record<OrigemTarefa, string>> = Objec
 
 export const TIPO_NOTIFICACAO_LABEL: Readonly<Record<TipoNotificacao, string>> = Object.freeze({
   LEMBRETE_TAREFA: "Lembrete de tarefa",
+  SLA_ESTOURADO: "Prazo estourado",
 });
