@@ -42,6 +42,9 @@ type Reclamado = { id: string; finalidade: Setor; responsavelId: string | null; 
  * destinatário e um `SlaEstouradoAlertado` por atendimento, uma única vez (D3), na mesma transação.
  * O atendimento é marcado mesmo sem destinatário (alertas desligados): não volta a ser avaliado.
  * Não alerta: respondido, encerrado, grupo, estouro fora da janela, ou a Aria já respondeu no prazo (D6).
+ * D6 compara o momento do envio (`enviadaEm`), não o `criadoEm` nem o `statusEm` (que avança com
+ * ENTREGUE/LIDA): resposta criada na fila antes do vencimento e enviada depois não evita o alerta (C3 da
+ * R1 do #241). Saídas gravadas antes da coluna já nasciam enviadas, então o `criadoEm` equivale.
  */
 export async function rodarAlertasSla(agora: Date): Promise<{ alertados: number; notificacoes: number }> {
   const desde = new Date(agora.getTime() - JANELA_ALERTA_SLA_MS);
@@ -55,7 +58,8 @@ export async function rodarAlertasSla(agora: Date): Promise<{ alertados: number;
         AND NOT EXISTS (
           SELECT 1 FROM "MensagemWhatsApp" m
           WHERE m."atendimentoId" = a.id AND m.direcao = 'SAIDA' AND m.origem = 'IA'
-            AND m.status IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m."criadoEm" <= a."prazoRespostaEm")
+            AND m.status IN ('ENVIADA', 'ENTREGUE', 'LIDA')
+            AND COALESCE(m."enviadaEm", m."criadoEm") <= a."prazoRespostaEm")
       RETURNING a.id, a.finalidade::text AS finalidade, a."responsavelId", a."prazoRespostaEm"`;
     if (!reclamados.length) return { alertados: 0, notificacoes: 0 };
 
