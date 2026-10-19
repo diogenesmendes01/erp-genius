@@ -1,12 +1,14 @@
 "use client";
 
 import { IconAlertTriangle } from "@tabler/icons-react";
+import { Botao } from "@/components/Botao";
 import "./globals.css";
 
 // Único boundary que repete <html>/<body>: o root layout não o envolve. Pega o que fura
 // (app)/error.tsx — falha no próprio layout raiz (ver docs/42-auditoria-frontend-ux.md,
 // ganho rápido 1). Sem fonte local nem layout.tsx aqui de propósito: se o root layout é
-// quem quebrou, importar de volta o que pode ter quebrado não é seguro.
+// quem quebrou, importar de volta o que pode ter quebrado não é seguro. O Botao (#172) é um componente puro,
+// sem estado nem contexto, e não depende do layout.
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="pt-BR">
@@ -19,13 +21,9 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
           <p className="max-w-sm text-sm text-gray-500">
             Recarregue a página. Se o problema continuar, fale com um administrador.
           </p>
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-2 rounded-md bg-brand-solid px-4 py-2 text-sm font-medium text-on-brand hover:brightness-95"
-          >
+          <Botao tamanho="lg" onClick={reset} className="mt-2">
             Tentar de novo
-          </button>
+          </Botao>
         </div>
       </body>
     </html>

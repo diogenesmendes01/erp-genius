@@ -15,7 +15,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { STATUS_MATRICULA_LABEL, rotular, STATUS_FATURA_B2B_LABEL } from "@/lib/labels";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
-import { formatarCompetencia } from "@/lib/data-civil";
+import { formatarCompetencia, formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -202,7 +202,9 @@ export function FichaEmpresa({
                     <td className="px-3 py-2 text-gray-800">
                       {formatarMoeda(f.valorTotal, f.moeda)}
                     </td>
-                    <td className="px-3 py-2 text-gray-600">{new Date(f.vencimento).toLocaleDateString("pt-BR")}</td>
+                    {/* Vencimento é dia, não instante: sai do ISO sem passar pelo fuso do navegador (em UTC−3 o
+                        toLocaleDateString mostrava o dia anterior; C52 da #170). */}
+                    <td className="px-3 py-2 text-gray-600">{formatarDataCivil(f.vencimento.slice(0, 10))}</td>
                     <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
                     <td className="px-3 py-2">
                       {f.status === "FECHADA" && (

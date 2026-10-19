@@ -152,3 +152,19 @@ describe("FichaEmpresa — inativar a empresa passa pela confirmação", () => {
     expect(doTipo(tela(), ConfirmarAcao)).toHaveLength(0);
   });
 });
+
+describe("FichaEmpresa — vencimento da fatura é data civil (C52 da #170)", () => {
+  it("mostra o dia gravado, mesmo num navegador em UTC−3", () => {
+    // O vencimento chega como ISO à meia-noite UTC; com toLocaleDateString, em São Paulo, 10/10 virava 09/10.
+    const anterior = process.env.TZ;
+    process.env.TZ = "America/Sao_Paulo";
+    try {
+      const t = texto(tela());
+      expect(t).toContain("10/10/2026");
+      expect(t).not.toContain("09/10/2026");
+    } finally {
+      if (anterior === undefined) delete process.env.TZ;
+      else process.env.TZ = anterior;
+    }
+  });
+});

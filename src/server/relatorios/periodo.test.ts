@@ -36,3 +36,19 @@ describe("periodo dos relatórios", () => {
     expect(() => periodoDoFiltro({ tipo: "PERSONALIZADO", de: "2026-02-31", ate: "2026-03-05" }, "UTC")).toThrow();
   });
 });
+
+describe("periodo dos relatórios no dia sem meia-noite (horário de verão)", () => {
+  // America/Santiago, 06/09/2026: à meia-noite (−04) o relógio pula para 01h (−03). O dia começa às 01h locais,
+  // 04:00Z; antes da correção, o início caía às 03:00Z, 23h do dia 05.
+  it("hoje_comeca_no_primeiro_instante_valido_do_dia", () => {
+    const agora = new Date("2026-09-06T15:00:00Z");
+    expect(periodoDoFiltro({ tipo: "HOJE" }, "America/Santiago", agora)).toEqual({
+      inicio: new Date("2026-09-06T04:00:00Z"),
+      fim: new Date("2026-09-07T03:00:00Z"),
+    });
+  });
+  it("personalizado_que_comeca_ou_termina_no_dia_sem_meia_noite", () => {
+    expect(periodoDoFiltro({ tipo: "PERSONALIZADO", de: "2026-09-06", ate: "2026-09-06" }, "America/Santiago").inicio).toEqual(new Date("2026-09-06T04:00:00Z"));
+    expect(periodoDoFiltro({ tipo: "PERSONALIZADO", de: "2026-09-01", ate: "2026-09-05" }, "America/Santiago").fim).toEqual(new Date("2026-09-06T04:00:00Z"));
+  });
+});
