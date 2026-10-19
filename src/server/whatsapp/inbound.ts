@@ -90,6 +90,7 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           midiaPath: m.midiaPath ?? null,
           status: m.fromMe ? "ENVIADA" : "ENTREGUE",
           statusEm: m.quando,
+          enviadaEm: m.fromMe ? m.quando : null,
           driver: m.driver,
           origem: m.fromMe ? "CELULAR" : null, // fromMe fora do ERP: enviada pelo celular (E3.6)
           providerMessageId: m.providerMessageId,
@@ -205,7 +206,7 @@ export async function processarStatusNormalizado(
   if (s.clientMessageId) ou.push({ clientMessageId: s.clientMessageId });
   const msg = await prisma.mensagemWhatsApp.findFirst({
     where: { numeroId: numero.id, OR: ou },
-    select: { id: true, status: true },
+    select: { id: true, status: true, enviadaEm: true },
   });
   if (!msg) return "sem_mensagem"; // status antes da mensagem existir: o motor adia e reprocessa; a Meta reenvia
   if (ORDEM_STATUS[s.status] <= ORDEM_STATUS[msg.status]) return "ignorado";
@@ -213,7 +214,8 @@ export async function processarStatusNormalizado(
   await prisma.$transaction(async (tx) => {
     await tx.mensagemWhatsApp.update({
       where: { id: msg.id },
-      data: { status: s.status, statusEm: s.quando },
+      // Saindo da fila para um status de envio, o primeiro deles marca o envio (D6 do SLA).
+      data: { status: s.status, statusEm: s.quando, ...(msg.enviadaEm === null && msg.status === "NA_FILA" && s.status !== "FALHOU" ? { enviadaEm: s.quando } : {}) },
     });
     if (aposAtualizar) await aposAtualizar(tx, msg);
   });
