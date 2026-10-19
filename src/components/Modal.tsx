@@ -1,7 +1,12 @@
 "use client";
 
-import { useId, useRef, type RefObject } from "react";
+import { useId, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { useDialogo } from "@/lib/dialogo";
+
+const semAssinatura = () => () => {};
+const noNavegador = () => true;
+const noServidor = () => false;
 
 // Casco único de modal centralizado (E7): role="dialog" + aria-modal + título ligado por
 // aria-labelledby, Escape e clique no fundo fecham, foco preso e devolvido (useDialogo), e altura
@@ -10,6 +15,10 @@ import { useDialogo } from "@/lib/dialogo";
 // precisa aparecer dentro do modal.
 // A confirmação de ação irreversível (ConfirmarAcao) usa o mesmo casco como `alertdialog`, descrito
 // pelo texto da consequência (aria-describedby) e com o foco inicial no botão seguro.
+// Portal e fundo inert (C14, #170): no navegador o modal é desenhado direto no <body>, fora do <main> e de
+// qualquer `overflow`/`transform` de quem o abriu, e o resto da página fica `inert` enquanto ele está aberto
+// (isolarFundo, pelo useDialogo). No HTML do servidor e na hidratação não há `document`: o modal sai no
+// lugar, como antes, e assim fica até fechar — trocar de lugar no meio remontaria o conteúdo e perderia o foco.
 export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = false, folha = false, telaCheiaNoCelular = false, papel = "dialog", descricaoId, focoInicial, children }: {
   titulo: React.ReactNode;
   aoFechar: () => void;
@@ -29,10 +38,14 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
   children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const camada = useRef<HTMLDivElement>(null);
   const tituloId = useId();
-  useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento, focoInicial });
-  return (
-    <div className={`fixed inset-0 z-50 flex justify-center bg-black/60 ${telaCheiaNoCelular ? "items-center p-0 sm:p-4" : folha ? "items-end p-0 sm:items-center sm:p-4" : "items-center p-4"}`} onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
+  // Decidido no primeiro render e congelado: aberto depois da hidratação, vai para o portal desde o início.
+  const clienteAgora = useSyncExternalStore(semAssinatura, noNavegador, noServidor);
+  const [emPortal] = useState(clienteAgora);
+  useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento, focoInicial, isolar: emPortal ? camada : undefined });
+  const conteudo = (
+    <div ref={camada} className={`fixed inset-0 z-50 flex justify-center bg-black/60 ${telaCheiaNoCelular ? "items-center p-0 sm:p-4" : folha ? "items-end p-0 sm:items-center sm:p-4" : "items-center p-4"}`} onClick={() => { if (!bloquearFechamento) aoFechar(); }}>
       <div
         ref={ref}
         role={papel === "alertdialog" ? "alertdialog" : "dialog"}
@@ -52,4 +65,5 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
       </div>
     </div>
   );
+  return emPortal ? createPortal(conteudo, document.body) : conteudo;
 }

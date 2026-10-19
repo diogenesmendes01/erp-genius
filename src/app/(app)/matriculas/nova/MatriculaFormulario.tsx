@@ -789,11 +789,14 @@ export function MatriculaFormulario({
               ← Voltar
             </button>
             <div className="ml-auto flex gap-2">
+              {/* C30 (#170): "Salvar matrícula" é a ação que conclui o assistente — primária, como o
+                  "Próximo" do passo 1; "← Voltar" fica secundário. */}
               {podeCriar && (
                 <button
+                  type="button"
                   onClick={() => salvar()}
                   disabled={salvando}
-                  className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
+                  className={botaoClasses({ tamanho: "lg" })}
                 >
                   {salvando ? "Processando…" : "Salvar matrícula"}
                 </button>
@@ -847,20 +850,22 @@ function PrecoTag({ refValor, moeda, manual }: { refValor?: number; moeda: strin
   return <>Sugerido: {formatarMoeda(refValor, moeda)}</>;
 }
 
-/** Stepper do wizard (2 passos). O passo concluído/clicável volta livremente; avançar valida o passo 1. */
-function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => void }) {
+/** Stepper do wizard (2 passos). O passo concluído/clicável volta livremente; avançar valida o passo 1.
+ *  Lista ordenada com o passo atual em `aria-current="step"` (C49, #168): o leitor de tela diz em que
+ *  etapa o operador está, não só a cor do círculo. */
+export function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => void }) {
   const passos = [
     { n: 1 as const, label: "Informações do aluno" },
     { n: 2 as const, label: "Curso, alocação e contrato" },
   ];
   return (
-    <div className="flex items-center gap-3">
+    <ol aria-label="Etapas da matrícula" className="flex items-center gap-3">
       {passos.map((s, i) => {
         const ativo = passo === s.n;
         const concluido = passo > s.n;
         return (
-          <div key={s.n} className="flex items-center gap-3">
-            <button type="button" onClick={() => onIr(s.n)} className="flex items-center gap-2">
+          <li key={s.n} className="flex items-center gap-3">
+            <button type="button" onClick={() => onIr(s.n)} aria-current={ativo ? "step" : undefined} className="flex items-center gap-2">
               <span
                 className={
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium " +
@@ -873,10 +878,10 @@ function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => void }) {
                 {s.label}
               </span>
             </button>
-            {i < passos.length - 1 && <span className="h-px w-8 bg-gray-200" />}
-          </div>
+            {i < passos.length - 1 && <span aria-hidden="true" className="h-px w-8 bg-gray-200" />}
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

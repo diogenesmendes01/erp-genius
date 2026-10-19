@@ -1171,6 +1171,12 @@ export type Excecao = { arquivo: string; tipo: TipoAchado; trecho: string; motiv
 
 export const EXCECOES: Excecao[] = [
   {
+    arquivo: "src/components/CampoMoeda.tsx",
+    tipo: "opaco",
+    trecho: "setAnunciado(aviso)",
+    motivo: "anúncio no blur (C6 da #173, B12): `aviso` só sai de avisoSemCentavos/avisoPontoAmbiguo (src/lib/dinheiro.ts), textos fixos de orientação sobre o valor digitado, nunca erro de ação; a prop `value` só decide qual deles",
+  },
+  {
     arquivo: "src/components/FeedbackAcao.tsx",
     tipo: "opaco",
     trecho: "texto={sucesso}",
@@ -1355,6 +1361,7 @@ describe("feedback separado: erro em role=\"alert\", sucesso em role=\"status\" 
 
   it("a lista de exceções é a combinada (cópia literal: acrescentar exceção exige mexer aqui também)", () => {
     expect(EXCECOES.map((e: Excecao) => `${e.arquivo} :: ${e.tipo} :: ${e.trecho}`)).toEqual([
+      "src/components/CampoMoeda.tsx :: opaco :: setAnunciado(aviso)",
       "src/components/FeedbackAcao.tsx :: opaco :: texto={sucesso}",
       "src/components/FeedbackAcao.tsx :: opaco :: progresso={progresso}",
       "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx :: opaco :: texto={correcao.impedimentoAprovacao}",

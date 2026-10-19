@@ -100,11 +100,44 @@ const textoDaChave = (chave: ts.PropertyName): string | undefined =>
   ts.isComputedPropertyName(chave) ? (ts.isStringLiteralLike(chave.expression) ? chave.expression.text : undefined) : chave.text;
 const ehAtribuicao = (tipo: ts.SyntaxKind) => tipo >= ts.SyntaxKind.FirstAssignment && tipo <= ts.SyntaxKind.LastAssignment;
 
-/** Destino de uma atribuição: cada nome atribuído, e a chave que o preenche na desestruturação (`({ papeis: p } = x)`). */
+/** Texto de uma expressão de string constante (`"pap" + "eis"`, `` `pap${"eis"}` ``); undefined quando depende de valor. */
+function textoConstante(expr: ts.Expression): string | undefined {
+  const e = semEnvoltorio(expr);
+  if (ts.isStringLiteralLike(e)) return e.text;
+  if (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+    const a = textoConstante(e.left), b = textoConstante(e.right);
+    return a === undefined || b === undefined ? undefined : a + b;
+  }
+  if (ts.isTemplateExpression(e)) {
+    let texto = e.head.text;
+    for (const trecho of e.templateSpans) {
+      const v = textoConstante(trecho.expression);
+      if (v === undefined) return undefined;
+      texto += v + trecho.literal.text;
+    }
+    return texto;
+  }
+  return undefined;
+}
+/** Chave montada como string (`a + b`, template) que não dá para resolver: pode ser qualquer uma, até `papeis`. */
+const ehChaveMontada = (expr: ts.Expression) => {
+  const e = semEnvoltorio(expr);
+  return ts.isTemplateExpression(e) || (ts.isBinaryExpression(e) && e.operatorToken.kind === ts.SyntaxKind.PlusToken);
+};
+
+/**
+ * Destino de uma atribuição: cada nome atribuído, e a chave que o preenche na desestruturação (`({ papeis: p } = x)`).
+ * Membro (`obj.p = …`, `obj["p"] = …`, C55b da #170): o nome do membro e o objeto raiz passam a ler o valor.
+ */
 type Destino = { nome: string; chave?: ts.PropertyName };
 function destinosDaAtribuicao(alvo: ts.Expression): Destino[] {
   const expr = semEnvoltorio(alvo);
   if (ts.isIdentifier(expr)) return [{ nome: expr.text }];
+  if (ts.isPropertyAccessExpression(expr)) return [{ nome: expr.name.text }, ...destinosDaAtribuicao(expr.expression)];
+  if (ts.isElementAccessExpression(expr)) {
+    const chave = textoConstante(expr.argumentExpression);
+    return [...(chave === undefined ? [] : [{ nome: chave }]), ...destinosDaAtribuicao(expr.expression)];
+  }
   // Valor padrão na desestruturação: `[p = []] = x`.
   if (ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.EqualsToken) return destinosDaAtribuicao(expr.left);
   if (ts.isArrayLiteralExpression(expr)) return expr.elements.flatMap((e): Destino[] => destinosDaAtribuicao(ts.isSpreadElement(e) ? e.expression : e));
@@ -172,9 +205,16 @@ function verificarRecusas(sf: ts.SourceFile, instrucaoGuard: ts.Statement, falha
   const ehChave = (id: ts.Identifier) => (ts.isPropertyAssignment(id.parent) || ts.isJsxAttribute(id.parent)) && id.parent.name === id;
   // Acesso por string (`sessao["papeis"]`) lê a chave como `sessao.papeis`.
   const ehChaveDeAcesso = (texto: ts.StringLiteralLike) => ts.isElementAccessExpression(texto.parent) && texto.parent.argumentExpression === texto;
+  // Chave calculada no acesso (C55b da #170): `sessao["pap" + "eis"]` é resolvida; montada com valor desconhecido
+  // (`sessao["pap" + parte]`) lê papel, por cautela, como a chave calculada na desestruturação.
+  const leChaveCalculada = (no: ts.ElementAccessExpression) => {
+    const chave = textoConstante(no.argumentExpression);
+    return chave !== undefined ? lePapel.has(chave) : ehChaveMontada(no.argumentExpression);
+  };
   const citaPapel = (no: ts.Node): boolean =>
     (ts.isIdentifier(no) && lePapel.has(no.text) && !ehChave(no))
     || (ts.isStringLiteralLike(no) && lePapel.has(no.text) && ehChaveDeAcesso(no))
+    || (ts.isElementAccessExpression(no) && leChaveCalculada(no))
     || !!ts.forEachChild(no, (filho) => citaPapel(filho) || undefined);
   const fontes: { nomes: string[]; le: () => boolean }[] = [];
   const porValor = (nomes: string[], valor: ts.Node) => { fontes.push({ nomes, le: () => citaPapel(valor) }); };
