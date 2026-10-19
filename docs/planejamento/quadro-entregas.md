@@ -3448,3 +3448,32 @@ Branch `claude/triagem-b4-b7-b9`, base `main` 7d3688ae, com merge de 8970be6e (#
 - **Testes (TDD, vermelhos antes):** `catalogo/estado-alvo.int.test.ts` e `acesso/estado-alvo.int.test.ts` (dois usuários: um ativa e o outro confirma "ativar" com a tela velha, e o resultado não desfaz nem grava segundo evento; também desativar duas vezes, alvo não booleano e reativação real que ainda aposenta o irmão); `importacao-duplicidade.test.ts` e `.int.test.ts` (acento, lote cheio seguido de outro com o cadastro mais novo, país); `api/inbox/eventos/route.test.ts` (relógio falso: prazo de vida, desativação, papel revogado, falha ao reler, JWT vencendo antes do prazo); `sessao-prazo.test.ts`; `useEventosInbox.test.ts`.
 - Nenhuma migration nova. A trava `crm-config/auditoria.test.ts` continua verde.
 - Evidências (banco descartável `erp_genius_test_b479`, `migrate deploy`, apagado ao fim): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` 0 erros, 40 avisos (linha de base); `npm test` saída 0, 756 arquivos, 5629 testes; `npm run build` saída 0; integração em `src/server/{catalogo,acesso,alunos,inbox,empresas}` e `whatsapp/participantes-aviso`: saída 0, 16 arquivos, 113 testes. Depois do merge de 8970be6e: `tsc --noEmit` saída 0; `npm run lint` 0 erros, 40 avisos; `npm test` saída 0, 759 arquivos, 5646 testes; a mesma integração saída 0, 16 arquivos, 113 testes.
+
+### B5 e B6 da triagem: escopo na mesma transação (#207) e confirmações que faltavam (#175) — 2026-10-19
+
+Branch `claude/triagem-b5-b6`, base `main` 7d3688ae, com merge de 8121ab13 (#238), 8970be6e (#240) e a9a71b9d (#242); conflito só no quadro (mantidas as duas seções, a do #242 antes desta).
+- **B5 (#207, C4 da R1 e C2 da R2):** `escopoAtendimentos(usuario, { enviar, agora, db })` e `atendimentoVisivel(usuario, id, enviar, db)` aceitam a transação. O `db` vai para `escopoComercialAtual`, `donosDeLinhaVisiveis` e as alocações do professor, e para `destinatarioAtualDoAtendimento` no envio. `devolverParaFila`, `atribuirAtendimento` (com `exigirResponsavelEnxerga`), `transferirAtendimento`, `convidarParticipante`, `revogarParticipante` e `registrarNotaAtendimento` conferem o escopo na própria tx: não abrem outra conexão com o `FOR UPDATE` tomado. `podeDevolverParaAria` repassa o `db` que já recebia. `acesso/*` não tinha checagem de escopo dentro de transação; o escopo comercial (`_shared/escopo-comercial.ts`) já aceitava a tx e só não a recebia. Sem mudança no comportamento fora de transação (o `prisma` global continua padrão, com o memo por requisição).
+- **Testes B5 (TDD):** `whatsapp/escopo-transacao.int.test.ts`: dentro de uma tx que nunca é commitada, a checagem com a tx enxerga o atendimento, a cobertura de carteira e o vínculo de equipe gravados nela; sem a tx, não. `whatsapp/acoes-atendimento-pool.int.test.ts`: com `connection_limit=1`, as seis ações acima concluem; antes da correção, todas caíam no `pool_timeout` (P2024).
+- **B6 (#175), padrão do `ConfirmarAcao` (fatia B):**
+  - **L2142**, `financeiro/permuta/PermutaOperacional.tsx`: a decisão da compensação (`DecidirCompensacao`) nasce vazia e obrigatória (antes vinha em "Aprovar e compensar"). O botão diz a ação. Aprovar abre a confirmação com o valor que sai de cada mensalidade e o aviso de que não é recebimento em dinheiro.
+  - **L325**, `alunos/[id]/portal/painel.tsx`: "Aprovar e aplicar" a troca de e-mail abre a confirmação. Ela informa o e-mail anterior e o novo, que a senha deixa de valer e que as sessões e os links de acesso são revogados na hora.
+  - **L1479**, `academico/recuperacoes/[realizacaoId]/Formularios.tsx`: "Oficializar esta versão" abre a confirmação, com a versão e a nota, e exige marcar "Conferi a nota e a evidência antes de oficializar.". `ConferirNota` recebe `versao` e `nota`.
+  - Rejeitar continua direto nas três telas. Cada uma tem uma exceção ancorada em `confirmacoes-mapa.ts`, e a cópia literal está em `confirmacoes.test.ts`.
+- **Travas tocadas:**
+  - `portal-aluno/actions.ts` passou a chamar `identidade.*` pelo namespace, porque a trava não aceita alias do nome da ação no módulo.
+  - `botoes-mapa.ts` ganhou o botão da decisão da permuta.
+  - `PermutaOperacional.test.ts` não expande mais a decisão, que tem teste próprio.
+- **Testes B6:** `PermutaOperacional.confirmacao.test.ts`, `painel.confirmacao.test.ts` e `Formularios.confirmacao.test.ts` verificam:
+  - clicar não executa;
+  - confirmar executa uma vez, com os argumentos certos;
+  - voltar não executa;
+  - o erro aparece dentro do diálogo;
+  - rejeitar segue direto.
+- **Fora:** L2019, o motivo na rejeição de desconto, aguarda decisão de produto.
+- Nenhuma migration nova.
+- Evidências no head final, com o merge do #242 (banco descartável `erp_genius_test_b56`, `migrate deploy`, apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npm run lint`: 0 erros e 40 avisos, a linha de base.
+  - `npm test`: saída 0, 762 arquivos e 5.661 testes.
+  - `npm run build` (NODE_OPTIONS=--max-old-space-size=5120): saída 0. Uma tentativa anterior caiu no OOM do cgroup, com a máquina ocupada por outros agentes.
+  - Integração `src/server/{whatsapp,inbox,acesso,financeiro/permuta}`: saída 0, 70 arquivos e 537 testes.
