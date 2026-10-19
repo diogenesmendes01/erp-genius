@@ -980,7 +980,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> editar → fantasma/sm",
     "<button> Sem turma compatível? Solicitar abertura ao Gerente Pedagógi → fantasma/sm",
     "<button> ← Voltar → secundario/lg",
-    "<button> Processando… · Salvar matrícula → secundario/lg",
+    "<button> Processando… · Salvar matrícula → primario/lg", // C30 (#170): a ação que conclui o assistente
   ],
   "relatorios/_componentes/Filtros.tsx": [
     "<button> Filtrar → secundario/md",

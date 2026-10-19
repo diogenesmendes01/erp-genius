@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ propor: vi.fn(), executar: vi.fn(), cancelar: vi.fn(), conciliar: vi.fn(), router: { refresh: vi.fn() }, useState: vi.fn(), useTransition: vi.fn(), useRef: vi.fn() }));
+const mocks = vi.hoisted(() => ({ propor: vi.fn(), executar: vi.fn(), cancelar: vi.fn(), conciliar: vi.fn(), router: { refresh: vi.fn() }, useState: vi.fn((inicial: unknown) => [inicial, () => {}]), useTransition: vi.fn(), useRef: vi.fn() }));
 vi.mock("react", async original => ({ ...(await original<typeof import("react")>()), useState: mocks.useState, useTransition: mocks.useTransition, useRef: mocks.useRef }));
 vi.mock("@/server/financeiro/devolucao-credito", () => ({ proporDevolucaoCredito: mocks.propor, decidirDevolucaoCredito: vi.fn(), registrarExecucaoDevolucaoCredito: mocks.executar, conciliarDevolucaoCredito: mocks.conciliar, cancelarDevolucaoCredito: mocks.cancelar }));
 vi.mock("next/navigation", () => ({ useRouter: () => mocks.router }));
@@ -13,7 +13,8 @@ const dados = { creditoId: "c", valorCredito: "200.00", reservaDevolucao: "0.00"
 afterEach(() => vi.unstubAllGlobals());
 it("submete proposta pelo callback real e refresca apenas após sucesso", async () => {
   // Dois useState na ordem em que o componente chama: erro, depois valor (CampoMoeda) —
-  // "100,00" com vírgula pra confirmar que parseMoeda entende o formato que o campo produz.
+  // "100,00" com vírgula pra confirmar que parseMoeda entende o formato que o campo produz. O useState do
+  // próprio CampoMoeda (anúncio no blur, B12) cai no padrão do mock: o valor inicial.
   mocks.useState.mockReturnValueOnce(["", vi.fn()]).mockReturnValueOnce(["100,00", vi.fn()]);
   mocks.useTransition.mockReturnValue([false, (cb: () => void) => cb()]); mocks.useRef.mockReturnValue({ current: "" });
   mocks.propor.mockResolvedValue({ ok: true, dado: { id: "p" } }); vi.stubGlobal("crypto", { randomUUID: () => "chave-ui-devolucao" });

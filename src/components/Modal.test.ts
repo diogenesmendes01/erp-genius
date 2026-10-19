@@ -20,14 +20,23 @@ describe("Modal \u2192 useDialogo", () => {
     expect(m.useDialogo).toHaveBeenCalledTimes(1);
     const [ref, opcoes] = m.useDialogo.mock.calls[0];
     expect(ref).toHaveProperty("current");
-    expect(opcoes).toEqual({ aberto: true, aoFechar, bloquearFechamento: true, focoInicial });
+    expect(opcoes).toEqual({ aberto: true, aoFechar, bloquearFechamento: true, focoInicial, isolar: undefined });
     expect(opcoes.focoInicial).toBe(focoInicial);
   });
 
   it("sem focoInicial e sem bloqueio: os padrões", () => {
     const aoFechar = vi.fn();
     renderToStaticMarkup(createElement(Modal, { titulo: "Registrar recebimento", aoFechar }));
-    expect(m.useDialogo.mock.calls[0][1]).toEqual({ aberto: true, aoFechar, bloquearFechamento: false, focoInicial: undefined });
+    expect(m.useDialogo.mock.calls[0][1]).toEqual({ aberto: true, aoFechar, bloquearFechamento: false, focoInicial: undefined, isolar: undefined });
+  });
+});
+
+describe("Modal no HTML do servidor (C14, #170)", () => {
+  it("sem document, sai no lugar (sem portal) e não pede isolamento do fundo — o HTML estático continua igual", () => {
+    const h = renderToStaticMarkup(createElement(Modal, { titulo: "Registrar recebimento", aoFechar: vi.fn() }, "corpo"));
+    expect(h).toMatch(/^<div class="fixed inset-0 z-50[^"]*"><div role="dialog" aria-modal="true"/);
+    expect(h).toContain("corpo");
+    expect(m.useDialogo.mock.calls[0][1].isolar).toBeUndefined();
   });
 });
 
