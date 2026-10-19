@@ -10,6 +10,10 @@
 > **precisam ser revalidados na WABA** (§7). O Baileys carrega risco operacional próprio
 > (sessão não oficial, risco de bloqueio do número) — tratado como risco aceito e monitorado,
 > não como estado final.
+>
+> **Situação no código (19/10/2026):** o piloto não roda no código atual. O `cron-comercial.ts`, citado
+> nos bloqueadores da §0, saiu com a casca do CRM antigo (E1), e as cadências de C1 e C2 não são mais
+> enfileiradas. O driver Baileys direto também saiu: o número é pareado no motor (Fase 4E).
 
 ## 0. Bloqueadores conhecidos (fechar ANTES de ativar o piloto)
 Levantados na revisão de prontidão; enquanto abertos, o piloto não começa. Cada um vira item

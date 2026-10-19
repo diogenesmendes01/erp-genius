@@ -1,6 +1,11 @@
 # Fase 0 — Telas (UX)
 
 > Especificação tela por tela da Fase 0 (operação 100% manual, sem automações).
+>
+> **Situação no código (19/10/2026):** três telas desta especificação não existem mais. A Home do
+> Vendedor saiu (o vendedor usa a home de atalhos), o Pipeline/Kanban virou o `/funil` e a Ficha do Lead
+> virou o `/contatos` com as oportunidades (`/leads` redireciona para o `/funil`). As seções abaixo
+> ficam como registro da Fase 0.
 
 ## App shell (moldura de todas as telas)
 

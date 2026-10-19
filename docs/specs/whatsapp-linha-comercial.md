@@ -3,9 +3,12 @@
 > Estado em 13/10/2026: **especificação aprovada; Fases 0, 2, 3 e 4 na `main`** (PR #128, mergeada em
 > 26/09/2026; trava de opt-out do histórico na #129). **Executados:** TypeScript, ESLint e a suíte
 > unitária em 26/09 (§9), e o `npm test` do CI a cada PR desde a #151 — inclusive as travas unitárias
-> da linha (`linha-comercial.test.ts`, `escopo-atendimentos.test.ts`, `historico.test.ts`).
+> da linha (`linha-comercial.test.ts`, `escopo-atendimentos.test.ts`).
 > **Ainda não executados:** os testes de integração (`linha-comercial.int.test.ts` e as suítes de
-> WhatsApp ajustadas, fora do CI) e a conferência do payload real da Evolution 2.3.7 (§9). Decisões
+> WhatsApp ajustadas, fora do CI). **Atualização em 19/10/2026:** a importação do histórico
+> (`importarHistoricoLinha`, com o `historico.test.ts`) saiu do código na R1 da #221, por não ter
+> chamador no motor; e a conferência do payload da Evolution 2.3.7 (§9) deixou de se aplicar, porque
+> os drivers Meta Cloud e Evolution saíram na Fase 4E e o número é pareado no motor. Decisões
 > tomadas pelo responsável do produto em 26/09/2026 a partir de testes em produção.
 > Complementa os docs [26](../26-whatsapp-v1.md), [30](../30-whatsapp-spec-implementacao.md),
 > [36](../36-politica-de-acesso-aprovada.md) e [37](../37-detalhamento-operacional-do-acesso.md);
