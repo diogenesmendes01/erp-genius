@@ -1,5 +1,6 @@
 import type { AcaoAgenteIATipo, EtapaLead } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { respostasParaAria } from "@/server/crm-config/respostas-rapidas";
 import { ErroRegra, executarAcao, exigirSessao, type Resultado } from "../_shared";
 import { ConfigAriaSchema, configPadrao, modoDaAcao, type ConfigAria } from "./config-schema";
 import { situacaoAria } from "./estado";
@@ -94,7 +95,9 @@ export async function testarAria(i: EntradaPlayground): Promise<Resultado<Result
       precos: await precosDoPais(pais?.id ?? null),
       trechos: (await buscarTrechos(ultimaFala, config.fontesAtivas)).map((t) => ({ id: t.id, texto: t.texto })),
       faq: config.faq.filter((f) => f.ativa),
-      respostasRapidas: [],
+      // Como o turno real (`montarContextoTurno`): a Aria só atua no COMERCIAL, então valem as respostas
+      // liberadas desse setor e as gerais, com a mesma função e o mesmo teto.
+      respostasRapidas: (await respostasParaAria("COMERCIAL")).map((r) => ({ atalho: r.atalho, corpo: r.corpo })),
       primeiraDaAria: !mensagens.some((m) => m.papel === "assistente"),
       trocasSemAvanco: 0,
     };
