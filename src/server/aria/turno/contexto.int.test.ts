@@ -4,6 +4,7 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { configPadrao } from "../config-schema";
+import { LIMITE_RESPOSTAS_ARIA } from "@/server/crm-config/respostas-rapidas";
 import { APRESENTACAO, montarContextoTurno, montarSistema, type ContextoTurno } from "./contexto";
 
 beforeEach(truncarBanco);
@@ -117,6 +118,55 @@ describe("contexto do turno", () => {
     const ctx = await montarContextoTurno(c.at.id);
     expect(ctx.trechos).toEqual([{ id: tr.id, texto: "As turmas noturnas começam às 19h." }]);
     expect(ctx.faq.map((x) => x.id)).toEqual(["1"]);
+  });
+
+  it("respostas_rapidas_liberadas_do_setor_do_atendimento_e_gerais_em_ordem_de_atalho", async () => {
+    const c = await cenario();
+    const rr = (atalho: string, o: { setor?: "COMERCIAL" | "FINANCEIRO" | null; aria?: boolean; arquivada?: boolean; tipo?: "RESPOSTA_RAPIDA" | "MODELO_AUTOMACAO" } = {}) =>
+      prisma.templateWhatsApp.create({
+        data: {
+          nome: `rr:${atalho}`, atalho, titulo: atalho, corpo: `corpo ${atalho}`, tipo: o.tipo ?? "RESPOSTA_RAPIDA",
+          setor: o.setor === undefined ? null : o.setor, ariaPodeUsar: o.aria ?? true,
+          arquivadoEm: o.arquivada ? new Date() : null,
+        },
+      });
+    await rr("/zgeral");
+    await rr("/comercial", { setor: "COMERCIAL" });
+    await rr("/financeiro", { setor: "FINANCEIRO" });
+    await rr("/arquivada", { setor: "COMERCIAL", arquivada: true });
+    await rr("/naoliberada", { setor: "COMERCIAL", aria: false });
+    await rr("/modelo", { tipo: "MODELO_AUTOMACAO" });
+    const ctx = await montarContextoTurno(c.at.id);
+    expect(ctx.respostasRapidas).toEqual([
+      { atalho: "/comercial", corpo: "corpo /comercial" },
+      { atalho: "/zgeral", corpo: "corpo /zgeral" },
+    ]);
+    // Na transação recebida: o que ela gravou e ainda não confirmou já entra.
+    await prisma.$transaction(async (tx) => {
+      await tx.templateWhatsApp.create({ data: { nome: "rr:/atx", atalho: "/atx", titulo: "x", corpo: "corpo /atx", tipo: "RESPOSTA_RAPIDA", setor: "COMERCIAL", ariaPodeUsar: true } });
+      expect((await montarContextoTurno(c.at.id, tx)).respostasRapidas.map((r) => r.atalho)).toEqual(["/atx", "/comercial", "/zgeral"]);
+    });
+  });
+
+  it("respostas_rapidas_seguem_a_finalidade_do_atendimento", async () => {
+    const c = await cenario();
+    await prisma.templateWhatsApp.create({ data: { nome: "rr:/sec", atalho: "/sec", titulo: "s", corpo: "s", tipo: "RESPOSTA_RAPIDA", setor: "SECRETARIA", ariaPodeUsar: true } });
+    await prisma.templateWhatsApp.create({ data: { nome: "rr:/com", atalho: "/com", titulo: "c", corpo: "c", tipo: "RESPOSTA_RAPIDA", setor: "COMERCIAL", ariaPodeUsar: true } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { finalidade: "SECRETARIA" } });
+    expect((await montarContextoTurno(c.at.id)).respostasRapidas.map((r) => r.atalho)).toEqual(["/sec"]);
+  });
+
+  it("respostas_rapidas_limitadas_como_a_faq", async () => {
+    const c = await cenario();
+    await prisma.templateWhatsApp.createMany({
+      data: Array.from({ length: LIMITE_RESPOSTAS_ARIA + 3 }, (_, i) => {
+        const atalho = `/r${String(i).padStart(3, "0")}`;
+        return { nome: `rr:${atalho}`, atalho, titulo: atalho, corpo: "x", tipo: "RESPOSTA_RAPIDA" as const, ariaPodeUsar: true };
+      }),
+    });
+    const ctx = await montarContextoTurno(c.at.id);
+    expect(ctx.respostasRapidas).toHaveLength(LIMITE_RESPOSTAS_ARIA);
+    expect(ctx.respostasRapidas[0].atalho).toBe("/r000");
   });
 
   // C10 da R3 do #229: texto seguido de áudio/figurinha/imagem sem legenda (corpo vazio) continua

@@ -5,6 +5,7 @@ import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/clien
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { hashEntrada, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { exigirArquivoVinculavel } from "@/server/uploads/autorizacao";
 import {
   exigirSessao,
@@ -36,6 +37,7 @@ async function ddiDoPais(paisId?: string | null): Promise<string> {
 }
 import {
   LeadSchema,
+  CriarLeadSchema,
   ResumoSchema,
   DatasSchema,
   InteracaoSchema,
@@ -45,6 +47,7 @@ import {
   ReguaComercialSchema,
   NotaInternaSchema,
   type LeadInput,
+  type CriarLeadInput,
   type ResumoInput,
   type DatasInput,
   type InteracaoInput,
@@ -131,11 +134,13 @@ async function exigirDocumentoPermitido(leadId: string, categoria: CategoriaDocu
   if (matricula?.secretariaAssumiuEm && categoria !== CategoriaDocumento.PROPOSTA) throw new ErroPermissao("Solicite a correção documental à secretaria.");
 }
 
-export async function criarLead(input: LeadInput): Promise<Resultado<{ id: string }>> {
+export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const dados = LeadSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = CriarLeadSchema.parse(input);
+    // Idempotência (#166): a chave e o hash da entrada vão no payload do `LeadCriado`.
+    const marca = chaveIdempotencia ? { chaveIdempotencia, entradaHash: hashEntrada(dados) } : null;
 
     // Vendedor vira dono por padrão; só gerente/admin podem atribuir a outro vendedor.
     // O servidor ignora qualquer vendedorDonoId enviado por um vendedor (doc 09).
@@ -144,6 +149,13 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
     const ddi = await ddiDoPais(dados.paisId);
 
     const id = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "LeadCriado", agregadoTipo: "Lead", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se a oportunidade já aparece antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
       const codigo = await gerarCodigo("lead");
       const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
       // `Empresa` não tem dono nem carteira; o escopo possível é o cadastro estar ativo. Inexistente ou
@@ -227,7 +239,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
         agregadoTipo: "Lead",
         agregadoId: lead.id,
         autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId },
+        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId, ...marca },
       });
       if (donoId) {
         await registrarEvento(tx, {

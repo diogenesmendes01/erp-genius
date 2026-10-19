@@ -109,6 +109,27 @@ describe("playground da Aria", () => {
     expect(sistema).toContain("Português · Regular");
   });
 
+  // C2 da R1 do #238: o playground lê as respostas liberadas como o turno real (COMERCIAL e gerais).
+  it("usa_respostas_liberadas_do_comercial_e_gerais_como_o_turno_real", async () => {
+    const rr = (atalho: string, corpo: string, ariaPodeUsar: boolean, setor: "COMERCIAL" | "FINANCEIRO" | null) =>
+      prisma.templateWhatsApp.create({ data: { nome: `rr:${atalho}`, atalho, titulo: atalho, corpo, tipo: "RESPOSTA_RAPIDA", ariaPodeUsar, setor } });
+    await rr("/material", "O material custa ₡15.000.", true, "COMERCIAL");
+    await rr("/geral", "A taxa de prova é ₡7.500.", true, null);
+    await rr("/boleto", "A segunda via custa ₡2.000.", true, "FINANCEIRO");
+    await rr("/interna", "Só para a equipe: ₡9.900.", false, null);
+    provedorMock.gerar.mockResolvedValue(resposta(saida({ resposta: "O material custa ₡15.000 e a prova ₡7.500." })));
+    const r = await rodar(p);
+    expect(r).toMatchObject({ resposta: "O material custa ₡15.000 e a prova ₡7.500.", bloqueio: null });
+    const sistema = provedorMock.gerar.mock.calls[0][0].sistema as string;
+    expect(sistema).toContain("- /material: O material custa ₡15.000.");
+    expect(sistema).toContain("- /geral:");
+    expect(sistema).not.toContain("/boleto");
+    expect(sistema).not.toContain("/interna");
+    // Outro setor ou não liberada: o valor continua bloqueado, como no turno real.
+    provedorMock.gerar.mockResolvedValue(resposta(saida({ resposta: "A segunda via custa ₡2.000." })));
+    expect((await rodar(p)).bloqueio).toContain("₡2.000");
+  });
+
   it("falha_do_provedor_vira_handoff_e_registra_erro", async () => {
     provedorMock.gerar.mockRejectedValue(new Error("boom"));
     const r = (await rodar(p));
