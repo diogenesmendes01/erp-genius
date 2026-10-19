@@ -1,5 +1,7 @@
 import type { Prisma, StatusAtendimentoWhatsApp } from "@prisma/client";
 import type { Setor } from "./setor";
+import { HorarioAtendimentoSchema, prazoVenceEm } from "@/server/crm-config/horario-atendimento";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export type EventoStatus = "ASSUMIDO" | "DEVOLVIDO" | "INBOUND" | "RESPOSTA_HUMANA" | "ENCERRADO";
 
@@ -16,10 +18,21 @@ export function proximoStatus(atual: StatusAtendimentoWhatsApp, evento: EventoSt
   }
 }
 
-/** Prazo de 1ª resposta do setor a partir de `inicio`; null quando o setor não tem prazo configurado. */
+/**
+ * Prazo de 1ª resposta do setor a partir de `inicio`; null quando o setor não tem prazo configurado.
+ * Com `contarSoNoHorario` e horário cadastrado, conta só dentro do horário (fuso da escola); sem horário,
+ * ou com horário que não passa no schema, conta corrido (D9). Gravado uma vez: mudar a config não recalcula (D7).
+ */
 export async function prazoRespostaEm(db: Prisma.TransactionClient, finalidade: Setor, inicio: Date): Promise<Date | null> {
-  const p = await db.prazoRespostaSetor.findUnique({ where: { finalidade }, select: { minutos: true } });
-  return p ? new Date(inicio.getTime() + p.minutos * 60_000) : null;
+  const p = await db.prazoRespostaSetor.findUnique({ where: { finalidade }, select: { minutos: true, contarSoNoHorario: true, horario: true } });
+  if (!p) return null;
+  if (!p.contarSoNoHorario || p.horario === null) return prazoVenceEm(inicio, p.minutos, null, "UTC");
+  const horario = HorarioAtendimentoSchema.safeParse(p.horario);
+  if (!horario.success) {
+    console.warn(`[sla] horário de atendimento inválido no setor ${finalidade}; prazo contado corrido.`);
+    return prazoVenceEm(inicio, p.minutos, null, "UTC");
+  }
+  return prazoVenceEm(inicio, p.minutos, horario.data, await fusoDaEscola(db));
 }
 
 /**
