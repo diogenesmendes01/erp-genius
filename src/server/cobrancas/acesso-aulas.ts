@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { acessoEfetivoBloqueado, cobrancaGeraRestricaoAutomatica, DIAS_RESTRICAO_AUTOMATICA } from "./acesso-aulas-regras";
 
 /** Trava matrícula antes de cobranças; não chamar mantendo locks de recebimento. */
@@ -20,9 +21,10 @@ export async function reavaliarAcessoAutomaticoMatriculaTx(tx: Prisma.Transactio
     } },
   } });
   if (!matricula) return "inalterado" as const;
+  const fuso = await fusoDaEscola(tx); // Q176: D+30 conta no calendário da escola
   const elegiveis = matricula.status === "ATIVA" ? matricula.cobrancas.filter((c) => cobrancaGeraRestricaoAutomatica({
     ...c, saldo: c.saldo === null ? null : Number(c.saldo), valorNegociado: Number(c.valorNegociado), valorRecebido: c.valorRecebido === null ? null : Number(c.valorRecebido),
-  }, agora)) : [];
+  }, agora, fuso)) : [];
   const automatico = elegiveis.length > 0;
   const bloqueado = acessoEfetivoBloqueado(matricula.acessoBloqueioManual, automatico);
   if (automatico === matricula.acessoBloqueioAutomatico && bloqueado === matricula.acessoBloqueado) return "inalterado" as const;
