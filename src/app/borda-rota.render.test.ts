@@ -37,6 +37,8 @@ import LoadingConfiguracao from "@/app/(app)/configuracao/loading";
 import LoadingLogin from "@/app/login/loading";
 import LoadingPagar from "@/app/pagar/[token]/loading";
 import LoadingCertificado from "@/app/certificado/[codigo]/loading";
+import LoadingMatriculaNova from "@/app/(app)/matriculas/nova/loading";
+import LoadingWhatsApp from "@/app/(app)/configuracao/whatsapp/loading";
 
 import ErroApp from "@/app/(app)/error";
 import ErroPortalAluno from "@/app/portal-aluno/error";
@@ -86,6 +88,8 @@ const LOADINGS: Record<Rota<typeof ROTAS_COM_LOADING>, { Componente: () => React
   "src/app/login": { Componente: LoadingLogin, titulos: 1, rotulo: "Carregando acesso" },
   "src/app/pagar/[token]": { Componente: LoadingPagar, titulos: 1, rotulo: "Carregando pagamento" },
   "src/app/certificado/[codigo]": { Componente: LoadingCertificado, titulos: 1, rotulo: "Carregando validação do certificado" },
+  "src/app/(app)/matriculas/nova": { Componente: LoadingMatriculaNova, titulos: 1, rotulo: "Carregando nova matrícula" },
+  "src/app/(app)/configuracao/whatsapp": { Componente: LoadingWhatsApp, titulos: 0, rotulo: "Carregando WhatsApp" },
 };
 
 /** Os layout.tsx que envolvem o loading de `rota` (o do mesmo segmento e os de cima, até src/app). */
