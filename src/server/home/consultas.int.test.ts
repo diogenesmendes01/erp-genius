@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { criarAlunoMinimo, criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { dadosHomeGerente } from "./consultas";
 
@@ -56,5 +56,30 @@ describe("dadosHomeGerente · meta de matrículas do mês", () => {
     await prisma.metaComercial.create({ data: { competencia, usuarioId: vend2.id, metrica: "MATRICULAS", valor: 6, criadaPorId: admin.id } });
     const { kpis } = await dadosHomeGerente(sessao(admin));
     expect(kpis.metaMatriculasMes).toEqual({ meta: 10, realizado: 1 });
+  });
+});
+
+describe("dadosHomeGerente · hoje e mês no fuso da escola", () => {
+  afterEach(() => { vi.useRealTimers(); });
+
+  // Escola na Costa Rica (−06, sem horário de verão). Às 04:30Z de 01/11/2026 ainda são 22h30 de 31/10 na escola:
+  // "hoje" é 31/10 e o mês é outubro, qualquer que seja o fuso do servidor (UTC em produção, −03 no notebook).
+  it("leads_de_hoje_e_matriculas_do_mes_seguem_o_dia_civil_da_escola", async () => {
+    await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "America/Costa_Rica" } });
+    await prisma.oportunidade.create({ data: { nome: "Hoje", vendedorDonoId: vend.id, criadoEm: new Date("2026-10-31T15:00:00Z") } });
+    await prisma.oportunidade.create({ data: { nome: "Ontem", vendedorDonoId: vend.id, criadoEm: new Date("2026-10-31T05:00:00Z") } });
+    const catalogo = await seedCatalogoMinimo();
+    const aluno = await criarAlunoMinimo();
+    const matricula = (ativadaEm: string) => prisma.matricula.create({ data: {
+      alunoId: aluno.id, produtoId: catalogo.produto.id, paisId: catalogo.pais.id, moeda: "CRC", status: "ATIVA", ativadaEm: new Date(ativadaEm),
+    } });
+    await matricula("2026-10-20T12:00:00Z");
+    await matricula("2026-10-01T05:00:00Z"); // 30/09 23h na escola: mês anterior
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-01T04:30:00Z"));
+    const { kpis } = await dadosHomeGerente(sessao(admin));
+    expect(kpis.leadsHoje).toBe(1);
+    expect(kpis.matriculasMes).toBe(1);
   });
 });

@@ -1,5 +1,7 @@
 // Período dos relatórios do CRM: limites de dia calculados no FUSO da escola (nunca em UTC), `fim` exclusivo.
 
+import { inicioDoDiaCivil } from "@/server/operacao/fuso";
+
 export interface Periodo {
   inicio: Date;
   fim: Date;
@@ -49,12 +51,13 @@ function somarDias(x: Ymd, dias: number): Ymd {
   return { a: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
 }
 
-/** Instante UTC da meia-noite local da data civil no fuso (convergente também em fusos com horário de verão). */
+/**
+ * Primeiro instante da data civil no fuso: a meia-noite local ou, no dia em que ela não existe (início do horário
+ * de verão, como America/Santiago em 06/09/2026), a 01h (`inicioDoDiaCivil`).
+ */
 function meiaNoite(x: Ymd, fuso: string): Date {
-  const alvo = Date.UTC(x.a, x.m - 1, x.d);
-  let t = alvo - deslocamentoMs(alvo, fuso);
-  t = alvo - deslocamentoMs(t, fuso);
-  return new Date(t);
+  const p = (n: number, t: number) => String(n).padStart(t, "0");
+  return inicioDoDiaCivil(`${p(x.a, 4)}-${p(x.m, 2)}-${p(x.d, 2)}`, fuso);
 }
 
 function lerYmd(s: string | undefined, campo: string): Ymd {

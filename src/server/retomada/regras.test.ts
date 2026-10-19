@@ -3,11 +3,13 @@ import { Prisma } from "@prisma/client";
 import { dataRetomada, DecidirRetomadaSchema, SolicitarRetomadaSchema } from "./schema";
 import {
   estadoFinanceiroRetomada, exigirSnapshotRetomadaAtual, impedimentoRetomada,
-  montarSnapshotRetomada, parcelasElegiveisRetomada, validarDatasNaoRetroativas,
+  dataMinimaReprogramacao, montarSnapshotRetomada, parcelasElegiveisRetomada, validarDatasNaoRetroativas,
   type CobrancaRetomadaFonte, type MatriculaRetomadaFonte,
 } from "./regras";
 
 const hoje = new Date(2026, 8, 8, 16);
+// Os casos antigos montam datas no relógio local do processo; a escola, neles, está no mesmo fuso.
+const FUSO_SERVIDOR = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const pausaId = "pausa-atual";
 const manter = { opcao: "MANTER_VENCIMENTOS" as const, motivo: "Retorno solicitado pelo aluno" };
 
@@ -98,7 +100,7 @@ describe("conjunto elegível e memória financeira", () => {
     const m = matricula();
     m.cobrancas[0].valorOriginal = new Prisma.Decimal("123.45");
     const outro = matricula({ id: "matricula-2", cobrancas: [cobranca("taxa", { tipo: "MATRICULA", matriculaId: "matricula-2" })] });
-    const snapshot = montarSnapshotRetomada("aluno", pausaId, [outro, m], manter, hoje);
+    const snapshot = montarSnapshotRetomada("aluno", pausaId, [outro, m], manter, hoje, FUSO_SERVIDOR);
     expect(snapshot.matriculas[0].cobrancas[0]).toMatchObject({ valorOriginal: "123.45", valorRecebido: "23.40", saldo: "100.05" });
     expect(snapshot.matriculas[1].cobrancas[0].tipo).toBe("MATRICULA");
     expect(estadoFinanceiroRetomada([m, outro])).toEqual(snapshot.matriculas);
@@ -109,10 +111,10 @@ describe("conjunto elegível e memória financeira", () => {
   it("MANTER aceita vencimentos antigos sem alterar a fonte; REPROGRAMAR troca só as datas propostas", () => {
     const m = matricula();
     const antes = estadoFinanceiroRetomada([m]);
-    const mantido = montarSnapshotRetomada("aluno", pausaId, [m], manter, hoje);
+    const mantido = montarSnapshotRetomada("aluno", pausaId, [m], manter, hoje, FUSO_SERVIDOR);
     expect(mantido.alvos[0].novoVencimento).toBe(m.cobrancas[0].vencimento.toISOString());
     const novosVencimentos = m.cobrancas.map((c) => ({ cobrancaId: c.id, vencimento: "2026-09-08" }));
-    const reprogramado = montarSnapshotRetomada("aluno", pausaId, [m], { ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos }, hoje);
+    const reprogramado = montarSnapshotRetomada("aluno", pausaId, [m], { ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos }, hoje, FUSO_SERVIDOR);
     expect(reprogramado.alvos.every((p) => new Date(p.novoVencimento).getDate() === 8)).toBe(true);
     expect(reprogramado.matriculas).toEqual(antes);
     expect(estadoFinanceiroRetomada([m])).toEqual(antes);
@@ -122,18 +124,18 @@ describe("conjunto elegível e memória financeira", () => {
     const m = matricula();
     const novos = m.cobrancas.map((c) => ({ cobrancaId: c.id, vencimento: "2026-10-20" }));
     for (const novosVencimentos of [[], novos.slice(0, 1), [...novos, novos[0]], [...novos, { cobrancaId: "taxa-ou-estrangeira", vencimento: "2026-10-20" }]]) {
-      expect(() => montarSnapshotRetomada("aluno", pausaId, [m], { ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos }, hoje)).toThrow(/mensalidade|cobrança/i);
+      expect(() => montarSnapshotRetomada("aluno", pausaId, [m], { ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos }, hoje, FUSO_SERVIDOR)).toThrow(/mensalidade|cobrança/i);
     }
   });
 
   it("rejeita data retroativa na proposta e revalida quando o tempo passa até a aprovação", () => {
     const m = matricula();
     const input = { ...manter, opcao: "REPROGRAMAR_PARCELAS" as const, novosVencimentos: m.cobrancas.map((c) => ({ cobrancaId: c.id, vencimento: "2026-09-07" })) };
-    expect(() => montarSnapshotRetomada("aluno", pausaId, [m], input, hoje)).toThrow(/passadas/i);
+    expect(() => montarSnapshotRetomada("aluno", pausaId, [m], input, hoje, FUSO_SERVIDOR)).toThrow(/passadas/i);
     input.novosVencimentos.forEach((p) => { p.vencimento = "2026-09-08"; });
-    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], input, hoje);
-    expect(() => validarDatasNaoRetroativas(snapshot.alvos, hoje)).not.toThrow();
-    expect(() => validarDatasNaoRetroativas(snapshot.alvos, new Date(2026, 8, 9, 1))).toThrow(/passadas/i);
+    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], input, hoje, FUSO_SERVIDOR);
+    expect(() => validarDatasNaoRetroativas(snapshot.alvos, hoje, FUSO_SERVIDOR)).not.toThrow();
+    expect(() => validarDatasNaoRetroativas(snapshot.alvos, new Date(2026, 8, 9, 1), FUSO_SERVIDOR)).toThrow(/passadas/i);
   });
 
   it.each([
@@ -149,18 +151,37 @@ describe("conjunto elegível e memória financeira", () => {
     ["origem do cancelamento alterada", (m: MatriculaRetomadaFonte) => { m.cobrancas[1].canceladaPorPausaId = "outra-pausa"; }],
   ] as const)("invalida o snapshot após %s", (_nome, alterar) => {
     const m = matricula();
-    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], manter, hoje);
+    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], manter, hoje, FUSO_SERVIDOR);
     alterar(m);
     expect(() => exigirSnapshotRetomadaAtual(snapshot, "aluno", pausaId, [m])).toThrow(/mudou/i);
   });
 
   it("invalida aluno, pausa, conjunto de matrículas ou conjunto de alvos diferente", () => {
     const m = matricula();
-    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], manter, hoje);
+    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], manter, hoje, FUSO_SERVIDOR);
     expect(() => exigirSnapshotRetomadaAtual(snapshot, "outro-aluno", pausaId, [m])).toThrow();
     expect(() => exigirSnapshotRetomadaAtual(snapshot, "aluno", "nova-pausa", [m])).toThrow();
     expect(() => exigirSnapshotRetomadaAtual(snapshot, "aluno", pausaId, [m, matricula({ id: "nova-matricula" })])).toThrow();
     snapshot.alvos.pop();
     expect(() => exigirSnapshotRetomadaAtual(snapshot, "aluno", pausaId, [m])).toThrow(/parcelas/i);
+  });
+});
+
+// Q176 (#164): "hoje" da retomada é o dia civil da escola, não o do servidor (UTC em produção). Na Costa Rica (−06),
+// às 04:30Z de 09/09/2026 ainda são 22h30 de 08/09: a data mínima é 08/09 e uma parcela para 08/09 não é retroativa.
+describe("retomada no dia civil da escola", () => {
+  const fuso = "America/Costa_Rica";
+  const agora = new Date("2026-09-09T04:30:00Z");
+  it("data mínima da reprogramação é o dia da escola", () => {
+    expect(dataMinimaReprogramacao(agora, fuso)).toBe("2026-09-08");
+    expect(dataMinimaReprogramacao(new Date("2026-09-09T06:00:00Z"), fuso)).toBe("2026-09-09");
+  });
+  it("aceita o dia de hoje da escola e recusa a véspera", () => {
+    const m = matricula();
+    const input = (vencimento: string) => ({ ...manter, opcao: "REPROGRAMAR_PARCELAS" as const, novosVencimentos: m.cobrancas.map((c) => ({ cobrancaId: c.id, vencimento })) });
+    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], input("2026-09-08"), agora, fuso);
+    expect(() => validarDatasNaoRetroativas(snapshot.alvos, agora, fuso)).not.toThrow();
+    expect(() => validarDatasNaoRetroativas(snapshot.alvos, new Date("2026-09-09T06:00:00Z"), fuso)).toThrow(/passadas/i);
+    expect(() => montarSnapshotRetomada("aluno", pausaId, [m], input("2026-09-07"), agora, fuso)).toThrow(/passadas/i);
   });
 });
