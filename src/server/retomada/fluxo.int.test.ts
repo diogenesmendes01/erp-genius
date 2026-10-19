@@ -129,6 +129,9 @@ function sinal() {
 
 beforeEach(async () => {
   await truncarBanco();
+  // As datas destas suítes saem do relógio local do processo (`diaEm`); a escola fica no mesmo fuso para que
+  // "ontem" e "hoje" sejam os mesmos dias civis para o teste e para a regra (Q176).
+  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: Intl.DateTimeFormat().resolvedOptions().timeZone } });
   sec = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria");
   fin = await criarUsuario([Papel.FINANCEIRO], "Financeiro");
   adm = await criarUsuario([Papel.ADMINISTRADOR], "Administração");

@@ -18,11 +18,8 @@ import { saldoAtual } from "./regras";
 import { orderByComissoes, type OrdemComissoes } from "./ordem-comissoes";
 import type { Ordenacao } from "@/lib/ordenacao";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "./vencimento-civil";
-
-function inicioDoMes() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
+import { inicioDoMesInstitucional } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 /** Escopo das comissões: financeiro/admin tudo; gerente as suas e as da equipe; vendedor as suas. */
 export function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.ComissaoWhereInput {
@@ -92,7 +89,8 @@ function resumirComissao(c: Prisma.ComissaoGetPayload<{ include: { vendedor: { s
 
 export async function kpisFinanceiro() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
-  const agora = new Date(); const ini = inicioDoMes();
+  // Q176 (#164): o mês dos KPIs é o mês civil da escola, nunca o do servidor (UTC em produção).
+  const agora = new Date(); const ini = inicioDoMesInstitucional(agora, await fusoDaEscola());
   const [recebimentos, eventosLegados, abertas, comissoesAprovadas, novasMatriculas] = await Promise.all([
     prisma.recebimento.findMany({ where: { dataPagamento: { gte: ini, lte: agora } }, select: { valor: true, moeda: true } }),
     prisma.evento.findMany({ where: { tipo: "PagamentoRegistrado", criadoEm: { gte: ini, lte: agora } }, select: { agregadoId: true, payload: true } }),
