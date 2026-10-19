@@ -15,7 +15,11 @@ import {
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { exigirConferenciaIndependente } from "@/server/financeiro/regras";
 import { acessoEfetivoBloqueado } from "./acesso-aulas-regras";
+import { instanteDaGrade } from "@/server/agenda/grade";
+import { DataCivilSchema } from "@/server/matricula/cobertura";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { reavaliarAcessoAutomaticoMatriculaTx } from "./acesso-aulas";
+import { promessaNoPassado } from "./regua";
 
 // Ações da régua de cobrança (doc 24). O envio do lembrete/cobrança (WhatsApp + passo) fica em
 // financeiro/acoes.ts (registrarCobrancaWhatsApp). Aqui: promessa de pagamento e bloqueio.
@@ -37,12 +41,12 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
     const { ate: ateStr } = PromessaSchema.parse({ ate });
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ateStr)!;
-    const ateData = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0);
-    if (isNaN(ateData.getTime())) throw new ErroRegra("Data prometida inválida.");
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    if (ateData < hoje) throw new ErroRegra("A data prometida não pode ser no passado.");
+    const ateCivil = ateStr.slice(0, 10);
+    if (!DataCivilSchema.safeParse(ateCivil).success) throw new ErroRegra("Data prometida inválida.");
+    // Q176: "hoje" é o dia da escola, e a promessa é gravada ao meio-dia dela (não do servidor).
+    const fuso = await fusoDaEscola();
+    if (promessaNoPassado(ateCivil, new Date(), fuso)) throw new ErroRegra("A data prometida não pode ser no passado.");
+    const ateData = instanteDaGrade(ateCivil, "12:00", fuso);
 
     const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
     if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
