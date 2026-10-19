@@ -53,6 +53,7 @@ describe("origem CELULAR e clientMessageId (M4)", () => {
     await processarMensagemNormalizada({ ...inbound, fromMe: true, providerMessageId: "eco-1" });
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "eco-1" } });
     expect(m).toMatchObject({ direcao: "SAIDA", origem: "CELULAR", autorId: null, atendimentoId: a.id });
+    expect(m.enviadaEm).toEqual(m.criadoEm);
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).primeiraRespostaEm).not.toBeNull();
   });
 
@@ -60,7 +61,7 @@ describe("origem CELULAR e clientMessageId (M4)", () => {
     const { a, inbound } = await cenario();
     await processarMensagemNormalizada({ ...inbound, providerMessageId: "in-1" });
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow({ where: { providerMessageId: "in-1" } });
-    expect(m).toMatchObject({ direcao: "ENTRADA", origem: null });
+    expect(m).toMatchObject({ direcao: "ENTRADA", origem: null, enviadaEm: null });
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).primeiraRespostaEm).toBeNull();
   });
 
