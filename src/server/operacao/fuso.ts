@@ -90,3 +90,29 @@ export function dataCivilInstitucional(instante: Date, fuso: string) {
   const parte = (tipo: string) => partes.find((p) => p.type === tipo)!.value;
   return `${parte("year")}-${parte("month")}-${parte("day")}`;
 }
+
+/**
+ * Primeiro instante do dia civil `data` (AAAA-MM-DD) no fuso da escola (Q176 · ref. #164). Normalmente é a
+ * meia-noite; onde ela não existe (início do horário de verão, como America/Santiago em 06/09/2026), é o
+ * primeiro instante válido do dia, à 01h. Nunca depende do fuso do servidor.
+ */
+export function inicioDoDiaCivil(data: string, fuso: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(data);
+  const alvo = m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : NaN;
+  if (!Number.isFinite(alvo) || new Date(alvo).toISOString().slice(0, 10) !== data) throw new Error("Data civil inválida.");
+  // Em segundos: 15h antes da meia-noite UTC ainda é a véspera em qualquer fuso (até +14h); 15h depois já é o dia
+  // ou depois (até −12h). A data civil não recua ao longo do tempo, então a busca binária acha a virada exata.
+  let antes = alvo / 1000 - 15 * 3600;
+  let depois = alvo / 1000 + 15 * 3600;
+  while (depois - antes > 1) {
+    const meio = Math.floor((antes + depois) / 2);
+    if (dataCivilInstitucional(new Date(meio * 1000), fuso) >= data) depois = meio;
+    else antes = meio;
+  }
+  return new Date(depois * 1000);
+}
+
+/** Primeiro instante do dia civil da escola em que `instante` cai (ver `inicioDoDiaCivil`). */
+export function inicioDoDiaInstitucional(instante: Date, fuso: string): Date {
+  return inicioDoDiaCivil(dataCivilInstitucional(instante, fuso), fuso);
+}

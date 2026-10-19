@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
+import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, inicioDoDiaCivil, inicioDoDiaInstitucional, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
 // Um critério só para servidor, PaisSchema e CampoFuso (docs/43 §6 item 6).
 describe("fusoIanaValido", () => {
   it.each(["America/Sao_Paulo", "America/Costa_Rica", "UTC", "Etc/GMT+3", "US/Eastern"])("aceita %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(true));
@@ -19,6 +19,33 @@ describe("data civil institucional", () => {
   });
   it.each(["", "Brasil", "+03:00", "America/Inexistente"])("não presume fuso para %s", (valor) => {
     expect(FusoInstitucionalSchema.safeParse(valor).success).toBe(false);
+  });
+});
+// Q176 (#164): o dia e o mês da escola começam no primeiro instante válido do dia civil no fuso dela, nunca
+// à meia-noite do servidor. Onde a meia-noite não existe (início do horário de verão), o dia começa à 01h.
+describe("início do dia civil institucional", () => {
+  it("meia-noite de Brasília é 03h UTC", () => {
+    expect(inicioDoDiaCivil("2026-03-10", "America/Sao_Paulo").toISOString()).toBe("2026-03-10T03:00:00.000Z");
+  });
+  it("às 23h30 de Brasília (02h30 UTC do dia seguinte), o dia da escola ainda é o anterior", () => {
+    expect(inicioDoDiaInstitucional(new Date("2026-03-11T02:30:00Z"), "America/Sao_Paulo").toISOString()).toBe("2026-03-10T03:00:00.000Z");
+    expect(inicioDoDiaInstitucional(new Date("2026-03-11T03:30:00Z"), "America/Sao_Paulo").toISOString()).toBe("2026-03-11T03:00:00.000Z");
+  });
+  it("sem meia-noite (America/Santiago, início do horário de verão em 06/09/2026), começa no primeiro instante válido", () => {
+    // 05/09 23:59:59 (-04) é seguido de 06/09 01:00 (-03): o dia 06/09 começa às 04h UTC.
+    expect(inicioDoDiaCivil("2026-09-06", "America/Santiago").toISOString()).toBe("2026-09-06T04:00:00.000Z");
+    expect(inicioDoDiaInstitucional(new Date("2026-09-06T15:00:00Z"), "America/Santiago").toISOString()).toBe("2026-09-06T04:00:00.000Z");
+  });
+  it("com meia-noite repetida no fim do horário de verão (America/Santiago, 05/04/2026), começa depois que a véspera acaba", () => {
+    // 04/04 23:59:59 (-03) volta para 04/04 23:00 (-04): o dia 05/04 começa às 04h UTC.
+    expect(inicioDoDiaCivil("2026-04-05", "America/Santiago").toISOString()).toBe("2026-04-05T04:00:00.000Z");
+  });
+  it("fusos extremos do calendário", () => {
+    expect(inicioDoDiaCivil("2026-01-01", "Pacific/Kiritimati").toISOString()).toBe("2025-12-31T10:00:00.000Z");
+    expect(inicioDoDiaCivil("2026-01-01", "Etc/GMT+12").toISOString()).toBe("2026-01-01T12:00:00.000Z");
+  });
+  it.each(["2026-02-30", "2026-13-01", "26-01-01"])("recusa a data civil inválida %s", (data) => {
+    expect(() => inicioDoDiaCivil(data, "America/Sao_Paulo")).toThrow();
   });
 });
 // Decisão do dono (17/10/2026): apelidos legados (US/*, Brazil/*…) não existem num Postgres sem tzdata-legacy e
