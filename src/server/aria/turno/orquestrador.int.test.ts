@@ -261,6 +261,31 @@ describe("processarTurnoAria", () => {
     expect(await prisma.acaoAgenteIA.findFirstOrThrow({ where: { acao: "HANDOFF" } })).toMatchObject({ payload: expect.objectContaining({ motivo: "VALOR_NAO_AUTORIZADO" }) });
   });
 
+  it("resposta_rapida_liberada_entra_no_prompt_e_seu_valor_passa_na_guarda", async () => {
+    await pronta();
+    await prisma.templateWhatsApp.create({
+      data: { nome: "rr:/material", atalho: "/material", titulo: "Material", corpo: "Oi {nome}! O material custa ₡15.000.", tipo: "RESPOSTA_RAPIDA", setor: "COMERCIAL", ariaPodeUsar: true },
+    });
+    await prisma.templateWhatsApp.create({
+      data: { nome: "rr:/interna", atalho: "/interna", titulo: "Interna", corpo: "Só para a equipe.", tipo: "RESPOSTA_RAPIDA", ariaPodeUsar: false },
+    });
+    const pedidos: PedidoIA[] = [];
+    const comMaterial: ProvedorIA = {
+      nome: "simulado",
+      async gerar(p) {
+        pedidos.push(p);
+        const r = await provedorSimulado.gerar(p);
+        return { ...r, texto: JSON.stringify({ ...JSON.parse(r.texto), resposta: "O material custa ₡15.000." }) };
+      },
+    };
+    expect(await processarTurnoAria(inbound.id, { provedor: comMaterial })).toMatchObject({ resultado: "RESPONDEU" });
+    expect(pedidos).toHaveLength(1);
+    expect(pedidos[0].sistema).toContain("RESPOSTAS RAPIDAS LIBERADAS");
+    expect(pedidos[0].sistema).toContain("- /material: Oi Maria! O material custa ₡15.000.");
+    expect(pedidos[0].sistema).not.toContain("/interna");
+    expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ origem: "IA", corpoRenderizado: expect.stringContaining("₡15.000") });
+  });
+
   it("pergunta_de_preco_sem_preco_vira_handoff", async () => {
     await pronta();
     await prisma.precoReferencia.updateMany({ data: { ativo: false } });

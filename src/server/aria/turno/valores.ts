@@ -81,3 +81,13 @@ export function valoresNaoAutorizados(texto: string, permitidos: ValoresPermitid
     .filter((a) => !igual(a.numero, permitidos[a.categoria]))
     .map((a) => a.trecho);
 }
+
+/**
+ * Valores, percentuais e parcelas que um texto cita, lidos pelos mesmos padrões da guarda. Usado para
+ * autorizar o que está nas respostas rápidas liberadas: um texto aprovado pela equipe passa na guarda.
+ */
+export function valoresCitados(texto: string): ValoresPermitidos {
+  const r: ValoresPermitidos = { valores: [], percentuais: [], parcelas: [] };
+  for (const a of coletar(texto)) if (!igual(a.numero, r[a.categoria])) r[a.categoria].push(a.numero);
+  return r;
+}
