@@ -40,21 +40,32 @@ export const POLITICAS_PADRAO: ConfigAria["politicas"] = {
 };
 
 /**
+ * O que as respostas rápidas liberadas autorizam na guarda de valores. Decisão provisória (C1 da R1 do
+ * #238): só os valores monetários. A guarda compara só o número, sem contexto ("multa de 2%" liberaria
+ * "2% de desconto"), e quem salva resposta inclui o Gerente Comercial, que passaria de `parcelasMax`.
+ * Percentuais e parcelas vêm só da política da Aria. Para liberar também essas categorias, acrescente
+ * "percentuais" e/ou "parcelas" aqui.
+ */
+export const CATEGORIAS_DAS_RESPOSTAS: readonly (keyof ValoresPermitidos)[] = ["valores"];
+
+/**
  * Lista da guarda de valores: preços do país, faixas de desconto e parcelas da política e, além deles,
- * o que as respostas rápidas liberadas para o setor citam (texto aprovado pela equipe; ver contexto.ts).
+ * as categorias de `CATEGORIAS_DAS_RESPOSTAS` citadas nas respostas rápidas liberadas para o setor
+ * (texto aprovado pela equipe; ver contexto.ts).
  */
 export function permitidos(ctx: Pick<ContextoTurno, "precos" | "respostasRapidas">, politicas: ConfigAria["politicas"]): ValoresPermitidos {
-  const dasRespostas = ctx.respostasRapidas.map((r) => valoresCitados(r.corpo));
+  const citados = ctx.respostasRapidas.map((r) => valoresCitados(r.corpo));
+  const dasRespostas = (c: keyof ValoresPermitidos) => (CATEGORIAS_DAS_RESPOSTAS.includes(c) ? citados.flatMap((v) => v[c]) : []);
   return {
-    valores: [...ctx.precos.map((p) => p.valor), ...dasRespostas.flatMap((v) => v.valores)],
+    valores: [...ctx.precos.map((p) => p.valor), ...dasRespostas("valores")],
     percentuais: [
       politicas.MATRICULA.descontoSemAprovacaoPct,
       politicas.MATRICULA.descontoComAprovacaoPct,
       politicas.MENSALIDADE.descontoSemAprovacaoPct,
       politicas.MENSALIDADE.descontoComAprovacaoPct,
-      ...dasRespostas.flatMap((v) => v.percentuais),
+      ...dasRespostas("percentuais"),
     ],
-    parcelas: [...Array.from({ length: politicas.parcelasMax }, (_, i) => i + 1), ...dasRespostas.flatMap((v) => v.parcelas)],
+    parcelas: [...Array.from({ length: politicas.parcelasMax }, (_, i) => i + 1), ...dasRespostas("parcelas")],
   };
 }
 

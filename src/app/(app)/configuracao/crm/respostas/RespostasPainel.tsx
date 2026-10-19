@@ -18,10 +18,12 @@ const SETORES: { v: Setor; t: string }[] = [
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
 /**
  * ariaPodeUsar é lido pelo turno da Aria (`montarContextoTurno` via `respostasParaAria`): as respostas
- * marcadas, ativas, do setor do atendimento e as gerais entram no prompt como referência, e os valores
- * citados nelas passam na guarda de valores.
+ * marcadas, ativas, do setor do atendimento e as gerais entram no prompt como referência, e os preços
+ * citados nelas passam na guarda de valores (percentuais e parcelas seguem a política da Aria). Hoje a
+ * Aria só atua no Comercial (`turno/guardas.ts`), então marcadas de outros setores ainda não têm efeito.
  */
-export const AVISO_ARIA = "A Aria usa as respostas marcadas como referência nos atendimentos do setor da resposta (ou de todos, se for geral), inclusive os valores citados no texto.";
+export const AVISO_ARIA =
+  "A Aria usa as respostas marcadas como referência, inclusive os preços citados no texto. Hoje a Aria só atua no Comercial: valem as respostas do Comercial e as gerais; respostas de outros setores marcadas ainda não têm efeito.";
 const VARIAVEIS = ["{nome}", "{responsavel}", "{curso}"];
 
 export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: RespostaLinha[]; setoresPermitidos: Setor[] }) {

@@ -102,10 +102,13 @@ describe("executor: resposta e documento", () => {
   it("valor_de_resposta_rapida_liberada_passa_e_de_nao_liberada_bloqueia", async () => {
     const rr = (atalho: string, corpo: string, ariaPodeUsar: boolean, setor: "COMERCIAL" | "FINANCEIRO" | null = null) =>
       prisma.templateWhatsApp.create({ data: { nome: `rr:${atalho}`, atalho, titulo: atalho, corpo, tipo: "RESPOSTA_RAPIDA", ariaPodeUsar, setor } });
-    await rr("/material", "O material didático custa ₡15.000 em até 12x.", true, "COMERCIAL");
+    await rr("/material", "O material didático custa ₡15.000 em até 12x, com multa de 2% por atraso.", true, "COMERCIAL");
     await rr("/taxa", "A taxa de prova é ₡7.500.", false);
     await rr("/boleto", "A segunda via custa ₡2.000.", true, "FINANCEIRO");
-    expect(await executar({ texto: "O material é ₡15.000 e dá para pagar em 12x.", destino: "EXECUTAR" })).toHaveProperty("acao");
+    expect(await executar({ texto: "O material é ₡15.000 e dá para pagar em 10x.", destino: "EXECUTAR" })).toHaveProperty("acao");
+    // C1 da R1 do #238: só o preço da resposta liberada entra; percentual e parcela seguem a política (parcelasMax 10).
+    expect(await executar({ texto: "O material dá para pagar em 12x.", destino: "EXECUTAR" })).toEqual({ bloqueada: "VALOR_NAO_AUTORIZADO" });
+    expect(await executar({ texto: "No material te dou 2% de desconto.", destino: "EXECUTAR" })).toEqual({ bloqueada: "VALOR_NAO_AUTORIZADO" });
     expect(await executar({ texto: "A taxa de prova é ₡7.500.", destino: "EXECUTAR" })).toEqual({ bloqueada: "VALOR_NAO_AUTORIZADO" });
     // Liberada, mas de outro setor: não entra no contexto, então o valor dela não está autorizado.
     expect(await executar({ texto: "A segunda via custa ₡2.000.", destino: "EXECUTAR" })).toEqual({ bloqueada: "VALOR_NAO_AUTORIZADO" });
