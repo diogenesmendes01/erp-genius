@@ -49,6 +49,11 @@ services:
   app:
     build:
       context: .
+      args:
+        # SHA do commit para o /api/health (#165). SOURCE_COMMIT é variável pré-definida do Coolify; no
+        # build ela só traz o commit com "Include Source Commit in Build" ligado (General → Build). Desligado,
+        # ou fora do Coolify, o /api/health responde "desconhecido".
+        GIT_SHA: ${SOURCE_COMMIT:-}
     restart: unless-stopped
     environment:
       # Coolify gera SERVICE_FQDN_APP_3000 a partir do domínio configurado no painel.

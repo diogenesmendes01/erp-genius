@@ -201,3 +201,25 @@ describe("docker-compose.coolify.yml: healthcheck do app", () => {
     expect(teste).not.toMatch(/localhost|\[::1\]/);
   });
 });
+
+// SHA do build (#165): o Dockerfile recebe o commit pelo build-arg GIT_SHA e o expõe como variável de
+// ambiente no runner (lida pelo /api/health); o compose do Coolify repassa o SOURCE_COMMIT.
+describe("SHA do build chega ao runner", () => {
+  const dockerfile = fs.readFileSync(path.join(__dirname, "../../Dockerfile"), "utf-8");
+  const compose = fs.readFileSync(path.join(__dirname, "../../docker-compose.coolify.yml"), "utf-8");
+  const runner = dockerfile.slice(dockerfile.indexOf("AS runner"));
+
+  it("o estágio runner declara ARG GIT_SHA e o exporta como ENV", () => {
+    expect(runner).toMatch(/^ARG GIT_SHA=?/m);
+    expect(runner).toMatch(/^ENV GIT_SHA=\$\{?GIT_SHA\}?/m);
+  });
+
+  it("o ARG vem depois das checagens do Prisma (o SHA muda a cada commit e não pode invalidar o cache delas)", () => {
+    expect(runner.indexOf("ARG GIT_SHA")).toBeGreaterThan(runner.indexOf("P1001"));
+  });
+
+  it("o app do compose do Coolify passa SOURCE_COMMIT como GIT_SHA", () => {
+    const app = compose.slice(compose.indexOf("\n  app:"), compose.indexOf("\n  motor:"));
+    expect(app).toMatch(/GIT_SHA:\s*\$\{SOURCE_COMMIT:-\}/);
+  });
+});
