@@ -8,6 +8,7 @@ import { ModalidadeSchema, type ModalidadeInput } from "@/server/catalogo/schema
 import { criarModalidade, editarModalidade } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { SEGMENTO_LABEL } from "@/lib/labels";
 
@@ -35,9 +36,10 @@ export function ModalidadeFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  // Sem chave de idempotência: criarModalidade cria outro registro a cada chamada — a falha de rede
-  // manda conferir a página antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // criarModalidade recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve a
+  // modalidade já criada. A edição continua sem chave: o formulário é outro (`modalidade` fixa na montagem).
+  const acao = useAcaoCliente({ idempotente: !modalidade });
+  const tentativa = useChaveIdempotencia();
 
   const {
     register,
@@ -59,7 +61,8 @@ export function ModalidadeFormulario({
   async function onSubmit(data: ModalidadeInput) {
     const d = await acao.executar<unknown>(() => modalidade
       ? editarModalidade(modalidade.id, data)
-      : criarModalidade(data));
+      : criarModalidade({ ...data, chaveIdempotencia: tentativa.atual }));
+    if (!modalidade) tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     router.refresh();
     onClose();
