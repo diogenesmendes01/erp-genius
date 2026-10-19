@@ -64,11 +64,12 @@ export const palavrasDaBusca = (busca: string) => busca.split(/\s+/).filter(Bool
 /** Há filtro aplicado? A ordem não é filtro: não muda quais alunos aparecem. */
 export const temFiltroAlunos = (f: FiltrosAlunos) => !!(f.busca || f.status || f.paisId || f.turmaId);
 
-// Critérios de cada coluna. Nome: primeiro nome e sobrenome na mesma direção (a decrescente é o
-// inverso exato da crescente). Nas outras colunas, empates por nome. Sempre com desempate final por id.
-const POR_NOME: Prisma.AlunoOrderByWithRelationInput[] = [{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }];
+// Critérios de cada coluna. Nome: a coluna gerada `nomeOrdenacao` (primeiro nome + sobrenome em
+// minúsculas e sem acento — D1, #141: no Postgres locale C, "Álvaro" ia para o fim). A decrescente é o
+// inverso exato da crescente. Nas outras colunas, empates por nome. Sempre com desempate final por id.
+const POR_NOME: Prisma.AlunoOrderByWithRelationInput[] = [{ nomeOrdenacao: "asc" }, { id: "asc" }];
 const CRITERIOS_ALUNOS: CriteriosOrdenacao<OrdemAlunos, Prisma.AlunoOrderByWithRelationInput> = {
-  nome: (dir) => [{ primeiroNome: dir }, { sobrenome: dir }, { id: dir }],
+  nome: (dir) => [{ nomeOrdenacao: dir }, { id: dir }],
   pais: (dir) => [{ pais: { nome: dir } }, ...POR_NOME],
   // Enum no banco: ordem de declaração (Ativo → Pausado → Encerrado), o ciclo de vida do aluno.
   status: (dir) => [{ status: dir }, ...POR_NOME],
