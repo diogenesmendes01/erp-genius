@@ -7,6 +7,7 @@ import { criarIdioma, definirIdiomaAtivo } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
 export interface IdiomaRow {
@@ -23,16 +24,19 @@ const inputCls =
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  // Sem chave de idempotência: criarIdioma cria outro registro a cada chamada — a falha de rede manda conferir a
-  // página antes de repetir. definirIdiomaAtivo recebe o estado-alvo (B4, #175 C2): repeti-lo não desfaz nada.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Tudo aqui é seguro de repetir: criarIdioma recebe chave de idempotência (#166), e o reenvio depois de um
+  // resultado incerto devolve o idioma já criado; definirIdiomaAtivo recebe o estado-alvo (B4, #175 C2; C2 da
+  // revisão do #242), então repeti-lo não desfaz nada.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
   const [origem, setOrigem] = useState<string | null>(null);
 
   async function adicionar() {
     if (!nome.trim()) return;
     setOrigem("novo");
-    const d = await acao.executar(() => criarIdioma({ nome: nome.trim() }));
+    const d = await acao.executar(() => criarIdioma({ nome: nome.trim(), chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setNome("");
     router.refresh();

@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel } from "@prisma/client";
+import { Papel, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import {
   exigirSessaoComPapel,
   registrarEvento,
@@ -14,11 +15,13 @@ import {
 import {
   IdiomaSchema,
   ModalidadeSchema,
+  CriarModalidadeSchema,
   NivelSchema,
   ProdutoSchema,
   PrecoSchema,
   type IdiomaInput,
   type ModalidadeInput,
+  type CriarModalidadeInput,
   type NivelInput,
   type ProdutoInput,
   type PrecoInput,
@@ -26,19 +29,38 @@ import {
 
 const PATH = "/configuracao/catalogo";
 
+/**
+ * Idempotência das criações (#166): com a marca da tentativa, trava a chave do autor e devolve o id já
+ * criado por ela (repetição idêntica), ou `null` para criar e gravar a marca no Evento de criação.
+ */
+async function idDaRepeticao(
+  tx: Prisma.TransactionClient,
+  alvo: { tipo: string; agregadoTipo: string; autorId: string; marca: MarcaIdempotencia | null; oQue: string },
+): Promise<string | null> {
+  if (!alvo.marca) return null;
+  const evento = await repeticaoIdempotente(tx, {
+    tipo: alvo.tipo, agregadoTipo: alvo.agregadoTipo, autorId: alvo.autorId, marca: alvo.marca,
+    mensagemConflito: `Esta tentativa já foi usada com outros dados. Recarregue a página e confira se ${alvo.oQue} já aparece antes de repetir.`,
+  });
+  return evento?.agregadoId ?? null;
+}
+
 // ----- Idiomas -----
 export async function criarIdioma(input: IdiomaInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
-    const dados = IdiomaSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = IdiomaSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const id = await prisma.$transaction(async (tx) => {
+      const repetido = await idDaRepeticao(tx, { tipo: "IdiomaCriado", agregadoTipo: "Idioma", autorId: autor.id, marca, oQue: "o idioma" });
+      if (repetido) return repetido;
       const idioma = await tx.idioma.create({ data: { nome: dados.nome } });
       await registrarEvento(tx, {
         tipo: "IdiomaCriado",
         agregadoTipo: "Idioma",
         agregadoId: idioma.id,
         autorId: autor.id,
-        payload: { nome: idioma.nome },
+        payload: { nome: idioma.nome, ...marca },
       });
       return idioma.id;
     });
@@ -76,11 +98,14 @@ export async function definirIdiomaAtivo(id: string, ativo: boolean): Promise<Re
 }
 
 // ----- Modalidades -----
-export async function criarModalidade(input: ModalidadeInput): Promise<Resultado<{ id: string }>> {
+export async function criarModalidade(input: CriarModalidadeInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const dados = ModalidadeSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = CriarModalidadeSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const id = await prisma.$transaction(async (tx) => {
+      const repetido = await idDaRepeticao(tx, { tipo: "ModalidadeCriada", agregadoTipo: "Modalidade", autorId: autor.id, marca, oQue: "a modalidade" });
+      if (repetido) return repetido;
       const m = await tx.modalidade.create({
         data: {
           nome: dados.nome,
@@ -97,7 +122,7 @@ export async function criarModalidade(input: ModalidadeInput): Promise<Resultado
         agregadoTipo: "Modalidade",
         agregadoId: m.id,
         autorId: autor.id,
-        payload: { nome: m.nome, segmento: m.segmento, minimoAbrir: m.minimoAbrir },
+        payload: { nome: m.nome, segmento: m.segmento, minimoAbrir: m.minimoAbrir, ...marca },
       });
       return m.id;
     });
@@ -145,10 +170,13 @@ export async function editarModalidade(id: string, input: ModalidadeInput): Prom
 export async function criarNivel(input: NivelInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
-    const dados = NivelSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = NivelSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const idioma = await prisma.idioma.findUnique({ where: { id: dados.idiomaId } });
     if (!idioma) throw new ErroRegra("Idioma não encontrado.");
     const id = await prisma.$transaction(async (tx) => {
+      const repetido = await idDaRepeticao(tx, { tipo: "NivelCriado", agregadoTipo: "Nivel", autorId: autor.id, marca, oQue: "o nível" });
+      if (repetido) return repetido;
       const n = await tx.nivel.create({
         data: { idiomaId: dados.idiomaId, codigo: dados.codigo, ordem: dados.ordem },
       });
@@ -157,7 +185,7 @@ export async function criarNivel(input: NivelInput): Promise<Resultado<{ id: str
         agregadoTipo: "Nivel",
         agregadoId: n.id,
         autorId: autor.id,
-        payload: { idiomaId: dados.idiomaId, codigo: n.codigo, ordem: n.ordem },
+        payload: { idiomaId: dados.idiomaId, codigo: n.codigo, ordem: n.ordem, ...marca },
       });
       return n.id;
     });
@@ -170,14 +198,18 @@ export async function criarNivel(input: NivelInput): Promise<Resultado<{ id: str
 export async function criarProduto(input: ProdutoInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const dados = ProdutoSchema.parse(input);
-
-    const dup = await prisma.produto.findFirst({
-      where: { idiomaId: dados.idiomaId, modalidadeId: dados.modalidadeId },
-    });
-    if (dup) throw new ErroRegra("Já existe um produto para esse idioma + modalidade.");
+    const { chaveIdempotencia, ...dados } = ProdutoSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
 
     const id = await prisma.$transaction(async (tx) => {
+      // A repetição vem antes da conferência de duplicado: o produto que a própria tentativa criou não é
+      // "outro" produto, e o reenvio devolve ele em vez do erro.
+      const repetido = await idDaRepeticao(tx, { tipo: "ProdutoCriado", agregadoTipo: "Produto", autorId: autor.id, marca, oQue: "o produto" });
+      if (repetido) return repetido;
+      const dup = await tx.produto.findFirst({
+        where: { idiomaId: dados.idiomaId, modalidadeId: dados.modalidadeId },
+      });
+      if (dup) throw new ErroRegra("Já existe um produto para esse idioma + modalidade.");
       const p = await tx.produto.create({
         data: { idiomaId: dados.idiomaId, modalidadeId: dados.modalidadeId },
       });
@@ -186,7 +218,7 @@ export async function criarProduto(input: ProdutoInput): Promise<Resultado<{ id:
         agregadoTipo: "Produto",
         agregadoId: p.id,
         autorId: autor.id,
-        payload: { idiomaId: dados.idiomaId, modalidadeId: dados.modalidadeId },
+        payload: { idiomaId: dados.idiomaId, modalidadeId: dados.modalidadeId, ...marca },
       });
       return p.id;
     });
@@ -199,7 +231,8 @@ export async function criarProduto(input: ProdutoInput): Promise<Resultado<{ id:
 export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const dados = PrecoSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = PrecoSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
 
     const produto = await prisma.produto.findUnique({ where: { id: dados.produtoId } });
     if (!produto) throw new ErroRegra("Produto não encontrado.");
@@ -214,6 +247,9 @@ export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: str
     };
 
     const id = await prisma.$transaction(async (tx) => {
+      // O reenvio da mesma tentativa devolve o preço criado por ela, sem aposentá-lo com uma cópia.
+      const repetido = await idDaRepeticao(tx, { tipo: "PrecoDefinido", agregadoTipo: "Preco", autorId: autor.id, marca, oQue: "o preço" });
+      if (repetido) return repetido;
       // supersede: desativa o preço ativo anterior do mesmo conjunto (mantém histórico)
       await tx.precoReferencia.updateMany({ where: { ...chave, ativo: true }, data: { ativo: false } });
       const preco = await tx.precoReferencia.create({
@@ -230,7 +266,7 @@ export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: str
         agregadoTipo: "Preco",
         agregadoId: preco.id,
         autorId: autor.id,
-        payload: { ...chave, valor: dados.valor, moeda: pais.moedaLocal },
+        payload: { ...chave, valor: dados.valor, moeda: pais.moedaLocal, ...marca },
       });
       return preco.id;
     });

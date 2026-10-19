@@ -33,6 +33,7 @@ import { confirmarNoDialogo } from "@/test/confirmacao-tela";
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
 const botaoDe = (t: ReactNode, rotulo: string): No => elementos(t).find((n: No) => n.type === "button" && texto(n.props.children).trim() === rotulo)!;
+const erros = (t: ReactNode) => elementos(t).filter((n: No) => n.type === FeedbackAcao).map((n: No) => n.props.erro).filter(Boolean);
 const sucessos = (t: ReactNode) => elementos(t).filter((n: No) => n.type === FeedbackAcao).map((n: No) => n.props.sucesso);
 
 beforeEach(() => {
@@ -88,6 +89,14 @@ describe("IdiomasPainel — desativar passa pela confirmação", () => {
     await (botaoDe(tela(), "Ativar").props.onClick as () => Promise<void>)();
     expect(m.idioma).toHaveBeenCalledWith("fra", true);
     expect(confirmacoes(tela())).toHaveLength(0);
+  });
+
+  it("ativar com falha de rede manda reenviar: o estado-alvo é seguro de repetir (C2 da revisão do #242)", async () => {
+    m.idioma.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await (botaoDe(tela(), "Ativar").props.onClick as () => Promise<void>)();
+    expect(erros(tela())).toContain(MSG_RESULTADO_INCERTO);
+    await (botaoDe(tela(), "Ativar").props.onClick as () => Promise<void>)();
+    expect(m.idioma.mock.calls).toEqual([["fra", true], ["fra", true]]);
   });
 });
 
@@ -152,5 +161,13 @@ describe("PrecosPainel — desativar passa pela confirmação", () => {
     await (botaoDe(tela(), "Reativar").props.onClick as () => Promise<void>)();
     expect(m.preco).toHaveBeenCalledWith("p-antigo", true);
     expect(confirmacoes(tela())).toHaveLength(0);
+  });
+
+  it("reativar com falha de rede manda reenviar: o estado-alvo é seguro de repetir (C2 da revisão do #242)", async () => {
+    m.preco.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await (botaoDe(tela(), "Reativar").props.onClick as () => Promise<void>)();
+    expect(erros(tela())).toContain(MSG_RESULTADO_INCERTO);
+    await (botaoDe(tela(), "Reativar").props.onClick as () => Promise<void>)();
+    expect(m.preco.mock.calls).toEqual([["p-antigo", true], ["p-antigo", true]]);
   });
 });
