@@ -10,6 +10,7 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { Drawer } from "@/components/Drawer";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { PRIORIDADE_TAREFA_LABEL, STATUS_TAREFA_LABEL, TIPO_TAREFA_LABEL } from "@/lib/labels";
 import type { Resultado } from "@/server/_shared/resultado";
 import type { TarefaLista } from "@/server/crm/mensagens-agendadas";
@@ -46,7 +47,11 @@ export function PainelTarefa(props: Props) {
 
 function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, dataInicial, params }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Nova tarefa: criarTarefa recebe chave de idempotência (#166), e o reenvio depois de um resultado incerto
+  // devolve a tarefa já criada (sem segundo lembrete). Tarefa existente: as ações usam a `versao` e ficam
+  // sem chave. `tarefa` não muda na vida do formulário (PainelTarefa troca o key).
+  const acao = useAcaoCliente({ idempotente: !tarefa });
+  const tentativa = useChaveIdempotencia();
   const aberta = !tarefa || tarefa.status === "ABERTA";
   const [titulo, setTitulo] = useState(tarefa?.titulo ?? "");
   const [tipo, setTipo] = useState<TipoTarefa>(tarefa?.tipo ?? "LIGACAO");
@@ -72,7 +77,11 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
     };
     const d = await acao.executar(async (): Promise<Resultado<unknown>> => {
       if (!tarefa) {
-        return criarTarefa({ ...base, ...(responsaveis.length && responsavel !== "__eu__" ? { responsavelId: responsavel || null } : {}) });
+        return criarTarefa({
+          ...base,
+          ...(responsaveis.length && responsavel !== "__eu__" ? { responsavelId: responsavel || null } : {}),
+          chaveIdempotencia: tentativa.atual,
+        });
       }
       const mudouResponsavel = responsaveis.length > 0 && responsavel !== (tarefa.responsavelId ?? "");
       const lida: CamposFormulario = {
@@ -83,6 +92,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
       };
       return editarTarefa(tarefa.id, tarefa.versao, { ...camposAlterados(lida, base), ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}) });
     }, tarefa ? "Tarefa salva." : "Tarefa criada.");
+    if (!tarefa) tentativa.depoisDo(d);
     if (d?.tipo === "ok") {
       router.refresh();
       if (!tarefa) fechar();

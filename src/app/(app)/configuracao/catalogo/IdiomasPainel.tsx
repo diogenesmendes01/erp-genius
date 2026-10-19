@@ -7,6 +7,7 @@ import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
 export interface IdiomaRow {
@@ -23,16 +24,21 @@ const inputCls =
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  // Sem chave de idempotência: criarIdioma cria outro registro a cada chamada e alternarIdiomaAtivo
-  // inverte o estado atual — a falha de rede manda conferir a página antes de repetir.
+  // criarIdioma recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
+  // idioma já criado. alternarIdiomaAtivo inverte o estado atual, então fica sem chave e no outro executor.
+  const acaoNovo = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const acao = useAcaoCliente({ idempotente: false });
+  const ocupado = acao.ocupado || acaoNovo.ocupado;
   // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
   const [origem, setOrigem] = useState<string | null>(null);
 
   async function adicionar() {
     if (!nome.trim()) return;
     setOrigem("novo");
-    const d = await acao.executar(() => criarIdioma({ nome: nome.trim() }));
+    acao.limpar();
+    const d = await acaoNovo.executar(() => criarIdioma({ nome: nome.trim(), chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setNome("");
     router.refresh();
@@ -40,6 +46,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
 
   async function ativar(id: string) {
     setOrigem(id);
+    acaoNovo.limpar();
     const d = await acao.executar(() => alternarIdiomaAtivo(id), "Idioma ativado.");
     if (d?.tipo === "ok") router.refresh();
   }
@@ -93,7 +100,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => (i.ativo ? pedirDesativacao(i) : ativar(i.id))}
-                    disabled={acao.ocupado || desativando !== null}
+                    disabled={ocupado || desativando !== null}
                     className={botaoClasses({ variante: i.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
@@ -117,13 +124,13 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         />
         <button
           onClick={adicionar}
-          disabled={acao.ocupado}
+          disabled={ocupado}
           className={botaoClasses({ tamanho: "lg" })}
         >
           <IconPlus className="h-4 w-4" /> Adicionar
         </button>
       </div>
-      <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-3" />
+      <FeedbackAcao erro={origem === "novo" ? acaoNovo.erro : null} className="mt-3" />
 
       {desativando && (
         <ConfirmarAcao

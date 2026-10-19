@@ -33,6 +33,8 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
       {form !== "none" && (
         <div className="mb-4">
           <ModalidadeFormulario
+            // Nova e edição são formulários diferentes: os valores iniciais e a chave da tentativa são lidos na montagem.
+            key={typeof form === "object" ? form.editar.id : "nova"}
             modalidade={typeof form === "object" ? form.editar : undefined}
             onClose={() => setForm("none")}
           />
