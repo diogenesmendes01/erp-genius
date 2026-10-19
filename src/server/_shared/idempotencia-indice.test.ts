@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 // `prisma migrate diff` não o enxerga, então não propõe removê-lo). Este teste impede que alguém apague a
 // migration, mude a expressão sem mudar a consulta ou tire o aviso do schema.
 const raiz = process.cwd();
-const migracao = readFileSync(path.join(raiz, "prisma/migrations/20261019010000_evento_idempotencia_idx/migration.sql"), "utf8");
+const migracao = readFileSync(path.join(raiz, "prisma/migrations/20261019100000_evento_idempotencia_idx/migration.sql"), "utf8");
 const schema = readFileSync(path.join(raiz, "prisma/schema.prisma"), "utf8");
 const helper = readFileSync(path.join(raiz, "src/server/_shared/idempotencia.ts"), "utf8");
 const modelo = schema.match(/model Evento \{[\s\S]*?\n\}/)?.[0] ?? "";

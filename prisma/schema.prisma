@@ -2321,7 +2321,7 @@ model Evento {
   @@index([criadoEm])
   // Idempotência das criações (#166): índice de expressão parcial "Evento_idempotencia_idx" sobre
   // (tipo, autorId, payload->>'chaveIdempotencia') WHERE payload ? 'chaveIdempotencia', em SQL manual na
-  // migration 20261019010000_evento_idempotencia_idx (o Prisma não representa expressão nem predicado).
+  // migration 20261019100000_evento_idempotencia_idx (o Prisma não representa expressão nem predicado).
   // Trava: src/server/_shared/idempotencia-indice.test.ts.
 }
 
