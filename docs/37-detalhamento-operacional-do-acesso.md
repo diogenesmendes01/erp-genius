@@ -109,13 +109,13 @@ Referências: [alunos](C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/serv
 | `academico.aprovar_excecao` | Pedido de mudança de nível; implementação D14 no [doc 40](40-mudancas-academicas-com-aprovacao.md) | GP/direção decide independentemente; PRO emite parecer; SEC executa a decisão vigente. D14 prevê dispensa justificada de parecer indisponível; outras exceções curriculares não são automaticamente implementadas por esse fluxo. |
 | `turma.solicitar_abertura` | `solicitarAberturaTurma` | Comercial encaminha demanda; solicitação não publica turma. |
 | `turma.manter` | `criarTurma`, `editarTurma`, `alterarStatusTurma` | GP/SEC conforme atribuição; mudança curricular ou efeito contratual exige a capacidade correspondente. |
-| `curriculo.manter` | `criarIdioma`, `alternarIdiomaAtivo`, `criarNivel` | GP/ADM; respeitar vínculos e histórico em uso. |
+| `curriculo.manter` | `criarIdioma`, `definirIdiomaAtivo`, `criarNivel` | GP/ADM; respeitar vínculos e histórico em uso. |
 | `oferta.manter` | `criarModalidade`, `editarModalidade`, `criarProduto` | Separar componente pedagógico de preço/condição comercial; concessão explícita por domínio. |
-| `preco.manter` | `criarPreco`, `alternarPrecoAtivo` | Direção/ADM ou delegação comercial/financeira; versionar vigência. |
+| `preco.manter` | `criarPreco`, `definirPrecoAtivo` | Direção/ADM ou delegação comercial/financeira; versionar vigência. |
 | `mercado.manter` | `criarPais`, `editarPais`, `alterarStatusPais`, `alternarProdutoPais` | Direção/ADM; preservar identidades e contratos existentes. |
 | `catalogo.consultar` | Consultas de país, idioma, produto, preço e disponibilidade | Equipes recebem opções publicadas necessárias à sua tarefa; não toda configuração interna. |
 | `comercial.configurar` | `salvarConfigComercial`, `salvarReguaComercial` e consultas de configuração/ensaio | GC/ADM no escopo; separar parâmetros de atendimento de segurança, comissões e ativação de automação. |
-| `acesso.administrar` | `criarUsuario`, `editarUsuario`, `alternarUsuarioAtivo`, `listarUsuarios` | ADM autorizado; diretórios operacionais de professores/vendedores recebem resposta mínima, não cadastro administrativo integral. |
+| `acesso.administrar` | `criarUsuario`, `editarUsuario`, `definirUsuarioAtivo`, `listarUsuarios` | ADM autorizado; diretórios operacionais de professores/vendedores recebem resposta mínima, não cadastro administrativo integral. |
 
 ### WhatsApp, arquivos e rotas
 

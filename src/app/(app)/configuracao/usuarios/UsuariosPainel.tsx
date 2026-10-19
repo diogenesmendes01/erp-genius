@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { PAPEL_LABEL } from "@/lib/labels";
-import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
+import { definirUsuarioAtivo } from "@/server/acesso/acoes";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -35,16 +35,16 @@ function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | nu
 
 export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { usuarios: UsuarioRow[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  // Ativar/desativar é um alternador sem chave de idempotência: repetir desfaz o que já foi aplicado.
-  // A falha de rede manda conferir o status na lista antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Ativar/desativar manda o estado-alvo (B4, #175 C2): repetir depois de uma falha de rede, ou confirmar com a
+  // tela velha o que um colega já aplicou, não desfaz nada — o servidor trata o mesmo estado como no-op.
+  const acao = useAcaoCliente({ idempotente: true });
   // O erro aparece na linha do usuário cujo botão disparou a ação, não no topo da lista.
   const [alvo, setAlvo] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
 
   async function ativar(id: string) {
     setAlvo(id);
-    const desfecho = await acao.executar(() => alternarUsuarioAtivo(id), "Usuário ativado.");
+    const desfecho = await acao.executar(() => definirUsuarioAtivo(id, true), "Usuário ativado.");
     if (desfecho?.tipo === "ok") router.refresh();
   }
 
@@ -165,8 +165,8 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
         <ConfirmarAcao
           titulo={`Desativar o acesso de ${desativando.nome}?`}
           confirmacao="desativação do acesso"
-          idempotente={false}
-          acao={() => alternarUsuarioAtivo(desativando.id)}
+          idempotente
+          acao={() => definirUsuarioAtivo(desativando.id, false)}
           aoConcluir={() => desativado(desativando)}
           aoCancelar={() => setDesativando(null)}
         >
