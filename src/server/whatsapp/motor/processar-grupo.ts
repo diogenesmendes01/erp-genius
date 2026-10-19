@@ -58,6 +58,7 @@ export async function processarMensagemGrupo(env: EnvelopeMotor, dados: DadosMen
           midiaPath: midiaPath ?? null,
           status: fromMe ? "ENVIADA" : "ENTREGUE",
           statusEm: quando,
+          enviadaEm: fromMe ? quando : null,
           driver: "MOTOR",
           origem: fromMe ? "CELULAR" : null,
           providerMessageId: dados.providerMessageId,

@@ -289,7 +289,7 @@ export async function revisarFalhaEnvio(input: { id: string; decisao: "CANCELAR"
       let novoStatus: "PENDENTE" | "CANCELADA" = "CANCELADA";
       let motivo = "revisado_sem_reenvio";
       if (dados.decisao === "REENVIAR_APOS_VERIFICACAO") {
-        if (!i.atendimentoId || !await atendimentoVisivel(u, i.atendimentoId, true)) throw new ErroRegra("Classifique o atendimento e confira o canal antes de solicitar novo envio.");
+        if (!i.atendimentoId || !await atendimentoVisivel(u, i.atendimentoId, true, tx)) throw new ErroRegra("Classifique o atendimento e confira o canal antes de solicitar novo envio.");
         const snapshot = i.cobrancaId ? await snapshotCobranca(i.cobrancaId, tx) : null;
         if (i.cobrancaId && (!snapshot || snapshot.assinatura !== i.referenciaCobranca)) {
           motivo = "cobranca_alterada_revisar";
