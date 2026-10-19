@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   intencoes: vi.fn(),
   atendimentos: vi.fn(),
   proximaAcao: vi.fn(),
+  config: vi.fn(async () => null as { fusoInstitucional: string } | null),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -20,7 +21,7 @@ vi.mock("@/lib/prisma", () => ({
     templateWhatsApp: { findMany: m.templates },
     intencaoMensagem: { findMany: m.intencoes },
     atendimentoWhatsApp: { findMany: m.atendimentos },
-    configuracaoOperacional: { findUnique: async () => null }, // fusoDaEscola() → America/Sao_Paulo
+    configuracaoOperacional: { findUnique: m.config }, // null → fusoDaEscola() = America/Sao_Paulo
   },
 }));
 vi.mock("./politica", () => ({ carregarPoliticaRegua: async () => ({ degraus: [], templateIdPorPasso: new Map() }) }));
@@ -124,6 +125,20 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
       // "Recebido hoje" começa à meia-noite de 22/06 em Brasília (03h UTC), não à meia-noite UTC de 23/06.
       const recebidos = m.eventos.mock.calls.map(([args]) => args).find((a) => a.where.tipo === "PagamentoRegistrado");
       expect(recebidos.where.criadoEm.gte.toISOString()).toBe("2026-06-22T03:00:00.000Z");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("R1 do #239 (C1): \"recebido hoje\" num dia sem meia-noite começa no primeiro instante válido (America/Santiago, 06/09/2026)", async () => {
+    m.config.mockResolvedValueOnce({ fusoInstitucional: "America/Santiago" });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-09-06T15:00:00Z")); // 06/09, 12h em Santiago (-03)
+      await listarFilaCobranca();
+      // 05/09 23:59:59 (-04) é seguido de 06/09 01:00 (-03): o dia começa às 04h UTC, sem erro de "00:00 inexistente".
+      const recebidos = m.eventos.mock.calls.map(([args]) => args).find((a) => a.where.tipo === "PagamentoRegistrado");
+      expect(recebidos.where.criadoEm.gte.toISOString()).toBe("2026-09-06T04:00:00.000Z");
     } finally {
       vi.useRealTimers();
     }
