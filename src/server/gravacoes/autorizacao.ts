@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ErroPermissao } from "@/server/_shared";
 import { cobrancaGeraRestricaoAutomatica } from "@/server/cobrancas/acesso-aulas-regras";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { exigirSessaoPortalAluno, type SessaoPortalAluno } from "@/server/portal-aluno/sessao";
 import { obterDriveOrganizacaoId } from "./credenciais";
 import { resolverFonteRevisaoGravacaoTx } from "./fonte-revisao-tx";
@@ -84,13 +85,14 @@ export async function autorizarReproducaoGravacaoTx(
       where: { matriculaId: fonte.matriculaId },
       select: { status: true, vencimento: true, saldo: true, valorNegociado: true, valorRecebido: true },
     });
+    const fuso = await fusoDaEscola(tx); // Q176: D+30 conta no calendário da escola
     const bloqueioD30 = cobrancas.some((cobranca) => cobrancaGeraRestricaoAutomatica({
       status: cobranca.status,
       vencimento: cobranca.vencimento,
       saldo: cobranca.saldo === null ? null : Number(cobranca.saldo),
       valorNegociado: Number(cobranca.valorNegociado),
       valorRecebido: cobranca.valorRecebido === null ? null : Number(cobranca.valorRecebido),
-    }, agora));
+    }, agora, fuso));
     if (bloqueioD30) throw new ErroPermissao("Reprodução não autorizada.");
 
     return { fileId: fonteFixa.fileId, reposicaoId: fonte.reposicaoId, matriculaId: fonte.matriculaId,

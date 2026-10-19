@@ -512,8 +512,6 @@ Aceite técnico B02/Q87 confirmado no código em 17/09/2026: migrar o vínculo f
 
 17/09/2026 — ambiente DEV2: identificada divergência de checksum da migração 204 no banco descartável `erp_genius_test_dev_gravacoes`. A versão aplicada previamente não estava preservada nos commits disponíveis; origem dessa aplicação não confirmada. O integrador reconstruiu exclusivamente esse banco, conferindo host `localhost`, porta `54329` e nome exato pelo perfil, com `migrate reset --force --skip-seed`. Cadeia revisada e Prisma Client concluídos na sessão 99146, saída 0. A base 204 passa a ser o commit `c332eaf8`, SHA256 `4849EB9D4F42DEC4358985FE5D68332019032BA530B4C80CF88584A828758A9A`, imutável após essa aplicação. Não houve alteração manual de checksums, dados reais ou outro banco. Testes Q117/Q38 novamente liberados para DEV2; entrega ainda não aceita.
 
-
-
 ### Rastreabilidade dos cenários transversais — auditoria de 17/09/2026
 
 Esta auditoria identifica testes existentes, sem declarar que um teste isolado comprova todo o cenário. A conclusão integral exige conferir o percurso composto e a evidência terminal correspondente.
@@ -878,7 +876,6 @@ Commit consolidado afc9a42. Regressão de integração 611 concluída: 1.292 tes
 17/09/2026 — TESTER Q87: corretivas de excedente e replay de data validadas no recorte completo `recebimentos-destinados.int.test.ts`: 8/8, saída 0, sessão 18:29 local. Confere pagamento de 125 dividido em cobrança 100 e crédito 25, replay concorrente de um fato, conservação da data original quando omitida no replay, e recusa de contrato/moeda ou comprovante alheios. A branch de validação trouxe as dependências canônicas de histórico/autorização para executar o arquivo, sem alterar schema ou banco.
 17/09/2026 — TESTER Q40/Q54: corretiva de vigência efetiva validada com `reposicao-entrega-operacional.int.test.ts` e `correcao-reposicao.int.test.ts`, 32/32, sessão 24498, saída 0. Callbacks da operação 2/2 e `tsc --noEmit` saída 0, sessão 92299. A→B→A usa nova designação e passa; ciclo de IDs falha; designação expirada permanece histórica. Após a troca, o professor anterior é recusado e o vigente pode propor a correção.
 17/09/2026 — fechamento TESTER Q40/CT11 e DCT03 UI: CT11 dirigido passou 1/1 na sessão 18:33, com 21 casos fora do filtro; prova indisponibilidade, pausa/restauração do prazo, substituição real preservando entrega/autoria/prazo e liberação pontual durante matrícula pausada. Callbacks de múltiplas substituições Q40 e textarea de invalidação DCT03 passaram 11/11, saída 0. A chave é renovada após a troca e o motivo fica editável quando apenas a invalidação está disponível.
-
 
 ### CT-12 — matriz de evidências locais (17/09/2026)
 
@@ -1522,7 +1519,6 @@ Cenário composto ainda faltante: persistir `INCERTO` do portal, reiniciar expli
 
 19/09/2026 — Q47/Q48 integrada em3f8ca710 (DEV9c8cd19a). Cadastro/formulário/importador permitem virada de dia e dispensam dataFim no novo cadastro; duração/frequência conferidas sob lock da modalidade. Edição preserva referências e exceções quando grade não muda; mudança em agenda publicada continua bloqueada. Painel projeta status canônico. Revisões encontraram e corrigiram bypass da duração pela edição, revalidação indevida da frequência aprovada e descarte de data final inválida no importador. Principal: três arquivos completos q47-criacao-noturna, regra-turma e integridade-academica,30/30 sem ignorados, sessão92122/6ddeae saída0; quatro arquivos unitários/SSR22/22, sessão31294/b3360a, TypeScript terminale8682a saída0. A execução completa de integridade sem resultado terminal no DEV não foi contada; reexecução principal terminou normalmente. SPEC atualizada. DEV1 agora revisa Q161 e resíduos operacionais; DEV2 implementa disponibilidade/snapshot dos destinos acadêmicos. Sem migração, envio externo ou push nesta entrega.
 
-
 19/09/2026 — Regressão global unitária a67af640: 392 arquivos,2.054 testes aprovados,zero falhas/pendentes; terminal33637/a61537 saída0, JSON node_modules/.implementation/unitarias-a67af640.json conferido emc55c94. Build mesmo snapshot com DATABASE_URL exclusivamente do perfil descartável integracao,87páginas+TypeScript,94584/f38334 saída0. Não inclui WIP destinos ou próximo atalho de agenda. Revisão independente Q161 DEV1nos snapshots03611416/467ddf1b:14/14 doisarquivos eTS0 (f6c07b),sem bloqueador. Resíduos operacionais349d3767 revisados emdd480517:10/10 trêsarquivos+TS0 (16bda4),sem bloqueador. Auditoria operacional do próprio DEV emQ47 identificou falta de atalho cadastro→geração da agenda; complemento atribuído ao DEV1, enquantoDEV2 implementa destinos por agenda/fotografia. Não confundir revisão do próprio autor com aceite independente da entregaQ47.
 
 19/09/2026 — Atalho operacional de turma integrado77ca5d4e/be78729e (fontes7cdade9e/7b8273f6). Criação encaminha à preparação com seleção validada pelo servidor; painel oferece próximo passo; parâmetro turmaId repetido e turma inelegível recusados. Revisão root detectou regressão na primeira versão: edição retorna sucesso sem dado e era tratada como falha. Correção separa criação/edição; teste exerce controlador realmente chamado pelo formulário, não somente composição de URL. Principal:3arquivos6/6 eTS0, saída terminal4052f5. SPEC atualizada; sem homologação visual presumida. DEV1 passa à revisão independente do WIP de destinos doDEV2; a regressão global registradaa67af640 não inclui este complemento.
@@ -1542,7 +1538,6 @@ Cenário composto ainda faltante: persistir `INCERTO` do portal, reiniciar expli
 
 19/09/2026 — Complemento269 integrado19a82cda (fontefd720a13): principal3/3 com8filtrados no recorte `preserva cobrança originalmente|permite alterar`, saída0 6c1239; TypeScript0c75d56. Preservadas as evidências do arquivo completo10/10 anterior ao novo caso. DEV1 passa à comprovaçãoQ161 após replanejamento, sem modificar o helper de destinos doDEV2; fallback pedagógico continua obrigatório quando a cadeia ou a cobertura não comprovar oferta. DEV2 segue regressão de destinos e revisão das alterações posteriores aprovadas. Nenhum aceite global ou homologação externa presumido.
 19/09/2026 — Q161: a fonte automática de continuidade passa a reconhecer a cadeia calendário→revisão→decisão→aplicação para grade histórica após replanejamento, guardando a âncora e o hash na memória. Aulas MINISTRADO preservadas podem compor o período; CANCELADO, fotografia divergente ou cadeia sem aplicação exigem confirmação da Gestão. Unitários de âncora/oferta: 18/18, saída 0 (e2d51c). Integração real de publicação e revisão sem remarcações: 2/2, saída 0 (d3ccf9), incluindo fotografia tornada obsoleta dentro de transação com rollback. TypeScript saída 0. Não emite cobrança nem substitui a confirmação humana.
-
 
 21/09/2026 — A pedido do usuário, Q161 transferida para codex/consolidacao-specs-20260916 por cherry-pick552b86e7/be99b3ca, resultando0914a7a1/a9d97763. Conflito exclusivamente documental resolvido preservando ambos os históricos. Verificação principal: cadeia-calendario-oferta.test.ts e oferta-continuidade-agenda-tx.test.ts19/19, saída0 1ee694; TypeScript sessão71029/186590 saída0. Tentativa replanejamento-sem-remarcacoes.int.test.ts não iniciou: setup do banco descartável integracao falhou, saída1 498efc; nenhum teste integrado aprovado nesta tentativa. A revisão anterior continua aberta: comparação rígida de status pode exigir confirmação indevida após evolução legítima PREVISTO→MINISTRADO; alterações individuais posteriores aprovadas também precisam de suporte. Integrado não significa Q161 integralmente concluída. Sem push nesta operação.
 
@@ -1649,7 +1644,6 @@ check" foi obtida com o check antigo (`prisma --version | grep`), não com os ch
 - **TypeScript** (`tsc --noEmit`) no ambiente preparado pelo integrador.
 
 **Estado**: Implementado e validado na VPS (relato do usuário); aguardando o redeploy no Coolify. Não concluído.
-
 
 ## Inbox WhatsApp — nome do contato com o perfil da própria linha (29/09/2026)
 
@@ -2104,7 +2098,6 @@ O contato pode usar no perfil do WhatsApp um nome errado ou inútil. A equipe pr
   `reabertura`), 99 testes, todos verdes.
 
 **Estado**: Implementado; aguardando o integrador. Não concluído.
-
 
 ## Fase 3, Task 13: regressão de escopo (E5)
 
@@ -3399,6 +3392,20 @@ Branch `claude/fase5-g-auditoria`, base `main` 04145a58 + merge de 8cbf1672 (#23
 
 - Novo job `build` no `.github/workflows/ci.yml`: `npm ci`, `prisma generate` e `npm run build`, com o `DATABASE_URL` de teste do workflow e `NODE_OPTIONS=--max-old-space-size=5120`. Motivo: no #234, componentes "use client" importando módulos de servidor com Prisma quebravam o build de produção sem que typecheck, lint ou testes acusassem.
 - Evidência: `npm run build` no `origin/main` (8cbf1672) com a env mínima do CI: saída 0, ~3 min.
+
+### Q176: régua de cobrança e D+30 no fuso da escola (B1 da triagem, lote "servidor sem migration" da #164) — 2026-10-19
+
+Branch `claude/regua-fuso-escola`, base `main` 78edb2a0. É só a Q176. O resto da #62 continua pendente na #164.
+- **Problema:** a régua contava os dias pelo relógio do servidor (`inicioDoDia` com `getFullYear/getMonth/getDate`). Em produção o processo roda em UTC, então o dia virava às 21h de Brasília, e lembrete, cobrança e D+30 podiam sair um dia antes.
+- **`cobrancas/regua.ts`:** `diferencaEmDias` foi substituída por `diasCivisDesde(agora, gravada, fuso)`. "Hoje" passa a ser a data civil da escola (`dataCivilInstitucional`). O dia de uma data gravada sai de `diaCivilGravado`, o maior entre o dia UTC e o dia da escola, e isso cobre as três convenções de gravação: meio-dia da escola, meia-noite da escola e meia-noite UTC do legado. `proximaAcao(entrada, hoje, fuso, politica?)` usa essa conta para os dias de atraso e para a promessa vigente. `promessaNoPassado(ate, agora, fuso)` é a regra da promessa.
+- **D+30:** `cobrancaGeraRestricaoAutomatica(…, agora, fuso)`. `reavaliarAcessoAutomaticoMatriculaTx` (`cobrancas/acesso-aulas.ts`) e `autorizarReproducaoGravacaoTx` (`gravacoes/autorizacao.ts`) leem o fuso com `fusoDaEscola(tx)`.
+- **Fila e ficha:** `montarReguaPorCobranca` lê `fusoDaEscola()`, ou recebe o fuso de quem chama. Isso vale para a fila, a ficha financeira, o cron da régua e o enfileiramento manual. Na fila, "Recebido hoje" passa a começar à meia-noite da escola (`instanteDaGrade`).
+- **Promessa de pagamento:** em `registrarPromessaPagamento`, "não pode ser no passado" compara com o dia da escola, e a data passa a ser gravada ao meio-dia da escola. Data civil inexistente, como 31/02, agora é recusada; antes rolava para o mês seguinte.
+- `fusoDaEscola(cliente?)` (`relatorios/atendimento.ts`) aceita a transação de quem já está dentro de uma. O padrão continua America/Sao_Paulo.
+- **Testes (TDD, com relógio fixo):** às 23h30 de Brasília (02h30 UTC do dia seguinte), o D0 e o D-3 ainda não saem, a promessa ainda vale e o D+30 ainda não restringe; à 00h30 saem. Há também casos para as três convenções de gravação e para "recebido hoje" com `vi.setSystemTime`. Os testes da régua deixaram de usar datas no relógio local do processo. Antes da correção, em UTC, os casos das 23h30 do D+30 falhavam e reproduziam o bug.
+- **Fora do escopo** (mesmo tipo de problema, mas fora do fluxo da régua): o teto de mensagens por contato/dia do despachante (`whatsapp/despachante.ts`, `inicioDia`) e o corte mensal do fechamento automático de comissões (`financeiro/cron-financeiro.ts`) ainda usam o relógio do servidor.
+- Nenhuma migration nova.
+- Evidências (banco descartável `erp_genius_test_regua`, `migrate deploy`, apagado ao fim): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` 0 erros, 40 avisos; `npm test` saída 0 com TZ=UTC e com TZ=America/Sao_Paulo, 754 arquivos e 5612 testes em cada; `npm run build` saída 0; integração em `cobrancas`, `gravacoes/{autorizacao,troca-fonte-reposicao}`, `whatsapp/{ciclo-cobranca,acoes,cron,motor/ponta-a-ponta}`, `retomada/fluxo` e `financeiro/gateway` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0, 11 arquivos, 120 testes.
 
 ### #166, 1º lote: idempotência em `criarMatricula` e na Nova oportunidade — 2026-10-19
 
