@@ -20,9 +20,9 @@ export interface MetricasAtendimento {
   calor: number[][];
 }
 
-/** Fuso institucional (padrão America/Sao_Paulo); `db` permite ler pelo tx do chamador. */
-export async function fusoDaEscola(db: Pick<Prisma.TransactionClient, "configuracaoOperacional"> = prisma): Promise<string> {
-  const c = await db.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
+/** Fuso institucional da escola (padrão America/Sao_Paulo). Aceita a transação de quem já está dentro de uma. */
+export async function fusoDaEscola(cliente: Pick<Prisma.TransactionClient, "configuracaoOperacional"> = prisma): Promise<string> {
+  const c = await cliente.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
   return c?.fusoInstitucional ?? FUSO_PADRAO;
 }
 

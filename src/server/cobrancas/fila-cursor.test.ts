@@ -21,6 +21,7 @@ vi.mock("@/lib/prisma", () => ({
     templateWhatsApp: { findMany: m.templates },
     intencaoMensagem: { findMany: m.intencoes },
     atendimentoWhatsApp: { findMany: m.atendimentos },
+    configuracaoOperacional: { findUnique: async () => null }, // fusoDaEscola() → America/Sao_Paulo
   },
 }));
 vi.mock("./politica", () => ({ carregarPoliticaRegua: async () => ({ degraus: [], templateIdPorPasso: new Map() }) }));
