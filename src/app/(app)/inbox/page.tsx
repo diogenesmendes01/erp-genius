@@ -9,6 +9,10 @@ import { InboxNovo } from "./InboxNovo";
 import { NovoAtendimento } from "./NovoAtendimento";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { listarNotificacoes } from "@/server/crm/notificacoes";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { SinoNotificacoes } from "../tarefas/SinoNotificacoes";
 
 // Inbox novo (Fase 3): lista paginada por cursor + conversa + painel; tempo real por SSE (sem polling).
 // Guard de página ANTES de qualquer consulta; o row-level real é o escopo do atendimento (whatsapp/escopo.ts).
@@ -35,13 +39,16 @@ export default async function InboxPage({
     throw e;
   });
 
-  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro] = await Promise.all([
+  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola] = await Promise.all([
     listarAtendimentosPagina(usuario, filtros, cursor),
     listarOpcoesAtendimento(),
     triagemOuNula(),
     admin ? listarRevisoesEnvio() : Promise.resolve(null),
     consultarPreferenciaFusoEquipe(),
     opcoesFiltroInbox(usuario),
+    // Sino (SLA): o aviso de prazo estourado abre o atendimento aqui (?c=).
+    listarNotificacoes(usuario),
+    fusoDaEscola(),
   ]);
   // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
   if (c && !inicial.itens.some((i) => i.id === c)) {
@@ -52,7 +59,10 @@ export default async function InboxPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-medium">Inbox</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-medium">Inbox</h1>
+        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={resolverFusoExibicao(fuso, fusoEscola)} fusoEscola={fusoEscola} />
+      </div>
       <div className="mt-4">
         <NovoAtendimento opcoes={opcoes} />
       </div>

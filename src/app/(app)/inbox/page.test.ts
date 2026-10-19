@@ -10,6 +10,10 @@ vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFuso
 vi.mock("@/server/inbox/opcoes-filtro", () => ({ opcoesFiltroInbox: mocks.filtro }));
 vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro }: { opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}` }));
 vi.mock("./NovoAtendimento", () => ({ NovoAtendimento: () => "novo-atendimento" }));
+const sino = vi.hoisted(() => ({ listar: vi.fn(), fuso: vi.fn() }));
+vi.mock("@/server/crm/notificacoes", () => ({ listarNotificacoes: sino.listar }));
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: sino.fuso }));
+vi.mock("../tarefas/SinoNotificacoes", () => ({ SinoNotificacoes: ({ notificacoes, fusoExibicao, fusoEscola }: { notificacoes: { titulo: string }[]; fusoExibicao: string; fusoEscola: string }) => `Notificações:${notificacoes.map((n) => n.titulo)}|${fusoExibicao}|${fusoEscola}` }));
 
 import Page from "./page";
 
@@ -23,6 +27,15 @@ describe("InboxPage", () => {
     mocks.triagem.mockResolvedValue([]); mocks.revisoes.mockResolvedValue([]);
     mocks.pagina.mockResolvedValue({ itens: [], proximo: null }); mocks.opcoes.mockResolvedValue({ destinos: [], numeros: [] });
     mocks.filtro.mockResolvedValue({ setores: ["SECRETARIA"], numeros: [{ id: "n1", rotulo: "Secretaria" }] });
+    sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo");
+  });
+
+  it("inbox_mostra_o_sino", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    sino.listar.mockResolvedValue([{ id: "n1", titulo: "Prazo estourado: Maria (Comercial)" }]);
+    const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(h).toContain("Notificações:Prazo estourado: Maria (Comercial)|America/Sao_Paulo|America/Sao_Paulo");
+    expect(sino.listar).toHaveBeenCalledWith({ id: "secretaria", papeis: ["SECRETARIA_ACADEMICA"] });
   });
 
   it("entrega ao InboxNovo os setores e números do PainelFiltros, consultados com o usuário da sessão", async () => {
