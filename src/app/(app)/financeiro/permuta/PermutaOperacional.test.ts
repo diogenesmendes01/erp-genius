@@ -24,7 +24,7 @@ vi.mock("@/server/financeiro/permuta-servico", () => ({
 
 }));
 
-import { PermutaOperacional } from "./PermutaOperacional";
+import { DecidirCompensacao, PermutaOperacional } from "./PermutaOperacional";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 
@@ -35,6 +35,10 @@ function todos(no: unknown, tipo: string): No[] {
   if (!no || typeof no !== "object") return [];
 
   const atual = no as No;
+
+  // A decisão tem estado próprio e teste próprio (PermutaOperacional.confirmacao.test.ts): aqui fica fechada.
+
+  if (atual.type === DecidirCompensacao) return [];
 
   if (typeof atual.type === "function") return todos((atual.type as (props: Record<string, unknown>) => unknown)(atual.props ?? {}), tipo);
 
@@ -110,7 +114,8 @@ it("mantém chave e entrada para retry quando o acordo falha", async () => {
 
 });
 
-it("submete confirmação, proposta e decisão com os destinos explícitos", async () => {
+// A decisão (aprovar abate mensalidades) passou para o ConfirmarAcao: PermutaOperacional.confirmacao.test.ts.
+it("submete confirmação e proposta com os destinos explícitos", async () => {
 
   preparar();
 
@@ -120,13 +125,13 @@ it("submete confirmação, proposta e decisão com os destinos explícitos", asy
 
   const formularios = todos(PermutaOperacional({ acordos, podeFinanceiro: true, podePedagogico: true, podeAprovar: true }), "form");
 
-  await enviar(formularios[1]); await enviar(formularios[2]); await enviar(formularios[3]);
+  await enviar(formularios[1]); await enviar(formularios[2]);
 
   expect(mocks.confirmar).toHaveBeenCalledWith(expect.objectContaining({ acordoId: "acordo", chaveIdempotencia: "chave-nova" }));
 
   expect(mocks.propor).toHaveBeenCalledWith(expect.objectContaining({ confirmacaoId: "confirmacao", destinos: [{ cobrancaId: "cobranca", valor: "100" }] }));
 
-  expect(mocks.decidir).toHaveBeenCalledWith({ propostaId: "proposta", aprovar: true, motivo: "Condições conferidas" });
+  expect(mocks.decidir).not.toHaveBeenCalled();
 
 });
 

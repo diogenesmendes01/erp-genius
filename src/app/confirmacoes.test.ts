@@ -58,6 +58,10 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "desconectarNumero", achado: "Fase 4D" },
   { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", modulo: "@/server/whatsapp/motor/acoes-mensagem", acao: "apagarMensagemWhatsApp", achado: "Fase 4D" },
   { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", modulo: "@/server/whatsapp/motor/acoes-mensagem", acao: "encaminharMensagemWhatsApp", achado: "Fase 4D" },
+  // Confirmações que faltavam (#175; triagem B6).
+  { arquivo: "src/app/(app)/financeiro/permuta/PermutaOperacional.tsx", modulo: "@/server/financeiro/permuta-servico", acao: "decidirCompensacaoPermuta", achado: "L2142" },
+  { arquivo: "src/app/(app)/alunos/[id]/portal/painel.tsx", modulo: "@/server/portal-aluno/actions", acao: "decidirTrocaEmailPortalAluno", achado: "L325" },
+  { arquivo: "src/app/(app)/academico/recuperacoes/[realizacaoId]/Formularios.tsx", modulo: "@/server/avaliacoes/recuperacao-nota", acao: "decidirNotaRecuperacao", achado: "L1479" },
 ];
 
 /** Cópia literal das exceções (arquivo, trecho exato). */
@@ -73,6 +77,10 @@ const COPIA_EXCECOES: { arquivo: string; trecho: string }[] = [
   { arquivo: "src/app/(app)/configuracao/catalogo/IdiomasPainel.tsx", trecho: "alternarIdiomaAtivo(id)" },
   { arquivo: "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx", trecho: "alternarPrecoAtivo(id)" },
   { arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx", trecho: "definirSituacaoEmpresa(empresa.id, true)" },
+  // Confirmações que faltavam (#175; triagem B6).
+  { arquivo: "src/app/(app)/financeiro/permuta/PermutaOperacional.tsx", trecho: "decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: false, motivo: motivoDecisao })" },
+  { arquivo: "src/app/(app)/alunos/[id]/portal/painel.tsx", trecho: "decidirTrocaEmailPortalAluno({ solicitacaoId, aprovar: false, motivo })" },
+  { arquivo: "src/app/(app)/academico/recuperacoes/[realizacaoId]/Formularios.tsx", trecho: "decidirNotaRecuperacao({ notaId, entradaHash, aprovada: false, motivo })" },
 ];
 
 /** Cópia literal dos imports que saem do src (arquivo, especificador exato). */

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { FinalidadeAtendimentoWhatsApp, Prisma } from "@prisma/client";
 import type { UsuarioSessao } from "@/server/_shared";
-import { escopoAtendimentos } from "./escopo";
+import { escopoAtendimentos, type Db } from "./escopo";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { chaveDeReabertura } from "./status-atendimento";
 import { atendimentoComercialDaLinha, atendimentoDaLinhaParaInbound } from "./linha-comercial";
@@ -75,14 +75,15 @@ export async function garantirAtendimento(tx: Prisma.TransactionClient, dados: {
   });
 }
 
-export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: string, enviar = false) {
-  const a = await prisma.atendimentoWhatsApp.findFirst({
-    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario, { enviar })] },
+/** `db`: a transação em curso, quando a checagem roda dentro de uma (ver `escopoAtendimentos`). */
+export async function atendimentoVisivel(usuario: UsuarioSessao, atendimentoId: string, enviar = false, db: Db = prisma) {
+  const a = await db.atendimentoWhatsApp.findFirst({
+    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario, { enviar, db })] },
     include: { conversa: { include: { numero: true, contato: true } } },
   });
   if (!a) return null;
   const i = comContatoIndividual(a);
-  if (enviar && !await destinatarioAtualDoAtendimento(i)) return null;
+  if (enviar && !await destinatarioAtualDoAtendimento(i, db)) return null;
   return { ...i, transporteId: i.conversaId, numeroId: i.conversa.numeroId, contatoId: i.conversa.contato.id,
     numero: i.conversa.numero, contato: i.conversa.contato };
 }

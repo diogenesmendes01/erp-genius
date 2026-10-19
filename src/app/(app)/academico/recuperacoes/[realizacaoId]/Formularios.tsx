@@ -5,6 +5,7 @@ import { salvarNotaRecuperacao, decidirNotaRecuperacao } from "@/server/avaliaco
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 
 export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno }: { realizacaoId: string; versaoEsperada: number; nota: string | null; comentarioAluno: string }) {
   const [erro, setErro] = useState(""), [enviando, setEnviando] = useState(false);
@@ -30,21 +31,37 @@ export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno
   </form>;
 }
 
-export function ConferirNota({ notaId, entradaHash, podeAprovar }: { notaId: string; entradaHash: string; podeAprovar: boolean }) {
+// Conferir (docs/42 L1479): oficializar não tem volta pela tela (depois só muda por correção aprovada). Escolher
+// "Oficializar esta versão" só abre o ConfirmarAcao, que repete versão e nota e exige marcar a conferência; a action
+// roda nele e mostra a falha lá. Repetir a mesma decisão não grava de novo (servidor). Rejeitar continua direto.
+export function ConferirNota({ notaId, entradaHash, podeAprovar, versao, nota }: { notaId: string; entradaHash: string; podeAprovar: boolean; versao: number; nota: string | null }) {
   const [erro, setErro] = useState(""), [enviando, setEnviando] = useState(false), router = useRouter();
-  return <form className="space-y-2" onSubmit={async e => {
-    e.preventDefault(); if (enviando) return;
-    const data = new FormData(e.currentTarget); setEnviando(true); setErro("");
+  const [oficializando, setOficializando] = useState<{ motivo: string } | null>(null);
+  async function rejeitar(motivo: string) {
+    setEnviando(true); setErro("");
     try {
-      const r = await decidirNotaRecuperacao({ notaId, entradaHash, aprovada: data.get("decisao") === "aprovar", motivo: String(data.get("motivo") ?? "") });
+      const r = await decidirNotaRecuperacao({ notaId, entradaHash, aprovada: false, motivo });
       if (!r.ok) setErro(r.erro); else router.refresh();
     } catch { setErro(MSG_DECISAO_INCERTA); }
     finally { setEnviando(false); }
+  }
+  return <form className="space-y-2" onSubmit={e => {
+    e.preventDefault(); if (enviando) return;
+    const data = new FormData(e.currentTarget), motivo = String(data.get("motivo") ?? "");
+    if (data.get("decisao") === "aprovar") { setErro(""); setOficializando({ motivo }); return; }
+    void rejeitar(motivo);
   }}>
-    <fieldset disabled={enviando} className="space-y-2">
+    <fieldset disabled={enviando || !!oficializando} className="space-y-2">
       <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Oficializar esta versão</option>}<option value="rejeitar">Rejeitar esta versão</option></select></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{enviando ? "Conferindo…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}
+    {oficializando && <ConfirmarAcao titulo={`Oficializar a versão ${versao} da nota?`} confirmacao="oficialização da nota" conferencia="Conferi a nota e a evidência antes de oficializar." idempotente
+      acao={() => decidirNotaRecuperacao({ notaId, entradaHash, aprovada: true, motivo: oficializando.motivo })}
+      aoConcluir={() => { setOficializando(null); router.refresh(); }} aoCancelar={() => setOficializando(null)}>
+      <p>A nota {nota ?? "informada"} (versão {versao}) vira a nota oficial desta recuperação.</p>
+      <p>Não há desfazer pela tela: depois disso, ela só muda por fluxo de correção aprovado.</p>
+      <p>Motivo registrado: {oficializando.motivo.trim()}</p>
+    </ConfirmarAcao>}
   </form>;
 }
