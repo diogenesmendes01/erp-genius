@@ -6,8 +6,8 @@ import { ErroRegra } from "./sessao";
 // que já a têm (`modelos-tx.ts`, `reposicao-entrega-operacional.ts`): a chave é do autor, a entrada vira
 // `entradaHash`, a repetição idêntica devolve o resultado original e a chave reaproveitada com outra entrada
 // é recusada. Aqui a chave mora no payload do Evento de criação, gravado na MESMA transação do registro
-// (docs/13), o que dispensa coluna nova; a busca usa o índice `Evento_idempotencia_idx`. A trava consultiva serializa reenvios simultâneos da mesma chave:
-// o segundo espera o primeiro confirmar e então o encontra.
+// (docs/13), o que dispensa coluna nova; a busca usa o índice `Evento_idempotencia_idx`. A trava consultiva
+// serializa reenvios simultâneos da mesma chave: o segundo espera o primeiro confirmar e então o encontra.
 
 /** Hash da entrada já validada, sem a própria chave. */
 export function hashEntrada(entrada: unknown): string {
