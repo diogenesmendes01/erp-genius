@@ -8,12 +8,13 @@ import { hrefDaAbaAtiva, type AbaSubnav } from "@/lib/nav";
 // mais longo, com `exato`/`prefixo` para as áreas de prefixos aninhados (ver AbaSubnav).
 export function SubTabs({
   tabs,
-  ariaLabel = "Sub-navegação",
+  ariaLabel,
 }: {
   tabs: AbaSubnav[];
-  /** Diferencie quando houver mais de um SubTabs na mesma página — o default serve só a
-   *  instância única de hoje. */
-  ariaLabel?: string;
+  /** Nome da navegação para o leitor de tela ("Seções do CRM"). Obrigatório (C45, #170): o antigo padrão
+   *  "Sub-navegação" não dizia de que área eram as abas e se repetia quando dois SubTabs ficam na mesma
+   *  página (/configuracao/whatsapp mostra o da configuração e o do WhatsApp). */
+  ariaLabel: string;
 }) {
   const pathname = usePathname();
   const hrefAtivo = hrefDaAbaAtiva(pathname ?? "", tabs);

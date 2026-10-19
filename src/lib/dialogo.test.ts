@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { criarPilhaDialogos, proximoFocoPreso } from "./dialogo";
+import { criarPilhaDialogos, isolarFundo, proximoFocoPreso } from "./dialogo";
 import { Modal } from "@/components/Modal";
 
 describe("proximoFocoPreso (Tab preso no diálogo)", () => {
@@ -73,5 +73,48 @@ describe("Modal como alertdialog (ConfirmarAcao)", () => {
     const padrao = renderToStaticMarkup(createElement(Modal, { titulo: "Registrar recebimento", aoFechar: () => {} }));
     expect(padrao).toMatch(/role="dialog"/);
     expect(padrao).not.toContain("aria-describedby");
+  });
+});
+
+describe("isolarFundo (C14, #170: o fundo do modal em portal fica inert)", () => {
+  type No = { nome: string; tagName: string; inert: boolean };
+  const no = (nome: string, tagName = "DIV", inert = false): No => ({ nome, tagName, inert });
+  const corpo = (...filhos: No[]) => ({ children: filhos });
+  const camadaEm = (pai: { children: No[] }) => { const c = { ...no("modal"), parentElement: pai }; pai.children.push(c); return c; };
+  const inertes = (pai: { children: No[] }) => pai.children.filter((n) => n.inert).map((n) => n.nome);
+
+  it("marca os irmãos da camada (a página por trás) e deixa a própria camada, scripts e estilos de fora", () => {
+    const body = corpo(no("app"), no("anunciador-de-rota"), no("s", "SCRIPT"), no("css", "STYLE"));
+    const camada = camadaEm(body);
+    isolarFundo(camada);
+    expect(inertes(body)).toEqual(["app", "anunciador-de-rota"]);
+    expect(camada.inert).toBe(false);
+  });
+
+  it("desfazer solta só o que ele marcou: um nó que já era inert (a gaveta fechada) continua inert", () => {
+    const body = corpo(no("app"), no("gaveta-fechada", "DIV", true));
+    const desfazer = isolarFundo(camadaEm(body));
+    expect(inertes(body)).toEqual(["app", "gaveta-fechada"]);
+    desfazer();
+    expect(inertes(body)).toEqual(["gaveta-fechada"]);
+  });
+
+  it("modal sobre modal: o de cima isola o de baixo e, ao fechar, devolve só ele — o fundo continua isolado", () => {
+    const body = corpo(no("app"));
+    const baixo = camadaEm(body);
+    const soltarBaixo = isolarFundo(baixo);
+    const cima = camadaEm(body);
+    const soltarCima = isolarFundo(cima);
+    expect(inertes(body)).toEqual(["app", "modal"]);
+    expect(baixo.inert).toBe(true);
+    soltarCima();
+    expect(baixo.inert).toBe(false);
+    expect(inertes(body)).toEqual(["app"]);
+    soltarBaixo();
+    expect(inertes(body)).toEqual([]);
+  });
+
+  it("camada sem pai (já desmontada): nada a fazer", () => {
+    expect(() => isolarFundo({ parentElement: null })()).not.toThrow();
   });
 });

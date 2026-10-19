@@ -17,7 +17,7 @@ export default async function ConfiguracaoLayout({
       <p className="mt-1 text-sm text-gray-500">
         Configurações disponíveis para sua função.
       </p>
-      <SubTabs tabs={tabs} />
+      <SubTabs tabs={tabs} ariaLabel="Seções da configuração" />
       <div className="mt-6">{children}</div>
     </div>
   );

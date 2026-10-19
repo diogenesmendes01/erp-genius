@@ -1,6 +1,6 @@
 import { Genero } from "@prisma/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 
 // R1 da #145 (B3): o erro por campo dos dois passos, pelo clique — sem DOM. O componente é chamado como
 // função com os ganchos de src/test/tela-sem-dom.ts; botões e controles dos <Campo> são acionados na árvore.
@@ -16,10 +16,12 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: m.push, refresh: m
 vi.mock("@/server/matricula/acoes", () => ({ criarMatricula: m.criar }));
 vi.mock("@/server/turmas/acoes", () => ({ solicitarAberturaTurma: m.abrir }));
 
-import { MatriculaFormulario, errosDoPasso2, type DadosPasso2 } from "./MatriculaFormulario";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MatriculaFormulario, Stepper, errosDoPasso2, type DadosPasso2 } from "./MatriculaFormulario";
+import { VARIANTES_BOTAO } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
-import { campos, clicar, criarGanchos, documentoQueRegistraFoco, elementos, errosDosCampos, preencher } from "@/test/tela-sem-dom";
+import { botao, campos, clicar, criarGanchos, documentoQueRegistraFoco, elementos, errosDosCampos, preencher } from "@/test/tela-sem-dom";
 
 const props = {
   podeCriar: true,
@@ -290,5 +292,41 @@ describe("matrícula nova — validação do passo 2 (função pura)", () => {
   it("tudo vazio: as chaves saem na ordem da tela", () => {
     const vazio: DadosPasso2 = { taxaValor: "", mensalidadeValor: "", certificadoValor: "x", referenciaCobertura: "", primeiroVencimento: "", inicioCobertura: "" };
     expect(Object.keys(errosDoPasso2(vazio).erros)).toEqual(["taxa", "mensalidade", "referenciaCobertura", "primeiroVencimento", "inicioCobertura", "certificado"]);
+  });
+});
+
+// B12 (#170 C30 e #168 C49): a etapa atual é anunciada e a ação que conclui o assistente é a primária.
+describe("matrícula nova — acessibilidade do assistente", () => {
+  /** O Stepper da árvore, desenhado como o React o desenharia (ele não tem ganchos). */
+  const stepperDaTela = (t: ReactNode) => {
+    const no = elementos(t).find((n) => n.type === Stepper);
+    expect(no, "Stepper na tela").toBeDefined();
+    return renderToStaticMarkup(createElement(Stepper, no!.props as Parameters<typeof Stepper>[0]));
+  };
+  const etapaAtual = (html: string) => [...html.matchAll(/<button[^>]*aria-current="step"[^>]*>.*?<\/button>/g)].map((m) => m[0].replace(/<[^>]+>/g, ""));
+
+  it("passo 1: a lista de etapas marca só \"Informações do aluno\" com aria-current=\"step\"", () => {
+    const html = stepperDaTela(tela());
+    expect(html).toMatch(/^<ol aria-label="Etapas da matrícula"/);
+    expect(etapaAtual(html)).toEqual(["1Informações do aluno"]);
+  });
+
+  it("ao avançar, aria-current passa para \"Curso, alocação e contrato\"; ao voltar, retorna", () => {
+    irAoPasso2();
+    expect(etapaAtual(stepperDaTela(tela()))).toEqual(["2Curso, alocação e contrato"]);
+    clicar(tela(), "← Voltar");
+    expect(etapaAtual(stepperDaTela(tela()))).toEqual(["1Informações do aluno"]);
+  });
+
+  it("C30: no passo 2, \"Salvar matrícula\" é primário (como o \"Próximo\" do passo 1) e \"← Voltar\" é secundário", () => {
+    const primario = VARIANTES_BOTAO.primario, secundario = VARIANTES_BOTAO.secundario;
+    expect(String(botao(tela(), PROXIMO).props.className)).toContain(primario);
+    irAoPasso2();
+    const t = tela();
+    const salvar = botao(t, "Salvar matrícula");
+    expect(String(salvar.props.className)).toContain(primario);
+    expect(String(salvar.props.className)).not.toContain(secundario);
+    expect(salvar.props.type).toBe("button");
+    expect(String(botao(t, "← Voltar").props.className)).toContain(secundario);
   });
 });

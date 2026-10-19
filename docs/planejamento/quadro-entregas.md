@@ -3586,6 +3586,47 @@ Branch `claude/pendencias-241-244`, base `main` d54280b6, com merge de 858d38e9 
   - `npm test`: saída 0, 775 arquivos e 5.758 testes.
   - `npm run build`: saída 0.
 
+### Triagem B12 e B17: lote de acessibilidade e travas do CI (ref. #170) — 2026-10-19
+
+Branch `claude/triagem-b12-b17`, base `main` d2adffd4. Cada item foi conferido no `main` antes de mexer; todos ainda estavam abertos.
+- **B12, acessibilidade:**
+  - **#168 C49, wizard da matrícula:** o `Stepper` de `matriculas/nova/MatriculaFormulario.tsx` virou `<ol aria-label="Etapas da matrícula">`, com `aria-current="step"` no passo atual.
+  - **#170 C30:** no passo 2, "Salvar matrícula" passou a `primario` (com `type="button"`); "← Voltar" segue `secundario`. Mapa de botões (`src/app/botoes-mapa.ts`) atualizado.
+  - **#173 C6, `CampoMoeda`:** o aviso visível continua mudando a cada tecla, mas deixou de ser `role="alert"`. Fica ligado ao input por `aria-describedby`, e o anúncio sai de uma região `role="status"` sempre montada, preenchida no blur com o aviso que ficou e esvaziada ao voltar a digitar. Exceção ancorada em `feedback-separado.test.ts` para `setAnunciado(aviso)`.
+  - **#170 C14, `Modal`:** no navegador, o modal vai para um portal em `document.body`. Enquanto ele está aberto, o resto da página fica `inert` (`isolarFundo`, em `lib/dialogo.ts`). O isolamento roda no mesmo efeito do foco: o fundo é isolado depois que o foco entra no diálogo e é solto antes de o foco voltar a quem abriu. No HTML do servidor e na hidratação, o modal sai no lugar, como antes. Os `ConfirmarAcao` que ficam dentro de um `<form>` (4 telas) só têm botões `type="button"`, então nada dependia do form de fora.
+  - **#170 C45, `SubTabs`:** `ariaLabel` virou obrigatório, sem o padrão "Sub-navegação"; `/configuracao` ganhou "Seções da configuração". A trava confere que cada `<SubTabs>` do app tem rótulo literal próprio.
+- **B17, CI e travas:**
+  - **C46:** o lint do CI roda `npx eslint . --max-warnings 40`, o número atual. `src/test/ci-workflow.test.ts` trava o teto.
+  - **#204 C1:** `src/server/crm/comissoes-painel.test.ts` confere, com Prisma mockado, o `where` de "Matriculadas sem comissão": `vendedorDonoId` no mesmo `AND` do escopo, sem datas, e nenhuma consulta para VENDEDOR.
+  - **C38:** a âncora do cursor da fila de agenda de 2ª chamada é lida no universo da fila (decisão aprovada + disponibilização), não em qualquer proposta. Teste unitário lê o SQL montado; `filas-cursor.test.ts` segue verde.
+  - **C51:** a trava de anúncio (`anuncios.test.ts`) só aceita `role="alert"`/`"status"`, `role={…}` que escolhe entre os dois, `aria-live` polite/assertive ou a nota estática declarada (`role="note"`). Antes passava qualquer `role=`, incluindo `data-role` e `aria-live="off"`. O detector de "resultado incerto" em variável ou template já está coberto pela trava AST de `feedback-separado.test.ts` (E3, E6).
+  - **C55b:** `src/test/guard-pagina.ts` passa a ver papel guardado em membro (`obj.p = sessao.papeis`, `obj["p"] = …`) e lido por chave calculada (`sessao["pap" + "eis"]` resolvida; chave montada com valor desconhecido lê papel, por cautela).
+- **Fora deste PR (pendências):**
+  - `docker build` no CI (C47): pesado, fica para um job próprio.
+  - `coolify-db-init.test.ts` (C47): obsoleto, o arquivo saiu com a Evolution (8ded2f5c).
+  - C48 (travas de enum da R3 da #138, `ETAPA_LABEL`, fornecedor, badges `{label, cls}`) e C54 (limites declarados de 7 travas): são grandes e cada trava pede uma releitura própria. Ficam para PRs separadas.
+  - C53: o manifesto já trava os usos do `EstadoVazio` arquivo a arquivo, então o piso solto é redundante. O caso B2 (exceção exata somada à edição do manifesto) exige redesenhar a trava de exceções.
+- Nenhuma migration nova. A integração da fila de 2ª chamada (`segunda-chamada-agenda-inicial.int.test.ts`) não rodou aqui, porque o container não tem Docker.
+- Evidências no head, sobre o `main` d2adffd4:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
+  - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 779 arquivos e 5.801 testes.
+  - `npm run build`: saída 0.
+
+### Revisão da #249: modal solta o fundo antes do feedback (C1) e integração do cursor `antes` (C2) — 2026-10-19
+
+Branch `claude/modal-feedback-inert`, base `main` 2a209fd4.
+- **C1, `useDialogo` (`src/lib/dialogo.ts`):** o fundo isolado pelo `Modal` em portal passa a ser solto na limpeza de um efeito de layout, dentro do próprio commit. Antes, ele só era solto na limpeza do `useEffect`. Quando a tela fecha a confirmação e publica o resultado no mesmo lote (confirma → fecha → `FeedbackAcao`), o texto entrava na região `role="status"` com a página ainda `inert`, e o leitor de tela podia não anunciar. A ordem foi mantida: o foco entra e depois o fundo vira inert; o fundo é solto e depois o foco volta. O foco segue no efeito passivo, e a limpeza passiva só devolve o foco (`soltarUmaVez`: soltar de novo não faz nada). No servidor, o gancho cai no `useEffect`, sem o aviso de `useLayoutEffect` no HTML.
+- **Teste do C1 (`src/components/Modal.feedback.test.ts`):** o react-dom/client roda de verdade sobre um DOM mínimo (`src/test/dom-minimo.ts`). O projeto não tem jsdom nem Testing Library, e agentes não mexem em package/lockfile. Um `MutationObserver` confere que, quando o texto entra na região status, ela já não está dentro de um ancestral `inert`, e que o foco volta a quem abriu. O relógio do Scheduler é avançado para ele ceder entre o commit e os efeitos passivos, o caso de um commit maior que a fatia de 5 ms. Sem a correção, o teste falha com `inert: true`. `dialogo.interacao.test.ts` foi ajustado às duas limpezas e ganhou o caso "a limpeza do commit solta o fundo sem mexer no foco".
+- **C2, fila de 2ª chamada:** novo caso em `segunda-chamada-agenda-inicial.int.test.ts` para o cursor `antes`. São 22 fontes. A âncora do `antes` é agendada e sai da fila, e chega uma fonte nova à frente. A volta devolve a primeira página igual à original, e a volta seguinte chega ao começo, que é a primeira página lida do início (`lerPaginaDaFila`). Uma âncora fora do universo da fila (proposta sem decisão, mais antiga que as fontes) vale o mesmo que um id inexistente e não posiciona a leitura.
+- Nenhuma migration nova.
+- Evidências no head, sobre o `main` 2a209fd4:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos.
+  - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 780 arquivos e 5.803 testes.
+  - `npm run build`: saída 0.
+  - Integração `segunda-chamada-agenda-inicial.int.test.ts` no Postgres da porta 54329, banco descartável `erp_genius_test_modal` (`migrate deploy`, perfil temporário fora do commit): saída 0, com 13 testes.
+
 ### Fuso da escola, parte 4: atraso de mensalidade no dia da escola, datas digitadas no fuso da escola e adiamento direto à janela (pontos do #247) — 2026-10-19
 
 Branch `claude/fuso-parte4`, base `main` fef6d467 (#247). Mesmo padrão do #239, #243 e #247: o dia é o civil da escola (`fusoDaEscola()`), nunca o do servidor, que roda em UTC. Cada ponto começou com um teste com relógio fixo que falhava; todos verdes com TZ=UTC e com TZ=America/Sao_Paulo.

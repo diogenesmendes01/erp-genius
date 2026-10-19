@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -15,7 +17,7 @@ const tabs = [
 describe("SubTabs", () => {
   it("destaca só a sub-aba de prefixo mais longo em /configuracao/whatsapp", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
-    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
     expect(html).toMatch(/<a(?=[^>]*\shref="\/configuracao\/whatsapp")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-solid[^"]*")[^>]*>/);
     expect([...html.matchAll(/aria-current="page"/g)]).toHaveLength(1);
     expect([...html.matchAll(/class="[^"]*bg-brand-solid[^"]*"/g)]).toHaveLength(1);
@@ -23,7 +25,7 @@ describe("SubTabs", () => {
 
   it("aba ativa: fundo bg-brand-solid com texto on-brand; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
-    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
     expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-on-brand"]));
     expect(classeDe("/configuracao")).not.toContain("bg-brand-solid");
@@ -33,7 +35,7 @@ describe("SubTabs", () => {
 
   it("destaca a aba geral quando a rota é exatamente /configuracao", () => {
     mocks.pathname.mockReturnValue("/configuracao");
-    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
     expect(html).toMatch(/<a(?=[^>]*\shref="\/configuracao")(?=[^>]*\saria-current="page")(?=[^>]*\sclass="[^"]*bg-brand-solid[^"]*")[^>]*>/);
     expect([...html.matchAll(/aria-current="page"/g)]).toHaveLength(1);
   });
@@ -47,7 +49,7 @@ describe("SubTabs", () => {
     ];
     const marcadas = (caminho: string) => {
       mocks.pathname.mockReturnValue(caminho);
-      const html = renderToStaticMarkup(createElement(SubTabs, { tabs: aninhadas }));
+      const html = renderToStaticMarkup(createElement(SubTabs, { tabs: aninhadas, ariaLabel: "Seções do acadêmico" }));
       return [...html.matchAll(/<a[^>]*aria-current="page"[^>]*>/g)].map((m) => m[0].match(/\shref="([^"]+)"/)?.[1]);
     };
     expect(marcadas("/academico")).toEqual(["/academico"]);
@@ -57,17 +59,30 @@ describe("SubTabs", () => {
     expect(marcadas("/academico/segundas-chamadas/a1/P1")).toEqual([]);
   });
 
-  it("aceita um aria-label próprio para distinguir mais de um SubTabs na mesma página", () => {
+  it("o aria-label recebido nomeia a navegação (C45: sem o antigo padrão \"Sub-navegação\")", () => {
     mocks.pathname.mockReturnValue("/configuracao");
-    const semLabel = renderToStaticMarkup(createElement(SubTabs, { tabs }));
-    expect(semLabel).toContain('aria-label="Sub-navegação"');
-    const comLabel = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Sub-navegação de canais" }));
-    expect(comLabel).toContain('aria-label="Sub-navegação de canais"');
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções do WhatsApp" }));
+    expect(html).toMatch(/^<nav class="[^"]*" aria-label="Seções do WhatsApp">/);
+    expect(html).not.toContain("Sub-navegação");
+  });
+
+  it("todo <SubTabs> do app declara um aria-label literal próprio, sem repetir o de outra área (C45, #170)", () => {
+    const usos = (readdirSync("src/app", { recursive: true }) as string[])
+      .filter((f) => f.endsWith(".tsx"))
+      .flatMap((f) => [...readFileSync(join("src/app", f), "utf-8").matchAll(/<SubTabs\b[^>]*>/g)].map((m) => ({ arquivo: f, tag: m[0] })));
+    expect(usos.length).toBeGreaterThanOrEqual(6);
+    const rotulos = usos.map(({ arquivo, tag }) => {
+      const r = /\bariaLabel="([^"]+)"/.exec(tag)?.[1];
+      expect(r, `${arquivo}: ${tag}`).toBeTruthy();
+      expect(r, arquivo).not.toBe("Sub-navegação");
+      return r;
+    });
+    expect(new Set(rotulos).size, rotulos.join(" | ")).toBe(rotulos.length);
   });
 
   it("sub-aba ativa é pílula sólida com text-on-brand", () => {
     mocks.pathname.mockReturnValue("/configuracao/whatsapp");
-    const html = renderToStaticMarkup(createElement(SubTabs, { tabs }));
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
     expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["rounded-full", "px-3", "py-1.5", "max-sm:min-h-11", "bg-brand-solid", "text-on-brand", "font-medium"]));
     expect(classeDe("/configuracao")).toEqual(expect.arrayContaining(["rounded-full", "text-gray-600", "hover:bg-highlight"]));
