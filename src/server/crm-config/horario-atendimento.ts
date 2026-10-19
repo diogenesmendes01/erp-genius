@@ -66,7 +66,8 @@ function intervalosDoDia(cal: HorarioAtendimento, data: string): Intervalo[] {
 /**
  * Vencimento do prazo de `minutos` a partir de `inicio`, contando só dentro do calendário (no fuso da
  * escola). Sem calendário ou sem intervalos, a contagem é corrida. Fora do horário, o relógio começa na
- * próxima abertura; a sobra do dia passa para o próximo dia de atendimento.
+ * próxima abertura; a sobra do dia passa para o próximo dia de atendimento. Se o prazo não couber em
+ * 400 dias do calendário (dias de atendimento todos em feriados), avisa no log e conta corrido; nunca lança.
  */
 export function prazoVenceEm(inicio: Date, minutos: number, calendario: HorarioAtendimento | null, fuso: string): Date {
   if (!calendario || calendario.intervalos.length === 0) return new Date(inicio.getTime() + minutos * 60_000);
@@ -87,7 +88,10 @@ export function prazoVenceEm(inicio: Date, minutos: number, calendario: HorarioA
       cursor = fecha;
     }
   }
-  throw new Error(`Prazo não cabe em ${MAX_DIAS} dias do horário de atendimento; revise o calendário.`);
+  // Quem chama é o inbound, dentro da transação: não lançar (C2 da R1 do #241). Como o horário inválido em
+  // `prazoRespostaEm`, avisa no log e conta corrido.
+  console.warn(`[sla] prazo não cabe em ${MAX_DIAS} dias do horário de atendimento; prazo contado corrido.`);
+  return new Date(inicio.getTime() + minutos * 60_000);
 }
 
 /** O instante está dentro de um intervalo de atendimento (fechamento exclusivo; feriado fica fora). */

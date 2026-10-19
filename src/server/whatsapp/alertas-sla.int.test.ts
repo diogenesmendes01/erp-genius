@@ -3,6 +3,7 @@ import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, truncarBanco } from "@/test/integracao";
 import { rodarAlertasSla } from "./alertas-sla";
+import { processarStatusNormalizado } from "./inbound";
 
 type U = Awaited<ReturnType<typeof criarUsuario>>;
 let v1: U, g1: U, admin: U;
@@ -82,6 +83,45 @@ describe("rodarAlertasSla", () => {
     const msg = { atendimentoId: a.id, conversaId: conv.conversaId, numeroId: conv.conversa.numeroId, direcao: "SAIDA" as const, origem: "IA" as const, driver: "MOTOR" as const };
     await prisma.mensagemWhatsApp.create({ data: { ...msg, status: "FALHOU", criadoEm: minutos(-30) } });
     await prisma.mensagemWhatsApp.create({ data: { ...msg, status: "ENVIADA", criadoEm: minutos(-1) } });
+    expect((await rodarAlertasSla(agora)).alertados).toBe(1);
+  });
+
+  // C3 da R1 do #241: vale o momento em que a resposta da IA saiu (`enviadaEm`), não o `criadoEm`.
+  it("aria_criada_na_fila_antes_do_prazo_e_enviada_depois_nao_evita_o_alerta", async () => {
+    const a = await atendimento();
+    const conv = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id }, include: { conversa: { include: { numero: true } } } });
+    await prisma.mensagemWhatsApp.create({ data: {
+      atendimentoId: a.id, conversaId: conv.conversaId, numeroId: conv.conversa.numeroId, direcao: "SAIDA", origem: "IA", driver: "MOTOR",
+      status: "NA_FILA", providerMessageId: `ia-fila-${a.id}`, criadoEm: minutos(-30),
+    } });
+    // O envio é confirmado pelo canal só depois do vencimento (minutos(-5)).
+    expect(await processarStatusNormalizado({ numeroProviderRef: conv.conversa.numero.providerRef, providerMessageId: `ia-fila-${a.id}`, status: "ENVIADA", driver: "MOTOR", quando: minutos(-2) })).toBe("atualizado");
+    expect((await rodarAlertasSla(agora)).alertados).toBe(1);
+  });
+
+  it("aria_enviada_no_prazo_e_lida_depois_nao_alerta", async () => {
+    const a = await atendimento();
+    const conv = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id }, include: { conversa: { include: { numero: true } } } });
+    await prisma.mensagemWhatsApp.create({ data: {
+      atendimentoId: a.id, conversaId: conv.conversaId, numeroId: conv.conversa.numeroId, direcao: "SAIDA", origem: "IA", driver: "MOTOR",
+      status: "NA_FILA", providerMessageId: `ia-lida-${a.id}`, criadoEm: minutos(-40),
+    } });
+    const status = (s: "ENVIADA" | "LIDA", quando: Date) =>
+      processarStatusNormalizado({ numeroProviderRef: conv.conversa.numero.providerRef, providerMessageId: `ia-lida-${a.id}`, status: s, driver: "MOTOR", quando });
+    await status("ENVIADA", minutos(-30));
+    // Lida depois do vencimento: o statusEm avança, mas o envio foi no prazo.
+    await status("LIDA", minutos(-1));
+    expect((await rodarAlertasSla(agora)).alertados).toBe(0);
+  });
+
+  it("aria_que_saltou_da_fila_direto_para_entregue_depois_do_prazo_alerta", async () => {
+    const a = await atendimento();
+    const conv = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id }, include: { conversa: { include: { numero: true } } } });
+    await prisma.mensagemWhatsApp.create({ data: {
+      atendimentoId: a.id, conversaId: conv.conversaId, numeroId: conv.conversa.numeroId, direcao: "SAIDA", origem: "IA", driver: "MOTOR",
+      status: "NA_FILA", providerMessageId: `ia-entregue-${a.id}`, criadoEm: minutos(-30),
+    } });
+    await processarStatusNormalizado({ numeroProviderRef: conv.conversa.numero.providerRef, providerMessageId: `ia-entregue-${a.id}`, status: "ENTREGUE", driver: "MOTOR", quando: minutos(-1) });
     expect((await rodarAlertasSla(agora)).alertados).toBe(1);
   });
 

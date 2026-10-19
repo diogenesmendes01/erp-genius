@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { dentroDoHorario, HorarioAtendimentoSchema, prazoVenceEm, type HorarioAtendimento } from "./horario-atendimento";
 
 const d = (s: string) => new Date(s);
@@ -31,9 +31,33 @@ describe("prazoVenceEm", () => {
     const cal: HorarioAtendimento = { intervalos: [{ dia: 0, inicio: "01:30", fim: "05:00" }], feriados: [] };
     expect(prazoVenceEm(d("2026-11-01T00:00-04:00"), 10, cal, "America/New_York")).toEqual(d("2026-11-01T01:40-04:00"));
   });
-  it("calendario_so_de_feriados_que_nunca_abre_lanca_erro", () => {
-    const cal: HorarioAtendimento = { intervalos: [{ dia: 1, inicio: "08:00", fim: "09:00" }], feriados: [] };
-    expect(() => prazoVenceEm(d("2026-10-19T08:00-03:00"), 60 * 24 * 400, cal, fuso)).toThrow(/400 dias/);
+  // C2 da R1 do #241: quem chama é o inbound (na transação). Prazo que não cabe em 400 dias não derruba o
+  // inbound: avisa no log e conta corrido, como o horário inválido.
+  it("prazo_que_nao_cabe_em_400_dias_avisa_e_conta_corrido", () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const cal: HorarioAtendimento = { intervalos: [{ dia: 1, inicio: "08:00", fim: "09:00" }], feriados: [] };
+      const inicio = d("2026-10-19T08:00-03:00");
+      const minutos = 60 * 24 * 400;
+      expect(prazoVenceEm(inicio, minutos, cal, fuso)).toEqual(new Date(inicio.getTime() + minutos * 60_000));
+      expect(aviso).toHaveBeenCalledTimes(1);
+      expect(String(aviso.mock.calls[0][0])).toMatch(/400 dias.*corrido/);
+    } finally {
+      aviso.mockRestore();
+    }
+  });
+  it("calendario_cujos_dias_de_atendimento_sao_todos_feriados_conta_corrido", () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // Só segundas-feiras, e todas as segundas dos próximos 400 dias são feriado.
+      const feriados = Array.from({ length: 60 }, (_, k) => new Date(Date.parse("2026-10-19T00:00:00Z") + k * 7 * 86_400_000).toISOString().slice(0, 10));
+      const cal: HorarioAtendimento = { intervalos: [{ dia: 1, inicio: "08:00", fim: "18:00" }], feriados };
+      const inicio = d("2026-10-19T08:00-03:00");
+      expect(prazoVenceEm(inicio, 30, cal, fuso)).toEqual(d("2026-10-19T08:30-03:00"));
+      expect(aviso).toHaveBeenCalledTimes(1);
+    } finally {
+      aviso.mockRestore();
+    }
   });
   it("schema_rejeita_fim_antes_do_inicio_e_sobreposicao", () => {
     expect(HorarioAtendimentoSchema.safeParse({ intervalos: [{ dia: 1, inicio: "18:00", fim: "08:00" }] }).success).toBe(false);

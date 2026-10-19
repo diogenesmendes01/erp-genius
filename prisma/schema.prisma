@@ -2534,6 +2534,10 @@ model MensagemWhatsApp {
 
   status            StatusMensagem    @default(NA_FILA)
   statusEm          DateTime?
+  // Momento em que a SAIDA saiu (gravada já ENVIADA, ou o primeiro status de envio vindo de NA_FILA).
+  // statusEm avança com ENTREGUE/LIDA; este não. Nulo em ENTRADA, NA_FILA, FALHOU e nas saídas anteriores
+  // à coluna (essas já nasciam enviadas: o criadoEm equivale). Usado pelo D6 do SLA (alertas-sla.ts).
+  enviadaEm         DateTime?
   driver            DriverWhatsApp
   origem            OrigemEnvio? // só SAIDA
   providerMessageId String? // wamid/key.id do driver

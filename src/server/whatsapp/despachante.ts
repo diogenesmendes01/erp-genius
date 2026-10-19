@@ -615,6 +615,7 @@ export async function despacharFila(
             midiaPath: it.midiaPath,
             status: "ENVIADA",
             statusEm: agora,
+            enviadaEm: agora,
             driver: "MOTOR",
             origem: it.origem,
             clientMessageId,
@@ -918,7 +919,7 @@ export async function despacharMensagemGrupo(mensagemId: string, agora: Date = n
     // O eco `origem: "erp"` pode ter chegado antes: só completa o que falta.
     await prisma.mensagemWhatsApp.updateMany({
       where: { id: m.id, status: "NA_FILA" },
-      data: { status: "ENVIADA", statusEm: agora, providerMessageId: r.providerMessageId, mensagemIdMotor: r.mensagemIdMotor ?? null },
+      data: { status: "ENVIADA", statusEm: agora, enviadaEm: agora, providerMessageId: r.providerMessageId, mensagemIdMotor: r.mensagemIdMotor ?? null },
     });
     return "ENVIADA";
   } catch (e) {
