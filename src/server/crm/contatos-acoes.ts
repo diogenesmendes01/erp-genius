@@ -3,7 +3,7 @@
 import { atribuirTag, removerTag } from "./tags";
 import { definirValorCampo } from "./campos";
 import { editarPessoa, registrarNotaPessoa, registrarOptOut, type EditarPessoaInput } from "./contatos";
-import { mesclarPessoas } from "./duplicados";
+import { mesclarPessoas, previaMesclaPessoas } from "./duplicados";
 
 // Ações de servidor da tela /contatos. Os módulos de origem exportam constantes e tipos, então não podem ser "use server".
 // Cada uma só repassa: sessão, capacidade, escopo e Evento ficam na ação de domínio.
@@ -34,4 +34,9 @@ export async function definirCampoDaFicha(input: { campoId: string; pessoaId: st
 
 export async function mesclarContatosDaLista(input: Parameters<typeof mesclarPessoas>[0]) {
   return mesclarPessoas(input);
+}
+
+/** Prévia da mesclagem (D14): só leitura, mostrada no diálogo antes de confirmar. */
+export async function previaMesclaDaLista(input: Parameters<typeof previaMesclaPessoas>[0]) {
+  return previaMesclaPessoas(input);
 }

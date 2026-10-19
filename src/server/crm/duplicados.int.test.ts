@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, criarAlunoMinimo, eventosDo } from "@/test/integracao";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { registrarNotaPessoa } from "./contatos";
-import { MSG_NOME_ALUNO, mesclarPessoas, sugerirDuplicados } from "./duplicados";
+import { MSG_ALCADA_SECRETARIA_MESCLA, MSG_NOME_ALUNO, mesclarPessoas, previaMesclaPessoas, sugerirDuplicados } from "./duplicados";
 import { historicoPessoa } from "./historico";
 
 const logadoComo = (id: string) => authMock.mockResolvedValue({ user: { id } });
@@ -74,12 +74,43 @@ describe("mesclarPessoas", () => {
     expect(JSON.stringify((await eventosDo("Pessoa", a)).at(-1)!.payload)).not.toContain("@");
   });
 
-  it("move o cadastro acadêmico quando só a secundária o tem e não remescla lápide", async () => {
-    logadoComo(gerente.id);
+  // D14 (decisão do dono, 19/10/2026; #211 C4): repor Aluno/Responsavel.pessoaId pela mescla exige a alçada da
+  // Secretaria (Secretaria Acadêmica ou Administrador), além de contatos.mesclar, e grava um evento no cadastro.
+  it("move o cadastro acadêmico quando só a secundária o tem, com a alçada da Secretaria, e não remescla lápide", async () => {
+    const gcSecretaria = await criarUsuario([Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA], "GC e Secretaria");
+    logadoComo(gcSecretaria.id);
     expect((await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { nome: "secundaria", email: "secundaria" } })).ok).toBe(true);
     expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: a } })).toMatchObject({ nome: "Aluno", email: null });
-    expect((await prisma.aluno.findFirstOrThrow({ where: { pessoaId: a } })).pessoaId).toBe(a);
+    const aluno = await prisma.aluno.findFirstOrThrow({ where: { pessoaId: a } });
+    const ev = (await eventosDo("Aluno", aluno.id)).filter((e) => e.tipo === "CadastroAcademicoRepontado");
+    expect(ev).toHaveLength(1);
+    expect(ev[0].autorId).toBe(gcSecretaria.id);
+    expect(ev[0].payload).toMatchObject({ pessoaIdAntes: pessoaAluno, pessoaIdDepois: a, via: "mescla" });
     expect((await mesclarPessoas({ principalId: pessoaResponsavel, secundariaId: pessoaAluno, escolhas: {} })).ok).toBe(false);
+  });
+
+  it("sem a alçada da Secretaria, o gerente comercial não move o cadastro acadêmico e nada muda", async () => {
+    logadoComo(gerente.id);
+    expect(await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { nome: "secundaria", email: "secundaria" } }))
+      .toEqual({ ok: false, erro: MSG_ALCADA_SECRETARIA_MESCLA });
+    expect(await mesclarPessoas({ principalId: a, secundariaId: pessoaResponsavel, escolhas: { nome: "secundaria" } }))
+      .toEqual({ ok: false, erro: MSG_ALCADA_SECRETARIA_MESCLA });
+    expect(await prisma.aluno.count({ where: { pessoaId: pessoaAluno } })).toBe(1);
+    expect(await prisma.responsavel.count({ where: { pessoaId: pessoaResponsavel } })).toBe(1);
+    expect((await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoaAluno } })).mescladaEmId).toBeNull();
+    expect(await prisma.evento.count({ where: { tipo: { in: ["PessoasMescladas", "CadastroAcademicoRepontado"] } } })).toBe(0);
+    // O cadastro acadêmico na principal não é movido: a mescla comum segue com o gerente.
+    expect((await mesclarPessoas({ principalId: pessoaResponsavel, secundariaId: b, escolhas: {} })).ok).toBe(true);
+  });
+
+  it("Administrador tem a alçada da Secretaria e move o responsável, com evento no cadastro do responsável", async () => {
+    const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    logadoComo(admin.id);
+    expect((await mesclarPessoas({ principalId: a, secundariaId: pessoaResponsavel, escolhas: {} })).ok).toBe(true);
+    const resp = await prisma.responsavel.findFirstOrThrow({ where: { pessoaId: a } });
+    const ev = (await eventosDo("Responsavel", resp.id)).filter((e) => e.tipo === "CadastroAcademicoRepontado");
+    expect(ev).toHaveLength(1);
+    expect(ev[0].payload).toMatchObject({ pessoaIdAntes: pessoaResponsavel, pessoaIdDepois: a, via: "mescla" });
   });
 
   it("quem não é Administrador não muda nome nem e-mail de aluno pela mescla", async () => {
@@ -88,7 +119,8 @@ describe("mesclarPessoas", () => {
     // Aluno na principal, nome da secundária escolhido.
     expect(await mesclarPessoas({ principalId: pessoaAluno, secundariaId: a, escolhas: { nome: "secundaria" } }))
       .toEqual({ ok: false, erro: MSG_NOME_ALUNO });
-    // Aluno na secundária, nome comercial da principal mantido.
+    // Aluno na secundária, nome comercial da principal mantido (com a alçada da Secretaria, que não é Administrador).
+    logadoComo((await criarUsuario([Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA], "GC e Secretaria")).id);
     expect(await mesclarPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { email: "secundaria" } }))
       .toEqual({ ok: false, erro: MSG_NOME_ALUNO });
     expect(await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoaAluno } })).toMatchObject({ nome: "Aluno", email: "aluno@x.com", mescladaEmId: null });
@@ -123,6 +155,52 @@ describe("mesclarPessoas", () => {
     logadoComo(gerente.id);
     await mesclarPessoas({ principalId: a, secundariaId: b, escolhas: {} });
     expect((await prisma.valorCampoPersonalizado.findFirstOrThrow({ where: { pessoaId: a, campoId: campo.id } })).valor).toBe("A");
+  });
+});
+
+describe("previaMesclaPessoas (D14)", () => {
+  it("mostra o que muda sem gravar nada, inclusive o cadastro acadêmico e a alçada exigida", async () => {
+    const op = await prisma.oportunidade.create({ data: { nome: "Op", pessoaId: pessoaAluno } });
+    await prisma.participanteOportunidade.create({ data: { oportunidadeId: op.id, pessoaId: pessoaAluno, papel: "DECISOR" } });
+    await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+5511900000009", pessoaId: pessoaAluno } });
+    const t1 = await prisma.tag.create({ data: { nome: "t1", cor: "NEUTRA" } });
+    await prisma.pessoaTag.create({ data: { pessoaId: pessoaAluno, tagId: t1.id } });
+    const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    logadoComo(admin.id);
+    const antes = await prisma.evento.count();
+    const r = await previaMesclaPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { nome: "secundaria", email: "secundaria" } });
+    expect(r).toEqual({
+      ok: true,
+      dado: {
+        principal: { id: a, nome: "Beatriz Lima" },
+        secundaria: { id: pessoaAluno, nome: "Aluno" },
+        camposDaSecundaria: ["nome", "email"],
+        movidos: { contatos: 1, oportunidades: 1, participantes: 1, tags: 1, valoresCampo: 0 },
+        cadastroAcademico: { aluno: true, responsavel: false },
+        exigeSecretaria: true,
+        bloqueio: null,
+      },
+    });
+    expect(await prisma.evento.count()).toBe(antes);
+    expect(await prisma.oportunidade.count({ where: { pessoaId: pessoaAluno } })).toBe(1);
+    expect((await prisma.pessoa.findUniqueOrThrow({ where: { id: pessoaAluno } })).mescladaEmId).toBeNull();
+  });
+
+  it("sem a alçada, a prévia já diz que a mesclagem será recusada", async () => {
+    logadoComo(gerente.id);
+    const r = await previaMesclaPessoas({ principalId: a, secundariaId: pessoaAluno, escolhas: { nome: "secundaria", email: "secundaria" } });
+    expect(r).toMatchObject({ ok: true, dado: { exigeSecretaria: true, bloqueio: MSG_ALCADA_SECRETARIA_MESCLA } });
+  });
+
+  it("mescla comum: sem cadastro acadêmico, sem alçada extra", async () => {
+    logadoComo(gerente.id);
+    const r = await previaMesclaPessoas({ principalId: a, secundariaId: b, escolhas: { cidade: "secundaria" } });
+    expect(r).toMatchObject({ ok: true, dado: { camposDaSecundaria: ["cidade"], cadastroAcademico: null, exigeSecretaria: false, bloqueio: null } });
+  });
+
+  it("vendedor não vê a prévia (sem contatos.mesclar)", async () => {
+    logadoComo(vendedor.id);
+    expect((await previaMesclaPessoas({ principalId: a, secundariaId: b, escolhas: {} })).ok).toBe(false);
   });
 });
 

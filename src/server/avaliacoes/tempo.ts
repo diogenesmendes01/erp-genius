@@ -2,6 +2,13 @@ import { z } from "zod";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 
+/**
+ * D10 (decisão do dono, 19/10/2026; C7 da #170): sem o fuso da escola, o lançamento de avaliação fica bloqueado —
+ * em UTC a data da avaliação pode cair no dia errado. A tela esconde o formulário e a ação recusa com esta mensagem.
+ */
+export const MSG_LANCAMENTO_SEM_FUSO =
+  "Lançamento de avaliação bloqueado: a escola ainda não tem fuso configurado, e em UTC a data da avaliação pode cair no dia errado. Configure o fuso da escola em Configuração › Operação (perfil de administração) antes de lançar.";
+
 export const DataHoraAvaliacaoSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::[0-5]\d(?:\.\d{1,3})?)?$/);
 export function instanteAvaliacaoLocal(local: string, fuso: string) {
   DataHoraAvaliacaoSchema.parse(local);

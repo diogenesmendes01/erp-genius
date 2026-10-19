@@ -3612,3 +3612,35 @@ Branch `claude/triagem-b12-b17`, base `main` d2adffd4. Cada item foi conferido n
   - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
   - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 779 arquivos e 5.801 testes.
   - `npm run build`: saída 0.
+
+### Decisões D9, D10, D11 e D14 do dono: B2B oculto, avaliação exige fuso, mescla com alçada (D11 parado) — 2026-10-19
+
+- **D9, cobrança de empresas oculta (L2282):** a escola não usa a fatura B2B.
+  - A chave fica em `src/lib/funcionalidades.ts`: `COBRANCA_B2B_ATIVA = false`, com `MSG_COBRANCA_B2B_DESLIGADA` ao lado.
+  - Na ficha da empresa, as faturas antigas continuam listadas para consulta. "Registrar pagamento" e "Cancelar fatura" somem, e um aviso diz por quê.
+  - `fecharFaturaB2B`, `pagarFaturaB2B` e `cancelarFaturaB2B` recusam com a mensagem, depois da sessão e da alçada e antes de qualquer leitura.
+  - Nada foi apagado. Para religar, basta trocar a chave para `true`. Os testes do fluxo antigo (`FichaEmpresa.confirmacao.test.ts` e `b2b.int.test.ts`) já religam a chave.
+  - Testes novos: `fatura-desligada.test.ts` (o servidor recusa) e o bloco D9 da ficha (a ação some).
+- **D10, avaliação sem fuso da escola (C7 da #170):**
+  - A página de lançamento sempre confere o fuso da escola, mesmo com `?fuso=` na URL.
+  - Sem o fuso, o formulário não aparece. No lugar entra `MSG_LANCAMENTO_SEM_FUSO`, com o link "Configurar o fuso da escola" (`/configuracao/operacao`). O histórico continua visível.
+  - `salvarLancamentoAvaliacaoLocal` também recusa com a mesma mensagem.
+  - `salvarLancamentoAvaliacao` (instante absoluto, sem tela) não mudou: ela não interpreta horário local, e é a base de 15 suítes de integração.
+- **D14, mescla que repõe `Aluno/Responsavel.pessoaId` (#211 C4):**
+  - **Alçada:** mover o cadastro acadêmico exige a alçada da Secretaria (`temAlcadaSecretaria`: Secretaria Acadêmica ou Administrador), além de `contatos.mesclar`. Sem ela, a mescla recusa com `MSG_ALCADA_SECRETARIA_MESCLA` e nada muda. A mescla comum segue igual.
+  - **Prévia:** `previaMesclaPessoas` (`previaMesclaDaLista`, só leitura) devolve o que passa (telefones, oportunidades, participações, tags e campos), os campos que mudam, o cadastro acadêmico que é reposto e o motivo da recusa, quando houver.
+  - **Tela:** "Revisar mesclagem" pede a prévia e a mostra no diálogo. Se a mescla seria recusada, o diálogo não abre e o motivo aparece.
+  - **Evento:** cada cadastro reposto grava `CadastroAcademicoRepontado` no `Aluno` ou no `Responsavel` (agregado novo em `AgregadoTipo`), com `pessoaIdAntes`, `pessoaIdDepois` e `via: "mescla"`. O `PessoasMescladas` continua como antes.
+  - **Mudança no teste:** o teste de nome/e-mail de aluno pela mescla passou a usar um usuário com GC e Secretaria, porque o gerente comercial sozinho agora para na alçada.
+- **D11, previsão de pagamento das comissões (C50/L2259): PARADO, precisa de regra.**
+  - `Comissao.dataPrevistaPagamento` existe desde o `init`, mas nenhum código grava esse campo, nem hoje nem no histórico do git. A única leitura era `listarComissoes` (`financeiro/consultas.ts:86`).
+  - O `/comissoes` antigo nunca mostrou a coluna: o doc 42 L2259 já a dava como ausente.
+  - O que existe de regra é o fechamento: o manual ("Fechar mês", sem data) e o automático. O automático nasce desligado e paga no 1º tick do mês as comissões aprovadas até o mês anterior.
+  - Derivar a previsão daí ("1º dia do mês seguinte à aprovação") seria regra nova. Ela também seria ambígua com o automático desligado. Falta o dono definir a regra.
+- Nenhuma migration nova.
+- Evidências no head, sobre o `main` 2a209fd4:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base, nenhum nos arquivos tocados).
+  - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 782 arquivos e 5.818 testes.
+  - `npm run build`: saída 0.
+  - Integração de `src/server/crm`, `src/server/empresas` e `src/server/avaliacoes` (banco `erp_genius_test_d9`): 58 arquivos e 503 testes, todos verdes.

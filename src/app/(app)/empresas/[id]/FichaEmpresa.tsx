@@ -18,6 +18,8 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { formatarCompetencia, formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Aviso } from "@/components/Aviso";
+import { COBRANCA_B2B_ATIVA, MSG_COBRANCA_B2B_DESLIGADA } from "@/lib/funcionalidades";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
@@ -174,6 +176,9 @@ export function FichaEmpresa({
       {/* Faturas corporativas já registradas permanecem consultáveis e editáveis. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Faturas históricas</h2>
+        {/* D9 (19/10/2026): a escola não usa a cobrança de empresas. As faturas antigas ficam para consulta, sem
+            pagar nem cancelar; a ação do servidor também recusa. Religar: COBRANCA_B2B_ATIVA em src/lib/funcionalidades. */}
+        {!COBRANCA_B2B_ATIVA && faturas.length > 0 && <Aviso tom="info" className="mb-3">{MSG_COBRANCA_B2B_DESLIGADA}</Aviso>}
 
         {faturas.length === 0 ? (
           <EstadoVazio>
@@ -207,7 +212,7 @@ export function FichaEmpresa({
                     <td className="px-3 py-2 text-gray-600">{formatarDataCivil(f.vencimento.slice(0, 10))}</td>
                     <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
                     <td className="px-3 py-2">
-                      {f.status === "FECHADA" && (
+                      {COBRANCA_B2B_ATIVA && f.status === "FECHADA" && (
                         // "Cancelar" sozinho, ao lado da ação primária, lia-se como "desistir da operação":
                         // o botão diz o que cancela e fica afastado do pagamento.
                         <span className="flex flex-wrap gap-3">
