@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { dinheiro, saldoAtual } from "@/server/financeiro/regras";
+import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { dataRetomada, type ParcelaRetomada, type SolicitarRetomadaInput } from "./schema";
 
 type Monetario = Prisma.Decimal | string | number;
@@ -81,19 +82,24 @@ export function impedimentoRetomada(status: string, pausaId: string | null, paus
   return null;
 }
 
-export function dataMinimaReprogramacao(agora = new Date()) {
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+/** Q176 (#164): o "hoje" da retomada é o dia civil da escola, nunca o do servidor (UTC em produção). */
+export function dataMinimaReprogramacao(agora: Date, fuso: string) {
+  return dataCivilInstitucional(agora, fuso);
 }
 
-export function validarDatasNaoRetroativas(alvos: SnapshotRetomada["alvos"], agora: Date) {
-  const hoje = dataRetomada(dataMinimaReprogramacao(agora))!;
-  hoje.setHours(0, 0, 0, 0);
-  if (alvos.some((alvo) => new Date(alvo.novoVencimento) < hoje)) {
+/** Data AAAA-MM-DD que a pessoa digitou, de volta do instante que `dataRetomada` gravou (meio-dia local). */
+function dataDigitada(instante: Date) {
+  return `${instante.getFullYear()}-${String(instante.getMonth() + 1).padStart(2, "0")}-${String(instante.getDate()).padStart(2, "0")}`;
+}
+
+export function validarDatasNaoRetroativas(alvos: SnapshotRetomada["alvos"], agora: Date, fuso: string) {
+  const hoje = dataMinimaReprogramacao(agora, fuso);
+  if (alvos.some((alvo) => dataDigitada(new Date(alvo.novoVencimento)) < hoje)) {
     throw new ErroRegra("A reprogramação não pode usar datas passadas. Envie uma proposta com novas datas.");
   }
 }
 
-export function montarSnapshotRetomada(alunoId: string, pausaId: string, matriculas: MatriculaRetomadaFonte[], input: SolicitarRetomadaInput, agora = new Date()): SnapshotRetomada {
+export function montarSnapshotRetomada(alunoId: string, pausaId: string, matriculas: MatriculaRetomadaFonte[], input: SolicitarRetomadaInput, agora: Date, fuso: string): SnapshotRetomada {
   const elegiveis = parcelasElegiveisRetomada(matriculas, pausaId);
   const datas = input.novosVencimentos ?? [];
   let alvos: SnapshotRetomada["alvos"];
@@ -110,7 +116,7 @@ export function montarSnapshotRetomada(alunoId: string, pausaId: string, matricu
       if (!vencimento) throw new ErroRegra("Informe uma data real no formato AAAA-MM-DD.");
       return { cobrancaId: p.cobrancaId, novoVencimento: vencimento.toISOString() };
     });
-    validarDatasNaoRetroativas(alvos, agora);
+    validarDatasNaoRetroativas(alvos, agora, fuso);
   }
   return { versaoFormato: 1, alunoId, pausaId, matriculas: estadoFinanceiroRetomada(matriculas), alvos: alvos.sort((a, b) => a.cobrancaId.localeCompare(b.cobrancaId)) };
 }
