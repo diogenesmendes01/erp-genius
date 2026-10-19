@@ -265,6 +265,20 @@ describe("papeisDoGuardFonte — o guard é a única recusa (B6)", () => {
     expect(() => ler(delegado)).toThrow(BRANDA);
   });
 
+  it("C55b (#170, R1 da #171): papéis guardados num membro ou lidos por chave calculada — a recusa branda continua vista", () => {
+    // Atribuição a membro: o nome do membro e o objeto passam a ler papel.
+    expect(() => ler(pagina(`${SESSAO}  const obj = { p: [] as string[] };\n  obj.p = sessao.papeis;\n  if (!obj.p.includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
+    expect(() => ler(pagina(`${SESSAO}  const obj: Record<string, string[]> = {};\n  obj["p"] = sessao.papeis;\n  if (!obj["p"].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
+    expect(() => ler(pagina(`${SESSAO}  const caixa = { lista: [] as string[] };\n  caixa.lista = sessao.papeis;\n  const { lista } = caixa;\n  if (!lista.includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
+    // Chave calculada no acesso: constante montada por partes é resolvida; não constante lê papel, por cautela.
+    expect(() => ler(pagina(`${SESSAO}  if (!sessao["pap" + "eis"].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
+    expect(() => ler(pagina(`${SESSAO}  if (!sessao[\`pap\${"eis"}\`].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
+    expect(() => ler(pagina(`${SESSAO}  const parte = String(1);\n  if (!sessao["pap" + parte].includes("GERENTE_PEDAGOGICO")) return null;`))).toThrow(BRANDA);
+    // Sem papel: acesso por índice numérico ou por variável comum e membro que não recebe papel seguem livres.
+    expect(ler(pagina(`${SESSAO}  const itens = [1, 2];\n  const i = 0;\n  if (!itens[i] || !itens[1]) return null;\n  const obj = { n: 0 };\n  obj.n = itens.length;\n  if (!obj.n) return null;`))).toEqual(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]);
+    expect(ler(pagina(`${SESSAO}  const rotulos: Record<string, string> = { a: "A" };\n  if (!rotulos["a" + "b"]) return null;`))).toEqual(["GERENTE_PEDAGOGICO", "SECRETARIA_ACADEMICA"]);
+  });
+
   it("T13: return sob while, do ou for com condição de papel — lança", () => {
     expect(() => ler(pagina(`${SESSAO}  while (!temPapel(sessao, Papel.GERENTE_PEDAGOGICO)) return null;`, COM_TEM_PAPEL))).toThrow(BRANDA);
     expect(() => ler(pagina(`${SESSAO}  do return null; while (!temPapel(sessao, Papel.GERENTE_PEDAGOGICO));`, COM_TEM_PAPEL))).toThrow(BRANDA);
