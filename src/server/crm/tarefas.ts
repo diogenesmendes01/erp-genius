@@ -4,7 +4,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
@@ -24,6 +26,8 @@ export type TarefaInput = {
   pessoaId?: string;
   alunoId?: string;
   matriculaId?: string;
+  /** Só na criação pela tela (#166): a mesma chave até o sucesso; o reenvio devolve a tarefa já criada. */
+  chaveIdempotencia?: string;
 };
 
 const MSG_VERSAO = "Esta tarefa foi alterada por outra pessoa. Recarregue.";
@@ -51,6 +55,8 @@ const CamposSchema = z.object({
   alunoId: z.string().min(1).optional(),
   matriculaId: z.string().min(1).optional(),
 });
+// A chave só existe na criação: `editarTarefa` continua com `CamposSchema.partial()`, sem ela.
+const CriarTarefaSchema = CamposSchema.extend({ chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
 
 const CANAL_POR_TIPO: Partial<Record<TipoTarefa, string>> = {
   WHATSAPP: "WHATSAPP",
@@ -156,8 +162,18 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
-    const d = CamposSchema.parse(i);
+    const { chaveIdempotencia, ...d } = CriarTarefaSchema.parse(i);
+    // Idempotência (#166): a chave e o hash da entrada vão no payload do `TarefaCriada` da tarefa. O lembrete
+    // mora na própria tarefa (`lembrarEm`), então o reenvio não agenda um segundo aviso.
+    const marca = marcaIdempotencia(chaveIdempotencia, d);
     const id = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "TarefaCriada", agregadoTipo: "Tarefa", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se a tarefa já aparece antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
       const fuso = await carregarFusoInstitucionalTx(tx);
       if (!fuso) throw new ErroRegra("Configure o fuso institucional da escola antes de criar tarefas.");
       const dataCivil = d.dataCivil ?? null;
@@ -189,7 +205,7 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
         },
       });
       const payload = { titulo: t.titulo, tipo: t.tipo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil, hora };
-      await registrarEvento(tx, { tipo: "TarefaCriada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: autor.id, payload });
+      await registrarEvento(tx, { tipo: "TarefaCriada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: autor.id, payload: { ...payload, ...marca } });
       await espelharNoLead(tx, t, "TarefaCriada", autor.id, { tarefaId: t.id, ...payload });
       return t.id;
     });
