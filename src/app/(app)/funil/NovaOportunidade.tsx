@@ -8,6 +8,7 @@ import { Campo } from "@/components/Campo";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { ORIGEM_CANAL_LABEL } from "@/lib/labels";
 import { criarLead, moverEtapa } from "@/server/comercial/acoes";
 import { buscarPossiveisDuplicados } from "@/server/crm/oportunidades";
@@ -47,7 +48,10 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
   aoFechar?: () => void;
 }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // criarLead recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve a
+  // oportunidade já criada. moverEtapa para a etapa em que a oportunidade já está não faz nada.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [empresa, setEmpresa] = useState(false);
   const [nome, setNome] = useState(preenchido?.nome ?? "");
   const [telefone, setTelefone] = useState("");
@@ -123,7 +127,9 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
         criarEmpresa: empresa || undefined,
         vendedorDonoId: podeAtribuir && donoId ? donoId : undefined,
         pessoaId: !empresa && pessoaId ? pessoaId : undefined,
+        chaveIdempotencia: tentativa.atual,
       }));
+      tentativa.depoisDo(d);
       if (d?.tipo !== "ok" || !d.dado) return;
       id = d.dado.id;
       setCriadaId(id);
