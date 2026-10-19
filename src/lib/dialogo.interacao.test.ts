@@ -145,3 +145,42 @@ describe("useDialogo \u2014 pilha ligada ao efeito", () => {
     expect(ouvintes.size).toBe(0);
   });
 });
+
+describe("useDialogo \u2014 isolamento do fundo (C14, #170)", () => {
+  /** A camada do modal no <body>, ao lado do resto da página. */
+  function paginaComCamada() {
+    const app = { tagName: "MAIN", inert: false };
+    const body: { children: unknown[] } = { children: [app] };
+    const camada = { tagName: "DIV", inert: false, parentElement: body };
+    body.children.push(camada);
+    return { app, camada };
+  }
+
+  it("com `isolar`: o fundo fica inert enquanto aberto, depois de o foco entrar no diálogo", () => {
+    const { app, camada } = paginaComCamada();
+    const primeiro = elemento("primeiro");
+    primeiro.focus.mockImplementation(() => { expect(app.inert, "o foco entra antes de o fundo ficar inert").toBe(false); });
+    abrir({ current: caixa(primeiro) }, { aberto: true, aoFechar: vi.fn(), isolar: { current: camada as unknown as HTMLElement } });
+    expect(primeiro.focus).toHaveBeenCalledTimes(1);
+    expect(app.inert).toBe(true);
+    expect(camada.inert).toBe(false);
+  });
+
+  it("ao fechar, o fundo é solto ANTES de o foco voltar a quem abriu (focus() num inert falharia)", () => {
+    const { app, camada } = paginaComCamada();
+    const quemAbriu = elemento("abrir-modal");
+    documento.activeElement = quemAbriu;
+    const fechar = abrir({ current: caixa(elemento("dentro")) }, { aberto: true, aoFechar: vi.fn(), isolar: { current: camada as unknown as HTMLElement } });
+    expect(app.inert).toBe(true);
+    quemAbriu.focus.mockImplementation(() => { expect(app.inert, "fundo solto quando o foco volta").toBe(false); });
+    fechar();
+    expect(quemAbriu.focus).toHaveBeenCalledTimes(1);
+    expect(app.inert).toBe(false);
+  });
+
+  it("sem `isolar` (Drawer, painéis próprios): ninguém vira inert", () => {
+    const { app } = paginaComCamada();
+    abrir({ current: caixa(elemento("a")) }, { aberto: true, aoFechar: vi.fn() });
+    expect(app.inert).toBe(false);
+  });
+});

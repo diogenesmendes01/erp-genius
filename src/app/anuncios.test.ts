@@ -26,11 +26,30 @@ function tagEm(fonte: string, inicio: number) {
   return fonte.slice(inicio);
 }
 
+/**
+ * A tag abre uma região que anuncia: `role="alert"`/`role="status"`, `role={…}` que só escolhe entre os dois
+ * (`role={bloqueia ? "alert" : "status"}`) ou `aria-live` polite/assertive. Antes bastava qualquer `role=` —
+ * `role="presentation"`, `aria-live="off"` e até `data-role` passavam (C51, #170).
+ */
+function anuncia(tag: string) {
+  if (/(?<![\w-])role="(?:alert|status)"|(?<![\w-])aria-live="(?:polite|assertive)"/.test(tag)) return true;
+  const dinamico = /(?<![\w-])role=\{([^}]*)\}/.exec(tag)?.[1];
+  const literais = dinamico ? [...dinamico.matchAll(/"([^"]*)"/g)].map((m) => m[1]) : [];
+  return literais.length > 0 && literais.every((r) => r === "alert" || r === "status");
+}
+
+/**
+ * Além das regiões que anunciam, a trava aceita a nota estática declarada (`role="note"`): texto que acompanha
+ * um campo ou um modo da tela (a nota interna do compositor, o aviso do cadastro do contato), não o resultado
+ * de uma ação. Qualquer outro papel (`presentation`, `none`…) continua acusado.
+ */
+const regiaoDeclarada = (tag: string) => anuncia(tag) || /(?<![\w-])role="note"/.test(tag);
+
 function renderizacoesSemRegiao(variavel: RegExp) {
   const re = new RegExp(String.raw`\{\s*(${variavel.source})\s*&&\s*\(?\s*<(p|div|span)\b`, "g");
   return telas.flatMap(({ arquivo, conteudo }) =>
     [...conteudo.matchAll(re)]
-      .filter((m) => !/\brole=|aria-live=/.test(tagEm(conteudo, m.index! + m[0].lastIndexOf("<"))))
+      .filter((m) => !regiaoDeclarada(tagEm(conteudo, m.index! + m[0].lastIndexOf("<"))))
       .map((m) => `${arquivo}:${conteudo.slice(0, m.index).split("\n").length} ${m[1]}`),
   );
 }
@@ -98,6 +117,15 @@ describe("anúncio do resultado de ações", () => {
         .map((tag) => `${arquivo}: ${tag.slice(0, 80)}`),
     );
     expect(ofensores).toEqual([]);
+  });
+});
+
+describe("anuncia (o que a trava aceita como região de anúncio, C51)", () => {
+  it.each(['<p role="alert">', '<span role="status" className="x">', '<div aria-live="polite">', '<p aria-live="assertive">', '<p role={aviso.bloqueia ? "alert" : "status"}>'])("aceita %s", (tag) => {
+    expect(anuncia(tag)).toBe(true);
+  });
+  it.each(['<p role="presentation">', '<p role="none">', '<div role="note">', '<p aria-live="off">', '<p className="text-danger">', '<p data-role="alert">', '<p role={x ? "alert" : "presentation"}>', "<p role={papel}>"])("recusa %s", (tag) => {
+    expect(anuncia(tag)).toBe(false);
   });
 });
 
