@@ -62,11 +62,12 @@ export const temFiltroEmpresas = (f: FiltrosEmpresas) => !!(f.busca || f.situaca
 
 // A ordem de sempre: cadastro mais recente primeiro (id desempata empresas criadas no mesmo instante).
 const ORDEM_CADASTRO: Prisma.EmpresaOrderByWithRelationInput[] = [{ criadoEm: "desc" }, { id: "desc" }];
-const POR_NOME: Prisma.EmpresaOrderByWithRelationInput[] = [{ nome: "asc" }, { id: "asc" }];
+// Nome: a coluna gerada `nomeOrdenacao` (minúsculas, sem acento — D1, #141).
+const POR_NOME: Prisma.EmpresaOrderByWithRelationInput[] = [{ nomeOrdenacao: "asc" }, { id: "asc" }];
 const CRITERIOS_EMPRESAS: CriteriosOrdenacao<OrdemEmpresas, Prisma.EmpresaOrderByWithRelationInput> = {
   // Código é opcional: empresas sem código ficam no fim nas duas direções.
   codigo: (dir) => [{ codigo: { sort: dir, nulls: "last" } }, { id: dir }],
-  nome: (dir) => [{ nome: dir }, { id: dir }],
+  nome: (dir) => [{ nomeOrdenacao: dir }, { id: dir }],
   // A mesma contagem exibida na coluna (_count de matrículas), feita no banco.
   colaboradores: (dir) => [{ matriculas: { _count: dir } }, ...POR_NOME],
   // Pelo rótulo exibido: crescente = "Ativa" antes de "Inativa" (ativo = true primeiro).
