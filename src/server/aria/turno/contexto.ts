@@ -1,5 +1,7 @@
 import type { EtapaLead, OrigemEnvio, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { aplicarVariaveisResposta } from "@/components/conversa/respostas-rapidas";
+import { respostasParaAria } from "@/server/crm-config/respostas-rapidas";
 import { buscarTrechos } from "../conhecimento/busca";
 import type { ConfigAria } from "../config-schema";
 import { versaoPublicada } from "../versoes";
@@ -26,7 +28,11 @@ export interface ContextoTurno {
   precos: PrecoAria[];
   trechos: { id: string; texto: string }[];
   faq: ConfigAria["faq"];
-  /** Fica vazio até a Task 41 ligar TemplateWhatsApp.ariaPodeUsar. */
+  /**
+   * Respostas rápidas marcadas "Aria pode usar" (Configurações › CRM › Respostas), ativas, do setor
+   * (finalidade) do atendimento e as gerais, por atalho, até LIMITE_RESPOSTAS_ARIA. Entram no prompt
+   * só como referência (não há ação própria) e os valores delas contam como autorizados na guarda.
+   */
   respostasRapidas: { atalho: string; corpo: string }[];
   primeiraDaAria: boolean;
   trocasSemAvanco: number;
@@ -39,6 +45,7 @@ export async function montarContextoTurno(atendimentoId: string, tx?: Prisma.Tra
     select: {
       id: true,
       leadId: true,
+      finalidade: true,
       conversa: { select: { id: true, numeroId: true, contatoId: true } },
     },
   });
@@ -100,7 +107,7 @@ export async function montarContextoTurno(atendimentoId: string, tx?: Prisma.Tra
     precos: lead ? await precosDaOportunidade(lead.id, tx) : [],
     trechos,
     faq: (config?.faq ?? []).filter((f) => f.ativa),
-    respostasRapidas: [],
+    respostasRapidas: (await respostasParaAria(at.finalidade, db)).map((r) => ({ atalho: r.atalho, corpo: r.corpo })),
     primeiraDaAria: jaApresentou === 0,
     trocasSemAvanco,
   };
@@ -181,7 +188,18 @@ export function montarSistema(config: ConfigAria, ctx: ContextoTurno): string {
         : "(nenhuma fonte encontrada)"),
   );
   if (ctx.respostasRapidas.length) {
-    p.push("RESPOSTAS RAPIDAS LIBERADAS\n" + ctx.respostasRapidas.map((r) => `- ${r.atalho}: ${ocultarDadosPessoais(r.corpo)}`).join("\n"));
+    // Variáveis como no compositor do Inbox: {nome} é o nome do atendimento (no Comercial, o do lead) e
+    // {responsavel} é quem responde, aqui a própria Aria. Sem valor conhecido a variável fica, e a
+    // orientação abaixo impede que ela chegue crua ao cliente (no Inbox, o atendente completa).
+    const variaveis = { nome: ctx.oportunidade?.nome, responsavel: config.nome };
+    p.push(
+      [
+        "RESPOSTAS RAPIDAS LIBERADAS",
+        "Textos aprovados pela equipe. Use como referência e adapte à conversa, mas mantenha valores e condições exatamente como estão (eles também são autorizados).",
+        "Se sobrar variável entre chaves (ex.: {curso}) e você não souber o valor pela conversa, reescreva a frase sem ela: nunca envie texto com chaves ao cliente.",
+        ...ctx.respostasRapidas.map((r) => `- ${r.atalho}: ${ocultarDadosPessoais(aplicarVariaveisResposta(r.corpo, variaveis))}`),
+      ].join("\n"),
+    );
   }
   if (ctx.oportunidade) {
     p.push(`OPORTUNIDADE\nEtapa: ${ctx.oportunidade.etapa}\nNome: ${ocultarDadosPessoais(ctx.oportunidade.nome)}`);

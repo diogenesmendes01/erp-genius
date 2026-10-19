@@ -1,4 +1,4 @@
-import { Papel, type FinalidadeAtendimentoWhatsApp } from "@prisma/client";
+import { Papel, type FinalidadeAtendimentoWhatsApp, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado, type UsuarioSessao } from "@/server/_shared";
@@ -93,8 +93,24 @@ export async function listarRespostasRapidas(u: UsuarioSessao): Promise<{ id: st
   return ts.map((t) => ({ id: t.id, atalho: t.atalho ?? "", titulo: t.titulo ?? t.atalho ?? "", corpo: t.corpo, setor: t.setor }));
 }
 
-/** Respostas que a Aria pode usar (lidas pelo contexto do turno). */
-export async function respostasParaAria(): Promise<{ atalho: string; titulo: string; corpo: string; setor: FinalidadeAtendimentoWhatsApp | null }[]> {
-  const ts = await prisma.templateWhatsApp.findMany({ where: { tipo: "RESPOSTA_RAPIDA", arquivadoEm: null, ariaPodeUsar: true }, orderBy: { atalho: "asc" } });
+/**
+ * Teto de respostas no prompt da Aria, o mesmo da FAQ (`config-schema`: até 100 itens de até 2000
+ * caracteres). O corpo já é limitado a 2000 no Schema acima; a ordem por atalho torna o corte estável.
+ */
+export const LIMITE_RESPOSTAS_ARIA = 100;
+
+/**
+ * Respostas que a Aria pode usar no atendimento do setor informado: ativas, marcadas "Aria pode usar",
+ * do próprio setor ou gerais (sem setor). Lidas pelo contexto do turno no `db` recebido (tx do turno).
+ */
+export async function respostasParaAria(
+  setor: FinalidadeAtendimentoWhatsApp,
+  db: Prisma.TransactionClient = prisma,
+): Promise<{ atalho: string; titulo: string; corpo: string; setor: FinalidadeAtendimentoWhatsApp | null }[]> {
+  const ts = await db.templateWhatsApp.findMany({
+    where: { tipo: "RESPOSTA_RAPIDA", arquivadoEm: null, ariaPodeUsar: true, OR: [{ setor: null }, { setor }] },
+    orderBy: [{ atalho: "asc" }, { id: "asc" }],
+    take: LIMITE_RESPOSTAS_ARIA,
+  });
   return ts.map((t) => ({ atalho: t.atalho ?? "", titulo: t.titulo ?? t.atalho ?? "", corpo: t.corpo, setor: t.setor }));
 }
