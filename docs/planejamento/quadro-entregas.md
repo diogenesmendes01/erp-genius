@@ -3399,3 +3399,26 @@ Branch `claude/fase5-g-auditoria`, base `main` 04145a58 + merge de 8cbf1672 (#23
 
 - Novo job `build` no `.github/workflows/ci.yml`: `npm ci`, `prisma generate` e `npm run build`, com o `DATABASE_URL` de teste do workflow e `NODE_OPTIONS=--max-old-space-size=5120`. Motivo: no #234, componentes "use client" importando módulos de servidor com Prisma quebravam o build de produção sem que typecheck, lint ou testes acusassem.
 - Evidência: `npm run build` no `origin/main` (8cbf1672) com a env mínima do CI: saída 0, ~3 min.
+
+### SLA: horário de atendimento por setor e alertas de prazo estourado — 2026-10-19
+
+Branch `claude/sla-completo`, base `main` 78edb2a0. Resolve a pendência C2 da R1 do #233 (`alertarResponsavel`, `alertarGerente` e `contarSoNoHorario` só gravados) e entrega a parte de horário da P5 da Task 39. Plano: `docs/superpowers/plans/2026-10-19-sla-completo.md`. Migration `20261018090000_sla_horario_alertas` (só estrutura, sem `UPDATE` de dados).
+- **Calendário e prazo:** `crm-config/horario-atendimento.ts` (`HorarioAtendimentoSchema`, `prazoVenceEm`, `dentroDoHorario`), puro, no fuso da escola. `PrazoRespostaSetor.horario` (JSON). `prazoRespostaEm` conta só no horário quando `contarSoNoHorario` está ligado e há horário válido; filtro "Prazo estourado", lista e relatórios herdam o prazo útil. Horário de verão: hora pulada avança, hora repetida usa a primeira (`agenda/grade.ts` expõe `candidatosDaGrade`).
+- **Alerta:** `whatsapp/alertas-sla.ts#rodarAlertasSla` no tick do `/api/whatsapp/cron` (chave `alertasSla`): claim atômico de `AtendimentoWhatsApp.slaAlertadoEm`, uma `NotificacaoUsuario` `SLA_ESTOURADO` por destinatário e `SlaEstouradoAlertado` (agregado `AtendimentoWhatsApp`) na mesma transação. O UPDATE do claim emite `atendimento.atualizado` pelo trigger `notificar_inbox` (SSE do Inbox). Nada de WhatsApp nem e-mail.
+- **Sistema de notificações (duas correções):** a unicidade de `NotificacaoUsuario` passa a ser `(tipo, refId, usuarioId, criadaEm)`, pois responsável e gerente na mesma transação têm o mesmo `now()`; `marcarNotificacaoLida` audita no agregado do item (`AtendimentoWhatsApp` para SLA, `Tarefa` para lembrete) em vez de `"Tarefa"` fixo. O sino abre `/inbox?c=<id>` para SLA e aparece também no cabeçalho do Inbox.
+- **Tela:** Distribuição e SLA edita o horário (um intervalo por dia, fuso da escola na legenda), "Copiar de outro setor", textos de ajuda; o aviso "Em breve" do SLA saiu.
+- **Decisões do dono (19/10), iguais às recomendações do plano:**
+  - D1: horário por setor (`PrazoRespostaSetor.horario`), com "Copiar de outro setor".
+  - D2: feriados ficam para depois; o cálculo aceita `feriados`, mas não há tela (a tela devolve os gravados como estão).
+  - D3: um aviso por atendimento, sem repetir.
+  - D4: o aviso vai ao responsável; avisar também o gerente é opção da tela, desligada por padrão. Gerente: `GERENTE_COMERCIAL` (Comercial), `GERENTE_PEDAGOGICO` (Pedagógico), Administrador (Financeiro e Secretaria). Só usuários ativos.
+  - D5: atendimento sem responsável avisa o gerente do setor ou, se não houver, o Administrador; participantes do rodízio não recebem.
+  - D6: se a Aria respondeu dentro do prazo (mensagem `SAIDA`/`IA` enviada até o vencimento), não há alerta; `primeiraRespostaEm` e o indicador de primeira resposta continuam só humanos.
+  - D7: mudar horário ou prazo não recalcula atendimentos abertos (a tela avisa).
+  - D8: janela de 24 h; estouros mais antigos não alertam, e o claim acontece mesmo com alertas desligados.
+  - D9: "contar só no horário" sem horário cadastrado conta 24 h por dia (a tela avisa).
+  - D10: sem toast; o aviso é o sino mais a atualização da lista pelo SSE.
+  - D11: a tela tem um intervalo por dia; schema e cálculo aceitam vários (dia com vários intervalos gravados é preservado até ser editado).
+- **Desvios do plano:** `EntradaSla.horario` é opcional (ausente preserva o gravado; `null` limpa), para não quebrar quem salva só prazo e alertas; o teste de envio da tela usa a função pura `entradaSalvarSetor` (o componente não é montado com DOM); conversa de grupo não abre atendimento (trigger), então o filtro `grupoId` do claim fica só como defesa e sem teste de banco; `TIPO_NOTIFICACAO_LABEL` ganhou "Prazo estourado".
+- **Pendente (tarefas separadas):** tela de feriados; ligar `dentroDoHorario` em `metricasAtendimento.foraDoHorarioPct` (Relatórios) e no gatilho `foraHorario` da Aria; levar o sino ao layout global; aviso repetido e toast, se o dono pedir.
+- Evidências (banco descartável próprio `erp_genius_test_sla`, `migrate deploy`, apagado ao fim; sem chamada externa): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0; `npm run lint` saída 0, 0 erros, 40 avisos (linha de base); `npm test` saída 0, 759 arquivos, 5646 testes; `npm run build` saída 0; integração em `src/server/{crm-config,whatsapp,inbox,crm,relatorios}` e `cobrancas/acesso-aulas` (que chama a rota do cron): saída 0, 97 arquivos, 771 testes. Pendente para o integrador: `npm run test:int` completo.
