@@ -138,21 +138,28 @@ export async function editarUsuario(id: string, input: EditarUsuarioInput): Prom
   });
 }
 
-export async function alternarUsuarioAtivo(id: string): Promise<Resultado> {
+/**
+ * Ativa ou desativa o acesso com o estado-alvo explícito (B4, #175 C2): o segundo administrador que confirma, com a
+ * tela velha, o estado em que o usuário já está não desfaz o primeiro — é um no-op, sem evento.
+ */
+export async function definirUsuarioAtivo(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    if (typeof id !== "string" || !id.trim()) throw new ErroRegra("Usuário não informado.");
+    if (typeof ativo !== "boolean") throw new ErroRegra("Situação do usuário inválida.");
     await prisma.$transaction(async (tx) => {
       await bloquearUsuarios(tx, autor.id, [id]);
       const usuario = await tx.usuario.findUnique({ where: { id } });
       if (!usuario) throw new ErroRegra("Usuário não encontrado.");
-      if (id === autor.id && usuario.ativo) throw new ErroRegra("Você não pode desativar a si mesmo.");
-      await tx.usuario.update({ where: { id }, data: { ativo: !usuario.ativo } });
+      if (id === autor.id && !ativo) throw new ErroRegra("Você não pode desativar a si mesmo.");
+      if (usuario.ativo === ativo) return;
+      await tx.usuario.update({ where: { id }, data: { ativo } });
       await registrarEvento(tx, {
-        tipo: usuario.ativo ? "UsuarioDesativado" : "UsuarioAtivado",
+        tipo: ativo ? "UsuarioAtivado" : "UsuarioDesativado",
         agregadoTipo: "Usuario",
         agregadoId: id,
         autorId: autor.id,
-        payload: { de: usuario.ativo, para: !usuario.ativo },
+        payload: { de: usuario.ativo, para: ativo },
       });
     });
 

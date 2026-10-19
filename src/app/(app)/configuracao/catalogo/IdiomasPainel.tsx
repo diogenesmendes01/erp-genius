@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
-import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
+import { criarIdioma, definirIdiomaAtivo } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -24,20 +24,18 @@ const inputCls =
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  // criarIdioma recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
-  // idioma já criado. alternarIdiomaAtivo inverte o estado atual, então fica sem chave e no outro executor.
-  const acaoNovo = useAcaoCliente({ idempotente: true });
+  // Tudo aqui é seguro de repetir: criarIdioma recebe chave de idempotência (#166), e o reenvio depois de um
+  // resultado incerto devolve o idioma já criado; definirIdiomaAtivo recebe o estado-alvo (B4, #175 C2; C2 da
+  // revisão do #242), então repeti-lo não desfaz nada.
+  const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  const acao = useAcaoCliente({ idempotente: false });
-  const ocupado = acao.ocupado || acaoNovo.ocupado;
   // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
   const [origem, setOrigem] = useState<string | null>(null);
 
   async function adicionar() {
     if (!nome.trim()) return;
     setOrigem("novo");
-    acao.limpar();
-    const d = await acaoNovo.executar(() => criarIdioma({ nome: nome.trim(), chaveIdempotencia: tentativa.atual }));
+    const d = await acao.executar(() => criarIdioma({ nome: nome.trim(), chaveIdempotencia: tentativa.atual }));
     tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setNome("");
@@ -46,8 +44,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
 
   async function ativar(id: string) {
     setOrigem(id);
-    acaoNovo.limpar();
-    const d = await acao.executar(() => alternarIdiomaAtivo(id), "Idioma ativado.");
+    const d = await acao.executar(() => definirIdiomaAtivo(id, true), "Idioma ativado.");
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -100,7 +97,7 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => (i.ativo ? pedirDesativacao(i) : ativar(i.id))}
-                    disabled={ocupado || desativando !== null}
+                    disabled={acao.ocupado || desativando !== null}
                     className={botaoClasses({ variante: i.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
@@ -124,20 +121,20 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         />
         <button
           onClick={adicionar}
-          disabled={ocupado}
+          disabled={acao.ocupado}
           className={botaoClasses({ tamanho: "lg" })}
         >
           <IconPlus className="h-4 w-4" /> Adicionar
         </button>
       </div>
-      <FeedbackAcao erro={origem === "novo" ? acaoNovo.erro : null} className="mt-3" />
+      <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-3" />
 
       {desativando && (
         <ConfirmarAcao
           titulo={`Desativar ${desativando.nome}?`}
           confirmacao="desativação do idioma"
-          idempotente={false}
-          acao={() => alternarIdiomaAtivo(desativando.id)}
+          idempotente
+          acao={() => definirIdiomaAtivo(desativando.id, false)}
           aoConcluir={() => desativado(desativando)}
           aoCancelar={() => setDesativando(null)}
         >
