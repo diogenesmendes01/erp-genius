@@ -10,6 +10,7 @@ import { rodarControleAcessoAulas } from "@/server/cobrancas/acesso-aulas";
 import { rodarFechamentoComissoes } from "@/server/financeiro/cron-financeiro";
 import { rodarFechamentosPendentes } from "@/server/matricula/cron-fechamento";
 import { rodarLembretesTarefas } from "@/server/crm/lembretes";
+import { rodarAlertasSla } from "@/server/whatsapp/alertas-sla";
 import { reprocessarTurnosPendentes } from "@/server/aria/turno/orquestrador";
 import { expirarSugestoesAria } from "@/server/aria/expiracao";
 
@@ -60,6 +61,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   const eventosMotor = await seguro("eventos_motor", () => drenarEventosMotor(agora));
   // Lembretes de tarefa do CRM (Fase 2): claim atômico + notificação ao responsável; sem envio externo.
   const lembretesTarefas = await seguro("lembretes_tarefas", () => rodarLembretesTarefas(agora));
+  // SLA: prazo da 1ª resposta estourado vira aviso no sino (uma vez por atendimento); sem envio externo.
+  const alertasSla = await seguro("alertas_sla", () => rodarAlertasSla(agora));
   // Aria: âncoras sem turno há mais de 2 min (inbound perdido); só gera intenções, o despacho abaixo as drena.
   const aria = await seguro("aria", () => reprocessarTurnosPendentes(agora));
   // Aria: sugestões vencidas viram EXPIRADA e, se a configuração mandar, o atendimento passa a uma pessoa.
@@ -78,6 +81,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     linhaComercial,
     eventosMotor,
     lembretesTarefas,
+    alertasSla,
     aria,
     ariaExpiracao,
     despacho,
