@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { TipoCobranca } from "@prisma/client";
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
-import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
+import { criarPreco, definirPrecoAtivo } from "@/server/catalogo/acoes";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -45,13 +45,11 @@ export function PrecosPainel({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  // criarPreco recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o preço
-  // já criado, sem aposentá-lo com uma cópia. alternarPrecoAtivo inverte o estado atual, então fica sem
-  // chave e no outro executor.
-  const acaoNovo = useAcaoCliente({ idempotente: true });
+  // Tudo aqui é seguro de repetir: criarPreco recebe chave de idempotência (#166), e o reenvio depois de um
+  // resultado incerto devolve o preço já criado, sem aposentá-lo com uma cópia; definirPrecoAtivo recebe o
+  // estado-alvo (B4, #175 C2; C2 da revisão do #242), então repeti-lo não desfaz nada.
+  const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
-  const acao = useAcaoCliente({ idempotente: false });
-  const ocupado = acao.ocupado || acaoNovo.ocupado;
   // Onde mostrar o resultado: no formulário de novo preço ou na linha do preço alternado.
   const [origem, setOrigem] = useState<string | null>(null);
 
@@ -65,15 +63,14 @@ export function PrecosPainel({
 
   async function salvar() {
     setOrigem("novo");
-    acao.limpar();
     // Nunca ?? 0 aqui: texto inválido no valor criaria um preço de referência ZERO, que
     // matrículas passariam a usar como preço negociado — silencioso.
     const valorNumero = parseMoeda(valor);
     if (valorNumero === null) {
-      acaoNovo.setErro("Informe o valor, com no máximo duas casas decimais.");
+      acao.setErro("Informe o valor, com no máximo duas casas decimais.");
       return;
     }
-    const d = await acaoNovo.executar(() => criarPreco({
+    const d = await acao.executar(() => criarPreco({
       paisId,
       produtoId,
       tipoCobranca,
@@ -91,8 +88,7 @@ export function PrecosPainel({
 
   async function reativar(id: string) {
     setOrigem(id);
-    acaoNovo.limpar();
-    const d = await acao.executar(() => alternarPrecoAtivo(id), "Preço reativado.");
+    const d = await acao.executar(() => definirPrecoAtivo(id, true), "Preço reativado.");
     if (d?.tipo === "ok") router.refresh();
   }
 
@@ -185,14 +181,14 @@ export function PrecosPainel({
               <input id="precos-versao-estudo" value={versaoEstudo} onChange={(e) => setVersao(e.target.value)} className={inputCls + " w-full"} />
             </div>
           </div>
-          <FeedbackAcao erro={origem === "novo" ? acaoNovo.erro : null} className="mt-4" />
+          <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-4" />
           <div className="mt-4 flex gap-2">
             <button
               onClick={salvar}
-              disabled={ocupado}
+              disabled={acao.ocupado}
               className={botaoClasses({ tamanho: "lg" })}
             >
-              {acaoNovo.ocupado ? "Salvando…" : "Salvar preço"}
+              {acao.ocupado ? "Salvando…" : "Salvar preço"}
             </button>
             <button
               onClick={() => setAberto(false)}
@@ -243,7 +239,7 @@ export function PrecosPainel({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => (p.ativo ? pedirDesativacao(p) : reativar(p.id))} disabled={ocupado || desativando !== null} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
+                    <button onClick={() => (p.ativo ? pedirDesativacao(p) : reativar(p.id))} disabled={acao.ocupado || desativando !== null} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
                     <FeedbackAcao erro={origem === p.id ? acao.erro : null} sucesso={origem === p.id ? acao.sucesso : undefined} className="mt-1 text-left" />
@@ -259,8 +255,8 @@ export function PrecosPainel({
         <ConfirmarAcao
           titulo={`Desativar o preço de ${desativando.produto.idioma.nome} · ${desativando.produto.modalidade.nome} em ${desativando.pais.nome}?`}
           confirmacao="desativação do preço"
-          idempotente={false}
-          acao={() => alternarPrecoAtivo(desativando.id)}
+          idempotente
+          acao={() => definirPrecoAtivo(desativando.id, false)}
           aoConcluir={() => desativado(desativando)}
           aoCancelar={() => setDesativando(null)}
         >

@@ -22,8 +22,8 @@ vi.mock("react", async (original) => {
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/catalogo/acoes", () => ({
-  criarIdioma: m.criarIdioma, alternarIdiomaAtivo: vi.fn(), criarNivel: m.criarNivel, criarProduto: m.criarProduto,
-  criarPreco: m.criarPreco, alternarPrecoAtivo: vi.fn(), criarModalidade: m.criarModalidade, editarModalidade: vi.fn(),
+  criarIdioma: m.criarIdioma, definirIdiomaAtivo: vi.fn(), criarNivel: m.criarNivel, criarProduto: m.criarProduto,
+  criarPreco: m.criarPreco, definirPrecoAtivo: vi.fn(), criarModalidade: m.criarModalidade, editarModalidade: vi.fn(),
 }));
 // O formulário da modalidade usa react-hook-form; aqui só o envio importa.
 vi.mock("react-hook-form", () => ({

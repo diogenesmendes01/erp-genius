@@ -7,8 +7,8 @@ import { nomeCompleto } from "@/lib/nome";
 // com os alunos já cadastrados E com as linhas anteriores da mesma planilha, e a repetida é IGNORADA (não criada),
 // com o motivo devolvido ao operador.
 //
-// Chaves de identidade (qualquer uma que coincida basta):
-//   1. documento: o mesmo número no mesmo país (comparado sem pontuação, espaço e caixa: "1-2345-6789" = "123456789");
+// Chaves de identidade (qualquer uma que coincida basta), todas dentro do mesmo país (#180 C2):
+//   1. documento: o mesmo número (comparado sem pontuação, espaço e caixa: "1-2345-6789" = "123456789");
 //   2. nome completo + e-mail;
 //   3. nome completo + telefone (E.164);
 //   4. nome completo + data de nascimento.
@@ -37,8 +37,8 @@ export type ChaveIdentidade = { chave: string; criterio: CriterioDuplicidade };
 /** Onde a identidade já apareceu: um aluno cadastrado ou uma linha anterior da mesma planilha. */
 export type OrigemIdentidade = { tipo: "cadastro"; nome: string; codigo: string | null } | { tipo: "planilha"; linha: number };
 
-/** Teto da leitura dos candidatos no banco (a planilha tem no máximo 1000 linhas). */
-export const TETO_CANDIDATOS_DUPLICIDADE = 5000;
+/** Tamanho de cada lote da leitura dos candidatos no banco. Não é teto: os lotes seguem pelo id até acabar. */
+export const LOTE_CANDIDATOS_DUPLICIDADE = 2000;
 
 const RAZAO: Record<CriterioDuplicidade, string> = {
   documento: "mesmo documento no mesmo país",
@@ -59,6 +59,12 @@ export const documentoComparavel = (documento: string) => semAcento(documento).t
 /** Data civil da nascença (AAAA-MM-DD, em UTC: a planilha grava ao meio-dia local, a carga Q10 à meia-noite UTC). */
 const dataCivil = (d: Date) => d.toISOString().slice(0, 10);
 
+/** O dia civil da nascença como intervalo UTC [00:00, 00:00 do dia seguinte): o mesmo recorte de `dataCivil`. */
+function diaUtc(civil: string): { gte: Date; lt: Date } {
+  const inicio = new Date(`${civil}T00:00:00.000Z`);
+  return { gte: inicio, lt: new Date(inicio.getTime() + 24 * 60 * 60 * 1000) };
+}
+
 /** As chaves de identidade de uma pessoa (vazias quando os campos faltam; documento curto demais não identifica). */
 export function chavesDeIdentidade(p: IdentidadeAluno): ChaveIdentidade[] {
   const chaves: ChaveIdentidade[] = [];
@@ -66,10 +72,13 @@ export function chavesDeIdentidade(p: IdentidadeAluno): ChaveIdentidade[] {
   if (doc.length >= 4) chaves.push({ chave: `documento:${p.paisId}:${doc}`, criterio: "documento" });
   const nome = nomeComparavel(p.primeiroNome, p.sobrenome);
   if (!nome) return chaves;
+  // O país entra em todas as chaves, como no documento: um homônimo com o mesmo e-mail em outro país não é a
+  // mesma matrícula (#180 C2).
+  const pessoa = `${p.paisId}:${nome}`;
   const email = p.email?.trim().toLowerCase();
-  if (email) chaves.push({ chave: `email:${nome}:${email}`, criterio: "email" });
-  if (p.telefoneE164) chaves.push({ chave: `telefone:${nome}:${p.telefoneE164}`, criterio: "telefone" });
-  if (p.nascimento && !isNaN(p.nascimento.getTime())) chaves.push({ chave: `nascimento:${nome}:${dataCivil(p.nascimento)}`, criterio: "nascimento" });
+  if (email) chaves.push({ chave: `email:${pessoa}:${email}`, criterio: "email" });
+  if (p.telefoneE164) chaves.push({ chave: `telefone:${pessoa}:${p.telefoneE164}`, criterio: "telefone" });
+  if (p.nascimento && !isNaN(p.nascimento.getTime())) chaves.push({ chave: `nascimento:${pessoa}:${dataCivil(p.nascimento)}`, criterio: "nascimento" });
   return chaves;
 }
 
@@ -100,9 +109,13 @@ export class IndiceDuplicidade {
 }
 
 /**
- * Os alunos já cadastrados que podem repetir alguma linha, num só `findMany` com teto: mesmo documento (como veio e
- * sem pontuação), mesmo e-mail (sem caixa), mesmo telefone ou mesmo primeiro nome com nascimento. A comparação fina
- * (nome + campo) é feita em memória pelas chaves. Sem candidato possível, não consulta.
+ * Os alunos já cadastrados que podem repetir alguma linha, nos países da planilha: mesmo documento (como veio e sem
+ * pontuação), mesmo e-mail (sem caixa), mesmo telefone ou nascidos no mesmo dia. A comparação fina (nome + campo) é
+ * feita em memória pelas chaves. Sem candidato possível, não consulta.
+ *
+ * #180 C2: o candidato por nascimento vem pelo DIA, não pelo primeiro nome — o `mode: "insensitive"` do Postgres
+ * diferencia acento, e "Jose" na planilha não achava "José" no cadastro. E a leitura não tem teto: segue em lotes
+ * pelo id até o fim, porque um teto com `orderBy id` cortava justamente os cadastros mais novos.
  */
 export async function carregarCadastradosParaDuplicidade(linhas: readonly IdentidadeAluno[]): Promise<IndiceDuplicidade> {
   const indice = new IndiceDuplicidade();
@@ -110,20 +123,26 @@ export async function carregarCadastradosParaDuplicidade(linhas: readonly Identi
   const documentos = unicos(linhas.flatMap((l) => (l.documento ? [l.documento.trim(), documentoComparavel(l.documento)] : [])));
   const emails = unicos(linhas.map((l) => l.email?.trim().toLowerCase()));
   const telefones = unicos(linhas.map((l) => l.telefoneE164));
-  const primeirosNomes = unicos(linhas.filter((l) => l.nascimento).map((l) => l.primeiroNome.trim()));
+  const dias = unicos(linhas.map((l) => (l.nascimento && !isNaN(l.nascimento.getTime()) ? dataCivil(l.nascimento) : null)));
   const ou: Prisma.AlunoWhereInput[] = [
     ...(documentos.length ? [{ documento: { in: documentos } }] : []),
     ...(emails.length ? [{ email: { in: emails, mode: "insensitive" as const } }] : []),
     ...(telefones.length ? [{ telefoneE164: { in: telefones } }] : []),
-    ...(primeirosNomes.length ? [{ primeiroNome: { in: primeirosNomes, mode: "insensitive" as const }, nascimento: { not: null } }] : []),
+    ...dias.map((d) => ({ nascimento: diaUtc(d) })),
   ];
   if (!ou.length) return indice;
-  const cadastrados = await prisma.aluno.findMany({
-    where: { OR: ou },
-    orderBy: { id: "asc" },
-    take: TETO_CANDIDATOS_DUPLICIDADE,
-    select: { paisId: true, primeiroNome: true, sobrenome: true, codigo: true, documento: true, email: true, telefoneE164: true, nascimento: true },
-  });
-  for (const a of cadastrados) indice.registrar(chavesDeIdentidade(a), { tipo: "cadastro", nome: nomeCompleto(a), codigo: a.codigo });
-  return indice;
+  const where: Prisma.AlunoWhereInput = { paisId: { in: unicos(linhas.map((l) => l.paisId)) }, OR: ou };
+  let depoisDe: string | undefined;
+  for (;;) {
+    const lote = await prisma.aluno.findMany({
+      where,
+      orderBy: { id: "asc" },
+      take: LOTE_CANDIDATOS_DUPLICIDADE,
+      ...(depoisDe ? { cursor: { id: depoisDe }, skip: 1 } : {}),
+      select: { id: true, paisId: true, primeiroNome: true, sobrenome: true, codigo: true, documento: true, email: true, telefoneE164: true, nascimento: true },
+    });
+    for (const a of lote) indice.registrar(chavesDeIdentidade(a), { tipo: "cadastro", nome: nomeCompleto(a), codigo: a.codigo });
+    if (lote.length < LOTE_CANDIDATOS_DUPLICIDADE) return indice;
+    depoisDe = lote[lote.length - 1].id;
+  }
 }
