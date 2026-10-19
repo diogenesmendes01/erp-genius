@@ -20,6 +20,7 @@ import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
 import { atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "./acoes-atendimento";
 import { registrarNotaAtendimento } from "./acoes-conversa";
+import { revisarFalhaEnvio } from "./operacoes-atendimento";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 const como = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
@@ -32,7 +33,7 @@ async function cenario() {
   const numero = await criarNumeroSetor({ telefoneE164: "+5511999990001", setores: ["COMERCIAL", "SECRETARIA"], finalidade: "AGENDA", donoId: null });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: v1.id }));
-  return { v1, v2, gc, sec, a };
+  return { v1, v2, gc, sec, a, numero, contato };
 }
 
 describe("ações do atendimento com pool de uma conexão", () => {
@@ -74,5 +75,16 @@ describe("ações do atendimento com pool de uma conexão", () => {
     const { v1, a } = await cenario();
     como(v1);
     expect(await registrarNotaAtendimento({ atendimentoId: a.id, nota: "Ligar amanhã" })).toEqual({ ok: true });
+  });
+
+  it("revisar falha de envio com reenvio (confere o escopo na tx)", async () => {
+    const { v1, a, numero, contato } = await cenario();
+    const admin = await criarUsuario([Papel.ADMINISTRADOR], "Admin");
+    const i = await prisma.intencaoMensagem.create({ data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: a.id, origem: "HUMANO", autorId: v1.id,
+      corpoRenderizado: "Olá", status: "FALHOU", motivoFalha: "resultado_incerto", clientMessageId: "a-b-c-d-e-f-g" } });
+    como(admin);
+    const r = await revisarFalhaEnvio({ id: i.id, decisao: "REENVIAR_APOS_VERIFICACAO", evidencia: "conferido no aparelho" });
+    expect(r.ok).toBe(true);
+    expect(await prisma.intencaoMensagem.findUnique({ where: { id: i.id } })).toMatchObject({ status: "PENDENTE", clientMessageId: null });
   });
 });

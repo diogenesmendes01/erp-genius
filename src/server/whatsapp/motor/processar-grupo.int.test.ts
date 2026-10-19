@@ -52,6 +52,7 @@ describe("grupos do motor", () => {
       conversaId: conversa.id, direcao: "ENTRADA", corpo: "bom dia, turma", atendimentoId: null,
       participanteJid: PART, participanteE164: "+50688887777", participanteNome: "Ana", driver: "MOTOR",
     });
+    expect(m.enviadaEm).toBeNull(); // entrada não tem envio
     expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
     expect(await prisma.contatoWhatsApp.count()).toBe(0);
     // repetição e segunda mensagem reaproveitam grupo e conversa
@@ -77,6 +78,8 @@ describe("grupos do motor", () => {
     expect(r).toBe("ok");
     const m = await prisma.mensagemWhatsApp.findFirstOrThrow();
     expect(m).toMatchObject({ direcao: "SAIDA", origem: "CELULAR", status: "ENVIADA", corpo: "aviso" });
+    // Nasce ENVIADA: o momento do envio (D6 do SLA) é o `quando` do eco.
+    expect(m.enviadaEm?.getTime()).toBe(1_790_000_000_000);
     expect((await prisma.conversaWhatsApp.findFirstOrThrow()).naoLidas).toBe(0);
   });
 

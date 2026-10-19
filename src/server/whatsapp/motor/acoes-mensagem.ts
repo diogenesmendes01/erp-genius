@@ -156,7 +156,7 @@ export async function encaminharMensagemWhatsApp(input: { mensagemId: string; at
           where: { numeroId_providerMessageId: { numeroId: m.numeroId, providerMessageId } },
           create: {
             conversaId: d.transporteId, numeroId: m.numeroId, atendimentoId: d.id, direcao: "SAIDA", tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath,
-            status: "ENVIADA", statusEm: agora, driver: "MOTOR", origem: "HUMANO", providerMessageId, mensagemIdMotor, autorId: u.id, criadoEm: agora,
+            status: "ENVIADA", statusEm: agora, enviadaEm: agora, driver: "MOTOR", origem: "HUMANO", providerMessageId, mensagemIdMotor, autorId: u.id, criadoEm: agora,
           },
           update: { origem: "HUMANO", autorId: u.id, atendimentoId: d.id, conversaId: d.transporteId, ...(mensagemIdMotor ? { mensagemIdMotor } : {}) },
         });
