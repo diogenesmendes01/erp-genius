@@ -8,6 +8,7 @@ import { carregarEstadoRetomada } from "./estado";
 import { impedimentoFluxoGlobal } from "@/server/matricula/limite-legado";
 import { SnapshotRetomadaSchema, impedimentoRetomada, parcelasElegiveisRetomada, dataMinimaReprogramacao } from "./regras";
 import type { ContextoRetomada, PropostaRetomadaResumo } from "./schema";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export type { ContextoRetomada, PropostaRetomadaResumo, ParcelaRetomada } from "./schema";
 
@@ -20,7 +21,7 @@ export async function listarContextoRetomada(alunoId: string): Promise<Resultado
     const pendente = await prisma.propostaRetomada.findFirst({ where: { alunoId, status: "PENDENTE" }, select: { id: true } });
     return {
       alunoId, alunoNome: nomeCompleto(estado.aluno), status: estado.aluno.status,
-      dataMinimaReprogramacao: dataMinimaReprogramacao(),
+      dataMinimaReprogramacao: dataMinimaReprogramacao(new Date(), await fusoDaEscola()),
       pausa: estado.pausa ? { ...estado.pausa, criadoEm: estado.pausa.criadoEm.toISOString() } : null,
       propostaPendenteId: pendente?.id ?? null,
       impedimento: impedimentoGlobal ?? impedimentoRetomada(estado.aluno.status, estado.pausa?.id ?? null, estado.pausaRastreada, estado.matriculas),

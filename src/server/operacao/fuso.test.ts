@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, inicioDoDiaCivil, inicioDoDiaInstitucional, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
+import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, inicioDoDiaCivil, inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional, inicioDoMesInstitucional, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
 // Um critério só para servidor, PaisSchema e CampoFuso (docs/43 §6 item 6).
 describe("fusoIanaValido", () => {
   it.each(["America/Sao_Paulo", "America/Costa_Rica", "UTC", "Etc/GMT+3", "US/Eastern"])("aceita %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(true));
@@ -46,6 +46,21 @@ describe("início do dia civil institucional", () => {
   });
   it.each(["2026-02-30", "2026-13-01", "26-01-01"])("recusa a data civil inválida %s", (data) => {
     expect(() => inicioDoDiaCivil(data, "America/Sao_Paulo")).toThrow();
+  });
+});
+// Dia seguinte e mês da escola, para quem precisa do fim exclusivo do dia ou do início do mês civil.
+describe("início do dia seguinte e do mês institucional", () => {
+  it("às 23h30 de Brasília, o dia seguinte da escola começa à meia-noite local (03h UTC)", () => {
+    expect(inicioDoDiaSeguinteInstitucional(new Date("2026-03-11T02:30:00Z"), "America/Sao_Paulo").toISOString()).toBe("2026-03-11T03:00:00.000Z");
+  });
+  it("o dia seguinte sem meia-noite (America/Santiago, 06/09/2026) começa à 01h local", () => {
+    expect(inicioDoDiaSeguinteInstitucional(new Date("2026-09-05T20:00:00Z"), "America/Santiago").toISOString()).toBe("2026-09-06T04:00:00.000Z");
+  });
+  it("vira o mês e o ano no calendário da escola", () => {
+    expect(inicioDoDiaSeguinteInstitucional(new Date("2027-01-01T02:00:00Z"), "America/Sao_Paulo").toISOString()).toBe("2027-01-01T03:00:00.000Z");
+  });
+  it("o mês da escola começa no dia 1 local, mesmo quando em UTC já é o mês seguinte", () => {
+    expect(inicioDoMesInstitucional(new Date("2026-11-01T04:30:00Z"), "America/Costa_Rica").toISOString()).toBe("2026-10-01T06:00:00.000Z");
   });
 });
 // Decisão do dono (17/10/2026): apelidos legados (US/*, Brazil/*…) não existem num Postgres sem tzdata-legacy e

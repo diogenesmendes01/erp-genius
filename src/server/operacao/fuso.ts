@@ -116,3 +116,15 @@ export function inicioDoDiaCivil(data: string, fuso: string): Date {
 export function inicioDoDiaInstitucional(instante: Date, fuso: string): Date {
   return inicioDoDiaCivil(dataCivilInstitucional(instante, fuso), fuso);
 }
+
+/** Primeiro instante do dia civil da escola seguinte ao de `instante`: o fim exclusivo do "hoje" da escola. */
+export function inicioDoDiaSeguinteInstitucional(instante: Date, fuso: string): Date {
+  const hoje = new Date(`${dataCivilInstitucional(instante, fuso)}T00:00:00Z`);
+  hoje.setUTCDate(hoje.getUTCDate() + 1);
+  return inicioDoDiaCivil(hoje.toISOString().slice(0, 10), fuso);
+}
+
+/** Primeiro instante do mês civil da escola em que `instante` cai (dia 1, ver `inicioDoDiaCivil`). */
+export function inicioDoMesInstitucional(instante: Date, fuso: string): Date {
+  return inicioDoDiaCivil(`${dataCivilInstitucional(instante, fuso).slice(0, 8)}01`, fuso);
+}
