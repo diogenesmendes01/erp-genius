@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CODIGOS_ISO } from "@/lib/paises-iso";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
 // Validação compartilhada frontend ↔ backend (ver docs/04 §3 e docs/13).
 // Política de rigor (doc 04): TELEFONE e E-MAIL bloqueiam; DOCUMENTO avisa mas salva
@@ -14,25 +15,52 @@ export const emailSchema = z.string().email("E-mail inválido");
 
 // ------------------------------------------------------------
 // Datas "date-only" (doc 13). <input type="date"> envia "YYYY-MM-DD".
-// z.coerce.date() interpretaria isso como MEIA-NOITE UTC; ao renderizar com
-// toLocaleDateString("pt-BR") num fuso negativo (ex.: America/Sao_Paulo -03),
-// o dia exibido recua 1 (01/01/2026 vira 31/12/2025). Para o dia digitado bater
-// com o exibido, ancoramos a data no MEIO-DIA LOCAL: assim nenhuma diferença de
-// fuso prática (servidor em -03/-06) cruza a fronteira do dia.
+// z.coerce.date() interpretaria isso como MEIA-NOITE UTC; ao renderizar num fuso
+// negativo (ex.: America/Sao_Paulo -03), o dia exibido recuaria 1. Para o dia
+// digitado bater com o exibido, ancoramos a data no MEIO-DIA DA ESCOLA (ref. #247):
+// antes era o meio-dia do relógio do servidor, que em produção roda em UTC (09h em
+// Brasília). Os dados antigos continuam legíveis: `diaCivilGravado` recupera o dia
+// civil nas duas convenções.
 // ------------------------------------------------------------
 const SOMENTE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 // <input type="datetime-local"> envia "YYYY-MM-DDTHH:mm" (sem fuso) — hora LOCAL.
 const DATA_HORA_LOCAL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
 
+/** Fuso da escola em vigor durante `comDatasDaEscola`; fora dele, nenhum. */
+let fusoDasDatasDigitadas: string | null = null;
+
 /**
- * Converte uma string "YYYY-MM-DD" (date-only) em Date ancorada no meio-dia
- * LOCAL do dia digitado. Qualquer outro valor (Date, datetime ISO, etc.) passa
- * inalterado para o coerce seguinte.
+ * Executa `analisar` com as datas digitadas (AAAA-MM-DD) convertidas para o meio-dia da escola em `fuso`. Só
+ * aceita trabalho síncrono, como o parse do Zod: o fuso vale só durante esta chamada e não alcança outra requisição.
  */
-export function paraDataLocal(v: unknown): unknown {
+export function comDatasDaEscola<T>(fuso: string, analisar: () => T): T {
+  const anterior = fusoDasDatasDigitadas;
+  fusoDasDatasDigitadas = fuso;
+  try {
+    const resultado = analisar();
+    if (resultado instanceof Promise) throw new Error("comDatasDaEscola aceita apenas validação síncrona.");
+    return resultado;
+  } finally {
+    fusoDasDatasDigitadas = anterior;
+  }
+}
+
+/** Valida `entrada` com `schema`, com as datas digitadas no meio-dia da escola (ver {@link comDatasDaEscola}). */
+export function analisarComDatasDaEscola<S extends z.ZodTypeAny>(schema: S, entrada: unknown, fuso: string): z.output<S> {
+  return comDatasDaEscola(fuso, () => schema.parse(entrada));
+}
+
+/**
+ * Converte uma string "YYYY-MM-DD" (date-only) em Date ancorada no meio-dia do fuso da escola
+ * (`instanteDaGrade(data, "12:00", fuso)`). Sem fuso, recusa em vez de cair no relógio do servidor.
+ * Um dia inexistente mantém a normalização de antes (31/02 → 03/03). Qualquer outro valor (Date,
+ * datetime ISO etc.) passa inalterado para o coerce seguinte.
+ */
+export function paraDataLocal(v: unknown, fuso: string | null = fusoDasDatasDigitadas): unknown {
   if (typeof v === "string" && SOMENTE_DATA.test(v)) {
+    if (!fuso) throw new Error("Data digitada sem o fuso da escola: valide a entrada com analisarComDatasDaEscola.");
     const [ano, mes, dia] = v.split("-").map(Number);
-    return new Date(ano, mes - 1, dia, 12, 0, 0, 0);
+    return instanteDaGrade(new Date(Date.UTC(ano, mes - 1, dia)).toISOString().slice(0, 10), "12:00", fuso);
   }
   return v;
 }
@@ -40,7 +68,7 @@ export function paraDataLocal(v: unknown): unknown {
 /**
  * Campo de data opcional compartilhado por todos os schemas (turma, matrícula,
  * aluno, lead, financeiro, ajustes). Vazio/null/undefined → undefined; string
- * date-only → meio-dia local (ver {@link paraDataLocal}).
+ * date-only → meio-dia da escola (ver {@link paraDataLocal} e {@link analisarComDatasDaEscola}).
  */
 export const dataOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
@@ -51,7 +79,7 @@ export const dataOpcional = z.preprocess(
  * Converte uma string "YYYY-MM-DDTHH:mm" (vinda de <input type="datetime-local">,
  * sem fuso) em Date na HORA LOCAL informada. Diferente de {@link paraDataLocal},
  * NÃO ancora no meio-dia: a hora digitada é preservada (issue #16 — não descartar o
- * horário da experimental). Date-only ("YYYY-MM-DD") cai no meio-dia local via
+ * horário da experimental). Date-only ("YYYY-MM-DD") cai no meio-dia da escola via
  * {@link paraDataLocal}; qualquer outro valor passa inalterado.
  */
 export function paraDataHoraLocal(v: unknown): unknown {
@@ -66,14 +94,14 @@ export function paraDataHoraLocal(v: unknown): unknown {
 
 /**
  * Campo opcional de data COM hora (datetime-local). Preserva o horário digitado;
- * aceita também date-only (ancorado no meio-dia local). Vazio → undefined.
+ * aceita também date-only (ancorado no meio-dia da escola). Vazio → undefined.
  */
 export const dataHoraOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataHoraLocal(v)),
   z.coerce.date().optional(),
 );
 
-/** Data OBRIGATÓRIA "date-only" (ex.: nascimento) — ancorada no meio-dia local. */
+/** Data OBRIGATÓRIA "date-only" (ex.: nascimento) — ancorada no meio-dia da escola. */
 export const dataObrigatoria = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataLocal(v)),
   z.coerce.date({ required_error: "Informe a data" }),

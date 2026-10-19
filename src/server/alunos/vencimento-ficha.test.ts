@@ -5,6 +5,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 const db = vi.hoisted(() => ({
   aluno: { findUnique: vi.fn(), findMany: vi.fn() },
   cobranca: { findUnique: vi.fn() },
+  configuracaoOperacional: { findUnique: async () => null },
 }));
 const trilhas = vi.hoisted(() => vi.fn());
 

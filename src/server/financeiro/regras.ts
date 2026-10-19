@@ -1,11 +1,20 @@
 import { Prisma, StatusCobranca, StatusMatricula } from "@prisma/client";
 import { ErroRegra, ErroPermissao } from "@/server/_shared/sessao";
+import { vencimentoEmAtraso } from "@/server/operacao/fuso";
 
 /** Dinheiro é calculado em decimal e arredondado uma única vez na borda. */
 export function dinheiro(valor: Prisma.Decimal.Value): Prisma.Decimal {
   const n = new Prisma.Decimal(valor);
   if (!n.isFinite() || n.isNegative()) throw new ErroRegra("Valor monetário inválido.");
   return n.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+}
+
+/**
+ * Status de uma cobrança que segue em aberto, pelo vencimento (ref. #247): ATRASADO só quando o dia civil da
+ * escola já passou do dia do vencimento (`vencimentoEmAtraso`). O dia do vencimento inteiro ainda é PENDENTE.
+ */
+export function statusEmAbertoPorVencimento(vencimento: Date, agora: Date, fuso: string) {
+  return vencimentoEmAtraso(vencimento, agora, fuso) ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE;
 }
 
 export function saldoAtual(negociado: Prisma.Decimal.Value, recebido: Prisma.Decimal.Value | null, liquidadoCredito: Prisma.Decimal.Value = 0, creditoOriginado: Prisma.Decimal.Value = 0, compensadoPermuta: Prisma.Decimal.Value = 0) {

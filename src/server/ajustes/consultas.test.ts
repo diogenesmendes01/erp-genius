@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Papel, StatusCobranca } from "@prisma/client";
 const { findFirst, authMock, usuarioMock } = vi.hoisted(() => ({ findFirst: vi.fn(), authMock: vi.fn(), usuarioMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
@@ -52,5 +52,23 @@ describe("projeção financeira operacional — política 36", () => {
   it("aluno inexistente não devolve estrutura com dados de outro", async () => {
     findFirst.mockResolvedValue(null);
     expect(await obterFichaFinanceira("ausente")).toBeNull();
+  });
+  describe("atraso no dia civil da escola (ref. #247)", () => {
+    afterEach(() => vi.useRealTimers());
+    const ficha = async (agora: string) => {
+      vi.setSystemTime(new Date(agora));
+      findFirst.mockResolvedValue({ id: "aluno", pais: { nome: "BR" }, responsaveis: [], matriculas: [{ id: "m", comissoes: [], ajustes: [], acessoBloqueado: false, cobrancas: [{ id: "c", status: StatusCobranca.PENDENTE, vencimento: new Date("2026-06-23T15:00:00Z"), cicloRegua: 0, valorNegociado: 100, valorRecebido: 0, origensCreditoAcertoTaxaAditivo: [], moeda: "BRL", pagoEm: null }] }] });
+      return obterFichaFinanceira("aluno");
+    };
+    it("às 21h30 de Brasília do dia do vencimento não está em atraso e ainda é o próximo vencimento", async () => {
+      const f = await ficha("2026-06-24T00:30:00Z");
+      expect(f?.emAtraso).toEqual([]);
+      expect(f?.proximo?.id).toBe("c");
+    });
+    it("à 00h30 de Brasília do dia seguinte está em atraso", async () => {
+      const f = await ficha("2026-06-24T03:30:00Z");
+      expect(f?.emAtraso).toEqual([{ moeda: "BRL", valor: 100 }]);
+      expect(f?.proximo).toBeNull();
+    });
   });
 });
