@@ -110,6 +110,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<Link> Preparar novo modelo → secundario/md",
   ],
   "configuracao/crm/distribuicao/SetorPainel.tsx": [
+    "<button> Copiar horário → secundario/sm",
     "<button> Salvando… · Salvar setor → primario/md",
   ],
   "configuracao/crm/ia/IaPainel.tsx": [
