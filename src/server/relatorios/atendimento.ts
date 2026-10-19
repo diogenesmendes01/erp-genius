@@ -20,8 +20,9 @@ export interface MetricasAtendimento {
   calor: number[][];
 }
 
-export async function fusoDaEscola(): Promise<string> {
-  const c = await prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
+/** Fuso institucional (padrão America/Sao_Paulo); `db` permite ler pelo tx do chamador. */
+export async function fusoDaEscola(db: Pick<Prisma.TransactionClient, "configuracaoOperacional"> = prisma): Promise<string> {
+  const c = await db.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
   return c?.fusoInstitucional ?? FUSO_PADRAO;
 }
 
