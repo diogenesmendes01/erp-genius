@@ -84,7 +84,6 @@ export function civisComoInstante(fonte: string): string[] {
 
 /** Usos conhecidos fora do recorte da C52, contados por arquivo — a lista só encolhe. */
 const CIVIS_COMO_INSTANTE_CONHECIDOS: Record<string, { usos: number; motivo: string }> = {
-  "src/app/(app)/empresas/[id]/FichaEmpresa.tsx": { usos: 1, motivo: "vencimento da fatura; fica para outra PR (a #175 mexe no arquivo)" },
   "src/app/(app)/financeiro/InformesPagamento.tsx": { usos: 1, motivo: "dataPagamento é DateTime sem @db.Date; conferir se é dia ou instante antes de trocar" },
 };
 
