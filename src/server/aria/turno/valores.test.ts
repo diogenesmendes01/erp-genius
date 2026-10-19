@@ -1,7 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { valoresNaoAutorizados } from "./valores";
+import { valoresCitados, valoresNaoAutorizados } from "./valores";
 
 const vazio = { valores: [], percentuais: [], parcelas: [] };
+
+describe("valoresCitados", () => {
+  it("extrai_valor_percentual_e_parcelas_com_a_mesma_leitura_da_guarda", () => {
+    expect(valoresCitados("Matrícula R$ 350,00 em 12x, com 15% e mais vinte por cento. Aula às 19h.")).toEqual({
+      valores: [350],
+      percentuais: [15, 20],
+      parcelas: [12],
+    });
+    expect(valoresCitados("Sem valores aqui, dia 12/11.")).toEqual(vazio);
+  });
+
+  it("o_texto_citado_passa_na_guarda_com_o_que_ele_mesmo_cita", () => {
+    const t = "A mensalidade é ₡85.000 em 3 vezes, com 5% à vista.";
+    expect(valoresNaoAutorizados(t, valoresCitados(t))).toEqual([]);
+  });
+});
 
 describe("valoresNaoAutorizados", () => {
   it("formatos_variados_de_valor", () => {
