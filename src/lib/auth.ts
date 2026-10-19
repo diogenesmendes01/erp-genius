@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { loginBloqueado, registrarFalhaLogin, limparFalhasLogin } from "@/lib/rate-limit-login";
+import { prazoDoToken } from "@/lib/prazo-sessao";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -63,6 +64,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as { papeis?: string[] }).papeis =
           (token.papeis as string[]) ?? [];
       }
+      // O `exp` do JWT recebido (não o prazo renovado de `session.expires`): o SSE do Inbox fecha quando ele vence.
+      session.expiraEm = prazoDoToken(token.exp);
       return session;
     },
   },
