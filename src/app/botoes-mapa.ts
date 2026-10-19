@@ -799,6 +799,8 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "financeiro/permuta/PermutaOperacional.tsx": [
     "<button> Enviando… · Registrar → secundario/sm",
+    // Decidir a compensação (L2142, #175): rejeitar é perigo; aprovar só abre o ConfirmarAcao.
+    "<button> Enviando… · Rejeitar · Aprovar e compensar · Decidir → perigo|secundario/sm",
   ],
   "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
     "<button> Destinar → fantasma/sm",

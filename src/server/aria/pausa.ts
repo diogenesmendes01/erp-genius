@@ -73,7 +73,7 @@ export async function aoGravarSaidaHumana(
  * única da action (`devolverParaAria`) e do botão "Devolver para Aria" no Inbox (`carregarAriaDoAtendimento`).
  */
 export async function podeDevolverParaAria(db: Tx | typeof prisma, u: UsuarioSessao, atendimentoId: string): Promise<boolean> {
-  const visivel = await db.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { enviar: true })] } });
+  const visivel = await db.atendimentoWhatsApp.count({ where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(u, { enviar: true, db })] } });
   return visivel === 1;
 }
 
