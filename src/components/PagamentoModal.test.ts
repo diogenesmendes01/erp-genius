@@ -48,6 +48,6 @@ describe("PagamentoModal — aviso ligado ao input (R1 da #173, B1 e C3)", () =>
     const id = attr(input, "id");
     expect(id).toBeTruthy();
     expect(attr(input, "aria-describedby")).toBe(`${id}-aviso-moeda`);
-    expect(html).toContain(`<span id="${id}-aviso-moeda" role="alert" class="mt-1 block text-xs text-amber-700">CRC normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.</span>`);
+    expect(html).toContain(`<span id="${id}-aviso-moeda" aria-hidden="true" class="mt-1 block text-xs text-amber-700">CRC normalmente não usa centavos — confira o valor. Ele será registrado exatamente como digitado, sem arredondamento.</span>`);
   });
 });

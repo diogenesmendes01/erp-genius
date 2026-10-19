@@ -3585,3 +3585,30 @@ Branch `claude/pendencias-241-244`, base `main` d54280b6, com merge de 858d38e9 
   - `npm run lint`: 0 erros e 40 avisos, a linha de base.
   - `npm test`: saída 0, 775 arquivos e 5.758 testes.
   - `npm run build`: saída 0.
+
+### Triagem B12 e B17: lote de acessibilidade e travas do CI (ref. #170) — 2026-10-19
+
+Branch `claude/triagem-b12-b17`, base `main` d2adffd4. Cada item foi conferido no `main` antes de mexer; todos ainda estavam abertos.
+- **B12, acessibilidade:**
+  - **#168 C49, wizard da matrícula:** o `Stepper` de `matriculas/nova/MatriculaFormulario.tsx` virou `<ol aria-label="Etapas da matrícula">`, com `aria-current="step"` no passo atual.
+  - **#170 C30:** no passo 2, "Salvar matrícula" passou a `primario` (com `type="button"`); "← Voltar" segue `secundario`. Mapa de botões (`src/app/botoes-mapa.ts`) atualizado.
+  - **#173 C6, `CampoMoeda`:** o aviso visível continua mudando a cada tecla, mas deixou de ser `role="alert"`. Fica ligado ao input por `aria-describedby`, e o anúncio sai de uma região `role="status"` sempre montada, preenchida no blur com o aviso que ficou e esvaziada ao voltar a digitar. Exceção ancorada em `feedback-separado.test.ts` para `setAnunciado(aviso)`.
+  - **#170 C14, `Modal`:** no navegador, o modal vai para um portal em `document.body`. Enquanto ele está aberto, o resto da página fica `inert` (`isolarFundo`, em `lib/dialogo.ts`). O isolamento roda no mesmo efeito do foco: o fundo é isolado depois que o foco entra no diálogo e é solto antes de o foco voltar a quem abriu. No HTML do servidor e na hidratação, o modal sai no lugar, como antes. Os `ConfirmarAcao` que ficam dentro de um `<form>` (4 telas) só têm botões `type="button"`, então nada dependia do form de fora.
+  - **#170 C45, `SubTabs`:** `ariaLabel` virou obrigatório, sem o padrão "Sub-navegação"; `/configuracao` ganhou "Seções da configuração". A trava confere que cada `<SubTabs>` do app tem rótulo literal próprio.
+- **B17, CI e travas:**
+  - **C46:** o lint do CI roda `npx eslint . --max-warnings 40`, o número atual. `src/test/ci-workflow.test.ts` trava o teto.
+  - **#204 C1:** `src/server/crm/comissoes-painel.test.ts` confere, com Prisma mockado, o `where` de "Matriculadas sem comissão": `vendedorDonoId` no mesmo `AND` do escopo, sem datas, e nenhuma consulta para VENDEDOR.
+  - **C38:** a âncora do cursor da fila de agenda de 2ª chamada é lida no universo da fila (decisão aprovada + disponibilização), não em qualquer proposta. Teste unitário lê o SQL montado; `filas-cursor.test.ts` segue verde.
+  - **C51:** a trava de anúncio (`anuncios.test.ts`) só aceita `role="alert"`/`"status"`, `role={…}` que escolhe entre os dois, `aria-live` polite/assertive ou a nota estática declarada (`role="note"`). Antes passava qualquer `role=`, incluindo `data-role` e `aria-live="off"`. O detector de "resultado incerto" em variável ou template já está coberto pela trava AST de `feedback-separado.test.ts` (E3, E6).
+  - **C55b:** `src/test/guard-pagina.ts` passa a ver papel guardado em membro (`obj.p = sessao.papeis`, `obj["p"] = …`) e lido por chave calculada (`sessao["pap" + "eis"]` resolvida; chave montada com valor desconhecido lê papel, por cautela).
+- **Fora deste PR (pendências):**
+  - `docker build` no CI (C47): pesado, fica para um job próprio.
+  - `coolify-db-init.test.ts` (C47): obsoleto, o arquivo saiu com a Evolution (8ded2f5c).
+  - C48 (travas de enum da R3 da #138, `ETAPA_LABEL`, fornecedor, badges `{label, cls}`) e C54 (limites declarados de 7 travas): são grandes e cada trava pede uma releitura própria. Ficam para PRs separadas.
+  - C53: o manifesto já trava os usos do `EstadoVazio` arquivo a arquivo, então o piso solto é redundante. O caso B2 (exceção exata somada à edição do manifesto) exige redesenhar a trava de exceções.
+- Nenhuma migration nova. A integração da fila de 2ª chamada (`segunda-chamada-agenda-inicial.int.test.ts`) não rodou aqui, porque o container não tem Docker.
+- Evidências no head, sobre o `main` d2adffd4:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
+  - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 779 arquivos e 5.801 testes.
+  - `npm run build`: saída 0.

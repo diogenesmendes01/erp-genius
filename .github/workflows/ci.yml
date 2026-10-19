@@ -61,8 +61,10 @@ jobs:
           cache: npm
       - name: Instalar dependências (npm ci)
         run: npm ci
-      - name: ESLint (eslint .)
-        run: npx eslint .
+      - name: ESLint (eslint . --max-warnings 40)
+        # Teto de avisos (C46, #170): os 40 de hoje (no-unused-vars, set-state-in-effect…) não crescem. Ao
+        # resolver avisos, baixe o número aqui no mesmo PR; src/test/ci-workflow.test.ts confere o teto.
+        run: npx eslint . --max-warnings 40
 
   test:
     # Dois fusos: UTC (o do runner) e o da operação. A produção não fixa TZ, e há teste sensível a fuso
