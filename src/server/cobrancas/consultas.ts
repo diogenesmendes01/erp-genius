@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { numero, numeroOuNull } from "@/server/_shared/decimal";
 import { somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
+import { instanteDaGrade } from "@/server/agenda/grade";
+import { dataCivilInstitucional } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { proximaAcao, type DegrauRegua, type PassoRegua, type EstadoCobranca, type TipoAcao } from "./regua";
 import { carregarPoliticaRegua } from "./politica";
 import { TEXTOS_FABRICA } from "./fabrica";
@@ -83,8 +86,9 @@ export interface DashsCobranca {
   recebidoHoje: ValorMoeda[];
 }
 
-function inicioDoDia(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+/** Meia-noite de hoje no fuso da escola (Q176), não no relógio do servidor. */
+function inicioDoDiaNaEscola(agora: Date, fuso: string): Date {
+  return instanteDaGrade(dataCivilInstitucional(agora, fuso), "00:00", fuso);
 }
 
 export interface ReguaCalculada {
@@ -120,9 +124,12 @@ export async function montarReguaPorCobranca(
   cobrancas: { id: string; vencimento: Date; cicloRegua: number; acessoBloqueado: boolean }[],
   hoje: Date,
   politica?: readonly DegrauRegua[],
+  /** Fuso da escola; sem ele, lê `fusoDaEscola()` (Q176: o dia vira à meia-noite da escola). */
+  fusoEscola?: string,
 ): Promise<Map<string, ReguaCalculada>> {
   // Política como dado (doc 26/30): sem parâmetro, carrega a do banco (fallback = fábrica).
   const degraus = politica ?? (await carregarPoliticaRegua()).degraus;
+  const fuso = fusoEscola ?? (cobrancas.length ? await fusoDaEscola() : "");
   const ids = cobrancas.map((c) => c.id);
   const ciclos = new Map(cobrancas.map((c) => [c.id, c.cicloRegua]));
   const eventos = ids.length
@@ -180,6 +187,7 @@ export async function montarReguaPorCobranca(
     const acao = proximaAcao(
       { vencimento: c.vencimento, quitada: false, passosFeitos: passos, promessaAte },
       hoje,
+      fuso,
       degraus,
     );
     const tent = tentativasPorId.get(c.id);
@@ -250,6 +258,7 @@ export interface FilaCobrancaConsulta extends NavegacaoDaPagina {
 export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Promise<FilaCobrancaConsulta> {
   const filtros = entrada.filtros ?? lerFiltrosFila({});
   const hoje = new Date();
+  const fuso = await fusoDaEscola(); // Q176: régua, D+30 e "recebido hoje" no dia da escola
   const politica = await carregarPoliticaRegua();
 
   const abertas = await prisma.cobranca.findMany({
@@ -276,6 +285,7 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
     abertas.map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: c.matricula.acessoBloqueado })),
     hoje,
     politica.degraus,
+    fuso,
   );
 
   // O que ordena, filtra e conta, para a fila inteira (os mesmos campos que o item exibido mostra).
@@ -450,7 +460,7 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   // Recebido hoje = soma das BAIXAS de hoje (eventos PagamentoRegistrado), não o status PAGO:
   // captura parciais (que ficam PENDENTE) e usa o valor DESTA baixa, não o acumulado (review §2).
   const pagamentosHoje = await prisma.evento.findMany({
-    where: { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", criadoEm: { gte: inicioDoDia(hoje) } },
+    where: { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", criadoEm: { gte: inicioDoDiaNaEscola(hoje, fuso) } },
     select: { agregadoId: true, payload: true },
   });
   const moedaPorCobranca = new Map<string, string>();

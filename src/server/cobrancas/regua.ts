@@ -1,4 +1,5 @@
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
+import { dataCivilInstitucional } from "@/server/operacao/fuso";
 
 // CÉREBRO da cobrança (doc 24). Função PURA, determinística, sem IA: dada uma cobrança, o que
 // já foi feito e a data de hoje, decide qual é a ação devida na RÉGUA. O "braço" (humano hoje,
@@ -54,7 +55,7 @@ export interface ResultadoRegua {
   degrau: DegrauRegua | null;
   /** A data do degrau já passou e ele não foi cumprido (backlog) — não é "ação no dia". */
   atrasadaNaAcao: boolean;
-  /** hoje − vencimento, em dias de calendário (negativo = antes do vencimento). */
+  /** hoje − vencimento, em dias de calendário da escola (negativo = antes do vencimento). */
   diasAtraso: number;
   /** Menor = mais urgente. Para ordenar a fila (UI pode refinar por valor/risco). */
   prioridade: number;
@@ -71,13 +72,31 @@ export interface EntradaRegua {
   promessaAte?: Date | null;
 }
 
-function inicioDoDia(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+// Q176 (#164): o dia da régua vira à meia-noite do fuso da escola (`fusoDaEscola()`), nunca no
+// relógio do servidor. Em produção o processo roda em UTC, e o dia virava às 21h de Brasília.
+
+/**
+ * Dia civil (AAAA-MM-DD) de uma data gravada, como vencimento ou promessa. Elas nasceram como dia
+ * civil em convenções distintas: meio-dia ou meia-noite do fuso da escola, ou meia-noite UTC no
+ * legado. O maior entre o dia UTC e o dia da escola recupera o dia civil nas três; num instante
+ * legado ambíguo fica o dia mais tardio, que nunca antecipa lembrete, cobrança ou restrição.
+ */
+export function diaCivilGravado(gravada: Date, fuso: string): string {
+  const utc = gravada.toISOString().slice(0, 10);
+  const daEscola = dataCivilInstitucional(gravada, fuso);
+  return utc > daEscola ? utc : daEscola;
 }
 
-/** Diferença em dias de calendário entre `a` e `b` (a − b), ignorando hora. */
-export function diferencaEmDias(a: Date, b: Date): number {
-  return Math.round((inicioDoDia(a).getTime() - inicioDoDia(b).getTime()) / 86400000);
+const msDoDia = (civil: string) => Date.parse(`${civil}T00:00:00Z`);
+
+/** Dias de calendário da escola entre a data gravada e `agora` (positivo = já passou; ignora hora). */
+export function diasCivisDesde(agora: Date, gravada: Date, fuso: string): number {
+  return Math.round((msDoDia(dataCivilInstitucional(agora, fuso)) - msDoDia(diaCivilGravado(gravada, fuso))) / 86400000);
+}
+
+/** A data prometida (AAAA-MM-DD) já passou no calendário da escola? Hoje ainda vale. */
+export function promessaNoPassado(ate: string, agora: Date, fuso: string): boolean {
+  return ate < dataCivilInstitucional(agora, fuso);
 }
 
 /** Prioridade do degrau (menor = mais urgente): bloquear < cobrar (mais atraso) < lembrar. */
@@ -164,16 +183,18 @@ export function selecionarDegrau<D extends { offset: number; chave: string }>(
 export function proximaAcao(
   entrada: EntradaRegua,
   hoje: Date,
+  /** Fuso da escola (`fusoDaEscola()`): define quando o dia vira. */
+  fuso: string,
   politica: readonly DegrauRegua[] = REGUA,
 ): ResultadoRegua {
-  const diasAtraso = diferencaEmDias(hoje, entrada.vencimento);
+  const diasAtraso = diasCivisDesde(hoje, entrada.vencimento, fuso);
   const promessaAte = entrada.promessaAte ?? null;
 
   if (entrada.quitada) {
     return { estado: "quitada", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 999, promessaAte };
   }
   // Promessa vigente = data prometida ainda não passou (>= hoje). Dormente até lá.
-  if (promessaAte && diferencaEmDias(promessaAte, hoje) >= 0) {
+  if (promessaAte && diasCivisDesde(hoje, promessaAte, fuso) <= 0) {
     return { estado: "promessa", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 900, promessaAte };
   }
 
