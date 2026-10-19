@@ -425,6 +425,8 @@ model PrazoRespostaSetor {
   alertarResponsavel Boolean @default(true)
   alertarGerente Boolean @default(false)
   contarSoNoHorario Boolean @default(true)
+  // Horário de atendimento (HorarioAtendimentoSchema, hora civil no fuso da escola); nulo = contagem corrida.
+  horario Json?
   ultimoAtribuidoId String?
   atualizadoEm DateTime @updatedAt
 }
@@ -465,6 +467,8 @@ model AtendimentoWhatsApp {
   primeiroInboundEm DateTime?
   primeiraRespostaEm DateTime?
   prazoRespostaEm DateTime?
+  // Alerta de prazo estourado já tratado (claim do cron, uma vez por atendimento).
+  slaAlertadoEm DateTime?
   atendimentoOrigemId String?
   atendimentoOrigem AtendimentoWhatsApp? @relation("TransferenciaAtendimento", fields: [atendimentoOrigemId], references: [id], onDelete: Restrict)
   transferidos AtendimentoWhatsApp[] @relation("TransferenciaAtendimento")
@@ -9136,6 +9140,7 @@ enum OrigemTarefa {
 
 enum TipoNotificacao {
   LEMBRETE_TAREFA
+  SLA_ESTOURADO
 }
 
 model Tarefa {
@@ -9203,7 +9208,7 @@ model NotificacaoUsuario {
   criadaEm  DateTime        @default(now())
   lidaEm    DateTime?
 
-  @@unique([tipo, refId, criadaEm])
+  @@unique([tipo, refId, usuarioId, criadaEm])
   @@index([usuarioId, lidaEm])
 }
 
