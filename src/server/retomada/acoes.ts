@@ -10,6 +10,7 @@ import { bloquearCalendarioAluno, carregarEstadoRetomada } from "./estado";
 import { exigirFluxoGlobalSemMovimentacaoContratual } from "@/server/matricula/limite-legado";
 import { DecidirRetomadaSchema, SolicitarRetomadaSchema, dataRetomada, type DecidirRetomadaInput, type SolicitarRetomadaInput } from "./schema";
 import { SnapshotRetomadaSchema, exigirSnapshotRetomadaAtual, impedimentoRetomada, montarSnapshotRetomada, validarDatasNaoRetroativas } from "./regras";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 const SOLICITANTES: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO, Papel.ADMINISTRADOR];
 const APROVADORES: Papel[] = [Papel.FINANCEIRO, Papel.ADMINISTRADOR];
@@ -47,7 +48,7 @@ export async function solicitarRetomada(alunoId: string, input: SolicitarRetomad
         if (pendente.solicitanteId === autor.id && pendente.pausaId === estado.pausa.id && pendente.opcao === dados.opcao && pendente.motivo === dados.motivo && mesmasDatas) return pendente.id;
         throw new ErroRegra("O aluno já tem uma proposta de retomada pendente. Aguarde a decisão ou solicite a rejeição antes de propor novamente.");
       }
-      const snapshot = montarSnapshotRetomada(alunoId, estado.pausa.id, estado.matriculas, dados);
+      const snapshot = montarSnapshotRetomada(alunoId, estado.pausa.id, estado.matriculas, dados, new Date(), await fusoDaEscola(tx));
       const proposta = await tx.propostaRetomada.create({ data: {
         alunoId, pausaId: estado.pausa.id, opcao: dados.opcao, motivo: dados.motivo, solicitanteId: autor.id, snapshot,
       } });
@@ -88,7 +89,7 @@ export async function decidirRetomada(propostaId: string, input: DecidirRetomada
         const snapshot = parsed.data;
         exigirSnapshotRetomadaAtual(snapshot, proposta.alunoId, estado.pausa.id, estado.matriculas);
         if (proposta.pausaId !== estado.pausa.id) throw new ErroRegra("A pausa mudou desde a proposta. Rejeite-a e solicite uma nova.");
-        if (proposta.opcao === "REPROGRAMAR_PARCELAS") validarDatasNaoRetroativas(snapshot.alvos, agora);
+        if (proposta.opcao === "REPROGRAMAR_PARCELAS") validarDatasNaoRetroativas(snapshot.alvos, agora, await fusoDaEscola(tx));
         const cobrancas = new Map(estado.matriculas.flatMap((m) => m.cobrancas).map((c) => [c.id, c]));
         for (const alvo of snapshot.alvos) {
           const cobranca = cobrancas.get(alvo.cobrancaId)!;
