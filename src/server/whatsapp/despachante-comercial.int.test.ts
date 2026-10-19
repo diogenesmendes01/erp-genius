@@ -300,3 +300,46 @@ describe("idempotência do degrau comercial inclui a CHAVE da cadência (review 
     expect(intencao.motivoFalha).toBe("degrau_ja_cumprido");
   });
 });
+
+describe("teto por contato/dia no dia civil da ESCOLA (Q176 · ref. #164)", () => {
+  // Relógio fixo: o dia do teto vira à meia-noite do fuso da escola (padrão America/Sao_Paulo),
+  // nunca no relógio do servidor, que em produção roda em UTC. Verde com TZ=UTC e TZ=America/Sao_Paulo.
+
+  /** Uma saída automática (não reativa) do contato no instante dado. */
+  async function saidaAutomaticaEm(ctx: Awaited<ReturnType<typeof seedComercial>>, em: Date) {
+    const conversa = await prisma.conversaWhatsApp.create({
+      data: { numeroId: ctx.numero.id, contatoId: ctx.contato.id, ultimaMensagemEm: em },
+    });
+    await prisma.mensagemWhatsApp.create({
+      data: {
+        conversaId: conversa.id, numeroId: ctx.numero.id, direcao: "SAIDA", corpo: "Lembrete",
+        status: "ENVIADA", driver: DriverWhatsApp.BAILEYS, origem: "CRON", criadoEm: em,
+      },
+    });
+  }
+
+  it("às 23h30 de Brasília (02h30 UTC do dia seguinte), a saída do meio-dia ainda conta no teto do dia", async () => {
+    const ctx = await seedComercial({ teto: 1 });
+    await saidaAutomaticaEm(ctx, new Date("2026-03-10T15:00:00.000Z")); // 10/03, 12h de Brasília
+    await enfileirarDegrau(ctx);
+
+    const r = await despacharFila(new Date("2026-03-11T02:30:00.000Z")); // 10/03, 23h30 de Brasília
+    expect(r.adiadas).toBe(1);
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } });
+    expect(intencao.status).toBe("ADIADA");
+    expect(intencao.motivoFalha).toBe("teto_contato_dia");
+  });
+
+  it("contra-prova: à 00h30 de Brasília, a saída das 23h30 da véspera já não conta", async () => {
+    const ctx = await seedComercial({ teto: 1 });
+    await saidaAutomaticaEm(ctx, new Date("2026-03-11T02:30:00.000Z")); // 10/03, 23h30 de Brasília
+    await enfileirarDegrau(ctx);
+
+    const r = await despacharFila(new Date("2026-03-11T03:30:00.000Z")); // 11/03, 00h30 de Brasília
+    expect(r.adiadas).toBe(0);
+    expect(r.simuladas).toBe(1);
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } });
+    expect(intencao.status).toBe("SIMULADA");
+    expect(intencao.motivoFalha).not.toBe("teto_contato_dia");
+  });
+});

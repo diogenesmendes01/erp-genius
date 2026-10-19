@@ -24,6 +24,8 @@ import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/se
 import { aplicarResposta } from "./status-atendimento";
 import { aoGravarSaidaHumana, MOTIVO_ARIA_PAUSADA } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
+import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -165,6 +167,8 @@ export async function despacharFila(
   // Shadow PRÓPRIO da Aria (origem IA): o estado do agente, não o ensaio da saudação comercial.
   const ariaEstado = (await prisma.agenteIA.findUnique({ where: { id: "aria" }, select: { estado: true } }))?.estado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
+  // Q176 (#164): o teto por contato/dia (passo 7) conta no dia civil da escola, não no relógio do servidor (UTC).
+  const inicioDiaEscola = inicioDoDiaInstitucional(agora, await fusoDaEscola());
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
   // vira FALHOU com motivo — o item volta à fila humana; nunca re-tenta sozinho, porque o
@@ -442,13 +446,12 @@ export async function despacharFila(
     //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
     //    e o 1º follow-up da cadência não saía no mesmo dia.
     if (!agenda && automatica && !reativa && !gestao) {
-      const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
           conversa: { contatoId: it.contatoId },
           direcao: "SAIDA",
           origem: { in: ["CRON", "LOTE"] },
-          criadoEm: { gte: inicioDia },
+          criadoEm: { gte: inicioDiaEscola },
           NOT: { intencao: { is: { reativa: true } } },
         },
       });
