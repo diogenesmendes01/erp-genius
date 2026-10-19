@@ -24,7 +24,7 @@ export function marcaIdempotencia(chaveIdempotencia: string | undefined, entrada
 
 /**
  * Busca do Evento de criação pela chave. Repete a expressão e o predicado do índice parcial
- * `Evento_idempotencia_idx` (migration 20261019010000), para o Postgres usá-lo em vez de percorrer
+ * `Evento_idempotencia_idx` (migration 20261019100000), para o Postgres usá-lo em vez de percorrer
  * todos os Eventos do tipo (C1 da revisão do #240).
  */
 export function sqlBuscaIdempotente(alvo: { tipo: string; agregadoTipo: string; autorId: string; chaveIdempotencia: string }): Prisma.Sql {

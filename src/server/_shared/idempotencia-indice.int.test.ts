@@ -23,14 +23,19 @@ describe("Evento_idempotencia_idx", () => {
   });
 
   it("a busca de repeticaoIdempotente usa o índice", async () => {
-    const alvo = { tipo: "TarefaCriada", agregadoTipo: "Tarefa", autorId, chaveIdempotencia: "chave-indice-0001" };
-    const plano = await prisma.$transaction(async (tx) => {
-      // Tabela pequena no teste: sem isto o planejador prefere a varredura sequencial.
-      await tx.$executeRaw`SET LOCAL enable_seqscan = off`;
-      const linhas = await tx.$queryRaw<{ "QUERY PLAN": string }[]>(Prisma.sql`EXPLAIN ${sqlBuscaIdempotente(alvo)}`);
-      return linhas.map((l) => l["QUERY PLAN"]).join("\n");
-    });
-    expect(plano).toContain("Evento_idempotencia_idx");
+    // Cenário de produção: muitos Eventos do mesmo tipo e agregado, a maioria sem chave e o resto com chaves
+    // de vários autores. Com estatísticas atualizadas, o planejador deve preferir o índice parcial.
+    await prisma.$executeRaw`
+      INSERT INTO "Evento" ("id", "tipo", "agregadoTipo", "agregadoId", "autorId", "payload")
+      SELECT 'carga-' || g, 'TarefaCriada', 'Tarefa', 'tarefa-' || g, ${autorId},
+             CASE WHEN g % 4 = 0 THEN jsonb_build_object('chaveIdempotencia', 'carga-' || g, 'entradaHash', 'h') ELSE '{}'::jsonb END
+      FROM generate_series(1, 5000) AS g`;
+    await prisma.$executeRaw`ANALYZE "Evento"`;
+    const alvo = { tipo: "TarefaCriada", agregadoTipo: "Tarefa", autorId, chaveIdempotencia: "carga-400" };
+    const linhas = await prisma.$queryRaw<{ "QUERY PLAN": string }[]>(Prisma.sql`EXPLAIN ${sqlBuscaIdempotente(alvo)}`);
+    expect(linhas.map((l) => l["QUERY PLAN"]).join("\n")).toContain("Evento_idempotencia_idx");
+    const [achado] = await prisma.$queryRaw<{ agregadoId: string }[]>(sqlBuscaIdempotente(alvo));
+    expect(achado?.agregadoId).toBe("tarefa-400");
   });
 
   it("acha o Evento pela chave do payload, só do mesmo tipo, agregado e autor", async () => {
