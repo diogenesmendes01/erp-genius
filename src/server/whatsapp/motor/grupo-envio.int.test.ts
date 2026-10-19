@@ -45,6 +45,9 @@ describe("envio humano para grupo", () => {
       status: "ENVIADA", providerMessageId: "3EBG1", mensagemIdMotor: `${GRUPO}:3EBG1`, driver: "MOTOR",
     });
     expect(m.clientMessageId).toMatch(/^[0-9a-f-]{36}$/);
+    // C3 da R1 do #241: a saída da fila marca o envio.
+    expect(m.enviadaEm).toEqual(m.statusEm);
+    expect(m.enviadaEm).not.toBeNull();
     expect(enviarTexto).toHaveBeenCalledTimes(1);
     expect(enviarTexto).toHaveBeenCalledWith(expect.objectContaining({ id: numero.id }), GRUPO, "Reunião amanhã",
       { clientMessageId: m.clientMessageId, origem: "HUMANO" });

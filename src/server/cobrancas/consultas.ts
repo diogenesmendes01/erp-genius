@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { numero, numeroOuNull } from "@/server/_shared/decimal";
 import { somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
-import { instanteDaGrade } from "@/server/agenda/grade";
-import { dataCivilInstitucional } from "@/server/operacao/fuso";
+import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { proximaAcao, type DegrauRegua, type PassoRegua, type EstadoCobranca, type TipoAcao } from "./regua";
 import { carregarPoliticaRegua } from "./politica";
@@ -84,11 +83,6 @@ export interface DashsCobranca {
   bloquear: number;
   promessas: number;
   recebidoHoje: ValorMoeda[];
-}
-
-/** Meia-noite de hoje no fuso da escola (Q176), não no relógio do servidor. */
-function inicioDoDiaNaEscola(agora: Date, fuso: string): Date {
-  return instanteDaGrade(dataCivilInstitucional(agora, fuso), "00:00", fuso);
 }
 
 export interface ReguaCalculada {
@@ -460,7 +454,7 @@ export async function listarFilaCobranca(entrada: EntradaFilaCobranca = {}): Pro
   // Recebido hoje = soma das BAIXAS de hoje (eventos PagamentoRegistrado), não o status PAGO:
   // captura parciais (que ficam PENDENTE) e usa o valor DESTA baixa, não o acumulado (review §2).
   const pagamentosHoje = await prisma.evento.findMany({
-    where: { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", criadoEm: { gte: inicioDoDiaNaEscola(hoje, fuso) } },
+    where: { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", criadoEm: { gte: inicioDoDiaInstitucional(hoje, fuso) } }, // R1 do #239 (C1): 1º instante válido do dia
     select: { agregadoId: true, payload: true },
   });
   const moedaPorCobranca = new Map<string, string>();
