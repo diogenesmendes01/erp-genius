@@ -3566,3 +3566,22 @@ Branch `claude/fuso-parte3`, base `main` 1e721ca5, rebaseada sobre d54280b6 (#24
   - `npm run build` (NODE_OPTIONS=--max-old-space-size=5120): saída 0.
   - Integração `src/server/{relatorios,home,financeiro,retomada,operacao}` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, 15 arquivos e 157 testes.
   - Integração `src/server/whatsapp` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, 60 arquivos e 465 testes.
+
+### Pendências das revisões do #241 (N1, C5) e do #244 (C2), com a integração completa — 2026-10-19
+
+Branch `claude/pendencias-241-244`, base `main` d54280b6, com merge de 858d38e9 (#244), 914dece1 (#245), 6a4165d8 (#246) e fef6d467 (#247).
+- **#241 N1:** duas saídas que nascem `ENVIADA` não gravavam `MensagemWhatsApp.enviadaEm`. Agora gravam:
+  - o encaminhamento pelo motor (`encaminharMensagemWhatsApp`, `motor/acoes-mensagem.ts`) grava `enviadaEm = statusEm`. Se o eco do celular chega antes, ele já grava `enviadaEm` e o `upsert` não mexe nisso;
+  - o eco `fromMe` em grupo (`motor/processar-grupo.ts`) grava o `quando` do eco. A entrada em grupo continua com `enviadaEm` nulo.
+  - Testes (vermelhos antes): `motor/acoes-mensagem.int.test.ts` e `motor/processar-grupo.int.test.ts`.
+- **#244 C2:** `revisarFalhaEnvio` (`whatsapp/operacoes-atendimento.ts`) confere o escopo com `atendimentoVisivel(u, id, true, tx)`, dentro da própria transação. Teste novo em `whatsapp/acoes-atendimento-pool.int.test.ts` (`connection_limit=1`): revisar com reenvio conclui. Antes da correção, caía no `pool_timeout`.
+- **#241 C5:** `npm run test:int` completo no head final (2b5b5b67, com todo o main até fef6d467), em 4 shards (`--shard=n/4`). Cada shard usou um banco próprio, `erp_genius_test_p241_1` a `_4`, recriado vazio, com `migrate deploy` do zero (463 migrações), e apagado ao fim. Perfil temporário em `scripts/test-profile.mjs`, desfeito antes do commit.
+  - Saída 0 nos 4 shards: 309 arquivos e 2.652 testes, com 2.648 passando, 0 falhas e 4 pulados. Os pulados são as fixtures de homologação Q165, Q170 e Q249 (`*-ui-homologacao.int.test.ts`), que só rodam quando ligadas.
+  - Por shard: 78 arquivos e 663 testes; 77 e 692 (3 pulados); 77 e 704 (1 pulado); 77 e 593.
+  - Duas rodadas anteriores, em heads que ficaram para trás com a entrada do #245 e depois do #247, foram interrompidas sem nenhuma falha até o ponto em que pararam.
+- Nenhuma migration nova.
+- Evidências no head final:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0. A primeira tentativa acusou `.next/types` velho, gerado antes do #246, que removeu `(portal)/layout.tsx`; depois do build, saída 0.
+  - `npm run lint`: 0 erros e 40 avisos, a linha de base.
+  - `npm test`: saída 0, 775 arquivos e 5.758 testes.
+  - `npm run build`: saída 0.
