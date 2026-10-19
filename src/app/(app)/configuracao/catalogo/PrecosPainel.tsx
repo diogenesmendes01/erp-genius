@@ -10,6 +10,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
 import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
@@ -44,10 +45,11 @@ export function PrecosPainel({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  // Sem chave de idempotência: criarPreco cria um preço novo (e aposenta o ativo) a cada chamada — a falha de rede
-  // manda conferir a página antes de repetir. definirPrecoAtivo recebe o estado-alvo (B4, #175 C2): repeti-lo não
-  // desfaz nada.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Tudo aqui é seguro de repetir: criarPreco recebe chave de idempotência (#166), e o reenvio depois de um
+  // resultado incerto devolve o preço já criado, sem aposentá-lo com uma cópia; definirPrecoAtivo recebe o
+  // estado-alvo (B4, #175 C2; C2 da revisão do #242), então repeti-lo não desfaz nada.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // Onde mostrar o resultado: no formulário de novo preço ou na linha do preço alternado.
   const [origem, setOrigem] = useState<string | null>(null);
 
@@ -74,7 +76,9 @@ export function PrecosPainel({
       tipoCobranca,
       valor: valorNumero,
       versaoEstudo: versaoEstudo || undefined,
+      chaveIdempotencia: tentativa.atual,
     }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setValor("");
     setVersao("");

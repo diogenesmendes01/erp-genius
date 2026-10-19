@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { registrarEvento } from "@/server/_shared/evento";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { diffCampos } from "@/server/_shared/regras";
 import { palavrasDaBuscaLeads } from "@/server/comercial/filtros";
@@ -487,20 +489,32 @@ export async function editarPessoa(id: string, input: EditarPessoaInput): Promis
 const NotaSchema = z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota deve ter até 2.000 caracteres.");
 const MotivoOptOutSchema = z.string().trim().min(1, "Informe o motivo.").max(500, "O motivo deve ter até 500 caracteres.");
 
-/** Nota interna da equipe sobre a pessoa (`Evento NotaInterna` no agregado Pessoa). Nunca é enviada ao contato. */
-export async function registrarNotaPessoa(id: string, texto: string): Promise<Resultado> {
+/**
+ * Nota interna da equipe sobre a pessoa (`Evento NotaInterna` no agregado Pessoa). Nunca é enviada ao contato.
+ * Com `chaveIdempotencia` (a ficha manda, #166), o reenvio da mesma tentativa não grava uma segunda nota: a nota
+ * é o próprio Evento, então a chave e o hash da entrada (pessoa + texto) vão no payload dele.
+ */
+export async function registrarNotaPessoa(id: string, texto: string, chaveIdempotencia?: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "contatos.editar");
     const nota = NotaSchema.parse(texto);
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(chaveIdempotencia), { pessoaId: id, texto: nota });
     await prisma.$transaction(async (tx) => {
       await pessoaNoEscopo(tx, id, autor);
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "NotaInterna", agregadoTipo: "Pessoa", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra nota. Recarregue a página e confira se a nota já aparece no histórico antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "NotaInterna",
         agregadoTipo: "Pessoa",
         agregadoId: id,
         autorId: autor.id,
-        payload: { texto: nota },
+        payload: { texto: nota, ...marca },
       });
     });
   });
