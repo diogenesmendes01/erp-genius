@@ -10,6 +10,9 @@ import { donosDeLinhaVisiveis, whereLinhasDosDonos } from "./linha-comercial";
 // Doc 36/37: transporte e acesso são dimensões diferentes. Escopo de número só serve
 // para listagens operacionais do canal. Mensagens/arquivos exigem escopoAtendimentos.
 
+/** Cliente das consultas do escopo: o `prisma` global ou a transação em curso. */
+export type Db = Prisma.TransactionClient | typeof prisma;
+
 export const PAPEIS_INBOX: Papel[] = [
   Papel.ADMINISTRADOR,
   Papel.GERENTE_COMERCIAL,
@@ -43,9 +46,12 @@ export function ramoFilaDoSetor(setor: Setor): Prisma.AtendimentoWhatsAppWhereIn
 /** O transporte nunca concede leitura das mensagens. Cada finalidade tem seus vínculos. */
 export async function escopoAtendimentos(
   usuario: Pick<UsuarioSessao, "id" | "papeis">,
-  opcoes: { enviar?: boolean; agora?: Date } = {},
+  opcoes: { enviar?: boolean; agora?: Date; db?: Db } = {},
 ): Promise<Prisma.AtendimentoWhatsAppWhereInput> {
   const agora = opcoes.agora ?? new Date();
+  // Dentro de uma transação, o chamador passa a tx: o escopo é lido nela (enxerga o que ela gravou) e não pede
+  // outra conexão do pool enquanto a dela está presa num FOR UPDATE (#207, C4 da R1 e C2 da R2).
+  const db = opcoes.db ?? prisma;
   const ativo: Prisma.AtendimentoWhatsAppWhereInput = opcoes.enviar ? {
     encerradoEm: null, conversa: { numero: { ativo: true } },
     OR: [{ finalidade: { not: "FINANCEIRO" } }, { matriculaId: { not: null } }],
@@ -58,7 +64,7 @@ export async function escopoAtendimentos(
   } } };
   if (usuario.papeis.some((p) => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL)) {
     ors.push({ finalidade: "COMERCIAL", OR: [
-      { lead: { is: await escopoComercialAtual({ ...usuario, nome: "" }) } },
+      { lead: { is: await escopoComercialAtual({ ...usuario, nome: "" }, db) } },
       // Numa linha comercial o acesso sem lead vem da POSSE ATUAL da linha (abaixo): o responsável
       // gravado na criação não pode manter acesso depois de troca de dono ou linha desativada.
       { leadId: null, responsavelId: usuario.id, conversa: { numero: { finalidade: { not: "VENDAS" } } } },
@@ -67,7 +73,7 @@ export async function escopoAtendimentos(
     // Linha comercial (SPEC-ERP-005, LC-D02): dono atual da linha e gerente da equipe do dono veem
     // TODAS as conversas da linha, com ou sem lead. Só o conteúdo da conversa — painel do lead,
     // ficha de aluno e financeiro seguem as próprias regras (LC-L01/LC-L02).
-    const donos = await donosDeLinhaVisiveis(usuario);
+    const donos = await donosDeLinhaVisiveis(usuario, db);
     if (donos.length) ors.push(whereLinhasDosDonos(donos));
   }
   // Participante vale para qualquer setor, sem filtrar por finalidade.
@@ -87,7 +93,7 @@ export async function escopoAtendimentos(
     }
   }
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
-    const vinculos = await prisma.alocacaoTurma.findMany({ where: { ativa: true, turma: escopoTurmasDocente(usuario.id, agora) }, select: { alunoId: true, turmaId: true } });
+    const vinculos = await db.alocacaoTurma.findMany({ where: { ativa: true, turma: escopoTurmasDocente(usuario.id, agora) }, select: { alunoId: true, turmaId: true } });
     // Vínculo ATUAL: o diário próprio é outra capacidade, não acesso perpétuo à inbox.
     ors.push({ finalidade: "PEDAGOGICO", encerradoEm: null, OR: [
       ...vinculos.map((v) => ({ alunoId: v.alunoId, turmaId: v.turmaId })),

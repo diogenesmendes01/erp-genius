@@ -38,7 +38,7 @@ export default async function Nota({ params, searchParams }: { params: Promise<{
       {n.correcaoVigente && <p className="whitespace-pre-wrap">Nota anterior: {n.nota}. Correção aprovada: {n.correcaoVigente.motivo}</p>}
       {n.decisao && <p className="whitespace-pre-wrap">Conferência de {n.decisao.decisor.nome}: {n.decisao.motivo}</p>}
       {n.podeCorrigir && <Link className="block underline" href={`/academico/recuperacoes/correcoes/${encodeURIComponent(n.id)}`}>Propor ou conferir correção</Link>}
-      {n.podeDecidir && n.entradaHash && <ConferirNota notaId={n.id} entradaHash={n.entradaHash} podeAprovar={n.podeAprovar} />}
+      {n.podeDecidir && n.entradaHash && <ConferirNota notaId={n.id} entradaHash={n.entradaHash} podeAprovar={n.podeAprovar} versao={n.versao} nota={n.nota} />}
     </article>)}
     {!d.notas.length && (antesVersao
       ? <EstadoVazio bloco>Nenhuma versão de nota registrada nesta página.</EstadoVazio>

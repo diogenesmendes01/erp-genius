@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { decidirTrocaEmailPortalAluno, prepararConvitePortalAluno, prepararTrocaEmailPortalAluno } from "@/server/portal-aluno/actions";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -42,14 +43,32 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
     formulario.reset();
     router.refresh();
   }
-  async function decidir(solicitacaoId: string, aprovar: boolean, motivo: string) {
+  // Aprovar e aplicar (docs/42 L325) troca o e-mail, apaga a senha e revoga sessões e links do aluno: só abre o
+  // ConfirmarAcao, que roda a action e mostra a falha nele. Rejeitar não mexe na conta e continua direto.
+  const [aplicando, setAplicando] = useState<{ id: string; novoEmail: string; motivo: string } | null>(null);
+  async function rejeitar(solicitacaoId: string, motivo: string) {
     setAlvo(`decisao:${solicitacaoId}`);
-    const d = await acao.executar(() => decidirTrocaEmailPortalAluno({ solicitacaoId, aprovar, motivo }), aprovar ? "Troca aplicada; sessões e links anteriores foram revogados. A recuperação foi preparada para o novo endereço." : "Troca de e-mail rejeitada.");
+    const d = await acao.executar(() => decidirTrocaEmailPortalAluno({ solicitacaoId, aprovar: false, motivo }), "Troca de e-mail rejeitada.");
     if (d?.tipo === "ok") router.refresh();
+  }
+  function aplicada(solicitacaoId: string) {
+    setAplicando(null);
+    setAlvo(`decisao:${solicitacaoId}`);
+    acao.setErro(null);
+    acao.setSucesso("Troca aplicada; sessões e links anteriores foram revogados. A recuperação foi preparada para o novo endereço.");
+    router.refresh();
   }
   return <div className="space-y-5"><section className="rounded border bg-surface p-4"><h2 className="font-medium">Situação</h2><dl className="mt-3 grid gap-2 text-sm"><div><dt className="text-gray-500">E-mail cadastrado</dt><dd>{emailCadastro ?? "Ausente"}</dd></div><div><dt className="text-gray-500">Identidade de portal</dt><dd>{conta ? conta.ativa ? conta.temSenha ? "Ativa" : "Aguardando definição de senha" : "Bloqueada" : "Ainda não preparada"}</dd></div><div><dt className="text-gray-500">E-mail verificado do portal</dt><dd>{conta?.emailVerificado ?? "Ainda não confirmado pelo convite"}</dd></div></dl></section>
     <section className="rounded border bg-surface p-4"><h2 className="font-medium">Convite individual</h2><p className="mt-1 text-sm text-gray-600">Não há senha nem link para copiar nesta tela.</p><button onClick={convite} disabled={acao.ocupado} className={`${botaoClasses({ tamanho: "lg" })} mt-3`}>Preparar convite</button><FeedbackAcao erro={alvo === "convite" ? acao.erro : null} sucesso={alvo === "convite" ? acao.sucesso : undefined} className="mt-3" /></section>
     <section className="rounded border bg-surface p-4"><h2 className="font-medium">Troca assistida de e-mail</h2><form onSubmit={troca} className="mt-3 grid gap-3"><label className="text-sm">Novo e-mail<input required name="novoEmail" type="email" className="mt-1 w-full rounded border px-3 py-2" /></label><label className="text-sm">Motivo<CampoTexto required minLength={5} name="motivo" className="mt-1 w-full rounded border px-3 py-2" /></label><label className="text-sm">Evidência de identidade e vínculo<CampoTexto required minLength={5} name="evidencia" className="mt-1 w-full rounded border px-3 py-2" /></label><FeedbackAcao erro={alvo === "troca" ? acao.erro : null} sucesso={alvo === "troca" ? acao.sucesso : undefined} /><button disabled={acao.ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} justify-self-start`}>Preparar validação</button></form></section>
-    <section className="rounded border bg-surface p-4"><h2 className="font-medium">Solicitações de troca</h2>{!trocas.length ? <EstadoVazio className="mt-2">Nenhuma solicitação.</EstadoVazio> : <div className="mt-3 space-y-3">{trocas.map((troca) => <article key={troca.id} className="rounded border p-3 text-sm"><p>{troca.novoEmail} · {rotular(SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, troca.situacao)}</p><p className="mt-1 text-gray-600">Preparada em {instanteAdministrativo(troca.criadaEm)}</p>{troca.novoEmailVerificadoEm && <p className="mt-1 text-gray-600">Novo endereço confirmado em {instanteAdministrativo(troca.novoEmailVerificadoEm)}</p>}{troca.decisao && <p className="mt-1">Decisão {troca.decisao.aprovada ? "aprovada" : "rejeitada"} em {instanteAdministrativo(troca.decisao.criadaEm)}.</p>}{podeDecidir && troca.situacao === "PENDENTE_DECISAO" && <form onSubmit={(evento) => { evento.preventDefault(); void decidir(troca.id, true, String(new FormData(evento.currentTarget).get("motivo") ?? "")); }} className="mt-3 flex flex-wrap gap-2"><input required name="motivo" aria-label={`Motivo da decisão sobre a troca para ${troca.novoEmail}`} placeholder="Motivo da decisão" className="min-w-48 flex-1 rounded border px-2 py-1" /><button disabled={acao.ocupado} className={botaoClasses({ tamanho: "sm" })}>Aprovar e aplicar</button><button type="button" disabled={acao.ocupado} onClick={(evento) => { const formulario = evento.currentTarget.form; if (formulario) void decidir(troca.id, false, String(new FormData(formulario).get("motivo") ?? "")); }} className={botaoClasses({ variante: "perigo", tamanho: "sm" })}>Rejeitar</button></form>}<FeedbackAcao erro={alvo === `decisao:${troca.id}` ? acao.erro : null} sucesso={alvo === `decisao:${troca.id}` ? acao.sucesso : undefined} className="mt-3" /></article>)}</div>}</section>
+    <section className="rounded border bg-surface p-4"><h2 className="font-medium">Solicitações de troca</h2>{!trocas.length ? <EstadoVazio className="mt-2">Nenhuma solicitação.</EstadoVazio> : <div className="mt-3 space-y-3">{trocas.map((troca) => <article key={troca.id} className="rounded border p-3 text-sm"><p>{troca.novoEmail} · {rotular(SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, troca.situacao)}</p><p className="mt-1 text-gray-600">Preparada em {instanteAdministrativo(troca.criadaEm)}</p>{troca.novoEmailVerificadoEm && <p className="mt-1 text-gray-600">Novo endereço confirmado em {instanteAdministrativo(troca.novoEmailVerificadoEm)}</p>}{troca.decisao && <p className="mt-1">Decisão {troca.decisao.aprovada ? "aprovada" : "rejeitada"} em {instanteAdministrativo(troca.decisao.criadaEm)}.</p>}{podeDecidir && troca.situacao === "PENDENTE_DECISAO" && <form onSubmit={(evento) => { evento.preventDefault(); if (!acao.ocupado) setAplicando({ id: troca.id, novoEmail: troca.novoEmail, motivo: String(new FormData(evento.currentTarget).get("motivo") ?? "") }); }} className="mt-3 flex flex-wrap gap-2"><input required name="motivo" aria-label={`Motivo da decisão sobre a troca para ${troca.novoEmail}`} placeholder="Motivo da decisão" className="min-w-48 flex-1 rounded border px-2 py-1" /><button disabled={acao.ocupado} className={botaoClasses({ tamanho: "sm" })}>Aprovar e aplicar</button><button type="button" disabled={acao.ocupado} onClick={(evento) => { const formulario = evento.currentTarget.form; if (formulario) void rejeitar(troca.id, String(new FormData(formulario).get("motivo") ?? "")); }} className={botaoClasses({ variante: "perigo", tamanho: "sm" })}>Rejeitar</button></form>}<FeedbackAcao erro={alvo === `decisao:${troca.id}` ? acao.erro : null} sucesso={alvo === `decisao:${troca.id}` ? acao.sucesso : undefined} className="mt-3" /></article>)}</div>}</section>
+    {aplicando && <ConfirmarAcao titulo={`Aplicar a troca do e-mail do portal para ${aplicando.novoEmail}?`} confirmacao="troca de e-mail" idempotente={false}
+      acao={() => decidirTrocaEmailPortalAluno({ solicitacaoId: aplicando.id, aprovar: true, motivo: aplicando.motivo })}
+      aoConcluir={() => aplicada(aplicando.id)} aoCancelar={() => setAplicando(null)}>
+      <p>O acesso do aluno ao portal passa de {conta?.emailVerificado ?? "sem e-mail confirmado"} para {aplicando.novoEmail}, e a senha atual deixa de valer.</p>
+      <p>As sessões abertas e os links de acesso já enviados ao aluno são revogados na hora. A recuperação de acesso é preparada para o novo endereço.</p>
+      <p>Motivo registrado: {aplicando.motivo.trim()}</p>
+      <p>Não há desfazer pela tela: voltar ao endereço anterior exige uma nova solicitação de troca.</p>
+    </ConfirmarAcao>}
   </div>;
 }
