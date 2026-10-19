@@ -13,7 +13,8 @@ import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { formatarMoeda, formatarMoedaOuIndefinida, MOEDA_NAO_DEFINIDA } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
-import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { UNIDADE_PERMUTA_SERVICO_LABEL, rotular } from "@/lib/labels";
 
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
@@ -118,6 +119,52 @@ function dados(formulario: HTMLFormElement) {
 }
 const campo = (formulario: HTMLFormElement, nome: string) => String(dados(formulario).get(nome) ?? "").trim();
 
+// Decidir a compensação (docs/42 L2142): a decisão nasce vazia e obrigatória (antes vinha em "Aprovar e compensar" e
+// enviar sem tocar no campo abatia mensalidades), o botão diz a ação escolhida e aprovar só abre o ConfirmarAcao, que
+// diz quanto sai de cada mensalidade. A action roda na confirmação e mostra a falha lá. Rejeitar não abate nada e
+// continua direto. Repetir a mesma decisão com o mesmo motivo não grava de novo (servidor), então é idempotente.
+export function DecidirCompensacao({ proposta, moeda, cobrancas }: { proposta: Proposta; moeda: string | null; cobrancas: Acordo["cobrancas"] }) {
+  const router = useRouter();
+  const [decisao, setDecisao] = useState<"" | "APROVAR" | "REJEITAR">("");
+  const [motivo, setMotivo] = useState("");
+  const [confirmando, setConfirmando] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const aprovar = decisao === "APROVAR", rejeitar = decisao === "REJEITAR";
+  const motivoDecisao = motivo.trim();
+  const valor = formatarMoedaOuIndefinida(proposta.valor, moeda);
+  async function rejeitarDireto() {
+    setOcupado(true); setErro(null);
+    try {
+      const r = await decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: false, motivo: motivoDecisao });
+      if (!r.ok) setErro(r.erro); else router.refresh();
+    } catch { setErro(MSG_DECISAO_INCERTA); } finally { setOcupado(false); }
+  }
+  return <form className="space-y-2 rounded border p-3" onSubmit={e => {
+    e.preventDefault();
+    if (ocupado || !decisao || !motivoDecisao) return;
+    if (aprovar) { setErro(null); setConfirmando(true); return; }
+    void rejeitarDireto();
+  }}>
+    <fieldset disabled={ocupado || confirmando} className="space-y-2">
+      <legend className="font-medium">Decidir proposta</legend>
+      <label>Decisão <select name="aprovar" required value={decisao} onChange={e => { setErro(null); setDecisao(e.target.value === "APROVAR" || e.target.value === "REJEITAR" ? e.target.value : ""); }}><option value="" disabled>Escolha a decisão</option><option value="APROVAR">Aprovar e compensar</option><option value="REJEITAR">Rejeitar</option></select></label>
+      <label>Motivo <input required name="motivo" value={motivo} onChange={e => { setErro(null); setMotivo(e.target.value); }} /></label>
+      <button type="submit" disabled={!decisao} className={botaoClasses({ variante: rejeitar ? "perigo" : "secundario", tamanho: "sm" })}>{ocupado ? "Enviando…" : rejeitar ? "Rejeitar" : aprovar ? "Aprovar e compensar" : "Decidir"}</button>
+    </fieldset>
+    {erro && <p role="alert" className="text-sm">{erro}</p>}
+    {confirmando && <ConfirmarAcao titulo={`Aprovar a compensação de ${valor}?`} confirmacao={`compensação de ${valor}`} idempotente
+      acao={() => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: true, motivo: motivoDecisao })}
+      aoConcluir={() => { setConfirmando(false); setDecisao(""); setMotivo(""); router.refresh(); }} aoCancelar={() => setConfirmando(false)}>
+      <p>O valor do serviço sai do saldo destas mensalidades:</p>
+      <ul className="list-disc pl-5">{proposta.destinos.map(d => <li key={d.cobrancaId}>{cobrancas.find(c => c.id === d.cobrancaId)?.codigo ?? "Mensalidade"}: {formatarMoedaOuIndefinida(d.valor, moeda)}</li>)}</ul>
+      <p>Fica registrado como serviço compensado. Não é recebimento em dinheiro.</p>
+      <p>Motivo registrado: {motivoDecisao}</p>
+      <p>Não há desfazer pela tela.</p>
+    </ConfirmarAcao>}
+  </form>;
+}
+
 export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, podeAprovar, opcoes = [], preferenciaFusoExibicao = null }: { opcoes?: Opcao[]; acordos: Acordo[]; podeFinanceiro: boolean; podePedagogico: boolean; podeAprovar: boolean; preferenciaFusoExibicao?: string | null }) {
   const [matriculaSelecionada, selecionarMatricula] = useState("");
   const elegiveis = opcoes.filter(c => c.matriculaId === matriculaSelecionada);
@@ -157,9 +204,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
               {(() => { const exibicao = formatarInstanteExibicao(aplicacao.aplicadaEm, preferenciaFusoExibicao, "UTC"); return <>{acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {formatarMoedaOuIndefinida(aplicacao.valor, acordo.moeda)} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC) · serviço compensado</>; })()}
             </li>)}</ul>
           </details>}
-          {podeAprovar && !proposta.decisao && <Acao legenda="Decidir proposta" onSubmit={async formulario => decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: campo(formulario, "aprovar") === "sim", motivo: campo(formulario, "motivo") })}>
-            <label>Decisão <select name="aprovar"><option value="sim">Aprovar e compensar</option><option value="nao">Rejeitar</option></select></label><label>Motivo <input required name="motivo" /></label>
-          </Acao>}
+          {podeAprovar && !proposta.decisao && <DecidirCompensacao proposta={proposta} moeda={acordo.moeda} cobrancas={acordo.cobrancas} />}
         </div>)}
       </section>)}
     </article>)}

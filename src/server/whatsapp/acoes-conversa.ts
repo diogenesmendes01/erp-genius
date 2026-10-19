@@ -17,7 +17,7 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
     const u = await exigirSessao();
     const { atendimentoId, nota } = NotaSchema.parse(input);
     await prisma.$transaction(async (tx) => {
-      const a = await atendimentoVisivel(u, atendimentoId);
+      const a = await atendimentoVisivel(u, atendimentoId, false, tx);
       if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
       await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota } });
     });
