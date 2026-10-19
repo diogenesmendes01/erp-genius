@@ -3,6 +3,7 @@ import { registrarEvento } from "@/server/_shared/evento";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { validarValorCampo } from "@/server/crm/campos";
+import { respostasParaAria } from "@/server/crm-config/respostas-rapidas";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { payloadDaAria } from "../ator";
 import { configPadrao, type ConfigAria, type ModoAcao } from "../config-schema";
@@ -11,7 +12,7 @@ import { APRESENTACAO, montarContextoTurno, type ContextoTurno } from "./context
 import { avaliarDesconto, solicitarAprovacaoDesconto } from "./desconto";
 import { precosDaOportunidade } from "./precos";
 import type { AcaoProposta, SaidaModelo } from "./tipos";
-import { valoresNaoAutorizados, type ValoresPermitidos } from "./valores";
+import { valoresCitados, valoresNaoAutorizados, type ValoresPermitidos } from "./valores";
 
 type Tx = Prisma.TransactionClient;
 
@@ -38,16 +39,33 @@ export const POLITICAS_PADRAO: ConfigAria["politicas"] = {
   validadePropostaDias: 7,
 };
 
-export function permitidos(ctx: Pick<ContextoTurno, "precos">, politicas: ConfigAria["politicas"]): ValoresPermitidos {
+/**
+ * O que as respostas rápidas liberadas autorizam na guarda de valores. Decisão provisória (C1 da R1 do
+ * #238): só os valores monetários. A guarda compara só o número, sem contexto ("multa de 2%" liberaria
+ * "2% de desconto"), e quem salva resposta inclui o Gerente Comercial, que passaria de `parcelasMax`.
+ * Percentuais e parcelas vêm só da política da Aria. Para liberar também essas categorias, acrescente
+ * "percentuais" e/ou "parcelas" aqui.
+ */
+export const CATEGORIAS_DAS_RESPOSTAS: readonly (keyof ValoresPermitidos)[] = ["valores"];
+
+/**
+ * Lista da guarda de valores: preços do país, faixas de desconto e parcelas da política e, além deles,
+ * as categorias de `CATEGORIAS_DAS_RESPOSTAS` citadas nas respostas rápidas liberadas para o setor
+ * (texto aprovado pela equipe; ver contexto.ts).
+ */
+export function permitidos(ctx: Pick<ContextoTurno, "precos" | "respostasRapidas">, politicas: ConfigAria["politicas"]): ValoresPermitidos {
+  const citados = ctx.respostasRapidas.map((r) => valoresCitados(r.corpo));
+  const dasRespostas = (c: keyof ValoresPermitidos) => (CATEGORIAS_DAS_RESPOSTAS.includes(c) ? citados.flatMap((v) => v[c]) : []);
   return {
-    valores: ctx.precos.map((p) => p.valor),
+    valores: [...ctx.precos.map((p) => p.valor), ...dasRespostas("valores")],
     percentuais: [
       politicas.MATRICULA.descontoSemAprovacaoPct,
       politicas.MATRICULA.descontoComAprovacaoPct,
       politicas.MENSALIDADE.descontoSemAprovacaoPct,
       politicas.MENSALIDADE.descontoComAprovacaoPct,
+      ...dasRespostas("percentuais"),
     ],
-    parcelas: Array.from({ length: politicas.parcelasMax }, (_, i) => i + 1),
+    parcelas: [...Array.from({ length: politicas.parcelasMax }, (_, i) => i + 1), ...dasRespostas("parcelas")],
   };
 }
 
@@ -424,7 +442,7 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${atendimentoId} FOR UPDATE`;
       const at = await tx.atendimentoWhatsApp.findUniqueOrThrow({
         where: { id: atendimentoId },
-        select: { id: true, encerradoEm: true, iaPausadaEm: true, conversa: { select: { numeroId: true, contatoId: true } } },
+        select: { id: true, finalidade: true, encerradoEm: true, iaPausadaEm: true, conversa: { select: { numeroId: true, contatoId: true } } },
       });
       if (at.iaPausadaEm) throw new ErroRegra("A Aria está pausada neste atendimento: uma pessoa já assumiu a conversa.");
       const contatoId = at.conversa.contatoId;
@@ -434,7 +452,8 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
       if (quando.getTime() <= Date.now()) throw new ErroRegra("O horário agendado já passou.");
       const pol = politicas ?? (await versaoPublicada(tx))?.config.politicas ?? POLITICAS_PADRAO;
       const precos = opId ? await precosDaOportunidade(opId, tx) : [];
-      if (valoresNaoAutorizados(String(payload.texto ?? ""), permitidos({ precos }, pol)).length > 0) {
+      const respostasRapidas = await respostasParaAria(at.finalidade, tx);
+      if (valoresNaoAutorizados(String(payload.texto ?? ""), permitidos({ precos, respostasRapidas }, pol)).length > 0) {
         throw new ErroRegra("O texto cita um valor que não está mais autorizado.");
       }
       const m = await tx.intencaoMensagem.create({
