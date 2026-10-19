@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Segmento, Temperatura, EtapaLead, MotivoPerda, OrigemCanal } from "@prisma/client";
-import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
+import { dataOpcional, dataHoraOpcional, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { parseMoeda } from "@/lib/dinheiro";
 
 // Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
@@ -42,6 +42,9 @@ export const LeadSchema = z.object({
   comissaoPrevista: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
 });
 export type LeadInput = z.input<typeof LeadSchema>;
+/** Criação pela tela (#166): a mesma chave até o sucesso; o reenvio devolve a oportunidade já criada. */
+export const CriarLeadSchema = LeadSchema.extend({ chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
+export type CriarLeadInput = z.input<typeof CriarLeadSchema>;
 
 export const ResumoSchema = z.object({
   interesse: z.string().optional(),
