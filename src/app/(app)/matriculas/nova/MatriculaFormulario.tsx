@@ -12,6 +12,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { CampoFuso } from "@/components/CampoFuso";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
@@ -162,9 +163,10 @@ export function MatriculaFormulario({
   precos: PrecoRef[];
 }) {
   const router = useRouter();
-  // criarMatricula não recebe chave de idempotência (server/matricula/acoes.ts:622-633): repetir pode
-  // criar aluno e contrato em dobro — conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // criarMatricula recebe chave de idempotência (#166): a mesma chave até o sucesso, e o reenvio depois
+  // de um resultado incerto devolve a matrícula já criada em vez de criar aluno e contrato em dobro.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // Solicitar abertura só grava um evento, sem chave (server/turmas/acoes.ts:74-93): repetir duplica o pedido.
   const abertura = useAcaoCliente({ idempotente: false });
   // Depois do sucesso a tela navega; o botão segue travado até sair, para não criar a matrícula de novo.
@@ -367,7 +369,8 @@ export function MatriculaFormulario({
     setTentouPasso2(true);
     const { erros, valores } = validarPasso2();
     if (focarPrimeiroComErro(erros, IDS_PASSO2) || !valores || !referenciaCobertura) return;
-    const res = await acao.executar(() => criarMatricula(montarInput(referenciaCobertura, valores)));
+    const res = await acao.executar(() => criarMatricula({ ...montarInput(referenciaCobertura, valores), chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(res);
     if (res?.tipo !== "ok") return;
     setNavegando(true);
     if (res.dado?.aguardaPreco) {
