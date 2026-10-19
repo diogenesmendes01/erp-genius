@@ -12,8 +12,8 @@ export async function editarPessoaDaFicha(id: string, input: EditarPessoaInput) 
   return editarPessoa(id, input);
 }
 
-export async function registrarNotaDaFicha(id: string, texto: string) {
-  return registrarNotaPessoa(id, texto);
+export async function registrarNotaDaFicha(id: string, texto: string, chaveIdempotencia?: string) {
+  return registrarNotaPessoa(id, texto, chaveIdempotencia);
 }
 
 export async function registrarOptOutDaFicha(pessoaId: string, motivo: string) {

@@ -6,6 +6,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { criarProduto } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
 export interface ProdutoRow {
@@ -30,13 +31,15 @@ export function ProdutosPainel({
   const router = useRouter();
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [modalidadeId, setModalidadeId] = useState(modalidades[0]?.id ?? "");
-  // Sem chave de idempotência: criarProduto não recebe chave do cliente — a falha de rede manda
-  // conferir a página antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // criarProduto recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
+  // produto já criado, em vez do erro "Já existe um produto".
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
 
   async function adicionar() {
     if (!idiomaId || !modalidadeId) return;
-    const d = await acao.executar(() => criarProduto({ idiomaId, modalidadeId }));
+    const d = await acao.executar(() => criarProduto({ idiomaId, modalidadeId, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo === "ok") router.refresh();
   }
 

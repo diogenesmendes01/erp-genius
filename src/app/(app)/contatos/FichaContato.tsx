@@ -12,6 +12,7 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { ETAPA_LABEL, ORIGEM_CANAL_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
 import {
   atribuirTagDaFicha,
@@ -101,6 +102,10 @@ function FichaCorpo({
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
+  // A nota recebe chave de idempotência (#166): o reenvio depois de um resultado incerto não grava uma
+  // segunda nota. Por isso ela tem executor próprio; as outras ações da ficha seguem sem chave.
+  const acaoNota = useAcaoCliente({ idempotente: true });
+  const tentativaNota = useChaveIdempotencia();
   const pode = (c: CapacidadeCrm) => capacidades.includes(c);
   const podeEditar = pode("contatos.editar");
   const classeFiltro = (f: FiltroHistoricoPessoa) => botaoClasses({ variante: filtroHistorico === f ? "primario" : "fantasma", tamanho: "sm" });
@@ -123,10 +128,21 @@ function FichaCorpo({
   const podeOptOut = podeEditar && d.telefones.length > 0 && !d.optOut;
 
   async function rodar(f: () => ReturnType<typeof registrarNotaDaFicha>, sucesso: string, depois?: () => void) {
+    acaoNota.limpar();
     const r = await acao.executar(f, sucesso);
     if (r?.tipo === "ok") {
       router.refresh();
       depois?.();
+    }
+  }
+
+  async function registrarNota() {
+    acao.limpar();
+    const r = await acaoNota.executar(() => registrarNotaDaFicha(d.id, nota, tentativaNota.atual), "Nota registrada.");
+    tentativaNota.depoisDo(r);
+    if (r?.tipo === "ok") {
+      router.refresh();
+      setNota("");
     }
   }
 
@@ -306,13 +322,14 @@ function FichaCorpo({
               aria-label="Nova nota"
               onSubmit={(e) => {
                 e.preventDefault();
-                void rodar(() => registrarNotaDaFicha(d.id, nota), "Nota registrada.", () => setNota(""));
+                void registrarNota();
               }}
             >
               <Campo rotulo="Nota interna" dica="Só a equipe vê. Nunca é enviada ao contato.">
                 {(campo) => <CampoTexto {...campo} className={CONTROLE} rows={3} maxLength={2000} value={nota} onChange={(e) => setNota(e.target.value)} />}
               </Campo>
-              <Botao type="submit" tamanho="md" disabled={acao.ocupado || !nota.trim()}>Registrar nota</Botao>
+              <FeedbackAcao erro={acaoNota.erro} sucesso={acaoNota.sucesso} />
+              <Botao type="submit" tamanho="md" disabled={acao.ocupado || acaoNota.ocupado || !nota.trim()}>Registrar nota</Botao>
             </form>
           )}
           {historico.length === 0 ? (

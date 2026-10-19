@@ -6,6 +6,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { criarNivel } from "@/server/catalogo/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import type { IdiomaRow } from "./IdiomasPainel";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -18,13 +19,15 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [codigo, setCodigo] = useState("");
   const [ordem, setOrdem] = useState("");
-  // Sem chave de idempotência: criarNivel cria um registro novo a cada chamada — a falha de rede
-  // manda conferir a página antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // criarNivel recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
+  // nível já criado, em vez de duplicar a opção no formulário de matrícula.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
 
   async function adicionar() {
     if (!idiomaId || !codigo.trim()) return;
-    const d = await acao.executar(() => criarNivel({ idiomaId, codigo: codigo.trim(), ordem: ordem === "" ? 0 : Number(ordem) }));
+    const d = await acao.executar(() => criarNivel({ idiomaId, codigo: codigo.trim(), ordem: ordem === "" ? 0 : Number(ordem), chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setCodigo("");
     setOrdem("");

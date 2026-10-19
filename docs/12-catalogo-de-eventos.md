@@ -168,6 +168,13 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > Lista de eventos de configuração é **aberta** — adicione conforme novas telas de backstage,
 > mantendo o padrão `tipo · agregado · gatilho · autor · payload`.
 
+> **Idempotência das criações (#166, 2º lote).** Quando a tela manda a chave da tentativa, o Evento de criação
+> leva `chaveIdempotencia` e `entradaHash` no payload, gravados na mesma transação do registro: `IdiomaCriado`,
+> `ModalidadeCriada`, `NivelCriado`, `ProdutoCriado` e `PrecoDefinido` (Configuração → Catálogo), `TarefaCriada`
+> do agregado `Tarefa` (painel "Nova tarefa"; o espelho no `Lead` não leva a chave) e `NotaInterna` do agregado
+> `Pessoa` (ficha do contato; o hash cobre pessoa e texto). O reenvio com a mesma chave e a mesma entrada devolve
+> o registro original; com outra entrada, é recusado. A busca usa o índice parcial `Evento_idempotencia_idx`.
+
 ---
 
 ## Estado de implementação (código vs planejado)
