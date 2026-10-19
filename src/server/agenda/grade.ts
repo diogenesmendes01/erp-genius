@@ -13,6 +13,13 @@ export const GradeEncontrosSchema = z.object({
 
 /** Resolve horário local sem escolher silenciosamente um dos instantes de uma dobra DST. */
 export function instanteDaGrade(data: string, hora: string, fuso: string) {
+  const candidatos = candidatosDaGrade(data, hora, fuso);
+  if (candidatos.length !== 1) throw new Error(`Horário ${data} ${hora} em ${fuso} ${candidatos.length ? "ambíguo" : "inexistente"}; requer revisão da grade.`);
+  return candidatos[0];
+}
+
+/** Instantes (em ordem) em que a hora civil `data hora` acontece no fuso: 0 (pulada pelo horário de verão), 1 ou 2 (dobra). */
+export function candidatosDaGrade(data: string, hora: string, fuso: string): Date[] {
   DataCivilSchema.parse(data); horario.parse(hora); FusoInstitucionalSchema.parse(fuso);
   const nominal = Date.parse(`${data}T${hora}:00Z`);
   const formato = new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
@@ -26,9 +33,8 @@ export function instanteDaGrade(data: string, hora: string, fuso: string) {
     const instante = nominal + h * 3600000;
     offsets.add(Date.parse(`${local(instante)}Z`) - instante);
   }
-  const candidatos = [...offsets].map((offset) => nominal - offset).filter((instante) => local(instante) === `${data}T${hora}:00`);
-  if (candidatos.length !== 1) throw new Error(`Horário ${data} ${hora} em ${fuso} ${candidatos.length ? "ambíguo" : "inexistente"}; requer revisão da grade.`);
-  return new Date(candidatos[0]);
+  return [...offsets].map((offset) => nominal - offset).filter((instante) => local(instante) === `${data}T${hora}:00`)
+    .sort((a, b) => a - b).map((instante) => new Date(instante));
 }
 
 /** Prévia de grade: não publica nem presume disponibilidade do professor. */
