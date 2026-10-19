@@ -3613,6 +3613,20 @@ Branch `claude/triagem-b12-b17`, base `main` d2adffd4. Cada item foi conferido n
   - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 779 arquivos e 5.801 testes.
   - `npm run build`: saída 0.
 
+### Revisão da #249: modal solta o fundo antes do feedback (C1) e integração do cursor `antes` (C2) — 2026-10-19
+
+Branch `claude/modal-feedback-inert`, base `main` 2a209fd4.
+- **C1, `useDialogo` (`src/lib/dialogo.ts`):** o fundo isolado pelo `Modal` em portal passa a ser solto na limpeza de um efeito de layout, dentro do próprio commit. Antes, ele só era solto na limpeza do `useEffect`. Quando a tela fecha a confirmação e publica o resultado no mesmo lote (confirma → fecha → `FeedbackAcao`), o texto entrava na região `role="status"` com a página ainda `inert`, e o leitor de tela podia não anunciar. A ordem foi mantida: o foco entra e depois o fundo vira inert; o fundo é solto e depois o foco volta. O foco segue no efeito passivo, e a limpeza passiva só devolve o foco (`soltarUmaVez`: soltar de novo não faz nada). No servidor, o gancho cai no `useEffect`, sem o aviso de `useLayoutEffect` no HTML.
+- **Teste do C1 (`src/components/Modal.feedback.test.ts`):** o react-dom/client roda de verdade sobre um DOM mínimo (`src/test/dom-minimo.ts`). O projeto não tem jsdom nem Testing Library, e agentes não mexem em package/lockfile. Um `MutationObserver` confere que, quando o texto entra na região status, ela já não está dentro de um ancestral `inert`, e que o foco volta a quem abriu. O relógio do Scheduler é avançado para ele ceder entre o commit e os efeitos passivos, o caso de um commit maior que a fatia de 5 ms. Sem a correção, o teste falha com `inert: true`. `dialogo.interacao.test.ts` foi ajustado às duas limpezas e ganhou o caso "a limpeza do commit solta o fundo sem mexer no foco".
+- **C2, fila de 2ª chamada:** novo caso em `segunda-chamada-agenda-inicial.int.test.ts` para o cursor `antes`. São 22 fontes. A âncora do `antes` é agendada e sai da fila, e chega uma fonte nova à frente. A volta devolve a primeira página igual à original, e a volta seguinte chega ao começo, que é a primeira página lida do início (`lerPaginaDaFila`). Uma âncora fora do universo da fila (proposta sem decisão, mais antiga que as fontes) vale o mesmo que um id inexistente e não posiciona a leitura.
+- Nenhuma migration nova.
+- Evidências no head, sobre o `main` 2a209fd4:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos.
+  - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 780 arquivos e 5.803 testes.
+  - `npm run build`: saída 0.
+  - Integração `segunda-chamada-agenda-inicial.int.test.ts` no Postgres da porta 54329, banco descartável `erp_genius_test_modal` (`migrate deploy`, perfil temporário fora do commit): saída 0, com 13 testes.
+
 ### Decisões D9, D10, D11 e D14 do dono: B2B oculto, avaliação exige fuso, mescla com alçada (D11 parado) — 2026-10-19
 
 - **D9, cobrança de empresas oculta (L2282):** a escola não usa a fatura B2B.
