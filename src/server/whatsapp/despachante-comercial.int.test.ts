@@ -342,4 +342,30 @@ describe("teto por contato/dia no dia civil da ESCOLA (Q176 · ref. #164)", () =
     expect(intencao.status).toBe("SIMULADA");
     expect(intencao.motivoFalha).not.toBe("teto_contato_dia");
   });
+
+  // A mensagem barrada pelo teto volta no início do dia seguinte NA ESCOLA, não 24 horas corridas depois.
+  it("barrada às 23h30 de Brasília, volta à meia-noite de Brasília (03h UTC), não 24h depois", async () => {
+    const ctx = await seedComercial({ teto: 1 });
+    await saidaAutomaticaEm(ctx, new Date("2026-03-10T15:00:00.000Z"));
+    await enfileirarDegrau(ctx);
+
+    await despacharFila(new Date("2026-03-11T02:30:00.000Z")); // 10/03, 23h30 de Brasília
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } });
+    expect(intencao.motivoFalha).toBe("teto_contato_dia");
+    expect(intencao.despacharAposEm).toEqual(new Date("2026-03-11T03:00:00.000Z"));
+  });
+
+  it("escola em America/Santiago: o dia seguinte sem meia-noite (06/09/2026) começa à 01h local", async () => {
+    await prisma.configuracaoOperacional.upsert({
+      where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "America/Santiago" }, update: { fusoInstitucional: "America/Santiago" },
+    });
+    const ctx = await seedComercial({ teto: 1 });
+    await saidaAutomaticaEm(ctx, new Date("2026-09-05T16:00:00.000Z")); // 05/09, 12h em Santiago (−04)
+    await enfileirarDegrau(ctx);
+
+    await despacharFila(new Date("2026-09-06T03:30:00.000Z")); // 05/09, 23h30 em Santiago
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } });
+    expect(intencao.motivoFalha).toBe("teto_contato_dia");
+    expect(intencao.despacharAposEm).toEqual(new Date("2026-09-06T04:00:00.000Z")); // 06/09, 01h (−03)
+  });
 });

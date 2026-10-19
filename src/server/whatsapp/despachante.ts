@@ -24,7 +24,7 @@ import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/se
 import { aplicarResposta } from "./status-atendimento";
 import { aoGravarSaidaHumana, MOTIVO_ARIA_PAUSADA } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
-import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
+import { inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
@@ -168,7 +168,10 @@ export async function despacharFila(
   const ariaEstado = (await prisma.agenteIA.findUnique({ where: { id: "aria" }, select: { estado: true } }))?.estado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
   // Q176 (#164): o teto por contato/dia (passo 7) conta no dia civil da escola, não no relógio do servidor (UTC).
-  const inicioDiaEscola = inicioDoDiaInstitucional(agora, await fusoDaEscola());
+  const fusoEscola = await fusoDaEscola();
+  const inicioDiaEscola = inicioDoDiaInstitucional(agora, fusoEscola);
+  // A mensagem barrada pelo teto volta quando o dia da escola vira (1º instante válido do dia seguinte).
+  const inicioAmanhaEscola = inicioDoDiaSeguinteInstitucional(agora, fusoEscola);
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
   // vira FALHOU com motivo — o item volta à fila humana; nunca re-tenta sozinho, porque o
@@ -456,7 +459,7 @@ export async function despacharFila(
         },
       });
       if (enviadasHoje >= politica.tetoPorContatoDia) {
-        if (await adiar(it.id, new Date(agora.getTime() + 24 * 3600_000), "teto_contato_dia")) r.adiadas += 1;
+        if (await adiar(it.id, inicioAmanhaEscola, "teto_contato_dia")) r.adiadas += 1;
         else r.canceladas += 1;
         continue;
       }
