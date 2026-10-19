@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 
 // Comportamento de diálogo acessível (docs/42-auditoria-frontend-ux.md, E7): Escape fecha, o foco
 // entra no diálogo ao abrir, Tab/Shift+Tab ficam presos dentro dele e, ao fechar, o foco volta ao
@@ -67,6 +67,19 @@ export function isolarFundo(camada: { parentElement: { children: ArrayLike<unkno
   return () => { for (const el of marcados) el.inert = false; };
 }
 
+/** Só a primeira chamada desfaz: a limpeza de layout e a passiva chamam a mesma função. */
+function soltarUmaVez(desfazer: () => void): () => void {
+  let feito = false;
+  return () => {
+    if (feito) return;
+    feito = true;
+    desfazer();
+  };
+}
+
+// No servidor não há commit nem fundo para soltar, e o React avisa sobre useLayoutEffect no HTML do servidor.
+const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 /**
  * Liga o comportamento de diálogo a `ref` enquanto `aberto`. `aoFechar` é chamado no Escape — a menos
  * que `bloquearFechamento` (ex.: ação em andamento) esteja ligado. `focoInicial` escolhe quem recebe o
@@ -74,6 +87,11 @@ export function isolarFundo(camada: { parentElement: { children: ArrayLike<unkno
  * `isolar` é a camada do diálogo (o Modal em portal): enquanto aberto, o resto da página fica `inert`
  * (isolarFundo). Fica no mesmo efeito do foco de propósito: o fundo só é isolado depois de guardar quem
  * abriu e levar o foco para dentro, e é solto antes de devolver o foco — num fundo inert o `focus()` falha.
+ * Soltar o fundo, porém, não pode esperar a limpeza do efeito passivo (#249 C1): quando a tela fecha o modal
+ * e publica o resultado no mesmo lote (confirma → fecha → FeedbackAcao), o texto entra na região status no
+ * commit, e a limpeza passiva pode ficar para outra tarefa — a região ainda estaria inert e o leitor de tela
+ * não anunciaria. Por isso a limpeza de um efeito de layout solta o fundo dentro do próprio commit; a
+ * limpeza passiva, que vem depois, só devolve o foco (soltar de novo não faz nada).
  */
 export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFechar, bloquearFechamento = false, focoInicial, isolar }: {
   aberto: boolean;
@@ -87,6 +105,16 @@ export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFecha
   const bloqueado = useRef(bloquearFechamento);
   const inicial = useRef(focoInicial);
   useEffect(() => { fechar.current = aoFechar; bloqueado.current = bloquearFechamento; inicial.current = focoInicial; });
+  // Quem desfaz o isolamento do fundo, enquanto ele vale (soltarUmaVez: a primeira limpeza que rodar solta).
+  const soltar = useRef<(() => void) | undefined>(undefined);
+
+  // Limpeza no commit (antes de o navegador ver o DOM novo): solta o fundo antes de qualquer texto que o
+  // mesmo commit publicar fora do diálogo. Na desmontagem, as limpezas de layout rodam no commit e as
+  // passivas depois, então a ordem "solta → devolve o foco" se mantém.
+  useEfeitoDeLayout(() => {
+    if (!aberto) return;
+    return () => { soltar.current?.(); };
+  }, [aberto, isolar]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -98,7 +126,8 @@ export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFecha
     // Foco inicial: o escolhido pelo diálogo; senão o primeiro campo/botão; sem nenhum, a própria caixa
     // (tabIndex -1 no componente).
     (inicial.current?.current ?? focaveis()[0] ?? caixa)?.focus();
-    const soltarFundo = isolar?.current ? isolarFundo(isolar.current) : undefined;
+    const soltarFundo = isolar?.current ? soltarUmaVez(isolarFundo(isolar.current)) : undefined;
+    soltar.current = soltarFundo;
 
     function onKey(e: KeyboardEvent) {
       // Diálogo por baixo de outro: quem responde é o de cima.
@@ -115,7 +144,8 @@ export function useDialogo(ref: RefObject<HTMLElement | null>, { aberto, aoFecha
     return () => {
       PILHA_DIALOGOS.fechar(marca);
       document.removeEventListener("keydown", onKey);
-      soltarFundo?.();
+      soltarFundo?.(); // normalmente já solto pela limpeza de layout, no commit
+      if (soltar.current === soltarFundo) soltar.current = undefined;
       // Devolve o foco a quem abriu, se ele ainda está na página.
       if (anterior && document.contains(anterior)) anterior.focus();
     };
