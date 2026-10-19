@@ -21,7 +21,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { STATUS_SOLICITACAO_ENCERRAMENTO_LABEL } from "@/lib/labels";
 import { formatarDataCivil } from "@/lib/data-civil";
 
-/** Data civil (@db.Date, gravada à meia-noite UTC) em dd/mm/aaaa, sem converter de fuso (docs/43 §6 item 6). */
+/** Data civil (@db.Date: o Prisma a devolve como meia-noite UTC do dia) em dd/mm/aaaa, sem converter de fuso (docs/43 §6 item 6). */
 const dataCivil = (data: Date) => formatarDataCivil(data.toISOString().slice(0, 10));
 
 export default async function MovimentacoesPage({

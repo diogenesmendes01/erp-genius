@@ -27,6 +27,13 @@
 > atrasado** (a aula começar encerra a cadência). Enfileirador genérico: um núcleo,
 > N cenários. **C3 (IA)** aguarda a decisão de fornecedor de LLM + os requisitos LGPD do
 > gap D29 — é o que resta da fase comercial.
+>
+> **Situação no código (19/10/2026):** a casca do CRM antigo saiu (E1). O cron das réguas comerciais
+> (`cron-comercial.ts`) e as telas `/configuracao/whatsapp/comercial` e `/configuracao/whatsapp/reguas`
+> foram removidos, então as cadências de C1 e C2 descritas acima **não são mais enfileiradas**. A
+> captura de "SIM"/"REAGENDAR" no inbound continua (`capturarRespostaExperimental`). A IA da C3 não
+> saiu como copiloto: o `CopilotoSugestoes` e o `src/server/ia` foram removidos, e a IA do CRM é a
+> Aria (`/aria`).
 
 ## Tese estrutural: um motor de réguas, N políticas
 A régua de follow-up comercial (doc 08) é **a mesma máquina** da régua de cobrança (doc 24):

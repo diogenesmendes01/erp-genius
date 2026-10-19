@@ -32,6 +32,11 @@ export const ROTAS_COM_LOADING = [
   "src/app/login",
   "src/app/pagar/[token]",
   "src/app/certificado/[codigo]",
+  // Pendências da #174 (B15 da triagem): o formulário da matrícula nova (6 consultas antes de pintar) e as
+  // seções do WhatsApp, que ficam sob as abas do layout dele. O /portal não tem: é uma página estática que só
+  // explica o acesso do aluno (C4 da #170), sem consulta a esperar.
+  "src/app/(app)/matriculas/nova",
+  "src/app/(app)/configuracao/whatsapp",
 ] as const;
 
 /**

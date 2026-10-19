@@ -58,6 +58,12 @@ RUN DATABASE_URL="postgresql://check:check@127.0.0.1:1/check" node -e ' \
     (e) => { if (e.errorCode === "P1001") process.exit(0); \
              console.error("ERRO: query engine do Prisma não carregou:", e.message); process.exit(1); });'
 
+# SHA do commit (#165), lido pelo /api/health. Fica depois das checagens do Prisma: o valor muda a cada
+# commit, e um ARG antes delas invalidaria o cache dessas camadas em todo build. Sem o build-arg, o
+# /api/health responde "desconhecido". No Coolify, o compose repassa o SOURCE_COMMIT.
+ARG GIT_SHA=""
+ENV GIT_SHA=${GIT_SHA}
+
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]

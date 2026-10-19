@@ -90,7 +90,7 @@
 | [`24-cobrancas-regua-fluxo.md`](24-cobrancas-regua-fluxo.md) | Redesenho de Cobranças: régua + cérebro/braço + dash/lista/detalhe |
 | [`25-motor-de-risco-cobranca.md`](25-motor-de-risco-cobranca.md) | **Spec V2 (não implementado)**: motor de risco do aluno — score explicável + faseamento |
 | [`26-whatsapp-v1.md`](26-whatsapp-v1.md) | **Especificação original:** WhatsApp bimotor, régua e inbox; implementação parcial e situação operacional no doc 41 |
-| [`27-comercial-automacoes-ia.md`](27-comercial-automacoes-ia.md) | **Especificação C1–C5 e IA:** cadências têm implementação; isso não significa todas as ondas ou IA entregues. Situação no doc 41 |
+| [`27-comercial-automacoes-ia.md`](27-comercial-automacoes-ia.md) | **Especificação C1–C5 e IA:** as cadências de C1/C2 foram implementadas e depois removidas com a casca do CRM antigo (E1); a IA do CRM é a Aria. Situação no doc 41 |
 | [`28-whatsapp-auditoria-gaps.md`](28-whatsapp-auditoria-gaps.md) | **Auditoria pré-implementação**: 34 gaps/decisões pendentes dos docs 26/27, mapeados por marco |
 | [`29-whatsapp-integracao-codigo.md`](29-whatsapp-integracao-codigo.md) | **Mapa de integração**: o que reusa, o que muda (arquivo:linha), fluxos, projeções e as 10 regras anti-duplicação |
 | [`30-whatsapp-spec-implementacao.md`](30-whatsapp-spec-implementacao.md) | **Spec mestre (em implementação)**: decisões S1–S10, modelo de dados final, contratos e etapas E1–E6 |
