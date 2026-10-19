@@ -93,6 +93,17 @@ export function apenasPortal(usuario: UsuarioSessao): boolean {
  * portal é leitura via página própria (review PR #60).
  */
 export async function exigirSessao(): Promise<UsuarioSessao> {
+  return (await exigirSessaoComPrazo()).usuario;
+}
+
+export { prazoDoToken } from "@/lib/prazo-sessao";
+
+/**
+ * Como `exigirSessao`, mas devolve também o prazo do JWT com que a requisição chegou (`expiraEm`, em ms; null
+ * se o token não o traz). Para conexões longas, como o SSE do Inbox (B9, #201 C6), que fecham quando a sessão
+ * com que abriram vence.
+ */
+export async function exigirSessaoComPrazo(): Promise<{ usuario: UsuarioSessao; expiraEm: number | null }> {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o NextAuth.
   const { auth } = await import("@/lib/auth");
   const session = await auth();
@@ -101,7 +112,8 @@ export async function exigirSessao(): Promise<UsuarioSessao> {
   const usuario = await carregarUsuarioFresco(user.id);
   if (!usuario) throw new ErroAutenticacao();
   if (apenasPortal(usuario)) throw new ErroPermissao("Acesso restrito ao portal do aluno.");
-  return usuario;
+  const expiraEm = typeof session?.expiraEm === "number" && Number.isFinite(session.expiraEm) ? session.expiraEm : null;
+  return { usuario, expiraEm };
 }
 
 /** O usuário tem pelo menos um dos papéis informados? (Admin sempre passa.) */

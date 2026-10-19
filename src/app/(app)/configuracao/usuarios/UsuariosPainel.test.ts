@@ -4,7 +4,7 @@ import { Papel } from "@prisma/client";
 import { expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/server/acesso/acoes", () => ({ alternarUsuarioAtivo: vi.fn() }));
+vi.mock("@/server/acesso/acoes", () => ({ definirUsuarioAtivo: vi.fn() }));
 
 import { UsuariosPainel } from "./UsuariosPainel";
 

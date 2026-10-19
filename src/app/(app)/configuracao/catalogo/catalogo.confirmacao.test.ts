@@ -20,13 +20,13 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
-vi.mock("@/server/catalogo/acoes", () => ({ criarIdioma: vi.fn(), alternarIdiomaAtivo: m.idioma, criarPreco: vi.fn(), alternarPrecoAtivo: m.preco }));
+vi.mock("@/server/catalogo/acoes", () => ({ criarIdioma: vi.fn(), definirIdiomaAtivo: m.idioma, criarPreco: vi.fn(), definirPrecoAtivo: m.preco }));
 
 import { IdiomasPainel, type IdiomaRow } from "./IdiomasPainel";
 import { PrecosPainel, type PrecoRow } from "./PrecosPainel";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { criarGanchos, elementos, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
 import { confirmarNoDialogo } from "@/test/confirmacao-tela";
 
@@ -60,7 +60,7 @@ describe("IdiomasPainel — desativar passa pela confirmação", () => {
     expect(m.idioma).not.toHaveBeenCalled(); // renderizar a confirmação não executa
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.idioma).toHaveBeenCalledTimes(1);
-    expect(m.idioma).toHaveBeenCalledWith("ing");
+    expect(m.idioma).toHaveBeenCalledWith("ing", false);
     (c.props.aoConcluir as () => void)();
     const t = tela();
     expect(confirmacoes(t)).toHaveLength(0);
@@ -80,13 +80,13 @@ describe("IdiomasPainel — desativar passa pela confirmação", () => {
     m.idioma.mockResolvedValueOnce({ ok: false, erro: "Idioma não encontrado." });
     expect(await confirmarNoDialogo(confirmacoes(tela())[0], usar)).toEqual({ erro: "Idioma não encontrado.", confirmarDisponivel: true });
     m.idioma.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO);
     expect(confirmacoes(tela())).toHaveLength(1);
   });
 
   it("ativar continua direto", async () => {
     await (botaoDe(tela(), "Ativar").props.onClick as () => Promise<void>)();
-    expect(m.idioma).toHaveBeenCalledWith("fra");
+    expect(m.idioma).toHaveBeenCalledWith("fra", true);
     expect(confirmacoes(tela())).toHaveLength(0);
   });
 });
@@ -116,7 +116,7 @@ describe("PrecosPainel — desativar passa pela confirmação", () => {
     expect(m.preco).not.toHaveBeenCalled(); // renderizar a confirmação não executa
     await (c.props.acao as () => Promise<unknown>)();
     expect(m.preco).toHaveBeenCalledTimes(1);
-    expect(m.preco).toHaveBeenCalledWith("p-ativo");
+    expect(m.preco).toHaveBeenCalledWith("p-ativo", false);
     (c.props.aoConcluir as () => void)();
     const t = tela();
     expect(confirmacoes(t)).toHaveLength(0);
@@ -144,13 +144,13 @@ describe("PrecosPainel — desativar passa pela confirmação", () => {
     m.preco.mockResolvedValueOnce({ ok: false, erro: "Preço não encontrado." });
     expect(await confirmarNoDialogo(confirmacoes(tela())[0], usar)).toEqual({ erro: "Preço não encontrado.", confirmarDisponivel: true });
     m.preco.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO);
     expect(confirmacoes(tela())).toHaveLength(1);
   });
 
   it("reativar continua direto", async () => {
     await (botaoDe(tela(), "Reativar").props.onClick as () => Promise<void>)();
-    expect(m.preco).toHaveBeenCalledWith("p-antigo");
+    expect(m.preco).toHaveBeenCalledWith("p-antigo", true);
     expect(confirmacoes(tela())).toHaveLength(0);
   });
 });
