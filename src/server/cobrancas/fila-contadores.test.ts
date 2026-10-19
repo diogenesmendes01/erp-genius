@@ -20,6 +20,7 @@ vi.mock("@/lib/prisma", () => ({
     templateWhatsApp: { findMany: m.templates },
     intencaoMensagem: { findMany: m.intencoes },
     atendimentoWhatsApp: { findMany: m.atendimentos },
+    configuracaoOperacional: { findUnique: async () => null }, // fusoDaEscola() → America/Sao_Paulo
   },
 }));
 vi.mock("./politica", () => ({ carregarPoliticaRegua: async () => ({ degraus: [], templateIdPorPasso: new Map() }) }));
@@ -110,6 +111,21 @@ describe("listarFilaCobranca — contadores dos cartões (E4, R2 da #144)", () =
     // Cópia literal das chaves dos cartões (não itera INDICADORES_FILA).
     for (const indicador of ["aVencer", "emAtraso", "bloquear", "promessas"] as const) {
       expect(dashs[indicador], indicador).toBe(filtrarFila(itens, lerFiltrosFila({ indicador })).length);
+    }
+  });
+
+  it("Q176: régua e \"recebido hoje\" usam o dia da escola — às 23h30 de Brasília ainda é o dia anterior", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-06-23T02:30:00Z")); // 22/06, 23h30 em Brasília
+      await listarFilaCobranca();
+      // A régua recebe o fuso da escola, e não decide o dia pelo relógio do servidor.
+      expect(m.proximaAcao.mock.calls[0][2]).toBe("America/Sao_Paulo");
+      // "Recebido hoje" começa à meia-noite de 22/06 em Brasília (03h UTC), não à meia-noite UTC de 23/06.
+      const recebidos = m.eventos.mock.calls.map(([args]) => args).find((a) => a.where.tipo === "PagamentoRegistrado");
+      expect(recebidos.where.criadoEm.gte.toISOString()).toBe("2026-06-22T03:00:00.000Z");
+    } finally {
+      vi.useRealTimers();
     }
   });
 });
