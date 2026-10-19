@@ -35,7 +35,7 @@ type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
  * sairia da fila e ficaria invisível para quem o assumiu.
  */
 async function exigirResponsavelEnxerga(tx: Tx, id: string, alvo: { id: string; papeis: Papel[] }) {
-  const n = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id }, await escopoAtendimentos(alvo)] } });
+  const n = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id }, await escopoAtendimentos(alvo, { db: tx })] } });
   if (n === 1) return;
   // O texto segue o motivo: só a linha de vendas tem a regra do dono da linha.
   const a = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { finalidade: true, conversa: { select: { numero: { select: { finalidade: true } } } } } });
@@ -83,7 +83,7 @@ export async function devolverParaFila(atendimentoId: string): Promise<Resultado
     const id = IdSchema.parse(atendimentoId);
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
-      const a = await atendimentoVisivel(u, id);
+      const a = await atendimentoVisivel(u, id, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (a.responsavelId === null) throw new ErroRegra("Este atendimento já está na fila.");
@@ -105,7 +105,7 @@ export async function atribuirAtendimento(input: { atendimentoId: string; usuari
     const { atendimentoId: id, usuarioId } = AtribuirSchema.parse(input);
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
-      const a = await atendimentoVisivel(u, id);
+      const a = await atendimentoVisivel(u, id, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(u, "atribuir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
@@ -172,7 +172,7 @@ export async function transferirAtendimento(input: { atendimentoId: string; dest
     const dados = TransferirSchema.parse(input);
     const novoId = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
-      const a = await atendimentoVisivel(u, dados.atendimentoId);
+      const a = await atendimentoVisivel(u, dados.atendimentoId, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
@@ -226,7 +226,7 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
     if (fim.getTime() > agora.getTime() + PRAZO_MAXIMO_CONVITE_DIAS * 86_400_000) throw new ErroRegra(`O convite pode durar no máximo ${PRAZO_MAXIMO_CONVITE_DIAS} dias.`);
     const participanteId = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
-      const a = await atendimentoVisivel(u, dados.atendimentoId);
+      const a = await atendimentoVisivel(u, dados.atendimentoId, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(u, "convidar", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
@@ -283,7 +283,7 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
       await avisarRevogado(tx, p.atendimento, p.usuarioId);
       // Como devolver/atribuir: o que o revogado deixou pendente ou agendado fica CANCELADA, a menos que ele
       // ainda possa enviar neste atendimento por outro vínculo (responsável, gerente, outro convite).
-      const aindaEnvia = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: p.atendimento.id }, await escopoAtendimentos(p.usuario, { enviar: true, agora })] } });
+      const aindaEnvia = await tx.atendimentoWhatsApp.count({ where: { AND: [{ id: p.atendimento.id }, await escopoAtendimentos(p.usuario, { enviar: true, agora, db: tx })] } });
       if (aindaEnvia === 0) {
         await tx.intencaoMensagem.updateMany({
           where: { atendimentoId: p.atendimento.id, origem: "HUMANO", autorId: p.usuarioId, status: { in: ["PENDENTE", "ADIADA"] } },
