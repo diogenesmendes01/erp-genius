@@ -12,6 +12,7 @@ const m = vi.hoisted(() => ({
   ajusteFinanceiro: { create: vi.fn() },
   comissao: { update: vi.fn() },
   coberturaCarteira: { findMany: vi.fn() },
+  configuracaoOperacional: { findUnique: async () => null },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { ...m, $transaction: async (fn: (tx: typeof m) => Promise<unknown>) => fn(m) } }));

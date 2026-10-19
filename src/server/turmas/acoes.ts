@@ -23,6 +23,8 @@ import {
 } from "./schema";
 import { conferirConclusaoTurma } from "./conclusao-agenda";
 import { sincronizarVinculoDocente } from "./vinculo-docente";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Valida a agenda contra a frequência da modalidade e devolve o rótulo derivado.
 // Lança ErroRegra se o nº de dias não casar (ex.: Intensiva 3x exige 3 dias).
@@ -96,7 +98,7 @@ export async function solicitarAberturaTurma(input: {
 export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirGestorTurma();
-    const dados = TurmaSchema.parse(input);
+    const dados = analisarComDatasDaEscola(TurmaSchema, input, await fusoDaEscola());
 
     const id = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`regra-avaliacao-nivel:${dados.nivelId}`}, 0))`;
@@ -149,7 +151,7 @@ export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: str
 export async function editarTurma(id: string, input: TurmaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirGestorTurma();
-    const dados = TurmaSchema.parse(input);
+    const dados = analisarComDatasDaEscola(TurmaSchema, input, await fusoDaEscola());
     await prisma.$transaction(async (tx) => {
       // Matrícula, transferências e diário usam este mesmo lock antes de alterar ocupação/contexto.
       await tx.$queryRaw`SELECT id FROM "Turma" WHERE id = ${id} FOR UPDATE`;

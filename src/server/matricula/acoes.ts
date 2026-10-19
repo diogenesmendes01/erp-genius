@@ -62,6 +62,8 @@ import { nomeCompleto } from "@/lib/nome";
 import { resolverMensalVigenteTx } from "@/server/contratos/aditivo-mensal-vigente";
 // Conjuntos de papéis centralizados (compartilhados com a UI).
 import { PAPEIS_CRIAR, PAPEIS_ATIVAR } from "./permissoes";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Quem pode matricular SEM preço de referência (exceção de preço, Issue #7).
 const PAPEIS_EXCECAO_PRECO: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR];
@@ -88,7 +90,7 @@ async function criarMatriculaTx(
   /** Idempotência (#166): gravada no payload do `MatriculaCriada`, onde `criarMatricula` a procura. */
   marca: MarcaIdempotencia | null = null,
 ): Promise<{ id: string; alunoId: string; leadId: string | null; aguardaPreco: boolean }> {
-  const dados = MatriculaSchema.parse(input);
+  const dados = analisarComDatasDaEscola(MatriculaSchema, input, await fusoDaEscola());
 
   const pais = await tx.pais.findUnique({
     where: { id: dados.alunoPaisId },
@@ -628,7 +630,7 @@ export async function criarMatricula(
     exigirPapel(autor, ...PAPEIS_CRIAR);
     // Idempotência (#166): reenvio com a mesma chave (duplo clique, retry de rede, F5 no POST) devolve a
     // matrícula já criada, sem segundo aluno, cobrança, comissão ou Evento.
-    const { chaveIdempotencia, ...dados } = MatriculaSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = analisarComDatasDaEscola(MatriculaSchema, input, await fusoDaEscola());
     const marca = chaveIdempotencia ? { chaveIdempotencia, entradaHash: hashEntrada(dados) } : null;
 
     const res = await prisma.$transaction(async (tx) => {
@@ -657,7 +659,7 @@ export async function ativarMatricula(
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_ATIVAR);
-    const dados = AtivacaoSchema.parse(input);
+    const dados = analisarComDatasDaEscola(AtivacaoSchema, input, await fusoDaEscola());
 
     await prisma.$transaction((tx) =>
       ativarMatriculaTx(tx, autor, matriculaId, {
@@ -697,7 +699,7 @@ export async function criarEAtivarMatricula(
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_CRIAR);
     exigirPapel(autor, ...PAPEIS_ATIVAR);
-    const ativacao = AtivacaoSchema.parse(input.ativacao);
+    const ativacao = analisarComDatasDaEscola(AtivacaoSchema, input.ativacao, await fusoDaEscola());
 
     const res = await prisma.$transaction(async (tx) => {
       const criada = await criarMatriculaTx(tx, autor, input.matricula);

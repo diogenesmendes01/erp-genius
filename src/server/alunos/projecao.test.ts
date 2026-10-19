@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel, StatusAluno, StatusCobranca } from "@prisma/client";
 
-const db = vi.hoisted(() => ({ aluno: { findMany: vi.fn(), findUnique: vi.fn() }, turma: { findUnique: vi.fn() } }));
+const db = vi.hoisted(() => ({ aluno: { findMany: vi.fn(), findUnique: vi.fn() }, turma: { findUnique: vi.fn() }, configuracaoOperacional: { findUnique: async () => null } }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
 import { listarAlunos, obterAluno, obterTurma, podeEditarCadastroAluno } from "./consultas";
 

@@ -1,8 +1,9 @@
 import { Prisma, StatusCobranca, FormaPagamento, TipoDestinacaoRecebimento } from "@prisma/client";
 import { registrarEvento, ErroRegra, ErroPermissao } from "@/server/_shared";
-import { dinheiro } from "./regras";
+import { dinheiro, statusEmAbertoPorVencimento } from "./regras";
 import { createHash } from "node:crypto";
 import { saldoLiquidoAcertoTaxa } from "@/server/contratos/aditivo-acerto-taxa-calculo";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export type DestinoRecebimento = { tipo: TipoDestinacaoRecebimento; cobrancaId?: string; valor: number; evidencia: string; chaveIdempotencia: string };
 
@@ -74,6 +75,8 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
       comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null,
       hashDados, destinos: destinos.map(d => ({ tipo: d.tipo, cobrancaId: d.cobrancaId ?? null, valor: dinheiro(d.valor).toFixed(2), evidencia: d.evidencia.trim() })) },
   });
+  // Ref. #247: o saldo que resta só fica ATRASADO depois do dia do vencimento na escola.
+  const agora = new Date(), fuso = await fusoDaEscola(tx);
   for (const destino of input.destinos) {
     const valor = dinheiro(destino.valor);
     const criado = await tx.destinacaoRecebimento.create({ data: { recebimentoId: recebimento.id, cobrancaId: destino.cobrancaId ?? null, autorId: input.autorId, tipo: destino.tipo, valor, evidencia: destino.evidencia.trim(), chaveIdempotencia: destino.chaveIdempotencia } });
@@ -90,7 +93,7 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
     if (excedente.gt(0)) throw new ErroRegra("A destinação excede o saldo devido; registre somente o saldo como cobrança e o restante como crédito.");
     const saldo = saldoLiquidoAcertoTaxa(cobranca.valorNegociado, recebido, cobranca.valorLiquidadoCredito, creditoEmitido, cobranca.valorCompensadoPermuta);
     const quitada = saldo.isZero();
-    await tx.cobranca.update({ where: { id: cobranca.id }, data: { valorRecebido: recebido, saldo, versao: { increment: 1 }, status: quitada ? StatusCobranca.PAGO : (cobranca.vencimento < new Date() ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE), pagoEm: quitada ? input.dataPagamento : null, formaPagamento: input.forma, comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null } });
+    await tx.cobranca.update({ where: { id: cobranca.id }, data: { valorRecebido: recebido, saldo, versao: { increment: 1 }, status: quitada ? StatusCobranca.PAGO : statusEmAbertoPorVencimento(cobranca.vencimento, agora, fuso), pagoEm: quitada ? input.dataPagamento : null, formaPagamento: input.forma, comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null } });
     await registrarEvento(tx, { tipo: "PagamentoRegistrado", agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: input.autorId, payload: { recebimentoId: recebimento.id, destinacaoId: criado.id, informeId: input.informeId ?? null, valorRecebido: valor.toNumber(), recebidoAcumulado: recebido.toNumber(), saldo: saldo.toNumber(), forma: input.forma, quitada, dataPagamento: input.dataPagamento.toISOString() } });
   }
   return recebimento;

@@ -355,6 +355,36 @@ describe("teto por contato/dia no dia civil da ESCOLA (Q176 · ref. #164)", () =
     expect(intencao.despacharAposEm).toEqual(new Date("2026-03-11T03:00:00.000Z"));
   });
 
+  // C3 da revisão do #247: com janela, volta direto na abertura dela, sem a escala de adiamentos de hora em hora.
+  it("barrada às 23h30 de Brasília com janela 8–18, volta às 08h de Brasília do dia seguinte (11h UTC)", async () => {
+    const ctx = await seedComercial({ teto: 1, janela: [8, 18] });
+    await saidaAutomaticaEm(ctx, new Date("2026-03-10T15:00:00.000Z"));
+    await enfileirarDegrau(ctx);
+
+    await despacharFila(new Date("2026-03-11T02:30:00.000Z")); // 10/03, 23h30 de Brasília
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } });
+    expect(intencao.motivoFalha).toBe("teto_contato_dia");
+    expect(intencao.despacharAposEm).toEqual(new Date("2026-03-11T11:00:00.000Z"));
+
+    // À 00h30 de Brasília ela ainda não volta à fila; às 08h sai na janela.
+    expect((await despacharFila(new Date("2026-03-11T03:30:00.000Z"))).adiadas).toBe(0);
+    expect(await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } })).toMatchObject({ status: "ADIADA", motivoFalha: "teto_contato_dia" });
+    expect((await despacharFila(new Date("2026-03-11T11:00:00.000Z"))).simuladas).toBe(1);
+  });
+
+  it("lead em Tóquio, janela 8–18: volta às 08h de Tóquio, depois da meia-noite da escola", async () => {
+    const ctx = await seedComercial({ teto: 1, janela: [8, 18], fusoLead: "Asia/Tokyo" });
+    await saidaAutomaticaEm(ctx, new Date("2026-03-10T15:00:00.000Z"));
+    await enfileirarDegrau(ctx);
+
+    // 10/03, 23h30 de Brasília = 11/03, 11h30 em Tóquio (dentro da janela, mas o teto já foi gasto no dia da escola).
+    await despacharFila(new Date("2026-03-11T02:30:00.000Z"));
+    const intencao = await prisma.intencaoMensagem.findFirstOrThrow({ where: { passoComercial: "+30min" } });
+    expect(intencao.motivoFalha).toBe("teto_contato_dia");
+    // 00h de Brasília (03h UTC) = 12h em Tóquio, dentro da janela: o início do dia da escola é o maior.
+    expect(intencao.despacharAposEm).toEqual(new Date("2026-03-11T03:00:00.000Z"));
+  });
+
   it("escola em America/Santiago: o dia seguinte sem meia-noite (06/09/2026) começa à 01h local", async () => {
     await prisma.configuracaoOperacional.upsert({
       where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "America/Santiago" }, update: { fusoInstitucional: "America/Santiago" },
