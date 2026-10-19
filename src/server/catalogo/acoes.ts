@@ -47,19 +47,28 @@ export async function criarIdioma(input: IdiomaInput): Promise<Resultado<{ id: s
   });
 }
 
-export async function alternarIdiomaAtivo(id: string): Promise<Resultado> {
+/**
+ * Ativa ou desativa o idioma com o estado-alvo explícito (B4, #175 C2): quem confirma com a tela velha o estado em
+ * que o idioma já está não desfaz a mudança de um colega — é um no-op, sem evento. A linha é travada na transação
+ * para que duas confirmações simultâneas leiam o estado uma depois da outra.
+ */
+export async function definirIdiomaAtivo(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_PEDAGOGICO);
-    const idioma = await prisma.idioma.findUnique({ where: { id } });
-    if (!idioma) throw new ErroRegra("Idioma não encontrado.");
+    if (typeof id !== "string" || !id.trim()) throw new ErroRegra("Idioma não informado.");
+    if (typeof ativo !== "boolean") throw new ErroRegra("Situação do idioma inválida.");
     await prisma.$transaction(async (tx) => {
-      await tx.idioma.update({ where: { id }, data: { ativo: !idioma.ativo } });
+      await tx.$queryRaw`SELECT id FROM "Idioma" WHERE id = ${id} FOR UPDATE`;
+      const idioma = await tx.idioma.findUnique({ where: { id }, select: { ativo: true } });
+      if (!idioma) throw new ErroRegra("Idioma não encontrado.");
+      if (idioma.ativo === ativo) return;
+      await tx.idioma.update({ where: { id }, data: { ativo } });
       await registrarEvento(tx, {
-        tipo: idioma.ativo ? "IdiomaDesativado" : "IdiomaAtivado",
+        tipo: ativo ? "IdiomaAtivado" : "IdiomaDesativado",
         agregadoTipo: "Idioma",
         agregadoId: id,
         autorId: autor.id,
-        payload: { de: idioma.ativo, para: !idioma.ativo },
+        payload: { de: idioma.ativo, para: ativo },
       });
     });
     revalidatePath(PATH);
@@ -230,26 +239,41 @@ export async function criarPreco(input: PrecoInput): Promise<Resultado<{ id: str
   });
 }
 
-export async function alternarPrecoAtivo(id: string): Promise<Resultado> {
+/**
+ * Ativa ou desativa o preço de referência com o estado-alvo explícito (B4, #175 C2). Se o preço já está no estado
+ * pedido, nada muda e nenhum evento é gravado — em especial, confirmar "reativar" com a tela velha não aposenta o
+ * preço que um colega acabou de ativar. A combinação é travada na transação (mesma chave de `criarPreco`).
+ */
+export async function definirPrecoAtivo(id: string, ativo: boolean): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const preco = await prisma.precoReferencia.findUnique({ where: { id } });
-    if (!preco) throw new ErroRegra("Preço não encontrado.");
-
-    const reativando = !preco.ativo;
-    const chave = {
-      paisId: preco.paisId,
-      produtoId: preco.produtoId,
-      modalidadeId: preco.modalidadeId,
-      tipoCobranca: preco.tipoCobranca,
-    };
+    if (typeof id !== "string" || !id.trim()) throw new ErroRegra("Preço não informado.");
+    if (typeof ativo !== "boolean") throw new ErroRegra("Situação do preço inválida.");
 
     await prisma.$transaction(async (tx) => {
+      const alvo = await tx.precoReferencia.findUnique({
+        where: { id },
+        select: { paisId: true, produtoId: true, modalidadeId: true, tipoCobranca: true },
+      });
+      if (!alvo) throw new ErroRegra("Preço não encontrado.");
+      const chave = {
+        paisId: alvo.paisId,
+        produtoId: alvo.produtoId,
+        modalidadeId: alvo.modalidadeId,
+        tipoCobranca: alvo.tipoCobranca,
+      };
+      // Trava todos os preços da combinação, em ordem estável: duas reativações concorrentes de irmãos não
+      // deixam dois preços ativos, e o estado lido abaixo é o que vale na hora de gravar.
+      await tx.$queryRaw`SELECT id FROM "PrecoReferencia" WHERE "paisId" = ${chave.paisId} AND "produtoId" = ${chave.produtoId} AND "modalidadeId" = ${chave.modalidadeId} AND "tipoCobranca"::text = ${chave.tipoCobranca} ORDER BY id FOR UPDATE`;
+      const preco = await tx.precoReferencia.findUnique({ where: { id }, select: { ativo: true } });
+      if (!preco) throw new ErroRegra("Preço não encontrado.");
+      if (preco.ativo === ativo) return;
+
       // Ao reativar, supersede: inativa os irmãos ativos da mesma combinação
       // (país/produto/modalidade/tipo) para nunca haver dois preços ativos.
       // Mesmo comportamento de criarPreco — mantém histórico, só um fica ativo.
       let inativados: string[] = [];
-      if (reativando) {
+      if (ativo) {
         const irmaosAtivos = await tx.precoReferencia.findMany({
           where: { ...chave, ativo: true },
           select: { id: true, paisId: true, produtoId: true, modalidadeId: true, tipoCobranca: true },
@@ -263,15 +287,15 @@ export async function alternarPrecoAtivo(id: string): Promise<Resultado> {
         }
       }
 
-      await tx.precoReferencia.update({ where: { id }, data: { ativo: reativando } });
+      await tx.precoReferencia.update({ where: { id }, data: { ativo } });
       await registrarEvento(tx, {
-        tipo: reativando ? "PrecoReativado" : "PrecoDesativado",
+        tipo: ativo ? "PrecoReativado" : "PrecoDesativado",
         agregadoTipo: "Preco",
         agregadoId: id,
         autorId: autor.id,
         payload: {
           de: preco.ativo,
-          para: reativando,
+          para: ativo,
           ...(inativados.length > 0 ? { irmaosInativados: inativados } : {}),
         },
       });
