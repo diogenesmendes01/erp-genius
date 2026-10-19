@@ -3493,9 +3493,38 @@ Branch `claude/sla-completo`, base `main` 78edb2a0 com merge de 7d3688ae (#239; 
   - C5: integração dos módulos tocados no head final, em 4 shards com bancos próprios (`erp_genius_test_fix241`, `…b`, `…c`, `…d`; `migrate deploy`; apagados ao fim), toda com saída 0: `src/server/whatsapp` (inclui `alertas-sla` e `cron`): 58 arquivos, 452 testes; `src/server/{crm,crm-config,inbox}` (inclui `crm-config/sla` e `crm/notificacoes`): 33 arquivos, 268 testes; `src/server/{relatorios,cobrancas,aria}` (`cobrancas/acesso-aulas` chama a rota do cron): 28 arquivos, 311 testes. Total: 119 arquivos, 1031 testes.
   - Evidências da R1 (head com o main a9a71b9d): `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144) saída 0, 0 erros; `npm run lint` saída 0, 0 erros, 40 avisos (linha de base); `npm test` saída 0, 764 arquivos, 5690 testes; `npm run build` saída 0.
 
+### B5 e B6 da triagem: escopo na mesma transação (#207) e confirmações que faltavam (#175) — 2026-10-19
+
+Branch `claude/triagem-b5-b6`, base `main` 7d3688ae, com merge de 8121ab13 (#238), 8970be6e (#240) e a9a71b9d (#242); conflito só no quadro (mantidas as duas seções, a do #242 antes desta).
+- **B5 (#207, C4 da R1 e C2 da R2):** `escopoAtendimentos(usuario, { enviar, agora, db })` e `atendimentoVisivel(usuario, id, enviar, db)` aceitam a transação. O `db` vai para `escopoComercialAtual`, `donosDeLinhaVisiveis` e as alocações do professor, e para `destinatarioAtualDoAtendimento` no envio. `devolverParaFila`, `atribuirAtendimento` (com `exigirResponsavelEnxerga`), `transferirAtendimento`, `convidarParticipante`, `revogarParticipante` e `registrarNotaAtendimento` conferem o escopo na própria tx: não abrem outra conexão com o `FOR UPDATE` tomado. `podeDevolverParaAria` repassa o `db` que já recebia. `acesso/*` não tinha checagem de escopo dentro de transação; o escopo comercial (`_shared/escopo-comercial.ts`) já aceitava a tx e só não a recebia. Sem mudança no comportamento fora de transação (o `prisma` global continua padrão, com o memo por requisição).
+- **Testes B5 (TDD):** `whatsapp/escopo-transacao.int.test.ts`: dentro de uma tx que nunca é commitada, a checagem com a tx enxerga o atendimento, a cobertura de carteira e o vínculo de equipe gravados nela; sem a tx, não. `whatsapp/acoes-atendimento-pool.int.test.ts`: com `connection_limit=1`, as seis ações acima concluem; antes da correção, todas caíam no `pool_timeout` (P2024).
+- **B6 (#175), padrão do `ConfirmarAcao` (fatia B):**
+  - **L2142**, `financeiro/permuta/PermutaOperacional.tsx`: a decisão da compensação (`DecidirCompensacao`) nasce vazia e obrigatória (antes vinha em "Aprovar e compensar"). O botão diz a ação. Aprovar abre a confirmação com o valor que sai de cada mensalidade e o aviso de que não é recebimento em dinheiro.
+  - **L325**, `alunos/[id]/portal/painel.tsx`: "Aprovar e aplicar" a troca de e-mail abre a confirmação. Ela informa o e-mail anterior e o novo, que a senha deixa de valer e que as sessões e os links de acesso são revogados na hora.
+  - **L1479**, `academico/recuperacoes/[realizacaoId]/Formularios.tsx`: "Oficializar esta versão" abre a confirmação, com a versão e a nota, e exige marcar "Conferi a nota e a evidência antes de oficializar.". `ConferirNota` recebe `versao` e `nota`.
+  - Rejeitar continua direto nas três telas. Cada uma tem uma exceção ancorada em `confirmacoes-mapa.ts`, e a cópia literal está em `confirmacoes.test.ts`.
+- **Travas tocadas:**
+  - `portal-aluno/actions.ts` passou a chamar `identidade.*` pelo namespace, porque a trava não aceita alias do nome da ação no módulo.
+  - `botoes-mapa.ts` ganhou o botão da decisão da permuta.
+  - `PermutaOperacional.test.ts` não expande mais a decisão, que tem teste próprio.
+- **Testes B6:** `PermutaOperacional.confirmacao.test.ts`, `painel.confirmacao.test.ts` e `Formularios.confirmacao.test.ts` verificam:
+  - clicar não executa;
+  - confirmar executa uma vez, com os argumentos certos;
+  - voltar não executa;
+  - o erro aparece dentro do diálogo;
+  - rejeitar segue direto.
+- **Fora:** L2019, o motivo na rejeição de desconto, aguarda decisão de produto.
+- Nenhuma migration nova.
+- Evidências no head final, com o merge do #242 (banco descartável `erp_genius_test_b56`, `migrate deploy`, apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npm run lint`: 0 erros e 40 avisos, a linha de base.
+  - `npm test`: saída 0, 762 arquivos e 5.661 testes.
+  - `npm run build` (NODE_OPTIONS=--max-old-space-size=5120): saída 0. Uma tentativa anterior caiu no OOM do cgroup, com a máquina ocupada por outros agentes.
+  - Integração `src/server/{whatsapp,inbox,acesso,financeiro/permuta}`: saída 0, 70 arquivos e 537 testes.
+
 ### #166, 2º lote: idempotência em tarefas, catálogo e nota de contato, e índice da busca — 2026-10-19
 
-Branch `claude/idempotencia-lote2`, base `main` 8970be6e (#240), com o `main` d54280b6 trazido (#242, #243 e #241). A #166 continua aberta.
+Branch `claude/idempotencia-lote2`, base `main` 8970be6e (#240), com o `main` 858d38e9 trazido (#242, #243, #241 e #244). A #166 continua aberta.
 - **C1 da revisão do #240 (índice):** migration `20261019100000_evento_idempotencia_idx` (depois das do SLA, #241: `20261018090000_sla_horario_alertas` e `20261019090000_mensagem_enviada_em`) cria o índice de expressão parcial `Evento_idempotencia_idx` sobre `("tipo", "autorId", ("payload" ->> 'chaveIdempotencia')) WHERE "payload" ? 'chaveIdempotencia'`, em SQL manual. `repeticaoIdempotente` passa a buscar por `sqlBuscaIdempotente` (SQL cru com a mesma expressão e o mesmo predicado; antes era `findFirst` com filtro JSON, que o índice não atendia). O schema documenta o índice no `model Evento`, sem `@@index`: o Prisma 5.22 não representa expressão nem predicado, e o `prisma migrate diff` banco × schema sai idêntico ao de antes da migration (o índice não aparece, como os outros parciais). Trava: `_shared/idempotencia-indice.test.ts` (migration, consulta e schema). Novo `marcaIdempotencia(chave, entrada)`.
 - **Servidor:** chave opcional e marca no payload do Evento de criação, na mesma transação: `criarTarefa` (`TarefaCriada` da `Tarefa`; o lembrete é a própria tarefa, então não sai aviso duplicado; `editarTarefa` continua sem chave), `criarIdioma`, `criarNivel`, `criarModalidade` (`CriarModalidadeSchema`; `editarModalidade` sem chave), `criarProduto` (a conferência de duplicado foi para dentro da transação, depois da repetição, então o reenvio devolve o produto em vez de "Já existe") e `criarPreco` (o reenvio não aposenta o preço que a própria tentativa criou), e `registrarNotaDaFicha`/`registrarNotaPessoa` (a nota é o `NotaInterna`; o hash cobre pessoa e texto). `docs/12` atualizado.
 - **Cliente:** `useChaveIdempotencia` e `idempotente: true` em `PainelTarefa` (só na nova tarefa: `idempotente: !tarefa`), `IdiomasPainel` e `PrecosPainel`, `NiveisPainel`, `ProdutosPainel`, `ModalidadeFormulario` (só na nova; `ModalidadesPainel` passa `key` por formulário) e a nota da `FichaContato` (executor e feedback próprios).

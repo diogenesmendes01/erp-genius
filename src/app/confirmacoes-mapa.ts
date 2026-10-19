@@ -226,6 +226,28 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     achado: "Fase 4D",
     efeito: "envia a mensagem pelo WhatsApp a outro contato do mesmo número (message.forward); não há como desfazer pela tela",
   },
+  // Confirmações que faltavam (#175; triagem B6). A L2019 (motivo na rejeição de desconto) aguarda decisão de produto.
+  {
+    arquivo: "src/app/(app)/financeiro/permuta/PermutaOperacional.tsx",
+    modulo: "@/server/financeiro/permuta-servico",
+    acao: "decidirCompensacaoPermuta",
+    achado: "L2142",
+    efeito: "aprova a compensação e abate o valor do serviço do saldo das mensalidades destinadas; não há desfazer pela tela",
+  },
+  {
+    arquivo: "src/app/(app)/alunos/[id]/portal/painel.tsx",
+    modulo: "@/server/portal-aluno/actions",
+    acao: "decidirTrocaEmailPortalAluno",
+    achado: "L325",
+    efeito: "troca o e-mail do portal do aluno, apaga a senha e revoga na hora as sessões e os links de acesso anteriores",
+  },
+  {
+    arquivo: "src/app/(app)/academico/recuperacoes/[realizacaoId]/Formularios.tsx",
+    modulo: "@/server/avaliacoes/recuperacao-nota",
+    acao: "decidirNotaRecuperacao",
+    achado: "L1479",
+    efeito: "oficializa a versão da nota de recuperação; depois ela só muda por fluxo de correção aprovado",
+  },
 ];
 
 /**
@@ -287,6 +309,22 @@ export const EXCECOES_CONFIRMACAO: ExcecaoConfirmacao[] = [
     arquivo: "src/app/(app)/empresas/[id]/FichaEmpresa.tsx",
     trecho: "definirSituacaoEmpresa(empresa.id, true)",
     motivo: "reativar a empresa tem volta pelo mesmo botão; inativar abre o ConfirmarAcao",
+  },
+  // Confirmações que faltavam (#175; triagem B6).
+  {
+    arquivo: "src/app/(app)/financeiro/permuta/PermutaOperacional.tsx",
+    trecho: "decidirCompensacaoPermuta({ propostaId: proposta.id, aprovar: false, motivo: motivoDecisao })",
+    motivo: "rejeitar não abate nada (a proposta só fica rejeitada); aprovar e compensar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/alunos/[id]/portal/painel.tsx",
+    trecho: "decidirTrocaEmailPortalAluno({ solicitacaoId, aprovar: false, motivo })",
+    motivo: "rejeitar não mexe na conta do portal (a solicitação só fica rejeitada); aprovar e aplicar abre o ConfirmarAcao",
+  },
+  {
+    arquivo: "src/app/(app)/academico/recuperacoes/[realizacaoId]/Formularios.tsx",
+    trecho: "decidirNotaRecuperacao({ notaId, entradaHash, aprovada: false, motivo })",
+    motivo: "rejeitar a versão não oficializa nada (o professor lança outra versão); oficializar abre o ConfirmarAcao",
   },
 ];
 
