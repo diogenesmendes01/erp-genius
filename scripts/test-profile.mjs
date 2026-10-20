@@ -6,6 +6,9 @@ const bancos = Object.freeze({
   "dev-email": "erp_genius_test_dev_email",
   "dev-gravacoes": "erp_genius_test_dev_gravacoes",
   tester: "erp_genius_test_tester",
+  // Só o workflow .github/workflows/integracao.yml (D7) pede este perfil, por ERP_TEST_PROFILE; quem roda
+  // na máquina segue no "integracao" ou no perfil do .erp-test-profile do worktree, como antes.
+  "ci-integracao": "erp_genius_test_ciint",
 });
 
 export function resolverBancoTeste(raiz = process.cwd(), ambiente = process.env) {
