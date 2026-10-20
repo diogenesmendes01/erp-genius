@@ -24,7 +24,7 @@ import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/tes
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { atendimentoVisivel, garantirAtendimento } from "./atendimentos";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
-import { carregarThread } from "./consultas";
+import { mensagensDoInbox } from "@/test/inbox-consultas";
 import { enviarTextoInbox } from "./acoes";
 import { abrirAtendimentoInstitucional, encerrarAtendimentoWhatsApp, listarTriagemWhatsApp } from "./operacoes-atendimento";
 import { despacharFila } from "./despachante";
@@ -83,7 +83,7 @@ describe("destinatário atual para novos envios; histórico permanece autorizado
     await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { telefoneE164: "+50688880999" } });
     expect(await destinatarioAtual(c.atendimento.id)).toBe(false);
     expect(await atendimentoVisivel(ven, c.atendimento.id, true)).toBeNull();
-    expect((await carregarThread(ven, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([antiga.id]);
+    expect((await mensagensDoInbox(ven, c.atendimento.id))?.map((m) => m.id)).toEqual([antiga.id]);
     entrar(ven.id);
     expect((await enviarTextoInbox({ conversaId: c.atendimento.id, texto: "Não deve chegar ao número antigo" })).ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(1);
@@ -101,7 +101,7 @@ describe("destinatário atual para novos envios; histórico permanece autorizado
     expect(await destinatarioAtual(c.atendimento.id)).toBe(true);
     await prisma.aluno.update({ where: { id: c.aluno.id }, data: { telefoneE164: "+50688880777" } });
     expect(await destinatarioAtual(c.atendimento.id)).toBe(false);
-    expect((await carregarThread(fin, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([antiga.id]);
+    expect((await mensagensDoInbox(fin, c.atendimento.id))?.map((m) => m.id)).toEqual([antiga.id]);
     entrar(fin.id);
     expect((await enviarTextoInbox({ conversaId: c.atendimento.id, texto: "Destino antigo bloqueado" })).ok).toBe(false);
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe("destinatário atual para novos envios; histórico permanece autorizado
     expect(await destinatarioAtual(novo.dado!.id)).toBe(true);
     expect((await enviarTextoInbox({ conversaId: novo.dado!.id, texto: "Mensagem para o destinatário atual" })).ok).toBe(true);
     expect(enviarMock).toHaveBeenCalledTimes(1);
-    expect((await carregarThread(fin, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([antiga.id]);
+    expect((await mensagensDoInbox(fin, c.atendimento.id))?.map((m) => m.id)).toEqual([antiga.id]);
   });
 
   it("trocar o guardião revoga o contato antigo mesmo se o telefone do novo for igual", async () => {
@@ -128,7 +128,7 @@ describe("destinatário atual para novos envios; histórico permanece autorizado
     expect((await enviarTextoInbox({ conversaId: c.atendimento.id, texto: "Contato do guardião anterior" })).ok).toBe(false);
     await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: pendente.id } })).status).toBe("CANCELADA");
-    expect((await carregarThread(fin, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([antiga.id]);
+    expect((await mensagensDoInbox(fin, c.atendimento.id))?.map((m) => m.id)).toEqual([antiga.id]);
     expect((await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { id: c.contato.id } })).responsavelId).toBe(c.guardiao!.id);
   });
 
@@ -182,8 +182,8 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     const novo = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: inbound.atendimentoId! } });
     expect(novo).toMatchObject({ finalidade: "COMERCIAL", encerradoEm: null, leadId: c.lead.id, naoLidas: 1 });
     expect((await listarTriagemWhatsApp()).map((m) => m.id)).not.toContain(inbound.id);
-    expect((await carregarThread(adm, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([historica.id]);
-    expect((await carregarThread(adm, novo.id))?.mensagens.map((m) => m.id)).toEqual([inbound.id]);
+    expect((await mensagensDoInbox(adm, c.atendimento.id))?.map((m) => m.id)).toEqual([historica.id]);
+    expect((await mensagensDoInbox(adm, novo.id))?.map((m) => m.id)).toEqual([inbound.id]);
     expect(enviarMock).not.toHaveBeenCalled();
   });
 
@@ -201,7 +201,7 @@ describe("encerramento respeita a finalidade e inbound retorna à triagem", () =
     expect(depois.encerradoEm).toEqual(antes.encerradoEm); expect(depois.naoLidas).toBe(antes.naoLidas);
     expect(await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: inbound.atendimentoId! } })).toMatchObject({ finalidade: "FINANCEIRO", encerradoEm: null, matriculaId: c.atendimento.matriculaId });
     expect((await listarTriagemWhatsApp()).map((m) => m.id)).not.toContain(inbound.id);
-    expect((await carregarThread(adm, c.atendimento.id))?.mensagens.map((m) => m.id)).toEqual([historica.id]);
+    expect((await mensagensDoInbox(adm, c.atendimento.id))?.map((m) => m.id)).toEqual([historica.id]);
     expect(enviarMock).not.toHaveBeenCalled();
   });
 });

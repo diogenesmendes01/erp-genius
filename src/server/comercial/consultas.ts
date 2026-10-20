@@ -4,7 +4,6 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { exigirSessaoComPapel } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
-import { nomeDoContato } from "@/server/whatsapp/nome-contato";
 import { whereFiltrosLead, type FiltrosLead } from "./filtros";
 
 /** Vendedores ativos (para atribuir como dono do lead). */
@@ -18,64 +17,6 @@ export async function listarVendedores() {
     orderBy: { nome: "asc" },
     select: { id: true, nome: true },
   });
-}
-
-export interface ConfigComercialView {
-  autoLeadAtivo: boolean;
-  saudacaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
-  saudacaoTexto: string;
-  /** C4 (doc 27): matrícula automática — nasce desligada. */
-  matriculaAutomaticaAtiva: boolean;
-  /** C5 (doc 27): gestão (alerta SLA + relatório diário) — nasce desligada. */
-  gestaoEstado: "DESLIGADA" | "SHADOW" | "ATIVA";
-  gestaoTelefoneE164: string | null;
-  gestaoNumeroId: string | null;
-  gestaoSlaMinutos: number;
-  gestaoRelatorioHora: number;
-}
-
-/** Config comercial C1 (doc 27), com os defaults de fábrica quando ainda não há registro. */
-export async function carregarConfigComercial(): Promise<ConfigComercialView> {
-  await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-  const c = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
-  return {
-    autoLeadAtivo: c?.autoLeadAtivo ?? false,
-    saudacaoEstado: c?.saudacaoEstado ?? "DESLIGADA",
-    saudacaoTexto: c?.saudacaoTexto ?? "Olá! Recebemos sua mensagem e já retornamos. 😊",
-    matriculaAutomaticaAtiva: c?.matriculaAutomaticaAtiva ?? false,
-    gestaoEstado: c?.gestaoEstado ?? "DESLIGADA",
-    gestaoTelefoneE164: c?.gestaoTelefoneE164 ?? null,
-    gestaoNumeroId: c?.gestaoNumeroId ?? null,
-    gestaoSlaMinutos: c?.gestaoSlaMinutos ?? 30,
-    gestaoRelatorioHora: c?.gestaoRelatorioHora ?? 19,
-  };
-}
-
-export interface SaudacaoSimulada {
-  id: string;
-  contato: string;
-  texto: string;
-  quando: string;
-}
-
-/**
- * Ensaio observável (doc 27 §regra de ouro — review PR #53): as últimas saudações que o
- * shadow SIMULOU (o que TERIA sido enviado), para o gerente validar o piloto antes de ativar.
- */
-export async function carregarSaudacoesSimuladas(limite = 10): Promise<SaudacaoSimulada[]> {
-  const usuario = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-  const intencoes = await prisma.intencaoMensagem.findMany({
-    where: { reativa: true, status: "SIMULADA", ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { lead: { is: await escopoComercialAtual(usuario) } }) },
-    orderBy: { criadaEm: "desc" },
-    take: Math.max(1, Math.min(100, Math.floor(limite))),
-    include: { contato: { select: { nomeExibicao: true, nomePerfil: true, telefoneE164: true } } },
-  });
-  return intencoes.map((i) => ({
-    id: i.id,
-    contato: nomeDoContato(i.contato),
-    texto: i.corpoRenderizado,
-    quando: (i.despachadaEm ?? i.criadaEm).toISOString(),
-  }));
 }
 
 /** Compatibilidade para consumidores antigos; equipe e cobertura são relidas no servidor. */
