@@ -6,6 +6,7 @@ import { resolverComissao } from "@/server/financeiro/politica";
 import { exigirContratoAceito } from "./ativacao";
 import { exigirCondicoesMensaisAceitas } from "./condicoes-aceitas";
 import { conferirPagamentosEntradaParticular } from "./entrada-particular-pagamentos";
+import { carregarAplicacoesAdiantamentoEntradaTx } from "./entrada-particular-aplicacoes";
 import { conferirContinuidadeReserva } from "./excecao-admissao-estado";
 import { emitirEntradaTx } from "./emissao-entrada-tx";
 import { carregarAgendaParticularContratual } from "@/server/contratos/agenda-particular";
@@ -39,7 +40,7 @@ export async function ativarPreparacaoTx(tx: Prisma.TransactionClient, matricula
   if (await tx.aprovacao.count({ where: { alvoTipo: "Matricula", alvoId: m.id, status: "PENDENTE" } })) throw new ErroRegra("A matrícula aguarda aprovação comercial.");
   const condicoes = m.condicoesEntradaPreparacao[0], emissao = m.emissoesEntrada[0];
   if (!condicoes || m.emissoesEntrada.length !== 1 || !emissao?.conferenciaInicial || emissao.condicoesId !== condicoes.id) throw new ErroRegra("Confira a emissão inicial das condições aceitas.");
-  const entrada = conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, cobrancas, emissao.itens.map(i => i.cobrancaId));
+  const entrada = conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, cobrancas, emissao.itens.map(i => i.cobrancaId), await carregarAplicacoesAdiantamentoEntradaTx(tx, m.id));
   if (!entrada.pagamentosExigidosConfirmados) throw new ErroRegra("Confirme no Financeiro todos os pagamentos exigidos antes da ativação.");
   if (entrada.regime !== p.regime) throw new ErroRegra("O regime de entrada diverge da contratação.");
   const regra = p.regime === "MENSALIDADE" ? z.object({ aulas: z.object({ regime: z.literal("MENSALIDADE"), diaVencimentoContratado: z.number().int(), cobertura: z.object({ referencia: z.enum(["MES_CIVIL", "CICLO_MATRICULA"]), inicio: z.string() }) }) }).parse(condicoes.dados).aulas : null;
