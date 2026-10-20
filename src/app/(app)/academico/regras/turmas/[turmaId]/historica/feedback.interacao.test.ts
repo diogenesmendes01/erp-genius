@@ -30,12 +30,14 @@ import { DecidirConferenciaRegraHistorica, PrepararConferenciaRegraHistorica, Pr
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto } from "@/test/tela-sem-dom";
+import { Botao } from "@/components/Botao";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
 const fieldsetTravado = (t: ReactNode) => elementos(t).find((n) => n.type === "fieldset")?.props.disabled === true;
-const rotuloDoBotao = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button")?.props.children);
+// O "Revisar" é o <Botao> do design system (C33 da #170): conta o nativo e o <Botao>.
+const rotuloDoBotao = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button" || n.type === Botao)?.props.children);
 
 const revisao = {
   destinoId: "regra-2", estadoHash: "a".repeat(64), versaoEsperada: 0,

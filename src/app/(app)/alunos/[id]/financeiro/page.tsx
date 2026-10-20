@@ -2,13 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { obterFichaFinanceira, obterResumoComercialFinanceiro } from "@/server/ajustes/consultas";
-import { exigirSessaoPagina, temPapel } from "@/server/_shared";
+import { exigirSessaoPagina, temPapel, temPermissao } from "@/server/_shared";
 import { nomeCompleto } from "@/lib/nome";
 import { ResumoFinanceiroComercial } from "./ResumoFinanceiroComercial";
 import { InformesPagamento } from "@/app/(app)/financeiro/InformesPagamento";
 import { AcessoAulasPainel } from "@/app/(app)/financeiro/AcessoAulasPainel";
 import { listarInformesPagamento } from "@/server/financeiro/consultas";
-import { prisma } from "@/lib/prisma";
 import { FichaFinanceira, type FichaFinanceiraDados } from "./FichaFinanceira";
 import { ConcluirMatriculas } from "./ConcluirMatriculas";
 import { RetomadasPainel } from "@/app/(app)/financeiro/RetomadasPainel";
@@ -35,9 +34,9 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
     if (!resumo) notFound();
     return <ResumoFinanceiroComercial dados={resumo} />;
   }
-  const [f, informes, concessoes, contextoRetomada, propostasRetomada, preferencia] = await Promise.all([
+  // As capacidades vêm do usuário da sessão (carregarUsuarioFresco já traz `permissoes`; C11 da #170).
+  const [f, informes, contextoRetomada, propostasRetomada, preferencia] = await Promise.all([
     obterFichaFinanceira(id, usuario), listarInformesPagamento(id),
-    prisma.usuario.findUniqueOrThrow({ where: { id: usuario.id }, select: { permissoes: true } }),
     listarContextoRetomada(id), listarPropostasRetomada(id),
     consultarPreferenciaFusoEquipe(),
   ]);
@@ -129,7 +128,7 @@ export default async function FichaFinanceiraPage({ params }: { params: Promise<
     })),
     permissoes: {
       registrarPagamento: tem(Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA),
-      somenteInformar: !tem(Papel.FINANCEIRO) && !concessoes.permissoes.includes("pagamento.caixa"),
+      somenteInformar: !tem(Papel.FINANCEIRO) && !temPermissao(usuario, "pagamento.caixa"),
       renegociar: tem(Papel.FINANCEIRO, Papel.VENDEDOR),
       perdao: usuario.papeis.includes(Papel.ADMINISTRADOR),
     },

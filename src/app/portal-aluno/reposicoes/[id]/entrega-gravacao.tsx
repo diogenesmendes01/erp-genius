@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { Botao } from "@/components/Botao";
 
 export function EntregaGravacaoPortalAluno({ reposicaoId, podeEntregar, motivoBloqueio }: { reposicaoId: string; podeEntregar: boolean; motivoBloqueio: string | null }) {
   const router = useRouter();
@@ -29,7 +30,7 @@ export function EntregaGravacaoPortalAluno({ reposicaoId, podeEntregar, motivoBl
     <label className="block text-sm">Resumo do que foi assistido<CampoTexto required minLength={5} maxLength={4000} name="resumo" className="mt-1 min-h-24 w-full rounded border p-2" /></label>
     <label className="block text-sm">Atividade realizada<CampoTexto required minLength={5} maxLength={4000} name="atividade" className="mt-1 min-h-24 w-full rounded border p-2" /></label>
     <label className="block text-sm">Evidência ou observação<CampoTexto required minLength={5} maxLength={4000} name="evidencia" className="mt-1 min-h-20 w-full rounded border p-2" /></label>
-    <button disabled={enviando} className="rounded bg-brand-solid px-3 py-2 text-sm text-on-brand disabled:opacity-60">{enviando ? "Enviando…" : "Enviar para avaliação"}</button>
+    <Botao type="submit" ocupado={enviando}>{enviando ? "Enviando…" : "Enviar para avaliação"}</Botao>
     {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
   </form>;
 }

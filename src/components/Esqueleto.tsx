@@ -159,6 +159,55 @@ export function EsqueletoColunas({ rotulo, colunas = 5 }: { rotulo: string; colu
   );
 }
 
+/** Fileira de abas de área (pílulas), no lugar da barra que o layout da área desenha. */
+function BarraAbas({ abas = 5 }: { abas?: number }) {
+  return (
+    <div data-esqueleto="abas" className="flex gap-1 overflow-hidden">
+      {Array.from({ length: abas }, (_, i) => <div key={i} className={`${bloco} h-8 w-24 shrink-0 rounded-full`} />)}
+    </div>
+  );
+}
+
+/**
+ * Primeira entrada numa área com layout próprio (#174): o (app)/loading.tsx cobre a espera do layout da área,
+ * então desenha o formato dele. `financeiro`/`configuracao`: título + abas + tabela; `matricula`: cabeçalho do
+ * registro + abas + cartões; `abas` (acadêmico, diário): abas + título + cartões. Um título só em todos.
+ */
+export function EsqueletoArea({ rotulo, area = "abas" }: { rotulo: string; area?: "financeiro" | "configuracao" | "matricula" | "abas" }) {
+  if (area === "financeiro" || area === "configuracao") {
+    return (
+      <Carregando rotulo={rotulo} className="space-y-4">
+        <BarraTitulo largura={area === "financeiro" ? "w-32" : "w-40"} />
+        {area === "configuracao" && <div className={`${bloco} h-4 w-1/2`} />}
+        <BarraAbas abas={area === "financeiro" ? 6 : 5} />
+        {area === "financeiro" && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => <div key={i} className={`${bloco} h-20`} />)}
+          </div>
+        )}
+        <LinhasTabela linhas={6} />
+      </Carregando>
+    );
+  }
+  return (
+    <Carregando rotulo={rotulo} className="space-y-4">
+      <div className="space-y-3 border-b border-gray-200 pb-3">
+        {area === "matricula" && (
+          <div data-esqueleto="registro" className="flex flex-wrap items-center gap-3">
+            <div className={`${bloco} h-4 w-24`} />
+            <div className={`${bloco} h-4 w-40`} />
+            <div className={`${bloco} h-5 w-16 rounded-full`} />
+          </div>
+        )}
+        <BarraAbas />
+      </div>
+      <BarraTitulo largura="w-56" />
+      <div className={`${bloco} h-4 w-2/3`} />
+      {Array.from({ length: 3 }, (_, i) => <Cartao key={i} />)}
+    </Carregando>
+  );
+}
+
 /** Acesso da equipe (/login), fora do shell: cartão estreito no centro com a marca, os campos e o botão. */
 export function EsqueletoAcesso({ rotulo, campos = 2 }: { rotulo: string; campos?: number }) {
   return (
