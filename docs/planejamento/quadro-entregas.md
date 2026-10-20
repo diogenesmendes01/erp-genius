@@ -3808,6 +3808,20 @@ Branch `claude/remover-crm-antigo`, base `main` 9808cd29. Decisões do dono B13 
   - `prisma migrate diff` banco × schema: só as divergências antigas, as mesmas do `main`, e nenhuma linha dos objetos removidos.
 - **Pendência operacional:** fazer backup e rodar as consultas do PR antes do deploy.
 
+### Pendências pequenas das revisões #250, #253 e #255 — 2026-10-20
+
+- **#255 C1 (relógio fixo × `now()` do banco):** `whatsapp/acoes.int.test.ts`, `cobrancas/acesso-aulas.int.test.ts` e `cobrancas/conferencia.int.test.ts` fixam o relógio no meio-dia da escola **do dia corrente** (`meioDiaDaEscolaHoje()` em `src/test/integracao.ts`: `inicioDoDiaInstitucional(new Date(), fusoDaEscola()) + 12 h`, lido depois do `truncarBanco`), e não mais em 2026-10-20 15h UTC. Assim o processo fica no mesmo dia dos defaults `now()` do Postgres.
+- **#253 C2:** `criarMatriculaTx` passa o `tx` para `fusoDaEscola(tx)`.
+- **#253 C3:** conferido que o caso não acontece: o `SolicitarRetomadaSchema` já recusa `cobrancaId` repetido ("Uma cobrança não pode receber duas datas.", desde o #175), antes da transação e do replay. Nenhuma checagem duplicada no replay; um comentário ali aponta a dependência, e um teste novo em `retomada/fluxo.int.test.ts` trava o comportamento (erro, proposta e eventos intactos, replay correto continua devolvendo a mesma proposta).
+- **#250 C1:** comentário em `Modal.feedback.test.ts` sobre a dependência da fatia de 5 ms do Scheduler (`scheduler` 0.23.2, `performance.now`) e o que conferir depois de um upgrade do React. Conferido que o teste falha se `useDialogo` usar `useEffect` no lugar do efeito de layout.
+- **#249 C2:** já feito no #250 (caso `antes` em `avaliacoes/segunda-chamada-agenda-inicial.int.test.ts`); nada a fazer.
+- Evidências (banco descartável `erp_genius_test_pend`, `migrate deploy`, apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base; nenhum nos arquivos tocados).
+  - `npm test`: 788 arquivos e 5.892 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
+  - `npm run build`: saída 0.
+  - Integração (`whatsapp/acoes`, `cobrancas/acesso-aulas`, `cobrancas/conferencia`, `retomada/fluxo`, `matricula/criar-idempotencia`, `matricula/ativacao`, `financeiro/politica`): 7 arquivos e 97 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
+
 ## LGPD, D5 (#165): anonimizar o texto da busca nos `DadosExportados` antigos (20/10/2026)
 
 Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#255) trazido antes do push. Nenhuma migration. **O script não foi rodado em produção (UAT)**: fica para o dono, depois do backup.

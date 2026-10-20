@@ -1,5 +1,7 @@
 import { Prisma, Papel, StatusPais, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Helpers das suites de integração (*.int.test.ts). O banco é o Postgres de TESTE
 // (a URL é injetada pelo vitest.integration.config — nunca o .env/produção).
@@ -26,6 +28,16 @@ export async function configurarFusoDaEscola(fuso = "UTC"): Promise<void> {
     create: { id: "escola", fusoInstitucional: fuso },
     update: { fusoInstitucional: fuso },
   });
+}
+
+/**
+ * Meio-dia da escola no dia corrente (revisão da #255, C1). Serve de relógio fixo para as suítes que
+ * precisam do dia da máquina igual ao da escola: ao contrário de uma data literal, fica no mesmo dia do
+ * `now()` do Postgres (`criadoEm` etc.), que segue o relógio real. Ler com o relógio real, antes de
+ * `vi.setSystemTime`, e depois do `truncarBanco` (o fuso vem da configuração, ou do padrão).
+ */
+export async function meioDiaDaEscolaHoje(): Promise<Date> {
+  return new Date(inicioDoDiaInstitucional(new Date(), await fusoDaEscola()).getTime() + 12 * 3600_000);
 }
 
 let seqUsuario = 0;
