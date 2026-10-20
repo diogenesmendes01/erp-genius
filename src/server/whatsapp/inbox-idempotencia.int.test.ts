@@ -167,3 +167,16 @@ describe("reenvio tardio da mesma chave devolve o registro já feito (C3 do #267
     expect(await prisma.intencaoMensagem.count()).toBe(1);
   });
 });
+
+describe("agendamento com chave nova não revela se o atendimento existe (N1 da R1 do #274)", () => {
+  it("fora do escopo e inexistente recebem a mesma resposta, antes das validações de horário", async () => {
+    const { a, outro } = await cenario();
+    comoUsuario(outro);
+    const passado = new Date(Date.now() - 86_400_000).toISOString();
+    const existente = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "Sondagem", quando: passado, chaveIdempotencia: "chave-sonda-01" });
+    const inexistente = await agendarMensagemNoAtendimento({ atendimentoId: "atendimento-que-nao-existe", texto: "Sondagem", quando: passado, chaveIdempotencia: "chave-sonda-02" });
+    expect(existente).toEqual({ ok: false, erro: "Atendimento não encontrado." });
+    expect(inexistente).toEqual(existente);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+});
