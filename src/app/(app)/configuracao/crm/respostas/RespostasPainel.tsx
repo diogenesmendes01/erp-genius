@@ -30,7 +30,8 @@ const VARIAVEIS = ["{nome}", "{responsavel}", "{curso}"];
 export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: RespostaLinha[]; setoresPermitidos: Setor[] }) {
   const router = useRouter();
   // Criar resposta leva chave de idempotência (#166): o reenvio devolve a resposta já criada. Editar grava os
-  // valores da tela na resposta (estado-alvo), então repetir não duplica. Arquivar usa o ConfirmarAcao.
+  // valores da tela na resposta (estado-alvo) e o servidor não grava nada quando eles já estão lá. Arquivar
+  // roda neste mesmo executor; repetir só recebe "Resposta já arquivada", sem novo Evento.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [id, setId] = useState<string | undefined>();
@@ -40,10 +41,11 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
   const [setor, setSetor] = useState<Setor | "">("");
   const [aria, setAria] = useState(false);
   const limpar = () => { setId(undefined); setAtalho("/"); setTitulo(""); setCorpo(""); setSetor(""); setAria(false); };
-  const rodar = async (fn: () => Promise<Resultado<unknown>>, depois: () => void) => {
-    const criando = !id;
+  // `criacao`: só o "Criar resposta" consome a chave; um arquivamento ou edição que deu certo não pode
+  // trocar a chave de uma criação que ficou incerta.
+  const rodar = async (fn: () => Promise<Resultado<unknown>>, depois: () => void, criacao = false) => {
     const d = await acao.executar(fn);
-    if (criando) tentativa.depoisDo(d);
+    if (criacao) tentativa.depoisDo(d);
     if (d?.tipo === "ok") { depois(); router.refresh(); }
   };
 
@@ -77,7 +79,7 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
       </label>
       <label className="mt-3 flex items-center gap-1 text-sm"><input type="checkbox" checked={aria} onChange={(e) => setAria(e.target.checked)} />A Aria pode usar esta resposta</label>
       <p className="mt-1 text-xs text-gray-500">{AVISO_ARIA}</p>
-      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarRespostaRapidaDaTela({ id, atalho, titulo, corpo, setor: setor || null, ariaPodeUsar: aria, ...(id ? {} : { chaveIdempotencia: tentativa.atual }) }), limpar)}>{acao.ocupado ? "Salvando…" : id ? "Salvar resposta" : "Criar resposta"}</button>
+      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarRespostaRapidaDaTela({ id, atalho, titulo, corpo, setor: setor || null, ariaPodeUsar: aria, ...(id ? {} : { chaveIdempotencia: tentativa.atual }) }), limpar, !id)}>{acao.ocupado ? "Salvando…" : id ? "Salvar resposta" : "Criar resposta"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />
   </div>;

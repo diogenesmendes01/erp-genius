@@ -63,6 +63,8 @@ export async function salvarRespostaRapida(i: { id?: string; atalho: string; tit
       });
       if (dup) throw new ErroRegra("Já existe uma resposta com este atalho (inclusive arquivada).");
       const dados = { nome: "rr:" + d.atalho, atalho: d.atalho, titulo: d.titulo, corpo: d.corpo, setor: d.setor, ariaPodeUsar: d.ariaPodeUsar };
+      // Edição sem mudança (ex.: reenvio após resultado incerto): sem update nem Evento.
+      if (antes && antes.nome === dados.nome && JSON.stringify(resumo(antes)) === JSON.stringify(resumo(dados))) return { id: antes.id };
       const t = antes
         ? await tx.templateWhatsApp.update({ where: { id: antes.id }, data: dados })
         : await tx.templateWhatsApp.create({ data: { ...dados, tipo: "RESPOSTA_RAPIDA" } });

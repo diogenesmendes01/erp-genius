@@ -102,7 +102,7 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     const d = AgendarSchema.parse(i);
     if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
     // A marca mora no `MensagemAgendada` do atendimento; o agendamento pelo CRM nem sempre grava esse Evento.
-    if (d.chaveIdempotencia && !d.atendimentoId) throw new Error("Chave de idempotência só no agendamento pelo atendimento.");
+    if (d.chaveIdempotencia && !d.atendimentoId) throw new ErroRegra("Chave de idempotência só no agendamento pelo atendimento.");
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");

@@ -96,3 +96,43 @@ describe("salvarRespostaRapida (criação) com chave (#166)", () => {
     expect(await respostas()).toBe(1);
   });
 });
+
+// PR #267 B4: a edição (com `id`) roda no executor `idempotente: true`; o reenvio de uma edição que já
+// foi aplicada não grava update nem Evento.
+describe("edição sem mudança não grava (#166, PR #267 B4)", () => {
+  const conta = (tipo: string) => prisma.evento.count({ where: { tipo } });
+  const idCriado = (r: { ok: true; dado?: { id: string } } | { ok: false; erro: string }) => {
+    if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+    return r.dado.id;
+  };
+
+  it("tag: editar para 'B' duas vezes grava 1 Evento de edição; mudar a cor ainda grava", async () => {
+    const id = idCriado(await salvarTag({ nome: "A", grupo: "G", cor: "INFO", chaveIdempotencia: "chave-tag-edit-1" }));
+    const edicao = { id, nome: "B", grupo: "G", cor: "INFO" } as const;
+    expect(await salvarTag(edicao)).toEqual({ ok: true, dado: { id } });
+    expect(await salvarTag(edicao)).toEqual({ ok: true, dado: { id } });
+    expect(await conta("TagSalva")).toBe(2);
+    expect((await salvarTag({ ...edicao, cor: "SUCESSO" })).ok).toBe(true);
+    expect(await conta("TagSalva")).toBe(3);
+  });
+
+  it("campo: reenviar a mesma edição grava 1 Evento de edição; mudar o obrigatório ainda grava", async () => {
+    const id = idCriado(await salvarCampo({ nome: "Turno", tipo: "SELECAO", opcoes: ["Manhã", "Tarde"], alvo: "PESSOA", obrigatorio: false, chaveIdempotencia: "chave-campo-edit-1" }));
+    const edicao = { id, nome: "Turno", tipo: "SELECAO", opcoes: ["Manhã", "Tarde", "Noite", "noite"], alvo: "PESSOA", obrigatorio: false } as const;
+    expect((await salvarCampo({ ...edicao, opcoes: [...edicao.opcoes] })).ok).toBe(true);
+    expect((await salvarCampo({ ...edicao, opcoes: [...edicao.opcoes] })).ok).toBe(true);
+    expect(await conta("CampoSalvo")).toBe(2);
+    expect((await salvarCampo({ ...edicao, opcoes: [...edicao.opcoes], obrigatorio: true })).ok).toBe(true);
+    expect(await conta("CampoSalvo")).toBe(3);
+  });
+
+  it("resposta rápida: reenviar a mesma edição grava 1 Evento de edição; mudar o corpo ainda grava", async () => {
+    const id = idCriado(await salvarRespostaRapida({ atalho: "/oi", titulo: "Oi", corpo: "Oi {nome}.", setor: null, ariaPodeUsar: false, chaveIdempotencia: "chave-resp-edit-1" }));
+    const edicao = { id, atalho: "/oi", titulo: "Olá", corpo: "Oi {nome}.", setor: null, ariaPodeUsar: true };
+    expect((await salvarRespostaRapida(edicao)).ok).toBe(true);
+    expect((await salvarRespostaRapida(edicao)).ok).toBe(true);
+    expect(await conta("RespostaRapidaSalva")).toBe(2);
+    expect((await salvarRespostaRapida({ ...edicao, corpo: "Olá {nome}!" })).ok).toBe(true);
+    expect(await conta("RespostaRapidaSalva")).toBe(3);
+  });
+});

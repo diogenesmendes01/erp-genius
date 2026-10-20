@@ -40,6 +40,8 @@ export async function salvarTag(i: { id?: string; nome: string; grupo: string; c
       const antes = d.id ? todas.find((t) => t.id === d.id) : undefined;
       if (d.id && !antes) throw new ErroRegra("Tag não encontrada.");
       if (antes && !antes.ativo) throw new ErroRegra("Tag arquivada não pode ser editada.");
+      // Edição sem mudança (ex.: reenvio após resultado incerto): sem update nem Evento.
+      if (antes && antes.nome === d.nome && antes.grupo === d.grupo && antes.cor === d.cor) return { id: antes.id };
       const tag = antes
         ? await tx.tag.update({ where: { id: antes.id }, data: { nome: d.nome, grupo: d.grupo, cor: d.cor } })
         : await tx.tag.create({ data: { nome: d.nome, grupo: d.grupo, cor: d.cor } });
@@ -106,10 +108,12 @@ export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCamp
         if (usados > 0) throw new ErroRegra("Este campo já tem valores preenchidos: não é possível trocar o tipo nem o alvo.");
       }
       const dados = { nome: d.nome, tipo: d.tipo, alvo: d.alvo, opcoes, obrigatorio: d.obrigatorio };
+      const resumo = (c: typeof dados) => ({ nome: c.nome, tipo: c.tipo, alvo: c.alvo, opcoes: c.opcoes, obrigatorio: c.obrigatorio });
+      // Edição sem mudança (ex.: reenvio após resultado incerto): sem update nem Evento.
+      if (antes && JSON.stringify(resumo(antes)) === JSON.stringify(resumo(dados))) return { id: antes.id };
       const campo = antes
         ? await tx.campoPersonalizado.update({ where: { id: antes.id }, data: dados })
         : await tx.campoPersonalizado.create({ data: dados });
-      const resumo = (c: typeof campo) => ({ nome: c.nome, tipo: c.tipo, alvo: c.alvo, opcoes: c.opcoes, obrigatorio: c.obrigatorio });
       await registrarEvento(tx, {
         tipo: "CampoSalvo", agregadoTipo: "CampoPersonalizado", agregadoId: campo.id, autorId: autor.id,
         payload: { de: antes ? resumo(antes) : null, para: resumo(campo), ...marca },

@@ -14,8 +14,8 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   const router = useRouter();
   const [numeroAvisosAgendaId, setNumero] = useState(config.numeroAvisosAgendaId ?? "");
   const [templateAvisosAgendaId, setTemplate] = useState(config.templateAvisosAgendaId ?? "");
-  // salvarConfiguracaoAvisosAgenda não recebe chave de idempotência: resultado incerto manda conferir.
-  // Idempotente por natureza (#166): número e template dos avisos vão por upsert na configuração única da escola.
+  // Sem chave de idempotência, mas idempotente por natureza (#166): número e template vão por upsert na
+  // configuração única da escola, e o servidor não grava nada (nem Evento) quando já são esses. Reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
   const numeros = config.numeros.filter((n) => n.ativo && n.driver === "MOTOR");
   const templates = config.templates.filter((t) => t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
