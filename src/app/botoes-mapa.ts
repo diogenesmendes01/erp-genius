@@ -539,7 +539,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "academico/regras/turmas/[turmaId]/historica/ConferenciaRegraHistorica.tsx": [
     "<button> Registrando… · Propor conferência → secundario/lg",
-    "<button> Revisando… · Revisar → secundario/md",
+    "<Botao> Revisando… · Revisar → secundario/md",
     "<button> Registrar decisão → primario/lg",
   ],
   "academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx": [
