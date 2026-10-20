@@ -55,7 +55,7 @@ it.each(["valor", "vencimento", "moeda", "vinculo", "extra", "memoria"])("recusa
 
 // Q172: aditivo de adiantamento aplicado. A cobrança vigente é a da última aplicação, e a cadeia parte do conferido.
 function aplicarAditivo(f: ReturnType<typeof fixture>, extra: Partial<AplicacaoAdiantamentoEntrada> = {}) {
-  const a: AplicacaoAdiantamentoEntrada = { id: `ap${f.aplicacoes.length}`, cobrancaId: "c1", versaoCobrancaDepois: 2 + f.aplicacoes.length, valorAnterior: f.cobrancas[1].valorNegociado, valorNovo: "375",
+  const a: AplicacaoAdiantamentoEntrada = { id: `ap${f.aplicacoes.length}`, cobrancaId: "c1", versaoCobrancaAntes: f.cobrancas[1].versao, versaoCobrancaDepois: f.cobrancas[1].versao + 1, valorAnterior: f.cobrancas[1].valorNegociado, valorNovo: "375",
     vencimentoAnterior: f.cobrancas[1].vencimento, vencimentoNovo: new Date("2099-10-20T12:00:00Z"), minutosAnteriores: f.aplicacoes.at(-1)?.minutosNovos ?? 75, minutosNovos: 112, ...extra };
   f.aplicacoes.push(a);
   f.cobrancas[1] = { ...f.cobrancas[1], valorNegociado: new Prisma.Decimal(a.valorNovo), vencimento: a.vencimentoNovo, valorRecebido: new Prisma.Decimal(a.valorNovo), versao: a.versaoCobrancaDepois };
@@ -79,5 +79,21 @@ it.each(["valor", "vencimento", "origem", "cadeia", "minutos", "taxa", "outra co
   if (tipo === "minutos") aplicarAditivo(f, { minutosAnteriores: 60 });
   if (tipo === "taxa") f.aplicacoes[0] = { ...f.aplicacoes[0], cobrancaId: "c0" };
   if (tipo === "outra cobranca") f.aplicacoes[0] = { ...f.aplicacoes[0], cobrancaId: "fora-da-entrada" };
+  expect(() => f.consultar()).toThrow("A cobrança difere das condições conferidas");
+});
+
+it("aditivo aplicado: aceita versão avançada por alteração legítima entre aplicações e depois da última (ex.: pagamento)", () => {
+  const f = fixture(condicoes(true));
+  aplicarAditivo(f);
+  f.cobrancas[1].versao += 2;
+  aplicarAditivo(f, { valorNovo: "400", minutosNovos: 120 });
+  f.cobrancas[1].versao += 1;
+  expect(f.consultar()).toMatchObject({ pagamentosExigidosConfirmados: true, itens: [expect.anything(), { valor: "400", minutos: 120, versao: 6 }] });
+});
+it.each(["salto de versao", "versao sobreposta", "versao atual anterior"])("aditivo aplicado: recusa versão incoerente (%s)", tipo => {
+  const f = fixture(condicoes(true));
+  if (tipo === "salto de versao") aplicarAditivo(f, { versaoCobrancaDepois: 3 });
+  if (tipo === "versao sobreposta") { aplicarAditivo(f); f.cobrancas[1].versao = 1; aplicarAditivo(f, { valorNovo: "400" }); f.cobrancas[1].versao = 3; }
+  if (tipo === "versao atual anterior") { aplicarAditivo(f); f.cobrancas[1].versao = 1; }
   expect(() => f.consultar()).toThrow("A cobrança difere das condições conferidas");
 });
