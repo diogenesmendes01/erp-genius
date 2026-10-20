@@ -18,7 +18,7 @@ import { executarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalen
 import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } from "@/server/avaliacoes/equivalencia-proposta";
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { publicarOfertaAgendaDestino, retirarAulaFuturaDaOferta } from "@/test/oferta-agenda-destino";
 import { consultarFechamentosPortalAluno } from "./fechamentos";
 import { criarSessaoPortalAlunoTx } from "./sessao";
@@ -97,6 +97,7 @@ async function iniciarSessaoPortal() {
 beforeEach(async () => {
   mocks.portalCookie = ""; mocks.authMock.mockReset();
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR], "Professor A e B")).id;
   gestorId = (await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gestão da transferência")).id;

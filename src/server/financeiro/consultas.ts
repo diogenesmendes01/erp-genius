@@ -20,6 +20,7 @@ import type { Ordenacao } from "@/lib/ordenacao";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "./vencimento-civil";
 import { inicioDoMesInstitucional, vencimentoEmAtraso } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { DIA_PREVISAO_COMISSAO_PADRAO } from "./previsao-comissao";
 
 /** Escopo das comissões: financeiro/admin tudo; gerente as suas e as da equipe; vendedor as suas. */
 export function escopoComissoes(usuario: { id: string; papeis: Papel[] }): Prisma.ComissaoWhereInput {
@@ -304,12 +305,13 @@ export async function podeConfigurarComissoes() {
 
 export async function configuracaoComissoes() {
   if (!(await podeConfigurarComissoes())) return null;
-  const [politicas, paises, produtos] = await Promise.all([
+  const [politicas, paises, produtos, config] = await Promise.all([
     prisma.politicaComissao.findMany({ orderBy: { criadoEm: "desc" } }),
     prisma.pais.findMany({ where: { status: "ATIVO" }, select: { id: true, nome: true, moedaLocal: true } }),
     prisma.produto.findMany({ include: { idioma: { select: { nome: true } }, modalidade: { select: { nome: true } } } }),
+    prisma.configFinanceiro.findUnique({ where: { id: "financeiro" }, select: { diaPrevisaoPagamentoComissao: true } }),
   ]);
-  return semDecimais({ politicas: politicas.map((p) => ({ ...p, vigenteEm: p.vigenteEm.toISOString(), encerraEm: p.encerraEm?.toISOString() ?? null, criadoEm: p.criadoEm.toISOString() })),
+  return semDecimais({ diaPrevisaoPagamento: config?.diaPrevisaoPagamentoComissao ?? DIA_PREVISAO_COMISSAO_PADRAO, politicas: politicas.map((p) => ({ ...p, vigenteEm: p.vigenteEm.toISOString(), encerraEm: p.encerraEm?.toISOString() ?? null, criadoEm: p.criadoEm.toISOString() })),
     paises, produtos: produtos.map((p) => ({ id: p.id, nome: `${p.idioma.nome} · ${p.modalidade.nome}` })) });
 }
 

@@ -724,6 +724,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Aprovar → botao",
     "<button> Rejeitar → perigo/md",
   ],
+  "financeiro/DiaPrevisaoComissao.tsx": [
+    "<Botao> Salvar dia → primario/lg",
+  ],
   "financeiro/FilaCobranca.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",

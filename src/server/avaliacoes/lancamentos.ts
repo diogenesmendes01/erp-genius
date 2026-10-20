@@ -13,17 +13,22 @@ import { identificarMatriculaAvaliacao } from "./identificacao";
 import { avaliacoesDesignadas } from "./designacao-acesso";
 import { SalvarLancamentoSchema, OficializarLancamentoSchema, NotasLancamentoSchema } from "./lancamento-schema";
 import { salvarLancamentoTx, oficializarLancamentoTx, bloquearLancamento } from "./lancamento-tx";
+/** D10: sem o fuso da escola, nenhum lançamento é aceito (em UTC a data da avaliação pode cair no dia errado). */
+async function exigirFusoDaEscola() {
+  if (!(await consultarFusoInstitucional())) throw new ErroRegra(MSG_LANCAMENTO_SEM_FUSO);
+}
+
 export async function salvarLancamentoAvaliacao(input: z.input<typeof SalvarLancamentoSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
+    await exigirFusoDaEscola();
     return prisma.$transaction(tx => salvarLancamentoTx(tx, u.id, input));
   });
 }
 export async function salvarLancamentoAvaliacaoLocal(input: Omit<z.input<typeof SalvarLancamentoSchema>, "realizadaEm"> & { realizadaLocal: string; fuso: string }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
-    // D10: sem o fuso da escola, o lançamento com data e hora locais não é aceito (a tela também o esconde).
-    if (!(await consultarFusoInstitucional())) throw new ErroRegra(MSG_LANCAMENTO_SEM_FUSO);
+    await exigirFusoDaEscola(); // D10 (a tela também esconde o formulário)
     const { realizadaLocal, fuso, ...d } = SalvarLancamentoSchema.omit({ realizadaEm: true }).extend({ realizadaLocal: DataHoraAvaliacaoSchema, fuso: FusoInstitucionalSchema }).strict().parse(input);
     let realizadaEm: string;
     try { realizadaEm = instanteAvaliacaoLocal(realizadaLocal, fuso).toISOString(); }

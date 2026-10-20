@@ -118,3 +118,47 @@ describe("carregarPainelComissoes", () => {
     expect(await lista(gerente, v3.id)).toEqual([]);
   });
 });
+
+// D11 (decisão do dono, 20/10/2026): previsão de pagamento = dia X do mês seguinte à competência, no fuso da escola,
+// calculada na leitura com o X da ConfigFinanceiro (padrão 10). Paga e estornada ficam sem previsão.
+describe("carregarPainelComissoes — previsão de pagamento (D11)", () => {
+  const competenciaDe = (id: string, p: PainelComissoes) => p.linhas.find((l) => l.id === id);
+
+  it("padrão: dia 10 do mês seguinte à competência; paga sem previsão", async () => {
+    await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "America/Sao_Paulo" } });
+    const p = await carregarPainelComissoes(sessaoDe(financeiro), base);
+    expect(p.diaPrevisaoPagamento).toBe(10);
+    const [ano, mes] = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).format(new Date()).split("-").map(Number);
+    const seguinte = mes === 12 ? `${ano + 1}-01` : `${ano}-${String(mes + 1).padStart(2, "0")}`;
+    const aprovadas = p.linhas.filter((l) => l.status === "APROVADA");
+    expect(aprovadas.length).toBeGreaterThan(0);
+    for (const l of aprovadas) expect(l.previsaoPagamento).toBe(`${seguinte}-10`);
+    expect(p.linhas.find((l) => l.status === "PAGA")!.previsaoPagamento).toBeNull();
+  });
+
+  it("dezembro vira janeiro, no fuso da escola, com o dia configurado", async () => {
+    await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "America/Sao_Paulo" } });
+    await prisma.configFinanceiro.create({ data: { id: "financeiro", diaPrevisaoPagamentoComissao: 5 } });
+    // 01/01/2027 às 02h30 UTC ainda é 31/12/2026 em São Paulo: competência dezembro, previsão 05/01/2027.
+    const virada = await comissao(v1, { valor: 9, moeda: "BRL", status: "PENDENTE", aprovadaEm: new Date("2027-01-01T02:30:00Z") });
+    const meio = await comissao(v1, { valor: 8, moeda: "BRL", status: "APROVADA", aprovadaEm: new Date("2026-12-15T15:00:00Z") });
+    const estornada = await comissao(v1, { valor: 3, moeda: "BRL", status: "ESTORNADA", aprovadaEm: new Date("2026-12-15T15:00:00Z") });
+    // "Este mês" do painel é dezembro de 2026: só o relógio (Date) é fixado, o resto segue real.
+    vi.useFakeTimers({ now: new Date("2026-12-20T15:00:00Z"), toFake: ["Date"] });
+    try {
+      const p = await carregarPainelComissoes(sessaoDe(financeiro), base);
+      expect(p.diaPrevisaoPagamento).toBe(5);
+      expect(competenciaDe(virada.id, p)?.previsaoPagamento).toBe("2027-01-05");
+      expect(competenciaDe(meio.id, p)?.previsaoPagamento).toBe("2027-01-05");
+      expect(competenciaDe(estornada.id, p)?.previsaoPagamento).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("respeita o escopo: o vendedor só vê a previsão das próprias comissões", async () => {
+    const p = await carregarPainelComissoes(sessaoDe(v1), base);
+    expect(new Set(p.linhas.map((l) => l.vendedor))).toEqual(new Set(["V1"]));
+    expect(p.linhas.every((l) => l.previsaoPagamento !== null)).toBe(true);
+  });
+});
