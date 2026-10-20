@@ -29,7 +29,7 @@ describe("lista de /empresas paginada (E4)", () => {
   it("ordem da URL (E1) vira o orderBy da consulta paginada, com desempate por id", async () => {
     await listarEmpresasPagina(lerFiltrosEmpresas({ ordem: "colaboradores", dir: "desc", pagina: "2" }));
     expect(db.empresa.findMany.mock.calls[0][0]).toMatchObject({
-      orderBy: [{ matriculas: { _count: "desc" } }, { nome: "asc" }, { id: "asc" }],
+      orderBy: [{ matriculas: { _count: "desc" } }, { nomeOrdenacao: "asc" }, { id: "asc" }],
       skip: EMPRESAS_POR_PAGINA,
       take: EMPRESAS_POR_PAGINA,
     });

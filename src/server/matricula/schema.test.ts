@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { AtivacaoSchema, MatriculaSchema } from "./schema";
+import { AtivacaoSchema as AtivacaoSchemaBase, MatriculaSchema as MatriculaSchemaBase } from "./schema";
+import { comDatasDaEscola } from "@/server/_shared/validacao";
+
+// As datas digitadas viram o meio-dia da escola (ref. #247); nas ações, o parse roda dentro de `comDatasDaEscola`.
+const FUSO = "America/Sao_Paulo";
+const naEscola = <S extends { parse: (v: unknown) => unknown; safeParse: (v: unknown) => unknown }>(schema: S) => ({
+  parse: (v: unknown) => comDatasDaEscola(FUSO, () => schema.parse(v)) as ReturnType<S["parse"]>,
+  safeParse: (v: unknown) => comDatasDaEscola(FUSO, () => schema.safeParse(v)) as ReturnType<S["safeParse"]>,
+});
+const AtivacaoSchema = naEscola(AtivacaoSchemaBase);
+const MatriculaSchema = naEscola(MatriculaSchemaBase);
 
 describe("AtivacaoSchema — evidência do recebimento", () => {
   const pagamento = { valorRecebido: 60, forma: "DINHEIRO", dataPagamento: "2026-09-18" };

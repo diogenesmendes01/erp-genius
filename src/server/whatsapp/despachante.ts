@@ -24,7 +24,8 @@ import { envioAvisosAgendaHabilitado, MOTIVO_ENVIO_AGENDA_DESLIGADO } from "@/se
 import { aplicarResposta } from "./status-atendimento";
 import { aoGravarSaidaHumana, MOTIVO_ARIA_PAUSADA } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
-import { inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional } from "@/server/operacao/fuso";
+import { dataCivilInstitucional, inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional } from "@/server/operacao/fuso";
+import { candidatosDaGrade } from "@/server/agenda/grade";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
@@ -81,6 +82,44 @@ function diaSemanaLocal(data: Date, fuso: string): number {
   } catch {
     return data.getDay();
   }
+}
+
+/** Janela de envio da política (S3): horas [inicio, fim) e dias da semana (0 = domingo), no fuso do contato. */
+export interface JanelaEnvio {
+  janelaInicio: number;
+  janelaFim: number;
+  diasSemana: readonly number[];
+}
+
+function dentroDaJanela(instante: Date, janela: JanelaEnvio, fuso: string): boolean {
+  const hora = horaLocal(instante, fuso);
+  return hora >= janela.janelaInicio && hora < janela.janelaFim && janela.diasSemana.includes(diaSemanaLocal(instante, fuso));
+}
+
+/**
+ * Quando a mensagem barrada pelo teto diário volta (C3 da revisão do #247): no primeiro instante permitido, o
+ * maior entre `inicioAmanhaEscola` e a abertura da janela do contato. Sem isso ela voltava à 00h da escola e era
+ * adiada de hora em hora até a janela abrir. A abertura é a primeira hora existente da janela num dia permitido
+ * (o horário de verão pode pular a hora cheia). Sem janela possível em uma semana, ou com fuso inválido no
+ * cadastro, fica no início do dia seguinte da escola, e o passo da janela segue adiando como antes.
+ */
+export function retornoAposTeto(inicioAmanhaEscola: Date, janela: JanelaEnvio, fuso: string): Date {
+  try {
+    if (dentroDaJanela(inicioAmanhaEscola, janela, fuso)) return inicioAmanhaEscola;
+    const primeiroDia = Date.parse(`${dataCivilInstitucional(inicioAmanhaEscola, fuso)}T00:00:00Z`);
+    for (let dias = 0; dias <= 7; dias++) {
+      const data = new Date(primeiroDia + dias * 86_400_000).toISOString().slice(0, 10);
+      for (let hora = Math.max(0, janela.janelaInicio); hora < Math.min(24, janela.janelaFim); hora++) {
+        const [abertura] = candidatosDaGrade(data, `${String(hora).padStart(2, "0")}:00`, fuso);
+        if (!abertura) continue; // hora pulada pelo horário de verão
+        if (abertura >= inicioAmanhaEscola && dentroDaJanela(abertura, janela, fuso)) return abertura;
+        break; // a janela deste dia já passou (ou o dia não é permitido): tenta o próximo
+      }
+    }
+  } catch {
+    // fuso inválido no cadastro: mesmo critério de `horaLocal`, não trava a fila
+  }
+  return inicioAmanhaEscola;
 }
 
 export interface EntradaShadow {
@@ -170,7 +209,8 @@ export async function despacharFila(
   // Q176 (#164): o teto por contato/dia (passo 7) conta no dia civil da escola, não no relógio do servidor (UTC).
   const fusoEscola = await fusoDaEscola();
   const inicioDiaEscola = inicioDoDiaInstitucional(agora, fusoEscola);
-  // A mensagem barrada pelo teto volta quando o dia da escola vira (1º instante válido do dia seguinte).
+  // A mensagem barrada pelo teto volta quando o dia da escola vira (1º instante válido do dia seguinte), ou
+  // depois, na abertura da janela do contato (`retornoAposTeto`).
   const inicioAmanhaEscola = inicioDoDiaSeguinteInstitucional(agora, fusoEscola);
 
   // RECUPERAÇÃO (review PR #49): claim órfão (worker caiu entre o claim e a confirmação)
@@ -459,7 +499,9 @@ export async function despacharFila(
         },
       });
       if (enviadasHoje >= politica.tetoPorContatoDia) {
-        if (await adiar(it.id, inicioAmanhaEscola, "teto_contato_dia")) r.adiadas += 1;
+        // Volta direto no 1º instante permitido: início do dia seguinte da escola ou abertura da janela do contato
+        // (o passo 8 vale para toda mensagem que chega aqui).
+        if (await adiar(it.id, retornoAposTeto(inicioAmanhaEscola, politica, fusoDoDestino(it)), "teto_contato_dia")) r.adiadas += 1;
         else r.canceladas += 1;
         continue;
       }

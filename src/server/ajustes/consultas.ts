@@ -9,6 +9,8 @@ import { exigirSessaoComPapel, exigirPapel } from "@/server/_shared";
 import { financeiroOperacional, escopoMatriculaComercial, escopoMatriculaAprovacao } from "@/server/financeiro/acesso";
 import { saldoAtual } from "@/server/financeiro/regras";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { vencimentoEmAtraso } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 /** Ausência de identidade e vínculo nunca concede acesso global. */
 export function escopoFichaFinanceira(usuario?: UsuarioSessao): Prisma.AlunoWhereInput {
@@ -66,12 +68,13 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
   })]));
   const ajustes = alunoPlano.matriculas.flatMap((m) => m.ajustes);
   const comissoes = alunoPlano.matriculas.flatMap((m) => m.comissoes);
-  const agora = new Date();
+  // Ref. #247: o vencimento é um dia civil; a cobrança só entra em atraso quando o dia da escola passa dele.
+  const agora = new Date(), fuso = await fusoDaEscola();
 
   // Por moeda (nunca soma moedas diferentes) — o aluno pode ter matrículas em moedas distintas.
   const emAtraso = somarPorMoeda(
     cobrancas
-      .filter((c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora))
+      .filter((c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && vencimentoEmAtraso(c.vencimento, agora, fuso)))
       .map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), c.valorCompensadoPermuta).toNumber() })),
   );
   const emAberto = somarPorMoeda(
@@ -80,7 +83,7 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
       .map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), c.valorCompensadoPermuta).toNumber() })),
   );
   const proximo = cobrancas
-    .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
+    .filter((c) => c.status === StatusCobranca.PENDENTE && !vencimentoEmAtraso(c.vencimento, agora, fuso))
     .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime())[0] ?? null;
   const ultimoPago = cobrancas
     .filter((c) => c.status === StatusCobranca.PAGO && c.pagoEm)
@@ -98,6 +101,8 @@ export async function obterFichaFinanceira(alunoId: string, usuario?: UsuarioSes
         .map((c) => ({ id: c.id, vencimento: c.vencimento, cicloRegua: c.cicloRegua, acessoBloqueado: m.acessoBloqueado })),
     ),
     agora,
+    undefined,
+    fuso,
   );
   const acessoBloqueado = alunoPlano.matriculas.some((m) => m.acessoBloqueado);
   const historico = await historicoFinanceiroDoAluno(

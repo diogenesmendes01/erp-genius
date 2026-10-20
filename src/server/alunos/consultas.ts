@@ -14,6 +14,8 @@ import {
   referenciaVencimentoCivil,
   type ReferenciaVencimentoCivil,
 } from "@/server/financeiro/vencimento-civil";
+import { vencimentoEmAtraso } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Papéis com visão GLOBAL de alunos (doc 07 / nav): veem todos os registros.
 const PAPEIS_AMPLO_ALUNOS: Papel[] = [
@@ -103,27 +105,28 @@ type CobrancaResumo = {
   moeda: string;
 };
 
-function proximaCobranca<T extends CobrancaResumo>(cobrancas: T[], agora: Date) {
+// Ref. #247: o vencimento é um dia civil; a cobrança só entra em atraso quando o dia da escola passa dele.
+function proximaCobranca<T extends CobrancaResumo>(cobrancas: T[], agora: Date, fuso: string) {
   return cobrancas
-    .filter((c) => c.status === StatusCobranca.PENDENTE && c.vencimento >= agora)
+    .filter((c) => c.status === StatusCobranca.PENDENTE && !vencimentoEmAtraso(c.vencimento, agora, fuso))
     .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime())[0];
 }
 
-function calcularResumoFinanceiro<T extends CobrancaResumo>(cobrancas: T[], agora: Date) {
+function calcularResumoFinanceiro<T extends CobrancaResumo>(cobrancas: T[], agora: Date, fuso: string) {
   const atrasado = cobrancas.some(
-    (c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && c.vencimento < agora),
+    (c) => c.status === StatusCobranca.ATRASADO || (c.status === StatusCobranca.PENDENTE && vencimentoEmAtraso(c.vencimento, agora, fuso)),
   );
   const emAberto = somarPorMoeda(
     cobrancas
       .filter((c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO)
       .map((c) => ({ moeda: c.moeda, valor: Math.max(0, c.saldo != null ? numero(c.saldo) : numero(c.valorNegociado) - numero(c.valorRecebido ?? 0)) })),
   );
-  const proximo = proximaCobranca(cobrancas, agora);
+  const proximo = proximaCobranca(cobrancas, agora, fuso);
   return { atrasado, emAberto, proximo };
 }
 
-function resumoFinanceiro(cobrancas: CobrancaResumo[]) {
-  const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, new Date());
+function resumoFinanceiro(cobrancas: CobrancaResumo[], agora: Date, fuso: string) {
+  const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, agora, fuso);
   return { atrasado, emAberto, proximoVencimento: proximo?.vencimento ?? null };
 }
 
@@ -137,7 +140,7 @@ type CobrancaResumoDaFicha = CobrancaResumo & { id: string; matriculaId: string 
  * projeção pedagógica.
  */
 async function resumoFinanceiroDaFicha(cobrancas: CobrancaResumoDaFicha[]) {
-  const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, new Date());
+  const { atrasado, emAberto, proximo } = calcularResumoFinanceiro(cobrancas, new Date(), await fusoDaEscola());
   const resumo = { atrasado, emAberto };
   const proxima = proximo;
   if (!proxima) return { ...resumo, proximoVencimento: null as ReferenciaVencimentoCivil | null };
@@ -230,6 +233,8 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
     },
   });
 
+  const agora = new Date();
+  const fuso = verFinanceiro ? await fusoDaEscola() : null;
   return alunos.map((a) => {
     const cobrancas = a.matriculas.flatMap((m) => m.cobrancas);
     const alocacoes = a.alocacoes.filter((v) => temVisaoAmpla(usuario) || docenteAtual(usuario.id, v.turma));
@@ -242,7 +247,7 @@ export async function listarAlunos(usuario?: UsuarioSessao, filtros?: FiltrosAlu
       criadoEm: a.criadoEm.toISOString(),
       // Mesmo rótulo do filtro (C17, #170): "Regular B1" sozinho repetia entre turmas diferentes na célula e na planilha.
       turmas: alocacoes.map(({ turma }) => ({ id: turma.id, label: rotuloTurmaAcademica(turma) })),
-      financeiro: verFinanceiro ? resumoFinanceiro(cobrancas) : null,
+      financeiro: fuso ? resumoFinanceiro(cobrancas, agora, fuso) : null,
     };
   });
 }
