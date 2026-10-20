@@ -8,7 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
 import { atendimentoDoInbound, garantirAtendimento } from "./atendimentos";
-import { carregarThread, listarConversas } from "./consultas-inbox";
+import { obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { carregarPainel } from "@/server/inbox/paineis";
+import { listaDoInbox, mensagensDoInbox } from "@/test/inbox-consultas";
 import { listarOpcoesAtendimento, abrirAtendimentoInstitucional } from "./operacoes-atendimento";
 import { enfileirarIntencaoCobranca } from "./fila";
 import { referenciaDestinoCobranca, snapshotCobranca } from "./elegibilidade";
@@ -41,16 +43,16 @@ describe("WhatsApp financeiro por matrícula", () => {
       { numeroId: c.canal.numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "ENTRADA", driver: DriverWhatsApp.META_CLOUD, corpo: "Contrato A" },
       { numeroId: c.canal.numero.id, conversaId: b.conversaId, atendimentoId: b.id, direcao: "ENTRADA", driver: DriverWhatsApp.META_CLOUD, corpo: "Contrato B" },
     ] });
-    const ta = await carregarThread(c.sessao, a.id); const tb = await carregarThread(c.sessao, b.id);
-    expect(ta?.matricula?.id).toBe(c.matricula.id);
-    expect(ta?.cobrancaAtiva?.id).toBe(c.cobranca.id);
-    expect(tb?.cobrancaAtiva?.id).toBe(c.anterior.id);
-    expect(ta?.mensagens.map((m) => m.corpo)).toEqual(["Contrato A"]);
-    expect(tb?.mensagens.map((m) => m.corpo)).toEqual(["Contrato B"]);
-    const lista = await listarConversas(c.sessao);
+    const pa = await carregarPainel(c.sessao, a.id); const pb = await carregarPainel(c.sessao, b.id);
+    expect((await obterItemListaInbox(c.sessao, a.id))?.vinculo).toContain(c.matricula.codigo ?? c.matricula.id);
+    expect(pa?.acoes?.cobranca?.ativa?.id).toBe(c.cobranca.id);
+    expect(pb?.acoes?.cobranca?.ativa?.id).toBe(c.anterior.id);
+    expect((await mensagensDoInbox(c.sessao, a.id))?.map((m) => m.corpo)).toEqual(["Contrato A"]);
+    expect((await mensagensDoInbox(c.sessao, b.id))?.map((m) => m.corpo)).toEqual(["Contrato B"]);
+    const lista = await listaDoInbox(c.sessao);
     expect(new Set(lista.map((x) => x.vinculo)).size).toBe(2);
     const vendedor = await criarUsuario([Papel.VENDEDOR]);
-    expect(await carregarThread({ id: vendedor.id, nome: vendedor.nome, papeis: vendedor.papeis }, a.id)).toBeNull();
+    expect(await obterItemListaInbox({ id: vendedor.id, nome: vendedor.nome, papeis: vendedor.papeis }, a.id)).toBeNull();
   });
 
   it("oferece e abre cada matrícula explicitamente, sem aceitar chave antiga por aluno", async () => {
@@ -77,9 +79,8 @@ describe("WhatsApp financeiro por matrícula", () => {
       motivo: "Pagador aluno identificado para o contrato", chaveIdempotencia: `pagador-aluno-${semDivida.id}`, entradaHash: `pagador-aluno-${semDivida.id}`,
     } });
     const a = await c.abrir(semDivida.id);
-    const thread = await carregarThread(c.sessao, a.id);
-    expect(thread?.matricula?.id).toBe(semDivida.id);
-    expect(thread?.cobrancaAtiva).toBeNull();
+    expect((await obterItemListaInbox(c.sessao, a.id))?.vinculo).toBe(`matrícula · ${semDivida.codigo ?? semDivida.id}`);
+    expect((await carregarPainel(c.sessao, a.id))?.acoes?.cobranca).toMatchObject({ ativa: null });
   });
 
   it("mantém o roteamento automático quando há uma única matrícula inequívoca", async () => {
