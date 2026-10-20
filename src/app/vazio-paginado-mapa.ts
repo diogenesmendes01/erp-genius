@@ -37,6 +37,7 @@ export const MAPA_VAZIO_PAGINADO: readonly string[] = [
   "src/app/(app)/matriculas/[id]/contrato/substituicoes/page.tsx | d.paginaConferencias > 1 | Nenhuma conferência de outro original nesta página. Prepare e confira o documento substituto nos documentos da matrícula.",
   "src/app/(app)/matriculas/[id]/fechamentos-horas/page.tsx | q.cursor | Nenhum rascunho salvo nesta página.",
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx | d.pagina > 1 | Nenhum relato registrado nesta página.",
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/page.tsx | pagina > 1 | Nenhuma correção registrada nesta página.",
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx | d.pagina > 1 | Nenhuma proposta registrada nesta página.",
   "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/page.tsx | cursor | Nenhum encontro particular nesta página.",
   "src/app/(app)/matriculas/[id]/pagador/page.tsx | pagina > 1 | Nenhum registro nesta página.",
