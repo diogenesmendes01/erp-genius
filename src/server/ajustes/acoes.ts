@@ -8,9 +8,11 @@ import { nomeCompleto } from "@/lib/nome";
 import { exigirSessaoComPapel, registrarEvento, executarAcao, ErroRegra, ErroPermissao, validarDirecaoAjuste, numero, type Resultado, type UsuarioSessao } from "@/server/_shared";
 import { exigirEscopoAjuste, exigirEscopoAprovacao } from "@/server/financeiro/acesso";
 import { bloquearCobranca, bloquearMatriculas } from "@/server/financeiro/recebimentos";
-import { dinheiro, saldoAtual, descontoAcumulado, exigirConferenciaIndependente } from "@/server/financeiro/regras";
+import { dinheiro, saldoAtual, descontoAcumulado, exigirConferenciaIndependente, statusEmAbertoPorVencimento } from "@/server/financeiro/regras";
 import { limitesAtuais, exigeAprovacaoComponente } from "@/server/financeiro/politica";
 import { AjusteSchema, DecisaoSchema, type AjusteInput, type DecisaoInput } from "./schema";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 function revalidar() {
   revalidatePath("/financeiro", "layout"); revalidatePath("/alunos", "layout");
@@ -32,6 +34,8 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
   // A aprovação não pode alterar a base enquanto a ativação monta o cronograma.
   const vinculos = await tx.cobranca.findMany({ where: { id: { in: snapshot.alvos.map((alvo) => alvo.id) } }, select: { matriculaId: true } });
   await bloquearMatriculas(tx, vinculos.map((vinculo) => vinculo.matriculaId));
+  // Ref. #247: o atraso segue o dia civil da escola (o dia do vencimento inteiro ainda é PENDENTE).
+  const agora = new Date(), fuso = await fusoDaEscola(tx);
   for (const alvo of [...snapshot.alvos].sort((a,b) => a.id.localeCompare(b.id))) {
     const cobranca = await bloquearCobranca(tx, alvo.id);
     if (cobranca.versao !== alvo.versao || !cobranca.valorNegociado.equals(alvo.valorDe) || !cobranca.valorOriginal.equals(alvo.referencia)) {
@@ -53,8 +57,8 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     const vencimento = alvo.novoVencimento ? new Date(alvo.novoVencimento) : cobranca.vencimento;
     await tx.cobranca.update({ where: { id: cobranca.id }, data: {
       valorNegociado: valor, saldo, versao: { increment: 1 }, vencimento,
-      status: snapshot.tipo === TipoAjuste.PERDAO ? StatusCobranca.CANCELADA : saldo.isZero() ? StatusCobranca.PAGO : vencimento < new Date() ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE,
-      pagoEm: saldo.isZero() && snapshot.tipo !== TipoAjuste.PERDAO ? (cobranca.pagoEm ?? new Date()) : null,
+      status: snapshot.tipo === TipoAjuste.PERDAO ? StatusCobranca.CANCELADA : saldo.isZero() ? StatusCobranca.PAGO : statusEmAbertoPorVencimento(vencimento, agora, fuso),
+      pagoEm: saldo.isZero() && snapshot.tipo !== TipoAjuste.PERDAO ? (cobranca.pagoEm ?? agora) : null,
     } });
     await tx.ajusteFinanceiro.create({ data: {
       matriculaId: matricula.id, cobrancaId: cobranca.id, tipo: snapshot.tipo,
@@ -82,7 +86,7 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
 export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ aprovacao: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
-    const dados = AjusteSchema.parse(input);
+    const dados = analisarComDatasDaEscola(AjusteSchema, input, await fusoDaEscola());
     const resultado = await prisma.$transaction(async (tx) => {
       // Primeiro consultar somente o vínculo, autorizando antes de ler valores sensíveis.
       const vinculo = await tx.cobranca.findUnique({ where: { id: dados.cobrancaId }, select: { matriculaId: true } });

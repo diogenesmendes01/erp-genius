@@ -2,6 +2,8 @@ import { Papel, StatusCobranca, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { numero, numeroOuNull, exigirSessaoComPapel } from "@/server/_shared";
 import { EMPRESAS_POR_PAGINA, orderByEmpresas, whereFiltrosEmpresas, type FiltrosEmpresas } from "./filtros";
+import { vencimentoEmAtraso } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // B2B — consultas (Fase 2, doc 03): lista de empresas, ficha (colaboradores + faturas) e
 // o RELATÓRIO POR COLABORADOR (status da matrícula + mensalidades pagas/abertas/atrasadas).
@@ -107,13 +109,14 @@ export async function obterEmpresa(id: string) {
   if (!empresa) return null;
 
   // RELATÓRIO POR COLABORADOR (doc 03 §B2B).
-  const agora = new Date();
+  // Ref. #247: atrasada só depois do dia do vencimento na escola.
+  const agora = new Date(), fuso = await fusoDaEscola();
   const colaboradores: ColaboradorRelatorio[] = empresa.matriculas.map((m) => {
     const pagas = m.cobrancas.filter((c) => c.status === StatusCobranca.PAGO);
     const abertas = m.cobrancas.filter(
       (c) => c.status === StatusCobranca.PENDENTE || c.status === StatusCobranca.ATRASADO,
     );
-    const atrasadas = abertas.filter((c) => c.vencimento < agora);
+    const atrasadas = abertas.filter((c) => vencimentoEmAtraso(c.vencimento, agora, fuso));
     return {
       alunoId: m.aluno.id,
       matriculaId: m.id,

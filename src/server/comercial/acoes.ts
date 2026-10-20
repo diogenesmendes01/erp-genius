@@ -59,6 +59,8 @@ import {
 } from "./schema";
 import { Temperatura } from "@prisma/client";
 import { CADENCIAS_COMERCIAIS } from "./regua-fabrica";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -398,7 +400,7 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
-    const dados = DatasSchema.parse(input);
+    const dados = analisarComDatasDaEscola(DatasSchema, input, await fusoDaEscola());
     // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
     // Tipo específico DatasAtualizadas com payload completo, consumido pela linha
     // do tempo da ficha do lead (issue #43).

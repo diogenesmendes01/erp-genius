@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({ ator: "aprovador", tx: {
   decisaoAcertoDesistenciaContratual: { findUnique: vi.fn() },
   aplicacaoAcertoDesistenciaContratual: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   cobranca: { findMany: vi.fn(), update: vi.fn() },
+  configuracaoOperacional: { findUnique: async () => null },
 }, evento: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: (fn: (tx: unknown) => unknown) => fn(h.tx) } }));
 vi.mock("@/server/_shared", () => ({

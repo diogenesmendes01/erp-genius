@@ -33,6 +33,9 @@ import {
   type EditarAlunoInput,
 } from "./schema";
 import { bloquearCalendarioAluno } from "@/server/retomada/estado";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { limiteDoAtraso } from "@/server/operacao/fuso";
 
 const PAPEIS: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
 
@@ -49,7 +52,7 @@ function revalidar(id: string) {
 export async function editarAluno(id: string, input: EditarAlunoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
-    const dados = EditarAlunoSchema.parse(input);
+    const dados = analisarComDatasDaEscola(EditarAlunoSchema, input, await fusoDaEscola());
     const aluno = await prisma.aluno.findUnique({
       where: { id },
       include: { pais: { include: { tiposDocumento: true } } },
@@ -161,7 +164,9 @@ async function cancelarMensalidadesFuturas(tx: Prisma.TransactionClient, alunoId
   const matriculas = await tx.matricula.findMany({ where: { alunoId, status: "ATIVA" }, select: { id: true } });
   const ids = matriculas.map((m) => m.id);
   if (ids.length === 0) return;
-  const alvo = { matriculaId: { in: ids }, tipo: "MENSALIDADE" as const, status: StatusCobranca.PENDENTE, vencimento: { gt: agora } };
+  // Ref. #247: "futura" é a mensalidade ainda não atrasada no dia civil da escola (o dia do vencimento inteiro).
+  const naoAtrasada = limiteDoAtraso(agora, await fusoDaEscola(tx));
+  const alvo = { matriculaId: { in: ids }, tipo: "MENSALIDADE" as const, status: StatusCobranca.PENDENTE, vencimento: { gte: naoAtrasada } };
   // Item de fatura B2B FECHADA é congelado (review PR #60 rodada 2): cancelar por aqui
   // deixaria a fatura impagável/divergente. O caminho é cancelar a fatura primeiro.
   const faturada = await tx.cobranca.findFirst({
@@ -182,7 +187,7 @@ async function cancelarMensalidadesFuturas(tx: Prisma.TransactionClient, alunoId
 export async function pausarAluno(id: string, input: PausarInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS);
-    const dados = PausarSchema.parse(input);
+    const dados = analisarComDatasDaEscola(PausarSchema, input, await fusoDaEscola());
     await prisma.$transaction(async (tx) => {
       await bloquearCalendarioAluno(tx, id);
       await exigirFluxoGlobalSemMovimentacaoContratual(tx, id);
