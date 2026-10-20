@@ -83,8 +83,9 @@ export async function arquivarRespostaRapida(id: string): Promise<Resultado> {
     await prisma.$transaction(async (tx) => {
       const t = await tx.templateWhatsApp.findFirst({ where: { id, tipo: "RESPOSTA_RAPIDA" } });
       if (!t) throw new ErroRegra("Resposta rápida não encontrada.");
-      if (t.arquivadoEm) throw new ErroRegra("Resposta já arquivada.");
       if (t.setor && !setoresDoAutor(autor.papeis).includes(t.setor)) throw new ErroRegra("Você só pode arquivar respostas do seu setor ou gerais.");
+      // Já arquivada (ex.: reenvio após resultado incerto): o estado-alvo já vale; ok, sem update nem Evento.
+      if (t.arquivadoEm) return;
       const agora = new Date();
       await tx.templateWhatsApp.update({ where: { id }, data: { arquivadoEm: agora } });
       await registrarEvento(tx, {

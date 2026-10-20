@@ -91,7 +91,8 @@ describe("Respostas rápidas", () => {
     if (!x.ok || !x.dado) throw new Error("falha");
     expect((await salvarRespostaRapida({ ...r, id: x.dado.id, titulo: "Preço 2" })).ok).toBe(true);
     expect((await arquivarRespostaRapida(x.dado.id)).ok).toBe(true);
-    expect((await arquivarRespostaRapida(x.dado.id)).ok).toBe(false);
+    // Reenvio do arquivar (PR #267 C2): ok, sem segundo Evento.
+    expect((await arquivarRespostaRapida(x.dado.id)).ok).toBe(true);
     expect((await salvarRespostaRapida({ ...r, id: x.dado.id })).ok).toBe(false);
     expect(await listarRespostasRapidas({ id: admin.id, nome: "A", papeis: [Papel.ADMINISTRADOR] })).toEqual([]);
     const ev = await eventosDo("TemplateWhatsApp", x.dado.id);

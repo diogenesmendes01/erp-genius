@@ -11,6 +11,7 @@ import { definirSupervisao } from "@/server/aria/acoes";
 import { CONTROLE } from "./Campos";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
+import { ateParaLigar, tentativaDepoisDo, type TentativaSupervisao } from "./supervisao-tentativa";
 
 type Props = {
   config: ConfigAria;
@@ -24,7 +25,6 @@ type Props = {
   podeDesligarSupervisao: boolean;
 };
 
-const HORA_MS = 3_600_000;
 const SEM_FIM = new Date("9999-12-31T00:00:00Z");
 const EXPIRACOES = [30, 60, 120, 240] as const;
 const faixa = (de: number, ate: number) => Array.from({ length: (ate - de) / 5 + 1 }, (_, i) => de + i * 5);
@@ -33,10 +33,10 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
   const router = useRouter();
   // Idempotente por natureza (#166): este executor só define a supervisão (estado-alvo `supervisaoAte`),
   // e o servidor não grava nada quando `supervisaoAte` já é o alvo. Para o reenvio cair nesse caso,
-  // o `ate` é fixado dentro da tentativa (como o `fimDaTentativa` do convite): enquanto a mesma opção
-  // não tiver dado certo, repetir o clique manda o mesmo valor.
+  // o `ate` é fixado dentro da tentativa (como o `fimDaTentativa` do convite): depois de um resultado
+  // incerto, repetir a mesma opção manda o mesmo valor (regras em supervisao-tentativa.ts).
   const acao = useAcaoCliente({ idempotente: true });
-  const ateDaTentativa = useRef<{ horas: number; ate: Date } | null>(null);
+  const ateDaTentativa = useRef<TentativaSupervisao>(null);
   const [c, setC] = useState<ConfigAria>(config);
   const k = c.confianca;
   const alterado = JSON.stringify(c) !== JSON.stringify(config);
@@ -45,16 +45,13 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
 
   async function supervisionar(ate: Date | null, ok: string) {
     const d = await acao.executar(() => definirSupervisao({ ate }), ok);
-    if (d?.tipo === "ok") {
-      ateDaTentativa.current = null;
-      router.refresh();
-    }
+    ateDaTentativa.current = tentativaDepoisDo(d, ateDaTentativa.current);
+    if (d?.tipo === "ok") router.refresh();
   }
 
-  /** Liga por `horas` a partir de agora, reaproveitando o `ate` da tentativa anterior que não deu certo. */
+  /** Liga por `horas` a partir de agora, reaproveitando o `ate` da tentativa anterior que ficou incerta. */
   function ligarPor(horas: number, ok: string) {
-    const anterior = ateDaTentativa.current;
-    const ate = anterior && anterior.horas === horas && anterior.ate.getTime() > Date.now() ? anterior.ate : new Date(Date.now() + horas * HORA_MS);
+    const ate = ateParaLigar(ateDaTentativa.current, horas, Date.now());
     ateDaTentativa.current = { horas, ate };
     return supervisionar(ate, ok);
   }

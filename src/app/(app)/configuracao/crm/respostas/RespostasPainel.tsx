@@ -31,7 +31,7 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
   const router = useRouter();
   // Criar resposta leva chave de idempotência (#166): o reenvio devolve a resposta já criada. Editar grava os
   // valores da tela na resposta (estado-alvo) e o servidor não grava nada quando eles já estão lá. Arquivar
-  // roda neste mesmo executor; repetir só recebe "Resposta já arquivada", sem novo Evento.
+  // roda neste mesmo executor e também é por estado-alvo: repetir devolve ok, sem novo Evento.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const [id, setId] = useState<string | undefined>();
