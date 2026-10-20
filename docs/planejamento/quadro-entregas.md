@@ -3927,3 +3927,36 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npm test`: 791 arquivos e 5.924 testes OK.
   - `npm run build`: saída 0.
   - Integração de `src/server/crm`: 30 arquivos e 267 testes OK, incluindo os 40 de equivalência e os de `funil` e `carteira`.
+
+### Port da #62: Q164 e Q157 (#164) — 2026-10-20
+
+- **Escopo:** o lote da Q164 e da Q157, que têm migration e ficam fora da cadeia financeira. O dono confirmou que as decisões de 21/09 continuam valendo. A #164 continua aberta. Nada veio por cherry-pick: os testes da #62 entraram primeiro e falharam, e a implementação veio depois, sobre o main atual.
+- **Q164, resolução do impedimento causado pela escola:**
+  - A gestão pedagógica (ou a administração) confirma, com justificativa, que uma realização posterior da mesma avaliação resolveu o impedimento. Precisa ser a mesma matrícula, alocação, turma, regra e código, e a realização precisa ter nota oficial. Não há segunda aprovação.
+  - A reserva em `PENDENCIA_ESCOLA` e a ocorrência ficam como histórico. A resolução é um registro à parte (`ResolucaoImpedimentoSegundaChamada`), único por reserva e imutável, com guard SQL que repete as regras.
+  - O fechamento deixa de contar o impedimento resolvido.
+  - Tela: formulário no histórico de reservas, que só aparece quando existe realização apta.
+  - Migration `20261020200000_resolucao_impedimento_segunda_chamada`, que era a `20260921010000` na #62.
+- **Q157, correção do período de um relato confirmado de falta de oferta:**
+  - A correção é versionada e precisa de aprovação de outra pessoa. Aprovada, o período do relato muda na mesma transação, e todos os consumidores (TS e guards SQL) passam a ler o período vigente. O trigger do relato só aceita essa mudança quando há correção aprovada que a respalde.
+  - É recusada, na ação e no banco, quando retira dias que já sustentam compensação aprovada ou período integral aprovado.
+  - Relato aberto corrige só o início, porque o fim vem pelo término aprovado (Q156). Relato encerrado não é reaberto.
+  - Tela nova em `matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao`, com link na lista de relatos.
+  - Migration `20261020210000_correcao_relato_indisponibilidade_oferta`, que era a `20260921020000` na #62. A função `validar_registro_indisponibilidade_oferta_matricula` é a mesma do main (`20260915076000`, inalterada desde a #62) mais o ramo de UPDATE.
+- **Adaptações ao main:**
+  - Telas reescritas no padrão atual: `Campo`, `CampoTexto`, `Botao`, `FeedbackAcao`, `useAcaoCliente`, `useChaveIdempotencia`, `EstadoVazio` e `VoltarPara`. Entraram nos manifestos de botões, campos e estados vazios, e a correção entrou na trilha. "Rejeitar correção" usa a variante `perigo`.
+  - O histórico da Q157 usa o fuso da escola como referência, com aviso quando ele não está configurado. A #62 fixava `"UTC"`.
+  - Não entra o perfil de teste `claude` da #62.
+  - `decisoes-2026-09-21.md` continua fora do main. Nenhum lote o trouxe ainda.
+- **Testes novos além dos da #62:**
+  - Integração da Q164 com o schema completo, que a #62 não tinha: a recusa sem nota oficial, a confirmação idempotente, o fechamento sem a pendência, o histórico preservado e o guard SQL.
+  - Integração da Q157 recusando a retirada de dia com compensação aprovada, na ação e no banco.
+  - SSR das telas novas.
+- **Fica para depois:** as linhas desatualizadas do quadro (ACA/Q164) e de `docs/41`, que a #164 pede para atualizar junto com o fechamento da issue.
+- **Evidências** (banco descartável `erp_genius_test_q164`, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base, nenhum em arquivo tocado).
+  - `npm test`: 795 arquivos e 5.946 testes OK em UTC e em America/Sao_Paulo.
+  - `npm run build`: saída 0, com as rotas do histórico de reservas e da correção.
+  - `prisma migrate deploy` do zero: todas as migrations aplicadas, incluindo as duas novas.
+  - Integração de avaliações (segunda chamada, agenda, remarcação, substituição, pendências e fechamento acadêmico) e de matrícula (relato, confirmação, término e correção de indisponibilidade, estado, cobertura, compensação, fonte de compensação, disponibilidade de oferta e período integral): 20 arquivos e 166 testes OK.

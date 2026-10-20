@@ -19,6 +19,10 @@ export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
+  "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/ResolverImpedimento.tsx": [
+    "Realização posterior com nota oficial · obrigatório · select",
+    "Justificativa · obrigatório · CampoTexto",
+  ],
   "src/app/(app)/aria/_componentes/Cabecalho.tsx": [
     "Motivo da pausa · obrigatório · input · dica",
     "Estado da Aria · opcional · select · dica",
@@ -62,6 +66,14 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "País dos preços · opcional · select",
     "Configuração testada · opcional · select",
     "Mensagem do cliente · opcional · CampoTexto",
+  ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/CorrecaoRelatoOferta.tsx": [
+    "Início correto · obrigatório · input",
+    "Fim correto · obrigatório · input",
+    "Motivo · obrigatório · CampoTexto",
+    "Evidência · obrigatório · CampoTexto",
+    "Motivo da decisão · obrigatório · CampoTexto",
+    "Evidência conferida · obrigatório · CampoTexto",
   ],
   "src/app/portal-aluno/ativar/page.tsx": [
     "Nova senha · obrigatório · input · dica · erro: errosCampos.senha",
