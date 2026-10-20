@@ -287,3 +287,54 @@ BEGIN
  IF a.id IS NULL OR cr.id IS NULL OR cr."matriculaId" IS DISTINCT FROM a.fotografia->>'matriculaId' OR num_nonnulls(cr."origemLiberacaoId",cr."origemAcertoId",cr."origemPeriodoIntegralId",cr."origemDestinacaoRecebimentoId",cr."origemAcertoTaxaAditivoId",cr."origemAcertoDesistenciaContratualId",cr."origemReconferenciaDeltaDesistenciaId",cr."origemRevisaoCorrecaoAulaId")<>1 OR cr."origemAcertoDesistenciaContratualId" IS NOT NULL OR cr."origemReconferenciaDeltaDesistenciaId" IS NOT NULL OR NEW.valor IS DISTINCT FROM (cr."valorInicial"-coalesce((SELECT sum(u.valor) FROM "PropostaUsoCredito" u JOIN "DecisaoUsoCredito" d ON d."propostaId"=u.id AND d.aprovada WHERE u."creditoId"=cr.id),0)-coalesce((SELECT sum(r.valor) FROM "ReservaDevolucaoCredito" r WHERE r."creditoId"=cr.id AND r.estado<>'LIBERADA'),0)) OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(a."memoriaDelta"->'creditosExternos') x WHERE x->>'id'=cr.id AND (x->>'saldoDisponivel')::numeric=NEW.valor AND x->>'moeda'=cr.moeda) THEN RAISE EXCEPTION 'Reconhecimento exige crédito externo da fotografia delta'; END IF;
  RETURN NEW;
 END $$;
+
+-- C2 da R1 #266: aula declarada não cobrável (efeito SEM_ITEM) não vira item de fechamento depois.
+-- O TS (fechamento-horas-tx.ts) já a deixa de fora; o banco passa a recusar também. Mesma âncora
+-- advisory do item faturado e da fotografia, então a aplicação e o item não se cruzam.
+CREATE FUNCTION recusar_item_nao_cobravel_175() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended('calendario-escola', 0));
+  IF EXISTS (SELECT 1 FROM "AplicacaoRevisaoFinanceiraCorrecaoAula" a WHERE a."conferenciaId"=NEW."conferenciaId")
+  THEN RAISE EXCEPTION 'Aula declarada não cobrável não pode ser faturada no fechamento'; END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER recusar_item_nao_cobravel_175 BEFORE INSERT ON "ItemFechamentoHoras"
+  FOR EACH ROW EXECUTE FUNCTION recusar_item_nao_cobravel_175();
+
+-- B2 da R1-b #266: a fotografia SQL do ledger da reconferência delta (255) passa a conhecer a oitava origem,
+-- só quando existe (como o TS em desistencia-financeiro-tx.ts), sem mudar a fotografia das matrículas sem crédito Q175.
+-- Cópia da definição vigente (20260917184000; nenhuma migration posterior a redefine) com o ramo novo.
+CREATE OR REPLACE FUNCTION q165_fotografia_delta_atual_255(matricula_id TEXT) RETURNS JSONB LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object(
+    'matriculaId', matricula_id,
+    'cobrancas', COALESCE((SELECT jsonb_agg(
+      jsonb_build_object(
+        'id', cobranca.id, 'versao', cobranca.versao, 'tipo', cobranca.tipo::text, 'status', cobranca.status::text,
+        'moeda', cobranca.moeda, 'vencimento', q165_data_255(cobranca.vencimento),
+        'coberturaInicio', CASE WHEN cobranca."coberturaInicio" IS NULL THEN NULL ELSE to_char(cobranca."coberturaInicio", 'YYYY-MM-DD') END,
+        'coberturaFim', CASE WHEN cobranca."coberturaFim" IS NULL THEN NULL ELSE to_char(cobranca."coberturaFim", 'YYYY-MM-DD') END,
+        'valorOriginal', q165_valor_255(cobranca."valorOriginal"), 'valorNegociado', q165_valor_255(cobranca."valorNegociado"),
+        'valorRecebido', CASE WHEN cobranca."valorRecebido" IS NULL THEN NULL ELSE q165_valor_255(cobranca."valorRecebido") END,
+        'valorLiquidadoCredito', q165_valor_255(cobranca."valorLiquidadoCredito"),
+        'saldo', CASE WHEN cobranca.saldo IS NULL THEN NULL ELSE q165_valor_255(cobranca.saldo) END,
+        'pagoEm', CASE WHEN cobranca."pagoEm" IS NULL THEN NULL ELSE q165_data_255(cobranca."pagoEm") END,
+        'fontes', jsonb_build_object(
+          'emissaoEntrada', (SELECT CASE WHEN item.id IS NULL THEN NULL ELSE jsonb_build_object('itemId',item.id,'emissaoId',emissao.id,'etapa',emissao.etapa,'condicoesId',emissao."condicoesId",'criadaEm',q165_data_255(emissao."criadaEm")) END FROM "ItemEmissaoEntrada" item JOIN "EmissaoCobrancasEntrada" emissao ON emissao.id=item."emissaoId" WHERE item."cobrancaId"=cobranca.id),
+          'suspensaPorItemPausaId', cobranca."suspensaPorItemPausaId", 'canceladaPorPausaId', cobranca."canceladaPorPausaId",
+          'ajusteAcerto', (SELECT CASE WHEN ajuste.id IS NULL THEN NULL ELSE jsonb_build_object('id',ajuste.id,'decisaoId',ajuste."decisaoId",'valorNovo',q165_valor_255(ajuste."valorNovo"),'criadaEm',q165_data_255(ajuste."criadoEm")) END FROM "AjusteCobrancaAcerto" ajuste WHERE ajuste."cobrancaId"=cobranca.id),
+          'emissaoFechamentoHoras', (SELECT CASE WHEN emissao_horas.id IS NULL THEN NULL ELSE jsonb_build_object('id',emissao_horas.id,'decisaoId',emissao_horas."decisaoId",'criadaEm',q165_data_255(emissao_horas."criadaEm")) END FROM "EmissaoFechamentoHoras" emissao_horas WHERE emissao_horas."cobrancaId"=cobranca.id),
+          'acertoMultaDecisaoId', cobranca."acertoMultaDecisaoId"
+        ),
+        'informes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id',informe.id,'status',informe.status::text,'versao',informe.versao,'valor',q165_valor_255(informe.valor),'moeda',informe.moeda,'dataPagamento',q165_data_255(informe."dataPagamento")) ORDER BY informe.id) FROM "PagamentoInformado" informe WHERE informe."cobrancaId"=cobranca.id),'[]'::jsonb),
+        'recebimentos', COALESCE((SELECT jsonb_agg(jsonb_build_object('id',destino.id,'recebimentoId',recebimento.id,'valor',q165_valor_255(destino.valor),'moeda',recebimento.moeda,'dataPagamento',q165_data_255(recebimento."dataPagamento")) ORDER BY destino.id) FROM "DestinacaoRecebimento" destino JOIN "Recebimento" recebimento ON recebimento.id=destino."recebimentoId" WHERE destino."cobrancaId"=cobranca.id),'[]'::jsonb),
+        'utilizacoesCredito', COALESCE((SELECT jsonb_agg(jsonb_build_object('id',uso.id,'creditoId',uso."creditoId",'versao',uso.versao,'valor',q165_valor_255(uso.valor),'decisao',CASE WHEN decisao_uso.id IS NULL THEN NULL ELSE jsonb_build_object('id',decisao_uso.id,'aprovada',decisao_uso.aprovada,'decididaEm',q165_data_255(decisao_uso."decididaEm")) END) ORDER BY uso.id) FROM "PropostaUsoCredito" uso LEFT JOIN "DecisaoUsoCredito" decisao_uso ON decisao_uso."propostaId"=uso.id WHERE uso."cobrancaId"=cobranca.id),'[]'::jsonb),
+        'compensacoes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id',compensacao.id,'status',compensacao.status::text,'cobrancaVersao',compensacao."cobrancaVersao",'decididaEm',CASE WHEN compensacao."decididaEm" IS NULL THEN NULL ELSE q165_data_255(compensacao."decididaEm") END,'dias',COALESCE((SELECT jsonb_agg(jsonb_build_object('id',dia.id,'estado',dia.estado::text,'versao',dia.versao) ORDER BY dia.id) FROM "DiaCompensacaoCobertura" dia WHERE dia."compensacaoId"=compensacao.id),'[]'::jsonb)) ORDER BY compensacao.id) FROM "CompensacaoCoberturaMatricula" compensacao WHERE compensacao."cobrancaOrigemId"=cobranca.id),'[]'::jsonb)
+      ) || CASE WHEN cobranca."valorCompensadoPermuta">0 THEN jsonb_build_object('valorCompensadoPermuta',q165_valor_255(cobranca."valorCompensadoPermuta")) ELSE '{}'::jsonb END
+      ORDER BY cobranca.id) FROM "Cobranca" cobranca WHERE cobranca."matriculaId"=matricula_id),'[]'::jsonb),
+    'creditos', COALESCE((SELECT jsonb_agg(
+      jsonb_build_object('id',credito.id,'origemLiberacaoId',credito."origemLiberacaoId",'origemAcertoId',credito."origemAcertoId",'origemPeriodoIntegralId',credito."origemPeriodoIntegralId",'origemDestinacaoRecebimentoId',credito."origemDestinacaoRecebimentoId",'origemAcertoDesistenciaContratualId',credito."origemAcertoDesistenciaContratualId",'valorInicial',q165_valor_255(credito."valorInicial"),'moeda',credito.moeda,'criadoEm',q165_data_255(credito."criadoEm"),'origemAcertoTaxaAditivoId',credito."origemAcertoTaxaAditivoId",'saldoDisponivel',q165_valor_255(credito."valorInicial"-coalesce((SELECT sum(uso.valor) FROM "PropostaUsoCredito" uso JOIN "DecisaoUsoCredito" decisao_uso ON decisao_uso."propostaId"=uso.id AND decisao_uso.aprovada WHERE uso."creditoId"=credito.id),0)-coalesce((SELECT sum(reserva.valor) FROM "ReservaDevolucaoCredito" reserva WHERE reserva."creditoId"=credito.id AND reserva.estado<>'LIBERADA'),0))
+      ) || CASE WHEN credito."origemReconferenciaDeltaDesistenciaId" IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('origemReconferenciaDeltaDesistenciaId',credito."origemReconferenciaDeltaDesistenciaId") END
+        || CASE WHEN credito."origemRevisaoCorrecaoAulaId" IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('origemRevisaoCorrecaoAulaId',credito."origemRevisaoCorrecaoAulaId") END
+      ORDER BY credito.id) FROM "CreditoMatricula" credito WHERE credito."matriculaId"=matricula_id),'[]'::jsonb)
+  )
+$$;

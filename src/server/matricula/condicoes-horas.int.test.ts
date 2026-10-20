@@ -789,6 +789,35 @@ it("Q175 aula ainda não fechada: publicação atômica marca não cobrável e o
   expect(JSON.stringify(gravado)).not.toContain('"valor":"156.25"');
 }, 120_000);
 
+// B3 e C2 da R1 #266: a aula declarada não cobrável antes do fechamento (SEM_ITEM) não trava o encerramento da
+// matrícula por hora, e o banco recusa faturá-la depois, mesmo fora do fluxo do TS.
+it("Q175 encerramento por hora reconhece a aula não cobrável ainda não fechada e o banco recusa faturá-la", async () => {
+  const { d, e, propostaId } = await prepararAulaNaoCobravel("q175-encerramento", false, { duasAulas: true });
+  const { carregarImpactosAcademicosEncerramentoTx } = await import("./encerramento-impactos-academicos");
+  const { conferirAgendaEncerramentoTx } = await import("./encerramento-agenda");
+  const agenda = () => prisma.$transaction(async tx => conferirAgendaEncerramentoTx(tx, await carregarImpactosAcademicosEncerramentoTx(tx, d.alunoId, matriculaId), "2026-01-31", "America/Sao_Paulo", true));
+  const antes = await agenda();
+  expect(antes.pendencias.filter(p => p.includes(e.id))).toEqual([expect.stringContaining("sem destinação financeira")]);
+  const { publicar } = await revisarEPublicarNaoCobravel(propostaId, "q175-encerramento");
+  const publicada = await publicar(); if (!publicada.ok) throw new Error(JSON.stringify(publicada));
+  const aplicacao = await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.findFirstOrThrow({ include: { conferencia: true } });
+  const conferencia = aplicacao.conferencia!;
+  expect(aplicacao).toMatchObject({ efeito: "SEM_ITEM", conferencia: { encontroId: e.id } });
+  const depois = await agenda();
+  expect(depois.pendencias.filter(p => p.includes(e.id))).toEqual([]);
+  expect(depois.destinacoesHoras).toContainEqual({ encontroId: e.id, conferenciaId: conferencia.id, tipo: "NAO_COBRAVEL_CORRECAO", cobrancaId: null, itemId: null, aplicacaoId: aplicacao.id });
+  // O fechamento do mês fatura só a outra aula; com ela emitida, o encerramento fica sem pendência por hora.
+  const emissao = await emitirCobrancaDaPrevia(d, "q175-encerramento-emissao");
+  expect(await prisma.itemFechamentoHoras.findMany({ where: { emissaoId: emissao.id } })).toHaveLength(1);
+  const final = await agenda();
+  expect(final.pendencias).toEqual([]);
+  expect(final.destinacoesHoras.map(x => x.tipo).sort()).toEqual(["FATURADA", "NAO_COBRAVEL_CORRECAO"]);
+  // C2: a trava não fica só no TS; inserir o item direto no banco é recusado.
+  await expect(prisma.itemFechamentoHoras.create({ data: { emissaoId: emissao.id, conferenciaId: conferencia.id, valor: conferencia.valor } }))
+    .rejects.toThrow(/não cobrável não pode ser faturada/);
+  expect(await prisma.itemFechamentoHoras.count({ where: { conferenciaId: conferencia.id } })).toBe(0);
+}, 120_000);
+
 it("Q175 cobrança em aberto de uma aula: a publicação a cancela na mesma transação e o banco recusa publicar sem o acerto", async () => {
   const { e, emissao, propostaId } = await prepararAulaNaoCobravel("q175-aberta", true);
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao!.cobrancaId } });
@@ -850,6 +879,18 @@ it("Q175 cobrança paga: fatura permanece quitada e nasce crédito na matrícula
   // Crédito sem a origem da correção, ou com valor diferente dela, é recusado pelo banco.
   await expect(prisma.creditoMatricula.create({ data: { matriculaId, moeda: antes.moeda, valorInicial: "10.00" } })).rejects.toThrow();
   await expect(prisma.origemCreditoRevisaoCorrecaoAula.deleteMany()).rejects.toThrow();
+  // B2 da R1-b #266: a fotografia posterior da reconferência delta (TS) e a do ledger no banco
+  // (q165_fotografia_delta_atual_255, comparada pelo trigger diferido) coincidem com o crédito Q175.
+  const { carregarFontesReconferenciaDeltaTx } = await import("./desistencia-reconferencia-delta-fontes");
+  const memoriaBase = { itens: [{ cobrancaId: antes.id, devido: "0.00", moeda: antes.moeda }] };
+  const [comparacao] = await prisma.$transaction(async tx => {
+    const { fotografia } = await carregarFontesReconferenciaDeltaTx(tx, matriculaId, memoriaBase);
+    expect(fotografia).toMatchObject({ creditos: [{ id: creditos[0].id, origemRevisaoCorrecaoAulaId: creditos[0].origemRevisaoCorrecaoAulaId }] });
+    return tx.$queryRaw<{ igual: boolean; banco: unknown }[]>`SELECT q165_json_canon(${JSON.stringify(fotografia)}::jsonb) = q165_json_canon(q165_fotografia_delta_atual_255(${matriculaId})) AS igual,
+      q165_fotografia_delta_atual_255(${matriculaId})->'creditos' AS banco`;
+  });
+  expect(comparacao.banco).toMatchObject([{ origemRevisaoCorrecaoAulaId: creditos[0].origemRevisaoCorrecaoAulaId }]);
+  expect(comparacao.igual).toBe(true);
 }, 120_000);
 
 it("Q175 aprovações separadas: a financeira sozinha não muda valor, o Financeiro não publica e a publicação exige a revisão declarada", async () => {

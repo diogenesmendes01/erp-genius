@@ -21,8 +21,12 @@ const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string
     pendencias: z.array(z.object({ encontroId: z.string(), motivo: z.string() })),
     origens: z.array(z.object({ encontroId: z.string(), inicio: z.string().optional(), fim: z.string().optional() })).optional(),
     preservados: z.array(z.object({ encontroId: z.string(), destinacao: z.discriminatedUnion("tipo", [
-      z.object({ tipo: z.literal("FATURADA"), cobrancaId: z.string() }), z.object({ tipo: z.literal("ANTECIPACAO_CONFERIDA"), registroId: z.string() })]) })),
+      z.object({ tipo: z.literal("FATURADA"), cobrancaId: z.string() }), z.object({ tipo: z.literal("ANTECIPACAO_CONFERIDA"), registroId: z.string() }),
+      // Q175: aula declarada não cobrável na revisão financeira da correção; fica fora da cobrança.
+      z.object({ tipo: z.literal("NAO_COBRAVEL_CORRECAO"), aplicacaoId: z.string() })]) })),
     semCobranca: z.array(z.object({ encontroId: z.string(), desfecho: z.string(), origem: z.object({ inicio: z.string() }) })) }) });
+const ROTULO_PRESERVADO = { FATURADA: "Já faturado em cobrança anterior", ANTECIPACAO_CONFERIDA: "Destinação das horas antecipadas já conferida",
+  NAO_COBRAVEL_CORRECAO: "Aula declarada não cobrável na revisão financeira da correção; fica fora desta cobrança" } as const;
 const estados = { AGUARDANDO_CONFERENCIA: "Aguardando conferência", PROPOSTA_PARCIAL: "Proposta parcial — requer aprovação",
   APURACAO_COMPLETA: "Apuração completa", SEM_ITENS_A_FATURAR: "Sem itens a faturar" };
 const data = (s: string) => s.split("-").reverse().join("/");
@@ -99,7 +103,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <ul className="space-y-2">{m.data.apuracao.preservados.map(p => {
             const cobrancaId = p.destinacao.tipo === "FATURADA" ? p.destinacao.cobrancaId : null;
             const anterior = cobrancaId ? d.cobrancasAnteriores.find(c => c.cobrancaId === cobrancaId) : null;
-            return <li key={p.encontroId}>{encontro(p.encontroId)} · {p.destinacao.tipo === "FATURADA" ? "Já faturado em cobrança anterior" : "Destinação das horas antecipadas já conferida"}.
+            return <li key={p.encontroId}>{encontro(p.encontroId)} · {ROTULO_PRESERVADO[p.destinacao.tipo]}.
               {anterior && <> <Link className="underline" href={`${base}&versao=${encodeURIComponent(anterior.rascunhoId)}`}>Consultar fechamento da cobrança {anterior.codigo ?? "sem código"}</Link></>}
             </li>;
           })}</ul>
