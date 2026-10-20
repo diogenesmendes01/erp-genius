@@ -27,18 +27,19 @@ import type { DetalheOportunidade } from "@/server/crm/historico";
 // Edições da oportunidade que moravam na ficha antiga (/leads/[id], removida no bloco J; B1 da R1 do #216):
 // resumo e próximo passo, datas (follow-up, experimental, proposta), dados cadastrais, documentos e interação.
 // As server actions são as mesmas da ficha (server/comercial/acoes.ts), com o mesmo papel e o mesmo escopo
-// de carteira. Só registrarInteracao recebe chave de idempotência (#166): o reenvio da mesma tentativa não
-// grava outra interação. As demais seguem sem chave (anexarDocumentoLead cria um registro a cada chamada):
-// resultado incerto manda conferir antes de repetir.
+// de carteira. registrarInteracao recebe chave de idempotência (#166): o reenvio da mesma tentativa não
+// grava outra interação. Documentos são idempotentes por natureza (#166, lote 4): anexar o mesmo upload devolve
+// o documento já anexado (a URL do upload é única) e arquivar o já arquivado não grava nada. As demais seguem
+// sem chave: resultado incerto manda conferir antes de repetir.
 
 const CONTROLE = `w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11 ${CONTROLE_INVALIDO}`;
 const SECAO = "grid gap-3 border-b border-gray-200 pb-4";
 const TITULO = "text-sm font-medium text-gray-900";
 
 /** Estado da ação da seção; `concluiu` recarrega o painel só com a confirmação do servidor e diz se deu certo. */
-function useAcaoSecao() {
+function useAcaoSecao(idempotente = false) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente });
   function concluiu(desfecho: { tipo: string } | null | undefined): boolean {
     if (desfecho?.tipo !== "ok") return false;
     router.refresh();
@@ -291,7 +292,8 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
 
 /** Documentos da oportunidade: anexar (upload ligado à oportunidade e à categoria) e arquivar. */
 export function DocumentosOportunidade({ oportunidade: op, podeEditar }: { oportunidade: DetalheOportunidade; podeEditar: boolean }) {
-  const { acao, concluiu } = useAcaoSecao();
+  // Idempotente por natureza (#166): o mesmo upload não vira segundo documento; arquivar duas vezes não grava de novo.
+  const { acao, concluiu } = useAcaoSecao(true);
   const [categoria, setCategoria] = useState<CategoriaDocumento>(CategoriaDocumento.PROPOSTA);
 
   return (

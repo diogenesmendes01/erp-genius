@@ -19,7 +19,9 @@ type Props = {
 /** Rodapé comum das abas de edição: grava a seção no rascunho (publicar é na barra da página). */
 export function Salvar({ montar, baseVersaoId, rascunho, alterado }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): se o rascunho já tem exatamente esta configuração, o servidor devolve o
+  // rascunho como está, sem gravar nem registrar outro Evento, mesmo com o token antigo (salvarRascunho).
+  const acao = useAcaoCliente({ idempotente: true });
   async function salvar() {
     const d = await acao.executar(() => salvarRascunho({ config: montar(), baseVersaoId, rascunho }), "Rascunho salvo. Publique para a Aria usar.");
     if (d?.tipo === "ok") router.refresh();

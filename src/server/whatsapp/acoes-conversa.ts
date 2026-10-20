@@ -26,8 +26,8 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
     const { atendimentoId, nota, chaveIdempotencia } = NotaSchema.parse(input);
     const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, nota });
     await prisma.$transaction(async (tx) => {
-      const a = await atendimentoVisivel(u, atendimentoId, false, tx);
-      if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
+      // C3 da R2 do #267: a repetição vem antes do escopo. A nota já gravada por este autor, neste atendimento
+      // e com este texto, é devolvida mesmo que o atendimento tenha mudado de mãos depois; nada novo é gravado.
       if (marca) {
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
@@ -35,6 +35,8 @@ export async function registrarNotaAtendimento(input: { atendimentoId: string; n
         });
         if (repetido) return;
       }
+      const a = await atendimentoVisivel(u, atendimentoId, false, tx);
+      if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
       await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota, ...marca } });
     });
     revalidatePath("/inbox");
@@ -59,14 +61,24 @@ export async function notasDoAtendimento(atendimentoId: string): Promise<{ id: s
   return notas.filter((e) => !arquivadas.has(e.id)).map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "", autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
 }
 
+/** Número fixo do atendimento (o da conversa), sem conferir escopo: serve só para montar a entrada da repetição. */
+async function numeroDoAtendimento(atendimentoId: string): Promise<string | null> {
+  const a = await prisma.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { conversa: { select: { numeroId: true } } } });
+  return a?.conversa.numeroId ?? null;
+}
+
 /** Agenda uma mensagem pelo atendimento (Fase 2, Tarefa 29, reusada): o acesso e o número vêm do atendimento; horário, opt-out e validade ficam em `agendarMensagem`. */
 export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
     const a = await atendimentoVisivel(u, atendimentoId, true);
-    if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
-    const r = await agendarMensagem({ numeroId: a.numeroId, atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia });
+    // C3 da R2 do #267: com chave, o atendimento encerrado ou sem destinatário (opt-out) ainda segue para
+    // `agendarMensagem`, que procura a repetição antes de validar e só devolve a mensagem que este autor já
+    // agendou com a mesma entrada; qualquer outro caso cai nas mesmas validações e é recusado lá.
+    const numeroId = a && !a.encerradoEm ? a.numeroId : input.chaveIdempotencia ? await numeroDoAtendimento(atendimentoId) : null;
+    if (!numeroId) throw new ErroRegra("Atendimento não encontrado.");
+    const r = await agendarMensagem({ numeroId, atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia });
     if (!r.ok) throw new ErroRegra(r.erro);
     revalidatePath("/inbox");
     return r.dado!;

@@ -21,7 +21,9 @@ type Props = {
 /** Barra fixa acima da tabbar do celular; só existe quando há rascunho com alterações. */
 export function BarraPublicar({ diff, rascunho, podePublicar, podeDescartar }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotentes por natureza (#166): publicar o rascunho que este autor já publicou devolve o mesmo número, e
+  // descartar o que ele já descartou devolve ok; nenhum dos dois grava de novo (aria/versoes.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   const [confirmando, setConfirmando] = useState<"publicar" | "descartar" | null>(null);
   if (diff.length === 0) return null;
 
@@ -40,7 +42,7 @@ export function BarraPublicar({ diff, rascunho, podePublicar, podeDescartar }: P
         <ConfirmarAcao
           titulo="Publicar as alterações?"
           confirmacao="a publicação"
-          idempotente={false}
+          idempotente
           acao={() => publicarRascunho({ rascunho })}
           aoConcluir={() => { setConfirmando(null); acao.setSucesso("Versão publicada. A Aria já usa as novas regras."); router.refresh(); }}
           aoCancelar={() => setConfirmando(null)}
@@ -52,7 +54,7 @@ export function BarraPublicar({ diff, rascunho, podePublicar, podeDescartar }: P
         <ConfirmarAcao
           titulo="Descartar as alterações?"
           confirmacao="o descarte"
-          idempotente={false}
+          idempotente
           acao={() => descartarRascunho(rascunho)}
           aoConcluir={() => { setConfirmando(null); acao.setSucesso("Alterações descartadas."); router.refresh(); }}
           aoCancelar={() => setConfirmando(null)}

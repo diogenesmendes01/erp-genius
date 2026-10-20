@@ -49,15 +49,11 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
     if (!DataCivilSchema.safeParse(ateCivil).success) throw new ErroRegra("Data prometida inválida.");
     // Q176: "hoje" é o dia da escola, e a promessa é gravada ao meio-dia dela (não do servidor).
     const fuso = await fusoDaEscola();
-    if (promessaNoPassado(ateCivil, new Date(), fuso)) throw new ErroRegra("A data prometida não pode ser no passado.");
     const ateData = instanteDaGrade(ateCivil, "12:00", fuso);
 
-    const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId } });
-    if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
-    if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA)
-      throw new ErroRegra("Cobrança já quitada ou cancelada.");
-
     await prisma.$transaction(async (tx) => {
+      // C3 da R2 do #267: a repetição vem antes das validações de data e de situação. O reenvio tardio da mesma
+      // tentativa (a data passou, a cobrança foi paga) devolve a promessa já gravada em vez de um erro.
       if (marca) {
         const repetido = await repeticaoIdempotente(tx, {
           tipo: "PromessaPagamento", agregadoTipo: "Cobranca", autorId: autor.id, marca,
@@ -65,6 +61,11 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
         });
         if (repetido) return;
       }
+      if (promessaNoPassado(ateCivil, new Date(), fuso)) throw new ErroRegra("A data prometida não pode ser no passado.");
+      const cobranca = await tx.cobranca.findUnique({ where: { id: cobrancaId } });
+      if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
+      if (cobranca.status === StatusCobranca.PAGO || cobranca.status === StatusCobranca.CANCELADA)
+        throw new ErroRegra("Cobrança já quitada ou cancelada.");
       await registrarEvento(tx, {
         tipo: "PromessaPagamento",
         agregadoTipo: "Cobranca",

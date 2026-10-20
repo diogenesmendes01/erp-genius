@@ -24,7 +24,7 @@ vi.mock("@/server/comunicacoes-agenda/autorizacoes", () => ({
 
 import { AutorizacoesFormulario } from "./AutorizacoesFormulario";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
 import type { ReactNode } from "react";
@@ -46,7 +46,7 @@ describe("AutorizacoesFormulario — registrar", () => {
     nome: "registrar autorização", tela, action: m.registrar,
     acionar: () => submeter(tela(), { responsavelId: "resp-1", evidencia: "Termo assinado pelo responsável" }, 0),
     respostaOk: { ok: true, dado: { id: "aut-3" } },
-    sucesso: "Autorização registrada.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Autorização registrada.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => { const b = botoes(tela())[0]; return texto(b?.props.children) === "Registrando…" && b?.props.disabled === true; },
   });
 });
@@ -55,7 +55,7 @@ describe("AutorizacoesFormulario — revogar", () => {
   contratoFeedbackSeparado({
     nome: "revogar autorização", tela, action: m.revogar,
     acionar: () => submeter(tela(), { motivo: "Responsável pediu a revogação" }, 1),
-    sucesso: "Revogação registrada no histórico.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Revogação registrada no histórico.", incerto: MSG_RESULTADO_INCERTO,
     // O botão "Revogar autorização" não troca de rótulo: o sinal é ele (e o do registro) travados.
     ocupado: () => botoes(tela()).every((b) => b.props.disabled === true),
   });

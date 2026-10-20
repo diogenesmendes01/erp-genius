@@ -15,8 +15,9 @@ export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda
   alunoId: string; matriculaId: string; decisaoId: string; valor: string; moeda: string;
 }) {
   const router = useRouter();
-  // emitirFechamentoHoras não recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
-  const resultado = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a emissão é uma por decisão; repetir devolve a mesma emissão e a mesma
+  // cobrança, sem gravar nada (emitirFechamentoHorasTx).
+  const resultado = useAcaoCliente({ idempotente: true });
   const [confirmando, setConfirmando] = useState(false);
   const total = formatarMoeda(valor, moeda);
   return <div className="space-y-2 rounded border p-4">
@@ -27,7 +28,7 @@ export function EmitirFechamento({ alunoId, matriculaId, decisaoId, valor, moeda
       titulo={`Emitir a cobrança de ${total}?`}
       confirmacao="emissão da cobrança"
       conferencia={`Confirmo a emissão de ${total} para este período.`}
-      idempotente={false}
+      idempotente
       acao={() => emitirFechamentoHoras({ alunoId, matriculaId, decisaoId })}
       aoConcluir={() => {
         setConfirmando(false);
