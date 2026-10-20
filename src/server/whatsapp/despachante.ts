@@ -1,20 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { confirmarTransacao } from "@/lib/transacao-confirmada";
-import { cicloDoEventoCobranca, registrarEventoCobrancaEnviada, registrarEventoReguaComercialEnviada } from "@/server/cobrancas/eventos";
-import {
-  CHAVE_CONTRATO,
-  CHAVE_LEAD_NOVO,
-  CHAVE_LINK_PAGAMENTO,
-  CHAVE_NO_SHOW,
-  CHAVE_PRE_EXPERIMENTAL,
-} from "@/server/comercial/regua-fabrica";
+import { cicloDoEventoCobranca, registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
 import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
 import type { PassoRegua } from "@/server/cobrancas/regua";
 import { randomUUID } from "node:crypto";
 import { driverAceitaAutomacao, ErroDriver, type CanalWhatsApp, type ConteudoEspecial, type EnvioMidia, type NumeroCanal, type OpcoesEnvio } from "./canal";
 import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
-import { motivoCadenciaInvalida, snapshotCobranca } from "./elegibilidade";
+import { snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
 import { DriverWhatsApp, Papel, type EstadoPolitica } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
@@ -102,15 +95,13 @@ export interface EntradaShadow {
   /** origem !== HUMANO (CRON, LOTE, GESTAO). */
   automatica: boolean;
   reativa: boolean;
-  /** origem === GESTAO. */
+  /** origem === GESTAO (legado do CRM antigo, sem produtor: nunca envia). */
   gestao: boolean;
-  /** Estado da política que rege a intenção (cobrança ou comercial). */
+  /** Estado da política de cobrança que rege a intenção. */
   politicaEstado: EstadoPolitica;
-  gestaoEstado: EstadoPolitica;
-  saudacaoEstado: EstadoPolitica;
   /** origem === IA (resposta, handoff ou encaminhamento da Aria). */
   ia: boolean;
-  /** Estado da própria Aria (AgenteIA.estado): o ensaio dela, nunca o da saudação comercial. */
+  /** Estado da própria Aria (AgenteIA.estado): o ensaio dela. */
   ariaEstado: EstadoPolitica;
 }
 
@@ -120,10 +111,11 @@ export interface EntradaShadow {
  * vez num merge (#161) sem nenhum teste unitário perceber.
  *
  * - Sem WHATSAPP_LIVE tudo é simulado, inclusive origem HUMANO.
- * - Gestão olha só o seu shadow (gestaoEstado); a saudação reativa, o saudacaoEstado.
+ * - Gestão e a saudação reativa do CRM antigo (sem produtor desde a remoção do CRM antigo, sem
+ *   configuração) só simulam; a gestão já é cancelada antes, em `motivoIntencaoInvalida`.
  * - Origem IA (reativa) olha só o estado da Aria: em SHADOW a intenção já nasce SIMULADA na
  *   origem, e uma PENDENTE só sai com a Aria ATIVA no momento do despacho.
- * - O resto da automação (cobrança, comercial, lote) olha o estado da sua política.
+ * - O resto da automação (cobrança, lote) olha o estado da sua política.
  * - Aviso de agenda NÃO usa o ensaio da política de cobrança: o gate dele é
  *   COMUNICACOES_AGENDA_ENVIO_ENABLED (conferido antes do shadow, em `decidirEnvio`) mais
  *   número e template AGENDA (`motivoAvisoAgendaInvalido`).
@@ -131,9 +123,9 @@ export interface EntradaShadow {
 export function intencaoEmShadow(e: EntradaShadow): boolean {
   return (
     !e.live ||
-    (e.gestao && e.gestaoEstado !== "ATIVA") ||
-    (!e.agenda && e.automatica && !e.reativa && !e.gestao && e.politicaEstado !== "ATIVA") ||
-    (e.ia ? e.ariaEstado !== "ATIVA" : e.reativa && e.saudacaoEstado !== "ATIVA")
+    e.gestao ||
+    (!e.agenda && e.automatica && !e.reativa && e.politicaEstado !== "ATIVA") ||
+    (e.ia ? e.ariaEstado !== "ATIVA" : e.reativa)
   );
 }
 
@@ -169,13 +161,7 @@ export async function despacharFila(
   opts: OpcoesDespacho = {},
 ): Promise<ResultadoDespacho> {
   const politicaPadrao = await carregarPoliticaRegua();
-  // Shadow PRÓPRIO da saudação (review PR #53 · doc 27): a classe reativa não olha o estado
-  // da política de COBRANÇA — o ensaio dela é o saudacaoEstado da ConfigComercial.
-  const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
-  const saudacaoEstado = configComercial?.saudacaoEstado ?? "DESLIGADA";
-  // C5: shadow PRÓPRIO das mensagens de GESTÃO (alerta SLA/relatório do gestor).
-  const gestaoEstado = configComercial?.gestaoEstado ?? "DESLIGADA";
-  // Shadow PRÓPRIO da Aria (origem IA): o estado do agente, não o ensaio da saudação comercial.
+  // Shadow PRÓPRIO da Aria (origem IA): o estado do agente, não o da política de cobrança.
   const ariaEstado = (await prisma.agenteIA.findUnique({ where: { id: "aria" }, select: { estado: true } }))?.estado ?? "DESLIGADA";
   const live = process.env.WHATSAPP_LIVE === "1";
   // Q176 (#164): o teto por contato/dia (passo 7) conta no dia civil da escola, não no relógio do servidor (UTC).
@@ -214,9 +200,8 @@ export async function despacharFila(
       contato: true,
       template: true,
       politica: true,
-      politicaComercial: true, // estado (shadow) + chave (evento) da cadência comercial
-      // Fuso do destino no caminho comercial (S3) + estado de FECHAMENTO (B7 nas cadências C4).
-      lead: { include: { pais: true, matricula: { include: { cobrancas: { where: { tipo: "MATRICULA" } } } } } },
+      // Fuso do destino quando a intenção tem lead e não tem cobrança (S3).
+      lead: { include: { pais: true } },
       cobranca: { include: { matricula: { include: { pais: true, aluno: { include: { pais: true } } } } } },
       avisoAlteracaoAgenda: true,
     },
@@ -234,7 +219,7 @@ export async function despacharFila(
   };
 
   for (const it of intencoes) {
-    const invalida = await motivoIntencaoInvalida(it, agora);
+    const invalida = await motivoIntencaoInvalida(it);
     if (invalida) {
       await marcar(it.id, "CANCELADA", invalida);
       r.canceladas += 1;
@@ -246,23 +231,9 @@ export async function despacharFila(
       else r.canceladas += 1;
       continue;
     }
-    // Config de guard-rails: cadência comercial usa a SUA política (janela/teto/silêncio/
-    // estado próprios); cobrança usa a dela; o kill switch é sempre o global (da cobrança).
+    // Config de guard-rails: cobrança usa a sua política; o kill switch é sempre o global (da cobrança).
     const agenda = it.avisoAlteracaoAgendaId != null;
-    const comercialPol = it.leadId != null && it.politicaComercial;
-    const politica: PoliticaCarregada = comercialPol
-      ? {
-          ...politicaPadrao, // killSwitch global + defaults
-          estado: it.politicaComercial!.estado,
-          janelaInicio: it.politicaComercial!.janelaInicio,
-          janelaFim: it.politicaComercial!.janelaFim,
-          diasSemana: it.politicaComercial!.diasSemana,
-          tetoPorContatoDia: it.politicaComercial!.tetoPorContatoDia,
-          silencioPosInboundHoras: it.politicaComercial!.silencioPosInboundHoras,
-        }
-      : it.politica
-        ? { ...politicaPadrao, ...configDe(it.politica) }
-        : politicaPadrao;
+    const politica: PoliticaCarregada = it.politica ? { ...politicaPadrao, ...configDe(it.politica) } : politicaPadrao;
     const automatica = it.origem !== "HUMANO"; // guard-rails de automação valem p/ CRON e LOTE
     // Classe REATIVA (doc 27 · gap C20): saudação/resposta automática a um inbound. É isenta
     // dos guard-rails de HORÁRIO (janela/teto/silêncio) e da trava S1 — a janela de 24h está
@@ -270,14 +241,8 @@ export async function despacharFila(
     // sujeita a opt-out, conversa-viva (um inbound MAIS novo a cancela), shadow (WHATSAPP_LIVE)
     // e ao KILL SWITCH (freio de emergência de TODA automação — review PR #53 P1).
     const reativa = it.reativa;
-    // Cadência COMERCIAL (doc 27): vínculo Lead + passo. Isenta da trava S1 (liberada no
-    // Baileys por decisão de produto); shadow pela SUA política (não a de cobrança); janela/
-    // teto/silêncio VALEM (é disparo proativo). Kill switch de cobrança a congela também.
-    const comercial = it.leadId != null && it.passoComercial != null;
-    // C5 (doc 27): mensagem para a EQUIPE (gestor) — não é conversa de cliente. Isenta de
-    // janela/teto/silêncio/conversa-viva; segue automática (kill switch congela) e com
-    // shadow próprio (gestaoEstado). Nunca associada a lead/cobrança.
-    const gestao = it.origem === "GESTAO";
+    // A cadência comercial e a gestão do CRM antigo (passoComercial, origem GESTAO) não têm mais produtor:
+    // `motivoIntencaoInvalida` cancela as que sobraram na fila antes de chegar aqui.
 
     // 1. Kill switch: freio de emergência — congela TODA automação, reativa inclusive
     //    (nada é perdido nem cancelado). Só origem HUMANO passa: resposta na inbox/fila é
@@ -290,8 +255,8 @@ export async function despacharFila(
     // 2. Trava de driver (S1 revogada para MOTOR, D38): disparo do CRON exige driver que aceite
     //    automação: hoje só MOTOR (META_CLOUD não tem driver em DRIVERS — R1 do #213, C1);
     //    BAILEYS legado nunca recebe automação desassistida.
-    //    Reativa e cadência comercial são isentas (D34).
-    if (it.origem === "CRON" && !reativa && !comercial && !driverAceitaAutomacao(it.numero.driver)) {
+    //    Reativa é isenta (D34).
+    if (it.origem === "CRON" && !reativa && !driverAceitaAutomacao(it.numero.driver)) {
       await marcar(it.id, "CANCELADA", "trava_driver_oficial");
       r.canceladas += 1;
       continue;
@@ -316,7 +281,7 @@ export async function despacharFila(
 
     const transporte = await prisma.conversaWhatsApp.findUnique({
       where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
-      select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true, capturadaEm: true },
+      select: { id: true, ultimoInboundEm: true, inboundTratadoEm: true },
     });
     const estadoAtendimento = it.atendimentoId ? await prisma.atendimentoWhatsApp.findUnique({
       where: { id: it.atendimentoId }, select: { ultimoInboundEm: true, inboundTratadoEm: true },
@@ -328,7 +293,7 @@ export async function despacharFila(
 
     // 4. LEI DO DESPACHANTE: automação nunca fala por cima de conversa viva — inbound do
     //    contato posterior à criação da intenção cancela a intenção automática.
-    if (automatica && !gestao && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
+    if (automatica && conversa?.ultimoInboundEm && conversa.ultimoInboundEm > it.criadaEm) {
       await marcar(it.id, "CANCELADA", "conversa_viva");
       r.canceladas += 1;
       continue;
@@ -337,16 +302,7 @@ export async function despacharFila(
     // 5. Silêncio pós-inbound (S4): inbound recente (mesmo anterior à intenção) suspende o
     //    CRON até o humano TRATAR (promessa/pagamento/"retomar régua" marcam
     //    inboundTratadoEm — E3) ou a janela de silêncio expirar.
-    //    A cadência COMERCIAL ancora NO 1º inbound (`capturadaEm`, gravado no mesmo instante
-    //    que `ultimoInboundEm`): aplicar o silêncio sobre a PRÓPRIA âncora adiaria a cadência
-    //    inteira por 72h e faria +30min/+4h/+24h vencerem todos juntos depois (review PR #55
-    //    P1). O inbound que a ancorou é ignorado; um inbound POSTERIOR continua silenciando
-    //    (e, de todo modo, encerra a cadência no enfileirador e na regra 4).
-    const ancoraComercial = comercial ? conversa?.capturadaEm ?? null : null;
-    const inboundSilenciador =
-      ancoraComercial && conversa?.ultimoInboundEm && conversa.ultimoInboundEm <= ancoraComercial
-        ? null
-        : conversa?.ultimoInboundEm ?? null;
+    const inboundSilenciador = conversa?.ultimoInboundEm ?? null;
     const inboundNaoTratado =
       !!inboundSilenciador &&
       (!conversa?.inboundTratadoEm || conversa.inboundTratadoEm < inboundSilenciador);
@@ -355,59 +311,6 @@ export async function despacharFila(
       if (agora < limite) {
         if (await adiar(it.id, limite, "silencio_pos_inbound")) r.adiadas += 1;
         else r.canceladas += 1;
-        continue;
-      }
-    }
-
-    // 5b. REVALIDAÇÃO NO DESPACHO (B7, doc 32): o despacho não pode confiar no snapshot do
-    //     enqueue. Uma intenção PENDENTE/ADIADA dispararia mesmo que, DEPOIS do enqueue, o
-    //     lead tenha avançado de etapa, o vendedor assumido (B2) ou a experimental sido
-    //     reagendada — aqui a etapa + a ocorrência + o takeover são conferidos de novo, e a
-    //     intenção obsoleta é CANCELADA em vez de enviada.
-    if (comercial && it.lead) {
-      const chave = chaveComercial(it);
-      const lead = it.lead;
-      let motivoObsoleta: string | null = null;
-
-      if (chave === CHAVE_LEAD_NOVO) {
-        if (lead.etapa !== "NOVO") motivoObsoleta = "etapa_mudou";
-        else if (conversa && it.ocorrenciaComercial) {
-          // Takeover (B2): TODA saída manual após a âncora — origem HUMANO (inbox), CELULAR (eco) e
-          // origem null (fromMe: app do celular) — significa "vendedor assumiu".
-          const manuais = await prisma.mensagemWhatsApp.count({
-            where: {
-              conversaId: conversa.id,
-              direcao: "SAIDA",
-              OR: [{ origem: "HUMANO" }, { origem: "CELULAR" }, { origem: null }],
-              criadoEm: { gt: new Date(it.ocorrenciaComercial) },
-            },
-          });
-          if (manuais > 0) motivoObsoleta = "vendedor_assumiu";
-        }
-      } else if (chave === CHAVE_PRE_EXPERIMENTAL) {
-        if (lead.etapa !== "EXPERIMENTAL_AGENDADA") motivoObsoleta = "etapa_mudou";
-        else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
-          motivoObsoleta = "ocorrencia_mudou"; // aula reagendada: o lembrete era da anterior
-        else if (lead.aguardandoReagendamentoEm) motivoObsoleta = "aguardando_reagendamento"; // B8
-      } else if (chave === CHAVE_NO_SHOW) {
-        if (lead.etapa !== "NO_SHOW") motivoObsoleta = "etapa_mudou";
-        else if (lead.dataExperimental?.toISOString() !== it.ocorrenciaComercial)
-          motivoObsoleta = "ocorrencia_mudou"; // já remarcou: a recuperação era da falta anterior
-      } else if (chave === CHAVE_CONTRATO) {
-        const m = lead.matricula;
-        if (!m || m.status !== "AGUARDANDO" || m.contratoOk) motivoObsoleta = "estado_mudou";
-        else if (m.contratoEnviadoEm?.toISOString() !== it.ocorrenciaComercial)
-          motivoObsoleta = "ocorrencia_mudou"; // contrato reenviado: cadência é do envio novo
-      } else if (chave === CHAVE_LINK_PAGAMENTO) {
-        const m = lead.matricula;
-        const taxa = m?.cobrancas.find((c) => c.linkEnviadoEm?.toISOString() === it.ocorrenciaComercial);
-        if (!m || m.status !== "AGUARDANDO" || !taxa) motivoObsoleta = "estado_mudou";
-        else if (taxa.status !== "PENDENTE") motivoObsoleta = "estado_mudou"; // pagou/cancelou
-      }
-
-      if (motivoObsoleta) {
-        await marcar(it.id, "CANCELADA", motivoObsoleta);
-        r.canceladas += 1;
         continue;
       }
     }
@@ -430,37 +333,13 @@ export async function despacharFila(
         continue;
       }
     }
-    // 6b. Idempotência da cadência comercial: o passo pode já ter sido enviado (evento).
-    //     Confere CHAVE + passo (review PR #55 P2): cadências diferentes compartilham nomes
-    //     de passo (+30min/+3d/+7d), então só o passo não identifica o degrau cumprido.
-    if (comercial && it.leadId && it.passoComercial) {
-      const jaCumprido = await prisma.evento.count({
-        where: {
-          agregadoTipo: "Lead",
-          agregadoId: it.leadId,
-          tipo: "ReguaComercialEnviada",
-          AND: [
-            { payload: { path: ["chave"], equals: chaveComercial(it) } },
-            { payload: { path: ["passo"], equals: it.passoComercial } },
-            // ...e da MESMA ocorrência (review PR #56): o degrau homônimo de um ciclo
-            // anterior (experimental reagendada, segundo no-show) não cumpre este.
-            { payload: { path: ["ocorrencia"], equals: it.ocorrenciaComercial ?? "" } },
-          ],
-        },
-      });
-      if (jaCumprido > 0) {
-        await marcar(it.id, "CANCELADA", "degrau_ja_cumprido");
-        r.canceladas += 1;
-        continue;
-      }
-    }
 
     // 7. Teto por contato/dia (S5): soma mensagens AUTOMÁTICAS de hoje; suprimida = ADIADA,
     //    nunca descartada em silêncio (doc 27 §regra de ouro). Reativa não conta no teto —
     //    e a saudação é persistida como CRON, então a contagem precisa EXCLUIR pela intenção
     //    reativa que a originou (review PR #55 P2): sem isso, a própria saudação comia o teto
     //    e o 1º follow-up da cadência não saía no mesmo dia.
-    if (!agenda && automatica && !reativa && !gestao) {
+    if (!agenda && automatica && !reativa) {
       const enviadasHoje = await prisma.mensagemWhatsApp.count({
         where: {
           conversa: { contatoId: it.contatoId },
@@ -481,7 +360,7 @@ export async function despacharFila(
 
     // 8. Janela de horário + dias da semana (S3), no FUSO DO CONTATO (Aluno.fuso ?? Pais.fuso).
     //    Reativa é isenta: uma saudação "em segundos" não pode esperar o horário comercial.
-    if (automatica && !reativa && !gestao) {
+    if (automatica && !reativa) {
       // Mesma regra que recusa o agendamento fora do horário (janela-envio.ts, D12).
       if (!dentroDaJanelaEnvio(agora, fusoDoDestino(it), politica)) {
         if (await adiar(it.id, new Date(agora.getTime() + 3600_000), "fora_da_janela")) r.adiadas += 1;
@@ -495,13 +374,12 @@ export async function despacharFila(
     //    review PR #51 P1-3: lote aprovado durante o ensaio não pode disparar de verdade);
     //    origem HUMANO (resposta na inbox/fila) é decisão humana e envia mesmo em ensaio.
     //    SIMULADA não é terminal: a fila reabre quando o canal sair do ensaio (review PR #49).
-    // SHADOW (S8): ensaio da automação. Cobrança olha o estado da SUA política; a saudação
-    // reativa olha o seu shadow PRÓPRIO (saudacaoEstado — review PR #53). Ambiente sem
-    // WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
+    // SHADOW (S8): ensaio da automação. Cobrança olha o estado da SUA política; a Aria, o estado
+    // dela (`intencaoEmShadow`). Ambiente sem WHATSAPP_LIVE simula tudo. SHADOW registra o que TERIA sido enviado, sem chamar driver.
     // Aviso de agenda com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado fica retido (C2 do #208).
     const decisao = decidirEnvio({
-      live, agenda, automatica, reativa, gestao,
-      politicaEstado: politica.estado, gestaoEstado, saudacaoEstado,
+      live, agenda, automatica, reativa, gestao: it.origem === "GESTAO",
+      politicaEstado: politica.estado,
       ia: it.origem === "IA", ariaEstado,
       envioAgendaHabilitado: envioAvisosAgendaHabilitado(),
     });
@@ -569,9 +447,9 @@ export async function despacharFila(
     // A autorização do momento do enfileiramento não vale para sempre. Releitura após
     // o claim evita despachar com autor revogado, destinatário alterado ou saldo antigo.
     const atual = await prisma.intencaoMensagem.findUnique({
-      where: { id: it.id }, include: { numero: true, contato: true, politicaComercial: true, avisoAlteracaoAgenda: true },
+      where: { id: it.id }, include: { numero: true, contato: true, avisoAlteracaoAgenda: true },
     });
-    const invalidaAgora = atual ? await motivoIntencaoInvalida(atual, agora) : "intencao_ausente";
+    const invalidaAgora = atual ? await motivoIntencaoInvalida(atual) : "intencao_ausente";
     const conferirAgora = atual?.cobrancaId ? await suspensaoPorConferencia(atual.cobrancaId, agora) : null;
     if (!invalidaAgora && conferirAgora) {
       if (await adiarClaim(it.id, conferirAgora)) r.adiadas += 1;
@@ -676,14 +554,6 @@ export async function despacharFila(
             canal: "api",
             autorId: it.autorId, // humano que aprovou (LOTE/HUMANO) ou null (CRON)
           });
-        } else if (comercial && it.leadId && it.passoComercial) {
-          // Evento de domínio da cadência comercial — o motor conta como passo cumprido.
-          await registrarEventoReguaComercialEnviada(tx, {
-            leadId: it.leadId,
-            chave: chaveComercial(it),
-            passo: it.passoComercial,
-            ocorrencia: it.ocorrenciaComercial ?? "",
-          });
         }
         await tx.intencaoMensagem.update({
           where: { id: it.id },
@@ -731,8 +601,7 @@ type IntencaoParaValidar = {
   id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
   atendimentoId: string | null; cobrancaId: string | null; referenciaCobranca: string | null; cicloCobranca: number;
   templateId: string | null; corpoRenderizado: string; variaveis: unknown;
-  leadId: string | null; ocorrenciaComercial: string | null; passoComercial: string | null;
-  politicaComercial: { chave: string; estado: string; numeroRemetenteId: string | null } | null;
+  leadId: string | null; passoComercial: string | null;
   avisoAlteracaoAgendaId: string | null;
   acaoAgenteIAId: string | null;
   conteudo?: unknown;
@@ -756,7 +625,7 @@ async function pessoaAssumiuDepois(atendimentoId: string, criadaEm: Date): Promi
   return saidas + filas > 0;
 }
 
-async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Promise<string | null> {
+async function motivoIntencaoInvalida(it: IntencaoParaValidar): Promise<string | null> {
   if (!it.numero.ativo) return "numero_remetente_inativo";
   if (it.contato.optOutEm) return "opt_out";
   // A Aria (IA) não manda figurinha nem GIF; vale antes do ensaio (SHADOW), que não pode simular o que é proibido.
@@ -764,16 +633,15 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
   if (it.origem === "IA" && (tipoConteudo === "FIGURINHA" || tipoConteudo === "GIF")) return "ia_conteudo_nao_permitido";
   const motivoAgenda = await motivoAvisoAgendaInvalido(it);
   if (motivoAgenda) return motivoAgenda;
-  if (it.origem === "GESTAO") {
-    const config = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
-    if (!config || config.gestaoEstado === "DESLIGADA" || config.gestaoNumeroId !== it.numeroId || config.gestaoTelefoneE164 !== it.contato.telefoneE164) return "configuracao_gestao_alterada";
-    if (it.autorId || it.atendimentoId || it.cobrancaId || it.leadId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_gestao_invalido";
-  }
+  // Gestão (C5) e cadência comercial do CRM antigo: a configuração e a política foram removidas e nada mais as
+  // enfileira. Uma intenção que tenha sobrado na fila é cancelada com o mesmo motivo de quando a configuração mudava.
+  if (it.origem === "GESTAO") return "configuracao_gestao_alterada";
+  if (it.passoComercial) return "politica_comercial_alterada";
   if (it.origem === "IA") {
     // A Aria não tem usuário autor: a intenção vale só ligada à ação da Aria e a um atendimento.
     if (it.autorId || !it.atendimentoId || !it.acaoAgenteIAId || it.cobrancaId || it.passoComercial || it.avisoAlteracaoAgendaId) return "contexto_ia_invalido";
     if (await pessoaAssumiuDepois(it.atendimentoId, it.criadaEm)) return MOTIVO_ARIA_PAUSADA;
-  } else if (it.origem !== "CRON" && it.origem !== "GESTAO") {
+  } else if (it.origem !== "CRON") {
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";
     if (it.cobrancaId && !autor.papeis.some((p) => [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA].includes(p as "ADMINISTRADOR" | "FINANCEIRO" | "SECRETARIA_ACADEMICA"))) return "autor_sem_acesso";
@@ -801,10 +669,6 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
     if (!["PENDENTE", "ATRASADO"].includes(snapshot.c.status) || snapshot.saldo.lte(0)) return "cobranca_encerrada";
     if (!snapshot.destino || snapshot.destino.telefoneE164 !== it.contato.telefoneE164) return "destinatario_alterado";
     if (!it.referenciaCobranca || snapshot.assinatura !== it.referenciaCobranca) return "cobranca_alterada_revisar";
-  }
-  if (it.passoComercial) {
-    if (!it.politicaComercial || it.politicaComercial.estado === "DESLIGADA" || it.politicaComercial.numeroRemetenteId !== it.numeroId) return "politica_comercial_alterada";
-    return motivoCadenciaInvalida(it, agora);
   }
   return null;
 }
@@ -843,14 +707,9 @@ function fusoDoDestino(it: IntencaoComDestino): string {
     aluno?.fuso ??
     aluno?.pais?.fuso ??
     it.cobranca?.matricula.pais?.fuso ??
-    it.lead?.pais?.fuso ?? // cadência comercial: janela no fuso LOCAL do lead
+    it.lead?.pais?.fuso ?? // intenção com lead e sem cobrança: janela no fuso LOCAL do lead
     "America/Sao_Paulo"
   );
-}
-
-/** Chave da cadência que gerou a intenção comercial (identidade do degrau no evento). */
-function chaveComercial(it: { politicaComercial: { chave: string } | null }): string {
-  return it.politicaComercial?.chave ?? "COMERCIAL";
 }
 
 // Marks dos guard-rails só transitam de estados "na fila" — nunca clobberam um claim

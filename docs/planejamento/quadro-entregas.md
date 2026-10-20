@@ -3762,6 +3762,52 @@ Branch `claude/fix-acoes-int`, base `main` 6122c874 (#251). Relato: 3 testes de 
   - Integração `src/server/whatsapp`, `src/server/cobrancas` e `financeiro/politica.int.test.ts`: 64 arquivos e 513 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
   - Os 4 arquivos corrigidos: 47 testes OK no relógio real às 02h40 UTC (dentro da faixa que quebrava) e com o relógio deslocado para 01h30 UTC, nos dois fusos.
 
+### D7: integração completa noturna no GitHub Actions, em 4 shards — 2026-10-20
+
+Branch `claude/ci-integracao`, base `main` 9808cd29, PR #256 (draft). Nenhuma migration.
+- **Workflow `.github/workflows/integracao.yml`:** `npm run test:int -- --shard=N/4` toda noite às 06:17 UTC (03:17 em Brasília) e por `workflow_dispatch`, sem gatilho de PR. São 4 shards com `fail-fast: false`, e cada um tem o próprio `postgres:16-alpine` de serviço em `localhost:54329`, com `postgres:teste`, credencial de teste e não segredo. As migrações rodam do zero com `node scripts/prisma-teste.mjs migrate deploy`. O job usa `TZ=America/Sao_Paulo`, `NODE_OPTIONS=--max-old-space-size=4096` e timeout de 120 min, e cada passo tem o seu. Actions por SHA, Node do `.nvmrc` e cache do npm, como no `ci.yml`.
+- **Como o banco é escolhido:** o `vitest.integration.config.ts` ignora `DATABASE_URL` e usa o perfil (`.erp-test-profile` ou `ERP_TEST_PROFILE`), sempre em `localhost:54329`. O setup global só confere `migrate status`, sem criar banco nem migrar. Entrou o perfil `ci-integracao` (`erp_genius_test_ciint`) em `scripts/test-profile.mjs`, que o workflow pede por `ERP_TEST_PROFILE`. Os perfis locais não mudam, e `src/test/banco-isolado.test.ts` cobre o novo.
+- **Evidências:**
+  - YAML carregado sem erro.
+  - Shard 1/4 local com as mesmas variáveis do workflow, num banco descartável `erp_genius_test_ciint` migrado do zero: 79 arquivos e 666 testes verdes em 47 min 40 s, numa máquina compartilhada com outras suítes.
+  - `banco-isolado.test.ts` e `ci-workflow.test.ts`: 6 testes verdes.
+  - **Execução no Actions: não feita.** O `POST .../actions/workflows/integracao.yml/dispatches` voltou 403 "Resource not accessible by integration", porque o token da sessão não tem `actions: write`. O workflow também ainda não aparece na lista do repositório: o GitHub só registra um `workflow_dispatch` depois que o arquivo chega na branch padrão. O primeiro run sai pelo botão "Run workflow", com um token que tenha permissão, ou na primeira noite depois do merge.
+### B13 e D4: remoção do CRM antigo e do Inbox antigo (código morto e tabelas órfãs) — 2026-10-20
+
+Branch `claude/remover-crm-antigo`, base `main` 9808cd29. Decisões do dono B13 (remover o código morto) e D4 (apagar as tabelas e os campos órfãos). Cada item foi conferido com `git grep` (imports e chamadores) antes de sair.
+- **Inbox antigo:**
+  - Saem `listarConversasInbox`, `listarConversas` e `carregarThread` (`whatsapp/consultas-inbox.ts`).
+  - Saem os limites, a mescla e o filtro de canal de `whatsapp/busca-inbox.ts`. Ficam `lerBuscaInbox` e `whereBuscaConversas`, usados pelo Inbox novo.
+- **CRM antigo:**
+  - Saem `enfileirarIntencaoComercial`, `salvarConfigComercial`, `salvarReguaComercial`, `carregarSaudacoesSimuladas`, `carregarConfigComercial`, `comercial/regua-comercial.ts` e `comercial/regua-fabrica.ts`. Os dois arquivos entraram na trava `casca-crm-removida.test.ts`.
+  - Saem também `motivoCadenciaInvalida`, `reagendamentoPendente`, `registrarEventoReguaComercialEnviada` e a seção comercial do `seed-whatsapp`.
+  - **Despachante:** saem os ramos da cadência comercial e o shadow da saudação e da gestão lidos da `ConfigComercial`. O que sobrar na fila é cancelado: `passoComercial` com `politica_comercial_alterada`, origem `GESTAO` com `configuracao_gestao_alterada`. A reativa sem IA só simula.
+- **Dependências:** `@dnd-kit/sortable` e `@dnd-kit/utilities` saíram com `npm uninstall`. O `@dnd-kit/core` fica, porque o funil e a agenda de tarefas o usam.
+- **Migration `20261020090000_remover_crm_antigo`:**
+  - `DROP TABLE` de `PoliticaComercial` e `DegrauComercial`.
+  - `DROP COLUMN` de `IntencaoMensagem.politicaComercialId`, com o índice parcial `IntencaoMensagem_comercial_degrau_key`.
+  - `DROP COLUMN` de `ConfigComercial.autoLeadAtivo`, `saudacao*` e `gestao*`.
+  - O comentário no topo exige backup. As consultas de conferência estão no corpo do PR ("Antes do deploy").
+- **O que ficou:**
+  - `ConfigComercial.checkInToleranciaMinutos` e `matriculaAutomaticaAtiva` (lidos pela Home e pelo fechamento automático).
+  - `IntencaoMensagem.leadId`, `passoComercial` e `ocorrenciaComercial`.
+  - A regra da carteira (#254) que deixa `ReguaComercialEnviada` fora dos contatos: é a mesma régua antiga, mas vale para os eventos já gravados.
+  - `capturarRespostaExperimental`, que só acha os lembretes já gravados.
+- **Testes:**
+  - Saíram os que só exercitavam código morto.
+  - As regras de acesso que passavam pela thread antiga foram portadas para as consultas do Inbox novo (`src/test/inbox-consultas.ts`, `carregarPainel`).
+  - O teto Q176 foi para `despachante-teto.int.test.ts`, com o cancelamento das intenções que sobraram.
+  - B3, shadow com live e template pelo motor viraram testes de automação genérica.
+- **Evidências:**
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 40 avisos de base.
+  - `npm test`: 787 arquivos e 5.875 testes.
+  - `npm run build`: saída 0.
+  - Integração no banco `erp_genius_test_crmantigo`, com a migration aplicada: `src/server/whatsapp`, `comercial`, `crm` e `inbox`, mais `academico/visibilidade` e `aria/turno/despacho-ia`. Foram 101 arquivos e 780 testes verdes.
+  - `prisma migrate deploy` do zero num banco vazio: 466 migrations aplicadas.
+  - `prisma migrate diff` banco × schema: só as divergências antigas, as mesmas do `main`, e nenhuma linha dos objetos removidos.
+- **Pendência operacional:** fazer backup e rodar as consultas do PR antes do deploy.
+
 ### Pendências pequenas das revisões #250, #253 e #255 — 2026-10-20
 
 - **#255 C1 (relógio fixo × `now()` do banco):** `whatsapp/acoes.int.test.ts`, `cobrancas/acesso-aulas.int.test.ts` e `cobrancas/conferencia.int.test.ts` fixam o relógio no meio-dia da escola **do dia corrente** (`meioDiaDaEscolaHoje()` em `src/test/integracao.ts`: `inicioDoDiaInstitucional(new Date(), fusoDaEscola()) + 12 h`, lido depois do `truncarBanco`), e não mais em 2026-10-20 15h UTC. Assim o processo fica no mesmo dia dos defaults `now()` do Postgres.

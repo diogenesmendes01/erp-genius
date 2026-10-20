@@ -24,7 +24,6 @@ import {
 } from "@/server/_shared";
 import { moverEtapaTx } from "@/server/crm/mover-etapa";
 import { escopoPessoas, garantirPessoaTx } from "@/server/crm/pessoas";
-import { driverAceitaAutomacao } from "@/server/whatsapp/canal";
 import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
   professorAtribuido,
@@ -43,8 +42,6 @@ import {
   InteracaoSchema,
   PerdaSchema,
   AgendarExperimentalSchema,
-  ConfigComercialSchema,
-  ReguaComercialSchema,
   NotaInternaSchema,
   type LeadInput,
   type CriarLeadInput,
@@ -53,12 +50,9 @@ import {
   type InteracaoInput,
   type PerdaInput,
   type AgendarExperimentalInput,
-  type ConfigComercialInput,
-  type ReguaComercialInput,
   type NotaInternaInput,
 } from "./schema";
 import { Temperatura } from "@prisma/client";
-import { CADENCIAS_COMERCIAIS } from "./regua-fabrica";
 import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
@@ -701,171 +695,6 @@ export async function atribuirProfessorExperimental(
     });
     revalidarLead();
     revalidatePath("/home");
-  });
-}
-
-// Config comercial C1 (doc 27): auto-lead + saudação. Alçada = Gerente Comercial (dono da
-// automação comercial) + Admin. Evento auditável (antes→depois) — mudar quem o robô fala
-// em nome da escola é uma ação sensível.
-export async function salvarConfigComercial(input: ConfigComercialInput): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-    const dados = ConfigComercialSchema.parse(input);
-
-    // C5: armar a gestão exige número remetente EXISTENTE e ativo (prontidão, como nas réguas).
-    if (dados.gestaoEstado !== "DESLIGADA" && dados.gestaoNumeroId) {
-      const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.gestaoNumeroId } });
-      if (!numero || !numero.ativo) throw new ErroRegra("Número remetente da gestão inexistente ou inativo.");
-    }
-
-    await prisma.$transaction(async (tx) => {
-      const antes = await tx.configComercial.findUnique({ where: { id: "comercial" } });
-      await tx.configComercial.upsert({
-        where: { id: "comercial" },
-        create: { id: "comercial", ...dados },
-        update: dados,
-      });
-      await registrarEvento(tx, {
-        tipo: "ConfigComercialAlterada",
-        agregadoTipo: "ConfigComercial",
-        agregadoId: "comercial",
-        autorId: autor.id,
-        payload: {
-          antes: antes
-            ? {
-                autoLeadAtivo: antes.autoLeadAtivo,
-                saudacaoEstado: antes.saudacaoEstado,
-                saudacaoTexto: antes.saudacaoTexto,
-                matriculaAutomaticaAtiva: antes.matriculaAutomaticaAtiva,
-                gestaoEstado: antes.gestaoEstado,
-                gestaoTelefoneE164: antes.gestaoTelefoneE164,
-              }
-            : null,
-          depois: dados,
-        },
-      });
-    });
-    revalidatePath("/configuracao/whatsapp", "layout");
-  });
-}
-
-// Régua comercial "lead novo sem resposta" (doc 27 C1). Gerente Comercial/Admin. A ORDEM
-// dos passos é lei de código (regua-fabrica) — a UI só edita offset/ativo/template + estado.
-export async function salvarReguaComercial(input: ReguaComercialInput): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-    const dados = ReguaComercialSchema.parse(input);
-    if (dados.janelaFim <= dados.janelaInicio) throw new ErroRegra("A janela precisa terminar depois de começar.");
-
-    // Só passos da cadência CANÔNICA daquele cenário entram (ordem imutável — review PR #54).
-    const cadencia = CADENCIAS_COMERCIAIS.find((c) => c.chave === dados.chave);
-    if (!cadencia) throw new ErroRegra(`Cenário de régua desconhecido: ${dados.chave}.`);
-    const rotuloPorPasso = new Map(cadencia.degraus.map((d) => [d.passo, d.rotulo]));
-    for (const d of dados.degraus) {
-      if (!rotuloPorPasso.has(d.passo)) throw new ErroRegra(`Passo desconhecido na cadência: ${d.passo}.`);
-    }
-
-    // A ORDEM CANÔNICA é lei (review PR #55 P2). O motor corta o progresso pela ordem de
-    // fábrica, mas o loader ordena os degraus por OFFSET: se a UI gravasse +4h antes de
-    // +30min, o +4h sairia primeiro e o +30min ficaria eliminado para sempre (forward-only).
-    // Exige-se, então: todos os passos, uma única vez, com offsets ESTRITAMENTE CRESCENTES
-    // na ordem de fábrica. Vale para as três cadências — inclusive a pré-experimental, cujos
-    // offsets são NEGATIVOS (-24h antes de -2h continua sendo "estritamente crescente").
-    const ordemFabrica = cadencia.degraus.map((d) => d.passo);
-    const offsetPorPasso = new Map(dados.degraus.map((d) => [d.passo, d.offsetMinutos]));
-    if (offsetPorPasso.size !== dados.degraus.length) {
-      throw new ErroRegra("Cada passo da cadência pode aparecer uma única vez.");
-    }
-    const faltando = ordemFabrica.filter((p) => !offsetPorPasso.has(p));
-    if (faltando.length > 0) {
-      throw new ErroRegra(`A cadência precisa trazer todos os passos. Faltam: ${faltando.join(", ")}.`);
-    }
-    let offsetAnterior: number | null = null;
-    let passoAnterior: string | null = null;
-    for (const passo of ordemFabrica) {
-      const offset = offsetPorPasso.get(passo)!;
-      if (offsetAnterior !== null && offset <= offsetAnterior) {
-        throw new ErroRegra(
-          `A ordem da cadência é fixa: o intervalo de ${passo} precisa ser maior que o de ${passoAnterior}.`,
-        );
-      }
-      offsetAnterior = offset;
-      passoAnterior = passo;
-    }
-
-    // Prontidão (como na cobrança): armar (SHADOW/ATIVA) exige número remetente ativo.
-    if (dados.estado !== "DESLIGADA") {
-      if (!dados.numeroRemetenteId) throw new ErroRegra("Defina o número remetente antes de armar a régua.");
-      const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
-      if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
-      // Só o motor tem driver no despachante: armar a régua em outro driver só geraria intenções
-      // que falham com driver_indisponivel (mesma trava de salvarPoliticaRegua).
-      if (!driverAceitaAutomacao(remetente.driver)) {
-        throw new ErroRegra("Só números do motor WhatsApp enviam a régua. Troque o remetente antes de armar.");
-      }
-    }
-
-    // B1: allowlist só com leads que EXISTEM (id colado errado não vira lead fantasma que
-    // "some" do piloto em silêncio) — e sem duplicatas.
-    const idsUnicos = [...new Set(dados.pilotoLeadIds)];
-    const leadsExistentes = idsUnicos.length
-      ? await prisma.oportunidade.findMany({ where: { id: { in: idsUnicos } }, select: { id: true } })
-      : [];
-    if (leadsExistentes.length !== idsUnicos.length) {
-      throw new ErroRegra("A allowlist do piloto contém leads inexistentes.");
-    }
-    const leadIdsValidos = leadsExistentes.map((l) => l.id);
-
-    await prisma.$transaction(async (tx) => {
-      const existente = await tx.politicaComercial.findUnique({
-        where: { chave: dados.chave },
-        include: { degraus: true },
-      });
-      const politicaId = existente
-        ? existente.id
-        : (await tx.politicaComercial.create({ data: { chave: cadencia.chave, nome: cadencia.nome } })).id;
-
-      await tx.politicaComercial.update({
-        where: { id: politicaId },
-        data: {
-          estado: dados.estado,
-          numeroRemetenteId: dados.numeroRemetenteId,
-          janelaInicio: dados.janelaInicio,
-          janelaFim: dados.janelaFim,
-          tetoPorContatoDia: dados.tetoPorContatoDia,
-          // B1 (doc 32): cohort do piloto — allowlist explícita; ids inexistentes caem fora.
-          modoPiloto: dados.modoPiloto,
-          pilotoLeadIds: leadIdsValidos,
-        },
-      });
-      for (const d of dados.degraus) {
-        await tx.degrauComercial.upsert({
-          where: { politicaId_passo: { politicaId, passo: d.passo } },
-          create: {
-            politicaId,
-            passo: d.passo,
-            offsetMinutos: d.offsetMinutos,
-            rotulo: rotuloPorPasso.get(d.passo)!,
-            ativo: d.ativo,
-            templateId: d.templateId,
-          },
-          update: { offsetMinutos: d.offsetMinutos, ativo: d.ativo, templateId: d.templateId },
-        });
-      }
-      await registrarEvento(tx, {
-        tipo: "PoliticaComercialAlterada",
-        agregadoTipo: "PoliticaComercial",
-        agregadoId: politicaId,
-        autorId: autor.id,
-        payload: {
-          antes: existente
-            ? { estado: existente.estado, numeroRemetenteId: existente.numeroRemetenteId }
-            : null,
-          depois: { estado: dados.estado, numeroRemetenteId: dados.numeroRemetenteId, degraus: dados.degraus },
-        },
-      });
-    });
-    revalidatePath("/configuracao/whatsapp", "layout");
   });
 }
 

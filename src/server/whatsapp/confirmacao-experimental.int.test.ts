@@ -6,8 +6,10 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
-import { CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
 import { processarMensagemNormalizada } from "./inbound";
+
+/** Chave da cadência pré-experimental nos eventos `ReguaComercialEnviada` já gravados (régua do CRM antigo). */
+const CHAVE_PRE_EXPERIMENTAL = "PRE_EXPERIMENTAL";
 
 // Integração E6/C2 (doc 27): captura da confirmação da experimental por keyword (fallback Baileys).
 

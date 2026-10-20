@@ -28,7 +28,6 @@ import { buscarVinculosInbox } from "@/server/whatsapp/acoes";
 import { editarPais } from "@/server/paises/acoes";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { capturarRespostaExperimental } from "@/server/comercial/captura";
-import { CADENCIAS_COMERCIAIS, CHAVE_LEAD_NOVO, CHAVE_PRE_EXPERIMENTAL } from "@/server/comercial/regua-fabrica";
 
 let cat, admin, vendedor, outro, professor;
 const logar = (u) => authMock.mockResolvedValue({ user: { id: u.id } });
@@ -316,18 +315,13 @@ describe("Dinheiro e ciclo de matricula", () => {
   });
 });
 
+// Chaves da régua comercial do CRM antigo (removida): as intenções que sobraram na fila são canceladas no despacho.
+const CHAVE_LEAD_NOVO = "LEAD_NOVO_SEM_RESPOSTA";
+const CHAVE_PRE_EXPERIMENTAL = "PRE_EXPERIMENTAL";
 async function canalComercial(chave = CHAVE_LEAD_NOVO, etapa = "NOVO", ancora = new Date(Date.now() - 45 * 60000)) {
   const numero = await prisma.numeroWhatsApp.create({ data: {
     telefoneE164: "+50677776666", rotulo: "Auditoria", driver: "MOTOR", finalidade: "VENDAS",
     donoId: vendedor.id, providerRef: "audit-instance", sessao: "CONECTADO",
-  } });
-  const cadencia = CADENCIAS_COMERCIAIS.find(c => c.chave === chave);
-  const politica = await prisma.politicaComercial.create({ data: {
-    chave, nome: cadencia.nome, estado: "ATIVA", janelaInicio: 0, janelaFim: 24,
-    diasSemana: [0,1,2,3,4,5,6], tetoPorContatoDia: 10, numeroRemetenteId: numero.id,
-    degraus: { create: cadencia.degraus.map(d => ({
-      passo: d.passo, offsetMinutos: d.offsetMinutos, rotulo: d.rotulo, ativo: true,
-    })) },
   } });
   const lead = await prisma.oportunidade.create({ data: {
     nome: "Lead auditoria", etapa, vendedorDonoId: vendedor.id, paisId: cat.pais.id,
@@ -337,12 +331,12 @@ async function canalComercial(chave = CHAVE_LEAD_NOVO, etapa = "NOVO", ancora = 
   const conversa = await prisma.conversaWhatsApp.create({ data: {
     numeroId: numero.id, contatoId: contato.id, capturadaEm: chave === CHAVE_LEAD_NOVO ? ancora : maisDias(-3),
   } });
-  return { numero, politica, lead, contato, conversa, ancora };
+  return { numero, chave, lead, contato, conversa, ancora };
 }
 async function intencao(c, extra = {}) {
   return prisma.intencaoMensagem.create({ data: {
-    numeroId: c.numero.id, contatoId: c.contato.id, politicaComercialId: c.politica.id,
-    leadId: c.lead.id, passoComercial: c.politica.chave === CHAVE_PRE_EXPERIMENTAL ? "-2h" : "+30min",
+    numeroId: c.numero.id, contatoId: c.contato.id,
+    leadId: c.lead.id, passoComercial: c.chave === CHAVE_PRE_EXPERIMENTAL ? "-2h" : "+30min",
     ocorrenciaComercial: c.ancora.toISOString(), origem: "CRON", corpoRenderizado: "Mensagem antiga",
     status: "ADIADA", despacharAposEm: new Date(Date.now() - 60000), ...extra,
   } });
