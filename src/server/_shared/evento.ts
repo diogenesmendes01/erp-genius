@@ -45,10 +45,8 @@ export type AgregadoTipo =
   | "TemplateWhatsApp"
   | "IntencaoMensagem"
   | "PoliticaRegua"
-  // Fase comercial (doc 27): config de automação comercial (auto-lead + saudação) e a
-  // régua comercial editável (lead-novo e demais cadências).
-  | "ConfigComercial"
-  | "PoliticaComercial"
+  // "ConfigComercial" e "PoliticaComercial" (auto-lead, saudação e régua comercial do CRM antigo) saíram
+  // com a remoção do CRM antigo; os eventos já gravados continuam no histórico.
   | "LotePreparacaoMigracao"
   // Fase 2 (doc 03): financeiro automatizado + B2B.
   | "ConfigFinanceiro"

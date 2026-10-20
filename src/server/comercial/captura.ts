@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { gerarCodigo } from "@/lib/codigo";
 import { registrarEvento } from "@/server/_shared/evento";
-import { CHAVE_PRE_EXPERIMENTAL } from "./regua-fabrica";
 
 // CAPTURA AUTOMÁTICA DE LEAD (doc 27 C1 · doc 29 §fluxo F5, regra 6).
 // O 1º inbound de um número de VENDAS sem vínculo vira um Lead — MAS pelo MESMO caminho
@@ -119,6 +118,8 @@ export async function criarLeadDeInboundWhatsApp(
 // engano. Confirmar muda ESTADO do funil; pedir reagendamento só emite um sinal para o
 // vendedor, então esse lado pode aceitar os sinônimos naturais sem risco.
 const KEYWORDS_CONFIRMA = new Set(["sim", "confirmo"]);
+/** Chave da cadência pré-experimental do CRM antigo nos eventos `ReguaComercialEnviada` já gravados. */
+const CHAVE_PRE_EXPERIMENTAL = "PRE_EXPERIMENTAL";
 /** Folga entre o relógio do banco (evento) e o do WhatsApp (mensagem) na correlação. */
 const TOLERANCIA_RELOGIO_MS = 5 * 60_000;
 const KEYWORDS_REAGENDA = new Set(["reagendar", "remarcar", "reagendo", "outro horario", "outro horário"]);
@@ -190,10 +191,8 @@ export async function capturarRespostaExperimental(
     return "confirmada";
   }
 
-  // B8 (doc 32): o pedido de reagendamento PAUSA a cadência pré-experimental — estado
-  // persistido que o cron e o despachante honram até a ação humana (remarcar limpa o campo
-  // em `agendarExperimental` e abre uma ocorrência nova). Sem isso, o inbound cancelava as
-  // intenções existentes mas o tick seguinte enfileirava o próximo degrau por cima do pedido.
+  // B8 (doc 32): o pedido de reagendamento fica persistido até a ação humana (remarcar limpa o campo
+  // em `agendarExperimental` e abre uma ocorrência nova).
   await tx.oportunidade.update({ where: { id: lead.id }, data: { aguardandoReagendamentoEm: ctx.quando } });
   await registrarEvento(tx, {
     tipo: "ExperimentalReagendamentoSolicitado",
@@ -201,11 +200,6 @@ export async function capturarRespostaExperimental(
     agregadoId: lead.id,
     autorId: null,
     payload: { via: "whatsapp_keyword", ocorrencia: lead.dataExperimental.toISOString() },
-  });
-  await tx.intencaoMensagem.updateMany({
-    where: { leadId: lead.id, ocorrenciaComercial: lead.dataExperimental.toISOString(),
-      politicaComercial: { chave: CHAVE_PRE_EXPERIMENTAL }, status: { in: ["PENDENTE", "ADIADA"] } },
-    data: { status: "CANCELADA", motivoFalha: "reagendamento_solicitado" },
   });
   return "reagendar";
 }

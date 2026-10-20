@@ -6,7 +6,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
-import { carregarThread } from "./consultas-inbox";
+import { carregarPainel } from "@/server/inbox/paineis";
 import { listarOpcoesAtendimento, abrirAtendimentoInstitucional } from "./operacoes-atendimento";
 import { enfileirarIntencaoCobranca, ErroCobrancaAlterada, type EnfileirarCobranca } from "./fila";
 import { despacharFila } from "./despachante";
@@ -49,9 +49,9 @@ describe("pagador financeiro do contrato", () => {
     const a = await c.abrir(c.matricula.id); const b = await c.abrir(segunda.id);
     expect(a.ok).toBe(true); expect(b.ok).toBe(true);
     if (!a.ok || !b.ok) throw new Error("Abertura recusada");
-    const ta = await carregarThread(c.sessao, a.dado!.id); const tb = await carregarThread(c.sessao, b.dado!.id);
+    const ta = await carregarPainel(c.sessao, a.dado!.id); const tb = await carregarPainel(c.sessao, b.dado!.id);
     expect(ta?.podeEnviar).toBe(true); expect(tb?.podeEnviar).toBe(true);
-    expect(ta?.cobrancaAtiva?.id).toBe(c.cobranca.id); expect(tb?.cobrancaAtiva?.id).toBe(cobrancaB.id);
+    expect(ta?.acoes?.cobranca?.ativa?.id).toBe(c.cobranca.id); expect(tb?.acoes?.cobranca?.ativa?.id).toBe(cobrancaB.id);
     const contato = await prisma.contatoWhatsApp.findUniqueOrThrow({ where: { telefoneE164: "+50680002222" } });
     expect(contato.alunoId).toBeNull(); expect(contato.responsavelId).toBeNull();
   });
@@ -106,6 +106,6 @@ describe("pagador financeiro do contrato", () => {
     const outroContato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50680003333", alunoId: c.aluno.id } });
     const errado = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: c.canal.numero.id, contatoId: outroContato.id, finalidade: "FINANCEIRO", alunoId: c.aluno.id, matriculaId: c.matricula.id }));
     expect(await atendimentoVisivel(c.sessao, errado.id, true)).toBeNull();
-    expect((await carregarThread(c.sessao, errado.id))?.cobrancaAtiva).toBeNull();
+    expect((await carregarPainel(c.sessao, errado.id))?.acoes?.cobranca?.ativa ?? null).toBeNull();
   });
 });
