@@ -1,7 +1,7 @@
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
 import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
-import { ancorarCalendarioOferta, type AncoraCalendarioOferta } from "@/server/agenda/cadeia-calendario-oferta";
+import { ancorarCalendarioOferta, type AncoraCalendarioOferta, type ElosQuantidade } from "@/server/agenda/cadeia-calendario-oferta";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
@@ -72,8 +72,12 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
   // `aplicadaEm` só ordena os elos; fica fora do hash para não invalidar memórias já confirmadas.
   const calendarioNoHash = calendarioVigente && { ...calendarioVigente, replanejamentos: calendarioVigente.replanejamentos?.map((r) => ({ ...r,
     decisaoConjunta: r.decisaoConjunta && { ...r.decisaoConjunta, aplicacao: r.decisaoConjunta.aplicacao && { id: r.decisaoConjunta.aplicacao.id, estadoHash: r.decisaoConjunta.aplicacao.estadoHash } } })) };
-  const contextoHash = hashSubstituicao(JSON.parse(JSON.stringify({ alocacoes, calendarioVigente: calendarioNoHash, ausencias, ...(impactos.length ? { impactosQuantidade: impactos } : {}),
-    ...(transferencia ? { transferencia } : {}) })) as Prisma.JsonValue);
+  // Impactos de quantidade só entram no hash quando viram elo da cadeia (B1 da #260): os que já existiam
+  // sem virar elo não podem invalidar confirmações da gestão. Uma alteração aplicada depois da confirmação
+  // continua invalidando pelas aulas da turma, que já estão no hash por meio de `alocacoes`.
+  const hashContexto = (elos: ElosQuantidade = []) => hashSubstituicao(JSON.parse(JSON.stringify({ alocacoes, calendarioVigente: calendarioNoHash, ausencias,
+    ...(elos.length ? { alteracoesQuantidade: elos } : {}), ...(transferencia ? { transferencia } : {}) })) as Prisma.JsonValue);
+  const contextoHash = hashContexto();
   const exigir = (motivo: Motivo) => ({ estado: "EXIGE_CONFIRMACAO_GESTAO" as const, memoria: { fontes: [] as Fonte[], motivos: [motivo], contextoHash } });
   const inicioCivil = d.inicio.toISOString().slice(0, 10), fimCivil = d.fim.toISOString().slice(0, 10);
   type Segmento = { alocacao: (typeof conferidas)[number]; inicioCivil: string; fimCivil: string; exigeAntes: boolean; exigeDepois: boolean };
@@ -134,6 +138,7 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     fontes.push(resultado);
   }
   if (ausencias.length) return exigir("DOCENTE_INDISPONIVEL");
-  return { estado: "COMPROVADA_POR_AGENDA" as const, memoria: { fontes, motivos: [] as Motivo[], contextoHash,
+  const elos = fontes.flatMap((f) => f.ancoraCalendario.tipo === "REPLANEJAMENTO_APLICADO" ? f.ancoraCalendario.alteracoesQuantidade ?? [] : []);
+  return { estado: "COMPROVADA_POR_AGENDA" as const, memoria: { fontes, motivos: [] as Motivo[], contextoHash: hashContexto(elos),
     ...(transferencia ? { transferencia: { solicitacaoId: transferencia.solicitacaoId, executadaEm: transferencia.executadaEm.toISOString() } } : {}) } };
 }

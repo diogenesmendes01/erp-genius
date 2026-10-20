@@ -152,3 +152,35 @@ describe("cadeia após replanejamento", () => {
     expect(com.memoria.contextoHash).toBe(sem.memoria.contextoHash);
   });
 });
+
+describe("hash de contexto com alterações de quantidade aplicadas", () => {
+  const q = "q".repeat(64);
+  const iso = (e: { id: string; inicio: Date; fim: Date; status: string }) => ({ id: e.id as string | null, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status });
+  const aula = base().turma.encontrosAgenda[0]!;
+  const em = (id: string, dia: string, status = "PREVISTO") => ({ ...aula, id, inicio: new Date(`${dia}T12:00:00Z`), fim: new Date(`${dia}T13:00:00Z`), status });
+  const impacto = (id: string, antes: ReturnType<typeof em>[], depois: ReturnType<typeof em>[], aplicadaEm: string) => ({
+    id: `impacto-${id}`, turmaId: "turma", snapshot: { agendaAntes: antes.map(iso), agendaDepois: depois.map(iso) },
+    proposta: { id, estadoHash: q, decisao: { id: `decisao-${id}`, aprovada: true, estadoHash: q }, aplicacao: { id: `aplicacao-${id}`, estadoHash: q, aplicadaEm: new Date(aplicadaEm) } },
+  });
+  const previstas = [em("a1", "2026-10-01"), em("a2", "2026-10-15"), em("a3", "2026-10-31")];
+  const aposPrimeira = [previstas[0]!, em("a2", "2026-10-15", "CANCELADO"), previstas[2]!];
+  const cancelouA2 = impacto("quantidade-1", previstas, aposPrimeira, "2026-09-25T00:00:00Z");
+
+  it("impacto aplicado que não vira elo da cadeia não muda o hash de memórias já confirmadas", async () => {
+    // Turma em GRADE_PUBLICADA: o impacto existe no banco desde antes do deploy, mas não entra na cadeia.
+    const semImpacto = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: aposPrimeira })]) as never, entrada);
+    const comImpacto = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: aposPrimeira })], [], { id: "cal", versao: 4 }, [cancelouA2]) as never, entrada);
+    expect(semImpacto).toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["AULA_EXCEPCIONAL_NO_PERIODO"] } });
+    expect(comImpacto).toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["AULA_EXCEPCIONAL_NO_PERIODO"] } });
+    expect(comImpacto.memoria.contextoHash).toBe(semImpacto.memoria.contextoHash);
+  });
+
+  it("alteração aplicada depois da confirmação continua invalidando pelo caminho das aulas", async () => {
+    const confirmada = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: aposPrimeira })], [], { id: "cal", versao: 4 }, [cancelouA2]) as never, entrada);
+    const aposSegunda = [aposPrimeira[0]!, aposPrimeira[1]!, em("a3", "2026-10-31", "CANCELADO")];
+    const cancelouA3 = impacto("quantidade-2", aposPrimeira, aposSegunda, "2026-10-10T00:00:00Z");
+    const posterior = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base({ encontrosAgenda: aposSegunda })], [], { id: "cal", versao: 4 }, [cancelouA2, cancelouA3]) as never, entrada);
+    expect(posterior.memoria.motivos).toEqual(confirmada.memoria.motivos);
+    expect(posterior.memoria.contextoHash).not.toBe(confirmada.memoria.contextoHash);
+  });
+});
