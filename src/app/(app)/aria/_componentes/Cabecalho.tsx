@@ -54,7 +54,7 @@ export function Cabecalho({ nome, funcao, versaoPublicada, estado, pausada, moti
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-surface-muted px-3 py-1 text-sm text-gray-800">{pausada ? "Pausada" : ESTADO_POLITICA_LABEL[estado]}</span>
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800">{pausada ? "Pausada" : ESTADO_POLITICA_LABEL[estado]}</span>
           {supervisao && <span className="rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-800">Supervisão ligada</span>}
           {podePausar && !pausada && !pedindoMotivo && (
             <Botao variante="secundario" onClick={() => setPedindoMotivo(true)}>Pausar</Botao>

@@ -6,8 +6,9 @@
 // os desenha de novo — sairiam em dobro (C3 da issue #170). As barras de título e de abas levam
 // `data-esqueleto` para a trava contar (src/app/borda-rota.render.test.ts).
 
-// animate-pulse: o movimento é desligado em prefers-reduced-motion (globals.css).
-const bloco = "animate-pulse rounded-md bg-surface-muted";
+// animate-pulse: o movimento é desligado em prefers-reduced-motion (globals.css). Fundo gray-100
+// (--neutral-muted): o surface-muted é igual ao --bg-page no tema claro e o bloco sumia (C6, #263).
+const bloco = "animate-pulse rounded-md bg-gray-100";
 
 function Carregando({ rotulo, className, children }: { rotulo: string; className?: string; children: React.ReactNode }) {
   return (
@@ -26,7 +27,7 @@ function BarraTitulo({ largura = "w-40" }: { largura?: string }) {
 function LinhasTabela({ linhas }: { linhas: number }) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200">
-      <div className="h-9 bg-surface-muted" />
+      <div className="h-9 bg-gray-100" />
       {Array.from({ length: linhas }, (_, i) => (
         <div key={i} className="flex items-center gap-4 border-t border-gray-200 px-4 py-3">
           <div className={`${bloco} h-4 w-1/4`} />
