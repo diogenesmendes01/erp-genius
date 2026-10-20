@@ -17,6 +17,18 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
+/** Q175: consumo estornado (aula declarada não cobrável) devolveu os minutos à compra. */
+export function situacaoReserva(r: { convertidaCredito: boolean; liberada: boolean; consumo: { conferenciaOcorrencia: { desfecho: string } | null; estorno?: { id: string } | null } | null }) {
+  return r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação"
+    : r.consumo?.estorno ? "aula declarada não cobrável: minutos devolvidos ao saldo"
+      : r.consumo?.conferenciaOcorrencia ? `consumida por ${rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, r.consumo.conferenciaOcorrencia.desfecho).toLowerCase()}`
+        : r.consumo ? "consumo por aula realizada" : "reserva registrada";
+}
+
+export function resumoMinutosCompra(c: { minutosReservados: number; minutosConsumidos: number; minutosEstornados: number; minutosConvertidosCredito: number; minutosDisponiveis: number }) {
+  return `${c.minutosReservados} minutos reservados · ${c.minutosConsumidos} consumidos · ${c.minutosEstornados ? `${c.minutosEstornados} devolvidos por aula não cobrável · ` : ""}${c.minutosConvertidosCredito} convertidos em crédito · ${c.minutosDisponiveis} ainda não reservados.`;
+}
+
 export function RegistroCompraHoras({ nome, criadoEm, preferenciaFusoExibicao }: { nome: string; criadoEm: string; preferenciaFusoExibicao?: string | null }) {
   const exibicao = formatarInstanteExibicao(criadoEm, preferenciaFusoExibicao, "UTC");
   return <p>Registrado por {nome} em {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC).</p>;
@@ -39,8 +51,8 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
       {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {formatarMoeda(c.valorPagoAlocado, c.moeda)}</summary>
         <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
         <p>{c.liquidacao ? `Quitação: ${formatarMoeda(c.liquidacao.valorEmDinheiro, c.moeda)} em dinheiro e ${formatarMoeda(c.liquidacao.valorEmCredito, c.moeda)} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {formatarMoeda(c.valorOriginal, c.moeda)}. Desconto original: {formatarMoeda(c.descontoOriginal, c.moeda)}. Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
-        <p>{c.minutosReservados} minutos reservados · {c.minutosConsumidos} consumidos · {c.minutosConvertidosCredito} convertidos em crédito · {c.minutosDisponiveis} ainda não reservados.</p>
-        {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {r.convertidaCredito ? "convertida em crédito" : r.liberada ? "reserva liberada para remarcação" : r.consumo?.conferenciaOcorrencia ? `consumida por ${rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, r.consumo.conferenciaOcorrencia.desfecho).toLowerCase()}` : r.consumo ? "consumo por aula realizada" : "reserva registrada"}</p>
+        <p>{resumoMinutosCompra(c)}</p>
+        {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {situacaoReserva(r)}</p>
           {!r.consumo && !r.liberada && r.statusEncontro !== "CANCELADO" && <ConsumoHoras reservaId={r.id} aoSalvar={carregar} />}
           {r.statusEncontro === "CANCELADO" && !r.consumo && <LiberacaoHoras alunoId={alunoId} reservaId={r.id} propostas={r.propostasLiberacao} aoSalvar={carregar} />}
         </div>)}
