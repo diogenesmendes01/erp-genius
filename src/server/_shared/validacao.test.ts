@@ -140,3 +140,59 @@ describe("dataHoraOpcional (schema datetime-local)", () => {
     expect(dataHoraOpcional.parse(undefined)).toBeUndefined();
   });
 });
+
+// Port da #62 (d379bbc3), lote 1 da #164. Documento continua "avisa, não bloqueia".
+describe("validarDocumento (documentos estrangeiros)", () => {
+  it("cédula CR: física de 9 dígitos ou DIMEX de 11–12, com máscara", () => {
+    expect(validarDocumento("cedula_cr", "1-0234-0567")).toBe(true);
+    expect(validarDocumento("cedula_cr", "155812345678")).toBe(true);
+    expect(validarDocumento("cedula_cr", "012340567")).toBe(false);
+    expect(validarDocumento("cedula_cr", "12345")).toBe(false);
+    expect(validarDocumento("cedula_cr", "1-0234-056A")).toBe(false);
+  });
+  it("CURP: formato, data e dígito verificador", () => {
+    expect(validarDocumento("curp", "gode561231hdfrrn00")).toBe(true);
+    expect(validarDocumento("curp", "GODE561231HDFRRN01")).toBe(false);
+    expect(validarDocumento("curp", "GODE561331HDFRRN00")).toBe(false);
+  });
+  it("CURP: exemplo oficial do RENAPO e verificador módulo 10 com pesos 18…2", () => {
+    expect(validarDocumento("curp", "HEGG560427MVZRRL04")).toBe(true);
+    expect(validarDocumento("curp", "HEGG560427MVZRRL05")).toBe(false);
+    expect(validarDocumento("curp", "MAAR790213HMNRLF03")).toBe(true);
+  });
+  it("CURP: recusa entidade federativa inexistente e data impossível", () => {
+    // Mesmo dígito verificador recalculado: só a regra de formato pode recusar.
+    expect(validarDocumento("curp", "HEGG560427MXXRRL02")).toBe(false);
+    expect(validarDocumento("curp", "HEGG560231MVZRRL00")).toBe(false);
+  });
+  it("CURP: nascido no exterior (NE) e homoclave com letra para 2000 em diante", () => {
+    expect(validarDocumento("curp", "PEGJ000101HNEXXXA4")).toBe(true);
+    expect(validarDocumento("curp", "PEGJ000229HNEXXXA1")).toBe(true); // 29/02/2000 existe
+  });
+  it("DNI AR: 7 ou 8 dígitos com pontos", () => {
+    expect(validarDocumento("dni_ar", "12.345.678")).toBe(true);
+    expect(validarDocumento("dni_ar", "1234567")).toBe(true);
+    expect(validarDocumento("dni_ar", "123456")).toBe(false);
+    expect(validarDocumento("dni_ar", "02.345.678")).toBe(false);
+  });
+  it("DUI SV: dígito verificador módulo 10", () => {
+    expect(validarDocumento("dui_sv", "00016297-5")).toBe(true);
+    expect(validarDocumento("dui_sv", "00016297-4")).toBe(false);
+    expect(validarDocumento("dui_sv", "000000000")).toBe(false);
+    expect(validarDocumento("dui_sv", "04491574-2")).toBe(true);
+  });
+  it("passaporte: formato ICAO genérico, sem aceitar texto livre", () => {
+    expect(validarDocumento("passaporte", "AB123456")).toBe(true);
+    expect(validarDocumento("passaporte", "ab 123-456")).toBe(true);
+    expect(validarDocumento("passaporte", "ABCDEFG")).toBe(false);
+    expect(validarDocumento("passaporte", "529.982.247-25")).toBe(false);
+    expect(validarDocumento("passaporte", "A1234")).toBe(false);
+    expect(validarDocumento("passaporte", "AB12345678")).toBe(false);
+  });
+  it("calcularDocumentoValido aceita cédula OU passaporte do mesmo país", () => {
+    const cr = [{ validador: "cedula_cr" }, { validador: "passaporte" }];
+    expect(calcularDocumentoValido(cr, "1-0234-0567")).toBe(true);
+    expect(calcularDocumentoValido(cr, "AB123456")).toBe(true);
+    expect(calcularDocumentoValido(cr, "texto livre")).toBe(false);
+  });
+});

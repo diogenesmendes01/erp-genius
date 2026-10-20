@@ -162,11 +162,74 @@ function validarCPF(valor: string): boolean {
   return calc(9) === Number(cpf[9]) && calc(10) === Number(cpf[10]);
 }
 
+/**
+ * Cédula (Costa Rica): física com 9 dígitos (X-XXXX-XXXX, primeiro dígito 1–9) ou
+ * DIMEX de estrangeiro residente com 11–12 dígitos. Não há dígito verificador público:
+ * a conferência é só de formato.
+ */
+function validarCedulaCR(valor: string): boolean {
+  const limpo = valor.replace(/[\s-]/g, "");
+  return /^[1-9]\d{8}$/.test(limpo) || /^[1-9]\d{10,11}$/.test(limpo);
+}
+
+/** Entidades federativas do RENAPO (NE = nascido no exterior). */
+const ENTIDADES_CURP = new Set([
+  "AS", "BC", "BS", "CC", "CL", "CM", "CS", "CH", "DF", "DG", "GT", "GR", "HG", "JC", "MC", "MN",
+  "MS", "NT", "NL", "OC", "PL", "QT", "QR", "SP", "SL", "SR", "TC", "TS", "TL", "VZ", "YN", "ZS", "NE",
+]);
+const ALFABETO_CURP = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+
+/**
+ * CURP (México), 18 posições: iniciais, data AAMMDD, sexo, entidade, consoantes internas,
+ * homoclave (dígito para nascidos até 1999, letra a partir de 2000) e dígito verificador do
+ * RENAPO: soma dos valores no alfabeto oficial com pesos 18…2, verificador = (10 − soma mod 10) mod 10.
+ */
+function validarCURP(valor: string): boolean {
+  const curp = valor.trim().toUpperCase();
+  const m = /^[A-Z][AEIOUX][A-Z]{2}(\d{2})(\d{2})(\d{2})[HMX]([A-Z]{2})[B-DF-HJ-NP-TV-Z]{3}([A-Z\d])\d$/.exec(curp);
+  if (!m) return false;
+  const [, aa, mm, dd, entidade, homoclave] = m;
+  if (!ENTIDADES_CURP.has(entidade!)) return false;
+  const ano = (/\d/.test(homoclave!) ? 1900 : 2000) + Number(aa);
+  const nascimento = new Date(Date.UTC(ano, Number(mm) - 1, Number(dd)));
+  if (nascimento.getUTCMonth() !== Number(mm) - 1 || nascimento.getUTCDate() !== Number(dd)) return false;
+  let soma = 0;
+  for (let i = 0; i < 17; i++) soma += ALFABETO_CURP.indexOf(curp[i]!) * (18 - i);
+  return (10 - (soma % 10)) % 10 === Number(curp[17]);
+}
+
+/** DNI (Argentina): 7 ou 8 dígitos (com ou sem pontos). Não há dígito verificador. */
+function validarDNIAR(valor: string): boolean {
+  const limpo = valor.replace(/[\s.]/g, "");
+  return /^[1-9]\d{6,7}$/.test(limpo);
+}
+
+/** DUI (El Salvador): 8 dígitos + verificador; soma com pesos 9…2, verificador = (10 − soma mod 10) mod 10. */
+function validarDUISV(valor: string): boolean {
+  const limpo = valor.replace(/[\s-]/g, "");
+  if (!/^\d{9}$/.test(limpo) || /^0{9}$/.test(limpo)) return false;
+  let soma = 0;
+  for (let i = 0; i < 8; i++) soma += Number(limpo[i]) * (9 - i);
+  return (10 - (soma % 10)) % 10 === Number(limpo[8]);
+}
+
+/**
+ * Passaporte: só o formato genérico do número de documento ICAO 9303 (6–9 alfanuméricos,
+ * com ao menos um dígito). Não há verificador universal nem regra por país emissor
+ * (decisão da #62); o dígito da MRZ não é digitado no cadastro.
+ */
+function validarPassaporte(valor: string): boolean {
+  const limpo = valor.replace(/[\s-]/g, "").toUpperCase();
+  return /^[A-Z0-9]{6,9}$/.test(limpo) && /\d/.test(limpo);
+}
+
 const VALIDADORES: Record<string, ValidadorDocumento> = {
   cpf: validarCPF,
-  // TODO (P5/B1): algoritmos reais de cedula_cr, curp, dni_ar, dui_sv, passaporte.
-  // Por ora, validadores ainda não implementados deixam o documento como "não validado".
-  passaporte: () => false,
+  cedula_cr: validarCedulaCR,
+  curp: validarCURP,
+  dni_ar: validarDNIAR,
+  dui_sv: validarDUISV,
+  passaporte: validarPassaporte,
 };
 
 /**
