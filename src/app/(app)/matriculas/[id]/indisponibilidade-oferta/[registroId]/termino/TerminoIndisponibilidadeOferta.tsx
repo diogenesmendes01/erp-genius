@@ -99,7 +99,7 @@ export function TerminoIndisponibilidadeOferta({
       <p className="whitespace-pre-wrap">{proposta.motivo}</p>
       <p className="whitespace-pre-wrap">Evidência: {proposta.evidenciaTexto}</p>
       <p>Proposta registrada em {instanteDoEvento(proposta.criadaEm, fusoInstitucional)}.</p>
-      {proposta.decisao ? <section className="rounded bg-gray-50 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
+      {proposta.decisao ? <section className="rounded bg-gray-100 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
       {proposta.podeDecidir && <form className="space-y-2" onSubmit={evento => {
         evento.preventDefault();
         const formulario = new FormData(evento.currentTarget);

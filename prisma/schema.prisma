@@ -2339,6 +2339,8 @@ model Evento {
   criadoEm     DateTime @default(now())
 
   @@index([agregadoTipo, agregadoId])
+  // Último Evento por agregado (MAX(criadoEm)) no funil/carteira (#262 C2): varredura reversa que para na 1ª linha.
+  @@index([agregadoTipo, agregadoId, criadoEm])
   @@index([tipo])
   @@index([criadoEm])
   // Idempotência das criações (#166): índice de expressão parcial "Evento_idempotencia_idx" sobre

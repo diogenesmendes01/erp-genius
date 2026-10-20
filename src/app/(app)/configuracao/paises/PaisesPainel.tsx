@@ -136,7 +136,7 @@ export function PaisesPainel({
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500">
+            <thead className="bg-gray-100 text-left text-xs text-gray-500">
               <tr>
                 <th className="px-4 py-2 font-medium">País</th>
                 <th className="px-4 py-2 font-medium">Moeda</th>
@@ -221,7 +221,7 @@ export function PaisesPainel({
                   </td>
                 </tr>,
                 catalogo === p.id ? (
-                  <tr key={p.id + "-cat"} className="bg-gray-50">
+                  <tr key={p.id + "-cat"} className="bg-gray-100">
                     <td colSpan={9} className="px-4 py-3">
                       <div className="text-xs font-medium text-gray-600">Idiomas/modalidades habilitados neste país</div>
                       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 md:grid-cols-3">

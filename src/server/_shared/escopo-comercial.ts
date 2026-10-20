@@ -3,7 +3,16 @@ import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "./sessao";
 import { congelar, memoPorRequisicao } from "./memo-requisicao";
 
-/** Carteira é um vínculo atual: comissão histórica e número remetente não o substituem. */
+/**
+ * Carteira é um vínculo atual: comissão histórica e número remetente não o substituem.
+ *
+ * ATENÇÃO (#262 B19): o funil (ordem "tempo" e perdidos com período) e a carteira traduzem este `where`
+ * para SQL cru em `src/server/crm/oportunidade-sql.ts` (`whereOportunidadeEmSql`). O tradutor só aceita as
+ * três formas devolvidas hoje — `{}` (admin), `{ id: "__sem_acesso__" }` e `{ vendedorDonoId: { in: [...] } }` —
+ * e RECUSA com erro qualquer outra (falha fechada: essas telas dariam 500 em vez de vazar ou esconder dados).
+ * Quem acrescentar uma forma nova aqui (outro campo, `OR`, `NOT`, relação...) precisa ensiná-la ao tradutor;
+ * `src/server/crm/escopo-comercial-sql.test.ts` trava o formato e quebra antes da produção.
+ */
 export async function escopoComercialAtual(
   usuario: UsuarioSessao,
   tx: Prisma.TransactionClient | typeof prisma = prisma,

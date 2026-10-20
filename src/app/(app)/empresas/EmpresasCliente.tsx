@@ -166,7 +166,7 @@ export function EmpresasCliente({
         ) : (
           <div aria-busy={lista.buscando} className={"overflow-x-auto rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+              <thead className="bg-gray-100 text-left text-xs text-gray-500">
                 <tr>
                   {/* Ordenação no servidor (E1); País e Faturas a receber não têm ordem no banco. */}
                   <ColunaOrdenavel campo="codigo" rotulo="Código" {...coluna} />
