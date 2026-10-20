@@ -34,9 +34,10 @@ import {
 const PAPEIS_B2B: Papel[] = [Papel.FINANCEIRO];
 
 /**
- * D9 (decisão do dono, 19/10/2026): a escola não usa a cobrança de empresas. Fechar, pagar e cancelar fatura
- * recusam com mensagem clara enquanto a chave `COBRANCA_B2B_ATIVA` estiver desligada — depois da sessão e da
- * alçada, antes de qualquer leitura ou escrita. O código e as faturas antigas ficam; religar a chave devolve o fluxo.
+ * D9 (decisão do dono, 19/10/2026): a escola não usa a cobrança de empresas. Fechar e pagar fatura recusam com
+ * mensagem clara enquanto a chave `COBRANCA_B2B_ATIVA` estiver desligada — depois da sessão e da alçada, antes de
+ * qualquer leitura ou escrita. Cancelar NÃO passa por aqui (R1 do #251, B1): desfaz o agrupamento de uma fatura
+ * FECHADA antiga, que de outro modo travaria pausa do aluno, ajuste e baixa das cobranças dela.
  */
 function exigirCobrancaB2BAtiva(): void {
   if (!COBRANCA_B2B_ATIVA) throw new ErroRegra(MSG_COBRANCA_B2B_DESLIGADA);
@@ -317,7 +318,6 @@ export async function cancelarFaturaB2B(faturaId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_B2B);
-    exigirCobrancaB2BAtiva();
     await prisma.$transaction(async (tx) => {
       const ref = await tx.faturaB2B.findUnique({ where: { id: faturaId }, select: { empresaId: true, cobrancas: { select: { matriculaId: true } } } });
       if (!ref) throw new ErroRegra("Fatura não encontrada.");

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // D9 (decisão do dono, 19/10/2026): a escola não usa a cobrança de empresas (fatura B2B, docs/42 L2282). Com a
-// chave COBRANCA_B2B_ATIVA desligada, fechar, pagar e cancelar fatura recusam com mensagem clara, depois da
-// sessão e da alçada e antes de qualquer leitura ou escrita. Nada é apagado: religar a chave devolve o fluxo.
+// chave COBRANCA_B2B_ATIVA desligada, fechar e pagar fatura recusam com mensagem clara, depois da sessão e da
+// alçada e antes de qualquer leitura ou escrita. Cancelar continua (R1 do #251, B1): só desfaz o agrupamento, e é o
+// caminho que a pausa do aluno, o ajuste e a baixa pedem para uma fatura FECHADA antiga.
 
 const m = vi.hoisted(() => ({
   ativa: false,
@@ -47,13 +48,19 @@ beforeEach(() => {
 const acoes = {
   fechar: () => fecharFaturaB2B({ empresaId: "emp-1", competencia: "2026-09" }),
   pagar: () => pagarFaturaB2B("fat-1"),
-  cancelar: () => cancelarFaturaB2B("fat-1"),
 };
 
 describe("fatura B2B com a cobrança de empresas desligada (D9)", () => {
   it("a mensagem diz o que está desligado e que as faturas antigas continuam para consulta", () => {
     expect(MSG_COBRANCA_B2B_DESLIGADA).toContain("cobrança de empresas");
     expect(MSG_COBRANCA_B2B_DESLIGADA).toContain("desligada");
+    expect(MSG_COBRANCA_B2B_DESLIGADA).toContain("ainda pode ser cancelada");
+  });
+
+  it("cancelar não é bloqueado pela chave: segue para a transação", async () => {
+    m.transacao.mockRejectedValueOnce(new Error("chegou à transação"));
+    await expect(cancelarFaturaB2B("fat-1")).rejects.toThrow("chegou à transação");
+    expect(m.transacao).toHaveBeenCalledTimes(1);
   });
 
   for (const [nome, chamar] of Object.entries(acoes)) {

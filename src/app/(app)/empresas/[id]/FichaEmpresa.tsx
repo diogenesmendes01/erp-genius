@@ -176,8 +176,9 @@ export function FichaEmpresa({
       {/* Faturas corporativas já registradas permanecem consultáveis e editáveis. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Faturas históricas</h2>
-        {/* D9 (19/10/2026): a escola não usa a cobrança de empresas. As faturas antigas ficam para consulta, sem
-            pagar nem cancelar; a ação do servidor também recusa. Religar: COBRANCA_B2B_ATIVA em src/lib/funcionalidades. */}
+        {/* D9 (19/10/2026): a escola não usa a cobrança de empresas. Sem registrar pagamento (o servidor também
+            recusa); cancelar continua, para soltar as cobranças de uma fatura fechada antiga (R1 do #251, B1).
+            Religar: COBRANCA_B2B_ATIVA em src/lib/funcionalidades. */}
         {!COBRANCA_B2B_ATIVA && faturas.length > 0 && <Aviso tom="info" className="mb-3">{MSG_COBRANCA_B2B_DESLIGADA}</Aviso>}
 
         {faturas.length === 0 ? (
@@ -212,11 +213,11 @@ export function FichaEmpresa({
                     <td className="px-3 py-2 text-gray-600">{formatarDataCivil(f.vencimento.slice(0, 10))}</td>
                     <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
                     <td className="px-3 py-2">
-                      {COBRANCA_B2B_ATIVA && f.status === "FECHADA" && (
+                      {f.status === "FECHADA" && (
                         // "Cancelar" sozinho, ao lado da ação primária, lia-se como "desistir da operação":
                         // o botão diz o que cancela e fica afastado do pagamento.
                         <span className="flex flex-wrap gap-3">
-                          {podePagar && (
+                          {COBRANCA_B2B_ATIVA && podePagar && (
                             <button
                               className={btnPri}
                               disabled={ocupado}
