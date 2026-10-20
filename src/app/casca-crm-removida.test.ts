@@ -6,8 +6,11 @@ import { tabsParaPapeis } from "@/app/(app)/configuracao/_componentes/tabs";
 import { navParaPapeis } from "@/lib/nav";
 
 // E1 (docs/planejamento/levantamento-troca-whatsapp-crm-novo.md, Parte 6): a casca do CRM antigo não volta.
-const REMOVIDOS: string[] = ["src/server/whatsapp/cron-comercial.ts", "src/server/whatsapp/cron-gestao.ts", "src/app/(app)/pipeline", "src/app/(app)/carteiras", "src/app/(app)/configuracao/whatsapp/comercial", "src/app/(app)/configuracao/whatsapp/reguas", "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", "src/app/(app)/home/HomeVendedor.tsx", "src/components/CopilotoSugestoes.tsx", "src/server/ia"];
-const IMPORTS_PROIBIDOS: string[] = ["@/server/whatsapp/cron-comercial", "./cron-comercial", "./cron-gestao", "@/server/whatsapp/cron-gestao", "@/components/CopilotoSugestoes", "@/server/ia/consultas", "@/server/ia/acoes", "@/server/ia/copiloto"];
+const REMOVIDOS: string[] = ["src/server/whatsapp/cron-comercial.ts", "src/server/whatsapp/cron-gestao.ts", "src/app/(app)/pipeline", "src/app/(app)/carteiras", "src/app/(app)/configuracao/whatsapp/comercial", "src/app/(app)/configuracao/whatsapp/reguas", "src/app/(app)/configuracao/whatsapp/ComercialPainel.tsx", "src/app/(app)/configuracao/whatsapp/ReguaComercialPainel.tsx", "src/app/(app)/home/HomeVendedor.tsx", "src/components/CopilotoSugestoes.tsx", "src/server/ia",
+  // B13 (20/10/2026): a régua comercial antiga e seus defaults de fábrica.
+  "src/server/comercial/regua-comercial.ts", "src/server/comercial/regua-fabrica.ts"];
+const IMPORTS_PROIBIDOS: string[] = ["@/server/whatsapp/cron-comercial", "./cron-comercial", "./cron-gestao", "@/server/whatsapp/cron-gestao", "@/components/CopilotoSugestoes", "@/server/ia/consultas", "@/server/ia/acoes", "@/server/ia/copiloto",
+  "@/server/comercial/regua-comercial", "@/server/comercial/regua-fabrica", "./regua-comercial", "./regua-fabrica"];
 
 const fontes = (readdirSync("src", { recursive: true }) as string[])
   .filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => join("src", f).split("\\").join("/"))
