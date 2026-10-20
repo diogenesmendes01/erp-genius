@@ -3742,3 +3742,14 @@ Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` 5b4e75a9
     - `npm test`: 783 arquivos e 5.861 testes.
     - build: saída 0.
     - Integração de `src/server/crm` mais despachante e agendamento: 34 arquivos e 265 testes.
+
+### D7: integração completa noturna no GitHub Actions, em 4 shards — 2026-10-20
+
+Branch `claude/ci-integracao`, base `main` 9808cd29, PR #256 (draft). Nenhuma migration.
+- **Workflow `.github/workflows/integracao.yml`:** `npm run test:int -- --shard=N/4` toda noite às 06:17 UTC (03:17 em Brasília) e por `workflow_dispatch`, sem gatilho de PR. São 4 shards com `fail-fast: false`, e cada um tem o próprio `postgres:16-alpine` de serviço em `localhost:54329`, com `postgres:teste`, credencial de teste e não segredo. As migrações rodam do zero com `node scripts/prisma-teste.mjs migrate deploy`. O job usa `TZ=America/Sao_Paulo`, `NODE_OPTIONS=--max-old-space-size=4096` e timeout de 120 min, e cada passo tem o seu. Actions por SHA, Node do `.nvmrc` e cache do npm, como no `ci.yml`.
+- **Como o banco é escolhido:** o `vitest.integration.config.ts` ignora `DATABASE_URL` e usa o perfil (`.erp-test-profile` ou `ERP_TEST_PROFILE`), sempre em `localhost:54329`. O setup global só confere `migrate status`, sem criar banco nem migrar. Entrou o perfil `ci-integracao` (`erp_genius_test_ciint`) em `scripts/test-profile.mjs`, que o workflow pede por `ERP_TEST_PROFILE`. Os perfis locais não mudam, e `src/test/banco-isolado.test.ts` cobre o novo.
+- **Evidências:**
+  - YAML carregado sem erro.
+  - Shard 1/4 local com as mesmas variáveis do workflow, num banco descartável `erp_genius_test_ciint` migrado do zero: 79 arquivos e 666 testes verdes em 47 min 40 s, numa máquina compartilhada com outras suítes.
+  - `banco-isolado.test.ts` e `ci-workflow.test.ts`: 6 testes verdes.
+  - **Execução no Actions: não feita.** O `POST .../actions/workflows/integracao.yml/dispatches` voltou 403 "Resource not accessible by integration", porque o token da sessão não tem `actions: write`. O workflow também ainda não aparece na lista do repositório: o GitHub só registra um `workflow_dispatch` depois que o arquivo chega na branch padrão. O primeiro run sai pelo botão "Run workflow", com um token que tenha permissão, ou na primeira noite depois do merge.
