@@ -4098,6 +4098,19 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `npm run build`: saída 0.
   - A migration nova aplica com `migrate deploy`, e o `migrate diff` não mostra divergência em `Evento`.
 
+### Q172-R: robustez da conferência da entrada com aditivo de adiantamento (reviews da #270) — 2026-10-20
+
+- **Versões na cadeia (`entrada-particular-pagamentos.ts`):** cada aplicação precisa ter `versaoCobrancaDepois = versaoCobrancaAntes + 1`, nenhuma pode partir de versão anterior à deixada pela aplicação precedente (`antes ≥ depois anterior`), e a cobrança atual não pode estar em versão anterior à da última aplicação (`c.versao ≥ depois da última`). Qualquer violação recusa com a mesma mensagem de divergência.
+- **Não adotado (de propósito):** a igualdade estrita sugerida (`antes = depois anterior` e `c.versao = depois da última`). O pagamento (`financeiro/recebimentos.ts`) e outras alterações legítimas (pausa/retomada, liquidação etc.) incrementam `versao` sem mudar valor e vencimento; a igualdade quebraria a ativação depois de pagar o adiantamento, que é o fluxo normal coberto pelas integrações de ativação real. A versão da cobrança na emissão também não é gravada (memória e `ItemEmissaoEntrada` não a guardam), então a primeira aplicação não é ancorada. Valor, vencimento e minutos continuam sendo a conferência principal.
+- **Loader (`entrada-particular-aplicacoes.ts`):** filtra `decisao.aprovada = true`, repetindo a regra do trigger `guardar_aplicacao_adiantamento_172` como defesa em profundidade, e passa a carregar `versaoCobrancaAntes`.
+- **Quadro:** a contagem do `aditivo.int.test.ts` na entrada da Q172 foi corrigida (64 de 64 depois do merge com a `main`).
+- **Testes:** unitário (`entrada-particular-pagamentos.test.ts`, 4 novos): versão avançada entre aplicações e depois da última (pagamento) é aceita; recusa salto de versão, versão sobreposta e versão atual anterior à da última aplicação.
+- **Evidências** (banco descartável `erp_genius_test_q172r`, `migrate deploy`, perfil temporário desfeito antes do commit e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - Unitários: 814 arquivos e 6.097 testes OK em UTC e em `TZ=America/Sao_Paulo`.
+  - Integração: `contratos/aditivo.int.test.ts` e `matricula/ativacao.int.test.ts`, 69 de 69 OK (inclui aceite → aditivo → pagamento → ativação real e o aditivo antes do aceite).
+
 ### Port da #62, lote 3: Q175, aula que não devia ser cobrada (#164) — 2026-10-20
 
 - **Decisão:** a de 21/09/2026 (PR #62, `decisoes-2026-09-21.md` e `q175-desenho-tecnico.md` daquela PR), reconfirmada pelo dono em 20/10/2026. Aula particular lançada como realizada ou falta cobrável que não aconteceu por motivo da escola, ou foi lançada por engano, tem o valor zerado.
@@ -4143,7 +4156,7 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `prisma migrate deploy` do zero no `erp_genius_test_q175b`: 471 migrations. No `migrate diff` banco × schema, nenhuma linha dos objetos novos da Q175.
   - Integração de `src/server/matricula`, `financeiro` e `diario` no `erp_genius_test_q175b`: 68 arquivos e 623 testes verdes. Ficaram de fora 2 arquivos e 3 testes de homologação de UI, condicionais por ambiente. Entre os testes estão o novo cenário de encerramento e trava do item e a comparação entre a fotografia delta em TS e a do banco com crédito Q175.
   - `npm run build`: saída 0. A primeira tentativa parou em "Failed to type check" por falta de memória, enquanto a integração rodava em paralelo.
-  - Depois dos merges seguintes do `main` (#267, #269, #270 e #271; conflito só no quadro): `tsc` e `eslint` com saída 0; `npm test` com 816 arquivos e 6.101 testes em cada fuso; integração de `condicoes-horas`, `q23-consumo-horas`, `desistencia-reconferencia-delta` e `indisponibilidade-oferta-correcao` com 4 arquivos e 55 testes verdes; `npm run build` com saída 0.
+  - Depois dos merges seguintes do `main` (#267, #269, #270, #271 e #272; conflito só no quadro): `tsc` e `eslint` com saída 0; `npm test` com 816 arquivos e 6.101 testes em cada fuso; integração de `condicoes-horas`, `q23-consumo-horas`, `desistencia-reconferencia-delta` e `indisponibilidade-oferta-correcao` com 4 arquivos e 55 testes verdes; `npm run build` com saída 0.
 - **Não alterado:**
   - O aditivo continua contando consumo estornado. O caso não chega a ele: só existe consumo com compra de horas, e a compra já faz o aditivo recusar.
   - A cobrança cancelada por redução a zero continua sem coluna `canceladaPor*`. A origem está em `AplicacaoRevisaoFinanceiraCorrecaoAula.cobrancaId`.
