@@ -16,6 +16,8 @@ import {
 } from "@/server/_shared";
 import { COBRANCA_B2B_ATIVA, MSG_COBRANCA_B2B_DESLIGADA } from "@/lib/funcionalidades";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { baixarCobrancaTx } from "@/server/financeiro/baixa";
 import {
   EmpresaSchema,
@@ -49,13 +51,18 @@ function revalidar() {
   revalidatePath("/alunos");
 }
 
+/**
+ * Cria (sem `id`) ou edita a empresa. Na criação, `chaveIdempotencia` (#166) faz o reenvio da mesma tentativa
+ * devolver a empresa já criada (a marca vai no `EmpresaCriada`); na edição, o mesmo cadastro não grava nada.
+ */
 export async function salvarEmpresa(
-  input: EmpresaInput & { id?: string },
+  input: EmpresaInput & { id?: string; chaveIdempotencia?: string },
 ): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_B2B);
     const dados = EmpresaSchema.parse(input);
+    const marca = input.id ? null : marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), dados);
     if (dados.paisId) {
       const pais = await prisma.pais.findUnique({ where: { id: dados.paisId } });
       if (!pais) throw new ErroRegra("País inexistente.");
@@ -65,6 +72,8 @@ export async function salvarEmpresa(
       if (input.id) {
         const antes = await tx.empresa.findUnique({ where: { id: input.id } });
         if (!antes) throw new ErroRegra("Empresa não encontrada.");
+        // Estado-alvo: o reenvio do mesmo cadastro não grava outro `EmpresaEditada`.
+        if ((Object.keys(dados) as (keyof typeof dados)[]).every((k) => (antes[k] ?? null) === (dados[k] ?? null))) return input.id;
         await tx.empresa.update({ where: { id: input.id }, data: dados });
         await registrarEvento(tx, {
           tipo: "EmpresaEditada",
@@ -75,6 +84,13 @@ export async function salvarEmpresa(
         });
         return input.id;
       }
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "EmpresaCriada", agregadoTipo: "Empresa", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outro cadastro de empresa. Recarregue a lista e confira se a empresa já foi criada antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
       const codigo = await gerarCodigo("empresa", tx);
       const empresa = await tx.empresa.create({ data: { ...dados, codigo } });
       await registrarEvento(tx, {
@@ -82,7 +98,7 @@ export async function salvarEmpresa(
         agregadoTipo: "Empresa",
         agregadoId: empresa.id,
         autorId: autor.id,
-        payload: { codigo, nome: dados.nome },
+        payload: { codigo, nome: dados.nome, ...marca },
       });
       return empresa.id;
     });

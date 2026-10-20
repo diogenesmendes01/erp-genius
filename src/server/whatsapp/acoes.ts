@@ -393,12 +393,23 @@ export async function criarLeadDaConversa(atendimentoId: string): Promise<Result
       throw new ErroRegra("Conversa fora de uma linha comercial do seu escopo.");
     }
     const resultado = await prisma.$transaction(async (tx) => {
+      // Trava o atendimento: o segundo clique simultâneo espera o primeiro e encontra o lead já vinculado.
+      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${alcance.id} FOR UPDATE`;
       const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({
         where: { id: alcance.id }, include: { conversa: { include: { contato: true, numero: true } } },
       });
-      if (atual.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
-      if (atual.leadId) throw new ErroRegra("Esta conversa já tem lead.");
       const contato = contatoIndividual(atual.conversa);
+      if (atual.leadId) {
+        // Estado-alvo (#166): a conversa já tem oportunidade. O reenvio devolve a mesma, sem gravar outro Evento;
+        // `criado` vem do vínculo que este autor gravou (a tela repete a mesma mensagem de sucesso).
+        const vinculo = await tx.evento.findFirst({
+          where: { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contato.id, autorId: autor.id },
+          orderBy: { criadoEm: "desc" }, select: { payload: true },
+        });
+        const p = (vinculo?.payload ?? {}) as { alvo?: { id?: unknown }; via?: unknown };
+        return { leadId: atual.leadId, criado: p.alvo?.id === atual.leadId && p.via === "criar_lead_linha" };
+      }
+      if (atual.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       let leadId = contato.leadId;
       let criado = false;
       if (!leadId) {

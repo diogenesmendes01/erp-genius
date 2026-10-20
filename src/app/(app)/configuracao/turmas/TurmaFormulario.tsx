@@ -11,6 +11,7 @@ import {
 } from "@/server/turmas/schema";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
 const inputCls =
@@ -100,9 +101,11 @@ export function TurmaFormulario({
   aoMudarAlterado?: (alterado: boolean) => void;
 }) {
   const router = useRouter();
-  // Sem chave de idempotência: repetir a criação geraria outra turma (novo código); a falha de rede
-  // manda conferir a lista antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // A criação recebe chave de idempotência (#166): o reenvio da mesma tentativa devolve a turma já criada em vez
+  // de outra com novo código; a chave só muda depois do sucesso. A edição segue sem chave: a falha de rede manda
+  // conferir a lista antes de repetir.
+  const acao = useAcaoCliente({ idempotente: !turma });
+  const tentativa = useChaveIdempotencia();
   useEffect(() => { aoMudarOcupado?.(acao.ocupado); }, [acao.ocupado, aoMudarOcupado]);
 
   const [nome, setNome] = useState(turma?.nome ?? "");
@@ -172,9 +175,10 @@ export function TurmaFormulario({
       rolling,
     };
     const desfecho = await acao.executar(async () => {
-      const res = await submeterTurma(turma?.id, input, { criar: criarTurma, editar: editarTurma });
+      const res = await submeterTurma(turma?.id, input, { criar: (i) => criarTurma({ ...i, chaveIdempotencia: tentativa.atual }), editar: editarTurma });
       return res.ok ? { ok: true as const, dado: res.destino } : res;
     });
+    tentativa.depoisDo(desfecho);
     if (desfecho?.tipo !== "ok") return;
     if (desfecho.dado) {
       router.push(desfecho.dado);

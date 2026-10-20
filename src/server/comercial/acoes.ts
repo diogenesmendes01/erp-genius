@@ -595,6 +595,14 @@ export async function anexarDocumentoLead(
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${leadId} FOR UPDATE`;
       await exigirDocumentoPermitido(leadId, doc.categoria, autor, tx);
       await exigirArquivoVinculavel(autor, doc.url, { leadId, categoriaDocumento: doc.categoria }, tx);
+      // Idempotência por natureza (#166): cada upload tem URL própria, e o lead está travado acima. O reenvio do
+      // mesmo upload, com a mesma categoria e o mesmo nome, devolve o documento já anexado sem gravar outro
+      // registro nem outro Evento; com outro nome é recusado.
+      const jaAnexado = await tx.documento.findFirst({ where: { leadId, url: doc.url, arquivado: false }, select: { categoria: true, nome: true } });
+      if (jaAnexado) {
+        if (jaAnexado.categoria === doc.categoria && jaAnexado.nome === doc.nome) return;
+        throw new ErroRegra("Este arquivo já está anexado a esta oportunidade com outro nome. Recarregue a página e confira os documentos.");
+      }
       await tx.documento.create({
         data: { leadId, categoria: doc.categoria, nome: doc.nome, url: doc.url },
       });
@@ -623,6 +631,9 @@ export async function arquivarDocumentoLead(documentoId: string): Promise<Result
       await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${leadId} FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM "Documento" WHERE id = ${documentoId} FOR UPDATE`;
       await exigirDocumentoPermitido(leadId, doc.categoria, autor, tx);
+      // Estado-alvo (#166): o documento já arquivado não é arquivado de novo nem ganha outro Evento.
+      const atual = await tx.documento.findUnique({ where: { id: documentoId }, select: { arquivado: true } });
+      if (atual?.arquivado) return;
       const contratoEmUso = await tx.matricula.findFirst({ where: { contratoDocumentoId: documentoId, contratoOk: true }, select: { id: true } });
       if (contratoEmUso) throw new ErroRegra("Registre a substituição contratual antes de arquivar um contrato confirmado.");
       await tx.documento.update({ where: { id: documentoId }, data: { arquivado: true } });

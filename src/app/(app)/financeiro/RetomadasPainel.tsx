@@ -29,9 +29,9 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
   const [motivo, setMotivo] = useState("");
   const [datas, setDatas] = useState<Record<string, string>>({});
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  // Proposta e decisão não recebem chave de idempotência (server/retomada/acoes.ts:29 e :63); o servidor
-  // só reconhece a repetição idêntica pelo conteúdo (acoes.ts:47 e :75). Conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotentes por natureza (#166): a proposta pendente idêntica, do mesmo solicitante, é devolvida sem novo
+  // registro; a mesma decisão, do mesmo aprovador e com o mesmo motivo, também (server/retomada/acoes.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   // O resultado aparece junto da proposta nova ("proposta") ou da proposta decidida (id).
   const [alvo, setAlvo] = useState<string | null>(null);
   const ocupado = acao.ocupado;

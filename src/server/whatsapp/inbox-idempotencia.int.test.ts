@@ -41,7 +41,7 @@ async function cenario() {
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
   const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: vend.id }));
   comoUsuario(vend);
-  return { vend, outro, fin, a };
+  return { vend, outro, fin, a, contato };
 }
 
 describe("registrarNotaAtendimento com chave (#166)", () => {
@@ -127,6 +127,43 @@ describe("agendarMensagemNoAtendimento com chave (#166)", () => {
     const outroHorario = await agendarMensagemNoAtendimento({ ...base, quando: diaUtilAs(11).toISOString() });
     expect([outroTexto.ok, outroHorario.ok]).toEqual([false, false]);
     if (!outroTexto.ok) expect(outroTexto.erro).toMatch(/já foi usada/);
+    expect(await prisma.intencaoMensagem.count()).toBe(1);
+  });
+});
+
+// C3 da R2 do #267 (lote 4): a busca da repetição roda antes das validações de estado. O reenvio tardio da
+// mesma tentativa, depois que o atendimento foi encerrado ou o contato pediu opt-out, devolve o que já foi feito
+// em vez de um erro, e não grava nada de novo.
+describe("reenvio tardio da mesma chave devolve o registro já feito (C3 do #267)", () => {
+  it("nota: o atendimento saiu do escopo de quem anotou e foi encerrado; o reenvio devolve ok sem nova nota", async () => {
+    const { a, outro } = await cenario();
+    const entrada = { atendimentoId: a.id, nota: "Combinou retorno", chaveIdempotencia: "chave-nota-tardia-01" };
+    const primeira = await registrarNotaAtendimento(entrada);
+    expect(primeira.ok, primeira.ok ? undefined : primeira.erro).toBe(true);
+    // O atendimento e a linha passam a outro vendedor: quem anotou perde o escopo.
+    const { numeroId } = await prisma.conversaWhatsApp.findUniqueOrThrow({ where: { id: a.conversaId } });
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { donoId: outro.id } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: outro.id, encerradoEm: new Date(), status: "ENCERRADO" } });
+    expect(await registrarNotaAtendimento(entrada)).toEqual(primeira);
+    expect(await prisma.evento.count({ where: { tipo: "NotaInterna" } })).toBe(1);
+    // Chave nova continua passando pelas validações.
+    expect((await registrarNotaAtendimento({ ...entrada, chaveIdempotencia: "chave-nota-tardia-02" })).ok).toBe(false);
+  });
+
+  it("agendamento: depois do encerramento e do opt-out, o reenvio devolve a mesma mensagem agendada", async () => {
+    const { a, contato } = await cenario();
+    const entrada = { atendimentoId: a.id, texto: "Lembrete da aula", quando: diaUtilAs(10).toISOString(), chaveIdempotencia: "chave-agenda-tardia-01" };
+    const primeira = await agendarMensagemNoAtendimento(entrada);
+    expect(primeira.ok, primeira.ok ? undefined : primeira.erro).toBe(true);
+    await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { optOutEm: new Date() } });
+    expect(await agendarMensagemNoAtendimento(entrada)).toEqual(primeira);
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { encerradoEm: new Date(), status: "ENCERRADO" } });
+    expect(await agendarMensagemNoAtendimento(entrada)).toEqual(primeira);
+    expect(await prisma.intencaoMensagem.count()).toBe(1);
+    expect(await prisma.evento.count({ where: { tipo: "MensagemAgendada" } })).toBe(1);
+    // Sem a repetição, as validações continuam valendo.
+    const nova = await agendarMensagemNoAtendimento({ ...entrada, chaveIdempotencia: "chave-agenda-tardia-02" });
+    expect(nova.ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(1);
   });
 });

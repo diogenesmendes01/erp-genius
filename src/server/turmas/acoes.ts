@@ -23,7 +23,8 @@ import {
 } from "./schema";
 import { conferirConclusaoTurma } from "./conclusao-agenda";
 import { sincronizarVinculoDocente } from "./vinculo-docente";
-import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Valida a agenda contra a frequência da modalidade e devolve o rótulo derivado.
@@ -95,12 +96,24 @@ export async function solicitarAberturaTurma(input: {
   });
 }
 
-export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: string }>> {
+/**
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve a turma já criada em vez de criar outra
+ * com outro código: a chave e o hash da entrada vão no payload do `TurmaCriada`.
+ */
+export async function criarTurma(input: TurmaInput & { chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirGestorTurma();
     const dados = analisarComDatasDaEscola(TurmaSchema, input, await fusoDaEscola());
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), dados);
 
     const id = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "TurmaCriada", agregadoTipo: "Turma", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados de turma. Recarregue a lista e confira se a turma já foi criada antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`regra-avaliacao-nivel:${dados.nivelId}`}, 0))`;
       await tx.$queryRaw`SELECT id FROM "Modalidade" WHERE id = ${dados.modalidadeId} FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autor.id} FOR SHARE`;
@@ -138,7 +151,7 @@ export async function criarTurma(input: TurmaInput): Promise<Resultado<{ id: str
         agregadoTipo: "Turma",
         agregadoId: turma.id,
         autorId: autor.id,
-        payload: { codigo, modalidadeId: dados.modalidadeId, nivelId: dados.nivelId, regraAvaliacaoId: turma.regraAvaliacaoId },
+        payload: { codigo, modalidadeId: dados.modalidadeId, nivelId: dados.nivelId, regraAvaliacaoId: turma.regraAvaliacaoId, ...marca },
       });
       return turma.id;
     });

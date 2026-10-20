@@ -103,7 +103,7 @@ async function criarEnvioPendenteTx(
       AND situacao = 'PREPARADO'
     ORDER BY "criadoEm" DESC LIMIT 1 FOR UPDATE
   `);
-  if (existente) return { id: existente.id, situacao: existente.situacao as "PREPARADO" };
+  if (existente) return { id: existente.id, situacao: existente.situacao as "PREPARADO", reaproveitado: true };
   const id = randomUUID();
   await tx.$executeRaw(Prisma.sql`
     INSERT INTO "SolicitacaoEnvioPortalAluno"
@@ -112,7 +112,7 @@ async function criarEnvioPendenteTx(
       (${id}, ${entrada.contaId}, ${entrada.finalidade}::"FinalidadeTokenPortalAluno",
        ${entrada.destinatario}, ${entrada.trocaEmailId ?? null}, 'PREPARADO', ${`portal:${entrada.finalidade}:${id}`})
   `);
-  return { id, situacao: "PREPARADO" as const };
+  return { id, situacao: "PREPARADO" as const, reaproveitado: false };
 }
 
 /**
@@ -129,19 +129,30 @@ export async function prepararConvitePortalAluno(input: { alunoId: string }) {
       const conta = await obterOuCriarContaTx(tx, dados.alunoId);
       if (!conta.ativa) throw new ErroRegra("A conta do aluno está bloqueada.");
       if (conta.senhaHash) throw new ErroRegra("O aluno já possui credencial; use recuperação de acesso quando necessário.");
+      // Idempotência por natureza (#166): o reenvio não grava Evento de novo quando nada mudou. A pendência de
+      // e-mail só é registrada se a última anotação de convite do aluno não for ela mesma; o convite ainda não
+      // despachado é reaproveitado por `criarEnvioPendenteTx` (um envio só) e não ganha outro Evento.
       if (!conta.emailAluno) {
-        await registrarEvento(tx, {
-          tipo: "PendenciaAcessoPortalAlunoEmailAusente", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
-          payload: { contaId: conta.id },
+        const ultima = await tx.evento.findFirst({
+          where: { agregadoTipo: "Aluno", agregadoId: conta.alunoId, tipo: { in: ["PendenciaAcessoPortalAlunoEmailAusente", "ConvitePortalAlunoPreparado"] } },
+          orderBy: { criadoEm: "desc" }, select: { tipo: true },
         });
+        if (ultima?.tipo !== "PendenciaAcessoPortalAlunoEmailAusente") {
+          await registrarEvento(tx, {
+            tipo: "PendenciaAcessoPortalAlunoEmailAusente", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
+            payload: { contaId: conta.id },
+          });
+        }
         return { contaId: conta.id, situacao: "PENDENTE_EMAIL" as const };
       }
       const destinatario = normalizarEmailPortalAluno(conta.emailAluno);
       const envio = await criarEnvioPendenteTx(tx, { contaId: conta.id, finalidade: "CONVITE", destinatario });
-      await registrarEvento(tx, {
-        tipo: "ConvitePortalAlunoPreparado", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
-        payload: { contaId: conta.id, solicitacaoEnvioId: envio.id },
-      });
+      if (!envio.reaproveitado) {
+        await registrarEvento(tx, {
+          tipo: "ConvitePortalAlunoPreparado", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
+          payload: { contaId: conta.id, solicitacaoEnvioId: envio.id },
+        });
+      }
       return { contaId: conta.id, solicitacaoEnvioId: envio.id, situacao: envio.situacao };
     });
   });
@@ -280,6 +291,24 @@ export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; no
     return prisma.$transaction(async (tx) => {
       await exigirFuncionarioAtualTx(tx, autor.id, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
       const conta = await obterOuCriarContaTx(tx, dados.alunoId);
+      // Idempotência por natureza (#166): a conta só admite uma troca pendente (índice parcial único). A mesma
+      // troca, preparada por este autor com o mesmo endereço, motivo e evidência, é devolvida sem novo registro,
+      // novo envio ou novo Evento; antes o reenvio caía na violação do índice.
+      const [pendente] = await tx.$queryRaw<{ id: string; situacao: string; novoEmail: string; motivo: string; evidencia: string; preparadorId: string }[]>(Prisma.sql`
+        SELECT id, situacao::text AS situacao, "novoEmail" AS "novoEmail", motivo, evidencia, "preparadorId" AS "preparadorId"
+        FROM "SolicitacaoTrocaEmailPortalAluno"
+        WHERE "contaId" = ${conta.id} AND situacao IN ('PENDENTE_VALIDACAO', 'PENDENTE_DECISAO')
+        FOR UPDATE
+      `);
+      if (pendente) {
+        if (pendente.preparadorId !== autor.id || pendente.novoEmail !== novoEmail || pendente.motivo !== dados.motivo || pendente.evidencia !== dados.evidencia) {
+          throw new ErroRegra("Já existe uma troca de e-mail pendente para esta conta. Aguarde a validação e a decisão antes de preparar outra.");
+        }
+        const [envio] = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT id FROM "SolicitacaoEnvioPortalAluno" WHERE "trocaEmailId" = ${pendente.id} ORDER BY "criadoEm" ASC LIMIT 1
+        `);
+        return { solicitacaoId: pendente.id, solicitacaoEnvioId: envio?.id ?? null, situacao: pendente.situacao as "PENDENTE_VALIDACAO" };
+      }
       if (!conta.emailVerificado) throw new ErroRegra("A recuperação assistida exige uma conta com e-mail anterior verificado.");
       if (!conta.ativa) throw new ErroRegra("A conta do aluno está bloqueada.");
       if (conta.emailVerificado === novoEmail) throw new ErroRegra("O novo e-mail deve ser diferente do e-mail atual.");
@@ -320,11 +349,19 @@ export async function decidirTrocaEmailPortalAluno(input: { solicitacaoId: strin
       `);
       if (!solicitacao) throw new ErroRegra("Solicitação de troca de e-mail não encontrada.");
       if (solicitacao.preparadorId === decisor.id) throw new ErroPermissao("Outra pessoa da Administração deve decidir a troca de e-mail.");
-      if (solicitacao.situacao !== "PENDENTE_DECISAO") throw new ErroRegra("A solicitação ainda não está pronta para decisão.");
-      const [anterior] = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
-        SELECT id FROM "DecisaoTrocaEmailPortalAluno" WHERE "solicitacaoId" = ${solicitacao.id} FOR UPDATE
+      const [anterior] = await tx.$queryRaw<{ id: string; decisorId: string; aprovada: boolean; motivo: string }[]>(Prisma.sql`
+        SELECT id, "decisorId" AS "decisorId", aprovada, motivo FROM "DecisaoTrocaEmailPortalAluno" WHERE "solicitacaoId" = ${solicitacao.id} FOR UPDATE
       `);
-      if (anterior) throw new ErroRegra("A solicitação já recebeu uma decisão.");
+      if (anterior) {
+        // Idempotência por natureza (#166): a mesma decisão, do mesmo decisor e com o mesmo motivo, é devolvida sem
+        // gravar nada; outra decisão continua recusada. Vem antes da situação, que a própria decisão já mudou.
+        if (anterior.decisorId !== decisor.id || anterior.aprovada !== dados.aprovar || anterior.motivo !== dados.motivo) throw new ErroRegra("A solicitação já recebeu uma decisão.");
+        if (!anterior.aprovada) return { decisaoId: anterior.id, aprovada: false as const };
+        const aplicada = await tx.evento.findFirst({ where: { tipo: "TrocaEmailPortalAlunoAplicada", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId }, orderBy: { criadoEm: "desc" }, select: { payload: true } });
+        const p = (aplicada?.payload ?? {}) as { decisaoId?: unknown; solicitacaoEnvioId?: unknown };
+        return { decisaoId: anterior.id, aprovada: true as const, solicitacaoEnvioId: p.decisaoId === anterior.id ? String(p.solicitacaoEnvioId) : "" };
+      }
+      if (solicitacao.situacao !== "PENDENTE_DECISAO") throw new ErroRegra("A solicitação ainda não está pronta para decisão.");
       const agora = new Date();
       if (dados.aprovar && (!solicitacao.verificadoEm || !solicitacao.ativa || solicitacao.versaoAtual !== solicitacao.versaoConferida || solicitacao.emailAtual !== solicitacao.emailAnterior)) {
         throw new ErroRegra("A conta mudou desde a conferência; prepare uma nova solicitação.");
