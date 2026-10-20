@@ -9,7 +9,9 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
 import { agoraAs, diasDepois, seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
-import { listarConversas, carregarThread } from "./consultas";
+import { listaDoInbox, mensagensDoInbox } from "@/test/inbox-consultas";
+import { listarMensagensPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { carregarPainel } from "@/server/inbox/paineis";
 import { despacharFila } from "./despachante";
 import { processarMensagemNormalizada, processarStatusNormalizado } from "./inbound";
 import {
@@ -64,17 +66,16 @@ describe("escopo do atendimento (doc 36)", () => {
     const minha = await seedConversaVendas(vendedor.id);
     const outroVendedor = await criarUsuario([Papel.VENDEDOR]);
 
-    const doDono = await listarConversas({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] });
+    const doDono = await listaDoInbox({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] });
     expect(doDono.map((c) => c.id)).toEqual([minha.conversa.id]);
 
-    const doOutro = await listarConversas({ id: outroVendedor.id, nome: "o", papeis: [Papel.VENDEDOR] });
+    const doOutro = await listaDoInbox({ id: outroVendedor.id, nome: "o", papeis: [Papel.VENDEDOR] });
     expect(doOutro).toHaveLength(0);
 
-    const doFinanceiro = await listarConversas({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] });
+    const doFinanceiro = await listaDoInbox({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] });
     expect(doFinanceiro).toHaveLength(0); // número é de VENDAS
 
-    const thread = await carregarThread({ id: outroVendedor.id, nome: "o", papeis: [Papel.VENDEDOR] }, minha.conversa.id);
-    expect(thread).toBeNull();
+    expect(await obterItemListaInbox({ id: outroVendedor.id, nome: "o", papeis: [Papel.VENDEDOR] }, minha.conversa.id)).toBeNull();
   });
 });
 
@@ -309,14 +310,14 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
       data: { conversaId: segundaConversa.id, atendimentoId: atendimento.id, numeroId: primeiroNumero.id, direcao: "ENTRADA", corpo: "Segunda cobrança", driver: DriverWhatsApp.META_CLOUD },
     });
 
-    const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, atendimento.id);
-    expect(thread?.cobrancaAtiva).toMatchObject({
+    const ativa = (await carregarPainel({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, atendimento.id))?.acoes?.cobranca?.ativa;
+    expect(ativa).toMatchObject({
       id: segundaCobranca.id,
       matriculaId: segundaMatricula.id,
       vencimento: { estado: "CONFIRMADO", dataCivil: "2099-12-02", fuso: "America/Costa_Rica", origem: "EMISSAO_ENTRADA" },
     });
-    expect(thread?.cobrancaAtiva?.id).not.toBe(primeira.cobranca.id);
-    expect(thread?.cobrancaAtiva?.matriculaId).not.toBe(primeira.matricula.id);
+    expect(ativa?.id).not.toBe(primeira.cobranca.id);
+    expect(ativa?.matriculaId).not.toBe(primeira.matricula.id);
   });
 
   it("financeiro recebe a cobrança; vendedor recebe null MESMO com contato vinculado a aluno devedor", async () => {
@@ -346,19 +347,17 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
       ],
     });
 
-    const doFinanceiro = await carregarThread(
-      { id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] },
-      atendimentoCobranca.id,
-    );
-    expect(doFinanceiro?.cobrancaAtiva).toMatchObject({
+    const financeiroSessao = { id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] };
+    const doFinanceiro = (await carregarPainel(financeiroSessao, atendimentoCobranca.id))?.acoes?.cobranca?.ativa;
+    expect(doFinanceiro).toMatchObject({
       id: cobranca.id,
       matriculaId: matricula.id,
       vencimento: { estado: "A_CONFERIR" },
     });
-    expect(doFinanceiro?.cobrancaAtiva?.id).not.toBe(outraMatricula.cobranca.id);
-    expect(doFinanceiro?.cobrancaAtiva?.matriculaId).not.toBe(outraMatricula.matricula.id);
+    expect(doFinanceiro?.id).not.toBe(outraMatricula.cobranca.id);
+    expect(doFinanceiro?.matriculaId).not.toBe(outraMatricula.matricula.id);
     // Thread em ordem cronológica mesmo com o take desc (P2-5).
-    expect(doFinanceiro?.mensagens.map((m) => m.corpo)).toEqual(["primeira", "última"]);
+    expect((await mensagensDoInbox(financeiroSessao, atendimentoCobranca.id))?.map((m) => m.corpo)).toEqual(["primeira", "última"]);
 
     // Mesmo aluno devedor, mas num número de VENDAS do vendedor: o payload NÃO leva
     // saldo/vencimento — o gate é no server, não no botão do client.
@@ -372,12 +371,12 @@ describe("cobrancaAtiva na thread — só papéis de cobrança (P1-1)", () => {
     const atendimentoVendas = await prisma.$transaction((tx) => garantirAtendimento(tx, {
       numeroId: numeroVendas.id, contatoId: contatoVendas.id, finalidade: "COMERCIAL", responsavelId: vendedor.id,
     }));
-    const doVendedor = await carregarThread(
+    const doVendedor = await carregarPainel(
       { id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] },
       atendimentoVendas.id,
     );
     expect(doVendedor).not.toBeNull();
-    expect(doVendedor?.cobrancaAtiva).toBeNull();
+    expect(doVendedor?.acoes?.cobranca).toBeNull();
   });
 });
 
@@ -468,17 +467,12 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     return { ...seed, lead };
   }
 
-  it("thread traz o lead com os destinos MANUAIS válidos (etapa de evento nunca entra)", async () => {
+  it("painel do atendimento traz a oportunidade do vendedor dono", async () => {
     const { conversa, lead } = await seedLeadNaConversa(vendedor.id);
 
-    const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    expect(thread?.lead?.id).toBe(lead.id);
-    expect(thread?.lead?.etapa).toBe(EtapaLead.NOVO);
-    expect(thread?.lead?.etapasPermitidas).toContain(EtapaLead.EM_ATENDIMENTO);
-    expect(thread?.lead?.etapasPermitidas).not.toContain(EtapaLead.NOVO); // a atual não se repete
-    // Etapas geradas por evento (proposta, experimental realizada, matrícula) não são arrastáveis.
-    expect(thread?.lead?.etapasPermitidas).not.toContain(EtapaLead.PROPOSTA);
-    expect(thread?.lead?.etapasPermitidas).not.toContain(EtapaLead.MATRICULADO);
+    const painel = await carregarPainel({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    expect(painel).toMatchObject({ setor: "COMERCIAL", oportunidade: { id: lead.id, etapa: EtapaLead.NOVO } });
+    expect(painel?.acoes?.leadId).toBe(lead.id);
   });
 
   it("papel sem alçada comercial não recebe o lead na thread (gate no servidor, não no botão)", async () => {
@@ -491,8 +485,8 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
       data: { numeroId: numero.id, contatoId: contato.id, ultimaMensagemEm: new Date() },
     });
 
-    const thread = await carregarThread({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, conversa.id);
-    expect(thread).toBeNull(); // doc 36: nem a thread comercial nem legado são abertos pelo número.
+    // doc 36: nem a thread comercial nem legado são abertos pelo número.
+    expect(await obterItemListaInbox({ id: financeiro.id, nome: "f", papeis: [Papel.FINANCEIRO] }, conversa.id)).toBeNull();
   });
 
   it("lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)", async () => {
@@ -502,19 +496,19 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     const b = await criarUsuario([Papel.VENDEDOR]);
     const { conversa, lead } = await seedLeadNaConversa(b.id); // número de A, lead de B
 
-    const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    const thread = await carregarPainel({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
     // Falha da linha de base (main f8a9c0e), não mudança de E5: conflito doc 36 x LC-D02/SPEC-ERP-005
     // (dono da linha vê todas as conversas da linha). Resolvido a favor de LC-D02, AGUARDANDO aval do
     // integrador/produto (quadro, "Fase 3, Task 13"): o dono da linha VÊ a conversa, mas o painel do
     // lead de outra carteira segue fechado; o P1 é o vazamento do cockpit, não o acesso à conversa.
     expect(thread).not.toBeNull();
-    expect(thread?.lead).toBeNull();
-    expect(thread?.contato.leadId).toBeNull();
+    expect(thread).toMatchObject({ setor: "COMERCIAL", oportunidade: null });
+    expect(thread?.acoes?.leadId).toBeNull();
 
     // Caminho feliz intacto: se o lead for do PRÓPRIO A, o cockpit volta a aparecer.
     await prisma.oportunidade.update({ where: { id: lead.id }, data: { vendedorDonoId: vendedor.id } });
-    const propria = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    expect(propria?.lead?.id).toBe(lead.id);
+    const propria = await carregarPainel({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
+    expect(propria?.acoes?.leadId).toBe(lead.id);
   });
 
   it("nota interna vira EVENTO e nunca mensagem/intenção — não sai para o contato", async () => {
@@ -528,10 +522,10 @@ describe("cockpit do vendedor na thread (funil sem sair da conversa)", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     expect(await prisma.mensagemWhatsApp.count()).toBe(0);
 
-    const thread = await carregarThread({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id);
-    expect(thread?.lead?.notas).toHaveLength(1);
-    expect(thread?.lead?.notas[0].nota).toBe("Prefere aula à noite; decide com a esposa.");
-    expect(thread?.lead?.notas[0].autorNome).toBe(vendedor.nome);
+    const notas = (await listarMensagensPagina({ id: vendedor.id, nome: "v", papeis: [Papel.VENDEDOR] }, conversa.id))?.notas;
+    expect(notas).toHaveLength(1);
+    expect(notas?.[0].nota).toBe("Prefere aula à noite; decide com a esposa.");
+    expect(notas?.[0].autorNome).toBe(vendedor.nome);
 
     const vazia = await registrarNotaInterna(lead.id, { nota: "   " });
     expect(vazia.ok).toBe(false);

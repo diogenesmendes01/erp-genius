@@ -6,9 +6,6 @@ import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
 import { processarMensagemNormalizada, type InboundNormalizado } from "./inbound";
 import { enviarTextoInbox } from "./acoes";
-import { despacharFila } from "./despachante";
-import { motivoCadenciaInvalida } from "./elegibilidade";
-import { CADENCIA_LEAD_NOVO, CHAVE_LEAD_NOVO } from "@/server/comercial/regua-fabrica";
 
 const { authMock, enviarTextoMock } = vi.hoisted(() => ({
   authMock: vi.fn(),
@@ -81,44 +78,5 @@ describe("origem CELULAR e clientMessageId (M4)", () => {
     });
     await expect(criarMensagemSaida(i.clientMessageId!)).rejects.toMatchObject({ code: "P2002" });
     await expect(criarMensagemSaida("cid-00000002")).resolves.toMatchObject({ origem: "IA" });
-  });
-
-  // Regressão B2: o eco do celular grava origem CELULAR e deve contar como "vendedor assumiu".
-  async function cenarioTakeover() {
-    const c = await cenario();
-    const capturadaEm = new Date(Date.now() - 60 * 60_000);
-    const conversa = await prisma.conversaWhatsApp.findFirstOrThrow({ where: { numeroId: c.numero.id }, include: { contato: true } });
-    await prisma.conversaWhatsApp.update({ where: { id: conversa.id }, data: { capturadaEm } });
-    const politica = await prisma.politicaComercial.create({
-      data: {
-        chave: CHAVE_LEAD_NOVO, nome: CHAVE_LEAD_NOVO, estado: "SHADOW", janelaInicio: 0, janelaFim: 24,
-        diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: c.numero.id,
-        degraus: { create: CADENCIA_LEAD_NOVO.map((d) => ({ passo: d.passo, offsetMinutos: d.offsetMinutos, rotulo: d.rotulo, ativo: true, toleranciaMinutos: d.toleranciaMinutos })) },
-      },
-    });
-    const intencao = await prisma.intencaoMensagem.create({
-      data: {
-        numeroId: c.numero.id, contatoId: conversa.contatoId!, origem: "CRON", leadId: conversa.contato!.leadId,
-        passoComercial: "+30min", ocorrenciaComercial: capturadaEm.toISOString(), politicaComercialId: politica.id, corpoRenderizado: "Oi Maria!",
-      },
-    });
-    await processarMensagemNormalizada({ ...c.inbound, fromMe: true, providerMessageId: "eco-takeover" });
-    return { ...c, intencao };
-  }
-
-  it("eco do celular torna obsoleta a intenção de lead NOVO (elegibilidade)", async () => {
-    const { intencao } = await cenarioTakeover();
-    const completa = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id }, include: { politicaComercial: true } });
-    expect(await motivoCadenciaInvalida(completa, new Date())).toBe("atendimento_comercial_iniciado");
-  });
-
-  it("eco do celular cancela a intenção de lead NOVO no despachante (vendedor_assumiu)", async () => {
-    const { intencao } = await cenarioTakeover();
-    const r = await despacharFila();
-    expect(r.canceladas).toBe(1);
-    const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: intencao.id } });
-    expect(i.status).toBe("CANCELADA");
-    expect(["vendedor_assumiu", "atendimento_comercial_iniciado"]).toContain(i.motivoFalha); // 1ª barreira que enxergar o eco
-    expect(enviarTextoMock).not.toHaveBeenCalled();
   });
 });
