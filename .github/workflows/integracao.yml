@@ -24,7 +24,7 @@ jobs:
   integracao:
     name: integração (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 135
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +71,9 @@ jobs:
         # prisma-teste.mjs resolve a URL pelo mesmo perfil que a suíte usa; o setup global só confere
         # `migrate status` e nunca aplica migração por conta própria.
         timeout-minutes: 10
+        env:
+          # prisma-teste.mjs mata o Prisma em 2 min por padrão; do zero no runner passa disso.
+          PRISMA_TESTE_TIMEOUT_MS: "540000"
         run: node scripts/prisma-teste.mjs migrate deploy
       - name: Testes de integração (npm run test:int, shard ${{ matrix.shard }}/4)
         timeout-minutes: 100
