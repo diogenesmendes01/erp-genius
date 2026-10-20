@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -74,9 +73,7 @@ describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
     const links = [...html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)].map((m) => m[1].split(" "));
     expect(links).toHaveLength(6);
     for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
-    // O efeito não roda no render estático: a trava confere que a barra usa o mesmo ajuste da SubTabs.
-    const fonte = readFileSync("src/app/(app)/financeiro/BarraAbasFinanceiro.tsx", "utf-8");
-    expect(fonte).toMatch(/import \{[^}]*\bmostrarAbaAtiva\b[^}]*\} from "@\/components\/SubTabs"/);
-    expect(fonte).toMatch(/useEffect\(\(\) => \{ mostrarAbaAtiva\(nav\.current\); \}, \[pathname\]\)/);
+    // O efeito não roda no render estático: a rolagem até a aba ativa é conferida com o React DOM de verdade
+    // em BarraAbasFinanceiro.efeito.test.ts.
   });
 });
