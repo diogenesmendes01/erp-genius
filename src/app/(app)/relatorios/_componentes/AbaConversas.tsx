@@ -79,7 +79,7 @@ export function AbaConversas({ dados, anterior, mostrarAria }: { dados: Metricas
                   <tr key={d}>
                     <th scope="row" className="p-1 text-left font-normal">{DIAS[d]}</th>
                     {linha.map((n, i) => (
-                      <td key={i} className={"p-1 " + (n === 0 ? "text-gray-400" : n >= maximo * 0.75 ? "bg-brand-100 font-medium" : n >= maximo * 0.4 ? "bg-surface-muted" : "")}>{n === 0 ? "·" : fmtInteiro(n)}</td>
+                      <td key={i} className={"p-1 " + (n === 0 ? "text-gray-400" : n >= maximo * 0.75 ? "bg-brand-100 font-medium" : n >= maximo * 0.4 ? "bg-gray-100" : "")}>{n === 0 ? "·" : fmtInteiro(n)}</td>
                     ))}
                   </tr>
                 ))}

@@ -4064,3 +4064,36 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
   - Unitários: 793 arquivos e 5.949 testes OK em UTC e em `TZ=America/Sao_Paulo`.
   - Integração de 16 arquivos de `contratos`, `matricula`, `financeiro/politica` e `retomada` que passam por aceite, ativação, entrada ou compra de horas: `aditivo.int.test.ts` com 60 de 60 OK; nos outros 15, 291 de 293 na primeira rodada. As 2 falhas foram em `aditivo-acerto-taxa` (DCT03 e Q168), dentro da fixture e com "Erro inesperado", sob carga do Postgres compartilhado. Ao rodar o arquivo de novo, passaram 53 de 53.
+
+### Follow-ups da #262 (escopo comercial × SQL, índice de Evento) e da #269 (fundo sutil sobre a página) — 2026-10-20
+
+- **#262, C2 das duas revisões:** comentário em `escopoComercialAtual` (`src/server/_shared/escopo-comercial.ts`) avisa que o funil e a carteira traduzem esse `where` para SQL em `crm/oportunidade-sql.ts`, que só aceita as três formas atuais e recusa as outras. Quem mudar o escopo tem de atualizar o tradutor.
+- **#262, trava do formato:** `src/server/crm/escopo-comercial-sql.test.ts` roda o `escopoComercialAtual` real (com o banco simulado) para todas as 256 combinações de papéis, com e sem equipe ou cobertura, e para o usuário sem id. Confere que cada resultado é uma das três formas (`{}`, `{ id: "__sem_acesso__" }`, `{ vendedorDonoId: { in: [...] } }`) e que `whereOportunidadeEmSql` o traduz. Teste de mutação: devolver `{ OR: [...] }` no escopo derruba 2 testes.
+- **#262, índice `Evento(agregadoTipo, agregadoId, criadoEm)`: criado** (migration `20261020400000_evento_agregado_criado_em_idx`, com `@@index` no schema). Medido com `EXPLAIN ANALYZE` numa base sintética (banco descartável `erp_genius_test_fu262`). Os números são medianas de 5 rodadas numa máquina compartilhada, então há ruído.
+  - Base com 100 mil oportunidades e 800 mil Eventos de Lead (mais 500 mil de outros agregados). O ganho aparece nos perdidos com período (`MAX` sem filtro de tipo, só no índice): admin de ~295 para ~130 ms, vendedor de ~21 para ~15 ms. No funil "tempo" e na carteira, a diferença ficou dentro do ruído.
+  - Com timeline longa (mais 500 mil Eventos nos 2.500 leads de um vendedor, ~200 por lead):
+    - perdidos do vendedor: de ~89 para ~24 ms;
+    - perdidos do admin: de ~754 para ~128 ms;
+    - carteira do vendedor: de ~307 para ~140 ms;
+    - funil "tempo" do vendedor: de ~102 para ~70 ms;
+    - funil "tempo" do admin: de ~607 para ~348 ms.
+  - O plano passa a usar `Index Only Scan Backward` (sem filtro de tipo) ou `Index Scan Backward` + `Limit 1` (com filtro de tipo).
+  - Custo: 70 MB de índice para 1,8 milhão de Eventos (o antigo `(agregadoTipo, agregadoId)` ocupa 23 MB) e ~3 s de `CREATE INDEX`. **O `CREATE INDEX` trava a escrita em `Evento`, então o deploy deve rodar fora de pico.** O projeto não tem precedente de `CONCURRENTLY` nas migrations, então fica o `CREATE INDEX` comum.
+  - O índice antigo virou prefixo do novo. Removê-lo fica para outra PR.
+- **#269, follow-up do ponto 1:** conferi pelo JSX (árvore de ancestrais no arquivo e nos importadores) cada fundo `bg-gray-50`/`bg-surface-muted` sem borda em `src/app` e `src/components`.
+  - Nenhum layout envolve as telas em superfície branca. Os blocos das telas operacionais são `rounded border` sem fundo.
+  - **Trocados para `bg-gray-100`, que ficavam direto sobre a página:** 48 classes em 34 arquivos. São as caixas `rounded bg-gray-50 p-3/p-4`, os `pre` de payload `p-2`, os `thead` das tabelas com wrapper só de borda, a linha expandida de PaisesPainel, a célula intermediária do mapa de calor de AbaConversas e o item de mensagem da AgendaTarefas.
+  - Os `thead` e a AgendaTarefas tinham sido dados como "dentro de cartão" no #269, mas não estão.
+  - **Mantidos:**
+    - dentro de `bg-surface`: MudancasAcademicasPainel 2×, AcessoAulasPainel, SecretariaPainel, FichaEmpresa (2 `thead`), CartaoOportunidade, HomeProfessor e o tom neutro de `/pagar`;
+    - dentro de `Modal`: ImportarAlunosModal 2× e ImportarTurmasModal;
+    - o próprio `<main>` do portal do aluno;
+    - um comentário em `Aviso.tsx`.
+  - A trava `fundo-sobre-pagina.test.ts` saiu da Aria e foi para `src/app/`. Agora varre `src/app` e `src/components`, ignora comentários e só aceita fundo sutil sem borda nos arquivos da lista conferida (arquivo, quantidade e motivo). Também acusa sobra na lista. Teste de mutação: voltar uma caixa da ReposicoesEquipe para `bg-gray-50` derruba a trava.
+- **Verificação:** banco descartável `erp_genius_test_fu262`, `migrate deploy` do zero, perfil temporário desfeito e banco removido ao fim.
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 815 arquivos e 6.091 testes OK em UTC e em America/Sao_Paulo.
+  - Integração de `src/server/crm`: 31 arquivos e 277 testes OK.
+  - `npm run build`: saída 0.
+  - A migration nova aplica com `migrate deploy`, e o `migrate diff` não mostra divergência em `Evento`.
