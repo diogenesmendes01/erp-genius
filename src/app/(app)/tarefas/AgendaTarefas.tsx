@@ -164,7 +164,7 @@ function BlocoItem({ item, fusoEscola, fusoExibicao, params, aoReagendar, v }: {
     { rotulo: "Reagendar", desabilitado: ehTarefa ? !aberta : item.status !== "PENDENTE" && item.status !== "ADIADA", aoEscolher: () => aoReagendar(item) },
   ];
   return (
-    <div ref={setNodeRef} data-arrastando={isDragging ? "true" : undefined} className={`flex items-center gap-1 rounded-md px-1 text-xs ${ehTarefa ? "bg-brand-bg text-brand-800" : "bg-surface-muted text-gray-700"} ${isDragging ? "opacity-60" : ""}`}>
+    <div ref={setNodeRef} data-arrastando={isDragging ? "true" : undefined} className={`flex items-center gap-1 rounded-md px-1 text-xs ${ehTarefa ? "bg-brand-bg text-brand-800" : "bg-gray-100 text-gray-700"} ${isDragging ? "opacity-60" : ""}`}>
       {aberta && (
         <button ref={setActivatorNodeRef} type="button" {...attributes} {...listeners} aria-label={`Arrastar tarefa ${titulo}`} className="flex h-6 w-6 shrink-0 touch-none items-center justify-center text-gray-600 max-sm:h-11 max-sm:w-11">
           <IconGripVertical aria-hidden="true" className="h-4 w-4" />

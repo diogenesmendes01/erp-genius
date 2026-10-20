@@ -145,7 +145,7 @@ export function AlunosLista({
 
       <div aria-busy={buscando} className={"overflow-x-auto rounded-lg border border-gray-200 transition-opacity " + (buscando ? "opacity-60" : "")}>
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               {/* Ordenação no servidor (E1); Turma e Financeiro não têm ordem no banco. */}
               <ColunaOrdenavel campo="nome" rotulo="Aluno" {...coluna} />
