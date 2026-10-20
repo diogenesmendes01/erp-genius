@@ -14,6 +14,9 @@ import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { AlteracaoPendente } from "@/components/AlteracaoPendente";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
+import { numeroAlterado, setoresAlterados } from "./alteracoes-pendentes";
 import { DRIVER_WHATSAPP_LABEL, FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro, estado da sessão no motor WhatsApp, conexão por QR ou
@@ -63,6 +66,9 @@ export function NumerosPainel({
   const acao = useAcaoCliente({ idempotente: false });
   const [qrDe, setQrDe] = useState<NumeroConfig | null>(null);
   const [desconectando, setDesconectando] = useState<NumeroConfig | null>(null);
+  // C32 da #170: formulário aberto com mudança → marca e aviso ao sair (fechar ou salvar desliga).
+  const sujo = numeroAlterado(form, numeros);
+  useAvisoAoSair(sujo);
 
   async function salvar() {
     if (!form) return;
@@ -226,6 +232,7 @@ export function NumerosPainel({
               />
               Número ativo
             </label>
+            <AlteracaoPendente sujo={sujo} />
             <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
               {acao.ocupado ? "Salvando…" : "Salvar número"}
             </button>
@@ -282,6 +289,9 @@ export function SetoresNumeroEditor({
   // Só quem tem papel de um dos setores marcados (mesma regra que salvarSetoresNumero aplica no servidor).
   const elegiveis = responsaveis.filter((u) => podeTriarSetores(u.papeis, setores));
   const triagemValida = elegiveis.some((u) => u.id === triagem) ? triagem : "";
+  // C32 da #170: o que seria gravado difere do número salvo (o refresh traz o salvo novo).
+  const sujo = setoresAlterados(setores, setores.length >= 2 ? triagemValida : "", numero);
+  useAvisoAoSair(sujo);
 
   async function salvar() {
     const d = await acao.executar(
@@ -320,7 +330,8 @@ export function SetoresNumeroEditor({
           </select>
         </label>
       )}
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex items-center justify-end gap-3">
+        <AlteracaoPendente sujo={sujo} />
         <button type="button" className={btnPri} disabled={acao.ocupado || setores.length === 0} onClick={salvar}>
           {acao.ocupado ? "Salvando…" : "Salvar setores"}
         </button>

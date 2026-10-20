@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  ERRO_ATIVACAO_RECUSADA, ERRO_LINK_INDISPONIVEL, ERRO_RECUPERACAO_RECUSADA, definirSenhaPortalAluno, pedirRecuperacaoPortalAluno,
+  ERRO_ATIVACAO_RECUSADA, ERRO_LINK_INDISPONIVEL, ERRO_SENHA_RECUSADA, ERRO_RECUPERACAO_RECUSADA, definirSenhaPortalAluno, pedirRecuperacaoPortalAluno,
 } from "./requisicoes";
 
 // docs/43 §6 item 8: as chamadas do navegador às rotas do portal. `fetch` é um mock — nenhuma requisição real,
@@ -41,6 +41,14 @@ describe("definirSenhaPortalAluno", () => {
       fetchFalso.mockResolvedValueOnce(resposta(status, { erro: "x" }));
       expect(await definirSenhaPortalAluno("s", "x"), String(status)).toEqual({ ok: false, erro: ERRO_ATIVACAO_RECUSADA });
     }
+  });
+
+  it("400 com campo senha: a senha foi recusada e o link continua valendo (#172)", async () => {
+    fetchFalso.mockResolvedValueOnce(resposta(400, { erro: "Senha fora das regras.", campo: "senha" }));
+    expect(await definirSenhaPortalAluno("s", "x")).toEqual({ ok: false, erro: ERRO_SENHA_RECUSADA });
+    expect(ERRO_SENHA_RECUSADA).not.toBe(ERRO_LINK_INDISPONIVEL);
+    fetchFalso.mockResolvedValueOnce(resposta(400, { erro: "x" }));
+    expect(await definirSenhaPortalAluno("s", "x")).toEqual({ ok: false, erro: ERRO_ATIVACAO_RECUSADA });
   });
 
   it("falha de rede, ou 200 com corpo ilegível, lança (resultado incerto: a senha pode ter sido gravada)", async () => {

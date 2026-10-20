@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ pathname: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname: mocks.pathname }));
 
-import { SubTabs } from "./SubTabs";
+import { SubTabs, mostrarAbaAtiva } from "./SubTabs";
 
 const tabs = [
   { href: "/configuracao", label: "Geral" },
@@ -86,5 +86,27 @@ describe("SubTabs", () => {
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
     expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["rounded-full", "px-3", "py-1.5", "max-sm:min-h-11", "bg-brand-solid", "text-on-brand", "font-medium"]));
     expect(classeDe("/configuracao")).toEqual(expect.arrayContaining(["rounded-full", "text-gray-600", "hover:bg-highlight"]));
+  });
+
+  it("a 375 px as abas ficam numa faixa só, rolável na horizontal, em vez de quebrar em várias linhas (C45, #170)", () => {
+    mocks.pathname.mockReturnValue("/configuracao");
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
+    const nav = html.match(/^<nav class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(nav).toEqual(expect.arrayContaining(["flex", "max-sm:flex-nowrap", "max-sm:overflow-x-auto", "max-sm:p-1", "sm:flex-wrap"]));
+    expect(nav).not.toContain("flex-wrap"); // sem quebra incondicional
+    const links = [...html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)].map((m) => m[1].split(" "));
+    expect(links).toHaveLength(2);
+    for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
+  });
+
+  it("a aba ativa é trazida para a vista dentro da faixa, sem rolar a página na vertical", () => {
+    const rolar = vi.fn();
+    const nav = { querySelector: vi.fn(() => ({ scrollIntoView: rolar })) };
+    mostrarAbaAtiva(nav as unknown as HTMLElement);
+    expect(nav.querySelector).toHaveBeenCalledWith('[aria-current="page"]');
+    expect(rolar).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+    // Sem aba ativa (rota fora das abas) ou sem nav montada: nada a fazer, sem erro.
+    expect(() => mostrarAbaAtiva({ querySelector: () => null } as unknown as HTMLElement)).not.toThrow();
+    expect(() => mostrarAbaAtiva(null)).not.toThrow();
   });
 });
