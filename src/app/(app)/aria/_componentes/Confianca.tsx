@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
@@ -31,8 +31,12 @@ const faixa = (de: number, ate: number) => Array.from({ length: (ate - de) / 5 +
 
 export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEditarExpiracao, supervisao, podeLigarSupervisao, podeDesligarSupervisao }: Props) {
   const router = useRouter();
-  // Idempotente por natureza (#166): este executor só define a supervisão (estado-alvo `supervisaoAte`).
+  // Idempotente por natureza (#166): este executor só define a supervisão (estado-alvo `supervisaoAte`),
+  // e o servidor não grava nada quando `supervisaoAte` já é o alvo. Para o reenvio cair nesse caso,
+  // o `ate` é fixado dentro da tentativa (como o `fimDaTentativa` do convite): enquanto a mesma opção
+  // não tiver dado certo, repetir o clique manda o mesmo valor.
   const acao = useAcaoCliente({ idempotente: true });
+  const ateDaTentativa = useRef<{ horas: number; ate: Date } | null>(null);
   const [c, setC] = useState<ConfigAria>(config);
   const k = c.confianca;
   const alterado = JSON.stringify(c) !== JSON.stringify(config);
@@ -41,7 +45,18 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
 
   async function supervisionar(ate: Date | null, ok: string) {
     const d = await acao.executar(() => definirSupervisao({ ate }), ok);
-    if (d?.tipo === "ok") router.refresh();
+    if (d?.tipo === "ok") {
+      ateDaTentativa.current = null;
+      router.refresh();
+    }
+  }
+
+  /** Liga por `horas` a partir de agora, reaproveitando o `ate` da tentativa anterior que não deu certo. */
+  function ligarPor(horas: number, ok: string) {
+    const anterior = ateDaTentativa.current;
+    const ate = anterior && anterior.horas === horas && anterior.ate.getTime() > Date.now() ? anterior.ate : new Date(Date.now() + horas * HORA_MS);
+    ateDaTentativa.current = { horas, ate };
+    return supervisionar(ate, ok);
   }
 
   return (
@@ -95,8 +110,8 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
         <div className="mt-2 flex flex-wrap gap-2">
           {podeLigarSupervisao && (
             <>
-              <Botao variante="secundario" ocupado={acao.ocupado} onClick={() => supervisionar(new Date(Date.now() + 24 * HORA_MS), "Supervisão ligada por 24 horas.")}>Ligar por 24 horas</Botao>
-              <Botao variante="secundario" ocupado={acao.ocupado} onClick={() => supervisionar(new Date(Date.now() + 168 * HORA_MS), "Supervisão ligada por 7 dias.")}>Ligar por 7 dias</Botao>
+              <Botao variante="secundario" ocupado={acao.ocupado} onClick={() => ligarPor(24, "Supervisão ligada por 24 horas.")}>Ligar por 24 horas</Botao>
+              <Botao variante="secundario" ocupado={acao.ocupado} onClick={() => ligarPor(168, "Supervisão ligada por 7 dias.")}>Ligar por 7 dias</Botao>
               <Botao variante="secundario" ocupado={acao.ocupado} onClick={() => supervisionar(SEM_FIM, "Supervisão ligada até ser desligada.")}>Ligar até eu desligar</Botao>
             </>
           )}

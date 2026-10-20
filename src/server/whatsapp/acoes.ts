@@ -741,6 +741,8 @@ export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAg
     }
     await prisma.$transaction(async (tx) => {
       const antes = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } });
+      // Nada mudou (ex.: reenvio após resultado incerto): sem upsert nem Evento, como aplicarSlaSetor.
+      if (antes?.numeroAvisosAgendaId === numero.id && antes.templateAvisosAgendaId === template.id) return;
       await tx.configuracaoOperacional.upsert({
         where: { id: "escola" }, create: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },
         update: { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },

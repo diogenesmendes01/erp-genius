@@ -51,6 +51,10 @@ export async function salvarConfigIA(i: ConfigIAInput): Promise<Resultado> {
     const d = parsed.data;
     await prisma.$transaction(async (tx) => {
       const antes = await tx.configIA.upsert({ where: { id: "ia" }, create: { id: "ia" }, update: {} });
+      // Nada mudou (ex.: reenvio após resultado incerto): sem update nem Evento, como aplicarSlaSetor.
+      // O orçamento é comparado já em centavos, como a coluna Decimal(10, 2) guarda.
+      const alvo = resumo({ ...d, orcamentoMensalUsd: Math.round(d.orcamentoMensalUsd * 100) / 100 });
+      if (JSON.stringify(resumo(antes)) === JSON.stringify(alvo)) return;
       const depois = await tx.configIA.update({ where: { id: "ia" }, data: { ...d, alteradaPorId: autor.id } });
       await registrarEvento(tx, {
         tipo: "ConfigIAAlterada", agregadoTipo: "ConfigIA", agregadoId: "ia", autorId: autor.id,

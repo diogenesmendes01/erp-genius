@@ -31,7 +31,7 @@ const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm
 export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: CampoLinha[] }) {
   const router = useRouter();
   // Criar tag ou campo leva chave de idempotência (#166): o reenvio devolve o registro já criado. Editar grava os
-  // valores da tela no registro (estado-alvo), então repetir não duplica. Arquivar usa o ConfirmarAcao.
+  // valores da tela no registro (estado-alvo) e o servidor não grava nada (nem Evento) quando eles já estão lá. Arquivar usa o ConfirmarAcao.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativaTag = useChaveIdempotencia();
   const tentativaCampo = useChaveIdempotencia();

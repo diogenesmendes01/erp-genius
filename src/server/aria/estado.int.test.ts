@@ -109,3 +109,27 @@ describe("estado operacional da Aria", () => {
     expect((await situacaoAria()).supervisao).toBe(false);
   });
 });
+
+describe("definirSupervisao: reenvio idêntico não grava (#166, PR #267 B1)", () => {
+  const supervisoes = () => prisma.evento.count({ where: { tipo: "AriaSupervisaoAlterada" } });
+
+  it("duas chamadas com o mesmo ate gravam 1 Evento; mudar o ate ainda grava", async () => {
+    logado(admin);
+    const ate = new Date(Date.now() + 864e5);
+    expect((await definirSupervisao({ ate })).ok).toBe(true);
+    expect((await definirSupervisao({ ate: new Date(ate.getTime()) })).ok).toBe(true);
+    expect(await supervisoes()).toBe(1);
+    const depois = new Date(ate.getTime() + 864e5);
+    expect((await definirSupervisao({ ate: depois })).ok).toBe(true);
+    expect(await supervisoes()).toBe(2);
+    expect((await prisma.agenteIA.findUniqueOrThrow({ where: { id: "aria" } })).supervisaoAte?.toISOString()).toBe(depois.toISOString());
+  });
+
+  it("desligar duas vezes grava 1 Evento", async () => {
+    logado(admin);
+    expect((await definirSupervisao({ ate: new Date(Date.now() + 864e5) })).ok).toBe(true);
+    expect((await definirSupervisao({ ate: null })).ok).toBe(true);
+    expect((await definirSupervisao({ ate: null })).ok).toBe(true);
+    expect(await supervisoes()).toBe(2);
+  });
+});
