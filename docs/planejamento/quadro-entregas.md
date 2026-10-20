@@ -3879,6 +3879,33 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - Integração de disponibilidade de oferta, continuidade (fila, emissão SQL e condições), acadêmico (`academico`, `fluxo`), replanejamento sem remarcações e cadastro de alunos: 8 arquivos e 108 testes OK.
   - Uma rodada mais ampla (inclui `aditivo.int.test.ts`) passou de 30 minutos e foi interrompida sem resultado. Nenhuma integração existente cria aditivo de `REGIME`.
 
+### Port da #62, lote 2: Q172, aditivo de adiantamento (#164) — 2026-10-20
+
+- **Decisão:** a de 21/09/2026 (PR #62, `decisoes-2026-09-21.md` daquela PR), reconfirmada pelo dono em 20/10/2026. O aditivo de adiantamento só alcança o adiantamento da emissão inicial enquanto ele não foi pago nem usado.
+- **O que entrou (reimplementado sobre o `main`, sem cherry-pick cego):**
+  - Migration `20261020100000_aplicacao_adiantamento_aditivo` (era `20260921030000` na #62). Cria `PropostaAdiantamentoAditivo`, `DecisaoAdiantamentoAditivo` e `AplicacaoAdiantamentoAditivo`, os guards 172 e o trigger que altera a cobrança em aberto. Redefine `conferir_campos_aplicacao_direta_231` copiando a definição vigente (`20260917163000`, idêntica à do `main`) e acrescentando o ramo do adiantamento.
+  - Servidor: `contratos/adiantamento-aditivo.ts` (propor, decidir, aplicar, consultar) e `contratos/aditivo-adiantamento.ts` (alvo e recusas). A prova por campo (`aditivo-aplicacao-campos*.ts`), a revisão de efeitos e `conferirCompraPreparadaTx` passam a usar os minutos e o valor vigentes.
+  - Tela `financeiro/acertos-adiantamento/[matriculaId]/[propostaId]` no padrão atual (`useAcaoCliente`/`FeedbackAcao`, `EstadoVazio`, `IdentificacaoRegistro`, `formatarMoeda`), com link na proposta de aditivo: para o Financeiro e a Administração; a Secretaria recebe a orientação. Registrada nas travas de botões, estados vazios, trilha, feedback separado e identificação.
+- **Diferenças em relação à #62:**
+  - A orientação separa consumo ("já foram utilizadas em aulas") de compra registrada ("já foram registradas como saldo de horas"). Antes, as duas tinham uma mensagem só.
+  - As mutações devolvem `podeRevisar`, como o acerto de vencimento do `main`.
+- **Regras:**
+  - Há recusa com orientação, na consulta, na ação e no banco, quando existe: pagamento (mesmo parcial), crédito usado ou proposto, consumo, compra de horas, comprovante a conferir, pausa ou acerto.
+  - A decisão e a aplicação exigem um aprovador financeiro diferente de quem propôs.
+  - A aplicação só vale depois da vigência.
+  - A comissão (base: taxa de matrícula) não é recalculada.
+  - Convive com a recusa da Q174 (#260), que só alcança `REGIME`.
+- **Evidências:**
+  - Testes de integração novos em `contratos/aditivo.int.test.ts`, 8 cenários `PRODUCAO_HORA_ADIANTAMENTO`: fluxo completo da #62, pagamento parcial, crédito, compra de horas, consumo, mesma pessoa (na ação e no banco), vigência (antes recusa e depois aplica, com o relógio real do banco) e comissão inalterada.
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 40 avisos de base.
+  - `npm test` em UTC e em America/Sao_Paulo: 789 arquivos e 5.893 testes em cada fuso.
+  - `npm run build`: saída 0.
+  - `prisma migrate deploy` do zero no banco `erp_genius_test_q172`. No `migrate diff` banco × schema, nenhuma linha dos objetos da Q172.
+  - Integração de `src/server/matricula`, `financeiro` e `contratos` no `erp_genius_test_q172`: 61 arquivos e 618 testes verdes. Ficaram de fora 3 arquivos e 4 testes de homologação de UI, condicionais por ambiente.
+- **Fora deste lote:** Q175, Q173, Q171 e a origem histórica, nesta ordem. O link do acerto na página inicial do Financeiro também fica para depois.
+- **Pendência operacional:** fazer backup e ensaiar o `migrate deploy` numa cópia do UAT antes do deploy.
+
 ### B19: funil e carteira ordenam, filtram e cortam no banco (#196 C3, #198 C2) — 2026-10-20
 
 - **Problema:** o funil (ordem "tempo" e período dos perdidos) e a carteira carregavam todos os ids do escopo, buscavam o último `Evento` de cada um com `in` e ordenavam e cortavam em memória. Além de crescer com a base, isso quebrava acima de 32.767 oportunidades no escopo: o `in` passa do limite de parâmetros do Postgres (`P2035`, visto na medição abaixo com o admin).

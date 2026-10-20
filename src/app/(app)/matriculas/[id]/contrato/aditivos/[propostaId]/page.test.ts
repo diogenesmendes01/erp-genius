@@ -72,5 +72,27 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
       expect(tela).toContain('href="/financeiro/acertos-taxa/m1/p1">Abrir o acerto das taxas no Financeiro</a>');
       expect(tela).not.toContain("Avise o Financeiro");
     });
+
+    // Q172 (port da #62): adiantamento formalizado leva ao acerto próprio; a orientação do servidor aparece sempre.
+    const comAdiantamento = (formalizado: boolean) => mocks.efeitos.mockResolvedValue({ ok: true, dado: { vigenciaInicio: "2026-11-01T00:00:00.000Z", acertosTaxaAplicados: 0, efeitos: [], aplicacoesCampos: [], pendencias: [], aplicado: false,
+      primeiraMensalidade: null, adiantamento: { formalizado, aplicacao: null, pendencia: "O adiantamento já recebeu pagamento ou crédito." } } });
+    it("adiantamento: link do acerto para o Financeiro, orientação para a Secretaria", async () => {
+      mocks.sessao.mockResolvedValue({ papeis: ["FINANCEIRO"] });
+      comAdiantamento(true);
+      let tela = await html();
+      expect(tela).toContain('href="/financeiro/acertos-adiantamento/m1/p1"');
+      expect(tela).toContain("O adiantamento já recebeu pagamento ou crédito.");
+      mocks.sessao.mockResolvedValue({ papeis: ["SECRETARIA_ACADEMICA"] });
+      tela = await html();
+      expect(tela).not.toContain('href="/financeiro');
+      expect(tela).toContain("O acerto do adiantamento é feito pelo Financeiro");
+    });
+    it("adiantamento ainda não formalizado: só a orientação, sem link", async () => {
+      mocks.sessao.mockResolvedValue({ papeis: ["ADMINISTRADOR"] });
+      comAdiantamento(false);
+      const tela = await html();
+      expect(tela).not.toContain("acertos-adiantamento");
+      expect(tela).toContain("O adiantamento já recebeu pagamento ou crédito.");
+    });
   });
 });
