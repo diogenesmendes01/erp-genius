@@ -37,6 +37,8 @@ const ARQUIVOS_FIXOS = [
   // Fronteira "use server" da Aria (como as acoes-*.ts de crm-config): só repassa aos módulos acima.
   "src/server/aria/acoes.ts",
   "src/server/metas/metas.ts",
+  // D8 (#175, L2298): "Desvincular contato" do Inbox grava ContatoDesvinculado na mesma transação.
+  "src/server/whatsapp/desvincular-contato.ts",
 ];
 const ARQUIVOS_CRM_CONFIG = readdirSync("src/server/crm-config")
   .filter((n) => n.endsWith(".ts") && !n.endsWith(".test.ts") && !n.endsWith(".d.ts"))

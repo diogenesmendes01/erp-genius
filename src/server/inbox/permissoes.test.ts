@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Papel } from "@prisma/client";
-import { podeExecutar, type AcaoInbox, type ContextoAcao } from "./permissoes";
+import { podeExecutar, TIPOS_DESVINCULAVEIS, type AcaoInbox, type ContextoAcao } from "./permissoes";
 
 describe("matriz de permissões do Inbox (doc 03)", () => {
   it.each([
@@ -31,6 +31,14 @@ describe("matriz de permissões do Inbox (doc 03)", () => {
     [Papel.PROFESSOR, "enviar", { setor: "PEDAGOGICO", participante: false }, true],
     [Papel.VENDEDOR, "encaminhar", {}, true], [Papel.VENDEDOR, "preferenciaPessoal", {}, true],
     [Papel.VENDEDOR, "notaInterna", {}, true], [Papel.VENDEDOR, "agendar", {}, true],
+    // D8 (#175, L2298): desvincular só Administrador ou o gerente do setor do atendimento; nunca no pedagógico.
+    [Papel.ADMINISTRADOR, "desvincular", { setor: "COMERCIAL" }, true], [Papel.ADMINISTRADOR, "desvincular", { setor: "FINANCEIRO" }, true],
+    [Papel.ADMINISTRADOR, "desvincular", { setor: "SECRETARIA" }, true], [Papel.ADMINISTRADOR, "desvincular", { setor: "PEDAGOGICO" }, false],
+    [Papel.GERENTE_COMERCIAL, "desvincular", { setor: "COMERCIAL" }, true], [Papel.GERENTE_COMERCIAL, "desvincular", { setor: "SECRETARIA" }, false],
+    [Papel.GERENTE_COMERCIAL, "desvincular", { setor: "FINANCEIRO" }, false], [Papel.GERENTE_PEDAGOGICO, "desvincular", { setor: "PEDAGOGICO" }, false],
+    [Papel.VENDEDOR, "desvincular", { setor: "COMERCIAL", responsavelId: "v1" }, false],
+    [Papel.SECRETARIA_ACADEMICA, "desvincular", { setor: "SECRETARIA", responsavelId: "v1" }, false],
+    [Papel.FINANCEIRO, "desvincular", { setor: "FINANCEIRO", responsavelId: "v1" }, false],
   ])("%s %s %o → %s", (papel, acao, ctx, esperado) =>
     expect(podeExecutar({ id: "v1", papeis: [papel] }, acao as AcaoInbox, { setor: "COMERCIAL", responsavelId: null, ...ctx } as ContextoAcao)).toBe(esperado));
 });
@@ -47,5 +55,11 @@ describe("assumir em linha de vendas (C3 da revisão da 3C)", () => {
   });
   it("fora de linha de vendas o vendedor assume da fila como antes", () => {
     expect(podeExecutar({ id: "v1", papeis: [Papel.VENDEDOR] }, "assumir", { setor: "COMERCIAL", responsavelId: null, linhaComercial: false, donoLinhaId: null })).toBe(true);
+  });
+});
+
+describe("vínculos que cada setor desfaz (D8)", () => {
+  it("comercial desfaz a oportunidade; secretaria e financeiro, aluno e responsável; pedagógico nada", () => {
+    expect(TIPOS_DESVINCULAVEIS).toEqual({ COMERCIAL: ["lead"], SECRETARIA: ["aluno", "responsavel"], FINANCEIRO: ["aluno", "responsavel"], PEDAGOGICO: [] });
   });
 });

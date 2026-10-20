@@ -1,4 +1,4 @@
-import { Papel, type EtapaLead, type CorTag, type Prisma } from "@prisma/client";
+import { Papel, type EtapaLead, type CorTag, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoComPapel, executarAcao, ErroRegra, type Resultado } from "@/server/_shared";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
@@ -55,17 +55,40 @@ export const MAX_LINHAS_CARTEIRA = 500;
 const FUSO_PADRAO = "America/Sao_Paulo";
 
 /**
- * Eventos administrativos que NÃO contam como interação com o cliente no "sem interação" da carteira.
- * A reatribuição (`LeadAtribuido`) é o caso principal: sem esta lista, redistribuir uma oportunidade
- * parada há 30 dias faria ela aparecer como "Hoje" para o novo responsável. Tags e campos personalizados
- * hoje são gravados no agregado Pessoa/Empresa, mas ficam aqui para não passarem a contar se mudarem de agregado.
+ * Lista POSITIVA do "sem interação" da carteira (decisão D13 do dono, #198 C6): só conta o que é contato real
+ * com o cliente. Do agregado Lead valem a interação registrada (ligação, presencial, e-mail; também a que nasce
+ * da tarefa concluída com resultado), a tarefa concluída e a experimental (agendada, confirmada, realizada).
+ * Mensagem recebida do cliente ou enviada por uma pessoa não vira Evento do Lead: entra pela consulta às mensagens
+ * dos atendimentos da oportunidade (`ultimaMensagemPorLead`). Nota interna, edição de cadastro, reatribuição, tags, documentos e
+ * qualquer evento novo ficam de fora até alguém incluí-los aqui de propósito.
  */
-export const EVENTOS_IGNORADOS_SEM_INTERACAO = [
-  "LeadAtribuido",
-  "TagAtribuida",
-  "TagRemovida",
-  "CampoPersonalizadoAlterado",
+export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
+  "InteracaoRegistrada",
+  "TarefaConcluida",
+  "ExperimentalAgendada",
+  "ExperimentalConfirmada",
+  "ExperimentalRealizada",
 ] as const;
+
+/**
+ * Última mensagem de cada oportunidade, pelos atendimentos ligados a ela: a recebida do cliente e a enviada por
+ * uma pessoa (pela Inbox, `HUMANO`, ou pelo celular, `CELULAR`). A régua e as automações (`CRON`, `LOTE`,
+ * `GESTAO`) e a resposta da Aria (`IA`) não são contato humano (decisão do dono no #254); saída sem origem
+ * (legado) também fica de fora. Saída que falhou ou ainda está na fila não chegou ao cliente e não conta;
+ * mensagem apagada depois continua sendo um contato que aconteceu.
+ */
+async function ultimaMensagemPorLead(ids: string[]): Promise<{ leadId: string; ultima: Date | null }[]> {
+  return prisma.$queryRaw<{ leadId: string; ultima: Date | null }[]>`
+    SELECT a."leadId" AS "leadId", MAX(m."criadoEm") AS "ultima"
+    FROM "MensagemWhatsApp" m
+    JOIN "AtendimentoWhatsApp" a ON a.id = m."atendimentoId"
+    WHERE a."leadId" IN (${Prisma.join(ids)})
+      AND (m.direcao = 'ENTRADA' OR (m.status IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m.origem IN ('HUMANO', 'CELULAR')))
+    GROUP BY a."leadId"`;
+}
+
+const maisRecente = (a: Date | null | undefined, b: Date | null | undefined): Date | null =>
+  !a ? b ?? null : !b ? a : a > b ? a : b;
 
 const diasCivis = (de: string, ate: string) =>
   Math.round((Date.parse(`${ate}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86_400_000);
@@ -120,12 +143,16 @@ export async function carregarCarteira(
     }),
   ]);
 
-  // Último Evento (fora os administrativos) de cada oportunidade -> dias civis sem interação no fuso institucional.
+  // Último contato real (lista positiva de eventos + mensagens) -> dias civis sem interação no fuso institucional.
   const ids = brutas.map((o) => o.id);
-  const ultimos = ids.length
-    ? await prisma.evento.groupBy({ by: ["agregadoId"], where: { agregadoTipo: "Lead", agregadoId: { in: ids }, tipo: { notIn: [...EVENTOS_IGNORADOS_SEM_INTERACAO] } }, _max: { criadoEm: true } })
-    : [];
-  const ultimoPor = new Map(ultimos.map((u) => [u.agregadoId, u._max.criadoEm]));
+  const [ultimos, mensagens] = ids.length
+    ? await Promise.all([
+        prisma.evento.groupBy({ by: ["agregadoId"], where: { agregadoTipo: "Lead", agregadoId: { in: ids }, tipo: { in: [...EVENTOS_DE_CONTATO_SEM_INTERACAO] } }, _max: { criadoEm: true } }),
+        ultimaMensagemPorLead(ids),
+      ])
+    : [[], []];
+  const ultimoPor = new Map<string, Date | null>(ultimos.map((u) => [u.agregadoId, u._max.criadoEm]));
+  for (const m of mensagens) ultimoPor.set(m.leadId, maisRecente(ultimoPor.get(m.leadId), m.ultima));
   const minimo = f.semInteracaoDias ? Number(f.semInteracaoDias) : 0;
 
   const todas = brutas
