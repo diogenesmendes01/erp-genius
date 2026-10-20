@@ -184,13 +184,14 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > procura os três tipos e devolve o mesmo desfecho (`aprovacao`).
 
 > **4º lote (#166).** A marca passa a ir também em `TurmaCriada`, `EmpresaCriada` (só na criação) e
-> `AtendimentoInstitucionalAberto` (abertura pelo Inbox). Em `NotaInterna` e `MensagemAgendada` do atendimento e em
+> `AtendimentoInstitucionalAberto` (abertura pelo Inbox) e `ConvitePortalAlunoPreparado` (gravado também quando a
+> tentativa reaproveita um envio ainda preparado, com `reaproveitado: true`; o reenvio com a mesma chave devolve o envio
+> original mesmo já despachado, e chave nova é reemissão deliberada). Em `NotaInterna` e `MensagemAgendada` do atendimento e em
 > `PromessaPagamento`, a busca da repetição vem antes das validações de estado: o reenvio tardio devolve o registro
 > já feito. Sem marca, por estado-alvo (o reenvio não grava Evento de novo): `DocumentoAnexado` (o mesmo upload) e
 > `DocumentoArquivado` do `Lead`; `ContatoVinculado` de "criar oportunidade pela conversa"; `PoliticaComissaoPublicada`
 > (a última versão já é a pedida, do mesmo autor); `AgenteIARascunhoSalvo`, `AgenteIAPublicado` e
-> `AgenteIARascunhoDescartado`; `EmpresaEditada` com o mesmo cadastro; `ConvitePortalAlunoPreparado` (envio ainda não
-> despachado), `PendenciaAcessoPortalAlunoEmailAusente`, `TrocaEmailPortalAlunoPreparada` e a decisão da troca.
+> `AgenteIARascunhoDescartado`; `EmpresaEditada` com o mesmo cadastro; `PendenciaAcessoPortalAlunoEmailAusente`, `TrocaEmailPortalAlunoPreparada` e a decisão da troca.
 
 ---
 
