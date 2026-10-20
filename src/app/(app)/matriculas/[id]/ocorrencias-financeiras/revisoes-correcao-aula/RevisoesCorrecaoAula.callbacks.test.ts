@@ -14,11 +14,12 @@ function nos(no: unknown): No[] { if (Array.isArray(no)) return no.flatMap(nos);
 function encontrar(no: unknown, predicado: (no: No) => boolean) { const encontrado = nos(no).find(predicado); if (!encontrado) throw new Error("Elemento não encontrado"); return encontrado; }
 
 class DadosFormulario { get(nome: string) { return nome === "motivo" ? "Reconferência financeira necessária." : null; } }
-function montar() {
+const tiposPadrao = [{ tipo: "SEM_ALTERACAO_VALORES", efeito: null }, { tipo: "AULA_NAO_COBRAVEL", efeito: { tipo: "GERA_CREDITO", valorAula: "156.25", moeda: "CRC", creditoValor: "156.25" } }];
+function montar(tiposDisponiveis: unknown[] = tiposPadrao) {
   mocks.useTransition.mockReturnValue([false, (acao: () => void) => { void acao(); }]);
   mocks.useState.mockReturnValue(["", vi.fn()]);
   mocks.useRef.mockReturnValue({ current: new Map() });
-  return RevisoesCorrecaoAula({ matriculaId: "matricula", dados: { usuarioId: "fin", revisoes: [], candidatas: [{ id: "q23", encontroId: "encontro", versao: 1, encontro: { id: "encontro", inicio: new Date("2026-01-10T15:00:00Z"), fim: new Date("2026-01-10T16:15:00Z"), fusoOrigem: "America/Sao_Paulo" }, podePreparar: true, preparoBloqueadoPor: null }] } as never });
+  return RevisoesCorrecaoAula({ matriculaId: "matricula", dados: { usuarioId: "fin", revisoes: [], candidatas: [{ id: "q23", encontroId: "encontro", versao: 1, encontro: { id: "encontro", inicio: new Date("2026-01-10T15:00:00Z"), fim: new Date("2026-01-10T16:15:00Z"), fusoOrigem: "America/Sao_Paulo" }, podePreparar: true, preparoBloqueadoPor: null, tiposDisponiveis }] } as never });
 }
 
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
@@ -79,4 +80,51 @@ it("não oferece aprovação quando a fotografia histórica é incompatível, ma
   expect(html).toContain("Fotografia histórica indisponível");
   expect(html).toContain("Rejeitar revisão incompleta");
   expect(html).not.toContain("Aprovar sem alteração de valores");
+});
+
+// ── Q175: declaração de aula não cobrável ─────────────────────────────────────────────────────
+class DadosFormularioNaoCobravel { get(nome: string) { return nome === "motivo" ? "Aula não ocorreu por motivo da escola." : nome === "tipo" ? "AULA_NAO_COBRAVEL" : null; } }
+
+it("Q175: envia o tipo escolhido só quando o Financeiro declara a aula não cobrável", async () => {
+  vi.stubGlobal("FormData", DadosFormularioNaoCobravel); vi.stubGlobal("crypto", { randomUUID: vi.fn().mockReturnValue("chave-q175") });
+  mocks.preparar.mockResolvedValue({ ok: true });
+  const formulario = encontrar(montar(), no => no.type === "form");
+  (formulario.props!.onSubmit as (evento: { preventDefault(): void; currentTarget: object }) => void)({ preventDefault: vi.fn(), currentTarget: {} });
+  await Promise.resolve(); await Promise.resolve();
+  expect(mocks.preparar).toHaveBeenCalledWith({ propostaCorrecaoAulaId: "q23", motivo: "Aula não ocorreu por motivo da escola.", chaveIdempotencia: "chave-q175", tipo: "AULA_NAO_COBRAVEL" });
+});
+
+it("Q175: oferece só os tipos que o banco comprova, com o efeito calculado", () => {
+  mocks.useTransition.mockReturnValue([false, vi.fn()]);
+  mocks.useState.mockReturnValue(["", vi.fn()]);
+  mocks.useRef.mockReturnValue({ current: new Map() });
+  const html = renderToStaticMarkup(createElement(RevisoesCorrecaoAula, { matriculaId: "matricula", dados: { usuarioId: "fin", revisoes: [], candidatas: [{ id: "q23", encontroId: "encontro", versao: 1,
+    encontro: { id: "encontro", inicio: new Date("2026-01-10T15:00:00Z"), fim: new Date("2026-01-10T16:15:00Z"), fusoOrigem: "America/Sao_Paulo" }, podePreparar: true, preparoBloqueadoPor: null,
+    tiposDisponiveis: [{ tipo: "AULA_NAO_COBRAVEL", efeito: { tipo: "DEVOLVE_MINUTOS", valorAula: 0, moeda: "CRC", minutos: 60 } }] }] } as never }));
+  expect(html).toContain('value="AULA_NAO_COBRAVEL"');
+  expect(html).not.toContain('value="SEM_ALTERACAO_VALORES"');
+  expect(html).toContain("60 minutos voltam ao saldo da mesma compra");
+});
+
+it("Q175: a revisão de aula não cobrável mostra o efeito e oferece a aprovação própria, sem a da equivalência", () => {
+  mocks.useTransition.mockReturnValue([false, vi.fn()]);
+  mocks.useState.mockReturnValue(["", vi.fn()]);
+  mocks.useRef.mockReturnValue({ current: new Map() });
+  const html = renderToStaticMarkup(createElement(RevisoesCorrecaoAula, { matriculaId: "matricula", dados: {
+    usuarioId: "outro-financeiro", candidatas: [], revisoes: [{
+      id: "revisao-175", versao: 1, tipo: "AULA_NAO_COBRAVEL", motivo: "Sala indisponível.", criadaEm: new Date(),
+      propostaCorrecaoAulaId: "q23", fotografiaHash: "a".repeat(64), preparador: { id: "fin", nome: "Preparador" }, decisao: null, podeDecidir: true,
+      propostaCorrecaoAula: { versao: 1, autorId: "professor", entradaHash: "b".repeat(64), encontro: { id: "encontro", inicio: new Date("2026-01-10T15:00:00Z"), fim: new Date("2026-01-10T16:15:00Z"), fusoOrigem: "UTC" } },
+      fotografia: { ocorrencia: { id: "o", versao: 1, tipo: "REALIZADA" }, conferencia: { id: "c", desfecho: "REALIZADA" },
+        cobranca: { id: "cobranca", status: "PENDENTE", valorNegociado: 312.5, valorRecebido: 0, saldo: 312.5, moeda: "CRC", valorLiquidadoCredito: 0, valorCompensadoPermuta: 0 },
+        informesPagamento: [], recebimentos: [], destinacoes: [],
+        efeito: { tipo: "REDUZ_COBRANCA_ABERTA", valorAula: 156.25, moeda: "CRC", cobrancaId: "cobranca", versaoCobranca: 1, valorNegociadoAnterior: 312.5, valorNegociadoNovo: 156.25 } },
+    }],
+  } as never }));
+  expect(html).toContain("Aula não devia ser cobrada");
+  expect(html).toContain("A cobrança em aberto cai de ₡ 312,50 para ₡ 156,25.");
+  expect(html).toContain("só acontece quando a gestão pedagógica publicar a correção");
+  expect(html).toContain("Aprovar declaração de aula não cobrável");
+  expect(html).not.toContain("Aprovar sem alteração de valores");
+  expect(html).not.toContain("Fotografia histórica indisponível");
 });

@@ -22,6 +22,14 @@ function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => s
     <p>Vigência: {data(r.data.regras.vigenteDesde)} · Antecedência de cancelamento: {r.data.regras.antecedenciaCancelamentoMinutos} minutos.</p>
     <p>Cláusula de preço: {r.data.regras.clausulaPreco}</p><p>Cláusula de cancelamento: {r.data.regras.clausulaCancelamento}</p></div>;
 }
+/** Q175: o valor da conferência é histórico; a aula foi declarada não cobrável na revisão financeira da correção. */
+export function descreverAulaNaoCobravel(efeito: string) {
+  const destino = efeito === "SEM_ITEM" ? "fica fora do fechamento por hora"
+    : efeito === "REDUZ_COBRANCA_ABERTA" ? "foi retirada da cobrança em aberto"
+      : efeito === "GERA_CREDITO" ? "gerou crédito na matrícula sobre a fatura paga"
+        : efeito === "DEVOLVE_MINUTOS" ? "devolveu os minutos à compra de horas" : "teve efeito financeiro registrado";
+  return `Aula declarada não cobrável na revisão financeira da correção: o valor acima é histórico e a aula ${destino}.`;
+}
 export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"] }) {
   // Prévia é leitura sem chave; a conferência leva chave de idempotência estável. Cada uma preserva a orientação
   // própria para falha de transporte; um estado por grupo de ação, e o ocupado trava os dois.
@@ -52,6 +60,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
     {e.conferencia ? <section className="space-y-2"><h3>Conferência registrada</h3>
       <p>{rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, e.conferencia.desfecho)} · {e.conferencia.minutos} minutos · {e.conferencia.consumoAntecipacao ? "valor preservado da compra" : "valor apurado"}: {formatarMoeda(e.conferencia.valor, e.conferencia.moeda)}</p>
       <p>{e.conferencia.conferente.nome} · {data(e.conferencia.conferidaEm)}</p><p>{e.conferencia.motivo}</p>
+      {e.conferencia.aplicacaoNaoCobravel && <p role="note">{descreverAulaNaoCobravel(e.conferencia.aplicacaoNaoCobravel.efeito)} Declaração aplicada em {data(e.conferencia.aplicacaoNaoCobravel.aplicadaEm)}.</p>}
       {e.conferencia.consumoAntecipacao && <p>Reserva antecipada {e.conferencia.consumoAntecipacao.reservaId} da compra {e.conferencia.consumoAntecipacao.reserva.compraId} consumida por esta ocorrência. Não foi criada cobrança, recebimento ou crédito.</p>}
       <details><summary>Memória preservada da conferência</summary><Memoria snapshot={e.conferencia.snapshot} data={data} /></details>
       <p>A emissão da cobrança é uma etapa separada.</p>
