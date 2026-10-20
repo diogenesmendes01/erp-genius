@@ -23,6 +23,8 @@ export type AgregadoTipo =
   | "Lead"
   | "Matricula"
   | "Aluno"
+  // D14: a mescla de contatos repõe o cadastro do responsável (CadastroAcademicoRepontado).
+  | "Responsavel"
   | "Cobranca"
   | "Comissao"
   | "Turma"

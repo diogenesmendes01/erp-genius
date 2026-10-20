@@ -18,6 +18,8 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { formatarCompetencia, formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Aviso } from "@/components/Aviso";
+import { COBRANCA_B2B_ATIVA, MSG_COBRANCA_B2B_DESLIGADA } from "@/lib/funcionalidades";
 
 // FICHA DA EMPRESA: responsável financeiro, colaboradores e faturas históricas.
 // A matrícula é preparada individualmente; lote corporativo não está disponível.
@@ -174,6 +176,10 @@ export function FichaEmpresa({
       {/* Faturas corporativas já registradas permanecem consultáveis e editáveis. */}
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Faturas históricas</h2>
+        {/* D9 (19/10/2026): a escola não usa a cobrança de empresas. Sem registrar pagamento (o servidor também
+            recusa); cancelar continua, para soltar as cobranças de uma fatura fechada antiga (R1 do #251, B1).
+            Religar: COBRANCA_B2B_ATIVA em src/lib/funcionalidades. */}
+        {!COBRANCA_B2B_ATIVA && faturas.length > 0 && <Aviso tom="info" className="mb-3">{MSG_COBRANCA_B2B_DESLIGADA}</Aviso>}
 
         {faturas.length === 0 ? (
           <EstadoVazio>
@@ -211,7 +217,7 @@ export function FichaEmpresa({
                         // "Cancelar" sozinho, ao lado da ação primária, lia-se como "desistir da operação":
                         // o botão diz o que cancela e fica afastado do pagamento.
                         <span className="flex flex-wrap gap-3">
-                          {podePagar && (
+                          {COBRANCA_B2B_ATIVA && podePagar && (
                             <button
                               className={btnPri}
                               disabled={ocupado}

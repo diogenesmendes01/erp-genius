@@ -4,7 +4,7 @@ const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: authMock }));
 
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { HABILIDADES } from "./calculo";
 import { decidirExcecaoFrequencia, proporExcecaoFrequencia } from "./excecao-frequencia";
@@ -114,6 +114,7 @@ async function proporDaRevisao(revisao: Awaited<ReturnType<typeof revisarComoGes
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   gestorProponenteId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;

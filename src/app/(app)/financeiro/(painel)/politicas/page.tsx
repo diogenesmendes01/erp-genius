@@ -1,6 +1,7 @@
 import { configuracaoComissoes } from "@/server/financeiro/consultas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { PoliticasComissao } from "../../PoliticasComissao";
+import { DiaPrevisaoComissao } from "../../DiaPrevisaoComissao";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import { contextoDaAba } from "../../contexto";
 
@@ -10,5 +11,10 @@ export default async function PoliticasFinanceiroPage() {
   const ctx = await contextoDaAba("politicas");
   if (!ctx) return <AcessoNegado recurso="esta seção do financeiro" />;
   const [politicas, preferencia] = await Promise.all([configuracaoComissoes(), consultarPreferenciaFusoEquipe()]);
-  return politicas ? <PoliticasComissao dados={politicas} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} /> : null;
+  if (!politicas) return null;
+  // D11: o dia da previsão de pagamento fica junto da política, com a mesma alçada (comissao.configurar).
+  return <div className="space-y-6">
+    <DiaPrevisaoComissao dia={politicas.diaPrevisaoPagamento} />
+    <PoliticasComissao dados={politicas} preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null} />
+  </div>;
 }

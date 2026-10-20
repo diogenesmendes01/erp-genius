@@ -7,6 +7,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   pagar: vi.fn(), cancelar: vi.fn(), situacao: vi.fn(), refresh: vi.fn(),
+  b2bAtiva: true,
+}));
+// As confirmações de pagar e cancelar só existem com a cobrança de empresas ligada (D9): estes testes a religam.
+vi.mock("@/lib/funcionalidades", async (original) => ({
+  ...(await original<typeof import("@/lib/funcionalidades")>()),
+  get COBRANCA_B2B_ATIVA() { return m.b2bAtiva; },
 }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
@@ -27,6 +33,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { clicar, criarGanchos, elementos, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
 import { confirmarNoDialogo } from "@/test/confirmacao-tela";
+import { MSG_COBRANCA_B2B_DESLIGADA } from "@/lib/funcionalidades";
 
 const propsBase = {
   empresa: {
@@ -49,6 +56,7 @@ beforeEach(() => {
   m.cancelar.mockResolvedValue({ ok: true });
   m.situacao.mockResolvedValue({ ok: true });
   props = { ...propsBase, empresa: { ...propsBase.empresa } };
+  m.b2bAtiva = true;
 });
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
 
@@ -166,5 +174,40 @@ describe("FichaEmpresa — vencimento da fatura é data civil (C52 da #170)", ()
       if (anterior === undefined) delete process.env.TZ;
       else process.env.TZ = anterior;
     }
+  });
+});
+
+describe("FichaEmpresa — cobrança de empresas desligada (D9)", () => {
+  it("as faturas antigas continuam listadas, sem registrar pagamento, e um aviso diz por quê", () => {
+    m.b2bAtiva = false;
+    const t = tela();
+    const tudo = texto(t);
+    expect(tudo).toContain("FAT-0031"); // a fatura histórica segue para consulta
+    expect(tudo).not.toContain("Registrar pagamento");
+    expect(tudo).toContain(MSG_COBRANCA_B2B_DESLIGADA);
+    expect(doTipo(t, ConfirmarAcao)).toHaveLength(0);
+    expect(m.pagar).not.toHaveBeenCalled();
+  });
+
+  it("cancelar a fatura fechada continua, pela confirmação (R1 do #251, B1)", async () => {
+    m.b2bAtiva = false;
+    clicar(tela(), "Cancelar fatura");
+    const [c] = doTipo(tela(), ConfirmarAcao);
+    expect(c.props.titulo).toBe("Cancelar a fatura FAT-0031?");
+    await (c.props.acao as () => Promise<unknown>)();
+    expect(m.cancelar).toHaveBeenCalledWith("fat-1");
+  });
+
+  it("inativar e reativar a empresa não dependem da cobrança de empresas", () => {
+    m.b2bAtiva = false;
+    expect(texto(tela())).toContain("Inativar empresa");
+  });
+
+  it("religada, as ações voltam", () => {
+    m.b2bAtiva = true;
+    const tudo = texto(tela());
+    expect(tudo).toContain("Registrar pagamento");
+    expect(tudo).toContain("Cancelar fatura");
+    expect(tudo).not.toContain(MSG_COBRANCA_B2B_DESLIGADA);
   });
 });

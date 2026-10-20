@@ -7,7 +7,8 @@ import { Campo } from "@/components/Campo";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { mesclarContatosDaLista } from "@/server/crm/contatos-acoes";
+import { mesclarContatosDaLista, previaMesclaDaLista } from "@/server/crm/contatos-acoes";
+import type { PreviaMescla } from "@/server/crm/duplicados";
 import type { ParDuplicado, PessoaMesclavel } from "@/server/crm/ficha-dados";
 
 const CONTROLE = "w-full rounded-md border border-border-soft bg-surface-raised px-2 py-1.5 text-sm max-sm:min-h-11";
@@ -30,13 +31,64 @@ export function escolhasDaMescla(
   return Object.fromEntries(CAMPOS.map(({ chave }) => [chave, escolhido[chave] === principal ? "principal" : "secundaria"])) as never;
 }
 
-function Painel({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel; b: PessoaMesclavel; aoFechar: () => void; aoMesclar: () => void }) {
+const ROTULO_CAMPO: Record<string, string> = Object.fromEntries(CAMPOS.map(({ chave, rotulo }) => [chave, rotulo]));
+const contar = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+/** Juntar rótulos em português: "Nome", "Nome e E-mail", "Nome, E-mail e Cidade". */
+function juntar(itens: string[]): string {
+  return itens.length <= 1 ? (itens[0] ?? "") : `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
+}
+
+/** O que a mesclagem muda, a partir da prévia do servidor (D14). */
+function ResumoPrevia({ previa }: { previa: PreviaMescla }) {
+  const { principal, secundaria, movidos, camposDaSecundaria, cadastroAcademico } = previa;
+  const vinculos = [
+    movidos.contatos > 0 && contar(movidos.contatos, "telefone", "telefones"),
+    movidos.oportunidades > 0 && contar(movidos.oportunidades, "oportunidade", "oportunidades"),
+    movidos.participantes > 0 && contar(movidos.participantes, "participação em oportunidade", "participações em oportunidades"),
+    movidos.tags > 0 && contar(movidos.tags, "tag", "tags"),
+    movidos.valoresCampo > 0 && contar(movidos.valoresCampo, "campo personalizado", "campos personalizados"),
+  ].filter((v): v is string => !!v);
+  const cadastros = cadastroAcademico
+    ? [cadastroAcademico.aluno && "cadastro de aluno", cadastroAcademico.responsavel && "cadastro de responsável"].filter((v): v is string => !!v)
+    : [];
+  return (
+    <>
+      <p>{secundaria.nome} é arquivado e tudo dele passa para {principal.nome}.</p>
+      <ul className="list-disc pl-5">
+        <li>{vinculos.length ? `Passam para ${principal.nome}: ${juntar(vinculos)}.` : `Nenhum telefone, oportunidade, tag ou campo de ${secundaria.nome} para passar.`}</li>
+        {camposDaSecundaria.length > 0 && <li>{juntar(camposDaSecundaria.map((c) => ROTULO_CAMPO[c] ?? c))} passam a ser os de {secundaria.nome}.</li>}
+        {cadastros.length > 0 && (
+          <li>
+            O {juntar(cadastros)} de {secundaria.nome} passa a apontar para {principal.nome}. Isso exige a alçada da Secretaria e fica registrado no cadastro.
+          </li>
+        )}
+      </ul>
+      <p>Não há desfazer pela tela.</p>
+    </>
+  );
+}
+
+/** Painel da mesclagem de um par. "Revisar" pede a prévia ao servidor; só o "Confirmar" do diálogo mescla. */
+export function PainelMescla({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel; b: PessoaMesclavel; aoFechar: () => void; aoMesclar: () => void }) {
   const router = useRouter();
   const [principal, setPrincipal] = useState<Lado>("a");
   const [escolhido, setEscolhido] = useState<Record<(typeof CAMPOS)[number]["chave"], Lado>>({ nome: "a", email: "a", cidade: "a", cargo: "a" });
-  const [confirmando, setConfirmando] = useState(false);
+  const [previa, setPrevia] = useState<PreviaMescla | null>(null);
+  // A prévia só lê: repetir é seguro, então o resultado incerto pede para tentar de novo.
+  const revisao = useAcaoCliente({ idempotente: true });
   const pessoa = { a, b };
   const outra: Lado = principal === "a" ? "b" : "a";
+  const entrada = () => ({ principalId: pessoa[principal].id, secundariaId: pessoa[outra].id, escolhas: escolhasDaMescla(principal, escolhido) });
+
+  async function revisar() {
+    setPrevia(null);
+    const desfecho = await revisao.executar(() => previaMesclaDaLista(entrada()));
+    if (desfecho?.tipo !== "ok" || !desfecho.dado) return;
+    // A mesclagem seria recusada (ex.: falta a alçada da Secretaria): o motivo aparece e o diálogo não abre.
+    if (desfecho.dado.bloqueio) revisao.setErro(desfecho.dado.bloqueio);
+    else setPrevia(desfecho.dado);
+  }
 
   return (
     <section role="region" aria-label={`Mesclar ${a.nome} e ${b.nome}`} className="space-y-3 rounded-lg border border-border-soft bg-surface-raised p-3">
@@ -62,31 +114,25 @@ function Painel({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel; b: PessoaMe
       <p className="text-sm text-gray-600">
         Telefones, oportunidades e histórico de {pessoa[outra].nome} passam para {pessoa[principal].nome}. O cadastro de {pessoa[outra].nome} fica arquivado e a mesclagem não é desfeita pela tela.
       </p>
+      <FeedbackAcao erro={revisao.erro} sucesso={null} />
       <div className="flex flex-wrap gap-2">
-        <Botao tamanho="lg" onClick={() => setConfirmando(true)}>Revisar mesclagem</Botao>
+        <Botao tamanho="lg" ocupado={revisao.ocupado} onClick={revisar}>Revisar mesclagem</Botao>
         <Botao variante="fantasma" tamanho="lg" onClick={aoFechar}>Cancelar</Botao>
       </div>
-      {confirmando && (
+      {previa && (
         <ConfirmarAcao
-          titulo={`Mesclar ${pessoa[outra].nome} em ${pessoa[principal].nome}?`}
+          titulo={`Mesclar ${previa.secundaria.nome} em ${previa.principal.nome}?`}
           confirmacao="mesclagem"
           idempotente={false}
-          acao={() =>
-            mesclarContatosDaLista({
-              principalId: pessoa[principal].id,
-              secundariaId: pessoa[outra].id,
-              escolhas: escolhasDaMescla(principal, escolhido),
-            })
-          }
+          acao={() => mesclarContatosDaLista({ principalId: previa.principal.id, secundariaId: previa.secundaria.id, escolhas: escolhasDaMescla(principal, escolhido) })}
           aoConcluir={() => {
-            setConfirmando(false);
+            setPrevia(null);
             router.refresh();
             aoMesclar();
           }}
-          aoCancelar={() => setConfirmando(false)}
+          aoCancelar={() => setPrevia(null)}
         >
-          <p>{pessoa[outra].nome} é arquivado e tudo dele passa para {pessoa[principal].nome}.</p>
-          <p>Não há desfazer pela tela.</p>
+          <ResumoPrevia previa={previa} />
         </ConfirmarAcao>
       )}
     </section>
@@ -117,7 +163,7 @@ export function MesclarContatos({ pares, selecionado }: { pares: ParDuplicado[];
           </ul>
         </>
       )}
-      {ativo && <Painel a={ativo.a} b={ativo.b} aoFechar={() => setAtivo(null)} aoMesclar={() => { setAtivo(null); acao.setSucesso("Contatos mesclados."); }} />}
+      {ativo && <PainelMescla a={ativo.a} b={ativo.b} aoFechar={() => setAtivo(null)} aoMesclar={() => { setAtivo(null); acao.setSucesso("Contatos mesclados."); }} />}
     </section>
   );
 }

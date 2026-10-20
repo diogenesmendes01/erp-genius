@@ -25,6 +25,13 @@ function calculo(l: Painel["linhas"][number]) {
 /** Só PENDENTE/APROVADA estornam; a paga exigiria desconto no fechamento (fora da fase). */
 const estornavel = (status: string) => status === "PENDENTE" || status === "APROVADA";
 
+/** "10/11/2026" a partir da data civil "2026-11-10"; "—" quando não há previsão (comissão paga ou estornada). */
+function diaCivil(data: string | null) {
+  if (!data) return "—";
+  const [a, m, d] = data.split("-");
+  return `${d}/${m}/${a}`;
+}
+
 function dia(data: Date, fuso: string) {
   const [a, m, d] = dataCivilInstitucional(data, fuso).split("-");
   return `${d}/${m}/${a}`;
@@ -131,6 +138,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
 
       <section aria-label="Comissões do período" className="space-y-2">
         <h2 className="font-medium">Comissões do período</h2>
+        <p className="text-xs text-gray-600">Previsão de pagamento: dia {painel.diaPrevisaoPagamento} do mês seguinte à competência, no fuso da escola.</p>
         {painel.linhas.length === 0 ? (
           <EstadoVazio bloco>{filtrando ? "Nenhuma comissão com esses filtros." : "Nenhuma comissão neste período."}</EstadoVazio>
         ) : (
@@ -146,6 +154,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                     <th scope="col" className="px-4 py-2 font-medium">Valor</th>
                     <th scope="col" className="px-4 py-2 font-medium">Situação</th>
                     <th scope="col" className="px-4 py-2 font-medium">Competência</th>
+                    <th scope="col" className="px-4 py-2 font-medium">Previsão de pagamento</th>
                     {podeEstornar && <th scope="col" className="px-4 py-2 font-medium">Ações</th>}
                   </tr>
                 </thead>
@@ -159,6 +168,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                       <td className="px-4 py-2">{moeda(l.valor, l.moeda)}</td>
                       <td className="px-4 py-2">{rotular(STATUS_COMISSAO_LABEL, l.status)}</td>
                       <td className="px-4 py-2">{dia(l.competencia, fuso)}</td>
+                      <td className="px-4 py-2">{diaCivil(l.previsaoPagamento)}</td>
                       {podeEstornar && <td className="px-4 py-2">{estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}</td>}
                     </tr>
                   ))}
@@ -172,7 +182,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                   <p className="text-gray-600">{l.produto} · {l.vendedor}</p>
                   <p>{calculo(l)}</p>
                   <p className="flex flex-wrap justify-between gap-2"><span className="font-medium">{moeda(l.valor, l.moeda)}</span><span>{rotular(STATUS_COMISSAO_LABEL, l.status)}</span></p>
-                  <p className="text-xs text-gray-600">{dia(l.competencia, fuso)}</p>
+                  <p className="text-xs text-gray-600">{dia(l.competencia, fuso)}{l.previsaoPagamento && <> · previsão de pagamento {diaCivil(l.previsaoPagamento)}</>}</p>
                   {podeEstornar && estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}
                 </li>
               ))}

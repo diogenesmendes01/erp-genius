@@ -6,7 +6,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { publicarOfertaAgendaDestino } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
@@ -142,6 +142,7 @@ async function aprovarComDispensa(solicitacaoId: string) {
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR], "Professor da origem")).id;
   secretariaId = (await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria executora")).id;
