@@ -4051,6 +4051,66 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
 - **Correção da revisão R1 (B1–B4):** supervisão da Aria, configuração de IA, avisos de agenda e edição de tag, campo e resposta rápida gravavam um segundo Evento no reenvio. Agora o servidor compara o estado atual com o pedido e retorna sem update nem Evento quando nada mudou (como `aplicarSlaSetor`); a tela da supervisão fixa o `ate` dentro da tentativa. Cada caso tem teste de integração (duas chamadas idênticas → 1 Evento; mudança real grava). Também: arquivar resposta rápida não troca mais a chave de uma criação incerta, e a chave sem atendimento em `agendarMensagem` vira `ErroRegra`.
 - **Revisão R2 (aprovada), ajustes finais:** C5, a supervisão só reaproveita o `ate` depois de resultado incerto e não depois de erro definitivo (`supervisao-tentativa.ts`, com teste); C4, comentário do `FusoExibicaoFormulario`; C2, arquivar uma resposta rápida já arquivada devolve ok, sem Evento. **Fica para o lote 4 (C3):** em `agendarMensagem` (data futura, janela, encerramento e opt-out), na nota e na promessa, a busca da repetição roda depois das validações, e um reenvio tardio recebe erro em vez do registro já feito. Não duplica nada.
 
+### Q172, follow-up: a conferência da entrada considera o aditivo de adiantamento aplicado (#264 C1) — 2026-10-20
+
+- **Bug de produção (vinha da #261):** `conferirPagamentosEntradaParticular` comparava `valorNegociado` e `vencimento` do adiantamento com o plano **original** das condições de entrada. Depois de um aditivo aplicado, a ativação era recusada com "A cobrança difere das condições conferidas…" (contrato assinado → aceite → aditivo → pagamento → ativação), e um aditivo aplicado antes do aceite travava o aceite. Não havia como regularizar: o aditivo já estava aplicado e a cobrança paga.
+- **Correção:** a função passa a receber as aplicações (`AplicacaoAdiantamentoAditivo`) da matrícula, carregadas por `carregarAplicacoesAdiantamentoEntradaTx` (`src/server/matricula/entrada-particular-aplicacoes.ts`), nos três pontos de chamada: aceite (`contratos/aceite-estado.ts`), ativação (`matricula/ativacao-preparacao-tx.ts`) e consulta da entrada (`matricula/entrada-particular-consulta.ts`). Para a cobrança do adiantamento, a cadeia de aplicações (ordenada por `versaoCobrancaDepois`) precisa partir do valor, vencimento e minutos conferidos e ser encadeada (anterior de cada aplicação = novo da anterior); a cobrança é comparada com a **última** aplicação, como `conferirCompraPreparadaTx` já fazia. O item devolvido traz `minutos` e valor vigentes e `aplicacaoAdiantamentoAditivoId`. Sem aplicação, o comportamento e o snapshot do aceite não mudam.
+- **Continua recusado:** cobrança alterada sem aditivo, cobrança que diverge da última aplicação, cadeia que não parte do conferido ou que se quebra, e aplicação apontando para cobrança que não é o adiantamento.
+- **Testes:**
+  - Integração (`contratos/aditivo.int.test.ts`, 3 novos): aceite → aditivo aplicado → pagamento → **ativação real** por `concluirMatricula` (sem forçar status); aditivo antes do aceite → consulta da entrada mostra 375/180 min e o id da aplicação → aceite confirmado → ativação real; negativo: valor alterado sem aditivo recusa aceite e consulta, e vencimento alterado depois do aditivo recusa consulta e ativação. Os três falhavam antes da correção com a mensagem do bug.
+  - Unitário (`entrada-particular-pagamentos.test.ts`, 8 novos): última aplicação de uma cadeia de duas define valor, vencimento e minutos; recusa de valor, vencimento, origem, quebra de cadeia, minutos, aplicação na taxa e aplicação de outra cobrança.
+- **Evidências** (banco descartável `erp_genius_test_q172e`, `migrate deploy`, perfil temporário desfeito antes do commit e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - Unitários: 793 arquivos e 5.949 testes OK em UTC e em `TZ=America/Sao_Paulo`.
+  - Integração de 16 arquivos de `contratos`, `matricula`, `financeiro/politica` e `retomada` que passam por aceite, ativação, entrada ou compra de horas: `aditivo.int.test.ts` com 60 de 60 OK; nos outros 15, 291 de 293 na primeira rodada. As 2 falhas foram em `aditivo-acerto-taxa` (DCT03 e Q168), dentro da fixture e com "Erro inesperado", sob carga do Postgres compartilhado. Ao rodar o arquivo de novo, passaram 53 de 53.
+
+### Follow-ups da #262 (escopo comercial × SQL, índice de Evento) e da #269 (fundo sutil sobre a página) — 2026-10-20
+
+- **#262, C2 das duas revisões:** comentário em `escopoComercialAtual` (`src/server/_shared/escopo-comercial.ts`) avisa que o funil e a carteira traduzem esse `where` para SQL em `crm/oportunidade-sql.ts`, que só aceita as três formas atuais e recusa as outras. Quem mudar o escopo tem de atualizar o tradutor.
+- **#262, trava do formato:** `src/server/crm/escopo-comercial-sql.test.ts` roda o `escopoComercialAtual` real (com o banco simulado) para todas as 256 combinações de papéis, com e sem equipe ou cobertura, e para o usuário sem id. Confere que cada resultado é uma das três formas (`{}`, `{ id: "__sem_acesso__" }`, `{ vendedorDonoId: { in: [...] } }`) e que `whereOportunidadeEmSql` o traduz. Teste de mutação: devolver `{ OR: [...] }` no escopo derruba 2 testes.
+- **#262, índice `Evento(agregadoTipo, agregadoId, criadoEm)`: criado** (migration `20261020400000_evento_agregado_criado_em_idx`, com `@@index` no schema). Medido com `EXPLAIN ANALYZE` numa base sintética (banco descartável `erp_genius_test_fu262`). Os números são medianas de 5 rodadas numa máquina compartilhada, então há ruído.
+  - Base com 100 mil oportunidades e 800 mil Eventos de Lead (mais 500 mil de outros agregados). O ganho aparece nos perdidos com período (`MAX` sem filtro de tipo, só no índice): admin de ~295 para ~130 ms, vendedor de ~21 para ~15 ms. No funil "tempo" e na carteira, a diferença ficou dentro do ruído.
+  - Com timeline longa (mais 500 mil Eventos nos 2.500 leads de um vendedor, ~200 por lead):
+    - perdidos do vendedor: de ~89 para ~24 ms;
+    - perdidos do admin: de ~754 para ~128 ms;
+    - carteira do vendedor: de ~307 para ~140 ms;
+    - funil "tempo" do vendedor: de ~102 para ~70 ms;
+    - funil "tempo" do admin: de ~607 para ~348 ms.
+  - O plano passa a usar `Index Only Scan Backward` (sem filtro de tipo) ou `Index Scan Backward` + `Limit 1` (com filtro de tipo).
+  - Custo: 70 MB de índice para 1,8 milhão de Eventos (o antigo `(agregadoTipo, agregadoId)` ocupa 23 MB) e ~3 s de `CREATE INDEX`. **O `CREATE INDEX` trava a escrita em `Evento`, então o deploy deve rodar fora de pico.** O projeto não tem precedente de `CONCURRENTLY` nas migrations, então fica o `CREATE INDEX` comum.
+  - O índice antigo virou prefixo do novo. Removê-lo fica para outra PR.
+- **#269, follow-up do ponto 1:** conferi pelo JSX (árvore de ancestrais no arquivo e nos importadores) cada fundo `bg-gray-50`/`bg-surface-muted` sem borda em `src/app` e `src/components`.
+  - Nenhum layout envolve as telas em superfície branca. Os blocos das telas operacionais são `rounded border` sem fundo.
+  - **Trocados para `bg-gray-100`, que ficavam direto sobre a página:** 48 classes em 34 arquivos. São as caixas `rounded bg-gray-50 p-3/p-4`, os `pre` de payload `p-2`, os `thead` das tabelas com wrapper só de borda, a linha expandida de PaisesPainel, a célula intermediária do mapa de calor de AbaConversas e o item de mensagem da AgendaTarefas.
+  - Os `thead` e a AgendaTarefas tinham sido dados como "dentro de cartão" no #269, mas não estão.
+  - **Mantidos:**
+    - dentro de `bg-surface`: MudancasAcademicasPainel 2×, AcessoAulasPainel, SecretariaPainel, FichaEmpresa (2 `thead`), CartaoOportunidade, HomeProfessor e o tom neutro de `/pagar`;
+    - dentro de `Modal`: ImportarAlunosModal 2× e ImportarTurmasModal;
+    - o próprio `<main>` do portal do aluno;
+    - um comentário em `Aviso.tsx`.
+  - A trava `fundo-sobre-pagina.test.ts` saiu da Aria e foi para `src/app/`. Agora varre `src/app` e `src/components`, ignora comentários e só aceita fundo sutil sem borda nos arquivos da lista conferida (arquivo, quantidade e motivo). Também acusa sobra na lista. Teste de mutação: voltar uma caixa da ReposicoesEquipe para `bg-gray-50` derruba a trava.
+- **Verificação:** banco descartável `erp_genius_test_fu262`, `migrate deploy` do zero, perfil temporário desfeito e banco removido ao fim.
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 815 arquivos e 6.091 testes OK em UTC e em America/Sao_Paulo.
+  - Integração de `src/server/crm`: 31 arquivos e 277 testes OK.
+  - `npm run build`: saída 0.
+  - A migration nova aplica com `migrate deploy`, e o `migrate diff` não mostra divergência em `Evento`.
+
+### Q172-R: robustez da conferência da entrada com aditivo de adiantamento (reviews da #270) — 2026-10-20
+
+- **Versões na cadeia (`entrada-particular-pagamentos.ts`):** cada aplicação precisa ter `versaoCobrancaDepois = versaoCobrancaAntes + 1`, nenhuma pode partir de versão anterior à deixada pela aplicação precedente (`antes ≥ depois anterior`), e a cobrança atual não pode estar em versão anterior à da última aplicação (`c.versao ≥ depois da última`). Qualquer violação recusa com a mesma mensagem de divergência.
+- **Não adotado (de propósito):** a igualdade estrita sugerida (`antes = depois anterior` e `c.versao = depois da última`). O pagamento (`financeiro/recebimentos.ts`) e outras alterações legítimas (pausa/retomada, liquidação etc.) incrementam `versao` sem mudar valor e vencimento; a igualdade quebraria a ativação depois de pagar o adiantamento, que é o fluxo normal coberto pelas integrações de ativação real. A versão da cobrança na emissão também não é gravada (memória e `ItemEmissaoEntrada` não a guardam), então a primeira aplicação não é ancorada. Valor, vencimento e minutos continuam sendo a conferência principal.
+- **Loader (`entrada-particular-aplicacoes.ts`):** filtra `decisao.aprovada = true`, repetindo a regra do trigger `guardar_aplicacao_adiantamento_172` como defesa em profundidade, e passa a carregar `versaoCobrancaAntes`.
+- **Quadro:** a contagem do `aditivo.int.test.ts` na entrada da Q172 foi corrigida (64 de 64 depois do merge com a `main`).
+- **Testes:** unitário (`entrada-particular-pagamentos.test.ts`, 4 novos): versão avançada entre aplicações e depois da última (pagamento) é aceita; recusa salto de versão, versão sobreposta e versão atual anterior à da última aplicação.
+- **Evidências** (banco descartável `erp_genius_test_q172r`, `migrate deploy`, perfil temporário desfeito antes do commit e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - Unitários: 814 arquivos e 6.097 testes OK em UTC e em `TZ=America/Sao_Paulo`.
+  - Integração: `contratos/aditivo.int.test.ts` e `matricula/ativacao.int.test.ts`, 69 de 69 OK (inclui aceite → aditivo → pagamento → ativação real e o aditivo antes do aceite).
+
 ### Idempotência, 4º lote (#166) — 2026-10-20
 
 - **Escopo:** criações sem guarda (as que duplicavam registro ou Evento) e o C3 da R2 do #267. A #166 continua aberta. Os testes de integração entraram primeiro e falharam contra o servidor de `main` (20 de 21; o que passou é trava de regressão); a implementação veio depois.
