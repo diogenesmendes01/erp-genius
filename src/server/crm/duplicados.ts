@@ -91,12 +91,127 @@ const MesclaSchema = z.object({
 
 const CAMPOS = ["nome", "email", "cidade", "cargo"] as const;
 
-/** Mescla a secundária na principal. A secundária vira lápide (`mescladaEmId`); nada é apagado e não há desfazer. */
-export async function mesclarPessoas(input: {
+type EntradaMescla = {
   principalId: string;
   secundariaId: string;
   escolhas: Partial<Record<(typeof CAMPOS)[number], "principal" | "secundaria">>;
-}): Promise<Resultado> {
+};
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/**
+ * D14 (decisão do dono, 19/10/2026; #211 C4): repor `Aluno.pessoaId`/`Responsavel.pessoaId` pela mescla é decisão
+ * da Secretaria. Quem tem a alçada: Secretaria Acadêmica ou Administrador (que tem todas). Continua valendo
+ * `contatos.mesclar` para mesclar qualquer par.
+ */
+export function temAlcadaSecretaria(papeis: readonly Papel[]): boolean {
+  return papeis.includes(Papel.SECRETARIA_ACADEMICA) || papeis.includes(Papel.ADMINISTRADOR);
+}
+
+export const MSG_ALCADA_SECRETARIA_MESCLA =
+  "Esta mesclagem passa o cadastro acadêmico (aluno ou responsável) para o outro contato. Só quem tem a alçada da Secretaria pode confirmá-la.";
+
+/** O que a mesclagem muda, calculado antes de confirmar. `bloqueio` traz a recusa que a mesclagem daria. */
+export type PreviaMescla = {
+  principal: { id: string; nome: string };
+  secundaria: { id: string; nome: string };
+  /** Campos da principal que passam a ter o valor da secundária. */
+  camposDaSecundaria: (typeof CAMPOS)[number][];
+  movidos: { contatos: number; oportunidades: number; participantes: number; tags: number; valoresCampo: number };
+  /** Cadastro acadêmico da secundária que passa para a principal (null quando nada muda). */
+  cadastroAcademico: { aluno: boolean; responsavel: boolean } | null;
+  exigeSecretaria: boolean;
+  bloqueio: string | null;
+};
+
+/**
+ * Leituras e regras comuns à prévia e à mesclagem: as duas pessoas no escopo, nenhuma lápide, cadastro acadêmico
+ * de um lado só, alçada da Secretaria para movê-lo e nome/e-mail de aluno. Nada é gravado aqui.
+ */
+async function analisarMesclaTx(tx: Tx, autor: UsuarioSessao, dados: z.infer<typeof MesclaSchema>) {
+  const ids = [dados.principalId, dados.secundariaId].sort();
+  const visiveis = await tx.pessoa.findMany({
+    where: { AND: [{ id: { in: ids } }, await escopoPessoas(autor, tx)] },
+    select: { id: true },
+  });
+  if (visiveis.length !== 2) throw new ErroRegra("Pessoa não encontrada.");
+
+  const sel = { aluno: { select: { id: true } }, responsavel: { select: { id: true } } } as const;
+  const principal = await tx.pessoa.findUniqueOrThrow({ where: { id: dados.principalId }, include: sel });
+  const secundaria = await tx.pessoa.findUniqueOrThrow({ where: { id: dados.secundariaId }, include: sel });
+  if (principal.mescladaEmId || secundaria.mescladaEmId) throw new ErroRegra("Uma das pessoas já foi mesclada.");
+  const academica = (p: typeof principal) => !!p.aluno || !!p.responsavel;
+  if (academica(principal) && academica(secundaria)) throw new ErroRegra(MSG_ACADEMICO);
+
+  // Cadastro acadêmico: só se a secundária for a única com ele.
+  const moveAcademico = academica(secundaria) && !academica(principal);
+
+  const dadosPrincipal: Record<string, string | null> = {};
+  const mudados: (typeof CAMPOS)[number][] = [];
+  for (const campo of CAMPOS) {
+    if (dados.escolhas[campo] === "secundaria" && secundaria[campo] !== principal[campo]) {
+      dadosPrincipal[campo] = secundaria[campo];
+      mudados.push(campo);
+    }
+  }
+
+  let bloqueio: string | null = null;
+  if (moveAcademico && !temAlcadaSecretaria(autor.papeis)) bloqueio = MSG_ALCADA_SECRETARIA_MESCLA;
+  // Mesma trava de editarPessoa: nome e e-mail de aluno só mudam por Administrador. Vale para o aluno
+  // de qualquer lado; quando o cadastro acadêmico vem da secundária, o nome que fica precisa ser o dela.
+  const ladoAluno = principal.aluno ? principal : secundaria.aluno ? secundaria : null;
+  if (!bloqueio && ladoAluno && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
+    const final = { nome: principal.nome, email: principal.email, ...dadosPrincipal };
+    if (final.nome !== ladoAluno.nome || final.email !== ladoAluno.email) bloqueio = MSG_NOME_ALUNO;
+  }
+  return { principal, secundaria, moveAcademico, dadosPrincipal, mudados, bloqueio };
+}
+
+/**
+ * Prévia da mesclagem (D14): o que passa da secundária para a principal, os campos que mudam, o cadastro
+ * acadêmico que é reposto e, quando a mesclagem seria recusada, o motivo. Só leitura: nada é gravado.
+ */
+export async function previaMesclaPessoas(input: EntradaMescla): Promise<Resultado<PreviaMescla>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    exigirCapacidadeCrm(autor, "contatos.mesclar");
+    const dados = MesclaSchema.parse(input);
+    if (dados.principalId === dados.secundariaId) throw new ErroRegra("Escolha duas pessoas diferentes.");
+    return prisma.$transaction(async (tx) => {
+      const a = await analisarMesclaTx(tx, autor, dados);
+      const de = dados.principalId;
+      const para = dados.secundariaId;
+      const jaParticipa = await tx.participanteOportunidade.findMany({ where: { pessoaId: de }, select: { oportunidadeId: true } });
+      const tagsPrincipal = await tx.pessoaTag.findMany({ where: { pessoaId: de }, select: { tagId: true } });
+      const valoresPrincipal = await tx.valorCampoPersonalizado.findMany({ where: { pessoaId: de } });
+      const porCampo = new Map(valoresPrincipal.map((v) => [v.campoId, v]));
+      const valoresSecundaria = await tx.valorCampoPersonalizado.findMany({ where: { pessoaId: para } });
+      const valoresCampo = valoresSecundaria.filter((v) => {
+        const existente = porCampo.get(v.campoId);
+        return !existente || (existente.valor === null && v.valor !== null);
+      }).length;
+      return {
+        principal: { id: a.principal.id, nome: a.principal.nome },
+        secundaria: { id: a.secundaria.id, nome: a.secundaria.nome },
+        camposDaSecundaria: a.mudados,
+        movidos: {
+          contatos: await tx.contatoWhatsApp.count({ where: { pessoaId: para } }),
+          oportunidades: await tx.oportunidade.count({ where: { pessoaId: para } }),
+          participantes: await tx.participanteOportunidade.count({
+            where: { pessoaId: para, oportunidadeId: { notIn: jaParticipa.map((x) => x.oportunidadeId) } },
+          }),
+          tags: await tx.pessoaTag.count({ where: { pessoaId: para, tagId: { notIn: tagsPrincipal.map((t) => t.tagId) } } }),
+          valoresCampo,
+        },
+        cadastroAcademico: a.moveAcademico ? { aluno: !!a.secundaria.aluno, responsavel: !!a.secundaria.responsavel } : null,
+        exigeSecretaria: a.moveAcademico,
+        bloqueio: a.bloqueio,
+      };
+    });
+  });
+}
+
+/** Mescla a secundária na principal. A secundária vira lápide (`mescladaEmId`); nada é apagado e não há desfazer. */
+export async function mesclarPessoas(input: EntradaMescla): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "contatos.mesclar");
@@ -108,18 +223,8 @@ export async function mesclarPessoas(input: {
       const ids = [dados.principalId, dados.secundariaId].sort();
       await tx.$queryRaw`SELECT id FROM "Pessoa" WHERE id IN (${ids[0]}, ${ids[1]}) ORDER BY id FOR UPDATE`;
 
-      const visiveis = await tx.pessoa.findMany({
-        where: { AND: [{ id: { in: ids } }, await escopoPessoas(autor, tx)] },
-        select: { id: true },
-      });
-      if (visiveis.length !== 2) throw new ErroRegra("Pessoa não encontrada.");
-
-      const sel = { aluno: { select: { id: true } }, responsavel: { select: { id: true } } } as const;
-      const principal = await tx.pessoa.findUniqueOrThrow({ where: { id: dados.principalId }, include: sel });
-      const secundaria = await tx.pessoa.findUniqueOrThrow({ where: { id: dados.secundariaId }, include: sel });
-      if (principal.mescladaEmId || secundaria.mescladaEmId) throw new ErroRegra("Uma das pessoas já foi mesclada.");
-      const academica = (p: typeof principal) => !!p.aluno || !!p.responsavel;
-      if (academica(principal) && academica(secundaria)) throw new ErroRegra(MSG_ACADEMICO);
+      const { secundaria, moveAcademico, dadosPrincipal, mudados, bloqueio } = await analisarMesclaTx(tx, autor, dados);
+      if (bloqueio) throw new ErroRegra(bloqueio);
 
       const de = dados.principalId;
       const para = dados.secundariaId;
@@ -156,29 +261,20 @@ export async function mesclarPessoas(input: {
         }
       }
 
-      // Cadastro acadêmico: só se a secundária for a única com ele.
-      let academicoMovido = false;
-      if (academica(secundaria) && !academica(principal)) {
-        if (secundaria.aluno) await tx.aluno.update({ where: { id: secundaria.aluno.id }, data: { pessoaId: de } });
-        if (secundaria.responsavel) await tx.responsavel.update({ where: { id: secundaria.responsavel.id }, data: { pessoaId: de } });
-        academicoMovido = true;
-      }
-
-      const dadosPrincipal: Record<string, string | null> = {};
-      const mudados: string[] = [];
-      for (const campo of CAMPOS) {
-        if (dados.escolhas[campo] === "secundaria" && secundaria[campo] !== principal[campo]) {
-          dadosPrincipal[campo] = secundaria[campo];
-          mudados.push(campo);
+      // Cadastro acadêmico (D14): só com a alçada da Secretaria (conferida na análise), e cada cadastro reposto
+      // ganha o seu evento, com a pessoa de antes e a de depois.
+      if (moveAcademico) {
+        const repontado = { pessoaIdAntes: para, pessoaIdDepois: de, via: "mescla" };
+        if (secundaria.aluno) {
+          await tx.aluno.update({ where: { id: secundaria.aluno.id }, data: { pessoaId: de } });
+          await registrarEvento(tx, { tipo: "CadastroAcademicoRepontado", agregadoTipo: "Aluno", agregadoId: secundaria.aluno.id, autorId: autor.id, payload: repontado });
+        }
+        if (secundaria.responsavel) {
+          await tx.responsavel.update({ where: { id: secundaria.responsavel.id }, data: { pessoaId: de } });
+          await registrarEvento(tx, { tipo: "CadastroAcademicoRepontado", agregadoTipo: "Responsavel", agregadoId: secundaria.responsavel.id, autorId: autor.id, payload: repontado });
         }
       }
-      // Mesma trava de editarPessoa: nome e e-mail de aluno só mudam por Administrador. Vale para o aluno
-      // de qualquer lado; quando o cadastro acadêmico vem da secundária, o nome que fica precisa ser o dela.
-      const ladoAluno = principal.aluno ? principal : secundaria.aluno ? secundaria : null;
-      if (ladoAluno && !autor.papeis.includes(Papel.ADMINISTRADOR)) {
-        const final = { nome: principal.nome, email: principal.email, ...dadosPrincipal };
-        if (final.nome !== ladoAluno.nome || final.email !== ladoAluno.email) throw new ErroRegra(MSG_NOME_ALUNO);
-      }
+
       if (mudados.length) await tx.pessoa.update({ where: { id: de }, data: dadosPrincipal });
       await tx.pessoa.update({ where: { id: para }, data: { mescladaEmId: de } });
 
@@ -192,7 +288,7 @@ export async function mesclarPessoas(input: {
           participantes: participantes.count,
           tags: tags.count,
           valoresCampo: valoresMovidos,
-          cadastroAcademico: academicoMovido,
+          cadastroAcademico: moveAcademico,
         },
       };
       for (const id of [de, para]) {

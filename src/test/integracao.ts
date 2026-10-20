@@ -15,6 +15,19 @@ export async function truncarBanco(): Promise<void> {
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${lista} RESTART IDENTITY CASCADE`);
 }
 
+/**
+ * Fuso da escola configurado (D10): sem ele, o lançamento de avaliação é recusado. As suítes que lançam notas
+ * chamam isto no setup, depois do truncarBanco. Upsert: chamar de novo (ou depois de outra configuração) só
+ * reafirma o fuso.
+ */
+export async function configurarFusoDaEscola(fuso = "UTC"): Promise<void> {
+  await prisma.configuracaoOperacional.upsert({
+    where: { id: "escola" },
+    create: { id: "escola", fusoInstitucional: fuso },
+    update: { fusoInstitucional: fuso },
+  });
+}
+
 let seqUsuario = 0;
 
 /** Cria um usuário REAL no banco de teste (papéis frescos são lidos daqui). */

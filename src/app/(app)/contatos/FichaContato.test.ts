@@ -9,7 +9,7 @@ import type { LinhaContato } from "@/server/crm/contatos";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {}, push: () => {} }) }));
 vi.mock("@/server/crm/contatos-acoes", () => ({
   editarPessoaDaFicha: vi.fn(), registrarNotaDaFicha: vi.fn(), registrarOptOutDaFicha: vi.fn(),
-  atribuirTagDaFicha: vi.fn(), removerTagDaFicha: vi.fn(), definirCampoDaFicha: vi.fn(), mesclarContatosDaLista: vi.fn(),
+  atribuirTagDaFicha: vi.fn(), removerTagDaFicha: vi.fn(), definirCampoDaFicha: vi.fn(), mesclarContatosDaLista: vi.fn(), previaMesclaDaLista: vi.fn(),
 }));
 vi.mock("@/server/comercial/acoes", () => ({ criarLead: vi.fn(), moverEtapa: vi.fn() }));
 vi.mock("@/server/crm/oportunidades", () => ({ buscarPossiveisDuplicados: vi.fn() }));
