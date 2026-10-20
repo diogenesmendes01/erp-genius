@@ -498,6 +498,27 @@ describe("proposta não se aplica sobre um calendário diferente", () => {
     expect(await movimentosRetomada()).toHaveLength(0);
   });
 
+  it("replay de REPROGRAMAR com cobrancaId repetido na entrada não reutiliza a proposta pendente", async () => {
+    // Revisão da #253, C3: o replay compara por mapa e `size === length`, então `[A, A, …]` com o mesmo tamanho
+    // da proposta `{A, B, …}` passaria como "mesmas datas". O schema recusa id repetido antes disso; este teste
+    // trava esse comportamento: erro, proposta e eventos intactos.
+    await pausar();
+    const input = await reprogramacao();
+    const datas = input.novosVencimentos!;
+    expect(datas.length).toBeGreaterThan(1);
+    const propostaId = await propor(input);
+    const proposta = await prisma.propostaRetomada.findUniqueOrThrow({ where: { id: propostaId } });
+    const eventos = await prisma.evento.findMany({ orderBy: { id: "asc" } });
+
+    const repetido = await solicitarRetomada(alunoId, { ...input, novosVencimentos: datas.map((p, i) => i === 1 ? datas[0] : p) });
+
+    expect(repetido.ok).toBe(false);
+    if (!repetido.ok) expect(repetido.erro).toContain("Uma cobrança não pode receber duas datas.");
+    expect(await prisma.propostaRetomada.findMany({ where: { alunoId } })).toEqual([proposta]);
+    expect(await prisma.evento.findMany({ orderBy: { id: "asc" } })).toEqual(eventos);
+    expect(sucesso(await solicitarRetomada(alunoId, input)).propostaId).toBe(propostaId);
+  });
+
   it("aprovações concorrentes e replay aplicam a retomada exatamente uma vez", async () => {
     await pausar();
     const input = await reprogramacao();
