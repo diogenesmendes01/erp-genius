@@ -7,6 +7,11 @@ import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+// A cobrança de empresas está desligada (D9, src/lib/funcionalidades.ts); esta suíte cobre o fluxo religado.
+vi.mock("@/lib/funcionalidades", async (original) => ({
+  ...(await original<typeof import("@/lib/funcionalidades")>()),
+  COBRANCA_B2B_ATIVA: true,
+}));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, seedCatalogoMinimo, eventosDo } from "@/test/integracao";

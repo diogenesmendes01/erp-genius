@@ -8,7 +8,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/whatsapp/drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, enviarTemplate: enviarMock, enviarMidia: enviarMock } }));
 
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, eventosDo, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { publicarOfertaAgendaDestino } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
@@ -197,6 +197,7 @@ async function esperarBloqueados(pid: number, quantidade: number) {
 
 beforeEach(async () => {
   vi.clearAllMocks(); await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   vi.stubEnv("WHATSAPP_LIVE", "1");
   enviarMock.mockResolvedValue({ providerMessageId: "teste-sem-rede" });
 });

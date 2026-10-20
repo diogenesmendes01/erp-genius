@@ -5,12 +5,15 @@ import { escopoComissoes } from "@/server/financeiro/consultas";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { nomeCompleto } from "@/lib/nome";
+import { DIA_PREVISAO_COMISSAO_PADRAO, previsaoPagamentoComissao } from "@/server/financeiro/previsao-comissao";
 
 export type PeriodoComissao = "mes" | "mes_anterior" | "trimestre" | "ano";
 
 export type LinhaComissao = {
   id: string; nome: string; produto: string; vendedor: string; base: string; percentual: string | null;
   valor: string; moeda: string; status: StatusComissao; competencia: Date;
+  /** D11: data civil (AAAA-MM-DD) prevista para o pagamento; null quando já paga ou estornada. */
+  previsaoPagamento: string | null;
 };
 
 export type PainelComissoes = {
@@ -21,6 +24,8 @@ export type PainelComissoes = {
   matriculadasSemComissao: { oportunidadeId: string; nome: string }[];
   linhas: LinhaComissao[];
   possuiMais: boolean;
+  /** D11: dia do mês seguinte à competência usado na previsão (ConfigFinanceiro). */
+  diaPrevisaoPagamento: number;
 };
 
 export const LINHAS_POR_PAGINA_COMISSOES = 50;
@@ -80,6 +85,9 @@ export async function carregarPainelComissoes(
 ): Promise<PainelComissoes> {
   const config = await prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
   const fuso = config?.fusoInstitucional ?? FUSO_PADRAO;
+  // D11: a previsão é calculada na leitura (ver previsao-comissao.ts), com o dia configurado no financeiro.
+  const configFinanceiro = await prisma.configFinanceiro.findUnique({ where: { id: "financeiro" }, select: { diaPrevisaoPagamentoComissao: true } });
+  const diaPrevisao = configFinanceiro?.diaPrevisaoPagamentoComissao ?? DIA_PREVISAO_COMISSAO_PADRAO;
   const { de, ate } = intervaloDoPeriodo(f.periodo, new Date(), fuso);
   // Q7: base TAXA_MATRICULA e competência na aprovação; com base mensalidade/ganho, mudar a fonte de LinhaComissao.base.
   const where: Prisma.ComissaoWhereInput = { AND: [
@@ -143,7 +151,9 @@ export async function carregarPainelComissoes(
       base: c.politica?.base ?? "TAXA_MATRICULA",
       percentual: c.tipo === "PERCENTUAL" ? dinheiro(c.percentual) : null,
       valor: dinheiro(c.valor), moeda: c.moeda, status: c.status, competencia: c.aprovadaEm ?? c.criadoEm,
+      previsaoPagamento: c.status === "PAGA" || c.status === "ESTORNADA" ? null : previsaoPagamentoComissao(c.aprovadaEm ?? c.criadoEm, fuso, diaPrevisao),
     })),
     possuiMais,
+    diaPrevisaoPagamento: diaPrevisao,
   };
 }

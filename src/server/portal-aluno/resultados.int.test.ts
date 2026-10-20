@@ -11,7 +11,7 @@ import { proporCorrecaoNota, revisarCorrecaoNota, decidirCorrecaoNota } from "@/
 import { salvarLancamentoAvaliacao, oficializarLancamentoAvaliacao } from "@/server/avaliacoes/lancamentos";
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { publicarOfertaAgendaDestino } from "@/test/oferta-agenda-destino";
 import { consultarResultadosPortalAluno } from "./resultados";
 import { carregarFontesEquivalenciaTx } from "@/server/avaliacoes/fontes-equivalencia-tx";
@@ -44,6 +44,7 @@ async function oficializar(lancamento: { id: string; conteudoHash: string }) {
 
 beforeEach(async () => {
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   gestorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;

@@ -19,7 +19,7 @@ vi.mock("@/server/_shared/sessao", async (importOriginal) => {
 
 import { prisma } from "@/lib/prisma";
 import { receberTx } from "@/server/financeiro/recebimentos";
-import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, eventosDo, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import type { Resultado } from "@/server/_shared";
 import { HABILIDADES } from "@/server/avaliacoes/calculo";
@@ -177,6 +177,7 @@ const memorizarContrato = () => Promise.all([
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   sec = await criarUsuario([Papel.SECRETARIA_ACADEMICA], "Secretaria acadêmica");
   gp = await criarUsuario([Papel.GERENTE_PEDAGOGICO], "Gestão pedagógica");
   adm = await criarUsuario([Papel.ADMINISTRADOR], "Direção");
@@ -184,7 +185,7 @@ beforeEach(async () => {
   proAlheio = await criarUsuario([Papel.PROFESSOR], "Professor de outra turma");
   catalogo = await seedCatalogoMinimo();
   await prisma.modalidade.update({ where: { id: catalogo.modalidade.id }, data: { aulasPorNivel: 4 } });
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   entrar(sec.id);
   const calendario = sucesso(await prepararCalendarioEscolar({
     fusoConferido: "UTC", versaoAnterior: 0, periodos: [],

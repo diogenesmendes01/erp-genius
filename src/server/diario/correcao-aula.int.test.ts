@@ -20,7 +20,7 @@ vi.mock("@/server/_shared/sessao", async (importOriginal) => {
 });
 
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { aprovarCorrecaoAula, consultarHistoricoCorrecaoAula, proporCorrecaoAula, rejeitarCorrecaoAula, revisarCorrecaoAula, revisarImpactosCorrecaoAula } from "./correcao-aula";
 import { carregarFrequenciaNivelTx, simularFrequenciaCorrecaoAulaTx } from "@/server/avaliacoes/frequencia-nivel-tx";
 import { prepararRegraAvaliacaoTx, decidirRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
@@ -93,6 +93,7 @@ async function persistirPublicacaoTeste(propostaId: string, decisorId: string) {
 
 beforeEach(async () => {
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR])).id;
   secretariaId = (await criarUsuario([Papel.SECRETARIA_ACADEMICA])).id;

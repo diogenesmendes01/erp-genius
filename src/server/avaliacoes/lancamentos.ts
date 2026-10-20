@@ -4,7 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
-import { DataHoraAvaliacaoSchema, instanteAvaliacaoLocal } from "./tempo";
+import { DataHoraAvaliacaoSchema, MSG_LANCAMENTO_SEM_FUSO, instanteAvaliacaoLocal } from "./tempo";
+import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { docenteAtual } from "@/server/diario/permissoes";
 import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
 import { notaVigente } from "./nota-vigente";
@@ -12,15 +13,22 @@ import { identificarMatriculaAvaliacao } from "./identificacao";
 import { avaliacoesDesignadas } from "./designacao-acesso";
 import { SalvarLancamentoSchema, OficializarLancamentoSchema, NotasLancamentoSchema } from "./lancamento-schema";
 import { salvarLancamentoTx, oficializarLancamentoTx, bloquearLancamento } from "./lancamento-tx";
+/** D10: sem o fuso da escola, nenhum lançamento é aceito (em UTC a data da avaliação pode cair no dia errado). */
+async function exigirFusoDaEscola() {
+  if (!(await consultarFusoInstitucional())) throw new ErroRegra(MSG_LANCAMENTO_SEM_FUSO);
+}
+
 export async function salvarLancamentoAvaliacao(input: z.input<typeof SalvarLancamentoSchema>) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
+    await exigirFusoDaEscola();
     return prisma.$transaction(tx => salvarLancamentoTx(tx, u.id, input));
   });
 }
 export async function salvarLancamentoAvaliacaoLocal(input: Omit<z.input<typeof SalvarLancamentoSchema>, "realizadaEm"> & { realizadaLocal: string; fuso: string }) {
   return executarAcao(async () => {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR);
+    await exigirFusoDaEscola(); // D10 (a tela também esconde o formulário)
     const { realizadaLocal, fuso, ...d } = SalvarLancamentoSchema.omit({ realizadaEm: true }).extend({ realizadaLocal: DataHoraAvaliacaoSchema, fuso: FusoInstitucionalSchema }).strict().parse(input);
     let realizadaEm: string;
     try { realizadaEm = instanteAvaliacaoLocal(realizadaLocal, fuso).toISOString(); }

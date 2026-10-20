@@ -8849,6 +8849,8 @@ model ConfigFinanceiro {
   id                            String  @id @default("financeiro")
   // Fechamento MENSAL de comissões automático (dia 1: paga as APROVADAS do mês anterior).
   fechamentoComissaoAutomatico  Boolean @default(false)
+  // D11: previsão de pagamento da comissão = este dia do mês seguinte à competência (1 a 28, CHECK na migration).
+  diaPrevisaoPagamentoComissao  Int     @default(10)
   criadoEm                      DateTime @default(now())
   atualizadoEm                  DateTime @updatedAt
 }
