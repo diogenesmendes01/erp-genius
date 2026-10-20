@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { TIPOS_MUDAM_ETAPA, ETAPAS_MANUAIS, DatasSchema } from "./schema";
+import { TIPOS_MUDAM_ETAPA, ETAPAS_MANUAIS, DatasSchema as DatasSchemaBase } from "./schema";
+import { comDatasDaEscola } from "@/server/_shared/validacao";
+
+// As datas digitadas viram o meio-dia da escola (ref. #247); nas ações, o parse roda dentro de `comDatasDaEscola`.
+const FUSO = "America/Sao_Paulo";
+const DatasSchema = { parse: (v: unknown) => comDatasDaEscola(FUSO, () => DatasSchemaBase.parse(v)) };
 
 describe("TIPOS_MUDAM_ETAPA", () => {
   it("inclui a mudança manual de etapa", () => {
@@ -42,20 +47,18 @@ describe("DatasSchema — dataExperimental preserva horário (issue #16)", () =>
     expect(d.getMinutes()).toBe(30);
   });
 
-  it("aceita data simples (date-only) sem hora explícita → meio-dia local", () => {
+  it("aceita data simples (date-only) sem hora explícita → meio-dia da escola", () => {
     const r = DatasSchema.parse({ dataExperimental: "2026-06-22" });
-    const d = r.dataExperimental as Date;
-    expect(d.getHours()).toBe(12);
-    expect(d.getDate()).toBe(22);
+    expect(r.dataExperimental).toEqual(new Date("2026-06-22T15:00:00.000Z"));
   });
 
-  it("proximoFollowUp e dataProposta continuam date-only (meio-dia local)", () => {
+  it("proximoFollowUp e dataProposta continuam date-only (meio-dia da escola)", () => {
     const r = DatasSchema.parse({
       proximoFollowUp: "2026-07-01",
       dataProposta: "2026-07-05",
     });
-    expect((r.proximoFollowUp as Date).getHours()).toBe(12);
-    expect((r.dataProposta as Date).getHours()).toBe(12);
+    expect(r.proximoFollowUp).toEqual(new Date("2026-07-01T15:00:00.000Z"));
+    expect(r.dataProposta).toEqual(new Date("2026-07-05T15:00:00.000Z"));
   });
 
   it("campos vazios viram undefined (não sobrescrevem)", () => {
