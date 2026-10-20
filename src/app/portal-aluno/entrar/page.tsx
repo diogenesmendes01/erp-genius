@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
 
@@ -19,6 +19,9 @@ export default function EntrarPortalAlunoPage() {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  // A troca de rota roda numa transição: `pendente` fica true até a navegação terminar, inclusive quando
+  // ela termina na própria tela (cookie não gravado → a área do aluno redireciona de volta para cá).
+  const [pendente, iniciarTransicao] = useTransition();
 
   async function entrar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -44,8 +47,11 @@ export default function EntrarPortalAlunoPage() {
       else setErro(MSG_INDISPONIVEL);
       return;
     }
-    // Aceito: o botão continua desativado até a troca de rota, para um segundo clique não abrir outra sessão.
-    router.replace("/portal-aluno"); router.refresh();
+    // Aceito: o botão continua desativado durante a troca de rota (`pendente`), para um segundo clique não
+    // abrir outra sessão. `enviando` é liberado logo depois de iniciar a transição: se a navegação voltar
+    // para esta mesma tela (a instância é preservada), o botão volta a ficar ativo em vez de preso em "Entrando…".
+    iniciarTransicao(() => { router.replace("/portal-aluno"); router.refresh(); });
+    setEnviando(false);
   }
 
   return <section className="mx-auto flex min-h-screen max-w-md items-center px-5"><div className="w-full rounded-xl border bg-surface p-7">
@@ -55,7 +61,7 @@ export default function EntrarPortalAlunoPage() {
       <label className="block text-sm">E-mail<input required name="email" type="email" autoComplete="email" className="mt-1 w-full rounded border px-3 py-2" /></label>
       <label className="block text-sm">Senha<input required name="senha" type="password" autoComplete="current-password" className="mt-1 w-full rounded border px-3 py-2" /></label>
       {erro && <p role="alert" className="text-sm text-red-700">{erro}</p>}
-      <Botao type="submit" tamanho="lg" className="w-full" disabled={enviando}>{enviando ? "Entrando…" : "Entrar"}</Botao>
+      <Botao type="submit" tamanho="lg" className="w-full" disabled={enviando || pendente}>{enviando || pendente ? "Entrando…" : "Entrar"}</Botao>
     </form>
     <Link href="/portal-aluno/recuperar" className="mt-5 block text-sm text-brand-700 underline">Não consigo acessar meu e-mail ou senha</Link>
   </div></section>;
