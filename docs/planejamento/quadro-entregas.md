@@ -3742,3 +3742,22 @@ Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` 5b4e75a9
     - `npm test`: 783 arquivos e 5.861 testes.
     - build: saída 0.
     - Integração de `src/server/crm` mais despachante e agendamento: 34 arquivos e 265 testes.
+
+### Testes de cobrança que dependiam do horário: fixture no dia da máquina × régua no dia da escola — 2026-10-20
+
+Branch `claude/fix-acoes-int`, base `main` 6122c874 (#251). Relato: 3 testes de `whatsapp/acoes.int.test.ts` ("Sem ação devida hoje para esta cobrança.") falhavam no main, embora a integração de fef6d467 tivesse passado.
+- **Causa:** não é regressão do #247 nem do #253 no produto. Desde o #239 (fa393092, Q176) a régua e o D+30 contam no dia civil da escola (`fusoDaEscola()`), e as datas gravadas são lidas por `diaCivilGravado` (o maior entre o dia UTC e o da escola). As fixtures montavam "hoje" no relógio real: `agoraAs`/`diasDepois` no fuso da máquina, e `Date.now() − N × 24 h`. Entre 00h e 03h UTC (21h–24h em Brasília) o dia UTC já é o seguinte ao da escola: o vencimento "hoje + 7" vira D-8 na escola (com TZ=UTC), e o "agora − 29 dias" vira D+28 (em qualquer TZ). A integração de fef6d467 passou porque rodou fora dessa faixa.
+- **Prova:**
+  - Reproduzido no relógio real às 01h15 e 02h12 UTC; com o relógio deslocado (preload que troca `Date`), `acoes.int.test.ts` falha às 01h30 e 02h59 UTC com TZ=UTC e passa às 03h01, 15h e 23h30; com TZ=America/Sao_Paulo passa em todos.
+  - `git bisect` (só esse arquivo, TZ=UTC, relógio às 01h30 UTC) entre fa393092^ (verde) e o main: primeiro commit ruim fa393092 (#239). fef6d467 falha às 01h30 UTC e passa às 15h UTC.
+  - Mesma família, achados com o relógio deslocado e confirmados no relógio real às 02h12 UTC: `cobrancas/acesso-aulas.int.test.ts` (2 testes D+29/D+30, nos dois fusos) e `cobrancas/conferencia.int.test.ts` (1 teste, TZ=UTC); ambos verdes em fa393092^ e vermelhos em fa393092 às 01h30 UTC.
+  - `financeiro/politica.int.test.ts`, "duas baixas parciais…" (relato do coordenador): a taxa vencia "agora − 24 h", que entre 21h e 24h de Brasília ainda cai no dia de hoje da escola, e o `emAtraso` (#253, `limiteDoAtraso`) saía vazio. Verde em b172bc53^ e vermelho em b172bc53 às 01h30 UTC; falhou no relógio real às 02h21 UTC nos dois fusos.
+- **Correção (só testes, nenhum produto alterado):** `acoes.int.test.ts`, `acesso-aulas.int.test.ts` e `conferencia.int.test.ts` rodam com relógio fixo (`vi.useFakeTimers({ toFake: ["Date"] })`, 2026-10-20 15h UTC = meio-dia da escola, quando o dia UTC e o da escola coincidem); o CT08 segue trocando o relógio por conta própria. Em `politica.int.test.ts` a taxa vence ao meio-dia de ontem no calendário da escola (`inicioDoDiaInstitucional(agora, fusoDaEscola()) − 12 h`).
+- **Busca por outros casos:** `grep` nos `*.int.test.ts` por vencimento derivado de `Date.now()`, `agora.getTime()`, `agoraAs`, `diasDepois` e `new Date()`. Rodados no relógio real entre 02h21 e 02h40 UTC: `whatsapp/{cron,ciclo-cobranca,inbox,acesso-atendimento,despachante.live}`, `whatsapp/motor/ponta-a-ponta`, `gravacoes/autorizacao`, `portal-aluno/relatos-indisponibilidade`, `financeiro/{confirmacao-manual,atraso-dia-civil}`, `matricula/{comissao-aprovada-em,reserva-vaga}`, `uploads/arquivos`, `aria/triagem` e `api/exportacoes` — todos verdes. `atendimento-pedagogico-autorizacao` só falhou com o relógio deslocado (o `now()` do banco ficava à frente do processo); no relógio real passa.
+- Evidências (banco descartável `erp_genius_test_acoesint`, `migrate deploy`, apagado ao fim), no head com o main 6122c874 (#251):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base; nenhum nos arquivos tocados).
+  - `npm test`: 787 arquivos e 5.868 testes OK.
+  - `npm run build` (NODE_OPTIONS=--max-old-space-size=5120): saída 0.
+  - Integração `src/server/whatsapp`, `src/server/cobrancas` e `financeiro/politica.int.test.ts`: 64 arquivos e 513 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
+  - Os 4 arquivos corrigidos: 47 testes OK no relógio real às 02h40 UTC (dentro da faixa que quebrava) e com o relógio deslocado para 01h30 UTC, nos dois fusos.
