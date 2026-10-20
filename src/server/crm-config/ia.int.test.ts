@@ -67,3 +67,17 @@ describe("Configuração de IA", () => {
     expect(p.orcamento.limiteUsd).toBe(100);
   });
 });
+
+describe("salvarConfigIA: reenvio idêntico não grava (#166, PR #267 B2)", () => {
+  const alteracoes = () => prisma.evento.count({ where: { tipo: "ConfigIAAlterada" } });
+
+  it("duas chamadas idênticas gravam 1 Evento; mudança real ainda grava", async () => {
+    logado(admin);
+    expect((await salvarConfigIA({ ...c, orcamentoMensalUsd: 250.5 })).ok).toBe(true);
+    expect((await salvarConfigIA({ ...c, orcamentoMensalUsd: 250.5 })).ok).toBe(true);
+    expect(await alteracoes()).toBe(1);
+    expect((await salvarConfigIA({ ...c, orcamentoMensalUsd: 250.5, limiarTriagem: 90 })).ok).toBe(true);
+    expect(await alteracoes()).toBe(2);
+    expect((await ultimoEvento("ConfigIAAlterada")).payload).toMatchObject({ de: { limiarTriagem: 80 }, para: { limiarTriagem: 90 } });
+  });
+});

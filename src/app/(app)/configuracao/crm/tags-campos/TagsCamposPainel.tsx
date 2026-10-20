@@ -6,6 +6,7 @@ import type { Resultado } from "@/server/_shared";
 import { arquivarCampoDaTela, arquivarTagDaTela, salvarCampoDaTela, salvarTagDaTela } from "@/server/crm-config/acoes-tags-campos";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia, type ChaveTentativa } from "@/lib/chave-idempotencia";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -29,7 +30,11 @@ const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm
 
 export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: CampoLinha[] }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Criar tag ou campo leva chave de idempotência (#166): o reenvio devolve o registro já criado. Editar grava os
+  // valores da tela no registro (estado-alvo) e o servidor não grava nada (nem Evento) quando eles já estão lá. Arquivar usa o ConfirmarAcao.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativaTag = useChaveIdempotencia();
+  const tentativaCampo = useChaveIdempotencia();
   const [tagId, setTagId] = useState<string | undefined>();
   const [tNome, setTNome] = useState("");
   const [tGrupo, setTGrupo] = useState("");
@@ -45,8 +50,9 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
 
   const limparTag = () => { setTagId(undefined); setTNome(""); setTGrupo(""); setTCor("NEUTRA"); };
   const limparCampo = () => { setCampoId(undefined); setCNome(""); setCTipo("TEXTO"); setCAlvo("PESSOA"); setCOpcoes(""); setCObrig(false); };
-  const rodar = async (fn: () => Promise<Resultado<unknown>>, depois: () => void) => {
+  const rodar = async (fn: () => Promise<Resultado<unknown>>, depois: () => void, tentativa?: ChaveTentativa) => {
     const d = await acao.executar(fn);
+    tentativa?.depoisDo(d);
     if (d?.tipo === "ok") { depois(); router.refresh(); }
   };
 
@@ -70,7 +76,7 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
           <select className={input} value={tCor} onChange={(e) => setTCor(e.target.value as Cor)}>{CORES.map((c) => <option key={c.v} value={c.v}>{c.t}</option>)}</select>
         </label>
       </div>
-      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarTagDaTela({ id: tagId, nome: tNome, grupo: tGrupo, cor: tCor }), limparTag)}>{acao.ocupado ? "Salvando…" : tagId ? "Salvar tag" : "Criar tag"}</button>
+      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarTagDaTela({ id: tagId, nome: tNome, grupo: tGrupo, cor: tCor, ...(tagId ? {} : { chaveIdempotencia: tentativaTag.atual }) }), limparTag, tagId ? undefined : tentativaTag)}>{acao.ocupado ? "Salvando…" : tagId ? "Salvar tag" : "Criar tag"}</button>
     </section>
 
     <section aria-label="Campos personalizados" className="rounded-lg border border-gray-200 p-4">
@@ -98,7 +104,7 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
         <CampoTexto className={input} rows={4} value={cOpcoes} onChange={(e) => setCOpcoes(e.target.value)} />
       </label>}
       <label className="mt-3 flex items-center gap-1 text-sm"><input type="checkbox" checked={cObrig} onChange={(e) => setCObrig(e.target.checked)} />Obrigatório</label>
-      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarCampoDaTela({ id: campoId, nome: cNome, tipo: cTipo, alvo: cAlvo, opcoes: cTipo === "SELECAO" ? cOpcoes.split("\n").map((s) => s.trim()).filter(Boolean) : [], obrigatorio: cObrig }), limparCampo)}>{acao.ocupado ? "Salvando…" : campoId ? "Salvar campo" : "Criar campo"}</button>
+      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarCampoDaTela({ id: campoId, nome: cNome, tipo: cTipo, alvo: cAlvo, opcoes: cTipo === "SELECAO" ? cOpcoes.split("\n").map((s) => s.trim()).filter(Boolean) : [], obrigatorio: cObrig, ...(campoId ? {} : { chaveIdempotencia: tentativaCampo.atual }) }), limparCampo, campoId ? undefined : tentativaCampo)}>{acao.ocupado ? "Salvando…" : campoId ? "Salvar campo" : "Criar campo"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />
     {arquivandoTag && <ConfirmarAcao

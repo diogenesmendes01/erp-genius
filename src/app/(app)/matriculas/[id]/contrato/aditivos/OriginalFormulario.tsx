@@ -6,8 +6,9 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 export function OriginalFormulario({ matriculaId, propostaId, conferencia }: { matriculaId: string; propostaId: string; conferencia: { id: string; versao: number; revisaoHash: string } }) {
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
-  const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): um original por conferência; repetir devolve o artefato já preservado
+  // (aditivo-original-tx.ts; aditivo.int.test.ts). Reenviar é seguro.
+  const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   return <form className="space-y-3 rounded border p-3" onSubmit={async e => {
     e.preventDefault(); const motivo = String(new FormData(e.currentTarget).get("motivo") ?? "").trim();
     const d = await acao.executar(() => preservarOriginalAditivo({ matriculaId, propostaId, conferenciaId: conferencia.id, conferenciaHash: conferencia.revisaoHash, motivo, conteudoConferido: true }),

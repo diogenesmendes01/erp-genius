@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
@@ -11,6 +11,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
@@ -181,7 +182,12 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
 }
 
 export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
-  const acao = useAcaoCliente({ idempotente: false });
+  // Convidar: convidarParticipante recebe chave de idempotência (#166) e o reenvio devolve o convite já criado.
+  // Atribuir é por estado-alvo, mas fica sem chave como antes. `modo` não muda na vida do diálogo.
+  const acao = useAcaoCliente({ idempotente: modo === "convidar" });
+  const tentativa = useChaveIdempotencia();
+  // O fim do convite é calculado no clique; dentro da mesma tentativa ele não muda (senão o reenvio vira outra entrada).
+  const fimDaTentativa = useRef<{ chave: string; dias: number; fim: string } | null>(null);
   const [pessoas, setPessoas] = useState<{ id: string; nome: string }[] | null>(null);
   const [usuarioId, setUsuarioId] = useState("");
   const [podeEnviar, setPodeEnviar] = useState(false);
@@ -200,10 +206,15 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
     e.preventDefault();
     const d = await acao.executar(async (): Promise<Resultado> => {
       if (modo === "atribuir") return atribuirAtendimento({ atendimentoId, usuarioId });
-      const r = await convidarParticipante({ atendimentoId, usuarioId, podeEnviar, fim: new Date(Date.now() + dias * 86_400_000).toISOString(), motivo });
+      const chave = tentativa.atual;
+      const anterior = fimDaTentativa.current;
+      const fim = anterior && anterior.chave === chave && anterior.dias === dias ? anterior.fim : new Date(Date.now() + dias * 86_400_000).toISOString();
+      fimDaTentativa.current = { chave, dias, fim };
+      const r = await convidarParticipante({ atendimentoId, usuarioId, podeEnviar, fim, motivo, chaveIdempotencia: chave });
       // O id do participante não interessa à tela: só o desfecho.
       return r.ok ? { ok: true } : { ok: false, erro: r.erro };
     });
+    if (modo === "convidar") tentativa.depoisDo(d);
     if (d?.tipo === "ok") aoConcluir();
   }
 
@@ -237,11 +248,14 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
 }
 
 function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string }) {
-  const acao = useAcaoCliente({ idempotente: false });
+  // registrarNotaAtendimento recebe chave de idempotência (#166): o reenvio não grava uma segunda nota.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [nota, setNota] = useState("");
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const d = await acao.executar(() => registrarNotaAtendimento({ atendimentoId, nota }));
+    const d = await acao.executar(() => registrarNotaAtendimento({ atendimentoId, nota, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo === "ok") aoConcluir();
   }
   return (
@@ -258,7 +272,9 @@ function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { a
 }
 
 function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string }) {
-  const acao = useAcaoCliente({ idempotente: false });
+  // agendarMensagemNoAtendimento recebe chave de idempotência (#166): o reenvio não agenda um segundo envio ao contato.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [texto, setTexto] = useState("");
   const [quando, setQuando] = useState("");
   const [erroQuando, setErroQuando] = useState<string | null>(null);
@@ -267,7 +283,8 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
     const erro = validarQuando(quando);
     setErroQuando(erro);
     if (erro) return;
-    const d = await acao.executar(() => agendarMensagemNoAtendimento({ atendimentoId, texto, quando: new Date(quando).toISOString() }));
+    const d = await acao.executar(() => agendarMensagemNoAtendimento({ atendimentoId, texto, quando: new Date(quando).toISOString(), chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo === "ok") aoConcluir();
   }
   return (

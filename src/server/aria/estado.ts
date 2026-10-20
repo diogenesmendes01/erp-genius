@@ -141,6 +141,8 @@ export async function definirSupervisao(input: { ate: Date | null }): Promise<Re
       ) {
         await exigir(u, "desligarSupervisao", "Só o Administrador encurta a supervisão em vigor.");
       }
+      // Já está no estado-alvo (ex.: reenvio após resultado incerto): nada a gravar, sem Evento.
+      if ((atual.supervisaoAte?.getTime() ?? null) === (input.ate?.getTime() ?? null)) return;
       await tx.agenteIA.update({ where: { id: ID_AGENTE }, data: { supervisaoAte: input.ate } });
       await registrarEvento(tx, {
         tipo: "AriaSupervisaoAlterada",

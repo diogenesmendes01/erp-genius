@@ -28,7 +28,9 @@ const usd = (n: number) => `US$ ${n.toFixed(2).replace(".", ",")}`;
 
 export function IaPainel({ chave, config, orcamento, chamadas }: { chave: "configurada" | "ausente"; config: ConfigIATela; orcamento: OrcamentoTela; chamadas: ChamadaTela[] }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a configuração de IA é um registro único, gravado com os valores da tela;
+  // o servidor não grava nada (nem Evento) quando eles já estão lá, então reenviar não duplica.
+  const acao = useAcaoCliente({ idempotente: true });
   const [f, setF] = useState(config);
   const pct = orcamento.limiteUsd > 0 ? Math.min(100, (orcamento.gastoUsd / orcamento.limiteUsd) * 100) : 0;
   const cor = orcamento.situacao === "ESTOURADO" ? "bg-red-500" : orcamento.situacao === "ALERTA" ? "bg-amber-600" : "bg-green-600";
