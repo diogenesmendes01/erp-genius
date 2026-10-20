@@ -22,6 +22,8 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { conferirPagamento, registrarPagamento, publicarPoliticaComissao, fecharMesComissoes } from "./acoes";
 import { kpisFinanceiro } from "./consultas";
+import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { ajustarCobranca, decidirAprovacao } from "@/server/ajustes/acoes";
 import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
 import { criarMatricula, ativarMatricula, concluirMatricula } from "@/server/matricula/acoes";
@@ -43,14 +45,17 @@ beforeEach(async () => {
     criarUsuario([Papel.SECRETARIA_ACADEMICA]), criarUsuario([Papel.FINANCEIRO]), criarUsuario([Papel.VENDEDOR]), criarUsuario([Papel.ADMINISTRADOR]),
   ]);
   cat = await seedCatalogoMinimo();
+  const ontemAoMeioDia = new Date(inicioDoDiaInstitucional(new Date(), await fusoDaEscola()).getTime() - 12 * 3600_000);
   const aluno = await prisma.aluno.create({ data: { primeiroNome: "Teste", paisId: cat.pais.id } }); alunoId = aluno.id;
   const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: ven.id } });
   const m = await prisma.matricula.create({ data: {
     alunoId, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "AGUARDANDO", mesesPlano: 2,
     referenciaCobertura: "MES_CIVIL",
     cobrancas: { create: [
-      // Vence ontem: no dia do vencimento a taxa ainda não está em atraso (ref. #247).
-      { tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, moeda: "CRC", vencimento: new Date(Date.now() - 86400000), saldo: 100 },
+      // Vence ontem, no calendário da escola: no dia do vencimento a taxa ainda não está em atraso (ref. #247).
+      // "Agora − 24 h" não servia: entre 21h e 24h de Brasília o dia UTC desse instante já é o de hoje na
+      // escola (`diaCivilGravado` fica com o maior) e `emAtraso` saía vazio.
+      { tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, moeda: "CRC", vencimento: ontemAoMeioDia, saldo: 100 },
       { tipo: "MENSALIDADE", coberturaInicio: new Date("2026-09-01"), coberturaFim: new Date("2026-09-30"), valorOriginal: 200, valorNegociado: 200, moeda: "CRC", vencimento: new Date(Date.now() + 86400000), saldo: 200 },
     ] },
   }, include: { cobrancas: true } });
