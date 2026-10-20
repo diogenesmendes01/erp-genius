@@ -3927,3 +3927,17 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npm test`: 791 arquivos e 5.924 testes OK.
   - `npm run build`: saída 0.
   - Integração de `src/server/crm`: 30 arquivos e 267 testes OK, incluindo os 40 de equivalência e os de `funil` e `carteira`.
+
+### Q172, follow-up: a conferência da entrada considera o aditivo de adiantamento aplicado (#264 C1) — 2026-10-20
+
+- **Bug de produção (vinha da #261):** `conferirPagamentosEntradaParticular` comparava `valorNegociado` e `vencimento` do adiantamento com o plano **original** das condições de entrada. Depois de um aditivo aplicado, a ativação era recusada com "A cobrança difere das condições conferidas…" (contrato assinado → aceite → aditivo → pagamento → ativação), e um aditivo aplicado antes do aceite travava o aceite. Não havia como regularizar: o aditivo já estava aplicado e a cobrança paga.
+- **Correção:** a função passa a receber as aplicações (`AplicacaoAdiantamentoAditivo`) da matrícula, carregadas por `carregarAplicacoesAdiantamentoEntradaTx` (`src/server/matricula/entrada-particular-aplicacoes.ts`), nos três pontos de chamada: aceite (`contratos/aceite-estado.ts`), ativação (`matricula/ativacao-preparacao-tx.ts`) e consulta da entrada (`matricula/entrada-particular-consulta.ts`). Para a cobrança do adiantamento, a cadeia de aplicações (ordenada por `versaoCobrancaDepois`) precisa partir do valor, vencimento e minutos conferidos e ser encadeada (anterior de cada aplicação = novo da anterior); a cobrança é comparada com a **última** aplicação, como `conferirCompraPreparadaTx` já fazia. O item devolvido traz `minutos` e valor vigentes e `aplicacaoAdiantamentoAditivoId`. Sem aplicação, o comportamento e o snapshot do aceite não mudam.
+- **Continua recusado:** cobrança alterada sem aditivo, cobrança que diverge da última aplicação, cadeia que não parte do conferido ou que se quebra, e aplicação apontando para cobrança que não é o adiantamento.
+- **Testes:**
+  - Integração (`contratos/aditivo.int.test.ts`, 3 novos): aceite → aditivo aplicado → pagamento → **ativação real** por `concluirMatricula` (sem forçar status); aditivo antes do aceite → consulta da entrada mostra 375/180 min e o id da aplicação → aceite confirmado → ativação real; negativo: valor alterado sem aditivo recusa aceite e consulta, e vencimento alterado depois do aditivo recusa consulta e ativação. Os três falhavam antes da correção com a mensagem do bug.
+  - Unitário (`entrada-particular-pagamentos.test.ts`, 8 novos): última aplicação de uma cadeia de duas define valor, vencimento e minutos; recusa de valor, vencimento, origem, quebra de cadeia, minutos, aplicação na taxa e aplicação de outra cobrança.
+- **Evidências** (banco descartável `erp_genius_test_q172e`, `migrate deploy`, perfil temporário desfeito antes do commit e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - Unitários: 793 arquivos e 5.949 testes OK em UTC e em `TZ=America/Sao_Paulo`.
+  - Integração de 16 arquivos de `contratos`, `matricula`, `financeiro/politica` e `retomada` que passam por aceite, ativação, entrada ou compra de horas: `aditivo.int.test.ts` com 60 de 60 OK; nos outros 15, 291 de 293 na primeira rodada. As 2 falhas foram em `aditivo-acerto-taxa` (DCT03 e Q168), dentro da fixture e com "Erro inesperado", sob carga do Postgres compartilhado. Ao rodar o arquivo de novo, passaram 53 de 53.

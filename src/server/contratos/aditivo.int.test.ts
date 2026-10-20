@@ -1749,3 +1749,95 @@ it("PRODUCAO_HORA_ADIANTAMENTO: a aplicação do adiantamento não recalcula a c
   expect(await prisma.comissao.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } })).toEqual(comissoesAntes);
   expect(await prisma.evento.count({ where: { tipo: "ComissaoRecalculada" } })).toBe(0);
 }, 120_000);
+
+// Q172 (follow-up do C1 da revisão da #264): a conferência da entrada (aceite, ativação e consulta) usa o
+// valor e o vencimento da última aplicação do aditivo de adiantamento; divergência sem aditivo segue recusada.
+async function aplicarAcertoAdiantamento(chave: string) {
+  const { decidirAdiantamentoAditivo, aplicarAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const ctx = await prepararAcertoAdiantamento(chave);
+  const proposta = await proporAcertoAdiantamento(ctx);
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Adiantamento decidido por administração independente", chaveIdempotencia: `${chave}-decisao` })).toMatchObject({ ok: true });
+  const aplicacao = await aplicarAdiantamentoAditivo({ propostaId: proposta.id, chaveIdempotencia: `${chave}-aplicacao` });
+  if (!aplicacao.ok || !aplicacao.dado) throw new Error(JSON.stringify(aplicacao));
+  const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } });
+  expect(depois).toMatchObject({ vencimento: new Date("2099-09-20T12:00:00Z") });
+  expect(depois.valorNegociado.toFixed(2)).toBe("375.00");
+  return { ...ctx, aplicacaoId: aplicacao.dado.id };
+}
+
+async function revisarAceiteEntrada() {
+  const { consultarAceiteOriginal } = await import("./aceite");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const revisao = await consultarAceiteOriginal({ matriculaId: fixture.matriculaId, conclusaoId });
+  if (!revisao.ok || !revisao.dado) throw new Error(JSON.stringify(revisao));
+  return revisao.dado;
+}
+
+async function confirmarAceiteEntrada(chave: string) {
+  const { confirmarAceiteOriginal } = await import("./aceite");
+  const revisao = await revisarAceiteEntrada();
+  if (!revisao.revisao) throw new Error(`Aceite: ${JSON.stringify(revisao)}`);
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const aceite = await confirmarAceiteOriginal({ matriculaId: fixture.matriculaId, conclusaoId, revisaoHash: revisao.revisao.hash, evidenciasConferidas: true, motivo: "Aceite do original conferido", chaveIdempotencia: chave });
+  if (!aceite.ok || !aceite.dado) throw new Error(JSON.stringify(aceite));
+  return revisao.revisao;
+}
+
+async function pagarEntradaEAtivar(adiantamentoId: string, valorAdiantamento: number) {
+  const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } });
+  await prisma.politicaComissao.create({ data: { paisId: m.paisId, produtoId: m.produtoId, versao: 1, tipo: "PERCENTUAL", percentual: 10, moeda: m.moeda, vigenteEm: new Date("2000-01-01T00:00:00Z"), criadaPorId: fixture.adminId } });
+  const taxa = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: m.id, tipo: "MATRICULA" } });
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  const pagTaxa = await registrarPagamento(taxa.id, { chaveIdempotencia: "q172e-taxa-recebida-0001", valorRecebido: taxa.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Taxa recebida antes da ativação da contratação por hora." }); if (!pagTaxa.ok) throw new Error(JSON.stringify(pagTaxa));
+  expect(await registrarPagamento(adiantamentoId, { chaveIdempotencia: "q172e-adiantamento-recebido-0001", valorRecebido: valorAdiantamento, forma: "DINHEIRO", comentario: "Adiantamento recebido conforme o aditivo aplicado." })).toMatchObject({ ok: true });
+  const { concluirMatricula } = await import("@/server/matricula/acoes");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  return concluirMatricula(fixture.matriculaId);
+}
+
+it("PRODUCAO_HORA_ADIANTAMENTO: aceite, aditivo aplicado, pagamento e ativação real conferem a entrada pelo aditivo", async () => {
+  await confirmarAceiteEntrada("q172e-aceite-antes");
+  const ctx = await aplicarAcertoAdiantamento("q172e-depois-aceite");
+  const ativacao = await pagarEntradaEAtivar(ctx.emitida.id, 375);
+  if (!ativacao.ok) throw new Error(JSON.stringify(ativacao));
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).toMatchObject({ status: "ATIVA" });
+  expect(await prisma.evento.count({ where: { tipo: "MatriculaAtivada", agregadoId: fixture.matriculaId } })).toBe(1);
+}, 180_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: aditivo aplicado antes do aceite não trava o aceite, e a consulta da entrada mostra os valores do aditivo", async () => {
+  const ctx = await aplicarAcertoAdiantamento("q172e-antes-aceite");
+  const { consultarPagamentosEntradaParticular } = await import("@/server/matricula/entrada-particular-consulta");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const consulta = await consultarPagamentosEntradaParticular(fixture.matriculaId);
+  if (!consulta.ok || !consulta.dado) throw new Error(JSON.stringify(consulta));
+  expect(consulta.dado.itens.find(i => i.tipo === "HORA_PARTICULAR")).toMatchObject({ id: ctx.emitida.id, valor: "375", minutos: 180, aplicacaoAdiantamentoAditivoId: ctx.aplicacaoId });
+  const revisao = await confirmarAceiteEntrada("q172e-aceite-depois");
+  expect(revisao.entrada.itens.find(i => i.tipo === "HORA_PARTICULAR")).toMatchObject({ valor: "375", minutos: 180, aplicacaoAdiantamentoAditivoId: ctx.aplicacaoId });
+  expect(await prisma.aceiteOriginalContratual.count({ where: { matriculaId: fixture.matriculaId } })).toBe(1);
+  const ativacao = await pagarEntradaEAtivar(ctx.emitida.id, 375);
+  if (!ativacao.ok) throw new Error(JSON.stringify(ativacao));
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).toMatchObject({ status: "ATIVA" });
+}, 180_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: cobrança alterada fora do aditivo continua recusada no aceite, na consulta e na ativação", async () => {
+  const divergente = "A cobrança difere das condições conferidas. Regularize o ajuste antes de ativar.";
+  // Sem aditivo: o valor do adiantamento mudou sem lastro.
+  const emitida = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "HORA_PARTICULAR" } });
+  await prisma.cobranca.update({ where: { id: emitida.id }, data: { valorNegociado: "375.00", saldo: emitida.saldo === null ? null : "375.00", versao: { increment: 1 } } });
+  expect(await revisarAceiteEntrada()).toMatchObject({ revisao: null, pendencia: divergente });
+  const { consultarPagamentosEntradaParticular } = await import("@/server/matricula/entrada-particular-consulta");
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  expect(await consultarPagamentosEntradaParticular(fixture.matriculaId)).toMatchObject({ ok: false, erro: divergente });
+  await prisma.cobranca.update({ where: { id: emitida.id }, data: { valorNegociado: emitida.valorNegociado, saldo: emitida.saldo, versao: { increment: 1 } } });
+
+  // Com aditivo: o vencimento aplicado mudou de novo sem nova aplicação.
+  const ctx = await aplicarAcertoAdiantamento("q172e-divergente");
+  await confirmarAceiteEntrada("q172e-aceite-divergente");
+  await prisma.cobranca.update({ where: { id: ctx.emitida.id }, data: { vencimento: new Date("2099-09-25T12:00:00Z"), versao: { increment: 1 } } });
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  expect(await consultarPagamentosEntradaParticular(fixture.matriculaId)).toMatchObject({ ok: false, erro: divergente });
+  expect(await pagarEntradaEAtivar(ctx.emitida.id, 375)).toMatchObject({ ok: false, erro: divergente });
+  expect(await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).toMatchObject({ status: expect.not.stringMatching(/^ATIVA$/) });
+}, 180_000);
