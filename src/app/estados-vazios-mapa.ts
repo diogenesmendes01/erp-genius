@@ -311,6 +311,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhuma autorização especial registrada.",
   ],
   "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/page.tsx": [
+    "compacto · Este impedimento bloqueia o fechamento até existir realização posterior desta avaliação com nota ofi",
     "bloco · Nenhuma reserva registrada.",
   ],
   "src/app/(app)/academico/segundas-chamadas/agendas/page.tsx": [
@@ -776,6 +777,10 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx": [
     "compacto · Nenhum relato registrado nesta página.",
     "compacto · Nenhum relato de indisponibilidade registrado para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/page.tsx": [
+    "compacto · Nenhuma correção registrada nesta página.",
+    "compacto · Nenhuma correção registrada para este relato.",
   ],
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
     "compacto · Nenhuma proposta registrada nesta página.",

@@ -56,3 +56,16 @@ describe("LoginPage — acessibilidade", () => {
     expect(html).toMatch(/<p(?=[^>]*id="login-senha-erro")(?=[^>]*aria-live="polite")[^>]*><\/p>/);
   });
 });
+
+describe("LoginPage — saídas da tela (docs/42 /login #3 e #5)", () => {
+  it("diz o que fazer com a senha esquecida (não há reset da equipe: o caminho é o administrador)", () => {
+    const html = renderToStaticMarkup(createElement(LoginPage));
+    expect(html).toContain("Esqueceu a senha? Peça a redefinição a um administrador.");
+  });
+
+  it("aponta o aluno para a área do aluno, que tem acesso próprio", () => {
+    const html = renderToStaticMarkup(createElement(LoginPage));
+    expect(html).toMatch(/É aluno\?/);
+    expect(html).toMatch(/<a[^>]*href="\/portal-aluno\/entrar"[^>]*>Acesse a área do aluno<\/a>/);
+  });
+});

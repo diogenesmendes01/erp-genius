@@ -10,14 +10,15 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { MSG_ATIVACAO_INCERTA } from "@/lib/mensagens";
 import { ERRO_LINK_INDISPONIVEL, definirSenhaPortalAluno } from "../requisicoes";
 import {
-  MAXIMO_BYTES_SENHA, MINIMO_CARACTERES_SENHA, armazenamentoDaAba, capturarTokenAtivacao, esquecerTokenAtivacao, validarSenhas,
+  MAXIMO_BYTES_SENHA, MINIMO_CARACTERES_SENHA, armazenamentoDaAba, bytesDaSenha, capturarTokenAtivacao, esquecerTokenAtivacao, validarSenhas,
   type CampoSenha,
 } from "./ativacao";
 
 // Definir a senha do portal pelo link do convite ou da recuperação (docs/42 /portal-aluno/ativar; docs/43 §6
 // item 8). O link sobrevive ao F5 (cópia na aba, ver ./ativacao.ts); sem link, a tela não mostra o formulário
 // e diz o que fazer. A regra da senha está escrita, a confirmação bloqueia o envio enquanto as duas não
-// coincidem, e erro e sucesso saem separados (useAcaoCliente + FeedbackAcao).
+// coincidem, e erro e sucesso saem separados (useAcaoCliente + FeedbackAcao). Os campos não têm maxLength:
+// ele conta caracteres, e o limite é de 72 bytes; quem avisa é a validarSenhas, no envio (#172).
 
 const IDS: Record<CampoSenha, string> = { senha: "ativar-senha", confirmacao: "ativar-confirmacao" };
 const CONTROLE = `w-full rounded-md border border-gray-300 px-3 py-2 text-sm ${CONTROLE_INVALIDO}`;
@@ -88,11 +89,11 @@ export default function AtivarPortalAlunoPage() {
   return <Moldura>
     {!concluido && <form onSubmit={confirmar} noValidate className="mt-5 space-y-4">
       <p className="text-sm text-gray-600">Crie uma senha que só você conhece. Ela vale para entrar na área do aluno.</p>
-      <Campo rotulo="Nova senha" obrigatorio id={IDS.senha} erro={errosCampos.senha} dica={`Mínimo de ${MINIMO_CARACTERES_SENHA} caracteres (até ${MAXIMO_BYTES_SENHA} bytes). Digitados: ${senha.length}.`}>
-        {(campo) => <input {...campo} name="senha" type="password" autoComplete="new-password" maxLength={MAXIMO_BYTES_SENHA} value={senha} onChange={(e) => setSenha(e.target.value)} className={CONTROLE} />}
+      <Campo rotulo="Nova senha" obrigatorio id={IDS.senha} erro={errosCampos.senha} dica={`Mínimo de ${MINIMO_CARACTERES_SENHA} caracteres (até ${MAXIMO_BYTES_SENHA} bytes). Digitados: ${senha.length} caracteres (${bytesDaSenha(senha)} bytes).`}>
+        {(campo) => <input {...campo} name="senha" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} className={CONTROLE} />}
       </Campo>
       <Campo rotulo="Repita a senha" obrigatorio id={IDS.confirmacao} erro={errosCampos.confirmacao} dica="Digite a mesma senha de novo. O envio só acontece quando as duas coincidem.">
-        {(campo) => <input {...campo} name="confirmacao" type="password" autoComplete="new-password" maxLength={MAXIMO_BYTES_SENHA} value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} className={CONTROLE} />}
+        {(campo) => <input {...campo} name="confirmacao" type="password" autoComplete="new-password" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} className={CONTROLE} />}
       </Campo>
       <Botao type="submit" tamanho="lg" className="w-full" disabled={acao.ocupado}>{acao.ocupado ? "Confirmando…" : "Confirmar acesso"}</Botao>
     </form>}
