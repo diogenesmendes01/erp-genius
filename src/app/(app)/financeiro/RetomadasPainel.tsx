@@ -126,7 +126,7 @@ function TabelaParcelas<T extends Parcela>({ parcelas, novaData }: { parcelas: T
   return <div className="overflow-x-auto rounded-md border border-gray-200">
     <table className="w-full text-left text-sm">
       <caption className="sr-only">Comparação do calendário atual com o calendário proposto</caption>
-      <thead className="bg-gray-50 text-xs text-gray-600"><tr>{["Parcela", "Contratado", "Recebido", "Saldo restante", "Vencimento atual", "Vencimento proposto"].map((nome) => <th key={nome} className="whitespace-nowrap px-3 py-2 font-medium" scope="col">{nome}</th>)}</tr></thead>
+      <thead className="bg-gray-100 text-xs text-gray-600"><tr>{["Parcela", "Contratado", "Recebido", "Saldo restante", "Vencimento atual", "Vencimento proposto"].map((nome) => <th key={nome} className="whitespace-nowrap px-3 py-2 font-medium" scope="col">{nome}</th>)}</tr></thead>
       <tbody>{parcelas.map((p) => <tr key={p.cobrancaId} className="border-t border-gray-100">
         <th scope="row" className="px-3 py-2 font-normal"><span className="block">{p.codigo ?? `Mensalidade ${formatarCompetencia(p.competencia, "")}`}</span><span className="block text-xs text-gray-500">{p.matriculaCodigo ?? "Matrícula"}{p.restaurar ? " · suspensa pela pausa" : ""}</span></th>
         <td className="whitespace-nowrap px-3 py-2">{formatarMoeda(p.valorNegociado, p.moeda)}</td>

@@ -178,7 +178,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
           </p>
           <div className="overflow-x-auto rounded-lg border border-border-soft">
             <table className="w-full text-left text-sm">
-              <thead className="bg-surface-muted text-xs text-gray-600">
+              <thead className="bg-gray-100 text-xs text-gray-600">
                 <tr>
                   {podeReatribuir && (
                     <th scope="col" className="w-11 px-1 py-0">

@@ -44,7 +44,7 @@ const ResumoSchema = z.object({ contratos: z.array(z.object({ calculo: z.object(
 function Resumo({ snapshot }: { snapshot: unknown }) {
   const resultado = ResumoSchema.safeParse(snapshot);
   if (!resultado.success) return <p role="alert">Esta versão não pode ser apresentada. Confira sua estrutura antes de continuar.</p>;
-  return <div className="space-y-3">{resultado.data.contratos.map(({ calculo: c, propostaExcecaoMulta: excecao, origem, compensacaoFinanceira, horasAntecipadas, consolidacao }) => <div key={c.matriculaId} className="space-y-2 overflow-x-auto rounded bg-gray-50 p-3">
+  return <div className="space-y-3">{resultado.data.contratos.map(({ calculo: c, propostaExcecaoMulta: excecao, origem, compensacaoFinanceira, horasAntecipadas, consolidacao }) => <div key={c.matriculaId} className="space-y-2 overflow-x-auto rounded bg-gray-100 p-3">
     <p className="font-medium">Matrícula {c.matriculaId} · {c.moeda}</p>
     <table className="w-full text-left text-sm"><caption className="text-left">Memória do componente mensal</caption><thead><tr><th>Cobrança</th><th>Base</th><th>Desconto</th><th>Dias cobertos</th><th>Devido</th><th>Saldo</th><th>Crédito apurado</th></tr></thead>
       <tbody>{c.parcelas.map((p) => <tr key={p.cobrancaId}><td>{p.cobrancaId}</td><td>{formatarMoeda(p.memoria.base, c.moeda)}</td><td>{formatarMoeda(p.memoria.desconto, c.moeda)}</td><td>{p.diasCobertos}/{p.diasPeriodo}</td><td>{formatarMoeda(p.valorDevido, c.moeda)}</td><td>{formatarMoeda(p.saldoDevido, c.moeda)}</td><td>{formatarMoeda(p.creditoApurado, c.moeda)}</td></tr>)}</tbody>

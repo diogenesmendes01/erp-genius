@@ -51,7 +51,7 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
 
       <section className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Aluno</th>
               <th className="px-4 py-2 font-medium">Código</th>

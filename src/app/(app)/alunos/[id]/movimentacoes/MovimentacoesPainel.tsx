@@ -120,7 +120,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         {impactos.matriculas.map((m) => <div key={m.matriculaId} className="space-y-2 border-t pt-3">
           <h3 className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</h3>
           <Pendencias itens={m.pendencias} />
-          {m.periodos.map((p) => <div key={p.cobrancaId} className="rounded bg-gray-50 p-3 text-sm">
+          {m.periodos.map((p) => <div key={p.cobrancaId} className="rounded bg-gray-100 p-3 text-sm">
             {"cobertura" in p ? <><p>Cobertura anterior: {data(p.coberturaAnterior.inicio)} a {data(p.coberturaAnterior.fim)}</p><p>Cobertura proposta: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)}</p><p>Vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p></> : <><p>{p.codigo ?? "Mensalidade"}: {efeito[p.efeito]}</p><p>Cobertura: {p.inicio && p.fim ? `${data(p.inicio)} a ${data(p.fim)}` : "A conferir"}</p><p>Vencimento: {data(p.vencimento)}</p></>}
           </div>)}
           {m.periodos.length === 0 && <EstadoVazio>Nenhum período calculado nesta proposta.</EstadoVazio>}
