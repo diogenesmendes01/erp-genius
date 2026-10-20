@@ -249,6 +249,27 @@ it("bloqueia a efetivação Q165 enquanto houver solicitação de assinatura abe
   expect(efetivada).toMatchObject({ ok: true, dado: { status: "CANCELADA" } });
 });
 
+// N2 da R2 #266: a fotografia SQL da Q165 (q165_fotografia_atual) reconhece a origem Q175 do crédito como o TS
+// (fotografiaQ165). O fluxo real não chega aqui (crédito Q175 exige aula ministrada; Q165, matrícula não ativada),
+// então o crédito entra com os triggers desligados só nesta transação, desfeita no fim.
+it("fotografia Q165 Node/SQL coincide com crédito de origem Q175", async () => {
+  const { fotografiaQ165 } = await import("./desistencia-acerto-contratual");
+  const pedido = await registrarPedido("pedido-q165-origem-q175");
+  const proposta = dado(await preparar(pedido.id, "preparo-q165-origem-q175"));
+  const desfazer = new Error("desfazer");
+  await expect(prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica");
+    const credito = await tx.creditoMatricula.create({ data: { matriculaId: base.matriculaId, origemRevisaoCorrecaoAulaId: "origem-q175-fixture", valorInicial: "12.50", moeda: "BRL" } });
+    const { fotografia } = await fotografiaQ165(tx, base.matriculaId);
+    expect(fotografia.financeiro.creditos).toContainEqual(expect.objectContaining({ id: credito.id, origemRevisaoCorrecaoAulaId: "origem-q175-fixture" }));
+    await tx.$executeRaw`UPDATE "PropostaAcertoDesistenciaContratual" SET memoria = jsonb_set(memoria, '{fotografia}', ${JSON.stringify(fotografia)}::jsonb) WHERE id = ${proposta.id}`;
+    await tx.$executeRawUnsafe("SET LOCAL session_replication_role = origin");
+    await tx.$queryRaw`SELECT q165_fotografia_atual(${proposta.id})::text`;
+    throw desfazer;
+  })).rejects.toBe(desfazer);
+  expect(await prisma.creditoMatricula.count({ where: { matriculaId: base.matriculaId } })).toBe(0);
+});
+
 it("preserva pagamento informado posterior e bloqueia a efetivação até nova conferência", async () => {
   const { pedido, aplicacao } = await prepararAplicacaoSemPagamento("informe-posterior-q165");
   const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
