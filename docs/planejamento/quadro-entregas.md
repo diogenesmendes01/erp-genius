@@ -3761,3 +3761,17 @@ Branch `claude/fix-acoes-int`, base `main` 6122c874 (#251). Relato: 3 testes de 
   - `npm run build` (NODE_OPTIONS=--max-old-space-size=5120): saída 0.
   - Integração `src/server/whatsapp`, `src/server/cobrancas` e `financeiro/politica.int.test.ts`: 64 arquivos e 513 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
   - Os 4 arquivos corrigidos: 47 testes OK no relógio real às 02h40 UTC (dentro da faixa que quebrava) e com o relógio deslocado para 01h30 UTC, nos dois fusos.
+
+### Pendências pequenas das revisões #250, #253 e #255 — 2026-10-20
+
+- **#255 C1 (relógio fixo × `now()` do banco):** `whatsapp/acoes.int.test.ts`, `cobrancas/acesso-aulas.int.test.ts` e `cobrancas/conferencia.int.test.ts` fixam o relógio no meio-dia da escola **do dia corrente** (`meioDiaDaEscolaHoje()` em `src/test/integracao.ts`: `inicioDoDiaInstitucional(new Date(), fusoDaEscola()) + 12 h`, lido depois do `truncarBanco`), e não mais em 2026-10-20 15h UTC. Assim o processo fica no mesmo dia dos defaults `now()` do Postgres.
+- **#253 C2:** `criarMatriculaTx` passa o `tx` para `fusoDaEscola(tx)`.
+- **#253 C3:** conferido que o caso não acontece: o `SolicitarRetomadaSchema` já recusa `cobrancaId` repetido ("Uma cobrança não pode receber duas datas.", desde o #175), antes da transação e do replay. Nenhuma checagem duplicada no replay; um comentário ali aponta a dependência, e um teste novo em `retomada/fluxo.int.test.ts` trava o comportamento (erro, proposta e eventos intactos, replay correto continua devolvendo a mesma proposta).
+- **#250 C1:** comentário em `Modal.feedback.test.ts` sobre a dependência da fatia de 5 ms do Scheduler (`scheduler` 0.23.2, `performance.now`) e o que conferir depois de um upgrade do React. Conferido que o teste falha se `useDialogo` usar `useEffect` no lugar do efeito de layout.
+- **#249 C2:** já feito no #250 (caso `antes` em `avaliacoes/segunda-chamada-agenda-inicial.int.test.ts`); nada a fazer.
+- Evidências (banco descartável `erp_genius_test_pend`, `migrate deploy`, apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base; nenhum nos arquivos tocados).
+  - `npm test`: 788 arquivos e 5.892 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
+  - `npm run build`: saída 0.
+  - Integração (`whatsapp/acoes`, `cobrancas/acesso-aulas`, `cobrancas/conferencia`, `retomada/fluxo`, `matricula/criar-idempotencia`, `matricula/ativacao`, `financeiro/politica`): 7 arquivos e 97 testes OK com TZ=UTC e com TZ=America/Sao_Paulo.
