@@ -5,6 +5,10 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
 
+const MSG_CREDENCIAIS = "E-mail ou senha incorretos.";
+const MSG_INDISPONIVEL = "O serviço está indisponível agora. Tente de novo em alguns minutos.";
+const MSG_SEM_SERVIDOR = "Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.";
+
 export default function EntrarPortalAlunoPage() {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
@@ -14,15 +18,22 @@ export default function EntrarPortalAlunoPage() {
     evento.preventDefault();
     setErro(null); setEnviando(true);
     const form = new FormData(evento.currentTarget);
+    // docs/42 /portal-aluno/entrar #2 (#172): credencial recusada, serviço fora e rede caída dizem coisas
+    // diferentes; antes tudo virava "credenciais", e o aluno redigitava a senha durante uma instabilidade.
+    let resposta: Response;
     try {
-      const resposta = await fetch("/api/portal-aluno/sessao", {
+      resposta = await fetch("/api/portal-aluno/sessao", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.get("email"), senha: form.get("senha") }),
       });
-      if (!resposta.ok) throw new Error();
-      router.replace("/portal-aluno"); router.refresh();
-    } catch { setErro("Não foi possível entrar com essas credenciais."); }
-    finally { setEnviando(false); }
+    } catch {
+      setErro(MSG_SEM_SERVIDOR); setEnviando(false);
+      return;
+    }
+    setEnviando(false);
+    if (resposta.status === 401) { setErro(MSG_CREDENCIAIS); return; }
+    if (!resposta.ok) { setErro(MSG_INDISPONIVEL); return; }
+    router.replace("/portal-aluno"); router.refresh();
   }
 
   return <section className="mx-auto flex min-h-screen max-w-md items-center px-5"><div className="w-full rounded-xl border bg-surface p-7">

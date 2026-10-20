@@ -1,11 +1,14 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-const mocks = vi.hoisted(() => ({ consultar: vi.fn(), sessao: vi.fn(), preferencia: vi.fn() }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoComPapel: mocks.sessao }));
-vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUniqueOrThrow: async () => ({ permissoes: [] }) } } }));
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), sessao: vi.fn(), preferencia: vi.fn(), usuario: vi.fn(async () => ({ permissoes: [] })) }));
+vi.mock("@/server/_shared", async () => ({
+  exigirSessaoComPapel: mocks.sessao,
+  temPermissao: (await vi.importActual<typeof import("@/server/_shared/sessao")>("@/server/_shared/sessao")).temPermissao,
+}));
+vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUniqueOrThrow: mocks.usuario } } }));
 vi.mock("@/server/financeiro/permuta-servico", () => ({ consultarPermutas: mocks.consultar, listarCobrancasParaPermuta: vi.fn() }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
-vi.mock("./PermutaOperacional", () => ({ PermutaOperacional: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao: string | null }) => `preferência=${preferenciaFusoExibicao}` }));
+vi.mock("./PermutaOperacional", () => ({ PermutaOperacional: ({ preferenciaFusoExibicao, podeAprovar }: { preferenciaFusoExibicao: string | null; podeAprovar: boolean }) => `preferência=${preferenciaFusoExibicao} aprovar=${podeAprovar}` }));
 import Page from "./page";
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,4 +51,14 @@ it("não consulta acordos ou preferência quando a guarda falha", async () => {
   await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow("Sem sessão");
   expect(mocks.consultar).not.toHaveBeenCalled();
   expect(mocks.preferencia).not.toHaveBeenCalled();
+});
+
+// C11 da #170: `financeiro.aprovar_acertos` vem do usuário da sessão, sem reler `usuario` no banco.
+it("financeiro com a capacidade aprova; sem ela, não — sem reler o usuário", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
+  mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });
+  expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("aprovar=true");
+  mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: [] });
+  expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("aprovar=false");
+  expect(mocks.usuario).not.toHaveBeenCalled();
 });

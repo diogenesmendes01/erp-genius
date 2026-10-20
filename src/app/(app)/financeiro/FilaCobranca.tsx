@@ -319,16 +319,15 @@ export function FilaCobranca({
           <div className="text-xs text-gray-500">Recebido hoje</div>
         </div>
       </div>
-      <p className="mb-3 text-xs text-gray-400">
-        Cartões filtram a fila ·{" "}
-        {filtros.indicador ? (
+      {/* C33 da #170: o botão de limpar fica ao lado do texto de apoio, não dentro do <p>. */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 text-xs text-gray-400">
+        <p>Cartões filtram a fila ·{filtros.indicador ? "" : " ordenada por prioridade"}</p>
+        {filtros.indicador && (
           <Link href={semIndicador} onClick={lista.aoClicar(semIndicador)} className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}>
             limpar filtro
           </Link>
-        ) : (
-          <>ordenada por prioridade</>
         )}
-      </p>
+      </div>
 
       {/* Busca + filtros de navegação (volume), na URL. Sem JavaScript, o formulário GET também leva o
           indicador escolhido. */}
