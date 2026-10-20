@@ -490,7 +490,8 @@ Feedback de envio: "Mensagem enviada." / "Ensaio (shadow): registrado sem envio 
 | Nome | Tipo | Título / campos | Botões |
 |---|---|---|---|
 | Opt-out | `ConfirmarAcao` | "Registrar o opt-out de {nome}?" — explica que nada mais sai por nenhum número; só a administração desfaz | Voltar · **Confirmar opt-out** |
-| Vínculo | `ConfirmarAcao` | "Vincular esta conversa a {nome} ({aluno\|responsável\|lead})?" — "Não há desvincular pela tela…" | Voltar · **Confirmar vínculo** |
+| Vínculo | `ConfirmarAcao` | "Vincular esta conversa a {nome} ({aluno\|responsável\|lead})?" — "Para desfazer um vínculo errado, a administração ou o gerente do setor usa “Desvincular”…" | Voltar · **Confirmar vínculo** |
+| Desvínculo (D8) | motivo obrigatório + `ConfirmarAcao` | "Desvincular esta conversa de {nome} ({aluno\|responsável\|oportunidade})?" — "Nada é apagado…"; só Administrador ou gerente do setor; grava `ContatoDesvinculado` | Voltar · **Confirmar desvínculo** |
 | Vincular | painel inline | busca ≥ 2 caracteres (debounce 300 ms), 3 colunas: Alunos / Responsáveis / Leads (código) | clicar no nome → modal de vínculo |
 | Editar nome | painel inline | "Nome salvo do contato" (até 80) + nota da origem do nome | **Salvar** · X Fechar |
 | Pagamento | `PagamentoModal` (financeiro) | "Registrar recebimento — {aluno}" | Registrar recebimento · Cancelar |
@@ -498,7 +499,7 @@ Feedback de envio: "Mensagem enviada." / "Ensaio (shadow): registrado sem envio 
 
 **Estados:** composer desabilitado com texto ("Contato em opt-out.", "Número inativo.", "Atendimento em leitura."); janela 24h fechada é **só aviso** (não bloqueia nem oferece template); vazio da lista "Nenhuma conversa ainda — elas nascem do primeiro inbound ou envio."
 
-**Não existe na Inbox:** marcar perdido, agendar experimental, enviar proposta, trocar dono, assumir/transferir/encerrar atendimento, seletor de template, legenda de mídia, responder/citar, desvincular.
+**Não existe na Inbox:** marcar perdido, agendar experimental, enviar proposta, trocar dono, assumir/transferir/encerrar atendimento, seletor de template, legenda de mídia, responder/citar.
 
 ---
 

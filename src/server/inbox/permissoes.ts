@@ -3,11 +3,25 @@ import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { ehGerenteDoSetor, setoresVisiveisNoInbox, type Setor } from "@/server/whatsapp/setor";
 
 /** Funções do Inbox sujeitas a alçada (doc 03; plano 03-fase-inbox, Tarefa 14). */
-export type AcaoInbox = "enviar" | "editarApagar" | "encaminhar" | "preferenciaPessoal" | "assumir" | "devolver" | "atribuir" | "transferir" | "convidar" | "encerrar" | "notaInterna" | "agendar" | "grupoGerir" | "bloquear" | "perfilNumero";
+export type AcaoInbox = "enviar" | "editarApagar" | "encaminhar" | "preferenciaPessoal" | "assumir" | "devolver" | "atribuir" | "transferir" | "convidar" | "encerrar" | "notaInterna" | "agendar" | "grupoGerir" | "bloquear" | "perfilNumero" | "desvincular";
 
 export interface ContextoAcao { setor: Setor; responsavelId: string | null; autorMensagemId?: string | null; participante?: boolean;
   /** Atendimento COMERCIAL de linha de vendas (número VENDAS) e o dono atual da linha: quem assume precisa continuar enxergando o atendimento (LC-D02). */
   linhaComercial?: boolean; donoLinhaId?: string | null }
+
+/** Vínculo do contato com um cadastro (ContatoWhatsApp.alunoId/responsavelId/leadId). */
+export type TipoVinculoContato = "aluno" | "responsavel" | "lead";
+
+/**
+ * D8 (#175, L2298): quais vínculos do contato cada setor desfaz pela tela, os mesmos que o setor faz em
+ * `vincularContatoWhatsApp`. O pedagógico não expõe o contato e não vincula nem desvincula.
+ */
+export const TIPOS_DESVINCULAVEIS: Readonly<Record<Setor, readonly TipoVinculoContato[]>> = {
+  COMERCIAL: ["lead"],
+  SECRETARIA: ["aluno", "responsavel"],
+  FINANCEIRO: ["aluno", "responsavel"],
+  PEDAGOGICO: [],
+};
 
 const GERENTES: Papel[] = [Papel.GERENTE_COMERCIAL, Papel.GERENTE_PEDAGOGICO];
 
@@ -53,5 +67,8 @@ export function podeExecutar(u: Pick<UsuarioSessao, "id" | "papeis">, acao: Acao
       return gerente;
     case "perfilNumero":
       return admin;
+    case "desvincular":
+      // D8: só o Administrador ou o gerente do setor do atendimento (ehGerenteDoSetor já inclui o administrador).
+      return TIPOS_DESVINCULAVEIS[ctx.setor].length > 0 && gerenteDoSetor;
   }
 }

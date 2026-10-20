@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import Link from "next/link";
 import { Botao } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -11,7 +12,8 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
-import type { AcoesContatoInbox, PessoasVinculo } from "@/server/whatsapp/consultas-inbox";
+import type { AcoesContatoInbox, PessoasVinculo, VinculoContatoInbox } from "@/server/whatsapp/consultas-inbox";
+import { desvincularContatoWhatsApp } from "@/server/whatsapp/desvincular-contato";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { buscarVinculosInbox, criarLeadDaConversa, editarNomeContatoWhatsApp, marcarConversaTratada, vincularContatoWhatsApp } from "@/server/whatsapp/acoes";
 
@@ -46,7 +48,7 @@ export function avisoCadastroDoNome(a: Pick<AcoesContatoInbox, "fonteNome" | "al
   return null;
 }
 
-type Aberto = null | "nome" | "vincular";
+type Aberto = null | "nome" | "vincular" | "desvincular";
 
 export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMudar }: PropsAcoesContato) {
   const [aberto, setAberto] = useState<Aberto>(null);
@@ -58,7 +60,8 @@ export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMud
     if (d?.tipo === "ok") aoMudar?.();
   }
 
-  const temCadastro = acoes.leadId || acoes.alunoId || acoes.podeCriarLead || acoes.podeEditarNome || acoes.podeVincular;
+  const podeDesvincular = acoes.vinculos.length > 0;
+  const temCadastro = acoes.leadId || acoes.alunoId || acoes.podeCriarLead || acoes.podeEditarNome || acoes.podeVincular || podeDesvincular;
   return (
     <>
       {temCadastro && (
@@ -73,10 +76,12 @@ export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMud
             {acoes.podeCriarLead && <Botao tamanho="sm" variante="secundario" ocupado={criar.ocupado} onClick={() => void criarOportunidade()}>Criar oportunidade</Botao>}
             {acoes.podeEditarNome && <Botao tamanho="sm" variante="secundario" aria-expanded={aberto === "nome"} onClick={() => setAberto(aberto === "nome" ? null : "nome")}>Editar nome</Botao>}
             {acoes.podeVincular && <Botao tamanho="sm" variante="secundario" aria-expanded={aberto === "vincular"} onClick={() => setAberto(aberto === "vincular" ? null : "vincular")}>Vincular</Botao>}
+            {podeDesvincular && <Botao tamanho="sm" variante="secundario" aria-expanded={aberto === "desvincular"} onClick={() => setAberto(aberto === "desvincular" ? null : "desvincular")}>Desvincular</Botao>}
           </div>
           <FeedbackAcao erro={criar.erro} sucesso={criar.sucesso} />
           {aberto === "nome" && <EditarNomeContato atendimentoId={atendimentoId} acoes={acoes} aoFechar={() => setAberto(null)} aoMudar={aoMudar} />}
           {aberto === "vincular" && <VincularContato atendimentoId={atendimentoId} acoes={acoes} aoFechar={() => setAberto(null)} aoMudar={aoMudar} />}
+          {aberto === "desvincular" && <DesvincularContato atendimentoId={atendimentoId} vinculos={acoes.vinculos} aoFechar={() => setAberto(null)} aoMudar={aoMudar} />}
         </section>
       )}
       {acoes.cobranca && <CobrancaContato atendimentoId={atendimentoId} cobranca={acoes.cobranca} fuso={fuso} optOut={optOut} aoMudar={aoMudar} />}
@@ -130,8 +135,8 @@ type Escolha = { alvo: AlvoVinculo; nome: string; como: string };
 export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { atendimentoId: string; acoes: AcoesContatoInbox; aoFechar(): void; aoMudar?: () => void }) {
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState<PessoasVinculo | null>(null);
-  // Vincular amarra o histórico da conversa a outra pessoa e não há desvincular pela tela (docs/42 L2298):
-  // escolher um nome só abre a confirmação; a action roda no ConfirmarAcao.
+  // Vincular amarra o histórico da conversa a outra pessoa (docs/42 L2298); desfazer cabe só à administração ou ao
+  // gerente do setor, com motivo (D8). Escolher um nome só abre a confirmação; a action roda no ConfirmarAcao.
   const [escolha, setEscolha] = useState<Escolha | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const busca = useAcaoCliente({ idempotente: true });
@@ -180,7 +185,63 @@ export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { a
           aoCancelar={() => setEscolha(null)}
         >
           <p>O contato {acoes.contatoNome} passa a ficar ligado a <strong>{escolha.nome}</strong> ({escolha.como}): o histórico desta conversa, e o das próximas mensagens deste número, aparece no cadastro.</p>
-          <p>Não há desvincular pela tela: corrigir um vínculo errado exige a administração, com revisão do histórico.</p>
+          <p>Para desfazer um vínculo errado, a administração ou o gerente do setor usa “Desvincular”, com motivo registrado.</p>
+        </ConfirmarAcao>
+      )}
+    </div>
+  );
+}
+
+const COMO_VINCULO: Record<VinculoContatoInbox["tipo"], string> = { aluno: "aluno", responsavel: "responsável", lead: "oportunidade" };
+const MOTIVO_MINIMO = 10;
+
+/**
+ * "Desvincular contato" (D8, #175, docs/42 L2298): só aparece para quem o servidor autoriza (Administrador ou gerente do
+ * setor). Escolhe o vínculo, exige o motivo e roda a action dentro do ConfirmarAcao, que diz o efeito.
+ */
+export function DesvincularContato({ atendimentoId, vinculos, aoFechar, aoMudar }: { atendimentoId: string; vinculos: VinculoContatoInbox[]; aoFechar(): void; aoMudar?: () => void }) {
+  const [escolha, setEscolha] = useState<VinculoContatoInbox | null>(vinculos.length === 1 ? vinculos[0] : null);
+  const [motivo, setMotivo] = useState("");
+  const [confirmar, setConfirmar] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const id = useId();
+  const motivoOk = motivo.trim().length >= MOTIVO_MINIMO;
+
+  return (
+    <div className="space-y-2 rounded border border-gray-200 bg-surface-muted p-3">
+      <ul className="space-y-1">
+        {vinculos.map((v) => (
+          <li key={`${v.tipo}:${v.id}`}>
+            <Botao tamanho="sm" variante="fantasma" onClick={() => { setAviso(null); setEscolha(v); }}>Desvincular de {v.nome}</Botao>
+            <span className="ml-1 text-xs text-gray-600">({COMO_VINCULO[v.tipo]})</span>
+          </li>
+        ))}
+      </ul>
+      {escolha && (
+        <>
+          <label htmlFor={`${id}-motivo`} className="block text-xs font-medium text-gray-700">Motivo do desvínculo</label>
+          <p className="text-xs text-gray-700">Desvincular de <strong>{escolha.nome}</strong> ({COMO_VINCULO[escolha.tipo]}). O motivo fica registrado no histórico do contato.</p>
+          <CampoTexto id={`${id}-motivo`} value={motivo} onChange={(e) => setMotivo(e.target.value)} required minLength={MOTIVO_MINIMO} maxLength={500} rows={2}
+            aria-label="Motivo do desvínculo" className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
+        </>
+      )}
+      <div className="flex gap-2">
+        {escolha && <Botao tamanho="sm" disabled={!motivoOk} onClick={() => setConfirmar(true)}>Revisar desvínculo</Botao>}
+        <Botao tamanho="sm" variante="fantasma" onClick={aoFechar}>Fechar</Botao>
+      </div>
+      <FeedbackAcao erro={null} sucesso={aviso} />
+      {confirmar && escolha && (
+        <ConfirmarAcao
+          folha
+          titulo={`Desvincular esta conversa de ${escolha.nome} (${COMO_VINCULO[escolha.tipo]})?`}
+          confirmacao="desvínculo"
+          idempotente={false}
+          acao={() => desvincularContatoWhatsApp({ atendimentoId, alvo: { tipo: escolha.tipo, id: escolha.id }, motivo: motivo.trim() })}
+          aoConcluir={() => { setConfirmar(false); setEscolha(null); setMotivo(""); setAviso(`Contato desvinculado de ${escolha.nome}.`); aoMudar?.(); }}
+          aoCancelar={() => setConfirmar(false)}
+        >
+          <p>O contato deixa de ficar ligado a <strong>{escolha.nome}</strong> ({COMO_VINCULO[escolha.tipo]}): as próximas mensagens deste número não aparecem mais nesse cadastro.</p>
+          <p>Nada é apagado: o cadastro, as mensagens e os atendimentos continuam. O desvínculo e o motivo ficam registrados.</p>
         </ConfirmarAcao>
       )}
     </div>

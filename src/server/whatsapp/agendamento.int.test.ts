@@ -10,10 +10,13 @@ import { garantirAtendimento } from "./atendimentos";
 import { agendarMensagemNoAtendimento } from "./acoes-conversa";
 import { transferirAtendimento } from "./acoes-atendimento";
 import { despacharFila } from "./despachante";
+import { diaUtilAs } from "@/test/janela-envio";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
 const comoUsuario = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 const emMinutos = (n: number) => new Date(Date.now() + n * 60_000).toISOString();
+// D12: só dentro da janela de envio (fábrica: 9h–20h, segunda a sexta) no fuso da escola (padrão America/Sao_Paulo).
+const util = (hora: number) => diaUtilAs(hora);
 
 async function cenario() {
   const vend = await criarUsuario([Papel.VENDEDOR], "Vend");
@@ -31,12 +34,13 @@ describe("agendar mensagem pelo atendimento", () => {
   it("não sai antes da hora e sai depois", async () => {
     const { vend, a, numero, contato } = await cenario();
     comoUsuario(vend);
-    const r = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "Lembrete", quando: emMinutos(10) });
+    const quando = util(10);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "Lembrete", quando: quando.toISOString() });
     expect(r.ok).toBe(true);
     expect(await prisma.intencaoMensagem.findUnique({ where: { id: idDe(r) } })).toMatchObject({ atendimentoId: a.id, numeroId: numero.id, contatoId: contato.id, origem: "HUMANO", autorId: vend.id });
-    await despacharFila(new Date());
+    await despacharFila(new Date(quando.getTime() - 60_000));
     expect(await status(r)).toBe("PENDENTE");
-    await despacharFila(new Date(Date.now() + 11 * 60_000));
+    await despacharFila(new Date(quando.getTime() + 60_000));
     expect(await status(r)).not.toBe("PENDENTE");
     expect(["DESPACHADA", "SIMULADA"]).toContain(await status(r));
     expect(await prisma.evento.count({ where: { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id } })).toBe(1);
@@ -45,17 +49,18 @@ describe("agendar mensagem pelo atendimento", () => {
   it("não sai depois de transferência", async () => {
     const { vend, a } = await cenario();
     comoUsuario(vend);
-    const r = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: emMinutos(1) });
+    const quando = util(10);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: quando.toISOString() });
     const t = await transferirAtendimento({ atendimentoId: a.id, destino: "SECRETARIA", destinoChave: null, contexto: "x".repeat(12) });
     expect(t.ok).toBe(true);
-    await despacharFila(new Date(Date.now() + 2 * 60_000));
+    await despacharFila(new Date(quando.getTime() + 60_000));
     expect(await prisma.intencaoMensagem.findUnique({ where: { id: idDe(r) } })).toMatchObject({ status: "CANCELADA", motivoFalha: "atendimento_encerrado" });
   });
 
   it("recusa atendimento fora do escopo", async () => {
     const { fora, a } = await cenario();
     comoUsuario(fora);
-    expect(await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: emMinutos(5) })).toEqual({ ok: false, erro: "Atendimento não encontrado." });
+    expect(await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: util(10).toISOString() })).toEqual({ ok: false, erro: "Atendimento não encontrado." });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
@@ -64,7 +69,17 @@ describe("agendar mensagem pelo atendimento", () => {
     comoUsuario(vend);
     expect((await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: emMinutos(-5) })).ok).toBe(false);
     await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { optOutEm: new Date() } });
-    expect((await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: emMinutos(5) })).ok).toBe(false);
+    expect((await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: util(10).toISOString() })).ok).toBe(false);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
+  it("recusa o horário de silêncio da escola com mensagem clara (D12, #202 C4)", async () => {
+    const { vend, a } = await cenario();
+    comoUsuario(vend);
+    expect(await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "x", quando: util(3).toISOString() })).toEqual({
+      ok: false,
+      erro: "Fora da janela de envio da escola: as mensagens saem das 9h às 20h, de segunda a sexta (horário de America/Sao_Paulo). Escolha outro horário.",
+    });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 });

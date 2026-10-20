@@ -3711,6 +3711,38 @@ Branch `claude/fuso-parte4`, base `main` fef6d467 (#247). Mesmo padrão do #239,
     - A falha é `politica.int.test.ts`, "duas baixas parciais…": o `emAtraso` sai vazio entre 21h e 24h de Brasília. A taxa vence "agora − 24 h" e, nesse horário, ainda é o mesmo dia civil na escola (regra do #253). Este PR não mexe em KPI nem em vencimento.
     - As 15 suítes que lançam notas, rodadas à parte: 298 testes verdes.
 
+### Decisões D8, D12 e D13 do dono: desvincular contato, mensagem agendada e carteira por contato real — 2026-10-20
+
+Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` 5b4e75a9 (#250, #252 e #253) trazido antes do push. Implementado em TDD; nenhuma migration.
+- **D12, mensagem agendada (#202 C3/C4):**
+  - **C3:** `agendarMensagem` pelo CRM (tarefa, oportunidade ou pessoa) grava a intenção sem atendimento. O despachante abre (ou reusa) o atendimento COMERCIAL só no claim do envio (`abrirAtendimentoDaAgendada`, na mesma transação). Se o autor perdeu o número ou a carteira, a transação é desfeita e a intenção vira `CANCELADA`/`atendimento_sem_acesso`, sem atendimento criado. Agendada cancelada ou simulada (sem `WHATSAPP_LIVE`) nunca abre atendimento. O agendamento pelo Inbox continua no atendimento que já existe.
+  - **C4:** agendar, reagendar e a `AGENDAR_MENSAGEM` da Aria são recusados fora da janela de envio, com a mensagem "Fora da janela de envio da escola: as mensagens saem das 9h às 20h, de segunda a sexta (horário de …). Escolha outro horário." A Aria fica `BLOQUEADA` com `motivoBloqueio: "FORA_DA_JANELA"`, e a sugestão aplicada depois é revalidada.
+  - **Regra única:** `src/server/whatsapp/janela-envio.ts` (`dentroDaJanelaEnvio`) agora decide o passo 8 do despachante e a recusa do agendamento. A hora e o dia vêm do helper novo `horaEDiaInstitucional` de `operacao/fuso.ts`. A janela é a que o despachante aplica a uma intenção sem política própria (`carregarPoliticaRegua`), lida no fuso da escola. O `retornoAposTeto` do #253 também passou a usar `dentroDaJanelaEnvio`, sem cópia de `horaLocal`/`diaSemanaLocal`.
+  - "Enviar agora" segue sem trava de janela, porque é envio imediato e não agendamento.
+- **D13, carteira (#198 C6):** a lista negativa virou a positiva `EVENTOS_DE_CONTATO_SEM_INTERACAO`: `InteracaoRegistrada` (ligação, presencial, e-mail), `TarefaConcluida`, `ExperimentalAgendada`, `ExperimentalConfirmada` e `ExperimentalRealizada`. Somam-se as mensagens de entrada e as saídas que chegaram (`ENVIADA`/`ENTREGUE`/`LIDA`) nos atendimentos da oportunidade. Nota interna, edição de cadastro, reatribuição, tags e documentos não contam. A integração cobre o lead com só notas e edições depois do último contato e a saída que falhou.
+- **D8, "Desvincular contato" no Inbox (#175, docs/42 L2298):**
+  - **Ação:** `desvincularContatoWhatsApp` (`src/server/whatsapp/desvincular-contato.ts`) zera `ContatoWhatsApp.alunoId`, `responsavelId` ou `leadId`, o vínculo que `vincularContatoWhatsApp` faz. Na linha de vendas, também solta o lead do atendimento da linha. Não apaga cadastro, mensagens nem atendimentos, e o contexto dos atendimentos de secretaria e financeiro (aluno e matrícula) fica.
+  - **Permissão:** só o Administrador ou o gerente do setor (`podeExecutar(…, "desvincular")`). O comercial desfaz a oportunidade; a secretaria e o financeiro, o aluno e o responsável; o pedagógico, nada.
+  - **Motivo e auditoria:** o motivo é obrigatório (10 a 500 caracteres). O evento `ContatoDesvinculado` é gravado na mesma transação, e o arquivo entrou na trava `crm-config/auditoria.test.ts` (mutação do evento fora da transação conferida: a trava falha).
+  - **Tela:** o botão "Desvincular" no painel do Inbox (`AcoesContato.tsx`) aparece só com os `vinculos` que o servidor libera. Pede o motivo no `CampoTexto` e roda a action no `ConfirmarAcao`, registrado no mapa de confirmações. A confirmação do vínculo deixou de dizer "não há desvincular pela tela".
+- **Evidências** no head:
+  - `tsc --noEmit`: saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com os 40 avisos de base.
+  - `npm test`: 783 arquivos e 5.860 testes, sobre o `main` 5b4e75a9.
+  - `npm run build`: saída 0.
+  - **Integração de whatsapp, inbox, crm e aria (+ `app/(app)/inbox`):** 117 arquivos e 1.004 testes, verdes salvo 3 testes de `whatsapp/acoes.int.test.ts` (cobrança "Sem ação devida hoje"), que falham igual no `main` b1da50fc limpo e não são deste PR. Depois do merge do #253: 12 arquivos de integração do despachante, agendamento, carteira, desvincular, Aria e regras do Inbox, com 129 de 129 testes.
+- **Ajustes depois da R1 e das decisões do dono no #254 (2026-10-20):**
+  - **Carteira:** a mensagem enviada só conta quando foi uma pessoa (`HUMANO` pela Inbox, `CELULAR` pelo app), além da recebida do cliente. Régua e automações (`CRON`, `LOTE`, `GESTAO`), a resposta da Aria (`IA`) e saída legada sem origem não contam. O teste de integração cobre o lead que só recebeu régua e Aria depois do último contato e continua "sem interação".
+  - Recusar o agendamento no fim de semana e deixar "Enviar agora" sem a trava da janela foram confirmados pelo dono, sem mudança.
+  - **C3:** `abrirAtendimentoDaAgendada` confere `destinatarioAtualDoAtendimento` dentro da transação do claim, antes da visibilidade. Na divergência, tudo é desfeito e a intenção vira `CANCELADA`/`destinatario_alterado`, sem atendimento nem conversa. Há teste com o contato da pessoa diferente do telefone da oportunidade.
+  - **C4:** `dentroDaJanelaEnvio` usa `horaEDiaNoFuso` (novo em `operacao/fuso.ts`, só `Intl`), então um fuso como `EST5EDT` vale. Só cai na hora do servidor o que nem o `Intl` aceita.
+  - **Evidências:**
+    - `tsc`: saída 0.
+    - lint: 40 avisos de base.
+    - `npm test`: 783 arquivos e 5.861 testes.
+    - build: saída 0.
+    - Integração de `src/server/crm` mais despachante e agendamento: 34 arquivos e 265 testes.
+
 ### Testes de cobrança que dependiam do horário: fixture no dia da máquina × régua no dia da escola — 2026-10-20
 
 Branch `claude/fix-acoes-int`, base `main` 6122c874 (#251). Relato: 3 testes de `whatsapp/acoes.int.test.ts` ("Sem ação devida hoje para esta cobrança.") falhavam no main, embora a integração de fef6d467 tivesse passado.

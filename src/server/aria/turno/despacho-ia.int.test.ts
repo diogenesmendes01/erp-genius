@@ -10,6 +10,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { diaUtilAs } from "@/test/janela-envio";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { despacharFila } from "@/server/whatsapp/despachante";
@@ -162,7 +163,7 @@ describe("despacho da resposta da Aria", () => {
 // Vindo da 5D (antes da revisão final da 5C): a mensagem agendada pela Aria antes do handoff não sai,
 // e o aviso do próprio handoff sai. Ajustado à regra final (motivo MOTIVO_ARIA_PAUSADA, sem Evento próprio).
 describe("mensagem agendada da Aria e o handoff", () => {
-  const amanha = () => new Date(Date.now() + 24 * 3600_000);
+  const amanha = () => diaUtilAs(10); // D12: dentro da janela de envio
   const comAgendamento: ProvedorIA = {
     nome: "simulado",
     async gerar(p: PedidoIA): Promise<RespostaIA> {

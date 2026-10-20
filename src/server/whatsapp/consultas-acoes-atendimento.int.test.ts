@@ -5,6 +5,7 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { diaUtilAs } from "@/test/janela-envio";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
 import { convidarParticipante, revogarParticipante } from "./acoes-atendimento";
@@ -24,7 +25,7 @@ async function cenario() {
   await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: v1.id, status: "EM_ATENDIMENTO" } });
   return { v1, v2, gc, a };
 }
-const amanha = () => new Date(Date.now() + 86_400_000).toISOString();
+const amanha = () => diaUtilAs(10).toISOString(); // D12: dentro da janela de envio
 
 describe("convites e agendamentos do atendimento (Task 31)", () => {
   it("lista o convite ativo para quem concedeu e para o gerente, e não para um terceiro; revogar o tira da lista", async () => {

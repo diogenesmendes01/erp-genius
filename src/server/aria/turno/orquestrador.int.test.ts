@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TipoMensagem } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { diaUtilAs } from "@/test/janela-envio";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { configPadrao, type ConfigAria, type Matriz } from "../config-schema";
@@ -158,7 +159,7 @@ describe("processarTurnoAria", () => {
 
   it("so_acoes_com_humano_assumindo_durante_a_chamada_nao_mexe_no_crm", async () => {
     await pronta("ATIVA", matriz({ NOVO: { MOVER_ETAPA: "EXECUTA", AGENDAR_MENSAGEM: "EXECUTA", MARCAR_PERDIDO: "EXECUTA" } }));
-    const amanha = new Date(Date.now() + 24 * 3600_000).toISOString();
+    const amanha = diaUtilAs(10).toISOString(); // D12: dentro da janela de envio
     // Sem resposta de texto: só ações. O atendente assume pelo ERP enquanto o provedor pensa.
     const provedor: ProvedorIA = {
       nome: "simulado",
