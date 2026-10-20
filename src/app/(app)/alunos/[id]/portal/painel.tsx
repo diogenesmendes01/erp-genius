@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -18,10 +19,13 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
   alunoId: string; emailCadastro: string | null; conta: { emailVerificado: string | null; temSenha: boolean; ativa: boolean } | null; trocas: Troca[]; podeDecidir: boolean; preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
-  // Idempotentes por natureza (#166, server/portal-aluno/identidade.ts): o convite ainda não despachado é
-  // reaproveitado (um envio, sem outro Evento); a troca pendente idêntica, do mesmo autor, é devolvida; a mesma
-  // decisão, do mesmo decisor e com o mesmo motivo, também. Nenhum reenvio gera outro e-mail.
+  // Reenvio reconhecido pelo servidor (#166, server/portal-aluno/identidade.ts). Convite: com chave de idempotência
+  // (B1 da R1 do #274), o reenvio da mesma tentativa devolve o convite original mesmo depois que o cron o despachou;
+  // a chave só muda depois do sucesso, e um novo clique é reemissão deliberada. Troca pendente idêntica, do mesmo
+  // autor, e a mesma decisão, do mesmo decisor e com o mesmo motivo: devolvidas por natureza. Nenhum reenvio gera
+  // outro e-mail.
   const acao = useAcaoCliente({ idempotente: true });
+  const tentativaConvite = useChaveIdempotencia();
   // Origem do resultado ("convite", "troca" ou "decisao:<id>"): aparece junto do botão.
   const [alvo, setAlvo] = useState<string | null>(null);
   const instanteAdministrativo = (valor: string) => {
@@ -30,7 +34,8 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
   };
   async function convite() {
     setAlvo("convite");
-    const d = await acao.executar(() => prepararConvitePortalAluno({ alunoId }), (dado) => dado?.situacao === "PENDENTE_EMAIL" ? "Acesso pendente: cadastre e confirme um e-mail individual." : "Convite preparado. O envio depende da configuração institucional.");
+    const d = await acao.executar(() => prepararConvitePortalAluno({ alunoId, chaveIdempotencia: tentativaConvite.atual }), (dado) => dado?.situacao === "PENDENTE_EMAIL" ? "Acesso pendente: cadastre e confirme um e-mail individual." : "Convite preparado. O envio depende da configuração institucional.");
+    tentativaConvite.depoisDo(d);
     if (d?.tipo === "ok") router.refresh();
   }
   async function troca(evento: FormEvent<HTMLFormElement>) {

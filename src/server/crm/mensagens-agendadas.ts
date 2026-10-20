@@ -123,6 +123,14 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
       const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvoRepeticao));
       if (repetido) return { id: intencaoDe(repetido) };
     }
+    // N1 da R1 do #274: sem repetição, o escopo vem antes das validações de horário e janela. Assim quem não vê o
+    // atendimento recebe a mesma resposta para um id existente e um inexistente.
+    const a = d.atendimentoId ? await atendimentoVisivel(autor, d.atendimentoId, true) : null;
+    if (d.atendimentoId) {
+      if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
+      if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
+      if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
+    }
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
@@ -130,11 +138,7 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     // horário de silêncio é barrado aqui, no fuso da escola, antes de gravar.
     await exigirAgendamentoNaJanela(quando);
 
-    if (d.atendimentoId) {
-      const a = await atendimentoVisivel(autor, d.atendimentoId, true);
-      if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
-      if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
-      if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
+    if (a) {
       const id = await prisma.$transaction(async (tx) => {
         if (alvoRepeticao) {
           const repetido = await repeticaoIdempotente(tx, alvoRepeticao);

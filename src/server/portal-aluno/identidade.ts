@@ -10,6 +10,8 @@ import {
   exigirSessaoComPapel,
   registrarEvento,
 } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { limparFalhasLoginPortal, loginPortalBloqueadoTx, registrarFalhaLoginPortal } from "./rate-limit";
 import {
   digestSegredoPortalAluno,
@@ -115,17 +117,36 @@ async function criarEnvioPendenteTx(
   return { id, situacao: "PREPARADO" as const, reaproveitado: false };
 }
 
+type SituacaoEnvioPortalAluno = "PREPARADO" | "CANCELADO" | "ENVIADO" | "FALHOU" | "INCERTO";
+
 /**
  * Q72/Q73. Só prepara uma intenção rastreável: não retorna token, senha ou
  * link. O despachante interno é o único componente que materializa o token
  * quando Resend, domínio e remetente estiverem efetivamente configurados.
+ *
+ * `chaveIdempotencia` (#166, B1 da R1 do #274): a marca vai no `ConvitePortalAlunoPreparado`, na mesma transação do
+ * envio. O reenvio da mesma tentativa devolve o convite original mesmo depois que o cron o despachou (sem outro
+ * envio, outro e-mail nem a revogação do primeiro link); a reemissão deliberada é outra tentativa, com chave nova.
  */
-export async function prepararConvitePortalAluno(input: { alunoId: string }) {
+export async function prepararConvitePortalAluno(input: { alunoId: string; chaveIdempotencia?: string }) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
-    const dados = z.object({ alunoId: z.string().min(1) }).strict().parse(input);
+    const { chaveIdempotencia, ...dados } = z.object({ alunoId: z.string().min(1), chaveIdempotencia: ChaveIdempotenciaSchema.optional() }).strict().parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     return prisma.$transaction(async (tx) => {
       await exigirFuncionarioAtualTx(tx, autor.id, Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
+      if (marca) {
+        // Antes das validações de estado: a conta pode ter sido ativada (ou o envio despachado) desde a tentativa.
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "ConvitePortalAlunoPreparado", agregadoTipo: "Aluno", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada para o convite de outro aluno. Recarregue a ficha e confira o acesso antes de repetir.",
+        });
+        if (repetido) {
+          const p = repetido.payload as { contaId?: unknown; solicitacaoEnvioId?: unknown };
+          const envio = await tx.solicitacaoEnvioPortalAluno.findUniqueOrThrow({ where: { id: String(p.solicitacaoEnvioId) }, select: { id: true, situacao: true } });
+          return { contaId: String(p.contaId), solicitacaoEnvioId: envio.id, situacao: envio.situacao as SituacaoEnvioPortalAluno };
+        }
+      }
       const conta = await obterOuCriarContaTx(tx, dados.alunoId);
       if (!conta.ativa) throw new ErroRegra("A conta do aluno está bloqueada.");
       if (conta.senhaHash) throw new ErroRegra("O aluno já possui credencial; use recuperação de acesso quando necessário.");
@@ -147,13 +168,15 @@ export async function prepararConvitePortalAluno(input: { alunoId: string }) {
       }
       const destinatario = normalizarEmailPortalAluno(conta.emailAluno);
       const envio = await criarEnvioPendenteTx(tx, { contaId: conta.id, finalidade: "CONVITE", destinatario });
-      if (!envio.reaproveitado) {
+      // Com chave, o reaproveitamento também grava o Evento (com `reaproveitado`): sem a marca, o reenvio desta
+      // tentativa depois do despacho não a reconheceria e prepararia outro convite.
+      if (!envio.reaproveitado || marca) {
         await registrarEvento(tx, {
           tipo: "ConvitePortalAlunoPreparado", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
-          payload: { contaId: conta.id, solicitacaoEnvioId: envio.id },
+          payload: { contaId: conta.id, solicitacaoEnvioId: envio.id, ...(envio.reaproveitado ? { reaproveitado: true } : {}), ...marca },
         });
       }
-      return { contaId: conta.id, solicitacaoEnvioId: envio.id, situacao: envio.situacao };
+      return { contaId: conta.id, solicitacaoEnvioId: envio.id, situacao: envio.situacao as SituacaoEnvioPortalAluno };
     });
   });
 }
@@ -357,9 +380,13 @@ export async function decidirTrocaEmailPortalAluno(input: { solicitacaoId: strin
         // gravar nada; outra decisão continua recusada. Vem antes da situação, que a própria decisão já mudou.
         if (anterior.decisorId !== decisor.id || anterior.aprovada !== dados.aprovar || anterior.motivo !== dados.motivo) throw new ErroRegra("A solicitação já recebeu uma decisão.");
         if (!anterior.aprovada) return { decisaoId: anterior.id, aprovada: false as const };
-        const aplicada = await tx.evento.findFirst({ where: { tipo: "TrocaEmailPortalAlunoAplicada", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId }, orderBy: { criadoEm: "desc" }, select: { payload: true } });
-        const p = (aplicada?.payload ?? {}) as { decisaoId?: unknown; solicitacaoEnvioId?: unknown };
-        return { decisaoId: anterior.id, aprovada: true as const, solicitacaoEnvioId: p.decisaoId === anterior.id ? String(p.solicitacaoEnvioId) : "" };
+        // N2/C3 da R1 do #274: o Evento desta decisão (não o mais recente do aluno, que pode ser de outra troca).
+        const aplicada = await tx.evento.findFirst({
+          where: { tipo: "TrocaEmailPortalAlunoAplicada", agregadoTipo: "Aluno", agregadoId: solicitacao.alunoId, payload: { path: ["decisaoId"], equals: anterior.id } },
+          select: { payload: true },
+        });
+        const envioId = (aplicada?.payload as { solicitacaoEnvioId?: unknown } | undefined)?.solicitacaoEnvioId;
+        return { decisaoId: anterior.id, aprovada: true as const, solicitacaoEnvioId: typeof envioId === "string" ? envioId : null };
       }
       if (solicitacao.situacao !== "PENDENTE_DECISAO") throw new ErroRegra("A solicitação ainda não está pronta para decisão.");
       const agora = new Date();

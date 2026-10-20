@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
 import { Papel } from "@prisma/client";
 
 // #166 (4º lote): ações do portal do aluno na ficha da equipe são idempotentes por natureza. Nenhum reenvio grava
@@ -27,6 +28,7 @@ import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integraca
 import {
   consumirTokenPortalAluno, decidirTrocaEmailPortalAluno, despacharSolicitacaoPortalAlunoInterna, prepararConvitePortalAluno, prepararTrocaEmailPortalAluno,
 } from "./identidade";
+import { processarEnviosPortalAluno } from "./processar-envios";
 
 let secretariaId: string, adminId: string, alunoId: string, semEmailId: string;
 
@@ -68,6 +70,85 @@ describe("convite do portal repetido (#166)", () => {
     expect(a.ok && a.dado?.situacao).toBe("PENDENTE_EMAIL");
     expect(await prepararConvitePortalAluno({ alunoId: semEmailId })).toEqual(a);
     expect(await eventos("PendenciaAcessoPortalAlunoEmailAusente")).toBe(1);
+  });
+});
+
+// B1 da R1 do #274: sem chave, o servidor só reconhecia o reenvio do convite enquanto o envio estava PREPARADO.
+// Se o cron despachasse no intervalo, o reenvio preparava outro convite, e o despacho seguinte revogava o link do
+// primeiro. Com a chave da tentativa (marca no `ConvitePortalAlunoPreparado`), o reenvio devolve o convite
+// original mesmo já despachado; a reemissão deliberada usa chave nova.
+describe("convite do portal com chave, depois do despacho pelo cron (B1 da R1 do #274)", () => {
+  const ambiente = {
+    EMAIL_PORTAL_ENVIO_ENABLED: "true", RESEND_API_KEY: "chave-ficticia-idem",
+    EMAIL_INSTITUCIONAL_REMETENTE: "portal@example.test", PORTAL_ALUNO_URL_PUBLICA: "https://escola.example.test",
+  };
+  const fetch = vi.fn();
+  beforeEach(() => {
+    fetch.mockReset();
+    fetch.mockImplementation(async () => new Response(JSON.stringify({ id: randomUUID() }), { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+  const tokenDoEmail = (n: number) => {
+    const token = /#token=([^\n]+)/.exec(JSON.parse(fetch.mock.calls[n]![1].body).text)?.[1];
+    if (!token) throw new Error("O e-mail de teste não trouxe o token.");
+    return token;
+  };
+
+  it("o reenvio com a mesma chave devolve o convite original: um envio, um Evento, um e-mail e o link vale", async () => {
+    const entrada = { alunoId, chaveIdempotencia: "chave-convite-01" };
+    const a = await prepararConvitePortalAluno(entrada);
+    expect(a.ok, a.ok ? undefined : a.erro).toBe(true);
+    expect(await processarEnviosPortalAluno({}, { ambiente })).toMatchObject({ aceitosPeloProvedor: 1 });
+    const b = await prepararConvitePortalAluno(entrada);
+    expect(b.ok && b.dado && "solicitacaoEnvioId" in b.dado && b.dado.solicitacaoEnvioId).toBe(a.ok && a.dado && "solicitacaoEnvioId" in a.dado && a.dado.solicitacaoEnvioId);
+    expect(await processarEnviosPortalAluno({}, { ambiente })).toMatchObject({ processados: 0 });
+    expect(await prisma.solicitacaoEnvioPortalAluno.count()).toBe(1);
+    expect(await eventos("ConvitePortalAlunoPreparado")).toBe(1);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(await consumirTokenPortalAluno({ token: tokenDoEmail(0), senha: "Senha inicial segura 2026" })).toMatchObject({ tipo: "SESSAO" });
+  });
+
+  it("devolve o convite original mesmo depois da ativação da conta", async () => {
+    const entrada = { alunoId, chaveIdempotencia: "chave-convite-02" };
+    const a = await prepararConvitePortalAluno(entrada);
+    await processarEnviosPortalAluno({}, { ambiente });
+    await consumirTokenPortalAluno({ token: tokenDoEmail(0), senha: "Senha inicial segura 2026" });
+    const b = await prepararConvitePortalAluno(entrada);
+    expect(b.ok, b.ok ? undefined : b.erro).toBe(true);
+    expect(b.ok && b.dado && "solicitacaoEnvioId" in b.dado && b.dado.solicitacaoEnvioId).toBe(a.ok && a.dado && "solicitacaoEnvioId" in a.dado && a.dado.solicitacaoEnvioId);
+  });
+
+  it("o reenvio de uma tentativa que reaproveitou o envio preparado também é reconhecido depois do despacho", async () => {
+    const semChave = await prepararConvitePortalAluno({ alunoId });
+    const entrada = { alunoId, chaveIdempotencia: "chave-convite-03" };
+    const a = await prepararConvitePortalAluno(entrada);
+    expect(a).toEqual(semChave);
+    await processarEnviosPortalAluno({}, { ambiente });
+    expect((await prepararConvitePortalAluno(entrada)).ok).toBe(true);
+    expect(await prisma.solicitacaoEnvioPortalAluno.count()).toBe(1);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it("chave nova é reemissão deliberada: novo convite, e o link anterior deixa de valer", async () => {
+    await prepararConvitePortalAluno({ alunoId, chaveIdempotencia: "chave-convite-04" });
+    await processarEnviosPortalAluno({}, { ambiente });
+    const nova = await prepararConvitePortalAluno({ alunoId, chaveIdempotencia: "chave-convite-05" });
+    expect(nova.ok, nova.ok ? undefined : nova.erro).toBe(true);
+    await processarEnviosPortalAluno({}, { ambiente });
+    expect(await prisma.solicitacaoEnvioPortalAluno.count()).toBe(2);
+    expect(await eventos("ConvitePortalAlunoPreparado")).toBe(2);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    await expect(consumirTokenPortalAluno({ token: tokenDoEmail(0), senha: "Senha inicial segura 2026" })).rejects.toThrow(/não está disponível/);
+    expect(await consumirTokenPortalAluno({ token: tokenDoEmail(1), senha: "Senha inicial segura 2026" })).toMatchObject({ tipo: "SESSAO" });
+  });
+
+  it("recusa a mesma chave para outro aluno, sem preparar nada", async () => {
+    await prepararConvitePortalAluno({ alunoId, chaveIdempotencia: "chave-convite-06" });
+    const outro = await prepararConvitePortalAluno({ alunoId: semEmailId, chaveIdempotencia: "chave-convite-06" });
+    expect(outro.ok).toBe(false);
+    if (!outro.ok) expect(outro.erro).toMatch(/tentativa já foi usada/);
+    expect(await eventos("PendenciaAcessoPortalAlunoEmailAusente")).toBe(0);
   });
 });
 
@@ -121,5 +202,26 @@ describe("troca de e-mail repetida (#166)", () => {
     expect(await decidirTrocaEmailPortalAluno(decisao)).toEqual(a);
     expect(await prisma.solicitacaoEnvioPortalAluno.count({ where: { finalidade: "RECUPERACAO" } })).toBe(envios);
     expect(await eventos("TrocaEmailPortalAlunoAplicada")).toBe(1);
+  });
+
+  it("decidir: a aprovação repetida devolve o próprio envio mesmo depois de outra troca aplicada (N2 da R1 do #274)", async () => {
+    await contaAtiva();
+    const preparada = await prepararTrocaEmailPortalAluno({ alunoId, ...troca });
+    if (!preparada.ok || !preparada.dado) throw new Error(JSON.stringify(preparada));
+    await consumirTokenPortalAluno({ token: await despachar(String(preparada.dado.solicitacaoEnvioId)) });
+    sessao.usuarioId = adminId;
+    const decisao = { solicitacaoId: preparada.dado.solicitacaoId, aprovar: true, motivo: "Identidade e endereço conferidos por outra pessoa" };
+    const a = await decidirTrocaEmailPortalAluno(decisao);
+    if (!a.ok || !a.dado?.aprovada) throw new Error(JSON.stringify(a));
+    // Uma segunda troca é aplicada depois: o `TrocaEmailPortalAlunoAplicada` mais recente passa a ser o dela.
+    sessao.usuarioId = secretariaId;
+    const segunda = await prepararTrocaEmailPortalAluno({ alunoId, ...troca, novoEmail: "terceiro.portal@example.com" });
+    if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
+    await consumirTokenPortalAluno({ token: await despachar(String(segunda.dado.solicitacaoEnvioId)) });
+    sessao.usuarioId = adminId;
+    const b = await decidirTrocaEmailPortalAluno({ ...decisao, solicitacaoId: segunda.dado.solicitacaoId });
+    expect(b.ok, b.ok ? undefined : b.erro).toBe(true);
+    expect(await decidirTrocaEmailPortalAluno(decisao)).toEqual(a);
+    expect(a.dado.solicitacaoEnvioId).toEqual(expect.any(String));
   });
 });
