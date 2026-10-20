@@ -16,6 +16,8 @@ import { disponibilizarSegundaChamada } from "./segunda-chamada-disponibilizacao
 import { consultarPreviaAgendaInicialSegundaChamada, decidirAgendaInicialSegundaChamada, proporAgendaInicialSegundaChamada } from "./segunda-chamada-agenda-inicial";
 import { registrarRealizacaoSegundaChamada, salvarNotaOriginalSegundaChamada } from "./segunda-chamada-realizacao";
 import { oficializarLancamentoAvaliacao } from "./lancamentos";
+import { confirmarResolucaoImpedimentoSegundaChamada } from "./segunda-chamada-resolucao-impedimento";
+import { carregarPendenciasFechamentoTx } from "./pendencias-fechamento-tx";
 import { autorizarRealizacaoEspecialSegundaChamada, autorizacaoEspecialSegundaChamadaVigente } from "./segunda-chamada-autorizacao-especial";
 import { autorizarSegundaChamadaEspecialLocal } from "./segunda-chamada-autorizacao-local";
 import { designarProfessorSegundaChamada } from "./segunda-chamada-designacao";
@@ -1150,6 +1152,63 @@ it("histórico conserva impedimento anterior quando a mesma proposta ganha nova 
   expect(await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" })).toMatchObject({ ok: false });
   entrar(gestor); await prisma.usuario.update({ where: { id: gestor }, data: { ativo: false } });
   expect(await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" })).toMatchObject({ ok: false });
+});
+
+it("Q164: gestão confirma a resolução do impedimento pela realização posterior com nota oficial, sem apagar o histórico", async () => {
+  const antiga = await reservarRealizavel("q164-reserva-impedida");
+  entrar(gestor);
+  const { registrarOcorrenciaSegundaChamada } = await import("./segunda-chamada-ocorrencia");
+  expect(await registrarOcorrenciaSegundaChamada({ reservaId: antiga, tipo: "IMPEDIMENTO_ESCOLA", ocorridaEm: new Date().toISOString(), motivo: "Sala interditada pela escola no horário", evidencia: "Comunicado da coordenação arquivado" })).toMatchObject({ ok: true });
+  const reserva = await prisma.reservaSegundaChamada.findUniqueOrThrow({ where: { id: antiga }, include: { proposta: true } });
+  const contexto = { alocacaoId, matriculaId, nivelId: reserva.proposta.nivelId, regraId: reserva.regraId };
+  const pendencias = () => prisma.$transaction(tx => carregarPendenciasFechamentoTx(tx, contexto));
+  expect((await pendencias()).pendenciasSegundaChamada.ocorrenciasAguardandoEscola).toBe(1);
+
+  const nova = await aprovarAgendaInicial({ id: reserva.propostaId, entradaHash: reserva.proposta.entradaHash }, "q164-nova-agenda");
+  await new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, nova.inicio.getTime() - Date.now() + 200)));
+  entrar(professor);
+  const realizada = await registrarRealizacaoSegundaChamada({ reservaId: nova.reservaId, realizadaEm: new Date().toISOString(), evidencia: "Ata da nova aplicação." });
+  if (!realizada.ok || !realizada.dado) throw new Error(JSON.stringify(realizada));
+  const entrada = { reservaImpedidaId: antiga, realizacaoId: realizada.dado.id, motivo: "Avaliação aplicada depois do impedimento escolar.", chaveIdempotencia: "q164-resolucao-0001" };
+
+  // Professor não confirma; sem nota oficial a gestão também não.
+  expect(await confirmarResolucaoImpedimentoSegundaChamada(entrada)).toMatchObject({ ok: false });
+  entrar(gestor);
+  expect(await confirmarResolucaoImpedimentoSegundaChamada(entrada)).toMatchObject({ ok: false, erro: expect.stringContaining("nota oficial") });
+  const historicoAntes = await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" });
+  expect(historicoAntes).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: antiga, realizacoesQueResolvem: [] })]) } });
+
+  entrar(professor);
+  const [fonte] = await prisma.$queryRaw<{ realizadaEm: Date }[]>`SELECT "realizadaEm" AS "realizadaEm" FROM "RealizacaoSegundaChamada" WHERE id=${realizada.dado.id}`;
+  const nota = await salvarNotaOriginalSegundaChamada({ realizacaoId: realizada.dado.id, lancamento: { alocacaoId, codigoAvaliacao: "I1", realizadaEm: fonte.realizadaEm.toISOString(), notas: [{ habilidade: "FALA", nota: "8", comentarioAluno: "Nota da segunda chamada reaplicada." }], submetida: true, versaoEsperada: 0, chaveIdempotencia: "q164-nota-original" } });
+  if (!nota.ok || !nota.dado) throw new Error(JSON.stringify(nota));
+  const versao = await prisma.versaoLancamentoAvaliacao.findUniqueOrThrow({ where: { id: nota.dado.id }, select: { conteudoHash: true } });
+  entrar(gestor);
+  expect(await oficializarLancamentoAvaliacao({ lancamentoId: nota.dado.id, conteudoHash: versao.conteudoHash, aprovada: true, motivo: "Oficialização independente da nota." })).toMatchObject({ ok: true });
+
+  const historico = await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" });
+  expect(historico).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: antiga, resolucaoImpedimento: null, realizacoesQueResolvem: [expect.objectContaining({ id: realizada.dado.id })] })]) } });
+  // A realização não resolve a si mesma nem é oferecida para reservas sem impedimento.
+  expect(historico).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: nova.reservaId, realizacoesQueResolvem: [] })]) } });
+  expect(await confirmarResolucaoImpedimentoSegundaChamada({ ...entrada, reservaImpedidaId: nova.reservaId, chaveIdempotencia: "q164-reserva-errada" })).toMatchObject({ ok: false });
+
+  const confirmada = await confirmarResolucaoImpedimentoSegundaChamada(entrada);
+  expect(confirmada).toMatchObject({ ok: true, dado: { nova: true } });
+  if (!confirmada.ok || !confirmada.dado) throw new Error("resolução ausente");
+  expect(await confirmarResolucaoImpedimentoSegundaChamada(entrada)).toMatchObject({ ok: true, dado: { id: confirmada.dado.id, nova: false } });
+  expect(await confirmarResolucaoImpedimentoSegundaChamada({ ...entrada, chaveIdempotencia: "q164-resolucao-0002" })).toMatchObject({ ok: false, erro: expect.stringContaining("já possui resolução") });
+
+  // O impedimento continua no histórico, mas deixa de bloquear o fechamento.
+  expect(await prisma.reservaSegundaChamada.findUniqueOrThrow({ where: { id: antiga } })).toMatchObject({ status: "PENDENCIA_ESCOLA" });
+  expect((await pendencias()).pendenciasSegundaChamada).toMatchObject({ ocorrenciasAguardandoEscola: 0, realizacoesSemNotaOficial: 0 });
+  const depois = await consultarHistoricoReservasSegundaChamada({ alocacaoId, codigoAvaliacao: "I1" });
+  expect(depois).toMatchObject({ ok: true, dado: { itens: expect.arrayContaining([expect.objectContaining({ id: antiga, realizacoesQueResolvem: [], resolucaoImpedimento: expect.objectContaining({ motivo: entrada.motivo, realizadaEm: fonte.realizadaEm.toISOString() }) })]) } });
+  expect(await prisma.evento.count({ where: { tipo: "SegundaChamadaImpedimentoResolvido", agregadoId: matriculaId } })).toBe(1);
+
+  // O banco repete as invariantes e preserva o registro.
+  await expect(prisma.resolucaoImpedimentoSegundaChamada.update({ where: { id: confirmada.dado.id }, data: { motivo: "Motivo reescrito indevidamente" } })).rejects.toThrow();
+  await expect(prisma.resolucaoImpedimentoSegundaChamada.deleteMany()).rejects.toThrow();
+  await expect(prisma.resolucaoImpedimentoSegundaChamada.create({ data: { reservaImpedidaId: nova.reservaId, realizacaoId: realizada.dado.id, confirmadaPorId: gestor, motivo: "Escrita direta sem impedimento", chaveIdempotencia: "q164-sql-direto" } })).rejects.toThrow("não possui impedimento");
 });
 
 it("histórico distingue realização de nota e preserva autoria e evidência", async () => {

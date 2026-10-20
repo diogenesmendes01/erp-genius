@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { exigirSessaoPagina } from "@/server/_shared";
+import { exigirSessaoPagina, temPermissao } from "@/server/_shared";
 import { PAPEIS_PAUSA } from "@/server/matricula/pausa-estado";
 import { obterAluno } from "@/server/alunos/consultas";
 import { MovimentacoesPainel } from "./MovimentacoesPainel";
@@ -44,7 +44,6 @@ export default async function MovimentacoesPage({
   const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
   const fuso = FusoInstitucionalSchema.safeParse(config?.fusoInstitucional);
   const financeiro = usuario.papeis.some((p) => p === "FINANCEIRO" || p === "ADMINISTRADOR");
-  const permissoes = financeiro ? await prisma.usuario.findUnique({ where: { id: usuario.id }, select: { permissoes: true } }) : null;
   const pedidos = await listarPedidosEncerramentoParaUsuario({ alunoId: id, pagina: paginaPedidos }, usuario);
   return <section className="space-y-5">
     <VoltarPara href={`/alunos/${id}`} para="Ficha do aluno" />
@@ -54,7 +53,7 @@ export default async function MovimentacoesPage({
     <NovaRetomada alunoId={id} contratos={contratos.filter((m) => m.status === "PAUSADA").map((m) => ({ id: m.id, identificacao: identificacaoContrato(m.codigo, m.id), nome: `${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` }))} hoje={fuso.success ? dataCivilInstitucional(new Date(), fuso.data) : null} />
     <MovimentacoesPainel alunoId={id} preferenciaFusoExibicao={preferenciaFusoExibicao} />
     {financeiro && contratos.length > 0 && <ComprasHorasPainel alunoId={id} contratos={contratos} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
-    {financeiro && contratos.length > 0 && <CompensacoesPainel alunoId={id} contratos={contratos} usuarioId={usuario.id} podeAprovar={usuario.papeis.includes("ADMINISTRADOR") || !!permissoes?.permissoes.includes("financeiro.aprovar_acertos")} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+    {financeiro && contratos.length > 0 && <CompensacoesPainel alunoId={id} contratos={contratos} usuarioId={usuario.id} podeAprovar={usuario.papeis.includes("ADMINISTRADOR") || temPermissao(usuario, "financeiro.aprovar_acertos")} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
     {usuario.papeis.some((p) => p === "SECRETARIA_ACADEMICA" || p === "ADMINISTRADOR") && <NovoEncerramento alunoId={id} hoje={fuso.success ? dataCivilInstitucional(new Date(), fuso.data) : null} contratos={contratos.map((m) => ({ id: m.id, nome: `${identificacaoContrato(m.codigo, m.id)} · ${m.produto.idioma.nome} · ${m.produto.modalidade.nome}` }))} />}
     <section className="space-y-3" aria-label="Pedidos de encerramento">
       <h2 className="text-lg font-medium">Pedidos de encerramento</h2>
