@@ -34,13 +34,13 @@ function matricula(extra: Partial<MatriculaRetomadaFonte> = {}): MatriculaRetoma
 
 describe("entrada da retomada", () => {
   it.each(["2026-02-29", "2028-02-30", "2026-04-31", "2026-13-01", "2026-00-10", "2026-09-00", "2026-9-08", "08/09/2026", "2026-09-08T12:00:00Z", " 2026-09-08"])("não normaliza a data inválida %s", (valor) => {
-    expect(dataRetomada(valor)).toBeNull();
+    expect(dataRetomada(valor, "America/Sao_Paulo")).toBeNull();
     expect(SolicitarRetomadaSchema.safeParse({ ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos: [{ cobrancaId: "c", vencimento: valor }] }).success).toBe(false);
   });
 
-  it("aceita dia bissexto real e mantém o dia de calendário local", () => {
-    const data = dataRetomada("2028-02-29")!;
-    expect([data.getFullYear(), data.getMonth(), data.getDate()]).toEqual([2028, 1, 29]);
+  it("aceita dia bissexto real e grava o meio-dia da escola, não o do servidor (ref. #247)", () => {
+    expect(dataRetomada("2028-02-29", "America/Sao_Paulo")).toEqual(new Date("2028-02-29T15:00:00.000Z"));
+    expect(dataRetomada("2028-02-29", "America/Costa_Rica")).toEqual(new Date("2028-02-29T18:00:00.000Z"));
   });
 
   it("exige decisão booleana e motivo significativo nas duas etapas", () => {
@@ -183,5 +183,22 @@ describe("retomada no dia civil da escola", () => {
     expect(() => validarDatasNaoRetroativas(snapshot.alvos, agora, fuso)).not.toThrow();
     expect(() => validarDatasNaoRetroativas(snapshot.alvos, new Date("2026-09-09T06:00:00Z"), fuso)).toThrow(/passadas/i);
     expect(() => montarSnapshotRetomada("aluno", pausaId, [m], input("2026-09-07"), agora, fuso)).toThrow(/passadas/i);
+  });
+});
+
+// Ref. #247: a data digitada na reprogramação vira o meio-dia da ESCOLA; propostas antigas, gravadas ao meio-dia do
+// relógio do servidor (UTC em produção), continuam lidas no mesmo dia civil.
+describe("datas digitadas da retomada no fuso da escola", () => {
+  const fuso = "America/Costa_Rica";
+  const agora = new Date("2026-09-09T04:30:00Z"); // 08/09, 22h30 na Costa Rica
+  it("grava o meio-dia da escola, qualquer que seja o fuso do servidor", () => {
+    const m = matricula();
+    const snapshot = montarSnapshotRetomada("aluno", pausaId, [m], { ...manter, opcao: "REPROGRAMAR_PARCELAS", novosVencimentos: m.cobrancas.map((c) => ({ cobrancaId: c.id, vencimento: "2026-09-08" })) }, agora, fuso);
+    expect(snapshot.alvos.map((p) => p.novoVencimento)).toEqual(m.cobrancas.map(() => "2026-09-08T18:00:00.000Z"));
+  });
+  it("proposta antiga ao meio-dia UTC do servidor continua no mesmo dia (não vira retroativa)", () => {
+    const antiga = [{ cobrancaId: "c", novoVencimento: "2026-09-08T12:00:00.000Z" }];
+    expect(() => validarDatasNaoRetroativas(antiga, agora, fuso)).not.toThrow();
+    expect(() => validarDatasNaoRetroativas(antiga, new Date("2026-09-09T06:00:00Z"), fuso)).toThrow(/passadas/i);
   });
 });

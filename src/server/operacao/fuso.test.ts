@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, inicioDoDiaCivil, inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional, inicioDoMesInstitucional, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana } from "./fuso";
+import { APELIDOS_FUSO_LEGADOS, APELIDOS_FUSO_US_BRASIL, LINKS_FUSO_BACKWARD_ICU, dataCivilInstitucional, fusoIanaValido, inicioDoDiaCivil, inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional, inicioDoMesInstitucional, FusoInstitucionalSchema, FusoPreferenciaSchema, normalizarFusoIana, diaCivilGravado, diasCivisDesde, vencimentoEmAtraso, limiteDoAtraso } from "./fuso";
 // Um critério só para servidor, PaisSchema e CampoFuso (docs/43 §6 item 6).
 describe("fusoIanaValido", () => {
   it.each(["America/Sao_Paulo", "America/Costa_Rica", "UTC", "Etc/GMT+3", "US/Eastern"])("aceita %s", (fuso) => expect(fusoIanaValido(fuso)).toBe(true));
@@ -133,5 +133,46 @@ describe("FusoPreferenciaSchema", () => {
   });
   it.each(["", "GMT-3", "Brasil", "America/Inexistente"])("recusa %s", (valor) => {
     expect(FusoPreferenciaSchema.safeParse(valor).success).toBe(false);
+  });
+});
+
+// Ref. #247: vencimento gravado como dia civil (meio-dia ou meia-noite da escola, ou meia-noite UTC no legado)
+// só entra em atraso quando o dia civil da escola passa do dia do vencimento. Relógio fixo; verde com
+// TZ=UTC e TZ=America/Sao_Paulo.
+describe("vencimento em atraso no dia civil da escola", () => {
+  const FUSO = "America/Sao_Paulo";
+  const convencoes = {
+    "meio-dia da escola": new Date("2026-06-23T15:00:00Z"),
+    "meia-noite da escola": new Date("2026-06-23T03:00:00Z"),
+    "meia-noite UTC (legado)": new Date("2026-06-23T00:00:00Z"),
+  };
+  const noDia2130 = new Date("2026-06-24T00:30:00Z"); // 23/06, 21h30 de Brasília (servidor em UTC já está no dia 24)
+  const noDia2359 = new Date("2026-06-24T02:59:59Z"); // 23/06, 23h59min59s de Brasília
+  const seguinte0030 = new Date("2026-06-24T03:30:00Z"); // 24/06, 00h30 de Brasília
+  const vespera2130 = new Date("2026-06-23T00:30:00Z"); // 22/06, 21h30 de Brasília
+
+  it.each(Object.entries(convencoes))("%s: às 21h30 do dia do vencimento não está atrasado; à 00h30 do dia seguinte está", (_, vencimento) => {
+    expect(vencimentoEmAtraso(vencimento, vespera2130, FUSO)).toBe(false);
+    expect(vencimentoEmAtraso(vencimento, noDia2130, FUSO)).toBe(false);
+    expect(vencimentoEmAtraso(vencimento, noDia2359, FUSO)).toBe(false);
+    expect(vencimentoEmAtraso(vencimento, seguinte0030, FUSO)).toBe(true);
+  });
+
+  it("limiteDoAtraso separa os vencimentos exatamente como vencimentoEmAtraso (filtro no banco)", () => {
+    const fusos = ["America/Sao_Paulo", "America/Costa_Rica", "Europe/Moscow", "Asia/Tokyo", "UTC", "America/Santiago"];
+    const agoras = [vespera2130, noDia2130, noDia2359, seguinte0030, new Date("2026-09-06T04:30:00Z"), new Date("2026-06-23T14:59:59Z")];
+    for (const fuso of fusos) for (const agora of agoras) {
+      const limite = limiteDoAtraso(agora, fuso);
+      for (let h = -72; h <= 72; h++) {
+        const vencimento = new Date(agora.getTime() + h * 3600_000 + 1234);
+        expect(vencimento < limite, `${fuso} ${agora.toISOString()} ${vencimento.toISOString()}`).toBe(vencimentoEmAtraso(vencimento, agora, fuso));
+      }
+    }
+  });
+
+  it("diaCivilGravado e diasCivisDesde continuam os mesmos da régua (sem cópia)", async () => {
+    const regua = await import("@/server/cobrancas/regua");
+    expect(regua.diaCivilGravado).toBe(diaCivilGravado);
+    expect(regua.diasCivisDesde).toBe(diasCivisDesde);
   });
 });

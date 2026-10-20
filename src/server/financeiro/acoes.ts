@@ -32,6 +32,8 @@ import type { PassoRegua } from "@/server/cobrancas/regua";
 import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
 import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 import { PASSOS_POLITICA } from "@/server/whatsapp/schema";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
 const PAPEIS_COMISSAO: Papel[] = [Papel.FINANCEIRO];
@@ -66,7 +68,7 @@ async function reavaliarAcessoAposCommit(cobrancaId: string) {
 export async function registrarPagamento(cobrancaId: string, input: PagamentoInput): Promise<Resultado<{ informado: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
-    const dados = PagamentoSchema.parse(input);
+    const dados = analisarComDatasDaEscola(PagamentoSchema, input, await fusoDaEscola());
     const hashDados = hashDadosPagamento({ ...dados, cobrancaId, autorId: autor.id });
     const concessoes = await prisma.usuario.findUniqueOrThrow({ where: { id: autor.id }, select: { permissoes: true } });
     const financeiro = autor.papeis.includes(Papel.FINANCEIRO) || autor.papeis.includes(Papel.ADMINISTRADOR) || concessoes.permissoes.includes("pagamento.caixa");

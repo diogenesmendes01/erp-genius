@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { dinheiro, saldoAtual } from "@/server/financeiro/regras";
-import { dataCivilInstitucional } from "@/server/operacao/fuso";
+import { dataCivilInstitucional, diaCivilGravado } from "@/server/operacao/fuso";
 import { dataRetomada, type ParcelaRetomada, type SolicitarRetomadaInput } from "./schema";
 
 type Monetario = Prisma.Decimal | string | number;
@@ -87,14 +87,17 @@ export function dataMinimaReprogramacao(agora: Date, fuso: string) {
   return dataCivilInstitucional(agora, fuso);
 }
 
-/** Data AAAA-MM-DD que a pessoa digitou, de volta do instante que `dataRetomada` gravou (meio-dia local). */
-function dataDigitada(instante: Date) {
-  return `${instante.getFullYear()}-${String(instante.getMonth() + 1).padStart(2, "0")}-${String(instante.getDate()).padStart(2, "0")}`;
+/**
+ * Data AAAA-MM-DD que a pessoa digitou, de volta do instante gravado: o meio-dia da escola (`dataRetomada`) ou,
+ * em propostas anteriores ao #247, o meio-dia do relógio do servidor. `diaCivilGravado` lê as duas.
+ */
+export function dataDigitadaRetomada(instante: Date, fuso: string) {
+  return diaCivilGravado(instante, fuso);
 }
 
 export function validarDatasNaoRetroativas(alvos: SnapshotRetomada["alvos"], agora: Date, fuso: string) {
   const hoje = dataMinimaReprogramacao(agora, fuso);
-  if (alvos.some((alvo) => dataDigitada(new Date(alvo.novoVencimento)) < hoje)) {
+  if (alvos.some((alvo) => dataDigitadaRetomada(new Date(alvo.novoVencimento), fuso) < hoje)) {
     throw new ErroRegra("A reprogramação não pode usar datas passadas. Envie uma proposta com novas datas.");
   }
 }
@@ -112,7 +115,7 @@ export function montarSnapshotRetomada(alunoId: string, pausaId: string, matricu
       throw new ErroRegra("Informe uma única data para cada mensalidade remanescente, sem incluir outras cobranças.");
     }
     alvos = elegiveis.map((p) => {
-      const vencimento = dataRetomada(porId.get(p.cobrancaId)!);
+      const vencimento = dataRetomada(porId.get(p.cobrancaId)!, fuso);
       if (!vencimento) throw new ErroRegra("Informe uma data real no formato AAAA-MM-DD.");
       return { cobrancaId: p.cobrancaId, novoVencimento: vencimento.toISOString() };
     });
