@@ -193,7 +193,7 @@ export function TurmasPainel({
                       {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {/* Início e término são dias: o formulário grava ao meio-dia local (paraDataLocal), e registros
+                      {/* Início e término são dias: o formulário grava ao meio-dia da escola (paraDataLocal), e registros
                           gravados por script podem vir à meia-noite UTC. Nos dois casos o dia sai do ISO, sem passar
                           pelo fuso do navegador — em UTC−3 o toLocaleDateString mostrava o dia anterior (C52 da #170). */}
                       {t.dataInicio ? formatarDataCivil(t.dataInicio.slice(0, 10)) : "—"}

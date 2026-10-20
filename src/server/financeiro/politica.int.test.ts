@@ -49,7 +49,8 @@ beforeEach(async () => {
     alunoId, leadId: lead.id, produtoId: cat.produto.id, paisId: cat.pais.id, moeda: "CRC", status: "AGUARDANDO", mesesPlano: 2,
     referenciaCobertura: "MES_CIVIL",
     cobrancas: { create: [
-      { tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, moeda: "CRC", vencimento: new Date(), saldo: 100 },
+      // Vence ontem: no dia do vencimento a taxa ainda não está em atraso (ref. #247).
+      { tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, moeda: "CRC", vencimento: new Date(Date.now() - 86400000), saldo: 100 },
       { tipo: "MENSALIDADE", coberturaInicio: new Date("2026-09-01"), coberturaFim: new Date("2026-09-30"), valorOriginal: 200, valorNegociado: 200, moeda: "CRC", vencimento: new Date(Date.now() + 86400000), saldo: 200 },
     ] },
   }, include: { cobrancas: true } });

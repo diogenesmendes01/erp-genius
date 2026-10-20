@@ -128,3 +128,40 @@ export function inicioDoDiaSeguinteInstitucional(instante: Date, fuso: string): 
 export function inicioDoMesInstitucional(instante: Date, fuso: string): Date {
   return inicioDoDiaCivil(`${dataCivilInstitucional(instante, fuso).slice(0, 8)}01`, fuso);
 }
+
+/**
+ * Dia civil (AAAA-MM-DD) de uma data gravada, como vencimento ou promessa. Elas nasceram como dia
+ * civil em convenções distintas: meio-dia ou meia-noite do fuso da escola, ou meia-noite UTC no
+ * legado. O maior entre o dia UTC e o dia da escola recupera o dia civil nas três; num instante
+ * legado ambíguo fica o dia mais tardio, que nunca antecipa lembrete, cobrança, restrição ou atraso.
+ */
+export function diaCivilGravado(gravada: Date, fuso: string): string {
+  const utc = gravada.toISOString().slice(0, 10);
+  const daEscola = dataCivilInstitucional(gravada, fuso);
+  return utc > daEscola ? utc : daEscola;
+}
+
+const msDoDia = (civil: string) => Date.parse(`${civil}T00:00:00Z`);
+
+/** Dias de calendário da escola entre a data gravada e `agora` (positivo = já passou; ignora hora). */
+export function diasCivisDesde(agora: Date, gravada: Date, fuso: string): number {
+  return Math.round((msDoDia(dataCivilInstitucional(agora, fuso)) - msDoDia(diaCivilGravado(gravada, fuso))) / 86400000);
+}
+
+/**
+ * Vencimento em atraso (ref. #247): só quando o dia civil da escola já passou do dia do vencimento. O dia
+ * do vencimento vale inteiro, até a meia-noite da escola, qualquer que seja a convenção de gravação.
+ */
+export function vencimentoEmAtraso(vencimento: Date, agora: Date, fuso: string): boolean {
+  return diasCivisDesde(agora, vencimento, fuso) > 0;
+}
+
+/**
+ * O mesmo critério de `vencimentoEmAtraso` como instante, para filtrar no banco: `vencimento < limite`
+ * ⟺ em atraso. `diaCivilGravado` < hoje exige o dia UTC e o dia da escola antes de hoje, ou seja, o
+ * instante antes da meia-noite UTC de hoje e antes do início de hoje na escola; vale o menor dos dois.
+ */
+export function limiteDoAtraso(agora: Date, fuso: string): Date {
+  const hoje = dataCivilInstitucional(agora, fuso);
+  return new Date(Math.min(msDoDia(hoje), inicioDoDiaCivil(hoje, fuso).getTime()));
+}

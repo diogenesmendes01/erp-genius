@@ -18,7 +18,7 @@ import { saldoAtual } from "./regras";
 import { orderByComissoes, type OrdemComissoes } from "./ordem-comissoes";
 import type { Ordenacao } from "@/lib/ordenacao";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "./vencimento-civil";
-import { inicioDoMesInstitucional } from "@/server/operacao/fuso";
+import { inicioDoMesInstitucional, vencimentoEmAtraso } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 /** Escopo das comissões: financeiro/admin tudo; gerente as suas e as da equipe; vendedor as suas. */
@@ -90,7 +90,7 @@ function resumirComissao(c: Prisma.ComissaoGetPayload<{ include: { vendedor: { s
 export async function kpisFinanceiro() {
   await exigirSessaoComPapel(Papel.FINANCEIRO);
   // Q176 (#164): o mês dos KPIs é o mês civil da escola, nunca o do servidor (UTC em produção).
-  const agora = new Date(); const ini = inicioDoMesInstitucional(agora, await fusoDaEscola());
+  const agora = new Date(); const fuso = await fusoDaEscola(); const ini = inicioDoMesInstitucional(agora, fuso);
   const [recebimentos, eventosLegados, abertas, comissoesAprovadas, novasMatriculas] = await Promise.all([
     prisma.recebimento.findMany({ where: { dataPagamento: { gte: ini, lte: agora } }, select: { valor: true, moeda: true } }),
     prisma.evento.findMany({ where: { tipo: "PagamentoRegistrado", criadoEm: { gte: ini, lte: agora } }, select: { agregadoId: true, payload: true } }),
@@ -107,7 +107,7 @@ export async function kpisFinanceiro() {
     ...recebimentos.map((r) => ({ moeda: r.moeda, valor: numero(r.valor) })),
     ...legados.filter((e) => porId.has(e.agregadoId)).map((e) => ({ moeda: porId.get(e.agregadoId)!, valor: (e.payload as { valorRecebido: number }).valorRecebido })),
   ]);
-  const valores = (atrasadas: boolean) => somarPorMoeda(abertas.filter((c) => (c.vencimento < agora) === atrasadas).map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), c.valorCompensadoPermuta).toNumber() })));
+  const valores = (atrasadas: boolean) => somarPorMoeda(abertas.filter((c) => vencimentoEmAtraso(c.vencimento, agora, fuso) === atrasadas).map((c) => ({ moeda: c.moeda, valor: saldoAtual(c.valorNegociado, c.valorRecebido, c.valorLiquidadoCredito, c.origensCreditoAcertoTaxaAditivo.reduce((total, origem) => total.plus(origem.valor), new Prisma.Decimal(0)), c.valorCompensadoPermuta).toNumber() })));
   return { recebidoMes, emAtraso: valores(true), aReceber: valores(false),
     comissoesAPagar: somarPorMoeda(comissoesAprovadas.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) }))), novasMatriculas };
 }

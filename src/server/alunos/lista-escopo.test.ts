@@ -12,6 +12,7 @@ vi.mock("@/lib/prisma", () => ({
     aluno: { findMany: mocks.alunos, count: mocks.contar },
     pais: { findMany: mocks.paises },
     turma: { findMany: mocks.turmas },
+    configuracaoOperacional: { findUnique: async () => null },
   },
 }));
 
