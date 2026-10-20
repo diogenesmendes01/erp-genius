@@ -1297,6 +1297,7 @@ export const MIGRADOS = [
   "src/app/(app)/financeiro/acertos-cobertura/ImpactosCoberturaOperacao.tsx",
   "src/app/(app)/financeiro/acertos-taxa/DecisaoTaxa.tsx",
   "src/app/(app)/financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx",
+  "src/app/(app)/financeiro/acertos-adiantamento/[matriculaId]/[propostaId]/Formulario.tsx",
   "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/Formulario.tsx",
   "src/app/(app)/matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx",
   "src/app/(app)/matriculas/[id]/condicoes-horas/CondicoesHoras.tsx",
