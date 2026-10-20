@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { conferirPagamentosEntradaParticular } from "@/server/matricula/entrada-particular-pagamentos";
+import { carregarAplicacoesAdiantamentoEntradaTx } from "@/server/matricula/entrada-particular-aplicacoes";
 import { carregarRevisaoAssinatura } from "./assinatura-estado";
 import { ConclusaoAssinaturaSchema, validarConclusaoAssinatura } from "./conclusao-assinatura-schema";
 import { hashPrevia } from "./previa-estado";
@@ -37,7 +38,7 @@ export async function carregarRevisaoAceite(tx: Prisma.TransactionClient, matric
   const condicoes = m.condicoesEntradaPreparacao[0], emissao = m.emissoesEntrada[0];
   if (!condicoes || !emissao?.conferenciaInicial || m.emissoesEntrada.length !== 1 || emissao.condicoesId !== condicoes.id) throw new ErroRegra("Confira a emissão inicial correspondente ao original.");
   // A consistência financeira é exigida; pagamento inicial para ativar não é exigência adicional de assinatura.
-  const entrada = conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, m.cobrancas, emissao.itens.map(i => i.cobrancaId));
+  const entrada = conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, m.cobrancas, emissao.itens.map(i => i.cobrancaId), await carregarAplicacoesAdiantamentoEntradaTx(tx, matriculaId));
   if (m.cobrancas.some(i => i.status === "CANCELADA")) throw new ErroRegra("Regularize as cobranças canceladas antes de confirmar o aceite.");
   const condicoesMensais = { referenciaCobertura: m.referenciaCobertura, dataReferenciaCobertura: m.dataReferenciaCobertura?.toISOString() ?? null, diaVencimento: m.diaVencimento,
     mensalidades: m.cobrancas.filter(i => i.tipo === "MENSALIDADE").map(i => ({ id: i.id, versao: i.versao, coberturaInicio: i.coberturaInicio?.toISOString() ?? null, coberturaFim: i.coberturaFim?.toISOString() ?? null, vencimento: i.vencimento.toISOString(), valorNegociado: i.valorNegociado.toString(), moeda: i.moeda })) };
