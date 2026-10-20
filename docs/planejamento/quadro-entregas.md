@@ -4110,6 +4110,7 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `prisma migrate deploy` do zero no `erp_genius_test_q175b`: 471 migrations. No `migrate diff` banco × schema, nenhuma linha dos objetos novos da Q175.
   - Integração de `src/server/matricula`, `financeiro` e `diario` no `erp_genius_test_q175b`: 68 arquivos e 623 testes verdes. Ficaram de fora 2 arquivos e 3 testes de homologação de UI, condicionais por ambiente. Entre os testes estão o novo cenário de encerramento e trava do item e a comparação entre a fotografia delta em TS e a do banco com crédito Q175.
   - `npm run build`: saída 0. A primeira tentativa parou em "Failed to type check" por falta de memória, enquanto a integração rodava em paralelo.
+  - Depois do segundo merge do `main` (#267, #269 e #270; conflito só no quadro): `tsc` e `eslint` com saída 0; `npm test` com 816 arquivos e 6.101 testes em cada fuso; integração de `condicoes-horas`, `q23-consumo-horas`, `desistencia-reconferencia-delta` e `indisponibilidade-oferta-correcao` com 4 arquivos e 55 testes verdes; `npm run build` com saída 0.
 - **Não alterado:**
   - O aditivo continua contando consumo estornado. O caso não chega a ele: só existe consumo com compra de horas, e a compra já faz o aditivo recusar.
   - A cobrança cancelada por redução a zero continua sem coluna `canceladaPor*`. A origem está em `AplicacaoRevisaoFinanceiraCorrecaoAula.cobrancaId`.
