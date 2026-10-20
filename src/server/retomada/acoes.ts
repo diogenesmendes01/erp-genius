@@ -47,6 +47,8 @@ export async function solicitarRetomada(alunoId: string, input: SolicitarRetomad
         const diasAnteriores = anterior.success
           ? new Map(anterior.data.alvos.map((alvo) => [alvo.cobrancaId, dataDigitadaRetomada(new Date(alvo.novoVencimento), fuso)]))
           : null;
+        // `size === length` só prova "mesmas datas" com ids da entrada únicos; quem garante isso é o
+        // `SolicitarRetomadaSchema` ("Uma cobrança não pode receber duas datas."), antes da transação (#253, C3).
         const mesmasDatas = dados.opcao === "MANTER_VENCIMENTOS" || (!!diasAnteriores && diasAnteriores.size === dados.novosVencimentos.length &&
           dados.novosVencimentos.every((p) => diasAnteriores.get(p.cobrancaId) === p.vencimento));
         if (pendente.solicitanteId === autor.id && pendente.pausaId === estado.pausa.id && pendente.opcao === dados.opcao && pendente.motivo === dados.motivo && mesmasDatas) return pendente.id;

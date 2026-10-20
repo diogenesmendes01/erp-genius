@@ -177,6 +177,13 @@ Evento: tabelas operacionais (doc 29 regra 3).
 
 ---
 
+## Exportação e LGPD (agregado `Exportacao`)
+
+| Evento | Gatilho | Quem | Payload |
+|---|---|---|---|
+| `DadosExportados` | Exportação de listagem (`/api/exportacoes/[tipo]`) ou de relatório (`/api/relatorios/exportar`) | Quem exportou | `{ conjunto, quantidade, colunas, filtros, finalidade }`. Desde a #119 (25/09/2026), `filtros.busca` é `{ aplicada: true, caracteres }`, sem o texto digitado |
+| `BuscaExportacaoAnonimizada` | Reparo LGPD (`scripts/anonimizar-busca-exportacoes.ts --aplicar`, #165 D5): a busca em texto dos `DadosExportados` antigos vira `{ aplicada: true, caracteres }`. Um evento por execução | Sistema (script operado pelo admin) | `{ motivo, decisao, eventoAlvo, campo, corte, candidatos, afetados, lotes, intervalo: { de, ate }, concluida }`, sem dado pessoal |
+
 ## Estado de implementação (código vs planejado)
 Conferido contra `src/server/**/acoes.ts` (junho/2026):
 

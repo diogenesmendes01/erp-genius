@@ -95,6 +95,14 @@ describe("Modal em portal: o fundo é solto antes de o resultado entrar na regi�
 
     // Depois do `await` da ação (sem evento em andamento): prioridade padrão, como no ConfirmarAcao.
     await Promise.resolve();
+    // Revisão da #250, C1: este passo depende de detalhes internos do Scheduler do React (pacote `scheduler`,
+    // 0.23.2 com react-dom 18.3.1): `frameYieldMs = 5` e `shouldYieldToHost()` medindo o tempo por
+    // `performance.now()` (lido no objeto global, por isso o spy funciona). Se o teste quebrar, ou passar
+    // trivialmente, depois de um upgrade do React, confira em node_modules/scheduler/cjs/scheduler.development.js:
+    // (1) se a fatia ainda é de 5 ms e o passo de 3 ms ainda cabe uma vez nela e a esgota na leitura seguinte;
+    // (2) se o relógio ainda vem de `performance.now` (e não de `Date.now` ou de uma referência guardada à função);
+    // (3) se os efeitos passivos ainda ficam para outra tarefa quando a fatia acaba. Para saber se o caso ainda
+    // é exercitado, troque o `useEfeitoDeLayout` de `useDialogo` por `useEffect`: o teste tem de falhar.
     let relogio = performance.now();
     const fatiaEsgotada = vi.spyOn(performance, "now").mockImplementation(() => (relogio += 3));
     try {
