@@ -18,7 +18,15 @@ export function conferirCorrecaoPeriodoRelato(atual: PeriodoRelato, novo: Period
   if (novo.inicio > (novo.fim ?? terminoAprovado ?? FIM_ABERTO)) throw new ErroRegra("O início corrigido não pode ultrapassar o fim vigente do relato.");
 }
 
-/** Intervalos civis que o relato deixa de cobrir; são eles que não podem já sustentar compensação. */
+/**
+ * Intervalos civis que o relato deixa de cobrir; são eles que não podem já sustentar compensação.
+ *
+ * Decisão (C2 da #265): só os dias REMOVIDOS são conferidos. Os dias ACRESCENTADOS por uma correção que
+ * amplia o período (início antes, fim depois) não são conferidos contra a disponibilidade positiva aprovada
+ * (Q161) nem contra a cobertura futura de um período integral aprovado. É o mesmo tratamento do relato novo,
+ * cujo INSERT também não confere isso, e a Q161 diz que a indisponibilidade confirmada prevalece. O guard
+ * SQL (migration 20261020210000, já aplicada e por isso não editada) segue a mesma decisão.
+ */
 export function diasRemovidosPelaCorrecao(atual: PeriodoRelato, novo: PeriodoRelato, terminoAprovado: string | null): Array<{ inicio: string; fim: string }> {
   const fimAtual = atual.fim ?? terminoAprovado ?? FIM_ABERTO, fimNovo = novo.fim ?? terminoAprovado ?? FIM_ABERTO;
   const removidos: Array<{ inicio: string; fim: string }> = [];
