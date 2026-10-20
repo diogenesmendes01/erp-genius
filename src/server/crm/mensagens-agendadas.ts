@@ -10,6 +10,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { atendimentoVisivel, garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { exigirAgendamentoNaJanela } from "@/server/whatsapp/janela-agendamento";
+import { destinatarioAtualDoAtendimento } from "@/server/whatsapp/destinatario-atual";
 import { capacidadesCrm, exigirCapacidadeCrm } from "./permissoes";
 import { escopoTarefas } from "./tarefas";
 import { somarDiasDataCivil } from "./tarefas-regras";
@@ -202,15 +203,20 @@ export async function autorAindaPodeEnviarAgendada(autor: UsuarioSessao, it: Age
 
 /**
  * Abre (ou reusa) o atendimento COMERCIAL da mensagem agendada no momento do envio (D12, #202 C3), dentro da
- * transação do claim do despachante, e liga a intenção a ele. Devolve null se o autor não enxergaria o
- * atendimento: o chamador desfaz a transação, e nada fica criado.
+ * transação do claim do despachante, e liga a intenção a ele. Confere aqui, na mesma transação, o que a releitura
+ * do despachante conferiria depois (R1 do #254, C3): o destinatário atual do atendimento e o acesso do autor.
+ * Devolve o motivo da recusa; o chamador desfaz a transação, e nada fica criado (nem atendimento, nem conversa).
  */
-export async function abrirAtendimentoDaAgendada(tx: Prisma.TransactionClient, autor: UsuarioSessao, intencaoId: string, it: AgendadaSemAtendimento): Promise<string | null> {
-  if (!await autorAindaPodeEnviarAgendada(autor, it, tx)) return null;
+export async function abrirAtendimentoDaAgendada(
+  tx: Prisma.TransactionClient, autor: UsuarioSessao, intencaoId: string, it: AgendadaSemAtendimento,
+): Promise<{ atendimentoId: string } | { recusa: "atendimento_sem_acesso" | "destinatario_alterado" }> {
+  if (!await autorAindaPodeEnviarAgendada(autor, it, tx)) return { recusa: "atendimento_sem_acesso" };
   const atendimento = await garantirAtendimento(tx, { numeroId: it.numeroId, contatoId: it.contatoId, finalidade: "COMERCIAL", leadId: it.leadId });
-  if (!await atendimentoVisivel(autor, atendimento.id, true, tx)) return null;
+  const contato = await tx.contatoWhatsApp.findUniqueOrThrow({ where: { id: it.contatoId }, select: { telefoneE164: true, responsavelId: true, alunoId: true } });
+  if (!await destinatarioAtualDoAtendimento({ ...atendimento, conversa: { contato } }, tx)) return { recusa: "destinatario_alterado" };
+  if (!await atendimentoVisivel(autor, atendimento.id, true, tx)) return { recusa: "atendimento_sem_acesso" };
   const r = await tx.intencaoMensagem.updateMany({ where: { id: intencaoId, atendimentoId: null }, data: { atendimentoId: atendimento.id } });
-  return r.count === 1 ? atendimento.id : null;
+  return r.count === 1 ? { atendimentoId: atendimento.id } : { recusa: "atendimento_sem_acesso" };
 }
 
 /** Por que a mensagem não pôde ser alterada (ela não está mais PENDENTE/ADIADA ou não é do escopo). */

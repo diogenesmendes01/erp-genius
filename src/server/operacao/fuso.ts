@@ -170,7 +170,14 @@ const DIA_DA_SEMANA: Readonly<Record<string, number>> = Object.freeze({ Sun: 0, 
 
 /** Hora (0–23) e dia da semana (0 = domingo) de `instante` no fuso informado, independente do servidor. */
 export function horaEDiaInstitucional(instante: Date, fuso: string): { hora: number; diaSemana: number } {
-  const timeZone = FusoInstitucionalSchema.parse(fuso);
+  return horaEDiaNoFuso(instante, FusoInstitucionalSchema.parse(fuso));
+}
+
+/**
+ * O mesmo, sem o regex institucional: aceita qualquer fuso que o `Intl` aceite (como `EST5EDT`, guardado no
+ * texto livre de `Aluno.fuso`). Fuso que nem o `Intl` aceita lança RangeError.
+ */
+export function horaEDiaNoFuso(instante: Date, timeZone: string): { hora: number; diaSemana: number } {
   if (!Number.isFinite(instante.getTime())) throw new Error("Instante inválido.");
   const partes = new Intl.DateTimeFormat("en-US", { timeZone, hour: "2-digit", hourCycle: "h23", weekday: "short" }).formatToParts(instante);
   const parte = (tipo: string) => partes.find((p) => p.type === tipo)!.value;
