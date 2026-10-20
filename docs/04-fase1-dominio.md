@@ -32,7 +32,7 @@ ativar um mercado.
 Alguns documentos **não são um formato, são um algoritmo** (dígito verificador): CPF
 (módulo 11), CURP (México), cédula (Costa Rica), DNI (Argentina), RUT… Isso não cabe num
 campo de texto. Cada tipo de documento aponta para um **validador nomeado**
-(`cpf`, `curp`, `cedula_cr`, `dni_ar`, `email`, `telefone_e164`). Hoje só o `cpf` tem algoritmo na `main` (`src/server/_shared/validacao.ts`; e-mail e telefone E.164 são validados por schema no mesmo arquivo): `curp`, `cedula_cr` e `dni_ar` estão especificados, mas não existem, e o documento fica como "não validado". Os validadores de Cédula CR, CURP, DNI AR, DUI SV e passaporte estavam no pacote da #62, que não foi publicado (doc 44 §3);
+(`cpf`, `curp`, `cedula_cr`, `dni_ar`, `email`, `telefone_e164`). Na `main` existem `cpf`, `cedula_cr`, `curp`, `dni_ar`, `dui_sv` e `passaporte` (`src/server/_shared/validacao.ts`, desde a #260; e-mail e telefone E.164 são validados por schema no mesmo arquivo). Têm dígito verificador o `cpf`, o `curp` e o `dui_sv`; `cedula_cr` e `dni_ar` conferem só o formato, e `passaporte` usa o formato ICAO genérico, sem regra por país. O resultado só marca `documentoValido` e nunca bloqueia o cadastro; validador desconhecido continua dando "não validado";
 documento novo/exótico = o dev adiciona **um** validador e ele fica disponível pra sempre.
 
 > Resumo: a config do país é **dado** (admin mexe); o "como validar" cada documento é **código**.
