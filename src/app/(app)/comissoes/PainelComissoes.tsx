@@ -145,7 +145,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
           <>
             <div className="hidden overflow-x-auto rounded-lg border border-border-soft md:block">
               <table className="hidden w-full text-left text-sm md:table">
-                <thead className="bg-surface-muted text-xs text-gray-600">
+                <thead className="bg-gray-100 text-xs text-gray-600">
                   <tr>
                     <th scope="col" className="px-4 py-2 font-medium">Aluno</th>
                     <th scope="col" className="px-4 py-2 font-medium">Produto</th>

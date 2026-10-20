@@ -43,7 +43,7 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Modalidade</th>
               <th className="px-4 py-2 font-medium">Segmento</th>
