@@ -11,7 +11,7 @@ vi.mock("@/server/whatsapp/cron", () => ({ rodarCronRegua: cronMensagem }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: despacho }));
 
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, eventosDo, meioDiaDaEscolaHoje, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { bloquearAcesso, desbloquearAcesso, decidirSolicitacaoAcessoAulas } from "./acoes";
 import { rodarControleAcessoAulas, reavaliarAcessoAutomaticoDaCobranca } from "./acesso-aulas";
 import { carregarGestaoAcessoAulas } from "./acesso-aulas-consultas";
@@ -45,19 +45,18 @@ async function solicitar(c: Awaited<ReturnType<typeof cenario>>, bloquear = true
   return resultado.dado.solicitacaoId;
 }
 
-// Relógio fixo ao meio-dia da escola (15h UTC). O vencimento "agora − N × 24 h" é lido pelo dia
+// Relógio fixo ao meio-dia da escola do dia corrente. O vencimento "agora − N × 24 h" é lido pelo dia
 // civil (`diaCivilGravado`, o maior entre o dia UTC e o da escola) e o D+30 conta no dia da escola
 // (Q176, #239). Entre 00h e 03h UTC o dia UTC do vencimento já é o seguinte ao da escola e o
-// cenário "D+29" virava D+28, em qualquer TZ da máquina. Às 15h UTC os dois dias coincidem.
-const RELOGIO = new Date("2026-10-20T15:00:00.000Z");
-
+// cenário "D+29" virava D+28, em qualquer TZ da máquina. Ao meio-dia de Brasília (15h UTC) os dois dias
+// coincidem. O dia é o de hoje, não uma data literal, para não se afastar do `now()` do banco.
 beforeEach(async () => {
-  vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(RELOGIO);
   vi.clearAllMocks();
   cronMensagem.mockResolvedValue({ executou: false, motivoParada: "politica_desligada" });
   despacho.mockResolvedValue({ despachadas: 0 });
   await truncarBanco();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(await meioDiaDaEscolaHoje());
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
