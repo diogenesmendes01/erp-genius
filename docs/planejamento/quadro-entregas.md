@@ -3879,6 +3879,55 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - Integração de disponibilidade de oferta, continuidade (fila, emissão SQL e condições), acadêmico (`academico`, `fluxo`), replanejamento sem remarcações e cadastro de alunos: 8 arquivos e 108 testes OK.
   - Uma rodada mais ampla (inclui `aditivo.int.test.ts`) passou de 30 minutos e foi interrompida sem resultado. Nenhuma integração existente cria aditivo de `REGIME`.
 
+### Port da #62, lote 2: Q172, aditivo de adiantamento (#164) — 2026-10-20
+
+- **Decisão:** a de 21/09/2026 (PR #62, `decisoes-2026-09-21.md` daquela PR), reconfirmada pelo dono em 20/10/2026. O aditivo de adiantamento só alcança o adiantamento da emissão inicial enquanto ele não foi pago nem usado.
+- **O que entrou (reimplementado sobre o `main`, sem cherry-pick cego):**
+  - Migration `20261020100000_aplicacao_adiantamento_aditivo` (era `20260921030000` na #62). Cria `PropostaAdiantamentoAditivo`, `DecisaoAdiantamentoAditivo` e `AplicacaoAdiantamentoAditivo`, os guards 172 e o trigger que altera a cobrança em aberto. Redefine `conferir_campos_aplicacao_direta_231` copiando a definição vigente (`20260917163000`, idêntica à do `main`) e acrescentando o ramo do adiantamento.
+  - Servidor: `contratos/adiantamento-aditivo.ts` (propor, decidir, aplicar, consultar) e `contratos/aditivo-adiantamento.ts` (alvo e recusas). A prova por campo (`aditivo-aplicacao-campos*.ts`), a revisão de efeitos e `conferirCompraPreparadaTx` passam a usar os minutos e o valor vigentes.
+  - Tela `financeiro/acertos-adiantamento/[matriculaId]/[propostaId]` no padrão atual (`useAcaoCliente`/`FeedbackAcao`, `EstadoVazio`, `IdentificacaoRegistro`, `formatarMoeda`), com link na proposta de aditivo: para o Financeiro e a Administração; a Secretaria recebe a orientação. Registrada nas travas de botões, estados vazios, trilha, feedback separado e identificação.
+- **Diferenças em relação à #62:**
+  - A orientação separa consumo ("já foram utilizadas em aulas") de compra registrada ("já foram registradas como saldo de horas"). Antes, as duas tinham uma mensagem só.
+  - As mutações devolvem `podeRevisar`, como o acerto de vencimento do `main`.
+- **Regras:**
+  - Há recusa com orientação, na consulta, na ação e no banco, quando existe: pagamento (mesmo parcial), crédito usado ou proposto, consumo, compra de horas, comprovante a conferir, pausa ou acerto.
+  - A decisão e a aplicação exigem um aprovador financeiro diferente de quem propôs.
+  - A aplicação só vale depois da vigência.
+  - A comissão (base: taxa de matrícula) não é recalculada.
+  - Convive com a recusa da Q174 (#260), que só alcança `REGIME`.
+- **Evidências:**
+  - Testes de integração novos em `contratos/aditivo.int.test.ts`, 8 cenários `PRODUCAO_HORA_ADIANTAMENTO`: fluxo completo da #62, pagamento parcial, crédito, compra de horas, consumo, mesma pessoa (na ação e no banco), vigência (antes recusa e depois aplica, com o relógio real do banco) e comissão inalterada.
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 40 avisos de base.
+  - `npm test` em UTC e em America/Sao_Paulo: 789 arquivos e 5.893 testes em cada fuso.
+  - `npm run build`: saída 0.
+  - `prisma migrate deploy` do zero no banco `erp_genius_test_q172`. No `migrate diff` banco × schema, nenhuma linha dos objetos da Q172.
+  - Integração de `src/server/matricula`, `financeiro` e `contratos` no `erp_genius_test_q172`: 61 arquivos e 618 testes verdes. Ficaram de fora 3 arquivos e 4 testes de homologação de UI, condicionais por ambiente.
+- **Fora deste lote:** Q175, Q173, Q171 e a origem histórica, nesta ordem. O link do acerto na página inicial do Financeiro também fica para depois.
+- **Pendência operacional:** fazer backup e ensaiar o `migrate deploy` numa cópia do UAT antes do deploy.
+
+### B19: funil e carteira ordenam, filtram e cortam no banco (#196 C3, #198 C2) — 2026-10-20
+
+- **Problema:** o funil (ordem "tempo" e período dos perdidos) e a carteira carregavam todos os ids do escopo, buscavam o último `Evento` de cada um com `in` e ordenavam e cortavam em memória. Além de crescer com a base, isso quebrava acima de 32.767 oportunidades no escopo: o `in` passa do limite de parâmetros do Postgres (`P2035`, visto na medição abaixo com o admin).
+- **O que mudou:**
+  - `crm/oportunidade-sql.ts` (novo): traduz para SQL o `where` de Oportunidade que essas telas já montam em Prisma (escopo comercial + filtros da URL). O filtro continua definido uma vez só. A tradução cobre só as formas usadas aqui e **recusa com erro** qualquer outra, para que um filtro ou um escopo novo nunca suma em silêncio. A semântica é a do Prisma: `contains` insensível vira `ILIKE '%x%'` sem escapar `%` e `_` (o Prisma também não escapa), e `in: []` não casa nada.
+  - Funil: as colunas em ordem "tempo" e a coluna PERDIDO com período usam uma consulta em SQL, com junção lateral no último `Evento`, `ORDER BY` e `LIMIT 50`, mais os totais e somas por país. Só os 50 cartões da página são carregados. As outras ordens já eram `orderBy` + `take` no Prisma e não mudaram.
+  - Carteira: uma consulta calcula os dias civis sem interação no fuso da escola (lista positiva de eventos do #198 C6/D13 e mensagens humanas do #254), filtra "sem interação há N dias", ordena (mais dias primeiro e id em ordem binária) e corta em 500, com o `total` por `COUNT(*) OVER ()`. Só as linhas devolvidas carregam os detalhes. `carregarCarteira` ganhou um `limite` opcional, usado nos testes.
+  - Desempates: em "tempo" e na carteira o id vai com `COLLATE "C"`, a mesma ordem do `<` do JS de antes. Nas outras ordens fica a collation da coluna, como no `orderBy` do Prisma.
+- **Índices: nenhum.** O `EXPLAIN ANALYZE` numa base sintética de 100 mil oportunidades e 800 mil eventos mostrou que o custo está na busca do último evento por oportunidade, que já usa `Evento(agregadoTipo, agregadoId)`. Testei e descartei dois índices: `Lead(vendedorDonoId, etapa)` (ganho de poucos ms) e um índice de cobertura em `Evento` (scan só no índice, sem ganho). A subconsulta correlacionada no `WHERE` levava o planejador a estimar o custo pela tabela inteira e a compilar JIT (~330 ms numa consulta de 8 ms). Por isso as consultas usam junção lateral.
+- **Medição** (mesma base, `scripts` locais, não versionados): vendedor com 2.500 oportunidades: carteira 104–150 ms (antes 600–890 ms), funil "tempo" ~100 ms (antes 180–230 ms) e funil "recentes" com perdidos de 30 dias 150–190 ms (antes 100–160 ms). Admin: funil 0,5–1,6 s e carteira ~1,5 s. A versão antiga falhava com `P2035`.
+- **Testes:**
+  - `funil-carteira-equivalencia.int.test.ts` (40 testes): base determinística de 200 oportunidades com etapas, donos, cobertura ativa e vencida, países, valores e follow-ups com empates, tags, eventos, mensagens de todas as origens e turmas ativas e encerradas. Compara o resultado novo com a cópia da versão anterior (`src/test/legado-funil-carteira.ts`, só para teste), inteiro e na mesma ordem. No funil: 4 ordens × 3 períodos × 7 sessões (admin, 2 gerentes, vendedor com e sem cobertura, sem papel comercial) e 11 filtros (tipo, dono, temperatura, origem, tag, buscas com `_` e `%`, combinados). Na carteira: 10 filtros × 7 sessões, cortes de 1, 7 e 40, e fusos Tóquio e Honolulu.
+  - Escopo de visibilidade: vendedor vê a própria carteira e a que cobre (a cobertura vencida não conta), gerente vê só a equipe, sem papel comercial não vê nada e filtro de dono fora do escopo não abre carteira alheia. Vale nos dois caminhos do funil e na carteira.
+  - Mutação: inverter o desempate ou o `NULLS LAST` faz 26 dos 40 testes falharem.
+  - `oportunidade-sql.test.ts` (7, unitário): formas do escopo, enum, `not`, busca, relações e recusa do que não é suportado. `carteira.test.ts` foi reescrito para a consulta nova, com as mesmas regras da lista positiva e das mensagens.
+- **Evidências** (banco descartável `erp_genius_test_b19`, `migrate deploy`, perfil temporário desfeito antes do commit e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 791 arquivos e 5.924 testes OK.
+  - `npm run build`: saída 0.
+  - Integração de `src/server/crm`: 30 arquivos e 267 testes OK, incluindo os 40 de equivalência e os de `funil` e `carteira`.
+
 ### Idempotência, 3º lote (#166) — 2026-10-20
 
 - **Escopo:** 20 das ações com `idempotente: false` de maior risco de duplicação. A #166 continua aberta. Os testes de integração entraram primeiro e falharam; a implementação veio depois.
