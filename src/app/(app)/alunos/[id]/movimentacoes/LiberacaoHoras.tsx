@@ -7,6 +7,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { ROTULO_DIFERENCA_CREDITO, type OrigemDiferencaCompra } from "@/server/matricula/compra-horas-diferenca";
 const estilo = "rounded border p-2 text-sm";
 /** Moeda registrada na memória de cálculo do crédito (texto vazio se ausente: número formatado sem símbolo). */
 const moedaDoCalculo = (calculo: unknown) => {
@@ -14,7 +15,7 @@ const moedaDoCalculo = (calculo: unknown) => {
   return typeof moeda === "string" ? moeda : "";
 };
 type Proposta = { id: string; destino: "REMARCACAO" | "CREDITO"; valorCredito: string | null; calculoCredito: unknown; motivo: string; evidenciaEscolhaRemarcacao: string; podeDecidir: boolean; decisao: { aprovada: boolean; motivo: string; credito: { id: string; valorInicial: string; moeda: string } | null } | null };
-export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { alunoId: string; reservaId: string; propostas: Proposta[]; aoSalvar: () => Promise<void> }) {
+export function LiberacaoHoras({ alunoId, reservaId, propostas, origemDiferenca = "DESCONTO", aoSalvar }: { alunoId: string; reservaId: string; propostas: Proposta[]; origemDiferenca?: OrigemDiferencaCompra; aoSalvar: () => Promise<void> }) {
   const [erro, setErro] = useState(""); const [ocupado, iniciar] = useOperacao(); const chave = useRef("");
   async function executar(operacao: () => Promise<{ ok: boolean; erro?: string }>) {
     setErro("");
@@ -36,7 +37,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
     {propostas.map(p => <article key={p.id} className="space-y-2 border p-2">
       <p>Destino: {p.destino === "CREDITO" ? "Crédito financeiro" : "Remarcação"}</p>
       <p>{p.evidenciaEscolhaRemarcacao}</p><p>{p.motivo}</p><p>{p.decisao ? p.decisao.aprovada ? p.destino === "CREDITO" ? "Horas convertidas em crédito" : "Horas liberadas" : "Proposta rejeitada" : "Aguardando decisão financeira independente"}</p>
-      {p.destino === "CREDITO" && <><p>Valor proposto: {p.valorCredito != null ? formatarMoeda(p.valorCredito, moedaDoCalculo(p.calculoCredito)) : "—"}. Usa o valor pago original e a proporção dos minutos, com arredondamento acumulado da compra.</p><MemoriaCredito calculo={p.calculoCredito} /></>}
+      {p.destino === "CREDITO" && <><p>Valor proposto: {p.valorCredito != null ? formatarMoeda(p.valorCredito, moedaDoCalculo(p.calculoCredito)) : "—"}. Usa o valor pago original e a proporção dos minutos, com arredondamento acumulado da compra.</p><MemoriaCredito calculo={p.calculoCredito} origemDiferenca={origemDiferenca} /></>}
       {p.decisao?.credito && <p>Crédito original apurado: {formatarMoeda(p.decisao.credito.valorInicial, p.decisao.credito.moeda)}. <Link className="underline" href={`/alunos/${alunoId}/creditos/${p.decisao.credito.id}`}>Consultar saldo e utilização do crédito</Link>. Devolução ainda não disponível.</p>}
       {p.decisao && <p>{p.decisao.motivo}</p>}
       {p.podeDecidir && <form onSubmit={e => {
@@ -50,9 +51,10 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, aoSalvar }: { al
   </div>;
 }
 
-function MemoriaCredito({ calculo }: { calculo: unknown }) {
+/** O rótulo de descontoOriginal segue a origem da diferença na compra (Q172: redução por aditivo não é desconto). */
+export function MemoriaCredito({ calculo, origemDiferenca = "DESCONTO" }: { calculo: unknown; origemDiferenca?: OrigemDiferencaCompra }) {
   if (!calculo || typeof calculo !== "object" || Array.isArray(calculo)) return <p>Memória de cálculo indisponível; confira a proposta.</p>;
-  const campos: [string, string][] = [["moeda", "Moeda"], ["valorPagoOriginal", "Valor pago na compra"], ["descontoOriginal", "Desconto original já considerado"], ["minutosComprados", "Minutos comprados"], ["minutosConvertidos", "Minutos desta conversão"], ["minutosAnteriores", "Minutos convertidos anteriormente"], ["valorAnterior", "Créditos anteriores da compra"], ["valorAcumulado", "Valor acumulado após esta conversão"], ["valorCredito", "Crédito desta proposta"]];
+  const campos: [string, string][] = [["moeda", "Moeda"], ["valorPagoOriginal", "Valor pago na compra"], ["descontoOriginal", ROTULO_DIFERENCA_CREDITO[origemDiferenca]], ["minutosComprados", "Minutos comprados"], ["minutosConvertidos", "Minutos desta conversão"], ["minutosAnteriores", "Minutos convertidos anteriormente"], ["valorAnterior", "Créditos anteriores da compra"], ["valorAcumulado", "Valor acumulado após esta conversão"], ["valorCredito", "Crédito desta proposta"]];
   const valores = calculo as Record<string, unknown>;
   return <details><summary>Memória de cálculo</summary><dl className="space-y-1 text-sm">{campos.map(([campo, rotulo]) => <div key={campo}><dt className="font-medium">{rotulo}</dt><dd>{String(valores[campo] ?? "Não informado")}</dd></div>)}</dl></details>;
 }
