@@ -136,6 +136,12 @@ it("recusa retirar dias que já sustentam compensação aprovada, na ação e no
 
   expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-retira-compensado" }))
     .toMatchObject({ ok: false, erro: expect.stringContaining("compensação aprovada") });
+  // C3 da #265: a recusa nomeia o dia e aponta o caminho.
+  expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-retira-compensado-2" }))
+    .toMatchObject({ ok: false, erro: expect.stringMatching(/01\/10\/2026.*cobertura de 01\/10\/2026 a 31\/10\/2026.*não é desfeita por esta tela.*mantenha esse dia.*gestão financeira \(Compensações por falta de oferta da escola, em Pausa, retomada e encerramento do aluno\)/) });
+  // B1 da #268: nada de tela inexistente, de "tratar" a compensação aprovada nem de vínculo com o relato.
+  expect(await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-retira-compensado-3" }))
+    .not.toMatchObject({ erro: expect.stringMatching(/Compensações da cobrança|trate|com este relato/) });
   // Escrita direta da proposta não contorna: a decisão aprovada é recusada pelo banco.
   const direta = await prisma.propostaCorrecaoRelatoIndisponibilidadeOferta.create({ data: {
     registroId, versao: 1, inicioAnterior: new Date("2026-10-01"), fimAnterior: new Date("2026-10-10"), inicioNovo: new Date("2026-10-03"), fimNovo: new Date("2026-10-10"),
@@ -152,4 +158,26 @@ it("recusa retirar dias que já sustentam compensação aprovada, na ação e no
   comoGestor();
   expect(await decidir(amplia.dado.id)).toMatchObject({ ok: true, dado: { decisao: { aprovada: true } } });
   expect(await prisma.registroIndisponibilidadeOfertaMatricula.findUniqueOrThrow({ where: { id: registroId } })).toMatchObject({ inicio: new Date("2026-09-28"), fim: new Date("2026-10-12") });
+});
+
+it("C3: quando outro relato confirmado também cobre o dia compensado, a recusa diz isso e continua conservadora", async () => {
+  await prisma.matricula.update({ where: { id: matriculaId }, data: { status: "ATIVA" } });
+  const registroId = await relatoConfirmado("2026-10-01", "2026-10-10", "relato-c3-corrigido");
+  await relatoConfirmado("2026-09-28", "2026-10-05", "relato-c3-outro");
+  await relatoConfirmado("2026-09-20", "2026-10-02", "relato-c3-nao-confirmado", false);
+  const preparador = await criarUsuario(["FINANCEIRO"]);
+  const cobranca = await prisma.cobranca.create({ data: { matriculaId, tipo: "MENSALIDADE", moeda: "CRC", valorOriginal: 300, valorNegociado: 300, vencimento: new Date("2026-10-05"), coberturaInicio: new Date("2026-10-01"), coberturaFim: new Date("2026-10-31") } });
+  const compensacao = await prisma.compensacaoCoberturaMatricula.create({ data: {
+    matriculaId, cobrancaOrigemId: cobranca.id, preparadorId: preparador.id, motivo: "Indisponibilidade documentada", evidenciaCondicoes: "Condições do contrato conferidas",
+    diasPropostos: ["2026-10-01"], coberturaOriginalInicio: new Date("2026-10-01"), coberturaOriginalFim: new Date("2026-10-31"), valorCoberturaOriginal: 300, moeda: "CRC", cobrancaVersao: cobranca.versao,
+    status: "APROVADA", decisorId: gestorId, decididaEm: new Date(), motivoDecisao: "Conferência independente",
+  } });
+  await prisma.diaCompensacaoCobertura.create({ data: { compensacaoId: compensacao.id, matriculaId, diaOrigem: new Date("2026-10-01") } });
+  const r = await proporCorrecaoRelatoIndisponibilidadeOferta({ registroId, inicio: "2026-10-03", fim: "2026-10-10", ...textos, chaveIdempotencia: "correcao-c3-sobreposto" });
+  expect(r).toMatchObject({ ok: false, erro: expect.stringContaining("também está coberto pelo relato confirmado de 28/09/2026 a 05/10/2026") });
+  expect(r).toMatchObject({ ok: false, erro: expect.stringContaining("continua recusada enquanto houver compensação aprovada nele") });
+  expect(r).toMatchObject({ ok: false, erro: expect.stringContaining("Compensações por falta de oferta da escola, em Pausa, retomada e encerramento do aluno") });
+  expect(r).not.toMatchObject({ erro: expect.stringMatching(/Compensações da cobrança|com este relato/) });
+  expect(r).not.toMatchObject({ erro: expect.stringContaining("20/09/2026") });
+  expect(await prisma.propostaCorrecaoRelatoIndisponibilidadeOferta.count()).toBe(0);
 });
