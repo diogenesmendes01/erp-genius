@@ -1,0 +1,77 @@
+# Integração completa (D7): toda a suíte *.int.test.ts (npm run test:int) contra um Postgres 16 real, toda noite
+# e sob demanda. Em série ela passa de 2 h; aqui roda em 4 shards, cada um com o próprio Postgres de serviço e
+# migrações aplicadas do zero (`prisma migrate deploy`). Não roda em PR: o CI rápido continua sendo o ci.yml.
+name: Integração
+
+on:
+  schedule:
+    # 06:17 UTC = 03:17 em Brasília. Minuto quebrado para fugir do pico das 00 min do agendador do GitHub.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+# Um run por ref; um disparo manual novo não derruba o noturno em andamento (nem o contrário).
+concurrency:
+  group: integracao-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  integracao:
+    name: integração (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          # Credenciais de TESTE, nunca segredos reais: são as que scripts/test-profile.mjs fixa
+          # (postgres:teste@localhost:54329). O banco é o do perfil ci-integracao.
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: teste
+          POSTGRES_DB: erp_genius_test_ciint
+        ports:
+          # A guarda de src/test/setup-integracao.ts exige localhost:54329.
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d erp_genius_test_ciint"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # O vitest.integration.config.ts ignora DATABASE_URL e monta a URL pelo perfil (scripts/test-profile.mjs);
+      # o perfil ci-integracao aponta para o banco do serviço acima. A DATABASE_URL abaixo é a mesma URL, para o
+      # `prisma generate` e para qualquer ferramenta que leia o ambiente.
+      ERP_TEST_PROFILE: ci-integracao
+      DATABASE_URL: postgres://postgres:teste@localhost:54329/erp_genius_test_ciint
+      # Fuso da produção da escola.
+      TZ: America/Sao_Paulo
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        timeout-minutes: 15
+        run: npm ci
+      - name: Gerar o client do Prisma
+        timeout-minutes: 5
+        run: npx prisma generate
+      - name: Aplicar as migrações do zero (prisma migrate deploy no banco do perfil)
+        # prisma-teste.mjs resolve a URL pelo mesmo perfil que a suíte usa; o setup global só confere
+        # `migrate status` e nunca aplica migração por conta própria.
+        timeout-minutes: 10
+        run: node scripts/prisma-teste.mjs migrate deploy
+      - name: Testes de integração (npm run test:int, shard ${{ matrix.shard }}/4)
+        timeout-minutes: 100
+        run: npm run test:int -- --shard=${{ matrix.shard }}/4
