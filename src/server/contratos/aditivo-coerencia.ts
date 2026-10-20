@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ErroRegra } from "@/server/_shared";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
 import { OrigemCampoSchema } from "./campos";
 import { ValorAlteracaoAditivoSchema, validarValorAlteracaoAditivo } from "./aditivo-valores";
@@ -13,6 +14,17 @@ export const ContextoCoerenciaValoresAditivoSchema = z.object({
 }).strict();
 export const AlteracaoTipadaAditivoSchema = z.object({ origem: OrigemCampoSchema, valorEstruturado: ValorAlteracaoAditivoSchema }).strict();
 const EntradaSchema = z.object({ origem: ContextoCoerenciaValoresAditivoSchema, alteracoes: z.array(AlteracaoTipadaAditivoSchema).max(100) }).strict();
+
+export const MENSAGEM_REGIME_NOVA_CONTRATACAO = "A mudança de regime (mensalidade ↔ particular por hora) não é feita por aditivo. Encerre este contrato com o acerto correspondente e abra uma nova negociação para o aluno no regime desejado.";
+
+/**
+ * Q174 (decisão de 21/09/2026): mudança de regime é nova contratação. Recusar na proposta evita
+ * um aditivo assinado que travaria a emissão da cobrança. Vale só na preparação: propostas de
+ * REGIME anteriores à regra continuam podendo ser decididas (inclusive rejeitadas).
+ */
+export function recusarAditivoDeRegime(alteracoes: readonly { origem: string }[]): void {
+  if (alteracoes.some(a => a.origem === "REGIME")) throw new ErroRegra(MENSAGEM_REGIME_NOVA_CONTRATACAO);
+}
 
 /** Confere relações entre valores tipados e fatos da origem; não aplica as condições. */
 export function validarCoerenciaValoresAditivo(entrada: unknown): void {

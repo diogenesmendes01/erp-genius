@@ -3854,3 +3854,27 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npx eslint . --max-warnings 40`: saída 0, com os 40 avisos de base.
   - `npm test`: 788 arquivos e 5.892 testes.
   - `npm run build`: saída 0.
+
+### Port da #62, lote 1: validadores de documento, Q174 e Q161 (D2 do dono, #164) — 2026-10-20
+
+- **Escopo (D2):** trazer a #62 em lotes. Este é o lote de servidor sem migration e fora da cadeia financeira. A #164 continua aberta. Nada veio por cherry-pick: os testes da #62 entraram primeiro e falharam, e a implementação veio depois, refeita à mão onde o main mudou. A Q176 já tinha entrado pelos PRs #239, #243, #247 e #253 e não foi refeita.
+- **Validadores (B18, `_shared/validacao.ts`):**
+  - `curp`: formato, entidade federativa, data e dígito verificador do RENAPO.
+  - `dui_sv`: dígito verificador.
+  - `dni_ar` e `cedula_cr`: só formato.
+  - `passaporte`: formato ICAO genérico, sem regra por país, porque a #62 não definiu uma.
+  - Continua "avisa, não bloqueia": só a flag `documentoValido`.
+- **Q174:** o aditivo de `REGIME` é recusado em `prepararAditivoContratualTx`. Correção em relação à #62: lá a recusa ficava numa conferência que só roda com dinheiro, moeda ou cobertura, e um aditivo só de regime passava. Propostas anteriores continuam decidíveis. O aviso na tela fica para o lote das telas.
+- **Q161:** a cadeia pós-replanejamento aceita PREVISTO→MINISTRADO e alterações de quantidade aplicadas, compartilhadas com os destinos acadêmicos. A transferência aprovada no meio do ciclo é conferida em dois trechos civis. Memórias já confirmadas mantêm o hash. Detalhe em `continuidade-q161-q162.md`.
+- **Ficam para os próximos lotes:**
+  - fuso pessoal nas telas: refazer sobre a #159;
+  - Q164 (migration `…010000`) e Q157 (`…020000`);
+  - assinatura eletrônica: depende de telas e de `ASSINATURA_DRIVER`;
+  - cadeia financeira (Q172 → Q175 → Q173 → Q171 → origem histórica, migrations `…030000` a `…090000`) e `decisoes-2026-09-21.md`: aguardam o dono confirmar as regras de 21/09.
+- **Evidências** (banco descartável `erp_genius_test_p62`, `migrate deploy`, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 791 arquivos e 5.930 testes OK em UTC e em America/Sao_Paulo.
+  - `npm run build`: saída 0.
+  - Integração de disponibilidade de oferta, continuidade (fila, emissão SQL e condições), acadêmico (`academico`, `fluxo`), replanejamento sem remarcações e cadastro de alunos: 8 arquivos e 108 testes OK.
+  - Uma rodada mais ampla (inclui `aditivo.int.test.ts`) passou de 30 minutos e foi interrompida sem resultado. Nenhuma integração existente cria aditivo de `REGIME`.
