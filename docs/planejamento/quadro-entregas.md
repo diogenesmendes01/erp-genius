@@ -4122,3 +4122,55 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `tsc --noEmit`: saída 0. `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
   - Unitários: 815 arquivos e 6.104 testes OK em UTC e em `TZ=America/Sao_Paulo`.
   - `next build`: saída 0.
+
+### Port da #62, lote 3: Q175, aula que não devia ser cobrada (#164) — 2026-10-20
+
+- **Decisão:** a de 21/09/2026 (PR #62, `decisoes-2026-09-21.md` e `q175-desenho-tecnico.md` daquela PR), reconfirmada pelo dono em 20/10/2026. Aula particular lançada como realizada ou falta cobrável que não aconteceu por motivo da escola, ou foi lançada por engano, tem o valor zerado.
+- **O que entrou (reimplementado sobre o `main`, sem cherry-pick cego, a partir dos commits `5f2b7de0` e `85938ed7` da #62):**
+  - Migration `20261020500000_correcao_aula_nao_cobravel` (era `20260921040000`): `AplicacaoRevisaoFinanceiraCorrecaoAula`, `OrigemCreditoRevisaoCorrecaoAula` e `CreditoMatricula.origemRevisaoCorrecaoAulaId` (oitava origem de crédito); fotografia `q23_fotografia_nao_cobravel_175` com o efeito calculado no banco; guards; trigger diferido que exige o acerto na mesma publicação. Redefine `q23_foto_financeira_valida_257`, `q165_delta_reconhecimento_guard_249`, `credito_matricula_origem_unica_check` e `PropostaRevFinCorrecaoAula_tipo_check` copiando a definição vigente (idêntica no `main` e na base da #62) e acrescentando o ramo novo.
+  - Migration `20261020510000_estorno_consumo_horas_nao_cobravel` (era `20260921050000`): `EstornoConsumoHorasCompradas`, ramo `DEVOLVE_MINUTOS` da fotografia; `proteger_reserva_horas_compradas` e `conferir_liquidacao_horas_acerto` (vigentes copiadas) ignoram consumo estornado.
+  - IDs conferidos: o lote Q164/Q157 (#265, já no `main`) usa `20261020200000` e `20261020210000`; as duas da Q175 vêm logo depois (`20261020220000`/`230000`, renomeadas na R1).
+  - Servidor: `financeiro/revisao-correcao-aula-aplicacao-tx.ts` (aplicação dentro de `aprovarCorrecaoAula`), tipo explícito em `revisao-correcao-aula.ts`, destinação `NAO_COBRAVEL_CORRECAO` no fechamento de horas, estorno conhecido por compra de horas, reserva, encerramento e desistência.
+  - Tela de revisões financeiras de correção de aula, no padrão atual (`formatarMoeda`, `CampoTexto`, `FeedbackAcao`): escolha do tipo entre os que o banco comprova, efeito descrito e botão "Aprovar declaração de aula não cobrável". Painel de compras de horas mostra os minutos devolvidos.
+- **Regras:**
+  - A declaração é feita na revisão financeira; o encontro continua `MINISTRADO` (opção A).
+  - O valor vai a zero numa operação só, junto com a publicação acadêmica (trigger diferido).
+  - Aprovação financeira (outra pessoa do Financeiro) e pedagógica (gestão) separadas; a financeira sozinha não move valor.
+  - Cobrança aberta é reduzida, ou cancelada quando chega a zero; cobrança paga continua quitada e gera crédito na matrícula; aula paga com horas pré-pagas devolve os minutos à mesma compra.
+  - Fora: duração errada e `IMPEDIDO_POR_RESTRICAO`. Pagamento parcial, crédito, permuta, pausa, acerto ou comprovante a conferir fazem a fotografia recusar.
+  - A comissão não é recalculada.
+- **Diferenças em relação à #62:**
+  - Na #62 a revisão `AULA_NAO_COBRAVEL` não passava no esquema da fotografia Q92 da tela (sem `fundamento`): mostrava "fotografia indisponível" e só oferecia rejeitar. Aqui ela tem esquema e botão próprios.
+  - Painel de compras de horas descreve a reserva com consumo estornado e soma os minutos devolvidos.
+- **Evidências:**
+  - Integração nova: em `matricula/condicoes-horas.int.test.ts`, os 3 cenários da #62 (aula não fechada, cobrança aberta cancelada, cobrança paga → crédito) e 3 novos (cobrança de duas aulas reduzida e ainda aberta; aprovações separadas; comissão inalterada); em `matricula/q23-consumo-horas.int.test.ts`, o cenário de horas pré-pagas da #62. Todos conferem o encontro `MINISTRADO`.
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, com 40 avisos de base.
+  - `npm test` em UTC e em America/Sao_Paulo: 793 arquivos e 5.939 testes em cada fuso.
+  - `npm run build`: saída 0. Duas tentativas anteriores pararam em "Failed to type check" por falta de memória (outros `tsc` na máquina; um `tsc` paralelo foi morto pelo OOM).
+  - `prisma migrate deploy` do zero no banco isolado `erp_genius_test_q175`: 469 migrations. No `migrate diff` banco × schema, nenhuma linha dos objetos da Q175.
+  - Integração de `src/server/matricula`, `financeiro` e `diario` no `erp_genius_test_q175`, depois do merge da `main` com o #261: 67 arquivos e 617 testes verdes (inclui os 7 cenários da Q175). Ficaram de fora 2 arquivos e 3 testes de homologação de UI, condicionais por ambiente.
+- **Fora deste lote:** Q173, Q171 e a origem histórica, nesta ordem.
+- **Pendência operacional:** fazer backup e ensaiar o `migrate deploy` numa cópia do UAT antes do deploy.
+
+#### Q175: correções da R1 (duas reviews da #266) — 2026-10-20
+
+- **Base:** merge do `origin/main` (com #263, #264 e #265), sem rebase. Em `compra-horas.ts` e `ComprasHorasPainel.tsx` ficaram os dois lados: `diferencaValor`/`aplicacoes` e os rótulos de desconto e redução por aditivo da #264, e `consumo.estorno`, `minutosEstornados`, `minutosDisponiveis` sem o estornado e `resumoMinutosCompra`/`situacaoReserva` da Q175.
+- **Migrations renomeadas** para `20261020220000`/`20261020230000`, depois das `20261020200000`/`210000` da #265 (não foram aplicadas em lugar nenhum).
+- **Fechamento por hora (tela):** o esquema `Memoria` aceita `NAO_COBRAVEL_CORRECAO` em `preservados`, com rótulo próprio. Antes, a versão aparecia como "Memória incompatível" e o botão Emitir sumia.
+- **Encerramento por hora:** `conferirAgendaEncerramentoTx` reconhece a aula declarada não cobrável ainda não fechada (efeito `SEM_ITEM`) como destinação `NAO_COBRAVEL_CORRECAO` com `aplicacaoId`. Antes, ela ficava como pendência sem saída e o encerramento travava.
+- **Reconferência delta da desistência:** `q165_fotografia_delta_atual_255` (SQL) passa a incluir `origemRevisaoCorrecaoAulaId` quando o crédito tem essa origem, como a fotografia em TS. Antes, a matrícula com crédito Q175 caía em "Fotografia posterior delta não corresponde integralmente ao ledger".
+- **Banco:** o trigger `recusar_item_nao_cobravel_175` recusa `ItemFechamentoHoras` para conferência com aplicação Q175.
+- **Tela de ocorrências:** a conferência com declaração de não cobrável avisa que o valor exibido é histórico e diz qual foi o efeito.
+- **Evidências:**
+  - `tsc --noEmit`: saída 0. `eslint . --max-warnings 40`: saída 0 (40 avisos de base).
+  - `npm test` em UTC e em America/Sao_Paulo: 811 arquivos e 6.060 testes em cada fuso.
+  - `prisma migrate deploy` do zero no `erp_genius_test_q175b`: 471 migrations. No `migrate diff` banco × schema, nenhuma linha dos objetos novos da Q175.
+  - Integração de `src/server/matricula`, `financeiro` e `diario` no `erp_genius_test_q175b`: 68 arquivos e 623 testes verdes. Ficaram de fora 2 arquivos e 3 testes de homologação de UI, condicionais por ambiente. Entre os testes estão o novo cenário de encerramento e trava do item e a comparação entre a fotografia delta em TS e a do banco com crédito Q175.
+  - `npm run build`: saída 0. A primeira tentativa parou em "Failed to type check" por falta de memória, enquanto a integração rodava em paralelo.
+  - Depois dos merges seguintes do `main` (#267, #269, #270, #271 e #272; conflito só no quadro): `tsc` e `eslint` com saída 0; `npm test` com 816 arquivos e 6.101 testes em cada fuso; integração de `condicoes-horas`, `q23-consumo-horas`, `desistencia-reconferencia-delta` e `indisponibilidade-oferta-correcao` com 4 arquivos e 55 testes verdes; `npm run build` com saída 0.
+- **Não alterado:**
+  - O aditivo continua contando consumo estornado. O caso não chega a ele: só existe consumo com compra de horas, e a compra já faz o aditivo recusar.
+  - A cobrança cancelada por redução a zero continua sem coluna `canceladaPor*`. A origem está em `AplicacaoRevisaoFinanceiraCorrecaoAula.cobrancaId`.
+
+- **Migrations renomeadas de novo** para `20261020500000`/`20261020510000` (R2): o UAT já aplicou `20261020400000` (#271, deploy automático), e `220000`/`230000` rodariam fora de ordem. Também ficam depois de `20261020410000` (#273). Nenhuma foi aplicada em lugar nenhum.

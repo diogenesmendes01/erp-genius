@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), fuso: vi.fn(), preparar: vi.fn(), cabecalho: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), consulta: vi.fn(), preferencia: vi.fn(), fuso: vi.fn(), preparar: vi.fn(), cabecalho: vi.fn(), emitir: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/matricula/cabecalho", () => ({ consultarCabecalhoMatricula: mocks.cabecalho }));
 vi.mock("@/server/matricula/fechamento-horas-consulta", () => ({ consultarFechamentosHoras: mocks.consulta }));
@@ -11,7 +11,7 @@ vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFuso
 vi.mock("@/server/operacao/consultas", () => ({ consultarFusoInstitucional: mocks.fuso }));
 vi.mock("./PrepararFechamento", () => ({ PrepararFechamento: (props: unknown) => { mocks.preparar(props); return null; } }));
 vi.mock("./DecidirFechamento", () => ({ DecidirFechamento: () => null }));
-vi.mock("./EmitirFechamento", () => ({ EmitirFechamento: () => null }));
+vi.mock("./EmitirFechamento", () => ({ EmitirFechamento: (props: unknown) => { mocks.emitir(props); return null; } }));
 
 import Page from "./page";
 
@@ -98,5 +98,25 @@ describe("FechamentosHorasPage fuso de históricos", () => {
     const fallback = renderToStaticMarkup(await Page(entrada));
     expect(fallback).toContain("31/12/2025, 23:30");
     expect(fallback).toContain("origem America/Sao_Paulo");
+  });
+  // B2 da R1 #266: a aula declarada não cobrável (Q175) vai para `preservados` com tipo próprio; a memória precisa
+  // continuar legível, com rótulo próprio, e o botão Emitir aparecer para a versão aprovada.
+  it("memória com aula não cobrável (Q175) é apresentada com rótulo próprio e libera Emitir", async () => {
+    const memoria = { periodo: { inicio: "2026-01-01", fim: "2026-01-31", fuso: "America/Sao_Paulo", vencimento: "2026-02-10" }, apuracao: {
+      moeda: "BRL", estado: "APURACAO_COMPLETA", totalApurado: "100.00", minutosApurados: 60,
+      itens: [{ encontroId: "i", minutos: 60, valorHoraContratado: "100.00", valor: "100.00", origem: { inicio: "2026-01-01T02:30:00Z" } }],
+      pendencias: [], origens: [{ encontroId: "n", inicio: "2026-01-02T02:30:00Z" }],
+      preservados: [{ encontroId: "n", destinacao: { tipo: "NAO_COBRAVEL_CORRECAO", aplicacaoId: "aplicacao" } }],
+      semCobranca: [],
+    } };
+    const versaoBase = (dado as { versoes: Record<string, unknown>[] }).versoes[0]!;
+    mocks.consulta.mockResolvedValue({ ok: true, dado: { ...(dado as unknown as Record<string, unknown>), versoes: [{ ...versaoBase, memoria, emissao: null,
+      decisao: { id: "decisao", aprovada: true, motivo: "Conferido.", decisor: { nome: "Gestão" } } }] } });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "matricula" }), searchParams: Promise.resolve({ aluno: "aluno", versao: "rascunho" }) }));
+    expect(html).not.toContain("Memória incompatível com a apresentação");
+    expect(html).toContain("Encontros com destinação preservada: 1");
+    expect(html).toContain("Aula declarada não cobrável na revisão financeira da correção");
+    expect(html).not.toContain("Destinação das horas antecipadas já conferida");
+    expect(mocks.emitir).toHaveBeenCalledWith(expect.objectContaining({ decisaoId: "decisao", valor: "100.00", moeda: "BRL" }));
   });
 });

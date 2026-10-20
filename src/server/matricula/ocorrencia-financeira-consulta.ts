@@ -20,14 +20,16 @@ export async function consultarOcorrenciasFinanceiras(input: { matriculaId: stri
           ocorrenciasParticulares: { orderBy: { versao: "desc" }, take: 1, select: { id: true, versao: true, tipo: true, evidencia: true, comunicadoEm: true, autor: { select: { nome: true } } } },
           conferenciaOcorrenciaHoras: { select: { id: true, valor: true, moeda: true, minutos: true, desfecho: true, motivo: true, conferidaEm: true,
             conferente: { select: { nome: true } }, ocorrenciaId: true, condicoesId: true, snapshot: true,
-            consumoAntecipacao: { select: { id: true, reservaId: true, motivo: true, reserva: { select: { compraId: true, minutos: true } } } } } } } });
+            consumoAntecipacao: { select: { id: true, reservaId: true, motivo: true, reserva: { select: { compraId: true, minutos: true } } } },
+            // Q175 (C5 da R1-b #266): a conferência guarda o valor histórico; a declaração de não cobrável aparece ao lado.
+            aplicacaoNaoCobravel: { select: { id: true, efeito: true, aplicadaEm: true } } } } } });
       const condicoes = await tx.condicoesHorasMatricula.findMany({ where: { matriculaId: m.id, status: "APROVADA" }, orderBy: { versao: "desc" }, select: { id: true, versao: true, regras: true, documentoId: true } });
       const pagina = encontrados.slice(0, 30);
       return { matricula: m, proximoCursor: encontrados.length > 30 ? pagina[29].id : null,
         condicoes: condicoes.map(c => ({ ...c, regras: RegrasHorasSchema.safeParse(c.regras).success ? RegrasHorasSchema.parse(c.regras) : null })),
         encontros: pagina.map(({ ocorrenciasParticulares, conferenciaOcorrenciaHoras: c, ...e }) => ({ ...e, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(),
           ocorrencia: ocorrenciasParticulares[0] ? { ...ocorrenciasParticulares[0], comunicadoEm: ocorrenciasParticulares[0].comunicadoEm?.toISOString() ?? null } : null,
-          conferencia: c ? { ...c, valor: c.valor.toFixed(2), conferidaEm: c.conferidaEm.toISOString() } : null })) };
+          conferencia: c ? { ...c, valor: c.valor.toFixed(2), conferidaEm: c.conferidaEm.toISOString(), aplicacaoNaoCobravel: c.aplicacaoNaoCobravel ? { ...c.aplicacaoNaoCobravel, aplicadaEm: c.aplicacaoNaoCobravel.aplicadaEm.toISOString() } : null } : null })) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
 }
