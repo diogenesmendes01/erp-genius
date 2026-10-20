@@ -15,7 +15,7 @@ const base = (ajustes: Record<string, unknown> = {}) => ({
   },
 });
 function tx(alocacoes: unknown[], ausencias: unknown[] = [], calendario: unknown = { id: "cal", versao: 4 }, impactos: unknown[] = []) {
-  return { alocacaoTurma: { findMany: vi.fn().mockResolvedValue(alocacoes) }, indisponibilidadeDocente: { findMany: vi.fn().mockResolvedValue(ausencias) }, versaoCalendarioEscolar: { findFirst: vi.fn().mockResolvedValue(calendario) }, impactoQuantidadeAulasModalidade: { findMany: vi.fn().mockResolvedValue(impactos) } };
+  return { alocacaoTurma: { findMany: vi.fn().mockResolvedValue(alocacoes) }, indisponibilidadeDocente: { findMany: vi.fn().mockResolvedValue(ausencias) }, versaoCalendarioEscolar: { findFirst: vi.fn().mockResolvedValue(calendario) }, impactoQuantidadeAulasModalidade: { findMany: vi.fn().mockResolvedValue(impactos) }, solicitacaoMudancaAcademica: { findMany: vi.fn().mockResolvedValue([]) } };
 }
 const entrada = { matriculaId: "m1", inicio: new Date("2026-10-01T00:00:00Z"), fim: new Date("2026-10-31T00:00:00Z") };
 
