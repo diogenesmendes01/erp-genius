@@ -3960,3 +3960,15 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npm run build`: saída 0, com as rotas do histórico de reservas e da correção.
   - `prisma migrate deploy` do zero: todas as migrations aplicadas, incluindo as duas novas.
   - Integração de avaliações (segunda chamada, agenda, remarcação, substituição, pendências e fechamento acadêmico) e de matrícula (relato, confirmação, término e correção de indisponibilidade, estado, cobertura, compensação, fonte de compensação, disponibilidade de oferta e período integral): 20 arquivos e 166 testes OK.
+
+### Q164 e Q157: comentários da review da #265 — 2026-10-20
+
+- **Escopo:** os comentários não bloqueantes da review da #265 (C2 a C5). A #265 já está no main. Nenhuma migration aplicada foi editada.
+- **C4, Q164:** o histórico de reservas só oferece realização da mesma regra de avaliação da reserva impedida (`regraId` no filtro `oficiais`). Antes, uma realização de outra regra aparecia no seletor e só era recusada ao confirmar. Teste unitário novo em `segunda-chamada-historico.test.ts`.
+- **C3, Q157:** a recusa por compensação aprovada continua conservadora, como o guard SQL já aplicado. A mensagem agora:
+  - nomeia o dia;
+  - diz quando outro relato confirmado também cobre esse dia;
+  - aponta os dois caminhos: propor uma correção que mantenha o dia, ou tratar antes a compensação em Compensações da cobrança.
+  - Integração nova com um relato confirmado sobreposto. Um relato não confirmado no mesmo dia não é citado.
+- **C2, Q157, decisão registrada:** a correção que amplia o período não confere os dias acrescentados contra a disponibilidade positiva aprovada (Q161) nem contra a cobertura futura de período integral aprovado. É o mesmo tratamento do relato novo, e a Q161 diz que a indisponibilidade prevalece. A decisão está escrita em `indisponibilidade-oferta-correcao-regras.ts`. A migration `20261020210000` já foi aplicada e por isso não recebeu o comentário.
+- **C5:** a integração das duas frentes rodou com `npm run test:int` no Postgres 54329 (banco `erp_genius_test_q164`, `migrate deploy` do zero): avaliações (segunda chamada, agenda, remarcação, substituição, pendências e fechamento acadêmico) e matrícula (relato, confirmação, término e correção de indisponibilidade, estado, cobertura, compensação, fonte, disponibilidade de oferta e período integral): 20 arquivos e 167 testes OK. Também passaram `tsc --noEmit` (saída 0), `eslint . --max-warnings 40` (0 erros e 40 avisos de base) e os unitários de avaliações, matrícula e das telas tocadas (107 arquivos e 659 testes OK em UTC e em America/Sao_Paulo). O ensaio do `migrate deploy` numa cópia restaurada do UAT continua com o integrador, antes do deploy.
