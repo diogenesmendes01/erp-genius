@@ -21,8 +21,8 @@ O objetivo integral está em andamento. Este índice aponta as evidências recen
 | Desistência antes da ativação — Q121 | [Incremento 595](planejamento/validacao-incremento-595.md) e [SPEC](specs/desistencia-preparacao.md) | Pedido, efetivação simples e cancelamento aprovado de cobranças não pagas implementados; validações e correções discriminadas no relatório; casos com recebimentos/documentos e homologação ainda pendentes |
 | Conferência documental da desistência | [Incremento 596](planejamento/validacao-incremento-596.md) | Consulta Secretaria/Administração e interface implementadas; 22 integrações, nove testes de renderização, tipos, lint e build aprovados; decisão documental persistida, cancelamento próprio e integração externa ainda pendentes |
 | Decisão administrativa da desistência | [Incremento 597](planejamento/validacao-incremento-597.md) | Decisão independente imutável e interface implementadas; 29 integrações após correção do fuso e nove cenários administrativos na reexecução, dez de renderização; aplicação dos casos com avanço formal ainda pendente |
-| Resolução do impedimento escolar | [Q164 no incremento 571](planejamento/validacao-incremento-571.md) | Resposta pendente, comportamento não presumido |
-| Ciclo de agenda da segunda chamada | [Pendência acompanhada](planejamento/pendencia-agenda-segunda-chamada-565.md) | Proteção e remarcação implementadas; resolução Q164 e validação interativa pendentes |
+| Resolução do impedimento escolar | [Q164 no incremento 571](planejamento/validacao-incremento-571.md) e [decisões de 21/09](planejamento/decisoes-2026-09-21.md) | Decidida em 21/09: a gestão pedagógica confirma, com justificativa, sem segunda aprovação. Na `main` desde 20/10/2026 (#265 e #268, migration `20261020200000`), com integração no schema completo |
+| Ciclo de agenda da segunda chamada | [Pendência acompanhada](planejamento/pendencia-agenda-segunda-chamada-565.md) | Proteção e remarcação implementadas; resolução Q164 na `main` desde 20/10/2026 (#265); validação interativa pendente |
 
 ## Histórico de implementação — leitura por data
 
