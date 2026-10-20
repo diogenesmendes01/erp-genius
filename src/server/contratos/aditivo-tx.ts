@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { conferirAutor } from "./modelos-tx";
 import { carregarBaseAditivoTx } from "./aditivo-estado";
+import { recusarAditivoDeRegime } from "./aditivo-coerencia";
 import { hashSubstituicao } from "./substituicao-estado";
 import { DecidirAditivoContratualSchema, PrepararAditivoContratualSchema } from "./aditivo-schema";
 
@@ -15,6 +16,7 @@ async function conferirAtor(tx: Prisma.TransactionClient, id: string, decidir = 
  * substitui alçadas específicas, assinaturas, conferência ou aplicação. */
 export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = PrepararAditivoContratualSchema.parse(entrada);
+  recusarAditivoDeRegime(d.alteracoes);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await conferirAtor(tx, autorId);
   const anterior = await tx.propostaAditivoContratual.findUnique({ where: { preparadaPorId_chaveIdempotencia: { preparadaPorId: autorId, chaveIdempotencia: d.chaveIdempotencia } } });
