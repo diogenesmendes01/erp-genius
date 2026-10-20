@@ -25,26 +25,30 @@ const acoes = vi.hoisted(() => ({
   vincularContatoWhatsApp: vi.fn(async () => ({ ok: true as const })),
   marcarConversaTratada: vi.fn(async () => ({ ok: true as const })),
   registrarPromessaPagamento: vi.fn(async () => ({ ok: true as const })),
+  desvincularContatoWhatsApp: vi.fn(async () => ({ ok: true as const })),
 }));
 vi.mock("@/server/whatsapp/acoes", () => ({
   criarLeadDaConversa: acoes.criarLeadDaConversa, editarNomeContatoWhatsApp: acoes.editarNomeContatoWhatsApp,
   buscarVinculosInbox: acoes.buscarVinculosInbox, vincularContatoWhatsApp: acoes.vincularContatoWhatsApp,
   marcarConversaTratada: acoes.marcarConversaTratada,
 }));
+vi.mock("@/server/whatsapp/desvincular-contato", () => ({ desvincularContatoWhatsApp: acoes.desvincularContatoWhatsApp }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: acoes.registrarPromessaPagamento }));
 vi.mock("@/components/PagamentoModal", () => ({ PagamentoModal: () => null }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
+import { Botao } from "@/components/Botao";
+import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import type { AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
-import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
-import { AcoesContato, CobrancaContato, EditarNomeContato, VincularContato, type PropsAcoesContato } from "./AcoesContato";
+import { criarGanchos, clicarBotao, elementos, texto } from "@/test/tela-sem-dom";
+import { AcoesContato, CobrancaContato, DesvincularContato, EditarNomeContato, VincularContato, type PropsAcoesContato } from "./AcoesContato";
 
 const base: AcoesContatoInbox = {
   contatoId: "c1", contatoNome: "Maria", nomeSalvo: "Maria", nomePerfil: "Mari", fonteNome: "contato",
-  alunoId: null, leadId: null, podeCriarLead: false, podeVincular: false, podeEditarNome: false, cobranca: null,
+  alunoId: null, leadId: null, podeCriarLead: false, podeVincular: false, podeEditarNome: false, vinculos: [], cobranca: null,
 };
 const cobranca: NonNullable<AcoesContatoInbox["cobranca"]> = {
   silencio: { ativo: true, ate: "2026-10-18T15:00:00.000Z" },
@@ -88,6 +92,14 @@ describe("AcoesContato: marcação", () => {
     expect(h).toContain("Registrar pagamento");
     expect(h).toContain("Promessa de pagamento");
     expect(html({ cobranca: { silencio: { ativo: false, ate: null }, ativa: null } })).not.toContain("Retomar régua");
+  });
+  it("Desvincular só aparece com vínculo que a pessoa pode desfazer (regra do servidor, D8)", () => {
+    expect(html()).not.toContain(">Desvincular<");
+    expect(html({ podeVincular: true })).not.toContain(">Desvincular<");
+    expect(html({ vinculos: [{ tipo: "aluno", id: "al1", nome: "Ana Lima" }] })).toContain(">Desvincular<");
+  });
+  it("a confirmação do vínculo aponta o desvincular da administração ou do gerente do setor", () => {
+    expect(readFileSync("src/app/(app)/inbox/AcoesContato.tsx", "utf8")).not.toContain("Não há desvincular pela tela");
   });
   it("não mostra telefone (regra 5)", () => {
     expect(html({ podeEditarNome: true, podeVincular: true, cobranca })).not.toMatch(/\+\d{6,}/);
@@ -161,6 +173,34 @@ describe("AcoesContato: interação", () => {
     expect(String(conf.props.titulo)).toContain("Bia Souza");
     await (conf.props.acao as () => Promise<unknown>)();
     expect(acoes.vincularContatoWhatsApp).toHaveBeenCalledWith({ contatoId: "c1", atendimentoId: "a1", alvo: { tipo: "aluno", id: "al2" } });
+    (conf.props.aoConcluir as () => void)();
+    expect(p.aoMudar).toHaveBeenCalled();
+  });
+
+  it("Desvincular (D8): escolhe o vínculo, exige o motivo e só desfaz dentro do ConfirmarAcao", async () => {
+    const vinculos: AcoesContatoInbox["vinculos"] = [{ tipo: "lead", id: "op1", nome: "Lead Errado" }];
+    m.g = criarGanchos();
+    const p = props({ vinculos });
+    const painel = () => m.g!.renderizar(AcoesContato, p);
+    clicarBotao(painel(), "Desvincular");
+    expect(elementos(painel()).some((n) => n.type === DesvincularContato)).toBe(true);
+    m.g = criarGanchos();
+    const tela = () => m.g!.renderizar(DesvincularContato, { atendimentoId: "a1", vinculos, aoFechar: vi.fn(), aoMudar: p.aoMudar });
+    clicarBotao(tela(), "Desvincular de Lead Errado");
+    const motivo = () => elementos(tela()).find((n) => n.type === CampoTexto && n.props["aria-label"] === "Motivo do desvínculo")!;
+    const revisar = () => elementos(tela()).find((n) => n.type === Botao && texto(n.props.children) === "Revisar desvínculo")!;
+    expect(motivo().props.required).toBe(true);
+    expect(revisar().props.disabled).toBe(true);
+    (motivo().props.onChange as (e: unknown) => void)({ target: { value: "Oportunidade errada, era o irmão" } });
+    expect(revisar().props.disabled).toBe(false);
+    clicarBotao(tela(), "Revisar desvínculo");
+    expect(acoes.desvincularContatoWhatsApp).not.toHaveBeenCalled();
+    const conf = elementos(tela()).find((n) => n.type === ConfirmarAcao)!;
+    expect(conf.props.confirmacao).toBe("desvínculo");
+    expect(String(conf.props.titulo)).toBe("Desvincular esta conversa de Lead Errado (oportunidade)?");
+    expect(marcacao(conf.props.children as ReactNode)).toContain("Nada é apagado");
+    await (conf.props.acao as () => Promise<unknown>)();
+    expect(acoes.desvincularContatoWhatsApp).toHaveBeenCalledWith({ atendimentoId: "a1", alvo: { tipo: "lead", id: "op1" }, motivo: "Oportunidade errada, era o irmão" });
     (conf.props.aoConcluir as () => void)();
     expect(p.aoMudar).toHaveBeenCalled();
   });

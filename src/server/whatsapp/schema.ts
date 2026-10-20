@@ -30,6 +30,8 @@ export const EnviarMidiaInboxSchema = z.object({
 });
 export type EnviarMidiaInboxInput = z.input<typeof EnviarMidiaInboxSchema>;
 
+export const MSG_MOTIVO_DESVINCULO = "Escreva o motivo do desvínculo (10 a 500 caracteres).";
+
 export const VincularContatoSchema = z.object({
   atendimentoId: z.string().min(1).optional(),
   contatoId: z.string().min(1),
@@ -40,6 +42,14 @@ export const VincularContatoSchema = z.object({
   ]),
 });
 export type VincularContatoInput = z.input<typeof VincularContatoSchema>;
+
+/** Desvincular contato pelo Inbox (D8, #175, L2298): o vínculo atual que sai e o motivo, obrigatório. */
+export const DesvincularContatoSchema = z.object({
+  atendimentoId: z.string().min(1),
+  alvo: z.object({ tipo: z.enum(["aluno", "responsavel", "lead"]), id: z.string().min(1) }),
+  motivo: z.string().trim().min(10, MSG_MOTIVO_DESVINCULO).max(500, MSG_MOTIVO_DESVINCULO),
+});
+export type DesvincularContatoInput = z.input<typeof DesvincularContatoSchema>;
 
 /** Nome salvo do contato (edição na thread). Vazio = volta ao nome de perfil do WhatsApp / número. */
 export const EditarNomeContatoSchema = z.object({
