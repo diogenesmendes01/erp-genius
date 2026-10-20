@@ -23,7 +23,9 @@ import { listarAulasDiario, listarTurmasParaDiario } from "@/server/diario/consu
 import { editarTurma } from "@/server/turmas/acoes";
 import { podeLerArquivo } from "@/server/uploads/autorizacao";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
-import { carregarThread, listarConversas } from "@/server/whatsapp/consultas-inbox";
+import { obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { carregarPainel } from "@/server/inbox/paineis";
+import { listaDoInbox, mensagensDoInbox } from "@/test/inbox-consultas";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { abrirAtendimentoInstitucional } from "@/server/whatsapp/operacoes-atendimento";
@@ -206,11 +208,11 @@ afterEach(() => vi.unstubAllEnvs());
 describe("mudança acadêmica revoga vínculos atuais e preserva o diário", () => {
   it("solicitar/aprovar preserva acesso; executar revoga ficha, conversa e mídia do professor anterior", async () => {
     const c = await cenario();
-    expect(await carregarThread(c.professor, c.atendimento.id)).not.toBeNull();
+    expect(await obterItemListaInbox(c.professor, c.atendimento.id)).not.toBeNull();
     expect(await podeLerArquivo(c.professor, c.segmentosMidia)).toBe(true);
     await aprovar(c);
     expect(await obterAluno(c.aluno.id, c.professor)).not.toBeNull();
-    expect(await carregarThread(c.professor, c.atendimento.id)).not.toBeNull();
+    expect(await obterItemListaInbox(c.professor, c.atendimento.id)).not.toBeNull();
 
     const alocacaoOriginal = await prisma.alocacaoTurma.findFirstOrThrow({ where: { alunoId: c.aluno.id, ativa: true } });
     const diarioAntes = await prisma.registroAulaAluno.findMany({ where: { aulaId: c.aulaId } });
@@ -220,8 +222,8 @@ describe("mudança acadêmica revoga vínculos atuais e preserva o diário", () 
 
     expect(await obterAluno(c.aluno.id, c.professor)).toBeNull();
     expect(await listarAlunos(c.professor)).toEqual([]);
-    expect(await carregarThread(c.professor, c.atendimento.id)).toBeNull();
-    expect(await listarConversas(c.professor)).toEqual([]);
+    expect(await obterItemListaInbox(c.professor, c.atendimento.id)).toBeNull();
+    expect(await listaDoInbox(c.professor)).toEqual([]);
     expect(await podeLerArquivo(c.professor, c.segmentosMidia)).toBe(false);
     const seletorDiario = JSON.stringify(await listarTurmasParaDiario(c.professor));
     expect(seletorDiario).not.toContain(c.aluno.id);
@@ -242,14 +244,13 @@ describe("mudança acadêmica revoga vínculos atuais e preserva o diário", () 
 
     expect(await obterAluno(c.aluno.id, c.sucessor)).not.toBeNull();
     expect((await listarAulasDiario(c.sucessor)).aulas).toEqual([]);
-    expect(await carregarThread(c.sucessor, c.atendimento.id)).toBeNull();
+    expect(await obterItemListaInbox(c.sucessor, c.atendimento.id)).toBeNull();
     entrar(c.sucessor.id);
     const novo = sucesso(await abrirAtendimentoInstitucional({ numeroId: c.numero.id, destinoChave: `PEDAGOGICO:${c.aluno.id}:${c.destino.id}:${c.matricula.id}:ALUNO` }));
     expect(novo.id).not.toBe(c.atendimento.id);
-    const thread = await carregarThread(c.sucessor, novo.id);
-    expect(thread?.mensagens).toEqual([]);
-    expect(thread?.contato.telefone).toBe("");
-    expect(thread?.cobrancaAtiva).toBeNull();
+    expect(await mensagensDoInbox(c.sucessor, novo.id)).toEqual([]);
+    expect((await obterItemListaInbox(c.sucessor, novo.id))?.contatoTelefone).toBe("");
+    expect((await carregarPainel(c.sucessor, novo.id))?.acoes).toMatchObject({ cobranca: null });
   });
 
   it("mensagem humana pendente do professor anterior é cancelada no despacho após a execução", async () => {
