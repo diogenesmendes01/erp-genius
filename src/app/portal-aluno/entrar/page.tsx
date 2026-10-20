@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
 
 const MSG_CREDENCIAIS = "E-mail ou senha incorretos.";
+// 422: corpo recusado (e-mail ou senha fora do tamanho aceito) ou falha ao abrir a sessão — a rota não
+// distingue os dois. A mensagem cobre ambos sem dizer se a conta existe: o 422 sai antes de qualquer
+// leitura da conta, ou por erro do servidor, nunca pela existência do e-mail.
+const MSG_RECUSADO = "Não foi possível entrar com esses dados. Confira o e-mail e a senha e tente de novo; se continuar, tente mais tarde.";
+// 403: a requisição não saiu do endereço do portal (aba antiga, endereço alternativo, extensão do navegador).
+const MSG_ORIGEM = "Não foi possível confirmar de onde veio o acesso. Abra o portal pelo endereço oficial e tente de novo.";
 const MSG_INDISPONIVEL = "O serviço está indisponível agora. Tente de novo em alguns minutos.";
 const MSG_SEM_SERVIDOR = "Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.";
 
@@ -30,9 +36,15 @@ export default function EntrarPortalAlunoPage() {
       setErro(MSG_SEM_SERVIDOR); setEnviando(false);
       return;
     }
-    setEnviando(false);
-    if (resposta.status === 401) { setErro(MSG_CREDENCIAIS); return; }
-    if (!resposta.ok) { setErro(MSG_INDISPONIVEL); return; }
+    if (!resposta.ok) {
+      setEnviando(false);
+      if (resposta.status === 401) setErro(MSG_CREDENCIAIS);
+      else if (resposta.status === 422) setErro(MSG_RECUSADO);
+      else if (resposta.status === 403) setErro(MSG_ORIGEM);
+      else setErro(MSG_INDISPONIVEL);
+      return;
+    }
+    // Aceito: o botão continua desativado até a troca de rota, para um segundo clique não abrir outra sessão.
     router.replace("/portal-aluno"); router.refresh();
   }
 

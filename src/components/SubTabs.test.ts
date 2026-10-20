@@ -99,14 +99,28 @@ describe("SubTabs", () => {
     for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
   });
 
-  it("a aba ativa é trazida para a vista dentro da faixa, sem rolar a página na vertical", () => {
-    const rolar = vi.fn();
-    const nav = { querySelector: vi.fn(() => ({ scrollIntoView: rolar })) };
-    mostrarAbaAtiva(nav as unknown as HTMLElement);
-    expect(nav.querySelector).toHaveBeenCalledWith('[aria-current="page"]');
-    expect(rolar).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+  it("a aba ativa é trazida para a vista só pelo scrollLeft da faixa, sem rolar a página na vertical", () => {
+    const rect = (left: number, right: number) => ({ left, right }) as DOMRect;
+    const faixa = (aba: { left: number; right: number } | null, scrollWidth = 600, clientWidth = 343) => {
+      const ativa = aba ? { getBoundingClientRect: () => rect(aba.left, aba.right), scrollIntoView: vi.fn() } : null;
+      const nav = { scrollWidth, clientWidth, scrollLeft: 100, getBoundingClientRect: () => rect(16, 359), querySelector: vi.fn(() => ativa) };
+      mostrarAbaAtiva(nav as unknown as HTMLElement);
+      return { nav, ativa };
+    };
+    // Aba cortada à direita: avança só o que falta.
+    expect(faixa({ left: 330, right: 400 }).nav.scrollLeft).toBe(141);
+    // Aba cortada à esquerda: recua só o que falta.
+    expect(faixa({ left: -4, right: 60 }).nav.scrollLeft).toBe(80);
+    // Já visível: não mexe.
+    expect(faixa({ left: 40, right: 120 }).nav.scrollLeft).toBe(100);
+    // Faixa sem transbordo (sm+): nem procura a aba.
+    const larga = faixa({ left: 330, right: 400 }, 343, 343);
+    expect(larga.nav.querySelector).not.toHaveBeenCalled();
+    expect(larga.nav.scrollLeft).toBe(100);
+    // Nunca usa scrollIntoView (que rolaria a página).
+    expect(faixa({ left: 330, right: 400 }).ativa?.scrollIntoView).not.toHaveBeenCalled();
     // Sem aba ativa (rota fora das abas) ou sem nav montada: nada a fazer, sem erro.
-    expect(() => mostrarAbaAtiva({ querySelector: () => null } as unknown as HTMLElement)).not.toThrow();
+    expect(faixa(null).nav.scrollLeft).toBe(100);
     expect(() => mostrarAbaAtiva(null)).not.toThrow();
   });
 });
