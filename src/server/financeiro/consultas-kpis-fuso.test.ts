@@ -23,3 +23,16 @@ it("o mês dos kpis começa no dia 1 da escola, não no do servidor", async () =
   expect(m.eventos.mock.calls[0][0].where.criadoEm.gte).toEqual(inicioOutubroNaEscola);
   expect(m.contar.mock.calls[0][0].where.ativadaEm.gte).toEqual(inicioOutubroNaEscola);
 });
+
+// Ref. #247: a mensalidade só entra em atraso quando o dia civil da escola passa do dia do vencimento.
+it("às 22h30 da Costa Rica do dia do vencimento, a mensalidade ainda é a receber, não em atraso", async () => {
+  const cobranca = { valorNegociado: 100, valorRecebido: 0, valorLiquidadoCredito: 0, valorCompensadoPermuta: 0, moeda: "CRC", origensCreditoAcertoTaxaAditivo: [] };
+  m.cobrancas.mockResolvedValue([
+    { ...cobranca, vencimento: new Date("2026-10-31T18:00:00Z") }, // 31/10, meio-dia da escola
+    { ...cobranca, vencimento: new Date("2026-10-31T00:00:00Z") }, // 31/10, meia-noite UTC (legado)
+    { ...cobranca, vencimento: new Date("2026-10-30T18:00:00Z") }, // 30/10: já em atraso
+  ]);
+  const k = await kpisFinanceiro();
+  expect(k.emAtraso).toEqual([{ moeda: "CRC", valor: 100 }]);
+  expect(k.aReceber).toEqual([{ moeda: "CRC", valor: 200 }]);
+});

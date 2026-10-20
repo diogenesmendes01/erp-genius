@@ -1,13 +1,21 @@
 import { z } from "zod";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
 export const OPCOES_RETOMADA = ["MANTER_VENCIMENTOS", "REPROGRAMAR_PARCELAS"] as const;
 
-/** Data de calendário local, sem aceitar normalização de 31/02 ou strings com horário. */
-export function dataRetomada(valor: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return null;
+/** Data de calendário AAAA-MM-DD real, sem aceitar normalização de 31/02 ou strings com horário. */
+function dataCivilReal(valor: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
   const [ano, mes, dia] = valor.split("-").map(Number);
-  const data = new Date(ano, mes - 1, dia, 12);
-  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia ? data : null;
+  return new Date(Date.UTC(ano, mes - 1, dia)).toISOString().slice(0, 10) === valor;
+}
+
+/**
+ * Instante gravado para a data digitada: o meio-dia da escola (ref. #247), não o do relógio do servidor.
+ * Propostas antigas guardam o meio-dia do servidor; `diaCivilGravado` lê as duas no mesmo dia civil.
+ */
+export function dataRetomada(valor: string, fuso: string): Date | null {
+  return dataCivilReal(valor) ? instanteDaGrade(valor, "12:00", fuso) : null;
 }
 
 export const SolicitarRetomadaSchema = z.object({
@@ -15,7 +23,7 @@ export const SolicitarRetomadaSchema = z.object({
   motivo: z.string().trim().min(5, "Informe o motivo da retomada (mínimo 5 caracteres).").max(2000),
   novosVencimentos: z.array(z.object({
     cobrancaId: z.string().min(1),
-    vencimento: z.string().refine((valor) => dataRetomada(valor) !== null, "Informe uma data real no formato AAAA-MM-DD."),
+    vencimento: z.string().refine(dataCivilReal, "Informe uma data real no formato AAAA-MM-DD."),
   })).default([]),
 }).superRefine((dados, ctx) => {
   if (dados.opcao === "MANTER_VENCIMENTOS" && dados.novosVencimentos.length > 0) {

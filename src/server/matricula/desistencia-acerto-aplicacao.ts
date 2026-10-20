@@ -5,6 +5,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento, type Resultado } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { statusEmAbertoPorVencimento } from "@/server/financeiro/regras";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 const entradaSchema = z.object({
   decisaoId: z.string().trim().min(1).max(100),
@@ -90,14 +92,14 @@ export async function aplicarAcertoDesistenciaContratual(input: z.input<typeof e
         condicoesHash: decisao.proposta.condicoesHash, fotografiaHash: decisao.proposta.fotografiaHash,
         chaveIdempotencia: dados.chaveIdempotencia,
       } });
-      const agora = new Date();
+      const agora = new Date(), fuso = await fusoDaEscola(tx);
       for (const item of itens) {
         const cobranca = cobrancas.find((atual) => atual.id === item.cobrancaId);
         if (!cobranca || cobranca.moeda !== item.moeda) throw new ErroRegra("A cobrança não corresponde à memória aprovada.");
         const saldo = new Prisma.Decimal(item.saldoDevido);
         await tx.cobranca.update({ where: { id: cobranca.id }, data: {
           valorNegociado: new Prisma.Decimal(item.devido), saldo,
-          status: saldo.isZero() ? StatusCobranca.PAGO : (cobranca.vencimento < agora ? StatusCobranca.ATRASADO : StatusCobranca.PENDENTE),
+          status: saldo.isZero() ? StatusCobranca.PAGO : statusEmAbertoPorVencimento(cobranca.vencimento, agora, fuso),
           pagoEm: saldo.isZero() ? (cobranca.pagoEm ?? agora) : null,
           versao: { increment: 1 },
         } });

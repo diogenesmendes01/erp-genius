@@ -1,12 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
-  TurmaSchema,
+  TurmaSchema as TurmaSchemaBase,
   diasPorSemanaDaFrequencia,
   duracaoIntervaloEmMinutos,
   horarioFimPorDuracao,
   rotuloDiasHorario,
   emMinutos,
 } from "./schema";
+import { comDatasDaEscola } from "@/server/_shared/validacao";
+
+// As datas digitadas viram o meio-dia da escola (ref. #247); nas ações, o parse roda dentro de `comDatasDaEscola`.
+const TurmaSchema = { safeParse: (v: unknown) => comDatasDaEscola("America/Sao_Paulo", () => TurmaSchemaBase.safeParse(v)) };
 
 const base = {
   modalidadeId: "m1",

@@ -1173,6 +1173,11 @@ model Aluno {
   primeiroNome  String
   sobrenome     String?
   nomePreferido String?
+  /// Coluna GERADA (D1, #141): nome em minúsculas, sem acento e sem espaços repetidos, para ordenar
+  /// listas no Postgres locale C. Criada por SQL na migration 20261019110000_nome_ordenacao; o banco a
+  /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
+  /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
+  nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(((\"primeiroNome\" || ' '::text) || COALESCE(sobrenome, ''::text)), 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
   nascimento    DateTime?
   genero        Genero?
 
@@ -1234,6 +1239,7 @@ model Aluno {
   aplicacoesCadastroMigracao AplicacaoCadastroMigracao[]
 
   @@index([telefoneE164])
+  @@index([nomeOrdenacao, id])
 }
 
 model Responsavel {
@@ -8757,6 +8763,11 @@ model Empresa {
   id              String   @id @default(cuid())
   codigo          String?  @unique // E-000001
   nome            String
+  /// Coluna GERADA (D1, #141): nome em minúsculas, sem acento e sem espaços repetidos, para ordenar
+  /// listas no Postgres locale C. Criada por SQL na migration 20261019110000_nome_ordenacao; o banco a
+  /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
+  /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
+  nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(nome, 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
   paisId          String?
   documento       String? // CNPJ/RUC/NIT... conforme o país
   contatoNome     String?
@@ -8782,6 +8793,7 @@ model Empresa {
   valoresCampo  ValorCampoPersonalizado[]
 
   @@index([origemCanal])
+  @@index([nomeOrdenacao, id])
 }
 
 enum PapelParticipante {
@@ -8976,6 +8988,11 @@ model Pessoa {
   id           String       @id @default(cuid())
   codigo       String?      @unique
   nome         String
+  /// Coluna GERADA (D1, #141): nome em minúsculas, sem acento e sem espaços repetidos, para ordenar
+  /// listas no Postgres locale C. Criada por SQL na migration 20261019110000_nome_ordenacao; o banco a
+  /// recalcula sozinho e gravá-la é erro. O dbgenerated só existe para o `migrate diff` não propor
+  /// removê-la. Mapa em src/lib/nome-ordenacao.ts; trava em src/lib/nome-ordenacao.test.ts.
+  nomeOrdenacao String @default(dbgenerated("btrim(regexp_replace(translate(nome, 'ÁÀÂÃÄÅĀĂĄáàâãäåāăąÇĆĈĊČçćĉċčĎĐďđÉÈÊËĒĔĖĘĚéèêëēĕėęěĜĞĠĢĝğġģĤĦĥħÍÌÎÏĨĪĬĮİíìîïĩīĭįıĴĵĶķĹĻĽĿŁĺļľŀłÑŃŅŇñńņňÓÒÔÕÖØŌŎŐóòôõöøōŏőŔŖŘŕŗřŚŜŞŠȘśŝşšșŢŤŦȚţťŧțÚÙÛÜŨŪŬŮŰŲúùûüũūŭůűųŴŵÝŸŶýÿŷŹŻŽźżžABCDEFGHIJKLMNOPQRSTUVWXYZ ̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡'::text, 'aaaaaaaaaaaaaaaaaaccccccccccddddeeeeeeeeeeeeeeeeeegggggggghhhhiiiiiiiiiiiiiiiiiijjkkllllllllllnnnnnnnnoooooooooooooooooorrrrrrssssssssssttttttttuuuuuuuuuuuuuuuuuuuuwwyyyyyyzzzzzzabcdefghijklmnopqrstuvwxyz '::text), '[[:space:]]+'::text, ' '::text, 'g'::text))"))
   email        String?
   cidade       String?
   cargo        String?
@@ -8999,6 +9016,7 @@ model Pessoa {
 
   @@index([empresaId])
   @@index([mescladaEmId])
+  @@index([nomeOrdenacao, id])
 }
 
 // CRM (2.M3): tags, campos personalizados e filtros salvos.

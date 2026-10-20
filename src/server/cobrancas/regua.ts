@@ -1,5 +1,5 @@
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
-import { dataCivilInstitucional } from "@/server/operacao/fuso";
+import { dataCivilInstitucional, diaCivilGravado, diasCivisDesde } from "@/server/operacao/fuso";
 
 // CÉREBRO da cobrança (doc 24). Função PURA, determinística, sem IA: dada uma cobrança, o que
 // já foi feito e a data de hoje, decide qual é a ação devida na RÉGUA. O "braço" (humano hoje,
@@ -75,24 +75,9 @@ export interface EntradaRegua {
 // Q176 (#164): o dia da régua vira à meia-noite do fuso da escola (`fusoDaEscola()`), nunca no
 // relógio do servidor. Em produção o processo roda em UTC, e o dia virava às 21h de Brasília.
 
-/**
- * Dia civil (AAAA-MM-DD) de uma data gravada, como vencimento ou promessa. Elas nasceram como dia
- * civil em convenções distintas: meio-dia ou meia-noite do fuso da escola, ou meia-noite UTC no
- * legado. O maior entre o dia UTC e o dia da escola recupera o dia civil nas três; num instante
- * legado ambíguo fica o dia mais tardio, que nunca antecipa lembrete, cobrança ou restrição.
- */
-export function diaCivilGravado(gravada: Date, fuso: string): string {
-  const utc = gravada.toISOString().slice(0, 10);
-  const daEscola = dataCivilInstitucional(gravada, fuso);
-  return utc > daEscola ? utc : daEscola;
-}
-
-const msDoDia = (civil: string) => Date.parse(`${civil}T00:00:00Z`);
-
-/** Dias de calendário da escola entre a data gravada e `agora` (positivo = já passou; ignora hora). */
-export function diasCivisDesde(agora: Date, gravada: Date, fuso: string): number {
-  return Math.round((msDoDia(dataCivilInstitucional(agora, fuso)) - msDoDia(diaCivilGravado(gravada, fuso))) / 86400000);
-}
+// `diaCivilGravado` e `diasCivisDesde` moram em operacao/fuso (ref. #247): o atraso da mensalidade
+// fora da régua usa o mesmo critério. Reexportados aqui para os chamadores da régua.
+export { diaCivilGravado, diasCivisDesde };
 
 /** A data prometida (AAAA-MM-DD) já passou no calendário da escola? Hoje ainda vale. */
 export function promessaNoPassado(ate: string, agora: Date, fuso: string): boolean {

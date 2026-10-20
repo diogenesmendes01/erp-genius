@@ -7,7 +7,9 @@ import {
   dataOpcional,
   paraDataHoraLocal,
   dataHoraOpcional,
+  analisarComDatasDaEscola,
 } from "./validacao";
+import { z } from "zod";
 
 describe("validarDocumento (cpf)", () => {
   it("aceita CPF válido (com ou sem máscara)", () => {
@@ -59,15 +61,19 @@ describe("telefoneE164 (bloqueia)", () => {
   });
 });
 
-describe("paraDataLocal (date-only → meio-dia local, sem recuar 1 dia)", () => {
-  it("ancora 'YYYY-MM-DD' no meio-dia LOCAL do dia digitado", () => {
-    const d = paraDataLocal("2026-01-01") as Date;
-    expect(d).toBeInstanceOf(Date);
-    // O dia digitado é o dia exibido em qualquer fuso (não recua p/ 31/12).
-    expect(d.getFullYear()).toBe(2026);
-    expect(d.getMonth()).toBe(0); // janeiro
-    expect(d.getDate()).toBe(1);
-    expect(d.getHours()).toBe(12); // meio-dia local → margem de ±12h contra o fuso
+// Ref. #247: a data digitada é um dia civil da ESCOLA. Vira o meio-dia do fuso da escola, nunca o do relógio do
+// servidor (UTC em produção). Instantes fixos; verde com TZ=UTC e TZ=America/Sao_Paulo.
+describe("paraDataLocal (date-only → meio-dia da escola, sem recuar 1 dia)", () => {
+  it("ancora 'YYYY-MM-DD' no meio-dia do fuso da escola", () => {
+    expect(paraDataLocal("2026-01-01", "America/Sao_Paulo")).toEqual(new Date("2026-01-01T15:00:00.000Z"));
+    expect(paraDataLocal("2026-01-01", "America/Costa_Rica")).toEqual(new Date("2026-01-01T18:00:00.000Z"));
+    expect(paraDataLocal("2026-07-01", "Asia/Tokyo")).toEqual(new Date("2026-07-01T03:00:00.000Z"));
+  });
+  it("mantém a normalização antiga de dia inexistente (31/02 → 03/03)", () => {
+    expect(paraDataLocal("2026-02-31", "America/Sao_Paulo")).toEqual(new Date("2026-03-03T15:00:00.000Z"));
+  });
+  it("sem o fuso da escola recusa a data digitada, em vez de cair no relógio do servidor", () => {
+    expect(() => paraDataLocal("2026-01-01")).toThrow(/fuso da escola/);
   });
   it("deixa valores não-date-only passarem inalterados (Date, datetime ISO)", () => {
     const date = new Date("2026-03-10T08:00:00Z");
@@ -78,11 +84,17 @@ describe("paraDataLocal (date-only → meio-dia local, sem recuar 1 dia)", () =>
 });
 
 describe("dataOpcional (schema compartilhado)", () => {
-  it("converte string date-only para Date no dia digitado", () => {
-    const r = dataOpcional.parse("2026-01-01") as Date;
-    expect(r.getFullYear()).toBe(2026);
-    expect(r.getMonth()).toBe(0);
-    expect(r.getDate()).toBe(1);
+  it("dentro de analisarComDatasDaEscola, converte a data digitada para o meio-dia da escola", () => {
+    expect(analisarComDatasDaEscola(dataOpcional, "2026-01-01", "America/Sao_Paulo")).toEqual(new Date("2026-01-01T15:00:00.000Z"));
+    const schema = z.object({ inicio: dataOpcional, fim: dataOpcional });
+    expect(analisarComDatasDaEscola(schema, { inicio: "2026-01-01", fim: "" }, "America/Costa_Rica"))
+      .toEqual({ inicio: new Date("2026-01-01T18:00:00.000Z"), fim: undefined });
+  });
+  it("o fuso vale só durante o parse", () => {
+    analisarComDatasDaEscola(dataOpcional, "2026-01-01", "America/Sao_Paulo");
+    expect(() => dataOpcional.parse("2026-01-01")).toThrow(/fuso da escola/);
+    expect(() => analisarComDatasDaEscola(z.object({ d: dataOpcional, n: z.number() }), { d: "2026-01-01", n: "x" }, "America/Sao_Paulo")).toThrow();
+    expect(() => dataOpcional.parse("2026-01-01")).toThrow(/fuso da escola/);
   });
   it("trata vazio/null/undefined como undefined", () => {
     expect(dataOpcional.parse("")).toBeUndefined();
@@ -105,10 +117,9 @@ describe("paraDataHoraLocal (datetime-local → preserva a hora, issue #16)", ()
     const d = paraDataHoraLocal("2026-06-22T14:30:45") as Date;
     expect(d.getSeconds()).toBe(45);
   });
-  it("date-only cai no meio-dia local (reusa paraDataLocal)", () => {
-    const d = paraDataHoraLocal("2026-06-22") as Date;
-    expect(d.getHours()).toBe(12);
-    expect(d.getDate()).toBe(22);
+  it("date-only cai no meio-dia da escola (reusa paraDataLocal)", () => {
+    const d = analisarComDatasDaEscola(dataHoraOpcional, "2026-06-22", "America/Sao_Paulo");
+    expect(d).toEqual(new Date("2026-06-22T15:00:00.000Z"));
   });
   it("deixa outros valores passarem inalterados", () => {
     const date = new Date("2026-03-10T08:00:00Z");

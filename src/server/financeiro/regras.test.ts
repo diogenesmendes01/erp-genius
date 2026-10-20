@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Papel, StatusCobranca, StatusMatricula } from "@prisma/client";
-import { acimaDaAlcada, calcularPoliticaComissao, descontoAcumulado, dinheiro, exigirConferenciaIndependente, saldoAtual, validarEstadoAtivacao, pagamentoConfirmado } from "./regras";
+import { acimaDaAlcada, calcularPoliticaComissao, descontoAcumulado, dinheiro, exigirConferenciaIndependente, saldoAtual, validarEstadoAtivacao, pagamentoConfirmado, statusEmAbertoPorVencimento } from "./regras";
 import { exigeAprovacaoComponente } from "./politica";
 
 describe("contratos financeiros aprovados D01/D06/D07", () => {
@@ -58,5 +58,18 @@ describe("contratos financeiros aprovados D01/D06/D07", () => {
   });
   it("taxa cancelada não é evidência de quitação", () => {
     expect(() => validarEstadoAtivacao(StatusMatricula.AGUARDANDO, StatusCobranca.CANCELADA)).toThrow(/cancelada/);
+  });
+});
+
+// Ref. #247: o status de uma cobrança em aberto segue o dia civil da escola, nunca o relógio do servidor.
+describe("statusEmAbertoPorVencimento", () => {
+  const FUSO = "America/Sao_Paulo";
+  const vencimento = new Date("2026-06-23T15:00:00Z"); // 23/06, meio-dia de Brasília
+  it("às 21h30 de Brasília do dia do vencimento é PENDENTE; à 00h30 do dia seguinte é ATRASADO", () => {
+    expect(statusEmAbertoPorVencimento(vencimento, new Date("2026-06-24T00:30:00Z"), FUSO)).toBe(StatusCobranca.PENDENTE);
+    expect(statusEmAbertoPorVencimento(vencimento, new Date("2026-06-24T03:30:00Z"), FUSO)).toBe(StatusCobranca.ATRASADO);
+  });
+  it("vencimento legado à meia-noite UTC não fica atrasado às 21h30 da véspera em Brasília", () => {
+    expect(statusEmAbertoPorVencimento(new Date("2026-06-23T00:00:00Z"), new Date("2026-06-23T00:30:00Z"), FUSO)).toBe(StatusCobranca.PENDENTE);
   });
 });

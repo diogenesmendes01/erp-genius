@@ -65,12 +65,12 @@ describe("ordenação de empresas (E1 — ColunaOrdenavel)", () => {
 
   it("orderBy: sem ordem, o de sempre; cada coluna termina no desempate por id", () => {
     expect(orderByEmpresas(null)).toEqual([{ criadoEm: "desc" }, { id: "desc" }]);
-    expect(orderByEmpresas({ campo: "nome", dir: "desc" })).toEqual([{ nome: "desc" }, { id: "desc" }]);
+    expect(orderByEmpresas({ campo: "nome", dir: "desc" })).toEqual([{ nomeOrdenacao: "desc" }, { id: "desc" }]);
     expect(orderByEmpresas({ campo: "codigo", dir: "asc" })).toEqual([{ codigo: { sort: "asc", nulls: "last" } }, { id: "asc" }]);
-    expect(orderByEmpresas({ campo: "colaboradores", dir: "desc" })).toEqual([{ matriculas: { _count: "desc" } }, { nome: "asc" }, { id: "asc" }]);
+    expect(orderByEmpresas({ campo: "colaboradores", dir: "desc" })).toEqual([{ matriculas: { _count: "desc" } }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
     // Crescente pelo rótulo exibido: "Ativa" antes de "Inativa".
-    expect(orderByEmpresas({ campo: "situacao", dir: "asc" })).toEqual([{ ativo: "desc" }, { nome: "asc" }, { id: "asc" }]);
-    expect(orderByEmpresas({ campo: "situacao", dir: "desc" })).toEqual([{ ativo: "asc" }, { nome: "asc" }, { id: "asc" }]);
+    expect(orderByEmpresas({ campo: "situacao", dir: "asc" })).toEqual([{ ativo: "desc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
+    expect(orderByEmpresas({ campo: "situacao", dir: "desc" })).toEqual([{ ativo: "asc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
   });
 
   it("a ordem vai nos links (paginação, filtros, redirecionamento) e não conta como filtro", () => {
