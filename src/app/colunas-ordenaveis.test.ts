@@ -106,7 +106,7 @@ const PROIBIDOS = new Set([
  * `attributes`/`listeners` do dnd-kit. Qualquer outra origem externa com chaves desconhecidas falha fechada.
  */
 const EXTERNOS_CONFIAVEIS = new Map([
-  ["react-hook-form", ["useForm", "useFormContext"]], ["@dnd-kit/core", ["useDraggable", "useDroppable"]], ["@dnd-kit/sortable", ["useSortable"]],
+  ["react-hook-form", ["useForm", "useFormContext"]], ["@dnd-kit/core", ["useDraggable", "useDroppable"]],
 ]);
 /**
  * B8 da R3 da #149 (integração com a #145): o parâmetro único da função filha de um <Campo> — o render-prop
@@ -1346,7 +1346,7 @@ describe("colunas ordenáveis (E1)", () => {
     expect(ariaSortNoFonte('import { useMemo } from "react"; function C() { const juntar = useMemo(() => (a: string, b: string) => a + b, []); const k = juntar("aria", "-sort"); return k; }'), "useMemo").not.toEqual([]);
     // EXTERNOS_CONFIAVEIS: lista fechada exata — acrescentar uma origem afrouxa a trava.
     expect([...EXTERNOS_CONFIAVEIS]).toEqual([
-      ["react-hook-form", ["useForm", "useFormContext"]], ["@dnd-kit/core", ["useDraggable", "useDroppable"]], ["@dnd-kit/sortable", ["useSortable"]],
+      ["react-hook-form", ["useForm", "useFormContext"]], ["@dnd-kit/core", ["useDraggable", "useDroppable"]],
     ]);
     for (const [modulo, hooks] of EXTERNOS_CONFIAVEIS) for (const hook of hooks) {
       expect(ariaSortNoFonte(`import { ${hook} } from "${modulo}"; function C() { const r = ${hook}(); return <div {...r} />; }`), `${modulo}#${hook}`).toEqual([]);

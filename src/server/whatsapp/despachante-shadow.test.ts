@@ -10,8 +10,6 @@ const base: EntradaShadow = {
   reativa: false,
   gestao: false,
   politicaEstado: "ATIVA",
-  gestaoEstado: "ATIVA",
-  saudacaoEstado: "ATIVA",
   ia: false,
   ariaEstado: "ATIVA",
 };
@@ -27,9 +25,6 @@ describe("intencaoEmShadow", () => {
       expect(shadow({ agenda: true, politicaEstado: "SHADOW" })).toBe(false);
     });
 
-    it("gestão NÃO vira SIMULADA (olha só o gestaoEstado)", () => {
-      expect(shadow({ gestao: true, politicaEstado: "DESLIGADA" })).toBe(false);
-    });
 
     it("cobrança comum vira SIMULADA", () => {
       expect(shadow({ politicaEstado: "DESLIGADA" })).toBe(true);
@@ -39,9 +34,6 @@ describe("intencaoEmShadow", () => {
       expect(shadow({ politicaEstado: "SHADOW" })).toBe(true);
     });
 
-    it("reativa NÃO vira SIMULADA (olha só o saudacaoEstado)", () => {
-      expect(shadow({ reativa: true, politicaEstado: "DESLIGADA" })).toBe(false);
-    });
 
     it("origem HUMANO NÃO vira SIMULADA (decisão humana envia mesmo em ensaio)", () => {
       expect(shadow({ automatica: false, politicaEstado: "DESLIGADA" })).toBe(false);
@@ -51,8 +43,6 @@ describe("intencaoEmShadow", () => {
   it("política ATIVA com tudo ligado: envia de verdade", () => {
     expect(shadow({})).toBe(false);
     expect(shadow({ agenda: true })).toBe(false);
-    expect(shadow({ gestao: true })).toBe(false);
-    expect(shadow({ reativa: true })).toBe(false);
     expect(shadow({ automatica: false })).toBe(false);
   });
 
@@ -62,24 +52,12 @@ describe("intencaoEmShadow", () => {
     }
   });
 
-  it("gestão com gestaoEstado fora de ATIVA vira SIMULADA, mesmo com a política ATIVA", () => {
-    expect(shadow({ gestao: true, gestaoEstado: "SHADOW" })).toBe(true);
-    expect(shadow({ gestao: true, gestaoEstado: "DESLIGADA" })).toBe(true);
-  });
-
-  it("gestaoEstado não afeta quem não é gestão", () => {
-    expect(shadow({ gestaoEstado: "DESLIGADA" })).toBe(false);
-    expect(shadow({ agenda: true, gestaoEstado: "DESLIGADA" })).toBe(false);
-  });
-
-  it("reativa com saudacaoEstado fora de ATIVA vira SIMULADA, mesmo com a política ATIVA", () => {
-    expect(shadow({ reativa: true, saudacaoEstado: "SHADOW" })).toBe(true);
-    expect(shadow({ reativa: true, saudacaoEstado: "DESLIGADA" })).toBe(true);
-  });
-
-  it("saudacaoEstado não afeta quem não é reativa", () => {
-    expect(shadow({ saudacaoEstado: "DESLIGADA" })).toBe(false);
-    expect(shadow({ agenda: true, saudacaoEstado: "DESLIGADA" })).toBe(false);
+  // Remoção do CRM antigo: a gestão (C5) e a saudação reativa perderam a configuração e o produtor. O que sobrar
+  // na fila só simula (a gestão já é cancelada antes, em motivoIntencaoInvalida).
+  it("gestão e reativa sem IA sempre viram SIMULADA, mesmo com a política ATIVA", () => {
+    expect(shadow({ gestao: true })).toBe(true);
+    expect(shadow({ reativa: true })).toBe(true);
+    expect(shadow({ reativa: true, politicaEstado: "DESLIGADA" })).toBe(true);
   });
 
   // Revisão final da Fase 5C: a resposta da Aria (origem IA, reativa) não pode ficar presa ao
@@ -87,12 +65,12 @@ describe("intencaoEmShadow", () => {
   describe("origem IA", () => {
     const ia = { ia: true, reativa: true } as const;
 
-    it("Aria ATIVA envia mesmo com a saudação comercial DESLIGADA ou em SHADOW", () => {
-      expect(shadow({ ...ia, saudacaoEstado: "DESLIGADA" })).toBe(false);
-      expect(shadow({ ...ia, saudacaoEstado: "SHADOW" })).toBe(false);
+    it("Aria ATIVA envia, mesmo com a política de cobrança DESLIGADA", () => {
+      expect(shadow({ ...ia })).toBe(false);
+      expect(shadow({ ...ia, politicaEstado: "DESLIGADA" })).toBe(false);
     });
 
-    it("Aria fora de ATIVA no despacho vira SIMULADA, mesmo com a saudação ATIVA", () => {
+    it("Aria fora de ATIVA no despacho vira SIMULADA", () => {
       expect(shadow({ ...ia, ariaEstado: "SHADOW" })).toBe(true);
       expect(shadow({ ...ia, ariaEstado: "DESLIGADA" })).toBe(true);
     });
@@ -102,8 +80,8 @@ describe("intencaoEmShadow", () => {
     });
 
     it("ariaEstado não afeta quem não é IA", () => {
-      expect(shadow({ reativa: true, ariaEstado: "DESLIGADA" })).toBe(false);
       expect(shadow({ ariaEstado: "DESLIGADA" })).toBe(false);
+      expect(shadow({ agenda: true, ariaEstado: "DESLIGADA" })).toBe(false);
     });
   });
 });
@@ -130,9 +108,12 @@ describe("decidirEnvio", () => {
     expect(decidir({ agenda: true, live: false })).toBe("SIMULAR");
   });
 
-  it("a flag de agenda não afeta cobrança, gestão, reativa nem HUMANO", () => {
-    for (const parcial of [{}, { gestao: true }, { reativa: true }, { automatica: false }]) {
+  it("a flag de agenda não afeta cobrança, IA, gestão, reativa nem HUMANO", () => {
+    for (const parcial of [{}, { ia: true, reativa: true }, { automatica: false }]) {
       expect(decidir({ ...parcial, envioAgendaHabilitado: false })).toBe("ENVIAR");
+    }
+    for (const parcial of [{ gestao: true }, { reativa: true }]) {
+      expect(decidir({ ...parcial, envioAgendaHabilitado: false })).toBe("SIMULAR");
     }
     expect(decidir({ politicaEstado: "DESLIGADA", envioAgendaHabilitado: false })).toBe("SIMULAR");
   });

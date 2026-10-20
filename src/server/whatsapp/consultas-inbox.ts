@@ -1,12 +1,10 @@
-import { Papel, type AcaoAgenteIATipo, type EtapaLead, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
+import { Papel, type AcaoAgenteIATipo, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
-import { temPapel, transicaoManualPermitida, type UsuarioSessao } from "@/server/_shared";
+import { temPapel, type UsuarioSessao } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
-import { ETAPAS_MANUAIS } from "@/server/comercial/schema";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
 import { escopoAtendimentos } from "./escopo";
-import { LIMITE_CONVERSAS, LIMITE_NAO_LIDAS_FORA, mesclarPorRecencia, whereBuscaConversas, whereCanalInbox, type CanalInbox } from "./busca-inbox";
 import { ehLinhaComercial } from "./linha-comercial";
 import { atendimentoVisivel } from "./atendimentos";
 import { INCLUDE_MATRICULA_DESTINO, resolverDestinoFinanceiroDaMatricula } from "./destinatario-financeiro";
@@ -18,8 +16,6 @@ import { capacidadesAria } from "@/server/aria/permissoes-tela";
 import { leadsDecidiveis } from "@/server/aria/escopo-decisao";
 import { podeDevolverParaAria } from "@/server/aria/pausa";
 import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
-import type { RecursoMotor } from "@/components/conversa/recursos-canal";
-import { capacidadesDoNumero } from "./motor/capacidades";
 import { podeExecutar, TIPOS_DESVINCULAVEIS, type TipoVinculoContato } from "@/server/inbox/permissoes";
 
 export interface ConversaResumo {
@@ -48,28 +44,6 @@ export interface CobrancaAtivaThread {
   valorNegociado: number; valorRecebido: number; saldo: number; status: string;
 }
 export interface NotaInternaThread { id: string; nota: string; autorNome: string | null; criadoEm: string }
-export interface LeadNaThread {
-  id: string; nome: string; etapa: string; temperatura: string; dataExperimental: string | null;
-  etapasPermitidas: string[]; notas: NotaInternaThread[];
-}
-export interface ThreadConversa {
-  conversaId: string; finalidade: string; matricula: { id: string; codigo: string | null } | null; podeEnviar: boolean; podeVincular: boolean; podeReautorizar: boolean;
-  /** Editar o nome salvo do contato: fora do pedagógico e só se o usuário vê todos os atendimentos do contato. */
-  podeEditarNome: boolean;
-  /** Conversa de linha comercial; `podeCriarLead` = botão "Criar lead" (LC-D05). */
-  linhaComercial: boolean; podeCriarLead: boolean;
-  pendenciaDestinatario: string | null;
-  numero: { id: string; rotulo: string; driver: string; finalidade: string; sessao: string; ativo: boolean };
-  contato: { id: string; nome: string; telefone: string; optOutEm: string | null;
-    /** Nome salvo no ERP e nome de perfil do WhatsApp; `fonteNome` diz qual dos cadastros está na tela. */
-    nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
-    alunoId: string | null; alunoNome: string | null; responsavelId: string | null; responsavelNome: string | null;
-    leadId: string | null; leadNome: string | null };
-  /** Recursos do motor que o número executa agora (`recursos={(r) => capacidades.includes(r)}` na tela). */
-  capacidades: RecursoMotor[];
-  silencio: { ativo: boolean; ate: string | null }; cobrancaAtiva: CobrancaAtivaThread | null;
-  lead: LeadNaThread | null; mensagens: MensagemThread[];
-}
 export interface PessoasVinculo {
   alunos: { id: string; nome: string }[];
   responsaveis: { id: string; nome: string }[];
@@ -82,41 +56,6 @@ export const contextoInclude = {
   aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
   lead: { select: { id: true, nome: true, etapa: true, temperatura: true, dataExperimental: true } },
 } as const;
-
-export async function listarConversas(usuario: UsuarioSessao): Promise<ConversaResumo[]> {
-  return (await listarConversasInbox(usuario)).itens;
-}
-
-/**
- * Lista da inbox (E4): as LIMITE_CONVERSAS mais recentes e, se a lista foi cortada, também todas as
- * que têm não lidas — nenhuma conversa com mensagem por ler fica fora da lista. `busca` filtra no
- * servidor (nome do contato/aluno/lead ou telefone). `limitada` avisa a tela de que há mais antigas.
- */
-export async function listarConversasInbox(usuario: UsuarioSessao, { busca = "", canal = "" }: { busca?: string; canal?: CanalInbox | "" } = {}): Promise<{ itens: ConversaResumo[]; limitada: boolean }> {
-  const escopo = await escopoAtendimentos(usuario);
-  // O filtro opcional só restringe o escopo obrigatório; nunca o substitui (doc 37).
-  const filtros = [whereBuscaConversas(busca), whereCanalInbox(canal)].filter((f) => Object.keys(f).length);
-  const where: Prisma.AtendimentoWhatsAppWhereInput = filtros.length ? { AND: [escopo, ...filtros] } : escopo;
-  const orderBy = [{ ultimaMensagemEm: "desc" as const }, { criadoEm: "desc" as const }];
-  const include = { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" as const }, take: 1, select: { corpo: true, tipo: true } } };
-  const recentes = await prisma.atendimentoWhatsApp.findMany({ where, take: LIMITE_CONVERSAS + 1, orderBy, include });
-  const limitada = recentes.length > LIMITE_CONVERSAS;
-  const lista = recentes.slice(0, LIMITE_CONVERSAS);
-  const naoLidasFora = limitada
-    ? await prisma.atendimentoWhatsApp.findMany({
-        where: { AND: [where, { naoLidas: { gt: 0 } }, { id: { notIn: lista.map((a) => a.id) } }] },
-        take: LIMITE_NAO_LIDAS_FORA, orderBy, include,
-      })
-    : [];
-  // As não lidas de fora entram na MESMA ordem por recência, sem ir para o topo.
-  // Sem reordenar por não-lidas aqui (ganho rápido 22 da auditoria): o polling de 30s da
-  // inbox reconsulta a lista com frequência, e um agrupamento "não lidas primeiro" fazia a
-  // conversa pular de posição sempre que naoLidas cruzava zero (lida em outra aba, nova
-  // mensagem chegando) — a linha some debaixo do cursor de quem estava prestes a clicar. A
-  // ordem já vem estável do banco (orderBy ultimaMensagemEm desc); o badge de não lidas
-  // continua visível por linha, só não pula mais a lista inteira.
-  return { itens: mesclarPorRecencia(lista, naoLidasFora).map(resumirConversa), limitada };
-}
 
 export type AtendimentoDaLista = Prisma.AtendimentoWhatsAppGetPayload<{ include: typeof contextoInclude & { mensagens: { select: { corpo: true; tipo: true } } } }>;
 
@@ -141,52 +80,7 @@ export async function contarNaoLidas(usuario: UsuarioSessao): Promise<number> {
   return r._sum.naoLidas ?? 0;
 }
 
-export async function carregarThread(usuario: UsuarioSessao, atendimentoId: string): Promise<ThreadConversa | null> {
-  const achado = await prisma.atendimentoWhatsApp.findFirst({
-    where: { AND: [{ id: atendimentoId }, await escopoAtendimentos(usuario)] },
-    include: { ...contextoInclude, mensagens: { orderBy: { criadoEm: "desc" }, take: 300,
-      include: { autor: { select: { nome: true } }, template: { select: { nome: true } },
-        favoritosUsuarios: { where: { usuarioId: usuario.id }, select: { id: true } } } } },
-  });
-  if (!achado) return null;
-  const a = comContatoIndividual(achado);
-  const pedag = a.finalidade === "PEDAGOGICO";
-  const comercial = a.finalidade === "COMERCIAL";
-  const financeiro = a.finalidade === "FINANCEIRO" && temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
-  const c = a.conversa;
-  const { nome, fonte: fonteNome } = nomeEFonteDoAtendimento(a);
-  const agora = Date.now();
-  const politica = financeiro ? await carregarPoliticaRegua() : null;
-  const silencio = silencioPosInbound(a, politica?.silencioPosInboundHoras ?? null, agora);
-  const podeEnviar = !!await atendimentoVisivel(usuario, a.id, true);
-  const linhaComercial = comercial && ehLinhaComercial(c.numero);
-  // LC-L02: ver a conversa pela linha não abre o lead de outra carteira (etapa, notas).
-  const verLead = comercial && !!a.leadId && await podeVerLeadNaThread(usuario, a.id, a.leadId, agora);
-  return { conversaId: a.id, finalidade: a.finalidade, matricula: financeiro || pedag ? a.matricula : null,
-    podeEnviar, linhaComercial,
-    ...regrasCadastroDoAtendimento(usuario, a, linhaComercial),
-    podeReautorizar: temPapel(usuario, Papel.ADMINISTRADOR),
-    podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contato.id),
-    pendenciaDestinatario: pedag && a.alunoId && !podeEnviar ? "A autorização ou o vínculo do destinatário precisa ser conferido antes de novo envio." : null,
-    numero: { id: c.numeroId, rotulo: pedag ? "Canal institucional" : c.numero.rotulo, driver: c.numero.driver,
-      finalidade: a.finalidade, sessao: c.numero.sessao, ativo: c.numero.ativo },
-    contato: { id: c.contato.id, nome, telefone: pedag ? "" : c.contato.telefoneE164,
-      nomeSalvo: pedag ? null : c.contato.nomeExibicao, nomePerfil: pedag ? null : c.contato.nomePerfil, fonteNome,
-      optOutEm: c.contato.optOutEm?.toISOString() ?? null, alunoId: a.alunoId,
-      alunoNome: a.aluno ? nomeCompleto(a.aluno) : null, responsavelId: null, responsavelNome: null,
-      leadId: verLead ? a.leadId : null, leadNome: verLead ? a.lead?.nome ?? null : null },
-    capacidades: capacidadesDoNumero({ driver: c.numero.driver, ativo: c.numero.ativo, sessao: c.numero.sessao }),
-    silencio,
-    cobrancaAtiva: financeiro && a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
-    lead: verLead && a.lead ? await leadNaThread(a.lead) : null,
-    mensagens: [...a.mensagens].reverse().map((m) => ({ id: m.id, direcao: m.direcao, tipo: m.tipo, corpo: m.corpo,
-      midiaPath: m.midiaPath, status: m.status, origem: m.origem, autorNome: m.autor?.nome ?? null,
-      templateNome: m.template?.nome ?? null, criadoEm: m.criadoEm.toISOString(),
-      participanteNome: m.participanteNome, favorita: m.favoritosUsuarios.length > 0, clientMessageId: m.clientMessageId,
-      propria: m.direcao === "SAIDA" && m.autorId === usuario.id, apagada: !!m.apagadaEm })) };
-}
-
-/** Botões de cadastro da conversa (os do Inbox antigo): criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */
+/** Botões de cadastro da conversa: criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */
 export function regrasCadastroDoAtendimento(
   usuario: UsuarioSessao, a: { finalidade: string; leadId: string | null; encerradoEm: Date | null }, linhaComercial: boolean,
 ): { podeCriarLead: boolean; podeVincular: boolean } {
@@ -206,7 +100,7 @@ export function silencioPosInbound(
   return { ativo, ate: ativo ? ate!.toISOString() : null };
 }
 
-/** Ações de cadastro e de cobrança do painel lateral do Inbox novo; mesmas regras e alçadas da thread do Inbox antigo. Sem telefone (regra 5). */
+/** Ações de cadastro e de cobrança do painel lateral do Inbox. Sem telefone (regra 5). */
 export interface AcoesContatoInbox {
   contatoId: string; contatoNome: string;
   nomeSalvo: string | null; nomePerfil: string | null; fonteNome: FonteNome;
@@ -312,12 +206,6 @@ export async function notasDoLead(leadId: string): Promise<NotaInternaThread[]> 
     orderBy: { criadoEm: "desc" }, take: 20, include: { autor: { select: { nome: true } } } });
   return notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "",
     autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
-}
-
-async function leadNaThread(lead: { id: string; nome: string; etapa: EtapaLead; temperatura: string; dataExperimental: Date | null }): Promise<LeadNaThread> {
-  return { ...lead, dataExperimental: lead.dataExperimental?.toISOString() ?? null,
-    etapasPermitidas: ETAPAS_MANUAIS.filter((d) => d !== lead.etapa && transicaoManualPermitida(lead.etapa, d)),
-    notas: await notasDoLead(lead.id) };
 }
 
 export async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {

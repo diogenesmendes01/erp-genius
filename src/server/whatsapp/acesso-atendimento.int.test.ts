@@ -10,13 +10,15 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
-import { carregarThread, listarConversas, buscarPessoasVinculo } from "./consultas";
+import { buscarPessoasVinculo } from "./consultas";
+import { obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { carregarPainel } from "@/server/inbox/paineis";
+import { listaDoInbox, mensagensDoInbox } from "@/test/inbox-consultas";
 import { despacharFila } from "./despachante";
-import { enfileirarIntencaoCobranca, enfileirarIntencaoComercial } from "./fila";
+import { enfileirarIntencaoCobranca } from "./fila";
 import { referenciaDestinoCobranca, snapshotCobranca } from "./elegibilidade";
 import { enviarTextoInbox, vincularContatoWhatsApp } from "./acoes";
 import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, listarOpcoesAtendimento } from "./operacoes-atendimento";
-import { capturarRespostaExperimental } from "@/server/comercial/captura";
 
 beforeEach(async () => {
   await truncarBanco(); vi.stubEnv("WHATSAPP_LIVE", "1"); authMock.mockReset();
@@ -37,42 +39,25 @@ async function comercial() {
   return { vendedor, outro, numero, lead, contato, a };
 }
 
-async function filaComercial(chave = "LEAD_NOVO_SEM_RESPOSTA") {
-  const c = await comercial();
-  const ancora = new Date(Date.now() - 3600_000);
-  const aula = new Date(Date.now() + 3600_000);
-  const ocorrencia = chave === "PRE_EXPERIMENTAL" ? aula : ancora;
-  const passo = chave === "PRE_EXPERIMENTAL" ? "-2h" : "+30min";
-  await prisma.conversaWhatsApp.update({ where: { id: c.a.conversaId }, data: { capturadaEm: ancora, ultimoInboundEm: ancora } });
-  if (chave === "PRE_EXPERIMENTAL") await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: aula } });
-  const politica = await prisma.politicaComercial.create({ data: { chave, nome: chave, estado: "ATIVA", janelaInicio: 0, janelaFim: 24,
-    diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: c.numero.id, degraus: { create: { passo, offsetMinutos: chave === "PRE_EXPERIMENTAL" ? -120 : 30, rotulo: "teste" } } } });
-  const dados = { numeroId: c.numero.id, contatoId: c.contato.id, leadId: c.lead.id, politicaComercialId: politica.id,
-    ocorrenciaComercial: ocorrencia.toISOString(), passoComercial: passo, corpoRenderizado: "Mensagem autorizada", variaveis: [], templateId: null,
-    validaAte: new Date(ocorrencia.getTime() + 7 * 24 * 3600_000) };
-  await prisma.$transaction((tx) => enfileirarIntencaoComercial(tx, dados));
-  const i = await prisma.intencaoMensagem.findFirstOrThrow();
-  return { ...c, ancora, aula, dados, i };
-}
-
 describe("D02: atendimento comercial segue carteira/equipe/cobertura atual", () => {
   it("participante da conversa fora da carteira abre a thread; o painel do lead não traz copiloto (E1)", async () => {
     const c = await comercial();
     await prisma.participanteAtendimentoWhatsApp.create({ data: { atendimentoId: c.a.id, usuarioId: c.outro.id, concedenteId: c.vendedor.id, inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60000), motivo: "Apoio restrito à conversa" } });
     authMock.mockResolvedValue({ user: { id: c.outro.id } });
-    const restrita = await carregarThread(sessao(c.outro), c.a.id);
-    expect(restrita?.lead?.id).toBe(c.lead.id);
-    expect(restrita?.lead).not.toHaveProperty("copilotoAtivo");
-    expect(restrita?.lead).not.toHaveProperty("sugestoesIA");
+    const restrita = await carregarPainel(sessao(c.outro), c.a.id);
+    expect(restrita?.acoes?.leadId).toBe(c.lead.id);
+    expect(restrita).toMatchObject({ oportunidade: { id: c.lead.id } });
+    expect(JSON.stringify(restrita)).not.toContain("copilotoAtivo");
+    expect(JSON.stringify(restrita)).not.toContain("sugestoesIA");
   });
   it("transferência da carteira revoga o anterior e a mensagem humana pendente", async () => {
     const c = await comercial();
-    expect((await listarConversas(sessao(c.vendedor))).map((a) => a.id)).toContain(c.a.id);
-    expect(await carregarThread(sessao(c.outro), c.a.id)).toBeNull();
+    expect((await listaDoInbox(sessao(c.vendedor))).map((a) => a.id)).toContain(c.a.id);
+    expect(await obterItemListaInbox(sessao(c.outro), c.a.id)).toBeNull();
     await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: c.contato.id, atendimentoId: c.a.id, origem: "HUMANO", autorId: c.vendedor.id, corpoRenderizado: "Antes da transferência" } });
     await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { vendedorDonoId: c.outro.id } });
-    expect(await carregarThread(sessao(c.vendedor), c.a.id)).toBeNull();
-    expect(await carregarThread(sessao(c.outro), c.a.id)).not.toBeNull();
+    expect(await obterItemListaInbox(sessao(c.vendedor), c.a.id)).toBeNull();
+    expect(await obterItemListaInbox(sessao(c.outro), c.a.id)).not.toBeNull();
     await despacharFila();
     expect(enviarMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("atendimento_sem_acesso");
@@ -81,9 +66,9 @@ describe("D02: atendimento comercial segue carteira/equipe/cobertura atual", () 
     const c = await comercial();
     const cobertura = await prisma.coberturaCarteira.create({ data: { titularId: c.vendedor.id, substitutoId: c.outro.id, concedenteId: c.vendedor.id,
       inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60000), motivo: "Cobertura teste" } });
-    expect(await carregarThread(sessao(c.outro), c.a.id)).not.toBeNull();
+    expect(await obterItemListaInbox(sessao(c.outro), c.a.id)).not.toBeNull();
     await prisma.coberturaCarteira.update({ where: { id: cobertura.id }, data: { fim: new Date(Date.now() - 1) } });
-    expect(await carregarThread(sessao(c.outro), c.a.id)).toBeNull();
+    expect(await obterItemListaInbox(sessao(c.outro), c.a.id)).toBeNull();
   });
   it("A06: busca e vinculação comercial não abrem cadastro de alunos nem outra carteira", async () => {
     const c = await comercial();
@@ -119,13 +104,15 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
       { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, atendimentoId: c.financeiro.id, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Dívida de 900" },
       { numeroId: c.numero.id, conversaId: c.pedagogico.conversaId, direcao: "ENTRADA", driver: DriverWhatsApp.BAILEYS, corpo: "Legado financeiro" },
     ] });
-    const thread = await carregarThread(sessao(c.pro), c.pedagogico.id);
-    expect(thread?.mensagens.map((m) => m.corpo)).toEqual(["Tarefa de hoje"]);
-    expect(thread?.cobrancaAtiva).toBeNull();
-    expect(JSON.stringify(thread)).not.toContain(c.aluno.telefoneE164);
-    expect(JSON.stringify(thread)).not.toContain(c.aluno.email);
+    const mensagens = await mensagensDoInbox(sessao(c.pro), c.pedagogico.id);
+    expect(mensagens?.map((m) => m.corpo)).toEqual(["Tarefa de hoje"]);
+    const painel = await carregarPainel(sessao(c.pro), c.pedagogico.id);
+    expect(painel?.acoes).toMatchObject({ cobranca: null });
+    const payload = JSON.stringify([await obterItemListaInbox(sessao(c.pro), c.pedagogico.id), mensagens, painel]);
+    expect(payload).not.toContain(c.aluno.telefoneE164);
+    expect(payload).not.toContain(c.aluno.email);
     await prisma.turma.update({ where: { id: c.t.id }, data: { professorId: c.outro.id } });
-    expect(await carregarThread(sessao(c.pro), c.pedagogico.id)).toBeNull();
+    expect(await obterItemListaInbox(sessao(c.pro), c.pedagogico.id)).toBeNull();
   });
   it("abertura e envio institucionais funcionam; chave de turma alheia é negada", async () => {
     const c = await turma();
@@ -146,42 +133,20 @@ describe("D04: finalidade pedagógica e contexto legado", () => {
     expect((await classificarMensagemWhatsApp({ mensagemId: m.id, atendimentoId: c.pedagogico.id, motivo: "Conteúdo revisado como pedagógico" })).ok).toBe(false);
     const adm = await criarUsuario([Papel.ADMINISTRADOR]); authMock.mockResolvedValue({ user: { id: adm.id } });
     expect((await classificarMensagemWhatsApp({ mensagemId: m.id, atendimentoId: c.pedagogico.id, motivo: "Conteúdo revisado como pedagógico" })).ok).toBe(true);
-    expect((await carregarThread(sessao(c.pro), c.pedagogico.id))?.mensagens.map((m) => m.corpo)).toEqual(["Revisar tarefa"]);
+    expect((await mensagensDoInbox(sessao(c.pro), c.pedagogico.id))?.map((m) => m.corpo)).toEqual(["Revisar tarefa"]);
   });
 });
 
 describe("W01–W07: intenção velha nunca chama o driver", () => {
-  it("W01: mudança de etapa cancela uma intenção adiada", async () => {
-    const c = await filaComercial();
-    await prisma.intencaoMensagem.update({ where: { id: c.i.id }, data: { status: "ADIADA", despacharAposEm: new Date(0) } });
-    await prisma.oportunidade.update({ where: { id: c.lead.id }, data: { etapa: "EM_ATENDIMENTO" } });
-    await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
-    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.i.id } })).motivoFalha).toBe("etapa_comercial_alterada");
-  });
-  it("W02: aula vencida cancela o lembrete mesmo que já esteja na fila", async () => {
-    const c = await filaComercial("PRE_EXPERIMENTAL");
-    await despacharFila(new Date(c.aula.getTime() + 1)); expect(enviarMock).not.toHaveBeenCalled();
-    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.i.id } })).motivoFalha).toBe("experimental_iniciada");
-  });
-  it("W03: saída fromMe encerra o cron e o despacho pendente", async () => {
-    const c = await filaComercial();
-    await prisma.mensagemWhatsApp.create({ data: { numeroId: c.numero.id, conversaId: c.a.conversaId, direcao: "SAIDA", origem: null, driver: DriverWhatsApp.BAILEYS, corpo: "Resposta pelo celular" } });
-    await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
-  });
-  it("W04: REAGENDAR cancela e não renasce para a agenda anterior", async () => {
-    const c = await filaComercial("PRE_EXPERIMENTAL");
-    await prisma.evento.create({ data: { tipo: "ReguaComercialEnviada", agregadoTipo: "Lead", agregadoId: c.lead.id,
-      payload: { chave: "PRE_EXPERIMENTAL", ocorrencia: c.aula.toISOString(), passo: "-24h" } } });
-    await prisma.$transaction((tx) => capturarRespostaExperimental(tx, { leadId: c.lead.id, corpo: "REAGENDAR", quando: new Date() }));
-    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.i.id } })).status).toBe("CANCELADA");
-    await despacharFila(); expect(enviarMock).not.toHaveBeenCalled();
-  });
-  it("W05: claim interrompido fica FALHOU e enfileirador não reabre", async () => {
-    const c = await filaComercial();
-    await prisma.intencaoMensagem.update({ where: { id: c.i.id }, data: { status: "ENVIANDO", despacharAposEm: new Date(0) } });
+  // W01–W04 eram da cadência comercial do CRM antigo (removida); o cancelamento das que sobraram na fila
+  // está em despachante-teto.int.test.ts.
+  it("W05: claim interrompido fica FALHOU e não é reenviado", async () => {
+    const c = await comercial();
+    const i = await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: c.contato.id, atendimentoId: c.a.id,
+      origem: "HUMANO", autorId: c.vendedor.id, corpoRenderizado: "Texto", status: "ENVIANDO", despacharAposEm: new Date(0) } });
     await despacharFila();
-    expect(await prisma.$transaction((tx) => enfileirarIntencaoComercial(tx, c.dados))).toBe("ja_existente");
-    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.i.id } })).status).toBe("FALHOU");
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: i.id } })).toMatchObject({ status: "FALHOU", motivoFalha: "envio_interrompido" });
+    await despacharFila();
     expect(enviarMock).not.toHaveBeenCalled();
   });
   it.each(["total", "parcial"])("W06: pagamento %s impede texto com saldo antigo", async (tipo) => {
