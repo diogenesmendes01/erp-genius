@@ -57,7 +57,14 @@ async function prepararIntencao() {
   return prisma.intencaoMensagem.findFirstOrThrow({ where: { cobrancaId: contexto.cobranca.id } });
 }
 
+// Relógio fixo ao meio-dia da escola (15h UTC): `diasDepois` monta o dia no fuso da máquina e a
+// régua conta no dia da escola (Q176, #239). Com TZ=UTC entre 00h e 03h UTC o "hoje + 7" virava
+// D-8 na escola e a outra parcela saía de `acao_devida`. O CT08 troca o relógio por conta própria.
+const RELOGIO = new Date("2026-10-20T15:00:00.000Z");
+
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(RELOGIO);
   await truncarBanco();
   vi.stubEnv("WHATSAPP_LIVE", "1");
   enviarMock.mockReset().mockImplementation(async () => ({ providerMessageId: `teste-${randomUUID()}` }));
