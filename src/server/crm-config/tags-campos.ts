@@ -1,7 +1,12 @@
 import { AlvoCampoPersonalizado, CorTag, Papel, TipoCampoPersonalizado } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado } from "@/server/_shared";
+import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+
+// Idempotência só na criação (#166): a chave vai no Evento de criação (`TagSalva`/`CampoSalvo` com `de: null`);
+// na edição (com `id`) ela é ignorada.
+const MSG_CONFLITO = "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se o item já aparece antes de repetir.";
 
 export type TipoCampo = TipoCampoPersonalizado;
 export type AlvoCampo = AlvoCampoPersonalizado;
@@ -16,13 +21,19 @@ const TagSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome.").max(60),
   grupo: z.string().trim().min(1, "Informe o grupo.").max(60),
   cor: z.nativeEnum(CorTag),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
-export async function salvarTag(i: { id?: string; nome: string; grupo: string; cor: CorTag }): Promise<Resultado<{ id: string }>> {
+export async function salvarTag(i: { id?: string; nome: string; grupo: string; cor: CorTag; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
-    const d = TagSchema.parse(i);
+    const { chaveIdempotencia, ...d } = TagSchema.parse(i);
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
+    const marca = d.id ? null : marcaIdempotencia(chaveIdempotencia, d);
     return prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, { tipo: "TagSalva", agregadoTipo: "Tag", autorId: autor.id, marca, mensagemConflito: MSG_CONFLITO });
+        if (repetido) return { id: repetido.agregadoId };
+      }
       const todas = await tx.tag.findMany();
       const chave = chaveNome(d.nome);
       if (todas.some((t) => t.id !== d.id && chaveNome(t.nome) === chave)) throw new ErroRegra("Já existe uma tag com este nome.");
@@ -34,7 +45,7 @@ export async function salvarTag(i: { id?: string; nome: string; grupo: string; c
         : await tx.tag.create({ data: { nome: d.nome, grupo: d.grupo, cor: d.cor } });
       await registrarEvento(tx, {
         tipo: "TagSalva", agregadoTipo: "Tag", agregadoId: tag.id, autorId: autor.id,
-        payload: { de: antes ? { nome: antes.nome, grupo: antes.grupo, cor: antes.cor } : null, para: { nome: tag.nome, grupo: tag.grupo, cor: tag.cor } },
+        payload: { de: antes ? { nome: antes.nome, grupo: antes.grupo, cor: antes.cor } : null, para: { nome: tag.nome, grupo: tag.grupo, cor: tag.cor }, ...marca },
       });
       return { id: tag.id };
     });
@@ -65,11 +76,12 @@ const CampoSchema = z.object({
   opcoes: z.array(z.string().trim().min(1).max(80)).max(50),
   alvo: z.nativeEnum(AlvoCampoPersonalizado),
   obrigatorio: z.boolean(),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
-export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCampo; opcoes: string[]; alvo: AlvoCampo; obrigatorio: boolean }): Promise<Resultado<{ id: string }>> {
+export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCampo; opcoes: string[]; alvo: AlvoCampo; obrigatorio: boolean; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
-    const d = CampoSchema.parse(i);
+    const { chaveIdempotencia, ...d } = CampoSchema.parse(i);
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
     const opcoes: string[] = [];
     if (d.tipo === "SELECAO") {
@@ -77,7 +89,12 @@ export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCamp
       for (const o of d.opcoes) if (!vistas.has(chaveNome(o))) { vistas.add(chaveNome(o)); opcoes.push(o); }
       if (opcoes.length === 0) throw new ErroRegra("Campo de lista precisa de ao menos uma opção.");
     }
+    const marca = d.id ? null : marcaIdempotencia(chaveIdempotencia, { ...d, opcoes });
     return prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, { tipo: "CampoSalvo", agregadoTipo: "CampoPersonalizado", autorId: autor.id, marca, mensagemConflito: MSG_CONFLITO });
+        if (repetido) return { id: repetido.agregadoId };
+      }
       const todos = await tx.campoPersonalizado.findMany({ where: { alvo: d.alvo } });
       const chave = chaveNome(d.nome);
       if (todos.some((c) => c.id !== d.id && chaveNome(c.nome) === chave)) throw new ErroRegra("Já existe um campo com este nome para este alvo.");
@@ -95,7 +112,7 @@ export async function salvarCampo(i: { id?: string; nome: string; tipo: TipoCamp
       const resumo = (c: typeof campo) => ({ nome: c.nome, tipo: c.tipo, alvo: c.alvo, opcoes: c.opcoes, obrigatorio: c.obrigatorio });
       await registrarEvento(tx, {
         tipo: "CampoSalvo", agregadoTipo: "CampoPersonalizado", agregadoId: campo.id, autorId: autor.id,
-        payload: { de: antes ? resumo(antes) : null, para: resumo(campo) },
+        payload: { de: antes ? resumo(antes) : null, para: resumo(campo), ...marca },
       });
       return { id: campo.id };
     });

@@ -15,7 +15,8 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   const [numeroAvisosAgendaId, setNumero] = useState(config.numeroAvisosAgendaId ?? "");
   const [templateAvisosAgendaId, setTemplate] = useState(config.templateAvisosAgendaId ?? "");
   // salvarConfiguracaoAvisosAgenda não recebe chave de idempotência: resultado incerto manda conferir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): número e template dos avisos vão por upsert na configuração única da escola.
+  const acao = useAcaoCliente({ idempotente: true });
   const numeros = config.numeros.filter((n) => n.ativo && n.driver === "MOTOR");
   const templates = config.templates.filter((t) => t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
 

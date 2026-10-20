@@ -12,6 +12,7 @@ import { dinheiro, saldoAtual, descontoAcumulado, exigirConferenciaIndependente,
 import { limitesAtuais, exigeAprovacaoComponente } from "@/server/financeiro/politica";
 import { AjusteSchema, DecisaoSchema, type AjusteInput, type DecisaoInput } from "./schema";
 import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 function revalidar() {
@@ -29,13 +30,15 @@ const SnapshotSchema = z.object({
 });
 type Snapshot = z.infer<typeof SnapshotSchema>;
 
-async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, snapshot: Snapshot, motivo: string, vigencia: Vigencia, aprovacaoId?: string) {
+async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, snapshot: Snapshot, motivo: string, vigencia: Vigencia, aprovacaoId?: string, marca?: MarcaIdempotencia | null) {
   // Mesma ordem da ativação/negociação: lead, matrícula, cobranças e comissões.
   // A aprovação não pode alterar a base enquanto a ativação monta o cronograma.
   const vinculos = await tx.cobranca.findMany({ where: { id: { in: snapshot.alvos.map((alvo) => alvo.id) } }, select: { matriculaId: true } });
   await bloquearMatriculas(tx, vinculos.map((vinculo) => vinculo.matriculaId));
   // Ref. #247: o atraso segue o dia civil da escola (o dia do vencimento inteiro ainda é PENDENTE).
   const agora = new Date(), fuso = await fusoDaEscola(tx);
+  // A marca de idempotência (#166) vai só no Evento da primeira cobrança ajustada: é ele que o reenvio encontra.
+  let marcaPendente = marca ?? null;
   for (const alvo of [...snapshot.alvos].sort((a,b) => a.id.localeCompare(b.id))) {
     const cobranca = await bloquearCobranca(tx, alvo.id);
     if (cobranca.versao !== alvo.versao || !cobranca.valorNegociado.equals(alvo.valorDe) || !cobranca.valorOriginal.equals(alvo.referencia)) {
@@ -79,15 +82,31 @@ async function aplicarAlvos(tx: Prisma.TransactionClient, autor: UsuarioSessao, 
     }
     await registrarEvento(tx, { tipo: snapshot.tipo === TipoAjuste.PERDAO ? "CobrancaPerdoada" : "CobrancaRenegociada",
       agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: autor.id,
-      payload: { de: alvo.valorDe, para: alvo.valorPara, saldo: saldo.toNumber(), vigencia, motivo, aprovacaoId: aprovacaoId ?? null, novoVencimento: alvo.novoVencimento } });
+      payload: { de: alvo.valorDe, para: alvo.valorPara, saldo: saldo.toNumber(), vigencia, motivo, aprovacaoId: aprovacaoId ?? null, novoVencimento: alvo.novoVencimento, ...marcaPendente } });
+    marcaPendente = null;
   }
 }
+
+/** Eventos que carregam a marca de idempotência do ajuste, sempre consultados nesta ordem (as travas consultivas também). */
+const TIPOS_EVENTO_AJUSTE = ["DescontoSolicitado", "CobrancaRenegociada", "CobrancaPerdoada"] as const;
 
 export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ aprovacao: boolean }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO);
-    const dados = analisarComDatasDaEscola(AjusteSchema, input, await fusoDaEscola());
+    const { chaveIdempotencia, ...dados } = analisarComDatasDaEscola(AjusteSchema, input, await fusoDaEscola());
+    // Idempotência (#166): o ajuste aplicado grava a marca no `CobrancaRenegociada`/`CobrancaPerdoada` da primeira
+    // cobrança; o pedido de aprovação, no `DescontoSolicitado`. O reenvio encontra um deles e devolve o mesmo desfecho.
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const resultado = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        for (const tipo of TIPOS_EVENTO_AJUSTE) {
+          const repetido = await repeticaoIdempotente(tx, {
+            tipo, agregadoTipo: "Cobranca", autorId: autor.id, marca,
+            mensagemConflito: "Esta tentativa já foi usada com outro ajuste. Recarregue a ficha financeira e confira o ajuste antes de repetir.",
+          });
+          if (repetido) return { aprovacao: tipo === "DescontoSolicitado" };
+        }
+      }
       // Primeiro consultar somente o vínculo, autorizando antes de ler valores sensíveis.
       const vinculo = await tx.cobranca.findUnique({ where: { id: dados.cobrancaId }, select: { matriculaId: true } });
       if (!vinculo) throw new ErroRegra("Cobrança não encontrada.");
@@ -125,8 +144,8 @@ export async function ajustarCobranca(input: AjusteInput): Promise<Resultado<{ a
           solicitanteId: autor.id, alvoTipo: "Cobranca", alvoId: cobranca.id, vigencia: dados.vigencia,
           motivo: dados.motivo, impactoMensal: snapshot.descontoValor, payload: snapshot,
         } });
-        await registrarEvento(tx, { tipo: "DescontoSolicitado", agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: autor.id, payload: { aprovacaoId: aprovada.id } });
-      } else await aplicarAlvos(tx, autor, snapshot, dados.motivo, dados.vigencia);
+        await registrarEvento(tx, { tipo: "DescontoSolicitado", agregadoTipo: "Cobranca", agregadoId: cobranca.id, autorId: autor.id, payload: { aprovacaoId: aprovada.id, ...marca } });
+      } else await aplicarAlvos(tx, autor, snapshot, dados.motivo, dados.vigencia, undefined, marca);
       return { aprovacao: acima };
     });
     revalidar(); return resultado;

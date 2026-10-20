@@ -31,7 +31,8 @@ const faixa = (de: number, ate: number) => Array.from({ length: (ate - de) / 5 +
 
 export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEditarExpiracao, supervisao, podeLigarSupervisao, podeDesligarSupervisao }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): este executor só define a supervisão (estado-alvo `supervisaoAte`).
+  const acao = useAcaoCliente({ idempotente: true });
   const [c, setC] = useState<ConfigAria>(config);
   const k = c.confianca;
   const alterado = JSON.stringify(c) !== JSON.stringify(config);

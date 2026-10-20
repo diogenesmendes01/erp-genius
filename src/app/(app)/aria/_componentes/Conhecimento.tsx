@@ -9,6 +9,7 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { STATUS_FONTE_CONHECIMENTO_LABEL } from "@/lib/labels";
 import { arquivarFonte, criarFonteTexto } from "@/server/aria/acoes";
 import type { ConfigAria } from "@/server/aria/config-schema";
@@ -21,7 +22,10 @@ type Props = { config: ConfigAria; baseVersaoId: string | null; rascunho: Rascun
 
 export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fontes }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Este executor só cria fonte, e criarFonteTexto recebe chave de idempotência (#166): o reenvio depois de um
+  // resultado incerto devolve a fonte já criada. Arquivar usa o ConfirmarAcao, com executor próprio.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [c, setC] = useState<ConfigAria>(config);
   const [nova, setNova] = useState({ nome: "", texto: "", enviavel: false });
   const [pergunta, setPergunta] = useState({ pergunta: "", resposta: "" });
@@ -31,7 +35,11 @@ export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fonte
   const alternar = (id: string) => setC((x) => ({ ...x, fontesAtivas: ativas.has(id) ? x.fontesAtivas.filter((f) => f !== id) : [...x.fontesAtivas, id] }));
 
   async function criar() {
-    const d = await acao.executar(() => criarFonteTexto({ nome: nova.nome, texto: nova.texto, enviavelAoLead: nova.enviavel }), "Fonte adicionada.");
+    const d = await acao.executar(
+      () => criarFonteTexto({ nome: nova.nome, texto: nova.texto, enviavelAoLead: nova.enviavel, chaveIdempotencia: tentativa.atual }),
+      "Fonte adicionada.",
+    );
+    tentativa.depoisDo(d);
     if (d?.tipo === "ok") {
       setNova({ nome: "", texto: "", enviavel: false });
       router.refresh();
