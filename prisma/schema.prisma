@@ -2338,8 +2338,9 @@ model Evento {
   payload      Json? // { de, para, motivo, ... } — o antes→depois
   criadoEm     DateTime @default(now())
 
-  @@index([agregadoTipo, agregadoId])
   // Último Evento por agregado (MAX(criadoEm)) no funil/carteira (#262 C2): varredura reversa que para na 1ª linha.
+  // Também serve toda busca por (agregadoTipo, agregadoId) ou só agregadoTipo (prefixo); o antigo
+  // @@index([agregadoTipo, agregadoId]) virou redundante e saiu (migration 20261020410000).
   @@index([agregadoTipo, agregadoId, criadoEm])
   @@index([tipo])
   @@index([criadoEm])

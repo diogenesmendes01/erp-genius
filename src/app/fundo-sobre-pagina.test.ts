@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { DIFERENCA_MINIMA, fundosDoTailwind } from "@/test/fundo-visivel";
 import config from "../../tailwind.config";
@@ -39,15 +40,30 @@ function arquivosTsx(dir: string): string[] {
   });
 }
 
-/** Strings de classe ("…", '…', `…`) com fundo sutil sem prefixo de estado (hover:, disabled:) e sem borda junto. */
+/**
+ * Literais de string do arquivo ("…", '…', `…`), sem os comentários. Usa o parser do TypeScript (TSX): um `/*` ou `//`
+ * dentro de string (glob, URL) não é comentário e não apaga o resto. Um template com `${…}` conta inteiro, uma vez.
+ */
+function literaisDeString(fonte: string): string[] {
+  const arquivo = ts.createSourceFile("x.tsx", fonte, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
+  const literais: string[] = [];
+  const visitar = (no: ts.Node): void => {
+    if (ts.isStringLiteral(no) || ts.isNoSubstitutionTemplateLiteral(no) || ts.isTemplateExpression(no)) {
+      literais.push(no.getText(arquivo));
+      return;
+    }
+    ts.forEachChild(no, visitar);
+  };
+  visitar(arquivo);
+  return literais;
+}
+
+/** Strings de classe com fundo sutil sem prefixo de estado (hover:, disabled:) e sem borda junto. */
 function semBorda(fonte: string): string[] {
-  const semComentarios = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-  const achados: string[] = [];
-  for (const m of semComentarios.matchAll(/"[^"\n]*"|'[^'\n]*'|`[^`]*`/g)) {
-    const classes = m[0].slice(1, -1).split(/\s+/);
-    if (classes.some((c) => SUTIL.test(c)) && !classes.some((c) => BORDA.test(c))) achados.push(m[0]);
-  }
-  return achados;
+  return literaisDeString(fonte).filter((literal) => {
+    const classes = literal.slice(1, -1).split(/\s+/);
+    return classes.some((c) => SUTIL.test(c)) && !classes.some((c) => BORDA.test(c));
+  });
 }
 
 describe("nada de fundo igual ao da página sem borda (#269 e follow-up)", () => {
@@ -74,6 +90,17 @@ describe("nada de fundo igual ao da página sem borda (#269 e follow-up)", () =>
     expect(semBorda(`<div className="rounded border-gray-200 bg-gray-50" />`)).toEqual([]);
     expect(semBorda(`<button className="hover:bg-gray-50 disabled:bg-surface-muted" />`)).toEqual([]);
     expect(semBorda("  // com `bg-surface-muted` sem borda a caixa some\n")).toEqual([]);
+    expect(semBorda("/* `bg-gray-50` num comentário de bloco */ const x = 1;")).toEqual([]);
+  });
+
+  it("um /* ou // dentro de string (glob, URL) não vira comentário nem esconde o que vem depois", () => {
+    const fonte = [
+      `const padrao = "src/app/*.tsx";`,
+      `const url = "https://exemplo.com";`,
+      `const el = <div className="rounded bg-gray-50 p-3" />;`,
+      `const fim = "*/";`,
+    ].join("\n");
+    expect(semBorda(fonte)).toEqual([`"rounded bg-gray-50 p-3"`]);
   });
 
   it("o substituto, bg-gray-100, se destaca da página nos dois temas", () => {
