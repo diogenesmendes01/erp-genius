@@ -2,6 +2,7 @@
 
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
+import { formatarDataCivil } from "@/lib/data-civil";
 import { prisma } from "@/lib/prisma";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento } from "@/server/_shared";
 import { hashSubstituicao } from "@/server/contratos/substituicao-estado";
@@ -53,7 +54,7 @@ async function carregarRelatoTx(tx: Prisma.TransactionClient, registroId: string
   return { ...relato, periodo: { inicio: dataCivil(relato.inicio), fim: civilOuNull(relato.fim) }, termino: civilOuNull(relato.propostasTermino[0]?.fim ?? null) };
 }
 
-const dataBr = (data: Date) => { const [ano, mes, dia] = dataCivil(data).split("-"); return `${dia}/${mes}/${ano}`; };
+const dataBr = (data: Date) => formatarDataCivil(dataCivil(data));
 
 /**
  * Outro relato confirmado da matrícula que também cobre o dia (fim do relato ou, aberto, o do término aprovado).
@@ -75,8 +76,10 @@ async function outroRelatoConfirmadoCobrindoTx(tx: Prisma.TransactionClient, mat
 /**
  * Dias que deixam de ser cobertos não podem já sustentar compensação ou período integral aprovados.
  * A recusa é conservadora mesmo quando outro relato confirmado também cobre o dia (C3 da #265): o guard
- * SQL já aplicado recusa igual, e a compensação aprovada não se desfaz pela tela. Por isso a mensagem nomeia
- * o dia e aponta os dois caminhos: manter o dia neste relato ou tratar antes a compensação da cobrança.
+ * SQL já aplicado recusa igual, e a compensação aprovada não se desfaz pela tela (só há PENDENTE → APROVADA
+ * ou REJEITADA). Por isso a mensagem nomeia o dia e só afirma o que o modelo guarda: o dia compensado, a
+ * cobertura da cobrança e o outro relato confirmado que cobre o dia (a compensação não registra qual relato
+ * a sustentou). Os caminhos são manter o dia ou levar o caso à gestão financeira, no painel real.
  */
 async function conferirEfeitosJaAprovadosTx(tx: Prisma.TransactionClient, matriculaId: string, relatoId: string, removidos: Array<{ inicio: string; fim: string }>) {
   for (const intervalo of removidos) {
@@ -87,9 +90,9 @@ async function conferirEfeitosJaAprovadosTx(tx: Prisma.TransactionClient, matric
       const dia = dataBr(compensado.diaOrigem), cobranca = compensado.compensacao.cobrancaOrigem;
       const outro = await outroRelatoConfirmadoCobrindoTx(tx, matriculaId, relatoId, compensado.diaOrigem);
       const fimOutro = outro ? outro.fim ?? outro.propostasTermino[0]?.fim ?? null : null;
-      const sobreposto = outro ? ` Esse dia também está coberto pelo relato confirmado de ${dataBr(outro.inicio)}${fimOutro ? ` a ${dataBr(fimOutro)}` : " em aberto"}, mas a compensação foi aprovada com este relato e a correção continua recusada.` : "";
-      const daCobranca = cobranca.coberturaInicio && cobranca.coberturaFim ? ` (cobertura de ${dataBr(cobranca.coberturaInicio)} a ${dataBr(cobranca.coberturaFim)})` : "";
-      throw new ErroRegra(`A correção retira o dia ${dia}, que já sustenta compensação aprovada.${sobreposto} Proponha uma correção que mantenha esse dia neste relato, ou trate antes a compensação em Compensações da cobrança${daCobranca}, na ficha da matrícula.`);
+      const sobreposto = outro ? ` Esse dia também está coberto pelo relato confirmado de ${dataBr(outro.inicio)}${fimOutro ? ` a ${dataBr(fimOutro)}` : " em aberto"}, mas a correção continua recusada enquanto houver compensação aprovada nele.` : "";
+      const daCobranca = cobranca.coberturaInicio && cobranca.coberturaFim ? ` na cobrança com cobertura de ${dataBr(cobranca.coberturaInicio)} a ${dataBr(cobranca.coberturaFim)}` : "";
+      throw new ErroRegra(`A correção retira o dia ${dia}, que já sustenta compensação aprovada${daCobranca}.${sobreposto} A compensação aprovada não é desfeita por esta tela: proponha uma correção que mantenha esse dia ou leve o caso à gestão financeira (Compensações por falta de oferta da escola, em Pausa, retomada e encerramento do aluno).`);
     }
     const integral = await tx.propostaPeriodoIntegral.findFirst({ where: { matriculaId, decisao: { is: { aprovada: true } }, cobranca: { coberturaInicio: { lte: fim }, coberturaFim: { gte: inicio } } }, select: { id: true } });
     if (integral) throw new ErroRegra("A correção retira dias de um período integral já aprovado. Trate o período integral antes de corrigir o relato.");
