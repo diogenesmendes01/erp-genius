@@ -23,7 +23,7 @@ const SIMBOLO: Record<ModoAcao, string> = { EXECUTA: "●", SUGERE: "◐", NAO_F
 const COR: Record<ModoAcao, string> = {
   EXECUTA: "bg-green-100 text-green-700",
   SUGERE: "bg-amber-100 text-amber-800",
-  NAO_FAZ: "bg-surface-muted text-gray-600",
+  NAO_FAZ: "bg-gray-100 text-gray-600",
 };
 // Ações com decisão própria (handoff e triagem de setor) ficam fora da matriz.
 const modoDe = (m: Matriz, etapa: EtapaLead, acao: AcaoAgenteIATipo): ModoAcao => m[etapa]?.[acao] ?? "NAO_FAZ";

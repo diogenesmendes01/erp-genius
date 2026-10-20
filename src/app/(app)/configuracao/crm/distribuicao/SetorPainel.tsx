@@ -86,7 +86,8 @@ export function SetorPainel(p: SetorPainelProps) {
   const [contar, setContar] = useState(p.contarSoNoHorario);
   const [linhas, setLinhas] = useState(() => linhasDoHorario(p.horario));
   const [copiarDe, setCopiarDe] = useState(p.outrosHorarios[0]?.finalidade ?? "");
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): distribuição e SLA do setor são gravados por upsert na finalidade (estado-alvo).
+  const acao = useAcaoCliente({ idempotente: true });
   const erroHorario = erroDasLinhas(linhas);
   const semHorario = !linhas.some((l) => l.atende);
 

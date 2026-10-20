@@ -12,6 +12,8 @@ import {
   ErroPermissao,
   type Resultado,
 } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { exigirConferenciaIndependente } from "@/server/financeiro/regras";
 import { acessoEfetivoBloqueado } from "./acesso-aulas-regras";
@@ -36,11 +38,13 @@ const PromessaSchema = z.object({
 /**
  * Registra uma promessa de pagamento (doc 24 §D2): a cobrança fica DORMENTE na fila até a data
  * prometida. NÃO altera o vencimento (isso é renegociação, outro fluxo) — só adia via evento.
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra promessa.
  */
-export async function registrarPromessaPagamento(cobrancaId: string, ate: string): Promise<Resultado> {
+export async function registrarPromessaPagamento(cobrancaId: string, ate: string, chaveIdempotencia?: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_BAIXA);
     const { ate: ateStr } = PromessaSchema.parse({ ate });
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(chaveIdempotencia), { cobrancaId, ate: ateStr.slice(0, 10) });
     const ateCivil = ateStr.slice(0, 10);
     if (!DataCivilSchema.safeParse(ateCivil).success) throw new ErroRegra("Data prometida inválida.");
     // Q176: "hoje" é o dia da escola, e a promessa é gravada ao meio-dia dela (não do servidor).
@@ -54,12 +58,19 @@ export async function registrarPromessaPagamento(cobrancaId: string, ate: string
       throw new ErroRegra("Cobrança já quitada ou cancelada.");
 
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "PromessaPagamento", agregadoTipo: "Cobranca", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra promessa. Recarregue a conversa e confira a promessa registrada antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "PromessaPagamento",
         agregadoTipo: "Cobranca",
         agregadoId: cobrancaId,
         autorId: autor.id,
-        payload: { ate: ateData.toISOString() },
+        payload: { ate: ateData.toISOString(), ...marca },
       });
     });
     revalidatePath("/financeiro", "layout");

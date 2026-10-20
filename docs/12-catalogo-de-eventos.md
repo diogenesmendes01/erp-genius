@@ -175,6 +175,14 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > `Pessoa` (ficha do contato; o hash cobre pessoa e texto). O reenvio com a mesma chave e a mesma entrada devolve
 > o registro original; com outra entrada, é recusado. A busca usa o índice parcial `Evento_idempotencia_idx`.
 
+> **3º lote (#166).** A mesma marca (`chaveIdempotencia`, `entradaHash`) passa a ir em: `NotaInterna` dos agregados
+> `AtendimentoWhatsApp` (Inbox) e `Lead` (painel da oportunidade), `InteracaoRegistrada` (`Lead`),
+> `ParticipanteConvidado` e `MensagemAgendada` do `AtendimentoWhatsApp` (só o agendamento pelo Inbox),
+> `PromessaPagamento` (`Cobranca`), `FonteConhecimentoCriada` (fonte de texto da Aria), `TagSalva`, `CampoSalvo` e
+> `RespostaRapidaSalva` (só na criação, com `de: null`). No ajuste de cobrança, a marca vai no `DescontoSolicitado`
+> (pedido de aprovação) ou no `CobrancaRenegociada`/`CobrancaPerdoada` da primeira cobrança ajustada; o reenvio
+> procura os três tipos e devolve o mesmo desfecho (`aprovacao`).
+
 ---
 
 ## Exportação e LGPD (agregado `Exportacao`)

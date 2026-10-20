@@ -30,9 +30,9 @@ export function InformesPagamento({ informes, fila = null, preferenciaFusoExibic
   preferenciaFusoExibicao?: string | null;
 }) {
   const router = useRouter();
-  // Conferência de dinheiro sem chave de idempotência (server/financeiro/acoes.ts:127); só a versão do
-  // informe e a repetição pelo mesmo conferente (acoes.ts:136-137) protegem. Conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a conferência trava o informe e confere a versão; repetida pelo mesmo
+  // conferente com a mesma decisão, devolve ok sem nova baixa (conferirPagamento; politica.int.test.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   // O erro aparece no informe cujo botão disparou a conferência.
   const [alvo, setAlvo] = useState<string | null>(null);
   const [motivos, setMotivos] = useState<Record<string, string>>({});
