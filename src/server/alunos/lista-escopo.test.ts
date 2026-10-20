@@ -70,15 +70,15 @@ describe("lista de alunos: escopo sempre junto dos filtros", () => {
     const porPais = lerFiltrosAlunos({ ordem: "pais", dir: "desc", pagina: "2" });
     await listarAlunosPagina(secretaria, porPais);
     expect((mocks.alunos.mock.calls[0] as unknown[])[0]).toMatchObject({
-      orderBy: [{ pais: { nome: "desc" } }, { primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }],
+      orderBy: [{ pais: { nome: "desc" } }, { nomeOrdenacao: "asc" }, { id: "asc" }],
       skip: 50,
       take: 50,
     });
     await listarAlunos(secretaria, lerFiltrosAlunos({ ordem: "status", dir: "desc" }));
-    expect(((mocks.alunos.mock.calls[1] as unknown[])[0] as { orderBy: unknown[] }).orderBy).toEqual([{ status: "desc" }, { primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    expect(((mocks.alunos.mock.calls[1] as unknown[])[0] as { orderBy: unknown[] }).orderBy).toEqual([{ status: "desc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
     // Sem filtros (chamadas internas antigas): a ordem de sempre.
     await listarAlunos(secretaria);
-    expect(((mocks.alunos.mock.calls[2] as unknown[])[0] as { orderBy: unknown[] }).orderBy).toEqual([{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    expect(((mocks.alunos.mock.calls[2] as unknown[])[0] as { orderBy: unknown[] }).orderBy).toEqual([{ nomeOrdenacao: "asc" }, { id: "asc" }]);
   });
 
   it("opções de turma: professor só as dele; papel amplo, as com alunos ativos", async () => {

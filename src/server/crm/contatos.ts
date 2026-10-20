@@ -172,7 +172,7 @@ export async function listarContatos(
   if (incluiPessoas && inicio < totalP) {
     const pessoas = await prisma.pessoa.findMany({
       where: wP,
-      orderBy: [{ nome: "asc" }, { id: "asc" }],
+      orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }], // coluna gerada sem acento (D1, #141)
       skip: inicio,
       take: Math.min(CONTATOS_POR_PAGINA, totalP - inicio),
       select: {
@@ -215,7 +215,7 @@ export async function listarContatos(
     const saltar = Math.max(0, inicio - totalP);
     const empresas = await prisma.empresa.findMany({
       where: wE,
-      orderBy: [{ nome: "asc" }, { id: "asc" }],
+      orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }], // coluna gerada sem acento (D1, #141)
       skip: saltar,
       take: Math.min(CONTATOS_POR_PAGINA - linhas.length, totalE - saltar),
       select: {
