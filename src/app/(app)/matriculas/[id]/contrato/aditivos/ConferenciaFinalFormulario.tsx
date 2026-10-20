@@ -6,8 +6,9 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 export function ConferenciaFinalFormulario({ matriculaId, propostaId, conclusaoId, revisaoHash }: { matriculaId: string; propostaId: string; conclusaoId: string; revisaoHash: string }) {
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
-  const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): uma conferência final por conclusão; a mesma entrada do mesmo autor devolve a
+  // conferência já registrada (aditivo-conferencia-final-tx.ts; aditivo.int.test.ts). Reenviar é seguro.
+  const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   return <form className="space-y-3 rounded border p-4" onSubmit={async event => { event.preventDefault(); const d = new FormData(event.currentTarget); if (d.get("documento") !== "on" || d.get("evidencias") !== "on") { acao.limpar(); acao.setErro("Confirme o documento e as evidências preservadas."); return; } const desfecho = await acao.executar(() => registrarConferenciaFinalAditivo({ matriculaId, propostaId, conclusaoId, revisaoHash, documentoConferido: true, evidenciasConferidas: true, motivo: String(d.get("motivo") ?? "") }), "Conferência interna registrada."); if (desfecho?.tipo === "ok") router.refresh(); }}>
     <h2 className="text-xl">Conferência final interna</h2><p>Esta conferência não aplica condições novas nem altera a matrícula.</p>
     <label className="block"><input type="checkbox" name="documento" disabled={acao.ocupado} /> Conferi o PDF assinado preservado.</label><label className="block"><input type="checkbox" name="evidencias" disabled={acao.ocupado} /> Conferi as evidências preservadas.</label>

@@ -12,8 +12,9 @@ export const DESTAQUES_FUSO_EXIBICAO: readonly SugestaoFuso[] = [["America/Sao_P
 
 export function FusoExibicaoFormulario({ atual }: { atual: string | null }) {
   const [fuso, setFuso] = useState(atual ?? ""); const router = useRouter();
-  // Sem chave de idempotência (a action sobrescreve a preferência): resultado incerto manda conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false }), ocupado = acao.ocupado;
+  // Sem chave de idempotência, mas idempotente por natureza (#166): grava o fuso escolhido no próprio usuário
+  // (estado-alvo, sem Evento), então reenviar depois de um resultado incerto é seguro.
+  const acao = useAcaoCliente({ idempotente: true }), ocupado = acao.ocupado;
   function enviar() {
     const fusoExibicao = fuso.trim();
     // Mesma validação do campo e do servidor (fusoIanaValido); vazio é "sem preferência".

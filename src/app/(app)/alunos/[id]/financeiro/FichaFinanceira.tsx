@@ -18,6 +18,7 @@ import { PagamentoModal } from "@/components/PagamentoModal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
@@ -316,9 +317,10 @@ export function RenegociarModal({
   const [vigencia, setVig] = useState<Vigencia>(Vigencia.ESTA_COBRANCA);
   const [novoVenc, setVenc] = useState("");
   const [motivo, setMotivo] = useState("");
-  // ajustarCobranca não recebe chave de idempotência: se o resultado ficar incerto, a instrução é
-  // conferir a cobrança antes de repetir — reenviar poderia registrar o ajuste duas vezes.
-  const acao = useAcaoCliente({ idempotente: false });
+  // ajustarCobranca recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o mesmo
+  // desfecho (ajuste aplicado ou pedido de aprovação) sem registrar o ajuste duas vezes.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const campoId = useId();
 
   const desconto =cobranca.valorNegociado - (parseMoeda(valorPara) ?? 0);
@@ -338,7 +340,9 @@ export function RenegociarModal({
       vigencia,
       novoVencimento: novoVenc,
       motivo,
+      chaveIdempotencia: tentativa.atual,
     }));
+    tentativa.depoisDo(desfecho);
     if (desfecho?.tipo === "ok") onDone(!!desfecho.dado?.aprovacao);
   }
 

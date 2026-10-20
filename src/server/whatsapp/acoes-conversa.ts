@@ -3,23 +3,39 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { agendarMensagem, cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
 import { despacharFila } from "./despachante";
 import { copiarMidiaParaSaida } from "./midia";
 
-const NotaSchema = z.object({ atendimentoId: z.string().min(1), nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres.") });
+const NotaSchema = z.object({
+  atendimentoId: z.string().min(1),
+  nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres."),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
+});
 
-/** Nota interna do atendimento (regra 20): só Evento, nunca MensagemWhatsApp nem IntencaoMensagem. Ver basta; participante sem envio pode anotar. */
-export async function registrarNotaAtendimento(input: { atendimentoId: string; nota: string }): Promise<Resultado> {
+/**
+ * Nota interna do atendimento (regra 20): só Evento, nunca MensagemWhatsApp nem IntencaoMensagem. Ver basta; participante sem envio pode anotar.
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra nota: a chave vai no payload do próprio Evento.
+ */
+export async function registrarNotaAtendimento(input: { atendimentoId: string; nota: string; chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
-    const { atendimentoId, nota } = NotaSchema.parse(input);
+    const { atendimentoId, nota, chaveIdempotencia } = NotaSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, nota });
     await prisma.$transaction(async (tx) => {
       const a = await atendimentoVisivel(u, atendimentoId, false, tx);
       if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
-      await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota } });
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra nota. Feche e reabra o atendimento e confira as notas antes de repetir.",
+        });
+        if (repetido) return;
+      }
+      await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { nota, ...marca } });
     });
     revalidatePath("/inbox");
   });
@@ -44,13 +60,13 @@ export async function notasDoAtendimento(atendimentoId: string): Promise<{ id: s
 }
 
 /** Agenda uma mensagem pelo atendimento (Fase 2, Tarefa 29, reusada): o acesso e o número vêm do atendimento; horário, opt-out e validade ficam em `agendarMensagem`. */
-export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string }): Promise<Resultado<{ id: string }>> {
+export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
     const a = await atendimentoVisivel(u, atendimentoId, true);
     if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
-    const r = await agendarMensagem({ numeroId: a.numeroId, atendimentoId, texto: input.texto, agendadaPara: input.quando });
+    const r = await agendarMensagem({ numeroId: a.numeroId, atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia });
     if (!r.ok) throw new ErroRegra(r.erro);
     revalidatePath("/inbox");
     return r.dado!;

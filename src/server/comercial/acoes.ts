@@ -5,7 +5,8 @@ import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/clien
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
-import { hashEntrada, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { hashEntrada, marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { exigirArquivoVinculavel } from "@/server/uploads/autorizacao";
 import {
   exigirSessao,
@@ -261,21 +262,30 @@ export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: 
 /**
  * NOTA INTERNA sobre o lead: comentário da equipe, **nunca enviado ao contato**.
  * Distinta de `registrarInteracao` (que registra um contato REAL — ligação/presencial).
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra nota (a chave vai no payload do Evento).
  */
-export async function registrarNotaInterna(leadId: string, input: NotaInternaInput): Promise<Resultado> {
+export async function registrarNotaInterna(leadId: string, input: NotaInternaInput & { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(leadId, autor);
     const { nota } = NotaInternaSchema.parse(input);
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { leadId, nota });
 
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "NotaInterna", agregadoTipo: "Lead", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra nota. Recarregue a página e confira se a nota já aparece no histórico antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "NotaInterna",
         agregadoTipo: "Lead",
         agregadoId: leadId,
         autorId: autor.id,
-        payload: { nota },
+        payload: { nota, ...marca },
       });
     });
     revalidarLead();
@@ -435,20 +445,30 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
   });
 }
 
-export async function registrarInteracao(id: string, input: InteracaoInput): Promise<Resultado> {
+/** Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra interação (a chave vai no payload do Evento). */
+export async function registrarInteracao(id: string, input: InteracaoInput & { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = InteracaoSchema.parse(input);
+    const payload = { canal: dados.canal || null, nota: dados.nota };
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { leadId: id, ...payload });
     // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "InteracaoRegistrada", agregadoTipo: "Lead", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra interação. Recarregue a página e confira o histórico antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "InteracaoRegistrada",
         agregadoTipo: "Lead",
         agregadoId: id,
         autorId: autor.id,
-        payload: { canal: dados.canal || null, nota: dados.nota },
+        payload: { ...payload, ...marca },
       });
     });
     revalidarLead();

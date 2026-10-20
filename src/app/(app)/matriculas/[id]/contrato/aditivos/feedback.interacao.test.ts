@@ -44,7 +44,7 @@ import { ParticipantesFormulario } from "./ParticipantesFormulario";
 import { ProcessoFormulario } from "./ProcessoFormulario";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { CampoTexto } from "@/components/CampoTexto";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios, contratoFeedbackSeparado, novosAnuncios, type Adiada } from "@/test/feedback-acao";
 import { FormDataFalso, botao, clicar, criarGanchos, elementos, formularios, submeter, texto, type No } from "@/test/tela-sem-dom";
 import type { ReactNode } from "react";
@@ -109,7 +109,7 @@ describe("ConferenciaFinalFormulario", () => {
   contratoFeedbackSeparado({
     nome: "registrar conferência interna", tela, action: m.conferenciaFinal,
     acionar: () => submeter(tela(), { documento: "on", evidencias: "on", motivo: "Conferência final" }),
-    sucesso: "Conferência interna registrada.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Conferência interna registrada.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => botaoOcupado(tela(), "Registrando…"),
   });
   it("sem as confirmações: aviso em role=\"alert\" e nada vai ao servidor", async () => {
@@ -256,7 +256,7 @@ describe("OriginalFormulario", () => {
   contratoFeedbackSeparado({
     nome: "gerar e preservar original do aditivo", tela, action: m.preservarOriginal,
     acionar: () => submeter(tela(), { motivo: "Texto conferido" }),
-    sucesso: "Original do aditivo preservado. Consulte o PDF abaixo.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Original do aditivo preservado. Consulte o PDF abaixo.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => botaoOcupado(tela(), "Gerando…"),
   });
 });
@@ -322,7 +322,7 @@ describe("ProcessoFormulario", () => {
     nome: "preparar processo de assinatura", tela, action: m.processo,
     preparar: () => mudar(elementos(tela()).find((n) => n.type === "select")!, "ZAPSIGN"),
     acionar: () => submeter(tela()),
-    sucesso: "Processo preparado internamente.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Processo preparado internamente.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => botaoOcupado(tela(), "Preparando…"),
   });
   it("sem fornecedor: aviso em role=\"alert\" e nada vai ao servidor", async () => {

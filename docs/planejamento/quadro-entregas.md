@@ -4030,6 +4030,27 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
 - **N1 da #268:** `dataBr` passou a usar `formatarDataCivil` de `src/lib/data-civil.ts`, em vez de repetir a formatação dd/mm/aaaa.
 - **N2 da #268:** as integrações da C3 continuam fora do CI. Rodaram com `vitest -c vitest.integration.config.ts` no Postgres 54329 (banco descartável `erp_genius_test_q164b`, `migrate deploy` do zero, perfil temporário revertido e banco removido): `indisponibilidade-oferta-correcao.int.test.ts`, 6 testes OK. Também passaram `tsc --noEmit` (saída 0), `eslint . --max-warnings 40` (0 erros e 40 avisos de base) e os unitários de matrícula e de `data-civil` (66 arquivos e 444 testes OK em UTC e em America/Sao_Paulo).
 
+### Idempotência, 3º lote (#166) — 2026-10-20
+
+- **Escopo:** 20 das ações com `idempotente: false` de maior risco de duplicação. A #166 continua aberta. Os testes de integração entraram primeiro e falharam; a implementação veio depois.
+- **Criações com chave** (`repeticaoIdempotente`, marca no payload do Evento de criação, tela com `useChaveIdempotencia`):
+  - Inbox: nota interna (`registrarNotaAtendimento`), convite de participante (`convidarParticipante`; o fim do convite fica fixo dentro da tentativa) e mensagem agendada (`agendarMensagemNoAtendimento`).
+  - Inbox, cobrança: promessa de pagamento (`registrarPromessaPagamento`).
+  - Funil: nota interna do lead (`registrarNotaInterna`) e interação (`registrarInteracao`), cada uma com executor próprio.
+  - Aria: fonte de texto (`criarFonteTexto`).
+  - Configuração do CRM: criar tag, campo e resposta rápida (só na criação; a edição grava o estado-alvo).
+  - Financeiro: ajuste de cobrança (`ajustarCobranca`, ficha financeira e resumo comercial). A marca vai no `DescontoSolicitado` ou no `CobrancaRenegociada`/`CobrancaPerdoada` da primeira cobrança; o reenvio devolve o mesmo `aprovacao`.
+- **Idempotentes por natureza** (`idempotente: true` com a justificativa no código, conferida no servidor): conferência final, original e processo de assinatura do aditivo; conferência de informe de pagamento; supervisão da Aria; distribuição/SLA do setor; configuração de IA; avisos de agenda; fuso de exibição.
+- **Restam 107** `idempotente: false` fora de testes, listados no PR para o lote 4.
+- **Evidências** (banco descartável `erp_genius_test_idem3`, `migrate deploy`, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 790 arquivos e 5.918 testes OK.
+  - `npm run build`: saída 0. A primeira tentativa parou no type-check sem mensagem, com a máquina sem memória livre; a segunda passou.
+  - Integração dos módulos tocados, em 4 blocos: 28 arquivos e 276 testes OK, incluindo os 5 arquivos novos (`*-idempotencia.int.test.ts`, 24 testes), Inbox/WhatsApp, mensagens agendadas, configuração do CRM, fontes da Aria, conferência e política financeira, atraso por dia civil, retomada e reconferência de desistência. Uma rodada única com todos os arquivos passou do limite de tempo da sessão; nela, `acesso-atendimento.int.test.ts` estourou o tempo de um teste (49 s) sob carga e passou ao ser rodado de novo.
+- **Correção da revisão R1 (B1–B4):** supervisão da Aria, configuração de IA, avisos de agenda e edição de tag, campo e resposta rápida gravavam um segundo Evento no reenvio. Agora o servidor compara o estado atual com o pedido e retorna sem update nem Evento quando nada mudou (como `aplicarSlaSetor`); a tela da supervisão fixa o `ate` dentro da tentativa. Cada caso tem teste de integração (duas chamadas idênticas → 1 Evento; mudança real grava). Também: arquivar resposta rápida não troca mais a chave de uma criação incerta, e a chave sem atendimento em `agendarMensagem` vira `ErroRegra`.
+- **Revisão R2 (aprovada), ajustes finais:** C5, a supervisão só reaproveita o `ate` depois de resultado incerto e não depois de erro definitivo (`supervisao-tentativa.ts`, com teste); C4, comentário do `FusoExibicaoFormulario`; C2, arquivar uma resposta rápida já arquivada devolve ok, sem Evento. **Fica para o lote 4 (C3):** em `agendarMensagem` (data futura, janela, encerramento e opt-out), na nota e na promessa, a busca da repetição roda depois das validações, e um reenvio tardio recebe erro em vez do registro já feito. Não duplica nada.
+
 ### Q172, follow-up: a conferência da entrada considera o aditivo de adiantamento aplicado (#264 C1) — 2026-10-20
 
 - **Bug de produção (vinha da #261):** `conferirPagamentosEntradaParticular` comparava `valorNegociado` e `vencimento` do adiantamento com o plano **original** das condições de entrada. Depois de um aditivo aplicado, a ativação era recusada com "A cobrança difere das condições conferidas…" (contrato assinado → aceite → aditivo → pagamento → ativação), e um aditivo aplicado antes do aceite travava o aceite. Não havia como regularizar: o aditivo já estava aplicado e a cobrança paga.

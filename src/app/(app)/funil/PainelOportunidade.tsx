@@ -12,6 +12,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
 import { atribuirDono, definirTemperatura, agendarExperimental, enviarProposta, registrarNotaInterna } from "@/server/comercial/acoes";
@@ -61,6 +62,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
+  // A nota interna recebe chave de idempotência (#166): o reenvio depois de um resultado incerto não grava uma
+  // segunda nota. Por isso ela tem executor próprio; as outras ações do painel seguem sem chave.
+  const acaoNota = useAcaoCliente({ idempotente: true });
+  const tentativaNota = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
   const [novoDono, setNovoDono] = useState("");
@@ -81,10 +86,21 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const taxaAberta = !!taxa && (taxa.status === "PENDENTE" || taxa.status === "ATRASADO");
 
   async function rodar(f: () => ReturnType<typeof enviarProposta>, sucesso: string, depois?: () => void) {
+    acaoNota.limpar();
     const d = await acao.executar(f, sucesso);
     if (d?.tipo === "ok") {
       router.refresh();
       depois?.();
+    }
+  }
+
+  async function registrarNota() {
+    acao.limpar();
+    const d = await acaoNota.executar(() => registrarNotaInterna(op.id, { nota, chaveIdempotencia: tentativaNota.atual }), "Nota registrada.");
+    tentativaNota.depoisDo(d);
+    if (d?.tipo === "ok") {
+      router.refresh();
+      setNota("");
     }
   }
 
@@ -248,13 +264,14 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               <div className="grid gap-2">
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Nota interna (a equipe vê; o contato não)</span>
-                  <CampoTexto rows={3} maxLength={2000} className={CAMPO} value={nota} disabled={acao.ocupado} onChange={(e) => setNota(e.target.value)} />
+                  <CampoTexto rows={3} maxLength={2000} className={CAMPO} value={nota} disabled={acao.ocupado || acaoNota.ocupado} onChange={(e) => setNota(e.target.value)} />
                 </label>
+                <FeedbackAcao erro={acaoNota.erro} sucesso={acaoNota.sucesso} />
                 <div>
                   <Botao
                     variante="secundario"
-                    disabled={!nota.trim() || acao.ocupado}
-                    onClick={() => rodar(() => registrarNotaInterna(op.id, { nota }), "Nota registrada.", () => setNota(""))}
+                    disabled={!nota.trim() || acao.ocupado || acaoNota.ocupado}
+                    onClick={() => void registrarNota()}
                   >Registrar nota</Botao>
                 </div>
               </div>
