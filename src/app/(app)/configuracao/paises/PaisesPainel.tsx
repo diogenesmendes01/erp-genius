@@ -186,7 +186,10 @@ export function PaisesPainel({
                               ddi: p.ddi,
                               fuso: p.fuso,
                               idioma: p.idioma,
+                              // O id vai junto (C13 da #170): o servidor preserva o tipo por ele, e
+                              // renomear um tipo em uso não vira "remover + criar".
                               tiposDocumento: p.tiposDocumento.map((d) => ({
+                                id: d.id,
                                 nome: d.nome,
                                 validador: d.validador,
                               })),

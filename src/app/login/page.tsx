@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,7 +48,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-surface p-8">
         <div className="mb-6 flex items-center gap-2 text-lg font-medium">
           <IconSchool className="h-6 w-6 text-brand-600" />
@@ -91,7 +92,14 @@ export default function LoginPage() {
             {isSubmitting ? "Entrando…" : "Entrar"}
           </Botao>
         </form>
+
+        {/* docs/42 /login #3: ainda não há reset de senha da equipe; a tela diz qual é o caminho. */}
+        <p className="mt-4 text-sm text-gray-600">Esqueceu a senha? Peça a redefinição a um administrador.</p>
       </div>
+      {/* docs/42 /login #5: o aluno que chega aqui não descobre sozinho que o acesso dele é outro. */}
+      <p className="mt-4 text-sm text-gray-600">
+        É aluno? <Link href="/portal-aluno/entrar" className="text-brand-700 underline">Acesse a área do aluno</Link>
+      </p>
     </div>
   );
 }

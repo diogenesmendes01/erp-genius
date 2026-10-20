@@ -108,6 +108,10 @@ describe("trilha de navegação", () => {
       "Matrículas → /secretaria", "Matrícula → /matriculas/cm0xyz9",
       "Indisponibilidade → /matriculas/cm0xyz9/indisponibilidade-oferta", "Término da indisponibilidade",
     ]);
+    expect(resumo("/matriculas/cm0xyz9/indisponibilidade-oferta/ci4r5t6/correcao")).toEqual([
+      "Matrículas → /secretaria", "Matrícula → /matriculas/cm0xyz9",
+      "Indisponibilidade → /matriculas/cm0xyz9/indisponibilidade-oferta", "Correção do período",
+    ]);
     expect(resumo("/secretaria/reservas/particulares/cr7y8u9")).toEqual(["Secretaria → /secretaria", "Reservas → /secretaria/reservas", "Reserva particular"]);
     expect(resumo("/secretaria/reservas/cr7y8u9")).toEqual(["Secretaria → /secretaria", "Reservas → /secretaria/reservas", "Reserva"]);
     // Segmento intermediário sem página não vira elo: a trilha sobe ao ancestral que é página.

@@ -51,6 +51,8 @@ export async function carregarPendenciasFechamentoTx(
     } }),
     tx.reservaSegundaChamada.count({ where: {
       status: "PENDENCIA_ESCOLA",
+      // Q164: a confirmação da gestão encerra a pendência sem reescrever o histórico.
+      resolucaoImpedimento: null,
       proposta: escopoSegunda,
     } }),
     // Uma realização não é resultado: enquanto o lançamento original não for

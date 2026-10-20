@@ -5,6 +5,7 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { palavrasDaBuscaLeads } from "@/server/comercial/filtros";
 import { TIPOS_MUDAM_ETAPA } from "@/server/comercial/schema";
 import { COLUNAS_FUNIL } from "./etapas";
+import { whereOportunidadeEmSql } from "./oportunidade-sql";
 
 export type FiltrosFunil = {
   busca: string;
@@ -46,6 +47,12 @@ export type ColunaFunil = {
 };
 
 export const CARTOES_POR_COLUNA = 50;
+
+const INCLUIR_CARTAO = {
+  pais: { select: { nome: true, moedaLocal: true } },
+  vendedor: { select: { id: true, nome: true } },
+  pessoa: { select: { tags: { select: { tag: { select: { id: true, nome: true, cor: true } } } } } },
+} satisfies Prisma.OportunidadeInclude;
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -93,88 +100,111 @@ function whereDosFiltros(f: FiltrosFunil): Prisma.OportunidadeWhereInput {
   };
 }
 
-// "tempo": a coluna não guarda desde quando a oportunidade está na etapa (isso vem de Evento);
-// carregarFunil resolve essa ordem em memória por etapaDesde; aqui só o desempate estável.
-function ordenacao(ordem: FiltrosFunil["ordem"]): Prisma.OportunidadeOrderByWithRelationInput[] {
+// Ordem de cada coluna. "tempo" (desde quando está na etapa, que vem de Evento) e o período dos perdidos (última
+// ação, também de Evento) não cabem no `orderBy`/`where` do Prisma: essas colunas vão por `colunaPorSql`, que
+// ordena e corta no banco com a MESMA ordem (B19, #196 C3).
+function ordenacao(ordem: Exclude<FiltrosFunil["ordem"], "tempo">): Prisma.OportunidadeOrderByWithRelationInput[] {
   switch (ordem) {
     case "valor":
       return [{ valorPrevisto: { sort: "desc", nulls: "last" } }, { id: "desc" }];
     case "proxima":
       return [{ proximoFollowUp: { sort: "asc", nulls: "last" } }, { id: "desc" }];
-    case "tempo":
-      return [{ criadoEm: "asc" }, { id: "asc" }];
     default:
       return [{ criadoEm: "desc" }, { id: "desc" }];
   }
+}
+
+/**
+ * Junção lateral com o último Evento do Lead (alias `o`), de qualquer tipo ou só dos `tipos` dados, exposto como
+ * `<apelido>."em"`. Lateral, e não subconsulta no WHERE/ORDER BY: o planejador estima o custo pelas linhas que
+ * passaram nos filtros baratos (escopo, etapa) e não pela tabela inteira, o que evita compilar JIT à toa.
+ */
+const ultimoEventoSql = (apelido: "ua" | "ue", tipos?: readonly string[]) => Prisma.sql`
+  LEFT JOIN LATERAL (
+    SELECT MAX(e."criadoEm") AS "em" FROM "Evento" e
+    WHERE e."agregadoTipo" = 'Lead' AND e."agregadoId" = o."id"${tipos ? Prisma.sql` AND e."tipo" IN (${Prisma.join([...tipos])})` : Prisma.empty}
+  ) ${Prisma.raw(apelido)} ON TRUE`;
+
+/**
+ * O mesmo `ordenacao` em SQL. Em "tempo", a data é a da última mudança de etapa (`ue`, ou a criação), a mais antiga
+ * primeiro, com desempate pelo id em ordem binária (`COLLATE "C"`, a do `<` do JS da versão em memória). Nas outras,
+ * o desempate pelo id usa a collation da coluna, como o `orderBy` do Prisma.
+ */
+function ordenacaoSql(ordem: FiltrosFunil["ordem"]): Prisma.Sql {
+  switch (ordem) {
+    case "valor":
+      return Prisma.sql`o."valorPrevisto" DESC NULLS LAST, o."id" DESC`;
+    case "proxima":
+      return Prisma.sql`o."proximoFollowUp" ASC NULLS LAST, o."id" DESC`;
+    case "tempo":
+      return Prisma.sql`COALESCE(ue."em", o."criadoEm") ASC, o."id" COLLATE "C" ASC`;
+    default:
+      return Prisma.sql`o."criadoEm" DESC, o."id" DESC`;
+  }
+}
+
+type GrupoPais = { paisId: string | null; _count: { _all: number }; _sum: { valorPrevisto: Prisma.Decimal | null } };
+
+/**
+ * Totais por país e ids da página de uma coluna, filtrados, ordenados e cortados no banco. `corte`: só entram as
+ * que tiveram a última ação (Evento de qualquer tipo, ou a criação) a partir dele (período dos perdidos).
+ */
+async function colunaPorSql(
+  condicao: Prisma.Sql,
+  ordem: FiltrosFunil["ordem"],
+  corte: Date | null,
+): Promise<{ grupos: GrupoPais[]; ids: string[] }> {
+  const periodo = corte
+    ? { juncao: ultimoEventoSql("ua"), filtro: Prisma.sql` AND COALESCE(ua."em", o."criadoEm") >= (CAST(${corte.toISOString()} AS timestamptz) AT TIME ZONE 'UTC')` }
+    : { juncao: Prisma.empty, filtro: Prisma.empty };
+  const juncaoOrdem = ordem === "tempo" ? ultimoEventoSql("ue", TIPOS_MUDAM_ETAPA) : Prisma.empty;
+  const [grupos, ids] = await Promise.all([
+    prisma.$queryRaw<{ paisId: string | null; total: number; soma: Prisma.Decimal | null }[]>`
+      SELECT o."paisId" AS "paisId", COUNT(*)::int AS "total", SUM(o."valorPrevisto") AS "soma"
+      FROM "Lead" o ${periodo.juncao}
+      WHERE ${condicao}${periodo.filtro}
+      GROUP BY o."paisId"`,
+    prisma.$queryRaw<{ id: string }[]>`
+      SELECT o."id" FROM "Lead" o ${periodo.juncao} ${juncaoOrdem}
+      WHERE ${condicao}${periodo.filtro}
+      ORDER BY ${ordenacaoSql(ordem)}
+      LIMIT ${CARTOES_POR_COLUNA}`,
+  ]);
+  return {
+    grupos: grupos.map((g) => ({ paisId: g.paisId, _count: { _all: g.total }, _sum: { valorPrevisto: g.soma } })),
+    ids: ids.map((i) => i.id),
+  };
 }
 
 const ordemMoeda = (m: string) => (m === "USD" ? 0 : 1);
 
 export async function carregarFunil(usuario: UsuarioSessao, f: FiltrosFunil): Promise<ColunaFunil[]> {
   const base: Prisma.OportunidadeWhereInput = { AND: [await escopoComercialAtual(usuario), whereDosFiltros(f)] };
-
-  // Perdidos: o período vale pela última ação (Evento), não pela criação.
-  let wherePerdido: Prisma.OportunidadeWhereInput = { AND: [base, { etapa: EtapaLead.PERDIDO }] };
-  if (f.perdidosDias !== "todos") {
-    const corte = new Date(Date.now() - Number(f.perdidosDias) * 86_400_000);
-    const perdidos = await prisma.oportunidade.findMany({ where: wherePerdido, select: { id: true, criadoEm: true } });
-    const ultimas = perdidos.length
-      ? await prisma.evento.groupBy({
-          by: ["agregadoId"],
-          where: { agregadoTipo: "Lead", agregadoId: { in: perdidos.map((p) => p.id) } },
-          _max: { criadoEm: true },
-        })
-      : [];
-    const mapa = new Map(ultimas.map((u) => [u.agregadoId, u._max.criadoEm]));
-    const ids = perdidos.filter((p) => (mapa.get(p.id) ?? p.criadoEm) >= corte).map((p) => p.id);
-    wherePerdido = { AND: [wherePerdido, { id: { in: ids } }] };
-  }
-  const whereDa = (etapa: EtapaLead): Prisma.OportunidadeWhereInput =>
-    etapa === EtapaLead.PERDIDO ? wherePerdido : { AND: [base, { etapa }] };
+  // Perdidos: o período vale pela última ação (Evento de qualquer tipo), não pela criação.
+  const corte = f.perdidosDias !== "todos" ? new Date(Date.now() - Number(f.perdidosDias) * 86_400_000) : null;
+  let baseSql: Prisma.Sql | null = null;
 
   return Promise.all(
     COLUNAS_FUNIL.map(async (etapa): Promise<ColunaFunil> => {
-      const where = whereDa(etapa);
-      // "tempo": ordena pela data do último evento de mudança de etapa (etapaDesde), a mais antiga primeiro.
-      let idsTempo: string[] | null = null;
-      if (f.ordem === "tempo") {
-        const todas = await prisma.oportunidade.findMany({ where, select: { id: true, criadoEm: true } });
-        const mud = todas.length
-          ? await prisma.evento.groupBy({
-              by: ["agregadoId"],
-              where: { agregadoTipo: "Lead", tipo: { in: TIPOS_MUDAM_ETAPA }, agregadoId: { in: todas.map((t) => t.id) } },
-              _max: { criadoEm: true },
-            })
+      const where: Prisma.OportunidadeWhereInput = { AND: [base, { etapa }] };
+      const comPeriodo = etapa === EtapaLead.PERDIDO && corte !== null;
+      let grupos: GrupoPais[];
+      let linhas: Prisma.OportunidadeGetPayload<{ include: typeof INCLUIR_CARTAO }>[];
+      if (f.ordem === "tempo" || comPeriodo) {
+        baseSql ??= whereOportunidadeEmSql(base);
+        const coluna = await colunaPorSql(Prisma.sql`${baseSql} AND o."etapa" = CAST(${etapa} AS "EtapaLead")`, f.ordem, comPeriodo ? corte : null);
+        grupos = coluna.grupos;
+        const posicao = new Map(coluna.ids.map((id, i) => [id, i]));
+        linhas = coluna.ids.length
+          ? (await prisma.oportunidade.findMany({ where: { AND: [where, { id: { in: coluna.ids } }] }, include: INCLUIR_CARTAO }))
+              .sort((a, b) => posicao.get(a.id)! - posicao.get(b.id)!)
           : [];
-        const desde = new Map(mud.map((m) => [m.agregadoId, m._max.criadoEm]));
-        idsTempo = todas
-          .map((t) => ({ id: t.id, em: (desde.get(t.id) ?? t.criadoEm).getTime() }))
-          .sort((a, b) => a.em - b.em || (a.id < b.id ? -1 : 1))
-          .slice(0, CARTOES_POR_COLUNA)
-          .map((t) => t.id);
+      } else {
+        [grupos, linhas] = await Promise.all([
+          prisma.oportunidade.groupBy({ by: ["paisId"], where, _count: { _all: true }, _sum: { valorPrevisto: true } }),
+          prisma.oportunidade.findMany({ where, orderBy: ordenacao(f.ordem), take: CARTOES_POR_COLUNA, include: INCLUIR_CARTAO }),
+        ]);
       }
-      const [grupos, linhasBrutas] = await Promise.all([
-        prisma.oportunidade.groupBy({
-          by: ["paisId"],
-          where,
-          _count: { _all: true },
-          _sum: { valorPrevisto: true },
-        }),
-        prisma.oportunidade.findMany({
-          where: idsTempo ? { AND: [where, { id: { in: idsTempo } }] } : where,
-          orderBy: ordenacao(f.ordem),
-          take: CARTOES_POR_COLUNA,
-          include: {
-            pais: { select: { nome: true, moedaLocal: true } },
-            vendedor: { select: { id: true, nome: true } },
-            pessoa: { select: { tags: { select: { tag: { select: { id: true, nome: true, cor: true } } } } } },
-          },
-        }),
-      ]);
-
-      const linhas = idsTempo
-        ? [...linhasBrutas].sort((a, b) => idsTempo!.indexOf(a.id) - idsTempo!.indexOf(b.id))
-        : linhasBrutas;
       const total = grupos.reduce((s, g) => s + g._count._all, 0);
       const paisesIds = grupos.map((g) => g.paisId).filter((x): x is string => !!x);
       const paises = paisesIds.length
