@@ -311,6 +311,7 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "bloco · Nenhuma autorização especial registrada.",
   ],
   "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/page.tsx": [
+    "compacto · Este impedimento bloqueia o fechamento até existir realização posterior desta avaliação com nota ofi",
     "bloco · Nenhuma reserva registrada.",
   ],
   "src/app/(app)/academico/segundas-chamadas/agendas/page.tsx": [
