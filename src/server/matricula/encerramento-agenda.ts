@@ -16,12 +16,16 @@ export async function conferirAgendaEncerramentoTx(tx: Prisma.TransactionClient,
     (e.status === "CANCELADO" || new Date(e.fim) <= r.limite) && !e.reservasHoras.length) : [];
   const conferencias = candidatos.length ? await tx.conferenciaOcorrenciaHoras.findMany({ where: {
     encontroId: { in: candidatos.map(e => e.id) }, encontro: { matriculaId: impactos.matriculaId } },
-    select: { id: true, encontroId: true, desfecho: true, valor: true, itemFaturado: { select: { id: true, emissao: { select: { cobrancaId: true, cobranca: { select: { matriculaId: true } } } } } } } }) : [];
-  const destinacoes = candidatos.flatMap<{ encontroId: string; conferenciaId: string; tipo: "FATURADA" | "SEM_COBRANCA"; cobrancaId: string | null; itemId: string | null }>(e => {
+    select: { id: true, encontroId: true, desfecho: true, valor: true, aplicacaoNaoCobravel: { select: { id: true, efeito: true } }, itemFaturado: { select: { id: true, emissao: { select: { cobrancaId: true, cobranca: { select: { matriculaId: true } } } } } } } }) : [];
+  const destinacoes = candidatos.flatMap<{ encontroId: string; conferenciaId: string; tipo: "FATURADA" | "SEM_COBRANCA" | "NAO_COBRAVEL_CORRECAO"; cobrancaId: string | null; itemId: string | null; aplicacaoId?: string }>(e => {
     const c = conferencias.find(c => c.encontroId === e.id);
     if (!c) return [];
     if (c.itemFaturado?.emissao.cobranca.matriculaId === impactos.matriculaId) return [{ encontroId: e.id, conferenciaId: c.id,
       tipo: "FATURADA" as const, cobrancaId: c.itemFaturado.emissao.cobrancaId, itemId: c.itemFaturado.id }];
+    // Q175 (B3 da R1 #266): aula declarada não cobrável antes do fechamento (efeito SEM_ITEM). A conferência guarda o
+    // valor histórico, mas a aplicação a tira da cobrança e o banco recusa o item (recusar_item_nao_cobravel_175).
+    if (c.aplicacaoNaoCobravel?.efeito === "SEM_ITEM") return [{ encontroId: e.id, conferenciaId: c.id,
+      tipo: "NAO_COBRAVEL_CORRECAO" as const, cobrancaId: null, itemId: null, aplicacaoId: c.aplicacaoNaoCobravel.id }];
     if (c.valor.isZero() && ["CANCELAMENTO_ESCOLA", "CANCELAMENTO_NO_PRAZO"].includes(c.desfecho)) return [{ encontroId: e.id,
       conferenciaId: c.id, tipo: "SEM_COBRANCA" as const, cobrancaId: null, itemId: null }];
     return [];

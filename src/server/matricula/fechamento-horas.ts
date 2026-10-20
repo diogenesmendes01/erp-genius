@@ -22,6 +22,7 @@ const Entrada = z.object({
       z.object({ tipo: z.literal("ANTECIPACAO_PENDENTE"), reservaId: id }).strict(),
       z.object({ tipo: z.literal("ANTECIPACAO_CONFERIDA"), registroId: id }).strict(),
       z.object({ tipo: z.literal("FATURADA"), cobrancaId: id, itemId: id }).strict(),
+      z.object({ tipo: z.literal("NAO_COBRAVEL_CORRECAO"), aplicacaoId: id }).strict(),
     ]),
     ocorrencia: OcorrenciaHorasSchema.nullable(),
   }).strict()),
@@ -54,7 +55,7 @@ export function apurarFechamentoHoras(input: EntradaFechamentoHoras) {
       || e.ocorrencia.contratoVersaoId !== e.contratoVersaoId || Date.parse(e.ocorrencia.inicio) !== inicio || Date.parse(e.ocorrencia.fim) !== fim)) {
       throw new Error("Ocorrência difere do encontro ou da versão contratual conferida.");
     }
-    if (e.destinacao.tipo === "FATURADA" || e.destinacao.tipo === "ANTECIPACAO_CONFERIDA") {
+    if (e.destinacao.tipo === "FATURADA" || e.destinacao.tipo === "ANTECIPACAO_CONFERIDA" || e.destinacao.tipo === "NAO_COBRAVEL_CORRECAO") {
       preservados.push({ encontroId: e.encontroId, destinacao: e.destinacao });
       continue;
     }
