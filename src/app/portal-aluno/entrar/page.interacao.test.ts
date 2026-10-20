@@ -36,8 +36,21 @@ describe("entrar no portal do aluno — mensagens de falha", () => {
     expect(m.replace).not.toHaveBeenCalled();
   });
 
-  it("serviço fora ou recusa de outro tipo: diz que está indisponível, não que a senha está errada", async () => {
-    for (const status of [422, 500, 503]) {
+  it("corpo recusado (422): pede para conferir os dados, sem afirmar que a conta existe nem mandar só esperar", async () => {
+    m.fetch.mockResolvedValueOnce({ ok: false, status: 422 });
+    await entrar();
+    expect(alertas()).toEqual(["Não foi possível entrar com esses dados. Confira o e-mail e a senha e tente de novo; se continuar, tente mais tarde."]);
+    expect(m.replace).not.toHaveBeenCalled();
+  });
+
+  it("origem recusada (403): manda abrir pelo endereço oficial", async () => {
+    m.fetch.mockResolvedValueOnce({ ok: false, status: 403 });
+    await entrar();
+    expect(alertas()).toEqual(["Não foi possível confirmar de onde veio o acesso. Abra o portal pelo endereço oficial e tente de novo."]);
+  });
+
+  it("serviço fora: diz que está indisponível, não que a senha está errada", async () => {
+    for (const status of [429, 500, 503]) {
       m.fetch.mockResolvedValueOnce({ ok: false, status });
       await entrar();
       expect(alertas(), String(status)).toEqual(["O serviço está indisponível agora. Tente de novo em alguns minutos."]);
@@ -56,5 +69,19 @@ describe("entrar no portal do aluno — mensagens de falha", () => {
     await entrar();
     expect(alertas()).toEqual([]);
     expect(m.replace).toHaveBeenCalledWith("/portal-aluno");
+  });
+
+  it("aceito: o botão segue desativado até a troca de rota (duplo clique não abre outra sessão)", async () => {
+    m.fetch.mockResolvedValueOnce({ ok: true, status: 200 });
+    await entrar();
+    const botao = elementos(tela()).find((n: No) => n.props.type === "submit");
+    expect(botao?.props.disabled).toBe(true);
+  });
+
+  it("recusado: o botão volta a ficar ativo", async () => {
+    m.fetch.mockResolvedValueOnce({ ok: false, status: 401 });
+    await entrar();
+    const botao = elementos(tela()).find((n: No) => n.props.type === "submit");
+    expect(botao?.props.disabled).toBe(false);
   });
 });

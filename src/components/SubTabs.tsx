@@ -6,12 +6,18 @@ import { usePathname } from "next/navigation";
 import { hrefDaAbaAtiva, type AbaSubnav } from "@/lib/nav";
 
 /**
- * Traz a aba ativa para a vista dentro da faixa rolável (abaixo de sm). `nearest` nos dois eixos: só rola o
- * que for preciso, e a página não pula na vertical quando a aba já está visível.
+ * Traz a aba ativa para a vista dentro da faixa rolável (abaixo de sm). Só mexe no `scrollLeft` da própria
+ * faixa, e só quando ela transborda: `scrollIntoView` rolaria também a página na vertical quando a faixa
+ * está parcialmente fora da tela (o Next rola até o segmento novo, logo abaixo das abas do layout).
  */
 export function mostrarAbaAtiva(nav: HTMLElement | null): void {
-  const ativa = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-  ativa?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  if (!nav || nav.scrollWidth <= nav.clientWidth) return; // do sm para cima as abas quebram: nada a rolar
+  const ativa = nav.querySelector<HTMLElement>('[aria-current="page"]');
+  if (!ativa) return;
+  const faixa = nav.getBoundingClientRect();
+  const aba = ativa.getBoundingClientRect();
+  if (aba.left < faixa.left) nav.scrollLeft -= faixa.left - aba.left;
+  else if (aba.right > faixa.right) nav.scrollLeft += aba.right - faixa.right;
 }
 
 // Sub-aba ativa = botão preenchido (destaque forte), conforme docs/09. Uma aba só por vez: prefixo

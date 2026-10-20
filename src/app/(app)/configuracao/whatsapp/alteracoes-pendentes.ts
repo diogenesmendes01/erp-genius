@@ -62,11 +62,25 @@ export interface CamposPolitica {
   degraus: DegrauConfig[];
 }
 
-const degrauGravado = (d: DegrauConfig) => [d.passo, d.offsetDias, d.modo, d.ativo, d.templateId ?? null];
+const degrauGravado = (d: DegrauConfig) => JSON.stringify([d.offsetDias, d.modo, d.ativo, d.templateId ?? null]);
+
+/**
+ * Os degraus diferem? Indexados por `passo`, não por posição: o servidor relê a política ordenada por
+ * offsetDias (e o empate entre offsets iguais não tem ordem garantida), enquanto o formulário mantém a
+ * ordem em que foi aberto. Comparar por posição acusaria "Alterações não salvas" logo depois de salvar
+ * uma mudança de offset que troca a ordem.
+ */
+function degrausAlterados(form: readonly DegrauConfig[], salvos: readonly DegrauConfig[]): boolean {
+  if (form.length !== salvos.length) return true;
+  const porPasso = new Map(salvos.map((d) => [d.passo, degrauGravado(d)]));
+  if (porPasso.size !== salvos.length) return true; // passo repetido: não dá para casar um a um
+  return form.some((d) => porPasso.get(d.passo) !== degrauGravado(d));
+}
 
 /**
  * A política na tela difere da salva? O kill switch fica de fora: ele grava na hora, pela confirmação
- * própria, e não depende do "Salvar política". A ordem dos dias marcados não conta.
+ * própria, e não depende do "Salvar política". A ordem dos dias marcados e a dos degraus
+ * não contam.
  */
 export function politicaAlterada(form: CamposPolitica, politica: PoliticaConfig): boolean {
   return form.estado !== politica.estado
@@ -76,5 +90,5 @@ export function politicaAlterada(form: CamposPolitica, politica: PoliticaConfig)
     || form.tetoPorContatoDia !== politica.tetoPorContatoDia
     || form.silencioPosInboundHoras !== politica.silencioPosInboundHoras
     || form.numeroRemetenteId !== (politica.numeroRemetenteId ?? "")
-    || JSON.stringify(form.degraus.map(degrauGravado)) !== JSON.stringify(politica.degraus.map(degrauGravado));
+    || degrausAlterados(form.degraus, politica.degraus);
 }

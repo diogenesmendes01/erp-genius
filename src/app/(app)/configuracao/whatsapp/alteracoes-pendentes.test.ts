@@ -74,4 +74,23 @@ describe("politicaAlterada", () => {
   it("a ordem dos dias marcados não conta", () => {
     expect(politicaAlterada({ ...form(), diasSemana: [5, 4, 3, 2, 1] }, politica)).toBe(false);
   });
+  it("a ordem dos degraus não conta: o servidor relê por offsetDias e o formulário mantém a ordem de abertura (B1)", () => {
+    // O admin muda o D-7 para -1 e salva: o refresh traz [D-3, D-7], o formulário continua [D-7, D-3].
+    const d7 = degrau({ passo: "D-7", rotulo: "D-7", offsetDias: -1 });
+    const d3 = degrau({ passo: "D-3", rotulo: "D-3", offsetDias: -3 });
+    const salva: PoliticaConfig = { ...politica, degraus: [d3, d7] };
+    expect(politicaAlterada({ ...form(), degraus: [d7, d3] }, salva)).toBe(false);
+    // Empate de offsets: a ordem do banco não é garantida, e continua sem alteração.
+    const e3 = { ...d7, offsetDias: -3 };
+    expect(politicaAlterada({ ...form(), degraus: [e3, d3] }, { ...politica, degraus: [d3, e3] })).toBe(false);
+  });
+  it("com a ordem trocada, um degrau mudado ainda conta; degrau a mais, a menos ou trocado de passo também", () => {
+    const d7 = degrau({ passo: "D-7", offsetDias: -7 });
+    const d3 = degrau({ passo: "D-3", offsetDias: -3 });
+    const salva: PoliticaConfig = { ...politica, degraus: [d7, d3] };
+    expect(politicaAlterada({ ...form(), degraus: [{ ...d3, ativo: false }, d7] }, salva)).toBe(true);
+    expect(politicaAlterada({ ...form(), degraus: [d3] }, salva)).toBe(true);
+    expect(politicaAlterada({ ...form(), degraus: [d3, d7, degrau({ passo: "D0", offsetDias: 0 })] }, salva)).toBe(true);
+    expect(politicaAlterada({ ...form(), degraus: [d3, degrau({ passo: "D0", offsetDias: -7 })] }, salva)).toBe(true);
+  });
 });

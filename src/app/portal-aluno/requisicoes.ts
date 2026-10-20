@@ -1,4 +1,5 @@
 import type { Resultado } from "@/server/_shared/resultado";
+import { MAXIMO_BYTES_SENHA, MINIMO_CARACTERES_SENHA } from "./ativar/ativacao";
 
 // Chamadas do navegador às rotas públicas do portal do aluno (docs/43 §6 item 8), no formato de uma server
 // action: recusa do servidor vira `{ ok: false, erro }` e falha de transporte (rede, servidor fora) LANÇA —
@@ -9,7 +10,7 @@ import type { Resultado } from "@/server/_shared/resultado";
 export const ERRO_LINK_INDISPONIVEL = "Este link não está mais disponível. Ele pode ter sido usado, ter expirado ou ter sido substituído por um mais novo.";
 export const ERRO_ATIVACAO_RECUSADA = "Não foi possível confirmar o acesso agora. Tente de novo em alguns minutos; se continuar, procure a Secretaria.";
 /** A rota recusou a senha (400 com `campo: "senha"`): o link continua valendo e o formulário fica. */
-export const ERRO_SENHA_RECUSADA = "A senha não foi aceita: ela precisa ter de 12 caracteres a 72 bytes. Ajuste e tente de novo; o link continua valendo.";
+export const ERRO_SENHA_RECUSADA = `A senha não foi aceita: ela precisa ter de ${MINIMO_CARACTERES_SENHA} caracteres a ${MAXIMO_BYTES_SENHA} bytes. Ajuste e tente de novo; o link continua valendo.`;
 export const ERRO_RECUPERACAO_RECUSADA = "Não foi possível registrar o pedido agora. Tente de novo em alguns minutos; se continuar, procure a Secretaria.";
 
 /** O que a ativação concluiu: sessão aberta (convite ou recuperação) ou só o novo e-mail validado. */

@@ -288,6 +288,9 @@ export function SetoresNumeroEditor({
 
   // Só quem tem papel de um dos setores marcados (mesma regra que salvarSetoresNumero aplica no servidor).
   const elegiveis = responsaveis.filter((u) => podeTriarSetores(u.papeis, setores));
+  // Triagem salva que apontava para alguém fora de `responsaveis` (desativado, ou que perdeu o papel) não
+  // vale mais: fica vazia aqui, e o editor já abre com "Alterações não salvas" de propósito — salvar agora
+  // gravaria a triagem como nenhuma (null), diferente do que está no banco. A marca avisa disso.
   const triagemValida = elegiveis.some((u) => u.id === triagem) ? triagem : "";
   // C32 da #170: o que seria gravado difere do número salvo (o refresh traz o salvo novo).
   const sujo = setoresAlterados(setores, setores.length >= 2 ? triagemValida : "", numero);
