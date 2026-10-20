@@ -559,6 +559,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum aditivo com condições de taxa nesta página.",
     "compacto · Nenhum aditivo formaliza condições de taxa.",
   ],
+  "src/app/(app)/financeiro/acertos-adiantamento/[matriculaId]/[propostaId]/page.tsx": [
+    "bloco · Nenhuma proposta de acerto registrada.",
+  ],
   "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx": [
     "bloco · Nenhuma proposta de acerto registrada.",
   ],

@@ -332,7 +332,7 @@ it("financeira estruturada: revisão dos efeitos usa a matrícula exata e não a
 });
 
 beforeEach(async (contexto) => {
-  await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { primeiraMensalidadeExigida: contexto.task.name.includes("PRODUCAO_MENSAL_VENCIMENTO"), camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined });
+  await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { primeiraMensalidadeExigida: contexto.task.name.includes("PRODUCAO_MENSAL_VENCIMENTO"), camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), minutosAdiantamento: contexto.task.name.includes("PRODUCAO_HORA_ADIANTAMENTO") ? 120 : undefined, semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined });
   const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: fixture.processoId }, include: { artefato: { include: { conferencia: true } } } });
   const snapshot = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(processo.artefato.conferencia.snapshot);
   const envio = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: processo.id }, orderBy: { numero: "desc" } });
@@ -1508,3 +1508,244 @@ it("confere nome contratual proposto sem mudar o aluno compartilhado", async () 
   expect(await prisma.aluno.findUnique({ where: { id: m.alunoId } })).toEqual(antes);
   expect(await prisma.conferenciaParticipantesAditivo.findUnique({ where: { id: c.id } })).toMatchObject({ snapshot: { participantes: [{ identidade: { nome: "Nome atualizado no aditivo" } }] } });
 });
+
+// Q172 (port da #62; decisão de 21/09/2026 reconfirmada em 20/10/2026): o aditivo de adiantamento só
+// alcança o adiantamento da emissão inicial enquanto não pago nem utilizado; aprovação financeira por outra
+// pessoa; aplicação só depois da vigência; a comissão não é recalculada.
+const ALTERACOES_ADIANTAMENTO = [
+  { origem: "ADIANTAMENTO_VALOR" as const, novo: "375.00 CRC", valorEstruturado: { tipo: "DINHEIRO" as const, valor: "375", moeda: "CRC" } },
+  { origem: "ADIANTAMENTO_MINUTOS" as const, novo: "180", valorEstruturado: { tipo: "MINUTOS" as const, minutos: 180 } },
+  { origem: "ADIANTAMENTO_VENCIMENTO" as const, novo: "2099-09-20", valorEstruturado: { tipo: "DATA" as const, data: "2099-09-20" } },
+];
+
+async function prepararAcertoAdiantamento(chave: string, vigenciaInicio = "2026-09-01T00:00:00Z") {
+  const emitida = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "HORA_PARTICULAR" } });
+  const aditivo = await concluirAditivoMensal({ vigenciaInicio, chaveIdempotencia: chave, alteracoes: ALTERACOES_ADIANTAMENTO }, chave);
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  const condicoes = await registrarCondicoesFormalizadasAditivo({ ...aditivo.finalAlvo, revisaoHash: aditivo.revisaoHash });
+  if (!condicoes.ok || !condicoes.dado) throw new Error(JSON.stringify(condicoes));
+  const versao = await prisma.versaoCondicoesAditivo.findFirstOrThrow({ where: { propostaId: aditivo.proposta.id } });
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  const entradaProposta = { matriculaId: fixture.matriculaId, versaoCondicoesId: versao.id, revisaoHash: aditivo.revisaoHash, motivo: "Aplicar o adiantamento contratado no aditivo", evidencia: "Cobrança em aberto e conclusão documental conferidas", chaveIdempotencia: `${chave}-proposta` };
+  return { emitida, aditivo, versao, financeiro, entradaProposta };
+}
+
+async function proporAcertoAdiantamento(ctx: Awaited<ReturnType<typeof prepararAcertoAdiantamento>>) {
+  const { proporAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  const proposta = await proporAdiantamentoAditivo(ctx.entradaProposta);
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  return prisma.propostaAdiantamentoAditivo.findUniqueOrThrow({ where: { id: proposta.dado.id } });
+}
+
+async function consultarAlvoAdiantamento(ctx: Awaited<ReturnType<typeof prepararAcertoAdiantamento>>) {
+  const { consultarAdiantamentosAditivo } = await import("./adiantamento-aditivo");
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  const r = await consultarAdiantamentosAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId: ctx.versao.id });
+  if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+  return r.dado.alvo;
+}
+
+it("PRODUCAO_HORA_ADIANTAMENTO: Q172 aplica o aditivo só ao adiantamento não pago, com aprovador independente, e a compra passa a conferir os minutos vigentes", async () => {
+  const { proporAdiantamentoAditivo, decidirAdiantamentoAditivo, aplicarAdiantamentoAditivo, consultarAdiantamentosAditivo } = await import("./adiantamento-aditivo");
+  const { minutosAdiantamentoVigentesTx } = await import("./aditivo-adiantamento");
+  const emitida = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "HORA_PARTICULAR" } });
+  expect(emitida.valorNegociado.toFixed(2)).toBe("250.00");
+  expect(await prisma.$transaction(tx => minutosAdiantamentoVigentesTx(tx, fixture.matriculaId, emitida.id))).toBe(120);
+  const ctx = await prepararAcertoAdiantamento("q172-adiantamento");
+  const { aditivo, versao, financeiro, entradaProposta } = ctx;
+  // Sem a aplicação própria, a condição não pode ser dada como aplicada (SQL 231 e cadeia TS).
+  expect(await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: aditivo.proposta.id })).toMatchObject({ ok: true, dado: { adiantamento: { formalizado: true, aplicacao: null }, aplicacoesCampos: expect.arrayContaining([{ campo: "ADIANTAMENTO_VALOR", aplicada: false }]) } });
+
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const consulta = await consultarAdiantamentosAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId: versao.id });
+  expect(consulta).toMatchObject({ ok: true, dado: { alvo: { podePreparar: true, proposto: { valor: { valor: "375", moeda: "CRC" }, minutos: 180, vencimento: "2099-09-20" }, cobranca: { valorAtual: "250.00", minutosAtuais: 120 } } } });
+  const proposta = await proporAdiantamentoAditivo(entradaProposta);
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  expect(await proporAdiantamentoAditivo(entradaProposta)).toEqual(proposta);
+  expect(await proporAdiantamentoAditivo({ ...entradaProposta, chaveIdempotencia: "q172-proposta-paralela" })).toMatchObject({ ok: false });
+  const gravada = await prisma.propostaAdiantamentoAditivo.findUniqueOrThrow({ where: { id: proposta.dado.id } });
+  await expect(prisma.propostaAdiantamentoAditivo.update({ where: { id: gravada.id }, data: { minutosNovos: 999 } })).rejects.toThrow();
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: emitida.id } })).toEqual(emitida);
+
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirAdiantamentoAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Adiantamento decidido por administração independente", chaveIdempotencia: "q172-decisao" })).toMatchObject({ ok: true, dado: { aprovada: true } });
+  const aplicacao = await aplicarAdiantamentoAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "q172-aplicacao" });
+  expect(aplicacao).toMatchObject({ ok: true, dado: { aplicada: true } });
+  expect(await aplicarAdiantamentoAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "q172-aplicacao" })).toEqual(aplicacao);
+  const depois = await prisma.cobranca.findUniqueOrThrow({ where: { id: emitida.id } });
+  expect(depois).toMatchObject({ versao: emitida.versao + 1, status: "PENDENTE", valorOriginal: emitida.valorOriginal, vencimento: new Date("2099-09-20T12:00:00Z") });
+  expect(depois.valorNegociado.toFixed(2)).toBe("375.00");
+  if (emitida.saldo !== null) expect(depois.saldo?.toFixed(2)).toBe("375.00");
+  expect(await prisma.$transaction(tx => minutosAdiantamentoVigentesTx(tx, fixture.matriculaId, emitida.id))).toBe(180);
+  await expect(prisma.aplicacaoAdiantamentoAditivo.deleteMany()).rejects.toThrow();
+  authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
+  expect(await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: aditivo.proposta.id })).toMatchObject({ ok: true, dado: { adiantamento: { aplicacao: { id: expect.any(String) } },
+    aplicacoesCampos: expect.arrayContaining([{ campo: "ADIANTAMENTO_VALOR", aplicada: true }, { campo: "ADIANTAMENTO_MINUTOS", aplicada: true }, { campo: "ADIANTAMENTO_VENCIMENTO", aplicada: true }]) } });
+
+  // Depois de pago, o mesmo adiantamento não admite novo acerto: a consulta orienta e nada é preparável.
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  const pagamento = await registrarPagamento(emitida.id, { chaveIdempotencia: "q172-pagamento-adiantamento", valorRecebido: 375, forma: "DINHEIRO", comentario: "Adiantamento recebido após o aditivo aplicado." });
+  if (!pagamento.ok) throw new Error(JSON.stringify(pagamento));
+  expect(await consultarAlvoAdiantamento(ctx)).toMatchObject({ podePreparar: false, pendencia: expect.stringContaining("já recebeu pagamento") });
+}, 120_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: pagamento parcial recusa o acerto com orientação, na ação e no banco", async () => {
+  const { proporAdiantamentoAditivo, decidirAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const ctx = await prepararAcertoAdiantamento("q172-parcial");
+  const proposta = await proporAcertoAdiantamento(ctx);
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  const pagamento = await registrarPagamento(ctx.emitida.id, { chaveIdempotencia: "q172-pagamento-parcial-0001", valorRecebido: 100, forma: "DINHEIRO", comentario: "Parte do adiantamento recebida antes do acerto." });
+  if (!pagamento.ok) throw new Error(JSON.stringify(pagamento));
+  const parcial = await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } });
+  expect(parcial.valorRecebido?.toFixed(2)).toBe("100.00");
+
+  const orientacao = "O adiantamento já recebeu pagamento ou crédito. O aditivo não alcança adiantamento pago; trate a diferença em nova contratação de horas.";
+  expect(await consultarAlvoAdiantamento(ctx)).toMatchObject({ podePreparar: false, pendencia: orientacao });
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Aprovação depois do pagamento parcial", chaveIdempotencia: "q172-parcial-decisao" })).toMatchObject({ ok: false, erro: orientacao });
+  await expect(prisma.decisaoAdiantamentoAditivo.create({ data: { propostaId: proposta.id, decisorId: fixture.adminId, aprovada: true, motivo: "Tentativa direta no banco", fotografiaHash: proposta.fotografiaHash, chaveIdempotencia: "q172-parcial-banco" } })).rejects.toThrow(/adiantamento/);
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  expect(await proporAdiantamentoAditivo({ ...ctx.entradaProposta, chaveIdempotencia: "q172-parcial-nova" })).toMatchObject({ ok: false, erro: orientacao });
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } })).toEqual(parcial);
+  expect(await prisma.aplicacaoAdiantamentoAditivo.count()).toBe(0);
+}, 120_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: crédito proposto para o adiantamento recusa o acerto, na ação e no banco", async () => {
+  const { decidirAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const { registrarRecebimentoDestinado } = await import("@/server/financeiro/acoes");
+  const { proporUtilizacaoCredito } = await import("@/server/financeiro/uso-credito-proposta");
+  const ctx = await prepararAcertoAdiantamento("q172-credito");
+  const proposta = await proporAcertoAdiantamento(ctx);
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  const recebimento = await registrarRecebimentoDestinado({ titularMatriculaId: fixture.matriculaId, chaveIdempotencia: "q172-credito-recebimento-0001", valorRecebido: 50, moeda: ctx.emitida.moeda, forma: "DINHEIRO",
+    dataPagamento: new Date("2026-10-01T12:00:00Z"), comentario: "Antecipação sem cobrança definida", destinos: [{ tipo: "CREDITO_SEM_DESTINO", valor: 50, evidencia: "Saldo antecipado sem cobrança definida.", chaveIdempotencia: "credito-sem-destino" }] });
+  if (!recebimento.ok) throw new Error(JSON.stringify(recebimento));
+  const credito = await prisma.creditoMatricula.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId } });
+  const uso = await proporUtilizacaoCredito({ creditoId: credito.id, cobrancaId: ctx.emitida.id, valor: "50.00", concordancia: "Aluno autorizou abater o adiantamento", motivo: "Proposta de uso do crédito no adiantamento", chaveIdempotencia: "q172-credito-uso" });
+  if (!uso.ok) throw new Error(JSON.stringify(uso));
+  const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } });
+
+  const orientacao = "O adiantamento já recebeu pagamento ou crédito. O aditivo não alcança adiantamento pago; trate a diferença em nova contratação de horas.";
+  expect(await consultarAlvoAdiantamento(ctx)).toMatchObject({ podePreparar: false, pendencia: orientacao });
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Aprovação com crédito proposto", chaveIdempotencia: "q172-credito-decisao" })).toMatchObject({ ok: false, erro: orientacao });
+  await expect(prisma.decisaoAdiantamentoAditivo.create({ data: { propostaId: proposta.id, decisorId: fixture.adminId, aprovada: true, motivo: "Tentativa direta no banco", fotografiaHash: proposta.fotografiaHash, chaveIdempotencia: "q172-credito-banco" } })).rejects.toThrow(/já pago/);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } })).toEqual(antes);
+}, 120_000);
+
+async function pagarERegistrarCompraAdiantamento(ctx: Awaited<ReturnType<typeof prepararAcertoAdiantamento>>) {
+  const { receberTx } = await import("@/server/financeiro/recebimentos");
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: ctx.emitida.id, autorId: fixture.adminId, chaveIdempotencia: "q172-recebimento-horas", valorRecebido: 250, forma: "TRANSFERENCIA",
+    dataPagamento: new Date("2026-10-01T12:00:00Z"), evidencia: "Pagamento confirmado do adiantamento de horas" }));
+  const documento = await prisma.documento.create({ data: { matriculaId: fixture.matriculaId, categoria: "CONTRATO", nome: "Contrato do adiantamento Q172", url: "/api/files/q172.pdf" } });
+  return prisma.compraHorasAntecipadas.create({ data: { matriculaId: fixture.matriculaId, cobrancaId: ctx.emitida.id, documentoId: documento.id, registradorId: ctx.financeiro.id, minutosComprados: 120, valorOriginal: 250, descontoOriginal: 0, valorPagoAlocado: 250,
+    moeda: ctx.emitida.moeda, evidenciaCondicoes: "Compra do adiantamento conferida", snapshot: { fixture: "q172" }, chaveIdempotencia: "q172-compra-horas", entradaHash: "fixture" } });
+}
+
+it("PRODUCAO_HORA_ADIANTAMENTO: compra de horas registrada recusa o acerto com orientação", async () => {
+  const { proporAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const ctx = await prepararAcertoAdiantamento("q172-compra");
+  await pagarERegistrarCompraAdiantamento(ctx);
+  const orientacao = "As horas deste adiantamento já foram registradas como saldo de horas. O aditivo não alcança adiantamento utilizado; trate a diferença em nova contratação de horas.";
+  expect(await consultarAlvoAdiantamento(ctx)).toMatchObject({ podePreparar: false, pendencia: orientacao });
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  expect(await proporAdiantamentoAditivo(ctx.entradaProposta)).toMatchObject({ ok: false, erro: orientacao });
+  expect(await prisma.propostaAdiantamentoAditivo.count()).toBe(0);
+}, 120_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: horas do adiantamento consumidas recusam o acerto com orientação", async () => {
+  const { proporAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const { reservarHorasCompradasParaEncontro } = await import("@/server/matricula/reserva-horas-compradas");
+  const { conferirRealizacaoHoras } = await import("@/server/matricula/consumo-horas");
+  const ctx = await prepararAcertoAdiantamento("q172-consumo");
+  const compra = await pagarERegistrarCompraAdiantamento(ctx);
+  await prisma.matricula.update({ where: { id: fixture.matriculaId }, data: { status: "ATIVA" } });
+  const professor = await criarUsuario(["PROFESSOR"]);
+  const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: fixture.matriculaId, professorId: professor.id, preparadorId: fixture.secretariaId, inicio: new Date("2099-10-01T12:00:00Z"), fim: new Date("2099-10-01T13:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula do adiantamento", chaveIdempotencia: "q172-encontro-consumo", entradaHash: "fixture" } });
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.id, encontroId: encontro.id, motivo: "Reserva da aula do adiantamento", chaveIdempotencia: "q172-reserva-consumo" });
+  if (!reserva.ok || !reserva.dado) throw new Error(JSON.stringify(reserva));
+  const aluno = (await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).alunoId;
+  const aula = await prisma.aulaDiario.create({ data: { encontroId: encontro.id, professorId: professor.id, ocorridaEm: encontro.inicio, conteudo: "Conversação realizada", registros: { create: { alunoId: aluno, nomeAluno: "Aluno teste", presente: false } } } });
+  await prisma.registroAulaAluno.updateMany({ where: { aulaId: aula.id }, data: { presente: true } });
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(new Date("2099-10-02T12:00:00Z"));
+    const revisao = await conferirRealizacaoHoras({ reservaId: reserva.dado.id });
+    if (!revisao.ok || !revisao.dado?.estadoDiario) throw new Error(JSON.stringify(revisao));
+    expect(await conferirRealizacaoHoras({ reservaId: reserva.dado.id, estadoDiario: revisao.dado.estadoDiario, motivo: "Realização conferida pelo Financeiro" })).toMatchObject({ ok: true });
+  } finally { vi.useRealTimers(); }
+  expect(await prisma.consumoHorasCompradas.count()).toBe(1);
+
+  const orientacao = "As horas deste adiantamento já foram utilizadas em aulas. O aditivo não alcança adiantamento utilizado; trate a diferença em nova contratação de horas.";
+  expect(await consultarAlvoAdiantamento(ctx)).toMatchObject({ podePreparar: false, pendencia: orientacao });
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  expect(await proporAdiantamentoAditivo(ctx.entradaProposta)).toMatchObject({ ok: false, erro: orientacao });
+  expect(await prisma.propostaAdiantamentoAditivo.count()).toBe(0);
+}, 120_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: quem propôs não aprova nem aplica, mesmo com alçada financeira, na ação e no banco", async () => {
+  const { decidirAdiantamentoAditivo, aplicarAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const ctx = await prepararAcertoAdiantamento("q172-mesma-pessoa");
+  await prisma.usuario.update({ where: { id: ctx.financeiro.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+  const proposta = await proporAcertoAdiantamento(ctx);
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  expect(await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Tentativa do próprio preparador", chaveIdempotencia: "q172-auto" })).toMatchObject({ ok: false, erro: "A decisão exige outra pessoa." });
+  await expect(prisma.decisaoAdiantamentoAditivo.create({ data: { propostaId: proposta.id, decisorId: ctx.financeiro.id, aprovada: true, motivo: "Tentativa direta no banco", fotografiaHash: proposta.fotografiaHash, chaveIdempotencia: "q172-auto-banco" } })).rejects.toThrow(/independente/);
+  expect(await prisma.decisaoAdiantamentoAditivo.count()).toBe(0);
+
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  const decisao = await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Aprovação por administração independente", chaveIdempotencia: "q172-decisao-independente" });
+  if (!decisao.ok || !decisao.dado) throw new Error(JSON.stringify(decisao));
+  authMock.mockResolvedValue({ user: { id: ctx.financeiro.id } });
+  expect(await aplicarAdiantamentoAditivo({ propostaId: proposta.id, chaveIdempotencia: "q172-aplicacao-preparador" })).toMatchObject({ ok: false, erro: "Aplicação exige o aprovador independente da proposta." });
+  await expect(prisma.aplicacaoAdiantamentoAditivo.create({ data: { decisaoId: decisao.dado.id, executorId: ctx.financeiro.id, fotografiaHash: proposta.fotografiaHash, chaveIdempotencia: "q172-aplicacao-preparador-banco",
+    versaoCobrancaAntes: proposta.versaoCobranca, versaoCobrancaDepois: proposta.versaoCobranca + 1, valorAnterior: proposta.valorAnterior, valorNovo: proposta.valorNovo,
+    vencimentoAnterior: proposta.vencimentoAnterior, vencimentoNovo: proposta.vencimentoNovo, minutosAnteriores: proposta.minutosAnteriores, minutosNovos: proposta.minutosNovos } })).rejects.toThrow(/aprovador/);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } })).toEqual(ctx.emitida);
+}, 120_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: aplicação só depois da vigência, na ação e no banco", async () => {
+  const { decidirAdiantamentoAditivo, aplicarAdiantamentoAditivo, consultarAdiantamentosAditivo } = await import("./adiantamento-aditivo");
+  // Vigência real próxima: o relógio do banco não é simulável, então o teste espera a vigência passar.
+  const vigencia = new Date(Math.ceil((Date.now() + 75_000) / 1000) * 1000);
+  const ctx = await prepararAcertoAdiantamento("q172-vigencia", vigencia.toISOString());
+  expect(ctx.versao.vigenciaInicio.getTime()).toBe(vigencia.getTime());
+  const proposta = await proporAcertoAdiantamento(ctx);
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  const decisao = await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Aprovação antes da vigência", chaveIdempotencia: "q172-vigencia-decisao" });
+  if (!decisao.ok || !decisao.dado) throw new Error(JSON.stringify(decisao));
+  expect(Date.now()).toBeLessThan(vigencia.getTime());
+  expect(await consultarAdiantamentosAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId: ctx.versao.id })).toMatchObject({ ok: true, dado: { propostas: [{ estado: "APROVADA", podeSolicitarAplicacao: false }] } });
+  expect(await aplicarAdiantamentoAditivo({ propostaId: proposta.id, chaveIdempotencia: "q172-vigencia-cedo" })).toMatchObject({ ok: false, erro: "Aguarde a vigência aprovada antes de aplicar o adiantamento." });
+  await expect(prisma.aplicacaoAdiantamentoAditivo.create({ data: { decisaoId: decisao.dado.id, executorId: fixture.adminId, fotografiaHash: proposta.fotografiaHash, chaveIdempotencia: "q172-vigencia-banco",
+    versaoCobrancaAntes: proposta.versaoCobranca, versaoCobrancaDepois: proposta.versaoCobranca + 1, valorAnterior: proposta.valorAnterior, valorNovo: proposta.valorNovo,
+    vencimentoAnterior: proposta.vencimentoAnterior, vencimentoNovo: proposta.vencimentoNovo, minutosAnteriores: proposta.minutosAnteriores, minutosNovos: proposta.minutosNovos } })).rejects.toThrow(/vigência/);
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } })).toEqual(ctx.emitida);
+
+  await new Promise(resolve => setTimeout(resolve, Math.max(0, vigencia.getTime() - Date.now()) + 1_500));
+  expect(await consultarAdiantamentosAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId: ctx.versao.id })).toMatchObject({ ok: true, dado: { propostas: [{ estado: "APROVADA", podeSolicitarAplicacao: true }] } });
+  expect(await aplicarAdiantamentoAditivo({ propostaId: proposta.id, chaveIdempotencia: "q172-vigencia-depois" })).toMatchObject({ ok: true, dado: { aplicada: true } });
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } })).valorNegociado.toFixed(2)).toBe("375.00");
+}, 240_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO: a aplicação do adiantamento não recalcula a comissão", async () => {
+  const { decidirAdiantamentoAditivo, aplicarAdiantamentoAditivo } = await import("./adiantamento-aditivo");
+  const ctx = await prepararAcertoAdiantamento("q172-comissao");
+  const vendedor = await criarUsuario(["VENDEDOR"]);
+  await prisma.comissao.createMany({ data: [
+    { matriculaId: fixture.matriculaId, vendedorId: vendedor.id, tipo: "PERCENTUAL", percentual: 10, valorBase: 250, valor: 25, moeda: ctx.emitida.moeda, status: "APROVADA", aprovadaEm: new Date("2026-10-01T12:00:00Z") },
+    { matriculaId: fixture.matriculaId, vendedorId: vendedor.id, tipo: "VALOR_FIXO", percentual: 0, valorFixo: 40, valor: 40, moeda: ctx.emitida.moeda, status: "PENDENTE" },
+  ] });
+  const comissoesAntes = await prisma.comissao.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } });
+  const proposta = await proporAcertoAdiantamento(ctx);
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirAdiantamentoAditivo({ propostaId: proposta.id, aprovada: true, motivo: "Aprovação independente do adiantamento", chaveIdempotencia: "q172-comissao-decisao" })).toMatchObject({ ok: true });
+  expect(await aplicarAdiantamentoAditivo({ propostaId: proposta.id, chaveIdempotencia: "q172-comissao-aplicacao" })).toMatchObject({ ok: true, dado: { aplicada: true } });
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: ctx.emitida.id } })).valorNegociado.toFixed(2)).toBe("375.00");
+  expect(await prisma.comissao.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } })).toEqual(comissoesAntes);
+  expect(await prisma.evento.count({ where: { tipo: "ComissaoRecalculada" } })).toBe(0);
+}, 120_000);
