@@ -24,3 +24,10 @@ it("preserva a rejeição e não oferece aprovação para proposta inelegível",
   expect(html).toContain("Rejeitar");
   expect(html).not.toContain("Aprovar e vincular");
 });
+
+it("C33 da #170: \"Revisar\" é o <Botao> de envio, com variante e tamanho declarados", () => {
+  const html = renderToStaticMarkup(createElement(PrepararConferenciaRegraHistorica, {
+    turmaId: "turma", destinos: [{ id: "regra-1", versao: 1 }],
+  }));
+  expect(html).toMatch(/<button type="submit" class="[^"]*\bpx-4 py-1\.5 text-sm\b[^"]*"[^>]*>Revisar<\/button>/);
+});

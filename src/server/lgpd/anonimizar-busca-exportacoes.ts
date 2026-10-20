@@ -94,6 +94,8 @@ export async function anonimizarBuscaExportacoes(prisma: PrismaClient, opcoes: O
 
   // Um evento por execução, gravado no fim (também quando um lote falhou, para a trilha mostrar o que foi
   // feito). Sem dado pessoal: contagens, corte e intervalo de datas. O texto removido não é copiado.
+  // Se o lote falhou e o registro também falha, os dois erros sobem juntos (#257 C5): o do lote é o que
+  // diz ao operador o que consertar antes de rodar de novo, e não pode ser engolido pelo do registro.
   const evento = await prisma.$transaction(async (tx) => registrarEvento(tx, {
     tipo: TIPO_EVENTO_ANONIMIZACAO, agregadoTipo: "Exportacao", agregadoId: randomUUID(), autorId: null,
     payload: {
@@ -108,7 +110,14 @@ export async function anonimizarBuscaExportacoes(prisma: PrismaClient, opcoes: O
       intervalo: { de: iso(de), ate: iso(ate) },
       concluida: falha === null,
     },
-  }));
+  })).catch((erroRegistro: unknown) => {
+    if (falha === null) throw erroRegistro;
+    throw new AggregateError(
+      [falha, erroRegistro],
+      "Um lote falhou e o evento de auditoria da execução também não foi gravado.",
+      { cause: falha },
+    );
+  });
   if (falha !== null) throw falha;
   return { modo: "aplicacao", corte: corte.toISOString(), candidatos, afetados, lotes, intervalo: { de: iso(de), ate: iso(ate) }, eventoId: evento.id };
 }

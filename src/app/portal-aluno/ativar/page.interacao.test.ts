@@ -120,9 +120,22 @@ describe("ativar — a senha", () => {
     expect(campos(tela()).map((c) => c.props.id)).toEqual(["ativar-senha", "ativar-confirmacao"]);
   });
 
-  it("o contador acompanha o que foi digitado", () => {
+  it("o contador acompanha o que foi digitado, em caracteres e em bytes", () => {
     preencher(tela(), "ativar-senha", "abc");
-    expect(html()).toContain("Digitados: 3.");
+    expect(html()).toContain("Digitados: 3 caracteres (3 bytes).");
+    preencher(tela(), "ativar-senha", "ação");
+    expect(html()).toContain("Digitados: 4 caracteres (6 bytes).");
+  });
+
+  it("os campos não cortam a senha por caracteres: o limite é de bytes e é conferido no envio (#172)", async () => {
+    // maxLength conta caracteres, não bytes: cortaria em silêncio uma senha colada com mais de 72 letras e
+    // deixaria passar 72 letras acentuadas (144 bytes). Quem avisa do limite é a validarSenhas.
+    expect(html()).not.toMatch(/maxlength/i);
+    const longa = "é".repeat(40); // 40 caracteres, 80 bytes
+    preencherSenhas(longa, longa);
+    await submeter(tela());
+    expect(m.definir).not.toHaveBeenCalled();
+    expect(errosDosCampos(tela())["ativar-senha"]).toMatch(/limite de 72 bytes/);
   });
 
   it("senha curta: não envia, marca o campo e leva o foco a ele", async () => {

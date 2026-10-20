@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ pathname: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname: mocks.pathname }));
 
-import { SubTabs } from "./SubTabs";
+import { SubTabs, mostrarAbaAtiva } from "./SubTabs";
 
 const tabs = [
   { href: "/configuracao", label: "Geral" },
@@ -86,5 +86,41 @@ describe("SubTabs", () => {
     const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
     expect(classeDe("/configuracao/whatsapp")).toEqual(expect.arrayContaining(["rounded-full", "px-3", "py-1.5", "max-sm:min-h-11", "bg-brand-solid", "text-on-brand", "font-medium"]));
     expect(classeDe("/configuracao")).toEqual(expect.arrayContaining(["rounded-full", "text-gray-600", "hover:bg-highlight"]));
+  });
+
+  it("a 375 px as abas ficam numa faixa só, rolável na horizontal, em vez de quebrar em várias linhas (C45, #170)", () => {
+    mocks.pathname.mockReturnValue("/configuracao");
+    const html = renderToStaticMarkup(createElement(SubTabs, { tabs, ariaLabel: "Seções da configuração" }));
+    const nav = html.match(/^<nav class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(nav).toEqual(expect.arrayContaining(["flex", "max-sm:flex-nowrap", "max-sm:overflow-x-auto", "max-sm:p-1", "sm:flex-wrap"]));
+    expect(nav).not.toContain("flex-wrap"); // sem quebra incondicional
+    const links = [...html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)].map((m) => m[1].split(" "));
+    expect(links).toHaveLength(2);
+    for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
+  });
+
+  it("a aba ativa é trazida para a vista só pelo scrollLeft da faixa, sem rolar a página na vertical", () => {
+    const rect = (left: number, right: number) => ({ left, right }) as DOMRect;
+    const faixa = (aba: { left: number; right: number } | null, scrollWidth = 600, clientWidth = 343) => {
+      const ativa = aba ? { getBoundingClientRect: () => rect(aba.left, aba.right), scrollIntoView: vi.fn() } : null;
+      const nav = { scrollWidth, clientWidth, scrollLeft: 100, getBoundingClientRect: () => rect(16, 359), querySelector: vi.fn(() => ativa) };
+      mostrarAbaAtiva(nav as unknown as HTMLElement);
+      return { nav, ativa };
+    };
+    // Aba cortada à direita: avança só o que falta.
+    expect(faixa({ left: 330, right: 400 }).nav.scrollLeft).toBe(141);
+    // Aba cortada à esquerda: recua só o que falta.
+    expect(faixa({ left: -4, right: 60 }).nav.scrollLeft).toBe(80);
+    // Já visível: não mexe.
+    expect(faixa({ left: 40, right: 120 }).nav.scrollLeft).toBe(100);
+    // Faixa sem transbordo (sm+): nem procura a aba.
+    const larga = faixa({ left: 330, right: 400 }, 343, 343);
+    expect(larga.nav.querySelector).not.toHaveBeenCalled();
+    expect(larga.nav.scrollLeft).toBe(100);
+    // Nunca usa scrollIntoView (que rolaria a página).
+    expect(faixa({ left: 330, right: 400 }).ativa?.scrollIntoView).not.toHaveBeenCalled();
+    // Sem aba ativa (rota fora das abas) ou sem nav montada: nada a fazer, sem erro.
+    expect(faixa(null).nav.scrollLeft).toBe(100);
+    expect(() => mostrarAbaAtiva(null)).not.toThrow();
   });
 });
