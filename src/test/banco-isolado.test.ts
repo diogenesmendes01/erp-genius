@@ -7,9 +7,9 @@ import { resolverBancoTeste } from "../../scripts/test-profile.mjs";
 const pastas: string[] = [];
 function pasta() { const p = mkdtempSync(join(tmpdir(), "erp-test-profile-")); pastas.push(p); return p; }
 afterEach(() => { for (const p of pastas.splice(0)) rmSync(p, { recursive: true }); });
-it("separa quatro bancos e ignora DATABASE_URL externa", () => {
-  const urls = ["integracao", "dev-email", "dev-gravacoes", "tester"].map(perfil => resolverBancoTeste(pasta(), { ERP_TEST_PROFILE: perfil, DATABASE_URL: "postgres://producao/remoto" }).url);
-  expect(new Set(urls).size).toBe(4);
+it("separa cinco bancos e ignora DATABASE_URL externa", () => {
+  const urls = ["integracao", "dev-email", "dev-gravacoes", "tester", "ci-integracao"].map(perfil => resolverBancoTeste(pasta(), { ERP_TEST_PROFILE: perfil, DATABASE_URL: "postgres://producao/remoto" }).url);
+  expect(new Set(urls).size).toBe(5);
   expect(urls.every(url => url.startsWith("postgres://postgres:teste@localhost:54329/erp_genius_test"))).toBe(true);
 });
 it("worktree fixa perfil e rejeita substituição divergente", () => {
@@ -19,4 +19,7 @@ it("worktree fixa perfil e rejeita substituição divergente", () => {
 });
 it("perfil inválido não vira conexão arbitrária", () => {
   expect(() => resolverBancoTeste(pasta(), { ERP_TEST_PROFILE: "../../producao" })).toThrow("desconhecido");
+});
+it("perfil do workflow de integração (D7) usa banco próprio", () => {
+  expect(resolverBancoTeste(pasta(), { ERP_TEST_PROFILE: "ci-integracao" }).banco).toBe("erp_genius_test_ciint");
 });
