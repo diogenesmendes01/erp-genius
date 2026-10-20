@@ -6,10 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   fetch: vi.fn(), replace: vi.fn(), refresh: vi.fn(),
+  // useTransition simulado: iniciar a transição liga `pendente` (como o React faz) e roda a função; o teste
+  // desliga `pendente` para simular a navegação terminando.
+  pendente: false,
 }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
-  return { ...real, useState: ((i: unknown) => m.ganchos!.useState(i)) as unknown as typeof real.useState };
+  return {
+    ...real,
+    useState: ((i: unknown) => m.ganchos!.useState(i)) as unknown as typeof real.useState,
+    useTransition: (() => [m.pendente, (f: () => void) => { m.pendente = true; f(); }]) as unknown as typeof real.useTransition,
+  };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: m.replace, refresh: m.refresh }) }));
 
@@ -18,11 +25,13 @@ import { FormDataFalso, criarGanchos, elementos, submeter, texto, type No } from
 
 const tela = () => m.ganchos!.renderizar(EntrarPortalAlunoPage, {});
 const entrar = () => submeter(tela(), { email: "aluna@escola.test", senha: "senha-de-teste" });
+const botaoEntrar = () => elementos(tela()).find((n: No) => n.props.type === "submit");
 const alertas = () => elementos(tela()).filter((n: No) => n.props.role === "alert").map((n: No) => texto(n.props.children));
 
 beforeEach(() => {
   vi.clearAllMocks();
   m.ganchos = criarGanchos();
+  m.pendente = false;
   vi.stubGlobal("FormData", FormDataFalso);
   vi.stubGlobal("fetch", m.fetch);
 });
@@ -76,6 +85,19 @@ describe("entrar no portal do aluno — mensagens de falha", () => {
     await entrar();
     const botao = elementos(tela()).find((n: No) => n.props.type === "submit");
     expect(botao?.props.disabled).toBe(true);
+  });
+
+  it("aceito: se a navegação terminar na própria tela de login, o botão volta a ficar ativo", async () => {
+    // Cookie não gravado/enviado → a área do aluno redireciona para /portal-aluno/entrar e o React preserva
+    // a instância desta página. Terminada a transição, o botão não pode ficar preso em "Entrando…".
+    m.fetch.mockResolvedValueOnce({ ok: true, status: 200 });
+    await entrar();
+    expect(m.replace).toHaveBeenCalledWith("/portal-aluno");
+    expect(botaoEntrar()?.props.disabled).toBe(true);
+    expect(texto(botaoEntrar()?.props.children)).toBe("Entrando…");
+    m.pendente = false; // navegação terminou (de volta nesta tela)
+    expect(botaoEntrar()?.props.disabled).toBe(false);
+    expect(texto(botaoEntrar()?.props.children)).toBe("Entrar");
   });
 
   it("recusado: o botão volta a ficar ativo", async () => {
