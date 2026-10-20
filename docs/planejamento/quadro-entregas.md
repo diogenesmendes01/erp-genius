@@ -3627,6 +3627,25 @@ Branch `claude/modal-feedback-inert`, base `main` 2a209fd4.
   - `npm run build`: saída 0.
   - Integração `segunda-chamada-agenda-inicial.int.test.ts` no Postgres da porta 54329, banco descartável `erp_genius_test_modal` (`migrate deploy`, perfil temporário fora do commit): saída 0, com 13 testes.
 
+### Ordenação de nomes com acento: coluna gerada `nomeOrdenacao` (D1, #141) — 2026-10-19
+Branch `claude/ordenacao-acento`. O Postgres de produção (`postgres:16-alpine`) roda com `datlocprovider=c`, sem ICU e sem `unaccent`, e ordena byte a byte: "Alice, Bruno, Zé, Álvaro". A decisão D1 foi uma coluna de ordenação normalizada, só nas listas de nome, criada por migration e sem mexer no cluster.
+- **Migration `20261019110000_nome_ordenacao`:** cria `nomeOrdenacao TEXT NOT NULL GENERATED ALWAYS AS (…) STORED` em `Aluno` (`primeiroNome || ' ' || sobrenome`), `Pessoa` e `Empresa` (`nome`), com índice `(nomeOrdenacao, id)`. Por ser coluna gerada, o `ADD COLUMN` já preenche as linhas existentes, e o banco recalcula o valor a cada INSERT/UPDATE, inclusive em SQL cru. Nenhum ponto da aplicação grava a coluna; se tentar, o banco recusa.
+- **Expressão:** `btrim(regexp_replace(translate(x, ORIGEM, DESTINO), '[[:space:]]+', ' ', 'g'))`. Usa só funções IMMUTABLE que não dependem de locale. O `translate` tira os acentos latinos (Á/À/Â/Ã/Ä/Ç/Ñ/Ø/Ł/Ș…), troca A–Z por minúsculas (sem `lower()`, cujo resultado fora do ASCII muda entre glibc e musl), troca o espaço duro por espaço e apaga os diacríticos combinantes U+0300–U+036F (texto em NFD).
+- **Fonte única:** `src/lib/nome-ordenacao.ts`. Guarda o mapa, a expressão SQL e o espelho `normalizarParaOrdenacao`. No schema, a coluna é declarada com `@default(dbgenerated(...))`, como a `busca` da base de conhecimento, para que o `migrate diff` não proponha removê-la. Conferido: o diff não menciona `nomeOrdenacao`.
+- **Listas trocadas para `[{ nomeOrdenacao }, { id }]`:** alunos (`alunos/filtros.ts`, na tela e na exportação, nas duas direções e como desempate das colunas país/status), contatos do CRM (pessoas e empresas em `crm/contatos.ts`), `/empresas` ordenada por nome (`empresas/filtros.ts`), contextos de recebimento destinado (`financeiro/consultas.ts`, ordenados pelo nome do aluno) e candidatos a aluno na preparação comercial.
+- **Fora:** `Responsavel` não tem nenhuma lista ordenada por nome no banco. As listas de usuários, países e catálogo ficam fora da decisão D1, e as ordenações em memória já usam `localeCompare`.
+- **Testes:**
+  - `nome-ordenacao.test.ts`: unitários para Á/á/À/Â/Ã/Ç, nomes combinados, NFD e espaços; mapa sem duplicatas.
+  - Trava: a migration contém exatamente a expressão do módulo; o schema declara a coluna e o índice; pela AST, o código de produção só cita `nomeOrdenacao` como chave de `orderBy`, com valor `"asc"`, `"desc"` ou `dir`.
+  - `nome-ordenacao.int.test.ts`: o banco calcula o mesmo valor que o espelho TS; o valor acompanha a edição, inclusive por SQL cru; gravar à mão é recusado; "Álvaro" fica entre "Alice" e "Bruno" nas listas de alunos (as duas direções), contatos e empresas.
+- Evidências no head:
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base; nenhum nos arquivos tocados).
+  - `npm test`: 780 arquivos e 5.814 testes OK.
+  - `npm run build`: saída 0.
+  - Integração no banco isolado `erp_genius_test_acento`, com a migration aplicada por `prisma migrate deploy`: 36 arquivos e 314 testes OK. Cobriu `nome-ordenacao`, alunos, os 22 do CRM, recebimentos destinados, 5 de matrícula (reserva de vaga, preparação, continuidade e CT06), visibilidade acadêmica, diário e exportações.
+  - `prisma migrate diff` (banco × schema): nenhuma linha com `nomeOrdenacao`.
+
 ### Fuso da escola, parte 4: atraso de mensalidade no dia da escola, datas digitadas no fuso da escola e adiamento direto à janela (pontos do #247) — 2026-10-19
 
 Branch `claude/fuso-parte4`, base `main` fef6d467 (#247). Mesmo padrão do #239, #243 e #247: o dia é o civil da escola (`fusoDaEscola()`), nunca o do servidor, que roda em UTC. Cada ponto começou com um teste com relógio fixo que falhava; todos verdes com TZ=UTC e com TZ=America/Sao_Paulo.
