@@ -818,6 +818,28 @@ it("Q175 encerramento por hora reconhece a aula não cobrável ainda não fechad
   expect(await prisma.itemFechamentoHoras.count({ where: { conferenciaId: conferencia.id } })).toBe(0);
 }, 120_000);
 
+// N3 da R2 #266: declaração de não cobrável rejeitada pela segunda alçada não gera aplicação; por isso a trava
+// `recusar_item_nao_cobravel_175` não alcança a aula, que é faturada normalmente no fechamento do mês.
+it("Q175 declaração de aula não cobrável rejeitada: sem aplicação, a aula é faturada normalmente", async () => {
+  const { d, e, propostaId } = await prepararAulaNaoCobravel("q175-rejeitada", false);
+  const { proporRevisaoFinanceiraCorrecaoAula, decidirRevisaoFinanceiraCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
+  const fin1 = await criarUsuario(["FINANCEIRO"]), fin2 = await criarUsuario(["FINANCEIRO"]);
+  login(fin1.id); const r = await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: propostaId, tipo: "AULA_NAO_COBRAVEL", motivo: "Aula não ocorreu por motivo da escola; não deve ser cobrada.", chaveIdempotencia: "q175-rejeitada-revisao" });
+  if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+  login(fin2.id); expect(await decidirRevisaoFinanceiraCorrecaoAula({ propostaId: r.dado.id, aprovada: false, motivo: "A aula ocorreu; a cobrança é devida." })).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.count()).toBe(0);
+  const conferencia = await prisma.conferenciaOcorrenciaHoras.findUniqueOrThrow({ where: { encontroId: e.id } });
+  const emissao = await emitirCobrancaDaPrevia(d, "q175-rejeitada-emissao");
+  const itens = await prisma.itemFechamentoHoras.findMany({ where: { emissaoId: emissao.id } });
+  expect(itens).toMatchObject([{ conferenciaId: conferencia.id }]);
+  expect(itens[0].valor.toFixed(2)).toBe("156.25");
+  const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } });
+  expect(cobranca.status).not.toBe("CANCELADA");
+  expect(cobranca.valorNegociado.toFixed(2)).toBe("156.25");
+  expect(await prisma.aplicacaoRevisaoFinanceiraCorrecaoAula.count()).toBe(0);
+  expect(await prisma.creditoMatricula.count()).toBe(0);
+}, 120_000);
+
 it("Q175 cobrança em aberto de uma aula: a publicação a cancela na mesma transação e o banco recusa publicar sem o acerto", async () => {
   const { e, emissao, propostaId } = await prepararAulaNaoCobravel("q175-aberta", true);
   const antes = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao!.cobrancaId } });
