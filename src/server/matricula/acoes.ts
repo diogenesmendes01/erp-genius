@@ -90,7 +90,7 @@ async function criarMatriculaTx(
   /** Idempotência (#166): gravada no payload do `MatriculaCriada`, onde `criarMatricula` a procura. */
   marca: MarcaIdempotencia | null = null,
 ): Promise<{ id: string; alunoId: string; leadId: string | null; aguardaPreco: boolean }> {
-  const dados = analisarComDatasDaEscola(MatriculaSchema, input, await fusoDaEscola());
+  const dados = analisarComDatasDaEscola(MatriculaSchema, input, await fusoDaEscola(tx));
 
   const pais = await tx.pais.findUnique({
     where: { id: dados.alunoPaisId },
