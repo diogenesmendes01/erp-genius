@@ -7,8 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { processarMensagemNormalizada } from "@/server/whatsapp/inbound";
 
-// Integração E1: o inbound não captura lead nem saúda (casca do CRM antigo removida), mesmo
-// com a ConfigComercial antiga ligada. Resta a trava S1 do despachante.
+// Integração E1: o inbound não captura lead nem saúda (casca do CRM antigo removida; a configuração do
+// auto-lead e da saudação saiu do banco). Resta a trava S1 do despachante.
 
 let dono: Awaited<ReturnType<typeof criarUsuario>>;
 
@@ -30,17 +30,6 @@ async function seedNumeroVendas() {
   });
 }
 
-async function ligarConfig(
-  over: { autoLeadAtivo?: boolean; saudacaoEstado?: "DESLIGADA" | "SHADOW" | "ATIVA" } = {},
-) {
-  const data = { autoLeadAtivo: over.autoLeadAtivo ?? false, saudacaoEstado: over.saudacaoEstado ?? ("DESLIGADA" as const) };
-  return prisma.configComercial.upsert({
-    where: { id: "comercial" },
-    create: { id: "comercial", ...data },
-    update: data,
-  });
-}
-
 async function inbound(numero: { providerRef: string | null }, over: Partial<Parameters<typeof processarMensagemNormalizada>[0]> = {}) {
   return processarMensagemNormalizada({
     numeroProviderRef: numero.providerRef,
@@ -57,9 +46,8 @@ async function inbound(numero: { providerRef: string | null }, over: Partial<Par
 }
 
 describe("casca removida (E1): o 1º inbound não captura lead nem saúda", () => {
-  it("config antiga ligada + número VENDAS → mensagem gravada, sem lead e sem intenção; capturadaEm marcado", async () => {
+  it("número VENDAS → mensagem gravada, sem lead e sem intenção; capturadaEm marcado", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ autoLeadAtivo: true, saudacaoEstado: "ATIVA" });
     expect(await inbound(numero, { referral: { sourceType: "ad", sourceId: "ad-1" } })).toBe("gravada");
     expect(await prisma.oportunidade.count()).toBe(0);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
@@ -68,7 +56,6 @@ describe("casca removida (E1): o 1º inbound não captura lead nem saúda", () =
   });
   it("telefone que já é lead: o contato não é vinculado automaticamente", async () => {
     const numero = await seedNumeroVendas();
-    await ligarConfig({ autoLeadAtivo: true });
     await prisma.oportunidade.create({ data: { nome: "Já lead", telefoneE164: "+5511970001111" } });
     await inbound(numero);
     expect((await prisma.contatoWhatsApp.findFirstOrThrow()).leadId).toBeNull();

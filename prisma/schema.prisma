@@ -2395,9 +2395,7 @@ model NumeroWhatsApp {
   mensagens           MensagemWhatsApp[]
   intencoes           IntencaoMensagem[]
   politicas           PoliticaRegua[]
-  politicasComerciais PoliticaComercial[]
   configuracaoAvisosAgenda ConfiguracaoOperacional? @relation("NumeroAvisosAgenda")
-  configsGestao       ConfigComercial[]   @relation("NumeroGestao") // C5: remetente das msgs do gestor
 
   // providerRef identifica o número DENTRO do driver (phone_number_id da Meta ×
   // instância Evolution) — duplicado deixaria o roteamento dos webhooks ambíguo e a
@@ -2647,17 +2645,12 @@ model IntencaoMensagem {
   politicaId String?
   politica   PoliticaRegua? @relation(fields: [politicaId], references: [id])
 
-  // Régua COMERCIAL (doc 27 C1 §Tese): lead-novo e demais cadências. Mesmo outbox/
-  // despachante da cobrança; o vínculo de domínio é o Lead + o passo da cadência.
+  // Vínculo com o lead. `passoComercial`/`ocorrenciaComercial` são da régua comercial do CRM antigo (a
+  // PoliticaComercial foi removida): nada novo os preenche e o despachante cancela as intenções que sobraram.
   leadId             String?
   lead               Oportunidade?             @relation(fields: [leadId], references: [id])
-  passoComercial     String? // passo da cadência comercial ("+30min"...) — idempotência
-  // OCORRÊNCIA da cadência (review PR #56): a âncora em ISO. É o que separa um CICLO do
-  // outro — experimental reagendada, segundo no-show. Sem ela a idempotência é eterna por
-  // lead e a cadência nova nasce com os passos do ciclo anterior já cumpridos.
-  ocorrenciaComercial String?
-  politicaComercialId String?
-  politicaComercial  PoliticaComercial? @relation(fields: [politicaComercialId], references: [id])
+  passoComercial     String? // passo da cadência comercial antiga ("+30min"...)
+  ocorrenciaComercial String? // âncora em ISO do ciclo da cadência antiga
 
   // Classe REATIVA (doc 27 §regras transversais · gap C20): resposta automática a um
   // inbound (saudação) — isenta de janela/teto/silêncio (uma saudação "em segundos" não
@@ -2689,16 +2682,6 @@ model IntencaoMensagem {
   autor           Usuario?          @relation("AutorIntencoesWhatsApp", fields: [autorId], references: [id])
 
   @@unique([cobrancaId, passo, cicloCobranca]) // cada calendário aprovado tem seus próprios degraus
-  // Cadência comercial: a idempotência inclui a POLÍTICA (review PR #55) e a OCORRÊNCIA
-  // (review PR #56). "Um motor, N políticas" só se sustenta se cadências distintas puderem
-  // compartilhar nomes de passo sem colidir no mesmo lead (+30min/+3d/+7d aparecem em
-  // lead-novo e no-show); a ocorrência (âncora em ISO — horário da aula, 1º inbound) separa
-  // um CICLO do outro no mesmo lead/cadência (um 2º no-show não nasce "feito"). É um índice
-  // UNIQUE PARCIAL (WHERE as colunas comerciais IS NOT NULL), no padrão do repo para
-  // unicidade condicional (cf. integridade_alocacao_preco): mora na migration
-  // `ocorrencia_cadencia_comercial` (Prisma não modela WHERE em @@unique) e o predicado
-  // mantém as intenções de COBRANÇA (essas colunas nulas) fora da constraint. O mesmo índice
-  // cobre o lookup do enfileirador (findFirst com as quatro colunas presentes).
   @@index([status, despacharAposEm])
   @@index([status, agendadaPara])
 }
@@ -2730,7 +2713,6 @@ model TemplateWhatsApp {
   atualizadoEm   DateTime       @updatedAt
 
   degraus            DegrauPolitica[]
-  degrausComerciais  DegrauComercial[]
   mensagens          MensagemWhatsApp[]
   intencoes          IntencaoMensagem[]
   configuracaoAvisosAgenda ConfiguracaoOperacional? @relation("TemplateAvisosAgenda")
@@ -2788,70 +2770,13 @@ model DegrauPolitica {
 }
 
 // ============================================================
-// COMERCIAL — fase pós-V1 (doc 27). C1 "captura + velocidade": auto-lead no 1º inbound
-// do número de vendas + saudação automática (texto fixo, reativa). Config como DADO,
-// singleton (id fixo "comercial"). Regra de ouro (doc 27): TODA automação nasce DESLIGADA.
-// A régua "lead novo sem resposta" e as demais políticas comerciais (C1 cadência + C2)
-// entram na fatia seguinte, no mesmo motor generalizado por âncora.
+// COMERCIAL — fase pós-V1 (doc 27). Config como DADO, singleton (id fixo "comercial").
+// Regra de ouro (doc 27): TODA automação nasce DESLIGADA. O auto-lead, a saudação, a gestão
+// (C5) e a régua comercial (PoliticaComercial/DegrauComercial) saíram com o CRM antigo.
 // ============================================================
-
-// Régua COMERCIAL como DADO (doc 27 §Tese: "um motor de réguas, N políticas"). A cadência
-// "lead novo sem resposta" (D0=saudação já na C1; +30min·+4h·+24h·+3d·+7d — doc 08) é a
-// 1ª política; no-show/proposta/nutrição entram no MESMO modelo. Nasce DESLIGADA (regra de
-// ouro do doc 27). Guard-rails próprios (janela/dias/teto/silêncio) — o despachante os aplica
-// como na cobrança. A ORDEM dos passos é lei de código (regua.ts) — aqui só offset/ativo.
-model PoliticaComercial {
-  id                      String            @id @default(cuid())
-  chave                   String            @unique // "LEAD_NOVO_SEM_RESPOSTA" (âncora/cenário)
-  nome                    String
-  estado                  EstadoPolitica    @default(DESLIGADA)
-  janelaInicio            Int               @default(9) // hora local do contato
-  janelaFim               Int               @default(20)
-  diasSemana              Int[]             @default([1, 2, 3, 4, 5])
-  tetoPorContatoDia       Int               @default(2)
-  silencioPosInboundHoras Int               @default(72)
-  numeroRemetenteId       String?
-  numeroRemetente         NumeroWhatsApp?   @relation(fields: [numeroRemetenteId], references: [id])
-
-  // B1 (doc 32): COHORT REAL do piloto. Em modo piloto (default — regra de ouro), o cron
-  // só enfileira para leads da allowlist explícita; lista vazia = ninguém. Desligar o modo
-  // piloto é o go-live geral da cadência — decisão explícita do gerente, nunca acidente.
-  modoPiloto    Boolean  @default(true)
-  pilotoLeadIds String[] @default([])
-
-  criadoEm                DateTime          @default(now())
-  atualizadoEm            DateTime          @updatedAt
-
-  degraus   DegrauComercial[]
-  intencoes IntencaoMensagem[]
-}
-
-model DegrauComercial {
-  id           String            @id @default(cuid())
-  politicaId   String
-  politica     PoliticaComercial @relation(fields: [politicaId], references: [id])
-  passo        String // "+30min", "+4h", "+24h", "+3d", "+7d"
-  offsetMinutos Int // minutos após a âncora (1º inbound do lead)
-  rotulo       String
-  ativo        Boolean           @default(true)
-  // B3/B4 (doc 32): tolerância MÁXIMA de atraso do degrau, em minutos — além dela o
-  // disparo perde sentido e a intenção é cancelada via `validaAte`. NULL = sem limite.
-  toleranciaMinutos Int?
-  templateId   String?
-  template     TemplateWhatsApp? @relation(fields: [templateId], references: [id])
-
-  @@unique([politicaId, passo])
-}
 
 model ConfigComercial {
   id            String   @id @default("comercial") // singleton
-  // Auto-criar lead no 1º inbound de um número VENDAS sem vínculo (gap 17 dedupe na ação).
-  autoLeadAtivo Boolean  @default(false)
-  // Saudação automática (resposta reativa, "em segundos") ao 1º inbound de um lead novo.
-  // Shadow PRÓPRIO (doc 27 §regra de ouro): DESLIGADA · SHADOW (registra o que TERIA sido
-  // enviado, sem enviar) · ATIVA. Reusa o enum das políticas de cobrança.
-  saudacaoEstado EstadoPolitica @default(DESLIGADA)
-  saudacaoTexto  String         @default("Olá! Recebemos sua mensagem e já retornamos. 😊")
   // B9 (doc 32): tolerância (minutos após o horário da aula) para o professor registrar o
   // check-in da experimental. Vencida a tolerância sem check-in: evento
   // `ExperimentalCheckInVencido` + alerta nas Homes (professor e gerente). Sem o check-in
@@ -2861,16 +2786,6 @@ model ConfigComercial {
   // ativam sozinhos (cronograma + comissão + lead MATRICULADO). Nasce DESLIGADA; a turma
   // segue híbrida (o sistema sugere, o consultor confirma — nunca aloca sozinho).
   matriculaAutomaticaAtiva Boolean @default(false)
-  // C5 (doc 27): GESTÃO — alerta de SLA + relatório diário no WhatsApp do gestor.
-  // Shadow próprio (DESLIGADA/SHADOW/ATIVA — nasce DESLIGADA); mensagens saem pela MESMA
-  // outbox/despachante com origem GESTAO (isentas de janela/teto/silêncio: são para a
-  // equipe, não para clientes; o kill switch global congela também).
-  gestaoEstado        EstadoPolitica @default(DESLIGADA)
-  gestaoTelefoneE164  String? // WhatsApp do gestor (destino)
-  gestaoNumeroId      String? // número remetente (vendas)
-  gestaoNumero        NumeroWhatsApp? @relation("NumeroGestao", fields: [gestaoNumeroId], references: [id])
-  gestaoSlaMinutos    Int            @default(30) // lead NOVO parado além disto = alerta
-  gestaoRelatorioHora Int            @default(19) // hora (do servidor) do relatório diário
   criadoEm       DateTime       @default(now())
   atualizadoEm   DateTime       @updatedAt
 }

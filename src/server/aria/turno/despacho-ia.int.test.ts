@@ -23,7 +23,7 @@ import type { PedidoIA, ProvedorIA, RespostaIA } from "../provedor/tipos";
 import { processarTurnoAria } from "./orquestrador";
 
 // Revisão final da Fase 5C (achado 1): a resposta da Aria ATIVA passa pelo despachante de verdade.
-// O ensaio dela é o estado da própria Aria, nunca o saudacaoEstado da ConfigComercial (padrão DESLIGADA).
+// O ensaio dela é o estado da própria Aria (a saudação reativa do CRM antigo, que só simula, não a afeta).
 
 let seq = 0;
 beforeEach(async () => {
@@ -63,9 +63,8 @@ async function cenario(estado: "ATIVA" | "SHADOW") {
 }
 
 describe("despacho da resposta da Aria", () => {
-  it("aria_ativa_envia_de_verdade_com_a_saudacao_comercial_desligada", async () => {
+  it("aria_ativa_envia_de_verdade", async () => {
     const c = await cenario("ATIVA");
-    expect(await prisma.configComercial.findUnique({ where: { id: "comercial" } })).toBeNull(); // saudacaoEstado = DESLIGADA (padrão)
 
     const m1 = await c.inbound("Quero saber das turmas de inglês");
     expect(await processarTurnoAria(m1.id, { provedor })).toMatchObject({ resultado: "RESPONDEU" });
@@ -149,9 +148,8 @@ describe("despacho da resposta da Aria", () => {
     expect(enviarTextoMock).not.toHaveBeenCalled();
   });
 
-  it("aria_em_shadow_nada_sai_mesmo_com_a_saudacao_comercial_ativa", async () => {
+  it("aria_em_shadow_nada_sai", async () => {
     const c = await cenario("SHADOW");
-    await prisma.configComercial.create({ data: { id: "comercial", saudacaoEstado: "ATIVA" } });
     const m = await c.inbound("Quero saber das turmas de inglês");
     await processarTurnoAria(m.id, { provedor });
     expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ origem: "IA", status: "SIMULADA" });

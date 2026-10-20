@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hrefInbox, lerBuscaInbox, lerCanalInbox, mesclarPorRecencia, whereBuscaConversas, whereCanalInbox } from "./busca-inbox";
-
-const d = (iso: string) => new Date(iso);
+import { lerBuscaInbox, whereBuscaConversas } from "./busca-inbox";
 
 describe("busca da inbox", () => {
   it("lê a busca da URL: sem espaços nas pontas, até 100 caracteres", () => {
@@ -30,25 +28,6 @@ describe("busca da inbox", () => {
     expect(temTelefone("12")).toBe(false);
     expect(temTelefone("123")).toBe(true);
   });
-
-  it("mescla recentes e não lidas de fora sem repetir, por recência (sem data vai para o fim)", () => {
-    const recentes = [
-      { id: "r1", ultimaMensagemEm: d("2026-10-05"), criadoEm: d("2026-01-01") },
-      { id: "r2", ultimaMensagemEm: d("2026-10-03"), criadoEm: d("2026-01-01") },
-    ];
-    const fora = [
-      { id: "n1", ultimaMensagemEm: d("2026-10-04"), criadoEm: d("2026-01-01") },
-      { id: "r2", ultimaMensagemEm: d("2026-10-03"), criadoEm: d("2026-01-01") },
-      { id: "n2", ultimaMensagemEm: null, criadoEm: d("2026-02-01") },
-    ];
-    expect(mesclarPorRecencia(recentes, fora).map((a) => a.id)).toEqual(["r1", "n1", "r2", "n2"]);
-  });
-
-  it("links da inbox mantêm a busca e a conversa aberta", () => {
-    expect(hrefInbox({ busca: "ana", c: "c1" })).toBe("/inbox?busca=ana&c=c1");
-    expect(hrefInbox({ c: "c1" })).toBe("/inbox?c=c1");
-    expect(hrefInbox({})).toBe("/inbox");
-  });
 });
 
 describe("teto da busca da inbox", () => {
@@ -56,25 +35,5 @@ describe("teto da busca da inbox", () => {
     const where = whereBuscaConversas("a b c d e f g") as { AND: unknown[] };
     expect(where.AND).toHaveLength(6);
     expect(JSON.stringify(where)).not.toContain('"g"');
-  });
-});
-
-describe("filtro de canal da inbox (SPEC-ERP-005 §5.5)", () => {
-  it("lê só valores conhecidos da URL", () => {
-    expect(lerCanalInbox({ canal: "linha" })).toBe("linha");
-    expect(lerCanalInbox({ canal: ["institucional", "linha"] })).toBe("institucional");
-    expect(lerCanalInbox({ canal: "tudo" })).toBe("");
-    expect(lerCanalInbox({})).toBe("");
-  });
-
-  it("linha = comercial em número de VENDAS; institucional = o complemento; vazio não filtra", () => {
-    const linha = { finalidade: "COMERCIAL", conversa: { numero: { finalidade: "VENDAS" } } };
-    expect(whereCanalInbox("linha")).toEqual(linha);
-    expect(whereCanalInbox("institucional")).toEqual({ NOT: linha });
-    expect(whereCanalInbox("")).toEqual({});
-  });
-
-  it("links preservam o canal", () => {
-    expect(hrefInbox({ busca: "ana", canal: "linha", c: "c1" })).toBe("/inbox?busca=ana&canal=linha&c=c1");
   });
 });

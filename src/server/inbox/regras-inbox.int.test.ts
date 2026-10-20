@@ -121,9 +121,9 @@ describe("§4.4 — regras do Inbox", () => {
       inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60_000), motivo: "Férias do titular" } });
     expect(await atendimentoVisivel(sessao(substituto), a.id)).toBeNull();
     // O dono da linha vê a conversa, mas o painel do lead segue a carteira (do vend2).
-    const { carregarThread } = await import("@/server/whatsapp/consultas");
-    expect((await carregarThread(sessao(vend), a.id))?.lead).toBeNull();
-    expect((await carregarThread(sessao(vend2), a.id))?.lead?.id).toBe(alheio.id);
+    const { carregarPainel } = await import("./paineis");
+    expect(await carregarPainel(sessao(vend), a.id)).toMatchObject({ oportunidade: null, acoes: { leadId: null } });
+    expect(await carregarPainel(sessao(vend2), a.id)).toMatchObject({ oportunidade: { id: alheio.id }, acoes: { leadId: alheio.id } });
   });
 
   it("04 professor só vê pedagógico aberto de turma atual", async () => {

@@ -132,7 +132,7 @@ describe("painel lateral por setor", () => {
     expect(await carregarPainel(sess(comEnvio), a.id)).toMatchObject({ podeEnviar: true });
   });
 
-  // C2 da R1 do #217 (decisão do dono): as ações do Inbox antigo voltam no painel, com as mesmas regras de carregarThread.
+  // C2 da R1 do #217 (decisão do dono): as ações do Inbox antigo voltam no painel, com as mesmas regras da thread antiga.
   describe("ações de cadastro e cobrança (as do Inbox antigo)", () => {
     it("linha comercial sem oportunidade: vendedor cria; com oportunidade visível, o id vem para o link do funil", async () => {
       const dono = await criarUsuario([Papel.VENDEDOR], "Dono");

@@ -10,7 +10,7 @@ export type PainelSetor = DadosSetor & {
   acoes?: AcoesContatoInbox | null;
   /** Estado da Aria no atendimento (Task 29). Ausente nos testes de marcação antigos. */
   aria?: AriaDoAtendimento | null;
-  /** O podeEnviar da thread (`atendimentoVisivel` com envio, como em carregarThread): decide o compositor (C6 do #217).
+  /** O podeEnviar da thread (`atendimentoVisivel` com envio): decide o compositor (C6 do #217).
    *  Ausente nos testes de marcação antigos; ausente vale como não pode. */
   podeEnviar?: boolean;
 };

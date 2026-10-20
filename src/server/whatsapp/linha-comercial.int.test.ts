@@ -8,7 +8,10 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
-import { carregarThread, contarNaoLidas, listarConversas, listarConversasInbox, listarLinhasDoUsuario } from "./consultas";
+import { contarNaoLidas, listarLinhasDoUsuario } from "./consultas";
+import { obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { carregarPainel } from "@/server/inbox/paineis";
+import { listaDoInbox, mensagensDoInbox } from "@/test/inbox-consultas";
 import { processarMensagemNormalizada } from "./inbound";
 import { criarLeadDaConversa, enviarTextoInbox, salvarNumeroWhatsApp, vincularContatoWhatsApp } from "./acoes";
 import { abrirAtendimentoInstitucional, listarOpcoesAtendimento, listarTriagemWhatsApp } from "./operacoes-atendimento";
@@ -61,24 +64,15 @@ async function mensagem(providerRef: string, over: Partial<Parameters<typeof pro
   });
 }
 
-async function ligarAutoLead(saudacao: "DESLIGADA" | "SHADOW" | "ATIVA" = "DESLIGADA") {
-  await prisma.configComercial.upsert({
-    where: { id: "comercial" },
-    create: { id: "comercial", autoLeadAtivo: true, saudacaoEstado: saudacao },
-    update: { autoLeadAtivo: true, saudacaoEstado: saudacao },
-  });
-}
-
 describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", () => {
   it("LC-01: auto-lead desligado → conversa sem lead, com 'Criar lead', fora da triagem", async () => {
     await linhaDe(vendedorA);
     expect(await mensagem("linha-a")).toBe("gravada");
 
-    const lista = await listarConversas(sessao(vendedorA));
+    const lista = await listaDoInbox(sessao(vendedorA));
     expect(lista).toHaveLength(1);
     expect(lista[0]).toMatchObject({ linhaComercial: true, vinculo: null, naoLidas: 1 });
-    const thread = await carregarThread(sessao(vendedorA), lista[0].id);
-    expect(thread).toMatchObject({ linhaComercial: true, podeCriarLead: true, lead: null, podeEnviar: true });
+    expect(await carregarPainel(sessao(vendedorA), lista[0].id)).toMatchObject({ oportunidade: null, acoes: { podeCriarLead: true, leadId: null }, podeEnviar: true });
 
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: lista[0].id } });
     // Dono da linha como responsável conta como assumido (mesma regra do backfill da M2).
@@ -88,9 +82,8 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(await listarTriagemWhatsApp()).toHaveLength(0);
   });
 
-  it("LC-02: auto-lead ligado não cria lead (casca removida) — conversa fica sem lead, com 'Criar lead'", async () => {
+  it("LC-02: inbound não cria lead (o auto-lead saiu com o CRM antigo) — conversa fica sem lead, com 'Criar lead'", async () => {
     await linhaDe(vendedorA);
-    await ligarAutoLead();
     await mensagem("linha-a");
     await mensagem("linha-a");
 
@@ -99,8 +92,7 @@ describe("LC-01/LC-02: contato desconhecido aparece na inbox do dono da linha", 
     expect(atendimentos).toHaveLength(1);
     expect(atendimentos[0].leadId).toBeNull();
     expect(await prisma.mensagemWhatsApp.count({ where: { atendimentoId: atendimentos[0].id } })).toBe(2);
-    const thread = await carregarThread(sessao(vendedorA), atendimentos[0].id);
-    expect(thread?.podeCriarLead).toBe(true);
+    expect((await carregarPainel(sessao(vendedorA), atendimentos[0].id))?.acoes?.podeCriarLead).toBe(true);
   });
 });
 
@@ -117,13 +109,13 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
   it("LC-03: vendedor de outra equipe não alcança a conversa por nenhum caminho", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
-    const [a] = await listarConversas(sessao(vendedorA));
+    const [a] = await listaDoInbox(sessao(vendedorA));
 
-    expect(await listarConversas(sessao(vendedorB))).toHaveLength(0);
-    expect(await carregarThread(sessao(vendedorB), a.id)).toBeNull();
+    expect(await listaDoInbox(sessao(vendedorB))).toHaveLength(0);
+    expect(await obterItemListaInbox(sessao(vendedorB), a.id)).toBeNull();
     expect(await atendimentoVisivel(sessao(vendedorB), a.id)).toBeNull();
     expect(await contarNaoLidas(sessao(vendedorB))).toBe(0);
-    expect((await listarConversasInbox(sessao(vendedorB), { busca: "Desconhecido" })).itens).toHaveLength(0);
+    expect(await listaDoInbox(sessao(vendedorB), { busca: "Desconhecido" })).toHaveLength(0);
     entrar(vendedorB);
     expect((await enviarTextoInbox({ conversaId: a.id, texto: "intrusão" })).ok).toBe(false);
     expect((await criarLeadDaConversa(a.id)).ok).toBe(false);
@@ -133,9 +125,9 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
   it("LC-04: gerente da equipe do dono vê; gerente de outra equipe também (E5)", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
-    expect(await listarConversas(sessao(gerenteA))).toHaveLength(1);
+    expect(await listaDoInbox(sessao(gerenteA))).toHaveLength(1);
     // E5, Task 13: GERENTE_COMERCIAL vê todo COMERCIAL (antes: só a carteira da equipe).
-    expect(await listarConversas(sessao(gerenteB))).toHaveLength(1);
+    expect(await listaDoInbox(sessao(gerenteB))).toHaveLength(1);
     expect(await contarNaoLidas(sessao(gerenteA))).toBe(1);
   });
 
@@ -143,9 +135,9 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     const secretaria = await criarUsuario([Papel.SECRETARIA_ACADEMICA]);
-    expect(await listarConversas(sessao(financeiro))).toHaveLength(0);
-    expect(await listarConversas(sessao(secretaria))).toHaveLength(0);
-    expect(await listarConversas(sessao(admin))).toHaveLength(1);
+    expect(await listaDoInbox(sessao(financeiro))).toHaveLength(0);
+    expect(await listaDoInbox(sessao(secretaria))).toHaveLength(0);
+    expect(await listaDoInbox(sessao(admin))).toHaveLength(1);
   });
 
   it("LC-D02: cobertura de carteira não dá a linha do titular; o substituto vê só os leads cobertos", async () => {
@@ -157,24 +149,16 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
     await prisma.coberturaCarteira.create({ data: { titularId: vendedorA.id, substitutoId: vendedorB.id, concedenteId: gerenteA.id,
       inicio: new Date(Date.now() - 1000), fim: new Date(Date.now() + 60_000), motivo: "Férias do titular" } });
 
-    const doSubstituto = await listarConversas(sessao(vendedorB));
+    const doSubstituto = await listaDoInbox(sessao(vendedorB));
     expect(doSubstituto.map((c) => c.contatoNome)).toEqual(["Lead coberto"]);
   });
 
   it("LC-L05: linha desativada corta o acesso do dono no próximo pedido", async () => {
     const linha = await linhaDe(vendedorA);
     await mensagem("linha-a");
-    expect(await listarConversas(sessao(vendedorA))).toHaveLength(1);
+    expect(await listaDoInbox(sessao(vendedorA))).toHaveLength(1);
     await prisma.numeroWhatsApp.update({ where: { id: linha.id }, data: { ativo: false } });
-    expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
-  });
-
-  it("filtro 'Linha comercial' × 'Institucional' só restringe o escopo", async () => {
-    await linhaDe(vendedorA);
-    await mensagem("linha-a");
-    expect((await listarConversasInbox(sessao(admin), { canal: "linha" })).itens).toHaveLength(1);
-    expect((await listarConversasInbox(sessao(admin), { canal: "institucional" })).itens).toHaveLength(0);
-    expect((await listarConversasInbox(sessao(vendedorB), { canal: "linha" })).itens).toHaveLength(0);
+    expect(await listaDoInbox(sessao(vendedorA))).toHaveLength(0);
   });
 });
 
@@ -186,8 +170,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     await mensagem("linha-a", { fromMe: true, corpo: "respondi pelo celular", quando: new Date(t0) });
     const atendimentos = await prisma.atendimentoWhatsApp.findMany();
     expect(atendimentos).toHaveLength(1);
-    const thread = await carregarThread(sessao(vendedorA), atendimentos[0].id);
-    expect(thread?.mensagens.map((m) => m.direcao)).toEqual(["ENTRADA", "SAIDA"]);
+    expect((await mensagensDoInbox(sessao(vendedorA), atendimentos[0].id))?.map((m) => m.direcao)).toEqual(["ENTRADA", "SAIDA"]);
     expect(atendimentos[0].naoLidas).toBe(1); // a saída não conta como não lida
   });
 
@@ -195,7 +178,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     await mensagem("linha-a");
-    const [conversa] = await listarConversas(sessao(vendedorA));
+    const [conversa] = await listaDoInbox(sessao(vendedorA));
 
     entrar(vendedorA);
     const r = await criarLeadDaConversa(conversa.id);
@@ -220,7 +203,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     const lead = await prisma.oportunidade.create({ data: { nome: "Lead já cadastrado", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
-    const [conversa] = await listarConversas(sessao(vendedorA));
+    const [conversa] = await listaDoInbox(sessao(vendedorA));
     entrar(vendedorA);
     const r = await vincularContatoWhatsApp({ contatoId: conversa.contatoId, atendimentoId: conversa.id, alvo: { tipo: "lead", id: lead.id } });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
@@ -233,7 +216,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     const existente = await prisma.oportunidade.create({ data: { nome: "Antigo", telefoneE164: "+50670001111", vendedorDonoId: vendedorA.id } });
-    const [conversa] = await listarConversas(sessao(vendedorA));
+    const [conversa] = await listaDoInbox(sessao(vendedorA));
     entrar(vendedorA);
     const r = await criarLeadDaConversa(conversa.id);
     expect(r.ok && r.dado).toEqual({ leadId: existente.id, criado: false });
@@ -250,12 +233,12 @@ describe("LC-07/LC-08: ver a conversa não abre outros dados", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
 
-    const [conversa] = await listarConversas(sessao(vendedorA));
+    const [conversa] = await listaDoInbox(sessao(vendedorA));
     const atendimento = await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: conversa.id } });
     expect(atendimento).toMatchObject({ finalidade: "COMERCIAL", alunoId: null, matriculaId: null });
-    const thread = await carregarThread(sessao(vendedorA), conversa.id);
-    expect(thread?.mensagens).toHaveLength(1);
-    expect(thread).toMatchObject({ matricula: null, cobrancaAtiva: null, contato: { alunoId: null, alunoNome: null } });
+    expect(await mensagensDoInbox(sessao(vendedorA), conversa.id)).toHaveLength(1);
+    expect(conversa.vinculo).toBeNull();
+    expect(await carregarPainel(sessao(vendedorA), conversa.id)).toMatchObject({ acoes: { alunoId: null, cobranca: null } });
     entrar(vendedorA);
     const r = await criarLeadDaConversa(conversa.id);
     expect(r.ok).toBe(false);
@@ -269,16 +252,15 @@ describe("LC-07/LC-08: ver a conversa não abre outros dados", () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
 
-    const [conversa] = await listarConversas(sessao(vendedorA));
-    const doDono = await carregarThread(sessao(vendedorA), conversa.id);
-    expect(doDono?.mensagens).toHaveLength(1);
-    expect(doDono?.lead).toBeNull();
-    expect(doDono?.contato.leadId).toBeNull();
-    expect(doDono?.podeCriarLead).toBe(false); // a conversa já tem lead (de outra carteira)
+    const [conversa] = await listaDoInbox(sessao(vendedorA));
+    expect(await mensagensDoInbox(sessao(vendedorA), conversa.id)).toHaveLength(1);
+    const doDono = await carregarPainel(sessao(vendedorA), conversa.id);
+    expect(doDono).toMatchObject({ oportunidade: null, acoes: { leadId: null } });
+    expect(doDono?.acoes?.podeCriarLead).toBe(false); // a conversa já tem lead (de outra carteira)
 
     // O titular da carteira continua com o painel completo (regra anterior preservada).
-    const doTitular = await carregarThread(sessao(vendedorC), conversa.id);
-    expect(doTitular?.lead?.id).toBe(lead.id);
+    const doTitular = await carregarPainel(sessao(vendedorC), conversa.id);
+    expect(doTitular).toMatchObject({ oportunidade: { id: lead.id }, acoes: { leadId: lead.id } });
   });
 });
 
@@ -291,8 +273,8 @@ describe("LC-09: troca de dono — o histórico segue a linha", () => {
     const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "MOTOR",
       finalidade: "VENDAS", donoId: vendedorD.id, ativo: true });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
-    expect(await listarConversas(sessao(vendedorD))).toHaveLength(1);
-    expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
+    expect(await listaDoInbox(sessao(vendedorD))).toHaveLength(1);
+    expect(await listaDoInbox(sessao(vendedorA))).toHaveLength(0);
     expect((await eventosDo("NumeroWhatsApp", linha.id)).map((e) => e.tipo)).toContain("NumeroWhatsAppAlterado");
   });
 });
@@ -332,16 +314,16 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
       { conversaId: conversa.id, numeroId: linha.id, direcao: "ENTRADA", driver: DriverWhatsApp.MOTOR, corpo: "oi", providerMessageId: "O-1", criadoEm: antiga },
       { conversaId: conversa.id, numeroId: linha.id, direcao: "SAIDA", driver: DriverWhatsApp.MOTOR, corpo: "olá", providerMessageId: "O-2", criadoEm: new Date(antiga.getTime() + 60_000) },
     ] });
-    expect(await listarConversas(sessao(vendedorA))).toHaveLength(0);
+    expect(await listaDoInbox(sessao(vendedorA))).toHaveLength(0);
 
     expect(await adotarMensagensOrfasDaLinha()).toEqual({ conversas: 1, mensagens: 2 });
-    const [item] = await listarConversas(sessao(vendedorA));
+    const [item] = await listaDoInbox(sessao(vendedorA));
     expect(item).toMatchObject({ naoLidas: 1, ultimaMensagemEm: new Date(antiga.getTime() + 60_000).toISOString() });
     entrar(admin);
     expect(await listarTriagemWhatsApp()).toHaveLength(0);
 
     expect(await adotarMensagensOrfasDaLinha()).toEqual({ conversas: 0, mensagens: 0 });
-    expect((await listarConversas(sessao(vendedorA)))[0].naoLidas).toBe(1);
+    expect((await listaDoInbox(sessao(vendedorA)))[0].naoLidas).toBe(1);
   });
 
   it("conversa de grupo numa linha VENDAS não derruba o sweep nem ganha atendimento", async () => {
@@ -367,7 +349,7 @@ describe("LC-15: mensagens da linha paradas na triagem", () => {
     const r = await salvarNumeroWhatsApp({ id: linha.id, telefoneE164: linha.telefoneE164, rotulo: linha.rotulo, driver: "MOTOR",
       finalidade: "VENDAS", donoId: vendedorA.id, ativo: true });
     expect(r.ok, r.ok ? "" : r.erro).toBe(true);
-    expect(await listarConversas(sessao(vendedorA))).toHaveLength(1);
+    expect(await listaDoInbox(sessao(vendedorA))).toHaveLength(1);
   });
 });
 
