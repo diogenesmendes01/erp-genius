@@ -560,6 +560,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes/Formulario.tsx": [
     "<button> Autorizando… · Autorizar realização especial → secundario/lg",
   ],
+  "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/ResolverImpedimento.tsx": [
+    "<Botao> Registrando… · Confirmar resolução → secundario/lg",
+  ],
   "academico/segundas-chamadas/minhas/[reservaId]/Formulario.tsx": [
     "<button> Registrando… · Registrar realização → secundario/lg",
     "<button> Submetendo… · Submeter nota para conferência → secundario/lg",

@@ -19,6 +19,10 @@ export type ExcecaoCampo = { arquivo: string; trecho: string; motivo: string };
 export const EXCECOES_CAMPO: readonly ExcecaoCampo[] = [];
 
 export const MAPA_CAMPOS: Record<string, string[]> = {
+  "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/ResolverImpedimento.tsx": [
+    "Realização posterior com nota oficial · obrigatório · select",
+    "Justificativa · obrigatório · CampoTexto",
+  ],
   "src/app/(app)/aria/_componentes/Cabecalho.tsx": [
     "Motivo da pausa · obrigatório · input · dica",
     "Estado da Aria · opcional · select · dica",

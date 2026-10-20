@@ -38,9 +38,15 @@ export async function consultarHistoricoReservasSegundaChamada(input: z.input<ty
           ocorrencias: { orderBy: [{ criadaEm: "desc" }, { id: "desc" }], take: 1, select: {
             status: true, ocorridaEm: true, criadaEm: true, motivo: true, evidencia: true, registradaPor: { select: { nome: true } },
           } },
+          resolucaoImpedimento: { select: { confirmadaEm: true, motivo: true, confirmadaPor: { select: { nome: true } }, realizacao: { select: { realizadaEm: true } } } },
           realizacao: { select: { realizadaEm: true, evidencia: true, professor: { select: { nome: true } }, registradaPor: { select: { nome: true } } } },
         },
       });
+      // Q164: só realização da mesma avaliação, já com nota oficial, pode resolver um impedimento.
+      const oficiais = reservas.some(r => r.status === "PENDENCIA_ESCOLA" && !r.resolucaoImpedimento) ? await tx.realizacaoSegundaChamada.findMany({
+        where: { reserva: escopo, lancamentosOriginais: { some: { decisao: { is: { aprovada: true } } } } },
+        orderBy: [{ realizadaEm: "asc" }, { id: "asc" }], select: { id: true, reservaId: true, realizadaEm: true },
+      }) : [];
       const config = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
       return {
         fusoExibicao: config?.fusoInstitucional ?? "UTC",
@@ -51,6 +57,10 @@ export async function consultarHistoricoReservasSegundaChamada(input: z.input<ty
             id: r.id, status: r.status, reservadaEm: r.reservadaEm.toISOString(), reservadaPor: r.reservadaPor.nome,
             encontro: e ? { id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status, professor: e.professor?.nome ?? "Não informado" } : null,
             ocorrencia: o ? { status: o.status, ocorridaEm: o.ocorridaEm.toISOString(), criadaEm: o.criadaEm.toISOString(), motivo: o.motivo, evidencia: o.evidencia, registradaPor: o.registradaPor.nome } : null,
+            resolucaoImpedimento: r.resolucaoImpedimento ? { confirmadaEm: r.resolucaoImpedimento.confirmadaEm.toISOString(), motivo: r.resolucaoImpedimento.motivo,
+              confirmadaPor: r.resolucaoImpedimento.confirmadaPor.nome, realizadaEm: r.resolucaoImpedimento.realizacao.realizadaEm.toISOString() } : null,
+            realizacoesQueResolvem: r.status === "PENDENCIA_ESCOLA" && !r.resolucaoImpedimento && o
+              ? oficiais.filter(z => z.reservaId !== r.id && z.realizadaEm > o.ocorridaEm).map(z => ({ id: z.id, realizadaEm: z.realizadaEm.toISOString() })) : [],
             realizacao: fato ? { realizadaEm: fato.realizadaEm.toISOString(), evidencia: fato.evidencia, professor: fato.professor.nome, registradaPor: fato.registradaPor.nome } : null,
           };
         }),
