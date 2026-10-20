@@ -28,7 +28,7 @@ export async function consultarCadastrosPreparacao(input: { leadId: string; pagi
     return prisma.$transaction(async (tx) => {
       const lead = await leadAutorizado(tx, autor.id, d.leadId);
       const contatoConferivel = contatoValido(lead.telefoneE164);
-      const candidatos = contatoConferivel && !lead.matricula ? await tx.aluno.findMany({ where: { telefoneE164: lead.telefoneE164 }, orderBy: [{ primeiroNome: "asc" }, { id: "asc" }], skip: (d.pagina - 1) * 20, take: 21,
+      const candidatos = contatoConferivel && !lead.matricula ? await tx.aluno.findMany({ where: { telefoneE164: lead.telefoneE164 }, orderBy: [{ nomeOrdenacao: "asc" }, { id: "asc" }], skip: (d.pagina - 1) * 20, take: 21,
         select: { id: true, primeiroNome: true, sobrenome: true } }) : [];
       const podeCadastrarNovo = contatoConferivel && !lead.matricula && !await tx.aluno.count({ where: { telefoneE164: lead.telefoneE164 } });
       const paisesCadastro = podeCadastrarNovo ? await tx.pais.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } }) : [];

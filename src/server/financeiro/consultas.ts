@@ -278,7 +278,7 @@ export async function listarContextosRecebimentoDestinado() {
   const matriculas = await prisma.matricula.findMany({
     // A antecipação documentada pode ocorrer antes da ativação. Rascunhos e
     // matrículas encerradas/canceladas continuam fora do caixa operacional.
-    where: { status: { in: [StatusMatricula.AGUARDANDO, StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: { aluno: { primeiroNome: "asc" } },
+    where: { status: { in: [StatusMatricula.AGUARDANDO, StatusMatricula.ATIVA, StatusMatricula.PAUSADA] } }, orderBy: [{ aluno: { nomeOrdenacao: "asc" } }, { id: "asc" }],
     include: { aluno: { select: { primeiroNome: true, sobrenome: true } }, pagadoresPreparacao: { orderBy: { versao: "desc" }, select: { id: true, tipo: true, versao: true } }, cobrancas: { where: { status: { in: [StatusCobranca.PENDENTE, StatusCobranca.ATRASADO] } }, orderBy: { vencimento: "asc" }, include: { origensCreditoAcertoTaxaAditivo: { select: { valor: true } }, ...incluirFonteVencimentoCivil } } },
   });
   const cobrancaIds = matriculas.flatMap((m) => m.cobrancas.map((c) => c.id));
