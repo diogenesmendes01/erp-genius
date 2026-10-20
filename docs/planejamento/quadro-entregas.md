@@ -3742,3 +3742,36 @@ Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` 5b4e75a9
     - `npm test`: 783 arquivos e 5.861 testes.
     - build: saída 0.
     - Integração de `src/server/crm` mais despachante e agendamento: 34 arquivos e 265 testes.
+
+## LGPD, D5 (#165): anonimizar o texto da busca nos `DadosExportados` antigos (20/10/2026)
+
+Branch `claude/lgpd-exportacoes`, base `main` 9808cd29. Nenhuma migration. **O script não foi rodado em produção (UAT)**: fica para o dono, depois do backup.
+
+- **Problema:** até a #119 (merge em 25/09/2026, 11:03), o evento `DadosExportados` gravava em `payload.filtros.busca` o texto digitado na busca da listagem exportada (alunos e leads), que pode ser nome, e-mail ou telefone. A partir da #119 a trilha grava só `{ aplicada: true, caracteres: n }`. A exportação de contatos e a de relatórios (#228) já nasceram no formato novo.
+- **Rotina:** `anonimizarBuscaExportacoes` (`src/server/lgpd/anonimizar-busca-exportacoes.ts`), operada por `scripts/anonimizar-busca-exportacoes.ts`, no padrão de `reparar-nome-contato-whatsapp.ts`.
+  - **Critério:** `tipo = 'DadosExportados'`, `criadoEm` antes do corte e `payload.filtros.busca` em texto (`jsonb_typeof = 'string'`). O corte padrão é o fim de 25/09 em Brasília (`2026-09-26T03:00:00Z`), porque o deploy da #119 veio depois do merge e o próprio dia 25 pode ter o texto. Pode ser trocado com `--corte`.
+  - **Troca:** a busca em texto vira `{ aplicada: true, caracteres: n }`, o mesmo formato que o código grava desde a #119 (o padrão da trilha, e não `null` nem um marcador). O resto do payload não muda. O texto removido não é copiado para lugar nenhum.
+  - **Simulação por padrão:** sem `--aplicar`, só conta as linhas e mostra o intervalo de datas, sem gravar nada.
+  - **Lotes:** `--lote` (padrão 500). Cada lote é um `UPDATE … WHERE id IN (SELECT … FOR UPDATE)` numa transação própria. Uma falha no meio não desfaz os lotes já gravados, e rodar de novo pega o resto.
+  - **Auditoria:** um `BuscaExportacaoAnonimizada` (agregado `Exportacao`, autor nulo) por execução com `--aplicar`, com `corte`, `candidatos`, `afetados`, `lotes`, `intervalo { de, ate }` e `concluida`. É gravado também quando um lote falha, e não guarda dado pessoal. Entrou no catálogo (doc 12, seção "Exportação e LGPD").
+  - **Idempotente:** a linha anonimizada sai do critério, então a segunda execução afeta 0 linhas (e registra um evento com 0).
+- **Como rodar em produção (UAT), quando o dono decidir:**
+  1. Fazer o backup do banco com `scripts/backup-producao.sh` e conferir que o arquivo foi gerado.
+  2. Com a `DATABASE_URL` do UAT, rodar a simulação: `npx tsx scripts/anonimizar-busca-exportacoes.ts`. Guardar a saída (quantidade e intervalo de datas).
+  3. Rodar `npx tsx scripts/anonimizar-busca-exportacoes.ts --aplicar`. A saída mostra as linhas anonimizadas, os lotes e o id do evento.
+  4. Rodar a simulação de novo: deve mostrar 0.
+  5. Conferir no banco: `SELECT count(*) FROM "Evento" WHERE tipo = 'DadosExportados' AND jsonb_typeof(payload #> '{filtros,busca}') = 'string';` deve dar 0, e `SELECT payload FROM "Evento" WHERE tipo = 'BuscaExportacaoAnonimizada' ORDER BY "criadoEm" DESC LIMIT 1;` traz a contagem.
+  6. Registrar aqui as saídas dos passos 2 a 5 e marcar o item da #165.
+- **Testes de integração** (`anonimizar-busca-exportacoes.int.test.ts`, banco descartável `erp_genius_test_lgpd`): 5 de 5.
+  - A simulação não altera nenhuma linha nem grava evento.
+  - A aplicação troca só a busca em texto das linhas antes do corte, em lotes de 1. Ficam iguais: a exportação sem busca, a já no formato novo, a posterior ao corte e um evento de outro tipo com o mesmo campo.
+  - Um `--corte` anterior ao dia 25 deixa a linha do dia 25.
+  - Idempotência: a segunda execução não muda nada.
+  - Evento: o payload exato, sem nenhum texto da busca, e um evento por execução.
+  - Mutação: tirar o filtro do corte faz 4 dos 5 testes falharem.
+- **Script pela linha de comando** no banco de teste: simulação com 1 linha, `--aplicar` com 1 linha e 1 lote, reexecução com 0, e argumento desconhecido recusado.
+- **Evidências:**
+  - `tsc --noEmit`: saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com os 40 avisos de base.
+  - `npm test`: 788 arquivos e 5.892 testes.
+  - `npm run build`: saída 0.
