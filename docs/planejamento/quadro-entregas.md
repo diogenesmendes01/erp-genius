@@ -4015,6 +4015,21 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `npm run build`: saída 0.
   - Integração `previsao-comissao` e `anonimizar-busca-exportacoes`: 2 arquivos e 9 testes OK.
 
+### Q164 e Q157: comentários da review da #265 — 2026-10-20
+
+- **Escopo:** os comentários não bloqueantes da review da #265 (C2 a C5). A #265 já está no main. Nenhuma migration aplicada foi editada.
+- **C4, Q164:** o histórico de reservas só oferece realização da mesma regra de avaliação da reserva impedida (`regraId` no filtro `oficiais`). Antes, uma realização de outra regra aparecia no seletor e só era recusada ao confirmar. Teste unitário novo em `segunda-chamada-historico.test.ts`.
+- **C3, Q157:** a recusa por compensação aprovada continua conservadora, como o guard SQL já aplicado. A mensagem agora:
+  - nomeia o dia;
+  - diz quando outro relato confirmado também cobre esse dia;
+  - aponta os dois caminhos: propor uma correção que mantenha o dia, ou levar o caso à gestão financeira (Compensações por falta de oferta da escola, em Pausa, retomada e encerramento do aluno). Texto corrigido pela B1 da review da #268, abaixo.
+  - Integração nova com um relato confirmado sobreposto. Um relato não confirmado no mesmo dia não é citado.
+- **C2, Q157, decisão registrada:** a correção que amplia o período não confere os dias acrescentados contra a disponibilidade positiva aprovada (Q161) nem contra a cobertura futura de período integral aprovado. É o mesmo tratamento do relato novo, e a Q161 diz que a indisponibilidade prevalece. A decisão está escrita em `indisponibilidade-oferta-correcao-regras.ts`. A migration `20261020210000` já foi aplicada e por isso não recebeu o comentário.
+- **C5:** a integração das duas frentes rodou com `npm run test:int` no Postgres 54329 (banco `erp_genius_test_q164`, `migrate deploy` do zero): avaliações (segunda chamada, agenda, remarcação, substituição, pendências e fechamento acadêmico) e matrícula (relato, confirmação, término e correção de indisponibilidade, estado, cobertura, compensação, fonte, disponibilidade de oferta e período integral): 20 arquivos e 167 testes OK. Também passaram `tsc --noEmit` (saída 0), `eslint . --max-warnings 40` (0 erros e 40 avisos de base) e os unitários de avaliações, matrícula e das telas tocadas (107 arquivos e 659 testes OK em UTC e em America/Sao_Paulo). O ensaio do `migrate deploy` numa cópia restaurada do UAT continua com o integrador, antes do deploy.
+- **B1 da review da #268 (Q157):** a mensagem da recusa por compensação aprovada deixou de apontar a tela inexistente "Compensações da cobrança", de mandar "tratar" uma compensação aprovada (o status só vai de PENDENTE para APROVADA ou REJEITADA, sem estorno) e de afirmar que a compensação foi aprovada "com este relato" (`CompensacaoCoberturaMatricula` e `DiaCompensacaoCobertura` não guardam o relato). O texto agora nomeia o dia e a cobertura da cobrança, cita o outro relato confirmado que cobre o dia ("a correção continua recusada enquanto houver compensação aprovada nele"), diz que a compensação aprovada não é desfeita por esta tela e orienta a manter o dia ou levar o caso à gestão financeira, no painel real "Compensações por falta de oferta da escola" (`alunos/[id]/movimentacoes`, "Pausa, retomada e encerramento"). As duas integrações da C3 fixam o texto novo e recusam os trechos antigos.
+- **N1 da #268:** `dataBr` passou a usar `formatarDataCivil` de `src/lib/data-civil.ts`, em vez de repetir a formatação dd/mm/aaaa.
+- **N2 da #268:** as integrações da C3 continuam fora do CI. Rodaram com `vitest -c vitest.integration.config.ts` no Postgres 54329 (banco descartável `erp_genius_test_q164b`, `migrate deploy` do zero, perfil temporário revertido e banco removido): `indisponibilidade-oferta-correcao.int.test.ts`, 6 testes OK. Também passaram `tsc --noEmit` (saída 0), `eslint . --max-warnings 40` (0 erros e 40 avisos de base) e os unitários de matrícula e de `data-civil` (66 arquivos e 444 testes OK em UTC e em America/Sao_Paulo).
+
 ### Idempotência, 3º lote (#166) — 2026-10-20
 
 - **Escopo:** 20 das ações com `idempotente: false` de maior risco de duplicação. A #166 continua aberta. Os testes de integração entraram primeiro e falharam; a implementação veio depois.
