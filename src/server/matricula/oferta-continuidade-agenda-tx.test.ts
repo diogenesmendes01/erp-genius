@@ -14,8 +14,8 @@ const base = (ajustes: Record<string, unknown> = {}) => ({
     ...ajustes,
   },
 });
-function tx(alocacoes: unknown[], ausencias: unknown[] = [], calendario: unknown = { id: "cal", versao: 4 }) {
-  return { alocacaoTurma: { findMany: vi.fn().mockResolvedValue(alocacoes) }, indisponibilidadeDocente: { findMany: vi.fn().mockResolvedValue(ausencias) }, versaoCalendarioEscolar: { findFirst: vi.fn().mockResolvedValue(calendario) } };
+function tx(alocacoes: unknown[], ausencias: unknown[] = [], calendario: unknown = { id: "cal", versao: 4 }, impactos: unknown[] = []) {
+  return { alocacaoTurma: { findMany: vi.fn().mockResolvedValue(alocacoes) }, indisponibilidadeDocente: { findMany: vi.fn().mockResolvedValue(ausencias) }, versaoCalendarioEscolar: { findFirst: vi.fn().mockResolvedValue(calendario) }, impactoQuantidadeAulasModalidade: { findMany: vi.fn().mockResolvedValue(impactos) } };
 }
 const entrada = { matriculaId: "m1", inicio: new Date("2026-10-01T00:00:00Z"), fim: new Date("2026-10-31T00:00:00Z") };
 
@@ -111,4 +111,44 @@ it("exige cobertura histórica integral mesmo quando a importação é posterior
   for (const mudanca of [{ inicioVigencia: new Date("2026-10-02T00:00:00Z") }, { fimVigencia: new Date("2026-10-31T00:00:00Z") }, { inicioVigencia: null }]) {
     await expect(carregarComprovacaoOfertaContinuidadeAgendaTx(tx([{ ...migrada, ...mudanca }]) as never, entrada)).resolves.toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["VINCULO_AUSENTE"] } });
   }
+});
+
+describe("cadeia após replanejamento", () => {
+  const h = "h".repeat(64), q = "q".repeat(64);
+  const iso = (e: { id: string; inicio: Date; fim: Date; status: string }) => ({ id: e.id as string | null, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), status: e.status });
+  const periodo = { matriculaId: "m", inicio: new Date("2026-10-01T00:00:00Z"), fim: new Date("2026-10-31T00:00:00Z") };
+  const replanejado = (aplicadaEm?: Date) => {
+    const originais = base().turma.encontrosAgenda;
+    return { id: "cal-novo", versao: 5, replanejamentos: [{ id: "revisao", estadoHash: h, decisaoConjunta: { id: "decisao", aprovada: true, estadoHash: h, aplicacao: { id: "aplicacao", estadoHash: h, ...(aplicadaEm ? { aplicadaEm } : {}) } },
+      snapshot: { calendarioId: "cal-novo", conferidoEm: "2026-09-20T12:00:00.000Z", pendencias: [], recursos: { internos: [], externos: [], indisponibilidades: [], semDocenteApto: [] }, particulares: [],
+        revisoes: [{ turmaId: "turma", codigo: "T-1", fusoOrigem: "UTC", pendencias: [], previsao: { previsaoTermino: "2026-10-31T13:00:00.000Z", preservados: [],
+          propostas: originais.map((e) => ({ encontroId: e.id, inicioAnterior: e.inicio.toISOString(), fimAnterior: e.fim.toISOString(), inicioProposto: e.inicio.toISOString(), fimProposto: e.fim.toISOString(), alterado: false })) } }] } }] };
+  };
+
+  it("comprova a oferta quando a aula replanejada já foi ministrada", async () => {
+    const alocacao = base();
+    alocacao.turma.encontrosAgenda[0]!.status = "MINISTRADO";
+    const r = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([alocacao], [], replanejado()) as never, periodo);
+    expect(r).toMatchObject({ estado: "COMPROVADA_POR_AGENDA", memoria: { fontes: [{ ancoraCalendario: { tipo: "REPLANEJAMENTO_APLICADO", revisaoId: "revisao" } }] } });
+  });
+
+  it("encadeia alteração de quantidade aplicada e a preserva na memória e no hash", async () => {
+    const alocacao = base(), originais = base().turma.encontrosAgenda;
+    const nova = { ...originais[1]!, id: "a3", inicio: new Date("2026-11-07T12:00:00Z"), fim: new Date("2026-11-07T13:00:00Z") };
+    alocacao.turma.encontrosAgenda.push(nova);
+    const impacto = { id: "impacto", turmaId: "turma", snapshot: { agendaAntes: originais.map(iso), agendaDepois: [...originais.map(iso), { ...iso(nova), id: null }] },
+      proposta: { id: "quantidade", estadoHash: q, decisao: { id: "decisao-q", aprovada: true, estadoHash: q }, aplicacao: { id: "aplicacao-q", estadoHash: q, aplicadaEm: new Date("2026-09-25T00:00:00Z") } } };
+    const calendario = replanejado(new Date("2026-09-21T00:00:00Z"));
+    const semElo = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([alocacao], [], calendario) as never, periodo);
+    expect(semElo).toMatchObject({ estado: "EXIGE_CONFIRMACAO_GESTAO", memoria: { motivos: ["CALENDARIO_DIVERGENTE"] } });
+    const comElo = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([alocacao], [], calendario, [impacto]) as never, periodo);
+    expect(comElo).toMatchObject({ estado: "COMPROVADA_POR_AGENDA", memoria: { fontes: [{ ancoraCalendario: { alteracoesQuantidade: [{ propostaId: "quantidade", aplicacaoId: "aplicacao-q" }] } }] } });
+    expect(comElo.memoria.contextoHash).not.toBe(semElo.memoria.contextoHash);
+  });
+
+  it("a data de aplicação do replanejamento não altera o hash de contexto", async () => {
+    const sem = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base()], [], replanejado()) as never, periodo);
+    const com = await carregarComprovacaoOfertaContinuidadeAgendaTx(tx([base()], [], replanejado(new Date("2026-09-21T00:00:00Z"))) as never, periodo);
+    expect(com.memoria.contextoHash).toBe(sem.memoria.contextoHash);
+  });
 });

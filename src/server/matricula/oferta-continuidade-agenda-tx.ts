@@ -21,7 +21,7 @@ const civilFimInclusivo = (data: Date, fuso: string) => civil(new Date(data.getT
 
 
 /** Q161: a prova automática é estreita; lacunas nunca declaram indisponibilidade. */
-export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Prisma.TransactionClient, "alocacaoTurma" | "indisponibilidadeDocente" | "versaoCalendarioEscolar">, input: z.input<typeof Entrada>) {
+export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Prisma.TransactionClient, "alocacaoTurma" | "indisponibilidadeDocente" | "versaoCalendarioEscolar" | "impactoQuantidadeAulasModalidade">, input: z.input<typeof Entrada>) {
   const d = Entrada.parse(input);
   const alocacoes = await tx.alocacaoTurma.findMany({
     where: { matriculaId: d.matriculaId, ativa: true, encerradaEm: null, OR: [{ provenienciaVinculo: null, criadoEm: { lte: d.inicio } }, { provenienciaVinculo: "MIGRACAO" }] },
@@ -37,7 +37,7 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
       id: true, versao: true,
       replanejamentos: { orderBy: [{ versao: "desc" }, { id: "desc" }], select: {
         id: true, estadoHash: true, snapshot: true,
-        decisaoConjunta: { select: { id: true, aprovada: true, estadoHash: true, aplicacao: { select: { id: true, estadoHash: true } } } },
+        decisaoConjunta: { select: { id: true, aprovada: true, estadoHash: true, aplicacao: { select: { id: true, estadoHash: true, aplicadaEm: true } } } },
       } },
     },
   });
@@ -47,8 +47,18 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     where: { decisao: { aprovada: true }, OR: encontrosConferidos.map(e => ({ professorId: e.professorId!, inicio: { lt: e.fim }, fim: { gt: e.inicio } })) },
     select: { id: true, professorId: true, inicio: true, fim: true }, orderBy: [{ inicio: "asc" }, { id: "asc" }],
   }) : [];
+  // Só a cadeia pós-replanejamento compara a agenda; alterações de quantidade aplicadas são os elos posteriores aceitos.
+  const turmaIds = [...new Set(alocacoes.map((a) => a.turmaId))];
+  const impactos = turmaIds.length ? await tx.impactoQuantidadeAulasModalidade.findMany({
+    where: { turmaId: { in: turmaIds }, proposta: { aplicacao: { isNot: null } } }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
+    select: { id: true, turmaId: true, snapshot: true, proposta: { select: { id: true, estadoHash: true,
+      decisao: { select: { id: true, aprovada: true, estadoHash: true } }, aplicacao: { select: { id: true, estadoHash: true, aplicadaEm: true } } } } },
+  }) : [];
   // Mesmo uma agenda insuficiente possui fontes que podem mudar após a aprovação humana.
-  const contextoHash = hashSubstituicao(JSON.parse(JSON.stringify({ alocacoes, calendarioVigente, ausencias })) as Prisma.JsonValue);
+  // `aplicadaEm` só ordena os elos; fica fora do hash para não invalidar memórias já confirmadas.
+  const calendarioNoHash = calendarioVigente && { ...calendarioVigente, replanejamentos: calendarioVigente.replanejamentos?.map((r) => ({ ...r,
+    decisaoConjunta: r.decisaoConjunta && { ...r.decisaoConjunta, aplicacao: r.decisaoConjunta.aplicacao && { id: r.decisaoConjunta.aplicacao.id, estadoHash: r.decisaoConjunta.aplicacao.estadoHash } } })) };
+  const contextoHash = hashSubstituicao(JSON.parse(JSON.stringify({ alocacoes, calendarioVigente: calendarioNoHash, ausencias, ...(impactos.length ? { impactosQuantidade: impactos } : {}) })) as Prisma.JsonValue);
   const exigir = (motivo: Motivo) => ({ estado: "EXIGE_CONFIRMACAO_GESTAO" as const, memoria: { fontes: [] as Fonte[], motivos: [motivo], contextoHash } });
   if (alocacoes.length !== 1 || !alocacoes[0]?.turma) return exigir("VINCULO_AUSENTE");
   const alocacao = alocacoes[0], turma = alocacao.turma;
@@ -70,6 +80,9 @@ export async function carregarComprovacaoOfertaContinuidadeAgendaTx(tx: Pick<Pri
     grade: { calendarioId: grade.calendarioId, calendarioVersao: grade.calendario.versao },
     calendarioVigente, turmaId: turma.id,
     encontros: aulas.map((encontro) => ({ id: encontro.id, inicio: encontro.inicio, fim: encontro.fim, status: encontro.status })),
+    alteracoesQuantidade: impactos.filter((i) => i.turmaId === turma.id).map((i) => ({
+      propostaId: i.proposta.id, estadoHash: i.proposta.estadoHash, impactoSnapshot: i.snapshot, decisao: i.proposta.decisao, aplicacao: i.proposta.aplicacao,
+    })),
   });
   if (!ancoraCalendario) return exigir("CALENDARIO_DIVERGENTE");
   const noPeriodo = aulas.filter((e) => civil(e.inicio, fuso) <= fimCivil && civilFimInclusivo(e.fim, fuso) >= inicioCivil);

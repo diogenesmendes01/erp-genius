@@ -1,8 +1,9 @@
 import { Papel, Prisma } from "@prisma/client";
 import { ReplanejamentoSnapshotSchema } from "@/server/agenda/replanejamento-snapshot";
+import { encadearAlteracoesQuantidade, type AlteracaoQuantidadeOferta, type ElosQuantidade } from "@/server/agenda/cadeia-calendario-oferta";
 
 type ClienteAgendaDestino = Pick<Prisma.TransactionClient,
-  "versaoCalendarioEscolar" | "propostaGradeTurma" | "encontroAgenda" | "indisponibilidadeDocente" | "rascunhoReplanejamento">;
+  "versaoCalendarioEscolar" | "propostaGradeTurma" | "encontroAgenda" | "indisponibilidadeDocente" | "rascunhoReplanejamento" | "impactoQuantidadeAulasModalidade">;
 
 export type FotografiaAgendaDestino = {
   gradeId: string;
@@ -13,7 +14,7 @@ export type FotografiaAgendaDestino = {
   calendarioVigenteVersao: number;
   cadeiaCalendario:
     | { tipo: "GRADE_PUBLICADA" }
-    | { tipo: "REPLANEJAMENTO_APLICADO"; rascunhoId: string; decisaoId: string; aplicacaoId: string; estadoHash: string };
+    | { tipo: "REPLANEJAMENTO_APLICADO"; rascunhoId: string; decisaoId: string; aplicacaoId: string; estadoHash: string; alteracoesQuantidade?: ElosQuantidade };
   encontros: Array<{
     id: string;
     inicio: string;
@@ -36,7 +37,9 @@ type EncontroDaAgenda = {
  * Uma grade continua sendo a fonte histórica dos encontros depois de um
  * replanejamento: a aplicação move os encontros, mas não a reescreve para o
  * calendário novo. A cadeia só é aceita quando a revisão aplicada contém a
- * turma e cada encontro atual da grade corresponde ao resultado conferido.
+ * turma e cada encontro atual da grade corresponde ao resultado conferido,
+ * diretamente ou seguido de alterações de quantidade aprovadas e aplicadas
+ * (mesma cadeia da comprovação de oferta Q161).
  */
 function cadeiaReplanejamentoDaAgenda(
   revisoes: Array<{
@@ -44,11 +47,12 @@ function cadeiaReplanejamentoDaAgenda(
     estadoHash: string;
     snapshot: unknown;
     decisaoConjunta: { id: string; aprovada: boolean; estadoHash: string } | null;
-    aplicacaoConjunta: { id: string; estadoHash: string } | null;
+    aplicacaoConjunta: { id: string; estadoHash: string; aplicadaEm: Date } | null;
   }>,
   turmaId: string,
   agenda: readonly EncontroDaAgenda[],
   agora: Date,
+  alteracoesQuantidade: readonly AlteracaoQuantidadeOferta[],
 ) {
   for (const revisao of revisoes) {
     if (!revisao.decisaoConjunta?.aprovada || !revisao.aplicacaoConjunta
@@ -67,17 +71,21 @@ function cadeiaReplanejamentoDaAgenda(
     }
     const agendaFutura = agenda.filter((encontro) => encontro.inicio >= agora);
     const esperadosFuturos = [...esperados.entries()].filter(([, encontro]) => new Date(encontro.inicio) >= agora);
-    if (!agendaFutura.length || agendaFutura.length !== esperadosFuturos.length || agendaFutura.some((encontro) => {
+    if (!agendaFutura.length) continue;
+    const direta = agendaFutura.length === esperadosFuturos.length && !agendaFutura.some((encontro) => {
       const esperado = esperados.get(encontro.id);
       return !esperado || esperado.inicio !== encontro.inicio.toISOString()
         || esperado.fim !== encontro.fim.toISOString() || esperado.status !== encontro.status;
-    }) || esperadosFuturos.some(([id]) => !agendaFutura.some((encontro) => encontro.id === id))) continue;
+    }) && !esperadosFuturos.some(([id]) => !agendaFutura.some((encontro) => encontro.id === id));
+    const elos = direta ? [] : encadearAlteracoesQuantidade(esperados, agenda, alteracoesQuantidade, revisao.aplicacaoConjunta.aplicadaEm, agora);
+    if (!elos) continue;
     return {
       tipo: "REPLANEJAMENTO_APLICADO" as const,
       rascunhoId: revisao.id,
       decisaoId: revisao.decisaoConjunta.id,
       aplicacaoId: revisao.aplicacaoConjunta.id,
       estadoHash: revisao.estadoHash,
+      ...(elos.length ? { alteracoesQuantidade: elos } : {}),
     };
   }
   return null;
@@ -126,8 +134,13 @@ export async function carregarOfertasAgendaDestinoTx(
     select: {
       id: true, estadoHash: true, snapshot: true,
       decisaoConjunta: { select: { id: true, aprovada: true, estadoHash: true } },
-      aplicacaoConjunta: { select: { id: true, estadoHash: true } },
+      aplicacaoConjunta: { select: { id: true, estadoHash: true, aplicadaEm: true } },
     },
+  }) : [];
+  const impactosQuantidade = calendarioVigente ? await tx.impactoQuantidadeAulasModalidade.findMany({
+    where: { turmaId: { in: ids }, proposta: { aplicacao: { isNot: null } } }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
+    select: { turmaId: true, snapshot: true, proposta: { select: { id: true, estadoHash: true,
+      decisao: { select: { id: true, aprovada: true, estadoHash: true } }, aplicacao: { select: { id: true, estadoHash: true, aplicadaEm: true } } } } },
   }) : [];
 
   const encontros = await tx.encontroAgenda.findMany({
@@ -175,7 +188,9 @@ export async function carregarOfertasAgendaDestinoTx(
     const agenda = encontrosPorGrade.get(grade.id) ?? [];
     const cadeiaCalendario = grade.calendarioId === calendarioVigente.id && grade.calendario.versao === calendarioVigente.versao
       ? { tipo: "GRADE_PUBLICADA" as const }
-      : cadeiaReplanejamentoDaAgenda(revisoesVigentes, turmaId, agenda, agora);
+      : cadeiaReplanejamentoDaAgenda(revisoesVigentes, turmaId, agenda, agora, impactosQuantidade.filter((i) => i.turmaId === turmaId).map((i) => ({
+        propostaId: i.proposta.id, estadoHash: i.proposta.estadoHash, impactoSnapshot: i.snapshot, decisao: i.proposta.decisao, aplicacao: i.proposta.aplicacao,
+      })));
     if (!cadeiaCalendario) {
       resultado.set(turmaId, { disponivel: false, fotografia: null });
       continue;
