@@ -53,12 +53,44 @@ async function carregarRelatoTx(tx: Prisma.TransactionClient, registroId: string
   return { ...relato, periodo: { inicio: dataCivil(relato.inicio), fim: civilOuNull(relato.fim) }, termino: civilOuNull(relato.propostasTermino[0]?.fim ?? null) };
 }
 
-/** Dias que deixam de ser cobertos não podem já sustentar compensação ou período integral aprovados. */
-async function conferirEfeitosJaAprovadosTx(tx: Prisma.TransactionClient, matriculaId: string, removidos: Array<{ inicio: string; fim: string }>) {
+const dataBr = (data: Date) => { const [ano, mes, dia] = dataCivil(data).split("-"); return `${dia}/${mes}/${ano}`; };
+
+/**
+ * Outro relato confirmado da matrícula que também cobre o dia (fim do relato ou, aberto, o do término aprovado).
+ * Só informa a recusa: a regra continua conservadora, como o guard SQL de 20261020210000 (C3 da #265).
+ */
+async function outroRelatoConfirmadoCobrindoTx(tx: Prisma.TransactionClient, matriculaId: string, relatoId: string, dia: Date) {
+  const termino = { decisao: { is: { aprovada: true } } };
+  return tx.registroIndisponibilidadeOfertaMatricula.findFirst({
+    where: { matriculaId, id: { not: relatoId }, confirmacao: { is: { confirmada: true } }, inicio: { lte: dia }, OR: [
+      { fim: { gte: dia } },
+      { fim: null, propostasTermino: { none: termino } },
+      { fim: null, propostasTermino: { some: { ...termino, fim: { gte: dia } } } },
+    ] },
+    orderBy: [{ inicio: "asc" }, { id: "asc" }],
+    select: { inicio: true, fim: true, propostasTermino: { where: termino, take: 1, select: { fim: true } } },
+  });
+}
+
+/**
+ * Dias que deixam de ser cobertos não podem já sustentar compensação ou período integral aprovados.
+ * A recusa é conservadora mesmo quando outro relato confirmado também cobre o dia (C3 da #265): o guard
+ * SQL já aplicado recusa igual, e a compensação aprovada não se desfaz pela tela. Por isso a mensagem nomeia
+ * o dia e aponta os dois caminhos: manter o dia neste relato ou tratar antes a compensação da cobrança.
+ */
+async function conferirEfeitosJaAprovadosTx(tx: Prisma.TransactionClient, matriculaId: string, relatoId: string, removidos: Array<{ inicio: string; fim: string }>) {
   for (const intervalo of removidos) {
     const inicio = dataUtc(intervalo.inicio), fim = dataUtc(intervalo.fim);
-    const compensado = await tx.diaCompensacaoCobertura.findFirst({ where: { matriculaId, diaOrigem: { gte: inicio, lte: fim }, compensacao: { status: "APROVADA" } }, select: { id: true } });
-    if (compensado) throw new ErroRegra("A correção retira dias que já sustentam compensação aprovada. Trate a compensação antes de corrigir o relato.");
+    const compensado = await tx.diaCompensacaoCobertura.findFirst({ where: { matriculaId, diaOrigem: { gte: inicio, lte: fim }, compensacao: { status: "APROVADA" } }, orderBy: { diaOrigem: "asc" },
+      select: { diaOrigem: true, compensacao: { select: { cobrancaOrigem: { select: { coberturaInicio: true, coberturaFim: true } } } } } });
+    if (compensado) {
+      const dia = dataBr(compensado.diaOrigem), cobranca = compensado.compensacao.cobrancaOrigem;
+      const outro = await outroRelatoConfirmadoCobrindoTx(tx, matriculaId, relatoId, compensado.diaOrigem);
+      const fimOutro = outro ? outro.fim ?? outro.propostasTermino[0]?.fim ?? null : null;
+      const sobreposto = outro ? ` Esse dia também está coberto pelo relato confirmado de ${dataBr(outro.inicio)}${fimOutro ? ` a ${dataBr(fimOutro)}` : " em aberto"}, mas a compensação foi aprovada com este relato e a correção continua recusada.` : "";
+      const daCobranca = cobranca.coberturaInicio && cobranca.coberturaFim ? ` (cobertura de ${dataBr(cobranca.coberturaInicio)} a ${dataBr(cobranca.coberturaFim)})` : "";
+      throw new ErroRegra(`A correção retira o dia ${dia}, que já sustenta compensação aprovada.${sobreposto} Proponha uma correção que mantenha esse dia neste relato, ou trate antes a compensação em Compensações da cobrança${daCobranca}, na ficha da matrícula.`);
+    }
     const integral = await tx.propostaPeriodoIntegral.findFirst({ where: { matriculaId, decisao: { is: { aprovada: true } }, cobranca: { coberturaInicio: { lte: fim }, coberturaFim: { gte: inicio } } }, select: { id: true } });
     if (integral) throw new ErroRegra("A correção retira dias de um período integral já aprovado. Trate o período integral antes de corrigir o relato.");
   }
@@ -93,7 +125,7 @@ export async function proporCorrecaoRelatoIndisponibilidadeOferta(input: z.input
       const novo = { inicio: dados.inicio, fim: dados.fim };
       conferirCorrecaoPeriodoRelato(relato.periodo, novo, relato.termino);
       if (await tx.propostaCorrecaoRelatoIndisponibilidadeOferta.count({ where: { registroId: relato.id, decisao: null } })) throw new ErroRegra("Já existe correção aguardando decisão para este relato.");
-      await conferirEfeitosJaAprovadosTx(tx, relato.matriculaId, diasRemovidosPelaCorrecao(relato.periodo, novo, relato.termino));
+      await conferirEfeitosJaAprovadosTx(tx, relato.matriculaId, relato.id, diasRemovidosPelaCorrecao(relato.periodo, novo, relato.termino));
       const ultima = await tx.propostaCorrecaoRelatoIndisponibilidadeOferta.findFirst({ where: { registroId: relato.id }, orderBy: { versao: "desc" }, select: { versao: true } });
       const proposta = await tx.propostaCorrecaoRelatoIndisponibilidadeOferta.create({ data: {
         registroId: relato.id, versao: (ultima?.versao ?? 0) + 1, inicioAnterior: relato.inicio, fimAnterior: relato.fim, inicioNovo: dataUtc(dados.inicio), fimNovo: dados.fim ? dataUtc(dados.fim) : null,
@@ -127,7 +159,7 @@ export async function decidirCorrecaoRelatoIndisponibilidadeOferta(input: z.inpu
       if (dados.aprovada) {
         if (dataCivil(proposta.inicioAnterior) !== relato.periodo.inicio || civilOuNull(proposta.fimAnterior) !== relato.periodo.fim) throw new ErroRegra("O período do relato mudou depois da proposta; prepare nova correção.");
         conferirCorrecaoPeriodoRelato(relato.periodo, novo, relato.termino);
-        await conferirEfeitosJaAprovadosTx(tx, relato.matriculaId, diasRemovidosPelaCorrecao(relato.periodo, novo, relato.termino));
+        await conferirEfeitosJaAprovadosTx(tx, relato.matriculaId, relato.id, diasRemovidosPelaCorrecao(relato.periodo, novo, relato.termino));
       }
       const decisao = await tx.decisaoCorrecaoRelatoIndisponibilidadeOferta.create({ data: { propostaId: proposta.id, decisorId: sessao.id, aprovada: dados.aprovada, motivo: dados.motivo, evidenciaTexto: dados.evidenciaTexto, entradaHash } });
       // O trigger do relato só aceita este UPDATE porque a decisão aprovada acima o respalda.
