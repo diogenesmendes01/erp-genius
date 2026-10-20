@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { diaUtilAs } from "@/test/janela-envio";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { montarContextoTurno } from "./contexto";
@@ -60,6 +61,8 @@ describe("executor: ações no CRM", () => {
   const ultimoEvento = (tipo: string) => prisma.evento.findFirstOrThrow({ where: { tipo }, orderBy: { criadoEm: "desc" } });
   const tagsDe = () => prisma.pessoaTag.findMany({ where: { pessoaId: c.pessoa!.id } });
   const amanha = () => new Date(Date.now() + 86_400_000).toISOString();
+  // D12: a mensagem agendada pela Aria precisa cair na janela de envio da escola (fábrica: 9h–20h, seg. a sex.).
+  const util = (hora = 10) => diaUtilAs(hora).toISOString();
 
   it("mover_etapa_grava_evento_da_aria", async () => {
     const a = await exec({ acao: "MOVER_ETAPA", para: "EM_ATENDIMENTO", justificativa: "respondeu" });
@@ -110,7 +113,7 @@ describe("executor: ações no CRM", () => {
   });
 
   it("agendar_mensagem_cria_intencao_ia_agendada", async () => {
-    const quando = amanha();
+    const quando = util();
     const a = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete da aula", enviarEmISO: quando, justificativa: "x" });
     expect(a.status).toBe("EXECUTADA");
     const m = await prisma.intencaoMensagem.findFirstOrThrow();
@@ -128,15 +131,30 @@ describe("executor: ações no CRM", () => {
       data: { nome: "rr:/material", atalho: "/material", titulo: "Material", corpo: "O material custa ₡15.000.", tipo: "RESPOSTA_RAPIDA", setor: "COMERCIAL", ariaPodeUsar: true },
     });
     const texto = "Lembrete: o material custa ₡15.000.";
-    expect((await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: amanha(), justificativa: "x" })).status).toBe("EXECUTADA");
-    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    expect((await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: util(), justificativa: "x" })).status).toBe("EXECUTADA");
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: util(), justificativa: "x" }, "SUGERIR");
     expect(s.status).toBe("SUGERIDA");
     await prisma.$transaction((tx) => aplicarAcao(tx, s));
     expect(await prisma.intencaoMensagem.count({ where: { corpoRenderizado: texto } })).toBe(2);
     // A resposta deixou de ser liberada: a sugestão antiga perde a autorização do valor.
-    const s2 = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    const s2 = await exec({ acao: "AGENDAR_MENSAGEM", texto, enviarEmISO: util(), justificativa: "x" }, "SUGERIR");
     await prisma.templateWhatsApp.update({ where: { id: rr.id }, data: { ariaPodeUsar: false } });
     await expect(prisma.$transaction((tx) => aplicarAcao(tx, s2))).rejects.toThrow(/valor/);
+  });
+
+  it("agendar_mensagem_no_horario_de_silencio_da_escola_e_bloqueada_com_motivo (D12)", async () => {
+    // O seedCanal abre a janela o dia todo; aqui vale a janela de fábrica (9h–20h, segunda a sexta).
+    await prisma.politicaRegua.updateMany({ where: { escopo: "COBRANCA" }, data: { janelaInicio: 9, janelaFim: 20, diasSemana: [1, 2, 3, 4, 5] } });
+    const a = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: util(3), justificativa: "x" });
+    expect(a.status).toBe("BLOQUEADA");
+    expect(a.payload).toMatchObject({ motivoBloqueio: "FORA_DA_JANELA" });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    // Sugestão feita dentro da janela, aplicada depois que a política mudou: a execução recusa com a mensagem clara.
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: util(10), justificativa: "x" }, "SUGERIR");
+    expect(s.status).toBe("SUGERIDA");
+    await prisma.politicaRegua.updateMany({ where: { escopo: "COBRANCA" }, data: { janelaInicio: 14, janelaFim: 18 } });
+    await expect(prisma.$transaction((tx) => aplicarAcao(tx, s))).rejects.toThrow(/Fora da janela de envio da escola/);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
   it("negar_nao_muda_nada", async () => {
@@ -214,7 +232,7 @@ describe("executor: ações no CRM", () => {
   it("reversibilidade_fixa", async () => {
     const t = await exec({ acao: "CRIAR_TAREFA", titulo: "Ligar", venceEmISO: amanha(), justificativa: "x" });
     const n = await exec({ acao: "NOTA_INTERNA", texto: "n", justificativa: "x" });
-    const m = await exec({ acao: "AGENDAR_MENSAGEM", texto: "oi", enviarEmISO: amanha(), justificativa: "x" });
+    const m = await exec({ acao: "AGENDAR_MENSAGEM", texto: "oi", enviarEmISO: util(), justificativa: "x" });
     expect([t.reversivel, n.reversivel, m.reversivel]).toEqual([true, true, true]);
   });
 });

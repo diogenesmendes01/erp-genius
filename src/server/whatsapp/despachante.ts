@@ -26,6 +26,8 @@ import { aoGravarSaidaHumana, MOTIVO_ARIA_PAUSADA } from "@/server/aria/pausa";
 import { comContatoIndividual } from "./grupos";
 import { inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { dentroDaJanelaEnvio } from "./janela-envio";
+import { abrirAtendimentoDaAgendada, autorAindaPodeEnviarAgendada, esperaAtendimento } from "@/server/crm/mensagens-agendadas";
 
 // DESPACHANTE ÚNICO (doc 26 §fila única · doc 30 §contratos): drena a outbox aplicando os
 // guard-rails UMA vez para os dois motores, na ordem da spec. Cada decisão deixa motivo
@@ -59,28 +61,6 @@ export interface ResultadoDespacho {
   /** Avisos de agenda retidos com COMUNICACOES_AGENDA_ENVIO_ENABLED desligado (R1 do #209, C2):
    *  contados à parte para não se misturarem ao kill switch em `pendentes`. */
   retidasAgenda: number;
-}
-
-function horaLocal(data: Date, fuso: string): number {
-  try {
-    return parseInt(
-      new Intl.DateTimeFormat("en-GB", { timeZone: fuso, hour: "2-digit", hour12: false }).format(data),
-      10,
-    );
-  } catch {
-    return data.getHours(); // fuso inválido no cadastro → hora do servidor (não trava a fila)
-  }
-}
-
-const DIA_POR_NOME: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-
-function diaSemanaLocal(data: Date, fuso: string): number {
-  try {
-    const nome = new Intl.DateTimeFormat("en-US", { timeZone: fuso, weekday: "short" }).format(data);
-    return DIA_POR_NOME[nome] ?? data.getDay();
-  } catch {
-    return data.getDay();
-  }
 }
 
 export interface EntradaShadow {
@@ -468,10 +448,8 @@ export async function despacharFila(
     // 8. Janela de horário + dias da semana (S3), no FUSO DO CONTATO (Aluno.fuso ?? Pais.fuso).
     //    Reativa é isenta: uma saudação "em segundos" não pode esperar o horário comercial.
     if (automatica && !reativa && !gestao) {
-      const fuso = fusoDoDestino(it);
-      const hora = horaLocal(agora, fuso);
-      const dia = diaSemanaLocal(agora, fuso);
-      if (hora < politica.janelaInicio || hora >= politica.janelaFim || !politica.diasSemana.includes(dia)) {
+      // Mesma regra que recusa o agendamento fora do horário (janela-envio.ts, D12).
+      if (!dentroDaJanelaEnvio(agora, fusoDoDestino(it), politica)) {
         if (await adiar(it.id, new Date(agora.getTime() + 3600_000), "fora_da_janela")) r.adiadas += 1;
         else r.canceladas += 1; // re-checa a cada hora
         continue;
@@ -530,9 +508,20 @@ export async function despacharFila(
           await tx.intencaoMensagem.update({ where: { id: it.id }, data: { status: it.status, despacharAposEm: it.despacharAposEm } });
           return;
         }
+        // D12 (#202 C3): a mensagem agendada pelo CRM só abre o atendimento agora, no envio. Sem acesso do
+        // autor, a transação inteira é desfeita (nem claim nem atendimento) e a intenção é cancelada abaixo.
+        if (esperaAtendimento(it)) {
+          const autor = it.autorId ? await tx.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
+          if (!autor?.ativo || !await abrirAtendimentoDaAgendada(tx, autor, it.id, it)) throw new AgendadaSemAcesso();
+        }
         claimCount = 1;
       }));
     } catch (erro) {
+      if (erro instanceof AgendadaSemAcesso) {
+        await marcar(it.id, "CANCELADA", "atendimento_sem_acesso");
+        r.canceladas += 1;
+        continue;
+      }
       if (!erroGuardaPedagogica(erro)) throw erro;
       await marcar(it.id, "CANCELADA", "autorizacao_academica_revogada");
       r.canceladas += 1;
@@ -561,6 +550,8 @@ export async function despacharFila(
     }
 
     // 12. Envio real + gravação em transação (mensagem + evento de domínio + intenção).
+    // Relido após o claim: a agendada do CRM ganha o atendimento só no claim (D12).
+    const atendimentoId = atual.atendimentoId;
     try {
       const numeroCanal: NumeroCanal = {
         id: it.numero.id,
@@ -606,14 +597,16 @@ export async function despacharFila(
       await prisma.$transaction(confirmarTransacao(async (tx) => {
         const conv =
           conversa ??
-          (await tx.conversaWhatsApp.create({
-            data: { numeroId: it.numeroId, contatoId: it.contatoId },
+          (await tx.conversaWhatsApp.upsert({
+            // A agendada pode ter aberto a conversa no claim (D12): upsert, não create.
+            where: { numeroId_contatoId: { numeroId: it.numeroId, contatoId: it.contatoId } },
+            create: { numeroId: it.numeroId, contatoId: it.contatoId }, update: {},
             select: { id: true, ultimoInboundEm: true },
           }));
         const msg = await tx.mensagemWhatsApp.create({
           data: {
             conversaId: conv.id,
-            atendimentoId: it.atendimentoId,
+            atendimentoId,
             numeroId: it.numeroId,
             direcao: "SAIDA",
             tipo: it.tipo,
@@ -632,10 +625,10 @@ export async function despacharFila(
           },
         });
         await tx.conversaWhatsApp.update({ where: { id: conv.id }, data: { ultimaMensagemEm: agora } });
-        if (it.atendimentoId) {
-          await tx.atendimentoWhatsApp.update({ where: { id: it.atendimentoId }, data: { ultimaMensagemEm: agora } });
-          if (it.origem === "HUMANO") await aplicarResposta(tx, it.atendimentoId, agora);
-          await aoGravarSaidaHumana(tx, { atendimentoId: it.atendimentoId, origem: it.origem, autorId: it.autorId });
+        if (atendimentoId) {
+          await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: { ultimaMensagemEm: agora } });
+          if (it.origem === "HUMANO") await aplicarResposta(tx, atendimentoId, agora);
+          await aoGravarSaidaHumana(tx, { atendimentoId, origem: it.origem, autorId: it.autorId });
         }
         if (it.cobrancaId && it.passo) {
           await registrarEventoCobrancaEnviada(tx, {
@@ -694,6 +687,9 @@ export async function despacharFila(
 /** Vida máxima (desde criadaEm) para reenviar automaticamente uma falha reprocessável. */
 export const LIMITE_REPROCESSO_MS = { HUMANO: 30 * 60_000, AUTOMACAO: 24 * 3_600_000 } as const;
 
+/** Desfaz o claim da agendada cujo autor não enxergaria o atendimento (D12). */
+class AgendadaSemAcesso extends Error {}
+
 type IntencaoParaValidar = {
   id: string; numeroId: string; contatoId: string; origem: string; autorId: string | null;
   atendimentoId: string | null; cobrancaId: string | null; referenciaCobranca: string | null; cicloCobranca: number;
@@ -704,6 +700,7 @@ type IntencaoParaValidar = {
   acaoAgenteIAId: string | null;
   conteudo?: unknown;
   criadaEm: Date;
+  agendadaPara: Date | null;
   numero: { ativo: boolean }; contato: { optOutEm: Date | null; telefoneE164: string };
 };
 
@@ -743,7 +740,10 @@ async function motivoIntencaoInvalida(it: IntencaoParaValidar, agora: Date): Pro
     const autor = it.autorId ? await prisma.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
     if (!autor?.ativo) return "autor_sem_acesso";
     if (it.cobrancaId && !autor.papeis.some((p) => [Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA].includes(p as "ADMINISTRADOR" | "FINANCEIRO" | "SECRETARIA_ACADEMICA"))) return "autor_sem_acesso";
-    if (!it.atendimentoId || !await atendimentoVisivel(autor, it.atendimentoId, true)) return "atendimento_sem_acesso";
+    if (!it.atendimentoId) {
+      // Agendada pelo CRM: o atendimento nasce no claim (D12); até lá vale o acesso que o agendamento exigiu.
+      if (!esperaAtendimento(it) || !await autorAindaPodeEnviarAgendada(autor, it)) return "atendimento_sem_acesso";
+    } else if (!await atendimentoVisivel(autor, it.atendimentoId, true)) return "atendimento_sem_acesso";
   }
   let matriculaAtendimento: string | null = null;
   let finalidadeAtendimento: string | null = null;

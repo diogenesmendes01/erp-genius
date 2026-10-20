@@ -9,6 +9,7 @@ import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/se
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { atendimentoVisivel, garantirAtendimento } from "@/server/whatsapp/atendimentos";
+import { exigirAgendamentoNaJanela } from "@/server/whatsapp/janela-agendamento";
 import { capacidadesCrm, exigirCapacidadeCrm } from "./permissoes";
 import { escopoTarefas } from "./tarefas";
 import { somarDiasDataCivil } from "./tarefas-regras";
@@ -97,6 +98,9 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
+    // D12 (#202 C4): a mensagem agendada sai como decisão humana e pula a janela do despachante; por isso o
+    // horário de silêncio é barrado aqui, no fuso da escola, antes de gravar.
+    await exigirAgendamentoNaJanela(quando);
 
     if (d.atendimentoId) {
       const a = await atendimentoVisivel(autor, d.atendimentoId, true);
@@ -146,11 +150,12 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
       const contato = contatos.find((c) => !c.optOutEm);
       if (!contato) throw new ErroRegra("Contato pediu para não receber mensagens.");
 
-      const atendimento = await garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId });
+      // D12 (#202 C3): o atendimento só nasce quando a mensagem sai (despachante, `abrirAtendimentoDaAgendada`).
+      // Criar aqui punha um atendimento COMERCIAL na inbox dias antes do envio, mesmo que a mensagem fosse cancelada.
       const m = await tx.intencaoMensagem.create({
         data: {
           numeroId: numero.id,
-          atendimentoId: atendimento.id,
+          atendimentoId: null,
           contatoId: contato.id,
           origem: "HUMANO",
           tipo: "TEXTO",
@@ -173,6 +178,41 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
   });
 }
 
+/** Intenção agendada pelo CRM que ainda espera o atendimento (D12, #202 C3): só a mensagem HUMANO avulsa. */
+export type AgendadaSemAtendimento = {
+  origem: string; agendadaPara: Date | null; atendimentoId: string | null; numeroId: string; contatoId: string; leadId: string | null;
+  cobrancaId: string | null; passoComercial: string | null; avisoAlteracaoAgendaId: string | null;
+};
+
+export function esperaAtendimento(it: AgendadaSemAtendimento): boolean {
+  return it.origem === "HUMANO" && it.agendadaPara != null && it.atendimentoId == null
+    && !it.cobrancaId && !it.passoComercial && !it.avisoAlteracaoAgendaId;
+}
+
+/**
+ * Na hora do envio, o autor ainda tem o que tinha ao agendar: o número de vendas (sem dono ou dele) e, se houver,
+ * a oportunidade na carteira. Sem isso a intenção é cancelada sem abrir atendimento.
+ */
+export async function autorAindaPodeEnviarAgendada(autor: UsuarioSessao, it: AgendadaSemAtendimento, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<boolean> {
+  const numero = await db.numeroWhatsApp.findFirst({ where: { AND: [{ id: it.numeroId }, numeroDoUsuario(autor)] }, select: { id: true } });
+  if (!numero) return false;
+  if (!it.leadId) return true;
+  return !!await db.oportunidade.findFirst({ where: { AND: [{ id: it.leadId }, await escopoComercialAtual(autor, db)] }, select: { id: true } });
+}
+
+/**
+ * Abre (ou reusa) o atendimento COMERCIAL da mensagem agendada no momento do envio (D12, #202 C3), dentro da
+ * transação do claim do despachante, e liga a intenção a ele. Devolve null se o autor não enxergaria o
+ * atendimento: o chamador desfaz a transação, e nada fica criado.
+ */
+export async function abrirAtendimentoDaAgendada(tx: Prisma.TransactionClient, autor: UsuarioSessao, intencaoId: string, it: AgendadaSemAtendimento): Promise<string | null> {
+  if (!await autorAindaPodeEnviarAgendada(autor, it, tx)) return null;
+  const atendimento = await garantirAtendimento(tx, { numeroId: it.numeroId, contatoId: it.contatoId, finalidade: "COMERCIAL", leadId: it.leadId });
+  if (!await atendimentoVisivel(autor, atendimento.id, true, tx)) return null;
+  const r = await tx.intencaoMensagem.updateMany({ where: { id: intencaoId, atendimentoId: null }, data: { atendimentoId: atendimento.id } });
+  return r.count === 1 ? atendimento.id : null;
+}
+
 /** Por que a mensagem não pôde ser alterada (ela não está mais PENDENTE/ADIADA ou não é do escopo). */
 function recusa(status: StatusIntencao | undefined): ErroRegra {
   switch (status) {
@@ -186,10 +226,12 @@ function recusa(status: StatusIntencao | undefined): ErroRegra {
   }
 }
 
+type Montagem = { data: Prisma.IntencaoMensagemUpdateManyMutationInput; payload: Prisma.InputJsonValue };
+
 async function alterar(
   id: string,
   tipoEvento: string,
-  montar: (m: { validaAte: Date | null }) => { data: Prisma.IntencaoMensagemUpdateManyMutationInput; payload: Prisma.InputJsonValue },
+  montar: (m: { validaAte: Date | null }) => Montagem | Promise<Montagem>,
 ): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -201,7 +243,7 @@ async function alterar(
       });
       if (!m) throw recusa(undefined);
       if (m.status !== "PENDENTE" && m.status !== "ADIADA") throw recusa(m.status);
-      const { data, payload } = montar(m);
+      const { data, payload } = await montar(m);
       const r = await tx.intencaoMensagem.updateMany({ where: { id, status: { in: ["PENDENTE", "ADIADA"] } }, data });
       if (r.count === 0) {
         const atual = await tx.intencaoMensagem.findUnique({ where: { id }, select: { status: true } });
@@ -219,9 +261,11 @@ function dataFutura(m: { validaAte: Date | null }, quando: Date) {
 }
 
 export async function reagendarMensagem(id: string, agendadaPara: string): Promise<Resultado> {
-  return alterar(id, "MensagemReagendada", (m) => {
+  return alterar(id, "MensagemReagendada", async (m) => {
     const quando = futuro(InstanteSchema.parse(agendadaPara));
     dataFutura(m, quando);
+    // Mesma trava do agendamento (D12): a nova data não pode cair no horário de silêncio da escola.
+    await exigirAgendamentoNaJanela(quando);
     return { data: { agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null }, payload: { agendadaPara: quando.toISOString() } };
   });
 }

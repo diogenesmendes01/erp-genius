@@ -13,6 +13,7 @@ import { criarNumeroSetor, seedCanal } from "@/test/integracao-whatsapp";
 import { atendimentoVisivel, garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { enviarMidiaInbox, enviarTextoInbox, marcarConversaTratada, registrarOptOutContato, removerOptOutContato, vincularContatoWhatsApp, editarNomeContatoWhatsApp } from "@/server/whatsapp/acoes";
 import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
+import { diaUtilAs } from "@/test/janela-envio";
 import { agendarMensagemNoAtendimento, cancelarAgendamentoDoAtendimento, encaminharMensagem, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { abrirAtendimentoInstitucional, classificarMensagemWhatsApp, encerrarAtendimentoWhatsApp, listarTriagemWhatsApp, revisarFalhaEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { destinatarioAtualDoAtendimento } from "@/server/whatsapp/destinatario-atual";
@@ -30,7 +31,8 @@ type U = Awaited<ReturnType<typeof criarUsuario>>;
 const sessao = (u: U) => ({ id: u.id, nome: u.nome, papeis: u.papeis }) as never;
 const como = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 const emDias = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
-const emMin = (n: number) => new Date(Date.now() + n * 60_000).toISOString();
+// D12: agendamento só dentro da janela de envio da escola (fábrica: 9h–20h, segunda a sexta).
+const naJanela = () => diaUtilAs(10).toISOString();
 const abrir = (numeroId: string, contatoId: string, extra: Parameters<typeof garantirAtendimento>[1] extends infer D ? Partial<D> : never) =>
   prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId, contatoId, finalidade: "COMERCIAL", ...extra } as never));
 
@@ -206,7 +208,7 @@ describe("§4.4 — regras do Inbox", () => {
     como(vend);
     expect((await registrarOptOutContato(contato.id)).ok).toBe(true);
     expect((await enviarTextoInbox({ conversaId: a.id, texto: "oi" })).ok).toBe(false);
-    expect((await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "depois", quando: emMin(10) })).ok).toBe(false);
+    expect((await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "depois", quando: naJanela() })).ok).toBe(false);
     expect((await encaminharMensagem({ mensagemId: m.id, destinoAtendimentoIds: [a.id] })).ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
     // Pendente que já estava na fila também não sai.
@@ -387,7 +389,7 @@ describe("§4.4 — regras do Inbox", () => {
     const conv = await convidarParticipante({ atendimentoId: a.id, usuarioId: fin.id, podeEnviar: false, fim: emDias(2), motivo: "Dúvida sobre boleto" });
     expect(conv.ok).toBe(true);
     if (conv.ok) expect((await revogarParticipante(conv.dado!.participanteId)).ok).toBe(true);
-    const ag = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "Lembrete", quando: emMin(30) });
+    const ag = await agendarMensagemNoAtendimento({ atendimentoId: a.id, texto: "Lembrete", quando: naJanela() });
     expect(ag.ok).toBe(true);
     if (ag.ok) expect((await cancelarAgendamentoDoAtendimento({ atendimentoId: a.id, intencaoId: ag.dado!.id })).ok).toBe(true);
     expect((await encaminharMensagem({ mensagemId: m.id, destinoAtendimentoIds: [b.id] })).ok).toBe(true);

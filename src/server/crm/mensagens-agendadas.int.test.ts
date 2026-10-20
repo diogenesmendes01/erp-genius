@@ -8,6 +8,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
+import { diaUtilAs } from "@/test/janela-envio";
+import { mensagemForaDaJanela } from "@/server/whatsapp/janela-envio";
 import { exigirSessao } from "@/server/_shared/sessao";
 import { criarTarefa } from "./tarefas";
 import {
@@ -22,6 +24,9 @@ function idDe(r: { ok: boolean; dado?: { id: string } }): string {
   return r.dado.id;
 }
 const emHoras = (h: number) => new Date(Date.now() + h * 3600_000).toISOString();
+// D12: o agendamento só vale dentro da janela de envio (fábrica: 9h–20h, segunda a sexta) no fuso da escola.
+const FUSO = "America/Costa_Rica";
+const util = (hora: number, minutos = 0) => diaUtilAs(hora, FUSO, minutos).toISOString();
 
 let vendedor: Awaited<ReturnType<typeof criarUsuario>>;
 let outro: Awaited<ReturnType<typeof criarUsuario>>;
@@ -72,7 +77,7 @@ describe("numerosParaAgendar", () => {
 describe("agendarMensagem", () => {
   it("só agenda com contato WhatsApp, sem opt-out e no futuro", async () => {
     logadoComo(vendedor.id);
-    const amanha = emHoras(24);
+    const amanha = util(10);
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: amanha, pessoaId: pessoaSemTelefone })).toEqual({ ok: false, erro: "Este contato não tem WhatsApp cadastrado." });
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: amanha, pessoaId: pessoaOptOut })).toEqual({ ok: false, erro: "Contato pediu para não receber mensagens." });
     expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: emHoras(-24), pessoaId })).toEqual({ ok: false, erro: "Escolha uma data e hora no futuro." });
@@ -85,23 +90,58 @@ describe("agendarMensagem", () => {
   });
 
   it("pela oportunidade grava o evento no Lead; fora da carteira é recusado", async () => {
-    const r = await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: emHoras(2), leadId });
+    const r = await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(10), leadId });
     expect(r.ok).toBe(true);
     expect((await eventosDo("Lead", leadId)).map((e) => e.tipo)).toContain("MensagemAgendada");
     const alheio = (await prisma.oportunidade.create({ data: { nome: "Alheia", vendedorDonoId: outro.id, pessoaId } })).id;
-    expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: emHoras(2), leadId: alheio })).toEqual({ ok: false, erro: "Oportunidade fora da sua carteira." });
+    expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(10), leadId: alheio })).toEqual({ ok: false, erro: "Oportunidade fora da sua carteira." });
   });
 
   it("número do outro vendedor ou texto vazio são recusados", async () => {
     const n = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955550009", rotulo: "Do outro", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", providerRef: "i9", donoId: outro.id } });
-    expect((await agendarMensagem({ numeroId: n.id, texto: "Oi", agendadaPara: emHoras(2), pessoaId })).ok).toBe(false);
-    expect(await agendarMensagem({ numeroId, texto: "  ", agendadaPara: emHoras(2), pessoaId })).toEqual({ ok: false, erro: "Escreva a mensagem." });
+    expect((await agendarMensagem({ numeroId: n.id, texto: "Oi", agendadaPara: util(10), pessoaId })).ok).toBe(false);
+    expect(await agendarMensagem({ numeroId, texto: "  ", agendadaPara: util(10), pessoaId })).toEqual({ ok: false, erro: "Escreva a mensagem." });
+  });
+});
+
+describe("D12: atendimento só no envio e recusa fora da janela", () => {
+  it("agendar pelo CRM não cria atendimento: a intenção espera sem atendimento até sair (#202 C3)", async () => {
+    const r = await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(10), leadId, tarefaId });
+    expect(r.ok).toBe(true);
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: idDe(r) } })).toMatchObject({ atendimentoId: null, leadId, status: "PENDENTE" });
+    expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
+    expect(await prisma.conversaWhatsApp.count()).toBe(0);
+  });
+
+  it("recusa agendar no horário de silêncio e no fim de semana, com a janela no fuso da escola (#202 C4)", async () => {
+    const recusa = mensagemForaDaJanela({ janelaInicio: 9, janelaFim: 20, diasSemana: [1, 2, 3, 4, 5] }, FUSO);
+    expect(recusa).toContain("das 9h às 20h, de segunda a sexta (horário de America/Costa_Rica)");
+    expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(3), leadId })).toEqual({ ok: false, erro: recusa });
+    expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(20), leadId })).toEqual({ ok: false, erro: recusa });
+    // 19h de sábado: dentro do horário, fora dos dias.
+    const sabado = new Date(diaUtilAs(10, FUSO).getTime());
+    while (new Intl.DateTimeFormat("en-US", { timeZone: FUSO, weekday: "short" }).format(sabado) !== "Sat") sabado.setTime(sabado.getTime() + 86_400_000);
+    expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: sabado.toISOString(), leadId })).toEqual({ ok: false, erro: recusa });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    // A janela é a da política que o despachante aplica: mudar a política muda a recusa.
+    await prisma.politicaRegua.create({ data: { nome: "Cobrança", escopo: "COBRANCA", janelaInicio: 2, janelaFim: 6, diasSemana: [0, 1, 2, 3, 4, 5, 6] } });
+    expect((await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(3), leadId })).ok).toBe(true);
+    expect(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(10), leadId })).toEqual({
+      ok: false, erro: mensagemForaDaJanela({ janelaInicio: 2, janelaFim: 6, diasSemana: [0, 1, 2, 3, 4, 5, 6] }, FUSO),
+    });
+  });
+
+  it("reagendar para fora da janela também é recusado e mantém a data", async () => {
+    const quando = util(11);
+    const m = idDe(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: quando, pessoaId, tarefaId }));
+    expect(await reagendarMensagem(m, util(5))).toEqual({ ok: false, erro: expect.stringContaining("Fora da janela de envio da escola") });
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: m } })).agendadaPara?.toISOString()).toBe(quando);
   });
 });
 
 describe("reagendar, cancelar e enviar agora", () => {
   async function nova() {
-    const r = await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: emHoras(5), pessoaId, tarefaId });
+    const r = await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(11), pessoaId, tarefaId });
     return idDe(r);
   }
 
@@ -118,7 +158,7 @@ describe("reagendar, cancelar e enviar agora", () => {
   it("reagendar exige futuro e muda a data", async () => {
     const m = await nova();
     expect(await reagendarMensagem(m, emHoras(-1))).toEqual({ ok: false, erro: "Escolha uma data e hora no futuro." });
-    const nova1 = emHoras(10);
+    const nova1 = util(15);
     expect(await reagendarMensagem(m, nova1)).toEqual({ ok: true });
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: m } })).agendadaPara?.toISOString()).toBe(new Date(nova1).toISOString());
     expect((await eventosDo("Tarefa", tarefaId)).map((e) => e.tipo)).toContain("MensagemReagendada");
@@ -139,7 +179,7 @@ describe("reagendar, cancelar e enviar agora", () => {
 
 describe("listarItensAgenda", () => {
   it("junta tarefas e mensagens HUMANO agendadas; ignora réguas; escopo por autor", async () => {
-    const m = idDe(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: emHoras(2), pessoaId, tarefaId }));
+    const m = idDe(await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: util(10), pessoaId, tarefaId }));
     const contato = await prisma.contatoWhatsApp.findFirstOrThrow({ where: { pessoaId } });
     await prisma.intencaoMensagem.create({ data: { numeroId, contatoId: contato.id, origem: "HUMANO", corpoRenderizado: "regua", agendadaPara: new Date(Date.now() + 3600_000), passoComercial: "+30min", leadId } });
     await prisma.intencaoMensagem.create({ data: { numeroId, contatoId: contato.id, origem: "HUMANO", corpoRenderizado: "imediata", autorId: vendedor.id } });
@@ -163,7 +203,7 @@ describe("listarItensAgenda", () => {
   });
 
   it("respeita o intervalo", async () => {
-    await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: "2099-06-15T12:00:00.000Z", pessoaId });
+    await agendarMensagem({ numeroId, texto: "Oi", agendadaPara: "2099-06-15T16:00:00.000Z", pessoaId });
     const u = await exigirSessao();
     expect((await listarItensAgenda(u, { de: "2099-06-15", ate: "2099-06-15" }, false)).filter((i) => i.tipo === "mensagem")).toHaveLength(1);
     expect((await listarItensAgenda(u, { de: "2099-06-16", ate: "2099-06-20" }, false)).filter((i) => i.tipo === "mensagem")).toHaveLength(0);

@@ -118,7 +118,14 @@ export const ACOES_CONFIRMADAS: AcaoConfirmada[] = [
     modulo: "@/server/whatsapp/acoes",
     acao: "vincularContatoWhatsApp",
     achado: "L2298",
-    efeito: "amarra o histórico da conversa a um aluno, responsável ou oportunidade; não há desvincular pela tela",
+    efeito: "amarra o histórico da conversa a um aluno, responsável ou oportunidade; só a administração ou o gerente do setor desfaz, com motivo",
+  },
+  {
+    arquivo: "src/app/(app)/inbox/AcoesContato.tsx",
+    modulo: "@/server/whatsapp/desvincular-contato",
+    acao: "desvincularContatoWhatsApp",
+    achado: "L2298",
+    efeito: "solta o contato do aluno, responsável ou oportunidade (D8): as próximas mensagens saem do cadastro; desfazer exige vincular de novo",
   },
   {
     arquivo: "src/app/(app)/inbox/OptOutContato.tsx",

@@ -128,3 +128,14 @@ export function inicioDoDiaSeguinteInstitucional(instante: Date, fuso: string): 
 export function inicioDoMesInstitucional(instante: Date, fuso: string): Date {
   return inicioDoDiaCivil(`${dataCivilInstitucional(instante, fuso).slice(0, 8)}01`, fuso);
 }
+
+const DIA_DA_SEMANA: Readonly<Record<string, number>> = Object.freeze({ Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 });
+
+/** Hora (0–23) e dia da semana (0 = domingo) de `instante` no fuso informado, independente do servidor. */
+export function horaEDiaInstitucional(instante: Date, fuso: string): { hora: number; diaSemana: number } {
+  const timeZone = FusoInstitucionalSchema.parse(fuso);
+  if (!Number.isFinite(instante.getTime())) throw new Error("Instante inválido.");
+  const partes = new Intl.DateTimeFormat("en-US", { timeZone, hour: "2-digit", hourCycle: "h23", weekday: "short" }).formatToParts(instante);
+  const parte = (tipo: string) => partes.find((p) => p.type === tipo)!.value;
+  return { hora: Number(parte("hour")), diaSemana: DIA_DA_SEMANA[parte("weekday")] };
+}
