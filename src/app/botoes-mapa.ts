@@ -792,6 +792,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Concluir impactos aplicados → primario/md",
     "<button> APROVADO · Confirmar fotografia divergente · Descartar conju → perigo/md",
   ],
+  "financeiro/acertos-adiantamento/[matriculaId]/[propostaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
   "financeiro/acertos-vencimento/[matriculaId]/[propostaId]/Formulario.tsx": [
     "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
   ],

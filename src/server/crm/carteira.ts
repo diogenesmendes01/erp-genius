@@ -6,6 +6,7 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { palavrasDaBuscaLeads } from "@/server/comercial/filtros";
 import { atribuirDono } from "@/server/comercial/acoes";
+import { whereOportunidadeEmSql } from "./oportunidade-sql";
 
 export type FiltrosCarteira = {
   donoId: string;
@@ -59,7 +60,7 @@ const FUSO_PADRAO = "America/Sao_Paulo";
  * com o cliente. Do agregado Lead valem a interação registrada (ligação, presencial, e-mail; também a que nasce
  * da tarefa concluída com resultado), a tarefa concluída e a experimental (agendada, confirmada, realizada).
  * Mensagem recebida do cliente ou enviada por uma pessoa não vira Evento do Lead: entra pela consulta às mensagens
- * dos atendimentos da oportunidade (`ultimaMensagemPorLead`). Nota interna, edição de cadastro, reatribuição, tags, documentos e
+ * dos atendimentos da oportunidade (`JUNCOES_ULTIMO_CONTATO_SQL`). Nota interna, edição de cadastro, reatribuição, tags, documentos e
  * qualquer evento novo ficam de fora até alguém incluí-los aqui de propósito.
  */
 export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
@@ -71,27 +72,57 @@ export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
 ] as const;
 
 /**
- * Última mensagem de cada oportunidade, pelos atendimentos ligados a ela: a recebida do cliente e a enviada por
- * uma pessoa (pela Inbox, `HUMANO`, ou pelo celular, `CELULAR`). A régua e as automações (`CRON`, `LOTE`,
- * `GESTAO`) e a resposta da Aria (`IA`) não são contato humano (decisão do dono no #254); saída sem origem
- * (legado) também fica de fora. Saída que falhou ou ainda está na fila não chegou ao cliente e não conta;
+ * Último contato real de cada oportunidade (alias `o` da tabela "Lead"), em SQL: junções laterais com o último evento
+ * da lista positiva (`ev`) e a última mensagem dos atendimentos ligados a ela (`msg`). Mensagens: a recebida do
+ * cliente e a enviada por uma pessoa (pela Inbox, `HUMANO`, ou pelo celular, `CELULAR`). A régua e as automações
+ * (`CRON`, `LOTE`, `GESTAO`) e a resposta da Aria (`IA`) não são contato humano (decisão do dono no #254); saída sem
+ * origem (legado) também fica de fora. Saída que falhou ou ainda está na fila não chegou ao cliente e não conta;
  * mensagem apagada depois continua sendo um contato que aconteceu.
+ * Junção lateral, e não subconsulta no SELECT: o planejador estima o custo pelas linhas que passaram no filtro
+ * (e não pela tabela inteira), o que evita, por exemplo, compilar JIT para a carteira de um vendedor.
  */
-async function ultimaMensagemPorLead(ids: string[]): Promise<{ leadId: string; ultima: Date | null }[]> {
-  return prisma.$queryRaw<{ leadId: string; ultima: Date | null }[]>`
-    SELECT a."leadId" AS "leadId", MAX(m."criadoEm") AS "ultima"
-    FROM "MensagemWhatsApp" m
-    JOIN "AtendimentoWhatsApp" a ON a.id = m."atendimentoId"
-    WHERE a."leadId" IN (${Prisma.join(ids)})
-      AND (m.direcao = 'ENTRADA' OR (m.status IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m.origem IN ('HUMANO', 'CELULAR')))
-    GROUP BY a."leadId"`;
+const JUNCOES_ULTIMO_CONTATO_SQL = Prisma.sql`
+  LEFT JOIN LATERAL (
+    SELECT MAX(e."criadoEm") AS "em" FROM "Evento" e
+    WHERE e."agregadoTipo" = 'Lead' AND e."agregadoId" = o."id"
+      AND e."tipo" IN (${Prisma.join([...EVENTOS_DE_CONTATO_SEM_INTERACAO])})
+  ) ev ON TRUE
+  LEFT JOIN LATERAL (
+    SELECT MAX(m."criadoEm") AS "em" FROM "MensagemWhatsApp" m
+    JOIN "AtendimentoWhatsApp" a ON a."id" = m."atendimentoId"
+    WHERE a."leadId" = o."id"
+      AND (m."direcao" = 'ENTRADA' OR (m."status" IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m."origem" IN ('HUMANO', 'CELULAR')))
+  ) msg ON TRUE`;
+
+/**
+ * Ids da carteira já filtrados, ordenados e cortados no banco (B19, #198 C2): dias civis sem interação no fuso
+ * da escola (o maior primeiro; nunca negativo), desempate pelo id em ordem binária (a mesma do `<` do JS que a
+ * versão em memória usava). O último contato é o mais recente entre evento e mensagem (`GREATEST` ignora o nulo,
+ * como o "mais recente dos dois" de antes), ou a criação quando não há nenhum. `total` conta todas as que passam
+ * no filtro, antes do corte.
+ */
+async function idsOrdenadosDaCarteira(
+  where: Prisma.OportunidadeWhereInput,
+  hoje: string,
+  fuso: string,
+  minimo: number,
+  limite: number,
+): Promise<{ ids: { id: string; dias: number }[]; total: number }> {
+  const linhas = await prisma.$queryRaw<{ id: string; dias: number; total: number }[]>`
+    SELECT x."id", x."dias", (COUNT(*) OVER ())::int AS "total"
+    FROM (
+      SELECT o."id",
+        GREATEST(0, CAST(${hoje} AS date)
+          - CAST((COALESCE(GREATEST(ev."em", msg."em"), o."criadoEm") AT TIME ZONE 'UTC') AT TIME ZONE ${fuso} AS date))::int AS "dias"
+      FROM "Lead" o
+      ${JUNCOES_ULTIMO_CONTATO_SQL}
+      WHERE ${whereOportunidadeEmSql(where)}
+    ) x
+    WHERE x."dias" >= ${minimo}
+    ORDER BY x."dias" DESC, x."id" COLLATE "C" ASC
+    LIMIT ${limite}`;
+  return { ids: linhas.map((l) => ({ id: l.id, dias: l.dias })), total: linhas[0]?.total ?? 0 };
 }
-
-const maisRecente = (a: Date | null | undefined, b: Date | null | undefined): Date | null =>
-  !a ? b ?? null : !b ? a : a > b ? a : b;
-
-const diasCivis = (de: string, ate: string) =>
-  Math.round((Date.parse(`${ate}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86_400_000);
 
 function diaMes(instante: Date, fuso: string): string {
   const p = new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, day: "2-digit", month: "2-digit" }).formatToParts(instante);
@@ -99,9 +130,11 @@ function diaMes(instante: Date, fuso: string): string {
   return `${v("day")}/${v("month")}`;
 }
 
+/** `limite`: corte das linhas devolvidas (padrão `MAX_LINHAS_CARTEIRA`); `total` conta todas as que passam no filtro. */
 export async function carregarCarteira(
   usuario: UsuarioSessao,
   f: FiltrosCarteira,
+  limite = MAX_LINHAS_CARTEIRA,
 ): Promise<{ vendedores: VendedorCarteira[]; linhas: LinhaCarteira[]; total: number }> {
   const agora = new Date();
   const config = await prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
@@ -124,17 +157,9 @@ export async function carregarCarteira(
     ],
   };
 
-  const [brutas, totaisPorDono, coberturas] = await Promise.all([
-    prisma.oportunidade.findMany({
-      where,
-      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
-      select: {
-        id: true, nome: true, b2b: true, etapa: true, pessoaId: true, empresaId: true, criadoEm: true,
-        vendedor: { select: { id: true, nome: true } },
-        pessoa: { select: { tags: { select: { tag: { select: { id: true, nome: true, cor: true } } } } } },
-        matricula: { select: { alocacoes: { where: { ativa: true }, take: 1, select: { turma: { select: { nome: true } } } } } },
-      },
-    }),
+  const minimo = f.semInteracaoDias ? Number(f.semInteracaoDias) : 0;
+  const [ordenadas, totaisPorDono, coberturas] = await Promise.all([
+    idsOrdenadosDaCarteira(where, hoje, fuso, minimo, limite),
     prisma.oportunidade.groupBy({ by: ["vendedorDonoId"], where: escopoAberto, _count: { _all: true } }),
     prisma.coberturaCarteira.findMany({
       where: { inicio: { lte: agora }, fim: { gt: agora }, revogadaEm: null },
@@ -143,20 +168,23 @@ export async function carregarCarteira(
     }),
   ]);
 
-  // Último contato real (lista positiva de eventos + mensagens) -> dias civis sem interação no fuso institucional.
-  const ids = brutas.map((o) => o.id);
-  const [ultimos, mensagens] = ids.length
-    ? await Promise.all([
-        prisma.evento.groupBy({ by: ["agregadoId"], where: { agregadoTipo: "Lead", agregadoId: { in: ids }, tipo: { in: [...EVENTOS_DE_CONTATO_SEM_INTERACAO] } }, _max: { criadoEm: true } }),
-        ultimaMensagemPorLead(ids),
-      ])
-    : [[], []];
-  const ultimoPor = new Map<string, Date | null>(ultimos.map((u) => [u.agregadoId, u._max.criadoEm]));
-  for (const m of mensagens) ultimoPor.set(m.leadId, maisRecente(ultimoPor.get(m.leadId), m.ultima));
-  const minimo = f.semInteracaoDias ? Number(f.semInteracaoDias) : 0;
-
-  const todas = brutas
-    .map((o): LinhaCarteira => ({
+  // Só as linhas que vão para a tela (no máximo `limite`) carregam os detalhes; o `where` continua no AND.
+  const detalhes = ordenadas.ids.length
+    ? await prisma.oportunidade.findMany({
+        where: { AND: [where, { id: { in: ordenadas.ids.map((o) => o.id) } }] },
+        select: {
+          id: true, nome: true, b2b: true, etapa: true, pessoaId: true, empresaId: true,
+          vendedor: { select: { id: true, nome: true } },
+          pessoa: { select: { tags: { select: { tag: { select: { id: true, nome: true, cor: true } } } } } },
+          matricula: { select: { alocacoes: { where: { ativa: true }, take: 1, select: { turma: { select: { nome: true } } } } } },
+        },
+      })
+    : [];
+  const porId = new Map(detalhes.map((o) => [o.id, o]));
+  const linhas = ordenadas.ids.flatMap(({ id, dias }): LinhaCarteira[] => {
+    const o = porId.get(id);
+    if (!o) return [];
+    return [{
       oportunidadeId: o.id,
       pessoaId: o.pessoaId,
       empresaId: o.empresaId,
@@ -164,12 +192,11 @@ export async function carregarCarteira(
       tipo: o.b2b ? "pj" : "pf",
       etapa: o.etapa,
       dono: o.vendedor,
-      diasSemInteracao: Math.max(0, diasCivis(dataCivilInstitucional(ultimoPor.get(o.id) ?? o.criadoEm, fuso), hoje)),
+      diasSemInteracao: dias,
       turmaAtiva: o.matricula?.alocacoes[0]?.turma.nome ?? null,
       tags: (o.pessoa?.tags ?? []).map((t) => t.tag),
-    }))
-    .filter((l) => l.diasSemInteracao >= minimo);
-  const linhas = todas.sort((a, b) => b.diasSemInteracao - a.diasSemInteracao || (a.oportunidadeId < b.oportunidadeId ? -1 : 1)).slice(0, MAX_LINHAS_CARTEIRA);
+    }];
+  });
 
   // Vendedores que o usuário enxerga: ele mesmo, os que cobre, a equipe (gerente) ou todos (admin).
   const admin = usuario.papeis.includes(Papel.ADMINISTRADOR);
@@ -205,7 +232,7 @@ export async function carregarCarteira(
     cobertoPor: coberturas.find((c) => c.titularId === id)?.substituto.nome ?? null,
   }));
 
-  return { vendedores, linhas, total: todas.length };
+  return { vendedores, linhas, total: ordenadas.total };
 }
 
 export async function reatribuirEmLote(input: {
