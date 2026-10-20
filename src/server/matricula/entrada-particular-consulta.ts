@@ -6,6 +6,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { exigirPrecoPreparacaoAutorizado } from "./preco-autorizado";
 import { conferirPagamentosEntradaParticular } from "./entrada-particular-pagamentos";
+import { carregarAplicacoesAdiantamentoEntradaTx } from "./entrada-particular-aplicacoes";
 
 export async function consultarPagamentosEntradaParticular(matriculaId: string) {
   return executarAcao(async () => {
@@ -25,8 +26,9 @@ export async function consultarPagamentosEntradaParticular(matriculaId: string) 
       const refs = z.object({ preparacaoId: z.string(), pagadorRegistroId: z.string() }).parse(condicoes.dados);
       if (refs.preparacaoId !== m.preparacaoComercial.id || refs.pagadorRegistroId !== m.pagadoresPreparacao[0]?.id) throw new ErroRegra("A preparação ou o pagador mudou. Confira novamente as condições.");
       await exigirPrecoPreparacaoAutorizado(tx, m.id);
+      const aplicacoes = await carregarAplicacoesAdiantamentoEntradaTx(tx, m.id);
       return { matriculaId: m.id, codigo: m.codigo, aluno: m.aluno, condicoesId: condicoes.id, versaoCondicoes: condicoes.versao,
-        ...conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, m.cobrancas, emissao.itens.map(i => i.cobrancaId)) };
+        ...conferirPagamentosEntradaParticular(condicoes.dados, emissao.memoria, m.cobrancas, emissao.itens.map(i => i.cobrancaId), aplicacoes) };
     });
   });
 }

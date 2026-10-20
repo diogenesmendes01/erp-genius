@@ -101,7 +101,7 @@ export function Playground({ paises, temRascunho, nome }: Props) {
       <div aria-label="Conversa de teste" className="space-y-2 rounded-md border border-gray-200 p-3">
         {historico.length === 0 && <EstadoVazio>Escreva como se fosse o cliente. {nome} responde sem enviar nada.</EstadoVazio>}
         {historico.map((f, i) => (
-          <p key={i} className={"max-w-[85%] rounded-md px-3 py-2 text-sm " + (f.papel === "usuario" ? "bg-surface-muted" : "ms-auto bg-brand-50")}>
+          <p key={i} className={"max-w-[85%] rounded-md px-3 py-2 text-sm " + (f.papel === "usuario" ? "bg-gray-100" : "ms-auto bg-brand-50")}>
             <span className="sr-only">{f.papel === "usuario" ? "Cliente: " : `${nome}: `}</span>
             {f.texto}
           </p>

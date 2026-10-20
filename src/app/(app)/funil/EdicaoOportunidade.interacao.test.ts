@@ -31,6 +31,8 @@ vi.mock("@/server/comercial/acoes", () => acoes);
 import type { DetalheOportunidade } from "@/server/crm/historico";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { Botao } from "@/components/Botao";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { campo, campos, clicarBotao, controle, criarGanchos, elementos, texto } from "@/test/tela-sem-dom";
 import {
   DadosOportunidade,
@@ -180,8 +182,22 @@ describe("InteracaoOportunidade", () => {
     t.digitar("op-interacao-canal", "Ligação");
     t.digitar("op-interacao-nota", "Pediu proposta");
     await t.clicar("Registrar interação");
-    expect(acoes.registrarInteracao).toHaveBeenCalledWith("op1", { canal: "Ligação", nota: "Pediu proposta" });
+    expect(acoes.registrarInteracao).toHaveBeenCalledWith("op1", { canal: "Ligação", nota: "Pediu proposta", chaveIdempotencia: expect.stringMatching(/^[0-9a-f-]{36}$/) });
     expect(t.valor("op-interacao-nota")).toBe("");
+  });
+  it("chave de idempotência (#166): o reenvio depois do incerto manda a mesma chave; depois do sucesso, outra", async () => {
+    const t = montar(InteracaoOportunidade, { oportunidadeId: "op1" });
+    t.digitar("op-interacao-nota", "Pediu proposta");
+    acoes.registrarInteracao.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await t.clicar("Registrar interação");
+    expect(elementos(t.arvore()).find((n) => n.type === FeedbackAcao)?.props.erro).toBe(MSG_RESULTADO_INCERTO);
+    expect(t.valor("op-interacao-nota")).toBe("Pediu proposta");
+    await t.clicar("Registrar interação");
+    t.digitar("op-interacao-nota", "Outra interação");
+    await t.clicar("Registrar interação");
+    const chaves = acoes.registrarInteracao.mock.calls.map((c) => (c[1] as { chaveIdempotencia?: string }).chaveIdempotencia);
+    expect(chaves[1]).toBe(chaves[0]);
+    expect(chaves[2]).not.toBe(chaves[0]);
   });
   it("na falha o texto fica para conferir", async () => {
     acoes.registrarInteracao.mockResolvedValue({ ok: false, erro: "Falhou" });

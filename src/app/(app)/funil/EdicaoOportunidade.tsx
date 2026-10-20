@@ -11,6 +11,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarMoedaParaCampo } from "@/lib/dinheiro";
 import { CATEGORIA_DOCUMENTO_LABEL, SEGMENTO_LABEL } from "@/lib/labels";
 import {
@@ -26,8 +27,9 @@ import type { DetalheOportunidade } from "@/server/crm/historico";
 // Edições da oportunidade que moravam na ficha antiga (/leads/[id], removida no bloco J; B1 da R1 do #216):
 // resumo e próximo passo, datas (follow-up, experimental, proposta), dados cadastrais, documentos e interação.
 // As server actions são as mesmas da ficha (server/comercial/acoes.ts), com o mesmo papel e o mesmo escopo
-// de carteira. Nenhuma recebe chave de idempotência (registrarInteracao e anexarDocumentoLead criam um
-// registro a cada chamada): resultado incerto manda conferir antes de repetir.
+// de carteira. Só registrarInteracao recebe chave de idempotência (#166): o reenvio da mesma tentativa não
+// grava outra interação. As demais seguem sem chave (anexarDocumentoLead cria um registro a cada chamada):
+// resultado incerto manda conferir antes de repetir.
 
 const CONTROLE = `w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11 ${CONTROLE_INVALIDO}`;
 const SECAO = "grid gap-3 border-b border-gray-200 pb-4";
@@ -338,7 +340,11 @@ export function DocumentosOportunidade({ oportunidade: op, podeEditar }: { oport
 
 /** Registro de interação com o contato (canal e o que aconteceu); entra no histórico da oportunidade. */
 export function InteracaoOportunidade({ oportunidadeId }: { oportunidadeId: string }) {
-  const { acao, concluiu } = useAcaoSecao();
+  // Com chave de idempotência (#166), fora do `useAcaoSecao`: o reenvio depois de um resultado incerto devolve a
+  // interação já registrada, e a mensagem do incerto manda reenviar.
+  const router = useRouter();
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [canal, setCanal] = useState("");
   const [nota, setNota] = useState("");
 
@@ -358,7 +364,10 @@ export function InteracaoOportunidade({ oportunidadeId }: { oportunidadeId: stri
           disabled={!nota.trim() || acao.ocupado}
           onClick={async () => {
             // Canal e nota só são limpos com a interação confirmada: na falha, o texto fica para conferir.
-            if (concluiu(await acao.executar(() => registrarInteracao(oportunidadeId, { canal, nota }), "Interação registrada."))) {
+            const d = await acao.executar(() => registrarInteracao(oportunidadeId, { canal, nota, chaveIdempotencia: tentativa.atual }), "Interação registrada.");
+            tentativa.depoisDo(d);
+            if (d?.tipo === "ok") {
+              router.refresh();
               setCanal("");
               setNota("");
             }

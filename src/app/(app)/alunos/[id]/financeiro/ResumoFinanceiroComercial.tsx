@@ -9,6 +9,7 @@ import type { obterResumoComercialFinanceiro } from "@/server/ajustes/consultas"
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { botaoClasses } from "@/components/Botao";
 
@@ -34,8 +35,10 @@ function LinhaAjustePreco({ preco, moeda }: { preco: Preco; moeda: string }) {
   const router = useRouter();
   const [valor, setValor] = useState(formatarMoedaParaCampo(preco.valor, moeda));
   // Estado por linha: o resultado aparece logo abaixo do botão clicado, não no topo da página.
-  // ajustarCobranca não tem chave de idempotência — falha de rede manda conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // ajustarCobranca recebe chave de idempotência (#166): o reenvio não aplica o desconto duas vezes nem abre
+  // segundo pedido de aprovação.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   async function ajustar(form: FormData) {
     // parseMoeda (não Number): "1.234" digitado não pode virar 1234 por acidente. E nunca
     // ?? 0: texto inválido viraria "novo valor: zero" registrado, silencioso.
@@ -45,8 +48,9 @@ function LinhaAjustePreco({ preco, moeda }: { preco: Preco; moeda: string }) {
       return;
     }
     const desfecho = await acao.executar(() => ajustarCobranca({ cobrancaId: String(form.get("cobrancaId")), valorPara, tipo: TipoAjuste.DESCONTO,
-      vigencia: form.get("futuras") ? Vigencia.PROXIMOS_MESES : Vigencia.ESTA_COBRANCA, motivo: String(form.get("motivo")) }),
+      vigencia: form.get("futuras") ? Vigencia.PROXIMOS_MESES : Vigencia.ESTA_COBRANCA, motivo: String(form.get("motivo")), chaveIdempotencia: tentativa.atual }),
     (dado) => dado?.aprovacao ? "Pedido encaminhado para aprovação independente." : "Preço ajustado dentro da alçada.");
+    tentativa.depoisDo(desfecho);
     if (desfecho?.tipo === "ok") router.refresh();
   }
   return (

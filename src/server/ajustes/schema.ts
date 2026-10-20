@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TipoAjuste, Vigencia } from "@prisma/client";
-import { dataOpcional } from "@/server/_shared/validacao";
+import { ChaveIdempotenciaSchema, dataOpcional } from "@/server/_shared/validacao";
 
 // Renegociação / Ajuste manual (ver docs/09 §Renegociação). Tudo com motivo + auditoria.
 // A DIREÇÃO do ajuste (desconto deve ter valorPara <= valor atual; só ALTERACAO_VALOR
@@ -13,6 +13,8 @@ export const AjusteSchema = z.object({
   vigencia: z.nativeEnum(Vigencia).default(Vigencia.ESTA_COBRANCA),
   novoVencimento: dataOpcional,
   motivo: z.string().min(1, "Motivo obrigatório (auditoria)"),
+  /** A mesma chave até o sucesso (#166): o reenvio não aplica o ajuste de novo nem abre segundo pedido. */
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 export type AjusteInput = z.input<typeof AjusteSchema>;
 
