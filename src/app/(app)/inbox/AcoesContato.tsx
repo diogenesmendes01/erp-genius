@@ -9,6 +9,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { registrarPromessaPagamento } from "@/server/cobrancas/acoes";
@@ -253,7 +254,10 @@ export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false,
   const [promessa, setPromessa] = useState(false);
   const [data, setData] = useState("");
   const retomar = useAcaoCliente({ idempotente: true });
-  const prometer = useAcaoCliente({ idempotente: false });
+  // A promessa recebe chave de idempotência (#166) e a marcação da conversa é por estado-alvo (a mesma de
+  // `retomar`): o reenvio depois de um resultado incerto não grava segunda promessa.
+  const prometer = useAcaoCliente({ idempotente: true });
+  const tentativaPromessa = useChaveIdempotencia();
   const ativa = cobranca.ativa;
 
   async function retomarRegua() {
@@ -263,10 +267,11 @@ export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false,
   async function registrarPromessa() {
     if (!ativa || !data) return;
     const d = await prometer.executar(async () => {
-      const r = await registrarPromessaPagamento(ativa.id, data);
+      const r = await registrarPromessaPagamento(ativa.id, data, tentativaPromessa.atual);
       if (!r.ok) return r;
       return marcarConversaTratada({ conversaId: atendimentoId, motivo: "promessa" });
     }, "Promessa registrada: régua pausada até a data.");
+    tentativaPromessa.depoisDo(d);
     if (d?.tipo === "ok") { setPromessa(false); setData(""); aoMudar?.(); }
   }
   async function aposPagamento() {
