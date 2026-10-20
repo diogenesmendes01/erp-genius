@@ -3906,6 +3906,61 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
 - **Fora deste lote:** Q175, Q173, Q171 e a origem histórica, nesta ordem. O link do acerto na página inicial do Financeiro também fica para depois.
 - **Pendência operacional:** fazer backup e ensaiar o `migrate deploy` numa cópia do UAT antes do deploy.
 
+### B19: funil e carteira ordenam, filtram e cortam no banco (#196 C3, #198 C2) — 2026-10-20
+
+- **Problema:** o funil (ordem "tempo" e período dos perdidos) e a carteira carregavam todos os ids do escopo, buscavam o último `Evento` de cada um com `in` e ordenavam e cortavam em memória. Além de crescer com a base, isso quebrava acima de 32.767 oportunidades no escopo: o `in` passa do limite de parâmetros do Postgres (`P2035`, visto na medição abaixo com o admin).
+- **O que mudou:**
+  - `crm/oportunidade-sql.ts` (novo): traduz para SQL o `where` de Oportunidade que essas telas já montam em Prisma (escopo comercial + filtros da URL). O filtro continua definido uma vez só. A tradução cobre só as formas usadas aqui e **recusa com erro** qualquer outra, para que um filtro ou um escopo novo nunca suma em silêncio. A semântica é a do Prisma: `contains` insensível vira `ILIKE '%x%'` sem escapar `%` e `_` (o Prisma também não escapa), e `in: []` não casa nada.
+  - Funil: as colunas em ordem "tempo" e a coluna PERDIDO com período usam uma consulta em SQL, com junção lateral no último `Evento`, `ORDER BY` e `LIMIT 50`, mais os totais e somas por país. Só os 50 cartões da página são carregados. As outras ordens já eram `orderBy` + `take` no Prisma e não mudaram.
+  - Carteira: uma consulta calcula os dias civis sem interação no fuso da escola (lista positiva de eventos do #198 C6/D13 e mensagens humanas do #254), filtra "sem interação há N dias", ordena (mais dias primeiro e id em ordem binária) e corta em 500, com o `total` por `COUNT(*) OVER ()`. Só as linhas devolvidas carregam os detalhes. `carregarCarteira` ganhou um `limite` opcional, usado nos testes.
+  - Desempates: em "tempo" e na carteira o id vai com `COLLATE "C"`, a mesma ordem do `<` do JS de antes. Nas outras ordens fica a collation da coluna, como no `orderBy` do Prisma.
+- **Índices: nenhum.** O `EXPLAIN ANALYZE` numa base sintética de 100 mil oportunidades e 800 mil eventos mostrou que o custo está na busca do último evento por oportunidade, que já usa `Evento(agregadoTipo, agregadoId)`. Testei e descartei dois índices: `Lead(vendedorDonoId, etapa)` (ganho de poucos ms) e um índice de cobertura em `Evento` (scan só no índice, sem ganho). A subconsulta correlacionada no `WHERE` levava o planejador a estimar o custo pela tabela inteira e a compilar JIT (~330 ms numa consulta de 8 ms). Por isso as consultas usam junção lateral.
+- **Medição** (mesma base, `scripts` locais, não versionados): vendedor com 2.500 oportunidades: carteira 104–150 ms (antes 600–890 ms), funil "tempo" ~100 ms (antes 180–230 ms) e funil "recentes" com perdidos de 30 dias 150–190 ms (antes 100–160 ms). Admin: funil 0,5–1,6 s e carteira ~1,5 s. A versão antiga falhava com `P2035`.
+- **Testes:**
+  - `funil-carteira-equivalencia.int.test.ts` (40 testes): base determinística de 200 oportunidades com etapas, donos, cobertura ativa e vencida, países, valores e follow-ups com empates, tags, eventos, mensagens de todas as origens e turmas ativas e encerradas. Compara o resultado novo com a cópia da versão anterior (`src/test/legado-funil-carteira.ts`, só para teste), inteiro e na mesma ordem. No funil: 4 ordens × 3 períodos × 7 sessões (admin, 2 gerentes, vendedor com e sem cobertura, sem papel comercial) e 11 filtros (tipo, dono, temperatura, origem, tag, buscas com `_` e `%`, combinados). Na carteira: 10 filtros × 7 sessões, cortes de 1, 7 e 40, e fusos Tóquio e Honolulu.
+  - Escopo de visibilidade: vendedor vê a própria carteira e a que cobre (a cobertura vencida não conta), gerente vê só a equipe, sem papel comercial não vê nada e filtro de dono fora do escopo não abre carteira alheia. Vale nos dois caminhos do funil e na carteira.
+  - Mutação: inverter o desempate ou o `NULLS LAST` faz 26 dos 40 testes falharem.
+  - `oportunidade-sql.test.ts` (7, unitário): formas do escopo, enum, `not`, busca, relações e recusa do que não é suportado. `carteira.test.ts` foi reescrito para a consulta nova, com as mesmas regras da lista positiva e das mensagens.
+- **Evidências** (banco descartável `erp_genius_test_b19`, `migrate deploy`, perfil temporário desfeito antes do commit e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 791 arquivos e 5.924 testes OK.
+  - `npm run build`: saída 0.
+  - Integração de `src/server/crm`: 30 arquivos e 267 testes OK, incluindo os 40 de equivalência e os de `funil` e `carteira`.
+
+### Port da #62: Q164 e Q157 (#164) — 2026-10-20
+
+- **Escopo:** o lote da Q164 e da Q157, que têm migration e ficam fora da cadeia financeira. O dono confirmou que as decisões de 21/09 continuam valendo. A #164 continua aberta. Nada veio por cherry-pick: os testes da #62 entraram primeiro e falharam, e a implementação veio depois, sobre o main atual.
+- **Q164, resolução do impedimento causado pela escola:**
+  - A gestão pedagógica (ou a administração) confirma, com justificativa, que uma realização posterior da mesma avaliação resolveu o impedimento. Precisa ser a mesma matrícula, alocação, turma, regra e código, e a realização precisa ter nota oficial. Não há segunda aprovação.
+  - A reserva em `PENDENCIA_ESCOLA` e a ocorrência ficam como histórico. A resolução é um registro à parte (`ResolucaoImpedimentoSegundaChamada`), único por reserva e imutável, com guard SQL que repete as regras.
+  - O fechamento deixa de contar o impedimento resolvido.
+  - Tela: formulário no histórico de reservas, que só aparece quando existe realização apta.
+  - Migration `20261020200000_resolucao_impedimento_segunda_chamada`, que era a `20260921010000` na #62.
+- **Q157, correção do período de um relato confirmado de falta de oferta:**
+  - A correção é versionada e precisa de aprovação de outra pessoa. Aprovada, o período do relato muda na mesma transação, e todos os consumidores (TS e guards SQL) passam a ler o período vigente. O trigger do relato só aceita essa mudança quando há correção aprovada que a respalde.
+  - É recusada, na ação e no banco, quando retira dias que já sustentam compensação aprovada ou período integral aprovado.
+  - Relato aberto corrige só o início, porque o fim vem pelo término aprovado (Q156). Relato encerrado não é reaberto.
+  - Tela nova em `matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao`, com link na lista de relatos.
+  - Migration `20261020210000_correcao_relato_indisponibilidade_oferta`, que era a `20260921020000` na #62. A função `validar_registro_indisponibilidade_oferta_matricula` é a mesma do main (`20260915076000`, inalterada desde a #62) mais o ramo de UPDATE.
+- **Adaptações ao main:**
+  - Telas reescritas no padrão atual: `Campo`, `CampoTexto`, `Botao`, `FeedbackAcao`, `useAcaoCliente`, `useChaveIdempotencia`, `EstadoVazio` e `VoltarPara`. Entraram nos manifestos de botões, campos e estados vazios, e a correção entrou na trilha. "Rejeitar correção" usa a variante `perigo`.
+  - O histórico da Q157 usa o fuso da escola como referência, com aviso quando ele não está configurado. A #62 fixava `"UTC"`.
+  - Não entra o perfil de teste `claude` da #62.
+  - `decisoes-2026-09-21.md` continua fora do main. Nenhum lote o trouxe ainda.
+- **Testes novos além dos da #62:**
+  - Integração da Q164 com o schema completo, que a #62 não tinha: a recusa sem nota oficial, a confirmação idempotente, o fechamento sem a pendência, o histórico preservado e o guard SQL.
+  - Integração da Q157 recusando a retirada de dia com compensação aprovada, na ação e no banco.
+  - SSR das telas novas.
+- **Fica para depois:** as linhas desatualizadas do quadro (ACA/Q164) e de `docs/41`, que a #164 pede para atualizar junto com o fechamento da issue.
+- **Evidências** (banco descartável `erp_genius_test_q164`, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base, nenhum em arquivo tocado).
+  - `npm test`: 795 arquivos e 5.946 testes OK em UTC e em America/Sao_Paulo.
+  - `npm run build`: saída 0, com as rotas do histórico de reservas e da correção.
+  - `prisma migrate deploy` do zero: todas as migrations aplicadas, incluindo as duas novas.
+  - Integração de avaliações (segunda chamada, agenda, remarcação, substituição, pendências e fechamento acadêmico) e de matrícula (relato, confirmação, término e correção de indisponibilidade, estado, cobertura, compensação, fonte de compensação, disponibilidade de oferta e período integral): 20 arquivos e 166 testes OK.
+
 ### Q172, follow-up da revisão da #261 (C1 e C2) e da revisão da #264 (B1, C1 a C3) — 2026-10-20
 
 - **C1, compra depois do aditivo:** o 1º cenário `PRODUCAO_HORA_ADIANTAMENTO` agora chama `registrarCompraHorasAntecipadas` depois do pagamento de 375. A compra de 120 minutos (os da emissão) é recusada ("Os minutos, valor e cobrança precisam corresponder ao adiantamento contratado..."). A de 180 minutos (os da aplicação) é registrada com valor original 375, desconto 0, pago 375, e a memória guarda `preparacao.aplicacaoAdiantamentoAditivoId`. Os números da revisão (180 aceita, 120 recusa) são os da regra; a fixture não precisou mudar. A compra preparada exige o aceite integrado do original, e o cenário o confirma **antes** do aditivo.
