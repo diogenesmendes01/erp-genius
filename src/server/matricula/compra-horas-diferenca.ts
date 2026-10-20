@@ -1,33 +1,35 @@
 import type { Prisma } from "@prisma/client";
-import { z } from "zod";
 
 /**
- * Origem da diferença entre o valor original gravado na compra e o valor pago (`descontoOriginal`).
- * Q172: com aditivo de adiantamento aplicado antes do pagamento, a cobrança conserva o valor original
- * da emissão e passa ao valor do aditivo; se ele for menor, a diferença é redução contratual, não desconto.
- * Sem dependência de execução do Prisma: os rótulos também servem às telas.
- * A memória da compra registra a aplicação em `snapshot.preparacao.aplicacaoAdiantamentoAditivoId`.
+ * Parcelas da diferença entre o valor original gravado na compra e o valor pago (`descontoOriginal`).
+ * Q172: `valorOriginal` é o preço de referência × minutos da emissão, que a aplicação do aditivo não altera;
+ * a aplicação só move `valorNegociado`. Por isso a diferença pode somar desconto de emissão (referência acima
+ * do negociado) e redução contratual por aditivo. Só a queda do valor negociado entre a 1ª aplicação
+ * (`valorAnterior`) e a última (`valorNovo`) é redução; o restante continua desconto original.
+ * Sem dependência de execução do Prisma: o tipo e os rótulos também servem às telas.
  */
-export type OrigemDiferencaCompra = "DESCONTO" | "REDUCAO_ADITIVO";
+export type DiferencaValorCompra = { valor: string; desconto: string; reducaoAditivo: string };
 
-export const ROTULO_DIFERENCA_COMPRA: Record<OrigemDiferencaCompra, string> = {
-  DESCONTO: "Desconto original",
-  REDUCAO_ADITIVO: "Redução do adiantamento por aditivo",
-};
+export const ROTULO_DESCONTO_COMPRA = "Desconto original";
+export const ROTULO_REDUCAO_COMPRA = "Redução do adiantamento por aditivo";
+export const ROTULO_DESCONTO_CREDITO = "Desconto original já considerado";
+export const ROTULO_REDUCAO_CREDITO = "Redução do adiantamento por aditivo já considerada";
 
-/** Rótulo da mesma diferença na memória de cálculo do crédito, que já a desconsidera do valor pago. */
-export const ROTULO_DIFERENCA_CREDITO: Record<OrigemDiferencaCompra, string> = {
-  DESCONTO: "Desconto original já considerado",
-  REDUCAO_ADITIVO: "Redução do adiantamento por aditivo já considerada",
-};
+type AplicacaoValor = { valorAnterior: Prisma.Decimal; valorNovo: Prisma.Decimal };
 
-const ComAditivo = z.object({ preparacao: z.object({ aplicacaoAdiantamentoAditivoId: z.string().min(1) }) });
-
-export function origemDiferencaCompra(snapshot: unknown, diferenca: Prisma.Decimal): OrigemDiferencaCompra {
-  return diferenca.gt(0) && ComAditivo.safeParse(snapshot).success ? "REDUCAO_ADITIVO" : "DESCONTO";
+/** `aplicacoes` na ordem em que foram aplicadas à cobrança, até a registrada na memória da compra. */
+export function separarDiferencaCompra(descontoOriginal: Prisma.Decimal, aplicacoes: readonly AplicacaoValor[]): DiferencaValorCompra {
+  const zero = descontoOriginal.minus(descontoOriginal);
+  let reducao = zero;
+  if (aplicacoes.length && descontoOriginal.gt(0)) {
+    const queda = aplicacoes[0].valorAnterior.minus(aplicacoes[aplicacoes.length - 1].valorNovo);
+    reducao = queda.lte(0) ? zero : queda.gt(descontoOriginal) ? descontoOriginal : queda;
+  }
+  return { valor: descontoOriginal.toFixed(2), desconto: descontoOriginal.minus(reducao).toFixed(2), reducaoAditivo: reducao.toFixed(2) };
 }
 
-export function diferencaValorCompra(snapshot: unknown, diferenca: Prisma.Decimal) {
-  const origem = origemDiferencaCompra(snapshot, diferenca);
-  return { origem, valor: diferenca.toFixed(2), rotulo: ROTULO_DIFERENCA_COMPRA[origem] };
+/** Linhas a exibir: cada parcela positiva; sem nenhuma, o desconto original (zero) como antes da Q172. */
+export function parcelasDiferenca(d: Pick<DiferencaValorCompra, "desconto" | "reducaoAditivo">) {
+  const reducao = Number(d.reducaoAditivo) > 0;
+  return { desconto: Number(d.desconto) > 0 || !reducao, reducao };
 }

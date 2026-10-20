@@ -6,9 +6,16 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { conferirCompraPreparadaTx } from "./compra-horas-preparacao";
-import { diferencaValorCompra } from "./compra-horas-diferenca";
+import { separarDiferencaCompra } from "./compra-horas-diferenca";
 
 const ResumoLiquidacao = z.object({ liquidacao: z.object({ valorEmDinheiro: z.string(), valorEmCredito: z.string(), valorTotal: z.string() }) });
+const AplicacaoNaCompra = z.object({ preparacao: z.object({ aplicacaoAdiantamentoAditivoId: z.string().min(1) }) });
+/** Q172: aplicação de aditivo do adiantamento registrada na memória da compra (a última antes do registro). */
+function aplicacaoDaCompra(snapshot: Prisma.JsonValue) {
+  const r = AplicacaoNaCompra.safeParse(snapshot);
+  return r.success ? r.data.preparacao.aplicacaoAdiantamentoAditivoId : null;
+}
+
 function resumoLiquidacao(snapshot: Prisma.JsonValue) {
   const l = ResumoLiquidacao.safeParse(snapshot);
   return l.success ? l.data.liquidacao : null;
@@ -28,11 +35,19 @@ export async function consultarComprasHorasAntecipadas(input: { alunoId: string;
       if (!await tx.matricula.count({ where: { id: d.matriculaId, alunoId: d.alunoId } })) throw new ErroRegra("Matrícula não encontrada para este aluno.");
       const compras = await tx.compraHorasAntecipadas.findMany({ where: { matriculaId: d.matriculaId }, orderBy: [{ criadoEm: "desc" }, { id: "asc" }],
         select: { liquidacaoAcerto: { select: { minutos: true } }, snapshot: true, id: true, cobrancaId: true, minutosComprados: true, valorOriginal: true, descontoOriginal: true, valorPagoAlocado: true, moeda: true, evidenciaCondicoes: true, criadoEm: true, registrador: { select: { nome: true } }, reservas: { select: { id: true, encontroId: true, minutos: true, inicio: true, fim: true, consumo: { select: { id: true, conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, encontro: { select: { status: true } }, decisoesLiberacao: { where: { aprovada: true }, select: { id: true, proposta: { select: { destino: true } } } }, propostasLiberacao: { select: { id: true, preparadorId: true, destino: true, valorCredito: true, calculoCredito: true, evidenciaEscolhaRemarcacao: true, motivo: true, decisao: { select: { aprovada: true, motivo: true, credito: { select: { id: true, valorInicial: true, moeda: true } } } } }, orderBy: { criadoEm: "desc" } } }, orderBy: { inicio: "asc" } } } });
+      // Q172: a diferença gravada separa desconto de emissão e redução por aditivo a partir das aplicações.
+      const aplicacoes = compras.some(c => aplicacaoDaCompra(c.snapshot)) ? await tx.aplicacaoAdiantamentoAditivo.findMany({
+        where: { decisao: { proposta: { matriculaId: d.matriculaId, cobrancaId: { in: compras.map(c => c.cobrancaId) } } } }, orderBy: [{ versaoCobrancaDepois: "asc" }, { id: "asc" }],
+        select: { id: true, valorAnterior: true, valorNovo: true, decisao: { select: { proposta: { select: { cobrancaId: true } } } } } }) : [];
+      const diferencaValor = (c: { snapshot: Prisma.JsonValue; cobrancaId: string; descontoOriginal: Prisma.Decimal }) => {
+        const id = aplicacaoDaCompra(c.snapshot), daCobranca = aplicacoes.filter(a => a.decisao.proposta.cobrancaId === c.cobrancaId), ultima = daCobranca.findIndex(a => a.id === id);
+        return separarDiferencaCompra(c.descontoOriginal, ultima >= 0 ? daCobranca.slice(0, ultima + 1) : []);
+      };
       const encontros = await tx.encontroAgenda.findMany({ where: { finalidade: "AULA", matriculaId: d.matriculaId, matricula: { status: "ATIVA" }, status: "PREVISTO", inicio: { gt: new Date() }, reservasHoras: { none: {} } }, orderBy: [{ inicio: "asc" }, { id: "asc" }], take: 100,
         select: { id: true, inicio: true, fim: true, fusoOrigem: true } });
       const cobrancas = await tx.cobranca.findMany({ where: { matriculaId: d.matriculaId, tipo: "HORA_PARTICULAR", status: "PAGO", comprasHoras: { none: {} } }, orderBy: [{ vencimento: "asc" }, { id: "asc" }],
         select: { id: true, versao: true, moeda: true, valorNegociado: true, vencimento: true } });
-      return { encontros: encontros.map(e => ({ ...e, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })), compras: compras.map(({ snapshot, ...c }) => ({ ...c, liquidacao: resumoLiquidacao(snapshot), diferencaValor: diferencaValorCompra(snapshot, c.descontoOriginal), minutosReservados: c.reservas.filter(r => !r.consumo && !r.decisoesLiberacao.length).reduce((s, r) => s + r.minutos, 0), minutosConvertidosCredito: (c.liquidacaoAcerto?.minutos ?? 0) + c.reservas.filter(r => r.decisoesLiberacao.some(d => d.proposta.destino === "CREDITO")).reduce((s, r) => s + r.minutos, 0), minutosConsumidos: c.reservas.filter(r => !!r.consumo).reduce((s, r) => s + r.minutos, 0), minutosDisponiveis: c.minutosComprados - (c.liquidacaoAcerto?.minutos ?? 0) - c.reservas.filter(r => !r.decisoesLiberacao.some(d => d.proposta.destino === "REMARCACAO")).reduce((s, r) => s + r.minutos, 0), reservas: c.reservas.map(r => ({ id: r.id, encontroId: r.encontroId, minutos: r.minutos, consumo: r.consumo, statusEncontro: r.encontro.status, liberada: r.decisoesLiberacao.some(d => d.proposta.destino === "REMARCACAO"), convertidaCredito: r.decisoesLiberacao.some(d => d.proposta.destino === "CREDITO"), propostasLiberacao: r.propostasLiberacao.map(p => ({ id: p.id, destino: p.destino, valorCredito: p.valorCredito?.toFixed(2) ?? null, calculoCredito: p.calculoCredito, motivo: p.motivo, evidenciaEscolhaRemarcacao: p.evidenciaEscolhaRemarcacao, decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, credito: p.decisao.credito ? { ...p.decisao.credito, valorInicial: p.decisao.credito.valorInicial.toFixed(2) } : null } : null, podeDecidir: podeAprovar && p.preparadorId !== usuario.id && !p.decisao })), inicio: r.inicio.toISOString(), fim: r.fim.toISOString() })), valorOriginal: c.valorOriginal.toFixed(2), descontoOriginal: c.descontoOriginal.toFixed(2), valorPagoAlocado: c.valorPagoAlocado.toFixed(2), criadoEm: c.criadoEm.toISOString() })),
+      return { encontros: encontros.map(e => ({ ...e, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })), compras: compras.map(({ snapshot, ...c }) => ({ ...c, liquidacao: resumoLiquidacao(snapshot), diferencaValor: diferencaValor({ ...c, snapshot }), minutosReservados: c.reservas.filter(r => !r.consumo && !r.decisoesLiberacao.length).reduce((s, r) => s + r.minutos, 0), minutosConvertidosCredito: (c.liquidacaoAcerto?.minutos ?? 0) + c.reservas.filter(r => r.decisoesLiberacao.some(d => d.proposta.destino === "CREDITO")).reduce((s, r) => s + r.minutos, 0), minutosConsumidos: c.reservas.filter(r => !!r.consumo).reduce((s, r) => s + r.minutos, 0), minutosDisponiveis: c.minutosComprados - (c.liquidacaoAcerto?.minutos ?? 0) - c.reservas.filter(r => !r.decisoesLiberacao.some(d => d.proposta.destino === "REMARCACAO")).reduce((s, r) => s + r.minutos, 0), reservas: c.reservas.map(r => ({ id: r.id, encontroId: r.encontroId, minutos: r.minutos, consumo: r.consumo, statusEncontro: r.encontro.status, liberada: r.decisoesLiberacao.some(d => d.proposta.destino === "REMARCACAO"), convertidaCredito: r.decisoesLiberacao.some(d => d.proposta.destino === "CREDITO"), propostasLiberacao: r.propostasLiberacao.map(p => ({ id: p.id, destino: p.destino, valorCredito: p.valorCredito?.toFixed(2) ?? null, calculoCredito: p.calculoCredito, motivo: p.motivo, evidenciaEscolhaRemarcacao: p.evidenciaEscolhaRemarcacao, decisao: p.decisao ? { aprovada: p.decisao.aprovada, motivo: p.decisao.motivo, credito: p.decisao.credito ? { ...p.decisao.credito, valorInicial: p.decisao.credito.valorInicial.toFixed(2) } : null } : null, podeDecidir: podeAprovar && p.preparadorId !== usuario.id && !p.decisao })), inicio: r.inicio.toISOString(), fim: r.fim.toISOString() })), valorOriginal: c.valorOriginal.toFixed(2), descontoOriginal: c.descontoOriginal.toFixed(2), valorPagoAlocado: c.valorPagoAlocado.toFixed(2), criadoEm: c.criadoEm.toISOString() })),
         cobrancas: cobrancas.map((c) => ({ ...c, valorNegociado: c.valorNegociado.toFixed(2), vencimento: c.vencimento.toISOString().slice(0, 10) })) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
@@ -64,9 +79,9 @@ export async function registrarCompraHorasAntecipadas(input: z.input<typeof Entr
       if (!c || c.tipo !== "HORA_PARTICULAR" || c.versao !== d.versaoCobranca || c.moeda !== m.moeda || c.comprasHoras.length) throw new ErroRegra("Cobrança incompatível, desatualizada ou já vinculada a uma compra.");
       const preparacao = await conferirCompraPreparadaTx(tx, m, c, d.minutosComprados);
       // Preço de referência inferior ao negociado não é desconto negativo. Preservar ambos na memória.
-      // Q172: aditivo aplicado que reduz o adiantamento mantém o valor original da emissão; a diferença gravada
-      // em descontoOriginal é redução contratual, não desconto. A memória guarda a aplicação (preparacao) e a
-      // consulta expõe a origem e o rótulo corretos (compra-horas-diferenca).
+      // Q172: a aplicação do aditivo não altera o valor original da emissão; descontoOriginal pode somar desconto
+      // de emissão e redução por aditivo. A memória guarda a aplicação (preparacao) e a consulta separa as
+      // parcelas a partir das aplicações (compra-horas-diferenca).
       const valorOriginal = preparacao ? Prisma.Decimal.max(c.valorOriginal, c.valorNegociado) : c.valorOriginal;
       const total = c.destinacoesRecebimento.reduce((s, d) => s.plus(d.valor), new Prisma.Decimal(0));
       const utilizacoes = await tx.propostaUsoCredito.findMany({ where: { cobrancaId: c.id, decisao: { aprovada: true } }, orderBy: { id: "asc" },
