@@ -6,6 +6,7 @@ import type { Resultado } from "@/server/_shared";
 import { arquivarRespostaRapidaDaTela, salvarRespostaRapidaDaTela } from "@/server/crm-config/acoes-respostas";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -28,7 +29,10 @@ const VARIAVEIS = ["{nome}", "{responsavel}", "{curso}"];
 
 export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: RespostaLinha[]; setoresPermitidos: Setor[] }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Criar resposta leva chave de idempotência (#166): o reenvio devolve a resposta já criada. Editar grava os
+  // valores da tela na resposta (estado-alvo), então repetir não duplica. Arquivar usa o ConfirmarAcao.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [id, setId] = useState<string | undefined>();
   const [atalho, setAtalho] = useState("/");
   const [titulo, setTitulo] = useState("");
@@ -37,7 +41,9 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
   const [aria, setAria] = useState(false);
   const limpar = () => { setId(undefined); setAtalho("/"); setTitulo(""); setCorpo(""); setSetor(""); setAria(false); };
   const rodar = async (fn: () => Promise<Resultado<unknown>>, depois: () => void) => {
+    const criando = !id;
     const d = await acao.executar(fn);
+    if (criando) tentativa.depoisDo(d);
     if (d?.tipo === "ok") { depois(); router.refresh(); }
   };
 
@@ -71,7 +77,7 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
       </label>
       <label className="mt-3 flex items-center gap-1 text-sm"><input type="checkbox" checked={aria} onChange={(e) => setAria(e.target.checked)} />A Aria pode usar esta resposta</label>
       <p className="mt-1 text-xs text-gray-500">{AVISO_ARIA}</p>
-      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarRespostaRapidaDaTela({ id, atalho, titulo, corpo, setor: setor || null, ariaPodeUsar: aria }), limpar)}>{acao.ocupado ? "Salvando…" : id ? "Salvar resposta" : "Criar resposta"}</button>
+      <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarRespostaRapidaDaTela({ id, atalho, titulo, corpo, setor: setor || null, ariaPodeUsar: aria, ...(id ? {} : { chaveIdempotencia: tentativa.atual }) }), limpar)}>{acao.ocupado ? "Salvando…" : id ? "Salvar resposta" : "Criar resposta"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />
   </div>;

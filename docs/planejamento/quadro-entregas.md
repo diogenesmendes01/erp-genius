@@ -3878,3 +3878,22 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npm run build`: saída 0.
   - Integração de disponibilidade de oferta, continuidade (fila, emissão SQL e condições), acadêmico (`academico`, `fluxo`), replanejamento sem remarcações e cadastro de alunos: 8 arquivos e 108 testes OK.
   - Uma rodada mais ampla (inclui `aditivo.int.test.ts`) passou de 30 minutos e foi interrompida sem resultado. Nenhuma integração existente cria aditivo de `REGIME`.
+
+### Idempotência, 3º lote (#166) — 2026-10-20
+
+- **Escopo:** 20 das ações com `idempotente: false` de maior risco de duplicação. A #166 continua aberta. Os testes de integração entraram primeiro e falharam; a implementação veio depois.
+- **Criações com chave** (`repeticaoIdempotente`, marca no payload do Evento de criação, tela com `useChaveIdempotencia`):
+  - Inbox: nota interna (`registrarNotaAtendimento`), convite de participante (`convidarParticipante`; o fim do convite fica fixo dentro da tentativa) e mensagem agendada (`agendarMensagemNoAtendimento`).
+  - Inbox, cobrança: promessa de pagamento (`registrarPromessaPagamento`).
+  - Funil: nota interna do lead (`registrarNotaInterna`) e interação (`registrarInteracao`), cada uma com executor próprio.
+  - Aria: fonte de texto (`criarFonteTexto`).
+  - Configuração do CRM: criar tag, campo e resposta rápida (só na criação; a edição grava o estado-alvo).
+  - Financeiro: ajuste de cobrança (`ajustarCobranca`, ficha financeira e resumo comercial). A marca vai no `DescontoSolicitado` ou no `CobrancaRenegociada`/`CobrancaPerdoada` da primeira cobrança; o reenvio devolve o mesmo `aprovacao`.
+- **Idempotentes por natureza** (`idempotente: true` com a justificativa no código, conferida no servidor): conferência final, original e processo de assinatura do aditivo; conferência de informe de pagamento; supervisão da Aria; distribuição/SLA do setor; configuração de IA; avisos de agenda; fuso de exibição.
+- **Restam 107** `idempotente: false` fora de testes, listados no PR para o lote 4.
+- **Evidências** (banco descartável `erp_genius_test_idem3`, `migrate deploy`, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 790 arquivos e 5.918 testes OK.
+  - `npm run build`: saída 0. A primeira tentativa parou no type-check sem mensagem, com a máquina sem memória livre; a segunda passou.
+  - Integração dos módulos tocados, em 4 blocos: 28 arquivos e 276 testes OK, incluindo os 5 arquivos novos (`*-idempotencia.int.test.ts`, 24 testes), Inbox/WhatsApp, mensagens agendadas, configuração do CRM, fontes da Aria, conferência e política financeira, atraso por dia civil, retomada e reconferência de desistência. Uma rodada única com todos os arquivos passou do limite de tempo da sessão; nela, `acesso-atendimento.int.test.ts` estourou o tempo de um teste (49 s) sob carga e passou ao ser rodado de novo.

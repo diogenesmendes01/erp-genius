@@ -40,7 +40,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import type { AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
 import { criarGanchos, clicarBotao, elementos, texto } from "@/test/tela-sem-dom";
@@ -262,9 +262,29 @@ describe("AcoesContato: interação", () => {
     digitar(tela(), "Data da promessa de pagamento", "2026-10-25");
     clicarBotao(tela(), "Registrar promessa");
     await esvaziar();
-    expect(acoes.registrarPromessaPagamento).toHaveBeenCalledWith("cob1", "2026-10-25");
+    expect(acoes.registrarPromessaPagamento).toHaveBeenCalledWith("cob1", "2026-10-25", expect.stringMatching(/^[0-9a-f-]{36}$/));
     expect(acoes.marcarConversaTratada).toHaveBeenCalledWith({ conversaId: "a1", motivo: "promessa" });
     expect(marcacao(tela())).toContain("Promessa registrada");
+  });
+
+  it("promessa com chave de idempotência (#166): o reenvio depois do incerto manda a mesma chave; depois do sucesso, outra", async () => {
+    m.g = criarGanchos();
+    const tela = () => m.g!.renderizar(CobrancaContato, { atendimentoId: "a1", cobranca, fuso: null, aoMudar: vi.fn() });
+    const registrar = async () => {
+      if (!elementos(tela()).some((n) => n.type === "input" && n.props["aria-label"] === "Data da promessa de pagamento")) clicarBotao(tela(), "Promessa de pagamento");
+      digitar(tela(), "Data da promessa de pagamento", "2026-10-25");
+      clicarBotao(tela(), "Registrar promessa");
+      await esvaziar();
+    };
+    acoes.registrarPromessaPagamento.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await registrar();
+    expect(marcacao(tela())).toContain(MSG_RESULTADO_INCERTO);
+    await registrar();
+    await registrar();
+    const chaves = acoes.registrarPromessaPagamento.mock.calls.map((c) => (c as unknown[])[2]);
+    expect(chaves).toHaveLength(3);
+    expect(chaves[1]).toBe(chaves[0]);
+    expect(chaves[2]).not.toBe(chaves[0]);
   });
 });
 

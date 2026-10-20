@@ -13,6 +13,8 @@ import {
   registrarEvento,
   type Resultado,
 } from "../../_shared";
+import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "../../_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "../../_shared/validacao";
 import { capacidadesAria } from "../permissoes-tela";
 import { escolherProvedor, type ProvedorIA } from "../provedor";
 import { registrarChamadaIA } from "../uso";
@@ -60,6 +62,8 @@ interface Gravacao {
   enviavelAoLead: boolean;
   validoAte?: Date;
   criadoPorId: string;
+  /** Só na fonte de texto (#166): a marca vai no `FonteConhecimentoCriada`; o reenvio devolve a fonte já criada. */
+  marca?: MarcaIdempotencia | null;
 }
 
 function exigirValidadeFutura(validoAte: Date | undefined): void {
@@ -75,6 +79,13 @@ async function gravarFonte(g: Gravacao): Promise<{ id: string }> {
     throw new ErroRegra(`A fonte gera mais de ${MAX_TRECHOS_FONTE} trechos. Divida o conteúdo em fontes menores.`);
   }
   return prisma.$transaction(async (tx) => {
+    if (g.marca) {
+      const repetido = await repeticaoIdempotente(tx, {
+        tipo: "FonteConhecimentoCriada", agregadoTipo: "FonteConhecimento", autorId: g.criadoPorId, marca: g.marca,
+        mensagemConflito: "Esta tentativa já foi usada com outra fonte. Recarregue a página e confira se a fonte já aparece antes de repetir.",
+      });
+      if (repetido) return { id: repetido.agregadoId };
+    }
     const fonte = await tx.fonteConhecimento.create({
       data: {
         tipo: g.tipo,
@@ -105,6 +116,7 @@ async function gravarFonte(g: Gravacao): Promise<{ id: string }> {
         trechos: trechos.length,
         enviavelAoLead: g.enviavelAoLead,
         registroUploadId: g.registroUploadId ?? null,
+        ...g.marca,
       },
     });
     return { id: fonte.id };
@@ -116,6 +128,8 @@ export async function criarFonteTexto(input: {
   texto: string;
   enviavelAoLead: boolean;
   validoAte?: Date;
+  /** A mesma chave até o sucesso (#166): o reenvio devolve a fonte já criada, sem segunda fonte nem trechos. */
+  chaveIdempotencia?: string;
 }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirEdicao();
@@ -125,6 +139,9 @@ export async function criarFonteTexto(input: {
     if (!input.texto?.trim()) throw new ErroRegra("Informe o texto da fonte.");
     if (input.texto.length > MAX_CARACTERES_FONTE) throw new ErroRegra(MSG_TEXTO_GRANDE);
     exigirValidadeFutura(input.validoAte);
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), {
+      nome, texto: input.texto, enviavelAoLead: input.enviavelAoLead, validoAte: input.validoAte?.toISOString() ?? null,
+    });
     return gravarFonte({
       tipo: "TEXTO",
       nome,
@@ -133,6 +150,7 @@ export async function criarFonteTexto(input: {
       enviavelAoLead: input.enviavelAoLead,
       validoAte: input.validoAte,
       criadoPorId: u.id,
+      marca,
     });
   });
 }
