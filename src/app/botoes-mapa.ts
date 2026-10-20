@@ -948,6 +948,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     "<button> Registrando… · Registrar relato → secundario/lg",
     "<button> Registrar decisão → secundario/lg",
   ],
+  "matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/CorrecaoRelatoOferta.tsx": [
+    "<Botao> Registrando… · Propor correção → secundario/lg",
+    "<Botao> Aprovar correção → secundario/lg",
+    "<Botao> Rejeitar correção → perigo/lg",
+  ],
   "matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
     "<button> Registrando… · Propor último dia → secundario/lg",
     "<button> Registrar decisão → secundario/lg",

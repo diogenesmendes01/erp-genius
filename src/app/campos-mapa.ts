@@ -67,6 +67,14 @@ export const MAPA_CAMPOS: Record<string, string[]> = {
     "Configuração testada · opcional · select",
     "Mensagem do cliente · opcional · CampoTexto",
   ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/CorrecaoRelatoOferta.tsx": [
+    "Início correto · obrigatório · input",
+    "Fim correto · obrigatório · input",
+    "Motivo · obrigatório · CampoTexto",
+    "Evidência · obrigatório · CampoTexto",
+    "Motivo da decisão · obrigatório · CampoTexto",
+    "Evidência conferida · obrigatório · CampoTexto",
+  ],
   "src/app/portal-aluno/ativar/page.tsx": [
     "Nova senha · obrigatório · input · dica · erro: errosCampos.senha",
     "Repita a senha · obrigatório · input · dica · erro: errosCampos.confirmacao",
