@@ -21,7 +21,7 @@ function dado<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
 
 /** Fluxo contratual real no banco descartável. Apenas sessão e resultado do
  * transporte são simulados; prévia, PDF, emissão e revisões usam os serviços. */
-export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; /** Q172: contratação por hora com adiantamento emitido na entrada. */ minutosAdiantamento?: number; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string } = {}) {
+export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; /** Q172: contratação por hora com adiantamento emitido na entrada. */ minutosAdiantamento?: number; /** B1 da #264: preço de referência por hora diferente do negociado (125). */ valorReferenciaHora?: string; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string } = {}) {
   const ambiente = opcoes.ambiente ?? "SANDBOX";
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   const admin = await criarUsuario(["ADMINISTRADOR"]);
@@ -46,13 +46,15 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   let agendaParticular: z.input<typeof PreparacaoComercialSchema>["agendaParticular"];
   if (opcoes.porHora) {
     const oferta = await prisma.produtoPais.update({ where: { produtoId_paisId: { produtoId: c.produto.id, paisId: c.pais.id } }, data: { formaAgenda: "PARTICULAR_FLEXIVEL" } });
-    await prisma.precoReferencia.create({ data: { produtoId: c.produto.id, modalidadeId: c.produto.modalidadeId, paisId: c.pais.id, tipoCobranca: "HORA_PARTICULAR", moeda: "CRC", valor: "125", ativo: true } });
+    await prisma.precoReferencia.create({ data: { produtoId: c.produto.id, modalidadeId: c.produto.modalidadeId, paisId: c.pais.id, tipoCobranca: "HORA_PARTICULAR", moeda: "CRC", valor: opcoes.valorReferenciaHora ?? "125", ativo: true } });
     const dados = { ofertaId: oferta.id, versaoOferta: oferta.versaoEntrada, professorId: professor.id, fusoOrigem: "UTC", encontros: [{ data: "2099-10-02", horario: "15:00", duracaoMinutos: 75 }] };
     const revisao = await prisma.$transaction(tx => conferirAgendaParticularTx(tx, dados));
     agendaParticular = { ...dados, estadoHash: revisao.estadoHash, horariosAcordadosConferidos: true as const };
   }
   const preparacao = await prisma.$transaction(tx => prepararContratacaoTx(tx, { autorId: secretaria.id, leadId: lead.id, alunoId: aluno.id, produtoId: c.produto.id, paisId: c.pais.id, ...(agendaParticular ? { agendaParticular } : { turmaId: turma.id }), regime: opcoes.porHora ? "HORA_PARTICULAR" : "MENSALIDADE", ...(opcoes.minutosAdiantamento ? { minutosAdiantamento: opcoes.minutosAdiantamento } : {}), taxaProposta: "999999", valorServicoProposto: opcoes.porHora ? "125" : (opcoes.valorServicoMensal ?? "999999"), motivo: "Contratação para substituição", chaveIdempotencia: "preparacao-q116" }));
   const matriculaId = preparacao.matriculaId;
+  // Negociado abaixo da referência por hora: exceção de preço aprovada pela Administração, como na decisão real.
+  if (opcoes.valorReferenciaHora) await prisma.decisaoPrecoPreparacao.create({ data: { preparacaoId: preparacao.id, decisorId: admin.id, aprovada: true, motivo: "Exceção de preço por hora aprovada" } });
   await prisma.matricula.update({ where: { id: matriculaId }, data: { secretariaAssumiuEm: new Date() } });
   const pagador = dado(await registrarPagadorPreparacao({ matriculaId, versaoEsperada: 0, pagador: { tipo: "ALUNO" }, motivo: "Aluno pagador conferido", chaveIdempotencia: "pagador-q116" }));
   dado(await registrarCondicoesEntrada({ matriculaId, pagadorRegistroId: pagador.id, versaoEsperada: 0, taxaVencimento: "2099-09-01", aulas: opcoes.porHora ? { regime: "HORA_PARTICULAR", ...(opcoes.minutosAdiantamento ? { vencimentoAdiantamento: "2099-09-10" } : {}) } : { regime: "MENSALIDADE", cobertura: { referencia: "MES_CIVIL", inicio: "2099-10-01" }, primeiroVencimento: "2099-10-05", diaVencimentoContratado: 5 }, motivo: "Condições da contratação conferidas", chaveIdempotencia: "condicoes-q116" }));

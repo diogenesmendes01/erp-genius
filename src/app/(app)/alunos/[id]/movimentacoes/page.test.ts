@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), aluno: vi.fn(), matriculas: vi.fn(), config: vi.fn(), usuario: vi.fn(), pedidos: vi.fn(), preferencia: vi.fn() }));
 vi.mock("next/navigation", () => ({ notFound: vi.fn(() => { throw new Error("não encontrado"); }) }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
+vi.mock("@/server/_shared", async () => ({
+  exigirSessaoPagina: mocks.sessao,
+  temPermissao: (await vi.importActual<typeof import("@/server/_shared/sessao")>("@/server/_shared/sessao")).temPermissao,
+}));
 vi.mock("@/server/alunos/consultas", () => ({ obterAluno: mocks.aluno }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/operacao/fuso", () => ({ FusoInstitucionalSchema: { safeParse: () => ({ success: true, data: "America/Sao_Paulo" }) }, dataCivilInstitucional: () => "2099-01-01" }));
@@ -15,7 +18,7 @@ vi.mock("@/server/matricula/encerramento-pedidos-consulta", () => ({
 }));
 vi.mock("./MovimentacoesPainel", () => ({ MovimentacoesPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-mov": preferenciaFusoExibicao ?? "UTC" }) }));
 vi.mock("./ComprasHorasPainel", () => ({ ComprasHorasPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-compras": preferenciaFusoExibicao ?? "UTC" }) }));
-vi.mock("./CompensacoesPainel", () => ({ CompensacoesPainel: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-cumprimento": preferenciaFusoExibicao ?? "UTC" }) }));
+vi.mock("./CompensacoesPainel", () => ({ CompensacoesPainel: ({ preferenciaFusoExibicao, podeAprovar }: { preferenciaFusoExibicao?: string | null; podeAprovar?: boolean }) => createElement("p", { "data-cumprimento": preferenciaFusoExibicao ?? "UTC", "data-pode-aprovar": String(podeAprovar) }) }));
 vi.mock("./AcertoEncerramento", () => ({ AcertoEncerramento: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-acerto": preferenciaFusoExibicao ?? "UTC" }) }));
 vi.mock("./NovaPausa", () => ({ NovaPausa: () => null }));
 vi.mock("./NovaRetomada", () => ({ NovaRetomada: () => null }));
@@ -85,5 +88,25 @@ describe("MovimentacoesPage preferência de fuso", () => {
     expect(mocks.aluno).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
     expect(mocks.pedidos).not.toHaveBeenCalled();
+  });
+});
+
+// C11 da #170: `financeiro.aprovar_acertos` vem do usuário da sessão, sem reler `usuario` no banco.
+describe("MovimentacoesPage capacidade de aprovar acertos", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.aluno.mockResolvedValue({ id: "aluno" });
+    mocks.matriculas.mockResolvedValue([contrato]);
+    mocks.config.mockResolvedValue({ fusoInstitucional: "America/Sao_Paulo" });
+    mocks.pedidos.mockResolvedValue({ pagina: 1, temProxima: false, pedidos: [] });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: null });
+  });
+  it("financeiro com a capacidade aprova; sem ela, não — sem reler o usuário", async () => {
+    const abrir = () => Page({ params: Promise.resolve({ id: "aluno" }), searchParams: Promise.resolve({}) });
+    mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });
+    expect(renderToStaticMarkup(await abrir())).toContain('data-pode-aprovar="true"');
+    mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: [] });
+    expect(renderToStaticMarkup(await abrir())).toContain('data-pode-aprovar="false"');
+    expect(mocks.usuario).not.toHaveBeenCalled();
   });
 });

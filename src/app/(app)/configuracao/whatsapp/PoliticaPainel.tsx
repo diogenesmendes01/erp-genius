@@ -12,6 +12,9 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
 import { DRIVER_WHATSAPP_LABEL, rotular } from "@/lib/labels";
+import { AlteracaoPendente } from "@/components/AlteracaoPendente";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
+import { politicaAlterada } from "./alteracoes-pendentes";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
@@ -79,6 +82,9 @@ export function PoliticaPainel({
     numeroRemetenteId: politica.numeroRemetenteId ?? "",
     degraus: politica.degraus as DegrauConfig[],
   });
+  // C32 da #170: política na tela diferente da salva → marca e aviso ao sair (o refresh traz a salva nova).
+  const sujo = politicaAlterada(form, politica);
+  useAvisoAoSair(sujo);
   // Nenhuma das duas actions recebe chave de idempotência (o kill switch grava o estado-alvo, mas sem
   // chave): resultado incerto manda conferir antes de repetir.
   const acao = useAcaoCliente({ idempotente: false });
@@ -403,9 +409,12 @@ export function PoliticaPainel({
             Defaults de fábrica: D-7/D-3/D0 automáticos · D+3/D+7 lote · D+15 aprovação. Armar (shadow/ativa) valida a
             prontidão: só número do motor WhatsApp arma a política; no motor vale o texto do template.
           </p>
-          <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
-            {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}
-          </button>
+          <div className="flex shrink-0 items-center gap-3">
+            <AlteracaoPendente sujo={sujo} />
+            <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+              {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}
+            </button>
+          </div>
         </div>
         {feedback("salvar")}
       </div>

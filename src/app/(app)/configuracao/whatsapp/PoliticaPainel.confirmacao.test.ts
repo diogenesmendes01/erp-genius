@@ -23,6 +23,8 @@ vi.mock("react", async (original) => {
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: m.kill, estimarAlcanceRegua: m.estimar, salvarPoliticaRegua: m.salvar }));
+// O aviso ao sair (C32 da #170) é conferido em avisos-ao-sair.test.ts; aqui os ganchos não têm useEffect.
+vi.mock("@/lib/aviso-ao-sair", () => ({ useAvisoAoSair: () => undefined }));
 
 import { PoliticaPainel } from "./PoliticaPainel";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
