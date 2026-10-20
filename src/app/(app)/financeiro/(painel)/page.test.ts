@@ -35,6 +35,7 @@ vi.mock("../FilaCobranca", () => ({ FilaCobranca: marcador("fila") }));
 vi.mock("../InformesPagamento", () => ({ InformesPagamento: marcador("informes") }));
 vi.mock("../RetomadasPainel", () => ({ RetomadasPainel: marcador("retomadas") }));
 vi.mock("../PoliticasComissao", () => ({ PoliticasComissao: marcador("politicas") }));
+vi.mock("../DiaPrevisaoComissao", () => ({ DiaPrevisaoComissao: marcador("dia-previsao") }));
 vi.mock("../FinanceiroPainel", () => ({
   ComissoesAba: (props: { preferenciaFusoExibicao?: string | null }) => { mocks.componente(props); return marcador("comissoes")(props); },
   Descontos: marcador("descontos"), GeralAba: marcador("geral"),
@@ -226,7 +227,9 @@ describe("/financeiro por rota (E8)", () => {
     expect(await html(Politicas())).toContain("Acesso negado");
     expect(mocks.politicas).not.toHaveBeenCalled();
     mocks.podeConfigurar.mockResolvedValue(true);
-    expect(await html(Politicas())).toContain('[politicas|');
+    const aba = await html(Politicas());
+    expect(aba).toContain('[politicas|');
+    expect(aba).toContain('[dia-previsao|'); // D11: o dia da previsão fica nesta aba
     expect(mocks.politicas).toHaveBeenCalledTimes(1);
   });
 

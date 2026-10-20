@@ -20,7 +20,7 @@ vi.mock("@/server/_shared", () => {
   };
 });
 
-import { salvarLancamentoAvaliacaoLocal } from "./lancamentos";
+import { salvarLancamentoAvaliacao, salvarLancamentoAvaliacaoLocal } from "./lancamentos";
 import { MSG_LANCAMENTO_SEM_FUSO } from "./tempo";
 
 const entrada = {
@@ -54,6 +54,27 @@ describe("salvarLancamentoAvaliacaoLocal sem fuso da escola (D10)", () => {
     m.fuso.mockResolvedValue("America/Sao_Paulo");
     expect(await salvarLancamentoAvaliacaoLocal(entrada)).toEqual({ ok: true, dado: { id: "versao-1" } });
     expect(m.salvarTx).toHaveBeenCalledTimes(1);
+    expect(m.salvarTx.mock.calls[0][2]).toMatchObject({ realizadaEm: "2026-10-10T12:00:00.000Z" });
+  });
+});
+
+// Lacuna fechada (decisão do dono, 20/10/2026): a ação com instante absoluto também recusa sem fuso da escola.
+describe("salvarLancamentoAvaliacao sem fuso da escola (D10)", () => {
+  const { realizadaLocal: _l, fuso: _f, ...base } = entrada;
+  const absoluta = { ...base, realizadaEm: "2026-10-10T12:00:00.000Z" };
+
+  it("recusa com a mesma mensagem, sem abrir transação nem gravar", async () => {
+    m.fuso.mockResolvedValue(null);
+    expect(await salvarLancamentoAvaliacao(absoluta)).toEqual({ ok: false, erro: MSG_LANCAMENTO_SEM_FUSO });
+    expect(m.sessao).toHaveBeenCalledTimes(1);
+    expect(m.transacao).not.toHaveBeenCalled();
+    expect(m.salvarTx).not.toHaveBeenCalled();
+    void _l; void _f;
+  });
+
+  it("com o fuso da escola configurado, segue para gravar o instante recebido", async () => {
+    m.fuso.mockResolvedValue("America/Sao_Paulo");
+    expect(await salvarLancamentoAvaliacao(absoluta)).toEqual({ ok: true, dado: { id: "versao-1" } });
     expect(m.salvarTx.mock.calls[0][2]).toMatchObject({ realizadaEm: "2026-10-10T12:00:00.000Z" });
   });
 });

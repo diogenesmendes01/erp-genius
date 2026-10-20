@@ -32,6 +32,7 @@ import type { PassoRegua } from "@/server/cobrancas/regua";
 import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
 import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 import { PASSOS_POLITICA } from "@/server/whatsapp/schema";
+import { DIA_PREVISAO_COMISSAO_MAX, DIA_PREVISAO_COMISSAO_MIN, DiaPrevisaoComissaoSchema } from "./previsao-comissao";
 import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
@@ -309,6 +310,40 @@ export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomati
       });
     });
     revalidatePath("/financeiro", "layout");
+  });
+}
+
+/**
+ * Dia da previsão de pagamento das comissões (D11): a previsão é este dia do mês seguinte à competência. Mesma
+ * alçada de publicar política de comissão (Financeiro ou Gerente Comercial com `comissao.configurar`; Admin passa).
+ * Evento auditado com `{ de, para }`; repetir o mesmo dia não grava nada.
+ */
+export async function salvarDiaPrevisaoComissao(input: { dia: number }): Promise<Resultado<{ dia: number }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
+    await exigirCapacidade(autor, "comissao.configurar");
+    const parsed = DiaPrevisaoComissaoSchema.safeParse(input?.dia);
+    if (!parsed.success) throw new ErroRegra(`Informe um dia entre ${DIA_PREVISAO_COMISSAO_MIN} e ${DIA_PREVISAO_COMISSAO_MAX}.`);
+    const para = parsed.data;
+    await prisma.$transaction(async (tx) => {
+      // Cria a linha padrão se faltar e a trava: duas trocas simultâneas não gravam o mesmo "de".
+      await tx.configFinanceiro.upsert({ where: { id: "financeiro" }, create: { id: "financeiro" }, update: {} });
+      await tx.$queryRaw`SELECT id FROM "ConfigFinanceiro" WHERE id = 'financeiro' FOR UPDATE`;
+      const antes = await tx.configFinanceiro.findUniqueOrThrow({ where: { id: "financeiro" } });
+      const de = antes.diaPrevisaoPagamentoComissao;
+      if (de === para) return;
+      await tx.configFinanceiro.update({ where: { id: "financeiro" }, data: { diaPrevisaoPagamentoComissao: para } });
+      await registrarEvento(tx, {
+        tipo: "DiaPrevisaoComissaoAlterado",
+        agregadoTipo: "ConfigFinanceiro",
+        agregadoId: "financeiro",
+        autorId: autor.id,
+        payload: { de, para },
+      });
+    });
+    revalidatePath("/financeiro", "layout");
+    revalidatePath("/comissoes");
+    return { dia: para };
   });
 }
 

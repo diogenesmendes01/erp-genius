@@ -5,7 +5,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { instanteUtcSql } from "./segunda-chamada-utc";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "./regras-tx";
 import { consultarSegundasChamadas, consultarAutorizacoesEspeciaisSegundaChamada, decidirSegundaChamada, proporSegundaChamada } from "./segunda-chamada";
@@ -35,15 +35,12 @@ const proposta = (chaveIdempotencia = "segunda-chamada-proposta-1") => ({
 
 beforeEach(async () => {
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   professor = (await criarUsuario(["PROFESSOR"])).id;
   gestor = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
   administrador = (await criarUsuario(["ADMINISTRADOR"])).id;
-  await prisma.configuracaoOperacional.upsert({
-    where: { id: "escola" },
-    create: { id: "escola", fusoInstitucional: "UTC" },
-    update: { fusoInstitucional: "UTC" },
-  });
+  await configurarFusoDaEscola();
   entrar(gestor);
   const calendario = await prepararCalendarioEscolar({
     fusoConferido: "UTC", versaoAnterior: 0, periodos: [],

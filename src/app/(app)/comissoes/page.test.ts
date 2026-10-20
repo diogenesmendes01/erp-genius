@@ -25,8 +25,9 @@ const painel = {
   porPolitica: [],
   evolucao: [{ mes: "2026-10", moeda: "CRC", valor: "1600.00" }],
   matriculadasSemComissao: [],
-  linhas: [{ id: "c1", nome: "Ana Souza", produto: "Inglês · Online", vendedor: "Bia", base: "TAXA_MATRICULA", percentual: "5.00", valor: "1600.00", moeda: "CRC", status: "PAGA", competencia: new Date("2026-10-05T15:00:00Z") }],
+  linhas: [{ id: "c1", nome: "Ana Souza", produto: "Inglês · Online", vendedor: "Bia", base: "TAXA_MATRICULA", percentual: "5.00", valor: "1600.00", moeda: "CRC", status: "PAGA", competencia: new Date("2026-10-05T15:00:00Z"), previsaoPagamento: null }],
   possuiMais: false,
+  diaPrevisaoPagamento: 10,
 };
 const com = (papeis: string[]) => ({ id: "u1", nome: "U", papeis, permissoes: [] });
 const vendedor = com(["VENDEDOR"]);
@@ -70,6 +71,20 @@ describe("/comissoes (página)", () => {
     expect(await renderPagina(financeiro)).toContain('href="/financeiro/comissoes"');
     expect(await renderPagina(gerente)).not.toContain("/financeiro/comissoes");
     expect(await renderPagina(vendedor)).not.toContain("/financeiro/comissoes");
+  });
+
+  // D11 (decisão do dono, 20/10/2026): a previsão de pagamento aparece em cada linha, na tabela e no cartão; a
+  // paga ou estornada fica sem previsão ("—"), e a tela diz a regra com o dia configurado.
+  it("previsão de pagamento por linha, com a regra e o dia configurado", async () => {
+    mocks.usuario.valor = financeiro;
+    const aprovada = { ...painel.linhas[0], id: "c2", nome: "Bruno Lima", status: "APROVADA", previsaoPagamento: "2026-11-15" };
+    mocks.carregar.mockResolvedValue({ ...painel, diaPrevisaoPagamento: 15, linhas: [...painel.linhas, aprovada] });
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Previsão de pagamento</th>");
+    expect(html).toContain("15/11/2026");
+    expect(html).toContain("previsão de pagamento 15/11/2026");
+    expect(html).toContain("dia 15 do mês seguinte à competência");
+    expect(html).toContain("<td class=\"px-4 py-2\">—</td>"); // a PAGA não tem previsão
   });
 
   it("tabela vira cartões no celular", async () => {

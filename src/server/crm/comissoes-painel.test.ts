@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     configuracaoOperacional: { findUnique: async () => ({ fusoInstitucional: "America/Sao_Paulo" }) },
+    configFinanceiro: { findUnique: async () => null },
     comissao: { groupBy: async () => [], findMany: async () => [] },
     oportunidade: { findMany: m.oportunidades },
     usuario: { findMany: async () => [] },
