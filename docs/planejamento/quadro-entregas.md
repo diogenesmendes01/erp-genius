@@ -3742,3 +3742,39 @@ Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` 5b4e75a9
     - `npm test`: 783 arquivos e 5.861 testes.
     - build: saída 0.
     - Integração de `src/server/crm` mais despachante e agendamento: 34 arquivos e 265 testes.
+
+### B13 e D4: remoção do CRM antigo e do Inbox antigo (código morto e tabelas órfãs) — 2026-10-20
+
+Branch `claude/remover-crm-antigo`, base `main` 9808cd29. Decisões do dono B13 (remover o código morto) e D4 (apagar as tabelas e os campos órfãos). Cada item foi conferido com `git grep` (imports e chamadores) antes de sair.
+- **Inbox antigo:**
+  - Saem `listarConversasInbox`, `listarConversas` e `carregarThread` (`whatsapp/consultas-inbox.ts`).
+  - Saem os limites, a mescla e o filtro de canal de `whatsapp/busca-inbox.ts`. Ficam `lerBuscaInbox` e `whereBuscaConversas`, usados pelo Inbox novo.
+- **CRM antigo:**
+  - Saem `enfileirarIntencaoComercial`, `salvarConfigComercial`, `salvarReguaComercial`, `carregarSaudacoesSimuladas`, `carregarConfigComercial`, `comercial/regua-comercial.ts` e `comercial/regua-fabrica.ts`. Os dois arquivos entraram na trava `casca-crm-removida.test.ts`.
+  - Saem também `motivoCadenciaInvalida`, `reagendamentoPendente`, `registrarEventoReguaComercialEnviada` e a seção comercial do `seed-whatsapp`.
+  - **Despachante:** saem os ramos da cadência comercial e o shadow da saudação e da gestão lidos da `ConfigComercial`. O que sobrar na fila é cancelado: `passoComercial` com `politica_comercial_alterada`, origem `GESTAO` com `configuracao_gestao_alterada`. A reativa sem IA só simula.
+- **Dependências:** `@dnd-kit/sortable` e `@dnd-kit/utilities` saíram com `npm uninstall`. O `@dnd-kit/core` fica, porque o funil e a agenda de tarefas o usam.
+- **Migration `20261020090000_remover_crm_antigo`:**
+  - `DROP TABLE` de `PoliticaComercial` e `DegrauComercial`.
+  - `DROP COLUMN` de `IntencaoMensagem.politicaComercialId`, com o índice parcial `IntencaoMensagem_comercial_degrau_key`.
+  - `DROP COLUMN` de `ConfigComercial.autoLeadAtivo`, `saudacao*` e `gestao*`.
+  - O comentário no topo exige backup. As consultas de conferência estão no corpo do PR ("Antes do deploy").
+- **O que ficou:**
+  - `ConfigComercial.checkInToleranciaMinutos` e `matriculaAutomaticaAtiva` (lidos pela Home e pelo fechamento automático).
+  - `IntencaoMensagem.leadId`, `passoComercial` e `ocorrenciaComercial`.
+  - A regra da carteira (#254) que deixa `ReguaComercialEnviada` fora dos contatos: é a mesma régua antiga, mas vale para os eventos já gravados.
+  - `capturarRespostaExperimental`, que só acha os lembretes já gravados.
+- **Testes:**
+  - Saíram os que só exercitavam código morto.
+  - As regras de acesso que passavam pela thread antiga foram portadas para as consultas do Inbox novo (`src/test/inbox-consultas.ts`, `carregarPainel`).
+  - O teto Q176 foi para `despachante-teto.int.test.ts`, com o cancelamento das intenções que sobraram.
+  - B3, shadow com live e template pelo motor viraram testes de automação genérica.
+- **Evidências:**
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 40 avisos de base.
+  - `npm test`: 787 arquivos e 5.875 testes.
+  - `npm run build`: saída 0.
+  - Integração no banco `erp_genius_test_crmantigo`, com a migration aplicada: `src/server/whatsapp`, `comercial`, `crm` e `inbox`, mais `academico/visibilidade` e `aria/turno/despacho-ia`. Foram 101 arquivos e 780 testes verdes.
+  - `prisma migrate deploy` do zero num banco vazio: 466 migrations aplicadas.
+  - `prisma migrate diff` banco × schema: só as divergências antigas, as mesmas do `main`, e nenhuma linha dos objetos removidos.
+- **Pendência operacional:** fazer backup e rodar as consultas do PR antes do deploy.

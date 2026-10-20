@@ -10,7 +10,8 @@ vi.mock("./drivers/motor", () => ({ driverMotor: { enviarTexto: enviarMock, envi
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { garantirAtendimento } from "./atendimentos";
-import { carregarThread } from "./consultas-inbox";
+import { carregarPainel } from "@/server/inbox/paineis";
+import { mensagensDoInbox } from "@/test/inbox-consultas";
 import { despacharFila } from "./despachante";
 import { processarMensagemNormalizada } from "./inbound";
 import { enviarTextoInbox } from "./acoes";
@@ -117,7 +118,7 @@ describe("Q145: atendimento pedagógico usa matrícula e autorização explícit
     expect(enviarMock).not.toHaveBeenCalled();
     const pendenteCancelada = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: pendente.id } });
     expect(pendenteCancelada).toMatchObject({ status: "CANCELADA", motivoFalha: "atendimento_sem_acesso" });
-    expect((await carregarThread(sessao(c.professor), atendimentoA.id))?.podeEnviar).toBe(false);
+    expect((await carregarPainel(sessao(c.professor), atendimentoA.id))?.podeEnviar).toBe(false);
 
     await processarMensagemNormalizada({ numeroProviderRef: c.numero.providerRef, contatoWaId: c.responsavel.telefoneE164!.replace(/\D/g, ""), providerMessageId: "inbound-revogado", corpo: "Mensagem após revogação", tipo: "TEXTO", driver: DriverWhatsApp.BAILEYS, fromMe: false, quando: new Date() });
     const inbound = await prisma.mensagemWhatsApp.findUniqueOrThrow({ where: { numeroId_providerMessageId: { numeroId: c.numero.id, providerMessageId: "inbound-revogado" } } });
@@ -153,7 +154,8 @@ describe("Q145: atendimento pedagógico usa matrícula e autorização explícit
     const pendente = await prisma.intencaoMensagem.create({ data: { numeroId: c.numero.id, contatoId: atendimento.conversa.contato!.id, atendimentoId: atendimento.id, origem: "HUMANO", autorId: c.professor.id, corpoRenderizado: "Mensagem direta preparada antes da alteração" } });
 
     await alterar(c);
-    expect(await carregarThread(sessao(c.professor), atendimento.id)).toMatchObject({ mensagens: [expect.objectContaining({ id: historica.id })], podeEnviar: false });
+    expect(await mensagensDoInbox(sessao(c.professor), atendimento.id)).toEqual([expect.objectContaining({ id: historica.id })]);
+    expect(await carregarPainel(sessao(c.professor), atendimento.id)).toMatchObject({ podeEnviar: false });
     expect((await enviarTextoInbox({ conversaId: atendimento.id, texto: "Novo envio para o contato antigo" })).ok).toBe(false);
     await expect(prisma.intencaoMensagem.create({ data: {
       numeroId: c.numero.id, contatoId: atendimento.conversa.contato!.id, atendimentoId: atendimento.id,

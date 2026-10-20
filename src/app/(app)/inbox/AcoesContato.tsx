@@ -19,7 +19,7 @@ import { buscarVinculosInbox, criarLeadDaConversa, editarNomeContatoWhatsApp, ma
 
 // Ações de cadastro e de cobrança no painel lateral do Inbox novo (C2 da R1 do #217, decisão do dono: portar
 // tudo o que o Inbox antigo tinha na thread). As regras de quem vê cada botão vêm do servidor
-// (carregarAcoesContatoInbox, as mesmas de carregarThread) e cada Server Action confere de novo a alçada.
+// (carregarAcoesContatoInbox) e cada Server Action confere de novo a alçada.
 // O telefone não aparece (regra 5): o nome identifica o contato.
 
 export interface PropsAcoesContato {

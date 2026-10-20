@@ -86,43 +86,6 @@ export const InteracaoSchema = z.object({
 });
 export type InteracaoInput = z.input<typeof InteracaoSchema>;
 
-// Régua comercial "lead novo sem resposta" (doc 27 C1). Nasce DESLIGADA; armar
-// (SHADOW/ATIVA) exige número remetente (validado na ação). A ORDEM dos passos é lei de
-// código — aqui só offset/ativo/template por degrau.
-export const DegrauComercialSchema = z.object({
-  passo: z.string().min(1),
-  // Offset NEGATIVO é legítimo: a cadência pré-experimental dispara ANTES da âncora (-24h,
-  // -2h), como o D-7/D-3 da cobrança. O piso em 0, herdado da C1, tornava a cadência de
-  // fábrica da C2 impossível de salvar. ±30 dias.
-  offsetMinutos: z.number().int().min(-43200).max(43200),
-  ativo: z.boolean(),
-  templateId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v ? v : null)),
-});
-
-export const ReguaComercialSchema = z.object({
-  /** Cenário da cadência (lead-novo, pré-experimental, no-show — doc 27 C1/C2). */
-  chave: z.string().min(1),
-  estado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
-  numeroRemetenteId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v ? v : null)),
-  janelaInicio: z.number().int().min(0).max(23),
-  janelaFim: z.number().int().min(1).max(24),
-  tetoPorContatoDia: z.number().int().min(1).max(10),
-  degraus: z.array(DegrauComercialSchema).min(1),
-  // B1 (doc 32): cohort do piloto. modoPiloto=true (default) restringe o alcance à
-  // allowlist explícita; desligar É o go-live geral — por isso exige confirmação na UI.
-  modoPiloto: z.boolean().default(true),
-  pilotoLeadIds: z.array(z.string().min(1)).max(500, "Allowlist grande demais (máx. 500).").default([]),
-});
-export type ReguaComercialInput = z.input<typeof ReguaComercialSchema>;
-
 // NOTA INTERNA (cockpit da inbox): comentário da equipe sobre o lead. É DISTINTA de
 // `InteracaoRegistrada` — aquela registra um contato REAL com o cliente (ligação,
 // presencial); esta nunca sai do ERP e jamais é enviada ao contato.
@@ -130,41 +93,6 @@ export const NotaInternaSchema = z.object({
   nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "Nota longa demais (máx. 2000)."),
 });
 export type NotaInternaInput = z.input<typeof NotaInternaSchema>;
-
-// Config comercial C1 (doc 27): auto-lead (toggle) + saudação (shadow próprio
-// DESLIGADA/SHADOW/ATIVA — doc 27 §regra de ouro). Texto exigido fora de DESLIGADA.
-export const ConfigComercialSchema = z
-  .object({
-    autoLeadAtivo: z.boolean(),
-    saudacaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
-    saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
-    // C4 (doc 27): matrícula automática (contrato OK + taxa PAGA ativam) — nasce desligada.
-    matriculaAutomaticaAtiva: z.boolean().default(false),
-    // C5 (doc 27): gestão — alerta de SLA + relatório diário do gestor. Nasce desligada.
-    gestaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]).default("DESLIGADA"),
-    gestaoTelefoneE164: z
-      .string()
-      .trim()
-      .max(20)
-      .optional()
-      .transform((v) => (v ? v : null)),
-    gestaoNumeroId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((v) => (v ? v : null)),
-    gestaoSlaMinutos: z.number().int().min(5).max(1440).default(30),
-    gestaoRelatorioHora: z.number().int().min(0).max(23).default(19),
-  })
-  .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
-    message: "Escreva o texto da saudação antes de armá-la.",
-    path: ["saudacaoTexto"],
-  })
-  .refine((c) => c.gestaoEstado === "DESLIGADA" || (!!c.gestaoTelefoneE164 && !!c.gestaoNumeroId), {
-    message: "Armar a gestão exige o WhatsApp do gestor e um número remetente.",
-    path: ["gestaoTelefoneE164"],
-  });
-export type ConfigComercialInput = z.input<typeof ConfigComercialSchema>;
 
 export const PerdaSchema = z
   .object({
