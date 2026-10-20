@@ -59,7 +59,7 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
           {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · {formatarDataCivil(c.vencimento.slice(0, 10))}</option>)}
         </select>
       </label>
-      {atual && <dl className="grid gap-2 rounded bg-gray-50 p-3 sm:grid-cols-2">
+      {atual && <dl className="grid gap-2 rounded bg-gray-100 p-3 sm:grid-cols-2">
         <div><dt>Valor original / negociado</dt><dd>{formatarMoeda(atual.valorOriginal, atual.moeda)} / {formatarMoeda(atual.valorNegociado, atual.moeda)}</dd></div>
         <div><dt>Recebido / liquidado com crédito</dt><dd>{atual.valorRecebido != null ? formatarMoeda(atual.valorRecebido, atual.moeda) : "não registrado"} / {formatarMoeda(atual.valorLiquidadoCredito, atual.moeda)}</dd></div>
         <div><dt>Saldo atual / após acerto</dt><dd>{atual.saldo == null ? "Não informado" : formatarMoeda(atual.saldo, atual.moeda)} / {formatarMoeda(atual.saldoAposAcerto, atual.moeda)}</dd></div>

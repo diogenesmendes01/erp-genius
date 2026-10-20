@@ -50,7 +50,7 @@ function dataHora(valor: string, fuso: string) {
 }
 
 function FonteResumo({ fonte, titulo, fusoExibicao }: { fonte: Fonte; titulo: string; fusoExibicao: string }) {
-  return <div className="space-y-1 rounded bg-gray-50 p-3">
+  return <div className="space-y-1 rounded bg-gray-100 p-3">
     <p className="font-medium">{titulo}</p>
     {!fonte.concluida && <p>Conclusão retirada. Não há nova fonte de realização ou validação.</p>}
     {fonte.concluida && fonte.encontro && <p>Encontro particular realizado em {dataHora(fonte.encontro.realizadaEm, fusoExibicao)}. Encontro: {dataHora(fonte.encontro.inicio, fusoExibicao)} a {dataHora(fonte.encontro.fim, fusoExibicao)} (origem {fonte.encontro.fuso}).</p>}
@@ -91,7 +91,7 @@ export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExib
         <p>Preparada por {correcao.autor} em {dataHora(correcao.criadaEm, fusoExibicao)}.</p>
         <p className="whitespace-pre-wrap">Motivo: {correcao.motivo}</p>
         <div className="grid gap-3 lg:grid-cols-2"><FonteResumo titulo="Fonte anterior na sequência de propostas" fonte={correcao.antes} fusoExibicao={fusoExibicao} /><FonteResumo titulo="Depois proposto" fonte={correcao.fonte} fusoExibicao={fusoExibicao} /></div>
-        {correcao.decisao ? <div className="rounded bg-gray-50 p-3"><p className="font-medium">{correcao.decisao.aprovada ? "Correção aprovada" : "Correção rejeitada"}</p><p>Decisão de {correcao.decisao.decisor} em {dataHora(correcao.decisao.decididaEm, fusoExibicao)}.</p><p className="whitespace-pre-wrap">{correcao.decisao.motivo}</p></div>
+        {correcao.decisao ? <div className="rounded bg-gray-100 p-3"><p className="font-medium">{correcao.decisao.aprovada ? "Correção aprovada" : "Correção rejeitada"}</p><p>Decisão de {correcao.decisao.decisor} em {dataHora(correcao.decisao.decididaEm, fusoExibicao)}.</p><p className="whitespace-pre-wrap">{correcao.decisao.motivo}</p></div>
           : <><p role="status">A fonte vigente permanece a mesma até uma aprovação independente.</p><DecidirCorrecao correcao={correcao} /></>}
         {correcao.decisao?.aprovada && correcao.temImpactos && <ImpactosAprovados correcao={correcao} />}
       </article>)}
@@ -101,7 +101,7 @@ export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExib
 
 function ImpactosAprovados({ correcao }: { correcao: Dados["correcoes"][number] }) {
   if (!correcao.podeVerCasos) return <p role="status">A Gestão Pedagógica acompanha as dependências acadêmicas desta correção aprovada.</p>;
-  return <div className="space-y-2 rounded bg-gray-50 p-3"><p className="font-medium">Dependências acadêmicas em acompanhamento</p><p>A correção não desfaz movimentações já registradas.</p>{correcao.impactos.map((impacto) => <p key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}. {impacto.casoId ? <a className="underline" href={`/academico/correcoes/revisoes/${encodeURIComponent(impacto.casoId)}`}>Ver revisão</a> : "A revisão está sendo preparada pela gestão."}</p>)}</div>;
+  return <div className="space-y-2 rounded bg-gray-100 p-3"><p className="font-medium">Dependências acadêmicas em acompanhamento</p><p>A correção não desfaz movimentações já registradas.</p>{correcao.impactos.map((impacto) => <p key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}. {impacto.casoId ? <a className="underline" href={`/academico/correcoes/revisoes/${encodeURIComponent(impacto.casoId)}`}>Ver revisão</a> : "A revisão está sendo preparada pela gestão."}</p>)}</div>;
 }
 
 function ProporCorrecao({ dados }: { dados: Dados }) {
@@ -137,7 +137,7 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
     <h2 className="text-xl font-medium">Propor correção</h2>
     <p>A proposta conserva a fonte vigente até a decisão independente. Escolha uma fonte conferida desta reposição ou retire a conclusão sem substituir a fonte.</p>
     <label className="block">Resultado proposto<select name="fonte" required value={escolhaAtual} onChange={(evento) => setEscolhaAtual(evento.target.value)} className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="RETIRAR">Retirar a conclusão, sem nova fonte</option>{modalidade === "PARTICULAR" && dados.fontesDisponiveis.encontros.map((encontro) => <option key={encontro.id} value={encontro.id}>Encontro realizado em {dataHora(encontro.realizadaEm, encontro.fuso)}</option>)}{modalidade === "GRAVACAO" && dados.fontesDisponiveis.entregas.map((entrega) => <option key={entrega.id} value={entrega.id}>Entrega versão {entrega.versao} — {dataHora(entrega.entregueEm, "UTC")}</option>)}</select></label>
-    {modalidade === "GRAVACAO" && escolhaAtual !== "RETIRAR" && <><label className="block">Horário da validação (UTC)<input name="validadaEm" type="datetime-local" required className="block rounded border p-2" /></label><div className="space-y-2">{dados.fontesDisponiveis.entregas.map((entrega) => <details key={entrega.id} className="rounded bg-gray-50 p-3"><summary>Material da entrega versão {entrega.versao}</summary><p className="whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="whitespace-pre-wrap">Atividade: {entrega.atividade}</p><p className="whitespace-pre-wrap">Evidência: {entrega.evidencia}</p></details>)}</div></>}
+    {modalidade === "GRAVACAO" && escolhaAtual !== "RETIRAR" && <><label className="block">Horário da validação (UTC)<input name="validadaEm" type="datetime-local" required className="block rounded border p-2" /></label><div className="space-y-2">{dados.fontesDisponiveis.entregas.map((entrega) => <details key={entrega.id} className="rounded bg-gray-100 p-3"><summary>Material da entrega versão {entrega.versao}</summary><p className="whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="whitespace-pre-wrap">Atividade: {entrega.atividade}</p><p className="whitespace-pre-wrap">Evidência: {entrega.evidencia}</p></details>)}</div></>}
     {modalidade === "PARTICULAR" && !dados.fontesDisponiveis.encontros.length && <EstadoVazio role="status">Não há encontro próprio ministrado com presença disponível para esta correção.</EstadoVazio>}
     {modalidade === "GRAVACAO" && !dados.fontesDisponiveis.entregas.length && <EstadoVazio role="status">Não há entrega completa disponível para esta correção.</EstadoVazio>}
     <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
@@ -163,7 +163,7 @@ function DecidirCorrecao({ correcao }: { correcao: Dados["correcoes"][number] })
       } catch { setErro(MSG_DECISAO_INCERTA); }
     });
   }}><fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão independente</legend><p className="text-sm">Rejeitar não atesta que a fonte atual esteja correta. Aprovar exige que esta seja a proposta mais recente e que a fonte ainda seja válida.</p>
-    <div className="space-y-2 rounded bg-gray-50 p-3"><p className="font-medium">Dependências acadêmicas</p><p>A correção não desfaz movimentações acadêmicas. {correcao.impactos.length ? "As mudanças abaixo exigem conferência pedagógica após a aprovação." : "Não há mudança acadêmica vinculada para revisar."}</p>{!!correcao.impactos.length && <ul className="list-disc pl-5">{correcao.impactos.map((impacto) => <li key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}.</li>)}</ul>}</div>
+    <div className="space-y-2 rounded bg-gray-100 p-3"><p className="font-medium">Dependências acadêmicas</p><p>A correção não desfaz movimentações acadêmicas. {correcao.impactos.length ? "As mudanças abaixo exigem conferência pedagógica após a aprovação." : "Não há mudança acadêmica vinculada para revisar."}</p>{!!correcao.impactos.length && <ul className="list-disc pl-5">{correcao.impactos.map((impacto) => <li key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}.</li>)}</ul>}</div>
     <MensagemStatus texto={correcao.impedimentoAprovacao} />
     <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{correcao.podeAprovar && correcao.impactosHash && <option value="aprovar">Aprovar correção</option>}<option value="rejeitar">Rejeitar proposta</option></select></label>
     {(!correcao.podeAprovar || !correcao.impactosHash) && <p role="status">Esta proposta não pode ser aprovada no estado atual, mas ainda pode ser rejeitada.</p>}
