@@ -1,4 +1,4 @@
-import { horaEDiaInstitucional } from "@/server/operacao/fuso";
+import { horaEDiaNoFuso } from "@/server/operacao/fuso";
 
 /**
  * Janela de envio (S3): horas [janelaInicio, janelaFim) e dias da semana (0 = domingo) em que uma mensagem pode
@@ -11,11 +11,14 @@ export interface JanelaEnvio {
   diasSemana: readonly number[];
 }
 
-/** `instante` cai dentro da janela no `fuso`? Fuso inválido no cadastro usa a hora do servidor (não trava a fila). */
+/**
+ * `instante` cai dentro da janela no `fuso`? Vale qualquer fuso que o `Intl` aceite (R1 do #254, C4: o fuso do contato
+ * é texto livre); só o que nem o `Intl` aceita usa a hora do servidor (não trava a fila).
+ */
 export function dentroDaJanelaEnvio(instante: Date, fuso: string, janela: JanelaEnvio): boolean {
   let local: { hora: number; diaSemana: number };
   try {
-    local = horaEDiaInstitucional(instante, fuso);
+    local = horaEDiaNoFuso(instante, fuso);
   } catch {
     local = { hora: instante.getHours(), diaSemana: instante.getDay() };
   }

@@ -74,6 +74,26 @@ describe("mensagem agendada pelo CRM × atendimento (D12, #202 C3)", () => {
     expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
   });
 
+  it("contato cujo telefone não bate com o da oportunidade: cancela sem abrir atendimento (R1 do #254, C3)", async () => {
+    const vendedor = await criarUsuario([Papel.VENDEDOR], "Vendedor");
+    const numero = await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511955558002", rotulo: "Vendas", driver: DriverWhatsApp.MOTOR, finalidade: "VENDAS", providerRef: "inst-env2", donoId: vendedor.id },
+    });
+    const pessoa = await prisma.pessoa.create({ data: { nome: "Bia" } });
+    // O contato da pessoa (o mais antigo) é o escolhido, mas a oportunidade tem outro telefone.
+    await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688882001", pessoaId: pessoa.id } });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Bia", vendedorDonoId: vendedor.id, pessoaId: pessoa.id, telefoneE164: "+50688882999" } });
+    logadoComo(vendedor.id);
+    const quando = diaUtilAs(10, FUSO);
+    const r = await agendarMensagem({ numeroId: numero.id, texto: "Lembrete", agendadaPara: quando.toISOString(), leadId: lead.id });
+    if (!r.ok) throw new Error(r.erro);
+    await despacharFila(new Date(quando.getTime() + 60_000), { intencaoId: r.dado!.id });
+    expect(enviarTextoMock).not.toHaveBeenCalled();
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: r.dado!.id } })).toMatchObject({ status: "CANCELADA", motivoFalha: "destinatario_alterado", atendimentoId: null });
+    expect(await prisma.atendimentoWhatsApp.count()).toBe(0);
+    expect(await prisma.conversaWhatsApp.count()).toBe(0);
+  });
+
   it("cancelada antes da hora nunca abre atendimento", async () => {
     const c = await cenario();
     await prisma.intencaoMensagem.update({ where: { id: c.intencaoId }, data: { status: "CANCELADA" } });

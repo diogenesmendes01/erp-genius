@@ -3687,3 +3687,14 @@ Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` 5b4e75a9
   - `npm test`: 783 arquivos e 5.860 testes, sobre o `main` 5b4e75a9.
   - `npm run build`: saída 0.
   - **Integração de whatsapp, inbox, crm e aria (+ `app/(app)/inbox`):** 117 arquivos e 1.004 testes, verdes salvo 3 testes de `whatsapp/acoes.int.test.ts` (cobrança "Sem ação devida hoje"), que falham igual no `main` b1da50fc limpo e não são deste PR. Depois do merge do #253: 12 arquivos de integração do despachante, agendamento, carteira, desvincular, Aria e regras do Inbox, com 129 de 129 testes.
+- **Ajustes depois da R1 e das decisões do dono no #254 (2026-10-20):**
+  - **Carteira:** a mensagem enviada só conta quando foi uma pessoa (`HUMANO` pela Inbox, `CELULAR` pelo app), além da recebida do cliente. Régua e automações (`CRON`, `LOTE`, `GESTAO`), a resposta da Aria (`IA`) e saída legada sem origem não contam. O teste de integração cobre o lead que só recebeu régua e Aria depois do último contato e continua "sem interação".
+  - Recusar o agendamento no fim de semana e deixar "Enviar agora" sem a trava da janela foram confirmados pelo dono, sem mudança.
+  - **C3:** `abrirAtendimentoDaAgendada` confere `destinatarioAtualDoAtendimento` dentro da transação do claim, antes da visibilidade. Na divergência, tudo é desfeito e a intenção vira `CANCELADA`/`destinatario_alterado`, sem atendimento nem conversa. Há teste com o contato da pessoa diferente do telefone da oportunidade.
+  - **C4:** `dentroDaJanelaEnvio` usa `horaEDiaNoFuso` (novo em `operacao/fuso.ts`, só `Intl`), então um fuso como `EST5EDT` vale. Só cai na hora do servidor o que nem o `Intl` aceita.
+  - **Evidências:**
+    - `tsc`: saída 0.
+    - lint: 40 avisos de base.
+    - `npm test`: 783 arquivos e 5.861 testes.
+    - build: saída 0.
+    - Integração de `src/server/crm` mais despachante e agendamento: 34 arquivos e 265 testes.

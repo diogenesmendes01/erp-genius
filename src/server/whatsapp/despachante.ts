@@ -543,16 +543,19 @@ export async function despacharFila(
           return;
         }
         // D12 (#202 C3): a mensagem agendada pelo CRM só abre o atendimento agora, no envio. Sem acesso do
-        // autor, a transação inteira é desfeita (nem claim nem atendimento) e a intenção é cancelada abaixo.
+        // autor ou com o destinatário divergente, a transação inteira é desfeita (nem claim nem atendimento) e a
+        // intenção é cancelada abaixo com o motivo.
         if (esperaAtendimento(it)) {
           const autor = it.autorId ? await tx.usuario.findUnique({ where: { id: it.autorId }, select: { id: true, nome: true, papeis: true, ativo: true } }) : null;
-          if (!autor?.ativo || !await abrirAtendimentoDaAgendada(tx, autor, it.id, it)) throw new AgendadaSemAcesso();
+          if (!autor?.ativo) throw new AgendadaSemAcesso("atendimento_sem_acesso");
+          const aberto = await abrirAtendimentoDaAgendada(tx, autor, it.id, it);
+          if ("recusa" in aberto) throw new AgendadaSemAcesso(aberto.recusa);
         }
         claimCount = 1;
       }));
     } catch (erro) {
       if (erro instanceof AgendadaSemAcesso) {
-        await marcar(it.id, "CANCELADA", "atendimento_sem_acesso");
+        await marcar(it.id, "CANCELADA", erro.message);
         r.canceladas += 1;
         continue;
       }
@@ -721,7 +724,7 @@ export async function despacharFila(
 /** Vida máxima (desde criadaEm) para reenviar automaticamente uma falha reprocessável. */
 export const LIMITE_REPROCESSO_MS = { HUMANO: 30 * 60_000, AUTOMACAO: 24 * 3_600_000 } as const;
 
-/** Desfaz o claim da agendada cujo autor não enxergaria o atendimento (D12). */
+/** Desfaz o claim da agendada que não pode abrir o atendimento (D12); a mensagem é o motivo do cancelamento. */
 class AgendadaSemAcesso extends Error {}
 
 type IntencaoParaValidar = {

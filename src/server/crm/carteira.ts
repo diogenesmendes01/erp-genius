@@ -58,8 +58,8 @@ const FUSO_PADRAO = "America/Sao_Paulo";
  * Lista POSITIVA do "sem interação" da carteira (decisão D13 do dono, #198 C6): só conta o que é contato real
  * com o cliente. Do agregado Lead valem a interação registrada (ligação, presencial, e-mail; também a que nasce
  * da tarefa concluída com resultado), a tarefa concluída e a experimental (agendada, confirmada, realizada).
- * Mensagem enviada ou recebida não vira Evento do Lead: entra pela consulta às mensagens dos atendimentos da
- * oportunidade (`ultimaMensagemPorLead`). Nota interna, edição de cadastro, reatribuição, tags, documentos e
+ * Mensagem recebida do cliente ou enviada por uma pessoa não vira Evento do Lead: entra pela consulta às mensagens
+ * dos atendimentos da oportunidade (`ultimaMensagemPorLead`). Nota interna, edição de cadastro, reatribuição, tags, documentos e
  * qualquer evento novo ficam de fora até alguém incluí-los aqui de propósito.
  */
 export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
@@ -71,9 +71,11 @@ export const EVENTOS_DE_CONTATO_SEM_INTERACAO = [
 ] as const;
 
 /**
- * Última mensagem (entrada ou saída) de cada oportunidade, pelos atendimentos ligados a ela. Saída que
- * falhou ou ainda está na fila não chegou ao cliente e não conta; mensagem apagada depois continua sendo
- * um contato que aconteceu.
+ * Última mensagem de cada oportunidade, pelos atendimentos ligados a ela: a recebida do cliente e a enviada por
+ * uma pessoa (pela Inbox, `HUMANO`, ou pelo celular, `CELULAR`). A régua e as automações (`CRON`, `LOTE`,
+ * `GESTAO`) e a resposta da Aria (`IA`) não são contato humano (decisão do dono no #254); saída sem origem
+ * (legado) também fica de fora. Saída que falhou ou ainda está na fila não chegou ao cliente e não conta;
+ * mensagem apagada depois continua sendo um contato que aconteceu.
  */
 async function ultimaMensagemPorLead(ids: string[]): Promise<{ leadId: string; ultima: Date | null }[]> {
   return prisma.$queryRaw<{ leadId: string; ultima: Date | null }[]>`
@@ -81,7 +83,7 @@ async function ultimaMensagemPorLead(ids: string[]): Promise<{ leadId: string; u
     FROM "MensagemWhatsApp" m
     JOIN "AtendimentoWhatsApp" a ON a.id = m."atendimentoId"
     WHERE a."leadId" IN (${Prisma.join(ids)})
-      AND (m.direcao = 'ENTRADA' OR m.status IN ('ENVIADA', 'ENTREGUE', 'LIDA'))
+      AND (m.direcao = 'ENTRADA' OR (m.status IN ('ENVIADA', 'ENTREGUE', 'LIDA') AND m.origem IN ('HUMANO', 'CELULAR')))
     GROUP BY a."leadId"`;
 }
 

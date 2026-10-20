@@ -53,6 +53,10 @@ describe("carregarCarteira: regra \"sem interação\"", () => {
     mocks.mensagens.mockResolvedValue([{ leadId: "o1", ultima: ontem }]);
     const r = await carregarCarteira(gerente, lerFiltrosCarteira({}));
     expect(mocks.mensagens).toHaveBeenCalledTimes(1);
+    // Saída só conta enviada por uma pessoa; régua, lote, gestão e Aria ficam de fora (decisão do dono no #254).
+    const sql = (mocks.mensagens.mock.calls[0][0] as { strings?: string[] }).strings?.join("?") ?? String(mocks.mensagens.mock.calls[0][0]);
+    expect(sql).toContain("m.origem IN ('HUMANO', 'CELULAR')");
+    for (const o of ["CRON", "LOTE", "GESTAO", "'IA'"]) expect(sql).not.toContain(o);
     expect(r.linhas.find((l) => l.oportunidadeId === "o1")!.diasSemInteracao).toBeLessThanOrEqual(1);
     expect(r.linhas.find((l) => l.oportunidadeId === "o2")!.diasSemInteracao).toBeGreaterThan(1);
   });

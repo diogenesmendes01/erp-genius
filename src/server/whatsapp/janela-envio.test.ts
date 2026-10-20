@@ -26,6 +26,12 @@ describe("dentroDaJanelaEnvio", () => {
     expect(dentroDaJanelaEnvio(new Date("2026-10-24T13:00:00Z"), SP, { ...UTIL, diasSemana: [0, 6] })).toBe(true);
   });
 
+  it("fuso que o Intl aceita e o regex institucional recusa (Aluno.fuso é texto livre) usa o Intl (R1 do #254, C4)", () => {
+    // 23h UTC de terça = 19h em EST5EDT (EDT): dentro da janela; em UTC (23h) e em São Paulo (20h), fora.
+    expect(dentroDaJanelaEnvio(new Date("2026-10-20T23:00:00Z"), "EST5EDT", UTIL)).toBe(true);
+    expect(dentroDaJanelaEnvio(new Date("2026-10-21T01:00:00Z"), "EST5EDT", UTIL)).toBe(false); // 21h
+  });
+
   it("fuso inválido no cadastro cai na hora do servidor, sem travar a fila", () => {
     expect(() => dentroDaJanelaEnvio(new Date("2026-10-20T13:00:00Z"), "Brasil", UTIL)).not.toThrow();
   });
