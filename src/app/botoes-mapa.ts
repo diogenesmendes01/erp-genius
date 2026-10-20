@@ -560,6 +560,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes/Formulario.tsx": [
     "<button> Autorizando… · Autorizar realização especial → secundario/lg",
   ],
+  "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/ResolverImpedimento.tsx": [
+    "<Botao> Registrando… · Confirmar resolução → secundario/lg",
+  ],
   "academico/segundas-chamadas/minhas/[reservaId]/Formulario.tsx": [
     "<button> Registrando… · Registrar realização → secundario/lg",
     "<button> Submetendo… · Submeter nota para conferência → secundario/lg",
@@ -947,6 +950,11 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx": [
     "<button> Registrando… · Registrar relato → secundario/lg",
     "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/CorrecaoRelatoOferta.tsx": [
+    "<Botao> Registrando… · Propor correção → secundario/lg",
+    "<Botao> Aprovar correção → secundario/lg",
+    "<Botao> Rejeitar correção → perigo/lg",
   ],
   "matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
     "<button> Registrando… · Propor último dia → secundario/lg",
