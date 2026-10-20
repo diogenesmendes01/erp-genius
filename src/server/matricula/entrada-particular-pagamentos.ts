@@ -11,7 +11,7 @@ const itemSchema = z.object({ id: z.string().min(1), tipo: z.enum(["MATRICULA", 
 type Cobranca = { id: string; tipo: string; moeda: string; valorNegociado: Prisma.Decimal.Value; vencimento: Date; coberturaInicio: Date | null; coberturaFim: Date | null;
   status: StatusCobranca; valorRecebido: Prisma.Decimal.Value | null; pagoEm: Date | null; versao: number };
 /** Q172: aplicação do aditivo de adiantamento sobre uma cobrança da emissão inicial. */
-export type AplicacaoAdiantamentoEntrada = { id: string; cobrancaId: string; versaoCobrancaDepois: number; valorAnterior: Prisma.Decimal.Value; valorNovo: Prisma.Decimal.Value;
+export type AplicacaoAdiantamentoEntrada = { id: string; cobrancaId: string; versaoCobrancaAntes: number; versaoCobrancaDepois: number; valorAnterior: Prisma.Decimal.Value; valorNovo: Prisma.Decimal.Value;
   vencimentoAnterior: Date; vencimentoNovo: Date; minutosAnteriores: number; minutosNovos: number };
 const DIVERGENTE = "A cobrança difere das condições conferidas. Regularize o ajuste antes de ativar.";
 
@@ -32,12 +32,19 @@ export function conferirPagamentosEntradaParticular(condicoes: unknown, memoria:
     let vigente = { valor: new Prisma.Decimal(previsto.valor), vencimento: instanteDaGrade(previsto.vencimento, "12:00", memoriaValidada.fusoInstitucional), minutos: previsto.minutos };
     const cadeia = aplicacoes.filter(a => a.cobrancaId === id).sort((a, b) => a.versaoCobrancaDepois - b.versaoCobrancaDepois);
     if (cadeia.length && previsto.tipo !== "HORA_PARTICULAR") throw new ErroRegra(DIVERGENTE);
+    // Versões: cada aplicação avança exatamente uma versão e nenhuma parte de versão anterior à deixada pela aplicação
+    // precedente. A igualdade estrita (antes = depois anterior, versão atual = depois da última) não é exigida: pagamento,
+    // pausa/retomada e outras alterações legítimas também incrementam `versao` sem mudar valor e vencimento. A versão da
+    // cobrança na emissão não é gravada (memória e ItemEmissaoEntrada não a guardam), então a primeira aplicação não é ancorada.
+    let versaoMinima: number | null = null;
     for (const a of cadeia) {
-      if (!vigente.valor.equals(a.valorAnterior) || vigente.vencimento.getTime() !== a.vencimentoAnterior.getTime() || vigente.minutos !== a.minutosAnteriores) throw new ErroRegra(DIVERGENTE);
+      if (!vigente.valor.equals(a.valorAnterior) || vigente.vencimento.getTime() !== a.vencimentoAnterior.getTime() || vigente.minutos !== a.minutosAnteriores
+        || a.versaoCobrancaDepois !== a.versaoCobrancaAntes + 1 || (versaoMinima !== null && a.versaoCobrancaAntes < versaoMinima)) throw new ErroRegra(DIVERGENTE);
       vigente = { valor: new Prisma.Decimal(a.valorNovo), vencimento: a.vencimentoNovo, minutos: a.minutosNovos };
+      versaoMinima = a.versaoCobrancaDepois;
     }
     const aplicacao = cadeia.at(-1);
-    if (!c || c.tipo !== previsto.tipo || c.moeda !== previsto.moeda || !new Prisma.Decimal(c.valorNegociado).equals(vigente.valor) || c.vencimento.getTime() !== vigente.vencimento.getTime()
+    if (!c || (versaoMinima !== null && c.versao < versaoMinima) || c.tipo !== previsto.tipo || c.moeda !== previsto.moeda || !new Prisma.Decimal(c.valorNegociado).equals(vigente.valor) || c.vencimento.getTime() !== vigente.vencimento.getTime()
       || (c.coberturaInicio?.toISOString() ?? null) !== (previsto.cobertura ? `${previsto.cobertura.inicio}T00:00:00.000Z` : null)
       || (c.coberturaFim?.toISOString() ?? null) !== (previsto.cobertura ? `${previsto.cobertura.fim}T00:00:00.000Z` : null)) throw new ErroRegra(DIVERGENTE);
     const exigido = previsto.tipo !== "HORA_PARTICULAR" || politica.politicaEntrada.adiantamentoHoraExigido === true;
