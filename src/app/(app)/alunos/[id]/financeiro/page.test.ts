@@ -5,14 +5,17 @@ import { Papel } from "@prisma/client";
 
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), tem: vi.fn(), ficha: vi.fn(), resumo: vi.fn(), informes: vi.fn(), usuario: vi.fn(), contexto: vi.fn(), propostas: vi.fn(), preferencia: vi.fn() }));
 vi.mock("next/navigation", () => ({ notFound: vi.fn(() => { throw new Error("não encontrado"); }) }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao, temPapel: mocks.tem }));
+vi.mock("@/server/_shared", async () => ({
+  exigirSessaoPagina: mocks.sessao, temPapel: mocks.tem,
+  temPermissao: (await vi.importActual<typeof import("@/server/_shared/sessao")>("@/server/_shared/sessao")).temPermissao,
+}));
 vi.mock("@/server/ajustes/consultas", () => ({ obterFichaFinanceira: mocks.ficha, obterResumoComercialFinanceiro: mocks.resumo }));
 vi.mock("@/server/financeiro/consultas", () => ({ listarInformesPagamento: mocks.informes }));
 vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUniqueOrThrow: mocks.usuario } } }));
 vi.mock("@/server/retomada/consultas", () => ({ listarContextoRetomada: mocks.contexto, listarPropostasRetomada: mocks.propostas }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/lib/nome", () => ({ nomeCompleto: () => "Ana Aluna" }));
-vi.mock("./FichaFinanceira", () => ({ FichaFinanceira: ({ preferenciaFusoExibicao }: { preferenciaFusoExibicao?: string | null }) => createElement("p", { "data-ficha": preferenciaFusoExibicao ?? "UTC" }, "ficha") }));
+vi.mock("./FichaFinanceira", () => ({ FichaFinanceira: ({ preferenciaFusoExibicao, dados }: { preferenciaFusoExibicao?: string | null; dados?: { permissoes?: { somenteInformar?: boolean } } }) => createElement("p", { "data-ficha": preferenciaFusoExibicao ?? "UTC", "data-somente-informar": String(dados?.permissoes?.somenteInformar) }, "ficha") }));
 vi.mock("./ResumoFinanceiroComercial", () => ({ ResumoFinanceiroComercial: () => null }));
 vi.mock("./ConcluirMatriculas", () => ({ ConcluirMatriculas: () => null }));
 vi.mock("@/app/(app)/financeiro/InformesPagamento", () => ({ InformesPagamento: () => null }));
@@ -49,5 +52,24 @@ describe("FichaFinanceiraPage acesso a aulas", () => {
     await expect(Page({ params: Promise.resolve({ id: "aluno" }) })).rejects.toThrow("sem acesso");
     expect(mocks.preferencia).not.toHaveBeenCalled();
     expect(mocks.ficha).not.toHaveBeenCalled();
+  });
+});
+
+// C11 da #170: a capacidade `pagamento.caixa` vem do usuário da sessão (carregarUsuarioFresco já traz
+// `permissoes`), sem uma segunda leitura de `usuario` no banco.
+describe("FichaFinanceiraPage capacidade de caixa", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.tem.mockImplementation((_: unknown, ...papeis: Papel[]) => papeis.includes(Papel.SECRETARIA_ACADEMICA));
+    mocks.ficha.mockResolvedValue(ficha); mocks.informes.mockResolvedValue([]);
+    mocks.contexto.mockResolvedValue({ ok: true, dado: null }); mocks.propostas.mockResolvedValue({ ok: true, dado: [] });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: null });
+  });
+  it("secretaria com pagamento.caixa registra; sem ela, só informa — sem reler o usuário", async () => {
+    mocks.sessao.mockResolvedValue({ id: "sec", papeis: [Papel.SECRETARIA_ACADEMICA], permissoes: ["pagamento.caixa"] });
+    expect(renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }) }))).toContain('data-somente-informar="false"');
+    mocks.sessao.mockResolvedValue({ id: "sec", papeis: [Papel.SECRETARIA_ACADEMICA], permissoes: [] });
+    expect(renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "aluno" }) }))).toContain('data-somente-informar="true"');
+    expect(mocks.usuario).not.toHaveBeenCalled();
   });
 });

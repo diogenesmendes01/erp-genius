@@ -13,7 +13,7 @@ import {
 } from "@/lib/cursor-fila";
 import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero, numeroOuNull, semDecimais } from "@/server/_shared/decimal";
-import { exigirSessaoComPapel, ErroPermissao } from "@/server/_shared";
+import { exigirSessaoComPapel, ErroPermissao, temPermissao } from "@/server/_shared";
 import { saldoAtual } from "./regras";
 import { orderByComissoes, type OrdemComissoes } from "./ordem-comissoes";
 import type { Ordenacao } from "@/lib/ordenacao";
@@ -298,9 +298,8 @@ export async function listarContextosRecebimentoDestinado() {
 /** Quem configura a política de comissão: Administrador ou permissão `comissao.configurar`. Sem carregar a política. */
 export async function podeConfigurarComissoes() {
   const usuario = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
-  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return true;
-  const atual = await prisma.usuario.findUniqueOrThrow({ where: { id: usuario.id }, select: { permissoes: true } });
-  return atual.permissoes.includes("comissao.configurar");
+  // O usuário da sessão já vem com `permissoes` (carregarUsuarioFresco): sem segunda leitura (C11 da #170).
+  return usuario.papeis.includes(Papel.ADMINISTRADOR) || temPermissao(usuario, "comissao.configurar");
 }
 
 export async function configuracaoComissoes() {

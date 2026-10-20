@@ -198,6 +198,8 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     expect(html).toContain('role="group" aria-label="Filtrar a fila pelos indicadores"');
     expect(cartoes(html)).toEqual([["false", "2 A vencer"], ["true", "1 Em atraso"], ["false", "0 Bloquear"], ["false", "0 Promessas"]]);
     expect(html).toContain("limpar filtro");
+    // C33 da #170: o botão de limpar não fica dentro de um <p> (o texto de apoio é um <p>, o botão vem ao lado).
+    expect(html).not.toMatch(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*limpar filtro/);
     // A seleção do lote continua na linha (o filtro não mexe nela).
     expect(html).toContain('aria-label="Selecionar Ana Silva para o lote"');
   });
