@@ -59,7 +59,7 @@ export function CondicoesEncerramento({ matriculaId, codigo, documentoId, autorI
       const resultado = RegrasEncerramentoSchema.safeParse(v.regras);
       const r = resultado.success ? resultado.data : null;
       const acerto = r?.acertoDesistenciaPreparacao ? descreverAcerto(r.acertoDesistenciaPreparacao) : null;
-      return <article key={v.id} className="space-y-2 rounded bg-gray-50 p-3 text-sm">
+      return <article key={v.id} className="space-y-2 rounded bg-gray-100 p-3 text-sm">
         <h3>Versão {v.versao} · {v.status === "PENDENTE" ? "Aguardando aprovação" : v.status === "APROVADA" ? "Aprovada" : "Rejeitada"}</h3>
         <p>Preparada por {v.preparador.nome}. Motivo: {v.motivo}</p>
         {v.artefatoContratual && <a className="underline" target="_blank" rel="noopener noreferrer" href={`/api/matriculas/${encodeURIComponent(matriculaId)}/originais/${encodeURIComponent(v.artefatoContratual.id)}/pdf`}>Consultar original desta versão</a>}

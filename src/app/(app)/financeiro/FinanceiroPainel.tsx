@@ -235,7 +235,7 @@ export function Comissoes({
       </div>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               {cabecalho("vendedor", "Vendedor")}
               <th className="px-4 py-2 font-medium">%</th>
@@ -447,7 +447,7 @@ export function CambioPainel({
       </p>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Moeda</th>
               <th className="px-4 py-2 font-medium">1 US$ =</th>
@@ -513,7 +513,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+              <thead className="bg-gray-100 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Moeda</th>
                   <th className="px-4 py-2 font-medium">Total concedido</th>
@@ -542,7 +542,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+              <thead className="bg-gray-100 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
                   <th className="px-4 py-2 font-medium">Moeda</th>
@@ -572,7 +572,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+              <thead className="bg-gray-100 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
                   <th className="px-4 py-2 font-medium">Moeda</th>
@@ -602,7 +602,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+              <thead className="bg-gray-100 text-left text-xs text-gray-500">
                 <tr>
                   <th className="px-4 py-2 font-medium">Moeda</th>
                   <th className="px-4 py-2 font-medium">Status</th>
