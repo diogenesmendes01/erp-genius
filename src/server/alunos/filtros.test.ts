@@ -125,12 +125,12 @@ describe("ordenação da lista (E1 — ColunaOrdenavel)", () => {
   });
 
   it("orderBy: padrão idêntico ao de antes; cada coluna termina no desempate por id", () => {
-    expect(orderByAlunos()).toEqual([{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
-    expect(orderByAlunos(lerFiltrosAlunos({}).ordem)).toEqual([{ primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    expect(orderByAlunos()).toEqual([{ nomeOrdenacao: "asc" }, { id: "asc" }]);
+    expect(orderByAlunos(lerFiltrosAlunos({}).ordem)).toEqual([{ nomeOrdenacao: "asc" }, { id: "asc" }]);
     // Decrescente por nome é o inverso exato da crescente (inclusive o desempate).
-    expect(orderByAlunos({ campo: "nome", dir: "desc" })).toEqual([{ primeiroNome: "desc" }, { sobrenome: "desc" }, { id: "desc" }]);
-    expect(orderByAlunos({ campo: "pais", dir: "desc" })).toEqual([{ pais: { nome: "desc" } }, { primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
-    expect(orderByAlunos({ campo: "status", dir: "asc" })).toEqual([{ status: "asc" }, { primeiroNome: "asc" }, { sobrenome: "asc" }, { id: "asc" }]);
+    expect(orderByAlunos({ campo: "nome", dir: "desc" })).toEqual([{ nomeOrdenacao: "desc" }, { id: "desc" }]);
+    expect(orderByAlunos({ campo: "pais", dir: "desc" })).toEqual([{ pais: { nome: "desc" } }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
+    expect(orderByAlunos({ campo: "status", dir: "asc" })).toEqual([{ status: "asc" }, { nomeOrdenacao: "asc" }, { id: "asc" }]);
   });
 
   it("a ordem vai na query (paginação, exportação, redirecionamento) só quando não é a padrão", () => {
