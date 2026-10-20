@@ -3928,6 +3928,93 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npm run build`: saída 0.
   - Integração de `src/server/crm`: 30 arquivos e 267 testes OK, incluindo os 40 de equivalência e os de `funil` e `carteira`.
 
+### Port da #62: Q164 e Q157 (#164) — 2026-10-20
+
+- **Escopo:** o lote da Q164 e da Q157, que têm migration e ficam fora da cadeia financeira. O dono confirmou que as decisões de 21/09 continuam valendo. A #164 continua aberta. Nada veio por cherry-pick: os testes da #62 entraram primeiro e falharam, e a implementação veio depois, sobre o main atual.
+- **Q164, resolução do impedimento causado pela escola:**
+  - A gestão pedagógica (ou a administração) confirma, com justificativa, que uma realização posterior da mesma avaliação resolveu o impedimento. Precisa ser a mesma matrícula, alocação, turma, regra e código, e a realização precisa ter nota oficial. Não há segunda aprovação.
+  - A reserva em `PENDENCIA_ESCOLA` e a ocorrência ficam como histórico. A resolução é um registro à parte (`ResolucaoImpedimentoSegundaChamada`), único por reserva e imutável, com guard SQL que repete as regras.
+  - O fechamento deixa de contar o impedimento resolvido.
+  - Tela: formulário no histórico de reservas, que só aparece quando existe realização apta.
+  - Migration `20261020200000_resolucao_impedimento_segunda_chamada`, que era a `20260921010000` na #62.
+- **Q157, correção do período de um relato confirmado de falta de oferta:**
+  - A correção é versionada e precisa de aprovação de outra pessoa. Aprovada, o período do relato muda na mesma transação, e todos os consumidores (TS e guards SQL) passam a ler o período vigente. O trigger do relato só aceita essa mudança quando há correção aprovada que a respalde.
+  - É recusada, na ação e no banco, quando retira dias que já sustentam compensação aprovada ou período integral aprovado.
+  - Relato aberto corrige só o início, porque o fim vem pelo término aprovado (Q156). Relato encerrado não é reaberto.
+  - Tela nova em `matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao`, com link na lista de relatos.
+  - Migration `20261020210000_correcao_relato_indisponibilidade_oferta`, que era a `20260921020000` na #62. A função `validar_registro_indisponibilidade_oferta_matricula` é a mesma do main (`20260915076000`, inalterada desde a #62) mais o ramo de UPDATE.
+- **Adaptações ao main:**
+  - Telas reescritas no padrão atual: `Campo`, `CampoTexto`, `Botao`, `FeedbackAcao`, `useAcaoCliente`, `useChaveIdempotencia`, `EstadoVazio` e `VoltarPara`. Entraram nos manifestos de botões, campos e estados vazios, e a correção entrou na trilha. "Rejeitar correção" usa a variante `perigo`.
+  - O histórico da Q157 usa o fuso da escola como referência, com aviso quando ele não está configurado. A #62 fixava `"UTC"`.
+  - Não entra o perfil de teste `claude` da #62.
+  - `decisoes-2026-09-21.md` continua fora do main. Nenhum lote o trouxe ainda.
+- **Testes novos além dos da #62:**
+  - Integração da Q164 com o schema completo, que a #62 não tinha: a recusa sem nota oficial, a confirmação idempotente, o fechamento sem a pendência, o histórico preservado e o guard SQL.
+  - Integração da Q157 recusando a retirada de dia com compensação aprovada, na ação e no banco.
+  - SSR das telas novas.
+- **Fica para depois:** as linhas desatualizadas do quadro (ACA/Q164) e de `docs/41`, que a #164 pede para atualizar junto com o fechamento da issue.
+- **Evidências** (banco descartável `erp_genius_test_q164`, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base, nenhum em arquivo tocado).
+  - `npm test`: 795 arquivos e 5.946 testes OK em UTC e em America/Sao_Paulo.
+  - `npm run build`: saída 0, com as rotas do histórico de reservas e da correção.
+  - `prisma migrate deploy` do zero: todas as migrations aplicadas, incluindo as duas novas.
+  - Integração de avaliações (segunda chamada, agenda, remarcação, substituição, pendências e fechamento acadêmico) e de matrícula (relato, confirmação, término e correção de indisponibilidade, estado, cobertura, compensação, fonte de compensação, disponibilidade de oferta e período integral): 20 arquivos e 166 testes OK.
+
+### Q172, follow-up da revisão da #261 (C1 e C2) e da revisão da #264 (B1, C1 a C3) — 2026-10-20
+
+- **C1, compra depois do aditivo:** o 1º cenário `PRODUCAO_HORA_ADIANTAMENTO` agora chama `registrarCompraHorasAntecipadas` depois do pagamento de 375. A compra de 120 minutos (os da emissão) é recusada ("Os minutos, valor e cobrança precisam corresponder ao adiantamento contratado..."). A de 180 minutos (os da aplicação) é registrada com valor original 375, desconto 0, pago 375, e a memória guarda `preparacao.aplicacaoAdiantamentoAditivoId`. Os números da revisão (180 aceita, 120 recusa) são os da regra; a fixture não precisou mudar. A compra preparada exige o aceite integrado do original, e o cenário o confirma **antes** do aditivo.
+- **Pendência aberta (C1 da revisão da #264), recusa da entrada depois do aditivo:** `conferirPagamentosEntradaParticular` compara a cobrança com o plano **original** das condições de entrada e ignora a `AplicacaoAdiantamentoAditivo`. Depois de aplicado o aditivo ao adiantamento, ela recusa com "A cobrança difere das condições conferidas" no **aceite** (se o aditivo vier antes dele), na **ativação** da matrícula e na consulta da entrada. O caso típico da Q172 (contrato assinado, aditivo no adiantamento ainda não pago, pagamento) fica com a ativação travada e sem caminho de regularização. Os cenários de integração desta Q contornam isso: confirmam o aceite antes do aditivo e forçam `status: "ATIVA"` via Prisma. A correção (a conferência da entrada passar a usar a última aplicação, como `conferirCompraPreparadaTx`, com teste de ativação real depois do aditivo) vai em **PR separado** e precisa entrar antes de liberar a Q172 no UAT.
+- **C2 da #261 e B1 da #264, desconto de emissão e redução por aditivo:** os valores gravados na compra não mudam (`valorOriginal` da emissão, `descontoOriginal` = diferença, líquido certo no encerramento e no crédito), e o `calculoCredito` gravado nas propostas também não. Como `valorOriginal` é o preço de referência × minutos da emissão e a aplicação do aditivo não o altera, a diferença pode somar desconto de emissão e redução por aditivo. A consulta de compras carrega as `AplicacaoAdiantamentoAditivo` da cobrança até a registrada na memória e expõe `diferencaValor { valor, desconto, reducaoAditivo }` (`matricula/compra-horas-diferenca.ts`): `reducaoAditivo = clamp(valorAnterior da 1ª aplicação − valorNovo da última, 0, descontoOriginal)` e `desconto = descontoOriginal − reducaoAditivo`. O painel de compras e a memória do crédito mostram cada parcela positiva ("Desconto original" e "Redução do adiantamento por aditivo"); sem nenhuma, o desconto original como antes. `LiberacaoHoras` e `MemoriaCredito` passam a exigir as parcelas (`diferencaCompra`, sem padrão).
+- **Evidências:** cenários de integração com referência igual ao negociado (125/h; aditivo 250 → 200: gravados 250/50/200, desconto 0 e redução 50) e com referência de 150/h e negociado de 125/h, 120 minutos: aditivo só de vencimento (300/50/250, só desconto 50), aditivo 250 → 280 (300/20/280, desconto 20, sem redução) e aditivo 250 → 200 (300/100/200, desconto 50 e redução 50). Testes unitários do helper e do render da memória de crédito. Banco descartável `erp_genius_test_q172g`.
+
+### Itens restantes da #170 e pendências do #257 (C3, C5) — 2026-10-20
+
+Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cada item entrou em TDD: o teste falhou antes da correção.
+
+- **C13 (países):** a edição repassa o `id` de cada tipo de documento ao formulário (`PaisesPainel.tsx`). Renomear pela tela um tipo em uso deixa de virar "remover + criar", que o servidor recusava. Teste: `PaisesPainel.edicao.test.ts`.
+- **#257 C5:** em `anonimizarBuscaExportacoes`, se um lote falha e o registro do evento também falha, sobe um `AggregateError` com os dois erros e `cause` = o erro do lote. Antes, o erro do lote se perdia. Falha só no lote ou só no registro continua subindo o erro como está. Teste: `anonimizar-busca-exportacoes.test.ts`, com 3 casos.
+- **#257 C3:** registrado na seção da #165 acima: destino do backup com o texto (`/var/backups/erp-genius/<carimbo>/erp.dump`, retenção de 14 dias do script) e a exigência de rodar o script de novo depois de restaurar um backup anterior à execução.
+- **#172 (portal do aluno):**
+  - `ativar`: os campos de senha não têm mais `maxLength`, que contava caracteres, cortava em silêncio uma senha colada e deixava passar 72 letras acentuadas. O limite de 72 bytes fica com a `validarSenhas`, e o contador mostra caracteres e bytes.
+  - `/api/portal-aluno/token`: a senha recusada pelo schema responde 400 com `campo: "senha"`, e a tela diz que o link continua valendo. Token malformado, link vencido e corpo ilegível continuam no 422.
+  - `/portal-aluno/entrar` (doc 42 #2): credencial recusada (401), serviço fora e falha de rede têm mensagens próprias.
+  - `/login` (doc 42 #3 e #5): "Esqueceu a senha? Peça a redefinição a um administrador." e "É aluno? Acesse a área do aluno".
+  - `entrega-gravacao.tsx`: o envio usa o `<Botao type="submit">`, com estado ocupado.
+- **C45 (abas a 375 px):** abaixo de `sm`, o `SubTabs` vira uma faixa só, rolável na horizontal (`flex-nowrap`, `overflow-x-auto`, abas `shrink-0 whitespace-nowrap`), e a aba ativa é trazida para a vista. Do `sm` para cima, as abas continuam quebrando linha. O `p-1` da faixa evita que o anel de foco seja cortado.
+- **#174 (esqueleto genérico):** o `(app)/loading.tsx` lê o caminho de destino e, na primeira entrada em financeiro (abas do painel), configuração, matrícula, acadêmico ou diário, desenha o formato da área: título, cabeçalho do registro e barra de abas, sempre com um título só. Fora delas, continua o genérico. Módulo `esqueleto-area.ts` e o `EsqueletoArea` em `Esqueleto.tsx`. Testes: `(app)/loading.test.ts`. Conferido só por render no teste, não no navegador.
+- **C32 (aviso ao sair):** números, setores do número, política da régua e avisos de agenda ganharam a marca "Alterações não salvas" (`AlteracaoPendente`, região `role="status"` sempre montada) e o `useAvisoAoSair`. A base é o valor salvo que chega pelas props, então salvar e esperar o `router.refresh` desliga o aviso. O kill switch não conta, porque grava na hora. Os painéis "comercial" e "régua comercial" do L2519 não existem mais no código. Testes: `alteracoes-pendentes.test.ts` e `avisos-ao-sair.test.ts`.
+- **C11:** as capacidades `pagamento.caixa` e `financeiro.aprovar_acertos` (ficha financeira, movimentações e permuta) e `comissao.configurar` (`podeConfigurarComissoes`) passam a vir de `temPermissao(usuario, …)`, sem uma segunda leitura de `usuario` no banco. Testes nas três páginas e em `pode-configurar-comissoes.test.ts`.
+- **C33:** "Revisar" (conferência de regra histórica) é um `<Botao type="submit" variante="secundario" tamanho="md">`, e o "limpar filtro" da fila de cobrança saiu de dentro do `<p>`. `botoes-mapa.ts` foi atualizado.
+- **C50 (parte):** o `PADRAO` de `ordem-comissoes.ts` passou a ser o critério da própria coluna padrão, em vez de uma lista solta.
+- **Ficam abertos:**
+  - **Travas grandes:**
+    - **C48:** os C7–C9 da R3 da #138, `ETAPA_LABEL`, o fornecedor cru e os badges pedem uma trava de enum nova em várias telas.
+    - **C53:** exceções do `EstadoVazio` e o piso `USOS_DA_MIGRACAO_E1`.
+    - **C54:** os limites de 7 travas.
+  - **C19:** telemetria do `rotular` fora de `development`. Depende de escolher o destino dos eventos.
+  - **C27:** título de aba fora das fichas e allow-list duplicada do guard. É uma refatoração de `titulos-registro.ts` com os guards das fichas.
+  - **C45 (resto):** `secoes.test.ts` ainda lê o guard pelo fonte. Trocar exige expor os papéis do guard como dado.
+  - **C46 (resto):**
+    - `no-explicit-any` nos testes;
+    - `testTimeout` global.
+  - **C50 (resto):** `/empresas` sem volta à ordem padrão, ainda não reconferido.
+  - **C52 (resto):**
+    - o campo de `InformesPagamento`, que precisa ser conferido como dia ou instante;
+    - `pool: "forks"`.
+  - **#172:**
+    - `set-state-in-effect` em `ativar/page.tsx`: o ajuste muda o arnês do teste de interação;
+    - a troca de e-mail, que é operacional e precisa ser conferida no UAT antes;
+    - `/login` #6: redirecionar quem já tem sessão pode entrar em laço com sessão desativada e precisa de desenho.
+  - **L2019:** decisão de produto.
+  - **C47 (`docker build` no CI):** fora do recorte.
+- **Evidências** (banco descartável `erp_genius_test_i170`, perfil temporário desfeito e banco apagado antes do commit):
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 799 arquivos e 5.980 testes OK em UTC e em America/Sao_Paulo.
+  - `npm run build`: saída 0.
+  - Integração `previsao-comissao` e `anonimizar-busca-exportacoes`: 2 arquivos e 9 testes OK.
+
 ### Idempotência, 3º lote (#166) — 2026-10-20
 
 - **Escopo:** 20 das ações com `idempotente: false` de maior risco de duplicação. A #166 continua aberta. Os testes de integração entraram primeiro e falharam; a implementação veio depois.
@@ -3946,3 +4033,4 @@ Branch `claude/lgpd-exportacoes`, base `main` 9808cd29, com o `main` 4d698f2e (#
   - `npm test`: 790 arquivos e 5.918 testes OK.
   - `npm run build`: saída 0. A primeira tentativa parou no type-check sem mensagem, com a máquina sem memória livre; a segunda passou.
   - Integração dos módulos tocados, em 4 blocos: 28 arquivos e 276 testes OK, incluindo os 5 arquivos novos (`*-idempotencia.int.test.ts`, 24 testes), Inbox/WhatsApp, mensagens agendadas, configuração do CRM, fontes da Aria, conferência e política financeira, atraso por dia civil, retomada e reconferência de desistência. Uma rodada única com todos os arquivos passou do limite de tempo da sessão; nela, `acesso-atendimento.int.test.ts` estourou o tempo de um teste (49 s) sob carga e passou ao ser rodado de novo.
+- **Correção da revisão R1 (B1–B4):** supervisão da Aria, configuração de IA, avisos de agenda e edição de tag, campo e resposta rápida gravavam um segundo Evento no reenvio. Agora o servidor compara o estado atual com o pedido e retorna sem update nem Evento quando nada mudou (como `aplicarSlaSetor`); a tela da supervisão fixa o `ate` dentro da tentativa. Cada caso tem teste de integração (duas chamadas idênticas → 1 Evento; mudança real grava). Também: arquivar resposta rápida não troca mais a chave de uma criação incerta, e a chave sem atendimento em `agendarMensagem` vira `ErroRegra`.

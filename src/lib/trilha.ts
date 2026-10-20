@@ -199,6 +199,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/matriculas/*/fechamentos-horas": "Fechamentos de horas",
   "/matriculas/*/indisponibilidade-oferta": "Indisponibilidade",
   "/matriculas/*/indisponibilidade-oferta/*/termino": "Término da indisponibilidade",
+  "/matriculas/*/indisponibilidade-oferta/*/correcao": "Correção do período",
   "/matriculas/*/nova-reserva": "Nova reserva",
   "/matriculas/*/ocorrencias-financeiras": "Ocorrências financeiras",
   "/matriculas/*/ocorrencias-financeiras/revisoes-correcao-aula": "Revisões de correção de aula",

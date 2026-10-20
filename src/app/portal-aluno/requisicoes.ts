@@ -1,4 +1,5 @@
 import type { Resultado } from "@/server/_shared/resultado";
+import { MAXIMO_BYTES_SENHA, MINIMO_CARACTERES_SENHA } from "./ativar/ativacao";
 
 // Chamadas do navegador às rotas públicas do portal do aluno (docs/43 §6 item 8), no formato de uma server
 // action: recusa do servidor vira `{ ok: false, erro }` e falha de transporte (rede, servidor fora) LANÇA —
@@ -8,6 +9,8 @@ import type { Resultado } from "@/server/_shared/resultado";
 /** A rota recusou o link (usado, expirado, revogado ou de outro contato): a tela some com o formulário. */
 export const ERRO_LINK_INDISPONIVEL = "Este link não está mais disponível. Ele pode ter sido usado, ter expirado ou ter sido substituído por um mais novo.";
 export const ERRO_ATIVACAO_RECUSADA = "Não foi possível confirmar o acesso agora. Tente de novo em alguns minutos; se continuar, procure a Secretaria.";
+/** A rota recusou a senha (400 com `campo: "senha"`): o link continua valendo e o formulário fica. */
+export const ERRO_SENHA_RECUSADA = `A senha não foi aceita: ela precisa ter de ${MINIMO_CARACTERES_SENHA} caracteres a ${MAXIMO_BYTES_SENHA} bytes. Ajuste e tente de novo; o link continua valendo.`;
 export const ERRO_RECUPERACAO_RECUSADA = "Não foi possível registrar o pedido agora. Tente de novo em alguns minutos; se continuar, procure a Secretaria.";
 
 /** O que a ativação concluiu: sessão aberta (convite ou recuperação) ou só o novo e-mail validado. */
@@ -20,6 +23,11 @@ export async function definirSenhaPortalAluno(token: string, senha: string): Pro
   const resposta = await fetch("/api/portal-aluno/token", { method: "POST", headers: CABECALHOS_JSON, body: JSON.stringify({ token, senha }) });
   // 422 é a resposta única da rota para link que não serve mais (ver api/portal-aluno/token/route.ts).
   if (resposta.status === 422) return { ok: false, erro: ERRO_LINK_INDISPONIVEL };
+  // 400 com o campo: a senha foi recusada pelo schema da rota, antes de o link ser consumido.
+  if (resposta.status === 400) {
+    const corpo = (await resposta.json().catch(() => null)) as { campo?: unknown } | null;
+    return { ok: false, erro: corpo?.campo === "senha" ? ERRO_SENHA_RECUSADA : ERRO_ATIVACAO_RECUSADA };
+  }
   if (!resposta.ok) return { ok: false, erro: ERRO_ATIVACAO_RECUSADA };
   // Corpo ilegível com 200: a senha pode ter sido gravada — lança, e a tela diz que o resultado é incerto.
   const corpo = (await resposta.json()) as { situacao?: unknown };

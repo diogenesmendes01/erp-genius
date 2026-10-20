@@ -7,6 +7,9 @@ import { salvarConfiguracaoAvisosAgenda } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { AlteracaoPendente } from "@/components/AlteracaoPendente";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
+import { avisosAgendaAlterados } from "./alteracoes-pendentes";
 
 const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
 
@@ -17,6 +20,9 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
   // Sem chave de idempotência, mas idempotente por natureza (#166): número e template vão por upsert na
   // configuração única da escola, e o servidor não grava nada (nem Evento) quando já são esses. Reenviar é seguro.
   const acao = useAcaoCliente({ idempotente: true });
+  // C32 da #170: marca e aviso ao sair enquanto a escolha difere da salva (o refresh traz a salva nova).
+  const sujo = avisosAgendaAlterados(numeroAvisosAgendaId, templateAvisosAgendaId, config);
+  useAvisoAoSair(sujo);
   const numeros = config.numeros.filter((n) => n.ativo && n.driver === "MOTOR");
   const templates = config.templates.filter((t) => t.corpo.includes("{horarios}") && !/\{[^}]+\}/.test(t.corpo.replace(/\{(nome|horarios)\}/g, "")));
 
@@ -43,7 +49,10 @@ export function AvisosAgendaPainel({ config }: { config: ConfiguracaoAvisosAgend
       </label>
     </div>
     <p className="mt-3 text-xs text-gray-500">O template deve conter <code>{"{horarios}"}</code> e pode usar <code>{"{nome}"}</code>. O envio proativo sai pelo motor WhatsApp; números Baileys legados não são habilitados para este canal.</p>
-    <button className={`${botaoClasses({ tamanho: "md" })} mt-4`} disabled={acao.ocupado || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar canal de agenda"}</button>
+    <div className="mt-4 flex flex-wrap items-center gap-3">
+      <button className={botaoClasses({ tamanho: "md" })} disabled={acao.ocupado || !numeroAvisosAgendaId || !templateAvisosAgendaId} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar canal de agenda"}</button>
+      <AlteracaoPendente sujo={sujo} />
+    </div>
     <FeedbackAcao erro={acao.erro} className="mt-3" />
   </section>;
 }

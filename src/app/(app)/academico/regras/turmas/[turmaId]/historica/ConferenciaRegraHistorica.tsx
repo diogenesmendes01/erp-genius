@@ -6,7 +6,7 @@ import { decidirConferenciaRegraHistorica, proporConferenciaRegraHistorica, revi
 import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
 import type { Resultado } from "@/server/_shared/resultado";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
-import { botaoClasses } from "@/components/Botao";
+import { Botao, botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -77,7 +77,7 @@ export function PrepararConferenciaRegraHistorica({ turmaId, destinos }: { turma
           <option value="">Selecione</option>
           {destinos.map(d => <option key={d.id} value={d.id}>Versão {d.versao}</option>)}
         </select></label>
-        <button className={botaoClasses({ variante: "secundario" })}>{acao.ocupado ? "Revisando…" : "Revisar"}</button>
+        <Botao type="submit" variante="secundario" tamanho="md">{acao.ocupado ? "Revisando…" : "Revisar"}</Botao>
       </fieldset>
     </form>
     <FeedbackAcao erro={acao.erro} />
