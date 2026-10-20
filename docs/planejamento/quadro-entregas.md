@@ -282,7 +282,7 @@ Base conferida: `main` em `e5418550` (merge da #161, 10/10/2026). Esta seção �
   11. fuso pessoal nas telas restantes, que está parcial: a #159 cobriu parte, com outro desenho.
 - **A #65 está publicada via #66.** O merge da #65 foi para a branch da #64, já fechada; a #66 reaplicou o mesmo commit na `main` (mesmo `patch-id`). Nada da #65 falta na `main`.
 
-As linhas "Vencimento no caixa" (Q176), Q165, Q167, DCT03 e ACA (Q164) da tabela "Fila corrente de implementação local — 18/09/2026", abaixo, ficaram desatualizadas: as decisões de 21/09 foram implementadas na #62, que não foi publicada (doc 44 §3).
+As linhas "Vencimento no caixa" (Q176), Q165, Q167, DCT03 e ACA (Q164) da tabela "Fila corrente de implementação local — 18/09/2026", abaixo, ficaram desatualizadas em 13/10, porque as decisões de 21/09 tinham sido implementadas só na #62, que não foi publicada (doc 44 §3). Em 20/10/2026 elas foram reescritas com o estado da `main` (#164). A lista acima continua sendo a fotografia de 13/10; o que já entrou está em [decisoes-2026-09-21.md](decisoes-2026-09-21.md), seção "Situação na `main` em 20/10/2026".
 
 ### Entregas desde a #133
 
@@ -394,8 +394,8 @@ Estado corrente: Q170 e Q151 integrados e revisados; Q168/Q169 implementados e v
 | SPEC-ERP-005 — linha comercial do WhatsApp | Claude / integrador | Fases 0–4 codificadas; TypeScript, ESLint e unitários aprovados; **integração não executada** | 26/09/2026 | Origem: teste em produção — número de vendas atribuído ao vendedor não aparecia na inbox dele. Decisões LC-D01–D06 aprovadas pelo responsável do produto. Sem migração de schema/dados. `tsc` saída 0 (29 arquivos, client gerado do schema do worktree, controle negativo conferido); ESLint saída 0; Vitest unitário 2519 aprovados, 10 arquivos com falha de ambiente fora do WhatsApp (pacotes `pdfkit`/`google-auth-library` ausentes no checkout principal, CRLF no compose) — detalhes na SPEC §9. Todo o código das Fases 0–4 está na PR (nada adiado). Verificação a cargo do integrador/tester: rodar `linha-comercial.int.test.ts` + suítes de WhatsApp ajustadas (sem banco descartável nesta sessão) e build; conferir payload real da Evolution 2.3.7 (LID/`messages.set`). Checklist por fase na descrição da PR. |
 | Q170 — conjunto de impactos de taxa por aditivo | DEV1 / TESTER / integrador | Implementado e validado localmente, incluindo homologação visual | 18/09/2026 | Migrações232–237; principal9/9 direcionados e arquivo26/26 anterior aos3novos negativos; TESTER26/26+3novos negativos; rotas e callbacks com saídas0. Evidências abaixo. |
 | Q168/Q169 — acerto de cobertura e ciclo futuro | DEV2 / TESTER / integrador | Implementado e validado localmente | 18/09/2026 | SQL238/240, interface e emissão real integrados; revisão independente e recortes aprovados. Ensaio combinado real e homologação visual aprovados; arquivo completo53/53 no TESTERb8ac3a80,saída0. |
-| Q165 — acerto contratual da desistência | DEV1 Terra / TESTER Terra / integrador | Reconferência corrigida e validada localmente; integração externa pendente | 18/09/2026 | Até255 integrada em896c5564: principal36/36 integrações,20/20 consulta/página eTS0; TESTER22/22 integrações e revisão aprovada. Limites e evidências abaixo. Cancelamento externo aguarda fornecedor; fluxo integral permanece parcial. |
-| Q167 — destinação do excedente da permuta | DEV2 Terra / integrador | Cálculo e fontes em integração; destinos aguardam Q171 | 18/09/2026 | Cálculo14/14 com matriz625; fontes7unitários/2integrações,TS0. Efeitos financeiros e interface não concluídos. |
+| Q165 — acerto contratual da desistência | DEV1 Terra / TESTER Terra / integrador | Reconferência na `main`; envio e cancelamento de assinatura pendentes | 20/10/2026 | Até255 integrada em896c5564: principal36/36 integrações,20/20 consulta/página eTS0; TESTER22/22 integrações e revisão aprovada. Limites e evidências abaixo. Em 20/10 (#266): a fotografia delta em SQL reconhece o crédito da Q175. Não está na `main`: o port da assinatura com driver simulado (`EnviarAssinatura`, `CancelarAssinatura`, lote 5 da #164); a tela de documentos da desistência só consulta. O driver real (Q155) é dívida assumida. Fluxo integral permanece parcial. |
+| Q167 — destinação do excedente da permuta | DEV2 Terra / integrador | Cálculo e fontes na `main`; destinos decididos (Q171) e não portados | 20/10/2026 | Cálculo14/14 com matriz625; fontes7unitários/2integrações,TS0. A Q171 foi decidida em 21/09 (os dois destinos, por acordo caso a caso) e implementada só na #62. Na `main` não há proposta, concordância, decisão, saldo de serviços nem tela; aguarda o lote Q171 da #164. |
 | M01 — conferência inicial de regra histórica | DEV 1 Terra | Integrada e validada localmente | 16/09/2026 | Integrada até b254ba81, migrações 188/190/191 aplicadas no banco descartável; aprovação independente e revisão explícita da versão. Evidências do conjunto M01 abaixo; não equivale à carga real homologada |
 | M01 — navegação para regra histórica mapeada | DEV 2 Terra | Implementação local validada | 18/09/2026 | O detalhe do vínculo migrado aponta somente para a turma canônica da correspondência vigente; não aplica vínculo/regra nem altera as permissões da conferência. SSR dirigido 1/1 e TypeScript concluíram com saída 0; não representa conclusão de M01. |
 | EMAIL — acesso ao portal e operação dos envios | DEV 1 Terra | Implementação/revisão local e regressão global aprovadas | 16/09/2026 | Base 091d103, interface fc69c8e e revisão 8c056f9; homologação externa pendente |
@@ -453,11 +453,11 @@ Esta fila substitui os checkpoints históricos preservados abaixo. Implementaç�
 | CT-05 — conflito resolvido e aplicação conjunta do calendário | Comprovado localmente em 18d0bcd0 | DEV: 1/1 (9e8f04) e TypeScript (b272d5), saídas 0. TESTER ec9f7bf6: 1/1 (9b7e9f) e TypeScript (22d2cc), saídas 0. Conflito bloqueia ambas as turmas; cancelamento do encontro conflitante por fixture permite nova fotografia/revisão; aplicação preserva encontro ministrado e diário, replay conserva aplicação única. Não homologa o fluxo de cancelamento usado na preparação. |
 | CT-06 — composição de datas e fusos | Integração comprovada; apresentação ainda incompleta | TESTER: 1/1 (339cfd), TypeScript (459542), reexecução após restauração de ambiente 1/1 (f83342), saídas 0. Continuidade calcula fevereiro dia 28 e março dia 31 sem sobreposição/duplicação. Auditoria das telas encontrou fuso implícito no histórico do diário e no caixa; o teste Intl não comprova essas telas. |
 | Preferência de fuso de exibição | Perfil de equipe/portal e consumidores acadêmicos integrados; auditoria dos demais consumidores em andamento | Migrações 266/267 integradas e aplicadas no integracao, dev-email e tester; domínio validado para Intl. Calendário, avaliações, recuperações, segundas chamadas, regras, equivalências, mudanças acadêmicas, ficha por matrícula e fechamento do portal possuem entregas com testes dirigidos nas notas. Últimos complementos 4a1c448f/12891802. Preservados dados civis, fusos de entrada e snapshots; não declarar cobertura de todos os consumidores por este recorte. |
-| Vencimento no caixa | Projeção civil implementada e testada localmente | Caixa, fila de cobrança, ficha e conciliação usam fontes persistidas, com precedência por versão e pendência quando insuficientes. Pausa/retomada e aditivo cobertos por integrações reais descritas nas notas. Régua de dias e restrição D+30 ainda dependem da definição Q176 e correção própria; não estão concluídas pela apresentação civil. |
-| Q165 — desistência em preparação | Fluxo local contratual e reconferência implementados; integração de assinatura incompleta | Fornecedor Q155 necessário para envio/cancelamento autenticado. Novo crédito delta e ajuste material agora cobertos por cenário real com ajuste aprovado, recebimento, reconferência e efetivação; integração de assinatura continua pendente. |
-| Q167 — excedente de permuta | Cálculo e fontes implementados; decisão do destino operacional pendente | Q167C confirmada: acordo por caso e aprovação independente. Q171 delimita destinos; proposta, aplicação e interface ainda faltam. |
-| DCT03 — aditivos | Agenda, taxa Q170 e cobertura/ciclo Q168/Q169 implementados localmente | Adiantamento Q172, moeda Q173 e regime Q174 aguardam definição de alcance. Não aplicar condições sem consumidor operacional. |
-| ACA — impedimento da escola | Resolução formal ainda aguarda Q164 | Preservar relato e não presumir que nota posterior encerra o impedimento. |
+| Vencimento no caixa | Projeção civil e Q176 na `main` | Caixa, fila de cobrança, ficha e conciliação usam fontes persistidas, com precedência por versão e pendência quando insuficientes. Pausa/retomada e aditivo cobertos por integrações reais descritas nas notas. Q176 (régua de dias e D+30 no fuso da escola) entrou pela #239 e foi completada pelas #243, #247, #253 e #255. Sem fuso configurado, `fusoDaEscola()` usa `America/Sao_Paulo`. |
+| Q165 — desistência em preparação | Fluxo contratual e reconferência na `main`; assinatura pendente | Fornecedor Q155 necessário para envio/cancelamento autenticado. Novo crédito delta e ajuste material cobertos por cenário real com ajuste aprovado, recebimento, reconferência e efetivação. O port da assinatura com driver simulado da #62 (lote 5 da #164) não está na `main`. |
+| Q167 — excedente de permuta | Cálculo e fontes na `main`; destinos decididos e não portados | Q167C confirmada: acordo por caso e aprovação independente. Q171 decidida em 21/09: o acordo escolhe entre saldo restrito a serviços e crédito financeiro. Implementada só na #62; na `main` faltam proposta, aplicação e interface. |
+| DCT03 — aditivos | Agenda, taxa Q170, cobertura/ciclo Q168/Q169, adiantamento Q172 e recusa de regime Q174 na `main`; moeda Q173 e origem histórica não | Q172 (#261, #264, #270, #272; migration `20261020100000`): só enquanto o adiantamento não foi pago nem usado. Q174 (#260): recusa na preparação, só no servidor. Q173 e a origem contratual histórica foram decididas em 21/09 e implementadas só na #62. Não aplicar condições sem consumidor operacional. |
+| ACA — impedimento da escola | Q164 na `main` | #265 e #268, migration `20261020200000`. A gestão pedagógica confirma, com justificativa, que uma realização posterior com nota oficial resolveu o impedimento; a reserva em `PENDENCIA_ESCOLA` continua no histórico e nada é presumido sem essa confirmação. |
 | M01, Q69, Q87, Q40/Q54 e CT12 | Recortes locais implementados e validados | As antigas pendências de UI/revisão/reinicialização nos checkpoints abaixo estão superadas pelas evidências posteriores. Carga real e provedores reais não compõem este aceite local. |
 | Q102 — identificação de contratos legados | Integrado em 264ee4dc e 9cf0d946; validação local dirigida aprovada | Dois contratos sem código do mesmo aluno/produto precisam de identificação estável distinta. Os handlers já enviam a seleção explícita correta; não há mudança de regra ou schema. |
 | Q92 — consumo de horas antecipadas por falta/cancelamento tardio | Código, tela, schema e testes integrados; revisão independente aprovada | Migração 258 aplicada em dev-email, integracao e tester. Principal: 29 integrações e TS aprovados; TESTER: 29 integrações e TS aprovados antes do complemento 7400f940. Negativos adicionais de cancelamento sem consumo, XOR e vínculo cruzado aprovados pelo TESTER: 2/2 em30850/f7cc50, saída0. Não inclui correção posterior do consumo, tratada na frente Q23. |
@@ -4110,6 +4110,84 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
   - Unitários: 814 arquivos e 6.097 testes OK em UTC e em `TZ=America/Sao_Paulo`.
   - Integração: `contratos/aditivo.int.test.ts` e `matricula/ativacao.int.test.ts`, 69 de 69 OK (inclui aceite → aditivo → pagamento → ativação real e o aditivo antes do aceite).
+
+### Índice redundante de `Evento` e detector de fundo sem borda respeitando strings — 2026-10-20
+
+- **Índice (`prisma/schema.prisma`, migration `20261020410000_remover_indice_evento_redundante`):** sai `Evento_agregadoTipo_agregadoId_idx` (`@@index([agregadoTipo, agregadoId])`), que virou prefixo de `Evento_agregadoTipo_agregadoId_criadoEm_idx` (#271). A migration tem um único comando, `DROP INDEX CONCURRENTLY IF EXISTS "Evento_agregadoTipo_agregadoId_idx";` (não trava escrita em `Evento`).
+  - Conferido antes: nenhuma constraint usa o índice (`pg_constraint.conindid` de `Evento`: PK e as três FKs que apontam para `Evento.id`, todas sobre `Evento_pkey`); não há `@@unique` nem FK em `agregadoTipo`/`agregadoId`; as consultas por `(agregadoTipo, agregadoId)` ou só `agregadoTipo` (Prisma e SQL em `crm/`, `relatorios/`, `metas/`) usam o prefixo do índice novo.
+- **Detector (`src/app/fundo-sobre-pagina.test.ts`):** os literais de string passam a sair do parser do TypeScript (TSX) em vez de regex que apagava `/* … */` sem olhar strings; um `/*` dentro de string (glob, ex. `"src/app/*.tsx"`) apagava tudo até o próximo `*/` e escondia classes. Resultado idêntico ao do detector antigo nos 598 `.tsx` atuais (comparado arquivo a arquivo). Teste novo (glob + URL antes da classe) falha com o filtro antigo e passa com o novo; mais um caso de comentário de bloco.
+- **Evidências** (banco descartável `erp_genius_test_evi`, apagado ao fim):
+  - `migrate deploy` do zero: todas as migrations OK; `Evento` fica com `pkey`, `agregadoTipo_agregadoId_criadoEm`, `criadoEm`, `tipo` e `idempotencia`.
+  - `migrate diff` banco × schema: nada sobre índices de `Evento` (só o drift antigo de nome/ação das FKs de `AvisoAlteracaoAgenda`/`PendenciaAvisoAgenda`, que já existia).
+  - `tsc --noEmit`: saída 0. `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - Unitários: 815 arquivos e 6.104 testes OK em UTC e em `TZ=America/Sao_Paulo`.
+  - `next build`: saída 0.
+
+### Port da #62, lote 3: Q175, aula que não devia ser cobrada (#164) — 2026-10-20
+
+- **Decisão:** a de 21/09/2026 (PR #62, `decisoes-2026-09-21.md` e `q175-desenho-tecnico.md` daquela PR), reconfirmada pelo dono em 20/10/2026. Aula particular lançada como realizada ou falta cobrável que não aconteceu por motivo da escola, ou foi lançada por engano, tem o valor zerado.
+- **O que entrou (reimplementado sobre o `main`, sem cherry-pick cego, a partir dos commits `5f2b7de0` e `85938ed7` da #62):**
+  - Migration `20261020500000_correcao_aula_nao_cobravel` (era `20260921040000`): `AplicacaoRevisaoFinanceiraCorrecaoAula`, `OrigemCreditoRevisaoCorrecaoAula` e `CreditoMatricula.origemRevisaoCorrecaoAulaId` (oitava origem de crédito); fotografia `q23_fotografia_nao_cobravel_175` com o efeito calculado no banco; guards; trigger diferido que exige o acerto na mesma publicação. Redefine `q23_foto_financeira_valida_257`, `q165_delta_reconhecimento_guard_249`, `credito_matricula_origem_unica_check` e `PropostaRevFinCorrecaoAula_tipo_check` copiando a definição vigente (idêntica no `main` e na base da #62) e acrescentando o ramo novo.
+  - Migration `20261020510000_estorno_consumo_horas_nao_cobravel` (era `20260921050000`): `EstornoConsumoHorasCompradas`, ramo `DEVOLVE_MINUTOS` da fotografia; `proteger_reserva_horas_compradas` e `conferir_liquidacao_horas_acerto` (vigentes copiadas) ignoram consumo estornado.
+  - IDs conferidos: o lote Q164/Q157 (#265, já no `main`) usa `20261020200000` e `20261020210000`; as duas da Q175 vêm logo depois (`20261020220000`/`230000`, renomeadas na R1).
+  - Servidor: `financeiro/revisao-correcao-aula-aplicacao-tx.ts` (aplicação dentro de `aprovarCorrecaoAula`), tipo explícito em `revisao-correcao-aula.ts`, destinação `NAO_COBRAVEL_CORRECAO` no fechamento de horas, estorno conhecido por compra de horas, reserva, encerramento e desistência.
+  - Tela de revisões financeiras de correção de aula, no padrão atual (`formatarMoeda`, `CampoTexto`, `FeedbackAcao`): escolha do tipo entre os que o banco comprova, efeito descrito e botão "Aprovar declaração de aula não cobrável". Painel de compras de horas mostra os minutos devolvidos.
+- **Regras:**
+  - A declaração é feita na revisão financeira; o encontro continua `MINISTRADO` (opção A).
+  - O valor vai a zero numa operação só, junto com a publicação acadêmica (trigger diferido).
+  - Aprovação financeira (outra pessoa do Financeiro) e pedagógica (gestão) separadas; a financeira sozinha não move valor.
+  - Cobrança aberta é reduzida, ou cancelada quando chega a zero; cobrança paga continua quitada e gera crédito na matrícula; aula paga com horas pré-pagas devolve os minutos à mesma compra.
+  - Fora: duração errada e `IMPEDIDO_POR_RESTRICAO`. Pagamento parcial, crédito, permuta, pausa, acerto ou comprovante a conferir fazem a fotografia recusar.
+  - A comissão não é recalculada.
+- **Diferenças em relação à #62:**
+  - Na #62 a revisão `AULA_NAO_COBRAVEL` não passava no esquema da fotografia Q92 da tela (sem `fundamento`): mostrava "fotografia indisponível" e só oferecia rejeitar. Aqui ela tem esquema e botão próprios.
+  - Painel de compras de horas descreve a reserva com consumo estornado e soma os minutos devolvidos.
+- **Evidências:**
+  - Integração nova: em `matricula/condicoes-horas.int.test.ts`, os 3 cenários da #62 (aula não fechada, cobrança aberta cancelada, cobrança paga → crédito) e 3 novos (cobrança de duas aulas reduzida e ainda aberta; aprovações separadas; comissão inalterada); em `matricula/q23-consumo-horas.int.test.ts`, o cenário de horas pré-pagas da #62. Todos conferem o encontro `MINISTRADO`.
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, com 40 avisos de base.
+  - `npm test` em UTC e em America/Sao_Paulo: 793 arquivos e 5.939 testes em cada fuso.
+  - `npm run build`: saída 0. Duas tentativas anteriores pararam em "Failed to type check" por falta de memória (outros `tsc` na máquina; um `tsc` paralelo foi morto pelo OOM).
+  - `prisma migrate deploy` do zero no banco isolado `erp_genius_test_q175`: 469 migrations. No `migrate diff` banco × schema, nenhuma linha dos objetos da Q175.
+  - Integração de `src/server/matricula`, `financeiro` e `diario` no `erp_genius_test_q175`, depois do merge da `main` com o #261: 67 arquivos e 617 testes verdes (inclui os 7 cenários da Q175). Ficaram de fora 2 arquivos e 3 testes de homologação de UI, condicionais por ambiente.
+- **Fora deste lote:** Q173, Q171 e a origem histórica, nesta ordem.
+- **Pendência operacional:** fazer backup e ensaiar o `migrate deploy` numa cópia do UAT antes do deploy.
+
+#### Q175: correções da R1 (duas reviews da #266) — 2026-10-20
+
+- **Base:** merge do `origin/main` (com #263, #264 e #265), sem rebase. Em `compra-horas.ts` e `ComprasHorasPainel.tsx` ficaram os dois lados: `diferencaValor`/`aplicacoes` e os rótulos de desconto e redução por aditivo da #264, e `consumo.estorno`, `minutosEstornados`, `minutosDisponiveis` sem o estornado e `resumoMinutosCompra`/`situacaoReserva` da Q175.
+- **Migrations renomeadas** para `20261020220000`/`20261020230000`, depois das `20261020200000`/`210000` da #265 (não foram aplicadas em lugar nenhum).
+- **Fechamento por hora (tela):** o esquema `Memoria` aceita `NAO_COBRAVEL_CORRECAO` em `preservados`, com rótulo próprio. Antes, a versão aparecia como "Memória incompatível" e o botão Emitir sumia.
+- **Encerramento por hora:** `conferirAgendaEncerramentoTx` reconhece a aula declarada não cobrável ainda não fechada (efeito `SEM_ITEM`) como destinação `NAO_COBRAVEL_CORRECAO` com `aplicacaoId`. Antes, ela ficava como pendência sem saída e o encerramento travava.
+- **Reconferência delta da desistência:** `q165_fotografia_delta_atual_255` (SQL) passa a incluir `origemRevisaoCorrecaoAulaId` quando o crédito tem essa origem, como a fotografia em TS. Antes, a matrícula com crédito Q175 caía em "Fotografia posterior delta não corresponde integralmente ao ledger".
+- **Banco:** o trigger `recusar_item_nao_cobravel_175` recusa `ItemFechamentoHoras` para conferência com aplicação Q175.
+- **Tela de ocorrências:** a conferência com declaração de não cobrável avisa que o valor exibido é histórico e diz qual foi o efeito.
+- **Evidências:**
+  - `tsc --noEmit`: saída 0. `eslint . --max-warnings 40`: saída 0 (40 avisos de base).
+  - `npm test` em UTC e em America/Sao_Paulo: 811 arquivos e 6.060 testes em cada fuso.
+  - `prisma migrate deploy` do zero no `erp_genius_test_q175b`: 471 migrations. No `migrate diff` banco × schema, nenhuma linha dos objetos novos da Q175.
+  - Integração de `src/server/matricula`, `financeiro` e `diario` no `erp_genius_test_q175b`: 68 arquivos e 623 testes verdes. Ficaram de fora 2 arquivos e 3 testes de homologação de UI, condicionais por ambiente. Entre os testes estão o novo cenário de encerramento e trava do item e a comparação entre a fotografia delta em TS e a do banco com crédito Q175.
+  - `npm run build`: saída 0. A primeira tentativa parou em "Failed to type check" por falta de memória, enquanto a integração rodava em paralelo.
+  - Depois dos merges seguintes do `main` (#267, #269, #270, #271 e #272; conflito só no quadro): `tsc` e `eslint` com saída 0; `npm test` com 816 arquivos e 6.101 testes em cada fuso; integração de `condicoes-horas`, `q23-consumo-horas`, `desistencia-reconferencia-delta` e `indisponibilidade-oferta-correcao` com 4 arquivos e 55 testes verdes; `npm run build` com saída 0.
+- **Não alterado:**
+  - O aditivo continua contando consumo estornado. O caso não chega a ele: só existe consumo com compra de horas, e a compra já faz o aditivo recusar.
+  - A cobrança cancelada por redução a zero continua sem coluna `canceladaPor*`. A origem está em `AplicacaoRevisaoFinanceiraCorrecaoAula.cobrancaId`.
+
+- **Migrations renomeadas de novo** para `20261020500000`/`20261020510000` (R2): o UAT já aplicou `20261020400000` (#271, deploy automático), e `220000`/`230000` rodariam fora de ordem. Também ficam depois de `20261020410000` (#273). Nenhuma foi aplicada em lugar nenhum.
+
+### Docs da #164: decisões de 21/09 na `main` e linhas antigas do quadro atualizadas — 2026-10-20
+
+- **O que muda:** só documentação. Nenhum código, schema ou migration.
+  - `docs/planejamento/decisoes-2026-09-21.md` vem da branch da #62 (`db854944`), com o texto das decisões intacto. Ganhou a seção "Situação na `main` em 20/10/2026", conferida em `origin/main` `90a34cce`, e o aviso de que as notas de implementação descrevem a #62.
+  - Linhas antigas atualizadas: "Vencimento no caixa", Q165 (duas tabelas), Q167 (duas tabelas), DCT03, ACA e o parágrafo que as marcava como desatualizadas; doc 41 (Q164 e ciclo de agenda da segunda chamada) e doc 04 §2 (validadores).
+- **Na `main`:** Q176 (#239, #243, #247, #253, #255), validadores, Q174 e Q161 (#260), Q172 (#261, #264, #270, #272), Q164 e Q157 (#265, #268), Q175 (#266).
+- **Fora da `main`:** Q173, Q171/Q167C, origem contratual histórica, port da assinatura (driver simulado) e fuso pessoal nas telas restantes. A #164 continua aberta.
+- **Divergências e recortes entre as decisões e o código** (registrados no documento, sem mudança de código):
+  - Q176: sem fuso configurado, a `main` usa `America/Sao_Paulo`; a nota de 21/09 falava em manter o cálculo legado.
+  - Q175: a decisão diz que cobrança paga gera crédito; a fotografia recusa pagamento parcial, crédito, permuta, pausa, acerto ou comprovante a conferir.
+  - Q174: a recusa vale na preparação e não tem guard SQL; propostas de `REGIME` anteriores ainda podem ser decididas.
+  - Q172: comissão não recalculada (base = taxa de matrícula). Isso foi lido no código e não está nas decisões de 21/09.
+- **Não conferido:** se as migrations de 20/10 já foram aplicadas no UAT (só no painel do Coolify).
 
 ### Idempotência, 4º lote (#166) — 2026-10-20
 

@@ -976,7 +976,7 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx": [
     "<button> Preparar revisão financeira → secundario/lg",
     "<button> Rejeitar revisão incompleta → perigo/lg",
-    "<button> Aprovar sem alteração de valores → secundario/lg",
+    "<button> Aprovar declaração de aula não cobrável · Aprovar sem altera → secundario/lg",
     "<button> Rejeitar → perigo/lg",
   ],
   "matriculas/[id]/pagador/PagadorFormulario.tsx": [
