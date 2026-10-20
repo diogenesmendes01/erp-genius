@@ -4110,3 +4110,15 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
   - Unitários: 814 arquivos e 6.097 testes OK em UTC e em `TZ=America/Sao_Paulo`.
   - Integração: `contratos/aditivo.int.test.ts` e `matricula/ativacao.int.test.ts`, 69 de 69 OK (inclui aceite → aditivo → pagamento → ativação real e o aditivo antes do aceite).
+
+### Índice redundante de `Evento` e detector de fundo sem borda respeitando strings — 2026-10-20
+
+- **Índice (`prisma/schema.prisma`, migration `20261020410000_remover_indice_evento_redundante`):** sai `Evento_agregadoTipo_agregadoId_idx` (`@@index([agregadoTipo, agregadoId])`), que virou prefixo de `Evento_agregadoTipo_agregadoId_criadoEm_idx` (#271). A migration tem um único comando, `DROP INDEX CONCURRENTLY IF EXISTS "Evento_agregadoTipo_agregadoId_idx";` (não trava escrita em `Evento`).
+  - Conferido antes: nenhuma constraint usa o índice (`pg_constraint.conindid` de `Evento`: PK e as três FKs que apontam para `Evento.id`, todas sobre `Evento_pkey`); não há `@@unique` nem FK em `agregadoTipo`/`agregadoId`; as consultas por `(agregadoTipo, agregadoId)` ou só `agregadoTipo` (Prisma e SQL em `crm/`, `relatorios/`, `metas/`) usam o prefixo do índice novo.
+- **Detector (`src/app/fundo-sobre-pagina.test.ts`):** os literais de string passam a sair do parser do TypeScript (TSX) em vez de regex que apagava `/* … */` sem olhar strings; um `/*` dentro de string (glob, ex. `"src/app/*.tsx"`) apagava tudo até o próximo `*/` e escondia classes. Resultado idêntico ao do detector antigo nos 598 `.tsx` atuais (comparado arquivo a arquivo). Teste novo (glob + URL antes da classe) falha com o filtro antigo e passa com o novo; mais um caso de comentário de bloco.
+- **Evidências** (banco descartável `erp_genius_test_evi`, apagado ao fim):
+  - `migrate deploy` do zero: todas as migrations OK; `Evento` fica com `pkey`, `agregadoTipo_agregadoId_criadoEm`, `criadoEm`, `tipo` e `idempotencia`.
+  - `migrate diff` banco × schema: nada sobre índices de `Evento` (só o drift antigo de nome/ação das FKs de `AvisoAlteracaoAgenda`/`PendenciaAvisoAgenda`, que já existia).
+  - `tsc --noEmit`: saída 0. `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - Unitários: 815 arquivos e 6.104 testes OK em UTC e em `TZ=America/Sao_Paulo`.
+  - `next build`: saída 0.
