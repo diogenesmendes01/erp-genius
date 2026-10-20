@@ -12,7 +12,6 @@ export type OrdemComissoes = (typeof ORDENS_COMISSOES)[number];
 /** A ordem de sempre: beneficiário crescente (e, dentro dele, a mais recente primeiro). */
 export const ORDEM_PADRAO_COMISSOES: Ordenacao<OrdemComissoes> = { campo: "vendedor", dir: "asc" };
 
-const PADRAO: Prisma.ComissaoOrderByWithRelationInput[] = [{ vendedor: { nome: "asc" } }, { criadoEm: "desc" }, { id: "desc" }];
 const CRITERIOS_COMISSOES: CriteriosOrdenacao<OrdemComissoes, Prisma.ComissaoOrderByWithRelationInput> = {
   vendedor: (dir) => [{ vendedor: { nome: dir } }, { criadoEm: "desc" }, { id: "desc" }],
   // Valores em moedas diferentes não se comparam (100 USD × 50 000 CRC): agrupa por moeda e ordena o
@@ -21,6 +20,9 @@ const CRITERIOS_COMISSOES: CriteriosOrdenacao<OrdemComissoes, Prisma.ComissaoOrd
   // Enum no banco: ordem de declaração (Pendente → Aprovada → Paga → Estornada), o ciclo da comissão.
   status: (dir) => [{ status: dir }, { vendedor: { nome: "asc" } }, { criadoEm: "desc" }, { id: "desc" }],
 };
+
+/** Reserva do orderByDe (sem coluna válida): o critério da própria coluna padrão, não uma lista à parte (C50, #170). */
+const PADRAO = CRITERIOS_COMISSOES[ORDEM_PADRAO_COMISSOES.campo](ORDEM_PADRAO_COMISSOES.dir);
 
 /** Ordem da URL (`ordem`/`dir`); fora da lista fechada → a padrão. */
 export const lerOrdemComissoes = (p: ParametrosUrl) => lerOrdenacao(p, ORDENS_COMISSOES, ORDEM_PADRAO_COMISSOES);

@@ -49,3 +49,25 @@ it("validação de endereço não cria sessão e recuperação mantém resposta 
   const sucesso = await recuperar(requisicao("{}"));
   expect(await erro.json()).toEqual(await sucesso.json());
 });
+
+// #172: a senha recusada pelo schema não é "link indisponível". O link continua valendo (a validação vem antes
+// de tocar no token), então a rota responde 400 com o campo, e o 422 fica só para o link que não serve.
+it("token: senha recusada pelo schema devolve 400 com o campo, não o 422 do link", async () => {
+  const { z } = await import("zod");
+  const curta = z.object({ senha: z.string().min(12) }).safeParse({ senha: "curta" });
+  mocks.token.mockRejectedValue(curta.success ? new Error("esperava falha") : curta.error);
+  const r = await token(requisicao("{}"));
+  expect(r.status).toBe(400);
+  expect(r.headers.get("cache-control")).toBe("no-store");
+  expect(await r.json()).toEqual({ erro: "Senha fora das regras.", campo: "senha" });
+});
+
+it("token: token malformado, link vencido ou corpo ilegível continuam no 422 genérico", async () => {
+  const { z } = await import("zod");
+  const semToken = z.object({ token: z.string().min(32) }).safeParse({ token: "x" });
+  for (const erro of [semToken.success ? new Error("x") : semToken.error, new Error("Este link não está disponível.")]) {
+    mocks.token.mockRejectedValueOnce(erro);
+    expect((await token(requisicao("{}"))).status).toBe(422);
+  }
+  expect((await token(requisicao("{nao-json"))).status).toBe(422);
+});
