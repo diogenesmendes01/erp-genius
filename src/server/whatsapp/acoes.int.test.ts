@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -16,11 +16,20 @@ import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "./acoes";
 
 let financeiro: Awaited<ReturnType<typeof criarUsuario>>;
 
+// Relógio fixo ao meio-dia da escola (15h UTC): `agoraAs`/`diasDepois` montam o dia no fuso da
+// MÁQUINA, e a régua conta no dia civil da ESCOLA (Q176, #239). Com TZ=UTC entre 00h e 03h UTC
+// (21h–24h em Brasília) a máquina já está no dia seguinte, o vencimento "hoje + 7" vira D-8 na
+// escola e a ação devida some. Às 15h UTC os dois calendários coincidem em qualquer TZ de −11h a +11h.
+const RELOGIO = new Date("2026-10-20T15:00:00.000Z");
+
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(RELOGIO);
   await truncarBanco();
   financeiro = await criarUsuario([Papel.FINANCEIRO]);
   authMock.mockResolvedValue({ user: { id: financeiro.id } });
 });
+afterEach(() => vi.useRealTimers());
 
 describe("enfileirarCobrancaWhatsApp (origem HUMANO)", () => {
   it("enfileira o degrau devido e despacha — sem WHATSAPP_LIVE vira SIMULADA", async () => {
