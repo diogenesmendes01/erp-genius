@@ -63,7 +63,7 @@ export function VisaoGeral({ visao, dias, nome }: Props) {
             {visao.volume.map((v) => (
               <li key={v.dia} className="flex items-center gap-3 text-sm">
                 <span className="w-24 shrink-0 text-gray-700">{v.dia.split("-").reverse().slice(0, 2).join("/")}</span>
-                <span className="flex h-3 flex-1 overflow-hidden rounded-full bg-surface-muted" role="img" aria-label={`${v.resolvidas} resolvidas pela ${nome} e ${v.comHandoff} com transferência`}>
+                <span className="flex h-3 flex-1 overflow-hidden rounded-full bg-gray-100" role="img" aria-label={`${v.resolvidas} resolvidas pela ${nome} e ${v.comHandoff} com transferência`}>
                   <span className="bg-green-700" style={{ width: `${(v.resolvidas / maximo) * 100}%` }} />
                   <span className="bg-amber-600" style={{ width: `${(v.comHandoff / maximo) * 100}%` }} />
                 </span>

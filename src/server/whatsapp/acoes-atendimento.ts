@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { Papel, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { CANAL_INBOX, type AvisoInbox } from "@/server/inbox/barramento";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
@@ -213,18 +214,31 @@ const ConvidarSchema = z.object({
   podeEnviar: z.boolean(),
   fim: z.string().refine((v) => !Number.isNaN(new Date(v).getTime()), "Informe uma data de término válida."),
   motivo: z.string().trim().min(10, "Descreva o motivo do convite (mínimo de 10 caracteres).").max(500),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
-/** Convida alguém (de qualquer setor) a ver o atendimento, por prazo de até 30 dias (E3.4). Início = agora; concedente = quem convida. */
-export async function convidarParticipante(input: { atendimentoId: string; usuarioId: string; podeEnviar: boolean; fim: string; motivo: string }): Promise<Resultado<{ participanteId: string }>> {
+/**
+ * Convida alguém (de qualquer setor) a ver o atendimento, por prazo de até 30 dias (E3.4). Início = agora; concedente = quem convida.
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve o convite já criado em vez de "já participa".
+ */
+export async function convidarParticipante(input: { atendimentoId: string; usuarioId: string; podeEnviar: boolean; fim: string; motivo: string; chaveIdempotencia?: string }): Promise<Resultado<{ participanteId: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
-    const dados = ConvidarSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = ConvidarSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const agora = new Date();
     const fim = new Date(dados.fim);
-    if (fim <= agora) throw new ErroRegra("O fim do convite precisa ser no futuro.");
-    if (fim.getTime() > agora.getTime() + PRAZO_MAXIMO_CONVITE_DIAS * 86_400_000) throw new ErroRegra(`O convite pode durar no máximo ${PRAZO_MAXIMO_CONVITE_DIAS} dias.`);
     const participanteId = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        // Antes das validações de prazo: o reenvio de um convite já criado devolve o mesmo, mesmo perto do fim.
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "ParticipanteConvidado", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outro convite. Confira os participantes do atendimento antes de repetir.",
+        });
+        if (repetido) return String((repetido.payload as { participanteId?: unknown }).participanteId);
+      }
+      if (fim <= agora) throw new ErroRegra("O fim do convite precisa ser no futuro.");
+      if (fim.getTime() > agora.getTime() + PRAZO_MAXIMO_CONVITE_DIAS * 86_400_000) throw new ErroRegra(`O convite pode durar no máximo ${PRAZO_MAXIMO_CONVITE_DIAS} dias.`);
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
       const a = await atendimentoVisivel(u, dados.atendimentoId, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
@@ -239,7 +253,7 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
         data: { atendimentoId: a.id, usuarioId: dados.usuarioId, concedenteId: u.id, inicio: agora, fim, podeEnviar: dados.podeEnviar, motivo: dados.motivo },
       });
       await avisarMudancaDeEscopo(tx, a.id);
-      await registrarEvento(tx, { tipo: "ParticipanteConvidado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: u.id, payload: { participanteId: p.id, usuarioId: dados.usuarioId, podeEnviar: dados.podeEnviar, fim: fim.toISOString(), motivo: dados.motivo } });
+      await registrarEvento(tx, { tipo: "ParticipanteConvidado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: u.id, payload: { participanteId: p.id, usuarioId: dados.usuarioId, podeEnviar: dados.podeEnviar, fim: fim.toISOString(), motivo: dados.motivo, ...marca } });
       return p.id;
     });
     revalidatePath("/inbox");

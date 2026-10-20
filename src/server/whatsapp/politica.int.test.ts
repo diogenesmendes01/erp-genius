@@ -176,3 +176,22 @@ describe("carregarPoliticaConfig", () => {
     expect(salva.tetoPorContatoDia).toBe(3);
   });
 });
+
+describe("salvarConfiguracaoAvisosAgenda: reenvio idêntico não grava (#166, PR #267 B3)", () => {
+  const alteracoes = () => prisma.evento.count({ where: { tipo: "ConfiguracaoAvisosAgendaAlterada" } });
+
+  it("duas chamadas idênticas gravam 1 Evento; trocar o template ainda grava", async () => {
+    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+50675550003", rotulo: "Agenda", driver: "MOTOR", finalidade: "AGENDA", providerRef: "ref-agenda-3" } });
+    const modelo = (nome: string) => prisma.templateWhatsApp.create({
+      data: { nome, corpo: "Olá {nome}. Horários: {horarios}", idioma: "es", categoria: "utility", statusMeta: "APROVADO", metaTemplateId: `waba-${nome}` },
+    });
+    const [t1, t2] = [await modelo("agenda_a"), await modelo("agenda_b")];
+    const entrada = { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: t1.id };
+    expect((await salvarConfiguracaoAvisosAgenda(entrada)).ok).toBe(true);
+    expect((await salvarConfiguracaoAvisosAgenda(entrada)).ok).toBe(true);
+    expect(await alteracoes()).toBe(1);
+    expect((await salvarConfiguracaoAvisosAgenda({ ...entrada, templateAvisosAgendaId: t2.id })).ok).toBe(true);
+    expect(await alteracoes()).toBe(2);
+    expect(await prisma.configuracaoOperacional.findUniqueOrThrow({ where: { id: "escola" } })).toMatchObject({ templateAvisosAgendaId: t2.id });
+  });
+});

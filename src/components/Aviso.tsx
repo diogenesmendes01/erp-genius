@@ -9,7 +9,9 @@ export type TomAviso = "info" | "sucesso" | "atencao" | "erro";
 
 export const BASE_AVISO = "rounded-md p-3 text-sm";
 export const TONS_AVISO: Record<TomAviso, string> = {
-  info: "bg-surface-muted",
+  // Info com tom e borda próprios, como os demais: com `bg-surface-muted` (= --bg-page no claro) e sem borda, a
+  // caixa sumia direto sobre a página e só o texto aparecia (revisão R1 do #269).
+  info: "bg-blue-100 text-blue-700 border-s-[3px] border-blue-700",
   sucesso: "bg-green-100 text-green-700 border-s-[3px] border-green-700",
   atencao: "bg-amber-100 text-amber-800 border-s-[3px] border-amber-600",
   erro: "bg-red-100 text-red-700 border-s-[3px] border-red-600",

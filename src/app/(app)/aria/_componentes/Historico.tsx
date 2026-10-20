@@ -97,7 +97,7 @@ export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props)
         <>
           <div className="hidden overflow-x-auto rounded-lg border border-border-soft md:block">
             <table className="min-w-full text-sm">
-              <thead className="bg-surface-muted text-left text-gray-800">
+              <thead className="bg-gray-100 text-left text-gray-800">
                 <tr>
                   <th scope="col" className="px-3 py-2 font-medium">Quando</th>
                   <th scope="col" className="px-3 py-2 font-medium">Ação</th>

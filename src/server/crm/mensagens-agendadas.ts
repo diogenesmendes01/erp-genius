@@ -4,7 +4,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento, type AgregadoTipo } from "@/server/_shared/evento";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
@@ -32,6 +34,8 @@ export type AgendarMensagemInput = {
   pessoaId?: string;
   /** Agendamento pelo Inbox: o destino é o contato do atendimento e o número é o dele (o acesso vem do atendimento). */
   atendimentoId?: string;
+  /** Só no agendamento pelo atendimento (#166): a mesma chave até o sucesso; o reenvio devolve a mensagem já agendada. */
+  chaveIdempotencia?: string;
 };
 
 const MSG_FUTURO = "Escolha uma data e hora no futuro.";
@@ -47,6 +51,7 @@ const AgendarSchema = z.object({
   leadId: z.string().min(1).optional(),
   pessoaId: z.string().min(1).optional(),
   atendimentoId: z.string().min(1).optional(),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
 const ehAdmin = (u: UsuarioSessao) => u.papeis.includes(Papel.ADMINISTRADOR);
@@ -96,6 +101,8 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     const autor = await exigirSessao();
     const d = AgendarSchema.parse(i);
     if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
+    // A marca mora no `MensagemAgendada` do atendimento; o agendamento pelo CRM nem sempre grava esse Evento.
+    if (d.chaveIdempotencia && !d.atendimentoId) throw new ErroRegra("Chave de idempotência só no agendamento pelo atendimento.");
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
@@ -108,11 +115,23 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
       if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
       if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
       if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
+      // Idempotência (#166): a chave e o hash da entrada vão no payload do `MensagemAgendada`; o reenvio devolve
+      // a mesma intenção em vez de agendar um segundo envio ao contato.
+      const marca = marcaIdempotencia(d.chaveIdempotencia, {
+        atendimentoId: a.id, numeroId: d.numeroId, texto: d.texto, agendadaPara: quando.toISOString(), validaAte: validaAte?.toISOString() ?? null,
+      });
       const id = await prisma.$transaction(async (tx) => {
+        if (marca) {
+          const repetido = await repeticaoIdempotente(tx, {
+            tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", autorId: autor.id, marca,
+            mensagemConflito: "Esta tentativa já foi usada com outra mensagem ou outro horário. Confira os agendamentos do atendimento antes de repetir.",
+          });
+          if (repetido) return String((repetido.payload as { intencaoId?: unknown }).intencaoId);
+        }
         const m = await tx.intencaoMensagem.create({
           data: { numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: "TEXTO", corpoRenderizado: d.texto, agendadaPara: quando, validaAte, autorId: autor.id },
         });
-        await registrarEvento(tx, { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: autor.id, payload: { intencaoId: m.id, agendadaPara: quando.toISOString(), numeroId: a.numeroId } });
+        await registrarEvento(tx, { tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: autor.id, payload: { intencaoId: m.id, agendadaPara: quando.toISOString(), numeroId: a.numeroId, ...marca } });
         return m.id;
       });
       revalidar();

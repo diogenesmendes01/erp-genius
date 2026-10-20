@@ -50,10 +50,10 @@ describe("Esqueleto", () => {
     const cartoes = renderToStaticMarkup(createElement(EsqueletoCartoes, { rotulo: "x", cartoes: 4 }));
     expect([...cartoes.matchAll(/class="space-y-2 rounded-lg border border-gray-200 p-4"/g)]).toHaveLength(4);
     const tabela = renderToStaticMarkup(createElement(EsqueletoTabela, { rotulo: "x", indicadores: 4 }));
-    expect([...tabela.matchAll(/class="animate-pulse rounded-md bg-surface-muted h-20"/g)]).toHaveLength(4);
+    expect([...tabela.matchAll(/class="animate-pulse rounded-md bg-gray-100 h-20"/g)]).toHaveLength(4);
     expect(renderToStaticMarkup(createElement(EsqueletoTabela, { rotulo: "x" }))).not.toContain("h-20");
     const acesso = renderToStaticMarkup(createElement(EsqueletoAcesso, { rotulo: "x" }));
-    expect([...acesso.matchAll(/class="animate-pulse rounded-md bg-surface-muted h-9"/g)]).toHaveLength(3); // 2 campos + botão
+    expect([...acesso.matchAll(/class="animate-pulse rounded-md bg-gray-100 h-9"/g)]).toHaveLength(3); // 2 campos + botão
   });
 
   it("esqueleto de formato específico fica no grupo da página-índice, não na raiz — senão as rotas filhas herdariam o formato errado", () => {
