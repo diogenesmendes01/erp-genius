@@ -1,4 +1,5 @@
 import { EtapaLead, Prisma, type AcaoAgenteIA } from "@prisma/client";
+import { exigirAgendamentoNaJanela, recusaForaDaJanela } from "@/server/whatsapp/janela-agendamento";
 import { registrarEvento } from "@/server/_shared/evento";
 import { transicaoManualPermitida } from "@/server/_shared/regras";
 import { ErroRegra } from "@/server/_shared/sessao";
@@ -235,6 +236,7 @@ export type BloqueioAcaoCrm =
   | "CONTATO_INDISPONIVEL"
   | "VALOR_NAO_AUTORIZADO"
   | "FORA_POLITICA"
+  | "FORA_DA_JANELA"
   | "SEM_DONO";
 
 export interface EntradaAcaoCrm {
@@ -266,6 +268,9 @@ async function planejar(tx: Tx, ctx: ContextoTurno, p: AcaoProposta, config: Con
     case "AGENDAR_MENSAGEM": {
       const quando = new Date(p.enviarEmISO);
       if (Number.isNaN(quando.getTime()) || quando.getTime() <= Date.now()) return bloqueio("DATA_INVALIDA");
+      // D12 (#202 C4): a mesma recusa do agendamento humano, no fuso da escola.
+      const foraDaJanela = await recusaForaDaJanela(quando);
+      if (foraDaJanela) return bloqueio("FORA_DA_JANELA", { mensagem: foraDaJanela });
       const contato = await tx.contatoWhatsApp.findUnique({ where: { id: ctx.contatoId }, select: { optOutEm: true } });
       const at = await tx.atendimentoWhatsApp.findUnique({ where: { id: ctx.atendimentoId }, select: { encerradoEm: true } });
       if (!contato || contato.optOutEm || !at || at.encerradoEm) return bloqueio("CONTATO_INDISPONIVEL");
@@ -450,6 +455,8 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
       if (!contatoId || !contato || contato.optOutEm || at.encerradoEm) throw new ErroRegra("O contato não pode receber mensagens.");
       const quando = new Date(payload.agendadaPara);
       if (quando.getTime() <= Date.now()) throw new ErroRegra("O horário agendado já passou.");
+      // Sugestão aprovada depois: a janela pode ter mudado desde o planejamento (D12).
+      await exigirAgendamentoNaJanela(quando);
       const pol = politicas ?? (await versaoPublicada(tx))?.config.politicas ?? POLITICAS_PADRAO;
       const precos = opId ? await precosDaOportunidade(opId, tx) : [];
       const respostasRapidas = await respostasParaAria(at.finalidade, tx);

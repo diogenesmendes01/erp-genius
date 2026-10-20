@@ -7,6 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { diaUtilAs } from "@/test/janela-envio";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { notasDoAtendimento } from "@/server/whatsapp/acoes-conversa";
@@ -60,6 +61,7 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
   const tags = () => prisma.pessoaTag.findMany({ where: { pessoaId: c.pessoa.id } });
   const valorCampo = async () => (await prisma.valorCampoPersonalizado.findFirst({ where: { campoId: c.campo.id, pessoaId: c.pessoa.id } }))?.valor ?? null;
   const amanha = () => new Date(Date.now() + 86_400_000).toISOString();
+  const util = () => diaUtilAs(10).toISOString(); // D12: dentro da janela de envio
   const sugTag = () => exec({ acao: "TAG", tagId: c.tag.id, justificativa: "x" }, "SUGERIR");
 
   it("aprovar_aplica_e_marca_quem", async () => {
@@ -139,7 +141,7 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
   });
 
   it("aprovar_agendamento_com_aria_pausada_falha", async () => {
-    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete da aula", enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete da aula", enviarEmISO: util(), justificativa: "x" }, "SUGERIR");
     expect(s.status).toBe("SUGERIDA");
     await prisma.atendimentoWhatsApp.update({ where: { id: c.at.id }, data: { iaPausadaEm: new Date(), iaPausaMotivo: "HUMANO_RESPONDEU" } });
     expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "A Aria está pausada neste atendimento: uma pessoa já assumiu a conversa." });
@@ -148,7 +150,7 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
   });
 
   it("aprovar_agendamento_depois_de_mudanca_de_preco_falha", async () => {
-    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "A mensalidade é ₡85.000.", enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "A mensalidade é ₡85.000.", enviarEmISO: util(), justificativa: "x" }, "SUGERIR");
     expect(s.status).toBe("SUGERIDA");
     await prisma.precoReferencia.updateMany({ where: { tipoCobranca: "MENSALIDADE" }, data: { valor: 90000 } });
     expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "O texto cita um valor que não está mais autorizado." });
@@ -157,7 +159,7 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
   });
 
   it("aprovar_agendamento_valido_cria_intencao_ia_agendada", async () => {
-    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "A mensalidade é ₡85.000.", enviarEmISO: amanha(), justificativa: "x" }, "SUGERIR");
+    const s = await exec({ acao: "AGENDAR_MENSAGEM", texto: "A mensalidade é ₡85.000.", enviarEmISO: util(), justificativa: "x" }, "SUGERIR");
     expect((await aprovarAcaoAria(s.id)).ok).toBe(true);
     expect(await prisma.intencaoMensagem.findFirstOrThrow()).toMatchObject({ origem: "IA", acaoAgenteIAId: s.id, agendadaPara: expect.any(Date) });
   });
@@ -206,13 +208,13 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
   });
 
   it("desfazer_mensagem_agendada_pendente_cancela", async () => {
-    const e = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: amanha(), justificativa: "x" });
+    const e = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: util(), justificativa: "x" });
     expect((await desfazerAcaoAria(e.id)).ok).toBe(true);
     expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: e.intencaoId! } })).status).toBe("CANCELADA");
   });
 
   it("desfazer_mensagem_agendada_ja_despachada_falha", async () => {
-    const e = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: amanha(), justificativa: "x" });
+    const e = await exec({ acao: "AGENDAR_MENSAGEM", texto: "Lembrete", enviarEmISO: util(), justificativa: "x" });
     await prisma.intencaoMensagem.update({ where: { id: e.intencaoId! }, data: { status: "DESPACHADA" } });
     expect((await desfazerAcaoAria(e.id)).ok).toBe(false);
     expect((await acao(e)).status).toBe("EXECUTADA");

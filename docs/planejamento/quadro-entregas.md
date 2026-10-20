@@ -3612,3 +3612,24 @@ Branch `claude/triagem-b12-b17`, base `main` d2adffd4. Cada item foi conferido n
   - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
   - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 779 arquivos e 5.801 testes.
   - `npm run build`: saída 0.
+
+### Decisões D8, D12 e D13 do dono: desvincular contato, mensagem agendada e carteira por contato real — 2026-10-20
+
+Branch `claude/decisoes-d8-d12-d13`, base `main` 2a209fd4, com o `main` b1da50fc (#250) trazido antes do push. Implementado em TDD; nenhuma migration.
+- **D12, mensagem agendada (#202 C3/C4):**
+  - **C3:** `agendarMensagem` pelo CRM (tarefa, oportunidade ou pessoa) grava a intenção sem atendimento. O despachante abre (ou reusa) o atendimento COMERCIAL só no claim do envio (`abrirAtendimentoDaAgendada`, na mesma transação). Se o autor perdeu o número ou a carteira, a transação é desfeita e a intenção vira `CANCELADA`/`atendimento_sem_acesso`, sem atendimento criado. Agendada cancelada ou simulada (sem `WHATSAPP_LIVE`) nunca abre atendimento. O agendamento pelo Inbox continua no atendimento que já existe.
+  - **C4:** agendar, reagendar e a `AGENDAR_MENSAGEM` da Aria são recusados fora da janela de envio, com a mensagem "Fora da janela de envio da escola: as mensagens saem das 9h às 20h, de segunda a sexta (horário de …). Escolha outro horário." A Aria fica `BLOQUEADA` com `motivoBloqueio: "FORA_DA_JANELA"`, e a sugestão aplicada depois é revalidada.
+  - **Regra única:** `src/server/whatsapp/janela-envio.ts` (`dentroDaJanelaEnvio`) agora decide o passo 8 do despachante e a recusa do agendamento. A hora e o dia vêm do helper novo `horaEDiaInstitucional` de `operacao/fuso.ts`. A janela é a que o despachante aplica a uma intenção sem política própria (`carregarPoliticaRegua`), lida no fuso da escola.
+  - "Enviar agora" segue sem trava de janela, porque é envio imediato e não agendamento.
+- **D13, carteira (#198 C6):** a lista negativa virou a positiva `EVENTOS_DE_CONTATO_SEM_INTERACAO`: `InteracaoRegistrada` (ligação, presencial, e-mail), `TarefaConcluida`, `ExperimentalAgendada`, `ExperimentalConfirmada` e `ExperimentalRealizada`. Somam-se as mensagens de entrada e as saídas que chegaram (`ENVIADA`/`ENTREGUE`/`LIDA`) nos atendimentos da oportunidade. Nota interna, edição de cadastro, reatribuição, tags e documentos não contam. A integração cobre o lead com só notas e edições depois do último contato e a saída que falhou.
+- **D8, "Desvincular contato" no Inbox (#175, docs/42 L2298):**
+  - **Ação:** `desvincularContatoWhatsApp` (`src/server/whatsapp/desvincular-contato.ts`) zera `ContatoWhatsApp.alunoId`, `responsavelId` ou `leadId`, o vínculo que `vincularContatoWhatsApp` faz. Na linha de vendas, também solta o lead do atendimento da linha. Não apaga cadastro, mensagens nem atendimentos, e o contexto dos atendimentos de secretaria e financeiro (aluno e matrícula) fica.
+  - **Permissão:** só o Administrador ou o gerente do setor (`podeExecutar(…, "desvincular")`). O comercial desfaz a oportunidade; a secretaria e o financeiro, o aluno e o responsável; o pedagógico, nada.
+  - **Motivo e auditoria:** o motivo é obrigatório (10 a 500 caracteres). O evento `ContatoDesvinculado` é gravado na mesma transação, e o arquivo entrou na trava `crm-config/auditoria.test.ts` (mutação do evento fora da transação conferida: a trava falha).
+  - **Tela:** o botão "Desvincular" no painel do Inbox (`AcoesContato.tsx`) aparece só com os `vinculos` que o servidor libera. Pede o motivo no `CampoTexto` e roda a action no `ConfirmarAcao`, registrado no mapa de confirmações. A confirmação do vínculo deixou de dizer "não há desvincular pela tela".
+- **Evidências** no head:
+  - `tsc --noEmit`: saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com os 40 avisos de base.
+  - `npm test`: 780 arquivos e 5.824 testes.
+  - `npm run build`: saída 0.
+  - **Integração de whatsapp, inbox, crm e aria (+ `app/(app)/inbox`):** 117 arquivos e 1.004 testes, verdes salvo 3 testes de `whatsapp/acoes.int.test.ts` (cobrança "Sem ação devida hoje"), que falham igual no `main` b1da50fc limpo e não são deste PR.

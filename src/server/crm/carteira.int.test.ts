@@ -85,6 +85,34 @@ describe("carregarCarteira", () => {
     const ana = (await carregarCarteira(sessaoDe(gerente), base)).linhas.find((l) => l.oportunidadeId === op1)!;
     expect(ana.diasSemInteracao).toBeGreaterThanOrEqual(30);
   });
+  it("lead com só notas e edições depois do último contato: conta desde o último contato real (D13)", async () => {
+    await prisma.oportunidade.update({ where: { id: op1 }, data: { criadoEm: new Date(Date.now() - 40 * 86_400_000) } });
+    await prisma.evento.create({ data: { tipo: "InteracaoRegistrada", agregadoTipo: "Lead", agregadoId: op1, payload: { canal: "LIGACAO" }, criadoEm: new Date(Date.now() - 20 * 86_400_000) } });
+    for (const tipo of ["NotaInterna", "LeadEditado", "DatasAtualizadas", "ResumoAtualizado", "DocumentoAnexado", "ReguaComercialEnviada", "EtapaAlterada"]) {
+      await prisma.evento.create({ data: { tipo, agregadoTipo: "Lead", agregadoId: op1, payload: {} } });
+    }
+    const ana = (await carregarCarteira(sessaoDe(gerente), base)).linhas.find((l) => l.oportunidadeId === op1)!;
+    expect(ana.diasSemInteracao).toBeGreaterThanOrEqual(19);
+    expect(ana.diasSemInteracao).toBeLessThanOrEqual(20);
+    expect((await carregarCarteira(sessaoDe(gerente), { ...base, semInteracaoDias: "15" })).linhas.map((l) => l.nome)).toEqual(["Ana"]);
+  });
+  it("mensagem recebida ou enviada no atendimento da oportunidade é contato; saída que falhou não é (D13)", async () => {
+    await prisma.oportunidade.update({ where: { id: op1 }, data: { criadoEm: new Date(Date.now() - 40 * 86_400_000) } });
+    await prisma.oportunidade.update({ where: { id: op2 }, data: { criadoEm: new Date(Date.now() - 40 * 86_400_000) } });
+    const numero = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5511955557001", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS" } });
+    const mensagem = async (leadId: string, fone: string, dados: { direcao: "ENTRADA" | "SAIDA"; status: "ENVIADA" | "FALHOU" | "LIDA"; dias: number }) => {
+      const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: fone, leadId } });
+      const conversa = await prisma.conversaWhatsApp.create({ data: { numeroId: numero.id, contatoId: contato.id } });
+      const at = await prisma.atendimentoWhatsApp.create({ data: { conversaId: conversa.id, contextoChave: `COMERCIAL:${leadId}`, finalidade: "COMERCIAL", leadId } });
+      await prisma.mensagemWhatsApp.create({ data: { conversaId: conversa.id, atendimentoId: at.id, numeroId: numero.id, direcao: dados.direcao, status: dados.status,
+        driver: "MOTOR", corpo: "oi", criadoEm: new Date(Date.now() - dados.dias * 86_400_000) } });
+    };
+    await mensagem(op1, "+50688887001", { direcao: "ENTRADA", status: "LIDA", dias: 2 });
+    await mensagem(op2, "+50688887002", { direcao: "SAIDA", status: "FALHOU", dias: 1 });
+    const linhas = (await carregarCarteira(sessaoDe(gerente), base)).linhas;
+    expect(linhas.find((l) => l.oportunidadeId === op1)!.diasSemInteracao).toBeLessThanOrEqual(2);
+    expect(linhas.find((l) => l.oportunidadeId === op2)!.diasSemInteracao).toBeGreaterThanOrEqual(39);
+  });
   it("caminho positivo: b2b, turma ativa e tags aparecem nas linhas e nos filtros", async () => {
     const b2b = (await prisma.oportunidade.create({ data: { nome: "Empresa Alfa", vendedorDonoId: v1.id, b2b: true } as never })).id;
     const pessoa = await prisma.pessoa.create({ data: { nome: "Ana Pessoa" } });

@@ -1,4 +1,4 @@
-import { Papel, type AcaoAgenteIATipo, type EtapaLead, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
+import { Papel, type AcaoAgenteIATipo, type EtapaLead, type FinalidadeAtendimentoWhatsApp, type MotivoPausaAtendimentoIA, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { temPapel, transicaoManualPermitida, type UsuarioSessao } from "@/server/_shared";
@@ -20,6 +20,7 @@ import { podeDevolverParaAria } from "@/server/aria/pausa";
 import { ACAO_AGENTE_IA_LABEL } from "@/lib/labels";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { capacidadesDoNumero } from "./motor/capacidades";
+import { podeExecutar, TIPOS_DESVINCULAVEIS, type TipoVinculoContato } from "@/server/inbox/permissoes";
 
 export interface ConversaResumo {
   /** Identificador de atendimento; o transporte e os demais assuntos não ficam expostos. */
@@ -213,8 +214,40 @@ export interface AcoesContatoInbox {
   /** Oportunidade do atendimento, só para quem a vê (LC-L02); o link é /funil?o=<id>. */
   leadId: string | null;
   podeCriarLead: boolean; podeVincular: boolean; podeEditarNome: boolean;
+  /** Vínculos atuais do contato que esta pessoa pode desfazer (D8): vazio para quem não é administrador nem gerente do setor. */
+  vinculos: VinculoContatoInbox[];
   /** Só no FINANCEIRO e para FINANCEIRO/SECRETARIA_ACADEMICA (as alçadas de marcarConversaTratada). */
   cobranca: { silencio: { ativo: boolean; ate: string | null }; ativa: CobrancaAtivaThread | null } | null;
+}
+
+export interface VinculoContatoInbox { tipo: TipoVinculoContato; id: string; nome: string }
+
+/**
+ * "Desvincular contato" (D8, #175): os vínculos do contato que o setor do atendimento desfaz, só para o Administrador
+ * e o gerente do setor (a mesma regra de `desvincularContatoWhatsApp`). Oportunidade que a pessoa não vê aparece sem o nome.
+ */
+async function vinculosDesvinculaveis(
+  usuario: UsuarioSessao,
+  a: { id: string; finalidade: FinalidadeAtendimentoWhatsApp; responsavelId: string | null },
+  contato: { alunoId: string | null; responsavelId: string | null; leadId: string | null; responsavel: { nome: string } | null },
+  agora: number,
+): Promise<VinculoContatoInbox[]> {
+  if (!podeExecutar(usuario, "desvincular", { setor: a.finalidade, responsavelId: a.responsavelId })) return [];
+  const tipos = TIPOS_DESVINCULAVEIS[a.finalidade];
+  const vinculos: VinculoContatoInbox[] = [];
+  if (tipos.includes("aluno") && contato.alunoId) {
+    const aluno = await prisma.aluno.findUnique({ where: { id: contato.alunoId }, select: { primeiroNome: true, sobrenome: true } });
+    vinculos.push({ tipo: "aluno", id: contato.alunoId, nome: aluno ? nomeCompleto(aluno) : "Aluno" });
+  }
+  if (tipos.includes("responsavel") && contato.responsavelId) {
+    vinculos.push({ tipo: "responsavel", id: contato.responsavelId, nome: contato.responsavel?.nome ?? "Responsável" });
+  }
+  if (tipos.includes("lead") && contato.leadId) {
+    const visivel = await podeVerLeadNaThread(usuario, a.id, contato.leadId, agora);
+    const lead = visivel ? await prisma.oportunidade.findUnique({ where: { id: contato.leadId }, select: { nome: true } }) : null;
+    vinculos.push({ tipo: "lead", id: contato.leadId, nome: lead?.nome ?? "Oportunidade de outra carteira" });
+  }
+  return vinculos;
 }
 
 /** null fora do escopo do usuário e em conversa de grupo (sem contato individual). */
@@ -239,6 +272,7 @@ export async function carregarAcoesContatoInbox(usuario: UsuarioSessao, atendime
     alunoId: a.alunoId, leadId: verLead ? a.leadId : null,
     ...regrasCadastroDoAtendimento(usuario, a, linhaComercial),
     podeEditarNome: !pedag && await contatoSoNoAlcance(usuario, c.contato.id),
+    vinculos: await vinculosDesvinculaveis(usuario, a, c.contato, agora),
     cobranca: financeiro ? {
       silencio: silencioPosInbound(a, politica?.silencioPosInboundHoras ?? null, agora),
       ativa: a.alunoId && a.matriculaId ? await cobrancaAtivaDoAtendimento(a.matriculaId, a.alunoId, c.contato.id) : null,
