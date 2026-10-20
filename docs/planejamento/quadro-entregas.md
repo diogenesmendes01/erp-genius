@@ -3666,3 +3666,47 @@ Branch `claude/fuso-parte4`, base `main` fef6d467 (#247). Mesmo padrão do #239,
     - TZ=UTC, sobre fef6d467 (antes do ajuste da fixture abaixo): 1.230 passaram e 1 falhou, `financeiro/politica.int.test.ts`, cuja taxa vencia "agora" e era tida como atrasada no mesmo instante. A fixture passou a vencer ontem; o arquivo ficou verde com TZ=UTC e com TZ=America/Sao_Paulo (20 testes).
     - TZ=America/Sao_Paulo, no head com o #248: 1.232 passaram, 4 pulados. Saída 1 por uma rejeição não tratada em `matricula/desistencia-efetivacao.int.test.ts` (corrida de reserva concorrente; arquivo não tocado). Repetido duas vezes sozinho com TZ=America/Sao_Paulo: 11 de 11 e saída 0.
     - O #249 e o #250 não tocam nesses módulos de servidor: a integração não foi repetida depois deles.
+
+### Decisões D9, D10, D11 e D14 do dono: B2B oculto, previsão de comissões no painel novo, avaliação exige fuso, mescla com alçada (#251) — 2026-10-20
+
+- **D9, cobrança de empresas oculta (L2282):** a escola não usa a fatura B2B.
+  - A chave fica em `src/lib/funcionalidades.ts`: `COBRANCA_B2B_ATIVA = false`, com `MSG_COBRANCA_B2B_DESLIGADA` ao lado.
+  - `fecharFaturaB2B` e `pagarFaturaB2B` recusam com a mensagem, depois da sessão e da alçada e antes de qualquer leitura.
+  - Na ficha da empresa, as faturas antigas continuam listadas. "Registrar pagamento" some, e um aviso diz por quê.
+  - **Cancelar continua disponível** (R1 do #251, B1). Pausar ou cancelar aluno (`alunos/acoes.ts`), ajustar cobrança (`ajustes/acoes.ts`) e dar baixa (`financeiro/baixa.ts`) mandam cancelar antes a fatura FECHADA que já exista. Cancelar só desfaz o agrupamento, então `cancelarFaturaB2B` e o botão "Cancelar fatura" seguem com a chave desligada.
+  - Nada foi apagado. Para religar, basta trocar a chave para `true`. Os testes do fluxo antigo (`FichaEmpresa.confirmacao.test.ts` e `b2b.int.test.ts`) religam a chave.
+  - **Testes:**
+    - `fatura-desligada.test.ts`: fechar e pagar recusam; cancelar passa.
+    - Bloco D9 da ficha: pagar some e cancelar fica.
+    - `fatura-desligada.int.test.ts`: com uma fatura FECHADA antiga e a chave desligada, a pausa do aluno é recusada; depois de cancelar a fatura, o aluno pausa.
+- **D10, avaliação sem fuso da escola (C7 da #170):**
+  - A página de lançamento sempre confere o fuso da escola, mesmo com `?fuso=` na URL. Sem ele, o formulário dá lugar a `MSG_LANCAMENTO_SEM_FUSO`, com o link "Configurar o fuso da escola" (`/configuracao/operacao`). O histórico continua visível.
+  - `salvarLancamentoAvaliacaoLocal` e, desde a decisão de 20/10, `salvarLancamentoAvaliacao` (instante absoluto) recusam com a mesma mensagem.
+  - As 15 suítes de integração que lançam notas chamam o helper comum `configurarFusoDaEscola()` (`src/test/integracao.ts`, upsert) no setup, logo depois do `truncarBanco`. Os `configuracaoOperacional.create/upsert` com fuso UTC que já existiam nelas viraram o mesmo helper. Nenhuma asserção mudou.
+- **D11, previsão de pagamento das comissões (C50/L2259; decisão do dono de 20/10):**
+  - **Regra:** dia X do mês seguinte à competência, em data civil no fuso da escola. A competência é a do painel: `aprovadaEm`, ou `criadoEm` quando não houve aprovação. Dezembro vira janeiro do ano seguinte.
+  - **X:** fica em `ConfigFinanceiro.diaPrevisaoPagamentoComissao`, com padrão 10 e valores de 1 a 28 (CHECK no banco). A migration é `20261019120000_previsao_pagamento_comissao`.
+  - **Onde se configura:** na aba "Política de comissão" do `/financeiro` (componente `DiaPrevisaoComissao`). Foi a escolha porque é a seção de configuração de comissões, e o `/configuracao` não abre para o Financeiro. A alçada é a de publicar política: `comissao.configurar`, e o Administrador passa sempre.
+  - **Auditoria:** `salvarDiaPrevisaoComissao` grava o evento `DiaPrevisaoComissaoAlterado` (agregado `ConfigFinanceiro`) com `{ de, para }`. Repetir o mesmo dia não grava nada.
+  - **Calculada na leitura, sem gravar `Comissao.dataPrevistaPagamento`:** a previsão depende só da competência, que não muda, e de X, que muda. Gravar exigiria recalcular as comissões em aberto a cada troca de X e preencher as antigas por migration. Na leitura, a troca vale na hora. O campo continua sem uso, como sempre esteve.
+  - **Painel `/comissoes`:** coluna "Previsão de pagamento" na tabela e no cartão do celular, com a regra e o dia no topo da lista. Comissão paga ou estornada mostra "—". O escopo de quem vê cada linha é o mesmo do painel.
+  - **Testes:**
+    - Unitários do cálculo (`previsao-comissao.test.ts`, inclusive dezembro → janeiro e a virada de mês no fuso da escola), da tela de configuração e do painel.
+    - Integração do painel (padrão 10, dezembro → janeiro com X = 5, estornada sem previsão, escopo do vendedor) e da configuração (evento `{ de, para }`, faixa, CHECK e alçada).
+- **D14, mescla que repõe `Aluno/Responsavel.pessoaId` (#211 C4):**
+  - **Alçada:** mover o cadastro acadêmico exige a alçada da Secretaria (`temAlcadaSecretaria`: Secretaria Acadêmica ou Administrador), além de `contatos.mesclar`. Sem ela, a mescla recusa com `MSG_ALCADA_SECRETARIA_MESCLA` e nada muda. A mescla comum segue igual.
+  - **Secretaria sozinha:** continua sem mesclar (decisão do dono de 20/10).
+  - **Prévia:** `previaMesclaPessoas` (`previaMesclaDaLista`, só leitura) devolve o que passa (telefones, oportunidades, participações, tags e campos), os campos que mudam, o cadastro acadêmico que é reposto e o motivo da recusa, quando houver.
+  - **Tela:** "Revisar mesclagem" pede a prévia e a mostra no diálogo. Se a mescla seria recusada, o diálogo não abre e o motivo aparece.
+  - **Evento:** cada cadastro reposto grava `CadastroAcademicoRepontado` no `Aluno` ou no `Responsavel` (agregado novo em `AgregadoTipo`), com `pessoaIdAntes`, `pessoaIdDepois` e `via: "mescla"`.
+  - **Mudança no teste:** o teste de nome/e-mail de aluno pela mescla passou a usar um usuário com GC e Secretaria.
+- **Migration:** `20261019120000_previsao_pagamento_comissao` (nova coluna com padrão; sem trava longa).
+- Evidências no head, sobre o `main` 5b4e75a9 (com #248 a #253):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=6144): saída 0.
+  - `npx eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base, nenhum nos arquivos tocados).
+  - `npm test` com TZ=UTC e com TZ=America/Sao_Paulo: saída 0 nos dois, com 787 arquivos e 5.868 testes.
+  - `npm run build`: saída 0.
+  - Integração (banco `erp_genius_test_d9`, com a migration nova aplicada):
+    - `crm`, `empresas`, `avaliacoes`, `financeiro`, `academico`, `portal-aluno` e `diario/correcao-aula`: 88 arquivos, com 777 testes verdes e 1 falha.
+    - A falha é `politica.int.test.ts`, "duas baixas parciais…": o `emAtraso` sai vazio entre 21h e 24h de Brasília. A taxa vence "agora − 24 h" e, nesse horário, ainda é o mesmo dia civil na escola (regra do #253). Este PR não mexe em KPI nem em vencimento.
+    - As 15 suítes que lançam notas, rodadas à parte: 298 testes verdes.

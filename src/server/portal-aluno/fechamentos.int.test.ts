@@ -20,7 +20,7 @@ import { confirmarFechamentoAcademico, revisarFechamentoAcademico } from "@/serv
 import { salvarLancamentoAvaliacao, oficializarLancamentoAvaliacao } from "@/server/avaliacoes/lancamentos";
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "@/server/avaliacoes/regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { consultarFechamentosPortalAluno } from "./fechamentos";
 import { criarSessaoPortalAlunoTx } from "./sessao";
 
@@ -219,6 +219,7 @@ beforeEach(async () => {
   mocks.portalCookie = "";
   mocks.authMock.mockReset();
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   catalogoContexto = { produtoId: catalogo.produto.id, paisId: catalogo.pais.id };
   professorId = (await criarUsuario([Papel.PROFESSOR], "Professor do fechamento")).id;

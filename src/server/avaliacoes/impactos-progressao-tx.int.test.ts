@@ -10,7 +10,7 @@ import { carregarImpactosCorrecaoAulaTx } from "@/server/diario/correcao-aula-im
 import { proporCorrecaoConclusaoReposicao, decidirCorrecaoConclusaoReposicao } from "@/server/diario/reposicao-individual";
 import { consultarCorrecoesConclusaoReposicao } from "@/server/diario/correcao-reposicao-consulta";
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { publicarOfertaAgendaDestino, retirarAulaFuturaDaOferta } from "@/test/oferta-agenda-destino";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { HABILIDADES } from "./calculo";
@@ -276,6 +276,7 @@ async function criarPendenteOutraMatricula(catalogo: Awaited<ReturnType<typeof s
 beforeEach(async () => {
   vi.clearAllMocks();
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   catalogo = await seedCatalogoMinimo();
   professorId = (await criarUsuario([Papel.PROFESSOR])).id;
   gestorId = (await criarUsuario([Papel.GERENTE_PEDAGOGICO])).id;

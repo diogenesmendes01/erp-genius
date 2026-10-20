@@ -9,7 +9,7 @@ import { decidirEquivalenciaTransferencia } from "./equivalencia-decisao";
 import { proporEquivalenciaTransferencia, revisarEquivalenciaTransferencia } from "./equivalencia-proposta";
 import { decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "./regras-tx";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { prepararCalendarioEscolar } from "@/server/agenda/calendario";
 import { decidirCalendarioEscolar } from "@/server/agenda/calendario-decisao";
 import { prepararGradeInicialTurma } from "@/server/agenda/grade-proposta";
@@ -40,12 +40,13 @@ async function prepararProposta(chave: string) {
 let lancamentoId: string;
 beforeEach(async () => {
   await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
   const catalogo = await seedCatalogoMinimo();
   await prisma.modalidade.update({ where: { id: catalogo.modalidade.id }, data: { aulasPorNivel: 4 } });
   professorId = (await criarUsuario(["PROFESSOR"])).id;
   preparadorId = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
   decisorId = (await criarUsuario(["ADMINISTRADOR"])).id;
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   entrar(preparadorId);
   const calendario = await prepararCalendarioEscolar({
     fusoConferido: "UTC", versaoAnterior: 0, periodos: [],

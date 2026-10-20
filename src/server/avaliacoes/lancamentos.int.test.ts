@@ -20,7 +20,7 @@ vi.mock("@/server/_shared", async importOriginal => {
 });
 
 import { prisma } from "@/lib/prisma";
-import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
+import { criarUsuario, seedCatalogoMinimo, configurarFusoDaEscola, truncarBanco } from "@/test/integracao";
 import { regraAvaliacaoTeste } from "@/test/regra-avaliacao";
 import { prepararRegraAvaliacaoTx, decidirRegraAvaliacaoTx } from "./regras-tx";
 import { salvarLancamentoAvaliacao, salvarLancamentoAvaliacaoLocal, oficializarLancamentoAvaliacao, consultarLancamentosAvaliacao, listarAvaliacoesAlocacao } from "./lancamentos";
@@ -54,7 +54,7 @@ import { consultarProrrogacoesRecuperacao } from "./recuperacao-prorrogacao-cons
 import { designarProfessorRecuperacao } from "./recuperacao-designacao";
 import { consultarDesignacaoRecuperacao } from "./recuperacao-designacao-consulta";
 import { listarTentativasRecuperacaoDesignadas, consultarTentativaRecuperacaoDesignada } from "./recuperacao-fila-docente";
-import { dataHoraAvaliacaoLocal } from "./tempo";
+import { MSG_LANCAMENTO_SEM_FUSO, dataHoraAvaliacaoLocal } from "./tempo";
 import { HABILIDADES } from "./calculo";
 import { proporExtraRecuperacao, decidirExtraRecuperacao, consultarExtrasRecuperacao } from "./extra-recuperacao";
 import { estadoExtraRecuperacaoTx, quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
@@ -114,7 +114,7 @@ async function esperarCasoDeRevisaoImutavel(caso: CasoRevisaoProgressaoPersistid
 async function publicarParaCancelamento(itemReservaId: string) {
   const de = new Date(Date.now()+120*60000), ate = new Date(de.getTime()+30*60000);
   entrar(gestor);
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   const cal = await prepararCalendarioEscolar({ fusoConferido: "UTC", versaoAnterior: 0, motivo: "Calendário para cancelamento aprovado", chaveIdempotencia: "calendario-teste-cancelamento", periodos: [] });
   if (!cal.ok || !cal.dado) throw new Error(JSON.stringify(cal));
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id; entrar(admin);
@@ -457,7 +457,7 @@ it.each([false, true])("aprova agenda de recuperação atomicamente, com exceç�
   const de = new Date(Date.now() + 4000);
   const ate = new Date(de.getTime() + 30 * 60000);
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   const cal = await prepararCalendarioEscolar({ fusoConferido: "UTC", versaoAnterior: 0, motivo: "Calendário para publicação da avaliação", chaveIdempotencia: "calendario-publicacao-recuperacao", periodos: feriado ? [{ id: "feriado", nome: "Feriado", tipo: "FERIADO", inicio: de.toISOString().slice(0,10), fim: de.toISOString().slice(0,10) }] : [] });
   if (!cal.ok || !cal.dado) throw new Error(JSON.stringify(cal));
   entrar(admin); expect((await decidirCalendarioEscolar({ calendarioId: cal.dado.id, aprovar: true, motivo: "Calendário conferido independentemente" })).ok).toBe(true);
@@ -574,7 +574,7 @@ it("prévia da agenda de recuperação confere prazo, calendário, acesso e não
   const entradaAgenda = { itemReservaId: fala.id, inicioLocal: de.toISOString().slice(0, 16), fimLocal: ate.toISOString().slice(0, 16), fuso: "UTC" };
   const semCalendario = await preverAgendaRecuperacao(entradaAgenda);
   expect(semCalendario).toMatchObject({ ok: true, dado: { publicacaoAutorizada: false, professor: { id: professor }, pendencias: [expect.stringContaining("calendário institucional")] } });
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   const cal = await prepararCalendarioEscolar({ fusoConferido: "UTC", versaoAnterior: 0, motivo: "Calendário para recuperação", chaveIdempotencia: "calendario-recuperacao", periodos: [{ id: "feriado-teste", nome: "Feriado de teste", tipo: "FERIADO", inicio: de.toISOString().slice(0,10), fim: de.toISOString().slice(0,10) }] });
   if (!cal.ok || !cal.dado) throw new Error(JSON.stringify(cal));
   entrar((await criarUsuario(["ADMINISTRADOR"])).id);
@@ -877,7 +877,9 @@ it("frequência contabiliza impedimento com matrícula", async () => {
   expect(consulta.dado!.frequencia).toMatchObject({ base: 1, presencas: 0, impedimentos: 1, atendeMinimo: false, pendenciasHistoricas: [] });
 });
 beforeEach(async () => {
-  await truncarBanco(); const c = await seedCatalogoMinimo();
+  await truncarBanco();
+  await configurarFusoDaEscola(); // D10: lançar nota exige o fuso da escola
+  const c = await seedCatalogoMinimo();
   professor = (await criarUsuario(["PROFESSOR"])).id; gestor = (await criarUsuario(["GERENTE_PEDAGOGICO"])).id;
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
   const nivel = await prisma.nivel.create({ data: { idiomaId: c.idioma.id, codigo: "A1", ordem: 1 } });
@@ -924,7 +926,7 @@ it("registra autorização de preparação após pausa e exige seu vínculo na p
   const dados = { alocacaoId, motivo: "Preparar recuperação de insuficiência após pausa", prazoAte: new Date(Date.now()+86400000).toISOString(), chaveIdempotencia: "autorizar-preparacao-pausada" };
   entrar(gestor);
   expect(await autorizarPreparacaoEspecialRecuperacao(dados)).toMatchObject({ ok: false });
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   await prisma.matricula.update({ where: { id: matriculaId }, data: { referenciaCobertura: "MES_CIVIL" } });
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
   const financeiro = (await criarUsuario(["FINANCEIRO"])).id;
@@ -1023,7 +1025,7 @@ it("disponibiliza plano aprovado antes da pausa sem substituir proposta ou decis
   entrar(gestor);
   expect(await decidirPlanoRecuperacao({ propostaId: p.id, propostaHash: p.entradaHash, aprovada: true, motivo: "Plano aprovado ainda durante atividade" })).toMatchObject({ ok: true });
   const decisaoAntes = await prisma.decisaoPlanoRecuperacao.findUniqueOrThrow({ where: { propostaId: p.id } });
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   await prisma.matricula.update({ where: { id: matriculaId }, data: { referenciaCobertura: "MES_CIVIL" } });
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
   const financeiro = (await criarUsuario(["FINANCEIRO"])).id;
@@ -1148,7 +1150,7 @@ it("pagina autorizações de realização sem repetir registros nem aceitar curs
 
 it("realiza somente a recuperação autorizada após pausa contratual efetivamente aplicada", async () => {
   const { p, fala, escrita } = await prepararItensDesignacao();
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   await prisma.matricula.update({ where: { id: matriculaId }, data: { referenciaCobertura: "MES_CIVIL" } });
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
   const financeiro = (await criarUsuario(["FINANCEIRO"])).id;
@@ -1245,7 +1247,7 @@ it.each([false, true])("preserva encerramento efetivo ao realizar recuperação 
   else fala = (await prepararItensDesignacao()).fala;
   const admin = (await criarUsuario(["ADMINISTRADOR"])).id;
   const financeiro = (await criarUsuario(["FINANCEIRO"])).id;
-  await prisma.configuracaoOperacional.create({ data: { id: "escola", fusoInstitucional: "UTC" } });
+  await configurarFusoDaEscola();
   const documento = await prisma.documento.create({ data: { matriculaId, categoria: "CONTRATO", nome: "Contrato sintético Q151", url: "/api/files/q151.pdf" } });
   await prisma.matricula.update({ where: { id: matriculaId }, data: { referenciaCobertura: "MES_CIVIL", contratoOk: true, contratoDocumentoId: documento.id, confirmacaoContratoEm: new Date(), confirmacaoContratoPorId: admin } });
   const condicoes = await prisma.condicoesEncerramentoMatricula.create({ data: {
@@ -2632,6 +2634,15 @@ it("correção exige origem oficial, mudança válida e atribuição docente vig
   expect((await proporCorrecaoNota(d)).ok).toBe(false);
   entrar(gestor); expect((await proporCorrecaoNota(d)).ok).toBe(true);
   expect(await prisma.propostaCorrecaoNota.count()).toBe(1);
+});
+
+it("entrada local sem fuso da escola é recusada com a mensagem que leva à configuração (D10)", async () => {
+  await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: null } }); // escola sem fuso
+  const { realizadaEm: _r, ...base } = entrada();
+  void _r;
+  expect(await salvarLancamentoAvaliacaoLocal({ ...base, realizadaLocal: "2026-01-10T04:00", fuso: "America/Costa_Rica" }))
+    .toEqual({ ok: false, erro: MSG_LANCAMENTO_SEM_FUSO });
+  expect(await prisma.versaoLancamentoAvaliacao.count()).toBe(0);
 });
 
 it("entrada local converte no servidor e conserva idempotência e autorização", async () => {
