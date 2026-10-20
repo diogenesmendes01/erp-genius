@@ -775,6 +775,10 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhum relato registrado nesta página.",
     "compacto · Nenhum relato de indisponibilidade registrado para esta matrícula.",
   ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/page.tsx": [
+    "compacto · Nenhuma correção registrada nesta página.",
+    "compacto · Nenhuma correção registrada para este relato.",
+  ],
   "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
     "compacto · Nenhuma proposta registrada nesta página.",
     "compacto · Nenhuma proposta de término registrada para esta indisponibilidade.",
