@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import type { Prisma } from "@prisma/client";
+import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { atendimentoVisivel } from "../atendimentos";
 import { despacharFila, despacharMensagemGrupo } from "../despachante";
 import { escopoGrupos, grupoNovoNoEscopo } from "../escopo";
@@ -37,6 +39,19 @@ async function mensagemPropria(mensagemId: string, verbo: "editar" | "apagar") {
   return { u, m, numeroRef: m.numero.providerRef ?? m.numero.id, mensagemIdMotor: m.mensagemIdMotor };
 }
 
+/** A mensagem própria, no escopo de envio, já foi apagada por este autor pelo ERP? (#166) */
+async function apagadaPeloAutor(mensagemId: string): Promise<boolean> {
+  const u = await exigirSessao();
+  const m = await prisma.mensagemWhatsApp.findUnique({ where: { id: mensagemId }, select: { atendimentoId: true, apagadaEm: true, autorId: true, direcao: true } });
+  if (!m?.apagadaEm || !m.atendimentoId || m.direcao !== "SAIDA" || m.autorId !== u.id) return false;
+  if (!(await atendimentoVisivel(u, m.atendimentoId, true))) return false;
+  const evento = await prisma.evento.findFirst({
+    where: { tipo: "MensagemWhatsAppApagada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId, autorId: u.id, payload: { path: ["mensagemId"], equals: mensagemId } },
+    select: { id: true },
+  });
+  return !!evento;
+}
+
 function traduzir(e: unknown): never {
   if (e instanceof ErroMotor) {
     if (e.codigo === "LIMITE_RITMO") throw new ErroRegra(MENSAGEM_LIMITE_RITMO);
@@ -45,11 +60,25 @@ function traduzir(e: unknown): never {
   throw e;
 }
 
-/** Edita a própria mensagem de texto até 15 min depois do envio (message.edit no motor). */
+/** A última edição desta mensagem é de `autorId` e deixou exatamente `texto`? (#166) */
+async function ultimaEdicaoIgual(mensagemId: string, atendimentoId: string, autorId: string, texto: string): Promise<boolean> {
+  const ultima = await prisma.evento.findFirst({
+    where: { tipo: "MensagemWhatsAppEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, payload: { path: ["mensagemId"], equals: mensagemId } },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true, payload: true },
+  });
+  return ultima?.autorId === autorId && (ultima.payload as { depois?: unknown }).depois === texto;
+}
+
+/**
+ * Edita a própria mensagem de texto até 15 min depois do envio (message.edit no motor).
+ * Idempotente por natureza (#166): se a última edição já deixou o mesmo texto, devolve ok sem chamar o motor nem
+ * gravar outro Evento (antes das checagens de tipo e de janela, para o reenvio tardio também).
+ */
 export async function editarMensagemWhatsApp(input: { mensagemId: string; texto: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = EditarSchema.parse(input);
     const { u, m, numeroRef, mensagemIdMotor } = await mensagemPropria(dados.mensagemId, "editar");
+    if (m.editadaEm && m.corpo === dados.texto && await ultimaEdicaoIgual(m.id, m.atendimentoId!, u.id, dados.texto)) return undefined;
     if (m.tipo !== "TEXTO") throw new ErroRegra("Só é possível editar mensagens de texto.");
     if (Date.now() - m.criadoEm.getTime() > JANELA_EDICAO_MS) throw new ErroRegra("Só é possível editar até 15 minutos após o envio.");
     try {
@@ -67,10 +96,15 @@ export async function editarMensagemWhatsApp(input: { mensagemId: string; texto:
   });
 }
 
-/** Apaga para todos a própria mensagem (message.delete no motor); o corpo fica guardado, só `apagadaEm` marca. */
+/**
+ * Apaga para todos a própria mensagem (message.delete no motor); o corpo fica guardado, só `apagadaEm` marca.
+ * Idempotente por natureza (#166): se quem repete já a apagou pelo ERP, devolve ok sem chamar o motor nem gravar
+ * outro Evento. Apagada fora do ERP (pelo celular), segue "já foi apagada".
+ */
 export async function apagarMensagemWhatsApp(input: { mensagemId: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = ApagarSchema.parse(input);
+    if (await apagadaPeloAutor(dados.mensagemId)) return undefined;
     const { u, m, numeroRef, mensagemIdMotor } = await mensagemPropria(dados.mensagemId, "apagar");
     try {
       await executarAcaoMotor(numeroRef, "message.delete", { messageId: mensagemIdMotor, forEveryone: true }, { origem: "HUMANO" });
@@ -88,7 +122,7 @@ export async function apagarMensagemWhatsApp(input: { mensagemId: string }): Pro
 }
 
 const ReagirSchema = z.object({ mensagemId: z.string().min(1), emoji: z.string().max(32, "A reação pode ter no máximo 32 caracteres.") });
-const EncaminharSchema = z.object({ mensagemId: z.string().min(1), atendimentoDestinoId: z.string().min(1) });
+const EncaminharSchema = z.object({ mensagemId: z.string().min(1), atendimentoDestinoId: z.string().min(1), chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
 
 /** Reação do atendente: `autorJid` provisório até o eco do motor (que reaproveita a linha `deMim`). `""` remove. */
 export async function reagirMensagemWhatsApp(input: { mensagemId: string; emoji: string }): Promise<Resultado> {
@@ -119,11 +153,37 @@ export async function reagirMensagemWhatsApp(input: { mensagemId: string; emoji:
   });
 }
 
-/** Encaminha pelo motor (message.forward) para outra conversa do MESMO número e registra a mensagem como HUMANO. */
-export async function encaminharMensagemWhatsApp(input: { mensagemId: string; atendimentoDestinoId: string }): Promise<Resultado> {
+/**
+ * Encaminha pelo motor (message.forward) para outra conversa do MESMO número e registra a mensagem como HUMANO.
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve ok sem encaminhar de novo ao contato. A busca
+ * roda logo depois da sessão, antes das validações (o reenvio tardio, com a origem já apagada, também recebe ok), e
+ * a trava da chave fica presa até o fim do envio: um reenvio que chega com o primeiro ainda no motor espera por ele.
+ */
+export async function encaminharMensagemWhatsApp(input: { mensagemId: string; atendimentoDestinoId: string; chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
-    const dados = EncaminharSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = EncaminharSchema.parse(input);
     const u = await exigirSessao();
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
+    if (!marca) return encaminhar(u, dados, null, null);
+    // A transação segura a trava consultiva da chave durante a chamada ao motor (com folga sobre o timeout dele).
+    return prisma.$transaction(async (tx) => {
+      const repetido = await repeticaoIdempotente(tx, {
+        tipo: "MensagemWhatsAppEncaminhada", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+        mensagemConflito: "Esta tentativa já foi usada com outro destino. Confira a conversa de destino antes de repetir.",
+      });
+      if (repetido) return undefined;
+      return encaminhar(u, dados, marca, tx);
+    }, { maxWait: 10_000, timeout: 45_000 });
+  });
+}
+
+async function encaminhar(
+  u: Awaited<ReturnType<typeof exigirSessao>>,
+  dados: { mensagemId: string; atendimentoDestinoId: string },
+  marca: MarcaIdempotencia | null,
+  txExterna: Prisma.TransactionClient | null,
+): Promise<undefined> {
+  {
     const m = await prisma.mensagemWhatsApp.findUnique({
       where: { id: dados.mensagemId },
       include: { numero: { select: { id: true, driver: true, providerRef: true, ativo: true, sessao: true } } },
@@ -147,7 +207,7 @@ export async function encaminharMensagemWhatsApp(input: { mensagemId: string; at
     const providerMessageId = resp?.key?.id ?? null;
     const mensagemIdMotor = providerMessageId ? `${resp?.key?.remoteJid ?? chatId}:${providerMessageId}` : null;
 
-    await prisma.$transaction(async (tx) => {
+    const gravar = async (tx: Prisma.TransactionClient) => {
       let destinoMensagemId: string | null = null;
       if (providerMessageId) {
         // O eco do celular pode ter chegado antes desta resposta: o upsert corrige para HUMANO sem duplicar.
@@ -165,12 +225,14 @@ export async function encaminharMensagemWhatsApp(input: { mensagemId: string; at
       }
       await registrarEvento(tx, {
         tipo: "MensagemWhatsAppEncaminhada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId!, autorId: u.id,
-        payload: { mensagemId: m.id, atendimentoDestinoId: d.id, destinoMensagemId, providerMessageId },
+        payload: { mensagemId: m.id, atendimentoDestinoId: d.id, destinoMensagemId, providerMessageId, ...marca },
       });
-    });
+    };
+    if (txExterna) await gravar(txExterna);
+    else await prisma.$transaction(gravar);
     revalidatePath("/inbox");
     return undefined;
-  });
+  }
 }
 
 const ConteudoSchema = z.discriminatedUnion("tipo", [

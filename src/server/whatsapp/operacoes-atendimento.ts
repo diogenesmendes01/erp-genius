@@ -338,15 +338,37 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
     const u = await exigirSessao();
     if (!temPapel(u, Papel.GERENTE_COMERCIAL, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO)) throw new ErroRegra("Encerramento exige gestão do atendimento.");
     const a = await atendimentoVisivel(u, atendimentoId, true);
-    if (!a) throw new ErroRegra("Atendimento fora do seu escopo.");
+    if (!a) {
+      // #166: o reenvio de quem encerrou devolve ok sem outro Evento. O escopo de envio já não inclui o encerrado;
+      // o de leitura diz se a pessoa o enxerga. Encerrado por outra pessoa (ou fora do escopo), segue recusado.
+      const visto = await atendimentoVisivel(u, atendimentoId);
+      if (visto?.encerradoEm && await encerradoPor(prisma, visto.id, u.id)) return;
+      throw new ErroRegra(visto?.encerradoEm ? "Atendimento encerrado." : "Atendimento fora do seu escopo.");
+    }
     const papeisDaFinalidade = a.finalidade === "COMERCIAL" ? [Papel.GERENTE_COMERCIAL]
       : a.finalidade === "FINANCEIRO" ? [Papel.FINANCEIRO]
         : a.finalidade === "SECRETARIA" ? [Papel.SECRETARIA_ACADEMICA]
           : [Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA];
     if (!temPapel(u, ...papeisDaFinalidade)) throw new ErroRegra("Sua função não autoriza encerrar atendimentos desta finalidade.");
-    await prisma.$transaction(async (tx) => {
+    const repetido = await prisma.$transaction(async (tx) => {
+      // Trava a linha: o clique duplo espera o primeiro encerramento e não grava um segundo AtendimentoEncerrado.
+      const [atual] = await tx.$queryRaw<{ encerradoEm: Date | null }[]>`SELECT "encerradoEm" FROM "AtendimentoWhatsApp" WHERE id = ${a.id} FOR UPDATE`;
+      if (atual?.encerradoEm) {
+        if (await encerradoPor(tx, a.id, u.id)) return true;
+        throw new ErroRegra("Atendimento encerrado.");
+      }
       await encerrarAtendimentoNaTransacao(tx, a.id, u.id);
+      return false;
     });
-    revalidatePath("/inbox");
+    if (!repetido) revalidatePath("/inbox");
   });
+}
+
+/** O último AtendimentoEncerrado do atendimento é de `autorId`? */
+async function encerradoPor(db: Prisma.TransactionClient, atendimentoId: string, autorId: string): Promise<boolean> {
+  const ultimo = await db.evento.findFirst({
+    where: { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true },
+  });
+  return ultimo?.autorId === autorId;
 }
