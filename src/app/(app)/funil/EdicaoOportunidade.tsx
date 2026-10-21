@@ -23,6 +23,7 @@ import {
   registrarInteracao,
 } from "@/server/comercial/acoes";
 import type { DetalheOportunidade } from "@/server/crm/historico";
+import { FusoInstitucionalSchema, dataCivilInstitucional } from "@/server/operacao/fuso";
 
 // Edições da oportunidade que moravam na ficha antiga (/leads/[id], removida no bloco J; B1 da R1 do #216):
 // resumo e próximo passo, datas (follow-up, experimental, proposta), dados cadastrais, documentos e interação.
@@ -123,10 +124,16 @@ export function ResumoOportunidade({ oportunidade: op, podeEditar }: { oportunid
   );
 }
 
-/** "YYYY-MM-DD" da data civil no fuso institucional (as datas civis são gravadas ao meio-dia). */
+/**
+ * "YYYY-MM-DD" da data civil no fuso institucional (as datas civis são gravadas ao meio-dia). Fuso inválido não
+ * derruba o painel (C3 da review do #286): cai no dia UTC, como a exibição do follow-up.
+ */
 function dataCivil(d: Date | string | null, fuso: string): string {
   if (!d) return "";
-  return new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
+  const x = new Date(d);
+  if (!Number.isFinite(x.getTime())) return "";
+  const valido = FusoInstitucionalSchema.safeParse(fuso);
+  return valido.success ? dataCivilInstitucional(x, valido.data) : x.toISOString().slice(0, 10);
 }
 
 /** Valor de <input type="datetime-local"> na hora local do navegador (o mesmo do "Agendar experimental"). */

@@ -6,7 +6,7 @@ import { Formulario } from "./Formulario";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { fusoInicialDeEntrada } from "@/server/operacao/fuso-exibicao";
+import { formatarInstanteExibicao, fusoInicialDeEntrada } from "@/server/operacao/fuso-exibicao";
 
 const data = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short", timeStyle: "short", timeZone: fuso,
@@ -33,6 +33,9 @@ export default async function AgendaInicial({ params, searchParams }: {
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   const fusoInicial = fusoInicialDeEntrada(fusoInstitucional, preferencia.ok ? preferencia.dado?.fusoExibicao : null);
+  // O horário proposto é publicado no fuso da agenda (fusoOrigem) e mantém esse fuso; o registro da proposta é
+  // instante: fuso pessoal de exibição (sem preferência, o da agenda), com o fuso dito.
+  const registro = (valor: string, fusoOrigem: string) => { const e = formatarInstanteExibicao(valor, preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoOrigem); return `${e.texto} (${e.fuso})`; };
   return <section className="space-y-4">
     <Link className="underline" href="/academico">Acadêmico</Link>
     <h1 className="text-2xl font-medium">Agenda inicial da segunda chamada</h1>
@@ -42,7 +45,7 @@ export default async function AgendaInicial({ params, searchParams }: {
     <h2 className="text-xl font-medium">Histórico de propostas</h2>
     {!d.itens.length && <EstadoVazio bloco>Nenhuma agenda inicial foi preparada.</EstadoVazio>}
     {d.itens.map(item => <article key={item.id} className="space-y-2 rounded border p-4">
-      <p>Versão {item.versao} · Proposta de {item.autorNome} em {data(item.criadaEm, item.fusoOrigem)} ({item.fusoOrigem}).</p>
+      <p>Versão {item.versao} · Proposta de {item.autorNome} em {registro(item.criadaEm, item.fusoOrigem)}.</p>
       <p>Professor: {item.professorNome}.</p>
       <p>Horário proposto: {periodo(item.inicio, item.fim, item.fusoOrigem)}.</p>
       <p>Motivo: {item.motivo}</p><p>Evidência: {item.evidencia}</p>
