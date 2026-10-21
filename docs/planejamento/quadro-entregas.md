@@ -4269,6 +4269,59 @@ Branch `claude/compose-env-repasse`, base `main` 80ba5d88. Bug de deploy: o `env
   - `TZ=UTC vitest run`: 819 arquivos, 6.210 testes OK (antes dos agendadores); depois deles, `src/deploy` + rotas dos dois crons: 6 arquivos, 134 testes OK.
   - `docker compose -f … config` nos dois composes: saída 0, serviços `cron-portal-envios` e `cron-avisos-agenda` presentes e flags resolvidas como `"false"`.
 
+
+### Fuso pessoal nas telas restantes (1º lote: telas operacionais) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas`, base `main` 239001ad. Pendência da Q176 ("fuso pessoal nas telas restantes, que está parcial: a #159 cobriu parte"). Só exibição: regras de negócio continuam no fuso da escola (`fusoDaEscola`, `dataCivilInstitucional`, `diaCivilGravado`) e datas civis continuam como data civil. Sem migration.
+
+- **Helper central** (`src/server/operacao/fuso-exibicao.ts`): `formatarInstanteExibicao` ganhou o 4º parâmetro `estilo` (`dataHora`, padrão e igual ao de antes; `data`; `hora`, 24 h; `diaMesHora`), sempre com `timeZone` explícito. Novo `formatarDiaCivilGravado(valor, fusoEscola)`: data civil gravada como instante (promessa, data do pagamento) sai como o dia da escola pelo mesmo critério da régua, sem fuso pessoal.
+- **Telas ajustadas:**
+  - Inbox: a página entrega o fuso já resolvido (pessoal; sem ele, o da escola; antes caía em UTC); hora da lista (`ListaAtendimentos`), do balão (`BalaoMensagem`), da Aria (`PainelAria`) e de convites/agendamentos (`AcoesAtendimento`, que formatava no fuso do navegador).
+  - CRM: painel da oportunidade no funil (criação, experimental, histórico no fuso pessoal; o próximo follow-up passou a sair como dia civil da escola, sem a hora 12:00), ficha do contato, histórico da Aria, chamadas da IA em Configuração › CRM › IA (`toLocaleString` sem fuso).
+  - Financeiro: promessa na fila de cobrança e na ficha financeira, data do pagamento nos informes e "último pagamento" da ficha (eram `toLocaleDateString` no fuso do processo; a gravação legada à meia-noite UTC dava o dia anterior com o servidor em São Paulo); recebimento existente na conciliação da migração.
+  - Aluno: data do teste de nível e da emissão do certificado (fuso pessoal), nascimento (data civil, sem `new Date`); validação pública do certificado no fuso da escola.
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`): pelo AST, em todo `.ts`/`.tsx` de produção de `src/app` e `src/components` (fora `src/app/api`), acusa `toLocaleDateString`/`toLocaleTimeString` sem `timeZone`, `toLocaleString` sem `timeZone` que não é de número, `Intl.DateTimeFormat` sem `timeZone` e getters do relógio local (`getHours`, `getDate`, `getTimezoneOffset`…). Opções opacas e arquivo que não analisa contam. Exceções com motivo, uma por achado: os campos de entrada `datetime-local` da experimental (5 getters) e do diário (`getTimezoneOffset`), e a detecção do fuso do navegador no aditivo. Fora do alcance (declarado): `timeZone` presente com o fuso errado.
+- **Fica para o próximo lote:** telas que já passam `timeZone`, mas com o fuso de origem/da reserva em instantes (Secretaria › Reservas, matrícula: reserva, nova reserva, ocorrências financeiras, indisponibilidade de oferta, compensações, aditivos/agenda; segundas chamadas; presença histórica da migração) — é preciso separar, uma a uma, o que é instante do que é horário publicado no fuso da agenda; e o fuso de ENTRADA dos campos `datetime-local` (agendar mensagem no Inbox, experimental, diário), que ainda leem no relógio do navegador.
+
+### Docs do WhatsApp no estado do motor + nits da review do #279 — 2026-10-21
+
+Branch `claude/docs-whatsapp-e-nits`, base `main` 239001ad. Só documentação e um teste de deploy.
+
+- **Doc 30**: nota "Estado atual" no topo (Meta Cloud e Evolution fora do código; driver único `MOTOR`, `whatsapp-web-baileys` em modo serviço; `MOTOR_IMAGE`/`MOTOR_API_KEY`/`MOTOR_WEBHOOK_SECRET`; webhook `/api/whatsapp/webhook/motor`; conexão por QR ou código em Configuração › WhatsApp › Números). S1 deixa de dizer que as cadências C1/C2 saem pelo motor (não têm produtor; da D34 resta a classe reativa, hoje da Aria). Contratos: o driver único é `drivers/motor.ts`. Etapas E1/E3/E4/E5/E6 ganham o "hoje" ao lado do plano original.
+- **Doc 31**: §0 (burocracia Meta) trocada pelos pré-requisitos do motor; §1 descreve os serviços reais do compose (sem banco `evolution`, com `motor` e os crons); §1.3 vira motor + pareamento; §2 marca o crontab horário da VPS como **superado** e tabela os quatro laços do compose (`cron` 5 min, `cron-despacho` 1 min, `cron-portal-envios` 1 min, `cron-avisos-agenda` 5 min); §3 com os alertas atuais de `saude.ts` (motor inalcançável, eventos falhos, driver legado); §5/§6/§7 sem Evolution, kill switch em Política da régua.
+- **Doc 32**: aviso no topo de que o piloto C1/C2 **não roda no código atual** (`cron-comercial.ts` removido em 9e5d7bd3/53c69b4b; `PoliticaComercial` sem leitor em `src`; B1, B7 e B9 sumiram; restam B3 `validaAte` e o campo do B8). Status "todos implementados" marcado como superado.
+- **Nits do #279** (`src/deploy/cron-despacho.test.ts`): C1 — a contagem de laços em linha única passa a ser o número de serviços `cron*` do bloco `services` (não mais `toBe(4)`); C2 — a trava recusa qualquer `command:` em bloco escalar (`>`, `>-`, `>+`, `|`, `|-`, `|+`).
+- **Evidências:**
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run src/deploy`: 4 arquivos, 131 testes OK. Mutação: um quinto serviço `cron-extra` no compose do Coolify derruba o teste (`expected 4 to be 5`); a regex casa `>`, `>-`, `>+`, `|`, `|-` e não casa `command:` em lista nem `command: npx …`.
+  - Suíte de integração não rodada (máquina com carga alta; mudança só em docs e teste de deploy).
+
+### Idempotência, 5º lote (#166) — 2026-10-21
+
+- **Escopo:** o N3 da R1 do #274 e 12 ações que criam registro, enviam mensagem ou mexem em dinheiro. A #166 continua aberta. Os testes de integração do N3 entraram primeiro e falharam contra o servidor de `main` (6 dos 9 casos novos; os 3 da retomada que passaram em `main` cobrem o reenvio simultâneo, a chave nova e a chave de outro autor, e ficam como trava de regressão). A implementação veio depois.
+- **N3 da R1 do #274** (`repeticaoIdempotente`, depois da sessão e da conferência do papel, busca antes das validações de estado, escopo por autor):
+  - Troca de e-mail do portal: `prepararTrocaEmailPortalAluno` recebe chave (marca no `TrocaEmailPortalAlunoPreparada`; hash de aluno, novo e-mail normalizado, motivo e evidência). Se outra pessoa rejeitar a troca entre a tentativa e o reenvio, o reenvio devolve a solicitação original, sem nova solicitação nem novo e-mail de validação. A busca vem antes da leitura do aluno: a chave reaproveitada com outro aluno, existente ou não, recebe a mesma recusa. A ficha usa `useChaveIdempotencia`.
+  - Retomada: `solicitarRetomada` recebe chave (marca no `RetomadaSolicitada`; hash de aluno, opção, motivo e datas ordenadas pela cobrança). A conferência do usuário atual passou para antes das travas do calendário, e a busca vem logo depois dela. `RetomadasPainel` usa `useChaveIdempotencia`.
+  - Chave nova continua sendo nova solicitação ou proposta; sem chave, o comportamento de antes.
+- **Criações com chave:**
+  - Financeiro, fechar o mês das comissões (`fecharMesComissoes`): a marca vai em todos os `ComissaoPaga` do mesmo fechamento. O reenvio devolve quantas foram pagas e não paga as comissões aprovadas depois da tentativa (antes, o reenvio pagava tudo o que estivesse aprovado). O fechamento automático do cron não muda. `ConfirmarAcao` com `idempotente` e chave trocada em `aoConcluir`.
+  - Matrícula nova, solicitar abertura de turma (`solicitarAberturaTurma`, marca no `AberturaTurmaSolicitada`). Antes, cada reenvio gravava outro pedido.
+- **Idempotentes por natureza, com mudança no servidor.** O reenvio de quem já fez a ação devolve ok sem gravar registro nem Evento. Se o estado veio de outra pessoa (ou do contato, no opt-out), a ação segue recusada como antes. A linha do registro é travada para o clique duplo não gravar dois Eventos. Helper novo: `ultimoEventoDoAutor` (`src/server/_shared/idempotencia.ts`).
+  - Comissões, estornar (`estornarComissao`): mesmo motivo e detalhe. A falha de rede da tela agora manda tentar de novo.
+  - Home do professor, check-in da experimental (compareceu e faltou): o último check-in do lead é o mesmo, do mesmo autor. O escopo do professor passou para antes da etapa, então quem não está atribuído recebe sempre "não está atribuída a você".
+  - Funil, marcar como perdida (`marcarPerdido`): mesmo motivo e observação. Antes, cada reenvio gravava outro `LeadPerdido`. Com outro motivo, grava como antes.
+  - Configuração do CRM, arquivar tag e campo (o campo confere o nome de novo); Aria, arquivar fonte; Tarefas, cancelar (mesmo motivo, antes da conferência de versão); Carteira, revogar cobertura (já devolvia ok, mas o clique duplo gravava dois Eventos); Inbox, registrar e remover opt-out (a remoção confere a evidência).
+- **Mantidas como estão, por já estarem protegidas por chave única:** envio de cobrança pelo WhatsApp, individual e em lote (`IntencaoMensagem` única por cobrança, passo e ciclo; o reenvio devolve a intenção existente ou é recusado com "sem ação devida", sem segundo envio). Ficam com `idempotente: false` porque a tela não deve sugerir repetir.
+- **Restam 103 linhas** com `idempotente: false` ou `idempotente={false}` fora de testes e de `src/server` (eram 116 em `main`, na mesma contagem). Os grupos são os mesmos do PR #274. Saíram deste lote: estorno, fechamento do mês, check-in (2), perda, abertura de turma, tag, campo, fonte, tarefa, cobertura e opt-out (2).
+- **Testes atualizados** porque fixavam o comportamento antigo: o reenvio do opt-out (`whatsapp/inbox.int.test.ts`) e do arquivamento de fonte (`fontes.int.test.ts`) agora devolve ok com um Evento; os mocks de `comissoes-estorno.test.ts` e `experimental.test.ts` (trava da linha) e a mensagem de resultado incerto em `HomeProfessor.confirmacao.test.ts`.
+- **Evidências** (banco descartável `erp_genius_test_idem5`, `migrate deploy`; perfil temporário desfeito e banco apagado ao fim). O Postgres compartilhado foi reiniciado duas vezes durante a rodada; o banco foi recriado e as suítes, repetidas do zero.
+  - `tsc --noEmit`: saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `npm test`: 817 arquivos e 6.113 testes OK em UTC e em America/Sao_Paulo. Inclui a trava `crm-config/auditoria.test.ts`.
+  - `npm run build`: saída 0.
+  - Integração dos módulos tocados, em 3 blocos: portal do aluno, retomada e financeiro (29 arquivos, 219 testes); comercial, CRM, configuração do CRM, turmas, acesso e Aria (66 arquivos, 607 testes); WhatsApp e Inbox (69 arquivos, 536 testes). Mais `academico/fluxo` e `matricula/limite-legado`, que também chamam `solicitarRetomada` (2 arquivos, 68 testes). Tudo OK, sem testes ignorados nos blocos.
+  - Arquivos novos: `retomada/retomada-idempotencia`, `financeiro/comissoes-idempotencia`, `comercial/experimental-perda-idempotencia`, `crm-config/arquivamentos-idempotencia` e casos novos em `portal-aluno/identidade-idempotencia`. Só os do N3 foram rodados contra `main` antes da implementação; os demais foram escritos junto com ela.
+
 ### Idempotência, 6º lote (#166) — 2026-10-21
 
 Branch `claude/idempotencia-lote6`, base `main` 239001ad. Não toca as ações nem os arquivos do 5º lote (PR #282, ainda aberto). A #166 continua aberta.

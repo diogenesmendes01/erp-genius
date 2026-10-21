@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { IconAlertCircle, IconCheck, IconChecks, IconChevronDown, IconClock, IconStar } from "@tabler/icons-react";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
-import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { ORIGEM_ENVIO_LABEL } from "@/lib/labels";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { CartaoPix, type PixDados } from "./CartaoPix";
@@ -30,10 +30,7 @@ const STATUS: Record<string, { rotulo: string; icone: ReactNode; erro?: boolean 
 };
 
 function hora(iso: string, fuso: string | null): string {
-  const d = new Date(iso);
-  if (!Number.isFinite(d.getTime())) return iso;
-  try { return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: resolverFusoExibicao(fuso, "UTC") }).format(d); }
-  catch { return iso; }
+  return formatarInstanteExibicao(iso, fuso, "UTC", "hora").texto;
 }
 
 interface ItemAcao { cmd: ComandoMensagem; rotulo: string; recurso?: RecursoMotor; perigo?: boolean }

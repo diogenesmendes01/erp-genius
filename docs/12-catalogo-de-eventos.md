@@ -207,6 +207,21 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > (a última versão já é a pedida, do mesmo autor); `AgenteIARascunhoSalvo`, `AgenteIAPublicado` e
 > `AgenteIARascunhoDescartado`; `EmpresaEditada` com o mesmo cadastro; `PendenciaAcessoPortalAlunoEmailAusente`, `TrocaEmailPortalAlunoPreparada` e a decisão da troca.
 
+> **5º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em:
+> `TrocaEmailPortalAlunoPreparada` (hash de aluno, novo e-mail normalizado, motivo e evidência) e `RetomadaSolicitada`
+> (hash de aluno, opção, motivo e datas ordenadas pela cobrança). Nos dois, a busca vem antes das validações de estado:
+> o reenvio da mesma tentativa devolve a solicitação ou a proposta original mesmo depois que outra pessoa a decidiu
+> (N3 da R1 do #274). `AberturaTurmaSolicitada` (hash de produto, nível e observação). `ComissaoPaga` do fechamento
+> manual do mês: todos os Eventos do mesmo fechamento levam a mesma marca; o reenvio devolve quantos foram pagos (a
+> contagem deles) e não paga as comissões aprovadas depois da tentativa. O fechamento automático do cron não leva marca.
+> Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar; o estado vindo de outra pessoa
+> segue recusado ou, onde antes gravava, grava como antes): `ComissaoEstornada` (mesmo motivo e detalhe),
+> `ExperimentalRealizada` e `NoShow` (o último check-in do lead é o mesmo, do mesmo autor), `LeadPerdido` (mesmo motivo
+> e observação; antes cada reenvio gravava um), `TagArquivada`, `CampoArquivado`, `FonteConhecimentoArquivada`,
+> `TarefaCancelada` (mesmo motivo), `CoberturaRevogada` (já revogada devolve ok, como antes), `OptOutRegistrado` e
+> `OptOutRemovido` (mesma evidência). Nesses casos a linha do registro é travada, para o clique duplo não gravar dois
+> Eventos.
+
 ---
 
 ## Exportação e LGPD (agregado `Exportacao`)
