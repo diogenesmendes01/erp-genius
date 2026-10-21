@@ -421,6 +421,22 @@ Agregado Aluno; identifica pedido, rascunho, decisão e aprovação/rejeição. 
 
 Agregado `Recebimento`, na mesma transação do fato de caixa e das destinações. Preserva titular, pagador, valor/moeda, data/forma, hash material, referência do comprovante privado, comentário e destinações. O replay retorna o fato existente antes de emitir outro evento. A consulta financeira associa a prova somente quando ID do recebimento, matrícula e hash coincidem; ausência no legado não autoriza presumir prova.
 
+### Assinatura eletrônica por driver (port da #62, Q155/Q165) — 21/10/2026
+
+Envio, conciliação e cancelamento passam pelo port `ProvedorAssinatura` (`src/server/contratos/provedor-assinatura.ts`). Hoje o único driver é o SIMULADO (`ASSINATURA_DRIVER=simulado`). A marca de idempotência (`chaveIdempotencia` + `entradaHash`, de `repeticaoIdempotente`) só existe quando a ação recebe chave. Ela é o que permite devolver o resultado gravado sem chamar o serviço de novo, então faz parte do contrato do evento.
+
+| Evento | Agregado | Gatilho | Quem | Payload (essencial) |
+|---|---|---|---|---|
+| `EnvelopeSimuladoCriado` | `EnvelopeAssinaturaSimulado` (novo) | O driver simulado "cria" o envelope (tabela `EnvelopeAssinaturaSimulado`, que faz o papel do serviço). Nada sai do ERP | Sistema (`autorId` nulo) | `{ chave, referenciaExterna, pdfHash, signatarios (quantidade), simulado: true }` |
+| `EnvelopeSimuladoSituacaoAlterada` | `EnvelopeAssinaturaSimulado` | Transição condicional do envelope simulado (`EM_ASSINATURA` → `CANCELADO` ou `ASSINADO`). Só é gravado quando a transição acontece | Sistema | `{ referenciaExterna, de, para, simulado: true }` |
+| `TentativaAssinaturaIniciada` (alterado) | `Matricula` | Tentativa de envio do contrato confirmada antes da chamada externa | Secretaria que enviou | `{ processoId, tentativaId, numero, chaveIdempotencia?, entradaHash? }` |
+| `ResultadoEnvioAssinaturaRegistrado` (alterado) | `Matricula` | Resultado da criação (sem autor: veio do serviço) ou da conciliação (autor = quem conciliou). Gravado só para observação nova | Sistema ou Secretaria | `{ processoId, tentativaId, observacaoId, resultado, estado, chaveIdempotencia?, entradaHash? }`. Na conciliação, a marca e o `autorId` vêm da ação |
+| `TentativaAssinaturaAditivoIniciada` (novo) | `Matricula` | Tentativa de envio do aditivo confirmada antes da chamada externa. Antes, a primitiva não gravava Evento | Secretaria que enviou | `{ processoId, propostaId, tentativaId, numero, chaveIdempotencia?, entradaHash? }` |
+| `ResultadoEnvioAssinaturaAditivoRegistrado` (novo) | `Matricula` | Resultado da criação ou da conciliação do envio do aditivo, só para observação nova | Sistema ou Secretaria | `{ processoId, propostaId, tentativaId, observacaoId, resultado, estado, chaveIdempotencia?, entradaHash? }` |
+| `ResultadoCancelamentoAssinaturaDesistenciaPreservado` (alterado) | `Matricula` | Observação nova do cancelamento Q165. Agora é gravado **depois** da transição (`CANCELADO` quando confirmado), na mesma transação | Secretaria que acionou (`autorId`, antes nulo) | `{ intencaoId, observacaoId, processoId, resultado, cancelamentoConfirmado, chaveIdempotencia?, entradaHash? }` |
+
+Conciliação: `ENCONTRADO` só confirma o envio com o envelope `EM_ASSINATURA` ou `ASSINADO`. Envelope `CANCELADO` ou `RECUSADO` no serviço fica `INCERTO`, com o motivo na evidência (o `evidenciaHash` da observação). `ENVIANDO` só é conciliado depois de `PRAZO_CONCILIACAO_ENVIANDO_MS` contado de `iniciadaEm`. Antes disso a ação é recusada e nada é gravado. Nenhum destes eventos comprova assinatura, aceite ou efeito contratual: processos `SIMULADO` ficam em `SANDBOX`, e o banco exige `PRODUCAO` para efeito real.
+
 ### Destinação do excedente de permuta (Q171/Q167C)
 
 Agregado `Matricula`, cada um na transação do próprio registro. `DestinacaoExcedentePermutaProposta`: propostaId, cobrancaId, valorExcedente, moeda e os itens (`SALDO_SERVICOS`/`CREDITO_FINANCEIRO` com valor); a chave de idempotência mora na própria proposta. `ConcordanciaExcedentePermutaRegistrada`: propostaId, concordanciaId e parte (`ALUNO_OU_RESPONSAVEL`/`ESCOLA`); nome, meio e evidência ficam no registro imutável. `DestinacaoExcedentePermutaDecidida`: propostaId, decisaoId, aprovada, motivo e os destinos criados (id do saldo de serviços; id da origem e do crédito financeiro). A repetição idêntica devolve o registro existente sem novo evento. Não altera a cobrança nem a compensação original.

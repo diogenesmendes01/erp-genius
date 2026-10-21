@@ -856,6 +856,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/contrato/ConferirAssinatura.tsx": [
     "<button> Registrando… · Registrar conferência para assinatura → secundario/lg",
   ],
+  "matriculas/[id]/contrato/EnviarAssinatura.tsx": [
+    "<button> Aguarde… · Enviar para assinatura · Conciliar envio → secundario/lg",
+  ],
   "matriculas/[id]/contrato/PreservarOriginal.tsx": [
     "<button> Gerando e preservando… · Gerar e preservar original → secundario/lg",
   ],
@@ -873,6 +876,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/contrato/aditivos/ConferenciaFinalFormulario.tsx": [
     "<button> Registrando… · Registrar conferência interna → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/EnvioAditivoFormulario.tsx": [
+    "<button> Aguarde… · Enviar aditivo para assinatura · Conciliar envio → secundario/lg",
   ],
   "matriculas/[id]/contrato/aditivos/Formularios.tsx": [
     "<button> Registrando… · Registrar proposta de aditivo → secundario/lg",
@@ -920,6 +926,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx": [
     "<button> Registrando… · Registrar decisão administrativa → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/documentos/CancelarAssinatura.tsx": [
+    "<button> Aguarde… · Cancelar envio no serviço de assinatura → perigo/lg",
   ],
   "matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx": [
     "<button> Preparando… · Reapresentar memória contratual · Preparar mem → secundario/lg",
