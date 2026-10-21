@@ -145,6 +145,21 @@ services:
     volumes:
       # PGlite, chave do cofre, credenciais e mídia do motor (entra no backup).
       - motor_data:/data
+    healthcheck:
+      # node:24.22.1-bookworm-slim não tem curl/wget; usar node -e com fetch nativo.
+      # 127.0.0.1 (não localhost): evita IPv6 → bind só em IPv4 (HOST=0.0.0.0).
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4317/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          # Baileys: 512MB–1GB para sessões, mídia temporária, PGlite e heaps.
+          # CPU: 0.5–1 core (picos em QR/pareamento, idle baixo).
+          memory: 768M
+          cpus: "0.75"
     # SEM ports: o motor não sai para a internet.
 
   # TICK DO CRON (B4, doc 32): bate no endpoint da régua a cada 5 min.
