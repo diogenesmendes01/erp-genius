@@ -29,14 +29,18 @@ export interface ClienteMensagens {
   beta: { messages: { create(req: Record<string, unknown>): Promise<unknown> } };
 }
 
-class AnthropicHTTPClient implements ClienteMensagens {
+export class AnthropicHTTPClient implements ClienteMensagens {
   private readonly apiKey: string;
+  private readonly timeout: number;
+  private readonly maxRetries: number;
 
   constructor(config: { apiKey?: string; timeout?: number; maxRetries?: number }) {
     if (!config.apiKey) {
       throw new Error("ANTHROPIC_API_KEY não configurada");
     }
     this.apiKey = config.apiKey;
+    this.timeout = config.timeout ?? TIMEOUT_MS;
+    this.maxRetries = config.maxRetries ?? MAX_RETRIES;
   }
 
   beta = {
@@ -49,33 +53,59 @@ class AnthropicHTTPClient implements ClienteMensagens {
 
   private async chamarComRetry(req: Record<string, unknown>, tentativa: number): Promise<RespostaBruta> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    const betas = req.betas as string[] | undefined;
+    const bodyReq = { ...req };
+    delete bodyReq.betas;
+    delete bodyReq.fallbacks;
+
+    const headers: Record<string, string> = {
+      "x-api-key": this.apiKey,
+      "anthropic-version": ANTHROPIC_VERSION,
+      "content-type": "application/json",
+    };
+
+    if (betas && betas.length > 0) {
+      headers["anthropic-beta"] = betas.join(",");
+    }
+
+    const url = betas && betas.length > 0 ? `${ANTHROPIC_API_URL}?beta=true` : ANTHROPIC_API_URL;
 
     try {
-      const response = await fetch(ANTHROPIC_API_URL, {
+      const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "x-api-key": this.apiKey,
-          "anthropic-version": ANTHROPIC_VERSION,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(req),
+        headers,
+        body: JSON.stringify(bodyReq),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const shouldRetry = response.headers.get("x-should-retry") === "true";
+        const retryAfterMs = response.headers.get("retry-after-ms");
+        const retryAfter = response.headers.get("retry-after");
+
         const erro: ErroAPI = await response.json().catch(() => ({}));
         const mensagem = erro.error?.message || erro.message || response.statusText;
 
-        if (response.status === 429 && tentativa < MAX_RETRIES) {
-          await this.aguardar(Math.pow(2, tentativa) * 1000);
-          return this.chamarComRetry(req, tentativa + 1);
-        }
+        const isRetriable =
+          response.status === 408 ||
+          response.status === 409 ||
+          response.status === 429 ||
+          response.status >= 500;
 
-        if (response.status >= 500 && tentativa < MAX_RETRIES) {
-          await this.aguardar(Math.pow(2, tentativa) * 1000);
+        if ((isRetriable || shouldRetry) && tentativa < this.maxRetries) {
+          let delayMs = Math.pow(2, tentativa) * 1000;
+
+          if (retryAfterMs) {
+            delayMs = parseInt(retryAfterMs, 10);
+          } else if (retryAfter) {
+            delayMs = parseInt(retryAfter, 10) * 1000;
+          }
+
+          await this.aguardar(delayMs);
           return this.chamarComRetry(req, tentativa + 1);
         }
 
@@ -87,26 +117,23 @@ class AnthropicHTTPClient implements ClienteMensagens {
       clearTimeout(timeoutId);
 
       if (e && typeof e === "object" && "name" in e && e.name === "AbortError") {
-        throw { isTimeout: true, message: "Request timeout" };
-      }
-
-      if (
-        e &&
-        typeof e === "object" &&
-        "cause" in e &&
-        e.cause &&
-        typeof e.cause === "object" &&
-        "code" in e.cause
-      ) {
-        const code = (e.cause as { code?: string }).code;
-        if ((code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "ETIMEDOUT") && tentativa < MAX_RETRIES) {
+        if (tentativa < this.maxRetries) {
           await this.aguardar(Math.pow(2, tentativa) * 1000);
           return this.chamarComRetry(req, tentativa + 1);
         }
-        throw { isConnectionError: true, message: `Network error: ${code}` };
+        throw { isTimeout: true, message: "Request timeout" };
       }
 
-      throw e;
+      if (e && typeof e === "object" && "isAPIError" in e) {
+        throw e;
+      }
+
+      if (tentativa < this.maxRetries) {
+        await this.aguardar(Math.pow(2, tentativa) * 1000);
+        return this.chamarComRetry(req, tentativa + 1);
+      }
+
+      throw { isConnectionError: true, message: e instanceof Error ? e.message : "Network error" };
     }
   }
 
@@ -130,8 +157,6 @@ function traduzirErro(e: unknown): ErroProvedorIA {
     if ("status" in e && "isAPIError" in e) {
       const status = (e as { status: number }).status;
       const message = (e as { message?: string }).message || "API Error";
-      if (status === 429) return new ErroProvedorIA("429", message);
-      if (status === 401 || status === 403) return new ErroProvedorIA("401", message);
       return new ErroProvedorIA(String(status), message);
     }
 
