@@ -23,7 +23,7 @@ describe("ConferenciaHoras: instante no fuso pessoal, horário do encontro no fu
   it("com preferência: registros no fuso pessoal; encontro no fuso da agenda", () => {
     const html = render("Asia/Tokyo");
     expect(html).toContain("21/10/2026, 10:00 — 21/10/2026, 11:00 · America/Sao_Paulo");
-    expect(html).toContain("Comunicação: 21/10/2026, 11:30 (Asia/Tokyo)");
+    expect(html).toContain("Comunicação: 21/10/2026, 11:30 (Asia/Tokyo) (na agenda: 20/10/2026, 23:30, America/Sao_Paulo)");
     expect(html).toContain("Fin · 22/10/2026, 11:45 (Asia/Tokyo)");
     expect(html).toContain("Declaração aplicada em 23/10/2026, 11:50 (Asia/Tokyo)");
   });
@@ -31,7 +31,16 @@ describe("ConferenciaHoras: instante no fuso pessoal, horário do encontro no fu
   it("sem preferência: registros no fuso da agenda, com o fuso dito", () => {
     const html = render(null);
     expect(html).toContain("Comunicação: 20/10/2026, 23:30 (America/Sao_Paulo)");
+    expect(html).not.toContain("na agenda");
     expect(html).toContain("Fin · 21/10/2026, 23:45 (America/Sao_Paulo)");
     expect(html).toContain("Declaração aplicada em 22/10/2026, 23:50 (America/Sao_Paulo)");
+  });
+
+  // Review do #289 (item E): a comunicação é comparada com o limite de cancelamento, que está no fuso da agenda.
+  it("comunicação também no fuso da agenda quando o exibido difere; preferência igual à agenda não repete", () => {
+    expect(render("Asia/Tokyo")).toContain("(na agenda: 20/10/2026, 23:30, America/Sao_Paulo)");
+    const igual = render("America/Sao_Paulo");
+    expect(igual).toContain("Comunicação: 20/10/2026, 23:30 (America/Sao_Paulo)</p>");
+    expect(igual).not.toContain("na agenda");
   });
 });
