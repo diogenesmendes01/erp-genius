@@ -19,6 +19,8 @@ vi.mock("@/server/alunos/consultas", () => ({
 }));
 vi.mock("@/server/paises/consultas", () => ({ listarPaisesOperacionais: mocks.paises }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+// Fuso pessoal nas telas: datas civis gravadas (promessa, pagamento) saem no dia da escola.
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/server/matricula/limite-legado", () => ({ impedimentoFluxoGlobal: mocks.impedimento }));
 vi.mock("@/server/matricula/consultas", () => ({ turmaSugeridaParaAluno: mocks.turmaSugerida }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));

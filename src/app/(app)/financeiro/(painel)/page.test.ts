@@ -21,6 +21,8 @@ vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: mocks.guard }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => createElement("p", null, "Acesso negado") }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+// Fuso pessoal nas telas: datas civis gravadas (promessa, pagamento) saem no dia da escola.
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/server/cobrancas/consultas", () => ({ listarFilaCobranca: mocks.fila }));
 vi.mock("@/server/ajustes/consultas", () => ({ listarAprovacoesPendentes: mocks.aprovacoes }));
 vi.mock("@/server/retomada/consultas", () => ({ listarPropostasRetomada: mocks.retomadas }));
