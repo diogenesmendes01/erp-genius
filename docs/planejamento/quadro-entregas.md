@@ -4252,3 +4252,19 @@ Branch `claude/sla-feriados`, base `main` e68adb37. Continua o SLA do #241 ("hor
   - `vitest run` completo: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
   - Integração de `src/server/{whatsapp,crm-config,inbox,agenda,relatorios}`: saída 0, 92 arquivos, 718 testes.
   - `npm run build`: saída 0.
+
+
+### Deploy: repasse das variáveis de ambiente ao app e agendadores do portal e da agenda — 2026-10-21
+
+Branch `claude/compose-env-repasse`, base `main` 80ba5d88. Bug de deploy: o `environment` do serviço `app` em `docker-compose.coolify.yml` (e em `docker-compose.prod.yml`) só citava 11 variáveis; as demais lidas pelo código, definidas no painel do Coolify ou no `.env` da VPS, não chegavam ao container.
+
+- **Repasse** (dois composes): `RESEND_API_KEY`, `EMAIL_INSTITUCIONAL_REMETENTE`, `PORTAL_ALUNO_URL_PUBLICA`, `GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY`, `DRIVE_ORGANIZACAO_ID`, `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY` com `${VAR:-}`; `EMAIL_PORTAL_ENVIO_ENABLED`, `CONTINUIDADE_MENSAL_EMISSAO_ENABLED`, `COMUNICACOES_AGENDA_ENVIO_ENABLED`, `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` com `${VAR:-false}`. Nenhuma virou obrigatória.
+- **Agendadores novos** (dois composes, mesmo padrão de `cron`/`cron-despacho`): `cron-portal-envios` (POST `/api/portal-aluno/envios/cron` a cada 60 s) e `cron-avisos-agenda` (POST `/api/agenda/avisos/cron` a cada 5 min; sem cadência definida em código/docs, ficou a da régua). Conferido no código: com a flag diferente de `"true"`, as duas rotas respondem `{executou:false}` logo após conferir o `x-cron-secret`, sem tocar o banco (coberto pelos `route.test.ts` existentes).
+- **Pendência:** `/api/financeiro/continuidade/cron` continua sem agendador nos composes (documentado no compose, nos envs de exemplo e no SETUP.md); ligar `CONTINUIDADE_MENSAL_EMISSAO_ENABLED` exige agendador externo.
+- **Healthcheck do motor: não adicionado.** O repo não tem a imagem do motor (`MOTOR_IMAGE` externa): não dá para saber se ela traz `wget`/`curl` nem qual rota de saúde expõe (`/v1/health` aparece só num teste do cliente, como caminho arbitrário).
+- **Observações:** `PAGAMENTO_SIMULADO` não é lida por nenhum código atual (só comentários); mantida no compose. `.env.example` reorganizado com `[obrigatória]`/`[opcional]` e sem o bloco duplicado do motor (o segundo `MOTOR_URL="http://motor:4317"` sobrescrevia o de dev). `SETUP.md §Coolify` ganhou as variáveis novas.
+- **Trava** (`src/deploy/compose-env.test.ts`): varre `src` (`process.env.X`, `process.env["X"]`, `ambiente.X`, `env.X`) e exige cada variável de produção no `environment` do `app` dos dois composes, flags `*_ENABLED` com `:-false`, e a variável listada em `.env.example` e `deploy/env.production.example` (fora as montadas pelo compose: `DATABASE_URL`, `NEXTAUTH_URL`, `MOTOR_URL`). Exclusão explícita: só de teste (`FAKE_PRISMA`, `GUARD`, `GUARD_GRADES`, `TZ`, `PRISMA_TESTE_TIMEOUT_MS`, `HOMOLOGACAO_UI_*`, `QA_*`; o teste falha se alguma delas for lida fora de arquivo de teste) e da imagem (`NODE_ENV`, `GIT_SHA`, conferidas no Dockerfile). Contra os composes da main, falha em 13 casos. `cron-despacho.test.ts` estendido para os dois agendadores novos.
+- **Evidências:**
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `TZ=UTC vitest run`: 819 arquivos, 6.210 testes OK (antes dos agendadores); depois deles, `src/deploy` + rotas dos dois crons: 6 arquivos, 134 testes OK.
+  - `docker compose -f … config` nos dois composes: saída 0, serviços `cron-portal-envios` e `cron-avisos-agenda` presentes e flags resolvidas como `"false"`.
