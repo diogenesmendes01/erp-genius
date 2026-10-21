@@ -97,7 +97,7 @@ it("autoriza secretaria, administração e gestão pedagógica pela consulta rea
 });
 
 it("lista somente encontros elegíveis e matrículas particulares para os papéis da conferência", async () => {
-  expect(await consultarOpcoesConferenciaAgendaAditivo({ matriculaId: base.matriculaId })).toMatchObject({ ok: true, dado: { matricula: { id: base.matriculaId }, encontros: expect.arrayContaining([expect.objectContaining({ id: encontroId, professor: expect.any(String) })]), professores: expect.arrayContaining([expect.objectContaining({ id: expect.any(String), nome: expect.any(String) })]) } });
+  expect(await consultarOpcoesConferenciaAgendaAditivo({ matriculaId: base.matriculaId })).toMatchObject({ ok: true, dado: { matricula: { id: base.matriculaId }, fonteOrigemHistorica: false, encontros: expect.arrayContaining([expect.objectContaining({ id: encontroId, professor: expect.any(String) })]), professores: expect.arrayContaining([expect.objectContaining({ id: expect.any(String), nome: expect.any(String) })]) } });
   const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]); authMock.mockResolvedValue({ user: { id: gestor.id } });
   expect(await listarMatriculasConferenciaAgendaAditivo({ alunoId: (await prisma.matricula.findUniqueOrThrow({ where: { id: base.matriculaId } })).alunoId })).toMatchObject({ ok: true, dado: [{ id: base.matriculaId }] });
   const vendedor = await criarUsuario(["VENDEDOR"]); authMock.mockResolvedValue({ user: { id: vendedor.id } });
