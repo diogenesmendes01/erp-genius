@@ -100,7 +100,8 @@ describe("encaminharMensagemWhatsApp com chave (#166)", () => {
 });
 
 describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C2 da R1 do #291)", () => {
-  it("motor lento: nenhuma transação fica aberta; o reenvio no meio recebe 'em andamento' e o posterior, ok", async () => {
+  // Cenário C da R2: motor lento; o reenvio da mesma chave no meio não chama o motor.
+  it("motor lento: nenhuma transação fica aberta; o reenvio no meio recebe 'não confirmado' e o posterior, ok", async () => {
     const { autor, m, destino } = await cenario();
     const dest = await destino("+50688880002");
     // Mais que o timeout padrão (5 s) de uma transação interativa do Prisma: com a transação presa, a gravação falharia.
@@ -110,13 +111,14 @@ describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C
     while (!(await prisma.evento.count({ where: { tipo: "MensagemWhatsAppEncaminhamentoIniciado" } }))) await espera(50);
     const noMeio = await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada));
     expect(noMeio.ok).toBe(false);
-    if (!noMeio.ok) expect(noMeio.erro).toMatch(/em andamento/);
+    if (!noMeio.ok) expect(noMeio.erro).toMatch(/não foi confirmado/);
     expect((await primeiro).ok).toBe(true);
     expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).ok).toBe(true);
     expect(chamadas("message.forward")).toBe(1);
     expect(await contar("MensagemWhatsAppEncaminhada")).toBe(1);
   }, 60_000);
 
+  // Cenário A da R2 / C2 da R1.
   it("dois envios simultâneos com a mesma chave encaminham uma vez só", async () => {
     const { autor, m, destino } = await cenario();
     const dest = await destino("+50688880002");
@@ -125,12 +127,13 @@ describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C
     sessao.usuarioId = autor.id;
     const rs = await Promise.all([encaminharMensagemWhatsApp(entrada), encaminharMensagemWhatsApp(entrada)]);
     expect(rs.some((r) => r.ok), JSON.stringify(rs)).toBe(true);
-    for (const r of rs) if (!r.ok) expect(r.erro).toMatch(/em andamento/);
+    for (const r of rs) if (!r.ok) expect(r.erro).toMatch(/não foi confirmado/);
     expect(chamadas("message.forward")).toBe(1);
     expect(await contar("MensagemWhatsAppEncaminhada")).toBe(1);
     expect(await contar("MensagemWhatsAppEncaminhamentoIniciado")).toBe(1);
   }, 60_000);
 
+  // Cenário B da R2: o motor entregou e a resposta se perdeu.
   it("timeout do motor vira incerto; o reenvio da mesma chave não encaminha de novo", async () => {
     const { autor, m, destino } = await cenario();
     const dest = await destino("+50688880002");
@@ -183,6 +186,44 @@ describe("editar e apagar por natureza (#166)", () => {
     expect((await comoUsuario(autor, () => apagarMensagemWhatsApp({ mensagemId: m.id }))).ok).toBe(true);
     expect((await comoUsuario(autor, () => apagarMensagemWhatsApp({ mensagemId: m.id }))).ok).toBe(true);
     expect(chamadas("message.delete")).toBe(1);
+    expect(await contar("MensagemWhatsAppApagada")).toBe(1);
+  });
+
+  // Cenários D e E da R2 (B3): dois pedidos simultâneos geram uma chamada ao motor e um Evento.
+  it("dois editar simultâneos com o mesmo texto: uma chamada ao motor e um Evento", async () => {
+    const { autor, m } = await cenario();
+    acao.mockImplementation(async () => { await espera(1_500); return {}; });
+    sessao.usuarioId = autor.id;
+    const rs = await Promise.all([editarMensagemWhatsApp({ mensagemId: m.id, texto: "corrigido" }), editarMensagemWhatsApp({ mensagemId: m.id, texto: "corrigido" })]);
+    expect(rs.some((r) => r.ok), JSON.stringify(rs)).toBe(true);
+    for (const r of rs) if (!r.ok) expect(r.erro).toMatch(/não foi confirmada/);
+    expect(chamadas("message.edit")).toBe(1);
+    expect(await contar("MensagemWhatsAppEditada")).toBe(1);
+    expect((await editarMensagemWhatsApp({ mensagemId: m.id, texto: "corrigido" })).ok).toBe(true);
+    expect(chamadas("message.edit")).toBe(1);
+  }, 60_000);
+
+  it("dois apagar simultâneos: uma chamada ao motor e um Evento", async () => {
+    const { autor, m } = await cenario();
+    acao.mockImplementation(async () => { await espera(1_500); return {}; });
+    sessao.usuarioId = autor.id;
+    const rs = await Promise.all([apagarMensagemWhatsApp({ mensagemId: m.id }), apagarMensagemWhatsApp({ mensagemId: m.id })]);
+    expect(rs.some((r) => r.ok), JSON.stringify(rs)).toBe(true);
+    for (const r of rs) if (!r.ok) expect(r.erro).toMatch(/não foi confirmada/);
+    expect(chamadas("message.delete")).toBe(1);
+    expect(await contar("MensagemWhatsAppApagada")).toBe(1);
+    expect((await apagarMensagemWhatsApp({ mensagemId: m.id })).ok).toBe(true);
+    expect(chamadas("message.delete")).toBe(1);
+  }, 60_000);
+
+  it("timeout do motor ao apagar: não diz 'não executou'; registra incerto e permite novo pedido", async () => {
+    const { autor, m } = await cenario();
+    acao.mockRejectedValueOnce(new ErroMotor("TIMEOUT", 0));
+    const r1 = await comoUsuario(autor, () => apagarMensagemWhatsApp({ mensagemId: m.id }));
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) { expect(r1.erro).toMatch(/pode já ter sido feita/); expect(r1.erro).not.toMatch(/não executou/); }
+    expect(await contar("MensagemWhatsAppAcaoIncerta")).toBe(1);
+    expect((await comoUsuario(autor, () => apagarMensagemWhatsApp({ mensagemId: m.id }))).ok).toBe(true);
     expect(await contar("MensagemWhatsAppApagada")).toBe(1);
   });
 
