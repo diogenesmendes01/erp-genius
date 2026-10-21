@@ -31,7 +31,7 @@ vi.mock("@/server/matricula/recomposicao-aplicar", () => ({ aplicarRecomposicaoC
 import { DecisaoAcerto } from "./DecisaoAcerto";
 import { EfetivarAcerto } from "./EfetivarAcerto";
 import { RecomposicaoPainel } from "./RecomposicaoPainel";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado, novosAnuncios } from "@/test/feedback-acao";
 import { FormDataFalso, botao, clicar, criarGanchos, elementos, submeter, temBotao } from "@/test/tela-sem-dom";
 import type { ReactNode } from "react";
@@ -64,7 +64,8 @@ describe("EfetivarAcerto", () => {
   const acionar = () => clicar(tela(), "Efetivar encerramento aprovado");
   contratoFeedbackSeparado({
     nome: "efetivar encerramento", tela, action: m.efetivar, acionar,
-    sucesso: "Encerramento efetivado.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    // #166: a efetivação é idempotente por natureza; na falha de rede, reenviar sem alterar.
+    sucesso: "Encerramento efetivado.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => temBotao(tela(), "Efetivando…") && botao(tela(), "Efetivando…").props.disabled === true,
   });
 

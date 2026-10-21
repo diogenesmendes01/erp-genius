@@ -17,7 +17,9 @@ import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
 import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
-import { agendarMensagemNoAtendimento, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { fusoDoCampoLocal, instanteDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { listarConvitesEAgendamentos, listarPessoasParaAtendimento, type AgendamentoAtivo, type ConviteAtivo } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "@/server/whatsapp/operacoes-atendimento";
 import { alternarFixada, silenciarConversa } from "@/server/whatsapp/preferencias";
@@ -46,12 +48,16 @@ export interface PropsAcoesAtendimento {
 const SILENCIO_HORAS = 8;
 const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
-/** Horário de agendamento: vazio, inválido ou que não é futuro são recusados na própria tela (a action revalida). */
-export function validarQuando(quando: string, agora: Date = new Date()): string | null {
+/**
+ * Horário de agendamento, lido no `fuso` escrito ao lado do campo (não no do navegador): vazio, inválido (inclusive
+ * horário pulado ou repetido no horário de verão) ou que não é futuro são recusados na própria tela. Quem converte
+ * de verdade é o servidor (agendarMensagemNoAtendimentoLocal), que revalida.
+ */
+export function validarQuando(quando: string, fuso: string, agora: Date = new Date()): string | null {
   if (!quando) return "Escolha o dia e a hora do envio.";
-  const t = new Date(quando).getTime();
-  if (Number.isNaN(t)) return "Data e hora inválidas.";
-  if (t <= agora.getTime()) return "Escolha um horário no futuro.";
+  const r = instanteDoCampoLocal(quando, fuso);
+  if (!r.ok) return r.erro;
+  if (r.instante.getTime() <= agora.getTime()) return "Escolha um horário no futuro.";
   return null;
 }
 
@@ -65,14 +71,18 @@ type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar
 export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso }: PropsAcoesAtendimento) {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Fixar alterna o estado: o reenvio desfaria o primeiro clique, então fica sem garantia de repetição.
   const direta = useAcaoCliente({ idempotente: false });
+  // Assumir e devolver são idempotentes por natureza (#166): o reenvio de quem já fez a ação devolve ok sem Evento.
+  const responsavel = useAcaoCliente({ idempotente: true });
   const aberto = atendimento.status !== "ENCERRADO";
   const ctx = { setor: atendimento.finalidade, responsavelId: atendimento.responsavelId, linhaComercial, donoLinhaId };
   const pode = (a: Parameters<typeof podeExecutar>[1]) => aberto && podeExecutar(usuario, a, ctx);
 
-  async function rodar(acao: () => Promise<Resultado>, sucesso: string) {
+  async function rodar(acao: () => Promise<Resultado>, sucesso: string, executor: typeof direta = direta) {
     setAviso(null);
-    const d = await direta.executar(acao, sucesso);
+    direta.limpar(); responsavel.limpar();
+    const d = await executor.executar(acao, sucesso);
     if (d?.tipo === "ok") { setAviso(sucesso); aoMudar?.(); }
   }
   const concluir = (msg: string) => { setDialogo(null); setAviso(msg); aoMudar?.(); };
@@ -82,8 +92,8 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Ações do atendimento">
-        {pode("assumir") && <Botao tamanho="sm" ocupado={direta.ocupado} onClick={() => void rodar(() => assumirAtendimento(atendimento.id), "Atendimento assumido.")}>Assumir</Botao>}
-        {pode("devolver") && <Botao tamanho="sm" variante="secundario" ocupado={direta.ocupado} onClick={() => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.")}>Devolver para a fila</Botao>}
+        {pode("assumir") && <Botao tamanho="sm" ocupado={responsavel.ocupado} onClick={() => void rodar(() => assumirAtendimento(atendimento.id), "Atendimento assumido.", responsavel)}>Assumir</Botao>}
+        {pode("devolver") && <Botao tamanho="sm" variante="secundario" ocupado={responsavel.ocupado} onClick={() => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.", responsavel)}>Devolver para a fila</Botao>}
         {pode("atribuir") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("atribuir")}>Atribuir</Botao>}
         {pode("transferir") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("transferir")}>Transferir</Botao>}
         {pode("convidar") && <Botao tamanho="sm" variante="secundario" onClick={() => setDialogo("convidar")}>Convidar</Botao>}
@@ -96,20 +106,20 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
         <Botao tamanho="sm" variante="fantasma" ocupado={direta.ocupado} aria-pressed={silenciada} onClick={() => void rodar(() => silenciarConversa(atendimento.id, silenciada ? null : new Date(Date.now() + SILENCIO_HORAS * 3_600_000).toISOString()), silenciada ? "Notificações reativadas." : `Silenciada por ${SILENCIO_HORAS} horas.`)}>{silenciada ? "Reativar notificações" : "Silenciar"}</Botao>
       </div>
       <p className="text-xs text-gray-500">Fixar e silenciar valem só para você.</p>
-      <FeedbackAcao erro={direta.erro} sucesso={aviso} />
+      <FeedbackAcao erro={direta.erro ?? responsavel.erro} sucesso={aviso} />
 
       {dialogo === "atribuir" && <DialogoPessoa atendimentoId={atendimento.id} modo="atribuir" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento atribuído.")} />}
       {dialogo === "convidar" && <DialogoPessoa atendimentoId={atendimento.id} modo="convidar" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Convite enviado.")} />}
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
-      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
+      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
       {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} fuso={fuso} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
           folha
           titulo="Encerrar este atendimento?"
           confirmacao="encerramento"
-          idempotente={false}
+          idempotente
           acao={() => encerrarAtendimentoWhatsApp(atendimento.id)}
           aoConcluir={() => concluir("Atendimento encerrado.")}
           aoCancelar={() => setDialogo(null)}
@@ -134,7 +144,9 @@ function Rodape({ ocupado, aoFechar, children }: { ocupado: boolean; aoFechar: (
 }
 
 export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, destinos = [], aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; finalidade: Setor; setoresDoNumero: Setor[]; destinos?: DestinoTransferencia[] }) {
-  const acao = useAcaoCliente({ idempotente: false });
+  // transferirAtendimento recebe chave de idempotência (#166): o reenvio devolve o atendimento novo já aberto.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const setores = setoresParaTransferir(setoresDoNumero, finalidade);
   const [destino, setDestino] = useState<Setor | "">(setores[0] ?? "");
   const [chave, setChave] = useState("");
@@ -146,7 +158,8 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!destino || semDestino) return;
-    const d = await acao.executar(() => transferirAtendimento({ atendimentoId, destino, destinoChave: exigeChave ? chave : null, contexto }));
+    const d = await acao.executar(() => transferirAtendimento({ atendimentoId, destino, destinoChave: exigeChave ? chave : null, contexto, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo === "ok") aoConcluir();
   }
 
@@ -186,8 +199,8 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
 
 export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
   // Convidar: convidarParticipante recebe chave de idempotência (#166) e o reenvio devolve o convite já criado.
-  // Atribuir é por estado-alvo, mas fica sem chave como antes. `modo` não muda na vida do diálogo.
-  const acao = useAcaoCliente({ idempotente: modo === "convidar" });
+  // Atribuir é idempotente por estado-alvo: atribuir de novo à mesma pessoa devolve ok sem Evento.
+  const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   // O fim do convite é calculado no clique; dentro da mesma tentativa ele não muda (senão o reenvio vira outra entrada).
   const fimDaTentativa = useRef<{ chave: string; dias: number; fim: string } | null>(null);
@@ -274,7 +287,8 @@ function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { a
   );
 }
 
-function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string }) {
+/** `fuso`: o de exibição do Inbox (pessoal; sem preferência, o da escola), escrito ao lado do campo. */
+function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; fuso: string }) {
   // agendarMensagemNoAtendimento recebe chave de idempotência (#166): o reenvio não agenda um segundo envio ao contato.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
@@ -283,10 +297,10 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
   const [erroQuando, setErroQuando] = useState<string | null>(null);
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const erro = validarQuando(quando);
+    const erro = validarQuando(quando, fuso);
     setErroQuando(erro);
     if (erro) return;
-    const d = await acao.executar(() => agendarMensagemNoAtendimento({ atendimentoId, texto, quando: new Date(quando).toISOString(), chaveIdempotencia: tentativa.atual }));
+    const d = await acao.executar(() => agendarMensagemNoAtendimentoLocal({ atendimentoId, texto, quandoLocal: quando, fuso, chaveIdempotencia: tentativa.atual }));
     tentativa.depoisDo(d);
     if (d?.tipo === "ok") aoConcluir();
   }
@@ -297,7 +311,7 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
           {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={4} maxLength={4000} value={texto} onChange={(e) => setTexto(e.target.value)} />}
         </Campo>
         <Campo rotulo="Enviar em" obrigatorio erro={erroQuando}>
-          {(c) => <input {...c} type="datetime-local" className={CLASSE_CONTROLE} value={quando} onChange={(e) => { setQuando(e.target.value); setErroQuando(null); }} />}
+          {(c) => <CampoDataHoraLocal {...c} fuso={fuso} className={CLASSE_CONTROLE} value={quando} onChange={(e) => { setQuando(e.target.value); setErroQuando(null); }} />}
         </Campo>
         <FeedbackAcao erro={acao.erro} />
         <Rodape ocupado={acao.ocupado} aoFechar={aoFechar}><Botao type="submit" ocupado={acao.ocupado} disabled={!texto.trim()}>Agendar</Botao></Rodape>
@@ -325,13 +339,14 @@ export function DialogoPendentes({ atendimentoId, fuso, aoFechar, aoConcluir }: 
   }, [atendimentoId, versao]);
 
   if (alvo) {
+    // Revogar e cancelar são idempotentes por natureza (#166): o reenvio de quem já o fez devolve ok.
     const convite = alvo.tipo === "convite";
     return (
       <ConfirmarAcao
         folha
         titulo={convite ? `Revogar o convite de ${alvo.item.nome}?` : "Cancelar esta mensagem agendada?"}
         confirmacao={convite ? "revogação" : "cancelamento"}
-        idempotente={false}
+        idempotente
         acao={() => (convite ? revogarParticipante(alvo.item.id) : cancelarAgendamentoDoAtendimento({ atendimentoId, intencaoId: alvo.item.id }))}
         aoConcluir={() => { aoConcluir(convite ? "convite" : "agendamento"); setAlvo(null); setDados(null); carregar(); }}
         aoCancelar={() => setAlvo(null)}

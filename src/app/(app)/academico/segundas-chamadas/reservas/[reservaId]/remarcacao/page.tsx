@@ -5,7 +5,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarRemarcacoesAgendaSegundaChamada } from "@/server/avaliacoes/segunda-chamada-remarcacao";
 import { Formulario } from "./Formulario";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
-import { fusoInicialDeEntrada, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarInstanteExibicao, fusoInicialDeEntrada, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -16,9 +16,16 @@ function periodo(inicio: string, fim: string, fuso: string) {
   }).format(new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`));
   return `${formatar(inicio)} até ${formatar(fim)} (${fuso})`;
 }
-function instante(valor: string, fuso: string) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso })
-    .format(new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`));
+/**
+ * Prazo vigente: publicado para a agenda, sai no fuso que o servidor manda — o da agenda; sem ela, o da escola
+ * (fusoDoPrazoSegundaChamada), nunca o do servidor —, com o fuso e a origem escritos. Não lança com fuso inválido.
+ */
+function prazo(valor: string, fuso: string, origem: "AGENDA" | "ESCOLA" | undefined) {
+  const e = formatarInstanteExibicao(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`, null, fuso);
+  const rotulo = origem === "ESCOLA" ? "fuso da escola" : origem === "AGENDA" ? "fuso da agenda" : "fuso";
+  // Fuso não reconhecido (defensivo: o servidor não manda): diz que saiu em UTC, como na substituição.
+  if (e.fuso !== fuso) return `${e.texto} (UTC; ${rotulo} não reconhecido: ${fuso})`;
+  return `${e.texto} (${e.fuso}${origem ? `, ${rotulo}` : ""})`;
 }
 function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
   const r = agendaSchema.safeParse(valor);
@@ -54,7 +61,7 @@ export default async function Page({
       <div><dt className="inline font-medium">Reserva: </dt><dd className="inline">{d.conferencia.reservaId}</dd></div>
       <div><dt className="inline font-medium">Avaliação: </dt><dd className="inline">{d.conferencia.codigoAvaliacao}</dd></div>
       <div><dt className="inline font-medium">{d.conferencia.contextoVigente ? "Professor atual: " : "Professor registrado na agenda: "}</dt><dd className="inline">{d.conferencia.professorAtual?.nome ?? "Sem professor definido"}</dd></div>
-      <div><dt className="inline font-medium">{d.conferencia.contextoVigente ? "Prazo vigente: " : "Prazo registrado: "}</dt><dd className="inline">{d.conferencia.prazoVigente ? `${instante(d.conferencia.prazoVigente, d.conferencia.fusoExibicao)} (${d.conferencia.fusoExibicao})` : "Disponibilização sem prazo registrado"}</dd></div>
+      <div><dt className="inline font-medium">{d.conferencia.contextoVigente ? "Prazo vigente: " : "Prazo registrado: "}</dt><dd className="inline">{d.conferencia.prazoVigente ? prazo(d.conferencia.prazoVigente, d.conferencia.fusoExibicao, d.conferencia.origemFusoExibicao) : "Disponibilização sem prazo registrado"}</dd></div>
     </dl>
     <h2 className="font-medium">{d.conferencia.contextoVigente ? "Agenda atual" : "Agenda registrada"}</h2>
     <Agenda valor={d.atual} preferencia={preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null} />

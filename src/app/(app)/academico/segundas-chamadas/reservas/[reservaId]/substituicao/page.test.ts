@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({ consultar: vi.fn(), preferencia: vi.fn(async (
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: vi.fn() }));
 vi.mock("@/server/avaliacoes/segunda-chamada-substituicao", () => ({ consultarSubstituicaoAgendaSegundaChamada: mocks.consultar }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Costa_Rica" }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }) }));
 import Page from "./page";
 import { Formulario } from "./Formulario";
@@ -35,7 +36,7 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     expect(html).not.toContain("hash-interno");
     expect(html).not.toContain("encontro-interno");
     // docs/43 §6 item 6: o registro da proposta sai no fuso de exibição, com a origem — não mais o ISO cru.
-    expect(html).toContain("Registrada em 16/09/2026, 07:00 (America/Sao_Paulo; origem UTC).");
+    expect(html).toContain("Registrada em 16/09/2026, 07:00 (America/Sao_Paulo).");
     expect(html).not.toContain("2026-09-16T10:00:00.000Z");
   });
 
@@ -79,5 +80,26 @@ describe("SubstituicaoAgendaSegundaChamadaPage", () => {
     expect(identidadeNoReact(await renderizar({ substitutoId: "p2" }), Formulario)).toEqual(base);
     mocks.consultar.mockResolvedValue({ ok: true, dado: dado({ id: "p3", nome: "Professora três" }) });
     expect(identidadeNoReact(await renderizar({ substitutoId: "p3", antesVersao: "4" }), Formulario)).toEqual(base);
+  });
+  // Lote 3 do fuso pessoal: sem preferência, registro e decisão saem no fuso da agenda (antes, UTC); agenda com fuso
+  // inválido usa o da escola. O horário do encontro continua no fuso da agenda. Fixo em TZ=UTC e America/Sao_Paulo.
+  it("registro sem preferência: fuso da agenda; agenda inválida: escola; horário publicado no fuso da agenda", async () => {
+    const dado = (fusoOrigem: string) => ({ ok: true, dado: {
+      identificacao: { aluno: "Ana", matriculaCodigo: "M-1", turma: "T-1", codigoAvaliacao: "FALA" },
+      encontro: { id: "e", professorId: "p", professorNome: "Professor atual", inicio: "2026-09-17T13:00:00.000Z", fim: "2026-09-17T14:00:00.000Z", fusoOrigem, status: "PREVISTO" },
+      professores: [], previa: null, podePropor: false, podeDecidir: false, proximaVersao: null,
+      itens: [{ id: "x", versao: 1, autorNome: "Secretaria", substitutoNome: "Nova", motivo: "m", evidencia: "e", criadaEm: "2026-09-17T02:30:00.000Z", entradaHash: "h", podeDecidir: false,
+        snapshot: { professorNome: "A", inicio: "2026-09-17T13:00:00.000Z", fim: "2026-09-17T14:00:00.000Z", fusoOrigem }, decisao: { aprovada: false, aplicada: false, decisorNome: "Gestão", motivo: "Sem vaga", decididaEm: "2026-09-17T03:00:00.000Z" } }],
+    } });
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } } as never);
+    mocks.consultar.mockResolvedValue(dado("America/Sao_Paulo"));
+    let html = renderToStaticMarkup(await Page({ params: Promise.resolve({ reservaId: "r" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Registrada em 16/09/2026, 23:30 (America/Sao_Paulo).");
+    expect(html).toContain("Decisão em 17/09/2026, 00:00 (America/Sao_Paulo).");
+    expect(html).toContain("Horário: 17/09/2026, 10:00 até 17/09/2026, 11:00 (America/Sao_Paulo).");
+    mocks.consultar.mockResolvedValue(dado("Lua/Base"));
+    html = renderToStaticMarkup(await Page({ params: Promise.resolve({ reservaId: "r" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Registrada em 16/09/2026, 20:30 (America/Costa_Rica).");
+    expect(html).toContain("Horário: 17/09/2026, 13:00 até 17/09/2026, 14:00 (UTC; fuso da agenda não reconhecido: Lua/Base).");
   });
 });
