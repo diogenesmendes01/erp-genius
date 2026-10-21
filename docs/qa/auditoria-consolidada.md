@@ -1,123 +1,161 @@
 # Auditoria consolidada: código × documentação (base para o UAT v1)
 
-> Data: 2026-10-21 · Commit auditado: `bc858aff` (`main`) · Método: 6 varreduras independentes
-> (uma por área), cada uma lendo os docs na íntegra e cruzando com o código, arquivo e linha.
-> Os relatórios completos estão em [`auditoria/`](auditoria/). Nada no código foi alterado.
+> Data: 2026-10-21 · Commit auditado: `9e3d1d3c` (branch `qa/auditoria-e-onboarding`, igual à `main`
+> de 21/10 mais o kit de QA) · Método: 9 varreduras independentes, uma por área, cada uma lendo as
+> SPECs com critérios de aceite, a política de acesso (doc 37), o quadro de entregas e o código,
+> sempre com arquivo e linha. Nada no código foi alterado. Os relatórios completos estão em
+> [`auditoria/`](auditoria/).
+>
+> Esta versão substitui a auditoria de 21/10 feita sobre o commit `bc858aff` (agosto), que ficou
+> obsoleta: a `main` avançou 2.323 commits nesse intervalo.
 
 ## 1. Resumo executivo
 
-| Área | Relatório | Itens | Conforme | Divergente | Não impl. | Parcial | Sem doc |
-|---|---|---|---|---|---|---|---|
-| Papéis e permissões | [01](auditoria/01-papeis-permissoes.md) | 42 | 19 | 9 | 4 | 6 | 4 |
-| Telas da Fase 0 | [02](auditoria/02-telas-fase0.md) | 71 | 28 | 5 | 2 | 29 | 7 |
-| Dados, eventos e regras | [03](auditoria/03-dados-eventos-regras.md) | 27 regras | 15 | 2 | 3 | 8 | 22 models/enums |
-| Matrícula, catálogo, alunos | [04](auditoria/04-matricula-catalogo-alunos.md) | 41 | 12 | 9 | 7 | 11 | 2 |
-| Financeiro e cobranças | [05](auditoria/05-financeiro-cobrancas.md) | 42 | 18 | 7 | 5 | 9 | 3 |
-| CRM e WhatsApp | [06](auditoria/06-crm-whatsapp.md) | 52 | 30 | 6 | 4 | 11 | 1 |
+| Área | Relatório | Itens | Conforme | Divergente | Parcial | Não impl. | Sem doc | Cenários |
+|---|---|---|---|---|---|---|---|---|
+| Acesso, papéis e navegação (189 páginas conferidas; doc 37 §8: 25/30 critérios atendidos) | [01](auditoria/01-acesso-papeis.md) | 34 | 13 | 10 | 4 | 1 | 6 | 38 |
+| CRM novo, relatórios e Aria | [02](auditoria/02-crm-aria.md) | 63 | 26 | 13 | 15 | 4 | 5 | 50 |
+| Inbox, WhatsApp e comunicações (LC-01..15: 30/38 critérios) | [03](auditoria/03-inbox-whatsapp-comunicacoes.md) | 27 | 6 | 8 | 6 | 2 | 5 | 50 |
+| Entrada, matrícula, contrato e Secretaria (MAT 18/29, DOC 9/19 atendidos; resto parcial) | [04](auditoria/04-matricula-contrato-secretaria.md) | 24 | – | – | – | – | – | 60 |
+| Acadêmico e avaliações (159 critérios: 136 atendidos, 18 parciais) | [05](auditoria/05-academico-avaliacoes.md) | 24 | – | – | – | – | – | 57 |
+| Diário, agenda, reposições e turmas | [06](auditoria/06-diario-agenda-turmas.md) | 54 | 28 | 6 | 5 | 5 | 2 | 50 |
+| Financeiro | [07](auditoria/07-financeiro.md) | 43 | 19 | 6 | 8 | 5 | – | 58 |
+| Alunos, portal, empresas e migração | [08](auditoria/08-alunos-portal-empresas-migracao.md) | 55 | 28 | 11 | 9 | 4 | 3 | 50 |
+| Configuração, Home, interface e ambiente UAT | [09](auditoria/09-configuracao-ambiente-uat.md) | 45 | 16 | 10 | 15 | 2 | – | 50 |
 
 Leitura geral:
 
-- **A fundação está sólida.** Os 7 papéis batem com o enum, toda mutação tem guard de papel, o
-  escopo por linha de Vendedor/Professor é fail-closed, o catálogo e o versionamento de preço
-  estão conformes e testados, a régua de cobrança segue o doc 24, e o canal WhatsApp bimotor com
-  modo simulado cobre quase todo o UAT sem enviar mensagem real.
-- **Os docs estão desatualizados em pontos que o QA vai tropeçar.** O doc 10 §2 contradiz o doc 09
-  em várias regras de papel (o código segue o doc 09). Os docs 05/10/16 descrevem um gatilho de
-  ativação de matrícula (P7) que o código não usa. O doc 11 não cobre 11 models e 11 enums (todo o
-  WhatsApp) e o doc 12 lista 20 eventos como "planejados" que já são emitidos.
-- **Há 2 bloqueadores reais de UAT** e um conjunto de brechas de permissão que precisam de decisão
-  sua antes de o QA começar (ver §2 e §3).
+- **O núcleo está implementado e bem coberto por testes.** Guards de página em todas as 189 rotas,
+  escopo por linha, critérios das SPECs de matrícula, contrato e avaliação em grande parte
+  atendidos, 819 arquivos de teste unitário e 328 de integração.
+- **O UAT não fecha nenhum fluxo ponta a ponta sem apoio do dev.** Cinco integrações estão sem modo
+  simulado ou desligadas no código (assinatura, pagamento, e-mail do portal, Google Drive, mensagem
+  recebida no WhatsApp), e o seed não monta a configuração mínima. A seção 2 lista o que precisa
+  ser resolvido antes de o QA entrar.
+- **Há bugs claros, já reproduzíveis pela leitura do código**, que o QA pode confirmar no primeiro
+  ciclo (seção 3), e um conjunto de decisões de produto sem as quais o QA não sabe o que esperar
+  (seção 4).
+- **O kit de QA anterior e vários docs descrevem o sistema antigo** (CRM de leads e pipeline,
+  movimentações na ficha do aluno, Gerente Comercial na configuração do WhatsApp). A seção 7 lista o
+  que está desatualizado.
 
 ## 2. Bloqueadores do UAT (resolver antes de o QA entrar)
 
-| # | Problema | Evidência | Efeito no UAT | Ação sugerida |
+| # | Problema | Evidência | Efeito no UAT | Quem resolve |
 |---|---|---|---|---|
-| B1 | **Matrícula com turma falha sempre.** O wizard lista turmas por `dataInicio` futuro, mas o servidor exige `status = ABERTA`. Turmas nascem `PLANEJADA` e nenhuma tela chama `alterarStatusTurma`. | `src/server/matricula/consultas.ts:391-402`, `src/server/matricula/validacao.ts:62`, `src/server/turmas/acoes.ts:90,155-175` | Nenhuma matrícula com turma pode ser concluída pela interface. | Ou expor "Abrir turma" na UI, ou alinhar o filtro do wizard com a validação. Enquanto não houver fix, abrir turmas direto no banco de UAT. |
-| B2 | **Matrícula salva como "Aguardando" não pode ser ativada depois.** `ativarMatricula` existe mas nenhum componente a chama; só existe o botão atômico "Receber pagamento e ativar" na criação, visível apenas para Admin. | `src/server/matricula/acoes.ts:604-624`, `src/app/(app)/matriculas/nova/MatriculaFormulario.tsx:737-755`, `src/server/matricula/permissoes.ts:10-11` | O fluxo "Vendedor salva, Financeiro ativa" descrito no doc 09 não é testável. | Expor "Ativar matrícula" na ficha do aluno para Financeiro/Secretaria/Admin. |
-| B3 | **Seed não cobre todos os papéis.** Não existe usuário Gerente Pedagógico, nem usuários "puros" de Gerente Comercial, Financeiro e Secretaria. Mariana (GC+Vendedor) mascara bugs de GC puro. | `prisma/seed.ts` | QA não consegue testar 4 papéis isoladamente. | Criar em UAT: 1 usuário puro por papel (7) + os combinados do seed. Ver matriz no relatório 01. |
+| B1 | **Nenhuma tela muda o status da turma.** `alterarStatusTurma` existe mas nada a chama. A matrícula manual só lista turmas `ABERTA`; a passagem para `EM_ANDAMENTO` depende do cron; `CONCLUIDA` não se alcança. | `src/server/turmas/acoes.ts:260-298`, `src/server/matricula/consultas.ts:49` | Fluxo legado de matrícula bloqueado; conclusão de turma intestável. | DEV abre turmas no banco, ou expõe a ação na UI. |
+| B2 | **Não existe driver de assinatura de contrato, nem simulado.** A ativação exige aceite de uma conclusão de assinatura; o aceite por anexo está vetado. | `src/server/contratos/aceite-estado.ts:20` e relatório 04 §fluxo | Nenhuma matrícula do fluxo novo (oportunidade → contratação) chega a ATIVA. Aditivos e substituição ficam inacessíveis. | DEV entrega driver simulado ou fixture. |
+| B3 | **Pagamento simulado desligado no código.** `pagamentoSimuladoHabilitado()` retorna `false` fixo e ignora `PAGAMENTO_SIMULADO`; o webhook responde 404; nenhuma tela gera o link `/pagar`. | `src/server/financeiro/gateway.ts:42-45`, `src/server/financeiro/baixa.ts:26` | Pagamento em UAT só por informe da Secretaria + confirmação de outro usuário Financeiro, ou recebimento direto pelo Financeiro. Em `/pagar` só dá para testar link inválido e expirado. | PO decide se liga; DEV corrige a flag. |
+| B4 | **Portal do aluno sem modo simulado.** O token de ativação só nasce quando o e-mail é enviado de verdade (Resend + flag). O banco guarda só o hash. | relatório 08 §portal, relatório 01 §portal | Convite fica "Preparado" para sempre; ativação, login e recuperação do portal intestáveis. | PO escolhe: chave de teste do Resend para uma caixa do time, ou ferramenta dev que gera o token. |
+| B5 | **Gravação de aula exige Google Drive.** Sem Drive, publicar gravação dá "Erro inesperado". Único caminho: exceção de gravação aprovada por outra pessoa da gestão. | `src/server/gravacoes/gravacao-aula.ts:38-39`, `resultado.ts:35-36` | Sem aula "Ministrada" não há reposição, correção nem conclusão de turma pelo caminho normal. | DEV configura Drive de teste ou o roteiro usa só a exceção. |
+| B6 | **Experimental não chega ao check-in do professor.** O funil novo agenda sem professor e zera o responsável; não há tela para atribuir professor; o check-in exige um. Regressão em relação à ficha antiga. | `PainelOportunidade.tsx:203`, `src/server/comercial/acoes.ts:494,678-683` | Etapas "Exp. realizada" e "No-show" inalcançáveis pela interface. | DEV corrige. |
+| B7 | **Seeds não montam o ambiente.** Falta: vínculo vendedor → gerente comercial; alçadas de desconto nos campos novos (o seed preenche o campo antigo, que nenhuma regra lê: todo vendedor fica com 0% de autonomia); configuração operacional (fuso, prazos do portal e de reposição); calendário; regras de avaliação; grades; janelas de admissão; turmas; modelos contratuais; políticas de comissão; 2º Administrador; 2º Gerente Pedagógico; 2º Financeiro com permissão de aprovar acertos. | relatório 09 §Dados mínimos (checklist de 19 passos), relatório 01 §Usuários | Sem isso, Home do GC vazia, todo desconto vai para aprovação, preparação para em "Regras de entrada incompletas", reserva falha, notas não lançam. | DEV + ADM seguem o checklist do relatório 09. |
+| B8 | **Não há como simular mensagem recebida no WhatsApp**, e o que o QA envia pela Inbox em modo simulado some (fica só no banco). Nota interna e contexto de transferência são gravados e não aparecem. | relatório 03 §UAT e achados 2 e 4 | Inbox só testável com receita do DEV (POST assinado no webhook do motor) e com o DEV lendo o banco. | DEV segue a receita do relatório 03. |
 
-## 3. Brechas de permissão e regra (decidir: é bug ou é a regra nova?)
+## 3. Bugs prováveis (o QA confirma e abre issue no primeiro ciclo)
 
-Itens em que o código faz algo diferente do que os docs dizem. Para cada um, você precisa dizer ao
-QA qual é o comportamento esperado, senão ele vai abrir bug ou deixar passar.
-
-| # | O que o código faz hoje | O que os docs dizem | Arquivo:linha |
+| # | Bug | Evidência | Relatório |
 |---|---|---|---|
-| R1 | Matrícula **ativa só com a taxa quitada**; `contratoOk` é gravado `true` automaticamente; `primeiraMensalidadeOk` fica `false`; `ativadaComPendencia` nunca é `true`. | Docs 05/10/16 (P7): taxa + 1ª mensalidade + contrato. | `src/server/matricula/acoes.ts:416-427,485-496` |
-| R2 | **Vendedor aumenta valor e adia vencimento sem aprovação.** Só desconto acima do limite vai para aprovação. Vendedor também ajusta cobrança de aluno fora do seu escopo. | Doc 09: Vendedor só desconto até o limite. Doc 10: Vendedor não altera cobrança. | `src/server/_shared/regras.ts:332-342`, `src/server/ajustes/acoes.ts:192-224` |
-| R3 | **Gerente Comercial pode aprovar o próprio pedido** de desconto (não compara solicitante com aprovador). | Doc 07: GC aprova pedidos do Vendedor. | `src/server/ajustes/acoes.ts` (`decidirAprovacao`) |
-| R4 | **Gerente Comercial puro não consegue conceder desconto** nem renegociar (só aprovar). | Doc 07: exemplo "GC 20%". | `src/server/ajustes/acoes.ts:195` |
-| R5 | **Leituras sem guard de papel**: qualquer usuário autenticado abre `/configuracao/{paises,catalogo,turmas}`, `/pipeline`, `/leads`, `/matriculas/nova` por URL e lê preços de referência. Mutações continuam protegidas. | Doc 09: Configuração é do Admin (Turmas: Admin + GP). | `src/app/(app)/configuracao/*/page.tsx`, `(app)/layout.tsx:8` |
-| R6 | Ajuste e aprovação **não verificam o status da cobrança**: pedido aprovado depois da quitação reescreve `valorNegociado` de cobrança `PAGO`. | Implícito: cobrança paga é terminal. | `src/server/ajustes/acoes.ts:198,312` |
-| R7 | **Secretaria não entra em `/financeiro`** (só registra pagamento pela ficha do aluno). | Doc 09: Secretaria vê e registra pagamento. | `src/app/(app)/financeiro/page.tsx:16`, `src/lib/nav.ts:51-56` |
-| R8 | **Editar um país apaga o tipo de documento de todos os alunos daquele país** (deleteMany + FK SET NULL). | Não documentado. | `src/server/paises/acoes.ts:114-125` |
-| R9 | **Lead em `NO_SHOW` some do Kanban** (enum tem a etapa, o board não tem a coluna). | Doc 09: No-show é saída paralela, Perdido é coluna. | `src/app/(app)/pipeline/KanbanBoard.tsx:46-56,152-157` |
-| R10 | **Pausar aluno não libera vaga** nem o tira da visão do professor. | Doc 09: Pausado não ocupa vaga. | `src/server/alunos/acoes.ts:176-197` |
-| R11 | Aluno nasce `ATIVO` mesmo com matrícula `AGUARDANDO`. | Doc 09: aluno em rascunho até ativar. | `prisma/schema.prisma:332`, `src/server/matricula/acoes.ts:141` |
-| R12 | Telefone não valida E.164: "123" vira "+506123" e salva. | Doc 04: telefone inválido bloqueia. | `src/server/_shared/validacao.ts:102-112` |
-| R13 | Vigência `PROXIMOS_MESES` e `CONTRATO_INTEIRO` fazem a mesma coisa; impacto anual é mensal × 12 sem olhar vigência. | Doc 09/11: "próximos N meses". | `src/server/ajustes/acoes.ts:61-78,236` |
-| R14 | Matrícula sem preço de referência exige justificativa **e** papel GC/Admin. | Doc 10 §3.1: basta justificativa. | `src/server/matricula/validacao.ts:107-135` |
-| R15 | Certificado profissional com valor livre em qualquer país. | Doc 04: fixo, em colones, só Costa Rica. | `src/server/matricula/schema.ts:80` |
-| R16 | Régua comercial: resposta do vendedor pelo celular (`fromMe`) **não para a cadência**; `REAGENDAR` não pausa; despacho não revalida etapa/aula antes de enviar. | Doc 27 e doc 32 (B2, B7, B8). | `src/server/whatsapp/cron-comercial.ts:165-179`, `despachante.ts:226-246`, `captura.ts:189-196` |
+| X1 | Usuário criado com letra maiúscula no e-mail nunca consegue entrar: o login normaliza para minúsculas, o cadastro grava como digitado. | `src/lib/auth.ts:18,26`, `src/server/acesso/acoes.ts:44,53` | 01 |
+| X2 | Menu "Empresas" aparece para Gerente Comercial e Secretaria, mas a página só abre para Financeiro e Admin. | `src/lib/nav.ts:63-69`, `src/app/(app)/empresas/page.tsx:13` | 01, 02 |
+| X3 | `/financeiro/permuta` e `/configuracao/contratos` negam acesso com a tela de erro genérica "Não foi possível carregar esta tela" em vez de "Acesso negado". | `permuta/page.tsx:12`; `configuracao/contratos` sem guard | 01 |
+| X4 | Gerente Comercial ao abrir `/financeiro` cai na aba Comissões, que chama uma consulta que exige papel Financeiro: erro provável. O teste da página mocka essa consulta. | `src/server/financeiro/consultas.ts:318-319` | 07 |
+| X5 | Contador de "não lidas" da Inbox nunca zera: abrir a conversa não marca como lida. | relatório 03 achado 1 | 03 |
+| X6 | Importação XLSX de alunos: a coluna "Número" (endereço) também casa com "Número do documento" e o sobrescreve; reimportar o mesmo arquivo sem e-mail duplica alunos. | `src/server/alunos/importacao.ts:109-117`, `src/app/api/alunos/importar/route.ts:144-148` | 08 |
+| X7 | Funil: mover em lote mostra "Etapa atualizada." mesmo quando todas foram recusadas; "Abrir contato" leva a rota inexistente (404); aba Conversas dos Relatórios diz "sem horário configurado" com horário salvo. | `FunilCliente.tsx:74-81`, `PainelOportunidade.tsx:250`, `relatorios/atendimento.ts:101` | 02 |
+| X8 | Reserva de vaga em turma nunca expira: nenhum código grava `EXPIRADA`; vencida, segue ocupando a vaga até uma desistência. A particular expira pelo cron. | relatório 04 achado 3 | 04 |
+| X9 | Trocar a moeda de um país não atualiza as ofertas; a contratação passa a recusar com "Confira a oferta e a moeda do país". | `editarPais` (relatório 09 achado 5) | 09 |
+| X10 | Desativar um idioma não tem efeito: continua em produto, nível e matrícula. | relatório 09 | 09 |
+| X11 | Campo de senha do cadastro de usuário sem `autocomplete`: o navegador preenche a senha do próprio admin. Achado "Alta" do doc 42 ainda aberto. | relatório 01 e 09 | 01, 09 |
+| X12 | Trocar a senha de um usuário não encerra as sessões abertas dele. | relatório 01 | 01 |
+| X13 | Pausa por matrícula não libera a vaga nem tira o aluno da visão do professor. | relatório 08 achado 3 | 08 |
+| X14 | Reposição: "Reposta em [data]" não aparece no diário. | relatório 06 | 06 |
+| X15 | Algumas ações da Inbox (encaminhar, reagir, editar, apagar, bloquear, grupos, confirmação de leitura) chamam o motor direto, sem passar pela trava `WHATSAPP_LIVE`. Hoje inertes porque nenhum número está conectado. **O QA nunca deve escanear o QR em UAT.** | relatório 03 achado 3 | 03 |
 
-## 4. Não implementado (o QA não deve testar nem abrir bug)
+## 4. Decisões de produto pendentes (o QA registra o observado, não abre bug)
 
-Lista do que os docs descrevem mas não existe no código. Serve para o QA não perder tempo.
+| # | Decisão | Hoje o código faz | Fonte que diz diferente | Relatório |
+|---|---|---|---|---|
+| R1 | Destino do fluxo legado `/matriculas/nova`: continua no ciclo ou sai? | Sempre cria aluno novo (duplica cadastro), emite taxa e mensalidade na criação, não confere janela nem reserva. A Secretaria abre a tela mas não consegue salvar. | SPEC-002 (matrícula como unidade operacional) | 04, 09 |
+| R2 | Ligar o pagamento simulado em UAT? | Desligado no código (B3). | docs/37 §pagamentos a conferir | 07 |
+| R3 | Como o QA recebe links do portal sem e-mail real? | Só e-mail real via Resend. | – | 08 |
+| R4 | Oficializar a nota equivale a divulgá-la ao aluno? | Publica no portal no instante da oficialização. | ACA-22 ("não presumir divulgação") | 05 |
+| R5 | O que acontece quando o prazo da recuperação vence sem realização? | Fechamento fica bloqueado, sem saída pela interface. | Q137 / ACA-17 | 05 |
+| R6 | Secretaria pode cancelar segunda chamada? | – | specs de segunda chamada | 05 |
+| R7 | Alcance das autorizações especiais quando a matrícula passa de pausada a encerrada (Q163). | – | SPEC-004 | 05 |
+| R8 | Turmas encerradas continuam visíveis no portal do aluno? | Continuam após transferência. | – | 05 |
+| R9 | Aria: ligar em modo "Ativa" sem confirmação; atua só no setor Comercial e em número sem dono (regra não documentada); sem chave, transfere com "Falha do provedor". | Como descrito. | docs/27 (IA copiloto só-leitura) | 02 |
+| R10 | Certificado profissional com valor livre em qualquer país. | Valor livre. | docs/04: fixo, em colones, só Costa Rica | 09 |
+| R11 | Importação XLSX presume consentimento de comunicações quando a célula está vazia; a migração M01 assume "não". | Como descrito. | LGPD / SPEC-001 §10 | 08 |
+| R12 | Vendedor pode aumentar valor e adiar vencimento de cobrança sem aprovação (só desconto acima do limite vai para alçada). | Como descrito. | docs/37 §4 alçadas | 07 |
+| R13 | Gerente Comercial sem item "Configuração" no menu, mas abre `/configuracao/crm` por URL e pelo link "Definir metas". | Como descrito (um teste trava isso). | docs/09 | 01, 02 |
+| R14 | Secretaria não gerencia turmas. | Só Admin e Gerente Pedagógico. | docs/37 diz GP/SEC | 01 |
 
-- Notificações (doc 10 §5): lead novo, desconto aprovado, cobrança vencida, comissão aprovada.
-- Busca global (doc 10 §8).
-- Motor de risco de cobrança (doc 25): só documentação.
-- Estorno de comissão, cancelamento e encerramento de matrícula: `ESTORNADA`, `CANCELADA`,
-  `ENCERRADA`, `RASCUNHO` nunca são gravados.
-- Regra dos 90 dias de posse do lead.
-- Pipeline B2B separado: é só o funil PF filtrado por flag.
-- IA copiloto (doc 27 C3): nenhum provedor LLM no código. Só palavras-chave exatas.
-- Progressão de nível A1 → A2: só via troca manual de turma.
-- Rematrícula reaproveitando cadastro de ex-aluno: gera aluno duplicado.
-- Moeda USD na matrícula fora de país dolarizado.
-- Bloqueio de aluno novo em país pausado/rascunho/encerrado.
-- Edição de dados do lead pela ficha e transferência de dono pela UI (`editarLead` e
-  `atribuirDono` existem no servidor, sem tela).
-- Filtros do Kanban por vendedor/segmento/temperatura.
-- Histórico de movimentações registrando a própria matrícula.
-- Cargas Q10 (docs 19 a 23): foram one-shot, scripts removidos. O que existe são 2 importadores
-  XLSX (alunos e turmas, só Admin), sem doc próprio.
-- Integrações de pagamento/contrato (DocuSign, gateway, conferência de comprovante).
+## 5. Não implementado ou desligado (não testar, não abrir bug)
 
-## 5. Comportamentos que o QA precisa saber (não são bugs)
+- Motor de risco de cobrança (doc 25). Estorno automático de comissão em cancelamento. Estorno de
+  recebimento confirmado.
+- B2B: fatura única e lote de colaboradores desligados por decisão do dono (D9). Empresas é só um
+  cadastro; "Colaboradores" fica sempre vazio.
+- LGPD: só um script que limpa texto de busca nos eventos de exportação. Sem exportação ou
+  anonimização por aluno, sem consentimento por canal.
+- Cancelamento de aula de turma pedido pelo professor (Q08). Remarcação de turma (só pelo
+  replanejamento global do calendário). Substituição de professor sem tela.
+- Reposição particular: benefício e autorização excepcional só no servidor, sem tela. Reposição por
+  gravação depende de Drive e de conta do portal. Em UAT o ciclo vai só até "Autorizada".
+- Segunda chamada: prorrogação (Q149) e oportunidade extra (Q150) sem tela; a tela de propor e
+  decidir só abre por URL.
+- Recuperação: falta e cancelamento pelo aluno (Q137); antecedência configurada e nunca usada.
+- Lead automático e réguas comerciais (C1/C2) foram removidos com o CRM antigo. LC-10 e LC-11 da
+  SPEC-005 não implementados.
+- Continuidade mensal: precisa de flag de ambiente mais uma chamada externa que nada agenda.
+- Régua de cobrança automática começa desligada.
+- Modo simulado de e-mail: não existe. Com as chaves desligadas, convites e avisos ficam
+  "Preparado" nas telas da Secretaria.
 
-- **Status derivados.** `StatusCobranca.ATRASADO` e `StatusComissao.ESTORNADA` nunca são gravados.
-  "Em atraso" é calculado por `vencimento < hoje` na leitura. Conferências de dados devem olhar a
-  data, não o status. A coluna Status da ficha mostra "Pendente" para cobrança vencida.
-- **Régua e cron em UAT.** A política de cobrança é semeada DESLIGADA e o cron só roda com número
-  `META_CLOUD`. Nada dispara sozinho até o Admin ligar. O modo simulado (sem `WHATSAPP_LIVE`)
-  registra o envio na outbox sem mandar mensagem real.
-- **"SIM" não confirma experimental em modo simulado** (`captura.ts:158-174` exige envio real).
-- **Critério "Bloquear" usa 15 dias fixos**, não o offset do degrau D+15 da política.
-- **Login:** 5 falhas em 15 minutos bloqueiam o e-mail (em memória, reinicia com o servidor).
-  Sessão JWT dura 30 dias. Não existe troca de senha pelo próprio usuário.
-- **Códigos legíveis** (L-/A-/M-/C-/T-) podem ter buracos na sequência: a geração roda fora da
-  transação.
-- **Gerente Comercial** vê Configuração › WhatsApp só com os painéis comerciais (régua e config);
-  números, QR e templates são do Admin.
+## 6. Comportamentos que o QA precisa saber (não são bugs)
 
-## 6. Docs que precisam de atualização
+- **Fuso da escola** em Configuração › Operação é obrigatório para lançar notas, preparar
+  calendário e usar o portal. O seed deixa os países em `America/Sao_Paulo`.
+- **Regra de avaliação** precisa estar publicada e aprovada **antes** de criar a turma: o vínculo só
+  acontece para turma com início futuro.
+- **Chamada só abre depois do fim real do encontro**, e a aula dura o tempo da modalidade (2 h no
+  Regular). O DEV precisa criar uma modalidade curta de UAT e manter o cron no ar (tick a cada 5 min).
+- **Quase toda decisão exige outra pessoa** (aprovação independente). Usar o Admin como segundo
+  decisor esconde erros de papel: por isso o pedido de 2º Admin, 2º GP e 2º Financeiro.
+- **"Em atraso" é calculado na leitura**, nunca gravado. `/pagar` pode mostrar cobrança vencida como
+  "Pagamento em aberto".
+- **Inbox:** Professor e Gerente Pedagógico abrem a Inbox hoje. O que o QA envia em modo simulado
+  não aparece na conversa.
+- **Aria sem chave** usa provedor simulado com respostas fixas. O selo "SIMULAÇÃO" só aparece no
+  Playground. PDF na base de conhecimento falha sem chave: esperado.
+- **Login:** 5 falhas em 15 min bloqueiam o e-mail (em memória). Não existe troca de senha pelo
+  próprio usuário.
+- **Movimentações do aluno** (pausar, encerrar, reativar, trocar turma) saíram da ficha e viraram
+  propostas com aprovação em `/alunos/[id]/movimentacoes` e `/academico`. O Gerente Pedagógico não
+  abre a página de movimentações.
+- **Desistência antes da ativação** funciona nos ramos simples, administrativo, financeiro e acerto
+  contratual. Falta o encerramento da assinatura externa (ação existe, sem tela).
+- `/api/health` mostra o SHA do commit: use para confirmar qual versão está no UAT.
 
-| Doc | O que está desatualizado |
+## 7. Docs e materiais desatualizados
+
+| Material | O que está errado |
 |---|---|
-| 05, 10 §1, 16 §B3 | Gatilho de ativação P7 (código ativa só com a taxa). |
-| 10 §2 | Tabela de papéis contradiz doc 09 em: Vendedor altera cobrança até o limite; Secretaria não cria aluno; GC não aprova comissão; GC configura WhatsApp comercial. |
-| 11 | Faltam 11 models e 11 enums (WhatsApp, PoliticaRegua, ConfigComercial), 7 campos de `Lead`, 4 de `Matricula`, 18 migrations. |
-| 12 | 20 eventos listados como "planejados" já são emitidos; `ExperimentalAtribuida` não está no doc. |
-| 09 §Turmas | Ciclo de status da turma não existe na UI; situação é derivada das datas. |
-| 09 §Pipeline | Coluna No-show. Filtros do Kanban. |
-| 18 | Não define estados vazio/erro/confirmação; ações como Enviar proposta e Desativar usuário executam sem confirmação. |
-| 30 S1 | Trava "automático ⇒ oficial" foi liberada para comercial/reativa sem ADR. |
-| 28, 32 | 7 gaps do doc 28 abertos; os 9 bloqueadores B1 a B9 do doc 32 abertos. |
+| `docs/guia-dev-fluxo-crm.md` | Descreve o CRM antigo (Leads, Pipeline, ficha do lead), removido. |
+| `docs/40-mudancas-academicas-com-aprovacao.md` | Diz que transferência equivalente é direta (hoje passa por proposta, decisão e execução) e "um pedido aberto por aluno" (o limite real é por matrícula). |
+| `docs/specs/fechamento-e-aproveitamento-academico.md` e planos 358, 413, Q54, 565 | Dão como pendentes coisas já implementadas. |
+| `docs/37` | Diz que Secretaria gerencia turmas (não gerencia). AC14, AC18, AC19, AC24 parciais; AC30 sem evidência. |
+| `docs/04` | Certificado fixo em colones só na Costa Rica: o código aceita valor livre em qualquer país. |
+| `docs/09`, `10`, `11`, `12`, `16`, `26`, `27` | Especificação original: telas, regras, modelo de dados e eventos de agosto. Usar só como contexto histórico. |
+| Quadro de entregas (13/10) | Diz que `/api/health` não mostra o SHA; já mostra. |
+| Kit de QA anterior (roteiro de 177 cenários, matriz de usuários, testes Playwright de menu) | Escrito sobre o commit de agosto. Substituído por esta versão. |
 
-## 7. Como isso vira o roteiro de QA
+## 8. Como isso vira o roteiro de QA
 
-Cada relatório em `auditoria/` termina com uma lista de cenários de teste por tela ou fluxo
-(20 a 30 por área, cerca de 150 no total), já escritos para serem executados em UAT pela
-interface. O roteiro do QA será montado a partir deles, marcando para cada cenário qual é o
-comportamento esperado segundo a decisão tomada no §3.
+Cada relatório em `auditoria/` termina com 38 a 60 cenários (463 no total), já escritos para UAT
+pela interface, com papel, passos e resultado esperado, e marcados `[PO]` quando dependem de uma
+decisão da seção 4 e `[DEV]` quando exigem passo do desenvolvedor (banco, variável, cron, webhook).
+O roteiro em [`03-roteiro-testes-manuais.md`](03-roteiro-testes-manuais.md) organiza esses cenários
+na ordem real de uso e aponta para os IDs B, X e R desta página. O checklist de preparação do
+ambiente está no relatório 09, seção "Dados mínimos do UAT".

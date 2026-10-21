@@ -16,8 +16,8 @@ e2e/
   auth.setup.ts           loga uma vez com cada papel e salva a sessão em e2e/.auth/
   fixtures/usuarios.ts    e-mail e senha de cada papel, lidos do ambiente
   fixtures/auth.ts        login(page, papel) e o `test` com a opção { papel }
-  login.spec.ts           login por papel + menu lateral, senha errada, rota sem sessão
-  permissoes.spec.ts      papel X abre URL Y e recebe "Acesso negado"
+  login.spec.ts           ACE-01 login + menu por papel, ACE-02 senha errada, ACE-03 rota sem sessão
+  permissoes.spec.ts      PER-NNx: papel X abre URL Y e recebe "Acesso negado"
 ```
 
 ## 1. Instalar (uma vez por máquina)
@@ -41,7 +41,29 @@ Abra o `.env.e2e` e preencha:
 
 - `E2E_BASE_URL`: URL do UAT, sem barra no final (o gestor passa por canal privado).
 - `E2E_PASSWORD_<PAPEL>`: senha de cada usuário de teste (também por canal privado).
-- `E2E_EMAIL_<PAPEL>`: já vem com o padrão do seed de QA; só altere se o UAT usar outros.
+- `E2E_EMAIL_<PAPEL>`: já vem com o padrão do seed; só altere se o UAT usar outros.
+
+Papéis (`<PAPEL>`), com os apelidos do roteiro e o e-mail padrão do seed (`prisma/seed.ts` e
+`prisma/seed-qa.ts`):
+
+| `<PAPEL>` | Papel no sistema | E-mail padrão |
+|---|---|---|
+| `ADMIN` | Administrador | admin@genius.com |
+| `ADMIN2` | Administrador (segundo, para decisões independentes) | admin2@genius.com |
+| `GERENTE_COMERCIAL` | Gerente Comercial | gerente@genius.com |
+| `VENDEDOR` | Vendedor | joao@genius.com |
+| `VENDEDOR2` | Vendedor (segundo, outra carteira) | vendedor2@genius.com |
+| `VENDEDOR3` | Vendedor sem limite de desconto | vendedor3@genius.com |
+| `GERENTE_PEDAGOGICO` | Gerente Pedagógico | gp@genius.com |
+| `GERENTE_PEDAGOGICO2` | Gerente Pedagógico (segundo) | gp2@genius.com |
+| `PROFESSOR` | Professor | carla@genius.com |
+| `PROFESSOR2` | Professor (segundo, outra turma) | professor2@genius.com |
+| `FINANCEIRO` | Financeiro | financeiro@genius.com |
+| `FINANCEIRO2` | Financeiro (segundo, aprova acertos) | financeiro2@genius.com |
+| `SECRETARIA` | Secretaria Acadêmica | secretaria@genius.com |
+| `VENDEDOR_PROFESSOR` | Vendedor + Professor no mesmo usuário (AC03 do doc 37) | venprof@genius.com |
+
+Exemplo: `E2E_EMAIL_GERENTE_PEDAGOGICO2` e `E2E_PASSWORD_GERENTE_PEDAGOGICO2`.
 
 O `playwright.config.ts` lê esse arquivo sozinho (recurso nativo do Node, sem pacote extra).
 Se preferir não usar arquivo, defina as variáveis no terminal. O que está no terminal tem
@@ -60,7 +82,10 @@ $env:E2E_PASSWORD_PROFESSOR = '...'
 ```
 
 Sem `E2E_BASE_URL` nada roda: o Playwright para com uma mensagem explicando o que falta. Sem a
-senha de um papel, o setup daquele papel falha dizendo qual variável preencher.
+senha de um papel, o setup daquele papel é **pulado** (aparece como `skipped`, com o nome da
+variável) e só os testes que usam aquele papel falham, dizendo o que preencher. Assim um papel novo
+ainda sem senha (ex.: `ADMIN2`) não trava o resto. Senha preenchida mas errada faz o setup falhar e,
+nesse caso, nenhum spec roda: corrija a senha.
 
 ## 3. Rodar
 
@@ -70,7 +95,7 @@ senha de um papel, o setup daquele papel falha dizendo qual variável preencher.
 | `npm run test:e2e:ui` | Abre o modo UI: lista de testes, rodar um por um, ver cada passo e a tela |
 | `npm run test:e2e -- --headed` | Roda mostrando a janela do navegador |
 | `npm run test:e2e -- e2e/login.spec.ts` | Roda só um arquivo |
-| `npm run test:e2e -- -g "PER-09"` | Roda só os testes cujo nome contém `PER-09` |
+| `npm run test:e2e -- -g "PER-01"` | Roda só os testes cujo nome contém `PER-01` |
 | `npm run test:e2e -- --debug` | Roda passo a passo com o inspetor do Playwright |
 | `npx playwright test --list` | Só lista os testes encontrados, sem executar |
 
@@ -101,8 +126,8 @@ Print, vídeo e trace só são guardados para testes que **falharam**.
 
 ## 5. Como funciona o login reaproveitado
 
-1. O projeto `setup` (`e2e/auth.setup.ts`) roda antes de tudo: loga com cada papel pela tela
-   `/login` e salva os cookies em `e2e/.auth/<PAPEL>.json`.
+1. O projeto `setup` (`e2e/auth.setup.ts`) roda antes de tudo: loga com cada papel que tem senha
+   pela tela `/login` e salva os cookies em `e2e/.auth/<PAPEL>.json`.
 2. Num spec, `test.use({ papel: "PROFESSOR" })` faz os testes daquele bloco começarem já logados
    como Professor, sem passar pela tela de login de novo.
 3. Sem `test.use({ papel })`, o teste começa sem sessão (visitante), como em `login.spec.ts`.
@@ -115,25 +140,41 @@ opção `papel`.
 - **Um spec por módulo**: `login.spec.ts`, `permissoes.spec.ts`, e depois `crm.spec.ts`,
   `matricula.spec.ts`, `financeiro.spec.ts`, `alunos.spec.ts`...
 - **Nome do teste começa pelo ID do roteiro** `docs/qa/03-roteiro-testes-manuais.md`, seguido de
-  uma frase do que se espera. Ex.: `test("CRM-07 vendedor move lead de Novo para Em Atendimento", ...)`.
-  Assim o resultado do Playwright casa com o roteiro e com a issue de bug. Quando um cenário
-  manual cobre várias URLs ou papéis, cada teste automatizado recebe um sufixo (`PER-09a`,
-  `PER-09b`…) e o `ACE-01` roda uma vez por papel.
+  uma frase do que se espera. Assim o resultado do Playwright casa com o roteiro e com a issue de
+  bug. Os IDs destes specs são **definitivos**:
+  - `ACE-01` login com sucesso e menu lateral (roda uma vez por papel), `ACE-02` senha errada e
+    e-mail inexistente, `ACE-03` rotas protegidas sem sessão (`/alunos`, `/financeiro`,
+    `/configuracao/usuarios`, `/funil`);
+  - `PER-NNx` permissões: `NN` é o papel (`01` Professor, `02` Vendedor, `03` Gerente
+    Pedagógico, `04` Secretaria, `05` Financeiro; `06` a `08` são bugs conhecidos ou decisões
+    pendentes) e a letra é a URL (`PER-01a`, `PER-01b`…).
+  Novos specs seguem o mesmo padrão com o prefixo do módulo no roteiro.
+- **Menu esperado** (`MENU_ESPERADO` em `login.spec.ts`): espelha o array `NAV` de `src/lib/nav.ts`,
+  na mesma ordem (a Sidebar não reordena; a Home não é o primeiro item). Se o menu mudar, atualize
+  junto.
 - **Seletores**: prefira o que o usuário vê (`getByRole("button", { name: "Entrar" })`,
   `getByText(...)`, `getByRole("heading", ...)`). Evite classes CSS e XPath.
 - **Esperas**: não use `page.waitForTimeout(...)`. Os `expect(...)` do Playwright já esperam o
   elemento aparecer (até 10 s).
-- **Comportamento que diverge do doc** (itens R1 a R16 de `docs/qa/auditoria-consolidada.md`):
-  escreva o teste com o comportamento esperado e marque com `test.fixme(...)` e um comentário
-  citando o R. Quando o gestor decidir, troque por `test(...)` ou apague o caso.
+- **Bug conhecido ou decisão pendente** (itens X e R de `docs/qa/auditoria-consolidada.md`, ex.:
+  X2 Empresas no menu, X3 tela de erro em vez de "Acesso negado", R13 Configuração do Gerente
+  Comercial): escreva o teste com o comportamento esperado e marque com `test.fixme(...)` e um
+  comentário citando o X ou o R. Quando a correção for publicada ou o PO decidir, troque por
+  `test(...)`, ajuste ou apague o caso.
 - **Dados**: testes que criam registros (leads, matrículas) devem usar nomes identificáveis
   (ex.: prefixo `E2E `) para o time saber o que foi gerado pela automação.
 - Comentários e nomes de teste em português.
 
 ## 7. O que NÃO fazer
 
-- **Não aponte para produção.** `E2E_BASE_URL` é sempre o UAT. Os testes logam, clicam e
+- **Nunca aponte para produção.** `E2E_BASE_URL` é sempre o UAT. Os testes logam, clicam e
   (nos próximos specs) criam dados.
+- **Nunca escaneie o QR code do WhatsApp no UAT** (nem à mão, nem num teste). Algumas ações da
+  Inbox chamam o motor do WhatsApp direto, sem a trava `WHATSAPP_LIVE`; com um número conectado
+  elas mandariam mensagem de verdade (bug X15 da auditoria consolidada).
+- **Não espere o CI rodar estes testes.** O CI do repositório (`.github/workflows/ci.yml`) roda só
+  typecheck, lint, testes unitários e build; ele **não** roda os E2E. Os E2E rodam na máquina do QA,
+  contra o UAT, com o `.env.e2e` local.
 - **Não commite o `.env.e2e`** nem nada de `e2e/.auth/` (senhas e cookies de sessão). Ambos
   estão no `.gitignore`; confira com `git status` antes de commitar.
 - Não commite `playwright-report/` nem `test-results/` (também ignorados).

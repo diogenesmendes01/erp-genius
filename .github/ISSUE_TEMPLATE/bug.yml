@@ -26,14 +26,17 @@ body:
     attributes:
       label: Módulo
       options:
-        - Login / sessão
-        - Configuração (países, catálogo, turmas, usuários)
-        - CRM (leads, pipeline, inbox)
-        - WhatsApp
-        - Matrícula
-        - Alunos
-        - Financeiro (cobranças, pagamentos, aprovações, comissões)
-        - Permissões (papel vê ou faz algo que não devia)
+        - Login / sessão / permissões
+        - Configuração (operação, países, catálogo, turmas, usuários, modelos, WhatsApp, CRM)
+        - CRM (funil, carteira, contatos, tarefas, relatórios, metas)
+        - Inbox / WhatsApp / comunicações
+        - Matrícula / contrato / Secretaria
+        - Alunos / movimentações / portal do aluno
+        - Acadêmico (avaliações, correções, segunda chamada, recuperação, fechamento)
+        - Diário de aulas / agenda / reposições / gravações
+        - Financeiro (cobranças, pagamentos, descontos, aprovações, comissões, permutas)
+        - Empresas (B2B)
+        - Agente de IA (Aria)
         - Outro
     validations:
       required: true
@@ -52,13 +55,31 @@ body:
       required: true
 
   - type: input
+    id: versao
+    attributes:
+      label: Versão do UAT
+      description: O campo `sha` de /api/health no momento do teste.
+      placeholder: "9e3d1d3c"
+    validations:
+      required: true
+
+  - type: input
     id: papel
     attributes:
       label: Papel e usuário usados
-      description: Só o papel e o e-mail de teste. Nunca a senha.
-      placeholder: "Vendedor (joao@genius.com)"
+      description: Só o papel e o apelido ou e-mail de teste. Nunca a senha.
+      placeholder: "Vendedor (VEND-A, joao@genius.com)"
     validations:
       required: true
+
+  - type: input
+    id: auditoria
+    attributes:
+      label: Referência na auditoria
+      description: Se o roteiro marcou o cenário com X# (bug provável), escreva o código. Senão, deixe vazio.
+      placeholder: "X6"
+    validations:
+      required: false
 
   - type: input
     id: roteiro
