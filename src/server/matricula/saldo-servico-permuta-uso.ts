@@ -8,8 +8,8 @@ import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-a
 import { diaCivilGravado } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
-// Q171 (decisões de 21/09/2026): uso do saldo restrito a serviços. Abate mensalidade, hora particular ou taxa em
-// aberto da MESMA matrícula, na moeda do saldo, por proposta do Financeiro e decisão de outro aprovador. A aprovação
+// Q171 (decisões de 21/09/2026): uso do saldo restrito a serviços. Abate mensalidade (hora particular e taxa: ver
+// TIPOS_ABATIVEIS) em aberto da MESMA matrícula, na moeda do saldo, por proposta do Financeiro e decisão de outro aprovador. A aprovação
 // nasce como aplicação de compensação de permuta (crédito de serviço) na mesma transação; o saldo não expira e nunca
 // vira dinheiro. Port da #62 (4f09181e); guards no banco em 20261021310000_uso_saldo_servico_permuta.
 const id = z.string().trim().min(1).max(100);
@@ -17,7 +17,10 @@ const dinheiro = z.string().regex(/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/, "Informe
 const texto = z.string().trim().min(5).max(2000);
 const Propor = z.object({ saldoId: id, cobrancaId: id, valor: dinheiro, motivo: texto, chaveIdempotencia: z.string().trim().min(8).max(100) }).strict();
 const Decidir = z.object({ propostaId: id, aprovada: z.boolean(), motivo: texto }).strict();
-const TIPOS_ABATIVEIS = ["MENSALIDADE", "HORA_PARTICULAR", "MATRICULA"] as const;
+// R1 da #283 (B2 e item menor): só MENSALIDADE, como a permuta da main. Em HORA_PARTICULAR a aula declarada não cobrável
+// (Q175) devolveria o valor pago com saldo como crédito financeiro; em MATRICULA o acerto de taxa não conhece a permuta.
+// Hora particular e taxa ficam para conferência específica (ver a nota da Q171 em docs/planejamento/decisoes-2026-09-21.md).
+const TIPOS_ABATIVEIS = ["MENSALIDADE"] as const;
 
 async function executarUso<T>(acao: () => Promise<T>) {
   let podeRevisar = false;
@@ -70,7 +73,7 @@ export async function proporUsoSaldoServicoPermuta(input: z.input<typeof Propor>
       const c = await tx.cobranca.findUnique({ where: { id: d.cobrancaId }, select: { id: true, matriculaId: true, moeda: true, tipo: true, status: true, saldo: true, versao: true, suspensaPorItemPausaId: true, canceladaPorPausaId: true } });
       if (!c || c.matriculaId !== saldo.matriculaId) throw new ErroRegra("O saldo de serviços só abate cobranças da mesma matrícula.");
       if (c.moeda !== saldo.moeda) throw new ErroRegra(`O saldo de serviços está em ${saldo.moeda}; a cobrança está em ${c.moeda}. Nada é convertido.`);
-      if (!TIPOS_ABATIVEIS.includes(c.tipo as typeof TIPOS_ABATIVEIS[number])) throw new ErroRegra("O saldo de serviços abate apenas mensalidade, hora particular ou taxa de matrícula.");
+      if (!TIPOS_ABATIVEIS.includes(c.tipo as typeof TIPOS_ABATIVEIS[number])) throw new ErroRegra("O saldo de serviços abate apenas mensalidade. Hora particular e taxa exigem conferência financeira específica.");
       if (!["PENDENTE", "ATRASADO"].includes(c.status) || c.saldo === null) throw new ErroRegra("A cobrança precisa estar em aberto.");
       await exigirCobrancaAbativelTx(tx, c);
       const valor = new Prisma.Decimal(d.valor);

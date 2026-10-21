@@ -39,7 +39,7 @@ export default async function Pagina({ params }: { params: Promise<{ matriculaId
  {cabecalho && <IdentificacaoRegistro rotulo="Aluno e matrícula" dados={{ aluno: cabecalho.aluno, alunoHref: `/alunos/${encodeURIComponent(cabecalho.alunoId)}`, matriculaCodigo: cabecalho.codigo, matriculaComplemento: cabecalho.produto }} />}
  <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Como funciona</h2>
   <p>Quando a obrigação acordada fica menor do que o serviço já compensado, o excedente não vira crédito nem devolução sozinho. O Financeiro propõe a destinação, o aluno (ou responsável) e a escola registram concordância, e outra pessoa do Financeiro decide.</p>
-  <p>Saldo restrito a serviços abate mensalidade, hora particular ou taxa desta mesma matrícula, por proposta e aprovação próprias; não expira e nunca vira dinheiro, nem no encerramento ou na desistência. Crédito financeiro segue as regras gerais de crédito da matrícula, na mesma moeda.</p>
+  <p>Saldo restrito a serviços abate mensalidade desta mesma matrícula (hora particular e taxa exigem conferência financeira específica), por proposta e aprovação próprias; não expira e nunca vira dinheiro, nem no encerramento ou na desistência. Crédito financeiro segue as regras gerais de crédito da matrícula, na mesma moeda.</p>
  </section>
  <h2 className="text-xl">Cobranças compensadas por permuta</h2>
  {!d.cobrancas.length && <EstadoVazio bloco>Nenhuma cobrança desta matrícula foi compensada por permuta.</EstadoVazio>}
