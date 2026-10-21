@@ -166,6 +166,8 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/financeiro/migracao": "Conciliação da migração",
   "/financeiro/migracao/*": "Linha da migração",
   "/financeiro/permuta": "Permutas",
+  // Q171/Q167C: sem lista própria; o "voltar" leva às permutas.
+  "/financeiro/permuta/excedente/*": "Excedente de permuta",
   "/financeiro/recebimentos": "Recebimentos",
 
   // Matrículas (o registro tem o próprio cabeçalho com as seções). As seções têm o MESMO nome da aba

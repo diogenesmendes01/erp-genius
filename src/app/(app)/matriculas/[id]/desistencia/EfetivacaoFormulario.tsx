@@ -10,8 +10,9 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId }: { pedidoId: string; estadoHash: string; decisaoFinanceiraId?: string }) {
   const router = useRouter();
   const [concluido, setConcluido] = useState(false);
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a efetivação é única por pedido e o reenvio com a mesma confirmação devolve a
+  // efetivação já feita (server/matricula/desistencia-efetivacao.ts). Na falha de transporte, reenviar sem alterar.
+  const acao = useAcaoCliente({ idempotente: true });
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const dados = new FormData(evento.currentTarget);
