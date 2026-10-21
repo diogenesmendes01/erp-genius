@@ -76,6 +76,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   // segunda nota. Por isso ela tem executor próprio; as outras ações do painel seguem sem chave.
   const acaoNota = useAcaoCliente({ idempotente: true });
   const tentativaNota = useChaveIdempotencia();
+  // O link de pagamento também recebe chave (#166): o reenvio não grava outro LinkPagamentoEnviado nem move a
+  // âncora da régua "link sem pagamento". Executor próprio, como a nota.
+  const acaoLink = useAcaoCliente({ idempotente: true });
+  const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
   // A experimental é digitada no fuso pessoal (sem preferência, o da escola), escrito ao lado do campo; o servidor
@@ -100,6 +104,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
 
   async function rodar(f: () => ReturnType<typeof enviarProposta>, sucesso: string, depois?: () => void) {
     acaoNota.limpar();
+    acaoLink.limpar();
     const d = await acao.executar(f, sucesso);
     if (d?.tipo === "ok") {
       router.refresh();
@@ -107,8 +112,20 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
     }
   }
 
+  async function registrarLink() {
+    acao.limpar();
+    acaoNota.limpar();
+    const d = await acaoLink.executar(() => registrarLinkPagamento(taxa!.cobrancaId, link, { chaveIdempotencia: tentativaLink.atual }), "Link de pagamento registrado.");
+    tentativaLink.depoisDo(d);
+    if (d?.tipo === "ok") {
+      router.refresh();
+      setLink("");
+    }
+  }
+
   async function registrarNota() {
     acao.limpar();
+    acaoLink.limpar();
     const d = await acaoNota.executar(() => registrarNotaInterna(op.id, { nota, chaveIdempotencia: tentativaNota.atual }), "Nota registrada.");
     tentativaNota.depoisDo(d);
     if (d?.tipo === "ok") {
@@ -225,14 +242,15 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 {taxa!.linkPagamento && (
                   <p className="break-all text-xs text-gray-600">Link atual: {taxa!.linkPagamento}</p>
                 )}
-                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado} onChange={(e) => setLink(e.target.value)} />
+                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado || acaoLink.ocupado} onChange={(e) => setLink(e.target.value)} />
                 <div>
                   <Botao
                     variante="secundario"
-                    disabled={!link.trim() || acao.ocupado}
-                    onClick={() => rodar(() => registrarLinkPagamento(taxa!.cobrancaId, link), "Link de pagamento registrado.", () => setLink(""))}
+                    disabled={!link.trim() || acao.ocupado || acaoLink.ocupado}
+                    onClick={() => void registrarLink()}
                   >Registrar link de pagamento</Botao>
                 </div>
+                <FeedbackAcao erro={acaoLink.erro} sucesso={acaoLink.sucesso} />
               </div>
             )}
 

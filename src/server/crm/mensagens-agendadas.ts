@@ -273,6 +273,7 @@ async function alterar(
   id: string,
   tipoEvento: string,
   montar: (m: { validaAte: Date | null }) => Montagem | Promise<Montagem>,
+  estadoAlvo?: "CANCELADA",
 ): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
@@ -283,11 +284,26 @@ async function alterar(
         select: { status: true, tarefaId: true, leadId: true, atendimentoId: true, validaAte: true, contato: { select: { pessoaId: true } } },
       });
       if (!m) throw recusa(undefined);
-      if (m.status !== "PENDENTE" && m.status !== "ADIADA") throw recusa(m.status);
+      // #166: com o estado-alvo já alcançado por quem repete (o último `tipoEvento` desta intenção é dele), o
+      // reenvio devolve ok sem outro Evento. Se o estado veio do despachante ou de outra pessoa, segue recusado.
+      const jaFeito = async (status: string | undefined) => {
+        const agregado = aggregadoDe(m);
+        if (!estadoAlvo || status !== estadoAlvo || !agregado) return false;
+        const ultimo = await tx.evento.findFirst({
+          where: { tipo: tipoEvento, ...agregado, payload: { path: ["intencaoId"], equals: id } },
+          orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true },
+        });
+        return ultimo?.autorId === autor.id;
+      };
+      if (m.status !== "PENDENTE" && m.status !== "ADIADA") {
+        if (await jaFeito(m.status)) return;
+        throw recusa(m.status);
+      }
       const { data, payload } = await montar(m);
       const r = await tx.intencaoMensagem.updateMany({ where: { id, status: { in: ["PENDENTE", "ADIADA"] } }, data });
       if (r.count === 0) {
         const atual = await tx.intencaoMensagem.findUnique({ where: { id }, select: { status: true } });
+        if (await jaFeito(atual?.status)) return;
         throw recusa(atual?.status);
       }
       const alvo = aggregadoDe(m);
@@ -320,11 +336,12 @@ export async function enviarAgora(id: string): Promise<Resultado> {
   });
 }
 
+/** Idempotente por natureza (#166): o reenvio de quem cancelou devolve ok sem outro Evento. */
 export async function cancelarMensagemAgendada(id: string): Promise<Resultado> {
   return alterar(id, "MensagemAgendadaCancelada", () => ({
     data: { status: "CANCELADA", motivoFalha: "cancelada_pelo_autor" },
     payload: {},
-  }));
+  }), "CANCELADA");
 }
 
 /** Tarefas e mensagens agendadas do intervalo (datas civis, inclusive). Mensagem nunca fica em "Sem data". */

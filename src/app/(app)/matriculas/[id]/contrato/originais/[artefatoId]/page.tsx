@@ -6,6 +6,10 @@ import { ConferirAssinatura } from "../../ConferirAssinatura";
 import { consultarConclusaoContratual } from "@/server/contratos/conclusao-consulta";
 import { consultarAceiteOriginal } from "@/server/contratos/aceite";
 import { ConferirAceite } from "../../ConferirAceite";
+import { consultarIntegracaoAssinatura } from "@/server/contratos/envio";
+import { conciliacaoLiberada, rotuloFornecedorAssinatura } from "@/server/contratos/provedor-assinatura";
+import { EnviarAssinatura } from "../../EnviarAssinatura";
+import { AvisoAssinaturaSimulada } from "../../AvisoAssinaturaSimulada";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarMoeda } from "@/lib/dinheiro";
@@ -35,14 +39,27 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
   const processo = resultadoConclusao.ok ? resultadoConclusao.dado : null;
   const consultaAceite = processo?.conclusao ? await consultarAceiteOriginal({ matriculaId: id, conclusaoId: processo.conclusao.id }) : null;
   const aceite = consultaAceite?.ok ? consultaAceite.dado : null;
+  const consultaIntegracao = await consultarIntegracaoAssinatura();
+  const integracao = consultaIntegracao.ok ? consultaIntegracao.dado : null;
+  // Só a conferência registrada para a revisão atual autoriza o envio, e só pelo mesmo serviço/ambiente do
+  // processo já existente; a ação revalida tudo na transação.
+  const conferenciaAtual = atual ? d.historico.find((h) => h.revisaoHash === atual.hash) ?? null : null;
+  const mesmoServico = !!integracao && (!processo || (processo.fornecedor === integracao.fornecedor && processo.ambiente === integracao.ambiente));
+  const podeEnviar = mesmoServico && !!conferenciaAtual && (!processo || processo.estadoEnvio === "PREPARADO");
+  // ENVIANDO recente pode ter a criação em voo: só ENVIO_INCERTO ou ENVIANDO vencido (B-1 da revisão rigorosa do #288).
+  const podeConciliar = mesmoServico && !!processo && conciliacaoLiberada(processo.estadoEnvio, processo.tentativaAtualIniciadaEm).liberada;
   return <div className="space-y-4">
     <VoltarPara href={`/matriculas/${id}/contrato`} para="Documentos da matrícula" />
     <h1 className="text-2xl">Conferência para assinatura</h1>
     <a className="underline" href={`/api/matriculas/${id}/originais/${artefatoId}/pdf`} target="_blank" rel="noopener noreferrer">Abrir original preservado</a>
-    <p>O envio ao serviço de assinatura ainda não está disponível. Esta conferência registra a revisão; não comprova envio, assinatura ou aceite.</p>
+    <p>{integracao ? "O envio ao serviço de assinatura exige conferência registrada para a revisão atual." : "O envio ao serviço de assinatura ainda não está disponível."} Esta conferência registra a revisão; não comprova envio, assinatura ou aceite.</p>
+    {!consultaIntegracao.ok && <p role="alert">{consultaIntegracao.erro}</p>}
+    {((integracao?.simulado && (podeEnviar || podeConciliar)) || processo?.fornecedor === "SIMULADO") && <AvisoAssinaturaSimulada />}
+    {podeEnviar && conferenciaAtual && integracao && <EnviarAssinatura modo="ENVIAR" matriculaId={id} artefatoId={artefatoId} conferenciaId={conferenciaAtual.id} servico={rotuloFornecedorAssinatura(integracao.fornecedor)} />}
+    {podeConciliar && processo && integracao && <EnviarAssinatura modo="CONCILIAR" matriculaId={id} processoId={processo.processoId} servico={rotuloFornecedorAssinatura(integracao.fornecedor)} />}
     {!resultadoConclusao.ok && <p role="alert">{resultadoConclusao.erro}</p>}
     {processo && <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Evidências do processo de assinatura</h2>
-      <p>Serviço: {processo.fornecedor}. Ambiente: {processo.ambiente === "SANDBOX" ? "Teste — não comprova assinatura em produção" : "Produção"}.</p>
+      <p>Serviço: {rotuloFornecedorAssinatura(processo.fornecedor)}. Ambiente: {processo.ambiente === "SANDBOX" ? "Teste — não comprova assinatura em produção" : "Produção"}.</p>
       <p>Estado do envio: {rotular(ESTADO_ENVIO_ASSINATURA_LABEL, processo.estadoEnvio)}. A evidência preservada não substitui a conferência final da Secretaria.</p>
       {processo.conclusao ? <><p>Conclusão registrada em {textoInstanteAdministrativo(processo.conclusao.concluidaEm, preferenciaFusoExibicao)}.</p>
         <ul>{processo.conclusao.assinaturas.map(a => <li key={a.papel}>{a.nome} — {rotular(PAPEIS_MODELO, a.papel)} — {textoInstanteAdministrativo(a.assinadaEm, preferenciaFusoExibicao)}</li>)}</ul>

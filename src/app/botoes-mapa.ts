@@ -811,6 +811,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     // Decidir a compensação (L2142, #175): rejeitar é perigo; aprovar só abre o ConfirmarAcao.
     "<button> Enviando… · Rejeitar · Aprovar e compensar · Decidir → perigo|secundario/sm",
   ],
+  // Q171/Q167C: destinação do excedente e uso do saldo restrito a serviços (um botão por formulário, como acertos-adiantamento).
+  "financeiro/permuta/excedente/[matriculaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
   "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
     "<button> Destinar → fantasma/sm",
     "<button> Remover → perigo/sm",
@@ -849,6 +853,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "matriculas/[id]/contrato/ConferirAssinatura.tsx": [
     "<button> Registrando… · Registrar conferência para assinatura → secundario/lg",
   ],
+  "matriculas/[id]/contrato/EnviarAssinatura.tsx": [
+    "<button> Aguarde… · Enviar para assinatura · Conciliar envio → secundario/lg",
+  ],
   "matriculas/[id]/contrato/PreservarOriginal.tsx": [
     "<button> Gerando e preservando… · Gerar e preservar original → secundario/lg",
   ],
@@ -866,6 +873,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/contrato/aditivos/ConferenciaFinalFormulario.tsx": [
     "<button> Registrando… · Registrar conferência interna → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/EnvioAditivoFormulario.tsx": [
+    "<button> Aguarde… · Enviar aditivo para assinatura · Conciliar envio → secundario/lg",
   ],
   "matriculas/[id]/contrato/aditivos/Formularios.tsx": [
     "<button> Registrando… · Registrar proposta de aditivo → secundario/lg",
@@ -917,6 +927,9 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   ],
   "matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx": [
     "<button> Registrando… · Registrar decisão administrativa → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/documentos/CancelarAssinatura.tsx": [
+    "<button> Aguarde… · Cancelar envio no serviço de assinatura → perigo/lg",
   ],
   "matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx": [
     "<button> Preparando… · Reapresentar memória contratual · Preparar mem → secundario/lg",
