@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
-import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { garantirContato } from "./identidade";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
@@ -366,9 +366,5 @@ export async function encerrarAtendimentoWhatsApp(atendimentoId: string): Promis
 
 /** O último AtendimentoEncerrado do atendimento é de `autorId`? */
 async function encerradoPor(db: Prisma.TransactionClient, atendimentoId: string, autorId: string): Promise<boolean> {
-  const ultimo = await db.evento.findFirst({
-    where: { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId },
-    orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true },
-  });
-  return ultimo?.autorId === autorId;
+  return (await ultimoEventoDoAutor(db, { tipo: "AtendimentoEncerrado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId })) !== null;
 }
