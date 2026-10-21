@@ -13,7 +13,7 @@ import {
   registrarEvento,
   type Resultado,
 } from "../../_shared";
-import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "../../_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor, type MarcaIdempotencia } from "../../_shared/idempotencia";
 import { ChaveIdempotenciaSchema } from "../../_shared/validacao";
 import { capacidadesAria } from "../permissoes-tela";
 import { escolherProvedor, type ProvedorIA } from "../provedor";
@@ -250,9 +250,15 @@ export async function arquivarFonte(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirEdicao();
     await prisma.$transaction(async (tx) => {
+      // Idempotência por natureza (#166, 5º lote): a linha travada serializa o clique duplo, e a fonte já arquivada
+      // por quem repete devolve ok sem outro Evento. Arquivada por outra pessoa, segue recusada.
+      await tx.$queryRaw`SELECT id FROM "FonteConhecimento" WHERE id = ${id} FOR UPDATE`;
       const fonte = await tx.fonteConhecimento.findUnique({ where: { id } });
       if (!fonte) throw new ErroRegra("Fonte não encontrada.");
-      if (fonte.arquivadaEm) throw new ErroRegra("A fonte já está arquivada.");
+      if (fonte.arquivadaEm) {
+        if (await ultimoEventoDoAutor(tx, { tipo: "FonteConhecimentoArquivada", agregadoTipo: "FonteConhecimento", agregadoId: id, autorId: u.id })) return;
+        throw new ErroRegra("A fonte já está arquivada.");
+      }
       await tx.fonteConhecimento.update({ where: { id }, data: { arquivadaEm: new Date() } });
       await registrarEvento(tx, {
         tipo: "FonteConhecimentoArquivada",

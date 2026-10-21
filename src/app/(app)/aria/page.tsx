@@ -17,6 +17,8 @@ import { Confianca } from "./_componentes/Confianca";
 import { Conhecimento } from "./_componentes/Conhecimento";
 import { Handoff } from "./_componentes/Handoff";
 import { Historico } from "./_componentes/Historico";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { Playground } from "./_componentes/Playground";
 import { Permissoes } from "./_componentes/Permissoes";
 import { VisaoGeral } from "./_componentes/VisaoGeral";
@@ -35,7 +37,7 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
     etapa: lerOpcao(params, "etapa", ETAPAS_ARIA) ?? "",
     resultado: lerOpcao(params, "resultado", RESULTADOS) ?? "",
   };
-  const [dados, configuracao] = await Promise.all([
+  const [dados, configuracao, preferencia] = await Promise.all([
     carregarTelaAria(usuario, aba, {
       dias,
       busca: filtros.busca || undefined,
@@ -45,6 +47,7 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
       cursor: lerTexto(params, "cursor", 200) || undefined,
     }),
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
+    consultarPreferenciaFusoEquipe(),
   ]);
   const { config } = dados;
   const baseVersaoId = dados.publicada?.id ?? null;
@@ -99,7 +102,7 @@ export default async function AriaPage({ searchParams }: { searchParams?: Promis
               itens={dados.historico.itens}
               proximo={dados.historico.proximo}
               podeDecidir={cap.has("decidirHistorico")}
-              fuso={configuracao?.fusoInstitucional ?? "America/Sao_Paulo"}
+              fuso={resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, configuracao?.fusoInstitucional ?? "America/Sao_Paulo")}
               filtros={filtros}
             />
           )}

@@ -67,9 +67,9 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
       // O 1º useState da fila é o detalhe aberto (`aberta`): os filtros saíram do estado local para a URL (E4).
       return [chamadasUseState === 1 ? item : resolverEstadoInicial(inicial), vi.fn()];
     });
-    const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})), dashs, regua, podeOperar: false, podeBloquear: false }));
+    const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})), dashs, regua, podeOperar: false, podeBloquear: false, fusoEscola: "America/Sao_Paulo" }));
     mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
-    const fichaRenderizada = renderToStaticMarkup(createElement(FichaFinanceira, { dados: ficha }));
+    const fichaRenderizada = renderToStaticMarkup(createElement(FichaFinanceira, { dados: ficha, fusoEscola: "America/Sao_Paulo" }));
     const migracaoRenderizada = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: migracao }));
 
     for (const html of [fila, fichaRenderizada, migracaoRenderizada]) {
@@ -88,13 +88,29 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
       cobrancas: [{ ...ficha.cobrancas[0], regularizacaoIntegral: { escolha: "CREDITO", aplicadaEm: "2026-01-01T02:30:00.000Z", href: "/historico" } }],
     };
     mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
-    const preferida = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: "America/Costa_Rica" }));
-    const fallback = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: null }));
+    const preferida = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: "America/Costa_Rica", fusoEscola: "America/Sao_Paulo" }));
+    const fallback = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: null, fusoEscola: "America/Sao_Paulo" }));
 
     expect(preferida).toContain("31/12/2025, 20:30");
     expect(preferida).toContain("horário exibido em America/Costa_Rica; origem UTC");
     expect(fallback).toContain("01/01/2026, 02:30");
     expect(fallback).toContain("horário exibido em UTC; origem UTC");
     expect(preferida).toContain("vence 01/03/2099 · referência Pacific/Kiritimati");
+  });
+  // Lote 2 (ressalva A da review do #286): pagoEm é misto. Instante real à noite na escola (ajuste que quita,
+  // desistência, baixa sem data) sai no dia da escola, não no seguinte; data digitada e legado à meia-noite UTC
+  // continuam no próprio dia. Sem fuso pessoal.
+  it("último pagamento: instante à noite na escola fica no dia da escola; data digitada e legado mantêm o dia", () => {
+    mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
+    const casos: [string, string][] = [
+      ["2026-10-06T01:30:00.000Z", "05/10/2026"],
+      ["2026-10-05T15:00:00.000Z", "05/10/2026"],
+      ["2026-10-05T00:00:00.000Z", "05/10/2026"],
+    ];
+    for (const [data, esperado] of casos) for (const preferenciaFusoExibicao of ["Asia/Tokyo", null]) {
+      const dados: FichaFinanceiraDados = { ...ficha, tiles: { ...ficha.tiles, ultimoPago: { valor: 100, moeda: "USD", data, forma: null } } };
+      const html = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao, fusoEscola: "America/Sao_Paulo" }));
+      expect(html).toMatch(new RegExp(`Último pagamento[\\s\\S]*${esperado.replace(/\//g, "\\/")}`));
+    }
   });
 });

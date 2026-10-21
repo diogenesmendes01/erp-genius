@@ -23,6 +23,9 @@ import {
   registrarInteracao,
 } from "@/server/comercial/acoes";
 import type { DetalheOportunidade } from "@/server/crm/historico";
+import { FusoInstitucionalSchema, dataCivilInstitucional } from "@/server/operacao/fuso";
+import { fusoDoCampoLocal, valorCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
 // Edições da oportunidade que moravam na ficha antiga (/leads/[id], removida no bloco J; B1 da R1 do #216):
 // resumo e próximo passo, datas (follow-up, experimental, proposta), dados cadastrais, documentos e interação.
@@ -123,29 +126,32 @@ export function ResumoOportunidade({ oportunidade: op, podeEditar }: { oportunid
   );
 }
 
-/** "YYYY-MM-DD" da data civil no fuso institucional (as datas civis são gravadas ao meio-dia). */
+/**
+ * "YYYY-MM-DD" da data civil no fuso institucional (as datas civis são gravadas ao meio-dia). Fuso inválido não
+ * derruba o painel (C3 da review do #286): cai no dia UTC, como a exibição do follow-up.
+ */
 function dataCivil(d: Date | string | null, fuso: string): string {
   if (!d) return "";
-  return new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
-}
-
-/** Valor de <input type="datetime-local"> na hora local do navegador (o mesmo do "Agendar experimental"). */
-function dataHoraLocal(d: Date | string | null): string {
-  if (!d) return "";
   const x = new Date(d);
-  if (Number.isNaN(x.getTime())) return "";
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`;
+  if (!Number.isFinite(x.getTime())) return "";
+  const valido = FusoInstitucionalSchema.safeParse(fuso);
+  return valido.success ? dataCivilInstitucional(x, valido.data) : x.toISOString().slice(0, 10);
 }
 
 type CamposDatas = { followUp: string; experimental: string; proposta: string };
 
-/** Próximo follow-up e datas de experimental e proposta (alimentam a ordenação e os alertas do funil). */
-export function DatasOportunidade({ oportunidade: op, podeEditar, fuso }: { oportunidade: DetalheOportunidade; podeEditar: boolean; fuso: string }) {
+/**
+ * Próximo follow-up e datas de experimental e proposta (alimentam a ordenação e os alertas do funil). A experimental
+ * tem hora: é lida e escrita no fuso pessoal de exibição (sem preferência, o da escola), escrito ao lado do campo, e
+ * convertida no servidor (antes, no fuso do navegador). Follow-up e proposta são datas civis da escola.
+ */
+export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferenciaFusoExibicao = null }: { oportunidade: DetalheOportunidade; podeEditar: boolean; fuso: string; preferenciaFusoExibicao?: string | null }) {
   const { acao, concluiu } = useAcaoSecao();
+  const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
+  const experimentalInicial = valorCampoLocal(op.dataExperimental, fusoExperimental);
   const [f, setF] = useState<CamposDatas>({
     followUp: dataCivil(op.proximoFollowUp, fuso),
-    experimental: dataHoraLocal(op.dataExperimental),
+    experimental: experimentalInicial,
     proposta: dataCivil(op.dataProposta, fuso),
   });
 
@@ -158,7 +164,7 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso }: { opor
           {(c) => <input {...c} type="date" className={CONTROLE} value={f.followUp} disabled={acao.ocupado} onChange={(e) => setF({ ...f, followUp: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-experimental" rotulo="Experimental (data e hora)">
-          {(c) => <input {...c} type="datetime-local" className={CONTROLE} value={f.experimental} disabled={acao.ocupado} onChange={(e) => setF({ ...f, experimental: e.target.value })} />}
+          {(c) => <CampoDataHoraLocal {...c} fuso={fusoExperimental} className={CONTROLE} value={f.experimental} disabled={acao.ocupado} onChange={(e) => setF({ ...f, experimental: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-proposta" rotulo="Data da proposta">
           {(c) => <input {...c} type="date" className={CONTROLE} value={f.proposta} disabled={acao.ocupado} onChange={(e) => setF({ ...f, proposta: e.target.value })} />}
@@ -173,7 +179,11 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso }: { opor
             const enviados = f;
             const dados = {
               proximoFollowUp: enviados.followUp,
-              dataExperimental: enviados.experimental ? new Date(enviados.experimental).toISOString() : "",
+              // Experimental intocada volta como o instante gravado (menor 4 da review do #290): na hora repetida do fim
+              // do horário de verão, o texto inicial é ambíguo e a conversão o recusaria, travando salvar só o follow-up.
+              ...(op.dataExperimental && enviados.experimental === experimentalInicial
+                ? { dataExperimental: new Date(op.dataExperimental).toISOString() }
+                : { dataExperimental: enviados.experimental, fusoDataExperimental: fusoExperimental }),
               dataProposta: enviados.proposta,
             };
             concluiu(await acao.executar(() => atualizarDatas(op.id, dados), "Datas atualizadas."));

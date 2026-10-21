@@ -55,13 +55,15 @@ export default async function InboxPage({
     const item = await obterItemListaInbox(usuario, c);
     if (item) inicial.itens = [item, ...inicial.itens];
   }
-  const fuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
+  // Fuso de exibição já resolvido: o pessoal; sem ele, o da escola (antes, sem preferência, a lista e o balão saíam
+  // em UTC). Regras (SLA, prazos) seguem no fuso da escola, no servidor.
+  const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-medium">Inbox</h1>
-        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={resolverFusoExibicao(fuso, fusoEscola)} fusoEscola={fusoEscola} />
+        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />
       </div>
       <div className="mt-4">
         <NovoAtendimento opcoes={opcoes} />

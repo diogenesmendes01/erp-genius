@@ -212,7 +212,9 @@ describe("EncaminharMensagem (destino entre as conversas do mesmo número com en
     expect(confirmar.props.titulo).toBe("Encaminhar esta mensagem para Bia?");
     expect(acoes.encaminharMensagemWhatsApp).not.toHaveBeenCalled();
     await (confirmar.props.acao as () => Promise<unknown>)();
-    expect(acoes.encaminharMensagemWhatsApp).toHaveBeenCalledWith({ mensagemId: "m1", atendimentoDestinoId: "a2" });
+    // #166: a chave da tentativa vai junto; o reenvio da mesma tentativa não encaminha de novo.
+    expect(acoes.encaminharMensagemWhatsApp).toHaveBeenCalledWith({ mensagemId: "m1", atendimentoDestinoId: "a2", chaveIdempotencia: expect.any(String) });
+    expect(confirmar.props.idempotente).toBe(true);
     (confirmar.props.aoConcluir as () => void)();
     expect(p.aoFechar).toHaveBeenCalled();
     expect(p.aoMudar).toHaveBeenCalled();

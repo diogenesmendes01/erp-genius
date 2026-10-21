@@ -88,10 +88,11 @@ function parametroDoCampoAberto(antes: string): string | null {
 function camposSemRotulo(fontes: Fonte[] = telas, repass: Set<string> = repassadores) {
   // CampoTexto é um <textarea> (com o mínimo visível): cada uso é conferido como campo.
   // Sem repassadores, `|${""}` viraria uma alternativa vazia e casaria qualquer `<` (até `<Campo`).
-  const campo = new RegExp(String.raw`<(${["select", "input", "textarea", "CampoTexto", ...repass].join("|")})\b`, "g");
+  // CampoDataHoraLocal (lote 3 do fuso pessoal) também repassa os atributos ao seu <input>: conferido em cada uso.
+  const campo = new RegExp(String.raw`<(${["select", "input", "textarea", "CampoTexto", "CampoDataHoraLocal", ...repass].join("|")})\b`, "g");
   return fontes.flatMap(({ arquivo, conteudo }) => {
     // CampoTexto repassa todos os atributos ao seu <textarea>: o rótulo vem de cada uso, conferido acima.
-    if (arquivo.split("\\").join("/") === "src/components/CampoTexto.tsx") return [];
+    if (["src/components/CampoTexto.tsx", "src/components/CampoDataHoraLocal.tsx"].includes(arquivo.split("\\").join("/"))) return [];
     const alvos = valores(conteudo, "htmlFor");
     return [...conteudo.matchAll(campo)]
       .filter((m) => {
