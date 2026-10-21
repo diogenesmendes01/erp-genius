@@ -1,5 +1,6 @@
 "use client";
 
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useRef, useState } from "react";
 import { IconUsersGroup } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
@@ -19,8 +20,7 @@ export interface PropsListaAtendimentos {
 }
 
 function horaCurta(iso: string | null, fuso: string | null): string {
-  if (!iso) return "";
-  try { return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: fuso ?? "UTC" }).format(new Date(iso)); } catch { return ""; }
+  return iso ? formatarInstanteExibicao(iso, fuso, "UTC", "hora").texto : "";
 }
 
 const estourado = (i: ItemListaInbox, agora: number) =>

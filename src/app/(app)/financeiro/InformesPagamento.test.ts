@@ -20,6 +20,7 @@ describe("InformesPagamento", () => {
     const html = renderToStaticMarkup(createElement(InformesPagamento, {
       informes,
       preferenciaFusoExibicao: "America/Costa_Rica",
+      fusoEscola: "America/Sao_Paulo",
     }));
 
     expect(html).toContain("31/12/2025, 20:30");
@@ -29,9 +30,21 @@ describe("InformesPagamento", () => {
   });
 
   it("usa UTC quando não há preferência", () => {
-    const html = renderToStaticMarkup(createElement(InformesPagamento, { informes }));
+    const html = renderToStaticMarkup(createElement(InformesPagamento, { informes, fusoEscola: "America/Sao_Paulo" }));
 
     expect(html).toContain("01/01/2026, 02:30");
     expect(html).toContain("horário exibido em UTC; origem UTC");
   });
+
+  // Fuso pessoal nas telas (pendência da Q176): a data do pagamento é dia civil da escola, sem fuso pessoal nem do
+  // processo. A gravação legada à meia-noite UTC dava 14/01 com o servidor em São Paulo.
+  it("data do pagamento é o dia civil da escola, para qualquer preferência", () => {
+    for (const preferenciaFusoExibicao of ["Asia/Tokyo", "America/Costa_Rica", null]) {
+      const html = renderToStaticMarkup(createElement(InformesPagamento, {
+        informes: [{ ...informes[0], dataPagamento: "2026-01-15T00:00:00.000Z" }], preferenciaFusoExibicao, fusoEscola: "America/Sao_Paulo",
+      }));
+      expect(html).toContain("R$ 100,00 · 15/01/2026");
+    }
+  });
 });
+

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { Botao } from "@/components/Botao";
@@ -38,6 +39,8 @@ export interface PropsAcoesAtendimento {
   destinos?: DestinoTransferencia[];
   /** Depois de qualquer ação concluída (a tela recarrega a lista). */
   aoMudar?: () => void;
+  /** Fuso de exibição de quem lê (o pessoal; sem ele, o da escola), já resolvido pela página do Inbox. */
+  fuso: string | null;
 }
 
 const SILENCIO_HORAS = 8;
@@ -59,7 +62,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar }: PropsAcoesAtendimento) {
+export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso }: PropsAcoesAtendimento) {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const direta = useAcaoCliente({ idempotente: false });
@@ -100,7 +103,7 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
       {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
-      {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
+      {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} fuso={fuso} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
           folha
@@ -304,10 +307,11 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
 }
 
 type AlvoPendente = { tipo: "convite"; item: ConviteAtivo } | { tipo: "agendamento"; item: AgendamentoAtivo };
-const FORMATO_DATA = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+/** Fim do convite e horário do agendamento no fuso de exibição (antes, no fuso do navegador). */
+export const quandoPendente = (iso: string | Date, fuso: string | null) => formatarInstanteExibicao(iso, fuso, "UTC").texto;
 
 /** Convites ativos e mensagens agendadas do atendimento; "Revogar convite" e "Cancelar agendamento" pedem confirmação. */
-export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { atendimentoId: string; aoFechar: () => void; aoConcluir: (qual: "convite" | "agendamento") => void }) {
+export function DialogoPendentes({ atendimentoId, fuso, aoFechar, aoConcluir }: { atendimentoId: string; fuso: string | null; aoFechar: () => void; aoConcluir: (qual: "convite" | "agendamento") => void }) {
   const [dados, setDados] = useState<{ convites: ConviteAtivo[]; agendamentos: AgendamentoAtivo[] } | null>(null);
   const [alvo, setAlvo] = useState<AlvoPendente | null>(null);
   const [versao, setVersao] = useState(0);
@@ -349,7 +353,7 @@ export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { aten
               <ul className="space-y-2">
                 {dados.convites.map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span>{c.nome} até {FORMATO_DATA.format(new Date(c.fim))}{c.podeEnviar ? " (pode enviar)" : " (só leitura)"}</span>
+                    <span>{c.nome} até {quandoPendente(c.fim, fuso)}{c.podeEnviar ? " (pode enviar)" : " (só leitura)"}</span>
                     <Botao tamanho="sm" variante="perigo" onClick={() => setAlvo({ tipo: "convite", item: c })}>Revogar convite</Botao>
                   </li>
                 ))}
@@ -362,7 +366,7 @@ export function DialogoPendentes({ atendimentoId, aoFechar, aoConcluir }: { aten
               <ul className="space-y-2">
                 {dados.agendamentos.map((m) => (
                   <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="min-w-0 truncate">{FORMATO_DATA.format(new Date(m.agendadaPara))}: {m.texto}</span>
+                    <span className="min-w-0 truncate">{quandoPendente(m.agendadaPara, fuso)}: {m.texto}</span>
                     <Botao tamanho="sm" variante="perigo" onClick={() => setAlvo({ tipo: "agendamento", item: m })}>Cancelar agendamento</Botao>
                   </li>
                 ))}
