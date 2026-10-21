@@ -61,7 +61,7 @@ const item: FilaCobrancaItem = {
 const props = {
   itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: { paises: [], turmas: [] },
   dashs: { aVencer: 0, emAtraso: 1, bloquear: 0, promessas: 0, recebidoHoje: [] },
-  regua: [], podeOperar: true, podeBloquear: false,
+  regua: [], podeOperar: true, podeBloquear: false, fusoEscola: "America/Sao_Paulo",
 };
 
 const tela = (): ReactNode => m.ganchos!.renderizar(FilaCobranca, props);
@@ -166,7 +166,7 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirmaÃ
     const anterior = m.ganchos;
     m.ganchos = g;
     const detalhe = g.renderizar(DetalheCobranca, {
-      item, regua: [], podeOperar: true, preferenciaFusoExibicao: null,
+      item, regua: [], podeOperar: true, preferenciaFusoExibicao: null, fusoEscola: "America/Sao_Paulo",
       onClose: vi.fn(), onEnviarApi, onPrepararManual: async () => null, onConfirmarManual: async () => false, onPagar: vi.fn(), onPromessa: vi.fn(),
     });
     m.ganchos = anterior;

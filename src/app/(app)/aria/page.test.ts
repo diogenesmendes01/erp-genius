@@ -6,7 +6,9 @@ import { configPadrao } from "@/server/aria/config-schema";
 const mocks = vi.hoisted(() => ({
   usuario: { valor: { id: "u1", nome: "U", papeis: ["ADMINISTRADOR"] as string[], permissoes: [] as string[] } },
   carregar: vi.fn(),
+  preferencia: vi.fn(async () => ({ ok: true, dado: { fusoExibicao: null } }) as unknown),
 }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => mocks.usuario.valor }));
 vi.mock("@/lib/prisma", () => ({ prisma: { configuracaoOperacional: { findUnique: async () => ({ fusoInstitucional: "America/Sao_Paulo" }) } } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
@@ -115,5 +117,19 @@ describe("/aria (página)", () => {
     expect(html).toContain("Bruno");
     expect(html).toContain("md:hidden"); // cartões no celular
     expect(html).toContain('aria-label="Desfazer Aplicar tag de Ana"');
+  });
+
+  // Fuso pessoal nas telas (pendência da Q176): o horário do histórico sai no fuso pessoal; sem ele, no da escola.
+  it("historico_no_fuso_pessoal_de_exibicao", async () => {
+    mocks.usuario.valor = { id: "u1", nome: "U", papeis: ["ADMINISTRADOR"], permissoes: [] };
+    mocks.carregar.mockResolvedValue(dados({
+      historico: { itens: [{ id: "a1", quando: "2026-10-21T02:30:00.000Z", acao: "TAG", contato: "Ana", etapa: "NOVO", confianca: 90, status: "APROVADA", podeDesfazer: true, motivoIrreversivel: null, decididaPor: "Bruno" }], proximo: null },
+    }));
+    const pagina = async () => renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ aba: "historico" }) }));
+    expect(await pagina()).toContain("20/10, 23:30"); // escola (America/Sao_Paulo)
+    mocks.preferencia.mockResolvedValueOnce({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    const html = await pagina();
+    expect(html).toContain("20/10, 20:30");
+    expect(html).not.toContain("23:30");
   });
 });

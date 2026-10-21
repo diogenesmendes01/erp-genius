@@ -1,11 +1,14 @@
 import { validarCertificado } from "@/server/academico/consultas-legado";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // VALIDAÇÃO PÚBLICA de certificado (Fase 3): terceiros conferem a autenticidade pelo
 // código impresso no certificado. Projeção mínima (nome + nível + data de emissão).
 
 export default async function CertificadoPage({ params }: { params: Promise<{ codigo: string }> }) {
   const { codigo } = await params;
-  const cert = await validarCertificado(codigo.toUpperCase());
+  // Página pública: quem confere não tem fuso pessoal; a data de emissão sai no fuso da escola, nunca no do servidor.
+  const [cert, fusoEscola] = await Promise.all([validarCertificado(codigo.toUpperCase()), fusoDaEscola()]);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6 py-10">
@@ -22,7 +25,7 @@ export default async function CertificadoPage({ params }: { params: Promise<{ co
             <div><dt className="inline text-gray-500">Nível: </dt><dd className="inline">{cert.nivel}</dd></div>
             <div>
               <dt className="inline text-gray-500">Emitido em: </dt>
-              <dd className="inline">{new Date(cert.emitidoEmISO).toLocaleDateString("pt-BR")}</dd>
+              <dd className="inline">{formatarInstanteExibicao(cert.emitidoEmISO, null, fusoEscola, "data").texto}</dd>
             </div>
             <div><dt className="inline text-gray-500">Código: </dt><dd className="inline font-mono">{codigo.toUpperCase()}</dd></div>
           </dl>

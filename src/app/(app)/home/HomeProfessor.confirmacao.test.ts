@@ -24,7 +24,7 @@ vi.mock("@/server/comercial/acoes", () => ({ checkinExperimental: m.checkin }));
 
 import { HomeProfessor } from "./HomeProfessor";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { criarGanchos, elementos, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
 import { confirmarNoDialogo } from "@/test/confirmacao-tela";
 
@@ -84,7 +84,7 @@ describe("HomeProfessor — \"Faltou\" passa pela confirmação", () => {
     m.checkin.mockResolvedValueOnce({ ok: false, erro: "Não há experimental agendada para check-in neste lead." });
     expect(await confirmarNoDialogo(confirmacoes(tela())[0], usar)).toEqual({ erro: "Não há experimental agendada para check-in neste lead.", confirmarDisponivel: true });
     m.checkin.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    expect((await confirmarNoDialogo(confirmacoes(tela())[0], usar)).erro).toBe(MSG_RESULTADO_INCERTO); // check-in idempotente por natureza (#166, 5º lote)
     expect(confirmacoes(tela())).toHaveLength(1);
     expect(m.refresh).not.toHaveBeenCalled();
   });

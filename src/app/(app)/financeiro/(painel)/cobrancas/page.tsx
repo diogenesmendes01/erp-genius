@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listarFilaCobranca } from "@/server/cobrancas/consultas";
 import { hrefFila, lerFiltrosFila, navegacaoDaFilaValida } from "@/server/cobrancas/filtros-fila";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { cursorDaLeitura, lerNavegacao, MENSAGEM_CURSOR_INVALIDO, validarNavegacao } from "@/lib/cursor-fila";
 import type { ParametrosUrl } from "@/lib/pagina-url";
 import { FilaCobranca } from "../../FilaCobranca";
@@ -30,7 +31,7 @@ export default async function CobrancasFinanceiroPage({ searchParams }: { search
       </p>
     );
   }
-  const [fila, preferencia] = await Promise.all([listarFilaCobranca({ filtros, navegacao: validacao.nav }), consultarPreferenciaFusoEquipe()]);
+  const [fila, preferencia, fusoEscola] = await Promise.all([listarFilaCobranca({ filtros, navegacao: validacao.nav }), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   return (
     <FilaCobranca
       itens={fila.itens}
@@ -45,6 +46,7 @@ export default async function CobrancasFinanceiroPage({ searchParams }: { search
       podeOperar={ctx.permissoes.podeOperarCobranca}
       podeBloquear={ctx.permissoes.podeAprovar}
       preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
+      fusoEscola={fusoEscola}
     />
   );
 }
