@@ -103,36 +103,29 @@ describe("dataOpcional (schema compartilhado)", () => {
   });
 });
 
-describe("paraDataHoraLocal (datetime-local → preserva a hora, issue #16)", () => {
-  it("converte 'YYYY-MM-DDTHH:mm' mantendo a hora LOCAL digitada", () => {
-    const d = paraDataHoraLocal("2026-06-22T14:30") as Date;
-    expect(d).toBeInstanceOf(Date);
-    expect(d.getFullYear()).toBe(2026);
-    expect(d.getMonth()).toBe(5); // junho
-    expect(d.getDate()).toBe(22);
-    expect(d.getHours()).toBe(14); // hora NÃO é descartada nem ancorada no meio-dia
-    expect(d.getMinutes()).toBe(30);
-  });
-  it("aceita segundos opcionais", () => {
-    const d = paraDataHoraLocal("2026-06-22T14:30:45") as Date;
-    expect(d.getSeconds()).toBe(45);
+describe("paraDataHoraLocal: texto de datetime-local nunca no fuso do processo (lote 3 do fuso pessoal)", () => {
+  it("recusa 'YYYY-MM-DDTHH:mm' sem fuso (antes virava a hora no fuso do servidor)", () => {
+    expect(() => paraDataHoraLocal("2026-06-22T14:30")).toThrow(/sem fuso/);
+    expect(() => paraDataHoraLocal("2026-06-22T14:30:45")).toThrow(/sem fuso/);
   });
   it("date-only cai no meio-dia da escola (reusa paraDataLocal)", () => {
     const d = analisarComDatasDaEscola(dataHoraOpcional, "2026-06-22", "America/Sao_Paulo");
     expect(d).toEqual(new Date("2026-06-22T15:00:00.000Z"));
   });
-  it("deixa outros valores passarem inalterados", () => {
+  it("deixa instante ISO, Date e ausente passarem inalterados", () => {
     const date = new Date("2026-03-10T08:00:00Z");
     expect(paraDataHoraLocal(date)).toBe(date);
+    expect(paraDataHoraLocal("2026-06-22T17:30:00.000Z")).toBe("2026-06-22T17:30:00.000Z");
     expect(paraDataHoraLocal(undefined)).toBeUndefined();
   });
 });
 
 describe("dataHoraOpcional (schema datetime-local)", () => {
-  it("preserva o horário do datetime-local", () => {
-    const r = dataHoraOpcional.parse("2026-06-22T09:15") as Date;
-    expect(r.getHours()).toBe(9);
-    expect(r.getMinutes()).toBe(15);
+  it("aceita o instante já convertido e recusa o texto do datetime-local sem fuso", () => {
+    expect(dataHoraOpcional.parse("2026-06-22T12:15:00.000Z")).toEqual(new Date("2026-06-22T12:15:00.000Z"));
+    expect(dataHoraOpcional.safeParse("2026-06-22T09:15").error?.issues[0]?.message).toMatch(/sem fuso/);
+    // Malformado (segundos :60): também erro de validação legível, não exceção solta.
+    expect(dataHoraOpcional.safeParse("2026-06-22T09:15:60").error?.issues[0]?.message).toMatch(/sem fuso/);
   });
   it("trata vazio/null/undefined como undefined", () => {
     expect(dataHoraOpcional.parse("")).toBeUndefined();

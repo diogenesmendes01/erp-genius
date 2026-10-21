@@ -14,7 +14,9 @@ vi.mock("react", async original => {
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: m.push, refresh: vi.fn() }) }));
-vi.mock("@/server/contratos/aditivos", () => ({ prepararAditivoContratual: m.preparar, decidirAditivoContratual: vi.fn() }));
+// Lote 3 do fuso pessoal: a vigência vai como texto + fuso; quem converte é o servidor (aditivos-local.ts).
+vi.mock("@/server/contratos/aditivos-local", () => ({ prepararAditivoContratualLocal: m.preparar }));
+vi.mock("@/server/contratos/aditivos", () => ({ prepararAditivoContratual: vi.fn(), decidirAditivoContratual: vi.fn() }));
 import { PrepararAditivo } from "./Formularios";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { anuncios } from "@/test/feedback-acao";
@@ -43,7 +45,7 @@ const selectCom = (t: ReactNode, opcao: string) =>
 /** Monta o formulário, escolhe o modelo, a regra do ciclo (quando há cobertura) e os novos valores. */
 function montar(escolha: string, cobertura = true) {
   const campos: Origem[] = cobertura ? ["COBERTURA_INICIO", "COBERTURA_FIM"] : ["ALUNO_NOME"];
-  const props = { matriculaId: "matricula", fonte: { conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }] };
+  const props = { matriculaId: "matricula", fonte: { conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }], fusoVigencia: "America/Sao_Paulo" };
   const tela = () => m.ganchos!.renderizar(PrepararAditivo, props);
   mudar(selectCom(tela(), "modelo"), "modelo");
   if (cobertura) mudar(selectCom(tela(), "PRESERVAR_REFERENCIA"), escolha);
@@ -62,6 +64,9 @@ function montar(escolha: string, cobertura = true) {
 it("envia referência e data aprováveis no payload e na identidade da tentativa", async () => {
   const c = montar("MUDAR_REFERENCIA"); await c.enviar();
   expect(m.preparar).toHaveBeenCalledWith(expect.objectContaining({ cicloCoberturaFutura: { escolha: "MUDAR_REFERENCIA", referencia: "CICLO_MATRICULA", dataReferencia: "2026-11-03" }, chaveIdempotencia: "chave-original" }));
+  // Lote 3 do fuso pessoal: a vigência vai como o texto digitado e o fuso escrito ao lado do campo, sem conversão no navegador.
+  expect(m.preparar.mock.calls[0][0]).toMatchObject({ vigenciaLocal: "2026-10-01T10:00", fusoVigencia: "America/Sao_Paulo" });
+  expect(m.preparar.mock.calls[0][0]).not.toHaveProperty("vigenciaInicio");
   // A data de referência faz parte da identidade da tentativa: a mesma data reaproveita a chave; outra data troca.
   await c.enviar(); expect(m.preparar.mock.calls[1][0].chaveIdempotencia).toBe("chave-original");
   await c.enviar("2026-11-04"); expect(m.preparar.mock.calls[2][0]).toMatchObject({ chaveIdempotencia: "chave-nova", cicloCoberturaFutura: { dataReferencia: "2026-11-04" } });

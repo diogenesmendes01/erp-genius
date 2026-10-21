@@ -56,6 +56,10 @@ export const ResumoSchema = z.object({
 });
 export type ResumoInput = z.input<typeof ResumoSchema>;
 
+/**
+ * `dataExperimental` chega como instante ISO ou como o texto do `datetime-local` com `fusoDataExperimental` (o fuso
+ * escrito ao lado do campo). O texto sem fuso é recusado por `paraDataHoraLocal`: nunca o fuso do processo.
+ */
 export const DatasSchema = z.object({
   proximoFollowUp: dataOpcional,
   // dataExperimental carrega HORA (alimenta a agenda da Home). Aceita datetime-local
@@ -64,20 +68,25 @@ export const DatasSchema = z.object({
   dataExperimental: dataHoraOpcional,
   dataProposta: dataOpcional,
 });
-export type DatasInput = z.input<typeof DatasSchema>;
+/** Entrada da ação: o schema mais o fuso do campo da experimental, quando ela vem como texto digitado. */
+export type DatasInput = z.input<typeof DatasSchema> & { fusoDataExperimental?: string };
 
 // Agendamento da experimental (doc 09 §Ficha do Lead / pipeline). Captura também
 // o professor responsável (FK escopo — Issue #13). professorId opcional: pode-se
 // agendar sem definir o professor e atribuir/remanejar depois. A UI envia "" na
 // opção "Definir depois"; normalizamos vazio → null para diferenciar "limpar o
 // responsável" de "campo ausente".
+// Lote 3 do fuso pessoal: a tela manda o texto do `datetime-local` (`dataLocal`) e o fuso escrito ao lado do campo
+// (`fuso`); a ação converte no servidor, com o fuso explícito. `dataISO` (instante já convertido) continua aceito.
 export const AgendarExperimentalSchema = z.object({
-  dataISO: z.string().min(1, "Informe a data/hora da experimental"),
+  dataISO: z.string().min(1, "Informe a data/hora da experimental").optional(),
+  dataLocal: z.string().min(1, "Informe a data/hora da experimental").optional(),
+  fuso: z.string().optional(),
   professorId: z.preprocess(
     (v) => (v === "" || v == null ? null : v),
     z.string().nullable(),
   ).optional(),
-});
+}).refine((d) => !!d.dataISO || !!d.dataLocal, { message: "Informe a data/hora da experimental", path: ["dataISO"] });
 export type AgendarExperimentalInput = z.input<typeof AgendarExperimentalSchema>;
 
 export const InteracaoSchema = z.object({
