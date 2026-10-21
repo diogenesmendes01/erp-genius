@@ -228,4 +228,6 @@ repetir depois da janela do backup ou aparecer fora desse horário (confira `/va
 - **App não sobe**: veja os logs do Coolify (aba "Logs" do Resource). Variáveis obrigatórias
   ausentes bloqueiam o deploy com erro claro.
 - **Motor sem conexão**: o serviço `motor` só é acessível na rede interna do
-  compose. O app se comunica via `http://motor:4317` (nunca HTTPS público).
+  compose. O app se comunica via `http://motor:4317` (nunca HTTPS público). O motor tem
+  healthcheck nativo (`GET /api/health`) e limites de recursos (768MB RAM, 0.75 CPU) adequados
+  para um serviço Baileys em VPS compartilhada.
