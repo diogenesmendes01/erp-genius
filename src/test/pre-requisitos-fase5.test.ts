@@ -11,9 +11,6 @@ import { describe, expect, it } from "vitest";
 // atualizarPerfil/atualizarPrivacidade/definirTemporarias.
 const raiz = process.cwd();
 const schema = readFileSync(join(raiz, "prisma/schema.prisma"), "utf8");
-const pkg = JSON.parse(readFileSync(join(raiz, "package.json"), "utf8")) as {
-  dependencies: Record<string, string>;
-};
 
 function ler(rel: string): string {
   return readFileSync(join(raiz, rel), "utf8");
