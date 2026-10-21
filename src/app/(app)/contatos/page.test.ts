@@ -17,7 +17,9 @@ const mocks = vi.hoisted(() => ({
   config: vi.fn(async () => ({ fusoInstitucional: "America/Costa_Rica" })),
   lista: vi.fn((props: Record<string, unknown>) => createElement("div", { "data-lista": "" }, props.filtrando ? "filtrando" : "")),
   ficha: vi.fn((props: Record<string, unknown>) => createElement("div", { "data-ficha": "" }, (props.detalhe as { nome: string }).nome)),
+  preferencia: vi.fn(async () => ({ ok: true, dado: { fusoExibicao: "Asia/Tokyo" } }) as unknown),
 }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => mocks.usuario.valor }));
 vi.mock("@/server/crm/contatos", async (original) => ({
   ...(await original<typeof import("@/server/crm/contatos")>()),
@@ -61,6 +63,8 @@ describe("/contatos (página)", () => {
     expect(mocks.obter).toHaveBeenCalledWith("p1", expect.objectContaining({ id: "u1" }));
     expect(html).toContain("data-ficha");
     expect(mocks.historico).toHaveBeenCalledWith("p1", expect.anything(), "tudo");
+    // Fuso pessoal nas telas: a ficha recebe a preferência de exibição e, à parte, o fuso da escola.
+    expect(mocks.ficha.mock.calls.at(-1)?.[0]).toMatchObject({ fuso: "America/Costa_Rica", preferenciaFusoExibicao: "Asia/Tokyo" });
     const fora = await renderPagina({ c: "alheia" });
     expect(fora).not.toContain("data-ficha");
     expect(fora).toContain("Contato não encontrado na sua carteira.");

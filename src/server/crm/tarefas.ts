@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
-import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
@@ -349,7 +349,15 @@ export async function cancelarTarefa(id: string, versao: number, motivo: string)
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const m = z.string().trim().min(1, "Informe o motivo do cancelamento.").max(500, "O motivo deve ter até 500 caracteres.").parse(motivo);
     await prisma.$transaction(async (tx) => {
+      // Idempotência por natureza (#166, 5º lote): a linha travada serializa o clique duplo, e o mesmo cancelamento,
+      // já feito por quem repete com o mesmo motivo, devolve ok sem outro Evento. Vem antes da versão, que o próprio
+      // cancelamento já mudou. O escopo continua conferido primeiro.
+      await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id = ${id} FOR UPDATE`;
       const t = await carregarVisivel(tx, autor, id);
+      if (t.status === "CANCELADA" && t.motivoCancelamento === m) {
+        const p = await ultimoEventoDoAutor(tx, { tipo: "TarefaCancelada", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id });
+        if (p?.motivo === m) return;
+      }
       if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser canceladas.");
       await gravar(tx, t, versao, "ABERTA", { status: "CANCELADA", canceladaEm: new Date(), motivoCancelamento: m, lembrarEm: null });
       await registrarEvento(tx, { tipo: "TarefaCancelada", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id, payload: { motivo: m } });
