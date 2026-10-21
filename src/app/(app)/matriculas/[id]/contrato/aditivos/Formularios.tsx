@@ -1,7 +1,9 @@
 "use client";
-import { useId, useState, useSyncExternalStore } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { decidirAditivoContratual, prepararAditivoContratual } from "@/server/contratos/aditivos";
+import { decidirAditivoContratual } from "@/server/contratos/aditivos";
+import { prepararAditivoContratualLocal } from "@/server/contratos/aditivos-local";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import type { OrigemCampo } from "@/server/contratos/campos";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "@/server/contratos/aditivo-valores";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
@@ -14,20 +16,20 @@ import { CampoTexto } from "@/components/CampoTexto";
 
 type Fonte = { tipo: "CONCLUSAO" | "ORIGEM_HISTORICA"; conclusaoId: string | null; conclusaoHash: string | null; origemHistoricaId: string | null; origemHash: string | null; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
-const acompanharFuso = () => () => {};
-const fusoNavegador = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "fuso local do navegador";
-const fusoServidor = () => null;
 
-export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matriculaId: string; fonte: Fonte; modelos: Modelo[]; agenda?: { id: string; texto: string; pendencias: string[] } | null }) {
+/**
+ * `fusoVigencia`: fuso em que o início da vigência é digitado (fusoDoCampoLocal: pessoal; sem preferência, o da
+ * escola), escrito ao lado do campo; o servidor converte (prepararAditivoContratualLocal). Antes: fuso do navegador.
+ */
+export function PrepararAditivo({ matriculaId, fonte, modelos, agenda, fusoVigencia }: { matriculaId: string; fonte: Fonte; modelos: Modelo[]; agenda?: { id: string; texto: string; pendencias: string[] } | null; fusoVigencia: string }) {
   // Chave estável enquanto o conteúdo não muda: na falha de transporte, reenviar confere a mesma proposta.
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), [chave, setChave] = useState(() => crypto.randomUUID()), [tentativa, setTentativa] = useState<string | null>(null);
   const pendente = acao.ocupado;
   const id = useId();
   const [escolhaCiclo, setEscolhaCiclo] = useState("");
   const [modeloId, setModeloId] = useState(""), [valoresEstruturados, setValoresEstruturados] = useState<Partial<Record<OrigemCampo, unknown>>>({}); const modelo = modelos.find(m => m.id === modeloId);
-  const fuso = useSyncExternalStore<string | null>(acompanharFuso, fusoNavegador, fusoServidor);
   return <form className="space-y-4 rounded border p-4" onSubmit={async e => {
-    e.preventDefault(); const dados = new FormData(e.currentTarget), vigenciaLocal = String(dados.get("vigencia") ?? ""), instante = new Date(vigenciaLocal);
+    e.preventDefault(); const dados = new FormData(e.currentTarget), vigenciaLocal = String(dados.get("vigencia") ?? "").trim();
     const alteracoes: { origem: OrigemCampo; novo: string; valorEstruturado?: ReturnType<typeof validarValorAlteracaoAditivo> }[] = [];
     for (const c of fonte.campos) {
       if (dados.get(`alterar:${c.origem}`) !== "on") continue;
@@ -41,19 +43,19 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
         } catch { acao.limpar(); acao.setErro(`Preencha o novo valor de ${c.rotulo} conforme indicado.`); return; }
       } else alteracoes.push({ origem: c.origem, novo: String(dados.get(`novo:${c.origem}`) ?? "").trim() });
     }
-    if (!modelo || !vigenciaLocal || Number.isNaN(instante.getTime()) || !alteracoes.length || alteracoes.some(a => !a.novo)) { acao.limpar(); acao.setErro("Selecione o modelo, a vigência e ao menos uma condição com novo valor."); return; }
+    if (!modelo || !vigenciaLocal || !alteracoes.length || alteracoes.some(a => !a.novo)) { acao.limpar(); acao.setErro("Selecione o modelo, a vigência e ao menos uma condição com novo valor."); return; }
     const alteraCobertura = alteracoes.some(a => a.origem === "COBERTURA_INICIO" || a.origem === "COBERTURA_FIM");
     const ciclo = alteraCobertura ? CicloCoberturaFuturoAditivoSchema.safeParse(escolhaCiclo === "MUDAR_REFERENCIA"
       ? { escolha: escolhaCiclo, referencia: dados.get("referenciaCiclo"), dataReferencia: dados.get("dataReferenciaCiclo") }
       : { escolha: escolhaCiclo }) : null;
     if (ciclo && !ciclo.success) { acao.limpar(); acao.setErro("Escolha como ficam os períodos seguintes e informe uma referência válida quando houver mudança."); return; }
     const politica = ciclo?.success ? { cicloCoberturaFutura: ciclo.data } : {};
-    const vigenciaInicio = instante.toISOString(), conteudo = JSON.stringify({ modeloId: modelo.id, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? "") });
+    const conteudo = JSON.stringify({ modeloId: modelo.id, vigenciaLocal, fusoVigencia, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? "") });
     const chaveAtual = tentativa && tentativa !== conteudo ? crypto.randomUUID() : chave;
     if (chaveAtual !== chave) setChave(chaveAtual); if (tentativa !== conteudo) setTentativa(conteudo);
     // Sem mensagem de sucesso: o sucesso navega para a proposta registrada.
-    const d = await acao.executar(() => prepararAditivoContratual({ matriculaId, ...(fonte.tipo === "ORIGEM_HISTORICA" ? { origemHistoricaId: fonte.origemHistoricaId!, origemHashEsperado: fonte.origemHash! } : { conclusaoOriginalId: fonte.conclusaoId!, conclusaoHashEsperado: fonte.conclusaoHash! }),
-      modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual }));
+    const d = await acao.executar(() => prepararAditivoContratualLocal({ matriculaId, ...(fonte.tipo === "ORIGEM_HISTORICA" ? { origemHistoricaId: fonte.origemHistoricaId!, origemHashEsperado: fonte.origemHash! } : { conclusaoOriginalId: fonte.conclusaoId!, conclusaoHashEsperado: fonte.conclusaoHash! }),
+      modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaLocal, fusoVigencia, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual }));
     if (d?.tipo === "ok" && d.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(d.dado.id)}`);
   }}>
     <h2 className="text-xl">Preparar proposta de aditivo</h2>
@@ -68,8 +70,8 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
         <label className="block">Data de referência<input className="mt-1 block rounded border p-2" type="date" name="dataReferenciaCiclo" /></label>
       </>}
     </fieldset>}
-    <label className="block">Início da vigência<input className="mt-1 block rounded border p-2" type="datetime-local" name="vigencia" required disabled={pendente} /></label>
-    <p role="status">{fuso ? `Informe a vigência no fuso ${fuso}. O instante correspondente será preservado no registro.` : "Identificando o fuso do navegador…"}</p>
+    <label className="block">Início da vigência<CampoDataHoraLocal className="mt-1 block rounded border p-2" name="vigencia" fuso={fusoVigencia} required disabled={pendente} /></label>
+    <p>Informe a vigência no fuso {fusoVigencia}. O instante correspondente será preservado no registro.</p>
     <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <p>Esta proposta não altera condições, não emite taxa e não cria matrícula. Outra pessoa da Administração ainda precisa decidir.</p>
     <FeedbackAcao erro={acao.erro} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || !modelo}>{pendente ? "Registrando…" : "Registrar proposta de aditivo"}</button>

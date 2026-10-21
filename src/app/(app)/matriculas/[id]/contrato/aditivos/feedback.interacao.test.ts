@@ -17,9 +17,8 @@ vi.mock("react", async (original) => {
     useState: ((inicial: unknown) => m.ganchos!.useState(inicial)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
     useRef: ((inicial: unknown) => m.ganchos!.useRef(inicial)) as unknown as typeof real.useRef,
-    // PrepararAditivo: id dos campos e fuso do navegador.
+    // PrepararAditivo: id dos campos.
     useId: (() => "teste") as unknown as typeof real.useId,
-    useSyncExternalStore: (() => "UTC") as unknown as typeof real.useSyncExternalStore,
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push: m.push }) }));
@@ -27,7 +26,9 @@ vi.mock("@/server/contratos/aditivo-acerto-taxa-acoes", () => ({ proporAcertoTax
 vi.mock("@/server/contratos/aditivo-assinatura", () => ({ registrarConferenciaAssinaturaAditivo: m.conferenciaAssinatura }));
 vi.mock("@/server/contratos/aditivo-condicoes", () => ({ aplicarCondicoesFormalizadasAditivo: m.aplicarCondicoes, formalizarEAplicarCondicoesAditivo: m.formalizarCondicoes }));
 vi.mock("@/server/contratos/aditivo-conferencia-final", () => ({ registrarConferenciaFinalAditivo: m.conferenciaFinal }));
-vi.mock("@/server/contratos/aditivos", () => ({ prepararAditivoContratual: m.prepararAditivo, decidirAditivoContratual: m.decidirAditivo }));
+// Lote 3 do fuso pessoal: a vigência vai como texto + fuso; quem converte é o servidor (aditivos-local.ts).
+vi.mock("@/server/contratos/aditivos-local", () => ({ prepararAditivoContratualLocal: m.prepararAditivo }));
+vi.mock("@/server/contratos/aditivos", () => ({ prepararAditivoContratual: vi.fn(), decidirAditivoContratual: m.decidirAditivo }));
 vi.mock("@/server/contratos/aditivo-taxa-impactos", () => ({ prepararImpactosTaxaAditivo: m.impactos }));
 vi.mock("@/server/contratos/aditivo-originais", () => ({ preservarOriginalAditivo: m.preservarOriginal }));
 vi.mock("@/server/contratos/aditivo-participantes", () => ({ conferirParticipantesAditivo: m.conferirParticipantes, consultarFormularioParticipantesAditivo: m.consultarParticipantes }));
@@ -125,6 +126,7 @@ describe("PrepararAditivo", () => {
     matriculaId: "matricula",
     fonte: { tipo: "CONCLUSAO" as const, conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), origemHistoricaId: null, origemHash: null, campos: [{ origem: "ALUNO_NOME" as const, rotulo: "Nome do aluno", anterior: "Anterior" }] },
     modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }],
+    fusoVigencia: "America/Sao_Paulo",
   };
   const tela = () => m.ganchos!.renderizar(PrepararAditivo, props);
   const preparar = () => {

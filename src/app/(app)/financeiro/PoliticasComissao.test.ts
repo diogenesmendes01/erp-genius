@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/server/financeiro/acoes", () => ({ publicarPoliticaComissao: vi.fn() }));
+vi.mock("@/server/financeiro/politica-comissao-local", () => ({ publicarPoliticaComissaoLocal: vi.fn() }));
 import { PoliticasComissao } from "./PoliticasComissao";
 
 const dados = {
@@ -14,14 +14,21 @@ const dados = {
 
 describe("PoliticasComissao", () => {
   it("exibe vigências ISO como instantes no fuso pessoal e mantém a entrada datetime-local", () => {
-    const html = renderToStaticMarkup(createElement(PoliticasComissao, { dados, preferenciaFusoExibicao: "America/Costa_Rica" }));
+    const html = renderToStaticMarkup(createElement(PoliticasComissao, { dados, preferenciaFusoExibicao: "America/Costa_Rica", fusoEscola: "America/Sao_Paulo" }));
     expect(html).toContain("vigência desde 31/12/2025, 20:30 (horário exibido em America/Costa_Rica)");
     expect(html).toContain("até 01/01/2026, 20:30 (horário exibido em America/Costa_Rica)");
     expect(html).toContain('name="vigencia"');
     expect(html).toContain('type="datetime-local"');
+    // Lote 3 do fuso pessoal: o campo diz em que fuso a vigência é digitada (o mesmo das vigências exibidas).
+    expect(html).toContain('data-fuso="America/Costa_Rica"');
+    expect(html).toContain("Horário em America/Costa_Rica.");
   });
-  it("usa UTC se não há preferência", () => {
-    const html = renderToStaticMarkup(createElement(PoliticasComissao, { dados }));
+  it("sem preferência: vigências e campo no fuso da escola (antes, UTC); escola inválida, UTC escrito", () => {
+    let html = renderToStaticMarkup(createElement(PoliticasComissao, { dados, fusoEscola: "America/Sao_Paulo" }));
+    expect(html).toContain("31/12/2025, 23:30 (horário exibido em America/Sao_Paulo)");
+    expect(html).toContain("Horário em America/Sao_Paulo.");
+    html = renderToStaticMarkup(createElement(PoliticasComissao, { dados, fusoEscola: "" }));
     expect(html).toContain("01/01/2026, 02:30 (horário exibido em UTC)");
+    expect(html).toContain("Horário em UTC.");
   });
 });
