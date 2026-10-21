@@ -2,8 +2,11 @@
 # Sobe: Postgres (banco do app) · migrações · app Next standalone ·
 # motor WhatsApp (whatsapp-web-baileys, modo serviço) SÓ na rede interna · Caddy (TLS automático) como única borda.
 #
-# Uso (VPS):   cp deploy/env.production.example .env   →   preencher   →
-#              docker compose -f docker-compose.prod.yml up -d --build
+# O build acontece no GitHub Actions (.github/workflows/image.yml), não na VPS.
+# Este compose APENAS puxa a imagem validada do GHCR (variável APP_IMAGE com digest).
+#
+# Uso (VPS):   cp deploy/env.production.example .env   →   preencher APP_IMAGE e demais vars   →
+#              docker compose -f docker-compose.prod.yml up -d
 # As variáveis ${...} vêm do .env ao lado deste arquivo (compose lê sozinho).
 
 name: erp-genius
@@ -29,10 +32,9 @@ services:
     # ou túnel SSH — nunca porta pública (o banco atual em porta pública é o que a E5 aposenta).
 
   # Migrações ANTES do app (prisma migrate deploy é aditivo e idempotente — nunca reset).
+  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
-    build:
-      context: .
-      target: builder
+    image: ${APP_MIGRATE_IMAGE:?defina no .env}
     command: npx prisma migrate deploy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
@@ -42,8 +44,7 @@ services:
     restart: "no"
 
   app:
-    build:
-      context: .
+    image: ${APP_IMAGE:?defina no .env}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
