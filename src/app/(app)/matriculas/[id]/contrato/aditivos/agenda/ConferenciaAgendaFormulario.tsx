@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { consultarConferenciaAgendaAditivo, registrarPropostaAgendaAditivo } from "@/server/contratos/agenda-aditivo";
+import { registrarPropostaAgendaAditivo } from "@/server/contratos/agenda-aditivo";
+import { consultarConferenciaAgendaAditivoLocal } from "@/server/contratos/agenda-aditivo-local";
+import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import Link from "next/link";
 import { alternarEncontro, montarAlteracoesAgenda, professorSelecionado } from "./controle";
 import { botaoClasses } from "@/components/Botao";
@@ -15,11 +17,8 @@ type Professor = { id: string; nome: string };
 type Resultado = { proposta: { encontros: { encontroId: string; professorAnteriorId: string; professorNovoId: string; professorAnteriorNome: string; professorNovoNome: string; inicioAnterior: string; fimAnterior: string; inicioNovo: string; fimNovo: string; fusoAnterior: string; fusoNovo: string; duracaoMinutos: number }[] }; pendencias: string[] };
 
 const exibir = (valor: string, fuso: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(new Date(valor));
-const campoData = (valor: string, fuso: string) => {
-  const partes = new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(valor));
-  const parte = (tipo: string) => partes.find(p => p.type === tipo)?.value ?? "00";
-  return `${parte("year")}-${parte("month")}-${parte("day")}T${parte("hour")}:${parte("minute")}`;
-};
+/** Valor inicial dos campos: o horário atual no fuso do encontro (o mesmo do <CampoFuso> ao lado); não lança com fuso inválido. */
+const campoData = (valor: string, fuso: string) => valorCampoLocal(valor, fuso);
 export function ConferenciaAgendaFormulario({ matriculaId, encontros, professores }: { matriculaId: string; encontros: Encontro[]; professores: Professor[] }) {
   // A consulta só lê (não reserva nem grava): repetir com os mesmos dados é seguro, daí a mensagem de reenvio.
   const [selecionados, setSelecionados] = useState<string[]>([]), [resultado, setResultado] = useState<Resultado | null>(null), acao = useAcaoCliente({ idempotente: true });
@@ -32,7 +31,7 @@ export function ConferenciaAgendaFormulario({ matriculaId, encontros, professore
     } catch { return null; }
   };
   return <section className="space-y-4 rounded border p-4"><div><h2 className="text-xl">Conferência de agenda</h2><p>Conferência — não reserva nem altera agenda.</p></div>
-    {!encontros.length ? <EstadoVazio role="status">Não há encontros particulares futuros disponíveis para esta matrícula.</EstadoVazio> : <form className="space-y-4" onChange={() => setResultado(null)} onSubmit={async evento => { evento.preventDefault(); acao.limpar(); setResultado(null); const alteracoes = lerAlteracoes(new FormData(evento.currentTarget)); if (!alteracoes) { acao.setErro("Informe datas, horários e fuso válidos."); return; } if (!alteracoes.length) { acao.setErro("Selecione pelo menos um encontro para conferir."); return; } const d = await acao.executar(() => consultarConferenciaAgendaAditivo({ matriculaId, encontros: alteracoes })); if (d?.tipo !== "ok") return; if (!d.dado) acao.setErro("Conferência indisponível."); else setResultado(d.dado); }}>
+    {!encontros.length ? <EstadoVazio role="status">Não há encontros particulares futuros disponíveis para esta matrícula.</EstadoVazio> : <form className="space-y-4" onChange={() => setResultado(null)} onSubmit={async evento => { evento.preventDefault(); acao.limpar(); setResultado(null); const alteracoes = lerAlteracoes(new FormData(evento.currentTarget)); if (!alteracoes) { acao.setErro("Informe datas, horários e fuso válidos."); return; } if (!alteracoes.length) { acao.setErro("Selecione pelo menos um encontro para conferir."); return; } const d = await acao.executar(() => consultarConferenciaAgendaAditivoLocal({ matriculaId, alteracoes })); if (d?.tipo !== "ok") return; if (!d.dado) acao.setErro("Conferência indisponível."); else setResultado(d.dado); }}>
       <fieldset className="space-y-3" disabled={pendente}><legend className="font-medium">Encontros atuais</legend>{encontros.map(encontro => { const ativo = selecionados.includes(encontro.id), docenteAtual = professorSelecionado(encontro.professorId, professores); return <div key={encontro.id} className="rounded border p-3"><label className="flex gap-2"><input type="checkbox" checked={ativo} onChange={() => alternar(encontro.id)} disabled={pendente} /><span>{encontro.professor} · {exibir(encontro.inicio, encontro.fusoOrigem)}–{exibir(encontro.fim, encontro.fusoOrigem)} ({encontro.fusoOrigem})</span></label>{ativo && <div className="mt-3 grid gap-3 md:grid-cols-2"><label>Docente novo<select className="mt-1 block w-full rounded border p-2" name={`professor-${encontro.id}`} defaultValue={docenteAtual} required><option value="" disabled>Escolha o docente</option>{professores.map(professor => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label><label>Fuso novo<CampoFuso className="mt-1 block w-full rounded border p-2" name={`fuso-${encontro.id}`} padrao={encontro.fusoOrigem} /></label><label>Início novo<input className="mt-1 block w-full rounded border p-2" type="datetime-local" name={`inicio-${encontro.id}`} defaultValue={campoData(encontro.inicio, encontro.fusoOrigem)} required /></label><label>Fim novo<input className="mt-1 block w-full rounded border p-2" type="datetime-local" name={`fim-${encontro.id}`} defaultValue={campoData(encontro.fim, encontro.fusoOrigem)} required /></label></div>}</div>; })}</fieldset>
       <FeedbackAcao erro={acao.erro} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Conferindo…" : "Conferir alterações"}</button>
     </form>}
