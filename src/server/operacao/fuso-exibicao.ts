@@ -1,5 +1,5 @@
 import { formatarDataCivil } from "@/lib/data-civil";
-import { FusoInstitucionalSchema, diaCivilGravado } from "./fuso";
+import { FusoInstitucionalSchema, dataCivilInstitucional, diaCivilGravado } from "./fuso";
 
 /** Preferência só interpreta instantes já persistidos; não muda fontes ou datas civis. */
 export function resolverFusoExibicao(preferencia: string | null | undefined, fusoOrigem: string) {
@@ -61,4 +61,44 @@ export function formatarDiaCivilGravado(valor: Date | string | null | undefined,
   if (!Number.isFinite(instante.getTime())) return String(valor);
   const fuso = FusoInstitucionalSchema.safeParse(fusoEscola);
   return formatarDataCivil(fuso.success ? diaCivilGravado(instante, fuso.data) : instante.toISOString().slice(0, 10), ausente);
+}
+
+/**
+ * Dia de um campo de pagamento de semântica MISTA (`Cobranca.pagoEm`, `Recebimento.dataPagamento`, data do
+ * informe). Ele guarda a data digitada (meio-dia da escola, por `paraDataLocal`), a gravação legada à meia-noite
+ * UTC ou um instante real (`new Date()`/`agora` na baixa sem data, no ajuste que quita, na desistência; o
+ * instante histórico da baixa da migração). Normalizar na gravação não é local: o mesmo valor alimenta
+ * `Recebimento.dataPagamento`, o hash de idempotência e filtros por período. Por isso a leitura distingue:
+ * - exatamente 00:00:00.000 UTC → data civil legada, o dia UTC (não recua um dia a oeste de Greenwich);
+ * - qualquer outro valor → o dia da escola (`dataCivilInstitucional`). Para a data digitada (meio-dia ou
+ *   meia-noite da escola) é o próprio dia; para um instante, o dia em que ele ocorreu na escola.
+ * Limite aceito: um instante real exatamente à meia-noite UTC, com milissegundo zero, é lido como data civil.
+ * Sem fuso pessoal: o dia do pagamento não muda conforme quem lê. Fuso da escola inválido usa o dia UTC.
+ */
+export function diaCivilDoPagamento(gravada: Date, fusoEscola: string): string {
+  const utc = gravada.toISOString();
+  const fuso = FusoInstitucionalSchema.safeParse(fusoEscola);
+  if (!fuso.success || utc.endsWith("T00:00:00.000Z")) return utc.slice(0, 10);
+  return dataCivilInstitucional(gravada, fuso.data);
+}
+
+/** `diaCivilDoPagamento` formatado (dd/mm/aaaa); valor que não é data volta como está; ausente vira `ausente`. */
+export function formatarDiaDoPagamento(valor: Date | string | null | undefined, fusoEscola: string, ausente = "—"): string {
+  if (valor == null || valor === "") return ausente;
+  const instante = new Date(valor);
+  if (!Number.isFinite(instante.getTime())) return String(valor);
+  return formatarDataCivil(diaCivilDoPagamento(instante, fusoEscola), ausente);
+}
+
+/**
+ * Dia da escola de um valor que é o dia civil no fuso da escola por construção (follow-up gravado pelo
+ * `dataCivilInstitucional`, como no cartão do funil). Não lança: fuso da escola inválido usa o dia UTC, como os
+ * outros helpers de exibição; valor que não é data volta como está; ausente vira `ausente`.
+ */
+export function formatarDiaDaEscola(valor: Date | string | null | undefined, fusoEscola: string, ausente = "—"): string {
+  if (valor == null || valor === "") return ausente;
+  const instante = new Date(valor);
+  if (!Number.isFinite(instante.getTime())) return String(valor);
+  const fuso = FusoInstitucionalSchema.safeParse(fusoEscola);
+  return formatarDataCivil(fuso.success ? dataCivilInstitucional(instante, fuso.data) : instante.toISOString().slice(0, 10), ausente);
 }

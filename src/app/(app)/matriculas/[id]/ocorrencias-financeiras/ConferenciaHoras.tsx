@@ -12,6 +12,7 @@ import { DESFECHO_OCORRENCIA_HORAS_LABEL, TIPO_OCORRENCIA_HORAS_LABEL, rotular }
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => string }) {
@@ -30,7 +31,12 @@ export function descreverAulaNaoCobravel(efeito: string) {
         : efeito === "DEVOLVE_MINUTOS" ? "devolveu os minutos à compra de horas" : "teve efeito financeiro registrado";
   return `Aula declarada não cobrável na revisão financeira da correção: o valor acima é histórico e a aula ${destino}.`;
 }
-export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"] }) {
+/**
+ * Horário do encontro, vigência das condições e limite de cancelamento são publicados no fuso da agenda
+ * (`fusoOrigem`) e mantêm esse fuso. Comunicação, conferência e aplicação da declaração são instantes de registro:
+ * saem no fuso pessoal de exibição (sem preferência, o da agenda), com o fuso dito.
+ */
+export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenciaFusoExibicao = null }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"]; preferenciaFusoExibicao?: string | null }) {
   // Prévia é leitura sem chave; a conferência leva chave de idempotência estável. Cada uma preserva a orientação
   // própria para falha de transporte; um estado por grupo de ação, e o ocupado trava os dois.
   const router = useRouter(), carregamento = useAcaoCliente({ idempotente: false }), registro = useAcaoCliente({ idempotente: true }), [previa, setPrevia] = useState<Previa | null>(null);
@@ -38,6 +44,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
   const [condicoesId, setCondicoesId] = useState("");
   const chave = useRef({ entrada: "", valor: "" });
   const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(v));
+  const instante = (v: string) => { const x = formatarInstanteExibicao(v, preferenciaFusoExibicao, e.fusoOrigem); return `${x.texto} (${x.fuso})`; };
   const origem = { alunoId: matricula.alunoId, matriculaId: matricula.id, ocorrenciaId: e.ocorrencia?.id ?? "", condicoesId };
   async function carregarPrevia() {
     registro.limpar(); setPrevia(null);
@@ -56,11 +63,11 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula }: { encont
   }
   return <article className="space-y-3 rounded border p-4">
     <h2 className="font-medium">{data(e.inicio)} — {data(e.fim)} · {e.fusoOrigem}</h2>
-    {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotular(TIPO_OCORRENCIA_HORAS_LABEL, e.ocorrencia.tipo)} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {data(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
+    {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotular(TIPO_OCORRENCIA_HORAS_LABEL, e.ocorrencia.tipo)} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {instante(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
     {e.conferencia ? <section className="space-y-2"><h3>Conferência registrada</h3>
       <p>{rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, e.conferencia.desfecho)} · {e.conferencia.minutos} minutos · {e.conferencia.consumoAntecipacao ? "valor preservado da compra" : "valor apurado"}: {formatarMoeda(e.conferencia.valor, e.conferencia.moeda)}</p>
-      <p>{e.conferencia.conferente.nome} · {data(e.conferencia.conferidaEm)}</p><p>{e.conferencia.motivo}</p>
-      {e.conferencia.aplicacaoNaoCobravel && <p role="note">{descreverAulaNaoCobravel(e.conferencia.aplicacaoNaoCobravel.efeito)} Declaração aplicada em {data(e.conferencia.aplicacaoNaoCobravel.aplicadaEm)}.</p>}
+      <p>{e.conferencia.conferente.nome} · {instante(e.conferencia.conferidaEm)}</p><p>{e.conferencia.motivo}</p>
+      {e.conferencia.aplicacaoNaoCobravel && <p role="note">{descreverAulaNaoCobravel(e.conferencia.aplicacaoNaoCobravel.efeito)} Declaração aplicada em {instante(e.conferencia.aplicacaoNaoCobravel.aplicadaEm)}.</p>}
       {e.conferencia.consumoAntecipacao && <p>Reserva antecipada {e.conferencia.consumoAntecipacao.reservaId} da compra {e.conferencia.consumoAntecipacao.reserva.compraId} consumida por esta ocorrência. Não foi criada cobrança, recebimento ou crédito.</p>}
       <details><summary>Memória preservada da conferência</summary><Memoria snapshot={e.conferencia.snapshot} data={data} /></details>
       <p>A emissão da cobrança é uma etapa separada.</p>
