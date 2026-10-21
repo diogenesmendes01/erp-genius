@@ -34,8 +34,10 @@ export function PropostaFormulario({ pedidoId, estadoHash }: { pedidoId: string;
 export function DecisaoFormulario({ propostaId, propostaHash, podeAprovar }: { propostaId: string; propostaHash: string; podeAprovar: boolean }) {
   const router = useRouter();
   const [concluido, setConcluido] = useState(false);
-  // Sem chave (a decisão é presa ao propostaHash); na falha de transporte, o texto fixo da decisão incerta.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a decisão é presa ao propostaHash, e a mesma decisão do mesmo decisor com o
+  // mesmo motivo devolve a já registrada (server/matricula/desistencia-financeira.ts). Na falha de transporte, o
+  // texto fixo da decisão incerta.
+  const acao = useAcaoCliente({ idempotente: true });
   async function enviar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const dados = new FormData(event.currentTarget);
     const d = await acao.executar(

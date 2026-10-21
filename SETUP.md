@@ -110,6 +110,7 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Aria (Fase 5, ADR-F5-01). Sem a chave, a IA roda o provedor local determinístico "simulado" e nada chama a rede. Com a chave, a Aria chama a API da Anthropic e, quando estiver `ATIVA`, pode responder clientes. Os modelos ficam em Configurações › CRM › IA (não há variável de modelo). | vazio |
 | `PAGAMENTO_SIMULADO` | Habilita o botão de pagar da página `/pagar/[token]` (dev/demo) | vazio |
+| `ASSINATURA_DRIVER` | Assinatura eletrônica (Q155). Vazio = registro manual do assinado. `simulado` = envio, conciliação e cancelamento (desistência Q165) pelo driver SIMULADO: nada é enviado ao cliente, o processo fica `SIMULADO`/`SANDBOX` (o banco impede efeito contratual real) e as telas avisam. Só UAT/demo; outro valor falha, porque ainda não há driver de fornecedor real | vazio |
 
 Rotas públicas novas: `/pagar/[token]` (link de pagamento do gateway simulado) e
 `/certificado/[codigo]` (validação pública de certificado). Portal do aluno em `/portal`
@@ -178,6 +179,7 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
    | `ANTHROPIC_API_KEY` | | Aria (opcional). Vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a API da Anthropic e, quando `ATIVA`, pode enviar mensagens. Modelos em Configurações › CRM › IA | chave da API Anthropic |
    | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
+   | `ASSINATURA_DRIVER` | | Assinatura eletrônica: `simulado` liga o driver SIMULADO (nada é enviado ao cliente; processos `SIMULADO`/`SANDBOX`, com aviso nas telas) | `simulado` no UAT, vazio em produção |
    | `RESEND_API_KEY` | | Chave do Resend (e-mail do portal do aluno e avisos de agenda). Vazio = sem e-mail | chave da API Resend |
    | `EMAIL_INSTITUCIONAL_REMETENTE` | | Remetente dos e-mails (domínio verificado no Resend) | `nao-responda@geniusidiomas.com` |
    | `EMAIL_PORTAL_ENVIO_ENABLED` | | Liga os e-mails de acesso do portal (só `true` liga) | `false` até homologar |

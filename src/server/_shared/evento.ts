@@ -65,7 +65,9 @@ export type AgregadoTipo =
   | "FonteConhecimento"
   | "ConfigIA"
   | "MetaComercial"
-  | "ConfigSetorAtendimento";
+  | "ConfigSetorAtendimento"
+  // Driver SIMULADO de assinatura eletrônica (Q155 aberta): o "serviço" simulado guarda os envelopes no banco.
+  | "EnvelopeAssinaturaSimulado";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */

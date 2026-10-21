@@ -4356,3 +4356,160 @@ Branch `claude/fuso-pessoal-telas-2`, base `main` 95ca3d73 (com o 1º lote, #286
   - Afetados (helper, as duas travas, funil, financeiro, ficha financeira, reservas, ocorrências, indisponibilidade, continuidade, segundas chamadas, presença): 87 arquivos, 526 testes OK em `TZ=UTC` e em `TZ=America/Sao_Paulo`, com expectativas fixas. Os testes novos de tela falham com o comportamento antigo (conferido para o "último pagamento" e os informes).
   - `TZ=UTC vitest run` completo: 825 arquivos, 6.267 testes OK.
   - `npm run build`: saída 0.
+
+### Fuso pessoal nas telas (3º lote: fallback da escola, prazo da remarcação e fuso de entrada dos `datetime-local`) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas-3`, a partir do 2º lote (#289, já no `main`, com merge do `main` sem rebase). Encerra as três pendências que o #289 deixou e trata o item A da review dele (FIN-04). Sem migration.
+
+- **Fallback da escola** (sem preferência pessoal, as telas caíam em UTC): registros e decisões (instantes) agora usam o fuso pessoal; sem preferência, o da escola (ou o da agenda), com o fuso escrito na tela.
+  - Financeiro › acertos de adiantamento e de vencimento: proposta, aplicação e vigência. Saiu o "origem UTC". Os vencimentos são datas civis gravadas e passam por `formatarDiaCivilGravado`, no fuso em que o acerto foi preparado (antes era um `Intl` cru, que lançava com fuso inválido).
+  - Matrícula › período integral: registro, decisão e aplicação (`instanteDoPeriodoIntegral`).
+  - Aluno › movimentações › compras de horas: registro da compra. O horário do encontro continua no fuso da agenda.
+  - Segundas chamadas › substituição: registro e decisão no fuso pessoal; sem preferência, no da agenda (como a agenda inicial do lote 2) e, sem agenda válida, no da escola. O horário publicado fica no fuso da agenda, e um fuso de agenda inválido não derruba mais a página: sai em UTC, dito na tela.
+  - Política de comissão: as vigências exibidas acompanham o campo de entrada (sem preferência, fuso da escola).
+- **Remarcação da segunda chamada › "prazo vigente":** o servidor mandava `estado.encontro?.fusoOrigem ?? "UTC"`, ou seja, UTC sem encontro, e um fuso gravado inválido derrubava a página.
+  - Agora `fusoDoPrazoSegundaChamada` (`src/server/avaliacoes/segunda-chamada-prazo.ts`) usa o fuso da agenda; sem ela, ou com fuso inválido, usa o da escola (`fusoDaEscola`). Só cai em UTC se a escola também não tiver fuso, e nunca usa o fuso do servidor.
+  - A consulta devolve `origemFusoExibicao` e a tela escreve "(America/Sao_Paulo, fuso da agenda/da escola)", sem lançar.
+- **Fuso de ENTRADA dos `datetime-local`.** Os ~40 campos de `src/app` foram auditados:
+  - 24 já estavam certos: `<CampoFuso>` no mesmo formulário e ação `*-local` com `instanteAvaliacaoLocal`.
+  - Os errados liam o texto digitado no fuso do navegador (`new Date(valor)`: diário, Inbox, experimental no painel e nas datas, vigência do aditivo, política de comissão, validação/prazo/liberação da reposição).
+  - A correção da conclusão de reposição lia o valor como UTC.
+  - `paraDataHoraLocal` lia no fuso do PROCESSO.
+  - A agenda do aditivo convertia no cliente.
+  - O ciclo da agenda particular não dizia o fuso.
+  - **Novo `src/server/operacao/fuso-entrada.ts`:**
+    - `fusoDoCampoLocal`: o fuso pessoal; sem ele, o da escola; sem nenhum válido, "UTC" escrito ao lado do campo (fallback documentado).
+    - `valorCampoLocal`: valor inicial e `max` no mesmo fuso; não lança, e fuso inválido usa UTC.
+    - `instanteDoCampoLocal`: converte no fuso informado e recusa formato inválido, data impossível e horário pulado ou repetido no horário de verão.
+    - Servidor: `exigirInstanteDoCampoLocal` (`src/server/_shared/campo-local.ts`) transforma o erro em `ErroRegra`, sem fallback.
+  - **Novo `<CampoDataHoraLocal fuso=…>`** (`src/components`): escreve "Horário em X." ao lado do campo, marca `data-fuso` e, com `nomeFuso`, envia o fuso junto.
+  - **Ações `*-local`** (texto + fuso → instante no servidor):
+    - `diario/reposicao-local.ts`
+    - `diario/diario-local.ts`
+    - `financeiro/politica-comissao-local.ts`
+    - `contratos/aditivos-local.ts`
+    - `contratos/agenda-aditivo-local.ts`
+    - `agendarMensagemNoAtendimentoLocal`
+    - `agendarExperimental({ dataLocal, fuso })`
+    - `atualizarDatas({ dataExperimental, fusoDataExperimental })`
+  - `paraDataHoraLocal`/`dataHoraOpcional` passam a recusar o texto sem fuso.
+  - Exceção mantida: a conciliação financeira da migração, que usa deslocamento UTC explícito, copiado da fonte.
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`):
+  - Nova regra "campo-local": `datetime-local` fora do `<CampoDataHoraLocal>`, a não ser com `<CampoFuso>` no mesmo `<form>` ou na mesma árvore JSX. `createElement`/constante contam (falha fechada).
+  - Nova regra "conversao-local": `new Date(v)`/`Date.parse(v)` em que `v` lê o campo (`x.get("<name>")` ou o nome ligado ao `value`).
+  - Saíram as 7 exceções do lote 2 (experimental, diário, `Intl.DateTimeFormat()` do aditivo) e entrou 1 (conciliação da migração).
+  - `campos.test`/`campos-mapa` e `rotulos.test` reconhecem o `CampoDataHoraLocal`.
+- **FIN-04 (item A da review do #289):**
+  - Antes, o form gravava o meio-dia do NAVEGADOR: 05/10 digitado em Sydney virava 04/10 na escola em São Paulo.
+  - Agora o form manda `AAAA-MM-DD` e `registrarRecebimentoDestinado` analisa com `analisarComDatasDaEscola`/`dataObrigatoria`, gravando o meio-dia da escola (`Recebimento.dataPagamento` e `Cobranca.pagoEm`). O ISO de um form antigo ainda aberto continua aceito.
+  - **Idempotência:** com `dataDigitada`, o replay da mesma chave aceita a data gravada pela outra convenção de meio-dia para o MESMO dia digitado (`mesmaDataDigitada`: meio-dia de D em algum fuso, entre UTC−12 e UTC+14, em quartos de hora e sem segundos), desde que o resto do `hashDados` seja igual.
+  - Outro dia com a mesma chave continua recusado.
+- **Pendências:**
+  - Cerca de 100 telas ainda usam "UTC" como origem de exibição sem preferência (fora do escopo deste lote; lista com `grep 'formatarInstanteExibicao(.*"UTC"'`). Entre elas a própria página de aditivos e os históricos de movimentações.
+  - O horário publicado na remarcação da segunda chamada continua no fuso pessoal com "(origem X)", como o lote 2 deixou.
+  - O `tsc --noEmit` completo foi morto por falta de memória: fica com o CI. O dos arquivos alterados e dos seus importadores (143 arquivos) passou.
+- **Evidências** (depois do merge do `main` com o #289):
+  - Afetados: 282 arquivos e 2.546 testes OK em `TZ=UTC` e em `TZ=America/Sao_Paulo`, com expectativas fixas. Inclui as travas `fuso-pessoal-telas`, `fuso-instante`, `campos` e `rotulos`, os helpers e as telas tocadas.
+  - Testes novos: `fuso-entrada` (dois fusos, virada do dia, horário de verão, fallback), `acoes-campo-local` e `segunda-chamada-prazo`. `recebimentos-data-digitada` cobre Sydney → 05/10 e o replay. Também os autotestes das regras novas da trava.
+  - Integração no banco descartável `erp_genius_test_fuso3`, apagado no fim:
+    - `recebimentos-destinados`: FIN-04 nos dois sentidos do replay e outro dia recusado.
+    - `comercial/leads`: experimental com e sem fuso.
+    - `whatsapp/agendamento`: agendamento local.
+    - `reposicao-entrega-operacional`.
+    - Tudo OK em UTC; `agendamento` e `recebimentos-destinados` também em São Paulo.
+    - `segunda-chamada.int` (consulta de remarcação: fuso do prazo = agenda): OK.
+  - `tsc` dirigido (alterados e importadores, 145 arquivos): saída 0. O `tsc --noEmit` completo foi morto por falta de memória (4 GB): fica com o CI.
+  - `eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
+- **Correções das reviews do #290** (5605939307 e 5605944129):
+  - **B1:** em `/academico/reposicoes`, o prazo da etapa e o "Expira em" da liberação eram digitados em UTC quando não havia preferência. Agora a página usa `fusoDoCampoLocal(preferência, escola)`, e 25/10 23:59 em São Paulo vira `2026-10-26T02:59Z`. Nenhuma outra entrada caía em UTC.
+  - **FIN-04, replay (menor 1 e C3):** `mesmaDataDigitadaNaEscola` compara com o dia que a escola vê no registro existente. Em Pacific/Auckland e Pacific/Honolulu, outro dia com a mesma chave é recusado. Um registro antigo que a escola vê em outro dia (Sydney) também é recusado, sem duplicar o caixa.
+  - **Menores:**
+    - comentário de `diaCivilDoPagamento` atualizado;
+    - a experimental intocada volta como o instante gravado (hora repetida do horário de verão), com o limite documentado no diário e na agenda do aditivo;
+    - a trava "conversao-local" passa a pegar `new Date`/`Date.parse` sobre `*.target.value` nos handlers do campo e `valueAsNumber`/`valueAsDate`;
+    - na remarcação, o rótulo do prazo com fuso não reconhecido mostra "UTC; … não reconhecido";
+    - o texto do `datetime-local` sem fuso vira erro de validação legível.
+  - **Evidências:**
+    - trava e testes tocados (26 arquivos, 211 testes) OK em UTC e em São Paulo;
+    - financeiro, `_shared` e comercial: 72 arquivos e 560 testes OK nos dois TZ;
+    - `tsc` dirigido: saída 0; lint dos alterados: 0.
+    - A integração não rodou, porque o cluster de teste está com o checkpoint parado (vários `DROP DATABASE` pendentes, inclusive o do `erp_genius_test_fuso3`). O `recebimentos-destinados.int` foi atualizado para a regra nova.
+
+### Idempotência, 6º lote (#166) — 2026-10-21
+
+Branch `claude/idempotencia-lote6`, base `main` 239001ad, com `main` mesclada depois do 5º lote (PR #282). Não toca as ações do 5º lote. A #166 continua aberta.
+
+- **Escopo:** 20 ações que criam registro, enviam pelo WhatsApp ou mexem em dinheiro. Os testes de integração entraram primeiro e rodaram contra o servidor de `main`: 18 de 29 casos falharam; os 11 que passaram (sem chave, chave de outro autor, estado vindo de outra pessoa) ficam como trava de regressão.
+- **Criações com chave** (`repeticaoIdempotente` depois da sessão e do papel, busca antes das validações de estado, escopo por autor; `useChaveIdempotencia` na tela):
+  - Financeiro, pedido manual de restrição e de liberação de aulas (`bloquearAcesso`, `desbloquearAcesso`; marca em `RestricaoAulasSolicitada`/`LiberacaoAulasSolicitada`, hash de matrícula, pedido e motivo). Antes, se a solicitação era rejeitada entre a tentativa e o reenvio, o reenvio abria outra; se era aprovada, o reenvio era recusado. A mesma chave com outro motivo, o pedido inverso ou outra matrícula (existente ou não) recebe a mesma recusa.
+  - Funil, registrar o link de pagamento da taxa (`registrarLinkPagamento`; marca em `LinkPagamentoEnviado`, hash de cobrança e link). Antes, cada reenvio gravava outro Evento e movia a âncora da régua "link sem pagamento". O reenvio devolve ok mesmo com a cobrança já paga. O painel ganhou executor próprio para o link (como a nota).
+  - Inbox, transferir atendimento (`transferirAtendimento`; marca nos dois `AtendimentoTransferido`, hash de atendimento, destino, chave do destino e contexto). O reenvio devolve o atendimento novo em vez de "Atendimento encerrado".
+  - Inbox, encaminhar mensagem pelo motor (`encaminharMensagemWhatsApp`), no padrão do envio de assinatura (#288), depois do B1 da R1: a TX1 confere tudo e grava `MensagemWhatsAppEncaminhamentoIniciado` (com a marca) sob a trava da chave; o motor é chamado fora de transação; a TX2 grava o desfecho (`MensagemWhatsAppEncaminhada`, `...EncaminhamentoIncerto` para timeout, rede ou resposta ambígua, `...EncaminhamentoNaoEnviado` quando o motor afirma que não executou). O reenvio da mesma chave devolve ok, "em andamento" ou "incerto" sem chamar o motor; só depois de "não enviado" tenta de novo. A leitura e o escopo da TX1 usam a própria transação (B2). Sem chave, o fluxo de antes.
+- **Idempotentes por natureza, com mudança no servidor.** O reenvio de quem já fez a ação devolve ok sem gravar Evento nem chamar o motor. Se o estado veio de outra pessoa, do despachante ou do celular, a ação segue recusada como antes.
+  - Inbox: assumir (o último Evento de responsável do atendimento é o `AtendimentoAssumido` de quem repete; o clique duplo que perde o UPDATE condicional também recebe ok), devolver para a fila (último é o `AtendimentoDevolvido` dele), encerrar (antes, com a corrida do clique duplo, dava para gravar dois `AtendimentoEncerrado`; agora a linha é travada), revogar convite e cancelar mensagem agendada (`cancelarMensagemAgendada`, que também serve à agenda de tarefas).
+  - Mensagem pelo motor: editar com o mesmo texto da última edição de quem repete e apagar a mensagem que ele mesmo apagou pelo ERP. Apagada pelo celular (sem Evento), segue "já foi apagada".
+- **Idempotentes por natureza, só na tela** (conferido no servidor, que já devolvia a decisão ou a efetivação existente): decisão da solicitação de acesso às aulas, efetivação da desistência, decisão administrativa e decisão financeira da desistência, decisão e efetivação do acerto de encerramento, atribuir atendimento. As decisões já usavam a mensagem própria de decisão incerta ("reenvie a mesma decisão"); as efetivações passam de "recarregue antes de repetir" para "reenvie sem alterar os dados".
+- **Fica como está:** fixar conversa no Inbox alterna o estado (o reenvio desfaria o primeiro clique); continua com `idempotente: false`, agora num executor separado de assumir/devolver. O pagamento simulado da página pública `/pagar` não baixa a cobrança (`baixarCobrancaTx` exige autor), então não há o que repetir.
+- **Restam 92 linhas** com `idempotente: false` ou `idempotente={false}` fora de testes e de `src/server` (103 em `main` depois do 5º lote, na mesma contagem). O encerramento usa `ultimoEventoDoAutor` do 5º lote; assumir e devolver usam um helper local, porque o último Evento de responsável é procurado entre três tipos.
+- **Testes atualizados** porque fixavam o comportamento antigo: o segundo `revogarParticipante` em `whatsapp/participantes.int.test.ts` (agora ok, com um Evento); a chamada de `encaminharMensagemWhatsApp` em `inbox/AcoesMensagem.test.ts` (leva a chave); a mensagem de resultado incerto das efetivações em `movimentacoes/feedback.interacao.test.ts` e `desistencia/feedback.interacao.test.ts`.
+- **R1 do #291:** B1 e B2 acima; testes de motor lento (6 s, acima do timeout padrão de transação interativa), envio simultâneo com a mesma chave (C2), timeout que vira incerto e limite de ritmo que libera nova tentativa; encaminhar com chave, transferir com chave e as repetições de devolver, assumir e encerrar em `whatsapp/acoes-atendimento-pool.int.test.ts` (uma conexão). C3: chave por alvo (`useChavesPorAlvo`) no painel de acesso às aulas (matrícula e pedido) e no encaminhar (destino). C4: trava comum a restringir e liberar com a mesma chave.
+- **R2 do #291 (revisão 5605995246):** o marcador confirmado antes do motor (`...EncaminhamentoIniciado`) já cobria o B1/B2; o reenvio que o encontra sem desfecho agora diz "não confirmado, confira a conversa". `traduzir` só diz "não executou, tente de novo" quando o motor afirma que não executou; timeout, rede e `RESULTADO_INCERTO` dizem que a ação pode já ter sido feita. B3: editar e apagar gravam `MensagemWhatsAppAcaoIniciada` sob a trava da mensagem e do verbo antes do motor e o desfecho depois; dois pedidos simultâneos geram uma chamada e um Evento (cenários D e E). A chave não vai ao motor: a rota `/v1/numeros/:id/acoes` não tem campo de deduplicação no contrato conhecido (o `clientMessageId` é só da rota de mensagens).
+- **Arquivos novos:** `cobrancas/acesso-aulas-idempotencia`, `matricula/link-pagamento-idempotencia`, `whatsapp/atendimento-idempotencia` e `whatsapp/motor/mensagem-idempotencia` (`*.int.test.ts`). Os três primeiros trocam só `exigirSessao` (como `empresa-idempotencia`), para o envio simultâneo não esbarrar no `import()` duplo do NextAuth mockado.
+- **Evidências** (banco descartável `erp_genius_test_idem6`, `migrate deploy`; perfil temporário desfeito e banco apagado ao fim). A máquina estava sob carga (load ~20 em 4 núcleos) e o Postgres compartilhado entrou em recuperação no meio da rodada; a integração foi repetida depois que ele voltou.
+  - `tsc --noEmit`: saída 0, antes e depois do merge da `main`.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base), antes e depois do merge.
+  - `npm test` antes do merge: 819 arquivos e 6.218 testes; em UTC, 2 falharam por timeout de carga (`colunas-ordenaveis`, `paginacao-dois-sentidos`), em America/Sao_Paulo, 1 (`campos-texto`, timeout fixo de 120 s). Os três passam repetidos isolados. Inclui a trava `crm-config/auditoria.test.ts`.
+  - `npm run build`: saída 0 (a primeira tentativa parou em "Failed to type check" sem diagnóstico, com a memória da máquina esgotada; repetida, passou).
+  - Integração: os 19 arquivos que chamam as ações tocadas mais `whatsapp/linha-comercial`, `crm/carteira` e `crm/funil-carteira-equivalencia`: 22 arquivos e 247 testes OK. A rodada por diretório inteiro (`whatsapp`, `inbox`, `crm`, `cobrancas`) não terminou dentro do limite de uma hora por causa da carga.
+
+### Port da #62: Q171/Q167C — destinos do excedente de permuta e saldo restrito a serviços — 2026-10-21
+
+Branch `claude/port-62-q171`, base `main` 80ba5d88. Origem: #62 `5f2354ee` (destinação negociada) e `4f09181e` (uso do saldo), portados sem cherry-pick e adaptados à `main`. Regras de 21/09 (`docs/planejamento/decisoes-2026-09-21.md`, sexta rodada): o acordo caso a caso escolhe entre saldo restrito a serviços e crédito financeiro; concordância do aluno (ou responsável) e da escola com nome, meio e evidência; aprovação independente; saldo de serviços abate mensalidade, hora particular ou taxa da mesma matrícula, não expira e nunca vira dinheiro.
+
+- **Migrations** `20261021300000_destinacao_excedente_permuta` (era `20260921070000`) e `20261021310000_uso_saldo_servico_permuta` (era `…080000`). Proposta → concordâncias → decisão independente → destinos na mesma transação (`SaldoServicoPermuta`; `OrigemCreditoExcedentePermuta` → `CreditoMatricula`). O uso aprovado nasce como `AplicacaoCompensacaoPermuta` com `usoSaldoServicoId` (CHECK de origem única), então contador, projeção e proteção da cobrança seguem sem reescrita. Guards SQL imutáveis, aprovador ≠ preparador, constraint triggers diferidas (destinos e aplicação nascem com a aprovação).
+- **Nona origem de crédito** (`origemExcedentePermutaId`) em todas as funções que enumeram origens, copiadas da definição VIGENTE na `main` e conferidas com `diff -w` (só o ramo novo): `credito_matricula_origem_unica_check`, `q165_delta_reconhecimento_guard_249` e `q165_fotografia_delta_atual_255` (de `20261020500000`), `q165_fotografia_atual` (de `20261020520000`, #276). A #62 só tinha os dois primeiros: `_255` e `q165_fotografia_atual` foram redefinidos na `main` depois. TS no mesmo padrão (`desistencia-financeiro-tx.ts`, `desistencia-reconferencia-delta-fontes.ts`): a chave só aparece quando existe. `validar_aplicacao_permuta_223`: cópia da vigente (`20260917148000`) com o ramo do uso antes do corpo original, que ficou idêntico (a #62 mudava a ordem dos bloqueios).
+- **Diferenças em relação à #62:** o uso do saldo recusa cobrança em pausa (suspensa/cancelada) e com comprovante a conferir, na ação e no banco, como a compensação por permuta da `main`; a concordância idêntica repetida devolve a mesma (também depois da decisão); decisões guardam o motivo no Evento; ações devolvem `podeRevisar` como `permuta-servico.ts`; vencimentos na tela são dia civil no fuso da escola (`diaCivilGravado` + `fusoDaEscola`); tela sem id cru, com `IdentificacaoRegistro`, `EstadoVazio`, rótulos e `formatarMoeda`; valores aceitam vírgula.
+- **Tela** `financeiro/permuta/excedente/[matriculaId]` (link em cada acordo da lista de permutas). Manifestos atualizados: `botoes-mapa.ts`, `estados-vazios-mapa.ts`, trilha. Catálogo de eventos (doc 12) com os seis eventos novos.
+- **Perguntas ao dono (escolhido o mais conservador):** a concordância pode ser registrada pela Secretaria (como na #62), mas a tela é só do Financeiro, ok? A Q173 (aditivo de moeda, ainda não na `main`) deve contar saldo de serviços na moeda antiga como pendência da "matrícula limpa"? Hoje ele simplesmente não abate cobrança de outra moeda.
+- **TDD:** a igualdade Node/SQL da `q165_fotografia_atual` com a nona origem ficou vermelha antes do TS; integrações novas `excedente-permuta-destinacao.int.test.ts` (3 casos: fonte mista, soma, idempotência, concordâncias, autoaprovação na ação e no banco, destinos atômicos, cobrança intacta, Evento por escrita, TS = SQL da fotografia delta, crédito usado pelo fluxo geral, segunda destinação recusada, cobrança alterada) e `saldo-servico-permuta-uso.int.test.ts` (3 casos: tipos/moeda/matrícula, disponível na ação e no banco, reserva, autoaprovação, aprovação sem aplicação recusada pelo banco, imutabilidade, sem crédito gerado, cadeia nas fontes da Q167, comprovante a conferir recusado na ação e no banco, rejeição devolve a reserva).
+- **Evidências** (Postgres na 54329, banco descartável `erp_genius_test_q171`, `migrate deploy` do zero com 476 migrations, perfil temporário desfeito e banco apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base).
+  - `vitest run`: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo (inclui a trava `crm-config/auditoria.test.ts`).
+  - Integração de `src/server/financeiro` e `src/server/matricula` (permuta, desistência, Q165, Q167): 58 arquivos e 488 testes OK; `financeiro/politica.int.test.ts` (baixas parciais concorrentes, não tocado) falhou uma vez com o build rodando junto e passou ao ser repetido sozinho.
+  - `npm run build`: saída 0.
+- **Correções da revisão (R1 `5602744571` e R1 rigorosa `5603911810`):**
+  - **B1/C2, saldo restrito nunca vira dinheiro:** o uso aprovado do saldo não é origem de excedente. A recusa vale na ação (`apurarTx`) e no banco (`guardar_origem_excedente_uso_saldo_171` em `OrigemExcedentePermuta`).
+  - **B2 e item menor:** o uso abate só `MENSALIDADE`, como a permuta da `main`, na ação e no banco. Em hora particular, a Q175 devolveria a aula paga com saldo como crédito financeiro. Em taxa, o acerto de taxa não conhece a permuta e o uso falhava com exceção do banco. Nenhuma função vigente foi redefinida. Isso é mais estreito que a decisão de 21/09 (ver a nota da Q171 em `decisoes-2026-09-21.md`).
+  - **B3:** a destinação exige cobrança `PAGO`, com saldo 0 e liquidado ≥ `valorNegociado`, na ação e nos guards da proposta e da decisão.
+  - **C3:** a nota da Q171 explica que `valorDevidoAcordado` é digitado na proposta.
+  - As mudanças entraram nas próprias migrations `20261021300000`/`310000`. O corpo original de `validar_aplicacao_permuta_223` continua idêntico (`diff -w`).
+  - Testes novos: `saldo-servico-permuta-uso.int.test.ts` com 4 casos (B1 na ação e no banco; tipos fora de mensalidade recusados na ação e no banco) e `excedente-permuta-destinacao.int.test.ts` com 4 casos (B3 na ação e no banco). Com o guard do banco removido, o caso B1 fica vermelho.
+- **Correções da R2 (`5606178959` e rigorosa `5606415941`):**
+  - **B4:** o banco amarra o excedente à obrigação acordada. O limite é a redução (liquidado − obrigação) e o serviço próprio (permuta − usos do saldo). Além disso, a obrigação não pode passar do negociado. A regra vale nos guards da proposta e da decisão (`20261021300000`). Teste do cenário da sonda (caixa 30 + permuta 50 + uso 20) em `saldo-servico-permuta-uso.int.test.ts`.
+  - **C7:** a tela do excedente esconde a preparação em cobrança em aberto e quando a única fonte de serviço é uso de saldo, e explica o motivo. Teste de render em `excedente/[matriculaId]/page.test.ts`.
+  - **C6:** a descrição do PR foi atualizada para o recorte só de mensalidade.
+
+### Port da #62: assinatura eletrônica com driver simulado (Q155/Q165) — 2026-10-21
+
+Branch `claude/port-62-assinatura-simulada`, base `main` 239001ad. Traz, adaptado à `main` atual, o port da #62 (`d2cf08f2`, `1583df0a`, `f09201ea`, que nunca chegaram à `main`). Envio e cancelamento de assinatura (contrato, aditivo e desistência Q165) passam a funcionar ponta a ponta com um driver SIMULADO, atrás do port `ProvedorAssinatura`; trocar para o fornecedor real (Q155) é implementar um driver nesse contrato.
+
+- **Port e drivers** (`src/server/contratos/`): `provedor-assinatura.ts` (contrato: criar envelope pela chave da tentativa, consultar por chave, cancelar, baixar assinado; exceção, timeout ou referência vazia são sempre INCERTO), `provedor-assinatura-simulado.ts` (driver SIMULADO; os envelopes ficam na tabela `EnvelopeAssinaturaSimulado`, durável entre reinícios e com Evento em cada escrita) e `provedor-assinatura-ativo.ts` (`ASSINATURA_DRIVER`: vazio = registro manual; `simulado`; qualquer outro valor falha com erro de regra citando a Q155).
+- **Sinalização do simulado:** o processo criado pelo simulado tem fornecedor `SIMULADO` e ambiente `SANDBOX`. Migration `20261021500000_driver_assinatura_simulado`: CHECK `SIMULADO ⇒ SANDBOX` e `SIMULADO ⇒ referência sim_…` nos processos de contrato (NOT VALID, sem reler legado) e de aditivo; os guards de efeito contratual real já exigiam `PRODUCAO`. As telas mostram o aviso "Integração de assinatura SIMULADA" e o serviço como "Simulado (nenhum documento sai do ERP)". Em `NODE_ENV=production` o simulado é aceito (é o build do UAT), com aviso no log. Nenhuma função SQL foi redefinida.
+- **Envio e conciliação do contrato** (`envio.ts`, tela `contrato/originais/[artefatoId]`): tentativa confirmada no banco antes da chamada externa, resultado em outra transação; perda de resposta vira `ENVIO_INCERTO` e só a conciliação pela chave da tentativa resolve. Só aparece com o driver ativo, conferência da revisão atual e processo do mesmo serviço/ambiente.
+- **Aditivo** (`aditivo-envio.ts`, tela do original do aditivo): mesmo protocolo; `ProcessoFormulario` oferece "Simulado" só com o driver simulado ligado e fonte em SANDBOX, e a ação recusa `SIMULADO` sem o driver. `iniciarTentativaAditivoTx` e `registrarResultadoEnvioAditivoTx` passaram a gravar Evento (`TentativaAssinaturaAditivoIniciada`, `ResultadoEnvioAssinaturaAditivoRegistrado`), que faltava.
+- **Desistência Q165** (`executarCancelamentoAssinaturaDesistencia`, tela `desistencia/documentos`): intenção Q121 → cancelamento no serviço → observação `CONFIRMADO`/`INCERTO`; só a confirmação encerra o processo (`CANCELADO`), e a efetivação já reconhecia esse cancelamento. Repetir com nova chave concilia a mesma intenção; já confirmada, não chama o serviço de novo. A consulta documental separa o cancelamento por desistência do de substituição (antes, uma intenção de desistência aparecia como "cancelamento para substituição").
+- **Idempotência:** as quatro ações aceitam `chaveIdempotencia` (`repeticaoIdempotente`, marca no Evento da tentativa/resultado/observação) e as telas usam `useChaveIdempotencia`; a mesma chave devolve o resultado gravado sem chamar o serviço.
+- **Deploy:** `ASSINATURA_DRIVER` repassada em `docker-compose.coolify.yml` e `docker-compose.prod.yml`, listada em `.env.example`, `deploy/env.production.example` e `SETUP.md` (trava `compose-env.test.ts` conferida por mutação).
+- **Travas de UI:** botões novos em `botoes-mapa.ts` ("Cancelar envio no serviço de assinatura" como `perigo`); a mensagem de resultado do envio (`contrato/resultado-envio.ts`) entrou como exceção ancorada em `enums-rotulos.test.ts`, por ser frase do fluxo e não rótulo do estado.
+- **Fora do escopo:** driver real e webhook autenticado (Q155), conclusão automática a partir do assinado baixado, job de conciliação agendado, e envio de aditivo sobre base de ambiente `HISTORICO` (origem contratual histórica, #285).
+- **Perguntas ao dono (escolhido o mais conservador possível sem quebrar o objetivo):** (1) o simulado é aceito com `NODE_ENV=production` para servir ao UAT; bloquear em produção real exigiria outra variável. (2) Um processo SIMULADO/SANDBOX pode ser fonte do acerto Q246/Q165 (regra existente para SANDBOX, não alterada).
+- **Evidências** (Postgres 16 descartável na 54329, banco próprio do agente):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run` completo: 821 arquivos, 6.241 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
+  - `prisma migrate deploy` do zero em banco novo: 475 migrations aplicadas, saída 0.
+  - Integração dirigida: `contratos/envio-integrado.int.test.ts` 3/3; `aditivo.int.test.ts` cenário novo 1/1; `desistencia-acerto-contratual.int.test.ts` cenário novo 1/1 (envio pelo simulado, cancelamento incerto e depois confirmado, efetivação).
+  - Suítes completas de `src/server/contratos` e `src/server/matricula` (depois da volta do cluster): 57 arquivos, 571 testes passados, 4 ignorados e 2 falhas. As 2 falhas foram nos testes novos de corrida, que o run carregou no meio da edição. Rodados de novo isolados com o código final (`envio-integrado`, `aditivo`, `desistencia-acerto-contratual`): 3 arquivos, 90/90.
+  - Revisões R1, R2 e rigorosa: a conciliação não confirma envelope `CANCELADO`/`RECUSADO` (fica `INCERTO` com o motivo); `ENVIANDO` só é conciliado depois de `PRAZO_CONCILIACAO_ENVIANDO_MS` (10 min), maior que `TIMEOUT_CRIACAO_ENVELOPE_MS` (2 min), que agora é aplicado na criação; a tela só oferece conciliar em `ENVIO_INCERTO` ou `ENVIANDO` vencido; o catálogo de eventos (`docs/12`) foi atualizado; a evidência repetida do cancelamento simulado não varia mais; e o valor bruto de `ASSINATURA_DRIVER` vai só para o log.
+  - `npm run build`: saída 0.

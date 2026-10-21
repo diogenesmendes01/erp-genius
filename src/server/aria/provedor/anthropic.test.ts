@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { criarProvedorAnthropic, type ClienteMensagens } from "./anthropic";
 import { escolherProvedor } from "./index";
@@ -86,11 +85,12 @@ describe("provedor Anthropic", () => {
     process.env.ANTHROPIC_API_KEY = "chave-de-teste-nao-real";
     expect(escolherProvedor(M).nome).toBe("anthropic");
   });
-  it("erros_tipados_viram_ErroProvedorIA", async () => {
+  it("erros_de_api_viram_ErroProvedorIA", async () => {
     const com = (e: unknown) => criarProvedorAnthropic(cliente(vi.fn().mockRejectedValue(e)), M);
-    await expect(com(new Anthropic.RateLimitError(429, {}, "x", new Headers())).gerar(p)).rejects.toMatchObject({ codigo: "429" });
-    await expect(com(new Anthropic.AuthenticationError(401, {}, "x", new Headers())).gerar(p)).rejects.toMatchObject({ codigo: "401" });
-    await expect(com(new Anthropic.APIConnectionTimeoutError()).gerar(p)).rejects.toMatchObject({ codigo: "TIMEOUT" });
-    await expect(com(new Anthropic.InternalServerError(500, {}, "x", new Headers())).gerar(p)).rejects.toMatchObject({ codigo: "500" });
+    await expect(com({ status: 429, message: "rate limit", isAPIError: true }).gerar(p)).rejects.toMatchObject({ codigo: "429" });
+    await expect(com({ status: 401, message: "unauthorized", isAPIError: true }).gerar(p)).rejects.toMatchObject({ codigo: "401" });
+    await expect(com({ isTimeout: true, message: "timeout" }).gerar(p)).rejects.toMatchObject({ codigo: "TIMEOUT" });
+    await expect(com({ status: 500, message: "server error", isAPIError: true }).gerar(p)).rejects.toMatchObject({ codigo: "500" });
+    await expect(com({ isConnectionError: true, message: "connection failed" }).gerar(p)).rejects.toMatchObject({ codigo: "CONEXAO" });
   });
 });

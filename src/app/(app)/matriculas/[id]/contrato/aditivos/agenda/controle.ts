@@ -1,5 +1,3 @@
-import { instanteDaGrade } from "@/server/agenda/grade";
-
 export type ValoresAlteracao = { professorNovoId: string; fusoOrigem: string; inicioLocal: string; fimLocal: string };
 
 export function alternarEncontro(selecionados: string[], encontroId: string) {
@@ -10,13 +8,14 @@ export function professorSelecionado(professorId: string | null, professores: { 
   return professorId && professores.some(professor => professor.id === professorId) ? professorId : "";
 }
 
-/** Converte o horário civil só antes da chamada ao servidor; DST ambíguo ou inexistente falha aqui. */
+/**
+ * Alterações escolhidas, com o texto digitado e o fuso do <CampoFuso> ao lado. Não converte: a conversão em instante
+ * é do servidor (consultarConferenciaAgendaAditivoLocal), no fuso informado. Campo faltando lança.
+ */
 export function montarAlteracoesAgenda(selecionados: string[], valores: Record<string, ValoresAlteracao>) {
   return selecionados.map(encontroId => {
     const valor = valores[encontroId];
     if (!valor?.professorNovoId || !valor.fusoOrigem || !valor.inicioLocal || !valor.fimLocal) throw new Error("Preencha a alteração proposta.");
-    const inicioNovo = instanteDaGrade(valor.inicioLocal.slice(0, 10), valor.inicioLocal.slice(11, 16), valor.fusoOrigem).toISOString();
-    const fimNovo = instanteDaGrade(valor.fimLocal.slice(0, 10), valor.fimLocal.slice(11, 16), valor.fusoOrigem).toISOString();
-    return { encontroId, professorNovoId: valor.professorNovoId, inicioNovo, fimNovo, duracaoMinutos: Math.round((Date.parse(fimNovo) - Date.parse(inicioNovo)) / 60_000), fusoOrigem: valor.fusoOrigem };
+    return { encontroId, professorNovoId: valor.professorNovoId, fusoOrigem: valor.fusoOrigem, inicioLocal: valor.inicioLocal, fimLocal: valor.fimLocal };
   });
 }

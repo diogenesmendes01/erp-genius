@@ -30,12 +30,16 @@ export function resumoMinutosCompra(c: { minutosReservados: number; minutosConsu
   return `${c.minutosReservados} minutos reservados · ${c.minutosConsumidos} consumidos · ${c.minutosEstornados ? `${c.minutosEstornados} devolvidos por aula não cobrável · ` : ""}${c.minutosConvertidosCredito} convertidos em crédito · ${c.minutosDisponiveis} ainda não reservados.`;
 }
 
-export function RegistroCompraHoras({ nome, criadoEm, preferenciaFusoExibicao }: { nome: string; criadoEm: string; preferenciaFusoExibicao?: string | null }) {
-  const exibicao = formatarInstanteExibicao(criadoEm, preferenciaFusoExibicao, "UTC");
-  return <p>Registrado por {nome} em {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC).</p>;
+/**
+ * Registro da compra é instante (lote 3 do fuso pessoal nas telas): fuso pessoal; sem preferência, o da escola
+ * (antes, UTC); escola sem fuso válido, UTC — sempre escrito.
+ */
+export function RegistroCompraHoras({ nome, criadoEm, preferenciaFusoExibicao, fusoEscola }: { nome: string; criadoEm: string; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
+  const exibicao = formatarInstanteExibicao(criadoEm, preferenciaFusoExibicao, fusoEscola);
+  return <p>Registrado por {nome} em {exibicao.texto} (horário exibido em {exibicao.fuso}).</p>;
 }
 
-function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: string; matriculaId: string; preferenciaFusoExibicao?: string | null }) {
+function Compras({ alunoId, matriculaId, preferenciaFusoExibicao, fusoEscola }: { alunoId: string; matriculaId: string; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const [dados, setDados] = useState<Dados | null>(null), [erro, setErro] = useState<string | null>(null), [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, iniciar] = useOperacao();
   const chave = useRef("");
@@ -50,7 +54,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
     {dados && <>
       {dados.compras.length === 0 && <EstadoVazio>Nenhuma compra de horas registrada nesta matrícula.</EstadoVazio>}
       {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {formatarMoeda(c.valorPagoAlocado, c.moeda)}</summary>
-        <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+        <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} fusoEscola={fusoEscola} />
         <p>{c.liquidacao ? `Quitação: ${formatarMoeda(c.liquidacao.valorEmDinheiro, c.moeda)} em dinheiro e ${formatarMoeda(c.liquidacao.valorEmCredito, c.moeda)} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {formatarMoeda(c.valorOriginal, c.moeda)}. {parcelasDiferenca(c.diferencaValor).desconto && <>{ROTULO_DESCONTO_COMPRA}: {formatarMoeda(c.diferencaValor.desconto, c.moeda)}. </>}{parcelasDiferenca(c.diferencaValor).reducao && <>{ROTULO_REDUCAO_COMPRA}: {formatarMoeda(c.diferencaValor.reducaoAditivo, c.moeda)}. </>}Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
         <p>{resumoMinutosCompra(c)}</p>
         {c.reservas.map(r => <div key={r.id}><p>{r.minutos} minutos · encontro {r.encontroId} · {situacaoReserva(r)}</p>
@@ -97,11 +101,11 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao }: { alunoId: s
   </div>;
 }
 
-export function ComprasHorasPainel({ alunoId, contratos, preferenciaFusoExibicao = null }: { alunoId: string; contratos: { id: string; codigo: string | null }[]; preferenciaFusoExibicao?: string | null }) {
+export function ComprasHorasPainel({ alunoId, contratos, preferenciaFusoExibicao = null, fusoEscola }: { alunoId: string; contratos: { id: string; codigo: string | null }[]; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const [matriculaId, setMatriculaId] = useState(contratos[0]?.id ?? "");
   return <section className="space-y-3 rounded border p-3" aria-label="Compras de horas antecipadas"><h2 className="text-lg font-medium">Compras de horas antecipadas</h2>
     <label className="grid gap-1">Contrato das horas<select className={estilo} value={matriculaId} onChange={(e) => setMatriculaId(e.target.value)}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</select></label>
-    {matriculaId && <Compras key={matriculaId} alunoId={alunoId} matriculaId={matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} />}
+    {matriculaId && <Compras key={matriculaId} alunoId={alunoId} matriculaId={matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} fusoEscola={fusoEscola} />}
   </section>;
 }
 

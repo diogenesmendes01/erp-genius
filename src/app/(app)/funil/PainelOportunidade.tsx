@@ -24,6 +24,8 @@ import { ModalPerda } from "./ModalPerda";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
 import { formatarDiaDaEscola, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
 type Aba = "oportunidade" | "detalhes" | "atividade";
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -74,8 +76,15 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   // segunda nota. Por isso ela tem executor próprio; as outras ações do painel seguem sem chave.
   const acaoNota = useAcaoCliente({ idempotente: true });
   const tentativaNota = useChaveIdempotencia();
+  // O link de pagamento também recebe chave (#166): o reenvio não grava outro LinkPagamentoEnviado nem move a
+  // âncora da régua "link sem pagamento". Executor próprio, como a nota.
+  const acaoLink = useAcaoCliente({ idempotente: true });
+  const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
+  // A experimental é digitada no fuso pessoal (sem preferência, o da escola), escrito ao lado do campo; o servidor
+  // converte (antes: `new Date(valor)` no fuso do navegador).
+  const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");
   const [confirmaDono, setConfirmaDono] = useState(false);
@@ -95,6 +104,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
 
   async function rodar(f: () => ReturnType<typeof enviarProposta>, sucesso: string, depois?: () => void) {
     acaoNota.limpar();
+    acaoLink.limpar();
     const d = await acao.executar(f, sucesso);
     if (d?.tipo === "ok") {
       router.refresh();
@@ -102,8 +112,20 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
     }
   }
 
+  async function registrarLink() {
+    acao.limpar();
+    acaoNota.limpar();
+    const d = await acaoLink.executar(() => registrarLinkPagamento(taxa!.cobrancaId, link, { chaveIdempotencia: tentativaLink.atual }), "Link de pagamento registrado.");
+    tentativaLink.depoisDo(d);
+    if (d?.tipo === "ok") {
+      router.refresh();
+      setLink("");
+    }
+  }
+
   async function registrarNota() {
     acao.limpar();
+    acaoLink.limpar();
     const d = await acaoNota.executar(() => registrarNotaInterna(op.id, { nota, chaveIdempotencia: tentativaNota.atual }), "Nota registrada.");
     tentativaNota.depoisDo(d);
     if (d?.tipo === "ok") {
@@ -202,13 +224,13 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               <div className="grid gap-2">
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Data e hora da experimental</span>
-                  <input type="datetime-local" className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
+                  <CampoDataHoraLocal fuso={fusoExperimental} className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
                 </label>
                 <div>
                   <Botao
                     variante="secundario"
                     disabled={!dataExp || acao.ocupado}
-                    onClick={() => rodar(() => agendarExperimental(op.id, { dataISO: new Date(dataExp).toISOString() }), "Experimental agendada.")}
+                    onClick={() => rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental }), "Experimental agendada.")}
                   >Agendar experimental</Botao>
                 </div>
               </div>
@@ -220,14 +242,15 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 {taxa!.linkPagamento && (
                   <p className="break-all text-xs text-gray-600">Link atual: {taxa!.linkPagamento}</p>
                 )}
-                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado} onChange={(e) => setLink(e.target.value)} />
+                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado || acaoLink.ocupado} onChange={(e) => setLink(e.target.value)} />
                 <div>
                   <Botao
                     variante="secundario"
-                    disabled={!link.trim() || acao.ocupado}
-                    onClick={() => rodar(() => registrarLinkPagamento(taxa!.cobrancaId, link), "Link de pagamento registrado.", () => setLink(""))}
+                    disabled={!link.trim() || acao.ocupado || acaoLink.ocupado}
+                    onClick={() => void registrarLink()}
                   >Registrar link de pagamento</Botao>
                 </div>
+                <FeedbackAcao erro={acaoLink.erro} sucesso={acaoLink.sucesso} />
               </div>
             )}
 
@@ -260,7 +283,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
             <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />
             <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
-            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} />
+            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} />
             <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
           </div>
         )}

@@ -165,3 +165,20 @@ it("mantém a rejeição e oculta aprovação quando o vínculo da proposta foi 
   expect(html).not.toContain("Agenda atual");
   expect(html).not.toContain("Aprovar e remarcar / Rejeitar");
 });
+
+// Lote 3 do fuso pessoal nas telas: o "prazo vigente" sai no fuso que o servidor manda (o da agenda; sem ela, o da
+// escola — fusoDoPrazoSegundaChamada), com o fuso e a origem escritos; fuso inválido não derruba a página.
+// Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
+it("prazo vigente no fuso da agenda ou da escola, escrito; fuso inválido cai em UTC sem quebrar", async () => {
+  const conferencia = (fusoExibicao: string, origemFusoExibicao?: "AGENDA" | "ESCOLA") => ({ ok: true, dado: {
+    identificacao: { aluno: "Ana", matriculaCodigo: "M1", turma: "T1", nivel: "N1" },
+    conferencia: { contextoVigente: true, reservaId: "r", codigoAvaliacao: "I1", professorAtual: null, prazoVigente: "2026-09-21T02:30:00.000Z", fusoExibicao, origemFusoExibicao },
+    atual: { encontro: null }, estadoHash: "a".repeat(64), podePropor: false, proximoId: null, itens: [] } });
+  const render = async () => renderToStaticMarkup(await Page({ params: Promise.resolve({ reservaId: "r" }), searchParams: Promise.resolve({}) }));
+  consulta.mockResolvedValue(conferencia("America/Sao_Paulo", "AGENDA"));
+  expect(await render()).toContain("20/09/2026, 23:30 (America/Sao_Paulo, fuso da agenda)");
+  consulta.mockResolvedValue(conferencia("America/Costa_Rica", "ESCOLA"));
+  expect(await render()).toContain("20/09/2026, 20:30 (America/Costa_Rica, fuso da escola)");
+  consulta.mockResolvedValue(conferencia("Lua/Base", "AGENDA"));
+  expect(await render()).toContain("21/09/2026, 02:30 (UTC; fuso da agenda não reconhecido: Lua/Base)");
+});
