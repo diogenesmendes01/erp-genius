@@ -170,18 +170,20 @@ export async function consultarDestinacoesExcedentePermuta(input: { matriculaId:
       const aprova = usuario.papeis.includes(Papel.ADMINISTRADOR) || usuario.permissoes.includes("financeiro.aprovar_acertos");
       const [cobrancas, propostas, saldos, fuso] = await Promise.all([
         tx.cobranca.findMany({ where: { matriculaId: d.matriculaId, valorCompensadoPermuta: { gt: 0 } }, orderBy: [{ vencimento: "asc" }, { id: "asc" }], take: 100,
-          select: { id: true, tipo: true, versao: true, moeda: true, status: true, vencimento: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true } }),
+          select: { id: true, tipo: true, versao: true, moeda: true, status: true, saldo: true, vencimento: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true } }),
         tx.propostaDestinacaoExcedentePermuta.findMany({ where: { matriculaId: d.matriculaId }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], take: 50,
           include: { itens: true, concordancias: { orderBy: { parte: "asc" } }, decisao: true, preparador: { select: { nome: true } } } }),
         tx.saldoServicoPermuta.findMany({ where: { matriculaId: d.matriculaId }, orderBy: [{ criadoEm: "asc" }, { id: "asc" }], select: { id: true, moeda: true, valorInicial: true, criadoEm: true } }),
         fusoDaEscola(tx),
       ]);
       // As fontes reais de cada cobrança orientam quem prepara a distribuição; a leitura não altera nada.
-      const fontes = new Map<string, { prontas: boolean; pendencias: string[]; origens: { id: string; tipo: string; valor: string }[] }>();
+      const fontes = new Map<string, { prontas: boolean; pendencias: string[]; origens: { id: string; tipo: string; valor: string; usoSaldo: boolean }[] }>();
       for (const c of cobrancas) {
         try {
           const f = await carregarOrigensExcedentePermutaTx(tx, { matriculaId: d.matriculaId, cobrancaId: c.id });
-          fontes.set(c.id, { prontas: f.status === "PRONTA", pendencias: f.pendencias.map(x => x.codigo), origens: f.origens.map(o => ({ id: o.id, tipo: o.tipo, valor: new Prisma.Decimal(o.valor).toFixed(2) })) });
+          // C7 da R2 da #283: a tela marca o uso de saldo, que não é origem de excedente (B1), para não convidar ao erro.
+          const usos = new Set(f.fotografia.cadeias.filter(x => x.saldoServicoId).map(x => x.origemId));
+          fontes.set(c.id, { prontas: f.status === "PRONTA", pendencias: f.pendencias.map(x => x.codigo), origens: f.origens.map(o => ({ id: o.id, tipo: o.tipo, valor: new Prisma.Decimal(o.valor).toFixed(2), usoSaldo: usos.has(o.id) })) });
         } catch (erro) {
           if (!(erro instanceof ErroRegra)) throw erro;
           fontes.set(c.id, { prontas: false, pendencias: [erro.message], origens: [] });
@@ -190,7 +192,9 @@ export async function consultarDestinacoesExcedentePermuta(input: { matriculaId:
       return {
         matriculaId: d.matriculaId,
         // Vencimento é dia civil, lido no fuso da escola (Q176), nunca no do servidor.
-        cobrancas: cobrancas.map(c => ({ fontes: fontes.get(c.id)!, id: c.id, tipo: c.tipo, versao: c.versao, moeda: c.moeda, status: c.status, vencimento: diaCivilGravado(c.vencimento, fuso), valorNegociado: c.valorNegociado.toFixed(2),
+        cobrancas: cobrancas.map(c => ({ fontes: fontes.get(c.id)!, id: c.id,
+          // C7 da R2 da #283: mesmo critério de apurarTx (B3) — só cobrança quitada recebe destinação.
+          quitada: c.status === "PAGO" && c.saldo !== null && c.saldo.isZero() && new Prisma.Decimal(c.valorRecebido ?? 0).plus(c.valorLiquidadoCredito).plus(c.valorCompensadoPermuta).gte(c.valorNegociado), tipo: c.tipo, versao: c.versao, moeda: c.moeda, status: c.status, vencimento: diaCivilGravado(c.vencimento, fuso), valorNegociado: c.valorNegociado.toFixed(2),
           liquidado: new Prisma.Decimal(c.valorRecebido ?? 0).plus(c.valorLiquidadoCredito).plus(c.valorCompensadoPermuta).toFixed(2), permuta: c.valorCompensadoPermuta.toFixed(2),
           emAndamento: propostas.some(p => p.cobrancaId === c.id && !p.decisao),
           destinada: propostas.some(p => p.cobrancaId === c.id && p.decisao?.aprovada) })),

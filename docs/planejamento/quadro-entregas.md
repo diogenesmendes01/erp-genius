@@ -4380,3 +4380,7 @@ Branch `claude/port-62-q171`, base `main` 80ba5d88. Origem: #62 `5f2354ee` (dest
   - **C3:** a nota da Q171 explica que `valorDevidoAcordado` é digitado na proposta.
   - As mudanças entraram nas próprias migrations `20261021300000`/`310000`. O corpo original de `validar_aplicacao_permuta_223` continua idêntico (`diff -w`).
   - Testes novos: `saldo-servico-permuta-uso.int.test.ts` com 4 casos (B1 na ação e no banco; tipos fora de mensalidade recusados na ação e no banco) e `excedente-permuta-destinacao.int.test.ts` com 4 casos (B3 na ação e no banco). Com o guard do banco removido, o caso B1 fica vermelho.
+- **Correções da R2 (`5606178959` e rigorosa `5606415941`):**
+  - **B4:** o banco amarra o excedente à obrigação acordada. O limite é a redução (liquidado − obrigação) e o serviço próprio (permuta − usos do saldo). Além disso, a obrigação não pode passar do negociado. A regra vale nos guards da proposta e da decisão (`20261021300000`). Teste do cenário da sonda (caixa 30 + permuta 50 + uso 20) em `saldo-servico-permuta-uso.int.test.ts`.
+  - **C7:** a tela do excedente esconde a preparação em cobrança em aberto e quando a única fonte de serviço é uso de saldo, e explica o motivo. Teste de render em `excedente/[matriculaId]/page.test.ts`.
+  - **C6:** a descrição do PR foi atualizada para o recorte só de mensalidade.
