@@ -24,6 +24,8 @@ import { ModalPerda } from "./ModalPerda";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
 import { formatarDiaDaEscola, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
 type Aba = "oportunidade" | "detalhes" | "atividade";
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -76,6 +78,9 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const tentativaNota = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
+  // A experimental é digitada no fuso pessoal (sem preferência, o da escola), escrito ao lado do campo; o servidor
+  // converte (antes: `new Date(valor)` no fuso do navegador).
+  const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");
   const [confirmaDono, setConfirmaDono] = useState(false);
@@ -202,13 +207,13 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               <div className="grid gap-2">
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Data e hora da experimental</span>
-                  <input type="datetime-local" className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
+                  <CampoDataHoraLocal fuso={fusoExperimental} className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
                 </label>
                 <div>
                   <Botao
                     variante="secundario"
                     disabled={!dataExp || acao.ocupado}
-                    onClick={() => rodar(() => agendarExperimental(op.id, { dataISO: new Date(dataExp).toISOString() }), "Experimental agendada.")}
+                    onClick={() => rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental }), "Experimental agendada.")}
                   >Agendar experimental</Botao>
                 </div>
               </div>
@@ -260,7 +265,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
             <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />
             <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
-            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} />
+            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} />
             <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
           </div>
         )}

@@ -25,11 +25,35 @@ export async function bloquearMatriculas(tx: Prisma.TransactionClient, ids: stri
   for (const leadId of leads) await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${leadId} FOR UPDATE`;
   for (const matriculaId of [...new Set(ids)].sort()) await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${matriculaId} FOR UPDATE`;
 }
+const HORA = 3_600_000;
+/**
+ * Dias civis D ("AAAA-MM-DD") para os quais o instante é o MEIO-DIA de D em algum fuso do mundo (UTC−12 a UTC+14,
+ * deslocamentos múltiplos de 15 minutos, sem segundos). É a forma de uma data DIGITADA gravada ao meio-dia: pela
+ * regra antiga do FIN-04, o meio-dia do NAVEGADOR (`new Date("D T12:00:00")`); pela nova, o da escola. Um instante
+ * qualquer (com segundos ou fora do quarto de hora) não é data digitada: nenhum dia.
+ */
+export function diasDoMeioDiaDigitado(instante: Date): string[] {
+  const t = instante.getTime();
+  if (!Number.isFinite(t) || t % (15 * 60_000) !== 0) return [];
+  const base = Date.UTC(instante.getUTCFullYear(), instante.getUTCMonth(), instante.getUTCDate());
+  return [-1, 0, 1].map((d) => base + d * 24 * HORA).filter((dia) => t >= dia + 12 * HORA - 14 * HORA && t <= dia + 12 * HORA + 12 * HORA)
+    .map((dia) => new Date(dia).toISOString().slice(0, 10));
+}
+/** Os dois instantes podem ser a mesma data digitada ao meio-dia (de fusos diferentes). */
+export function mesmaDataDigitada(a: Date, b: Date): boolean {
+  const dias = diasDoMeioDiaDigitado(a);
+  return diasDoMeioDiaDigitado(b).some((d) => dias.includes(d));
+}
 
-/** Cria um fato de caixa único e suas destinações materiais FIN-04. */
+/**
+ * Cria um fato de caixa único e suas destinações materiais FIN-04.
+ * `dataDigitada`: a data veio digitada (AAAA-MM-DD) e foi gravada ao meio-dia. No REPLAY da mesma chave, a data
+ * gravada por outra convenção de meio-dia (o do navegador, antes da correção do lote 3 do fuso pessoal; o da escola,
+ * depois) para o MESMO dia digitado não é outra operação: devolve o recebimento existente, sem duplicar o caixa.
+ */
 export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, input: {
   titularMatriculaId: string; pagadorId?: string | null; chaveIdempotencia: string; autorId: string; valorRecebido: number; forma: FormaPagamento; dataPagamento: Date;
-  destinos: DestinoRecebimento[]; comprovanteUrl?: string | null; comprovanteNome?: string | null; comentario?: string | null; informeId?: string; hashDados?: string; moeda: string;
+  destinos: DestinoRecebimento[]; comprovanteUrl?: string | null; comprovanteNome?: string | null; comentario?: string | null; informeId?: string; hashDados?: string; moeda: string; dataDigitada?: boolean;
 }) {
   const valorOriginal = dinheiro(input.valorRecebido);
   if (valorOriginal.lte(0) || !input.destinos.length) throw new ErroRegra("O recebimento exige valor positivo e ao menos uma destinação.");
@@ -42,7 +66,8 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
   const destinos = [...input.destinos].sort((a, b) => a.chaveIdempotencia.localeCompare(b.chaveIdempotencia));
   // O hash informado por fluxos legados identifica a fonte, mas não substitui
   // a identidade material do caixa (data, comprovantes, comentário e destinos).
-  const hashDados = createHash("sha256").update(JSON.stringify({ titularMatriculaId: input.titularMatriculaId, pagadorId: input.pagadorId ?? null, autorId: input.autorId, informeId: input.informeId ?? null, valor: valorOriginal.toFixed(2), moeda: input.moeda, forma: input.forma, dataPagamento: input.dataPagamento.toISOString(), comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null, fonteHash: input.hashDados ?? null, destinos: destinos.map((d) => ({ ...d, valor: dinheiro(d.valor).toFixed(2) })) })).digest("hex");
+  const hashCom = (dataPagamento: Date) => createHash("sha256").update(JSON.stringify({ titularMatriculaId: input.titularMatriculaId, pagadorId: input.pagadorId ?? null, autorId: input.autorId, informeId: input.informeId ?? null, valor: valorOriginal.toFixed(2), moeda: input.moeda, forma: input.forma, dataPagamento: dataPagamento.toISOString(), comprovanteUrl: input.comprovanteUrl ?? null, comprovanteNome: input.comprovanteNome ?? null, comentario: input.comentario ?? null, fonteHash: input.hashDados ?? null, destinos: destinos.map((d) => ({ ...d, valor: dinheiro(d.valor).toFixed(2) })) })).digest("hex");
+  const hashDados = hashCom(input.dataPagamento);
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${input.autorId} FOR SHARE`;
   const caixa = await tx.usuario.findUnique({ where: { id: input.autorId }, select: { ativo: true, papeis: true, permissoes: true } });
   if (!caixa?.ativo || !(caixa.papeis.includes("ADMINISTRADOR") || caixa.papeis.includes("FINANCEIRO") || caixa.permissoes.includes("pagamento.caixa"))) throw new ErroPermissao("Exige capacidade de caixa vigente.");
@@ -51,7 +76,7 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
   await bloquearMatriculas(tx, [input.titularMatriculaId]);
   const existente = await tx.recebimento.findUnique({ where: { chaveIdempotencia: input.chaveIdempotencia }, include: { destinacoes: { orderBy: { chaveIdempotencia: "asc" } } } });
   if (existente) {
-    const iguais = existente.titularMatriculaId === input.titularMatriculaId && existente.pagadorId === (input.pagadorId ?? null) && existente.autorId === input.autorId && existente.moeda === input.moeda && existente.forma === input.forma && existente.informeId === (input.informeId ?? null) && existente.valor.equals(valorOriginal) && (!existente.hashDados || existente.hashDados === hashDados) && existente.destinacoes.length === destinos.length && existente.destinacoes.every((d, i) => d.tipo === destinos[i].tipo && d.cobrancaId === (destinos[i].cobrancaId ?? null) && d.valor.equals(dinheiro(destinos[i].valor)) && d.evidencia === destinos[i].evidencia && d.chaveIdempotencia === destinos[i].chaveIdempotencia);
+    const iguais = existente.titularMatriculaId === input.titularMatriculaId && existente.pagadorId === (input.pagadorId ?? null) && existente.autorId === input.autorId && existente.moeda === input.moeda && existente.forma === input.forma && existente.informeId === (input.informeId ?? null) && existente.valor.equals(valorOriginal) && (!existente.hashDados || existente.hashDados === hashDados || (!!input.dataDigitada && mesmaDataDigitada(existente.dataPagamento, input.dataPagamento) && existente.hashDados === hashCom(existente.dataPagamento))) && existente.destinacoes.length === destinos.length && existente.destinacoes.every((d, i) => d.tipo === destinos[i].tipo && d.cobrancaId === (destinos[i].cobrancaId ?? null) && d.valor.equals(dinheiro(destinos[i].valor)) && d.evidencia === destinos[i].evidencia && d.chaveIdempotencia === destinos[i].chaveIdempotencia);
     if (!iguais) throw new ErroRegra("Identificador de pagamento já usado para outra operação.");
     return existente;
   }

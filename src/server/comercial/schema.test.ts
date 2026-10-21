@@ -39,12 +39,12 @@ describe("ETAPAS_MANUAIS", () => {
 });
 
 describe("DatasSchema — dataExperimental preserva horário (issue #16)", () => {
-  it("aceita datetime-local e mantém a hora agendada", () => {
-    const r = DatasSchema.parse({ dataExperimental: "2026-06-22T14:30" });
-    const d = r.dataExperimental as Date;
-    expect(d).toBeInstanceOf(Date);
-    expect(d.getHours()).toBe(14);
-    expect(d.getMinutes()).toBe(30);
+  // Lote 3 do fuso pessoal: o texto do datetime-local é convertido ANTES do schema, no fuso informado pela tela
+  // (atualizarDatas → exigirInstanteDoCampoLocal). O schema recebe o instante e recusa o texto sem fuso.
+  it("aceita o instante da experimental (hora preservada) e recusa o texto do datetime-local sem fuso", () => {
+    const r = DatasSchema.parse({ dataExperimental: "2026-06-22T17:30:00.000Z" });
+    expect(r.dataExperimental).toEqual(new Date("2026-06-22T17:30:00.000Z"));
+    expect(() => DatasSchema.parse({ dataExperimental: "2026-06-22T14:30" })).toThrow(/sem fuso/);
   });
 
   it("aceita data simples (date-only) sem hora explícita → meio-dia da escola", () => {
