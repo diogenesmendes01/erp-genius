@@ -4268,3 +4268,16 @@ Branch `claude/compose-env-repasse`, base `main` 80ba5d88. Bug de deploy: o `env
   - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
   - `TZ=UTC vitest run`: 819 arquivos, 6.210 testes OK (antes dos agendadores); depois deles, `src/deploy` + rotas dos dois crons: 6 arquivos, 134 testes OK.
   - `docker compose -f … config` nos dois composes: saída 0, serviços `cron-portal-envios` e `cron-avisos-agenda` presentes e flags resolvidas como `"false"`.
+
+### Docs do WhatsApp no estado do motor + nits da review do #279 — 2026-10-21
+
+Branch `claude/docs-whatsapp-e-nits`, base `main` 239001ad. Só documentação e um teste de deploy.
+
+- **Doc 30**: nota "Estado atual" no topo (Meta Cloud e Evolution fora do código; driver único `MOTOR`, `whatsapp-web-baileys` em modo serviço; `MOTOR_IMAGE`/`MOTOR_API_KEY`/`MOTOR_WEBHOOK_SECRET`; webhook `/api/whatsapp/webhook/motor`; conexão por QR ou código em Configuração › WhatsApp › Números). S1 deixa de dizer que as cadências C1/C2 saem pelo motor (não têm produtor; da D34 resta a classe reativa, hoje da Aria). Contratos: o driver único é `drivers/motor.ts`. Etapas E1/E3/E4/E5/E6 ganham o "hoje" ao lado do plano original.
+- **Doc 31**: §0 (burocracia Meta) trocada pelos pré-requisitos do motor; §1 descreve os serviços reais do compose (sem banco `evolution`, com `motor` e os crons); §1.3 vira motor + pareamento; §2 marca o crontab horário da VPS como **superado** e tabela os quatro laços do compose (`cron` 5 min, `cron-despacho` 1 min, `cron-portal-envios` 1 min, `cron-avisos-agenda` 5 min); §3 com os alertas atuais de `saude.ts` (motor inalcançável, eventos falhos, driver legado); §5/§6/§7 sem Evolution, kill switch em Política da régua.
+- **Doc 32**: aviso no topo de que o piloto C1/C2 **não roda no código atual** (`cron-comercial.ts` removido em 9e5d7bd3/53c69b4b; `PoliticaComercial` sem leitor em `src`; B1, B7 e B9 sumiram; restam B3 `validaAte` e o campo do B8). Status "todos implementados" marcado como superado.
+- **Nits do #279** (`src/deploy/cron-despacho.test.ts`): C1 — a contagem de laços em linha única passa a ser o número de serviços `cron*` do bloco `services` (não mais `toBe(4)`); C2 — a trava recusa qualquer `command:` em bloco escalar (`>`, `>-`, `>+`, `|`, `|-`, `|+`).
+- **Evidências:**
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run src/deploy`: 4 arquivos, 131 testes OK. Mutação: um quinto serviço `cron-extra` no compose do Coolify derruba o teste (`expected 4 to be 5`); a regex casa `>`, `>-`, `>+`, `|`, `|-` e não casa `command:` em lista nem `command: npx …`.
+  - Suíte de integração não rodada (máquina com carga alta; mudança só em docs e teste de deploy).
