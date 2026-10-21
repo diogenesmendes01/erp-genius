@@ -4252,3 +4252,20 @@ Branch `claude/sla-feriados`, base `main` e68adb37. Continua o SLA do #241 ("hor
   - `vitest run` completo: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
   - Integração de `src/server/{whatsapp,crm-config,inbox,agenda,relatorios}`: saída 0, 92 arquivos, 718 testes.
   - `npm run build`: saída 0.
+
+### Port da #62: origem contratual histórica como fonte de aditivos do contrato legado — 2026-10-21
+
+Port de `db854944` (decisões da quinta e sexta rodada de 21/09, `docs/planejamento/decisoes-2026-09-21.md`), sem cherry-pick, sobre a `main` atual.
+
+- **Modelo:** `PropostaOrigemContratualHistorica` (Secretaria/Administração: PDF assinado em bytes + `pdfHash`, referência, data civil da assinatura, transcrição das condições e projeção no formato da prévia) → `DecisaoOrigemContratualHistorica` (outro administrador declara os hashes conferidos do PDF e da transcrição). `PropostaAditivoContratual` e `PropostaAgendaAditivoParticular` passam a ter `conclusaoOriginalId` **ou** `origemHistoricaId` (CHECK `num_nonnulls = 1`). Migration `20261021400000_origem_contratual_historica` (era `20260921090000`).
+- **Funções SQL redefinidas** (`conferir_fonte_aditivo_117`, `validar_proposta_aditivo_117`, `validar_decisao_aditivo_117`, `validar_artefato_aditivo_117`, `validar_conferencia_assinatura_aditivo_117`, `validar_decisao_alcada_aditivo_117`, `validar_compatibilidade_aplicacao_aditivo_117`, `validar_proposta_agenda_aditivo_117`, `vincular_agenda_proposta_aditivo_117`): partem da definição vigente na `main` (`pg_get_functiondef`), conferida com `diff -w`; só ganham o ramo histórico e os ajudantes `bloquear_fonte_aditivo_117`/`previa_fonte_aditivo_117`. Na `main`, a conferência de modelo/publicação de `conferir_fonte_aditivo_117` fica dentro do ramo da conclusão, então o ramo histórico a repete. Nenhuma outra função vigente lê `conclusaoOriginalId`/`conclusaoFonteId`.
+- **Diferenças em relação à #62:** o guard `guardar_origem_contratual_historica` também confere moeda da matrícula e regime da preparação comercial (a #62 só conferia na ação); telas reescritas com os padrões atuais (`useAcaoCliente`/`FeedbackAcao`, `CampoTexto`, `botaoClasses`, `VoltarPara`, `EstadoVazio`, rótulo `ESTADO_PROPOSTA_DECIDIDA_LABEL`, trilha "Origem histórica"); o resto do TS de aditivos aplicou sem conflito, exceto a importação ao lado da recusa de regime (Q174) e as telas de aditivo.
+- **Alcance:** sobre a origem histórica valem todos os aditivos exceto `TAXA_VALOR`, `TAXA_VENCIMENTO`, `PRIMEIRA_MENSALIDADE_VENCIMENTO` e `ADIANTAMENTO_*` (schema TS e guard SQL). Q172 (adiantamento) não é alcançado; Q174 (regime) continua recusado na preparação.
+- **Limite herdado da #62 (pergunta no PR):** a base do aditivo histórico tem `ambiente: "HISTORICO"`; o envio para assinatura só aceita `SANDBOX`/`PRODUCAO` e exige o mesmo ambiente da base, então o aditivo sobre contrato legado chega à aprovação, mas não segue para assinatura nem aplicação. Não foi inventado um ambiente.
+- **TDD/integração** (`contratos/origem-historica.int.test.ts`, sobre matrícula M01 real): os 2 cenários da #62 + 1 novo (inserção direta em outra moeda recusada pelo banco — vermelho antes do guard; um Evento por escrita com replay idempotente da proposta e da decisão; aditivo de taxa inserido direto no banco recusado; CHECK de fonte única).
+- **Evidências** (Postgres descartável na 54329, banco `erp_genius_test_orh` com `migrate deploy` do zero, perfil local não versionado; banco apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base; nenhum nos arquivos alterados).
+  - `vitest run` completo: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
+  - Integração de `src/server/contratos`: 166 testes OK (1 pulado por desenho, homologação Q170). Integração de `src/server/matricula`: 403 testes OK (3 pulados por desenho).
+  - `npm run build`: saída 0 (duas tentativas anteriores morreram por falta de memória na máquina compartilhada, sem erro de tipo).
