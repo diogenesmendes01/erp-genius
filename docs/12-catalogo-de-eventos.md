@@ -120,6 +120,20 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `ConfigComercialAlterada` | Salvar a config comercial (auto-lead / saudação — fase doc 27 C1); agregado `ConfigComercial` | Gerente Com./Admin | `{ antes, depois }` (`antes: null` na 1ª materialização) |
 | `PoliticaComercialAlterada` | Salvar a régua comercial (lead-novo: estado/remetente/degraus — doc 27 C1); agregado `PoliticaComercial` | Gerente Com./Admin | `{ antes, depois }` |
 
+> **6º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em: `AtendimentoTransferido`
+> (nos dois Eventos, origem e novo; hash de atendimento, destino, chave do destino e contexto), `MensagemWhatsAppEncaminhada`
+> (hash de mensagem e atendimento de destino; a trava da chave fica presa durante a chamada ao motor),
+> `RestricaoAulasSolicitada` e `LiberacaoAulasSolicitada` do agregado `Matricula` (hash de matrícula, pedido e motivo) e
+> `LinkPagamentoEnviado` do agregado `Cobranca` (hash de cobrança e link). Em todos, a busca vem depois da sessão e do
+> papel e antes das validações de estado: o reenvio da mesma tentativa devolve o registro original mesmo com a origem
+> encerrada, a mensagem apagada, a solicitação decidida ou a cobrança paga. A mesma chave com outra entrada recebe a
+> mesma recusa, exista o alvo ou não.
+> Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar nem chamar o motor; o estado vindo
+> de outra pessoa, do despachante ou do celular segue recusado): `AtendimentoAssumido` e `AtendimentoDevolvido` (o
+> último Evento de responsável do atendimento é o de quem repete), `AtendimentoEncerrado` (pelo Inbox; a linha é
+> travada), `ParticipanteRevogado`, `MensagemAgendadaCancelada`, `MensagemWhatsAppEditada` (a última edição já deixou
+> o mesmo texto) e `MensagemWhatsAppApagada`.
+
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |
 |---|---|---|---|

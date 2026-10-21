@@ -7,6 +7,7 @@ import { bloquearAcesso, desbloquearAcesso, decidirSolicitacaoAcessoAulas } from
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -33,9 +34,11 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
   const [form, setForm] = useState<{ matriculaId: string; bloquear: boolean } | null>(null);
   const [motivo, setMotivo] = useState("");
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  // Pedido e decisão não recebem chave de idempotência (server/cobrancas/acoes.ts:97-105). O servidor só
-  // reconhece a repetição idêntica pelo conteúdo (acoes.ts:80 e :115), sem chave — conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // #166: o pedido recebe chave de idempotência (o reenvio da mesma tentativa devolve a solicitação já registrada,
+  // mesmo decidida no meio); a chave só muda depois do sucesso. A decisão é idempotente por natureza: a mesma
+  // decisão, do mesmo decisor e com o mesmo motivo, devolve ok sem gravar de novo (server/cobrancas/acoes.ts).
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // O resultado aparece junto do formulário da matrícula ou da solicitação que disparou a ação.
   const [alvo, setAlvo] = useState<string | null>(null);
   const carregar = useCallback(async () => {
@@ -58,7 +61,9 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
   async function solicitar() {
     if (!form) return;
     setAlvo(`form:${form.matriculaId}`);
-    const d = await acao.executar(() => (form.bloquear ? bloquearAcesso(form.matriculaId, motivo) : desbloquearAcesso(form.matriculaId, motivo)), "Solicitação registrada. Outra pessoa da administração precisa decidir.");
+    const opcoes = { chaveIdempotencia: tentativa.atual };
+    const d = await acao.executar(() => (form.bloquear ? bloquearAcesso(form.matriculaId, motivo, opcoes) : desbloquearAcesso(form.matriculaId, motivo, opcoes)), "Solicitação registrada. Outra pessoa da administração precisa decidir.");
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setForm(null); setMotivo("");
     window.dispatchEvent(new Event("acesso-aulas-atualizado")); router.refresh();
