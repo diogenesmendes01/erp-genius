@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState, useTransition } from "react";
 import {
@@ -186,6 +187,7 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
       {!acordo.moeda && <p className="text-sm text-amber-700">Moeda não definida neste acordo: os valores não são exibidos para não serem lidos em outra moeda.</p>}
       <p>{acordo.quantidadePactuada} {rotular(UNIDADE_PERMUTA_SERVICO_LABEL, acordo.unidade).toLowerCase()}{podeFinanceiro && <> × {acordo.valorPorUnidade != null ? formatarMoedaOuIndefinida(acordo.valorPorUnidade, acordo.moeda) : "—"} = {acordo.valorTotalPactuado != null ? formatarMoedaOuIndefinida(acordo.valorTotalPactuado, acordo.moeda) : "—"}</>}. {acordo.contrapartida}</p>
       <p className="text-sm">{acordo.formulaDescricao}</p>
+      {podeFinanceiro && <p className="text-sm"><Link href={`/financeiro/permuta/excedente/${encodeURIComponent(acordo.matriculaId)}`} className="underline">Excedente de permuta e saldo restrito a serviços desta matrícula</Link></p>}
       {podePedagogico && <Acao legenda="Confirmar serviço por período" onSubmit={async formulario => confirmarServicoPermuta({ acordoId: acordo.id, periodoInicio: campo(formulario, "periodoInicio"), periodoFim: campo(formulario, "periodoFim"), quantidadeComprovada: campo(formulario, "quantidadeComprovada"), referenciaServico: campo(formulario, "referenciaServico"), evidencia: campo(formulario, "evidencia"), chaveIdempotencia: campo(formulario, "chaveIdempotencia") })}>
         <CamposPeriodo nomeInicio="periodoInicio" nomeFim="periodoFim" /><label>Quantidade efetiva <input required name="quantidadeComprovada" inputMode="decimal" /></label><label>Referência da prestação <input required name="referenciaServico" /></label><label>Evidência <input required name="evidencia" /></label>
       </Acao>}

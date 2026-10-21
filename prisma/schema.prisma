@@ -531,6 +531,11 @@ model Usuario {
   adiantamentosAditivoPreparados PropostaAdiantamentoAditivo[] @relation("PreparadorAdiantamentoAditivo")
   adiantamentosAditivoDecididos DecisaoAdiantamentoAditivo[] @relation("DecisorAdiantamentoAditivo")
   adiantamentosAditivoAplicados AplicacaoAdiantamentoAditivo[] @relation("ExecutorAdiantamentoAditivo")
+  destinacoesExcedentePermutaPreparadas PropostaDestinacaoExcedentePermuta[] @relation("PreparadorDestinacaoExcedentePermuta")
+  destinacoesExcedentePermutaDecididas DecisaoDestinacaoExcedentePermuta[] @relation("DecisorDestinacaoExcedentePermuta")
+  concordanciasExcedentePermutaRegistradas ConcordanciaDestinacaoExcedentePermuta[] @relation("RegistradorConcordanciaExcedentePermuta")
+  usosSaldoServicoPermutaPreparados PropostaUsoSaldoServicoPermuta[] @relation("PreparadorUsoSaldoServicoPermuta")
+  usosSaldoServicoPermutaDecididos DecisaoUsoSaldoServicoPermuta[] @relation("DecisorUsoSaldoServicoPermuta")
   conjuntosCoberturaAditivoPreparados ConjuntoImpactosCoberturaAditivo[] @relation("PreparadorConjuntoCoberturaAditivo")
   decisoesConjuntosCoberturaAditivo DecisaoConjuntoImpactosCoberturaAditivo[] @relation("DecisorConjuntoCoberturaAditivo")
   aplicacoesCoberturaAditivo AplicacaoCoberturaAditivo[] @relation("ExecutorCoberturaAditivo")
@@ -1809,6 +1814,10 @@ model ItemPropostaRetomadaMatriculas {
 }
 
 model Matricula {
+  destinacoesExcedentePermuta PropostaDestinacaoExcedentePermuta[]
+  saldosServicoPermuta SaldoServicoPermuta[]
+  usosSaldoServicoPermuta PropostaUsoSaldoServicoPermuta[]
+  origensCreditoExcedentePermuta OrigemCreditoExcedentePermuta[]
   aplicacoesRevisaoCorrecaoAula AplicacaoRevisaoFinanceiraCorrecaoAula[]
   origensCreditoRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula[]
   tarefas Tarefa[]
@@ -1978,6 +1987,9 @@ enum FormaPagamento {
 }
 
 model Cobranca {
+  destinacoesExcedentePermuta PropostaDestinacaoExcedentePermuta[]
+  origensCreditoExcedentePermuta OrigemCreditoExcedentePermuta[]
+  usosSaldoServicoPermuta PropostaUsoSaldoServicoPermuta[]
   aplicacoesRevisaoCorrecaoAula AplicacaoRevisaoFinanceiraCorrecaoAula[]
   origensCreditoRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula[]
   origensCreditoReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia[]
@@ -5489,6 +5501,9 @@ model CreditoMatricula {
   origemReconferenciaDeltaDesistencia OrigemCreditoReconferenciaDeltaDesistencia? @relation(fields: [origemReconferenciaDeltaDesistenciaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   origemRevisaoCorrecaoAulaId String? @unique
   origemRevisaoCorrecaoAula OrigemCreditoRevisaoCorrecaoAula? @relation(fields: [origemRevisaoCorrecaoAulaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // Q171/Q167C: nona origem — parte do excedente de permuta destinada a crédito financeiro no acordo aprovado.
+  origemExcedentePermutaId String? @unique
+  origemExcedentePermuta OrigemCreditoExcedentePermuta? @relation(fields: [origemExcedentePermutaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   reconhecimentosReconferenciaDelta ReconhecimentoCreditoReconferenciaDeltaDesistencia[]
   valorInicial Decimal @db.Decimal(12, 2)
   moeda String
@@ -8329,11 +8344,15 @@ model ResolucaoDivergenciaPresencaHistoricaMigracao {
 }
 
 model AplicacaoCompensacaoPermuta {
+  origensExcedente OrigemExcedentePermuta[]
   id String @id @default(cuid())
-  destinoId String @unique
-  destino DestinoPropostaCompensacaoPermuta @relation(fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  decisaoId String
-  decisao DecisaoCompensacaoPermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  // Exatamente uma origem (CHECK no banco): destino de proposta de compensação OU uso aprovado de saldo restrito (Q171).
+  destinoId String? @unique
+  destino DestinoPropostaCompensacaoPermuta? @relation(fields: [destinoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String?
+  decisao DecisaoCompensacaoPermuta? @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  usoSaldoServicoId String? @unique
+  usoSaldoServico DecisaoUsoSaldoServicoPermuta? @relation(fields: [usoSaldoServicoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   cobrancaId String
   cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   valor Decimal @db.Decimal(12, 2)
@@ -8342,6 +8361,156 @@ model AplicacaoCompensacaoPermuta {
   @@index([decisaoId])
 }
 
+
+// Q167C/Q171: destinação NEGOCIADA do excedente de permuta. O excedente nasce quando um acerto reduz a
+// obrigação de uma cobrança já compensada por serviços; nada é convertido automaticamente. O acordo escolhe
+// entre saldo restrito a serviços e crédito financeiro, com concordância das partes e aprovação independente.
+model PropostaDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  moeda String
+  valorDevidoAcordado Decimal @db.Decimal(12, 2)
+  valorExcedente Decimal @db.Decimal(12, 2)
+  fotografia Json
+  fotografiaHash String
+  preparadorId String
+  preparador Usuario @relation("PreparadorDestinacaoExcedentePermuta", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  origens OrigemExcedentePermuta[]
+  itens ItemDestinacaoExcedentePermuta[]
+  concordancias ConcordanciaDestinacaoExcedentePermuta[]
+  decisao DecisaoDestinacaoExcedentePermuta?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([cobrancaId, criadaEm])
+}
+
+model OrigemExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aplicacaoPermutaId String
+  aplicacaoPermuta AplicacaoCompensacaoPermuta @relation(fields: [aplicacaoPermutaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  @@unique([propostaId, aplicacaoPermutaId])
+  @@index([aplicacaoPermutaId])
+}
+
+model ItemDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  tipo String
+  valor Decimal @db.Decimal(12, 2)
+  saldoServico SaldoServicoPermuta?
+  origemCredito OrigemCreditoExcedentePermuta?
+  @@unique([propostaId, tipo])
+}
+
+model ConcordanciaDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  parte String
+  nomeDeclarante String
+  meio String
+  evidencia String
+  registradaPorId String
+  registradaPor Usuario @relation("RegistradorConcordanciaExcedentePermuta", fields: [registradaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  registradaEm DateTime @default(now())
+  @@unique([propostaId, parte])
+}
+
+model DecisaoDestinacaoExcedentePermuta {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaDestinacaoExcedentePermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorDestinacaoExcedentePermuta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  fotografiaHash String
+  decididaEm DateTime @default(now())
+  saldosServico SaldoServicoPermuta[]
+  origensCredito OrigemCreditoExcedentePermuta[]
+}
+
+// Saldo restrito a serviços: abate cobranças da MESMA matrícula, não expira e nunca vira dinheiro.
+model SaldoServicoPermuta {
+  id String @id @default(cuid())
+  itemId String @unique
+  item ItemDestinacaoExcedentePermuta @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String
+  decisao DecisaoDestinacaoExcedentePermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  moeda String
+  valorInicial Decimal @db.Decimal(12, 2)
+  criadoEm DateTime @default(now())
+  usos PropostaUsoSaldoServicoPermuta[]
+  @@index([matriculaId])
+}
+
+// Q171: uso do saldo restrito a serviços. Abate cobrança da MESMA matrícula (mensalidade, hora particular ou taxa)
+// por proposta do Financeiro e aprovação independente; a aprovação nasce como AplicacaoCompensacaoPermuta
+// (é crédito de serviço) e o resto do sistema segue lendo valorCompensadoPermuta. Nunca vira dinheiro.
+model PropostaUsoSaldoServicoPermuta {
+  id String @id @default(cuid())
+  saldoId String
+  saldo SaldoServicoPermuta @relation(fields: [saldoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versaoCobranca Int
+  moeda String
+  valor Decimal @db.Decimal(12, 2)
+  motivo String
+  preparadorId String
+  preparador Usuario @relation("PreparadorUsoSaldoServicoPermuta", fields: [preparadorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoUsoSaldoServicoPermuta?
+  @@unique([preparadorId, chaveIdempotencia])
+  @@index([saldoId])
+  @@index([cobrancaId])
+  @@index([matriculaId])
+}
+
+model DecisaoUsoSaldoServicoPermuta {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaUsoSaldoServicoPermuta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorUsoSaldoServicoPermuta", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+  aplicacao AplicacaoCompensacaoPermuta?
+}
+
+model OrigemCreditoExcedentePermuta {
+  id String @id @default(cuid())
+  itemId String @unique
+  item ItemDestinacaoExcedentePermuta @relation(fields: [itemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisaoId String
+  decisao DecisaoDestinacaoExcedentePermuta @relation(fields: [decisaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cobrancaId String
+  cobranca Cobranca @relation(fields: [cobrancaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  valor Decimal @db.Decimal(12, 2)
+  moeda String
+  credito CreditoMatricula?
+  criadaEm DateTime @default(now())
+}
 
 // 225: proposta e decisão; aplicação financeira será registrada separadamente.
 model PropostaVencimentoAditivo {
