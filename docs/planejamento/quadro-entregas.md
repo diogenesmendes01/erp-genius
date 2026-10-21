@@ -4189,6 +4189,22 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - Q172: comissão não recalculada (base = taxa de matrícula). Isso foi lido no código e não está nas decisões de 21/09.
 - **Não conferido:** se as migrations de 20/10 já foram aplicadas no UAT (só no painel do Coolify).
 
+#### Follow-ups das reviews da #266 (R2) e da #272 — 2026-10-20
+
+- **C1 da #272 (defesa em profundidade):** `compra-horas.ts` (consulta das compras) e `compra-horas-preparacao.ts` (`conferirCompraPreparadaTx`) passam a filtrar `aplicacaoAdiantamentoAditivo` por `decisao.aprovada = true`, igual ao loader da entrada (`entrada-particular-aplicacoes.ts`). Dado legítimo não muda de resultado: o trigger `guardar_aplicacao_adiantamento_172` já recusa aplicação sem decisão aprovada.
+- **N3 da R2 #266:** novo teste de integração em `matricula/condicoes-horas.int.test.ts`. A declaração de aula não cobrável é rejeitada pela segunda alçada e não nasce aplicação, então a trava `recusar_item_nao_cobravel_175` não alcança a aula. O fechamento do mês fatura a aula normalmente (item de 156,25, cobrança não cancelada, sem crédito).
+- **N2 da R2 #266:** a migration `20261020520000_q165_fotografia_origem_correcao_aula` redefine `q165_fotografia_atual` com as duas origens de crédito que o TS (`fotografiaQ165`) já incluía: `origemReconferenciaDeltaDesistenciaId` (assimetria anterior à Q175) e `origemRevisaoCorrecaoAulaId`. Cada chave só aparece quando existe, no mesmo padrão de `q165_fotografia_delta_atual_255`. O corpo foi copiado da definição vigente (`20260917166000`, que nenhuma migration posterior redefine). No `diff -w` contra ela, as únicas diferenças são as duas linhas `|| CASE WHEN cr."origem..." ...`.
+  - Os dois casos não são alcançáveis pelo fluxo. O crédito delta só nasce depois de uma Q165 aplicada. O crédito Q175 exige aula ministrada, e a Q165 exige matrícula não ativada.
+  - Por isso o teste novo (`desistencia-acerto-contratual.int.test.ts`, "fotografia Q165 Node/SQL coincide com crédito de …", um caso para cada origem) cria o crédito com os triggers desligados (`session_replication_role = replica`), só dentro de uma transação que é desfeita no fim.
+  - Sem a migration, os dois casos falham com "Fotografia financeira vigente diverge da proposta"; com ela, passam.
+- **Evidências** (banco isolado `erp_genius_test_fu266`, removido depois):
+  - `prisma migrate deploy`: aplicou a migration nova sem erro.
+  - `tsc --noEmit`: saída 0. `eslint . --max-warnings 40`: saída 0 (40 avisos de base).
+  - `npm test` em UTC e em America/Sao_Paulo: 817 arquivos e 6.112 testes em cada fuso.
+  - Integração de `compra-horas*`, `*aditivo*`, `desistencia-*` e `condicoes-horas`: 17 arquivos e 282 testes verdes. Ficaram em skip 3 arquivos e 4 testes de homologação de UI, condicionais por ambiente.
+  - `npm run build`: saída 0.
+- **Ramo da reconferência delta acrescentado** (a pedido da coordenação, antes do merge), com o caso correspondente no teste TS = SQL. Banco descartável no estado da `main` + `migrate deploy`: aplicou a `20261020520000` sem erro. `tsc`: saída 0. Unitários de `desistencia*` e `compra-horas*` em UTC e em America/Sao_Paulo: 12 arquivos e 84 testes em cada fuso. Integração `desistencia*`: 10 arquivos e 86 testes verdes. Ficaram em skip 2 arquivos e 3 testes de homologação de UI.
+
 ### Idempotência, 4º lote (#166) — 2026-10-20
 
 - **Escopo:** criações sem guarda (as que duplicavam registro ou Evento) e o C3 da R2 do #267. A #166 continua aberta. Os testes de integração entraram primeiro e falharam contra o servidor de `main` (20 de 21; o que passou é trava de regressão); a implementação veio depois.
