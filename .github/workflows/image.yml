@@ -1,0 +1,230 @@
+# Build, validação e publicação das imagens Docker no GHCR.
+# Roda em push na main e em tags v* (manual em outras branches apenas constrói, sem publicar).
+# As imagens validadas são publicadas no GHCR e o Coolify apenas puxa — o build não compete mais
+# pelos recursos da VPS (app uuid thpvwxk6figfp347ajznvzhl).
+name: Build e publicação de imagem
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+# Concurrency: builds de tags/main mais recentes não podem ser sobrescritos por builds antigos.
+# Push na main com merges seguidos: o run pendente é cancelado (só o último commit importa).
+# Tag: um grupo por ref, builds concorrentes são serializados (cancel-in-progress: false).
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Typecheck, lint e testes devem passar ANTES de buildar a imagem.
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
+      - name: TypeScript (tsc --noEmit)
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
+        run: npx tsc --noEmit
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: ESLint (eslint . --max-warnings 40)
+        run: npx eslint . --max-warnings 40
+
+  test:
+    name: test (${{ matrix.tz }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [UTC, America/Sao_Paulo]
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
+      NEXT_TELEMETRY_DISABLED: "1"
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
+      - name: Testes unitários (npm test)
+        run: npm test
+
+  build-next:
+    name: build Next.js
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Build de produção (npm run build)
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
+        run: npm run build
+
+  # Build e publicação das imagens Docker — roda SEMPRE, publica só em main/tags.
+  # Publica duas imagens: runner (app) e builder (migrate).
+  publish:
+    name: build e publicar imagens
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, test, build-next]
+    if: github.event_name != 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    env:
+      SHOULD_PUSH: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+    outputs:
+      app-digest: ${{ steps.push-app.outputs.digest }}
+      migrate-digest: ${{ steps.push-migrate.outputs.digest }}
+      app-tags: ${{ steps.meta-app.outputs.tags }}
+      migrate-tags: ${{ steps.meta-migrate.outputs.tags }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Login no GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extrair metadados da imagem do app
+        id: meta-app
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short,prefix=sha-
+
+      - name: Extrair metadados da imagem do migrate
+        id: meta-migrate
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/migrate
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short,prefix=sha-
+
+      - name: Build e publicação da imagem do app (runner)
+        id: push-app
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runner
+          push: true
+          tags: ${{ steps.meta-app.outputs.tags }}
+          labels: ${{ steps.meta-app.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+
+      - name: Build e publicação da imagem do migrate (builder)
+        id: push-migrate
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: builder
+          push: true
+          tags: ${{ steps.meta-migrate.outputs.tags }}
+          labels: ${{ steps.meta-migrate.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+
+      - name: Imprimir digests no job summary
+        env:
+          APP_DIGEST: ${{ steps.push-app.outputs.digest }}
+          MIGRATE_DIGEST: ${{ steps.push-migrate.outputs.digest }}
+          APP_TAGS: ${{ steps.meta-app.outputs.tags }}
+          MIGRATE_TAGS: ${{ steps.meta-migrate.outputs.tags }}
+        run: |
+          echo "## 🐳 Imagens publicadas no GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### App (runner)" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`$APP_DIGEST\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$APP_TAGS" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Referência completa por digest:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@$APP_DIGEST" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Migrate (builder)" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`$MIGRATE_DIGEST\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$MIGRATE_TAGS" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Referência completa por digest:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/migrate@$MIGRATE_DIGEST" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
