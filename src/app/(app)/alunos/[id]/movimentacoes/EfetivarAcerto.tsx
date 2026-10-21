@@ -6,8 +6,9 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 
 export function EfetivarAcerto({ alunoId, decisaoId, atualizar }: { alunoId: string; decisaoId: string; atualizar: () => void }) {
-  // Sem chave de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): a efetivação é única por solicitação e o reenvio com a mesma decisão devolve
+  // a efetivação já aplicada (server/matricula/encerramento-efetivar-tx.ts). Na falha de transporte, reenviar.
+  const acao = useAcaoCliente({ idempotente: true });
   const router = useRouter();
   return <div className="space-y-2 rounded border p-3">
     <p>A efetivação aplica o acerto aprovado e encerra somente as matrículas deste pedido. Valores a devolver permanecem sujeitos ao fluxo de devolução.</p>
