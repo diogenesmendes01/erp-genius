@@ -19,8 +19,12 @@ import { describe, expect, it } from "vitest";
 // - "texto-local" (lote 2, review do #286): uma data virando texto pelo `Date.prototype.toString`, que usa o fuso do
 //   processo — `String(d)`, `d.toString()`, `${d}` e `d + …`/`… + d`. Sem o type checker (caro demais para rodar
 //   em toda a suíte), "d é data" é sintático: `new Date(…)` ou um nome que o próprio arquivo declara como
-//   `new Date(…)` ou com tipo `Date` (também em união, como `Date | string`). Data que chega tipada de outro módulo
-//   (ex.: campo do Prisma) fica fora do alcance; dentro do JSX (`{d}`) o próprio tsc recusa a Date.
+//   `new Date(…)` ou com tipo `Date` (também em união, como `Date | string`), usado solto (`d`) ou como acesso por
+//   propriedade (`p.criadoEm`, review do #289). Data que chega tipada de outro módulo (ex.: campo do Prisma) fica
+//   fora do alcance, e retorno de função (`String(agora())`) também; dentro do JSX (`{d}`) o próprio tsc recusa a Date.
+//   O conjunto de nomes vale para o ARQUIVO inteiro, sem escopo: um nome declarado como data num lugar acusa em
+//   qualquer outro, mesmo onde é texto (`type P = { fim: Date }; function g(fim: string) { return "até " + fim; }`).
+//   É falso positivo possível (falha fechada: barulho, não omissão); quando aparecer, uma exceção resolve.
 // - "apelido" (lote 2): `Intl.DateTimeFormat` fora da posição de chamada (`const F = Intl.DateTimeFormat`,
 //   `.bind`, `Reflect.construct`), `Intl` usado como valor (`const I = Intl`), `X.DateTimeFormat` de outro objeto e a
 //   desestruturação `{ DateTimeFormat } = …`. `globalThis.Intl`/`window.Intl`/`Intl["DateTimeFormat"]` contam como
@@ -112,7 +116,7 @@ export function achadosDeFuso(arquivo: string, fonte: string): Achado[] {
   const diagnosticos = (sf as unknown as { parseDiagnostics?: unknown }).parseDiagnostics;
   if (!Array.isArray(diagnosticos) || diagnosticos.length) return [{ arquivo, linha: 1, regra: "opaco", trecho: "arquivo não analisa" }];
   const datas = nomesDeData(sf);
-  const ehData = (e: ts.Expression) => { e = semEnvoltorio(e); return ehNewDate(e) || (ts.isIdentifier(e) && datas.has(e.text)); };
+  const ehData = (e: ts.Expression) => { e = semEnvoltorio(e); return ehNewDate(e) || (ts.isIdentifier(e) && datas.has(e.text)) || (ts.isPropertyAccessExpression(e) && datas.has(e.name.text)); };
   const acha = (no: ts.Node, regra: Regra) =>
     achados.push({ arquivo, linha: sf.getLineAndCharacterOfPosition(no.getStart(sf)).line + 1, regra, trecho: normaliza(no.getText(sf)) });
   const visita = (no: ts.Node) => {
@@ -265,6 +269,12 @@ describe("autoteste da trava", () => {
     expect(acha("const d = new Date(x); const t = `em ${d}`;")).toEqual(["texto-local: d"]);
     expect(acha(`function f(quando: Date | string) { return "em " + quando; }`)).toEqual(['texto-local: "em " + quando']);
     expect(acha(`type P = { criadoEm: Date }; const g = ({ criadoEm }: P) => String(criadoEm);`)).toEqual(["texto-local: String(criadoEm)"]);
+    // Acesso por propriedade (review do #289, item B): antes passava calado.
+    expect(acha("type P = { criadoEm: Date }; const g = (p: P) => String(p.criadoEm) + `${p.criadoEm}`;")).toEqual(["texto-local: String(p.criadoEm)", "texto-local: p.criadoEm"]);
+    expect(acha("type P = { criadoEm: Date }; const g = (p: P) => \"em \" + p.criadoEm;")).toEqual(['texto-local: "em " + p.criadoEm']);
+    expect(acha("type P = { criadoEm: Date }; const g = (p: P) => String(p.criadoEm);")).toEqual(["texto-local: String(p.criadoEm)"]);
+    expect(acha("type P = { criadoEm: Date }; const g = (p: P) => `em ${p.criadoEm}`;")).toEqual(["texto-local: p.criadoEm"]);
+    expect(acha("class C { quando: Date = new Date(); t() { return this.quando.toString(); } }")).toEqual(["texto-local: this.quando.toString()"]);
     expect(acha(`let t = ""; const d: Date = agora(); t += d;`)).toEqual(["texto-local: t += d"]);
     expect(acha(`const t = Date();`)).toEqual(["relogio-local: Date()"]);
   });
