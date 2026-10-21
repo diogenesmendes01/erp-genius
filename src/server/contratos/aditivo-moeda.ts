@@ -14,6 +14,9 @@ export const ROTULOS_PENDENCIA_MOEDA: Record<string, string> = {
   DIAS_COMPENSACAO_PENDENTES: "Há dias de compensação aprovados sobre mensalidade da moeda anterior ainda não recompostos nem liquidados. Destine-os antes da troca.",
   PERIODO_INTEGRAL_PENDENTE: "Há proposta de período integral sobre cobrança da moeda anterior aguardando decisão ou aplicação. Conclua antes da troca.",
   PERMUTA_SERVICO_SEM_COMPENSACAO: "Há serviço de permuta confirmado em acordo da moeda anterior sem compensação aprovada. Compense antes da troca.",
+  // Q171: saldo restrito só abate cobrança da mesma moeda e nunca vira dinheiro. Até o dono decidir, bloqueia a troca.
+  SALDO_SERVICOS_PERMUTA: "Há saldo restrito a serviços de permuta disponível na moeda anterior. Use-o em cobrança da mesma moeda antes da troca.",
+  DESTINACAO_EXCEDENTE_PENDENTE: "Há destinação de excedente de permuta na moeda anterior aguardando decisão. Decida antes da troca.",
   REVISAO_CORRECAO_AULA_DEVOLVE_MINUTOS: "Há revisão financeira de correção de aula pendente que devolveria minutos a uma compra de horas da moeda anterior. Decida antes da troca.",
 };
 
