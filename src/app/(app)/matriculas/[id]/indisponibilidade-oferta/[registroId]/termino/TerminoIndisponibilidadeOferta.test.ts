@@ -55,4 +55,14 @@ describe("TerminoIndisponibilidadeOferta", () => {
     expect(com).not.toContain("Fuso da escola não configurado");
     expect(com).toContain("Proposta registrada em 12/09/2026, 10:41.");
   });
+
+  // Lote 2 do fuso pessoal: registro da proposta no fuso pessoal, com o fuso dito; vale também sem fuso da escola.
+  it("registro da proposta no fuso pessoal, com ou sem fuso da escola", () => {
+    const proposta = { id: "p", fim: "2026-09-20", motivo: "Motivo", evidenciaTexto: "Evidência", criadaEm: "2026-09-12T13:41:07.482Z", decisao: null, podeDecidir: false };
+    const render = (fusoInstitucional: string | null) => renderToStaticMarkup(createElement(TerminoIndisponibilidadeOferta, {
+      registroId: "registro", inicio: "2026-09-10", dados: { pagina: 1, temProxima: false, podePropor: false, propostas: [proposta] }, fusoInstitucional, preferenciaFusoExibicao: "Asia/Tokyo",
+    } as never));
+    expect(render("America/Sao_Paulo")).toContain("Proposta registrada em 12/09/2026, 22:41 Asia/Tokyo.");
+    expect(render(null)).toContain("Proposta registrada em 12/09/2026, 22:41 Asia/Tokyo.");
+  });
 });

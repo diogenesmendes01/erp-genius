@@ -23,4 +23,15 @@ describe("RelatosIndisponibilidadeOferta (Q157)", () => {
     expect(html).not.toContain("recusado/correcao");
     expect(html).not.toContain("pendente/correcao");
   });
+
+  // Lote 2 do fuso pessoal: a confirmação é instante de registro e segue a preferência, com o fuso dito; sem
+  // preferência, o fuso da escola (sem rótulo, como antes). Expectativas fixas em TZ=UTC e America/Sao_Paulo.
+  it("confirmação no fuso pessoal; sem preferência, no da escola", () => {
+    const render = (preferenciaFusoExibicao: string | null) => renderToStaticMarkup(createElement(RelatosIndisponibilidadeOferta, {
+      matriculaId: "mat", fusoInstitucional: "America/Sao_Paulo", preferenciaFusoExibicao,
+      dados: { pagina: 1, temProxima: false, podeRegistrar: false, relatos: [{ ...relato("conf", true), confirmacao: { confirmada: true, confirmadaEm: "2026-10-02T02:30:00.000Z", motivo: "Conferido", evidenciaTexto: "Ata" } }] },
+    } as never));
+    expect(render("Asia/Tokyo")).toContain("Indisponibilidade confirmada em 02/10/2026, 11:30 Asia/Tokyo.");
+    expect(render(null)).toContain("Indisponibilidade confirmada em 01/10/2026, 23:30.");
+  });
 });

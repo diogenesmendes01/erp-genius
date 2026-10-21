@@ -12,18 +12,22 @@ import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/me
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
 
-/** Sem fuso da escola, o instante sai em UTC formatado e rotulado; o aviso de configuração aparece uma vez no topo (docs/42 L939). */
-function instanteDoEvento(valor: string, fusoInstitucional: string | null) {
-  const instante = new Date(valor);
-  if (!fusoInstitucional) return `${new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(instante)} UTC`;
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoInstitucional }).format(instante);
+/**
+ * Instante de registro (proposta, confirmação, decisão): no fuso pessoal de exibição, com o fuso dito; sem
+ * preferência, no fuso da escola (sem rótulo, como antes). Sem fuso da escola nem preferência, sai em UTC formatado e
+ * rotulado; o aviso de configuração aparece uma vez no topo (docs/42 L939).
+ */
+function instanteDoEvento(valor: string, fusoInstitucional: string | null, preferencia: string | null) {
+  const e = formatarInstanteExibicao(valor, preferencia, fusoInstitucional ?? "UTC");
+  return e.fuso === fusoInstitucional ? e.texto : `${e.texto} ${e.fuso}`;
 }
 
-export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInstitucional }: { matriculaId: string; dados: Dados; fusoInstitucional: string | null }) {
+export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInstitucional, preferenciaFusoExibicao = null }: { matriculaId: string; dados: Dados; fusoInstitucional: string | null; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
   const [ocupado, iniciar] = useTransition();
   const [mensagem, setMensagem] = useState("");
@@ -81,8 +85,8 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
       {relato.terminoAprovado && <p role="status">Último dia de indisponibilidade aprovado: {dataCivil(relato.terminoAprovado.fim)}.</p>}
       <p className="whitespace-pre-wrap">{relato.motivo}</p>
       <p className="whitespace-pre-wrap">Evidência: {relato.evidenciaTexto}</p>
-      <p>Relatado em {instanteDoEvento(relato.criadaEm, fusoInstitucional)}.</p>
-      {relato.confirmacao ? <section className="rounded bg-gray-100 p-3"><p>{relato.confirmacao.confirmada ? "Indisponibilidade confirmada" : "Indisponibilidade recusada"} em {instanteDoEvento(relato.confirmacao.confirmadaEm, fusoInstitucional)}.</p><p className="whitespace-pre-wrap">{relato.confirmacao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {relato.confirmacao.evidenciaTexto}</p></section> : <p role="status">Aguardando confirmação independente.</p>}
+      <p>Relatado em {instanteDoEvento(relato.criadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p>
+      {relato.confirmacao ? <section className="rounded bg-gray-100 p-3"><p>{relato.confirmacao.confirmada ? "Indisponibilidade confirmada" : "Indisponibilidade recusada"} em {instanteDoEvento(relato.confirmacao.confirmadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p><p className="whitespace-pre-wrap">{relato.confirmacao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {relato.confirmacao.evidenciaTexto}</p></section> : <p role="status">Aguardando confirmação independente.</p>}
       {relato.confirmacao?.confirmada && <p><Link className="underline" href={`/matriculas/${matriculaId}/indisponibilidade-oferta/${relato.id}/correcao`}>Corrigir período ou ver correções</Link></p>}
       {relato.confirmacao?.confirmada && relato.fim === null && <Link className="underline" href={`/matriculas/${matriculaId}/indisponibilidade-oferta/${relato.id}/termino`}>{relato.terminoAprovado ? "Ver histórico do término" : "Registrar o último dia de indisponibilidade"}</Link>}
       {relato.podeConfirmar && <form className="space-y-2" onSubmit={evento => {
