@@ -161,6 +161,29 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
    | `ANTHROPIC_API_KEY` | | Aria (opcional). Vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a API da Anthropic e, quando `ATIVA`, pode enviar mensagens. Modelos em Configurações › CRM › IA | chave da API Anthropic |
    | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
+   | `RESEND_API_KEY` | | Chave do Resend (e-mail do portal do aluno e avisos de agenda). Vazio = sem e-mail | chave da API Resend |
+   | `EMAIL_INSTITUCIONAL_REMETENTE` | | Remetente dos e-mails (domínio verificado no Resend) | `nao-responda@geniusidiomas.com` |
+   | `EMAIL_PORTAL_ENVIO_ENABLED` | | Liga os e-mails de acesso do portal (só `true` liga) | `false` até homologar |
+   | `PORTAL_ALUNO_URL_PUBLICA` | se o envio do portal estiver ligado | Origem HTTPS pública, sem caminho — base dos links dos e-mails | `https://erp.geniusidiomas.com` |
+   | `GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL` | | Conta de serviço de leitura do Drive de gravações (player) | e-mail da conta de serviço |
+   | `GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY` | | Chave privada dessa conta (uma linha, `\n` literais) | campo `private_key` do JSON |
+   | `DRIVE_ORGANIZACAO_ID` | | ID do drive compartilhado autorizado | ID do shared drive |
+   | `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL` | | Conta de serviço separada, com escrita, para publicar/fixar revisões | e-mail da conta de serviço |
+   | `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY` | | Chave privada da conta de publicação | campo `private_key` do JSON |
+   | `CONTINUIDADE_MENSAL_EMISSAO_ENABLED` | | Liga a emissão mensal recorrente (só `true` liga) | `false` até ativação |
+   | `COMUNICACOES_AGENDA_ENVIO_ENABLED` | | Liga os avisos de alteração de agenda (só `true` liga) | `false` até homologar |
+   | `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` | | Liga os avisos de quantidade de aulas (Q38) (só `true` liga) | `false` até homologar |
+
+   > **Repasse ao container**: o Coolify só entrega ao app as variáveis citadas no `environment` do
+   > serviço `app` em `docker-compose.coolify.yml`. Variável nova lida pelo código precisa entrar lá
+   > (o teste `src/deploy/compose-env.test.ts` falha se faltar).
+   >
+   > **Agendadores**: o compose sobe `cron` (régua, 5 min), `cron-despacho` (60 s), `cron-portal-envios`
+   > (`/api/portal-aluno/envios/cron`, 60 s) e `cron-avisos-agenda` (`/api/agenda/avisos/cron`, 5 min). Com a
+   > flag desligada, as duas últimas rotas só respondem `{executou:false}`. **Exceção**:
+   > `/api/financeiro/continuidade/cron` não é agendado — ao ligar `CONTINUIDADE_MENSAL_EMISSAO_ENABLED`,
+   > configure um agendador (ex.: Scheduled Task do Coolify ou cron da VPS) com `POST` e header
+   > `x-cron-secret: $CRON_SECRET`.
 
    > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
    > As marcadas como obrigatórias (`${VAR:?...}`) bloqueiam o deploy se estiverem vazias.
