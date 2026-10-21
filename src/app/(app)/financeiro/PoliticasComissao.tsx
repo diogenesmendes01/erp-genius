@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { publicarPoliticaComissao } from "@/server/financeiro/acoes";
+import { publicarPoliticaComissaoLocal } from "@/server/financeiro/politica-comissao-local";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import type { configuracaoComissoes } from "@/server/financeiro/consultas";
 import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -11,7 +13,12 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 
-export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null }) {
+/**
+ * `fusoEscola`: sem preferência pessoal, as vigências saem e a nova vigência é digitada no fuso da escola (antes, a
+ * lista caía em UTC e o campo no fuso do navegador). O fuso do campo é escrito ao lado dele.
+ */
+export function PoliticasComissao({ dados, preferenciaFusoExibicao = null, fusoEscola }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
+  const fusoCampo = fusoDoCampoLocal(preferenciaFusoExibicao, fusoEscola);
   const router = useRouter();
   // Idempotente por natureza (#166): se a última versão já é exatamente esta, publicada por quem repete, o
   // servidor devolve ok sem abrir outra versão nem gravar outro Evento (publicarPoliticaComissao).
@@ -32,10 +39,10 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { d
       acao.setErro(tipo === "PERCENTUAL" ? "Informe um percentual válido." : "Informe um valor válido, com no máximo duas casas decimais.");
       return;
     }
-    const d = await acao.executar(() => publicarPoliticaComissao({ paisId, produtoId: String(form.get("produtoId")), tipo,
+    const d = await acao.executar(() => publicarPoliticaComissaoLocal({ paisId, produtoId: String(form.get("produtoId")), tipo,
       moeda: moedaSelecionada,
       percentual: tipo === "PERCENTUAL" ? valor : null, valorFixo: tipo === "VALOR_FIXO" ? valor : null,
-      vigenteEm: form.get("vigencia") ? new Date(String(form.get("vigencia"))) : new Date(),
+      vigenciaLocal: String(form.get("vigencia") ?? ""), fuso: fusoCampo,
     }));
     if (d?.tipo === "ok") { router.refresh(); setPercentual(""); setValorFixo(""); }
   }
@@ -51,13 +58,13 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { d
       ) : (
         <label>Valor<CampoMoeda required value={valorFixo} onChange={setValorFixo} moeda={moedaSelecionada} className="block w-28 rounded border p-2" /></label>
       )}
-      <label>Vigência (vazio = agora)<input name="vigencia" type="datetime-local" className="block rounded border p-2" /></label>
+      <label>Vigência (vazio = agora)<CampoDataHoraLocal name="vigencia" fuso={fusoCampo} className="block rounded border p-2" /></label>
       <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>Publicar nova versão</button>
     </form>
     <FeedbackAcao erro={acao.erro} />
     <ul className="divide-y rounded border text-sm">{dados.politicas.map((p) => {
-      const inicio = formatarInstanteExibicao(p.vigenteEm, preferenciaFusoExibicao, "UTC");
-      const fim = p.encerraEm ? formatarInstanteExibicao(p.encerraEm, preferenciaFusoExibicao, "UTC") : null;
+      const inicio = formatarInstanteExibicao(p.vigenteEm, preferenciaFusoExibicao, fusoEscola);
+      const fim = p.encerraEm ? formatarInstanteExibicao(p.encerraEm, preferenciaFusoExibicao, fusoEscola) : null;
       return <li key={p.id} className="p-3">
         {dados.paises.find((x) => x.id === p.paisId)?.nome ?? "País fora da lista"} · {dados.produtos.find((x) => x.id === p.produtoId)?.nome ?? "Produto fora da lista"} · v{p.versao} · {p.tipo === "VALOR_FIXO" ? (p.valorFixo != null ? formatarMoeda(p.valorFixo, p.moeda) : "valor não informado") : `${p.percentual}% da taxa`} · vigência desde {inicio.texto} (horário exibido em {inicio.fuso}){fim && ` até ${fim.texto} (horário exibido em ${fim.fuso})`}
       </li>;

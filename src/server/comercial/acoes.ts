@@ -55,6 +55,8 @@ import {
 } from "./schema";
 import { Temperatura } from "@prisma/client";
 import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
+import { VALOR_CAMPO_LOCAL } from "@/server/operacao/fuso-entrada";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
@@ -405,7 +407,12 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
-    const dados = analisarComDatasDaEscola(DatasSchema, input, await fusoDaEscola());
+    // A experimental digitada (texto do `datetime-local`) vira instante no fuso informado pela tela, aqui no servidor.
+    const { fusoDataExperimental, ...entrada } = input;
+    const experimental = typeof entrada.dataExperimental === "string" && VALOR_CAMPO_LOCAL.test(entrada.dataExperimental)
+      ? exigirInstanteDoCampoLocal(entrada.dataExperimental, fusoDataExperimental).toISOString()
+      : entrada.dataExperimental;
+    const dados = analisarComDatasDaEscola(DatasSchema, { ...entrada, dataExperimental: experimental }, await fusoDaEscola());
     // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
     // Tipo específico DatasAtualizadas com payload completo, consumido pela linha
     // do tempo da ficha do lead (issue #43).
@@ -488,7 +495,8 @@ export async function agendarExperimental(
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = AgendarExperimentalSchema.parse(input);
-    const data = new Date(dados.dataISO);
+    // Texto digitado: convertido aqui, no fuso informado pela tela (lote 3 do fuso pessoal); senão, o ISO.
+    const data = dados.dataLocal ? exigirInstanteDoCampoLocal(dados.dataLocal, dados.fuso) : new Date(dados.dataISO ?? "");
     if (isNaN(data.getTime())) throw new ErroRegra("Data inválida.");
     // Schema normaliza "" → null; `?? null` cobre o campo ausente. Sempre
     // persistimos a FK para que "Definir depois" limpe o responsável anterior.

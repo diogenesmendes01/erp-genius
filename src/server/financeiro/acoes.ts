@@ -33,7 +33,7 @@ import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
 import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 import { PASSOS_POLITICA } from "@/server/whatsapp/schema";
 import { DIA_PREVISAO_COMISSAO_MAX, DIA_PREVISAO_COMISSAO_MIN, DiaPrevisaoComissaoSchema } from "./previsao-comissao";
-import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
+import { analisarComDatasDaEscola, ChaveIdempotenciaSchema, dataObrigatoria } from "@/server/_shared/validacao";
 import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
@@ -48,7 +48,10 @@ const RegistroCobrancaWhatsAppSchema = z.object({
 }).strict();
 const RecebimentoDestinadoSchema = z.object({
   titularMatriculaId: z.string().min(1), pagadorId: z.string().min(1).nullable().optional(), chaveIdempotencia: z.string().min(16).max(120),
-  valorRecebido: z.coerce.number().positive().finite(), moeda: z.string().regex(/^[A-Z]{3}$/), forma: z.nativeEnum(FormaPagamento), dataPagamento: z.coerce.date(),
+  valorRecebido: z.coerce.number().positive().finite(), moeda: z.string().regex(/^[A-Z]{3}$/), forma: z.nativeEnum(FormaPagamento),
+  // Data DIGITADA (AAAA-MM-DD): meio-dia da escola, como em registrarPagamento (antes: o meio-dia do NAVEGADOR, que
+  // em Sydney gravava 05/10 como 04/10 da escola). Um ISO (formulário antigo ainda aberto) continua aceito.
+  dataPagamento: dataObrigatoria,
   comentario: z.string().trim().max(2000).nullable().optional(), comprovanteUrl: z.string().trim().nullable().optional(), comprovanteNome: z.string().trim().nullable().optional(),
   destinos: z.array(z.object({ tipo: z.enum(["COBRANCA", "CREDITO_SEM_DESTINO"]), cobrancaId: z.string().min(1).nullable().optional(), valor: z.coerce.number().positive().finite(), evidencia: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(1).max(120) }).strict()).min(1),
 }).strict();
@@ -116,10 +119,10 @@ export async function registrarPagamento(cobrancaId: string, input: PagamentoInp
 export async function registrarRecebimentoDestinado(input: unknown): Promise<Resultado<{ recebimentoId: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO);
-    const dados = RecebimentoDestinadoSchema.parse(input);
+    const dados = analisarComDatasDaEscola(RecebimentoDestinadoSchema, input, await fusoDaEscola());
     const resultado = await prisma.$transaction(async (tx) => {
       if (dados.comprovanteUrl) await exigirArquivoVinculavel(autor, dados.comprovanteUrl, { matriculaId: dados.titularMatriculaId, categoriaDocumento: "COMPROVANTE" }, tx);
-      const r = await receberComDestinacoesTx(tx, { ...dados, autorId: autor.id, pagadorId: dados.pagadorId ?? null, comentario: dados.comentario ?? null, comprovanteUrl: dados.comprovanteUrl ?? null, comprovanteNome: dados.comprovanteNome ?? null, destinos: dados.destinos.map((d) => ({ ...d, cobrancaId: d.cobrancaId ?? undefined })) });
+      const r = await receberComDestinacoesTx(tx, { ...dados, dataDigitada: true, autorId: autor.id, pagadorId: dados.pagadorId ?? null, comentario: dados.comentario ?? null, comprovanteUrl: dados.comprovanteUrl ?? null, comprovanteNome: dados.comprovanteNome ?? null, destinos: dados.destinos.map((d) => ({ ...d, cobrancaId: d.cobrancaId ?? undefined })) });
       return r.id;
     });
     for (const cobrancaId of [...new Set(dados.destinos.flatMap((d) => d.cobrancaId ? [d.cobrancaId] : []))]) await reavaliarAcessoAposCommit(cobrancaId);

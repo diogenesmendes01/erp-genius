@@ -5,15 +5,27 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   sessao: vi.fn(async () => ({ id: "prof", nome: "P", papeis: ["PROFESSOR"] })),
   aulas: vi.fn(async () => ({ aulas: [] as unknown[], proximo: null as string | null })),
-  diario: vi.fn((props: { mensagemVazio?: string }) => createElement("section", { "data-vazio": props.mensagemVazio ?? "" })),
+  diario: vi.fn((props: { mensagemVazio?: string; fusoEntrada?: string }) => createElement("section", { "data-vazio": props.mensagemVazio ?? "", "data-fuso": props.fusoEntrada ?? "" })),
+  preferencia: vi.fn(async () => ({ ok: true, dado: { fusoExibicao: null as string | null } })),
 }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/diario/consultas", () => ({ listarAulasDiario: mocks.aulas, listarTurmasParaDiario: async () => [] }));
 vi.mock("./DiarioAulas", () => ({ DiarioAulas: mocks.diario }));
+// Lote 3 do fuso pessoal: a página resolve o fuso de entrada da data da aula (pessoal; sem preferência, o da escola).
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 
 import Page from "./page";
 
 const render = async (params: Record<string, string>) => renderToStaticMarkup(await Page({ searchParams: Promise.resolve(params) }));
+
+describe("/diario — fuso de entrada da data da aula (lote 3 do fuso pessoal)", () => {
+  it("sem preferência, o da escola; com preferência, a pessoal", async () => {
+    expect(await render({})).toContain('data-fuso="America/Sao_Paulo"');
+    mocks.preferencia.mockResolvedValueOnce({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    expect(await render({})).toContain('data-fuso="America/Costa_Rica"');
+  });
+});
 
 describe("/diario — busca no histórico (E4)", () => {
   beforeEach(() => { vi.clearAllMocks(); mocks.aulas.mockResolvedValue({ aulas: [], proximo: null }); });

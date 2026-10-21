@@ -1261,6 +1261,9 @@ it("consulta de remarcação projeta reserva, avaliação, professor e prazo pro
   if (!antes.ok || !antes.dado) throw new Error(JSON.stringify(antes));
   expect(antes.dado.conferencia).toMatchObject({ reservaId: reserva.reservaId, codigoAvaliacao: "I1", professorAtual: { id: professor } });
   expect(antes.dado.conferencia.prazoVigente).toEqual(expect.any(String));
+  // Lote 3 do fuso pessoal: o fuso do prazo vigente é o da agenda da reserva (nunca o do servidor nem UTC presumido).
+  const encontroReserva = await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: reserva.encontroId }, select: { fusoOrigem: true } });
+  expect(antes.dado.conferencia).toMatchObject({ fusoExibicao: encontroReserva.fusoOrigem, origemFusoExibicao: "AGENDA" });
   const [disponibilizacao] = await prisma.$queryRaw<{ id: string }[]>`SELECT d.id FROM "DisponibilizacaoSegundaChamada" d JOIN "PropostaSegundaChamada" p ON p.id=d."propostaId" JOIN "ReservaSegundaChamada" r ON r."propostaId"=p.id WHERE r.id=${reserva.reservaId}`;
   const novoPrazo = new Date(new Date(antes.dado.conferencia.prazoVigente!).getTime() + 86_400_000).toISOString();
   const { proporProrrogacaoSegundaChamada, decidirProrrogacaoSegundaChamada } = await import("./segunda-chamada-prorrogacao");

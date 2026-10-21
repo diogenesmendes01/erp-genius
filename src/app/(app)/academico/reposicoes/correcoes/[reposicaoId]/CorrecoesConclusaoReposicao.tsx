@@ -8,6 +8,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
+import { proporCorrecaoGravadaLocal } from "@/server/diario/reposicao-local";
 
 type Fonte = {
   concluida: boolean;
@@ -64,13 +66,6 @@ function FonteResumo({ fonte, titulo, fusoExibicao }: { fonte: Fonte; titulo: st
   </div>;
 }
 
-function isoUtc(valor: FormDataEntryValue | null) {
-  const texto = String(valor ?? "").trim();
-  if (!texto) return null;
-  const data = new Date(`${texto}:00Z`);
-  return Number.isNaN(data.getTime()) ? null : data.toISOString();
-}
-
 /** `antesVersao`: o histórico de correções está numa página seguinte (cursor da página). Sem ele, é a primeira. */
 export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExibicao, antesVersao }: { dados: Dados; mostrarPreparacao: boolean; fusoExibicao: string; /** Obrigatória: esquecer o repasse faria a página antiga afirmar que não há correção. */ antesVersao: number | undefined }) {
   return <div className="space-y-5">
@@ -80,7 +75,7 @@ export function CorrecoesConclusaoReposicao({ dados, mostrarPreparacao, fusoExib
       <p>Conclusão original versão {dados.conclusao.versao}, registrada por {dados.conclusao.concluidaPor}. As datas da fonte abaixo são exibidas com o fuso correspondente.</p>
       <FonteResumo titulo={dados.consultaHistorica ? "Fonte efetiva nesta conclusão histórica" : dados.vigente.origem === "CORRECAO_APROVADA" ? "Fonte vigente após correção aprovada" : "Fonte vigente da conclusão original"} fonte={dados.vigente.fonte} fusoExibicao={fusoExibicao} />
     </section>
-    {mostrarPreparacao && dados.podePropor && <ProporCorrecao dados={dados} />}
+    {mostrarPreparacao && dados.podePropor && <ProporCorrecao dados={dados} fusoExibicao={fusoExibicao} />}
     <section className="space-y-3">
       <h2 className="text-xl font-medium">Histórico de correções</h2>
       {!dados.correcoes.length && (antesVersao
@@ -104,7 +99,8 @@ function ImpactosAprovados({ correcao }: { correcao: Dados["correcoes"][number] 
   return <div className="space-y-2 rounded bg-gray-100 p-3"><p className="font-medium">Dependências acadêmicas em acompanhamento</p><p>A correção não desfaz movimentações já registradas.</p>{correcao.impactos.map((impacto) => <p key={impacto.id}>Destino {impacto.destino} — {impacto.status === "EXECUTADA" ? "movimentação já executada" : "movimentação aprovada"}. {impacto.casoId ? <a className="underline" href={`/academico/correcoes/revisoes/${encodeURIComponent(impacto.casoId)}`}>Ver revisão</a> : "A revisão está sendo preparada pela gestão."}</p>)}</div>;
 }
 
-function ProporCorrecao({ dados }: { dados: Dados }) {
+/** `fusoExibicao`: o horário da validação é digitado nele (escrito ao lado do campo) e convertido no servidor. */
+function ProporCorrecao({ dados, fusoExibicao }: { dados: Dados; fusoExibicao: string }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState("");
   const [escolhaAtual, setEscolhaAtual] = useState("");
@@ -114,21 +110,23 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
     evento.preventDefault(); const formulario = new FormData(evento.currentTarget);
     const escolha = String(formulario.get("fonte") ?? "");
     const comum = { reposicaoId: dados.reposicao.id, conclusaoId: dados.conclusao.id, versaoAnterior: dados.versaoEsperada, motivo: String(formulario.get("motivo") ?? ""), evidencia: String(formulario.get("evidencia") ?? "") };
-    let fonte: { concluida: false } | { concluida: true; encontroReposicaoId: string; realizadaEm: string } | { concluida: true; entregaId: string; validadaEm: string };
+    // A validação da gravação é digitada no fuso de exibição da tela (escrito ao lado do campo) e convertida no
+    // servidor (proporCorrecaoGravadaLocal); antes, o navegador a lia como UTC.
+    let fonte: { concluida: false } | { concluida: true; encontroReposicaoId: string; realizadaEm: string } | { concluida: true; entregaId: string; validadaLocal: string; fuso: string };
     if (escolha === "RETIRAR") fonte = { concluida: false };
     else if (modalidade === "PARTICULAR") {
       const encontro = dados.fontesDisponiveis.encontros.find((item) => item.id === escolha);
       if (!encontro) { setErro("Selecione um encontro listado para esta reposição ou retire a conclusão."); return; }
       fonte = { concluida: true, encontroReposicaoId: encontro.id, realizadaEm: encontro.realizadaEm };
     } else {
-      const entrega = dados.fontesDisponiveis.entregas.find((item) => item.id === escolha), validadaEm = isoUtc(formulario.get("validadaEm"));
-      if (!entrega || !validadaEm) { setErro("Selecione uma entrega listada e informe a validação em UTC."); return; }
-      fonte = { concluida: true, entregaId: entrega.id, validadaEm };
+      const entrega = dados.fontesDisponiveis.entregas.find((item) => item.id === escolha), validadaLocal = String(formulario.get("validadaEm") ?? "").trim();
+      if (!entrega || !validadaLocal) { setErro(`Selecione uma entrega listada e informe a validação (horário em ${fusoExibicao}).`); return; }
+      fonte = { concluida: true, entregaId: entrega.id, validadaLocal, fuso: fusoExibicao };
     }
     iniciar(async () => {
       setErro("");
       try {
-        const resultado = await proporCorrecaoConclusaoReposicao({ ...comum, ...fonte });
+        const resultado = "validadaLocal" in fonte ? await proporCorrecaoGravadaLocal({ ...comum, ...fonte }) : await proporCorrecaoConclusaoReposicao({ ...comum, ...fonte });
         if (!resultado.ok) { setErro(resultado.erro); return; }
         router.refresh();
       } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
@@ -137,7 +135,7 @@ function ProporCorrecao({ dados }: { dados: Dados }) {
     <h2 className="text-xl font-medium">Propor correção</h2>
     <p>A proposta conserva a fonte vigente até a decisão independente. Escolha uma fonte conferida desta reposição ou retire a conclusão sem substituir a fonte.</p>
     <label className="block">Resultado proposto<select name="fonte" required value={escolhaAtual} onChange={(evento) => setEscolhaAtual(evento.target.value)} className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="RETIRAR">Retirar a conclusão, sem nova fonte</option>{modalidade === "PARTICULAR" && dados.fontesDisponiveis.encontros.map((encontro) => <option key={encontro.id} value={encontro.id}>Encontro realizado em {dataHora(encontro.realizadaEm, encontro.fuso)}</option>)}{modalidade === "GRAVACAO" && dados.fontesDisponiveis.entregas.map((entrega) => <option key={entrega.id} value={entrega.id}>Entrega versão {entrega.versao} — {dataHora(entrega.entregueEm, "UTC")}</option>)}</select></label>
-    {modalidade === "GRAVACAO" && escolhaAtual !== "RETIRAR" && <><label className="block">Horário da validação (UTC)<input name="validadaEm" type="datetime-local" required className="block rounded border p-2" /></label><div className="space-y-2">{dados.fontesDisponiveis.entregas.map((entrega) => <details key={entrega.id} className="rounded bg-gray-100 p-3"><summary>Material da entrega versão {entrega.versao}</summary><p className="whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="whitespace-pre-wrap">Atividade: {entrega.atividade}</p><p className="whitespace-pre-wrap">Evidência: {entrega.evidencia}</p></details>)}</div></>}
+    {modalidade === "GRAVACAO" && escolhaAtual !== "RETIRAR" && <><label className="block">Horário da validação<CampoDataHoraLocal name="validadaEm" fuso={fusoExibicao} required className="block rounded border p-2" /></label><div className="space-y-2">{dados.fontesDisponiveis.entregas.map((entrega) => <details key={entrega.id} className="rounded bg-gray-100 p-3"><summary>Material da entrega versão {entrega.versao}</summary><p className="whitespace-pre-wrap">Resumo: {entrega.resumo}</p><p className="whitespace-pre-wrap">Atividade: {entrega.atividade}</p><p className="whitespace-pre-wrap">Evidência: {entrega.evidencia}</p></details>)}</div></>}
     {modalidade === "PARTICULAR" && !dados.fontesDisponiveis.encontros.length && <EstadoVazio role="status">Não há encontro próprio ministrado com presença disponível para esta correção.</EstadoVazio>}
     {modalidade === "GRAVACAO" && !dados.fontesDisponiveis.entregas.length && <EstadoVazio role="status">Não há entrega completa disponível para esta correção.</EstadoVazio>}
     <label className="block">Motivo da correção<CampoTexto name="motivo" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
