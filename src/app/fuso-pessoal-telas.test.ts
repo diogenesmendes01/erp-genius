@@ -29,6 +29,19 @@ import { describe, expect, it } from "vitest";
 //   `.bind`, `Reflect.construct`), `Intl` usado como valor (`const I = Intl`), `X.DateTimeFormat` de outro objeto e a
 //   desestruturação `{ DateTimeFormat } = …`. `globalThis.Intl`/`window.Intl`/`Intl["DateTimeFormat"]` contam como
 //   `Intl.DateTimeFormat` e passam pela regra "intl" (timeZone obrigatório).
+// - "campo-local" (lote 3): campo de ENTRADA `<input type="datetime-local">` sem fuso dito. O valor digitado não tem
+//   fuso; ele só vale lido no fuso escrito ao lado do campo. Passa: o <CampoDataHoraLocal fuso=…> (src/components/
+//   CampoDataHoraLocal.tsx, que escreve o fuso e o envia junto) e o <input> nativo dentro de um <form> que tem um
+//   <CampoFuso> (a pessoa escolhe o fuso no mesmo formulário); sem <form> no componente (ele vem de um embrulho
+//   como `<Formulario>`), vale a árvore JSX contínua que contém o campo. Qualquer outro "datetime-local" — <input> fora desse
+//   form, `createElement("input", { type: "datetime-local" })`, `type={t}` com t calculado — conta (falha fechada).
+// - "conversao-local" (lote 3): o texto do campo virando instante no fuso do PROCESSO — `new Date(v)`/`Date.parse(v)`
+//   em que v lê o campo: `x.get("<name do campo>")` do FormData, ou o nome ligado ao `value`/`defaultValue` do campo
+//   (`value={quando}` → `new Date(quando)`, também dentro de uma função auxiliar com parâmetro de mesmo nome), ou,
+//   nos handlers do próprio campo, `*.target.value`/`*.currentTarget.value`; e `valueAsNumber`/`valueAsDate` no
+//   arquivo com o campo (o navegador lê o texto como UTC) — menor 5 da review do #290. A
+//   conversão é do servidor, com o fuso explícito (`exigirInstanteDoCampoLocal`). Limite declarado: valor copiado
+//   para outro nome antes de virar Date fica fora do alcance (é conferido nos testes de cada tela).
 // Opções que não são objeto literal, ou objeto com spread e sem `timeZone`, não dão para conferir: contam (falha
 // fechada). Arquivo que não analisa também conta.
 //
@@ -40,7 +53,7 @@ import { describe, expect, it } from "vitest";
 const RAIZES = ["src/app", "src/components"];
 const FORA_DE_TELA = /^src\/app\/api\//;
 
-export type Regra = "toLocale" | "intl" | "relogio-local" | "texto-local" | "apelido" | "opaco";
+export type Regra = "toLocale" | "intl" | "relogio-local" | "texto-local" | "apelido" | "campo-local" | "conversao-local" | "opaco";
 export type Achado = { arquivo: string; linha: number; regra: Regra; trecho: string };
 export type Excecao = { arquivo: string; regra: Regra; trecho: string; motivo: string };
 
@@ -109,6 +122,108 @@ function nomesDeData(sf: ts.SourceFile): Set<string> {
   return nomes;
 }
 
+/** O componente que escreve o fuso ao lado do campo: o único lugar com o <input type="datetime-local"> solto. */
+export const COMPONENTE_CAMPO_LOCAL = "src/components/CampoDataHoraLocal.tsx";
+const TIPO_CAMPO_LOCAL = "datetime-local";
+
+type ElementoJsx = ts.JsxElement | ts.JsxSelfClosingElement;
+const aberturaJsx = (n: ElementoJsx) => (ts.isJsxElement(n) ? n.openingElement : n);
+const tagJsx = (n: ElementoJsx, sf: ts.SourceFile) => aberturaJsx(n).tagName.getText(sf);
+const atributoJsx = (n: ElementoJsx, nome: string, sf: ts.SourceFile) =>
+  aberturaJsx(n).attributes.properties.find((p): p is ts.JsxAttribute => ts.isJsxAttribute(p) && p.name.getText(sf) === nome);
+/** Valor de texto literal do atributo (`a="x"`, `a={"x"}`), ou null. */
+function literalDoAtributo(a: ts.JsxAttribute | undefined): string | null {
+  const ini = a?.initializer;
+  if (!ini) return null;
+  if (ts.isStringLiteral(ini)) return ini.text;
+  if (ts.isJsxExpression(ini) && ini.expression && ts.isStringLiteralLike(semEnvoltorio(ini.expression))) return (semEnvoltorio(ini.expression) as ts.StringLiteralLike).text;
+  return null;
+}
+/** O elemento JSX cujo atributo `type` tem este literal, ou undefined se o literal não está nessa posição. */
+function elementoDoTipo(literal: ts.StringLiteralLike, sf: ts.SourceFile): ElementoJsx | undefined {
+  let n: ts.Node = literal.parent;
+  if (ts.isJsxExpression(n)) n = n.parent;
+  if (!ts.isJsxAttribute(n) || n.name.getText(sf) !== "type") return undefined;
+  const dono = n.parent.parent; // JsxAttributes → abertura
+  if (ts.isJsxSelfClosingElement(dono)) return dono;
+  if (ts.isJsxOpeningElement(dono)) return dono.parent;
+  return undefined;
+}
+const ehJsx = (n: ts.Node) => ts.isJsxElement(n) || ts.isJsxSelfClosingElement(n) || ts.isJsxFragment(n) || ts.isJsxExpression(n) || ts.isJsxOpeningElement(n) || ts.isJsxAttributes(n) || ts.isJsxAttribute(n);
+/**
+ * Onde procurar o <CampoFuso> do campo: o <form> JSX mais próximo; sem ele (o <form> está num componente que embrulha
+ * os campos, como `<Formulario>{…}</Formulario>`), a árvore JSX contínua mais externa que contém o campo.
+ */
+function escopoDoCampo(no: ts.Node, sf: ts.SourceFile): ts.Node {
+  let externo: ts.Node = no;
+  for (let n: ts.Node | undefined = no.parent; n && ehJsx(n); n = n.parent) {
+    if (ts.isJsxElement(n) && tagJsx(n, sf) === "form") return n;
+    externo = n;
+  }
+  return externo;
+}
+function contemCampoFuso(no: ts.Node, sf: ts.SourceFile): boolean {
+  let achou = false;
+  const visita = (n: ts.Node) => {
+    if (achou) return;
+    if ((ts.isJsxElement(n) || ts.isJsxSelfClosingElement(n)) && tagJsx(n, sf) === "CampoFuso") { achou = true; return; }
+    ts.forEachChild(n, visita);
+  };
+  visita(no);
+  return achou;
+}
+
+/** Regras "campo-local" e "conversao-local" (lote 3): ver o cabeçalho. */
+function achadosDeCampoLocal(arquivo: string, sf: ts.SourceFile, acha: (no: ts.Node, regra: Regra) => void) {
+  const nomes = new Set<string>(), valores = new Set<string>(), campos: ts.JsxAttributes[] = [];
+  const registraCampo = (el: ElementoJsx) => {
+    campos.push(aberturaJsx(el).attributes);
+    const nome = literalDoAtributo(atributoJsx(el, "name", sf));
+    if (nome) nomes.add(nome);
+    for (const attr of ["value", "defaultValue"]) {
+      const ini = atributoJsx(el, attr, sf)?.initializer;
+      const e = ini && ts.isJsxExpression(ini) && ini.expression ? semEnvoltorio(ini.expression) : undefined;
+      if (e && ts.isIdentifier(e)) valores.add(e.text);
+      else if (e && ts.isPropertyAccessExpression(e)) valores.add(e.name.text);
+    }
+  };
+  const visita = (no: ts.Node) => {
+    if (ts.isStringLiteralLike(no) && no.text === TIPO_CAMPO_LOCAL) {
+      const el = elementoDoTipo(no, sf);
+      if (el && tagJsx(el, sf) === "input") {
+        registraCampo(el);
+        if (arquivo !== COMPONENTE_CAMPO_LOCAL && !contemCampoFuso(escopoDoCampo(el, sf), sf)) acha(aberturaJsx(el), "campo-local");
+      } else if (arquivo !== COMPONENTE_CAMPO_LOCAL) acha(no, "campo-local");
+    }
+    if ((ts.isJsxElement(no) || ts.isJsxSelfClosingElement(no)) && tagJsx(no, sf) === "CampoDataHoraLocal") registraCampo(no);
+    ts.forEachChild(no, visita);
+  };
+  visita(sf);
+  if (!campos.length) return;
+  /** O nó está nos atributos (handlers) de um campo de data e hora. */
+  const noCampo = (no: ts.Node) => { for (let n: ts.Node | undefined = no.parent; n; n = n.parent) if (campos.includes(n as ts.JsxAttributes)) return true; return false; };
+  /** `*.target.value` / `*.currentTarget.value`: o texto do campo no próprio handler. */
+  const valorDoEvento = (e: ts.Node): boolean => {
+    if (ts.isPropertyAccessExpression(e) && e.name.text === "value" && ts.isPropertyAccessExpression(e.expression) && ["target", "currentTarget"].includes(e.expression.name.text)) return true;
+    return !!ts.forEachChild(e, (f) => valorDoEvento(f) || undefined);
+  };
+  const leCampo = (e: ts.Node): boolean => {
+    if (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression) && e.expression.name.text === "get" && e.arguments[0] && ts.isStringLiteralLike(e.arguments[0]) && nomes.has(e.arguments[0].text)) return true;
+    if (ts.isIdentifier(e) && valores.has(e.text)) return true;
+    return !!ts.forEachChild(e, (f) => leCampo(f) || undefined);
+  };
+  const conversao = (no: ts.Node) => {
+    const novaData = ts.isNewExpression(no) && ts.isIdentifier(no.expression) && no.expression.text === "Date" && no.arguments?.length === 1;
+    const parse = ts.isCallExpression(no) && ts.isPropertyAccessExpression(no.expression) && ts.isIdentifier(no.expression.expression) && no.expression.expression.text === "Date" && no.expression.name.text === "parse";
+    const arg = (novaData || parse) ? (no as ts.NewExpression | ts.CallExpression).arguments![0] : undefined;
+    if (arg && (leCampo(arg) || (noCampo(no) && valorDoEvento(arg)))) acha(no, "conversao-local");
+    // `valueAsNumber`/`valueAsDate` de um datetime-local é o texto lido como UTC pelo navegador: sempre conta.
+    else if (ts.isPropertyAccessExpression(no) && ["valueAsNumber", "valueAsDate"].includes(no.name.text)) acha(no, "conversao-local");
+    ts.forEachChild(no, conversao);
+  };
+  conversao(sf);
+}
+
 export function achadosDeFuso(arquivo: string, fonte: string): Achado[] {
   const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, arquivo.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const achados: Achado[] = [];
@@ -160,25 +275,15 @@ export function achadosDeFuso(arquivo: string, fonte: string): Achado[] {
     ts.forEachChild(no, visita);
   };
   visita(sf);
+  achadosDeCampoLocal(arquivo, sf, acha);
   return achados;
 }
 
-/** Comum às 5 linhas de dataHoraLocal (EdicaoOportunidade). */
-const MOTIVO_EXPERIMENTAL = "campo de ENTRADA <input type=\"datetime-local\"> da experimental: o valor é montado e relido (new Date(valor) no envio) no mesmo relógio do navegador, ida e volta; não é exibição. Fuso de entrada é outra pendência (ver PR)";
-
 export const EXCECOES: Excecao[] = [
-  { arquivo: "src/app/(app)/funil/EdicaoOportunidade.tsx", regra: "relogio-local", trecho: "x.getFullYear()", motivo: MOTIVO_EXPERIMENTAL },
-  { arquivo: "src/app/(app)/funil/EdicaoOportunidade.tsx", regra: "relogio-local", trecho: "x.getMonth()", motivo: MOTIVO_EXPERIMENTAL },
-  { arquivo: "src/app/(app)/funil/EdicaoOportunidade.tsx", regra: "relogio-local", trecho: "x.getDate()", motivo: MOTIVO_EXPERIMENTAL },
-  { arquivo: "src/app/(app)/funil/EdicaoOportunidade.tsx", regra: "relogio-local", trecho: "x.getHours()", motivo: MOTIVO_EXPERIMENTAL },
-  { arquivo: "src/app/(app)/funil/EdicaoOportunidade.tsx", regra: "relogio-local", trecho: "x.getMinutes()", motivo: MOTIVO_EXPERIMENTAL },
   {
-    arquivo: "src/app/(app)/diario/DiarioAulas.tsx", regra: "relogio-local", trecho: "d.getTimezoneOffset()",
-    motivo: "campo de ENTRADA <input type=\"datetime-local\"> da data da aula (valor inicial e `max`): converte o instante para o relógio do navegador que o próprio input usa; não é exibição. Fuso de entrada é outra pendência (ver PR)",
-  },
-  {
-    arquivo: "src/app/(app)/matriculas/[id]/contrato/aditivos/Formularios.tsx", regra: "intl", trecho: "Intl.DateTimeFormat()",
-    motivo: "não formata data: `resolvedOptions().timeZone` só descobre o fuso do navegador para DIZER, junto do campo de vigência, em que fuso o valor digitado é lido",
+    arquivo: "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx", regra: "campo-local",
+    trecho: '<input aria-label="Data e hora históricas" type="datetime-local" className="mt-1 block w-full rounded border p-2" value={formulario.dataLocal} onChange={(e) => mudar("dataLocal", e.target.value)} />',
+    motivo: "data histórica da migração: o fuso do valor é o campo \"Deslocamento UTC explícito\" ao lado (-03:00), copiado da fonte legada; o texto vai com o deslocamento (AAAA-MM-DDTHH:mm:00-03:00) e o servidor o lê como instante, sem fuso do navegador",
   },
 ];
 
@@ -291,6 +396,50 @@ describe("autoteste da trava", () => {
     expect(Array.isArray(ok.parseDiagnostics)).toBe(true);
     expect(ok.parseDiagnostics).toHaveLength(0);
     expect((quebrado.parseDiagnostics as unknown[]).length).toBeGreaterThan(0);
+  });
+
+  // Lote 3: campo de entrada datetime-local sem fuso dito e conversão no fuso do processo.
+  it("campo-local: datetime-local fora do CampoDataHoraLocal e sem CampoFuso no form conta; formas opacas também", () => {
+    expect(acha(`const a = <form><label>Quando<input name="q" type="datetime-local" /></label></form>;`)).toEqual(['campo-local: <input name="q" type="datetime-local" />']);
+    expect(acha(`const a = <input type={"datetime-local"} value={v} />;`)).toEqual(['campo-local: <input type={"datetime-local"} value={v} />']);
+    expect(acha(`createElement("input", { type: "datetime-local" });`)).toEqual(['campo-local: "datetime-local"']);
+    expect(acha(`const T = "datetime-local"; const a = <input type={T} />;`)).toEqual(['campo-local: "datetime-local"']);
+    // CampoFuso em OUTRO form não vale.
+    expect(acha(`const a = <><form><CampoFuso padrao="" /></form><form><input name="q" type="datetime-local" /></form></>;`)).toEqual(['campo-local: <input name="q" type="datetime-local" />']);
+  });
+
+  it("campo-local: o certo passa — CampoDataHoraLocal, CampoFuso no mesmo form ou na mesma árvore, e o próprio componente", () => {
+    expect(acha(`const a = <form><CampoDataHoraLocal name="q" fuso={fuso} /></form>;`)).toEqual([]);
+    expect(acha(`const a = <form><input name="q" type="datetime-local" /><CampoFuso padrao={f} /></form>;`)).toEqual([]);
+    expect(acha(`const H = () => <><label><input name="q" type="datetime-local" /></label><label><CampoFuso padrao="" /></label></>;`)).toEqual([]);
+    expect(acha(`const a = <input {...props} type="datetime-local" data-fuso={fuso} />;`, COMPONENTE_CAMPO_LOCAL)).toEqual([]);
+  });
+
+  it("conversao-local: o texto do campo virando Date no fuso do processo (FormData, value ligado, função auxiliar)", () => {
+    expect(acha(`const a = <CampoDataHoraLocal name="validadaEm" fuso={f} />; const i = new Date(String(dados.get("validadaEm") ?? ""));`))
+      .toEqual(['conversao-local: new Date(String(dados.get("validadaEm") ?? ""))']);
+    expect(acha(`const a = <CampoDataHoraLocal fuso={f} value={quando} />; f(new Date(quando).toISOString()); const t = Date.parse(quando);`))
+      .toEqual(["conversao-local: new Date(quando)", "conversao-local: Date.parse(quando)"]);
+    expect(acha(`function valida(quando: string) { return new Date(quando).getTime(); } const a = <CampoDataHoraLocal fuso={f} value={quando} />;`))
+      .toEqual(["conversao-local: new Date(quando)"]);
+    expect(acha(`const a = <CampoDataHoraLocal fuso={f} value={form.experimental} />; new Date(enviados.experimental);`))
+      .toEqual(["conversao-local: new Date(enviados.experimental)"]);
+  });
+
+  it("conversao-local (review do #290): handler do próprio campo e valueAsNumber/valueAsDate", () => {
+    expect(acha(`const a = <CampoDataHoraLocal fuso={f} onChange={(e) => salvar(new Date(e.target.value).toISOString())} />;`))
+      .toEqual(["conversao-local: new Date(e.target.value)"]);
+    expect(acha(`const a = <form><CampoFuso padrao="" /><input type="datetime-local" onBlur={(e) => setT(Date.parse(e.currentTarget.value))} /></form>;`))
+      .toEqual(["conversao-local: Date.parse(e.currentTarget.value)"]);
+    expect(acha(`const a = <CampoDataHoraLocal fuso={f} onChange={(e) => setT(e.currentTarget.valueAsNumber)} />;`))
+      .toEqual(["conversao-local: e.currentTarget.valueAsNumber"]);
+    expect(acha(`const a = <CampoDataHoraLocal fuso={f} />; const d = ref.current!.valueAsDate;`)).toEqual(["conversao-local: ref.current!.valueAsDate"]);
+    // Fora do handler do campo, `e.target.value` de outro controle não conta.
+    expect(acha(`const a = <><CampoDataHoraLocal fuso={f} /><input type="number" onChange={(e) => g(new Date(e.target.value))} /></>;`)).toEqual([]);
+  });
+
+  it("conversao-local: o certo passa — texto e fuso ao servidor, outros campos e instantes ISO", () => {
+    expect(acha(`const a = <CampoDataHoraLocal name="q" fuso={f} value={quando} />; acao({ quandoLocal: quando, fuso: f }); new Date(dados.get("outro")); new Date(item.criadoEm); new Date();`)).toEqual([]);
   });
 
   it("exceção solta (não casa) e achado sem exceção aparecem", () => {

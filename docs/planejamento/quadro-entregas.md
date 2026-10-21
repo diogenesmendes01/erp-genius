@@ -4356,3 +4356,81 @@ Branch `claude/fuso-pessoal-telas-2`, base `main` 95ca3d73 (com o 1º lote, #286
   - Afetados (helper, as duas travas, funil, financeiro, ficha financeira, reservas, ocorrências, indisponibilidade, continuidade, segundas chamadas, presença): 87 arquivos, 526 testes OK em `TZ=UTC` e em `TZ=America/Sao_Paulo`, com expectativas fixas. Os testes novos de tela falham com o comportamento antigo (conferido para o "último pagamento" e os informes).
   - `TZ=UTC vitest run` completo: 825 arquivos, 6.267 testes OK.
   - `npm run build`: saída 0.
+
+### Fuso pessoal nas telas (3º lote: fallback da escola, prazo da remarcação e fuso de entrada dos `datetime-local`) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas-3`, a partir do 2º lote (#289, já no `main`, com merge do `main` sem rebase). Encerra as três pendências que o #289 deixou e trata o item A da review dele (FIN-04). Sem migration.
+
+- **Fallback da escola** (sem preferência pessoal, as telas caíam em UTC): registros e decisões (instantes) agora usam o fuso pessoal; sem preferência, o da escola (ou o da agenda), com o fuso escrito na tela.
+  - Financeiro › acertos de adiantamento e de vencimento: proposta, aplicação e vigência. Saiu o "origem UTC". Os vencimentos são datas civis gravadas e passam por `formatarDiaCivilGravado`, no fuso em que o acerto foi preparado (antes era um `Intl` cru, que lançava com fuso inválido).
+  - Matrícula › período integral: registro, decisão e aplicação (`instanteDoPeriodoIntegral`).
+  - Aluno › movimentações › compras de horas: registro da compra. O horário do encontro continua no fuso da agenda.
+  - Segundas chamadas › substituição: registro e decisão no fuso pessoal; sem preferência, no da agenda (como a agenda inicial do lote 2) e, sem agenda válida, no da escola. O horário publicado fica no fuso da agenda, e um fuso de agenda inválido não derruba mais a página: sai em UTC, dito na tela.
+  - Política de comissão: as vigências exibidas acompanham o campo de entrada (sem preferência, fuso da escola).
+- **Remarcação da segunda chamada › "prazo vigente":** o servidor mandava `estado.encontro?.fusoOrigem ?? "UTC"`, ou seja, UTC sem encontro, e um fuso gravado inválido derrubava a página.
+  - Agora `fusoDoPrazoSegundaChamada` (`src/server/avaliacoes/segunda-chamada-prazo.ts`) usa o fuso da agenda; sem ela, ou com fuso inválido, usa o da escola (`fusoDaEscola`). Só cai em UTC se a escola também não tiver fuso, e nunca usa o fuso do servidor.
+  - A consulta devolve `origemFusoExibicao` e a tela escreve "(America/Sao_Paulo, fuso da agenda/da escola)", sem lançar.
+- **Fuso de ENTRADA dos `datetime-local`.** Os ~40 campos de `src/app` foram auditados:
+  - 24 já estavam certos: `<CampoFuso>` no mesmo formulário e ação `*-local` com `instanteAvaliacaoLocal`.
+  - Os errados liam o texto digitado no fuso do navegador (`new Date(valor)`: diário, Inbox, experimental no painel e nas datas, vigência do aditivo, política de comissão, validação/prazo/liberação da reposição).
+  - A correção da conclusão de reposição lia o valor como UTC.
+  - `paraDataHoraLocal` lia no fuso do PROCESSO.
+  - A agenda do aditivo convertia no cliente.
+  - O ciclo da agenda particular não dizia o fuso.
+  - **Novo `src/server/operacao/fuso-entrada.ts`:**
+    - `fusoDoCampoLocal`: o fuso pessoal; sem ele, o da escola; sem nenhum válido, "UTC" escrito ao lado do campo (fallback documentado).
+    - `valorCampoLocal`: valor inicial e `max` no mesmo fuso; não lança, e fuso inválido usa UTC.
+    - `instanteDoCampoLocal`: converte no fuso informado e recusa formato inválido, data impossível e horário pulado ou repetido no horário de verão.
+    - Servidor: `exigirInstanteDoCampoLocal` (`src/server/_shared/campo-local.ts`) transforma o erro em `ErroRegra`, sem fallback.
+  - **Novo `<CampoDataHoraLocal fuso=…>`** (`src/components`): escreve "Horário em X." ao lado do campo, marca `data-fuso` e, com `nomeFuso`, envia o fuso junto.
+  - **Ações `*-local`** (texto + fuso → instante no servidor):
+    - `diario/reposicao-local.ts`
+    - `diario/diario-local.ts`
+    - `financeiro/politica-comissao-local.ts`
+    - `contratos/aditivos-local.ts`
+    - `contratos/agenda-aditivo-local.ts`
+    - `agendarMensagemNoAtendimentoLocal`
+    - `agendarExperimental({ dataLocal, fuso })`
+    - `atualizarDatas({ dataExperimental, fusoDataExperimental })`
+  - `paraDataHoraLocal`/`dataHoraOpcional` passam a recusar o texto sem fuso.
+  - Exceção mantida: a conciliação financeira da migração, que usa deslocamento UTC explícito, copiado da fonte.
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`):
+  - Nova regra "campo-local": `datetime-local` fora do `<CampoDataHoraLocal>`, a não ser com `<CampoFuso>` no mesmo `<form>` ou na mesma árvore JSX. `createElement`/constante contam (falha fechada).
+  - Nova regra "conversao-local": `new Date(v)`/`Date.parse(v)` em que `v` lê o campo (`x.get("<name>")` ou o nome ligado ao `value`).
+  - Saíram as 7 exceções do lote 2 (experimental, diário, `Intl.DateTimeFormat()` do aditivo) e entrou 1 (conciliação da migração).
+  - `campos.test`/`campos-mapa` e `rotulos.test` reconhecem o `CampoDataHoraLocal`.
+- **FIN-04 (item A da review do #289):**
+  - Antes, o form gravava o meio-dia do NAVEGADOR: 05/10 digitado em Sydney virava 04/10 na escola em São Paulo.
+  - Agora o form manda `AAAA-MM-DD` e `registrarRecebimentoDestinado` analisa com `analisarComDatasDaEscola`/`dataObrigatoria`, gravando o meio-dia da escola (`Recebimento.dataPagamento` e `Cobranca.pagoEm`). O ISO de um form antigo ainda aberto continua aceito.
+  - **Idempotência:** com `dataDigitada`, o replay da mesma chave aceita a data gravada pela outra convenção de meio-dia para o MESMO dia digitado (`mesmaDataDigitada`: meio-dia de D em algum fuso, entre UTC−12 e UTC+14, em quartos de hora e sem segundos), desde que o resto do `hashDados` seja igual.
+  - Outro dia com a mesma chave continua recusado.
+- **Pendências:**
+  - Cerca de 100 telas ainda usam "UTC" como origem de exibição sem preferência (fora do escopo deste lote; lista com `grep 'formatarInstanteExibicao(.*"UTC"'`). Entre elas a própria página de aditivos e os históricos de movimentações.
+  - O horário publicado na remarcação da segunda chamada continua no fuso pessoal com "(origem X)", como o lote 2 deixou.
+  - O `tsc --noEmit` completo foi morto por falta de memória: fica com o CI. O dos arquivos alterados e dos seus importadores (143 arquivos) passou.
+- **Evidências** (depois do merge do `main` com o #289):
+  - Afetados: 282 arquivos e 2.546 testes OK em `TZ=UTC` e em `TZ=America/Sao_Paulo`, com expectativas fixas. Inclui as travas `fuso-pessoal-telas`, `fuso-instante`, `campos` e `rotulos`, os helpers e as telas tocadas.
+  - Testes novos: `fuso-entrada` (dois fusos, virada do dia, horário de verão, fallback), `acoes-campo-local` e `segunda-chamada-prazo`. `recebimentos-data-digitada` cobre Sydney → 05/10 e o replay. Também os autotestes das regras novas da trava.
+  - Integração no banco descartável `erp_genius_test_fuso3`, apagado no fim:
+    - `recebimentos-destinados`: FIN-04 nos dois sentidos do replay e outro dia recusado.
+    - `comercial/leads`: experimental com e sem fuso.
+    - `whatsapp/agendamento`: agendamento local.
+    - `reposicao-entrega-operacional`.
+    - Tudo OK em UTC; `agendamento` e `recebimentos-destinados` também em São Paulo.
+    - `segunda-chamada.int` (consulta de remarcação: fuso do prazo = agenda): OK.
+  - `tsc` dirigido (alterados e importadores, 145 arquivos): saída 0. O `tsc --noEmit` completo foi morto por falta de memória (4 GB): fica com o CI.
+  - `eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
+- **Correções das reviews do #290** (5605939307 e 5605944129):
+  - **B1:** em `/academico/reposicoes`, o prazo da etapa e o "Expira em" da liberação eram digitados em UTC quando não havia preferência. Agora a página usa `fusoDoCampoLocal(preferência, escola)`, e 25/10 23:59 em São Paulo vira `2026-10-26T02:59Z`. Nenhuma outra entrada caía em UTC.
+  - **FIN-04, replay (menor 1 e C3):** `mesmaDataDigitadaNaEscola` compara com o dia que a escola vê no registro existente. Em Pacific/Auckland e Pacific/Honolulu, outro dia com a mesma chave é recusado. Um registro antigo que a escola vê em outro dia (Sydney) também é recusado, sem duplicar o caixa.
+  - **Menores:**
+    - comentário de `diaCivilDoPagamento` atualizado;
+    - a experimental intocada volta como o instante gravado (hora repetida do horário de verão), com o limite documentado no diário e na agenda do aditivo;
+    - a trava "conversao-local" passa a pegar `new Date`/`Date.parse` sobre `*.target.value` nos handlers do campo e `valueAsNumber`/`valueAsDate`;
+    - na remarcação, o rótulo do prazo com fuso não reconhecido mostra "UTC; … não reconhecido";
+    - o texto do `datetime-local` sem fuso vira erro de validação legível.
+  - **Evidências:**
+    - trava e testes tocados (26 arquivos, 211 testes) OK em UTC e em São Paulo;
+    - financeiro, `_shared` e comercial: 72 arquivos e 560 testes OK nos dois TZ;
+    - `tsc` dirigido: saída 0; lint dos alterados: 0.
+    - A integração não rodou, porque o cluster de teste está com o checkpoint parado (vários `DROP DATABASE` pendentes, inclusive o do `erp_genius_test_fuso3`). O `recebimentos-destinados.int` foi atualizado para a regra nova.
