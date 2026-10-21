@@ -4,14 +4,12 @@ import {
   listarTurmasAbertas,
   listarPrecosAtivos,
 } from "@/server/matricula/consultas";
-import {
-  podeCriarMatricula,
-  podeCriarEAtivarMatricula,
-} from "@/server/matricula/permissoes";
+import { podeCriarMatricula } from "@/server/matricula/permissoes";
 import { listarNiveis } from "@/server/turmas/consultas";
 import { vagasTurma } from "@/server/alunos/consultas";
-import { listarPaises } from "@/server/paises/consultas";
+import { listarPaisesOperacionais } from "@/server/paises/consultas";
 import { MatriculaFormulario, type PrecoRef } from "./MatriculaFormulario";
+import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 
 export default async function NovaMatriculaPage({
@@ -22,21 +20,17 @@ export default async function NovaMatriculaPage({
   // Criar matrícula (doc 07 / acoes.criarMatricula): Vendedor e Gerente Comercial.
   // Vendedor recebe escopo: só pré-preenche a partir dos próprios leads.
   // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
-  const usuario = await exigirSessaoPagina();
+  const usuario = await exigirSessaoPagina(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
 
   const { lead: leadId } = await searchParams;
-  // Gating de papéis (issue #8 / #34): "Salvar matrícula" para quem pode CRIAR;
-  // "Receber pagamento e ativar" (fluxo atômico) exige os papéis de CRIAR E
-  // ATIVAR. Os botões só aparecem para quem passa nas checagens; o backend
-  // continua exigindo os papéis (defesa em profundidade). Isto é só UX.
+  // O aceite do contrato é registrado após a criação, no atendimento da secretaria.
   const podeCriar = podeCriarMatricula(usuario.papeis);
-  const podeCriarEAtivar = podeCriarEAtivarMatricula(usuario.papeis);
   const [leadRaw, produtos, turmas, precos, paises, niveis] = await Promise.all([
     leadId ? obterLeadParaMatricula(leadId, usuario) : Promise.resolve(null),
     listarProdutosParaMatricula(),
     listarTurmasAbertas(),
     listarPrecosAtivos(),
-    listarPaises(),
+    listarPaisesOperacionais(),
     listarNiveis(),
   ]);
 
@@ -50,19 +44,18 @@ export default async function NovaMatriculaPage({
     : null;
 
   const turmasComVaga = turmas
-    .filter((t) => vagasTurma(t.capacidade, t._count.alocacoes) > 0)
+    .filter((t) => vagasTurma(t.capacidade, (t._count.alocacoes + t._count.reservasMatricula)) > 0)
     .map((t) => ({
       id: t.id,
       label: `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ${t.diasHorario ?? "a definir"} · ${vagasTurma(
         t.capacidade,
-        t._count.alocacoes,
+        (t._count.alocacoes + t._count.reservasMatricula),
       )} vagas`,
     }));
 
   return (
     <MatriculaFormulario
       podeCriar={podeCriar}
-      podeCriarEAtivar={podeCriarEAtivar}
       lead={lead}
       paises={paises.map((p) => ({
         id: p.id,

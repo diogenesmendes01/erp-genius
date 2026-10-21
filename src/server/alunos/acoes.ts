@@ -6,10 +6,11 @@ import {
   Prisma,
   StatusAluno,
   StatusCobranca,
+  StatusFaturaB2B,
   TipoMovimentacao,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { vagasTurma } from "./consultas";
+import { exigirFluxoGlobalSemMovimentacaoContratual } from "@/server/matricula/limite-legado";
 import {
   exigirSessaoComPapel,
   registrarEvento,
@@ -31,13 +32,17 @@ import {
   type TrocarTurmaInput,
   type EditarAlunoInput,
 } from "./schema";
+import { bloquearCalendarioAluno } from "@/server/retomada/estado";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { limiteDoAtraso } from "@/server/operacao/fuso";
 
 const PAPEIS: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO];
 
 function revalidar(id: string) {
   revalidatePath("/alunos");
   revalidatePath(`/alunos/${id}`);
-  revalidatePath("/financeiro");
+  revalidatePath("/financeiro", "layout");
 }
 
 /**
@@ -46,8 +51,8 @@ function revalidar(id: string) {
  */
 export async function editarAluno(id: string, input: EditarAlunoInput): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(...PAPEIS);
-    const dados = EditarAlunoSchema.parse(input);
+    const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
+    const dados = analisarComDatasDaEscola(EditarAlunoSchema, input, await fusoDaEscola());
     const aluno = await prisma.aluno.findUnique({
       where: { id },
       include: { pais: { include: { tiposDocumento: true } } },
@@ -154,29 +159,44 @@ export async function editarAluno(id: string, input: EditarAlunoInput): Promise<
   });
 }
 
-/** Cancela mensalidades futuras (PENDENTE com vencimento > agora). Dívidas passadas permanecem. */
-async function cancelarMensalidadesFuturas(tx: Prisma.TransactionClient, alunoId: string) {
-  const matriculas = await tx.matricula.findMany({ where: { alunoId }, select: { id: true } });
+/** Preserva taxa, recebimentos e dívidas vencidas; somente a pausa identifica o que pode ser restaurado. */
+async function cancelarMensalidadesFuturas(tx: Prisma.TransactionClient, alunoId: string, agora: Date, pausaId?: string) {
+  const matriculas = await tx.matricula.findMany({ where: { alunoId, status: "ATIVA" }, select: { id: true } });
   const ids = matriculas.map((m) => m.id);
   if (ids.length === 0) return;
+  // Ref. #247: "futura" é a mensalidade ainda não atrasada no dia civil da escola (o dia do vencimento inteiro).
+  const naoAtrasada = limiteDoAtraso(agora, await fusoDaEscola(tx));
+  const alvo = { matriculaId: { in: ids }, tipo: "MENSALIDADE" as const, status: StatusCobranca.PENDENTE, vencimento: { gte: naoAtrasada } };
+  // Item de fatura B2B FECHADA é congelado (review PR #60 rodada 2): cancelar por aqui
+  // deixaria a fatura impagável/divergente. O caminho é cancelar a fatura primeiro.
+  const faturada = await tx.cobranca.findFirst({
+    where: { ...alvo, faturaB2B: { status: StatusFaturaB2B.FECHADA } },
+    include: { faturaB2B: { select: { codigo: true } } },
+  });
+  if (faturada) {
+    throw new ErroRegra(
+      `Há mensalidade na fatura B2B ${faturada.faturaB2B?.codigo ?? ""} (fechada) — cancele a fatura antes de pausar/cancelar o aluno.`,
+    );
+  }
   await tx.cobranca.updateMany({
-    where: { matriculaId: { in: ids }, status: StatusCobranca.PENDENTE, vencimento: { gt: new Date() } },
-    data: { status: StatusCobranca.CANCELADA },
+    where: alvo,
+    data: { status: StatusCobranca.CANCELADA, versao: { increment: 1 }, canceladaPorPausaId: pausaId ?? null },
   });
 }
 
 export async function pausarAluno(id: string, input: PausarInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS);
-    const dados = PausarSchema.parse(input);
-    const aluno = await prisma.aluno.findUnique({ where: { id } });
-    if (!aluno) throw new ErroRegra("Aluno não encontrado.");
-    if (aluno.status !== StatusAluno.ATIVO) throw new ErroRegra("Só é possível pausar um aluno Ativo.");
-
+    const dados = analisarComDatasDaEscola(PausarSchema, input, await fusoDaEscola());
     await prisma.$transaction(async (tx) => {
+      await bloquearCalendarioAluno(tx, id);
+      await exigirFluxoGlobalSemMovimentacaoContratual(tx, id);
+      const aluno = await tx.aluno.findUnique({ where: { id } });
+      if (!aluno) throw new ErroRegra("Aluno não encontrado.");
+      if (aluno.status !== StatusAluno.ATIVO) throw new ErroRegra("Só é possível pausar um aluno Ativo.");
+      const agora = new Date();
       await tx.aluno.update({ where: { id }, data: { status: StatusAluno.PAUSADO } });
-      await cancelarMensalidadesFuturas(tx, id);
-      await tx.movimentacaoAluno.create({
+      const pausa = await tx.movimentacaoAluno.create({
         data: {
           alunoId: id,
           tipo: TipoMovimentacao.PAUSA,
@@ -187,12 +207,13 @@ export async function pausarAluno(id: string, input: PausarInput): Promise<Resul
           usuarioId: autor.id,
         },
       });
+      await cancelarMensalidadesFuturas(tx, id, agora, pausa.id);
       await registrarEvento(tx, {
         tipo: "AlunoPausado",
         agregadoTipo: "Aluno",
         agregadoId: id,
         autorId: autor.id,
-        payload: { motivo: dados.motivo },
+        payload: { motivo: dados.motivo, pausaId: pausa.id, protocoloRetomada: 1 },
       });
     });
     revalidar(id);
@@ -201,30 +222,9 @@ export async function pausarAluno(id: string, input: PausarInput): Promise<Resul
 
 export async function reativarAluno(id: string): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(...PAPEIS);
-    const aluno = await prisma.aluno.findUnique({ where: { id } });
-    if (!aluno) throw new ErroRegra("Aluno não encontrado.");
-    if (aluno.status !== StatusAluno.PAUSADO) throw new ErroRegra("Só é possível reativar um aluno Pausado.");
-
-    await prisma.$transaction(async (tx) => {
-      await tx.aluno.update({ where: { id }, data: { status: StatusAluno.ATIVO } });
-      await tx.movimentacaoAluno.create({
-        data: {
-          alunoId: id,
-          tipo: TipoMovimentacao.REATIVACAO,
-          statusOrigem: StatusAluno.PAUSADO,
-          statusDestino: StatusAluno.ATIVO,
-          usuarioId: autor.id,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "AlunoReativado",
-        agregadoTipo: "Aluno",
-        agregadoId: id,
-        autorId: autor.id,
-      });
-    });
-    revalidar(id);
+    await exigirSessaoComPapel(...PAPEIS, Papel.FINANCEIRO);
+    if (!id.trim()) throw new ErroRegra("Aluno obrigatório.");
+    throw new ErroRegra("A retomada exige proposta aprovada por outra pessoa do Financeiro ou da administração. Abra a ficha financeira do aluno.");
   });
 }
 
@@ -232,13 +232,15 @@ export async function encerrarAluno(id: string, input: EncerrarInput): Promise<R
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS);
     const dados = EncerrarSchema.parse(input);
-    const aluno = await prisma.aluno.findUnique({ where: { id } });
-    if (!aluno) throw new ErroRegra("Aluno não encontrado.");
-    if (aluno.status === StatusAluno.ENCERRADO) throw new ErroRegra("Aluno já está encerrado.");
-
     await prisma.$transaction(async (tx) => {
+      await bloquearCalendarioAluno(tx, id);
+      await exigirFluxoGlobalSemMovimentacaoContratual(tx, id);
+      const aluno = await tx.aluno.findUnique({ where: { id } });
+      if (!aluno) throw new ErroRegra("Aluno não encontrado.");
+      if (aluno.status === StatusAluno.ENCERRADO) throw new ErroRegra("Aluno já está encerrado.");
       await tx.aluno.update({ where: { id }, data: { status: StatusAluno.ENCERRADO } });
-      await cancelarMensalidadesFuturas(tx, id);
+      await tx.alocacaoTurma.updateMany({ where: { alunoId: id, ativa: true }, data: { ativa: false, encerradaEm: new Date() } });
+      await cancelarMensalidadesFuturas(tx, id, new Date());
       await tx.movimentacaoAluno.create({
         data: {
           alunoId: id,
@@ -264,46 +266,9 @@ export async function encerrarAluno(id: string, input: EncerrarInput): Promise<R
 
 export async function trocarTurma(id: string, input: TrocarTurmaInput): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(...PAPEIS);
-    const dados = TrocarTurmaSchema.parse(input);
-    const aluno = await prisma.aluno.findUnique({
-      where: { id },
-      include: { alocacoes: { where: { ativa: true } } },
-    });
-    if (!aluno) throw new ErroRegra("Aluno não encontrado.");
-
-    const destino = await prisma.turma.findUnique({
-      where: { id: dados.turmaDestinoId },
-      // Conta SOMENTE alocações ativas (issues #1/#19) — vaga real da turma de destino.
-      include: { _count: { select: { alocacoes: { where: { ativa: true } } } } },
-    });
-    if (!destino) throw new ErroRegra("Turma de destino não encontrada.");
-    if (vagasTurma(destino.capacidade, destino._count.alocacoes) <= 0)
-      throw new ErroRegra("Turma de destino sem vaga.");
-
-    const atual = aluno.alocacoes[0] ?? null;
-
-    await prisma.$transaction(async (tx) => {
-      if (atual) await tx.alocacaoTurma.update({ where: { id: atual.id }, data: { ativa: false } });
-      await tx.alocacaoTurma.create({ data: { alunoId: id, turmaId: dados.turmaDestinoId } });
-      await tx.movimentacaoAluno.create({
-        data: {
-          alunoId: id,
-          tipo: TipoMovimentacao.TROCA_TURMA,
-          turmaOrigemId: atual?.turmaId ?? null,
-          turmaDestinoId: dados.turmaDestinoId,
-          motivo: dados.justificativa || null,
-          usuarioId: autor.id,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "TrocaTurma",
-        agregadoTipo: "Aluno",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { de: atual?.turmaId ?? null, para: dados.turmaDestinoId, motivo: dados.justificativa || null },
-      });
-    });
-    revalidar(id);
+    await exigirSessaoComPapel(...PAPEIS);
+    TrocarTurmaSchema.parse(input);
+    if (!id.trim()) throw new ErroRegra("Aluno obrigatório.");
+    throw new ErroRegra("A transferência exige proposta de aproveitamento, aprovação pedagógica independente e execução pela Secretaria. Abra o fluxo de equivalência acadêmica.");
   });
 }

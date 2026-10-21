@@ -2,19 +2,13 @@
 
 import { useState } from "react";
 import { IconPlus } from "@tabler/icons-react";
-import { Segmento } from "@prisma/client";
 import { ModalidadeFormulario, type ModalidadeParaEditar } from "./ModalidadeFormulario";
+import { botaoClasses } from "@/components/Botao";
+import { SEGMENTO_LABEL } from "@/lib/labels";
 
 export interface ModalidadeRow extends ModalidadeParaEditar {
   _count: { produtos: number; turmas: number };
 }
-
-const SEG_LABEL: Record<Segmento, string> = {
-  ADULTO: "Adulto",
-  KIDS: "Kids",
-  TEENS: "Teens",
-  EMPRESA: "Empresa",
-};
 
 export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[] }) {
   const [form, setForm] = useState<"none" | "nova" | { editar: ModalidadeParaEditar }>("none");
@@ -26,7 +20,7 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
         {form === "none" && (
           <button
             onClick={() => setForm("nova")}
-            className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            className={botaoClasses({ tamanho: "md" })}
           >
             <IconPlus className="h-4 w-4" /> Nova modalidade
           </button>
@@ -39,15 +33,17 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
       {form !== "none" && (
         <div className="mb-4">
           <ModalidadeFormulario
+            // Nova e edição são formulários diferentes: os valores iniciais e a chave da tentativa são lidos na montagem.
+            key={typeof form === "object" ? form.editar.id : "nova"}
             modalidade={typeof form === "object" ? form.editar : undefined}
             onClose={() => setForm("none")}
           />
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Modalidade</th>
               <th className="px-4 py-2 font-medium">Segmento</th>
@@ -62,7 +58,7 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
             {modalidades.map((m) => (
               <tr key={m.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-800">{m.nome}</td>
-                <td className="px-4 py-3 text-gray-600">{SEG_LABEL[m.segmento]}</td>
+                <td className="px-4 py-3 text-gray-600">{SEGMENTO_LABEL[m.segmento]}</td>
                 <td className="px-4 py-3 text-gray-600">{m.frequencia}</td>
                 <td className="px-4 py-3 text-gray-600">{m.duracaoPorNivel}</td>
                 <td className="px-4 py-3 text-gray-600">{m.aulasPorNivel ?? "—"}</td>
@@ -83,7 +79,7 @@ export function ModalidadesPainel({ modalidades }: { modalidades: ModalidadeRow[
                         },
                       })
                     }
-                    className="text-xs text-brand-700 hover:text-brand-800"
+                    className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                   >
                     Editar
                   </button>

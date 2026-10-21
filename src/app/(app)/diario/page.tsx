@@ -1,0 +1,30 @@
+import Link from "next/link";
+import { Papel } from "@prisma/client";
+import { exigirSessaoPagina } from "@/server/_shared";
+import { listarAulasDiario, listarTurmasParaDiario } from "@/server/diario/consultas";
+import { DiarioAulas } from "./DiarioAulas";
+import { hrefDiario, lerBuscaDiario } from "@/server/diario/busca-diario";
+import { botaoClasses } from "@/components/Botao";
+
+export default async function DiarioPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const usuario = await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
+  const parametros = await searchParams;
+  const antes = typeof parametros.antes === "string" ? parametros.antes : undefined;
+  // Busca no servidor (E4): por turma, assunto da aula ou professor; mantida ao paginar.
+  const busca = lerBuscaDiario(parametros);
+  const [historico, turmas] = await Promise.all([listarAulasDiario(usuario, antes, busca), listarTurmasParaDiario(usuario)]);
+  return <div className="space-y-6">
+    {/* As sub-seções do diário estão nas abas do layout (E2); Avaliações é do acadêmico. */}
+    <Link className="inline-block text-sm text-brand-700 underline" href="/academico/avaliacoes">Avaliações e histórico por matrícula</Link>
+    <form method="get" action="/diario" role="search" aria-label="Buscar no histórico do diário" className="flex flex-wrap items-center gap-2">
+      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar aula por turma, assunto ou professor" placeholder="Buscar por turma, assunto ou professor…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
+      <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
+      {busca && <Link href="/diario" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
+    </form>
+    <DiarioAulas aulas={historico.aulas} turmas={turmas} mensagemVazio={busca ? `Nenhuma aula para “${busca}”${antes ? " nesta página" : ""}.` : undefined} />
+    <nav aria-label="Páginas do histórico do diário" className="flex gap-4 text-sm text-brand-700">
+      {antes && <Link href={hrefDiario({ busca })}>Aulas recentes</Link>}
+      {historico.proximo && <Link href={hrefDiario({ busca, antes: historico.proximo })}>Aulas anteriores →</Link>}
+    </nav>
+  </div>;
+}

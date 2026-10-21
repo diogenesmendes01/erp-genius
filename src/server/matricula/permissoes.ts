@@ -47,6 +47,7 @@ export function podeAtivarMatricula(papeis: readonly Papel[]): boolean {
  * passa nas duas checagens; o backend continua exigindo ambos (defesa em
  * profundidade).
  */
-export function podeCriarEAtivarMatricula(papeis: readonly Papel[]): boolean {
-  return podeCriarMatricula(papeis) && podeAtivarMatricula(papeis);
+export function podeCriarEAtivarMatricula(papeis: readonly Papel[], capacidades: readonly string[] = []): boolean {
+  const podeReceber = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO) || capacidades.includes("pagamento.caixa");
+  return podeCriarMatricula(papeis) && podeAtivarMatricula(papeis) && podeReceber;
 }

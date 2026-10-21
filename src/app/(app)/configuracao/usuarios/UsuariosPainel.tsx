@@ -4,9 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Papel } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
-import { PAPEL_LABEL } from "@/lib/roles";
-import { alternarUsuarioAtivo } from "@/server/acesso/acoes";
+import { PAPEL_LABEL } from "@/lib/labels";
+import { definirUsuarioAtivo } from "@/server/acesso/acoes";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
+import { botaoClasses } from "@/components/Botao";
 
 export interface UsuarioRow {
   id: string;
@@ -15,58 +20,80 @@ export interface UsuarioRow {
   papeis: Papel[];
   ativo: boolean;
   limiteDescontoPct: number | null;
+  limiteDescontoTaxaPct: number | null;
+  limiteDescontoMensalidadePct: number | null;
+  permissoes: string[];
+  gerenteComercialId: string | null;
   ultimoAcesso: string | null; // ISO ou null
 }
 
-function formatarAcesso(iso: string | null): string {
+function formatarAcesso(iso: string | null, preferenciaFusoExibicao: string | null): string {
   if (!iso) return "nunca";
-  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const instante = formatarInstanteExibicao(iso, preferenciaFusoExibicao, "UTC");
+  return `${instante.texto} (horário exibido em ${instante.fuso}; origem UTC)`;
 }
 
-export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
+export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { usuarios: UsuarioRow[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // Ativar/desativar manda o estado-alvo (B4, #175 C2): repetir depois de uma falha de rede, ou confirmar com a
+  // tela velha o que um colega já aplicou, não desfaz nada — o servidor trata o mesmo estado como no-op.
+  const acao = useAcaoCliente({ idempotente: true });
+  // O erro aparece na linha do usuário cujo botão disparou a ação, não no topo da lista.
+  const [alvo, setAlvo] = useState<string | null>(null);
   const [form, setForm] = useState<"none" | "novo" | { editar: UsuarioParaEditar }>("none");
 
-  async function alternar(id: string) {
-    setErro(null);
-    const res = await alternarUsuarioAtivo(id);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+  async function ativar(id: string) {
+    setAlvo(id);
+    const desfecho = await acao.executar(() => definirUsuarioAtivo(id, true), "Usuário ativado.");
+    if (desfecho?.tipo === "ok") router.refresh();
+  }
+
+  // Desativar tira a pessoa do sistema na hora (docs/42 L2413): o botão só abre a confirmação, que nomeia a
+  // pessoa; a action roda no ConfirmarAcao, que mostra a falha dentro dele. Ativar continua direto.
+  const [desativando, setDesativando] = useState<UsuarioRow | null>(null);
+  function pedirDesativacao(u: UsuarioRow) {
+    setAlvo(u.id);
+    acao.limpar();
+    setDesativando(u);
+  }
+  function desativado(u: UsuarioRow) {
+    setDesativando(null);
+    setAlvo(u.id);
+    acao.setSucesso("Usuário desativado.");
+    router.refresh();
   }
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">7 papéis, multi-papel, limite de desconto e último acesso.</p>
+        <p className="text-sm text-gray-500">Papéis, equipes, alçadas e permissões específicas.</p>
         {form === "none" && (
           <button
             onClick={() => setForm("novo")}
-            className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            className={botaoClasses({ tamanho: "lg" })}
           >
             <IconPlus className="h-4 w-4" /> Novo usuário
           </button>
         )}
       </div>
 
-      {erro && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-
       {form !== "none" && (
         <div className="mb-6">
           <UsuarioFormulario
             usuario={typeof form === "object" ? form.editar : undefined}
+            gerentes={usuarios.filter((u) => u.ativo && u.papeis.includes(Papel.GERENTE_COMERCIAL))}
             onClose={() => setForm("none")}
           />
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Usuário</th>
               <th className="px-4 py-2 font-medium">Papéis</th>
-              <th className="px-4 py-2 font-medium">Limite %</th>
+              <th className="px-4 py-2 font-medium">Taxa / mensalidade</th>
               <th className="px-4 py-2 font-medium">Último acesso</th>
               <th className="px-4 py-2 font-medium">Status</th>
               <th className="px-4 py-2 font-medium text-right">Ações</th>
@@ -83,9 +110,9 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
                   {u.papeis.map((p) => PAPEL_LABEL[p]).join(", ")}
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  {u.limiteDescontoPct == null ? "—" : `${u.limiteDescontoPct}%`}
+                  {u.limiteDescontoTaxaPct ?? 0}% / {u.limiteDescontoMensalidadePct ?? 0}%
                 </td>
-                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso)}</td>
+                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso, preferenciaFusoExibicao)}</td>
                 <td className="px-4 py-3">
                   <span
                     className={
@@ -107,26 +134,47 @@ export function UsuariosPainel({ usuarios }: { usuarios: UsuarioRow[] }) {
                             email: u.email,
                             papeis: u.papeis,
                             limiteDescontoPct: u.limiteDescontoPct,
+                            limiteDescontoTaxaPct: u.limiteDescontoTaxaPct,
+                            limiteDescontoMensalidadePct: u.limiteDescontoMensalidadePct,
+                            permissoes: u.permissoes,
+                            gerenteComercialId: u.gerenteComercialId,
                           },
                         })
                       }
-                      className="text-xs text-brand-700 hover:text-brand-800"
+                      className={botaoClasses({ variante: "fantasma", tamanho: "sm" })}
                     >
                       Editar
                     </button>
                     <button
-                      onClick={() => alternar(u.id)}
-                      className="text-xs text-gray-500 hover:text-gray-800"
+                      onClick={() => (u.ativo ? pedirDesativacao(u) : ativar(u.id))}
+                      disabled={acao.ocupado || desativando !== null}
+                      className={botaoClasses({ variante: u.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                     >
                       {u.ativo ? "Desativar" : "Ativar"}
                     </button>
                   </div>
+                  <FeedbackAcao erro={alvo === u.id ? acao.erro : null} sucesso={alvo === u.id ? acao.sucesso : undefined} className="mt-2" />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar o acesso de ${desativando.nome}?`}
+          confirmacao="desativação do acesso"
+          idempotente
+          acao={() => definirUsuarioAtivo(desativando.id, false)}
+          aoConcluir={() => desativado(desativando)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>{desativando.nome} ({desativando.email}) perde o acesso ao sistema na hora.</p>
+          {desativando.papeis.length > 0 && <p>Papéis que deixam de valer: {desativando.papeis.map((p) => PAPEL_LABEL[p]).join(", ")}.</p>}
+          <p>O cadastro e o histórico ficam guardados; para devolver o acesso, use &quot;Ativar&quot; nesta lista.</p>
+        </ConfirmarAcao>
+      )}
     </div>
   );
 }

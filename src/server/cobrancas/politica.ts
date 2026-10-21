@@ -9,8 +9,8 @@ import { REGUA, type DegrauRegua, type PassoRegua, type TipoAcao } from "./regua
 // traduz para o formato puro que o cérebro (`proximaAcao`) consome. Sem registro no banco,
 // vale a política de FÁBRICA (a própria REGUA, com os modos do doc 26 e estado DESLIGADA).
 //
-// LEIS (fora da config — doc 26/30): degrau `bloquear` NUNCA é AUTOMATICO (D+15 exige
-// aprovação humana) — imposta aqui na leitura, mesmo que o banco diga o contrário.
+// D+15 conserva seu ID histórico e o envio manual; a restrição D+30 é processada
+// pelo controle de acesso independente, sem usar o degrau de mensagem como autorização.
 
 export { MODOS_FABRICA, POLITICA_COBRANCA_NOME };
 
@@ -66,20 +66,9 @@ export async function carregarPoliticaRegua(): Promise<PoliticaCarregada> {
   });
   if (!p) return politicaDeFabrica();
 
-  const degraus: DegrauRegua[] = [];
-  const modoPorPasso = new Map<PassoRegua, ModoDegrau>();
-  const templateIdPorPasso = new Map<PassoRegua, string | null>();
-  for (const d of p.degraus) {
-    if (!d.ativo) continue;
-    const passo = PASSOS.find((x) => x === d.passo);
-    const tipo = TIPOS.find((x) => x === d.tipo);
-    if (!passo || !tipo) continue; // linha malformada nunca chega ao cérebro
-    const template = MODELOS_WHATSAPP.find((m) => m === d.template?.nome) ?? modeloFabrica(passo);
-    degraus.push({ passo, offsetDias: d.offsetDias, tipo, template, rotulo: d.rotulo });
-    // LEI: bloquear nunca automatiza (nem por engano de config).
-    modoPorPasso.set(passo, tipo === "bloquear" && d.modo === "AUTOMATICO" ? "MANUAL" : d.modo);
-    templateIdPorPasso.set(passo, d.templateId ?? null);
-  }
+  const { degraus, modoPorPasso, templateIdPorPasso } = traduzirDegrausPolitica(
+    p.degraus.map((d) => ({ passo: d.passo, offsetDias: d.offsetDias, tipo: d.tipo, rotulo: d.rotulo, modo: d.modo, ativo: d.ativo, templateId: d.templateId, templateNome: d.template?.nome ?? null })),
+  );
 
   return {
     id: p.id,
@@ -96,6 +85,43 @@ export async function carregarPoliticaRegua(): Promise<PoliticaCarregada> {
     killSwitch: p.killSwitch,
     numeroRemetenteId: p.numeroRemetenteId,
   };
+}
+
+/** Uma linha de degrau como está guardada (DegrauPolitica) ou como o formulário da política a manda salvar. */
+export interface LinhaDegrauPolitica {
+  passo: string;
+  offsetDias: number;
+  tipo: string;
+  rotulo: string;
+  modo: ModoDegrau;
+  ativo: boolean;
+  templateId: string | null;
+  /** Nome do template ligado ao degrau (para o modelo de fábrica correspondente); null = modelo de fábrica do passo. */
+  templateNome: string | null;
+}
+
+/**
+ * Linhas de degrau → o formato que o cérebro (`proximaAcao`) e o cron consomem: só os degraus ATIVOS e
+ * bem-formados, em ordem crescente de offset; D+15 e "bloquear" nunca automáticos. É a tradução da política
+ * guardada (carregarPoliticaRegua) e também a da política que o formulário vai salvar — a estimativa de alcance
+ * da ativação (docs/42 L2517) usa a mesma, para contar com a régua que vai valer.
+ */
+export function traduzirDegrausPolitica(linhas: readonly LinhaDegrauPolitica[]): Pick<PoliticaCarregada, "degraus" | "modoPorPasso" | "templateIdPorPasso"> {
+  const degraus: DegrauRegua[] = [];
+  const modoPorPasso = new Map<PassoRegua, ModoDegrau>();
+  const templateIdPorPasso = new Map<PassoRegua, string | null>();
+  const emOrdem = [...linhas].sort((a: LinhaDegrauPolitica, b: LinhaDegrauPolitica) => a.offsetDias - b.offsetDias);
+  for (const d of emOrdem) {
+    if (!d.ativo) continue;
+    const passo = PASSOS.find((x) => x === d.passo);
+    const tipo = passo === "D+15" ? "cobrar" : TIPOS.find((x) => x === d.tipo);
+    if (!passo || !tipo) continue; // linha malformada nunca chega ao cérebro
+    const template = MODELOS_WHATSAPP.find((m) => m === d.templateNome) ?? modeloFabrica(passo);
+    degraus.push({ passo, offsetDias: d.offsetDias, tipo, template, rotulo: passo === "D+15" ? "Cobrança final" : d.rotulo });
+    modoPorPasso.set(passo, (passo === "D+15" || tipo === "bloquear") && d.modo === "AUTOMATICO" ? "MANUAL" : d.modo);
+    templateIdPorPasso.set(passo, d.templateId ?? null);
+  }
+  return { degraus, modoPorPasso, templateIdPorPasso };
 }
 
 function modeloFabrica(passo: PassoRegua): ModeloWhatsapp {

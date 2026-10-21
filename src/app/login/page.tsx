@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +8,8 @@ import { z } from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { IconSchool } from "@tabler/icons-react";
+import { Botao } from "@/components/Botao";
+import { destinoAposLogin } from "@/lib/destino-interno";
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -25,17 +28,27 @@ export default function LoginPage() {
 
   async function onSubmit(data: Form) {
     setErro(null);
-    const res = await signIn("credentials", { ...data, redirect: false });
-    if (res?.error) {
+    let recusado = false;
+    try {
+      const res = await signIn("credentials", { ...data, redirect: false });
+      recusado = !!res?.error;
+    } catch {
+      // Queda de rede ou servidor fora: sem isto o botão voltava a "Entrar" e nada era dito (docs/42 /login #4).
+      setErro("Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.");
+      return;
+    }
+    if (recusado) {
       setErro("E-mail ou senha incorretos.");
       return;
     }
-    router.push("/home");
+    // Volta à página pedida antes do login (o guard manda `?callbackUrl=`), só se for caminho interno:
+    // destinoAposLogin recusa URL externa e `//…` (sem open redirect) e cai no /home (docs/42 /login #2).
+    router.push(destinoAposLogin(new URLSearchParams(window.location.search).get("callbackUrl")));
     router.refresh();
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-surface p-8">
         <div className="mb-6 flex items-center gap-2 text-lg font-medium">
           <IconSchool className="h-6 w-6 text-brand-600" />
@@ -44,42 +57,49 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1 block text-sm text-gray-600">E-mail</label>
+            <label htmlFor="login-email" className="mb-1 block text-sm text-gray-600">E-mail</label>
             <input
+              {...register("email")}
+              id="login-email"
               type="email"
               autoComplete="email"
-              {...register("email")}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              aria-invalid={errors.email ? true : undefined}
+              aria-describedby={errors.email ? "login-email-erro" : undefined}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-            )}
+            {/* Sempre montado e visível: região aria-live precisa existir antes do texto mudar (display:none a tira da árvore).
+                Vazio, só a margem sai (empty:mt-0) — sem espaço sobrando e sem esconder a região. */}
+            <p id="login-email-erro" aria-live="polite" className="mt-1 text-xs text-red-600 empty:mt-0">{errors.email?.message}</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-gray-600">Senha</label>
+            <label htmlFor="login-senha" className="mb-1 block text-sm text-gray-600">Senha</label>
             <input
+              {...register("senha")}
+              id="login-senha"
               type="password"
               autoComplete="current-password"
-              {...register("senha")}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              aria-invalid={errors.senha ? true : undefined}
+              aria-describedby={errors.senha ? "login-senha-erro" : undefined}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
-            {errors.senha && (
-              <p className="mt-1 text-xs text-red-600">{errors.senha.message}</p>
-            )}
+            <p id="login-senha-erro" aria-live="polite" className="mt-1 text-xs text-red-600 empty:mt-0">{errors.senha?.message}</p>
           </div>
 
-          {erro && <p className="text-sm text-red-600">{erro}</p>}
+          {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
-          >
+          <Botao type="submit" tamanho="lg" className="mt-2" disabled={isSubmitting}>
             {isSubmitting ? "Entrando…" : "Entrar"}
-          </button>
+          </Botao>
         </form>
+
+        {/* docs/42 /login #3: ainda não há reset de senha da equipe; a tela diz qual é o caminho. */}
+        <p className="mt-4 text-sm text-gray-600">Esqueceu a senha? Peça a redefinição a um administrador.</p>
       </div>
+      {/* docs/42 /login #5: o aluno que chega aqui não descobre sozinho que o acesso dele é outro. */}
+      <p className="mt-4 text-sm text-gray-600">
+        É aluno? <Link href="/portal-aluno/entrar" className="text-brand-700 underline">Acesse a área do aluno</Link>
+      </p>
     </div>
   );
 }

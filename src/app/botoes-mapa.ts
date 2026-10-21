@@ -1,0 +1,1279 @@
+// Mapeamento travado da migração E1 (docs/42-auditoria-frontend-ux.md): para cada tela das áreas
+// migradas e cada componente de src/components, cada chamada a botaoClasses(...) — na ordem do
+// fonte — com o rótulo que a localiza (texto visível do botão/link, ou o nome da constante) e a
+// variante/tamanho decididos na migração. O botão que usa uma constante de botão (btnPri,
+// principal…) aparece com o nome dela.
+//
+// Regra aplicada na migração (preserva a intenção de cada botão):
+//   fundo da marca (ou verde de sucesso) + texto branco → primario; borda neutra → secundario;
+//   borda/fundo vermelho → perigo; borda verde → primario; borda azul → secundario.
+//   py-1 → sm; py-1.5 ou sem py → md; py-2 / p-2 → lg.
+// Hierarquia (depois da migração): ação destrutiva ou de recusa (Rejeitar, Remover, Revogar,
+// Descartar, Desativar, Cancelar <registro>…) é perigo; num botão que alterna (Desativar/Ativar) a
+// variante acompanha o rótulo ("perigo|fantasma"). Trava em botoes.test.ts (rotuloDestrutivo).
+// Trocar a variante ou o tamanho de um botão (ou incluir/remover um) quebra src/app/botoes.test.ts;
+// o diff do teste mostra o mapa real para a revisão decidir.
+export const MAPA_BOTOES: Record<string, string[]> = {
+  "aria/_componentes/Abas.tsx": [
+    "<Link> → primario|fantasma/md",
+  ],
+  "aria/_componentes/BarraPublicar.tsx": [
+    "<Botao> Descartar → perigo/md",
+    "<Botao> Publicar → primario/md",
+  ],
+  "aria/_componentes/Cabecalho.tsx": [
+    "<Botao> Pausar → secundario/md",
+    "<Botao> Reativar → primario/md",
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Pausar a Aria → primario/md",
+  ],
+  "aria/_componentes/Comportamento.tsx": [
+    "<Botao> Remover → perigo/sm",
+    "<Botao> Adicionar exemplo → secundario/md",
+  ],
+  "aria/_componentes/Confianca.tsx": [
+    "<Botao> Ligar por 24 horas → secundario/md",
+    "<Botao> Ligar por 7 dias → secundario/md",
+    "<Botao> Ligar até eu desligar → secundario/md",
+    "<Botao> Desligar supervisão → primario/md",
+  ],
+  "aria/_componentes/Conhecimento.tsx": [
+    "<Botao> Arquivar → fantasma/sm",
+    "<Botao> Adicionar fonte → primario/md",
+    "<Botao> Remover → perigo/sm",
+    "<Botao> Adicionar pergunta → secundario/md",
+  ],
+  "aria/_componentes/Playground.tsx": [
+    "<Botao> Testar → primario/md",
+    "<Botao> Limpar conversa → secundario/md",
+  ],
+  "aria/_componentes/Historico.tsx": [
+    "<Botao> Aprovar → primario/sm",
+    "<Botao> Rejeitar → perigo/sm",
+    "<Botao> Desfazer → secundario/sm",
+    "<Botao> Filtrar → secundario/md",
+  ],
+  "aria/_componentes/Permissoes.tsx": [
+    "<Botao> Supervisão → secundario/sm",
+    "<Botao> Equilibrado → secundario/sm",
+    "<Botao> Autônomo → secundario/sm",
+    "<Botao> nome → fantasma/sm",
+  ],
+  "aria/_componentes/Salvar.tsx": [
+    "<Botao> Salvar rascunho → primario/md",
+  ],
+  "aria/_componentes/VisaoGeral.tsx": [
+    "<Link> key p.dias → primario|fantasma/md",
+  ],
+  "configuracao/catalogo/EntradasOfertas.tsx": [
+    "<button> Salvando… · Salvar regras da oferta → secundario/md",
+  ],
+  "configuracao/catalogo/IdiomasPainel.tsx": [
+    "<button> Desativar · Ativar → perigo|fantasma/sm",
+    "<button> Adicionar → primario/lg",
+  ],
+  "configuracao/catalogo/ModalidadeFormulario.tsx": [
+    "<button> Salvando… · Salvar modalidade → primario/lg",
+    "<button> Cancelar → secundario/lg",
+  ],
+  "configuracao/catalogo/ModalidadesPainel.tsx": [
+    "<button> Nova modalidade → primario/md",
+    "<button> Editar → fantasma/sm",
+  ],
+  "configuracao/catalogo/NiveisPainel.tsx": [
+    "<button> Adicionar nível → primario/lg",
+  ],
+  "configuracao/catalogo/PrecosPainel.tsx": [
+    "<button> Novo preço → primario/md",
+    "<button> Salvando… · Salvar preço → primario/lg",
+    "<button> Cancelar → secundario/lg",
+    "<button> Desativar · Reativar → perigo|fantasma/sm",
+  ],
+  "configuracao/catalogo/ProdutosPainel.tsx": [
+    "<button> Adicionar produto → primario/lg",
+  ],
+  "configuracao/contratos/DecidirModelo.tsx": [
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "configuracao/contratos/ModeloFormulario.tsx": [
+    "<button> Remover campo → perigo/sm",
+    "<button> Adicionar campo → secundario/sm",
+    "<button> Remover seção → perigo/sm",
+    "<button> Adicionar seção → secundario/sm",
+    "<button> Remover regra → perigo/sm",
+    "<button> Adicionar regra de assinatura → secundario/sm",
+    "<button> Salvando proposta… · Salvar proposta para aprovação → primario/lg",
+    "<button> Reenviar a proposta anterior → secundario/lg",
+    "<button> Descartar a tentativa anterior → perigo/lg",
+  ],
+  "configuracao/contratos/page.tsx": [
+    "<Link> Preparar novo modelo → secundario/md",
+  ],
+  "configuracao/crm/distribuicao/SetorPainel.tsx": [
+    "<button> Copiar horário → secundario/sm",
+    "<button> Salvando… · Salvar setor → primario/md",
+  ],
+  "configuracao/crm/ia/IaPainel.tsx": [
+    "<button> Salvar → primario/md",
+  ],
+  "configuracao/crm/metas/page.tsx": [
+    "<Botao> Salvar meta → primario/md",
+  ],
+  "configuracao/crm/respostas/RespostasPainel.tsx": [
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar resposta · Criar resposta → primario/md",
+  ],
+  "configuracao/crm/tags-campos/TagsCamposPainel.tsx": [
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar tag · Criar tag → primario/md",
+    "<button> Editar → secundario/sm",
+    "<button> Arquivar → secundario/sm",
+    "<button> Salvando… · Salvar campo · Criar campo → primario/md",
+  ],
+  "configuracao/migracao/PreparacaoMigracaoPainel.tsx": [
+    "<button> Lendo… · Ler arquivo → secundario/md",
+    "<button> Preparando… · Preparar lote → primario/lg",
+  ],
+  "configuracao/migracao/[loteId]/AplicarCadastroMigracao.tsx": [
+    "<button> Processando… · Ensaiar cadastros → secundario/md",
+    "<button> Processando… · Aplicar cadastros confirmados → primario/md",
+  ],
+  "configuracao/migracao/[loteId]/AplicarVinculoMigracao.tsx": [
+    "<button> Remover → perigo/sm",
+    "<button> Adicionar fato → secundario/sm",
+    "<button> Aplicando… · Aplicar vínculo conferido → primario/sm",
+  ],
+  "configuracao/migracao/[loteId]/EnsaioVinculoMigracao.tsx": [
+    "<button> Conferindo… · Ensaiar vínculo → secundario/sm",
+    "<button> Salvar correspondência → secundario/sm",
+    "<button> Revogar correspondência → perigo/sm",
+  ],
+  "configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx": [
+    "<button> Registrando… · Registrar proposta → primario/lg",
+    "<button> Registrando… · Rejeitar · Aprovar e aplicar · Decidir → perigo|secundario/sm",
+    "<button> Registrando… · Registrar resolução → secundario/sm",
+  ],
+  "configuracao/operacao/OperacaoFormulario.tsx": [
+    "<button> Salvando… · Salvar configuração → primario/lg",
+  ],
+  "configuracao/operacao/PrazosEntregaReposicaoFormulario.tsx": [
+    "<button> Salvando… · Salvar prazos de reposição → secundario/md",
+  ],
+  "configuracao/operacao/PrazosPortalFormulario.tsx": [
+    "<button> Salvando… · Salvar prazos do portal → secundario/md",
+  ],
+  "configuracao/operacao/avisos-diario/AvisosDiarioFormulario.tsx": [
+    "<button> Salvando… · Salvar avisos → secundario/md",
+  ],
+  "configuracao/paises/PaisFormulario.tsx": [
+    "<button> Adicionar → fantasma/sm",
+    "<button> Salvando… · Salvar país → primario/lg",
+    "<button> Cancelar → secundario/lg",
+  ],
+  "configuracao/paises/PaisesPainel.tsx": [
+    "<button> Novo país → primario/lg",
+    "<button> Editar → fantasma/sm",
+    "<button> key a.alvo → ?/sm",
+    "<button> Catálogo → fantasma/sm",
+  ],
+  "configuracao/turmas/ImportarTurmasModal.tsx": [
+    "const btnPri → primario/lg",
+    "const btnSec → secundario/lg",
+    "<button> Importar turmas → btnSec",
+    "<button> Fechar · Cancelar → btnSec",
+    "<button> Enviando… · Importar → btnPri",
+  ],
+  "configuracao/turmas/TurmaFormulario.tsx": [
+    "<button> Salvando… · Salvar turma → primario/lg",
+    "<button> Cancelar → secundario/lg",
+  ],
+  "configuracao/turmas/TurmasPainel.tsx": [
+    "<button> Nova turma → primario/lg",
+    "<button> Descartar alterações → perigo/lg",
+    "<button> Continuar editando → secundario/lg",
+    "<button> Editar → fantasma/sm",
+  ],
+  "configuracao/usuarios/UsuarioFormulario.tsx": [
+    "<button> Salvando… · Salvar usuário → primario/lg",
+    "<button> Cancelar → secundario/lg",
+  ],
+  "configuracao/usuarios/UsuariosPainel.tsx": [
+    "<button> Novo usuário → primario/lg",
+    "<button> Editar → fantasma/sm",
+    "<button> Desativar · Ativar → perigo|fantasma/sm",
+  ],
+  "configuracao/whatsapp/AvisosAgendaPainel.tsx": [
+    "<button> Salvando… · Salvar canal de agenda → primario/md",
+  ],
+  "configuracao/whatsapp/NumerosPainel.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Novo número → btnPri",
+    "<button> Conectar → btnSec",
+    "<button> Desconectar → btnSec",
+    "<button> Editar → btnSec",
+    "<button> Salvando… · Salvar número → btnPri",
+    "<button> Salvando… · Salvar setores → btnPri",
+    "<button> Fechar → btnSec",
+    "<button> Atualizar QR → btnSec",
+    "<button> Gerar código → btnSec",
+  ],
+  "configuracao/whatsapp/numeros/PerfilNumeroPainel.tsx": [
+    "const btn → primario/sm",
+    "<button> Salvando… · Salvar perfil → btn",
+    "<button> Salvando… · Salvar privacidade → btn",
+    "<button> Salvando… · Salvar temporárias → btn",
+  ],
+  "configuracao/whatsapp/PoliticaPainel.tsx": [
+    "const btnPri → primario/md",
+    "<button> Kill switch LIGADO — destravar · Kill switch → perigo|secundario/md",
+    "<button> salvar · Salvando… · Salvar política → btnPri",
+  ],
+  "configuracao/whatsapp/TemplatesPainel.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Novo template → btnPri",
+    "<button> Editar → btnSec",
+    "<button> Salvando… · Salvar template → btnPri",
+  ],
+  "contatos/FichaContato.tsx": [
+    "const classeFiltro → primario|fantasma/sm",
+    "<Botao> Nova oportunidade → primario/md",
+    "<Botao> × → fantasma/sm",
+    "<Botao> Adicionar → secundario/lg",
+    "<Botao> Salvar dados → primario/lg",
+    "<Botao> Registrar opt-out → perigo/lg",
+    "<Link> Tudo → classeFiltro",
+    "<Link> Notas → classeFiltro",
+    "<Link> Etapas → classeFiltro",
+    "<Link> Alterações → classeFiltro",
+    "<Botao> Registrar nota → primario/md",
+    "<Botao> Salvar campos → primario/lg",
+  ],
+  "contatos/ImportarContatos.tsx": [
+    "<Botao> Importar → secundario/lg",
+    "<Botao> Fechar · Cancelar → fantasma/lg",
+    "<Botao> Lendo… · Ver prévia → primario/lg",
+    "<Botao> Importando… → primario/lg",
+  ],
+  "contatos/ListaContatos.tsx": [
+    "<a> Exportar → secundario/lg",
+    "<button> Filtrar → secundario/lg",
+    "<Botao> Limpar seleção → fantasma/md",
+    "<Link> Limpar filtros → secundario/md",
+  ],
+  "contatos/MesclarContatos.tsx": [
+    "<Botao> Revisar mesclagem → primario/lg",
+    "<Botao> Cancelar → fantasma/lg",
+    "<Botao> Mesclar selecionados → secundario/lg",
+    "<Botao> Mesclar → secundario/md",
+  ],
+  "diario/DiarioAulas.tsx": [
+    "const botao → primario/lg",
+    "<button> Registrar aula → botao",
+    "<button> Descartar e usar a nova data → perigo/lg",
+    "<button> Manter a data anterior → secundario/lg",
+    "<button> Salvando… · Salvar aula → botao",
+    "<button> Cancelar → secundario/lg",
+    "<Link> Completar diário do encontro → secundario/lg",
+    "<button> Editar registro → secundario/lg",
+  ],
+  "diario/encontros/[id]/ChamadaEncontro.tsx": [
+    "<button> Salvando… · Salvar lançamento pendente · Registrar diário → primario/lg",
+  ],
+  "diario/encontros/[id]/OcorrenciaParticular.tsx": [
+    "<button> Registrando… · Registrar nova versão · Registrar ocorrência → primario/lg",
+  ],
+  "diario/encontros/[id]/PublicarGravacao.tsx": [
+    "<button> Publicando… · Publicar gravação e concluir aula → primario/lg",
+  ],
+  "diario/encontros/[id]/SolicitarExcecao.tsx": [
+    "<button> Solicitar conclusão excepcional → secundario/lg",
+  ],
+  "diario/encontros/[id]/cancelamento/CancelamentoParticular.tsx": [
+    "<button> Solicitar cancelamento → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+  ],
+  "diario/encontros/[id]/correcao/CorrecaoAula.tsx": [
+    "<button> Recarregar fonte → secundario/lg",
+    "<button> Registrando… · Registrar proposta de correção → primario/lg",
+    "<button> Conferindo… · Conferir impactos da proposta → secundario/lg",
+    "<button> Conferindo… · Conferir impactos desta proposta → secundario/lg",
+    "<button> Publicar correção → primario/lg",
+    "<button> Publicando… · Confirmar publicação → primario/lg",
+    "<button> Cancelar → secundario/lg",
+    "<button> Rejeitar proposta → perigo/lg",
+    "<button> Registrando… · Confirmar rejeição → perigo/lg",
+    "<button> Cancelar → secundario/lg",
+    "<button> Carregando… · Carregar propostas anteriores → secundario/lg",
+  ],
+  "diario/encontros/[id]/correcao/CorrecaoFonteGravacao.tsx": [
+    "<button> Preparando… · Propor nova fonte para revisão → secundario/lg",
+  ],
+  "diario/encontros/[id]/remarcacao/RemarcacaoParticular.tsx": [
+    "<button> Conferir e submeter proposta → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+  ],
+  "diario/excecoes-gravacao/DecidirExcecao.tsx": [
+    "<button> Aprovar exceção e concluir aula → primario/lg",
+    "<button> Rejeitar solicitação → perigo/lg",
+  ],
+  "diario/page.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
+  "diario/regularizacoes-gravacao/RegularizacoesGravacao.tsx": [
+    "<button> Preparar proposta para revisão → secundario/lg",
+    "<button> Aprovar fonte → secundario/lg",
+    "<button> Rejeitar → perigo/lg",
+  ],
+  "diario/regularizacoes-gravacao/page.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
+  "diario/regularizacoes/GerirDesignacoes.tsx": [
+    "<button> Fechar designações · Ver designações · Gerir designações → fantasma/sm",
+    "<button> Atualizar responsáveis e histórico → fantasma/sm",
+    "<button> Designar → primario/lg",
+    "<button> Revogar designação → perigo/lg",
+  ],
+  "diario/reposicoes/ExcecaoAgendaReposicao.tsx": [
+    "<button> Enviando… · Propor exceção → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "diario/reposicoes/OperacaoEntregaReposicao.tsx": [
+    "<button> Repetir substituição · Confirmar substituição · Confirmar de → secundario/lg",
+    "<button> Usar gravação da aula original e abrir prazo → secundario/lg",
+    "<button> Publicar e abrir prazo → secundario/lg",
+    "<button> Prorrogar prazo conferido → secundario/lg",
+    "<button> Liberar entrega específica → secundario/lg",
+    "<button> Confirmar indisponibilidade e pausar prazo → secundario/lg",
+    "<button> Descartar relato sem pausar → perigo/lg",
+    "<button> Retomar material e prazo → secundario/lg",
+  ],
+  "diario/reposicoes/RelatarIndisponibilidadeReposicao.tsx": [
+    "<button> Registrando… · Registrar relato → secundario/lg",
+  ],
+  "diario/reposicoes/ReposicaoDocente.tsx": [
+    "<button> Registrar diário da particular → secundario/lg",
+    "<button> Confirmar reposição → secundario/lg",
+    "<button> Validando… · Confirmar reposição → secundario/lg",
+    "<button> Pedir correção ao aluno → secundario/lg",
+  ],
+  "diario/reposicoes/ReposicoesEquipe.tsx": [
+    "<button> Registrando… · Registrar pedido → secundario/lg",
+    "<button> Conferindo… · Conferir agenda → secundario/lg",
+    "<button> Confirmar agendamento → secundario/lg",
+    "<button> Propor cancelamento → secundario/lg",
+    "<button> Propor remarcação → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "diario/reposicoes/[id]/troca-fonte/TrocaFonteReposicao.tsx": [
+    "<button> Preparar para decisão independente → secundario/lg",
+    "<button> Aprovar adoção → secundario/lg",
+    "<button> Rejeitar → perigo/lg",
+  ],
+  "academico/MudancasAcademicasPainel.tsx": [
+    "const botao → secundario/lg",
+    "const principal → primario/lg",
+    "<button> Enviar para aprovação pedagógica → principal",
+    "<button> Registrar parecer docente → botao",
+    "<button> Aprovar mudança → principal",
+    "<button> Rejeitar solicitação → perigo/lg",
+    "<button> Executar mudança aprovada → principal",
+    "<button> Confirmar cancelamento da solicitação → perigo/lg",
+  ],
+  "academico/admissoes/[id]/JanelaFormulario.tsx": [
+    "<button> Preparando… · Preparar para decisão → primario/lg",
+    "<button> Aprovar janela → secundario/lg",
+    "<button> Rejeitar janela → perigo/lg",
+  ],
+  "academico/admissoes/excecoes/[reservaId]/FormularioExcecao.tsx": [
+    "<button> Registrando… · Registrar decisão · Propor exceção → secundario/lg",
+  ],
+  "academico/admissoes/page.tsx": [
+    "<button> Buscar → secundario/lg",
+  ],
+  "academico/avaliacoes/[alocacaoId]/[codigo]/Formularios.tsx": [
+    "<button> Registrando… · Registrar versão → primario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/avaliacoes/[alocacaoId]/[codigo]/designacao/Formulario.tsx": [
+    "<button> Buscar → secundario/lg",
+    "<button> Registrando… · revogar · Revogar designação · Registrar desi → perigo|secundario/lg",
+  ],
+  "academico/avaliacoes/[alocacaoId]/equivalencia/PrepararEquivalenciaTransferencia.tsx": [
+    "<button> Conferindo… · Atualizar requisitos · Carregar requisitos e f → secundario/lg",
+    "<button> Conferindo… · Revisar mapeamento selecionado → secundario/lg",
+    "<button> Registrando… · Registrar proposta para decisão → primario/lg",
+  ],
+  "academico/avaliacoes/[alocacaoId]/fechamento/ConfirmarFechamento.tsx": [
+    "<button> Confirmando… · Confirmar fechamento → primario/lg",
+  ],
+  "academico/avaliacoes/[alocacaoId]/fechamento/ExcecaoFrequencia.tsx": [
+    "<button> Registrando… · Registrar nova proposta · Registrar proposta → primario/lg",
+    "<button> Registrando… · Registrar decisão → primario/lg",
+  ],
+  "academico/calendario/[id]/DecidirCalendario.tsx": [
+    "<button> Aprovar e publicar calendário → primario/lg",
+    "<button> Rejeitar proposta → perigo/lg",
+  ],
+  "academico/calendario/[id]/replanejamento/EditorRevisao.tsx": [
+    "<button> Remover ajuste → perigo/lg",
+    "<button> Adicionar ajuste → secundario/lg",
+    "<button> Conferindo… · Conferir datas e conflitos → primario/lg",
+  ],
+  "academico/calendario/[id]/replanejamento/SalvarRevisao.tsx": [
+    "<button> Registrando… · Guardar revisão → primario/lg",
+    "<button> Consultar novamente a agenda → fantasma/sm",
+  ],
+  "academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx": [
+    "<button> Registrando… · Aprovar e aplicar conjunto → primario/lg",
+    "<button> Rejeitar revisão → perigo/lg",
+  ],
+  "academico/calendario/novo/PrepararCalendario.tsx": [
+    "<button> Remover da proposta → perigo/lg",
+    "<button> Adicionar período → secundario/lg",
+    "<button> Preparando… · Preparar calendário para revisão → primario/lg",
+  ],
+  "academico/calendario/page.tsx": [
+    "<Link> Preparar nova versão → secundario/lg",
+  ],
+  "academico/correcoes/PrepararCasosHistoricos.tsx": [
+    "<button> Preparar casos de revisão → secundario/lg",
+  ],
+  "academico/correcoes/[lancamentoId]/Formularios.tsx": [
+    "<button> Registrando… · Registrar proposta → primario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/correcoes/revisoes/[casoId]/ResolucaoRevisaoProgressao.tsx": [
+    "<button> Conferir prévia atual → secundario/lg",
+    "<button> Propor resolução → primario/lg",
+    "<button> Aprovar proposta → primario/lg",
+    "<button> Rejeitar proposta → perigo/lg",
+  ],
+  "academico/equivalencias/[propostaId]/AcoesEquivalencia.tsx": [
+    "<button> Registrando… · Registrar decisão → primario/lg",
+    "<button> Efetivando… · Efetivar transferência → primario/lg",
+  ],
+  "academico/grades/[id]/DecidirGrade.tsx": [
+    "<button> Aprovar e publicar encontros → primario/lg",
+    "<button> Rejeitar proposta → perigo/lg",
+  ],
+  "academico/grades/nova/PrepararGradeFormulario.tsx": [
+    "<button> Preparando… · Preparar para revisão → primario/lg",
+  ],
+  "academico/grades/nova/page.tsx": [
+    "<button> Buscar turmas → secundario/lg",
+  ],
+  "academico/grades/page.tsx": [
+    "<Link> Preparar nova grade → secundario/lg",
+  ],
+  "academico/indisponibilidades/DecisaoAusencia.tsx": [
+    "<button> Aprovar indisponibilidade → primario/lg",
+    "<button> Rejeitar → perigo/lg",
+  ],
+  "academico/indisponibilidades/SolicitarAusencia.tsx": [
+    "<button> Registrando… · Enviar solicitação → primario/lg",
+  ],
+  "academico/modalidades/[id]/quantidade/AlterarQuantidadeAulas.tsx": [
+    "<button> Conferindo… · Conferir impactos → secundario/lg",
+    "<button> Preparando… · Preparar revisão conjunta → primario/lg",
+  ],
+  "academico/modalidades/[id]/quantidade/propostas/[propostaId]/DecidirQuantidadeAulas.tsx": [
+    "<button> Aprovar e aplicar → primario/lg",
+    "<button> Rejeitar → perigo/lg",
+  ],
+  "academico/recuperacoes/AgendaPublicada.tsx": [
+    "<button> Atualizar situação → secundario/lg",
+  ],
+  "academico/recuperacoes/[realizacaoId]/Formularios.tsx": [
+    "<button> Salvando… · Salvar versão → secundario/lg",
+    "<button> Conferindo… · Registrar decisão → secundario/lg",
+  ],
+  "academico/recuperacoes/correcoes/[notaId]/Formularios.tsx": [
+    "<button> Conferindo… · Conferir proposta e impactos → secundario/lg",
+  ],
+  "academico/recuperacoes/planos/AutorizarPreparacao.tsx": [
+    "<button> Autorizando… · Autorizar preparação → secundario/lg",
+  ],
+  "academico/recuperacoes/planos/Formularios.tsx": [
+    "<button> Enviando… · Propor plano → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/recuperacoes/planos/[propostaId]/Formularios.tsx": [
+    "<button> Registrando… → secundario/lg",
+  ],
+  "academico/recuperacoes/planos/[propostaId]/PreviaAgenda.tsx": [
+    "<button> Conferindo… · Conferir horário → secundario/lg",
+  ],
+  "academico/recuperacoes/planos/[propostaId]/autorizacao-reserva/Formulario.tsx": [
+    "<button> Autorizando… · Autorizar pré-reserva → secundario/lg",
+    "<button> Reservando… · Reservar tentativa autorizada → secundario/lg",
+  ],
+  "academico/recuperacoes/tentativas/[itemReservaId]/autorizacao/Formulario.tsx": [
+    "<button> Autorizando… · Autorizar realização especial → secundario/lg",
+  ],
+  "academico/recuperacoes/tentativas/[itemReservaId]/designacao/PreviaSubstituicao.tsx": [
+    "<button> Conferindo… · Conferir disponibilidade → secundario/lg",
+  ],
+  "academico/recuperacoes/tentativas/[itemReservaId]/designacao/page.tsx": [
+    "<button> Buscar → secundario/lg",
+  ],
+  "academico/recuperacoes/tentativas/[itemReservaId]/designacao/propostas/DecidirSubstituicao.tsx": [
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/regras/[nivelId]/Formularios.tsx": [
+    "<button> Adicionar avaliação → secundario/lg",
+    "<button> Remover última avaliação → perigo/lg",
+    "<button> Salvando… · Enviar proposta para conferência → primario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/regras/page.tsx": [
+    "<button> Buscar → secundario/lg",
+  ],
+  "academico/regras/turmas/[turmaId]/Formularios.tsx": [
+    "<button> Registrando… · Registrar proposta → primario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/regras/turmas/[turmaId]/historica/ConferenciaRegraHistorica.tsx": [
+    "<button> Registrando… · Propor conferência → secundario/lg",
+    "<Botao> Revisando… · Revisar → secundario/md",
+    "<button> Registrar decisão → primario/lg",
+  ],
+  "academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx": [
+    "<button> Registrando… · Registrar proposta → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "academico/reposicoes/page.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
+  "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/FormularioOcorrencia.tsx": [
+    "<button> Registrando… · Registrar ocorrência → secundario/lg",
+  ],
+  "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/SegundaChamadaPainel.tsx": [
+    "<button> Enviar proposta → primario/lg",
+    "<button> Registrar decisão → primario/lg",
+    "<button> Disponibilizar e iniciar prazo → secundario/lg",
+  ],
+  "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes/Formulario.tsx": [
+    "<button> Autorizando… · Autorizar realização especial → secundario/lg",
+  ],
+  "academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/ResolverImpedimento.tsx": [
+    "<Botao> Registrando… · Confirmar resolução → secundario/lg",
+  ],
+  "academico/segundas-chamadas/minhas/[reservaId]/Formulario.tsx": [
+    "<button> Registrando… · Registrar realização → secundario/lg",
+    "<button> Submetendo… · Submeter nota para conferência → secundario/lg",
+  ],
+  "academico/segundas-chamadas/propostas/[propostaId]/agenda/Formulario.tsx": [
+    "<button> Salvando… · Registrar decisão → secundario/lg",
+    "<button> Conferindo… · Conferir prévia → secundario/lg",
+    "<button> Enviando… · Enviar proposta para decisão → secundario/lg",
+  ],
+  "academico/segundas-chamadas/propostas/[propostaId]/designacao/Formulario.tsx": [
+    "<button> Designando… · Designar professor → secundario/lg",
+  ],
+  "academico/segundas-chamadas/propostas/[propostaId]/designacao/page.tsx": [
+    "<button> Buscar → secundario/lg",
+  ],
+  "academico/segundas-chamadas/reservas/[reservaId]/cancelamento/Formulario.tsx": [
+    "<button> Salvando… · Registrar decisão · Enviar proposta → secundario/lg",
+  ],
+  "academico/segundas-chamadas/reservas/[reservaId]/remarcacao/Formulario.tsx": [
+    "<button> Salvando… · Registrar decisão · Enviar proposta → secundario/lg",
+  ],
+  "academico/segundas-chamadas/reservas/[reservaId]/substituicao/Formulario.tsx": [
+    "<button> Salvando… · Registrar decisão · Enviar proposta → secundario/lg",
+  ],
+  "alunos/AlunosLista.tsx": [
+    "<Link> Cadastrar aluno → primario/lg",
+    "<button> Buscando… · Buscar → secundario/md",
+  ],
+  "alunos/ImportarAlunosModal.tsx": [
+    "const btnPri → primario/lg",
+    "const btnSec → secundario/lg",
+    "<button> Cadastrar por lote → btnSec",
+    "<button> Fechar · Cancelar → btnSec",
+    "<button> Importar outra planilha → btnPri",
+    "<button> Enviando… · Importar → btnPri",
+  ],
+  "alunos/[id]/FichaAluno.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/md",
+    "<button> Editar dados → btnSec",
+    "<button> Pausar → btnSec",
+    "<button> Encerrar → perigo/md",
+    "<Link> Propor retomada → btnPri",
+    "<button> Encerrar → perigo/md",
+    "<Link> Turma, nível e solicitações acadêmicas · Consultar solicitaç → btnSec",
+    "<button> Cancelar → btnSec",
+    "<button> Salvando… · Salvar alterações → btnPri",
+    "<button> Confirmando… · Confirmar pausa → btnPri",
+    "<button> Cancelar → btnSec",
+    "<button> Confirmando… · Confirmar encerramento → perigo/md",
+    "<button> Cancelar → btnSec",
+    "<Link> Preparar alocação por matrícula → btnPri",
+  ],
+  "alunos/[id]/creditos/[creditoId]/DevolucaoCredito.tsx": [
+    "<button> Guardar proposta → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+    "<button> Cancelar e liberar reserva → perigo/lg",
+    "<button> Registrar execução → secundario/lg",
+    "<button> Conciliar resultado → secundario/lg",
+  ],
+  "alunos/[id]/creditos/[creditoId]/PropostaUsoCredito.tsx": [
+    "<button> Guardar proposta para conferência → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+  ],
+  "alunos/[id]/financeiro/ConcluirMatriculas.tsx": [
+    "<button> Concluindo… · Concluir matrícula → primario/lg",
+  ],
+  "alunos/[id]/financeiro/FichaFinanceira.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<Link> Compensar dias sem oferta → btnSec",
+    "<Link> Histórico da regularização → btnSec",
+    "<button> Informar pagamento · Registrar recebimento → btnSec",
+    "<button> Renegociar / ajustar → btnSec",
+    "<button> Salvando… · Aplicar ajuste → btnPri",
+    "<button> Cancelar → secundario/md",
+  ],
+  "alunos/[id]/financeiro/ResumoFinanceiroComercial.tsx": [
+    "<button> Enviando… · Solicitar desconto → secundario/md",
+  ],
+  "alunos/[id]/movimentacoes/AcertoEncerramento.tsx": [
+    "<button> Carregar / atualizar conferência → secundario/lg",
+    "<button> Conferir se o rascunho continua atual → secundario/lg",
+    "<button> Calcular componente mensal → secundario/lg",
+    "<button> Salvar rascunho financeiro → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/CompensacoesPainel.tsx": [
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Carregar compensações → secundario/lg",
+    "<button> Adicionar dia → secundario/lg",
+    "<button> Remover → perigo/lg",
+    "<button> Enviar proposta para aprovação → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/ComprasHorasPainel.tsx": [
+    "<button> Consultar compras de horas → secundario/lg",
+    "<button> Reservar horas → secundario/lg",
+    "<button> Registrar compra de horas → secundario/lg",
+    "<button> Conferir realização → secundario/lg",
+    "<button> Confirmar consumo pela realização → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/CumprimentoPainel.tsx": [
+    "<button> Enviar conferência de cumprimento → secundario/lg",
+    "<button> Registrar decisão de cumprimento → secundario/lg",
+    "<button> Atualizar cumprimentos → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/DecisaoAcerto.tsx": [
+    "<button> Registrar decisão → primario/lg",
+  ],
+  "alunos/[id]/movimentacoes/EfetivarAcerto.tsx": [
+    "<button> Efetivando… · Efetivar encerramento aprovado → perigo/lg",
+  ],
+  "alunos/[id]/movimentacoes/LiberacaoHoras.tsx": [
+    "<button> Preparar proposta para conferência → secundario/lg",
+    "<button> Confirmar decisão → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/MovimentacoesPainel.tsx": [
+    "<button> Consultar propostas → secundario/lg",
+    "<button> Conferir impactos → secundario/lg",
+    "<button> Próximas propostas → secundario/lg",
+    "<button> Aprovar proposta → secundario/lg",
+    "<button> Rejeitar proposta → perigo/lg",
+    "<button> Aplicar proposta aprovada → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/NovaPausa.tsx": [
+    "<button> Conferir impactos → secundario/lg",
+    "<button> Registrar proposta para decisão independente → primario/lg",
+  ],
+  "alunos/[id]/movimentacoes/NovaRetomada.tsx": [
+    "<button> Consultar períodos suspensos → secundario/lg",
+    "<button> Conferir proposta completa → secundario/lg",
+    "<button> Registrar proposta para decisão independente → primario/lg",
+  ],
+  "alunos/[id]/movimentacoes/NovoEncerramento.tsx": [
+    "<button> Registrar pedido de encerramento → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/RecomposicaoPainel.tsx": [
+    "<button> Consultar rascunho de recomposição → secundario/lg",
+    "<button> Conferir atualidade → secundario/lg",
+    "<button> Aplicar programação aprovada → secundario/lg",
+    "<button> Registrar decisão da recomposição → secundario/lg",
+    "<button> Conferir proposta de recomposição → secundario/lg",
+    "<button> Salvar versão da recomposição → secundario/lg",
+  ],
+  "alunos/[id]/movimentacoes/VinculosLegados.tsx": [
+    "<button> Consultar vínculos sem matrícula → secundario/lg",
+    "<button> Confirmar vínculo conferido → secundario/lg",
+  ],
+  "alunos/[id]/portal/painel.tsx": [
+    "<button> Preparar convite → primario/lg",
+    "<button> Preparar validação → secundario/lg",
+    "<button> Aprovar e aplicar → primario/sm",
+    "<button> Rejeitar → perigo/sm",
+  ],
+  "financeiro/(painel)/comissoes/page.tsx": [
+    "<button> Filtrar → secundario/md",
+  ],
+  "financeiro/AcessoAulasPainel.tsx": [
+    "const botao → secundario/md",
+    "<button> Solicitar liberação manual · Solicitar restrição manual → botao",
+    "<button> Enviar solicitação → botao",
+    "<button> Cancelar → botao",
+    "<button> Aprovar → botao",
+    "<button> Rejeitar → perigo/md",
+  ],
+  "financeiro/DiaPrevisaoComissao.tsx": [
+    "<Botao> Salvar dia → primario/lg",
+  ],
+  "financeiro/FilaCobranca.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<Link> limpar filtro → fantasma/sm",
+    "<button> Buscando… · Buscar → secundario/md",
+    "<button> Aprovar e enviar lote → btnPri",
+    "<button> Limpar → btnSec",
+    "<button> Consultar acesso → perigo/sm",
+    "<button> → btnSec",
+    "<button> Abrir WhatsApp manual → btnSec",
+    "<button> Enviar via WhatsApp (API) → btnPri",
+    "<button> Preparando… · Abrir WhatsApp manual → btnSec",
+    "<a> Abrir WhatsApp novamente → btnSec",
+    "<button> Confirmando… · Confirmar envio realizado → btnSec",
+    "<button> Registrar pagamento → btnSec",
+    "<button> Promessa de pagamento → btnSec",
+    "<button> Registrar promessa → btnPri",
+  ],
+  "financeiro/FinanceiroPainel.tsx": [
+    "const btnPri → primario/md",
+    "const btnSec → secundario/sm",
+    "<button> Fechar mês e marcar pagas → btnPri",
+    "<button> Aprovar → primario/sm",
+    "<button> Rejeitar → perigo/sm",
+    "<button> Salvando… · Salvar cotações → btnPri",
+    "<button> Atualizando… · Atualizar automaticamente → btnSec",
+  ],
+  "financeiro/InformesPagamento.tsx": [
+    "<button> Confirmar recebimento → primario/md",
+    "<button> Rejeitar → perigo/md",
+  ],
+  "financeiro/PoliticasComissao.tsx": [
+    "<button> Publicar nova versão → primario/lg",
+  ],
+  "financeiro/RetomadasPainel.tsx": [
+    "const principal → primario/lg",
+    "<button> Enviar proposta para aprovação → principal",
+    "<button> Aprovar proposta e retomar → principal",
+    "<button> Rejeitar proposta → perigo/lg",
+  ],
+  "financeiro/acertos-cobertura/ImpactosCoberturaFormulario.tsx": [
+    "<button> Preparando… · Preparar impactos de cobertura → primario/lg",
+  ],
+  "financeiro/acertos-cobertura/ImpactosCoberturaOperacao.tsx": [
+    "<button> Aprovar conjunto → primario/md",
+    "<button> Rejeitar conjunto → perigo/md",
+    "<button> Aplicar coberturas aprovadas → primario/md",
+    "<button> APROVADO · Confirmar divergência material · Descartar conjun → perigo/md",
+  ],
+  "financeiro/acertos-taxa/DecisaoTaxa.tsx": [
+    "<button> Aprovar acerto → secundario/lg",
+    "<button> Rejeitar acerto → perigo/lg",
+    "<button> Aplicar acerto aprovado → secundario/lg",
+    "<button> Conferir e invalidar para repropor → secundario/lg",
+  ],
+  "financeiro/acertos-taxa/ImpactosTaxaOperacao.tsx": [
+    "<button> Vincular acerto → secundario/sm",
+    "<button> Aprovar conjunto → primario/md",
+    "<button> Rejeitar conjunto → perigo/md",
+    "<button> Concluir impactos aplicados → primario/md",
+    "<button> APROVADO · Confirmar fotografia divergente · Descartar conju → perigo/md",
+  ],
+  "financeiro/acertos-adiantamento/[matriculaId]/[propostaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
+  "financeiro/acertos-vencimento/[matriculaId]/[propostaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
+  "financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx": [
+    "<button> Registrando… · Registrar proposta → primario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/sm",
+  ],
+  "financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx": [
+    "<button> Registrando… · Registrar proposta histórica → primario/lg",
+    "<button> Registrando… · Decidir → secundario/md",
+  ],
+  "financeiro/permuta/PermutaOperacional.tsx": [
+    "<button> Enviando… · Registrar → secundario/sm",
+    // Decidir a compensação (L2142, #175): rejeitar é perigo; aprovar só abre o ConfirmarAcao.
+    "<button> Enviando… · Rejeitar · Aprovar e compensar · Decidir → perigo|secundario/sm",
+  ],
+  "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
+    "<button> Destinar → fantasma/sm",
+    "<button> Remover → perigo/sm",
+    "<button> Registrando… · Tentar novamente · Confirmar recebimento → primario/lg",
+    "<button> Novo lançamento → secundario/lg",
+  ],
+  "matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx": [
+    "<button> Registrando… · Registrar autorização → secundario/lg",
+    "<button> Revogar autorização → perigo/lg",
+  ],
+  "matriculas/[id]/compensacoes/[cobrancaId]/CompensacaoCobertura.tsx": [
+    "<button> Enviando… · Propor direito de compensação → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/compensacoes/[cobrancaId]/periodo-integral/PeriodoIntegral.tsx": [
+    "<button> Enviando… · Propor regularização → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Aplicando… · Aplicar regularização aprovada → secundario/lg",
+  ],
+  "matriculas/[id]/condicoes-horas/CondicoesHoras.tsx": [
+    "<button> Registrando… · Preparar para revisão → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/condicoes/CondicoesFormulario.tsx": [
+    "<button> Registrando… · Registrar condições de entrada → secundario/lg",
+  ],
+  "matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx": [
+    "<button> Remover → perigo/md",
+    "<button> Adicionar feriado → secundario/lg",
+    "<button> Registrando… · Preparar para revisão → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/ConferirAceite.tsx": [
+    "<button> Registrando… · Confirmar aceite do original assinado → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/ConferirAssinatura.tsx": [
+    "<button> Registrando… · Registrar conferência para assinatura → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/PreservarOriginal.tsx": [
+    "<button> Gerando e preservando… · Gerar e preservar original → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/RegistrarPrevia.tsx": [
+    "<button> Registrando… · Preservar esta prévia → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/AcertoTaxaFormulario.tsx": [
+    "<button> Registrando proposta… · Propor acerto → primario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/AssinaturaFormulario.tsx": [
+    "<button> Registrando… · Registrar conferência → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/CondicoesFormalizadasFormulario.tsx": [
+    "<button> Registrando… → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ConferenciaFinalFormulario.tsx": [
+    "<button> Registrando… · Registrar conferência interna → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/Formularios.tsx": [
+    "<button> Registrando… · Registrar proposta de aditivo → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ImpactosTaxaFormulario.tsx": [
+    "<button> Preparando… · Preparar conjunto de impactos → primario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/OriginalFormulario.tsx": [
+    "<button> Gerando… · Gerar e preservar original do aditivo → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ParticipantesFormulario.tsx": [
+    "<button> Consultar exigências e participantes → secundario/lg",
+    "<button> Reabrir formulário e descartar preenchimento → perigo/lg",
+    "<button> Documentos anteriores → secundario/lg",
+    "<button> Próximos documentos → secundario/lg",
+    "<button> Ir para a primeira página → secundario/lg",
+    "<button> Aguarde… · Registrar conferência dos signatários → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/ProcessoFormulario.tsx": [
+    "<button> Preparando… · Preparar processo de assinatura → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/[propostaId]/alcadas/Formulario.tsx": [
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx": [
+    "<button> Conferindo… · Conferir alterações → secundario/lg",
+    "<button> Registrando… · Registrar fotografia da agenda → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/previas/[previaId]/participantes/Formulario.tsx": [
+    "<button> Registrando… · Registrar conferência dos participantes → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/previas/[previaId]/participantes/SeletorMaioridade.tsx": [
+    "<button> Atualizar papéis exigidos → secundario/lg",
+  ],
+  "matriculas/[id]/contrato/substituicoes/Formularios.tsx": [
+    "<button> Registrando… · Registrar proposta de substituição → secundario/lg",
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/EfetivacaoFormulario.tsx": [
+    "<button> Efetivando… · Confirmar desistência e liberar reservas → perigo/lg",
+  ],
+  "matriculas/[id]/desistencia/PedidoFormulario.tsx": [
+    "<button> Registrando… · Registrar pedido → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/administracao/DecisaoFormulario.tsx": [
+    "<button> Registrando… · Registrar decisão administrativa → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/financeiro/AcertoContratualFormularios.tsx": [
+    "<button> Preparando… · Reapresentar memória contratual · Preparar mem → secundario/lg",
+    "<button> Registrando… · Registrar decisão independente → secundario/lg",
+    "<button> Aplicar acerto aprovado → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/financeiro/Formularios.tsx": [
+    "<button> Registrando… · Submeter proposta financeira → secundario/lg",
+    "<button> Registrando… · Registrar decisão independente → secundario/lg",
+  ],
+  "matriculas/[id]/desistencia/financeiro/ReconferenciaDeltaFormularios.tsx": [
+    "<button> Reconciliando… · Reconciliar mesma tentativa → secundario/lg",
+    "<button> Preparando… · Preparar reconferência → secundario/lg",
+    "<button> Registrando… · Registrar decisão administrativa · Registrar → secundario/lg",
+    "<button> Aplicar reconferência → secundario/lg",
+  ],
+  "matriculas/[id]/disponibilidade-oferta/DisponibilidadeOferta.tsx": [
+    "<button> Enviar para conferência → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Anterior → secundario/md",
+    "<button> Próxima → secundario/md",
+  ],
+  "matriculas/[id]/emissao/ConfirmarEmissao.tsx": [
+    "<button> Conferindo e emitindo… · Confirmar conferência e emitir cobr → secundario/lg",
+  ],
+  "matriculas/[id]/fechamentos-horas/DecidirFechamento.tsx": [
+    "<button> Registrando… · Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/fechamentos-horas/EmitirFechamento.tsx": [
+    "<button> Emitir cobrança aprovada → secundario/lg",
+  ],
+  "matriculas/[id]/fechamentos-horas/PrepararFechamento.tsx": [
+    "<button> Conferindo… · Salvar rascunho do período conferido · Conferi → secundario/lg",
+  ],
+  "matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx": [
+    "<button> Registrando… · Registrar relato → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/CorrecaoRelatoOferta.tsx": [
+    "<Botao> Registrando… · Propor correção → secundario/lg",
+    "<Botao> Aprovar correção → secundario/lg",
+    "<Botao> Rejeitar correção → perigo/lg",
+  ],
+  "matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
+    "<button> Registrando… · Propor último dia → secundario/lg",
+    "<button> Registrar decisão → secundario/lg",
+  ],
+  "matriculas/[id]/nova-reserva/Formulario.tsx": [
+    "<button> Buscar → secundario/lg",
+    "<button> Professores anteriores → secundario/md",
+    "<button> Mais professores → secundario/md",
+    "<button> Remover → perigo/md",
+    "<button> Adicionar encontro → secundario/lg",
+    "<button> Revisar horários e condições → secundario/lg",
+    "<button> Confirmar nova reserva → secundario/lg",
+  ],
+  "matriculas/[id]/ocorrencias-financeiras/ConferenciaHoras.tsx": [
+    "<button> Conferir prévia → secundario/lg",
+    "<button> Registrar conferência → secundario/lg",
+  ],
+  "matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx": [
+    "<button> Preparar revisão financeira → secundario/lg",
+    "<button> Rejeitar revisão incompleta → perigo/lg",
+    "<button> Aprovar declaração de aula não cobrável · Aprovar sem altera → secundario/lg",
+    "<button> Rejeitar → perigo/lg",
+  ],
+  "matriculas/[id]/pagador/PagadorFormulario.tsx": [
+    "<button> Registrando… · Registrar pagador desta matrícula → secundario/lg",
+  ],
+  "matriculas/[id]/preparacao/DecidirPreco.tsx": [
+    "<button> Aprovar exceção de preço → secundario/lg",
+    "<button> Rejeitar exceção → perigo/lg",
+  ],
+  "matriculas/[id]/reserva/ReservarFormulario.tsx": [
+    "<button> Conferindo e reservando… · Confirmar reserva de vaga → secundario/lg",
+  ],
+  "matriculas/nova/MatriculaFormulario.tsx": [
+    "<button> Próximo: curso e contrato → → primario/lg",
+    "<button> editar → fantasma/sm",
+    "<button> Sem turma compatível? Solicitar abertura ao Gerente Pedagógi → fantasma/sm",
+    "<button> ← Voltar → secundario/lg",
+    "<button> Processando… · Salvar matrícula → primario/lg", // C30 (#170): a ação que conclui o assistente
+  ],
+  "relatorios/_componentes/Filtros.tsx": [
+    "<button> Filtrar → secundario/md",
+    "<a> Exportar CSV → secundario/md",
+  ],
+  "relatorios/_componentes/PainelDetalhe.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
+  "secretaria/CondicoesEncerramento.tsx": [
+    "<button> Registrar decisão → secundario/lg",
+    "<button> Enviar para aprovação administrativa → secundario/lg",
+  ],
+  "secretaria/SecretariaPainel.tsx": [
+    "<button> Conferir cobertura inicial → secundario/lg",
+    "<button> Assumir matrícula → primario/lg",
+    "<button> Concluir matrícula → primario/lg",
+    "<button> Arquivar → fantasma/sm",
+    "<button> Registrar aceite → secundario/lg",
+    "<button> Solicitar correção → secundario/lg",
+    "<button> Concluir decisão → secundario/lg",
+  ],
+  "secretaria/avisos-agenda/ReconferirPendencia.tsx": [
+    "<button> Reconferindo… · Reconferir condição → secundario/sm",
+  ],
+  "secretaria/envios-portal/ConciliacaoEnvio.tsx": [
+    "<button> Registrar evidência → secundario/sm",
+    "<button> Autorizar nova emissão → primario/sm",
+    "<button> Não autorizar → secundario/sm",
+  ],
+  "secretaria/page.tsx": [
+    "<button> Buscar → secundario/md",
+  ],
+  "secretaria/reservas/ConferirReserva.tsx": [
+    "<button> Conferindo… · Conferir vencimento → secundario/lg",
+  ],
+  "secretaria/reservas/[id]/Formularios.tsx": [
+    "<button> Enviar proposta para revisão → secundario/lg",
+    "<button> Aprovar e aplicar → secundario/lg",
+    "<button> Rejeitar proposta → perigo/lg",
+  ],
+  "oportunidades/[id]/contratacao/AgendaParticularFormulario.tsx": [
+    "<button> Buscar professores → secundario/lg",
+    "<button> Professores anteriores → secundario/md",
+    "<button> Mais professores → secundario/md",
+    "<button> Remover encontro → perigo/md",
+    "<button> Adicionar encontro → secundario/lg",
+    "<button> Conferir disponibilidade → secundario/lg",
+  ],
+  "oportunidades/[id]/contratacao/PreparacaoFormulario.tsx": [
+    "<button> Conferindo e preparando… · Preparar contratação e reservar → secundario/lg",
+  ],
+  "empresas/EmpresasCliente.tsx": [
+    "const btnPri → primario/md",
+    "<button> Nova empresa → btnPri",
+    "<button> Criando… · Criar → btnPri",
+    "<button> Buscando… · Buscar → secundario/md",
+  ],
+  "empresas/[id]/FichaEmpresa.tsx": [
+    "const btnPri → primario/md",
+    "<Link> Preparar matrícula individual → btnPri",
+    "<button> Registrar pagamento → btnPri",
+    "<button> Cancelar fatura → perigo/md",
+    "<button> Inativar empresa · Reativar empresa → perigo|secundario/md",
+  ],
+  "inbox/AcoesAtendimento.tsx": [
+    "<Botao> Assumir → primario/sm",
+    "<Botao> Devolver para a fila → secundario/sm",
+    "<Botao> Atribuir → secundario/sm",
+    "<Botao> Transferir → secundario/sm",
+    "<Botao> Convidar → secundario/sm",
+    "<Botao> Nota interna → secundario/sm",
+    "<Botao> Agendar mensagem → secundario/sm",
+    "<Botao> Convites e agendamentos → secundario/sm",
+    "<Botao> Encerrar atendimento → perigo/sm",
+    "<Botao> Bloquear → secundario/sm",
+    "<Botao> Desafixar · Fixar → fantasma/sm",
+    "<Botao> Reativar notificações · Silenciar → fantasma/sm",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Transferir → primario/md",
+    "<Botao> atribuir · Atribuir · Convidar → primario/md",
+    "<Botao> Registrar nota → primario/md",
+    "<Botao> Agendar → primario/md",
+    "<Botao> Revogar convite → perigo/sm",
+    "<Botao> Cancelar agendamento → perigo/sm",
+    "<Botao> Fechar → secundario/md",
+  ],
+  "inbox/AcoesContato.tsx": [
+    "<Botao> Criar oportunidade → secundario/sm",
+    "<Botao> Editar nome → secundario/sm",
+    "<Botao> Vincular → secundario/sm",
+    "<Botao> Desvincular → secundario/sm",
+    "<Botao> Salvar nome → primario/sm",
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Buscar → secundario/sm",
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Vincular a → fantasma/sm",
+    "<Botao> Desvincular de → fantasma/sm",
+    "<Botao> Revisar desvínculo → primario/sm",
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Retomar régua → secundario/sm",
+    "<Botao> Registrar pagamento → secundario/sm",
+    "<Botao> Promessa de pagamento → secundario/sm",
+    "<Botao> Registrar promessa → primario/sm",
+  ],
+  "inbox/AcoesMensagem.tsx": [
+    "<Botao> Buscar → secundario/sm",
+    "<Botao> Encaminhar para → fantasma/sm",
+    "<Botao> Carregar mais → secundario/sm",
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Cancelar → fantasma/sm",
+    "<Botao> Salvar edição → primario/sm",
+    "<Botao> `Reagir com ${e}` → secundario/sm",
+    "<Botao> Remover minha reação → perigo/sm",
+    "<Botao> Fechar → fantasma/sm",
+  ],
+  "inbox/NovoAtendimento.tsx": [
+    "<button> Abrir atendimento → primario/lg",
+  ],
+  "inbox/OptOutContato.tsx": [
+    "<Botao> Remover opt-out → perigo/sm",
+    "<Botao> Registrar opt-out → secundario/sm",
+  ],
+  "inbox/PainelAria.tsx": [
+    "<Botao> Devolver para Aria → secundario/sm",
+    "<Botao> Aprovar → primario/sm",
+    "<Botao> Rejeitar → perigo/sm",
+  ],
+  "inbox/PainelTriagem.tsx": [
+    "<button> Classificar esta mensagem → secundario/md",
+    "<button> Registrar revisão → secundario/md",
+  ],
+  "carteira/CoberturasPainel.tsx": [
+    "<button> Conceder cobertura → primario/lg",
+    "<button> Revogar → perigo/sm",
+  ],
+  "carteira/ListaCarteira.tsx": [
+    "<button> Filtrar → secundario/lg",
+    "<Link> Limpar filtros → secundario/md",
+    "<Botao> Mudar responsável → primario/lg",
+    "<Botao> Limpar seleção → fantasma/lg",
+  ],
+  "carteira/page.tsx": [
+    "<Link> Carteira → primario|fantasma/md",
+    "<Link> Coberturas → primario|fantasma/md",
+  ],
+  "funil/FunilCliente.tsx": [
+    "<Link> Quadro → primario|secundario/md",
+    "<Link> Lista → primario|secundario/md",
+    "<Botao> Nova oportunidade → primario/md",
+    "<Botao> Filtrar → secundario/md",
+    "<Link> Limpar → fantasma/md",
+    "<Botao> Mover selecionadas → secundario/md",
+  ],
+  "funil/EdicaoOportunidade.tsx": [
+    "<Botao> Editar resumo → fantasma/sm",
+    "<Botao> Salvar resumo → primario/md",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Salvar datas → secundario/md",
+    "<Botao> Editar dados → secundario/md",
+    "<Botao> Salvar dados → primario/md",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Arquivar → fantasma/sm",
+    "<Botao> Registrar interação → secundario/md",
+  ],
+  "funil/ModalPerda.tsx": [
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Salvando… · Marcar como perdida → perigo/md",
+  ],
+  "funil/NovaOportunidade.tsx": [
+    "<Botao> Pessoa → primario|secundario/sm",
+    "<Botao> Empresa → primario|secundario/sm",
+    "<Botao> Usar cadastro → secundario/sm",
+    "<Botao> Não usar → fantasma/sm",
+    "<Botao> Cancelar → secundario/md",
+    "<Botao> Salvando… · Criar oportunidade → primario/md",
+  ],
+  "funil/PainelOportunidade.tsx": [
+    "<Botao> Atribuir responsável → secundario/md",
+    "<Botao> Agendar experimental → secundario/md",
+    "<Botao> Registrar link de pagamento → secundario/md",
+    "<Botao> Enviar proposta → primario/md",
+    "<Link> Preparar contratação → primario/md",
+    "<Botao> Marcar como perdida → perigo/md",
+    "<Botao> Registrar nota → secundario/md",
+  ],
+  "funil/QuadroFunil.tsx": [
+    "<Botao> Recolher · Mostrar cartões → fantasma/sm",
+  ],
+  "funil/page.tsx": [
+    "<Link> Limpar filtros → secundario/md",
+    "<a> Exportar → secundario/lg",
+  ],
+  "tarefas/AgendaTarefas.tsx": [
+    "<Link> Anterior → secundario/md",
+    "<Link> Hoje → secundario/md",
+    "<Link> Próximo → secundario/md",
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Salvando… · Reagendar → primario/md",
+  ],
+  "tarefas/CalendarioTarefas.tsx": [
+    "<Link> Anterior → secundario/md",
+    "<Link> Hoje → secundario/md",
+    "<Link> Próximo → secundario/md",
+  ],
+  "tarefas/ListaTarefas.tsx": [
+    "<Botao> Concluir selecionadas → primario/sm",
+  ],
+  "tarefas/PainelTarefa.tsx": [
+    "<Botao> Salvando… · Salvar → primario/md",
+    "<Botao> Assumir → secundario/md",
+    "<Botao> Reabrir → secundario/md",
+    "<Botao> Concluir → secundario/md",
+    "<Botao> Cancelar tarefa → perigo/md",
+  ],
+  "tarefas/page.tsx": [
+    "<Link> Nova tarefa → primario/lg",
+  ],
+  "home/HomeProfessor.tsx": [
+    "<button> Compareceu → primario/sm",
+    "<button> Faltou → secundario/sm",
+  ],
+  "comissoes/EstornarComissao.tsx": [
+    "<Botao> Estornar → perigo/md",
+  ],
+  "comissoes/PainelComissoes.tsx": [
+    "<Link> Fechar mês → secundario/md",
+    "<button> Filtrar → secundario/md",
+  ],
+  "preferencias/FusoExibicaoFormulario.tsx": [
+    "<button> Salvando… · Salvar preferência → secundario/lg",
+  ],
+  "acesso-negado/page.tsx": [
+    "<Link> Voltar ao início → primario/lg",
+  ],
+  // Telas públicas fora do shell (docs/43 §6 item 8; chave com o caminho inteiro).
+  "src/app/login/page.tsx": [
+    "<Botao> Entrando… · Entrar → primario/lg",
+  ],
+  "src/app/pagar/[token]/PagarCliente.tsx": [
+    "<Botao> Processando… · Tentar de novo · Pagar (ambiente de teste) → primario/lg",
+  ],
+  "src/app/portal-aluno/entrar/page.tsx": [
+    "<Botao> Entrando… · Entrar → primario/lg",
+  ],
+  "src/app/portal-aluno/ativar/page.tsx": [
+    "<Link> Pedir um novo link → primario/lg",
+    "<Link> Já tenho senha: entrar → secundario/lg",
+    "<Botao> Confirmando… · Confirmar acesso → primario/lg",
+  ],
+  "src/app/portal-aluno/recuperar/page.tsx": [
+    "<Botao> Solicitando… · Solicitar recuperação → primario/lg",
+  ],
+  // Componentes compartilhados (chave com o caminho inteiro: não estão sob src/app/(app)).
+  "src/components/conversa/CartaoPix.tsx": [
+    "<Botao> Copiar código Pix → secundario/sm",
+  ],
+  "src/components/conversa/Compositor.tsx": [
+    "<Botao> Tentar de novo → secundario/sm",
+    "<Botao> Enviar → primario/md",
+  ],
+  "src/components/conversa/SeletorEmoji.tsx": [
+    "<Botao> Fechar → fantasma/sm",
+    "<Botao> Mostrar mais emojis → secundario/sm",
+  ],
+  "src/components/ConfirmarAcao.tsx": [
+    "<Botao> Voltar → secundario/md",
+    "<Botao> Confirmando… · Confirmar → perigo/md",
+  ],
+  "src/components/EstadoRota.tsx": [
+    "const classe → primario/lg",
+    "<Link> → classe",
+    "<button> → classe",
+  ],
+  "src/components/ExportarPlanilha.tsx": [
+    "<a> Exportar planilha (filtros aplicados) · Exportar planilha → secundario/lg",
+  ],
+  "src/components/PagamentoModal.tsx": [
+    "const btnPri → primario/md",
+    "<button> Salvando… · Enviar para conferência · Registrar recebimento → btnPri",
+    "<button> Cancelar → secundario/md",
+  ],
+};

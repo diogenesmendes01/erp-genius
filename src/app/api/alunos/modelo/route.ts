@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
+import { exigirSessaoComPapel, ErroAutenticacao, ErroPermissao } from "@/server/_shared/sessao";
 import { prisma } from "@/lib/prisma";
 import {
   COLUNAS_IMPORTACAO,
@@ -32,10 +32,12 @@ function colLetra(n: number): string {
 }
 
 export async function GET() {
-  const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
-  if (!session?.user?.id || !papeis.includes(Papel.ADMINISTRADOR)) {
-    return NextResponse.json({ erro: "Apenas administrador." }, { status: 403 });
+  try {
+    await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+  } catch (erro) {
+    if (erro instanceof ErroAutenticacao) return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
+    if (erro instanceof ErroPermissao) return NextResponse.json({ erro: "Apenas administrador." }, { status: 403 });
+    throw erro;
   }
 
   // Listas dinâmicas (vêm do banco): mercados e tipos de documento distintos.

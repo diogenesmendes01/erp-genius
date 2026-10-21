@@ -1,4 +1,5 @@
-import { StatusCobranca, TipoCobranca, type DriverWhatsApp, type EstadoPolitica } from "@prisma/client";
+import { StatusCobranca, TipoCobranca, type DriverWhatsApp, type EstadoPolitica, type FinalidadeNumero } from "@prisma/client";
+import type { Setor } from "@/server/whatsapp/setor";
 import { prisma } from "@/lib/prisma";
 import { REGUA } from "@/server/cobrancas/regua";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabrica";
@@ -25,9 +26,9 @@ export async function seedCanal(
     data: {
       telefoneE164: "+5511999990000",
       rotulo: "Cobrança (teste)",
-      driver: over.driver ?? "META_CLOUD",
+      driver: over.driver ?? "MOTOR",
       finalidade: "COBRANCA",
-      providerRef: "PHONE_ID_TESTE",
+      providerRef: "n-teste",
     },
   });
   const templates = new Map<string, string>();
@@ -103,4 +104,26 @@ export async function seedCobranca(
     },
   });
   return { pais, aluno, matricula, cobranca };
+}
+
+/** Número de teste com setores cadastrados (M1). Finalidade legada padrão: VENDAS. */
+export async function criarNumeroSetor(dados: {
+  telefoneE164: string;
+  setores: Setor[];
+  finalidade?: FinalidadeNumero;
+  donoId?: string | null;
+  triagemResponsavelId?: string | null;
+}) {
+  return prisma.numeroWhatsApp.create({
+    data: {
+      telefoneE164: dados.telefoneE164,
+      rotulo: `Número ${dados.telefoneE164}`,
+      driver: "MOTOR",
+      finalidade: dados.finalidade ?? "VENDAS",
+      providerRef: `ref-${dados.telefoneE164}`,
+      donoId: dados.donoId ?? null,
+      triagemResponsavelId: dados.triagemResponsavelId ?? null,
+      setores: { create: dados.setores.map((finalidade) => ({ finalidade })) },
+    },
+  });
 }

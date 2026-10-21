@@ -1,27 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { DriverWhatsApp, StatusTemplate } from "@prisma/client";
+import { Papel, type StatusTemplate } from "@prisma/client";
 import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { UPLOAD_DIR } from "@/lib/uploads";
 
-// Drivers FALSOS: este arquivo liga WHATSAPP_LIVE=1 para exercitar o caminho "real" do
-// despachante (o que os outros int tests nunca fazem) — nenhuma mensagem pode sair.
+// Driver do motor FALSO: este arquivo liga WHATSAPP_LIVE=1 para exercitar o caminho "real" do
+// despachante — nenhuma mensagem pode sair. Desde a Fase 4 (Tarefa 5) só o motor envia; números
+// legados (META_CLOUD/BAILEYS) falham com driver_indisponivel sem qualquer I/O.
 const { enviarTextoMock, enviarTemplateMock, enviarMidiaMock } = vi.hoisted(() => ({
-  enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-texto" }),
-  enviarTemplateMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-template" }),
-  enviarMidiaMock: vi.fn().mockResolvedValue({ providerMessageId: "wamid-midia" }),
+  enviarTextoMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-texto", mensagemIdMotor: "c:texto" }),
+  enviarTemplateMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-template", mensagemIdMotor: "c:template" }),
+  enviarMidiaMock: vi.fn().mockResolvedValue({ providerMessageId: "3EB0-midia", mensagemIdMotor: "c:midia" }),
 }));
-vi.mock("./drivers/meta-cloud", () => ({
-  driverMetaCloud: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
-}));
-vi.mock("./drivers/evolution", () => ({
-  driverEvolution: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
+vi.mock("./drivers/motor", () => ({
+  driverMotor: { enviarTexto: enviarTextoMock, enviarTemplate: enviarTemplateMock, enviarMidia: enviarMidiaMock },
 }));
 
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, criarUsuario } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { despacharFila } from "./despachante";
+import { garantirAtendimento } from "./atendimentos";
 
 // Integração do SHADOW por política com o canal LIVE (review PR #51 P1-3): com
 // WHATSAPP_LIVE=1, política em ensaio (SHADOW/DESLIGADA) precisa simular TODA automação —
@@ -40,7 +39,13 @@ afterEach(() => {
 });
 
 async function seedContato(telefone = "+50611112222") {
-  return prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone } });
+  const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: telefone } });
+  const numero = await prisma.numeroWhatsApp.findFirstOrThrow();
+  const autor = await criarUsuario([Papel.ADMINISTRADOR]);
+  const atendimento = await prisma.$transaction((tx) => garantirAtendimento(tx, {
+    numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", responsavelId: autor.id,
+  }));
+  return { ...contato, atendimentoId: atendimento.id, autorId: autor.id, conversaId: atendimento.conversaId };
 }
 
 describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
@@ -50,8 +55,8 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
-        origem: "LOTE",
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
+        origem: "LOTE", autorId: contato.autorId,
         corpoRenderizado: "lote em ensaio",
         politicaId: politica.id,
         templateId: templates.get("amigavel"),
@@ -74,8 +79,8 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
-        origem: "LOTE",
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
+        origem: "LOTE", autorId: contato.autorId,
         corpoRenderizado: "lote aprovado",
         politicaId: politica.id,
         templateId: templates.get("amigavel"),
@@ -92,12 +97,12 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
 
   it("política SHADOW: origem HUMANO atravessa o ensaio (decisão humana envia)", async () => {
     const { numero } = await seedCanal({ estado: "SHADOW", janela: [0, 24] });
-    const humano = await criarUsuario([]);
+    const humano = await criarUsuario([Papel.ADMINISTRADOR]);
     const contato = await seedContato();
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
         origem: "HUMANO",
         corpoRenderizado: "resposta humana",
         autorId: humano.id,
@@ -110,60 +115,42 @@ describe("shadow por política × WHATSAPP_LIVE=1 (P1-3)", () => {
   });
 });
 
-describe("shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #53 2ª passada)", () => {
-  async function seedSaudacao(estado: "SHADOW" | "ATIVA") {
+describe("reativa sem IA × WHATSAPP_LIVE=1 (saudação do CRM antigo)", () => {
+  // A saudação reativa perdeu a configuração e o produtor com a remoção do CRM antigo: o que sobrar na fila só simula.
+  it("SIMULADA mesmo com live — o driver NÃO é chamado", async () => {
     const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511988880000", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", providerRef: "inst-x" },
+      data: { telefoneE164: "+5511988880000", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS", providerRef: "n-vendas" },
     });
     const contato = await seedContato();
-    await prisma.configComercial.create({ data: { id: "comercial", saudacaoEstado: estado, saudacaoTexto: "Oi!" } });
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", reativa: true, corpoRenderizado: "Oi!" },
+      data: { numeroId: numero.id, contatoId: contato.id, atendimentoId: contato.atendimentoId, origem: "CRON", reativa: true, corpoRenderizado: "Oi!" },
     });
-  }
-
-  it("saudação em SHADOW: SIMULADA mesmo com live — o driver NÃO é chamado", async () => {
-    await seedSaudacao("SHADOW");
     const r = await despacharFila();
     expect(r.simuladas).toBe(1);
     expect(enviarTextoMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
   });
-
-  it("saudação ATIVA: a MESMA reativa envia de verdade (contra-prova) — em Baileys, sem trava S1", async () => {
-    await seedSaudacao("ATIVA");
-    const r = await despacharFila();
-    expect(r.despachadas).toBe(1);
-    expect(enviarTextoMock).toHaveBeenCalledTimes(1);
-    expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
-  });
 });
 
-describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys)", () => {
-  async function seedComercial(
-    estado: "SHADOW" | "ATIVA",
-    over: { driver?: DriverWhatsApp; template?: StatusTemplate | null } = {},
-  ) {
+describe("automação CRON pela política × WHATSAPP_LIVE=1 (D38 — automação no motor)", () => {
+  async function seedAutomacao(estado: "SHADOW" | "ATIVA", over: { template?: StatusTemplate | null } = {}) {
     const numero = await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: over.driver ?? "BAILEYS", finalidade: "VENDAS", providerRef: "inst-c" },
+      data: { telefoneE164: "+5511977776666", rotulo: "Vendas", driver: "MOTOR", finalidade: "VENDAS", providerRef: "n-automacao" },
     });
-    const contato = await seedContato();
-    const lead = await prisma.lead.create({ data: { codigo: "L-000123", nome: "Ana" } });
-    const politica = await prisma.politicaComercial.create({
-      data: { chave: "LEAD_NOVO_SEM_RESPOSTA", nome: "Lead novo", estado, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
+    const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50611113333" } });
+    const politica = await prisma.politicaRegua.create({
+      data: { nome: "Automação de teste", estado, janelaInicio: 0, janelaFim: 24, diasSemana: [0, 1, 2, 3, 4, 5, 6], numeroRemetenteId: numero.id },
     });
     const template = over.template
-      ? await prisma.templateWhatsApp.create({
-          data: { nome: "lead_novo_30min", corpo: "Oi {{1}}!", statusMeta: over.template },
-        })
+      ? await prisma.templateWhatsApp.create({ data: { nome: "aviso_teste", corpo: "Oi {{1}}!", statusMeta: over.template } })
       : null;
     await prisma.intencaoMensagem.create({
-      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", leadId: lead.id, passoComercial: "+30min", politicaComercialId: politica.id, corpoRenderizado: "Oi Ana!", templateId: template?.id ?? null, variaveis: ["Ana"] },
+      data: { numeroId: numero.id, contatoId: contato.id, origem: "CRON", politicaId: politica.id, corpoRenderizado: "Oi Ana!", templateId: template?.id ?? null, variaveis: ["Ana"] },
     });
   }
 
-  it("ATIVA: a cadência ENVIA no Baileys (trava S1 NÃO cancela) — review doc 27", async () => {
-    await seedComercial("ATIVA");
+  it("ATIVA: a automação ENVIA pelo motor (trava S1 NÃO cancela)", async () => {
+    await seedAutomacao("ATIVA");
     const r = await despacharFila();
     expect(r.despachadas).toBe(1);
     expect(r.canceladas).toBe(0);
@@ -171,45 +158,21 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
   });
 
-  it("SHADOW: mesmo com live, a cadência SIMULA (ensaio próprio da política comercial)", async () => {
-    await seedComercial("SHADOW");
+  it("SHADOW: mesmo com live, a automação SIMULA (ensaio da política)", async () => {
+    await seedAutomacao("SHADOW");
     const r = await despacharFila();
     expect(r.simuladas).toBe(1);
     expect(enviarTextoMock).not.toHaveBeenCalled();
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("SIMULADA");
   });
 
-  // Camada 2 (doc 26 · review PR #55 P1): no número OFICIAL a cadência não é reativa —
-  // +3d/+7d caem fora da janela de 24h. Sem template APROVADO, mandar texto livre é envio
-  // indevido (ou erro da API); FALHAR aqui é o comportamento certo — a fila humana mostra
-  // o motivo em vez de o degrau sumir em silêncio.
-  it("META_CLOUD sem template APROVADO: a cadência FALHA sem tocar o driver", async () => {
-    await seedComercial("ATIVA", { driver: "META_CLOUD", template: null });
-    const r = await despacharFila();
-    expect(r.falhas).toBe(1);
-    expect(r.despachadas).toBe(0);
-    expect(enviarTextoMock).not.toHaveBeenCalled();
-    expect(enviarTemplateMock).not.toHaveBeenCalled();
-
-    const intencao = await prisma.intencaoMensagem.findFirstOrThrow();
-    expect(intencao.status).toBe("FALHOU");
-    expect(intencao.motivoFalha).toBe("template_nao_aprovado_meta");
-  });
-
-  it("META_CLOUD com template só EM_REVISAO também falha (aprovado é aprovado)", async () => {
-    await seedComercial("ATIVA", { driver: "META_CLOUD", template: "EM_REVISAO" });
-    const r = await despacharFila();
-    expect(r.falhas).toBe(1);
-    expect(enviarTemplateMock).not.toHaveBeenCalled();
-    expect((await prisma.intencaoMensagem.findFirstOrThrow()).motivoFalha).toBe("template_nao_aprovado_meta");
-  });
-
-  it("contra-prova: com template APROVADO, o MESMO degrau sai como template na Meta", async () => {
-    await seedComercial("ATIVA", { driver: "META_CLOUD", template: "APROVADO" });
+  it("MOTOR com template: sai por enviarTemplate (texto renderizado), sem exigir aprovação Meta", async () => {
+    await seedAutomacao("ATIVA", { template: "EM_REVISAO" });
     const r = await despacharFila();
     expect(r.despachadas).toBe(1);
     expect(r.falhas).toBe(0);
     expect(enviarTemplateMock).toHaveBeenCalledTimes(1);
+    expect(enviarTemplateMock.mock.calls[0][2]).toMatchObject({ nome: "aviso_teste", corpoRenderizado: "Oi Ana!" });
     expect((await prisma.intencaoMensagem.findFirstOrThrow()).status).toBe("DESPACHADA");
   });
 });
@@ -217,12 +180,12 @@ describe("cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Bail
 describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
   it("midiaPath fora de whatsapp-out/ FALHA sem tocar o driver (exfiltração barrada)", async () => {
     const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
-    const humano = await criarUsuario([]);
+    const humano = await criarUsuario([Papel.ADMINISTRADOR]);
     const contato = await seedContato();
     await prisma.intencaoMensagem.create({
       data: {
         numeroId: numero.id,
-        contatoId: contato.id,
+        contatoId: contato.id, atendimentoId: contato.atendimentoId,
         origem: "HUMANO",
         tipo: "IMAGEM",
         midiaPath: "/api/files/999-comprovante.jpg", // comprovante financeiro, não anexo da inbox
@@ -242,7 +205,7 @@ describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
 
   it("midiaPath do próprio storage de envio é entregue ao driver", async () => {
     const { numero } = await seedCanal({ estado: "ATIVA", janela: [0, 24] });
-    const humano = await criarUsuario([]);
+    const humano = await criarUsuario([Papel.ADMINISTRADOR]);
     const contato = await seedContato();
 
     const dir = path.join(UPLOAD_DIR, "whatsapp-out", humano.id);
@@ -252,7 +215,7 @@ describe("mídia no despacho (P1-2 — defesa em profundidade)", () => {
       await prisma.intencaoMensagem.create({
         data: {
           numeroId: numero.id,
-          contatoId: contato.id,
+          contatoId: contato.id, atendimentoId: contato.atendimentoId,
           origem: "HUMANO",
           tipo: "IMAGEM",
           midiaPath: `/api/files/whatsapp-out/${humano.id}/foto.jpg`,

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -6,7 +6,7 @@ vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
-import { truncarBanco, criarUsuario, eventosDo } from "@/test/integracao";
+import { truncarBanco, criarUsuario, eventosDo, meioDiaDaEscolaHoje } from "@/test/integracao";
 import { agoraAs, diasDepois, seedCanal, seedCobranca } from "@/test/integracao-whatsapp";
 import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { carregarPoliticaRegua } from "@/server/cobrancas/politica";
@@ -16,11 +16,19 @@ import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca } from "./acoes";
 
 let financeiro: Awaited<ReturnType<typeof criarUsuario>>;
 
+// Relógio fixo ao meio-dia da escola do dia corrente: `agoraAs`/`diasDepois` montam o dia no fuso da
+// MÁQUINA, e a régua conta no dia civil da ESCOLA (Q176, #239). Com TZ=UTC entre 00h e 03h UTC
+// (21h–24h em Brasília) a máquina já está no dia seguinte, o vencimento "hoje + 7" vira D-8 na
+// escola e a ação devida some. Ao meio-dia de Brasília (15h UTC) os dois calendários coincidem em qualquer
+// TZ de −11h a +11h. O dia é o de hoje, não uma data literal, para não se afastar do `now()` do banco.
 beforeEach(async () => {
   await truncarBanco();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(await meioDiaDaEscolaHoje());
   financeiro = await criarUsuario([Papel.FINANCEIRO]);
   authMock.mockResolvedValue({ user: { id: financeiro.id } });
 });
+afterEach(() => vi.useRealTimers());
 
 describe("enfileirarCobrancaWhatsApp (origem HUMANO)", () => {
   it("enfileira o degrau devido e despacha — sem WHATSAPP_LIVE vira SIMULADA", async () => {
@@ -118,7 +126,7 @@ describe("regra S6 — vencimento renegociado reseta os passos no replay", () =>
 
     const politica = await carregarPoliticaRegua();
     const regua = await montarReguaPorCobranca(
-      [{ id: cobranca.id, vencimento: cobranca.vencimento, acessoBloqueado: false }],
+      [{ id: cobranca.id, vencimento: cobranca.vencimento, cicloRegua: cobranca.cicloRegua, acessoBloqueado: false }],
       agora,
       politica.degraus,
     );
@@ -144,7 +152,7 @@ describe("regra S6 — vencimento renegociado reseta os passos no replay", () =>
 
     const politica = await carregarPoliticaRegua();
     const regua = await montarReguaPorCobranca(
-      [{ id: cobranca.id, vencimento: cobranca.vencimento, acessoBloqueado: false }],
+      [{ id: cobranca.id, vencimento: cobranca.vencimento, cicloRegua: cobranca.cicloRegua, acessoBloqueado: false }],
       agora,
       politica.degraus,
     );

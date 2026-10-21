@@ -1,7 +1,7 @@
 import { Papel } from "@prisma/client";
 
 // Sub-abas da Configuração (doc 09): Países · Catálogo · Turmas · Usuários.
-// Dono = ADM; Turmas também acessível ao Gerente Pedagógico.
+// Currículo e turmas pertencem também à gerência pedagógica (política 36).
 export interface ConfigTab {
   href: string;
   label: string;
@@ -10,19 +10,24 @@ export interface ConfigTab {
 
 export const CONFIG_TABS: ConfigTab[] = [
   { href: "/configuracao/paises", label: "Países", papeis: [Papel.ADMINISTRADOR] },
-  { href: "/configuracao/catalogo", label: "Catálogo", papeis: [Papel.ADMINISTRADOR] },
+  { href: "/configuracao/contratos", label: "Modelos contratuais", papeis: [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA] },
+  { href: "/configuracao/catalogo", label: "Catálogo", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO] },
   {
     href: "/configuracao/turmas",
     label: "Turmas",
     papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO],
   },
   { href: "/configuracao/usuarios", label: "Usuários", papeis: [Papel.ADMINISTRADOR] },
-  // Canal WhatsApp: admin vê tudo (número/templates/política); Gerente Comercial vê só a
-  // seção Comercial (auto-lead/saudação — doc 27 C1). O gate real está na page.tsx.
+  { href: "/configuracao/operacao", label: "Operação", papeis: [Papel.ADMINISTRADOR] },
+  { href: "/configuracao/migracao", label: "Preparação de migração", papeis: [Papel.ADMINISTRADOR] },
+  // CRM (Fase 5F): seções Distribuição, Tags, Respostas, Metas (Fase 5E, Q9 — antes aba própria) e IA; é a única
+  // aba de Configuração que o Gerente Comercial vê.
+  { href: "/configuracao/crm", label: "CRM", papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL] },
+  // Canal WhatsApp: só o administrador vê as seções (o Gerente Comercial saiu na E1). O gate real está em whatsapp/secoes.ts + o guard de cada página de seção (E8).
   {
     href: "/configuracao/whatsapp",
     label: "WhatsApp",
-    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL],
+    papeis: [Papel.ADMINISTRADOR],
   },
 ];
 

@@ -1,0 +1,46 @@
+"use client";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { consultarPropostasUsoCredito, proporUtilizacaoCredito } from "@/server/financeiro/uso-credito-proposta";
+import { decidirUtilizacaoCredito } from "@/server/financeiro/uso-credito-decisao";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
+import { CampoMoeda } from "@/components/CampoMoeda";
+import { botaoClasses } from "@/components/Botao";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
+import { CampoTexto } from "@/components/CampoTexto";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { formatarDataCivil } from "@/lib/data-civil";
+type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarPropostasUsoCredito>>, { ok: true }>["dado"]>;
+const estilo = "block rounded border p-2";
+export function PropostaUsoCredito({ dados }: { dados: Dados }) {
+  const [erro, setErro] = useState(""); const [ocupado, iniciar] = useTransition(); const chave = useRef(""); const router = useRouter();
+  const [valor, setValor] = useState("");
+  // Cobrança pelo código e vencimento, nunca pelo id interno (docs/43 §6 item 7). A proposta pode citar uma
+  // cobrança que já saiu das abertas (quitada depois): aí ela é dita assim, sem o id.
+  const rotuloCobranca = (cobrancaId: string) => {
+    const c = dados.cobrancas.find(x => x.id === cobrancaId);
+    return c ? `${c.codigo ?? "Cobrança sem código"} · vencimento ${formatarDataCivil(c.vencimento.slice(0, 10))}` : "Cobrança que não está mais em aberto";
+  };
+  return <div className="space-y-4"><p>Crédito disponível após utilizações aprovadas: {formatarMoeda(dados.valorCredito, dados.moeda)}.</p>
+    {erro && <p role="alert">{erro}</p>}
+    {!dados.cobrancas.length ? <EstadoVazio>Nenhuma cobrança em aberto disponível nesta matrícula.</EstadoVazio> : <form onChange={() => { chave.current = ""; }} onSubmit={e => {
+      e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const chaveIdempotencia = chave.current;
+      iniciar(async () => { setErro(""); try {
+        const numero = parseMoeda(valor); if (numero === null) { setErro("Informe um valor válido, com no máximo duas casas decimais."); return; }
+        const r = await proporUtilizacaoCredito({ creditoId: dados.creditoId, cobrancaId: String(f.get("cobranca")), valor: numero.toFixed(2), concordancia: String(f.get("concordancia")), motivo: String(f.get("motivo")), chaveIdempotencia });
+        if (!r.ok) { setErro(r.erro); return; } chave.current = ""; setValor(""); router.refresh();
+      } catch { setErro(MSG_RESULTADO_INCERTO); } });
+    }}><fieldset disabled={ocupado} className="space-y-2"><legend>Nova proposta</legend>
+      <label className="block">Cobrança da mesma matrícula<select name="cobranca" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option>{dados.cobrancas.map(c => <option key={c.id} value={c.id}>{rotuloCobranca(c.id)} · saldo {formatarMoeda(c.saldo, dados.moeda)}</option>)}</select></label>
+      <label className="block">Valor a utilizar<CampoMoeda name="valor" moeda={dados.moeda} value={valor} onChange={setValor} required className={estilo} /></label>
+      <label className="block">Evidência da concordância do aluno<CampoTexto name="concordancia" required minLength={5} maxLength={2000} className={estilo} /></label>
+      <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Guardar proposta para conferência</button>
+    </fieldset></form>}
+    {dados.propostas.map(p => <article key={p.id} className="space-y-1 rounded border p-3"><h2>Proposta {p.versao} · {p.decisao ? p.decisao.aprovada ? "aplicada" : "rejeitada" : "aguardando decisão"}</h2><p>Cobrança: {rotuloCobranca(p.cobrancaId)}</p><p>{formatarMoeda(p.valor, dados.moeda)}</p><p>{p.concordancia}</p><p>{p.motivo}</p>
+      {p.decisao && <p>Decisão: {p.decisao.motivo}</p>}
+      {p.podeDecidir && <form onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget);
+        iniciar(async () => { setErro(""); try { const r = await decidirUtilizacaoCredito({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) }); if (!r.ok) { setErro(r.erro); return; } router.refresh(); } catch { setErro(MSG_DECISAO_INCERTA); } });
+      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">Aprovar e aplicar o abatimento</option><option value="rejeitar">Rejeitar proposta</option></select></label><label className="block">Justificativa<CampoTexto required name="motivo" minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button></fieldset></form>}
+    </article>)}
+  </div>;
+}

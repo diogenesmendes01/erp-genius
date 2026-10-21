@@ -1,0 +1,80 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, it, vi } from "vitest";
+
+vi.mock("./TurmaFormulario", () => ({
+  TurmaFormulario: () => "formulario-turma",
+  destinoPrepararGrade: (turmaId: string) => `/academico/grades/nova?turmaId=${encodeURIComponent(turmaId)}`,
+}));
+vi.mock("./ImportarTurmasModal", () => ({ ImportarTurmasModal: () => "importar-turmas" }));
+
+import { TurmasPainel, type TurmaRow } from "./TurmasPainel";
+
+const turma: TurmaRow = {
+  id: "turma-1",
+  codigo: "T-001",
+  nome: "Turma aberta antiga",
+  online: false,
+  diasHorario: "Seg · 22:00–01:00",
+  diasSemana: [1],
+  horarioInicio: "22:00",
+  horarioFim: "01:00",
+  dataInicio: "2020-01-01T12:00:00.000Z",
+  dataFim: "2020-02-01T12:00:00.000Z",
+  capacidade: 12,
+  rolling: false,
+  status: "ABERTA",
+  modalidadeId: "modalidade-1",
+  nivelId: "nivel-1",
+  modalidade: { nome: "Regular" },
+  nivel: { codigo: "A1", idioma: { nome: "Português" } },
+  professor: null,
+  regraAvaliacao: null,
+  _count: { alocacoes: 0, reservasMatricula: 0 },
+};
+
+it("exibe o status canônico mesmo quando a referência de período já passou", () => {
+  const html = renderToStaticMarkup(createElement(TurmasPainel, {
+    turmas: [turma],
+    modalidades: [{ id: "modalidade-1", label: "Regular", frequencia: "1x/semana", horasAula: 3 }],
+    niveis: [{ id: "nivel-1", label: "Português A1" }],
+    professores: [],
+  }));
+
+  expect(html).toContain("Aberta");
+  expect(html).not.toContain("Aceitando matrícula");
+  expect(html).not.toContain("Encerrada");
+  expect(html).toContain("22:00–01:00");
+});
+
+it("início e término saem como o dia gravado, mesmo num navegador em UTC−3 (C52 da #170)", () => {
+  // O caso pior: o dia gravado à meia-noite UTC (o formulário grava ao meio-dia local); com toLocaleDateString,
+  // em São Paulo, 15/10 virava 14/10.
+  const anterior = process.env.TZ;
+  process.env.TZ = "America/Sao_Paulo";
+  try {
+    const html = renderToStaticMarkup(createElement(TurmasPainel, {
+      turmas: [{ ...turma, dataInicio: "2026-10-15T00:00:00.000Z", dataFim: "2026-12-20T00:00:00.000Z" }],
+      modalidades: [{ id: "modalidade-1", label: "Regular", frequencia: "1x/semana", horasAula: 3 }],
+      niveis: [{ id: "nivel-1", label: "Português A1" }],
+      professores: [],
+    }));
+    expect(html).toContain("15/10/2026 → 20/12/2026");
+    expect(html).not.toContain("14/10/2026");
+    expect(html).not.toContain("19/12/2026");
+  } finally {
+    if (anterior === undefined) delete process.env.TZ;
+    else process.env.TZ = anterior;
+  }
+});
+
+it("oferece a preparação real para a turma planejada sem referência de término", () => {
+  const html = renderToStaticMarkup(createElement(TurmasPainel, {
+    turmas: [{ ...turma, status: "PLANEJADA", dataFim: null }],
+    modalidades: [{ id: "modalidade-1", label: "Regular", frequencia: "1x/semana", horasAula: 3 }],
+    niveis: [{ id: "nivel-1", label: "Português A1" }],
+    professores: [],
+  }));
+  expect(html).toContain("Previsão de término pendente da grade.");
+  expect(html).toContain('href="/academico/grades/nova?turmaId=turma-1"');
+});

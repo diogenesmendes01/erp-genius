@@ -1,0 +1,848 @@
+// Manifesto da trava de estados vazios (src/app/estados-vazios.test.ts). Gerado a partir das telas;
+// qualquer mudança aqui aparece no diff da revisão.
+//
+// EXCECOES_ESTADO_VAZIO: ramos de "lista vazia" que não são estado vazio, ancorados em arquivo +
+// condição + folha (texto exato do fonte, espaços normalizados). Cada um tem de casar com exatamente
+// um ramo.
+//
+// MAPA_ESTADOS_VAZIOS: cada <EstadoVazio>/<EstadoVazioLinha> de cada arquivo, na ordem do fonte —
+// variante (compacto/bloco/linha) e mensagem. Trocar um por outra coisa, apagá-lo ou mudar a variante
+// muda o mapa e falha a trava; src/components/EstadoVazio.test.ts confere a contagem por outro caminho.
+
+export type ExcecaoEstadoVazio = { arquivo: string; condicao: string; folha: string; motivo: string };
+
+export const EXCECOES_ESTADO_VAZIO: readonly ExcecaoEstadoVazio[] = [
+  {
+    arquivo: "src/app/(app)/academico/calendario/[id]/revisoes/[revisaoId]/DecidirReplanejamento.tsx",
+    condicao: "autorizadas.length",
+    folha: "<p>Nenhuma exceção de dia não letivo autorizada.</p>",
+    motivo: "frase do resumo de impacto dentro do diálogo de confirmação (o que a aprovação vai aplicar), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/calendario/novo/PrepararCalendario.tsx",
+    condicao: "!periodos.length",
+    folha: "<p>A proposta não contém períodos não letivos.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/recuperacoes/planos/[propostaId]/PreviaAgenda.tsx",
+    condicao: "dado.pendencias.length",
+    folha: "<p>Nenhum impedimento encontrado nesta conferência. O horário ainda não está agendado.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/designacao/PreviaSubstituicao.tsx",
+    condicao: "dado.pendencias.length",
+    folha: "<p>Nenhum impedimento identificado nesta conferência. A substituição ainda não foi aplicada.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/designacao/propostas/page.tsx",
+    condicao: "p.conferenciaOriginal.pendencias.length > 0",
+    folha: "<p>Conferência de origem sem pendências registradas.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/segundas-chamadas/propostas/[propostaId]/agenda/Formulario.tsx",
+    condicao: "!professores.length",
+    folha: "<p role=\"alert\">Não há professor elegível disponível para esta agenda.</p>",
+    motivo: "aviso (role=alert): não há professor para agendar",
+  },
+  {
+    arquivo: "src/app/(app)/academico/segundas-chamadas/propostas/[propostaId]/agenda/Formulario.tsx",
+    condicao: "naoLetivos.length",
+    folha: "<p>Não há período não letivo afetado.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/segundas-chamadas/propostas/[propostaId]/agenda/page.tsx",
+    condicao: "item.calendario.periodos.length",
+    folha: "<p>Não há período não letivo afetado.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/remarcacao/page.tsx",
+    condicao: "p.calendario.periodosNaoLetivos.length > 0",
+    folha: "<p>Não há período não letivo afetado.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/substituicao/Formulario.tsx",
+    condicao: "previa.pendencias.length",
+    folha: "<p>Não há pendência apontada nesta conferência.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/configuracao/paises/PaisesPainel.tsx",
+    condicao: "produtos.length === 0",
+    folha: "<span className=\"text-xs text-gray-400\">Cadastre produtos no Catálogo.</span>",
+    motivo: "dica curta dentro de uma linha de checkboxes do formulário",
+  },
+  {
+    arquivo: "src/app/(app)/oportunidades/[id]/contratacao/AgendaParticularFormulario.tsx",
+    condicao: "revisao.impedimentos.length",
+    folha: "<label className=\"block\"><input type=\"checkbox\" checked={confirmado} onChange={(e) => { setConfirmado(e.target.checked); onChange(e.target.checked ? { ...agenda(), estadoHash: revisao.estadoHash, horariosAcordadosConferidos: true } : null); }} /> Conferi os horários acordados e apresentados acima.</label>",
+    motivo: "sem itens, a tela mostra o passo seguinte (confirmação/formulário), não uma mensagem",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/compensacoes/[cobrancaId]/CompensacaoCobertura.tsx",
+    condicao: "!diasSelecionaveis.length",
+    folha: "<p role=\"status\">Todos os dias confirmados já possuem direito reconhecido.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx",
+    condicao: "resultado.pendencias.length",
+    folha: "<RegistrarFotografia matriculaId={matriculaId} resultado={resultado} />",
+    motivo: "sem itens, a tela mostra o passo seguinte (confirmação/formulário), não uma mensagem",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/desistencia/page.tsx",
+    condicao: "conferencia.pendencias.length",
+    folha: "<p>Nenhum avanço formal identificado nos registros consultados. A equipe ainda deve conferir os requisitos antes da efetivação.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/ConferenciaHoras.tsx",
+    condicao: "!previa.pendencias.length",
+    folha: "<form onSubmit={event => registrarConferencia(event, previa.estadoPrevia)}><label className=\"block\">Justificativa da conferência<CampoTexto className=\"block w-full rounded border p-2\" name=\"motivo\" required minLength={5} maxLength={2000} disabled={ocupado} /></label> <button className={`${botaoClasses({ variante: \"secundario\", tamanho: \"lg\" })} mt-2`} disabled={ocupado}>Registrar conferência</button></form>",
+    motivo: "sem itens, a tela mostra o passo seguinte (confirmação/formulário), não uma mensagem",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/preparacao/page.tsx",
+    condicao: "prontidao.dado.pendencias.length",
+    folha: "<p>Conferências básicas atendidas; prossiga com a conferência contratual completa.</p>",
+    motivo: "veredito positivo de uma conferência (nada pendente), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/matriculas/[id]/reserva/page.tsx",
+    condicao: "!r.podeReservar && !r.reservas.length && r.prazoMinutos",
+    folha: "<p>A situação da matrícula ou uma alocação existente impede nova reserva. Confira a contratação.</p>",
+    motivo: "aviso ou instrução (o que falta para seguir), não lista sem itens",
+  },
+  {
+    arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx",
+    condicao: "!documentoId && !fontesOriginaisEnviados.length",
+    folha: "<p className=\"text-sm\">Confirme o contrato ou aguarde o envio externo confirmado de um original para preparar estas condições.</p>",
+    motivo: "aviso ou instrução (o que falta para seguir), não lista sem itens",
+  },
+];
+
+export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
+  "src/app/(app)/aria/_componentes/Comportamento.tsx": [
+    "compacto · Nenhum exemplo cadastrado.",
+  ],
+  "src/app/(app)/aria/_componentes/Conhecimento.tsx": [
+    "bloco · Nenhuma fonte cadastrada. Adicione um texto abaixo para a Aria consultar.",
+    "compacto · Nenhuma pergunta cadastrada.",
+  ],
+  "src/app/(app)/aria/_componentes/Historico.tsx": [
+    "bloco · Nenhuma ação da Aria com esses filtros.",
+  ],
+  "src/app/(app)/aria/_componentes/Playground.tsx": [
+    "compacto · Escreva como se fosse o cliente. {nome} responde sem enviar nada.",
+    "compacto · Nenhuma.",
+    "compacto · Nenhuma.",
+  ],
+  "src/app/(app)/aria/_componentes/VisaoGeral.tsx": [
+    "compacto · Nenhuma conversa no período.",
+  ],
+  "src/app/(app)/academico/MudancasAcademicasPainel.tsx": [
+    "compacto · Não há turma de destino disponível no mesmo idioma, modalidade e formato.",
+    "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · Nenhuma solicitação acadêmica neste filtro.",
+    "compacto · Nenhum parecer registrado.",
+  ],
+  "src/app/(app)/academico/admissoes/[id]/page.tsx": [
+    "bloco · Nenhuma versão nesta página.",
+    "bloco · Nenhuma versão da janela de admissão registrada para esta turma.",
+  ],
+  "src/app/(app)/academico/admissoes/excecoes/[reservaId]/page.tsx": [
+    "compacto · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/admissoes/excecoes/page.tsx": [
+    "bloco · Nenhuma reserva encontrada.",
+  ],
+  "src/app/(app)/academico/admissoes/page.tsx": [
+    "bloco · Nenhuma turma encontrada.",
+  ],
+  "src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/designacao/page.tsx": [
+    "bloco · Nenhuma designação registrada.",
+  ],
+  "src/app/(app)/academico/avaliacoes/[alocacaoId]/[codigo]/page.tsx": [
+    "bloco · Nenhuma nota registrada.",
+  ],
+  "src/app/(app)/academico/avaliacoes/[alocacaoId]/equivalencia/PrepararEquivalenciaTransferencia.tsx": [
+    "compacto · Nenhum registro oficial desta habilidade está disponível para indicar.",
+  ],
+  "src/app/(app)/academico/avaliacoes/[alocacaoId]/extras/page.tsx": [
+    "bloco · Nenhuma habilidade deste vínculo ativo exige oportunidade extra neste momento.",
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/avaliacoes/[alocacaoId]/page.tsx": [
+    "bloco · Nenhuma avaliação disponível para este acesso.",
+  ],
+  "src/app/(app)/academico/avaliacoes/page.tsx": [
+    "bloco · Nenhum vínculo disponível neste filtro.",
+  ],
+  "src/app/(app)/academico/calendario/[id]/page.tsx": [
+    "compacto · Nenhum feriado, recesso ou férias nesta versão.",
+  ],
+  "src/app/(app)/academico/calendario/[id]/replanejamento/ConteudoRevisao.tsx": [
+    "compacto · Nenhuma turma com encontro previsto futuro encontrada.",
+  ],
+  "src/app/(app)/academico/calendario/[id]/revisoes/page.tsx": [
+    "bloco · Nenhuma revisão nesta página.",
+    "bloco · Nenhuma revisão registrada para este calendário.",
+  ],
+  "src/app/(app)/academico/calendario/page.tsx": [
+    "bloco · Nenhuma proposta encontrada.",
+  ],
+  "src/app/(app)/academico/correcoes/[lancamentoId]/[propostaId]/page.tsx": [
+    "bloco · Nenhuma mudança aprovada ou executada identificada para este vínculo.",
+  ],
+  "src/app/(app)/academico/correcoes/[lancamentoId]/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/correcoes/page.tsx": [
+    "bloco · Nenhum caso identificado.",
+  ],
+  "src/app/(app)/academico/correcoes/revisoes/[casoId]/ResolucaoRevisaoProgressao.tsx": [
+    "compacto · Nenhuma proposta de resolução foi registrada.",
+  ],
+  "src/app/(app)/academico/equivalencias/[propostaId]/page.tsx": [
+    "compacto · Nenhuma fonte oficial foi preservada nesta proposta.",
+    "compacto · Nenhuma fonte foi indicada; os requisitos permanecem pendentes para acompanhamento.",
+  ],
+  "src/app/(app)/academico/equivalencias/page.tsx": [
+    "compacto · Nenhuma proposta autorizada aguarda execução nesta página.",
+    "compacto · Nenhuma proposta autorizada entre as mais recentes. Confira as próximas propostas.",
+    "compacto · Nenhuma proposta autorizada aguarda execução nesta matrícula.",
+    "bloco · Nenhuma proposta de aproveitamento nesta página.",
+    "bloco · Nenhuma proposta de aproveitamento foi encontrada para esta matrícula.",
+  ],
+  "src/app/(app)/academico/grades/nova/page.tsx": [
+    "bloco · Nenhuma turma planejada sem histórico ou agenda publicada foi encontrada.",
+  ],
+  "src/app/(app)/academico/grades/page.tsx": [
+    "bloco · Nenhuma proposta a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · Nenhuma proposta encontrada.",
+  ],
+  "src/app/(app)/academico/indisponibilidades/SolicitarAusencia.tsx": [
+    "compacto · Nenhum professor ativo disponível.",
+  ],
+  "src/app/(app)/academico/indisponibilidades/page.tsx": [
+    "bloco · Nenhuma solicitação encontrada.",
+    "compacto · Nenhuma aula prevista coincide atualmente com o período solicitado.",
+    "compacto · Nenhuma aula prevista ou reserva particular conflita atualmente com este período.",
+  ],
+  "src/app/(app)/academico/recuperacoes/[realizacaoId]/page.tsx": [
+    "bloco · Nenhuma versão de nota registrada nesta página.",
+    "bloco · Nenhuma versão de nota registrada para esta realização.",
+  ],
+  "src/app/(app)/academico/recuperacoes/correcoes/[notaId]/page.tsx": [
+    "bloco · Sem propostas nesta página.",
+    "bloco · Nenhuma proposta de correção registrada para esta nota.",
+  ],
+  "src/app/(app)/academico/recuperacoes/designadas/page.tsx": [
+    "bloco · Nenhuma tentativa a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · {r.dado.modo === \"historico\" ? \"Nenhuma avaliação de recuperação no seu histórico.\" : \"Nenhuma tenta",
+  ],
+  "src/app/(app)/academico/recuperacoes/page.tsx": [
+    "bloco · Nenhuma realização disponível nesta página.",
+    "bloco · Nenhuma recuperação realizada neste vínculo.",
+  ],
+  "src/app/(app)/academico/recuperacoes/planos/[propostaId]/autorizacao-reserva/page.tsx": [
+    "bloco · Nenhuma autorização especial registrada.",
+  ],
+  "src/app/(app)/academico/recuperacoes/planos/[propostaId]/page.tsx": [
+    "bloco · Nenhuma reserva nesta página.",
+    "bloco · Nenhuma reserva registrada para este plano.",
+  ],
+  "src/app/(app)/academico/recuperacoes/planos/[propostaId]/prorrogacoes/page.tsx": [
+    "bloco · Nenhuma proposta nesta página.",
+    "bloco · Nenhuma proposta de prorrogação registrada para esta recuperação.",
+  ],
+  "src/app/(app)/academico/recuperacoes/planos/autorizacoes-preparacao/page.tsx": [
+    "bloco · Nenhuma autorização de preparação registrada.",
+  ],
+  "src/app/(app)/academico/recuperacoes/planos/page.tsx": [
+    "bloco · Nenhuma proposta nesta página.",
+    "bloco · Nenhum plano de recuperação proposto para esta matrícula.",
+  ],
+  "src/app/(app)/academico/recuperacoes/reservas/[reservaId]/cancelamento/page.tsx": [
+    "compacto · Nenhuma proposta de cancelamento registrada.",
+  ],
+  "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/agenda/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/autorizacao/page.tsx": [
+    "bloco · Nenhuma autorização especial registrada.",
+  ],
+  "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/designacao/page.tsx": [
+    "bloco · Nenhuma designação nesta página.",
+    "bloco · Nenhuma designação registrada para esta tentativa.",
+  ],
+  "src/app/(app)/academico/recuperacoes/tentativas/[itemReservaId]/designacao/propostas/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/regras/page.tsx": [
+    "bloco · Nenhum nível encontrado.",
+  ],
+  "src/app/(app)/academico/regras/turmas/[turmaId]/historica/page.tsx": [
+    "compacto · Nenhuma conferência registrada.",
+  ],
+  "src/app/(app)/academico/regras/turmas/[turmaId]/page.tsx": [
+    "bloco · Nenhuma mudança proposta.",
+  ],
+  "src/app/(app)/academico/reposicoes/correcoes/[reposicaoId]/CorrecoesConclusaoReposicao.tsx": [
+    "compacto · Não há correções nesta página.",
+    "compacto · Nenhuma correção proposta para esta conclusão.",
+    "compacto · Não há encontro próprio ministrado com presença disponível para esta correção.",
+    "compacto · Não há entrega completa disponível para esta correção.",
+  ],
+  "src/app/(app)/academico/reposicoes/page.tsx": [
+    "bloco · Nenhuma matrícula encontrada para “{busca}”.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/SegundaChamadaPainel.tsx": [
+    "compacto · Nenhuma proposta nesta avaliação.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/autorizacoes/page.tsx": [
+    "bloco · Nenhuma autorização especial registrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/historico/page.tsx": [
+    "compacto · Este impedimento bloqueia o fechamento até existir realização posterior desta avaliação com nota ofi",
+    "bloco · Nenhuma reserva registrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/agendas/page.tsx": [
+    "bloco · Nenhuma agenda de segunda chamada foi encontrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/minhas/page.tsx": [
+    "bloco · Nenhuma segunda chamada designada está disponível.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/pendentes-agenda/page.tsx": [
+    "bloco · Nenhuma segunda chamada pendente a partir deste ponto da fila: o link ficou antigo ou a fila termino",
+    "bloco · Nenhuma segunda chamada pendente de agenda foi encontrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/propostas/[propostaId]/agenda/page.tsx": [
+    "bloco · Nenhuma agenda inicial foi preparada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/propostas/[propostaId]/designacao/page.tsx": [
+    "bloco · Nenhuma designação registrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/cancelamento/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/remarcacao/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/academico/segundas-chamadas/reservas/[reservaId]/substituicao/page.tsx": [
+    "bloco · Nenhuma proposta de substituição foi registrada.",
+  ],
+  "src/app/(app)/alunos/AlunosLista.tsx": [
+    "linha · {totalBase === 0 ? \"Nenhum aluno cadastrado no seu alcance.\" : filtrando ? ( <>Nenhum aluno com esse",
+  ],
+  "src/app/(app)/alunos/[id]/AcademicoAluno.tsx": [
+    "compacto · Nenhum teste registrado.",
+    "compacto · Nenhum certificado emitido.",
+  ],
+  "src/app/(app)/alunos/[id]/FichaAluno.tsx": [
+    "compacto · Sem turma (lista de espera).",
+    "compacto · Sem movimentações.",
+  ],
+  "src/app/(app)/alunos/[id]/agenda-aditivo/page.tsx": [
+    "bloco · Não há matrícula particular ativa com encontro futuro disponível.",
+  ],
+  "src/app/(app)/alunos/[id]/creditos/[creditoId]/PropostaUsoCredito.tsx": [
+    "compacto · Nenhuma cobrança em aberto disponível nesta matrícula.",
+  ],
+  "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": [
+    "compacto · Sem ajustes.",
+    "compacto · Sem comissão.",
+    "compacto · Sem movimentações de cobrança.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/CompensacoesEncerramento.tsx": [
+    "compacto · Nenhuma compensação registrada nesta consulta.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/ComprasHorasPainel.tsx": [
+    "compacto · Nenhuma compra de horas registrada nesta matrícula.",
+    "compacto · Nenhuma cobrança de particular por hora paga e sem compra vinculada.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/CumprimentoPainel.tsx": [
+    "compacto · Nenhum dia de compensação programado para esta matrícula.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/MovimentacoesPainel.tsx": [
+    "compacto · Nenhuma proposta encontrada.",
+    "compacto · Nenhum período calculado nesta proposta.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/NovaPausa.tsx": [
+    "compacto · Nenhum contrato ativo disponível para seleção.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/NovaRetomada.tsx": [
+    "compacto · Nenhum contrato pausado disponível.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/NovoEncerramento.tsx": [
+    "compacto · Nenhum contrato disponível.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/RecomposicaoPainel.tsx": [
+    "compacto · Nenhum direito disponível sem programação.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/VinculosLegados.tsx": [
+    "compacto · Nenhum vínculo ativo sem matrícula identificado.",
+    "compacto · Não há contrato ativo compatível. Confira o cadastro contratual antes de associar.",
+  ],
+  "src/app/(app)/alunos/[id]/movimentacoes/page.tsx": [
+    "compacto · Nenhum pedido registrado nesta página.",
+    "compacto · Nenhum pedido de encerramento registrado para este aluno.",
+  ],
+  "src/app/(app)/alunos/[id]/portal/painel.tsx": [
+    "compacto · Nenhuma solicitação.",
+  ],
+  "src/app/(app)/alunos/turma/[id]/page.tsx": [
+    "linha · Nenhum aluno alocado.",
+  ],
+  "src/app/(app)/comissoes/PainelComissoes.tsx": [
+    "bloco · {filtrando ? \"Nenhuma comissão com esses filtros.\" : \"Nenhuma comissão neste período.\"}",
+  ],
+  "src/app/(app)/configuracao/catalogo/EntradasOfertas.tsx": [
+    "compacto · Cadastre a oferta do produto no país para configurar sua entrada.",
+  ],
+  "src/app/(app)/configuracao/catalogo/NiveisPainel.tsx": [
+    "compacto · Sem níveis.",
+  ],
+  "src/app/(app)/configuracao/catalogo/PrecosPainel.tsx": [
+    "linha · Nenhum preço cadastrado.",
+  ],
+  "src/app/(app)/configuracao/crm/distribuicao/SetorPainel.tsx": [
+    "compacto · Nenhum usuário ativo neste setor.",
+  ],
+  "src/app/(app)/configuracao/crm/ia/IaPainel.tsx": [
+    "compacto · Nenhuma chamada registrada.",
+  ],
+  "src/app/(app)/configuracao/crm/respostas/RespostasPainel.tsx": [
+    "compacto · Nenhuma resposta rápida cadastrada.",
+  ],
+  "src/app/(app)/configuracao/crm/tags-campos/TagsCamposPainel.tsx": [
+    "compacto · Nenhuma tag cadastrada.",
+    "compacto · Nenhum campo cadastrado.",
+  ],
+  "src/app/(app)/configuracao/contratos/[codigo]/page.tsx": [
+    "compacto · Sem campos variáveis.",
+  ],
+  "src/app/(app)/configuracao/contratos/page.tsx": [
+    "bloco · Nenhum modelo cadastrado.",
+  ],
+  "src/app/(app)/configuracao/migracao/[loteId]/EnsaioVinculoMigracao.tsx": [
+    "compacto · Ainda não há ensaio registrado para esta fotografia.",
+  ],
+  "src/app/(app)/configuracao/migracao/[loteId]/page.tsx": [
+    "bloco · Nenhuma linha neste trecho do lote: o link ficou antigo.",
+  ],
+  "src/app/(app)/configuracao/migracao/page.tsx": [
+    "bloco · Nenhum lote foi preparado ainda.",
+  ],
+  "src/app/(app)/configuracao/migracao/presenca/[linhaId]/PresencaHistorica.tsx": [
+    "compacto · Nenhuma proposta.",
+  ],
+  "src/app/(app)/configuracao/crm/metas/page.tsx": [
+    "compacto · Nenhuma meta definida para este mês.",
+  ],
+  "src/app/(app)/configuracao/paises/PaisFormulario.tsx": [
+    "compacto · Nenhum documento. Adicione ao menos um para poder ativar o país.",
+  ],
+  "src/app/(app)/configuracao/paises/PaisesPainel.tsx": [
+    "bloco · Nenhum país cadastrado ainda.",
+  ],
+  "src/app/(app)/configuracao/turmas/TurmasPainel.tsx": [
+    "bloco · Nenhuma turma cadastrada.",
+  ],
+  "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx": [
+    "bloco · Nenhum número cadastrado — o canal começa aqui.",
+  ],
+  "src/app/(app)/configuracao/whatsapp/TemplatesPainel.tsx": [
+    "bloco · Nenhum template — rode o seed ou crie o primeiro.",
+  ],
+  "src/app/(app)/contatos/FichaContato.tsx": [
+    "compacto · Nenhum telefone cadastrado.",
+    "compacto · Nenhuma tag neste contato.",
+    "compacto · Nenhuma atividade registrada.",
+    "compacto · Nenhuma oportunidade deste contato na sua carteira.",
+    "compacto · Nenhum campo personalizado de pessoa foi criado.",
+  ],
+  "src/app/(app)/contatos/ListaContatos.tsx": [
+    "bloco · {filtrando ? \"Nenhum contato com esses filtros.\" : \"Nenhum contato na sua carteira.\"}",
+  ],
+  "src/app/(app)/diario/DiarioAulas.tsx": [
+    "compacto · Nenhum aluno elegível na data selecionada.",
+    "bloco · {mensagemVazio ?? \"Nenhuma aula registrada neste histórico.\"}",
+  ],
+  "src/app/(app)/diario/encontros/[id]/OcorrenciaParticular.tsx": [
+    "compacto · Nenhum informe registrado.",
+  ],
+  "src/app/(app)/diario/encontros/[id]/correcao/CorrecaoAula.tsx": [
+    "compacto · Esta proposta não registrou diferenças legíveis.",
+    "compacto · Não há simulações disponíveis para esta proposta.",
+  ],
+  "src/app/(app)/diario/encontros/[id]/page.tsx": [
+    "compacto · Nenhum aluno elegível identificado para esta chamada.",
+  ],
+  "src/app/(app)/diario/encontros/page.tsx": [
+    "bloco · Nenhum encontro disponível.",
+  ],
+  "src/app/(app)/diario/excecoes-gravacao/page.tsx": [
+    "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · Nenhuma solicitação encontrada.",
+  ],
+  "src/app/(app)/diario/pendencias/page.tsx": [
+    "compacto · Nenhuma pendência de diário a partir deste ponto da fila.",
+    "compacto · Nenhuma pendência de diário encontrada.",
+  ],
+  "src/app/(app)/diario/regularizacoes-gravacao/RegularizacoesGravacao.tsx": [
+    "compacto · Não há propostas de regularização.",
+  ],
+  "src/app/(app)/diario/regularizacoes/GerirDesignacoes.tsx": [
+    "compacto · Nenhuma designação registrada.",
+  ],
+  "src/app/(app)/diario/regularizacoes/page.tsx": [
+    "compacto · Nenhuma aula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "compacto · {modo === \"HISTORICO\" ? \"Nenhuma designação encontrada no histórico.\" : \"Nenhuma regularização pende",
+  ],
+  "src/app/(app)/diario/reposicoes/ReposicoesEquipe.tsx": [
+    "compacto · Nenhuma reposição encontrada no escopo consultado.",
+  ],
+  "src/app/(app)/diario/reposicoes/[id]/troca-fonte/TrocaFonteReposicao.tsx": [
+    "compacto · Nenhuma troca de fonte foi proposta para esta reposição.",
+  ],
+  "src/app/(app)/diario/reposicoes/page.tsx": [
+    "bloco · Nenhuma reposição pendente para sua atuação.",
+    "compacto · Nenhuma conclusão disponível para sua consulta.",
+  ],
+  "src/app/(app)/empresas/EmpresasCliente.tsx": [
+    "bloco · {totalBase === 0 ? \"Nenhuma empresa ainda. Crie a primeira para registrar o responsável financeiro d",
+  ],
+  "src/app/(app)/empresas/[id]/FichaEmpresa.tsx": [
+    "compacto · Nenhum contrato individual vinculado a esta empresa ainda.",
+    "compacto · Nenhuma fatura histórica vinculada a esta empresa.",
+  ],
+  "src/app/(app)/financeiro/AcessoAulasPainel.tsx": [
+    "compacto · Nenhuma restrição ou solicitação pendente.",
+  ],
+  "src/app/(app)/financeiro/FilaCobranca.tsx": [
+    "bloco · Nenhuma cobrança a partir deste ponto da fila: as seguintes já foram resolvidas ou o link ficou anti",
+    "bloco · Nada nesta visão.",
+  ],
+  "src/app/(app)/financeiro/FinanceiroPainel.tsx": [
+    "linha · {vazio ?? \"Sem comissões.\"}",
+    "bloco · Nenhum pedido pendente.",
+    "bloco · Ainda não há descontos nem comissões registrados.",
+    "compacto · Sem descontos.",
+    "compacto · Sem comissões.",
+    "compacto · Sem descontos por vendedor.",
+    "compacto · Sem comissões.",
+  ],
+  "src/app/(app)/financeiro/InformesPagamento.tsx": [
+    "compacto · Nenhum informe a partir deste ponto da fila: os seguintes já foram conferidos ou o link ficou antigo",
+    "compacto · Nenhum informe neste atendimento.",
+  ],
+  "src/app/(app)/financeiro/RetomadasPainel.tsx": [
+    "compacto · Não há mensalidades remanescentes para alterar. A retomada ainda exige aprovação.",
+    "compacto · Nenhuma proposta de retomada.",
+  ],
+  "src/app/(app)/financeiro/acertos-cobertura/ImpactosCoberturaFormulario.tsx": [
+    "compacto · Nenhuma mensalidade existe nesta matrícula.",
+  ],
+  "src/app/(app)/financeiro/acertos-cobertura/page.tsx": [
+    "compacto · Nenhum aditivo de cobertura foi encontrado nesta página.",
+    "compacto · Nenhum aditivo formaliza correção de cobertura.",
+  ],
+  "src/app/(app)/financeiro/acertos-taxa/page.tsx": [
+    "compacto · Nenhum aditivo com condições de taxa nesta página.",
+    "compacto · Nenhum aditivo formaliza condições de taxa.",
+  ],
+  "src/app/(app)/financeiro/acertos-adiantamento/[matriculaId]/[propostaId]/page.tsx": [
+    "bloco · Nenhuma proposta de acerto registrada.",
+  ],
+  "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx": [
+    "bloco · Nenhuma proposta de acerto registrada.",
+  ],
+  "src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal.tsx": [
+    "bloco · Nenhuma matrícula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · Nenhuma matrícula precisa de acompanhamento na continuidade mensal.",
+  ],
+  "src/app/(app)/financeiro/desistencias/page.tsx": [
+    "bloco · Nenhum pedido a partir deste ponto da fila: os pedidos seguintes já foram concluídos ou o link ficou",
+    "bloco · Nenhum pedido de desistência aguardando conferência financeira.",
+  ],
+  "src/app/(app)/financeiro/migracao/[linhaId]/ConferenciaFinanceiraMigracao.tsx": [
+    "compacto · Nenhuma proposta registrada para esta linha.",
+  ],
+  "src/app/(app)/financeiro/migracao/[linhaId]/EntradaFinanceiraHistorica.tsx": [
+    "compacto · Nenhuma proposta de obrigação registrada.",
+  ],
+  "src/app/(app)/financeiro/migracao/page.tsx": [
+    "compacto · Nenhuma linha financeira nesta página.",
+    "compacto · Nenhuma linha financeira da migração para conciliar.",
+  ],
+  "src/app/(app)/financeiro/permuta/page.tsx": [
+    "bloco · Nenhum acordo nesta página.",
+    "bloco · Nenhum acordo de permuta registrado.",
+  ],
+  "src/app/(app)/financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
+    "bloco · Não há contratos disponíveis para recebimento.",
+  ],
+  "src/app/(app)/financeiro/recebimentos/page.tsx": [
+    "compacto · Nenhum recebimento nesta página.",
+    "compacto · Nenhum recebimento registrado.",
+  ],
+  "src/app/(app)/carteira/CoberturasPainel.tsx": [
+    "compacto · Nenhuma cobertura cadastrada.",
+  ],
+  "src/app/(app)/carteira/ListaCarteira.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na carteira.\"}",
+  ],
+  "src/app/(app)/funil/EdicaoOportunidade.tsx": [
+    "compacto · Nenhum documento anexado.",
+  ],
+  "src/app/(app)/funil/PainelOportunidade.tsx": [
+    "compacto · Nenhuma atividade registrada.",
+  ],
+  "src/app/(app)/funil/page.tsx": [
+    "bloco · {filtrando ? \"Nenhuma oportunidade com esses filtros.\" : \"Nenhuma oportunidade na sua carteira.\"}",
+  ],
+  "src/app/(app)/tarefas/ListaTarefas.tsx": [
+    "bloco · Nenhuma tarefa por aqui. Crie uma para começar.",
+  ],
+  "src/app/(app)/tarefas/SinoNotificacoes.tsx": [
+    "compacto · Nenhuma notificação.",
+  ],
+  "src/app/(app)/home/HomeGerente.tsx": [
+    "compacto · Sem vendedores.",
+    "compacto · Sem vendedores ativos.",
+  ],
+  "src/app/(app)/home/HomeProfessor.tsx": [
+    "compacto · Nenhuma experimental agendada.",
+    "compacto · Você não tem turmas atribuídas.",
+  ],
+  "src/app/(app)/inbox/AcoesAtendimento.tsx": [
+    "compacto · Este número não atende outro setor.",
+    "compacto · Nenhum convite ativo que você possa revogar.",
+    "compacto · Nenhuma mensagem agendada que você possa cancelar.",
+  ],
+  "src/app/(app)/inbox/AcoesMensagem.tsx": [
+    "compacto · Nenhuma conversa deste número em que você possa enviar.",
+  ],
+  "src/app/(app)/inbox/AcoesContato.tsx": [
+    "compacto · Nenhum encontrado.",
+  ],
+  "src/app/(app)/inbox/NovoAtendimento.tsx": [
+    "compacto · {opcoes.comercial ? \"Nenhum lead na sua carteira para iniciar uma conversa. Cadastre o lead em Leads",
+    "compacto · A administração precisa disponibilizar um canal ativo para os atendimentos autorizados.",
+    "compacto · Atendimento comercial sai pela sua linha comercial. Peça à administração para atribuir uma linha a v",
+  ],
+  "src/app/(app)/inbox/PainelSetor.tsx": [
+    "compacto · Nenhuma cobrança em aberto.",
+  ],
+  "src/app/(app)/inbox/ListaAtendimentos.tsx": [
+    "bloco · Nenhuma conversa neste filtro.",
+  ],
+  "src/app/(app)/oportunidades/[id]/contratacao/page.tsx": [
+    "bloco · {c.podeCadastrarNovo ? \"Não há cadastro com o contato da negociação. Você poderá preencher os dados ",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaAria.tsx": [
+    "bloco · Nenhum atendimento comercial com resposta neste período e com estes filtros.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaAtividades.tsx": [
+    "compacto · Nenhuma tarefa no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaConversas.tsx": [
+    "compacto · Nenhuma mensagem enviada no período.",
+    "compacto · Nenhuma mensagem recebida no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaEquipe.tsx": [
+    "bloco · Nenhuma pessoa da equipe neste recorte.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaFunil.tsx": [
+    "bloco · Nenhuma oportunidade no funil neste período e com estes filtros.",
+    "compacto · Nenhuma perda no período.",
+  ],
+  "src/app/(app)/relatorios/_componentes/AbaVisao.tsx": [
+    "compacto · Nenhuma variação de 10% ou mais nos indicadores.",
+  ],
+  "src/app/(app)/relatorios/_componentes/PainelDetalhe.tsx": [
+    "compacto · Nenhuma oportunidade aqui.",
+  ],
+  "src/app/(app)/matriculas/[id]/autorizacoes-comunicacao/AutorizacoesFormulario.tsx": [
+    "compacto · Não há responsável pedagógico vinculado a esta matrícula.",
+    "compacto · Nenhuma autorização registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/compensacoes/[cobrancaId]/CompensacaoCobertura.tsx": [
+    "compacto · Nenhuma proposta de compensação para esta mensalidade.",
+  ],
+  "src/app/(app)/matriculas/[id]/compensacoes/[cobrancaId]/periodo-integral/PeriodoIntegral.tsx": [
+    "compacto · Nenhuma proposta registrada para esta mensalidade.",
+  ],
+  "src/app/(app)/matriculas/[id]/condicoes-horas/CondicoesHoras.tsx": [
+    "compacto · Nenhuma versão registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/continuidade-mensal/CondicoesContinuidadeMensal.tsx": [
+    "compacto · Nenhuma versão registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/AcertoTaxaFormulario.tsx": [
+    "compacto · Nenhuma cobrança de taxa disponível para conferência.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/ImpactosTaxaFormulario.tsx": [
+    "compacto · Nenhuma cobrança de taxa foi encontrada para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/OriginaisPainel.tsx": [
+    "compacto · Nenhum original nesta página.",
+    "compacto · Nenhum original preservado para este aditivo.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesFormulario.tsx": [
+    "compacto · Nenhum documento disponível nesta página. Cadastre as evidências na documentação da matrícula antes ",
+    "compacto · Nenhum documento disponível. Cadastre as evidências na documentação da matrícula antes de concluir.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/ParticipantesHistorico.tsx": [
+    "compacto · Nenhuma conferência nesta página.",
+    "compacto · Nenhuma conferência de signatários registrada para este aditivo.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/alcadas/page.tsx": [
+    "bloco · Não há alçadas adicionais disponíveis para esta proposta.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/[propostaId]/originais/[artefatoId]/page.tsx": [
+    "compacto · Nenhuma tentativa de envio foi iniciada.",
+    "compacto · Nenhum registro nesta página.",
+    "compacto · Nenhuma conferência registrada para este original.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/agenda/ConferenciaAgendaFormulario.tsx": [
+    "compacto · Não há encontros particulares futuros disponíveis para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/aditivos/page.tsx": [
+    "compacto · Nenhum modelo de aditivo aprovado está disponível nesta página.",
+    "compacto · Nenhum modelo de aditivo aprovado está disponível.",
+    "compacto · Nenhuma proposta nesta página.",
+    "compacto · Nenhuma proposta de aditivo registrada para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/originais/[artefatoId]/page.tsx": [
+    "compacto · Nenhuma conferência registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/page.tsx": [
+    "compacto · Nenhum modelo publicado disponível nesta página para o regime da matrícula.",
+    "compacto · Nenhum modelo publicado disponível para o regime da matrícula.",
+    "compacto · Nenhuma prévia registrada nesta página.",
+    "compacto · Nenhuma prévia registrada para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/page.tsx": [
+    "compacto · Ainda não há original preservado. A geração exige uma conferência atual dos participantes.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/previas/[previaId]/participantes/page.tsx": [
+    "compacto · Nenhuma conferência registrada nesta página.",
+    "compacto · Nenhuma conferência de participantes registrada para esta prévia.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/substituicoes/Andamento.tsx": [
+    "compacto · Nenhum retorno nesta página.",
+    "compacto · Nenhum retorno do cancelamento registrado.",
+  ],
+  "src/app/(app)/matriculas/[id]/contrato/substituicoes/page.tsx": [
+    "compacto · Nenhuma conferência de outro original nesta página. Prepare e confira o documento substituto nos doc",
+    "compacto · Nenhuma conferência de outro original registrada. Prepare e confira o documento substituto nos docum",
+    "compacto · Nenhuma proposta nesta página.",
+    "compacto · Nenhuma proposta de substituição registrada para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/desistencia/administracao/page.tsx": [
+    "compacto · Nenhum pedido de desistência registrado.",
+  ],
+  "src/app/(app)/matriculas/[id]/desistencia/documentos/page.tsx": [
+    "compacto · Nenhum documento registrado nesta matrícula.",
+    "compacto · Nenhum processo de assinatura registrado nesta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/desistencia/financeiro/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+    "bloco · Nenhuma memória contratual preparada.",
+    "bloco · Nenhuma reconferência registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/desistencia/page.tsx": [
+    "compacto · Nenhum pedido registrado.",
+  ],
+  "src/app/(app)/matriculas/[id]/disponibilidade-oferta/DisponibilidadeOferta.tsx": [
+    "compacto · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/emissao/page.tsx": [
+    "compacto · Nenhum documento anexado. Confira os dados e documentos necessários antes de confirmar.",
+  ],
+  "src/app/(app)/matriculas/[id]/fechamentos-horas/page.tsx": [
+    "bloco · Nenhum rascunho salvo nesta página.",
+    "bloco · Nenhum rascunho de fechamento salvo para esta matrícula.",
+    "compacto · Nenhum encontro incluído para cobrança nesta versão.",
+  ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/RelatosIndisponibilidadeOferta.tsx": [
+    "compacto · Nenhum relato registrado nesta página.",
+    "compacto · Nenhum relato de indisponibilidade registrado para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/correcao/page.tsx": [
+    "compacto · Nenhuma correção registrada nesta página.",
+    "compacto · Nenhuma correção registrada para este relato.",
+  ],
+  "src/app/(app)/matriculas/[id]/indisponibilidade-oferta/[registroId]/termino/TerminoIndisponibilidadeOferta.tsx": [
+    "compacto · Nenhuma proposta registrada nesta página.",
+    "compacto · Nenhuma proposta de término registrada para esta indisponibilidade.",
+  ],
+  "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/page.tsx": [
+    "bloco · Nenhum encontro particular nesta página.",
+    "bloco · Nenhum encontro particular registrado para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/ocorrencias-financeiras/revisoes-correcao-aula/RevisoesCorrecaoAula.tsx": [
+    "compacto · Nenhuma correção de presença pendente nesta matrícula.",
+    "compacto · Nenhuma revisão financeira registrada.",
+  ],
+  "src/app/(app)/matriculas/[id]/pagador/page.tsx": [
+    "compacto · Nenhum registro nesta página.",
+    "compacto · Nenhuma versão do pagador registrada para esta matrícula.",
+  ],
+  "src/app/(app)/matriculas/[id]/page.tsx": [
+    "bloco · Nenhuma seção desta matrícula está disponível para a sua função.",
+  ],
+  "src/app/(app)/matriculas/[id]/reserva/page.tsx": [
+    "compacto · Nenhuma turma nesta página.",
+    "compacto · Nenhuma turma compatível com a contratação.",
+  ],
+  "src/app/(app)/secretaria/SecretariaPainel.tsx": [
+    "compacto · Nenhuma matrícula no seu escopo.",
+    "compacto · Nenhuma mensalidade registrada.",
+  ],
+  "src/app/(app)/secretaria/avisos-agenda/page.tsx": [
+    "compacto · Nenhum aviso a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "compacto · Nenhum aviso de alteração na agenda.",
+    "compacto · Nenhuma pendência a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "compacto · Nenhuma pendência operacional registrada.",
+  ],
+  "src/app/(app)/secretaria/desistencias/page.tsx": [
+    "bloco · Nenhum pedido pendente a partir deste ponto da fila: os seguintes já foram decididos ou o link ficou",
+    "bloco · Nenhum pedido aguardando decisão administrativa.",
+  ],
+  "src/app/(app)/secretaria/envios-portal/page.tsx": [
+    "bloco · Nenhuma solicitação a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
+    "bloco · Nenhum envio com resultado incerto para conciliar.",
+    "bloco · Nenhum envio com falha.",
+    "bloco · Nenhuma solicitação de acesso ao portal na fila.",
+  ],
+  "src/app/(app)/secretaria/reservas/[id]/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/(app)/secretaria/reservas/page.tsx": [
+    "bloco · Nenhuma reserva nesta consulta.",
+  ],
+  "src/app/(app)/secretaria/reservas/particulares/[id]/page.tsx": [
+    "bloco · Nenhuma proposta registrada.",
+  ],
+  "src/app/portal-aluno/page.tsx": [
+    "bloco · Não há reposições para este acesso.",
+  ],
+  "src/app/portal-aluno/resultados/page.tsx": [
+    "bloco · Não há vínculo acadêmico com resultados disponíveis neste acesso.",
+    "bloco · Não há alocação acadêmica disponível neste vínculo.",
+    "compacto · Não há pendências operacionais identificadas nesta consulta.",
+  ],
+  "src/components/conversa/SeletorEmoji.tsx": [
+    "compacto · {grupo === \"recentes\" && !consulta.trim() ? \"Os emojis usados aparecerão aqui.\" : \"Nenhum emoji enco",
+  ],
+};

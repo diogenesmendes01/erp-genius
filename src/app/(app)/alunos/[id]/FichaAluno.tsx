@@ -4,20 +4,22 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusAluno, TipoMovimentacao, Genero, Escolaridade } from "@prisma/client";
-import { STATUS_ALUNO_LABEL, GENERO_LABEL, ESCOLARIDADE_LABEL } from "@/lib/labels";
+import { STATUS_ALUNO_LABEL, GENERO_LABEL, ESCOLARIDADE_LABEL, TIPO_MOVIMENTACAO_LABEL } from "@/lib/labels";
 import { formatarValores, type ValorMoeda } from "@/lib/dinheiro";
 import { PAISES_ISO, nomePaisISO } from "@/lib/paises-iso";
 import { MOTIVOS_ENCERRAMENTO } from "@/server/alunos/schema";
-import { pausarAluno, reativarAluno, encerrarAluno, trocarTurma, editarAluno } from "@/server/alunos/acoes";
+import { pausarAluno, encerrarAluno, editarAluno } from "@/server/alunos/acoes";
 import { Drawer } from "@/components/Drawer";
-
-const TIPO_MOV_LABEL: Record<TipoMovimentacao, string> = {
-  MATRICULA: "Matrícula",
-  TROCA_TURMA: "Troca de turma",
-  PAUSA: "Pausa",
-  REATIVACAO: "Reativação",
-  ENCERRAMENTO: "Encerramento",
-};
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import type { ReferenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
+import { botaoClasses } from "@/components/Botao";
+import { formatarDataCivil } from "@/lib/data-civil";
+import { CampoTexto } from "@/components/CampoTexto";
+import { CampoFuso } from "@/components/CampoFuso";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
 
 const STATUS_CLS: Record<StatusAluno, string> = {
   ATIVO: "bg-green-100 text-green-700",
@@ -59,10 +61,12 @@ export interface AlunoFicha {
   idiomaNativo: string | null;
   fuso: string | null;
   observacoes: string | null;
-  turmaAtual: { id: string; label: string; professor: string | null; diasHorario: string | null } | null;
+  turmasAtuais: { id: string; matriculaCodigo: string | null; label: string; professor: string | null; diasHorario: string | null }[];
   // null na projeção pedagógica (professor não vê nada financeiro — doc 10).
-  financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: string | null } | null;
+  financeiro: { atrasado: boolean; emAberto: ValorMoeda[]; proximoVencimento: ReferenciaVencimentoCivil | null } | null;
   movimentacoes: {
+    matriculaId: string | null;
+    matriculaCodigo: string | null;
     id: string;
     tipo: TipoMovimentacao;
     motivo: string | null;
@@ -79,33 +83,72 @@ interface PaisOpt {
 }
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
-const btnSec = "rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
+  CONTROLE_INVALIDO;
+
+/** Obrigatórios da edição (EditarAlunoSchema), na ordem do painel: o foco vai ao primeiro pendente. */
+const IDS_EDICAO = {
+  primeiroNome: "ficha-primeiroNome",
+  sobrenome: "ficha-sobrenome",
+  paisId: "ficha-paisId",
+  motivo: "ficha-motivo",
+} as const;
+
+/**
+ * Mesmas exigências do EditarAlunoSchema (o servidor revalida). Aluno importado por lote costuma chegar
+ * sem sobrenome: a edição mostra isso no campo em vez de deixar "Salvar" desabilitado sem motivo.
+ * Função pura (fora do componente) para o teste conferir cada regra sem simular o clique.
+ */
+export function errosDaEdicaoAluno(ed: { primeiroNome: string; sobrenome: string; paisId: string; motivo: string }): ErrosDeCampos<keyof typeof IDS_EDICAO> {
+  const erros: ErrosDeCampos<keyof typeof IDS_EDICAO> = {};
+  if (!ed.primeiroNome.trim()) erros.primeiroNome = "Informe o nome.";
+  if (!ed.sobrenome.trim()) erros.sobrenome = "Informe o sobrenome.";
+  if (!ed.paisId) erros.paisId = "Selecione o país.";
+  if (!ed.motivo.trim()) erros.motivo = "Informe o motivo da edição.";
+  return erros;
+}
+const btnPri = botaoClasses();
+const btnSec = botaoClasses({ variante: "secundario" });
 
 export function FichaAluno({
   aluno,
-  turmas,
   paises,
-  podeMovimentar = true,
+  podeMovimentar = false,
+  podeMovimentarGlobal = false,
+  podeEditarCadastro = false,
+  podeConsultarAcademico = false,
+  preferenciaFusoExibicao = null,
+  turmaSugerida = null,
 }: {
   aluno: AlunoFicha;
-  turmas: { id: string; label: string }[];
   paises: PaisOpt[];
   // Professor tem visão somente leitura: oculta editar/trocar/pausar/encerrar (doc 10).
   podeMovimentar?: boolean;
+  podeMovimentarGlobal?: boolean;
+  podeEditarCadastro?: boolean;
+  podeConsultarAcademico?: boolean;
+  preferenciaFusoExibicao?: string | null;
+  /** C4 (auto-alocação híbrida): turma SUGERIDA na ativação — o consultor confirma aqui. */
+  turmaSugerida?: { turmaId: string; label: string; diasHorario: string | null } | null;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [modal, setModal] = useState<"none" | "pausar" | "encerrar" | "trocar" | "editar">("none");
+  // Editar, pausar e encerrar não recebem chave de idempotência (server/alunos/acoes.ts:49, :182, :226):
+  // conferir a ficha antes de repetir. Um só executor — só um painel fica aberto por vez (`modal`).
+  const acao = useAcaoCliente({ idempotente: false });
+  const [modal, setModal] = useState<"none" | "pausar" | "encerrar" | "editar">("none");
 
   // estados dos modais
   const [motivoPausa, setMotivoPausa] = useState("");
   const [retorno, setRetorno] = useState("");
   const [motivoEnc, setMotivoEnc] = useState<(typeof MOTIVOS_ENCERRAMENTO)[number]>("Concluiu");
   const [obsEnc, setObsEnc] = useState("");
-  const [turmaDest, setTurmaDest] = useState("");
-  const [justif, setJustif] = useState("");
+  // O painel aberto já tentou confirmar? Só então os campos pendentes aparecem marcados (e acompanham
+  // a digitação). Volta a false a cada painel aberto.
+  const [tentou, setTentou] = useState(false);
+  const instanteAdministrativo = (valor: string) => {
+    const exibicao = formatarInstanteExibicao(valor, preferenciaFusoExibicao, "UTC");
+    return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`;
+  };
 
   // edição de dados cadastrais (prefill com TODOS os valores atuais — edição lenient).
   const valoresEd = () => ({
@@ -142,6 +185,9 @@ export function FichaAluno({
   const set = <K extends keyof ReturnType<typeof valoresEd>>(k: K, v: ReturnType<typeof valoresEd>[K]) =>
     setEd((e) => ({ ...e, [k]: v }));
 
+  const errosEdicao: ErrosDeCampos<keyof typeof IDS_EDICAO> = tentou && modal === "editar" ? errosDaEdicaoAluno(ed) : {};
+  const erroObsEnc = tentou && motivoEnc === "Outro" && !obsEnc.trim() ? "Informe a observação quando o motivo é “Outro”." : null;
+
   const tiposDocEd = paises.find((p) => p.id === ed.paisId)?.tiposDocumento ?? [];
   const tipoDocNome =
     paises.find((p) => p.id === aluno.paisId)?.tiposDocumento.find((t) => t.id === aluno.tipoDocumentoId)?.nome ?? null;
@@ -151,15 +197,19 @@ export function FichaAluno({
 
   function abrirEdicao() {
     setEd(valoresEd()); // recarrega valores atuais a cada abertura
-    setErro(null);
-    setModal("editar");
+    abrir("editar");
   }
 
-  async function run(p: Promise<{ ok: boolean; erro?: string }>) {
-    setErro(null);
-    const r = await p;
-    if (!r.ok) setErro(r.erro ?? "Erro.");
-    else {
+  // O erro é exibido dentro do painel aberto; trocar de painel não pode herdar o erro do anterior.
+  function abrir(m: typeof modal) {
+    acao.limpar();
+    setTentou(false);
+    setModal(m);
+  }
+
+  async function run(chamada: () => ReturnType<typeof editarAluno>) {
+    const d = await acao.executar(chamada);
+    if (d?.tipo === "ok") {
       setModal("none");
       router.refresh();
     }
@@ -167,152 +217,154 @@ export function FichaAluno({
 
   return (
     <div className="flex flex-col gap-6">
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-
       <header>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-medium">{aluno.nome}</h1>
           {aluno.nomePreferido && <span className="text-sm text-gray-500">({aluno.nomePreferido})</span>}
           <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + STATUS_CLS[aluno.status]}>
-            {STATUS_ALUNO_LABEL[aluno.status]}
+            Cadastro: {STATUS_ALUNO_LABEL[aluno.status]}
           </span>
         </div>
         <p className="mt-1 text-sm text-gray-500">
-          {aluno.codigo} · {aluno.pais} · {aluno.telefone ?? "sem telefone"}
+          {aluno.codigo} · {aluno.pais}{podeEditarCadastro ? ` · ${aluno.telefone ?? "sem telefone"}` : ""}
         </p>
       </header>
 
       {/* Ações (apenas papéis que movimentam — professor tem visão somente leitura, doc 10) */}
       {podeMovimentar && (
         <div className="flex flex-wrap gap-2">
-          <button className={btnSec} onClick={abrirEdicao}>
+          {podeEditarCadastro && <button className={btnSec} onClick={abrirEdicao}>
             Editar dados
-          </button>
-          {aluno.status === StatusAluno.ATIVO && (
+          </button>}
+          {podeMovimentarGlobal && aluno.status === StatusAluno.ATIVO && (
             <>
-              <button className={btnSec} onClick={() => setModal("trocar")}>Trocar turma</button>
-              <button className={btnSec} onClick={() => setModal("pausar")}>Pausar</button>
-              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
+              <button className={btnSec} onClick={() => abrir("pausar")}>Pausar</button>
+              <button className={botaoClasses({ variante: "perigo" })} onClick={() => abrir("encerrar")}>Encerrar</button>
             </>
           )}
-          {aluno.status === StatusAluno.PAUSADO && (
+          {podeMovimentarGlobal && aluno.status === StatusAluno.PAUSADO && (
             <>
-              <button className={btnPri} onClick={() => run(reativarAluno(aluno.id))}>Reativar</button>
-              <button className={btnSec + " border-red-200 text-red-600 hover:bg-red-50"} onClick={() => setModal("encerrar")}>Encerrar</button>
+              {podeEditarCadastro ? <Link className={btnPri} href={`/alunos/${aluno.id}/financeiro#retomada`}>Propor retomada</Link> : <span className="self-center text-sm text-gray-500">A secretaria deve encaminhar uma proposta de retomada para aprovação financeira.</span>}
+              <button className={botaoClasses({ variante: "perigo" })} onClick={() => abrir("encerrar")}>Encerrar</button>
             </>
           )}
         </div>
       )}
 
+      {podeMovimentar && !podeMovimentarGlobal && <p className="text-sm text-gray-600">Pausa, retomada e encerramento devem identificar as matrículas envolvidas. A Secretaria acompanha essas solicitações no fluxo por matrícula.</p>}
+
+      {podeConsultarAcademico && <div><Link className={btnSec} href={`/alunos/${aluno.id}/academico`}>{podeMovimentar ? "Turma, nível e solicitações acadêmicas" : "Consultar solicitações e emitir parecer"}</Link></div>}
+
       <Drawer
         open={modal === "editar"}
-        onClose={() => setModal("none")}
+        onClose={() => { acao.limpar(); setModal("none"); }}
         title="Editar dados do aluno"
         footer={
-          <div className="flex justify-end gap-2">
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
-            <button
-              className={btnPri}
-              disabled={!ed.motivo.trim() || !ed.primeiroNome.trim() || !ed.sobrenome.trim() || !ed.paisId}
-              onClick={() =>
-                run(
-                  editarAluno(aluno.id, {
-                    ...ed,
-                    genero: ed.genero || undefined,
-                    escolaridade: ed.escolaridade || undefined,
-                  }),
-                )
-              }
-            >
-              Salvar alterações
-            </button>
-          </div>
+          <>
+            {/* Dentro do painel, acima dos botões: no topo da página ficaria atrás do overlay. */}
+            <FeedbackAcao erro={modal === "editar" ? acao.erro : null} className="mb-3" />
+            <div className="flex justify-end gap-2">
+              <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
+              {/* Habilitado mesmo com obrigatório vazio: ao clicar, cada campo pendente é marcado e o foco
+                  vai ao primeiro (antes, o botão ficava desabilitado sem dizer o que faltava). */}
+              <button
+                className={btnPri}
+                disabled={acao.ocupado}
+                onClick={() => {
+                  setTentou(true);
+                  if (focarPrimeiroComErro(errosDaEdicaoAluno(ed), IDS_EDICAO)) return;
+                  run(() =>
+                    editarAluno(aluno.id, {
+                      ...ed,
+                      genero: ed.genero || undefined,
+                      escolaridade: ed.escolaridade || undefined,
+                    }),
+                  );
+                }}
+              >
+                {acao.ocupado ? "Salvando…" : "Salvar alterações"}
+              </button>
+            </div>
+          </>
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Identificação */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Nome</label>
-            <input className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Sobrenome(s)</label>
-            <input className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Nome preferido</label>
-            <input className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Nascimento</label>
-            <input type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Gênero</label>
-            <select className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
-              <option value="">—</option>
-              {Object.values(Genero).map((g) => (
-                <option key={g} value={g}>{GENERO_LABEL[g]}</option>
-              ))}
-            </select>
-          </div>
+          <Campo id={IDS_EDICAO.primeiroNome} rotulo="Nome" obrigatorio erro={errosEdicao.primeiroNome}>
+            {(campo) => <input {...campo} className={inputCls} value={ed.primeiroNome} onChange={(e) => set("primeiroNome", e.target.value)} />}
+          </Campo>
+          <Campo id={IDS_EDICAO.sobrenome} rotulo="Sobrenome(s)" obrigatorio erro={errosEdicao.sobrenome}>
+            {(campo) => <input {...campo} className={inputCls} value={ed.sobrenome} onChange={(e) => set("sobrenome", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-nomePreferido" rotulo="Nome preferido">
+            {(campo) => <input {...campo} className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-nascimento" rotulo="Nascimento">
+            {(campo) => <input {...campo} type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-genero" rotulo="Gênero">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
+                <option value="">—</option>
+                {Object.values(Genero).map((g) => (
+                  <option key={g} value={g}>{GENERO_LABEL[g]}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
 
           {/* Documentação */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">País</label>
-            <select
-              className={inputCls}
-              value={ed.paisId}
-              onChange={(e) => {
-                const np = paises.find((p) => p.id === e.target.value);
-                setEd((s) => ({
-                  ...s,
-                  paisId: e.target.value,
-                  tipoDocumentoId: np?.tiposDocumento.some((t) => t.id === s.tipoDocumentoId) ? s.tipoDocumentoId : "",
-                }));
-              }}
-            >
-              {paises.map((p) => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Tipo de documento</label>
-            <select className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
-              <option value="">—</option>
-              {tiposDocEd.map((t) => (
-                <option key={t.id} value={t.id}>{t.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Número do documento</label>
-            <input className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />
-            <p className="mt-1 text-xs text-gray-500">Documento inválido não impede salvar — fica marcado como “não validado”.</p>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">País emissor</label>
-            <SelectISO value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Nacionalidade</label>
-            <SelectISO value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Segunda nacionalidade</label>
-            <SelectISO value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />
-          </div>
+          <Campo id={IDS_EDICAO.paisId} rotulo="País" obrigatorio erro={errosEdicao.paisId}>
+            {(campo) => (
+              <select
+                {...campo}
+                className={inputCls}
+                value={ed.paisId}
+                onChange={(e) => {
+                  const np = paises.find((p) => p.id === e.target.value);
+                  setEd((s) => ({
+                    ...s,
+                    paisId: e.target.value,
+                    tipoDocumentoId: np?.tiposDocumento.some((t) => t.id === s.tipoDocumentoId) ? s.tipoDocumentoId : "",
+                  }));
+                }}
+              >
+                {paises.map((p) => (
+                  <option key={p.id} value={p.id}>{p.nome}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo id="ficha-tipoDocumentoId" rotulo="Tipo de documento">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
+                <option value="">—</option>
+                {tiposDocEd.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nome}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo id="ficha-documento" rotulo="Número do documento" dica="Documento inválido não impede salvar — fica marcado como “não validado”.">
+            {(campo) => <input {...campo} className={inputCls} value={ed.documento} onChange={(e) => set("documento", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-documentoPaisEmissor" rotulo="País emissor">
+            {(campo) => <SelectISO {...campo} value={ed.documentoPaisEmissor} onChange={(v) => set("documentoPaisEmissor", v)} comVazio />}
+          </Campo>
+          <Campo id="ficha-nacionalidade" rotulo="Nacionalidade">
+            {(campo) => <SelectISO {...campo} value={ed.nacionalidade} onChange={(v) => set("nacionalidade", v)} comVazio />}
+          </Campo>
+          <Campo id="ficha-segundaNacionalidade" rotulo="Segunda nacionalidade">
+            {(campo) => <SelectISO {...campo} value={ed.segundaNacionalidade} onChange={(v) => set("segundaNacionalidade", v)} comVazio />}
+          </Campo>
 
           {/* Contato */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">E-mail</label>
-            <input type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Telefone</label>
-            <input className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />
-          </div>
+          <Campo id="ficha-email" rotulo="E-mail">
+            {(campo) => <input {...campo} type="email" className={inputCls} value={ed.email} onChange={(e) => set("email", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-telefone" rotulo="Telefone">
+            {(campo) => <input {...campo} className={inputCls} value={ed.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="+506..." />}
+          </Campo>
           <div className="flex items-center gap-4 pt-5 sm:col-span-2">
             <label className="flex items-center gap-2 text-sm text-gray-600">
               <input type="checkbox" checked={ed.whatsapp} onChange={(e) => set("whatsapp", e.target.checked)} />
@@ -325,86 +377,98 @@ export function FichaAluno({
           </div>
 
           {/* Residência */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">País de residência</label>
-            <SelectISO value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">CEP / Código postal</label>
-            <input className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Região / Estado / Província</label>
-            <input className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Cidade</label>
-            <input className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Bairro / Distrito</label>
-            <input className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Rua</label>
-            <input className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Número</label>
-            <input className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Complemento</label>
-            <input className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />
-          </div>
+          <Campo id="ficha-paisResidencia" rotulo="País de residência">
+            {(campo) => <SelectISO {...campo} value={ed.paisResidencia} onChange={(v) => set("paisResidencia", v)} comVazio />}
+          </Campo>
+          <Campo id="ficha-cep" rotulo="CEP / Código postal">
+            {(campo) => <input {...campo} className={inputCls} value={ed.cep} onChange={(e) => set("cep", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-regiao" rotulo="Região / Estado / Província">
+            {(campo) => <input {...campo} className={inputCls} value={ed.regiao} onChange={(e) => set("regiao", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-cidade" rotulo="Cidade">
+            {(campo) => <input {...campo} className={inputCls} value={ed.cidade} onChange={(e) => set("cidade", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-bairro" rotulo="Bairro / Distrito">
+            {(campo) => <input {...campo} className={inputCls} value={ed.bairro} onChange={(e) => set("bairro", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-rua" rotulo="Rua">
+            {(campo) => <input {...campo} className={inputCls} value={ed.rua} onChange={(e) => set("rua", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-numero" rotulo="Número">
+            {(campo) => <input {...campo} className={inputCls} value={ed.numero} onChange={(e) => set("numero", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-complemento" rotulo="Complemento">
+            {(campo) => <input {...campo} className={inputCls} value={ed.complemento} onChange={(e) => set("complemento", e.target.value)} />}
+          </Campo>
 
           {/* Acadêmico / operacional */}
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Escolaridade</label>
-            <select className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
-              <option value="">—</option>
-              {Object.values(Escolaridade).map((e) => (
-                <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Idioma nativo</label>
-            <input className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-600">Fuso horário</label>
-            <input className={inputCls} value={ed.fuso} onChange={(e) => set("fuso", e.target.value)} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-gray-600">Observações</label>
-            <textarea className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
-          </div>
+          <Campo id="ficha-escolaridade" rotulo="Escolaridade">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
+                <option value="">—</option>
+                {Object.values(Escolaridade).map((e) => (
+                  <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo id="ficha-idiomaNativo" rotulo="Idioma nativo">
+            {(campo) => <input {...campo} className={inputCls} value={ed.idiomaNativo} onChange={(e) => set("idiomaNativo", e.target.value)} />}
+          </Campo>
+          <Campo id="ficha-fuso" rotulo="Fuso horário">
+            {(campo) => <CampoFuso {...campo} name="fuso" required={false} className={inputCls} valor={ed.fuso} onChange={(valor) => set("fuso", valor)} />}
+          </Campo>
+          <Campo id="ficha-observacoes" rotulo="Observações" className="sm:col-span-2">
+            {(campo) => <CampoTexto {...campo} className={inputCls} rows={2} value={ed.observacoes} onChange={(e) => set("observacoes", e.target.value)} />}
+          </Campo>
 
           {/* Auditoria */}
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-gray-600">Motivo da edição <span className="text-red-600">*</span></label>
-            <textarea
-              className={inputCls}
-              rows={2}
-              placeholder="Ex.: correção de documento informado pelo aluno"
-              value={ed.motivo}
-              onChange={(e) => set("motivo", e.target.value)}
-            />
-            <p className="mt-1 text-xs text-gray-500">Fica registrado na auditoria, junto com quem editou.</p>
-          </div>
+          <Campo
+            id={IDS_EDICAO.motivo}
+            rotulo="Motivo da edição"
+            obrigatorio
+            dica="Fica registrado na auditoria, junto com quem editou."
+            erro={errosEdicao.motivo}
+            className="sm:col-span-2"
+          >
+            {(campo) => (
+              <CampoTexto
+                {...campo}
+                className={inputCls}
+                rows={2}
+                placeholder="Ex.: correção de documento informado pelo aluno"
+                value={ed.motivo}
+                onChange={(e) => set("motivo", e.target.value)}
+              />
+            )}
+          </Campo>
         </div>
       </Drawer>
 
       {modal === "pausar" && (
         <div className="rounded-lg border border-gray-200 bg-surface p-4">
           <h3 className="mb-2 text-sm font-medium">Pausar aluno</h3>
-          <input className={inputCls + " mb-2"} placeholder="Motivo" value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />
-          <label className="mb-1 block text-xs text-gray-600">Retorno previsto (opcional)</label>
-          <input type="date" className={inputCls + " mb-3"} value={retorno} onChange={(e) => setRetorno(e.target.value)} />
+          <Campo id="pausa-motivo" rotulo="Motivo da pausa" obrigatorio erro={tentou && !motivoPausa.trim() ? "Informe o motivo da pausa." : null} className="mb-2">
+            {(campo) => <input {...campo} className={inputCls} value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />}
+          </Campo>
+          <Campo id="pausa-retorno" rotulo="Retorno previsto (opcional)" className="mb-3">
+            {(campo) => <input {...campo} type="date" className={inputCls} value={retorno} onChange={(e) => setRetorno(e.target.value)} />}
+          </Campo>
+          <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={btnPri} onClick={() => run(pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }))}>Confirmar pausa</button>
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
+            <button
+              className={btnPri}
+              disabled={acao.ocupado}
+              onClick={() => {
+                setTentou(true);
+                if (!motivoPausa.trim()) { document.getElementById("pausa-motivo")?.focus(); return; }
+                run(() => pausarAluno(aluno.id, { motivo: motivoPausa, dataRetornoPrevista: retorno }));
+              }}
+            >
+              {acao.ocupado ? "Confirmando…" : "Confirmar pausa"}
+            </button>
+            <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
       )}
@@ -412,49 +476,73 @@ export function FichaAluno({
       {modal === "encerrar" && (
         <div className="rounded-lg border border-gray-200 bg-surface p-4">
           <h3 className="mb-2 text-sm font-medium">Encerrar aluno</h3>
-          <select className={inputCls + " mb-2"} value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
-            {MOTIVOS_ENCERRAMENTO.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-          <input className={inputCls + " mb-3"} placeholder="Observação (obrigatória se 'Outro')" value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />
+          <Campo id="encerramento-motivo" rotulo="Motivo do encerramento" obrigatorio className="mb-2">
+            {(campo) => (
+              <select {...campo} className={inputCls} value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
+                {MOTIVOS_ENCERRAMENTO.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            )}
+          </Campo>
+          <Campo
+            id="encerramento-observacao"
+            rotulo="Observação"
+            obrigatorio={motivoEnc === "Outro"}
+            dica="Obrigatória quando o motivo é “Outro”."
+            erro={erroObsEnc}
+            className="mb-3"
+          >
+            {(campo) => <input {...campo} className={inputCls} value={obsEnc} onChange={(e) => setObsEnc(e.target.value)} />}
+          </Campo>
+          <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
-            <button className={btnPri + " bg-danger hover:opacity-90"} onClick={() => run(encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }))}>Confirmar encerramento</button>
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
-          </div>
-        </div>
-      )}
-
-      {modal === "trocar" && (
-        <div className="rounded-lg border border-gray-200 bg-surface p-4">
-          <h3 className="mb-2 text-sm font-medium">Trocar turma</h3>
-          <select className={inputCls + " mb-2"} value={turmaDest} onChange={(e) => setTurmaDest(e.target.value)}>
-            <option value="">Selecione a turma…</option>
-            {turmas.map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
-            ))}
-          </select>
-          <input className={inputCls + " mb-3"} placeholder="Justificativa (exigida entre níveis)" value={justif} onChange={(e) => setJustif(e.target.value)} />
-          <div className="flex gap-2">
-            <button className={btnPri} disabled={!turmaDest} onClick={() => run(trocarTurma(aluno.id, { turmaDestinoId: turmaDest, justificativa: justif }))}>Confirmar troca</button>
-            <button className={btnSec} onClick={() => setModal("none")}>Cancelar</button>
+            <button
+              className={botaoClasses({ variante: "perigo" })}
+              disabled={acao.ocupado}
+              onClick={() => {
+                setTentou(true);
+                if (motivoEnc === "Outro" && !obsEnc.trim()) { document.getElementById("encerramento-observacao")?.focus(); return; }
+                run(() => encerrarAluno(aluno.id, { motivo: motivoEnc, observacao: obsEnc }));
+              }}
+            >
+              {acao.ocupado ? "Confirmando…" : "Confirmar encerramento"}
+            </button>
+            <button className={btnSec} onClick={() => { acao.limpar(); setModal("none"); }}>Cancelar</button>
           </div>
         </div>
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
-          <h2 className="mb-3 font-medium">Turma atual</h2>
-          {aluno.turmaAtual ? (
-            <div className="text-sm text-gray-700">
-              <div className="font-medium">{aluno.turmaAtual.label}</div>
-              <div className="text-gray-500">{aluno.turmaAtual.diasHorario ?? "Horário a definir"}</div>
-              <div className="text-gray-500">Professor: {aluno.turmaAtual.professor ?? "—"}</div>
+          <h2 className="mb-3 font-medium">Turmas atuais</h2>
+          {aluno.turmasAtuais.length > 0 ? aluno.turmasAtuais.map((turma) => (
+            <div key={turma.id} className="mb-3 text-sm text-gray-700">
+              <div className="font-medium">{turma.label}</div>
+              <div className="text-gray-500">{turma.matriculaCodigo ? `Matrícula ${turma.matriculaCodigo}` : "Matrícula sem código ou vínculo a conferir"}</div>
+              <div className="text-gray-500">{turma.diasHorario ?? "Horário a definir"}</div>
+              <div className="text-gray-500">Professor: {turma.professor ?? "—"}</div>
             </div>
-          ) : (
-            <p className="text-sm text-gray-400">Sem turma (lista de espera).</p>
+          )) : (
+            <EstadoVazio
+              acao={turmaSugerida && podeMovimentar ? (
+                // C4 (doc 08 §auto-alocação híbrida): o sistema SUGERIU na ativação;
+                // alocar de verdade é decisão do consultor — 1 clique aqui.
+                <div className="rounded-md border border-blue-200 bg-blue-50 p-2">
+                  <div className="text-xs font-medium text-blue-700">Turma sugerida na ativação</div>
+                  <div className="mt-0.5 text-gray-700">{turmaSugerida.label}</div>
+                  {turmaSugerida.diasHorario && <div className="text-xs text-gray-500">{turmaSugerida.diasHorario}</div>}
+                  <Link className={`${btnPri} mt-2`} href={`/alunos/${aluno.id}/academico`}>
+                    Preparar alocação por matrícula
+                  </Link>
+                </div>
+              ) : undefined}
+            >
+              Sem turma (lista de espera).
+            </EstadoVazio>
           )}
 
+          {podeEditarCadastro && <>
           <h2 className="mb-2 mt-5 font-medium">Dados pessoais</h2>
           <dl className="grid grid-cols-1 gap-1 text-sm text-gray-700">
             <Linha rotulo="Documento">
@@ -487,6 +575,7 @@ export function FichaAluno({
             <Linha rotulo="Idioma nativo">{aluno.idiomaNativo ?? "—"}</Linha>
             {aluno.observacoes && <Linha rotulo="Observações">{aluno.observacoes}</Linha>}
           </dl>
+          </>}
         </section>
 
         {/* Financeiro: oculto na projeção pedagógica (professor — doc 10). */}
@@ -502,7 +591,9 @@ export function FichaAluno({
               Em aberto: <strong>{formatarValores(aluno.financeiro.emAberto)}</strong>
               {aluno.financeiro.proximoVencimento && (
                 <span className="ml-2 text-gray-500">
-                  · próximo venc. {new Date(aluno.financeiro.proximoVencimento).toLocaleDateString("pt-BR")}
+                  · próximo venc. {aluno.financeiro.proximoVencimento.estado === "CONFIRMADO"
+                    ? formatarDataCivil(aluno.financeiro.proximoVencimento.dataCivil)
+                    : "a conferir"}
                 </span>
               )}
             </div>
@@ -516,17 +607,18 @@ export function FichaAluno({
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Histórico de movimentações</h2>
         {aluno.movimentacoes.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem movimentações.</p>
+          <EstadoVazio>Sem movimentações.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-3">
             {aluno.movimentacoes.map((m) => (
               <li key={m.id} className="border-l-2 border-gray-200 pl-3">
-                <div className="text-sm font-medium text-gray-800">{TIPO_MOV_LABEL[m.tipo]}</div>
+                <div className="text-sm font-medium text-gray-800">{TIPO_MOVIMENTACAO_LABEL[m.tipo]}</div>
+                <div className="text-xs text-gray-500">{m.matriculaId ? `Matrícula: ${m.matriculaCodigo ?? "sem código"}` : "Registro global ou legado sem matrícula identificada"}</div>
                 {m.motivo && <div className="text-sm text-gray-600">{m.motivo}</div>}
                 {m.observacao && <div className="text-xs text-gray-500">{m.observacao}</div>}
                 <div className="text-xs text-gray-400">
                   {m.usuario ?? "sistema"} ·{" "}
-                  {new Date(m.criadoEm).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  {instanteAdministrativo(m.criadoEm)}
                 </div>
               </li>
             ))}
@@ -546,10 +638,16 @@ function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   );
 }
 
-/** Select de país ISO 3166. */
-function SelectISO({ value, onChange, comVazio }: { value: string; onChange: (v: string) => void; comVazio?: boolean }) {
+/** Select de país ISO 3166. Recebe as ligações do <Campo>. */
+function SelectISO({
+  id,
+  value,
+  onChange,
+  comVazio,
+  ...ligacao
+}: Omit<LigacaoCampo, "id"> & { id: string; value: string; onChange: (v: string) => void; comVazio?: boolean }) {
   return (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <select id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>

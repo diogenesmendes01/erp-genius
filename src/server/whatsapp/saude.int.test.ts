@@ -1,14 +1,20 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { DriverWhatsApp } from "@prisma/client";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
 import { medirSaudeCanal } from "./saude";
+
+const motor = vi.hoisted(() => ({ chamar: vi.fn() }));
+vi.mock("./motor/cliente", () => ({ chamarMotor: motor.chamar }));
 
 // Integração E5 (doc 30 · gap A7): a saúde do canal mede a fila POR ESTADO (review
 // PR #52) — ADIADA esperando janela é saudável; o alerta é o que VENCEU sem ninguém pegar.
 
 beforeEach(async () => {
   await truncarBanco();
+  motor.chamar.mockReset();
+  motor.chamar.mockResolvedValue({ eventos: [] });
 });
 
 async function seedContato(telefone = "+50611112222") {
@@ -44,6 +50,11 @@ describe("medirSaudeCanal — fila por estado", () => {
       adiadaVencidaHaMin: null,
       claimExpiradoHaMin: null,
       falhas24h: 0,
+      eventosMotorPendentes: 0,
+      eventosMotorAdiados: 0,
+      eventosMotorFalhos: null,
+      retidasAgendaDesligada: 0,
+      envioAgendaHabilitado: process.env.COMUNICACOES_AGENDA_ENVIO_ENABLED === "true",
     });
     expect(s.ultimoInboundEm).toBeNull();
   });
@@ -56,6 +67,33 @@ describe("medirSaudeCanal — fila por estado", () => {
     expect(s.ok).toBe(false);
     expect(s.alertas.some((a) => a.includes("PENDENTE há"))).toBe(true);
     expect(s.fila.pendenteHaMin).toBeGreaterThanOrEqual(8 * 60);
+  });
+
+  it("mensagem AGENDADA para o futuro fica PENDENTE desde a criação e não alerta (C1 · R1 do #202)", async () => {
+    const agora = new Date();
+    await seedIntencao({
+      origem: "HUMANO",
+      criadaEm: new Date(agora.getTime() - 72 * 3600_000), // agendada há 3 dias...
+      agendadaPara: new Date(agora.getTime() + 48 * 3600_000), // ...para daqui a 2 dias
+    });
+
+    const s = await medirSaudeCanal(agora);
+    expect(s.ok).toBe(true);
+    expect(s.fila.pendentes).toBe(1); // estoque da fila conta a agendada
+    expect(s.fila.pendenteHaMin).toBeNull();
+  });
+
+  it("mensagem AGENDADA que venceu há horas e segue PENDENTE → alerta, medido desde o agendadaPara", async () => {
+    const agora = new Date();
+    await seedIntencao({
+      origem: "HUMANO",
+      criadaEm: new Date(agora.getTime() - 72 * 3600_000),
+      agendadaPara: new Date(agora.getTime() - 5 * 3600_000),
+    });
+
+    const s = await medirSaudeCanal(agora);
+    expect(s.ok).toBe(false);
+    expect(s.alertas.some((a) => a.includes("PENDENTE há 5h"))).toBe(true);
   });
 
   it("ADIADA com despacho no FUTURO é saudável (noite/teto — não é incidente)", async () => {
@@ -109,25 +147,37 @@ describe("medirSaudeCanal — fila por estado", () => {
     expect(s.alertas[0]).toContain("Kill switch");
   });
 
-  it("sessão Baileys caída em número ativo → alerta; número inativo não conta", async () => {
+  it("sessão caída de driver legado não gera alerta: só o motor tem sessão", async () => {
     await prisma.numeroWhatsApp.create({
-      data: { telefoneE164: "+5511911110000", rotulo: "Vendas", driver: "BAILEYS", finalidade: "VENDAS", sessao: "CAIU" },
+      data: { telefoneE164: "+5511911110000", rotulo: "Vendas", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", sessao: "CAIU" },
     });
+
+    const s = await medirSaudeCanal();
+    expect(s.alertas.filter((a) => a.includes("caiu"))).toHaveLength(0);
+  });
+
+  // C2 da R1 do #221: Meta e Evolution saíram do código; o número legado ativo fica mudo.
+  it.each([DriverWhatsApp.BAILEYS, DriverWhatsApp.META_CLOUD])("número ATIVO em driver legado %s → alerta para reparear no motor", async (driver) => {
     await prisma.numeroWhatsApp.create({
-      data: {
-        telefoneE164: "+5511922220000",
-        rotulo: "Antigo",
-        driver: "BAILEYS",
-        finalidade: "VENDAS",
-        sessao: "CAIU",
-        ativo: false,
-      },
+      data: { telefoneE164: "+5511911110001", rotulo: "Antigo", driver, finalidade: "VENDAS", sessao: "CONECTADO" },
     });
 
     const s = await medirSaudeCanal();
     expect(s.ok).toBe(false);
-    expect(s.alertas.filter((a) => a.includes("caiu"))).toHaveLength(1);
-    expect(s.alertas[0]).toContain("Vendas");
+    expect(s.alertas).toEqual([
+      `Número "Antigo" ativo em driver legado (${driver}) — não envia nem recebe; pareie a linha no motor e desative o número legado.`,
+    ]);
+  });
+
+  it("número legado DESATIVADO e número MOTOR ativo não geram o alerta de driver legado", async () => {
+    await prisma.numeroWhatsApp.create({
+      data: { telefoneE164: "+5511911110002", rotulo: "Antigo", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS", ativo: false },
+    });
+    await seedCanal();
+
+    const s = await medirSaudeCanal();
+    expect(s.alertas.filter((a) => a.includes("driver legado"))).toEqual([]);
+    expect(s.ok).toBe(true);
   });
 
   it("falhas24h conta pela TRANSIÇÃO para FALHOU (atualizadoEm), não pela criação", async () => {
@@ -164,12 +214,178 @@ describe("medirSaudeCanal — fila por estado", () => {
         numeroId: numero.id,
         direcao: "ENTRADA",
         corpo: "oi",
-        driver: "META_CLOUD",
+        driver: DriverWhatsApp.META_CLOUD,
         providerMessageId: "MSG-SAUDE-1",
       },
     });
 
     const s = await medirSaudeCanal();
     expect(s.ultimoInboundEm).not.toBeNull();
+  });
+});
+
+describe("medirSaudeCanal — motor", () => {
+  it("saúde alerta sessão MOTOR caída e eventos falhos no motor", async () => {
+    const { numero } = await seedCanal();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR", sessao: "CAIU" } });
+    motor.chamar.mockResolvedValue({ eventos: [{ idEvento: "e1" }] });
+    const s = await medirSaudeCanal();
+    expect(s.ok).toBe(false);
+    expect(s.alertas.some((a) => a.includes("Sessão do número") && a.includes("caiu"))).toBe(true);
+    expect(s.alertas.some((a) => a.includes("1 evento(s) falharam no motor"))).toBe(true);
+    expect(s.fila.eventosMotorFalhos).toBe(1);
+  });
+
+  it("evento do motor parado há mais de 15 min alerta; recente só conta como pendente", async () => {
+    const agora = new Date();
+    const base = { tipo: "mensagem.recebida", numeroRef: "n", ocorridoEm: agora, dados: {} };
+    await prisma.eventoMotorRecebido.create({
+      data: { ...base, idEvento: "11111111-1111-4111-8111-111111111111", recebidoEm: new Date(agora.getTime() - 20 * 60_000) },
+    });
+    const s = await medirSaudeCanal(agora);
+    expect(s.fila.eventosMotorPendentes).toBe(1);
+    expect(s.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(true);
+
+    await prisma.eventoMotorRecebido.updateMany({ data: { recebidoEm: new Date(agora.getTime() - 60_000) } });
+    const s2 = await medirSaudeCanal(agora);
+    expect(s2.fila.eventosMotorPendentes).toBe(1);
+    expect(s2.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(false);
+  });
+
+  it("evento em backoff (tentativas > 0, próxima tentativa no futuro) conta como adiado e não alerta", async () => {
+    const agora = new Date();
+    await prisma.eventoMotorRecebido.create({
+      data: {
+        idEvento: "22222222-2222-4222-8222-222222222222",
+        tipo: "mensagem.status",
+        numeroRef: "n",
+        ocorridoEm: agora,
+        dados: {},
+        recebidoEm: new Date(agora.getTime() - 40 * 60_000),
+        tentativas: 8,
+        proximaTentativaEm: new Date(agora.getTime() + 10 * 60_000),
+        resultado: "adiado:status_sem_mensagem",
+      },
+    });
+    const s = await medirSaudeCanal(agora);
+    expect(s.fila.eventosMotorAdiados).toBe(1);
+    expect(s.fila.eventosMotorPendentes).toBe(0);
+    expect(s.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(false);
+    expect(s.ok).toBe(true);
+  });
+
+  it("evento cuja próxima tentativa venceu há mais de 15 min alerta (o dreno não o pegou)", async () => {
+    const agora = new Date();
+    await prisma.eventoMotorRecebido.create({
+      data: {
+        idEvento: "33333333-3333-4333-8333-333333333333",
+        tipo: "mensagem.status",
+        numeroRef: "n",
+        ocorridoEm: agora,
+        dados: {},
+        recebidoEm: new Date(agora.getTime() - 60 * 60_000),
+        tentativas: 3,
+        proximaTentativaEm: new Date(agora.getTime() - 20 * 60_000),
+      },
+    });
+    const s = await medirSaudeCanal(agora);
+    expect(s.fila.eventosMotorAdiados).toBe(0);
+    expect(s.fila.eventosMotorPendentes).toBe(1);
+    expect(s.alertas.some((a) => a.includes("Evento do motor parado há 20min"))).toBe(true);
+
+    // Vencida há pouco (dentro do limiar) ainda não alerta, mesmo recebida há 1 h.
+    await prisma.eventoMotorRecebido.updateMany({ data: { proximaTentativaEm: new Date(agora.getTime() - 60_000) } });
+    const s2 = await medirSaudeCanal(agora);
+    expect(s2.alertas.some((a) => a.includes("Evento do motor parado"))).toBe(false);
+  });
+
+  it("com dois eventos parados, o alerta mede o MAIS atrasado, não o de menor seq (C4 do #215)", async () => {
+    const agora = new Date();
+    const base = { tipo: "mensagem.status", numeroRef: "n", ocorridoEm: agora, dados: {} };
+    // seq menor: sem backoff, recebido há 20 min (parado, mas menos atrasado).
+    await prisma.eventoMotorRecebido.create({
+      data: { ...base, idEvento: "44444444-4444-4444-8444-444444444444", recebidoEm: new Date(agora.getTime() - 20 * 60_000) },
+    });
+    // seq maior: em backoff com a próxima tentativa vencida há 50 min (o mais atrasado), recebido há pouco mais.
+    await prisma.eventoMotorRecebido.create({
+      data: {
+        ...base,
+        idEvento: "55555555-5555-4555-8555-555555555555",
+        recebidoEm: new Date(agora.getTime() - 55 * 60_000),
+        tentativas: 2,
+        proximaTentativaEm: new Date(agora.getTime() - 50 * 60_000),
+      },
+    });
+    // seq maior ainda: sem backoff, recebido há 35 min — também mais atrasado que o primeiro, menos que o anterior.
+    await prisma.eventoMotorRecebido.create({
+      data: { ...base, idEvento: "66666666-6666-4666-8666-666666666666", recebidoEm: new Date(agora.getTime() - 35 * 60_000) },
+    });
+    const s = await medirSaudeCanal(agora);
+    expect(s.alertas.filter((a) => a.includes("Evento do motor parado"))).toEqual([
+      "Evento do motor parado há 50min sem processamento — o dreno está rodando?",
+    ]);
+
+    // Sem o de backoff, o mais atrasado entre os sem backoff é o recebido há 35 min (seq maior que o de 20 min).
+    await prisma.eventoMotorRecebido.deleteMany({ where: { idEvento: "55555555-5555-4555-8555-555555555555" } });
+    const s2 = await medirSaudeCanal(agora);
+    expect(s2.alertas.some((a) => a.includes("Evento do motor parado há 35min"))).toBe(true);
+
+    // Backoff com a próxima tentativa no futuro não é "parado", mesmo recebido há horas.
+    await prisma.eventoMotorRecebido.create({
+      data: {
+        ...base,
+        idEvento: "77777777-7777-4777-8777-777777777777",
+        recebidoEm: new Date(agora.getTime() - 300 * 60_000),
+        tentativas: 5,
+        proximaTentativaEm: new Date(agora.getTime() + 10 * 60_000),
+      },
+    });
+    const s3 = await medirSaudeCanal(agora);
+    expect(s3.alertas.some((a) => a.includes("Evento do motor parado há 35min"))).toBe(true);
+  });
+
+  it("motor inalcançável com número MOTOR ativo → eventosMotorFalhos null e alerta", async () => {
+    const { numero } = await seedCanal();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR", sessao: "CONECTADO" } });
+    motor.chamar.mockRejectedValue(new Error("motor_indisponivel"));
+    const s = await medirSaudeCanal();
+    expect(s.fila.eventosMotorFalhos).toBeNull();
+    expect(s.ok).toBe(false);
+    expect(s.alertas.some((a) => a.includes("Motor WhatsApp inalcançável") && a.includes("motor_indisponivel"))).toBe(true);
+  });
+
+  it("sem número MOTOR ativo o motor nem é consultado e não há alerta de inalcançável", async () => {
+    await seedCanal({ driver: DriverWhatsApp.BAILEYS });
+    motor.chamar.mockRejectedValue(new Error("motor_indisponivel"));
+    const s = await medirSaudeCanal();
+    expect(motor.chamar).not.toHaveBeenCalled();
+    expect(s.alertas.some((a) => a.includes("inalcançável"))).toBe(false);
+  });
+});
+
+// C1 do #212: o motivo `envio_agenda_desligado` fica gravado até o próximo tick pegar a intenção.
+// Religado o envio de agenda, a saúde não pode seguir mostrando avisos retidos por ele.
+describe("medirSaudeCanal — retidas pelo envio de agenda desligado", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("com o envio desligado, conta a intenção retida pelo motivo próprio", async () => {
+    vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "false");
+    await seedIntencao({ motivoFalha: "envio_agenda_desligado" });
+
+    const s = await medirSaudeCanal();
+    expect(s.fila.envioAgendaHabilitado).toBe(false);
+    expect(s.fila.retidasAgendaDesligada).toBe(1);
+  });
+
+  it("religado o envio, o motivo antigo ainda gravado não conta como retido", async () => {
+    vi.stubEnv("COMUNICACOES_AGENDA_ENVIO_ENABLED", "true");
+    await seedIntencao({ motivoFalha: "envio_agenda_desligado" });
+
+    const s = await medirSaudeCanal();
+    expect(s.fila.envioAgendaHabilitado).toBe(true);
+    expect(s.fila.retidasAgendaDesligada).toBe(0);
+    expect(s.fila.pendentes).toBe(1);
   });
 });

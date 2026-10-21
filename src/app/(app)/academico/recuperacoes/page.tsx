@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { Papel } from "@prisma/client";
+import { exigirSessaoPagina } from "@/server/_shared";
+import { listarRecuperacoesRealizadas } from "@/server/avaliacoes/recuperacao-consulta";
+import { IdentificacaoAvaliacao } from "../avaliacoes/Identificacao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, lerTexto, type ParametrosUrl } from "@/lib/pagina-url";
+
+export default async function Recuperacoes({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
+  await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
+  const q = await searchParams, alocacaoId = lerTexto(q, "alocacaoId"), pagina = lerPagina(q);
+  const [r, preferencia] = await Promise.all([
+    listarRecuperacoesRealizadas({ alocacaoId, pagina }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
+  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
+  const fusoExibicao = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  return <section className="space-y-4">
+    <Link className="underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}`}>Avaliações da matrícula</Link>
+    <h1 className="text-2xl font-medium">Notas de recuperação</h1>
+    <IdentificacaoAvaliacao dados={r.dado.identificacao} />
+    <p>Recuperações realizadas neste vínculo. Lançar a nota não dispensa a conferência independente.</p>
+    {r.dado.realizacoes.map(item => <Link key={item.id} className="block rounded border p-3 underline" href={`/academico/recuperacoes/${encodeURIComponent(item.id)}`}>{rotular(HABILIDADE_LABEL, item.habilidade)} · {formatarInstanteExibicao(item.realizadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC) · {item.estado}</Link>)}
+    {!r.dado.realizacoes.length && (pagina > 1
+      ? <EstadoVazio bloco acao={<Link className="underline" href={`/academico/recuperacoes?${new URLSearchParams({ alocacaoId })}`}>Ir para a primeira página</Link>}>Nenhuma realização disponível nesta página.</EstadoVazio>
+      : <EstadoVazio bloco>Nenhuma recuperação realizada neste vínculo.</EstadoVazio>)}
+    <Paginacao pagina={pagina} temProxima={r.dado.temProxima} href={(p) => hrefLista("/academico/recuperacoes", { alocacaoId, pagina: p })} rotulo="Páginas de recuperações realizadas" />
+  </section>;
+}

@@ -2,13 +2,13 @@ import type { DriverWhatsApp, StatusMensagem, TipoMensagem } from "@prisma/clien
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
-import {
-  capturarComercial,
-  capturarRespostaExperimental,
-  type ReferralInbound,
-} from "@/server/comercial/captura";
-import { despacharFila } from "./despachante";
+import { capturarRespostaExperimental, type ReferralInbound } from "@/server/comercial/captura";
 import { garantirContato, telefoneDeWaId } from "./identidade";
+import { atendimentoDoInbound } from "./atendimentos";
+import { aplicarInbound, aplicarResposta } from "./status-atendimento";
+import { aoGravarSaidaHumana } from "@/server/aria/pausa";
+import { agendarTurnoAria } from "@/server/aria/turno/orquestrador";
+import { agendarTriagemAria } from "@/server/aria/triagem";
 
 // INGESTÃO NORMALIZADA (doc 26 §Camada 0): webhook Meta e eventos Evolution são traduzidos
 // pelos handlers para este formato ÚNICO antes de tocar o banco. Regras aqui:
@@ -23,8 +23,11 @@ export interface InboundNormalizado {
   numeroTelefoneE164?: string | null;
   /** wa_id/remoteJid do contato (sem "+" — normalizado aqui). */
   contatoWaId: string;
+  /** pushName/perfil do REMETENTE. Em fromMe é o perfil da própria linha: descartado aqui. */
   nomeExibicao?: string | null;
   providerMessageId: string;
+  /** Id da mensagem no motor (chatJid:idDoProtocolo); só o driver MOTOR preenche. */
+  mensagemIdMotor?: string | null;
   corpo: string | null;
   tipo: TipoMensagem;
   /** URL canônica /api/files/... do binário já baixado pelo webhook (E3 — gap A3). */
@@ -54,14 +57,16 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
   if (!numero) return "numero_desconhecido";
 
   const telefoneContato = telefoneDeWaId(m.contatoWaId);
-  let saudacaoIntencaoId: string | null = null;
 
   try {
+    const ancoraAria: { id: string | null } = { id: null };
+    const ancoraTriagem: { id: string | null } = { id: null };
     await prisma.$transaction(async (tx) => {
       const contato = await garantirContato(tx, {
         telefoneE164: telefoneContato,
         waId: m.contatoWaId.replace(/\D/g, ""),
-        nomeExibicao: m.nomeExibicao ?? null,
+        // fromMe: o pushName é o perfil de quem ENVIOU (a própria linha), não o do contato.
+        nomePerfil: m.fromMe ? null : m.nomeExibicao ?? null,
       });
 
       const conversa = await tx.conversaWhatsApp.upsert({
@@ -70,21 +75,12 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
         update: {},
       });
 
-      // 1º inbound da conversa? CLAIM ATÔMICO (review PR #53 P1): o updateMany condicional
-      // (capturadaEm IS NULL) toma o lock da linha — dois inbounds concorrentes do mesmo
-      // contato não passam ambos, então nasce no máximo um lead/saudação por conversa.
-      let primeiroInbound = false;
-      if (!m.fromMe) {
-        const claim = await tx.conversaWhatsApp.updateMany({
-          where: { id: conversa.id, capturadaEm: null },
-          data: { capturadaEm: m.quando },
-        });
-        primeiroInbound = claim.count === 1;
-      }
+      // Claim atômico de ConversaWhatsApp.capturadaEm: o despachante e elegibilidade.ts o leem.
+      if (!m.fromMe) await tx.conversaWhatsApp.updateMany({ where: { id: conversa.id, capturadaEm: null }, data: { capturadaEm: m.quando } });
 
       // Dedupe S7: o @@unique(numeroId, providerMessageId) faz o retry do webhook explodir
       // aqui dentro — capturado fora como "duplicada", sem efeito colateral.
-      await tx.mensagemWhatsApp.create({
+      const mensagem = await tx.mensagemWhatsApp.create({
         data: {
           conversaId: conversa.id,
           numeroId: numero.id,
@@ -94,9 +90,11 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           midiaPath: m.midiaPath ?? null,
           status: m.fromMe ? "ENVIADA" : "ENTREGUE",
           statusEm: m.quando,
+          enviadaEm: m.fromMe ? m.quando : null,
           driver: m.driver,
-          origem: null, // fromMe fora do ERP não tem origem HUMANO/CRON/LOTE (gap 16)
+          origem: m.fromMe ? "CELULAR" : null, // fromMe fora do ERP: enviada pelo celular (E3.6)
           providerMessageId: m.providerMessageId,
+          mensagemIdMotor: m.mensagemIdMotor ?? null,
           criadoEm: m.quando,
         },
       });
@@ -139,50 +137,36 @@ export async function processarMensagemNormalizada(m: InboundNormalizado): Promi
           });
         }
 
-        // C1 (doc 27): auto-captura de lead + saudação no 1º inbound de um número de vendas.
-        // Só dispara se a ConfigComercial estiver ligada (nasce desligada); nunca sobre um
-        // opt-out imediato. O contato de garantirContato traz os vínculos preservados.
-        const captura = await capturarComercial(tx, {
-          numero: { id: numero.id, finalidade: numero.finalidade, donoId: numero.donoId },
-          contato: {
-            id: contato.id,
-            telefoneE164: contato.telefoneE164,
-            nomeExibicao: contato.nomeExibicao,
-            alunoId: contato.alunoId,
-            responsavelId: contato.responsavelId,
-            leadId: contato.leadId,
-            optOut: !!contato.optOutEm || optOutAgora,
-          },
-          primeiroInbound,
-          quando: m.quando,
-          referral: m.referral ?? null,
-        });
-        saudacaoIntencaoId = captura.saudacaoIntencaoId;
-
         // C2 (doc 27): resposta à confirmação da experimental ("SIM"/"REAGENDAR" — fallback
-        // textual do Baileys). Só vale com experimental AGENDADA; o vínculo do contato pode
-        // ter acabado de ser criado pela captura acima.
-        const leadDoContato = captura.leadCriadoId ?? contato.leadId;
+        // textual do Baileys). Só vale com experimental AGENDADA.
         if (!optOutAgora) {
           await capturarRespostaExperimental(tx, {
-            leadId: leadDoContato,
+            leadId: contato.leadId,
             corpo: m.corpo,
             quando: m.quando,
           });
         }
       }
+      const atendimentoId = await atendimentoDoInbound(tx, conversa.id, { atribuir: !m.fromMe });
+      if (atendimentoId) {
+        await tx.mensagemWhatsApp.update({ where: { id: mensagem.id }, data: { atendimentoId } });
+        await tx.atendimentoWhatsApp.update({ where: { id: atendimentoId }, data: {
+          ultimaMensagemEm: m.quando, ...(m.fromMe ? {} : { ultimoInboundEm: m.quando, naoLidas: { increment: 1 } }),
+        } });
+        if (m.fromMe) {
+          await aplicarResposta(tx, atendimentoId, m.quando);
+          await aoGravarSaidaHumana(tx, { atendimentoId, origem: "CELULAR", autorId: null });
+        }
+        else {
+          await aplicarInbound(tx, atendimentoId, m.quando);
+          ancoraAria.id = mensagem.id;
+        }
+      } else if (!m.fromMe) ancoraTriagem.id = mensagem.id;
     });
-    // Saudação "em segundos" (reativa): despacha JÁ, fora da transação. ESCOPADO à intenção
-    // recém-criada (review PR #53 P2) — nunca drena a fila global (cobranças/lotes sem
-    // relação) a partir de um inbound. Sem WHATSAPP_LIVE=1 vira SIMULADA; falha não derruba
-    // o webhook.
-    if (saudacaoIntencaoId) {
-      try {
-        await despacharFila(new Date(), { intencaoId: saudacaoIntencaoId });
-      } catch (e) {
-        console.error("[inbound] falha ao despachar saudação reativa:", e);
-      }
-    }
+    // Depois do commit: a Aria roda em segundo plano, sem atrasar nem derrubar a ingestão.
+    if (ancoraAria.id) agendarTurnoAria(ancoraAria.id);
+    // Sem setor definido (número multissetor): a Aria tenta classificar; desligada, a mensagem fica na triagem humana.
+    else if (ancoraTriagem.id) agendarTriagemAria(ancoraTriagem.id);
     return "gravada";
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return "duplicada";
@@ -194,6 +178,8 @@ export interface StatusNormalizado {
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;
   providerMessageId: string;
+  /** Motor: o `providerMessageId` pode diferir do gravado no envio; o UUID da tentativa é a segunda chave. */
+  clientMessageId?: string | null;
   status: StatusMensagem;
   driver: DriverWhatsApp;
   quando: Date;
@@ -208,20 +194,30 @@ const ORDEM_STATUS: Record<StatusMensagem, number> = {
   FALHOU: 9,
 };
 
-export async function processarStatusNormalizado(s: StatusNormalizado): Promise<"atualizado" | "ignorado"> {
+export async function processarStatusNormalizado(
+  s: StatusNormalizado,
+  /** Roda na MESMA transação do update (ex.: Evento de auditoria). */
+  aposAtualizar?: (tx: Prisma.TransactionClient, msg: { id: string }) => Promise<void>,
+): Promise<"atualizado" | "ignorado" | "sem_mensagem"> {
   const numero = await acharNumero(s);
   if (!numero) return "ignorado";
 
-  const msg = await prisma.mensagemWhatsApp.findUnique({
-    where: { numeroId_providerMessageId: { numeroId: numero.id, providerMessageId: s.providerMessageId } },
-    select: { id: true, status: true },
+  const ou: Prisma.MensagemWhatsAppWhereInput[] = [{ providerMessageId: s.providerMessageId }];
+  if (s.clientMessageId) ou.push({ clientMessageId: s.clientMessageId });
+  const msg = await prisma.mensagemWhatsApp.findFirst({
+    where: { numeroId: numero.id, OR: ou },
+    select: { id: true, status: true, enviadaEm: true },
   });
-  if (!msg) return "ignorado"; // status fora de ordem antes da mensagem existir: retry da Meta resolve
+  if (!msg) return "sem_mensagem"; // status antes da mensagem existir: o motor adia e reprocessa; a Meta reenvia
   if (ORDEM_STATUS[s.status] <= ORDEM_STATUS[msg.status]) return "ignorado";
 
-  await prisma.mensagemWhatsApp.update({
-    where: { id: msg.id },
-    data: { status: s.status, statusEm: s.quando },
+  await prisma.$transaction(async (tx) => {
+    await tx.mensagemWhatsApp.update({
+      where: { id: msg.id },
+      // Saindo da fila para um status de envio, o primeiro deles marca o envio (D6 do SLA).
+      data: { status: s.status, statusEm: s.quando, ...(msg.enviadaEm === null && msg.status === "NA_FILA" && s.status !== "FALHOU" ? { enviadaEm: s.quando } : {}) },
+    });
+    if (aposAtualizar) await aposAtualizar(tx, msg);
   });
   return "atualizado";
 }
@@ -230,7 +226,7 @@ export async function processarStatusNormalizado(s: StatusNormalizado): Promise<
 // Evolution são namespaces distintos) — o lookup filtra por driver e o schema garante
 // @@unique([driver, providerRef]) (review PR #51 P2-6: sem isso, dois números com a mesma
 // referência roteariam mensagens para a conversa/dono errados).
-async function acharNumero(ref: {
+export async function acharNumero(ref: {
   numeroProviderRef?: string | null;
   numeroTelefoneE164?: string | null;
   driver: DriverWhatsApp;
@@ -242,7 +238,7 @@ async function acharNumero(ref: {
     if (porRef) return porRef;
   }
   if (ref.numeroTelefoneE164) {
-    return prisma.numeroWhatsApp.findUnique({ where: { telefoneE164: ref.numeroTelefoneE164 } });
+    return prisma.numeroWhatsApp.findFirst({ where: { telefoneE164: ref.numeroTelefoneE164, driver: ref.driver } });
   }
   return null;
 }

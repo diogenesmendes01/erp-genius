@@ -1,35 +1,39 @@
 import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { navParaPapeis } from "@/lib/nav";
-import { dadosHomeVendedor, dadosHomeGerente, dadosHomeProfessor } from "@/server/home/consultas";
-import { HomeVendedor } from "./HomeVendedor";
+import { dadosHomeGerente, dadosHomeProfessor } from "@/server/home/consultas";
 import { HomeGerente } from "./HomeGerente";
 import { HomeProfessor } from "./HomeProfessor";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 export default async function HomePage() {
   // Guard de página com papéis FRESCOS do banco (não do JWT) — ver _shared/sessao.
   const usuario = await exigirSessaoPagina();
 
+  // Papel ALUNO (só-portal) nem chega aqui: exigirSessaoPagina redireciona para /portal
+  // no núcleo da sessão (review PR #60 — barreira fail-closed única, não por tela).
+
   const ehGerente =
     usuario.papeis.includes(Papel.ADMINISTRADOR) ||
     usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
-  const ehVendedor = usuario.papeis.includes(Papel.VENDEDOR);
 
   if (ehGerente) {
-    const dados = await dadosHomeGerente();
+    const dados = await dadosHomeGerente(usuario);
     return <HomeGerente nome={usuario.nome} dados={dados} />;
   }
-  if (ehVendedor) {
-    const dados = await dadosHomeVendedor(usuario);
-    return <HomeVendedor nome={usuario.nome} dados={dados} />;
-  }
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
-    const dados = await dadosHomeProfessor(usuario);
-    return <HomeProfessor nome={usuario.nome} turmas={dados.turmas} experimentais={dados.experimentais} />;
+    const [dados, preferencia] = await Promise.all([dadosHomeProfessor(usuario), consultarPreferenciaFusoEquipe()]);
+    return <HomeProfessor
+      nome={usuario.nome}
+      turmas={dados.turmas}
+      experimentais={dados.experimentais}
+      proximaExperimental={dados.proximaExperimental}
+      preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
+    />;
   }
 
-  // Home genérica para os demais papéis (Secretaria, Financeiro, Pedagógico, Professor).
+  // Home genérica para os demais papéis (Vendedor, Secretaria, Financeiro, Pedagógico).
   const itens = navParaPapeis(usuario.papeis).filter((i) => i.href !== "/home");
   return (
     <div>

@@ -1,15 +1,37 @@
 import { z } from "zod";
-import { dataObrigatoria } from "@/server/_shared/validacao";
+import { dataObrigatoria, dataOpcional } from "@/server/_shared/validacao";
 
 // Turma = modalidade × nível × AGENDA (dias da semana + horário) × período (início→fim).
 // Cohort online (docs 06, 09). A agenda é um calendário real: o nº de dias deve casar com
-// a frequência da modalidade; início e fim são obrigatórios.
+// a frequência da modalidade; o fim da aula pode atravessar a meia-noite e a data final
+// é apenas uma referência histórica opcional.
 const HORARIO_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
 /** "HH:MM" → minutos desde a meia-noite (comparação robusta de horários). */
 export function emMinutos(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
+}
+
+/** Duração circular de uma aula. 22:00–01:00 corresponde a três horas. */
+export function duracaoIntervaloEmMinutos(horarioInicio: string, horarioFim: string): number {
+  const inicio = emMinutos(horarioInicio);
+  const fim = emMinutos(horarioFim);
+  return (fim - inicio + 24 * 60) % (24 * 60);
+}
+
+/** Fim que a duração aprovada pela modalidade determina a partir do início. */
+export function horarioFimPorDuracao(horarioInicio: string, duracaoMinutos: number): {
+  horarioFim: string;
+  atravessaDia: boolean;
+} {
+  const inicio = emMinutos(horarioInicio);
+  const total = inicio + duracaoMinutos;
+  const fim = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  return {
+    horarioFim: `${String(Math.floor(fim / 60)).padStart(2, "0")}:${String(fim % 60).padStart(2, "0")}`,
+    atravessaDia: total >= 24 * 60,
+  };
 }
 
 export const TurmaSchema = z
@@ -26,16 +48,18 @@ export const TurmaSchema = z
     horarioInicio: z.string().regex(HORARIO_RE, "Informe o horário de início (HH:MM)"),
     horarioFim: z.string().regex(HORARIO_RE, "Informe o horário de fim (HH:MM)"),
     dataInicio: dataObrigatoria,
-    dataFim: dataObrigatoria,
+    // A vigência final não é pré-requisito para criar a turma: a agenda publicada
+    // é a fonte do período operacional. Em edição, ausência preserva o legado.
+    dataFim: dataOpcional,
     capacidade: z.coerce.number().int().positive("Capacidade deve ser ≥ 1").default(12),
     rolling: z.boolean().optional().default(false),
   })
-  .refine((d) => d.dataFim > d.dataInicio, {
+  .refine((d) => !d.dataFim || d.dataFim > d.dataInicio, {
     message: "A data de fim deve ser depois da data de início",
     path: ["dataFim"],
   })
-  .refine((d) => emMinutos(d.horarioFim) > emMinutos(d.horarioInicio), {
-    message: "O horário de fim deve ser depois do início",
+  .refine((d) => duracaoIntervaloEmMinutos(d.horarioInicio, d.horarioFim) > 0, {
+    message: "O intervalo da aula deve ter duração positiva",
     path: ["horarioFim"],
   });
 

@@ -30,7 +30,10 @@ export const EnviarMidiaInboxSchema = z.object({
 });
 export type EnviarMidiaInboxInput = z.input<typeof EnviarMidiaInboxSchema>;
 
+export const MSG_MOTIVO_DESVINCULO = "Escreva o motivo do desvínculo (10 a 500 caracteres).";
+
 export const VincularContatoSchema = z.object({
+  atendimentoId: z.string().min(1).optional(),
   contatoId: z.string().min(1),
   alvo: z.discriminatedUnion("tipo", [
     z.object({ tipo: z.literal("aluno"), id: z.string().min(1) }),
@@ -39,6 +42,23 @@ export const VincularContatoSchema = z.object({
   ]),
 });
 export type VincularContatoInput = z.input<typeof VincularContatoSchema>;
+
+/** Desvincular contato pelo Inbox (D8, #175, L2298): o vínculo atual que sai e o motivo, obrigatório. */
+export const DesvincularContatoSchema = z.object({
+  atendimentoId: z.string().min(1),
+  alvo: z.object({ tipo: z.enum(["aluno", "responsavel", "lead"]), id: z.string().min(1) }),
+  motivo: z.string().trim().min(10, MSG_MOTIVO_DESVINCULO).max(500, MSG_MOTIVO_DESVINCULO),
+});
+export type DesvincularContatoInput = z.input<typeof DesvincularContatoSchema>;
+
+/** Nome salvo do contato (edição na thread). Vazio = volta ao nome de perfil do WhatsApp / número. */
+export const EditarNomeContatoSchema = z.object({
+  atendimentoId: z.string().min(1),
+  nome: z.string().trim().max(80, "Nome longo demais (até 80 caracteres)."),
+  /** Nome salvo que a tela carregou: a gravação só vale se ele ainda for o atual (edições concorrentes). */
+  nomeAnterior: z.string().nullable(),
+});
+export type EditarNomeContatoInput = z.input<typeof EditarNomeContatoSchema>;
 
 export const TratarConversaSchema = z.object({
   conversaId: z.string().min(1),
@@ -54,14 +74,9 @@ export const NumeroWhatsAppSchema = z.object({
   id: z.string().min(1).optional(),
   telefoneE164,
   rotulo: z.string().trim().min(2, "Dê um rótulo ao número (ex.: Cobrança)." ).max(60),
-  driver: z.enum(["META_CLOUD", "BAILEYS"]),
-  finalidade: z.enum(["COBRANCA", "VENDAS"]),
-  providerRef: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .transform((v) => (v ? v : null)),
+  // Só o motor aceita número novo; o providerRef é o próprio id (definido ao salvar).
+  driver: z.literal("MOTOR").default("MOTOR"),
+  finalidade: z.enum(["COBRANCA", "VENDAS", "AGENDA"]),
   donoId: z
     .string()
     .trim()
@@ -70,6 +85,13 @@ export const NumeroWhatsAppSchema = z.object({
   ativo: z.boolean().default(true),
 });
 export type NumeroWhatsAppInput = z.input<typeof NumeroWhatsAppSchema>;
+
+/** Escolha explícita do canal institucional de avisos de agenda. */
+export const ConfiguracaoAvisosAgendaSchema = z.object({
+  numeroAvisosAgendaId: z.string().trim().min(1),
+  templateAvisosAgendaId: z.string().trim().min(1),
+});
+export type ConfiguracaoAvisosAgendaInput = z.input<typeof ConfiguracaoAvisosAgendaSchema>;
 
 // ---------------------------------------------------------------------------
 // Config — template (E4). Nome segue a regra da Meta: minúsculas/dígitos/underscore.

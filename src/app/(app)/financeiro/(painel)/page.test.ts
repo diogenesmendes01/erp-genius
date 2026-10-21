@@ -1,0 +1,240 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Papel } from "@prisma/client";
+
+// /financeiro por rota (E8): índice → aba padrão; layout com a barra e as contagens; cada aba com o
+// PRÓPRIO guard antes das consultas e só as consultas dela.
+const mocks = vi.hoisted(() => ({
+  guard: vi.fn(), preferencia: vi.fn(), fila: vi.fn(), comissoes: vi.fn(), totais: vi.fn(), kpis: vi.fn(),
+  aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), contarInformes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
+  podeConfigurar: vi.fn(),
+  redirect: vi.fn((d: string) => { throw new Error(`REDIRECT ${d}`); }),
+  componente: vi.fn(),
+}));
+/** Cada componente de aba vira um marcador com o nome e o fuso recebido (hoisted: usado nos vi.mock). */
+const { marcador } = vi.hoisted(() => ({
+  marcador: (nome: string) => (props: { preferenciaFusoExibicao?: string | null }) => `[${nome}|${props.preferenciaFusoExibicao ?? "UTC"}]`,
+}));
+
+vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: mocks.guard }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => createElement("p", null, "Acesso negado") }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("@/server/cobrancas/consultas", () => ({ listarFilaCobranca: mocks.fila }));
+vi.mock("@/server/ajustes/consultas", () => ({ listarAprovacoesPendentes: mocks.aprovacoes }));
+vi.mock("@/server/retomada/consultas", () => ({ listarPropostasRetomada: mocks.retomadas }));
+vi.mock("@/server/financeiro/consultas", () => ({
+  COMISSOES_POR_PAGINA: 50, listarComissoesPagina: mocks.comissoes, totaisComissoesAPagar: mocks.totais,
+  kpisFinanceiro: mocks.kpis, dadosCambio: mocks.cotacoes,
+  relatorioDescontosComissoes: mocks.relatorio, listarFilaInformesPagamento: mocks.informes, contarInformesAConferir: mocks.contarInformes,
+  configuracaoComissoes: mocks.politicas, carregarConfigFinanceiro: mocks.configFinanceiro,
+  podeConfigurarComissoes: mocks.podeConfigurar,
+}));
+vi.mock("../FilaCobranca", () => ({ FilaCobranca: marcador("fila") }));
+vi.mock("../InformesPagamento", () => ({ InformesPagamento: marcador("informes") }));
+vi.mock("../RetomadasPainel", () => ({ RetomadasPainel: marcador("retomadas") }));
+vi.mock("../PoliticasComissao", () => ({ PoliticasComissao: marcador("politicas") }));
+vi.mock("../DiaPrevisaoComissao", () => ({ DiaPrevisaoComissao: marcador("dia-previsao") }));
+vi.mock("../FinanceiroPainel", () => ({
+  ComissoesAba: (props: { preferenciaFusoExibicao?: string | null }) => { mocks.componente(props); return marcador("comissoes")(props); },
+  Descontos: marcador("descontos"), GeralAba: marcador("geral"),
+  AprovacoesAba: marcador("aprovacoes"), CambioAba: marcador("cambio"),
+}));
+vi.mock("../BarraAbasFinanceiro", () => ({
+  BarraAbasFinanceiro: (props: { abas: string[]; contagem: Record<string, number> }) =>
+    createElement("nav", { "data-abas": props.abas.join(","), "data-contagem": JSON.stringify(props.contagem) }),
+}));
+
+import Indice from "./page";
+import Layout from "./layout";
+import CobrancasPagina from "./cobrancas/page";
+import InformesPagina from "./informes/page";
+import Retomadas from "./retomadas/page";
+import ComissoesPagina from "./comissoes/page";
+import Descontos from "./descontos/page";
+import Geral from "./geral/page";
+import Politicas from "./politicas/page";
+import Aprovacoes from "./aprovacoes/page";
+import Cambio from "./cambio/page";
+
+const html = async (el: Promise<React.ReactElement | null>) => renderToStaticMarkup((await el) ?? createElement("span"));
+/** A aba de cobranças lê os filtros da fila da URL (E4); sem parâmetros, a fila inteira. */
+const Cobrancas = (parametros: Record<string, string> = {}) => CobrancasPagina({ searchParams: Promise.resolve(parametros) });
+/** A aba de informes lê o cursor da fila da URL (item 9); sem parâmetros, o início da fila. */
+const Informes = (parametros: Record<string, string> = {}) => InformesPagina({ searchParams: Promise.resolve(parametros) });
+/** A aba de comissões lê situação e página da URL (E4); sem parâmetros, a primeira página. */
+const Comissoes = (parametros: Record<string, string> = {}) => ComissoesPagina({ searchParams: Promise.resolve(parametros) });
+/** Consultas pesadas, cada uma só da sua aba. */
+const pesadas = () => ({
+  fila: mocks.fila.mock.calls.length, comissoes: mocks.comissoes.mock.calls.length, totais: mocks.totais.mock.calls.length, kpis: mocks.kpis.mock.calls.length,
+  cotacoes: mocks.cotacoes.mock.calls.length, relatorio: mocks.relatorio.mock.calls.length, politicas: mocks.politicas.mock.calls.length,
+  configFinanceiro: mocks.configFinanceiro.mock.calls.length,
+});
+const nenhuma = { fila: 0, comissoes: 0, totais: 0, kpis: 0, cotacoes: 0, relatorio: 0, politicas: 0, configFinanceiro: 0 };
+
+describe("/financeiro por rota (E8)", () => {
+  beforeEach(() => {
+    mocks.guard.mockResolvedValue([Papel.FINANCEIRO]);
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+    mocks.fila.mockResolvedValue({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] });
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 0 }); mocks.totais.mockResolvedValue([]); mocks.kpis.mockResolvedValue({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 });
+    mocks.aprovacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({});
+    mocks.informes.mockResolvedValue({ itens: [], temAnterior: false, temProxima: false, anterior: null, proxima: null }); mocks.contarInformes.mockResolvedValue(0);
+    mocks.politicas.mockResolvedValue({}); mocks.podeConfigurar.mockResolvedValue(false); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] }); mocks.configFinanceiro.mockResolvedValue({ fechamentoComissaoAutomatico: false });
+  });
+  afterEach(() => vi.clearAllMocks());
+
+  it("índice leva à aba padrão do papel e respeita ?aba= antigo visível — sem consultar dados", async () => {
+    await expect(Indice({ searchParams: Promise.resolve({}) })).rejects.toThrow("REDIRECT /financeiro/cobrancas");
+    await expect(Indice({ searchParams: Promise.resolve({ aba: "geral" }) })).rejects.toThrow("REDIRECT /financeiro/geral");
+    await expect(Indice({ searchParams: Promise.resolve({ aba: "politicas" }) })).rejects.toThrow("REDIRECT /financeiro/cobrancas"); // sem permissão
+    mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
+    await expect(Indice({ searchParams: Promise.resolve({ aba: "cobrancas" }) })).rejects.toThrow("REDIRECT /financeiro/comissoes");
+    expect(pesadas()).toEqual(nenhuma);
+  });
+
+  it("guard recusa: índice, layout e abas negam sem consultar nada", async () => {
+    mocks.guard.mockResolvedValue(null);
+    expect(await html(Indice({ searchParams: Promise.resolve({}) }))).toContain("Acesso negado");
+    expect(await html(Layout({ children: createElement("p", null, "filho") }))).toContain("Acesso negado");
+    for (const aba of [Cobrancas, Informes, Retomadas, Comissoes, Descontos, Geral, Politicas, Aprovacoes, Cambio]) {
+      expect(await html(aba())).toContain("Acesso negado");
+    }
+    expect(mocks.guard).toHaveBeenCalledWith(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
+    expect(pesadas()).toEqual(nenhuma);
+    expect(mocks.preferencia).not.toHaveBeenCalled();
+    expect(mocks.informes).not.toHaveBeenCalled();
+    expect(mocks.contarInformes).not.toHaveBeenCalled();
+  });
+
+  it("layout: barra com as abas do papel e contagens das filas; Financeiro não consulta aprovações", async () => {
+    // Item 9: o número de informes a conferir é um count — o layout não lê os informes.
+    mocks.contarInformes.mockResolvedValue(2);
+    mocks.retomadas.mockResolvedValue({ ok: true, dado: [{ status: "PENDENTE" }, { status: "APLICADA" }] });
+    const pagina = await html(Layout({ children: createElement("p", null, "filho") }));
+    expect(pagina).toContain('data-abas="cobrancas,informes,retomadas,comissoes,descontos,geral,cambio"');
+    expect(pagina).toContain(`data-contagem="${JSON.stringify({ informes: 2, retomadas: 1, aprovacoes: 0 }).replaceAll('"', "&quot;")}"`);
+    expect(pagina).toContain("<p>filho</p>");
+    expect(mocks.aprovacoes).not.toHaveBeenCalled();
+    expect(mocks.informes).not.toHaveBeenCalled();
+    expect(pesadas()).toEqual(nenhuma); // o layout não consulta nada das abas
+  });
+
+  it("cobranças: só a fila; preferência de fuso entregue", async () => {
+    const pagina = await html(Cobrancas());
+    expect(pagina).toContain('[fila|');
+    expect(pagina).toContain('|America/Costa_Rica]');
+    expect(pesadas()).toEqual({ ...nenhuma, fila: 1 });
+  });
+
+  it.each([
+    ["comissoes", Comissoes, { ...nenhuma, comissoes: 1, totais: 1, configFinanceiro: 1 }],
+    ["descontos", Descontos, { ...nenhuma, relatorio: 1 }],
+    ["geral", Geral, { ...nenhuma, kpis: 1, cotacoes: 1 }],
+    ["cambio", Cambio, { ...nenhuma, cotacoes: 1 }],
+  ] as const)("%s consulta só o que a aba mostra", async (nome, Aba, esperado) => {
+    expect(await html(Aba())).toContain(`[${nome}|`);
+    expect(pesadas()).toEqual(esperado);
+  });
+
+  it("comissões (E4): situação e página da URL vão para a consulta paginada; o total a pagar vem do servidor", async () => {
+    const itens = Array.from({ length: 50 }, (_, i) => ({ id: `c${i}` }));
+    mocks.comissoes.mockResolvedValue({ itens, total: 120 });
+    mocks.totais.mockResolvedValue([{ moeda: "CRC", valor: 5000 }]);
+    const pagina = await html(Comissoes({ status: "APROVADA", pagina: "2" }));
+    expect(mocks.comissoes).toHaveBeenCalledWith({ status: "APROVADA", pagina: 2, ordem: { campo: "vendedor", dir: "asc" } });
+    expect(pagina).toContain("51–100 de 120 comissões");
+    expect(pagina).toContain("/financeiro/comissoes?status=APROVADA&amp;pagina=3");
+    expect(pagina).toContain('aria-label="Filtrar por situação"');
+    // Com filtro ativo, dá para limpá-lo (volta à aba sem parâmetros).
+    expect(pagina).toMatch(/<a[^>]*href="\/financeiro\/comissoes"[^>]*>Limpar filtro<\/a>/);
+    const props = mocks.componente.mock.calls.at(-1)?.[0] as { comissoes: unknown[]; aPagar: unknown };
+    expect(props.comissoes).toHaveLength(50);
+    expect(props.aPagar).toEqual([{ moeda: "CRC", valor: 5000 }]);
+  });
+
+  it("comissões (E1): a ordem da URL vai para a consulta e para os cabeçalhos; paginação, limpar e formulário a mantêm", async () => {
+    const itens = Array.from({ length: 50 }, (_, i) => ({ id: `c${i}` }));
+    mocks.comissoes.mockResolvedValue({ itens, total: 120 });
+    const pagina = await html(Comissoes({ status: "APROVADA", ordem: "status", dir: "desc", pagina: "2" }));
+    expect(mocks.comissoes).toHaveBeenCalledWith({ status: "APROVADA", pagina: 2, ordem: { campo: "status", dir: "desc" } });
+    const props = mocks.componente.mock.calls.at(-1)?.[0] as { ordenacao: unknown };
+    expect(props.ordenacao).toEqual({ atual: { campo: "status", dir: "desc" }, rota: "/financeiro/comissoes", parametros: { status: "APROVADA" } });
+    expect(pagina).toContain("/financeiro/comissoes?status=APROVADA&amp;ordem=status&amp;dir=desc&amp;pagina=3");
+    expect(pagina).toMatch(/<a[^>]*href="\/financeiro\/comissoes\?ordem=status&amp;dir=desc"[^>]*>Limpar filtro<\/a>/);
+    expect(pagina).toContain('<input type="hidden" name="ordem" value="status"/>');
+    expect(pagina).toContain('<input type="hidden" name="dir" value="desc"/>'); // R1 da #136, B5: decrescente não vira crescente
+    // Coluna fora da lista fechada: a ordem de sempre, sem parâmetros nos links.
+    await html(Comissoes({ ordem: "percentual", dir: "desc" }));
+    expect(mocks.comissoes).toHaveBeenLastCalledWith({ status: null, pagina: 1, ordem: { campo: "vendedor", dir: "asc" } });
+    expect((mocks.componente.mock.calls.at(-1)?.[0] as { ordenacao: unknown }).ordenacao).toEqual({ atual: { campo: "vendedor", dir: "asc" }, rota: "/financeiro/comissoes", parametros: {} });
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 60 });
+    await expect(Comissoes({ ordem: "valor", dir: "asc", pagina: "9" })).rejects.toThrow("REDIRECT /financeiro/comissoes?ordem=valor&dir=asc&pagina=2");
+  });
+
+  it("comissões: página além do fim volta para a última, sem perder a situação filtrada", async () => {
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 60 });
+    await expect(Comissoes({ pagina: "9" })).rejects.toThrow("REDIRECT /financeiro/comissoes?pagina=2");
+    await expect(Comissoes({ status: "APROVADA", pagina: "9" })).rejects.toThrow("REDIRECT /financeiro/comissoes?status=APROVADA&pagina=2");
+  });
+
+  it("comissões: filtro sem resultado diz que não há nesta situação e oferece ver todas; sem filtro, nada", async () => {
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 0 });
+    await html(Comissoes({ status: "PAGA" }));
+    const comFiltro = renderToStaticMarkup(createElement("div", null, (mocks.componente.mock.calls.at(-1)?.[0] as { vazio: React.ReactNode }).vazio));
+    expect(comFiltro).toContain("Nenhuma comissão nesta situação.");
+    expect(comFiltro).toContain('href="/financeiro/comissoes"');
+    await html(Comissoes());
+    expect((mocks.componente.mock.calls.at(-1)?.[0] as { vazio?: unknown }).vazio).toBeUndefined();
+  });
+
+  it("comissões: \"Ver todas\" do vazio filtrado mantém a ordem escolhida (R1 da #136, B5)", async () => {
+    mocks.comissoes.mockResolvedValue({ itens: [], total: 0 });
+    await html(Comissoes({ status: "PAGA", ordem: "valor", dir: "desc" }));
+    const vazio = renderToStaticMarkup(createElement("div", null, (mocks.componente.mock.calls.at(-1)?.[0] as { vazio: React.ReactNode }).vazio));
+    expect(vazio).toContain('href="/financeiro/comissoes?ordem=valor&amp;dir=desc"');
+  });
+
+  it("informes: a aba lê a própria fila por cursor (item 9); retomadas vêm das filas pendentes; ambas com o fuso", async () => {
+    expect(await html(Informes())).toContain('[informes|');
+    expect(mocks.informes).toHaveBeenCalledTimes(1);
+    expect(mocks.informes).toHaveBeenCalledWith({});
+    await html(Informes({ depois: "informe-30" }));
+    expect(mocks.informes).toHaveBeenLastCalledWith({ depois: "informe-30" });
+    expect(await html(Retomadas())).toContain('|America/Costa_Rica]');
+    expect(pesadas()).toEqual(nenhuma);
+  });
+
+  it("informes: cursor fora do formato é erro com a volta ao início, sem consultar a fila", async () => {
+    const pagina = await html(Informes({ depois: "../x" }));
+    expect(pagina).toContain('role="alert"');
+    expect(pagina).toContain('href="/financeiro/informes"');
+    expect(mocks.informes).not.toHaveBeenCalled();
+  });
+
+  it("Gerente pedindo uma aba de cobrança direto: acesso negado, sem consultar a fila nem os informes", async () => {
+    mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
+    for (const aba of [Cobrancas, Informes, Retomadas, Geral, Cambio]) expect(await html(aba())).toContain("Acesso negado");
+    expect(pesadas()).toEqual(nenhuma);
+    expect(mocks.informes).not.toHaveBeenCalled();
+    expect(mocks.contarInformes).not.toHaveBeenCalled();
+    expect(await html(Aprovacoes())).toContain('[aprovacoes|'); // Gerente aprova
+    expect(mocks.aprovacoes).toHaveBeenCalledTimes(1);
+  });
+
+  it("Política de comissão só com permissão; consulta a configuração apenas na própria aba", async () => {
+    expect(await html(Politicas())).toContain("Acesso negado");
+    expect(mocks.politicas).not.toHaveBeenCalled();
+    mocks.podeConfigurar.mockResolvedValue(true);
+    const aba = await html(Politicas());
+    expect(aba).toContain('[politicas|');
+    expect(aba).toContain('[dia-previsao|'); // D11: o dia da previsão fica nesta aba
+    expect(mocks.politicas).toHaveBeenCalledTimes(1);
+  });
+
+  it("Financeiro não abre Aprovações (não aprova): acesso negado, sem consultar", async () => {
+    expect(await html(Aprovacoes())).toContain("Acesso negado");
+    expect(mocks.aprovacoes).not.toHaveBeenCalled();
+  });
+});

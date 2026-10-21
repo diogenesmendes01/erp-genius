@@ -1,5 +1,7 @@
-import { Papel, StatusPais, TipoCobranca } from "@prisma/client";
+import { Prisma, Papel, StatusPais, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { inicioDoDiaInstitucional } from "@/server/operacao/fuso";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 // Helpers das suites de integração (*.int.test.ts). O banco é o Postgres de TESTE
 // (a URL é injetada pelo vitest.integration.config — nunca o .env/produção).
@@ -13,6 +15,29 @@ export async function truncarBanco(): Promise<void> {
   if (tabelas.length === 0) return;
   const lista = tabelas.map((t) => `"${t.tablename}"`).join(", ");
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${lista} RESTART IDENTITY CASCADE`);
+}
+
+/**
+ * Fuso da escola configurado (D10): sem ele, o lançamento de avaliação é recusado. As suítes que lançam notas
+ * chamam isto no setup, depois do truncarBanco. Upsert: chamar de novo (ou depois de outra configuração) só
+ * reafirma o fuso.
+ */
+export async function configurarFusoDaEscola(fuso = "UTC"): Promise<void> {
+  await prisma.configuracaoOperacional.upsert({
+    where: { id: "escola" },
+    create: { id: "escola", fusoInstitucional: fuso },
+    update: { fusoInstitucional: fuso },
+  });
+}
+
+/**
+ * Meio-dia da escola no dia corrente (revisão da #255, C1). Serve de relógio fixo para as suítes que
+ * precisam do dia da máquina igual ao da escola: ao contrário de uma data literal, fica no mesmo dia do
+ * `now()` do Postgres (`criadoEm` etc.), que segue o relógio real. Ler com o relógio real, antes de
+ * `vi.setSystemTime`, e depois do `truncarBanco` (o fuso vem da configuração, ou do padrão).
+ */
+export async function meioDiaDaEscolaHoje(): Promise<Date> {
+  return new Date(inicioDoDiaInstitucional(new Date(), await fusoDaEscola()).getTime() + 12 * 3600_000);
 }
 
 let seqUsuario = 0;
@@ -85,4 +110,17 @@ export async function eventosDo(agregadoTipo: string, agregadoId: string) {
     where: { agregadoTipo, agregadoId },
     orderBy: { criadoEm: "asc" },
   });
+}
+
+/**
+ * Aluno mínimo (país próprio criado sob demanda, reaproveitado se já existir).
+ * `extra` sobrescreve/complementa os campos (ex.: `pessoaId`).
+ */
+export async function criarAlunoMinimo(extra: Partial<Prisma.AlunoUncheckedCreateInput> = {}) {
+  const pais =
+    (await prisma.pais.findFirst({ where: { codigoISO: "CR" } })) ??
+    (await prisma.pais.create({
+      data: { nome: "Costa Rica", codigoISO: "CR", moedaLocal: "CRC", ddi: "+506", status: StatusPais.ATIVO },
+    }));
+  return prisma.aluno.create({ data: { primeiroNome: "Aluno", paisId: pais.id, ...extra } });
 }

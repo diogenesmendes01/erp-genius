@@ -1,12 +1,11 @@
 import type { Prisma } from "@prisma/client";
 import { gerarCodigo } from "@/lib/codigo";
 import { registrarEvento } from "@/server/_shared/evento";
-import { CHAVE_PRE_EXPERIMENTAL } from "./regua-fabrica";
 
 // CAPTURA AUTOMÁTICA DE LEAD (doc 27 C1 · doc 29 §fluxo F5, regra 6).
 // O 1º inbound de um número de VENDAS sem vínculo vira um Lead — MAS pelo MESMO caminho
 // que o formulário usa (gerarCodigo "lead" + LeadCriado/LeadAtribuido), nunca um
-// `tx.lead.create` solto no webhook (regra 6: pular o Contador/normalização/auditoria).
+// `tx.oportunidade.create` solto no webhook (regra 6: pular o Contador/normalização/auditoria).
 // Sem sessão: autorId = null (sistema). Dono = dono do NumeroWhatsApp de vendas.
 //
 // DEDUPE (gap 17): telefone que JÁ é aluno/responsável/lead não vira lead novo — a régua
@@ -40,7 +39,7 @@ export async function resolverPessoaPorTelefone(
   const [aluno, responsavel, lead] = await Promise.all([
     tx.aluno.findFirst({ where: { telefoneE164 }, select: { id: true } }),
     tx.responsavel.findFirst({ where: { telefoneE164 }, select: { id: true } }),
-    tx.lead.findFirst({ where: { telefoneE164 }, orderBy: { criadoEm: "desc" }, select: { id: true } }),
+    tx.oportunidade.findFirst({ where: { telefoneE164 }, orderBy: { criadoEm: "desc" }, select: { id: true } }),
   ]);
   return { alunoId: aluno?.id ?? null, responsavelId: responsavel?.id ?? null, leadId: lead?.id ?? null };
 }
@@ -52,6 +51,10 @@ export interface LeadDeInbound {
   donoId: string | null;
   paisId?: string | null;
   referral?: ReferralInbound | null;
+  /** Quem pediu a criação ("Criar lead" na linha comercial — SPEC-ERP-005 §5.3). null = sistema. */
+  autorId?: string | null;
+  /** Origem registrada no LeadCriado. Padrão: auto-captura do 1º inbound. */
+  origem?: "whatsapp_inbound" | "whatsapp_linha";
 }
 
 /**
@@ -65,7 +68,7 @@ export async function criarLeadDeInboundWhatsApp(
   dados: LeadDeInbound,
 ): Promise<string> {
   const codigo = await gerarCodigo("lead", tx);
-  const lead = await tx.lead.create({
+  const lead = await tx.oportunidade.create({
     data: {
       codigo,
       nome: dados.nomeExibicao?.trim() || "Contato WhatsApp",
@@ -86,16 +89,16 @@ export async function criarLeadDeInboundWhatsApp(
     tipo: "LeadCriado",
     agregadoTipo: "Lead",
     agregadoId: lead.id,
-    autorId: null, // sistema (auto-captura via WhatsApp)
-    payload: { codigo, nome: lead.nome, origem: "whatsapp_inbound", b2b: false },
+    autorId: dados.autorId ?? null, // null = sistema (auto-captura via WhatsApp)
+    payload: { codigo, nome: lead.nome, origem: dados.origem ?? "whatsapp_inbound", b2b: false },
   });
   if (dados.donoId) {
     await registrarEvento(tx, {
       tipo: "LeadAtribuido",
       agregadoTipo: "Lead",
       agregadoId: lead.id,
-      autorId: null,
-      payload: { de: null, para: dados.donoId, via: "whatsapp_inbound" },
+      autorId: dados.autorId ?? null,
+      payload: { de: null, para: dados.donoId, via: dados.origem ?? "whatsapp_inbound" },
     });
   }
   return lead.id;
@@ -115,6 +118,8 @@ export async function criarLeadDeInboundWhatsApp(
 // engano. Confirmar muda ESTADO do funil; pedir reagendamento só emite um sinal para o
 // vendedor, então esse lado pode aceitar os sinônimos naturais sem risco.
 const KEYWORDS_CONFIRMA = new Set(["sim", "confirmo"]);
+/** Chave da cadência pré-experimental do CRM antigo nos eventos `ReguaComercialEnviada` já gravados. */
+const CHAVE_PRE_EXPERIMENTAL = "PRE_EXPERIMENTAL";
 /** Folga entre o relógio do banco (evento) e o do WhatsApp (mensagem) na correlação. */
 const TOLERANCIA_RELOGIO_MS = 5 * 60_000;
 const KEYWORDS_REAGENDA = new Set(["reagendar", "remarcar", "reagendo", "outro horario", "outro horário"]);
@@ -149,7 +154,7 @@ export async function capturarRespostaExperimental(
   const resposta = classificarRespostaExperimental(ctx.corpo);
   if (!resposta) return null;
 
-  const lead = await tx.lead.findUnique({
+  const lead = await tx.oportunidade.findUnique({
     where: { id: ctx.leadId },
     select: { id: true, etapa: true, dataExperimental: true, experimentalConfirmadaEm: true },
   });
@@ -175,7 +180,7 @@ export async function capturarRespostaExperimental(
 
   if (resposta === "confirmada") {
     if (lead.experimentalConfirmadaEm) return null; // já confirmada — não duplica evento
-    await tx.lead.update({ where: { id: lead.id }, data: { experimentalConfirmadaEm: ctx.quando } });
+    await tx.oportunidade.update({ where: { id: lead.id }, data: { experimentalConfirmadaEm: ctx.quando } });
     await registrarEvento(tx, {
       tipo: "ExperimentalConfirmada",
       agregadoTipo: "Lead",
@@ -186,98 +191,15 @@ export async function capturarRespostaExperimental(
     return "confirmada";
   }
 
+  // B8 (doc 32): o pedido de reagendamento fica persistido até a ação humana (remarcar limpa o campo
+  // em `agendarExperimental` e abre uma ocorrência nova).
+  await tx.oportunidade.update({ where: { id: lead.id }, data: { aguardandoReagendamentoEm: ctx.quando } });
   await registrarEvento(tx, {
     tipo: "ExperimentalReagendamentoSolicitado",
     agregadoTipo: "Lead",
     agregadoId: lead.id,
     autorId: null,
-    payload: { via: "whatsapp_keyword" },
+    payload: { via: "whatsapp_keyword", ocorrencia: lead.dataExperimental.toISOString() },
   });
   return "reagendar";
-}
-
-// ---------------------------------------------------------------------------
-// Orquestração no inbound (chamada por whatsapp/inbound.ts, dentro da transação)
-// ---------------------------------------------------------------------------
-
-export interface CapturaContexto {
-  numero: { id: string; finalidade: string; donoId: string | null; paisId?: string | null };
-  contato: {
-    id: string;
-    telefoneE164: string;
-    nomeExibicao: string | null;
-    alunoId: string | null;
-    responsavelId: string | null;
-    leadId: string | null;
-    optOut: boolean;
-  };
-  /** Só o 1º inbound de uma conversa dispara captura/saudação (idempotente por conversa). */
-  primeiroInbound: boolean;
-  quando: Date;
-  referral?: ReferralInbound | null;
-}
-
-/**
- * C1 (doc 27): no 1º inbound de um número de VENDAS, auto-captura o lead e programa a
- * saudação. Idempotente (só `primeiroInbound`). Auto-lead e saudação são toggles
- * INDEPENDENTES na ConfigComercial — ambos nascem desligados.
- * Devolve se uma saudação foi enfileirada (o chamador dispara o despacho reativo).
- */
-export async function capturarComercial(
-  tx: Prisma.TransactionClient,
-  ctx: CapturaContexto,
-): Promise<{ saudacaoIntencaoId: string | null; leadCriadoId: string | null }> {
-  const nada = { saudacaoIntencaoId: null, leadCriadoId: null };
-  // Só número de vendas, só o 1º inbound, nunca depois de um opt-out imediato.
-  if (ctx.numero.finalidade !== "VENDAS" || !ctx.primeiroInbound || ctx.contato.optOut) return nada;
-
-  const config = await tx.configComercial.findUnique({ where: { id: "comercial" } });
-  if (!config) return nada; // nunca configurado → tudo desligado
-
-  let leadCriadoId: string | null = null;
-  const jaVinculado = ctx.contato.alunoId || ctx.contato.responsavelId || ctx.contato.leadId;
-
-  if (config.autoLeadAtivo && !jaVinculado) {
-    // DEDUPE (gap 17): telefone que já é aluno/responsável/lead só VINCULA o contato.
-    const pessoa = await resolverPessoaPorTelefone(tx, ctx.contato.telefoneE164);
-    if (pessoa.alunoId || pessoa.responsavelId || pessoa.leadId) {
-      await tx.contatoWhatsApp.update({
-        where: { id: ctx.contato.id },
-        data: {
-          alunoId: pessoa.alunoId ?? undefined,
-          responsavelId: pessoa.responsavelId ?? undefined,
-          leadId: pessoa.leadId ?? undefined,
-        },
-      });
-    } else {
-      leadCriadoId = await criarLeadDeInboundWhatsApp(tx, {
-        telefoneE164: ctx.contato.telefoneE164,
-        nomeExibicao: ctx.contato.nomeExibicao,
-        donoId: ctx.numero.donoId,
-        paisId: ctx.numero.paisId ?? null,
-        referral: ctx.referral ?? null,
-      });
-      await tx.contatoWhatsApp.update({ where: { id: ctx.contato.id }, data: { leadId: leadCriadoId } });
-    }
-  }
-
-  // SAUDAÇÃO (reativa, isenta de janela — gap C20). Só texto fixo; a IA da C3 não fala.
-  // Enfileira em SHADOW e ATIVA (o despachante simula a de shadow); DESLIGADA não gera nada.
-  let saudacaoIntencaoId: string | null = null;
-  if (config.saudacaoEstado !== "DESLIGADA") {
-    const intencao = await tx.intencaoMensagem.create({
-      data: {
-        numeroId: ctx.numero.id,
-        contatoId: ctx.contato.id,
-        origem: "CRON", // automação sem autor humano; a classe reativa a isenta dos guard-rails de horário
-        reativa: true,
-        corpoRenderizado: config.saudacaoTexto,
-        autorId: null,
-      },
-      select: { id: true },
-    });
-    saudacaoIntencaoId = intencao.id;
-  }
-
-  return { saudacaoIntencaoId, leadCriadoId };
 }
