@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
-import { Papel, Prisma } from "@prisma/client";
+import { Papel, Prisma, SituacaoTrocaEmailPortalAluno } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
@@ -306,13 +306,16 @@ export async function consumirTokenPortalAluno(input: unknown) {
   });
 }
 
+/** Solicitação devolvida pela preparação: a nova, a pendente idêntica ou, no reenvio com chave, a original na situação atual. */
+export type TrocaEmailPreparada = { solicitacaoId: string; solicitacaoEnvioId: string; situacao: SituacaoTrocaEmailPortalAluno };
+
 /**
  * `chaveIdempotencia` (#166, N3 da R1 do #274): a marca vai no `TrocaEmailPortalAlunoPreparada`, na mesma transação
  * da solicitação. O reenvio da mesma tentativa devolve a solicitação original mesmo depois que outra pessoa a
  * decidiu (sem nova solicitação nem novo e-mail de validação); uma nova solicitação deliberada usa chave nova.
  */
 export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; novoEmail: string; motivo: string; evidencia: string; chaveIdempotencia?: string }) {
-  return executarAcao(async () => {
+  return executarAcao(async (): Promise<TrocaEmailPreparada> => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR);
     const { chaveIdempotencia, ...dados } = z.object({
       alunoId: z.string().min(1), novoEmail: z.string().trim().max(320), motivo: texto, evidencia: texto, chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
@@ -331,14 +334,16 @@ export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; no
         if (repetido) {
           const p = repetido.payload as { solicitacaoId?: unknown; solicitacaoEnvioId?: unknown };
           const solicitacao = await tx.solicitacaoTrocaEmailPortalAluno.findUniqueOrThrow({ where: { id: String(p.solicitacaoId) }, select: { id: true, situacao: true } });
-          return { solicitacaoId: solicitacao.id, solicitacaoEnvioId: String(p.solicitacaoEnvioId), situacao: solicitacao.situacao as "PENDENTE_VALIDACAO" };
+          // A situação real (#282, C3): pode já ter sido decidida (rejeitada, aplicada ou cancelada) por outra
+          // pessoa desde a tentativa; a tela avisa em vez de anunciar uma validação nova.
+          return { solicitacaoId: solicitacao.id, solicitacaoEnvioId: String(p.solicitacaoEnvioId), situacao: solicitacao.situacao };
         }
       }
       const conta = await obterOuCriarContaTx(tx, dados.alunoId);
       // Idempotência por natureza (#166): a conta só admite uma troca pendente (índice parcial único). A mesma
       // troca, preparada por este autor com o mesmo endereço, motivo e evidência, é devolvida sem novo registro,
       // novo envio ou novo Evento; antes o reenvio caía na violação do índice.
-      const [pendente] = await tx.$queryRaw<{ id: string; situacao: string; novoEmail: string; motivo: string; evidencia: string; preparadorId: string }[]>(Prisma.sql`
+      const [pendente] = await tx.$queryRaw<{ id: string; situacao: "PENDENTE_VALIDACAO" | "PENDENTE_DECISAO"; novoEmail: string; motivo: string; evidencia: string; preparadorId: string }[]>(Prisma.sql`
         SELECT id, situacao::text AS situacao, "novoEmail" AS "novoEmail", motivo, evidencia, "preparadorId" AS "preparadorId"
         FROM "SolicitacaoTrocaEmailPortalAluno"
         WHERE "contaId" = ${conta.id} AND situacao IN ('PENDENTE_VALIDACAO', 'PENDENTE_DECISAO')
@@ -351,7 +356,7 @@ export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; no
         const [envio] = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
           SELECT id FROM "SolicitacaoEnvioPortalAluno" WHERE "trocaEmailId" = ${pendente.id} ORDER BY "criadoEm" ASC LIMIT 1
         `);
-        return { solicitacaoId: pendente.id, solicitacaoEnvioId: envio?.id ?? null, situacao: pendente.situacao as "PENDENTE_VALIDACAO" };
+        return { solicitacaoId: pendente.id, solicitacaoEnvioId: envio?.id ?? null, situacao: pendente.situacao };
       }
       if (!conta.emailVerificado) throw new ErroRegra("A recuperação assistida exige uma conta com e-mail anterior verificado.");
       if (!conta.ativa) throw new ErroRegra("A conta do aluno está bloqueada.");
@@ -367,7 +372,7 @@ export async function prepararTrocaEmailPortalAluno(input: { alunoId: string; no
         tipo: "TrocaEmailPortalAlunoPreparada", agregadoTipo: "Aluno", agregadoId: conta.alunoId, autorId: autor.id,
         payload: { solicitacaoId: id, solicitacaoEnvioId: envio.id, ...marca },
       });
-      return { solicitacaoId: id, solicitacaoEnvioId: envio.id, situacao: "PENDENTE_VALIDACAO" as const };
+      return { solicitacaoId: id, solicitacaoEnvioId: envio.id, situacao: SituacaoTrocaEmailPortalAluno.PENDENTE_VALIDACAO };
     });
   });
 }

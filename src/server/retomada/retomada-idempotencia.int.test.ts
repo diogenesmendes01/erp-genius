@@ -77,9 +77,11 @@ describe("proposta de retomada com chave (#166, N3 da R1 do #274)", () => {
 
   it("depois da rejeição, o reenvio da mesma tentativa devolve a proposta original sem abrir outra", async () => {
     const comChave = { ...entrada, chaveIdempotencia: "chave-retomada-02" };
-    const { propostaId } = sucesso(await solicitarRetomada(alunoId, comChave));
+    const { propostaId, status } = sucesso(await solicitarRetomada(alunoId, comChave));
+    expect(status).toBe("PENDENTE");
     await rejeitar(propostaId);
-    expect(sucesso(await solicitarRetomada(alunoId, comChave)).propostaId).toBe(propostaId);
+    // O status real, não o de uma proposta nova (#282, C3): a tela avisa que já foi decidida.
+    expect(sucesso(await solicitarRetomada(alunoId, comChave))).toEqual({ propostaId, status: "REJEITADA" });
     expect(await propostas()).toBe(1);
     expect(await solicitadas()).toBe(1);
   });

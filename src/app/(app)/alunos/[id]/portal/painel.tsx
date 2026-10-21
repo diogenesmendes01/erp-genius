@@ -13,6 +13,16 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, rotular } from "@/lib/labels";
 
+// Mensagem da preparação pela situação devolvida (#282, C3): o reenvio da mesma tentativa devolve a solicitação
+// original, que pode já ter sido decidida por outra pessoa no intervalo; aí nada foi gravado e a tela não anuncia
+// uma validação nova.
+function mensagemTrocaPreparada(dado: { situacao: string } | undefined): string {
+  if (!dado || dado.situacao === "PENDENTE_VALIDACAO") return "Validação do novo endereço preparada. Uma pessoa diferente da Administração decide depois da validação.";
+  if (dado.situacao === "PENDENTE_DECISAO") return "Esta solicitação já está em andamento: o novo endereço foi confirmado e aguarda a decisão da Administração.";
+  return `Esta solicitação já foi decidida: ${rotular(SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, dado.situacao).toLocaleLowerCase("pt-BR")}. Para uma nova troca, faça uma nova solicitação.`;
+}
+const trocaJaDecidida = (situacao: string | undefined) => !!situacao && situacao !== "PENDENTE_VALIDACAO" && situacao !== "PENDENTE_DECISAO";
+
 type Troca = { id: string; novoEmail: string; situacao: string; preparadorId: string; criadaEm: string; novoEmailVerificadoEm: string | null; decisao: { aprovada: boolean; motivo: string; criadaEm: string } | null };
 
 export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas, podeDecidir, preferenciaFusoExibicao }: {
@@ -46,10 +56,11 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
     // permanece válido como referência para limpar somente após o sucesso.
     const formulario = evento.currentTarget;
     const form = new FormData(formulario);
-    const d = await acao.executar(() => prepararTrocaEmailPortalAluno({ alunoId, novoEmail: String(form.get("novoEmail") ?? ""), motivo: String(form.get("motivo") ?? ""), evidencia: String(form.get("evidencia") ?? ""), chaveIdempotencia: tentativaTroca.atual }), "Validação do novo endereço preparada. Uma pessoa diferente da Administração decide depois da validação.");
+    const d = await acao.executar(() => prepararTrocaEmailPortalAluno({ alunoId, novoEmail: String(form.get("novoEmail") ?? ""), motivo: String(form.get("motivo") ?? ""), evidencia: String(form.get("evidencia") ?? ""), chaveIdempotencia: tentativaTroca.atual }), mensagemTrocaPreparada);
     tentativaTroca.depoisDo(d);
     if (d?.tipo !== "ok") return;
-    formulario.reset();
+    // Já decidida: os dados ficam no formulário para uma nova solicitação deliberada (a chave já é outra).
+    if (!trocaJaDecidida(d.dado?.situacao)) formulario.reset();
     router.refresh();
   }
   // Aprovar e aplicar (docs/42 L325) troca o e-mail, apaga a senha e revoga sessões e links do aluno: só abre o
