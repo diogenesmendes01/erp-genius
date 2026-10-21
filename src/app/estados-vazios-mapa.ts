@@ -565,6 +565,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
   "src/app/(app)/financeiro/acertos-vencimento/[matriculaId]/[propostaId]/page.tsx": [
     "bloco · Nenhuma proposta de acerto registrada.",
   ],
+  "src/app/(app)/financeiro/acertos-moeda/[matriculaId]/[propostaId]/page.tsx": [
+    "bloco · Nenhuma proposta de troca registrada.",
+  ],
   "src/app/(app)/financeiro/continuidade/FilaContinuidadeMensal.tsx": [
     "bloco · Nenhuma matrícula a partir deste ponto da fila: o link ficou antigo ou a fila terminou.",
     "bloco · Nenhuma matrícula precisa de acompanhamento na continuidade mensal.",
