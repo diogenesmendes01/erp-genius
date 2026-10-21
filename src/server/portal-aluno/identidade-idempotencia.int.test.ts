@@ -225,3 +225,73 @@ describe("troca de e-mail repetida (#166)", () => {
     expect(a.dado.solicitacaoEnvioId).toEqual(expect.any(String));
   });
 });
+
+// N3 da R1 do #274 (5º lote): se outra pessoa rejeitar a troca entre a tentativa e o reenvio, sem chave o reenvio
+// abria uma nova solicitação, com novo e-mail de validação. Com a chave da tentativa (marca no
+// `TrocaEmailPortalAlunoPreparada`), o reenvio devolve a solicitação original; chave nova é nova solicitação.
+describe("troca de e-mail com chave, depois da rejeição (N3 da R1 do #274)", () => {
+  const troca = { novoEmail: "Novo.Portal@Example.com ", motivo: "Aluna perdeu o endereço verificado", evidencia: "Identidade e vínculo conferidos presencialmente" };
+
+  async function contaAtiva() {
+    const convite = await prepararConvitePortalAluno({ alunoId });
+    if (!convite.ok || !convite.dado || !("solicitacaoEnvioId" in convite.dado)) throw new Error(JSON.stringify(convite));
+    const ativada = await consumirTokenPortalAluno({ token: await despachar(String(convite.dado.solicitacaoEnvioId)), senha: "Senha inicial segura 2026" });
+    if (ativada.tipo !== "SESSAO") throw new Error("Convite não criou sessão.");
+  }
+
+  async function rejeitar(solicitacaoId: string, envioId: string) {
+    await consumirTokenPortalAluno({ token: await despachar(envioId) });
+    sessao.usuarioId = adminId;
+    const r = await decidirTrocaEmailPortalAluno({ solicitacaoId, aprovar: false, motivo: "Evidência insuficiente para a troca" });
+    if (!r.ok) throw new Error(r.erro);
+    sessao.usuarioId = secretariaId;
+  }
+
+  it("o reenvio com a mesma chave, inclusive simultâneo, devolve a solicitação original", async () => {
+    await contaAtiva();
+    const entrada = { alunoId, ...troca, chaveIdempotencia: "chave-troca-01" };
+    const [a, b] = await Promise.all([prepararTrocaEmailPortalAluno(entrada), prepararTrocaEmailPortalAluno(entrada)]);
+    expect(a.ok && b.ok, JSON.stringify([a, b])).toBe(true);
+    expect(b).toEqual(a);
+    expect(await prisma.solicitacaoTrocaEmailPortalAluno.count()).toBe(1);
+    expect(await eventos("TrocaEmailPortalAlunoPreparada")).toBe(1);
+  });
+
+  it("depois da rejeição, o reenvio da mesma tentativa não abre outra solicitação nem prepara outro e-mail", async () => {
+    await contaAtiva();
+    const entrada = { alunoId, ...troca, chaveIdempotencia: "chave-troca-02" };
+    const a = await prepararTrocaEmailPortalAluno(entrada);
+    if (!a.ok || !a.dado) throw new Error(JSON.stringify(a));
+    await rejeitar(a.dado.solicitacaoId, String(a.dado.solicitacaoEnvioId));
+    const b = await prepararTrocaEmailPortalAluno(entrada);
+    expect(b.ok, b.ok ? undefined : b.erro).toBe(true);
+    expect(b.ok && b.dado?.solicitacaoId).toBe(a.dado.solicitacaoId);
+    expect(b.ok && b.dado?.solicitacaoEnvioId).toBe(a.dado.solicitacaoEnvioId);
+    expect(await prisma.solicitacaoTrocaEmailPortalAluno.count()).toBe(1);
+    expect(await prisma.solicitacaoEnvioPortalAluno.count({ where: { finalidade: "VALIDAR_TROCA_EMAIL" } })).toBe(1);
+    expect(await eventos("TrocaEmailPortalAlunoPreparada")).toBe(1);
+  });
+
+  it("chave nova depois da rejeição é nova solicitação; sem chave, o comportamento de antes", async () => {
+    await contaAtiva();
+    const a = await prepararTrocaEmailPortalAluno({ alunoId, ...troca, chaveIdempotencia: "chave-troca-03" });
+    if (!a.ok || !a.dado) throw new Error(JSON.stringify(a));
+    await rejeitar(a.dado.solicitacaoId, String(a.dado.solicitacaoEnvioId));
+    const nova = await prepararTrocaEmailPortalAluno({ alunoId, ...troca, chaveIdempotencia: "chave-troca-04" });
+    expect(nova.ok && nova.dado?.solicitacaoId).not.toBe(a.dado.solicitacaoId);
+    expect(await prisma.solicitacaoTrocaEmailPortalAluno.count()).toBe(2);
+    expect(await eventos("TrocaEmailPortalAlunoPreparada")).toBe(2);
+  });
+
+  it("recusa a mesma chave com outra entrada, sem preparar nada e sem revelar o outro aluno", async () => {
+    await contaAtiva();
+    await prepararTrocaEmailPortalAluno({ alunoId, ...troca, chaveIdempotencia: "chave-troca-05" });
+    const outra = await prepararTrocaEmailPortalAluno({ alunoId, ...troca, motivo: "Outro motivo informado agora", chaveIdempotencia: "chave-troca-05" });
+    expect(outra.ok).toBe(false);
+    if (!outra.ok) expect(outra.erro).toMatch(/tentativa já foi usada/);
+    const inexistente = await prepararTrocaEmailPortalAluno({ alunoId: "aluno-que-nao-existe", ...troca, chaveIdempotencia: "chave-troca-05" });
+    expect(inexistente).toEqual(outra);
+    expect(await prisma.solicitacaoTrocaEmailPortalAluno.count()).toBe(1);
+    expect(await eventos("TrocaEmailPortalAlunoPreparada")).toBe(1);
+  });
+});

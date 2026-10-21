@@ -74,22 +74,36 @@ async function exigirGestorAtual(tx: Prisma.TransactionClient, usuarioId: string
 }
 
 /** Vendedor solicita abertura de turma ao Gerente Pedagógico (doc 09 §Matrícula). */
+/**
+ * Com `chaveIdempotencia` (#166, 5º lote), o reenvio da mesma tentativa não grava outra solicitação: a chave e o
+ * hash da entrada vão no payload do `AberturaTurmaSolicitada`.
+ */
 export async function solicitarAberturaTurma(input: {
   produtoId: string;
   nivelId?: string;
   observacao?: string;
+  chaveIdempotencia?: string;
 }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
     if (!input.produtoId) throw new ErroRegra("Selecione o produto.");
+    const payload = { nivelId: input.nivelId ?? null, observacao: input.observacao ?? null };
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { produtoId: input.produtoId, ...payload });
     // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "AberturaTurmaSolicitada", agregadoTipo: "Produto", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada para outra solicitação de turma. Recarregue a página antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "AberturaTurmaSolicitada",
         agregadoTipo: "Produto",
         agregadoId: input.produtoId,
         autorId: autor.id,
-        payload: { nivelId: input.nivelId ?? null, observacao: input.observacao ?? null },
+        payload: { ...payload, ...marca },
       });
     });
     revalidatePath(PATH);

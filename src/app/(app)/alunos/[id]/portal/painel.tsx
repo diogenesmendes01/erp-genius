@@ -21,11 +21,13 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
   const router = useRouter();
   // Reenvio reconhecido pelo servidor (#166, server/portal-aluno/identidade.ts). Convite: com chave de idempotência
   // (B1 da R1 do #274), o reenvio da mesma tentativa devolve o convite original mesmo depois que o cron o despachou;
-  // a chave só muda depois do sucesso, e um novo clique é reemissão deliberada. Troca pendente idêntica, do mesmo
-  // autor, e a mesma decisão, do mesmo decisor e com o mesmo motivo: devolvidas por natureza. Nenhum reenvio gera
-  // outro e-mail.
+  // a chave só muda depois do sucesso, e um novo clique é reemissão deliberada. Troca: também com chave (N3 da R1 do
+  // #274), para o reenvio depois de uma rejeição não abrir nova solicitação; a troca pendente idêntica, do mesmo
+  // autor, continua devolvida por natureza. A mesma decisão, do mesmo decisor e com o mesmo motivo: devolvida.
+  // Nenhum reenvio gera outro e-mail.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativaConvite = useChaveIdempotencia();
+  const tentativaTroca = useChaveIdempotencia();
   // Origem do resultado ("convite", "troca" ou "decisao:<id>"): aparece junto do botão.
   const [alvo, setAlvo] = useState<string | null>(null);
   const instanteAdministrativo = (valor: string) => {
@@ -44,7 +46,8 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
     // permanece válido como referência para limpar somente após o sucesso.
     const formulario = evento.currentTarget;
     const form = new FormData(formulario);
-    const d = await acao.executar(() => prepararTrocaEmailPortalAluno({ alunoId, novoEmail: String(form.get("novoEmail") ?? ""), motivo: String(form.get("motivo") ?? ""), evidencia: String(form.get("evidencia") ?? "") }), "Validação do novo endereço preparada. Uma pessoa diferente da Administração decide depois da validação.");
+    const d = await acao.executar(() => prepararTrocaEmailPortalAluno({ alunoId, novoEmail: String(form.get("novoEmail") ?? ""), motivo: String(form.get("motivo") ?? ""), evidencia: String(form.get("evidencia") ?? ""), chaveIdempotencia: tentativaTroca.atual }), "Validação do novo endereço preparada. Uma pessoa diferente da Administração decide depois da validação.");
+    tentativaTroca.depoisDo(d);
     if (d?.tipo !== "ok") return;
     formulario.reset();
     router.refresh();
