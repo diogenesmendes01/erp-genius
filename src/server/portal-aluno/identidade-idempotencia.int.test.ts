@@ -262,11 +262,14 @@ describe("troca de e-mail com chave, depois da rejeição (N3 da R1 do #274)", (
     const entrada = { alunoId, ...troca, chaveIdempotencia: "chave-troca-02" };
     const a = await prepararTrocaEmailPortalAluno(entrada);
     if (!a.ok || !a.dado) throw new Error(JSON.stringify(a));
+    expect(a.dado.situacao).toBe("PENDENTE_VALIDACAO");
     await rejeitar(a.dado.solicitacaoId, String(a.dado.solicitacaoEnvioId));
     const b = await prepararTrocaEmailPortalAluno(entrada);
     expect(b.ok, b.ok ? undefined : b.erro).toBe(true);
     expect(b.ok && b.dado?.solicitacaoId).toBe(a.dado.solicitacaoId);
     expect(b.ok && b.dado?.solicitacaoEnvioId).toBe(a.dado.solicitacaoEnvioId);
+    // A situação real, não a de uma solicitação nova (#282, C3): a tela avisa que já foi decidida.
+    expect(b.ok && b.dado?.situacao).toBe("REJEITADA");
     expect(await prisma.solicitacaoTrocaEmailPortalAluno.count()).toBe(1);
     expect(await prisma.solicitacaoEnvioPortalAluno.count({ where: { finalidade: "VALIDAR_TROCA_EMAIL" } })).toBe(1);
     expect(await eventos("TrocaEmailPortalAlunoPreparada")).toBe(1);

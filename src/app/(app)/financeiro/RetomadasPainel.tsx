@@ -22,6 +22,12 @@ type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "w-full rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm";
 const principal = botaoClasses({ tamanho: "lg" });
 const rotuloOpcao = (opcao: Opcao) => opcao === "MANTER_VENCIMENTOS" ? "Manter vencimentos originais" : "Reprogramar parcelas restantes";
+// Mensagem da proposta pelo status devolvido (#282, C3): o reenvio da mesma tentativa devolve a proposta original,
+// que pode já ter sido decidida por outra pessoa no intervalo; aí nada foi gravado e a tela não anuncia uma nova.
+function mensagemProposta(dado: { status: string } | undefined): string {
+  if (!dado || dado.status === "PENDENTE") return "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.";
+  return `Esta proposta já foi decidida: ${dado.status === "APROVADA" ? "aprovada" : "rejeitada"}. Para uma nova retomada, faça uma nova proposta.`;
+}
 const data = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 
 export function RetomadasPainel({ contexto, propostas, erroConsulta, preferenciaFusoExibicao = null }: { contexto?: Contexto | null; propostas: Propostas; erroConsulta?: string | null; preferenciaFusoExibicao?: string | null }) {
@@ -53,10 +59,11 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
       opcao, motivo,
       novosVencimentos: opcao === "REPROGRAMAR_PARCELAS" ? contexto.parcelas.map((p) => ({ cobrancaId: p.cobrancaId, vencimento: datas[p.cobrancaId] ?? p.vencimento.slice(0, 10) })) : [],
       chaveIdempotencia: tentativa.atual,
-    }), "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.");
+    }), mensagemProposta);
     tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
-    setOpcao(""); setMotivo(""); setDatas({});
+    // Já decidida: os dados ficam no formulário para uma nova proposta deliberada (a chave já é outra).
+    if (d.dado?.status === "PENDENTE" || !d.dado) { setOpcao(""); setMotivo(""); setDatas({}); }
     router.refresh();
   }
 
