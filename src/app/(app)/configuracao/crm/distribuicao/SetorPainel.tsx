@@ -158,6 +158,7 @@ export function SetorPainel(p: SetorPainelProps) {
       )}
       {contar && semHorario && <p className="mt-1 text-xs text-gray-500">Sem horário cadastrado: o prazo conta direto, 24 h por dia.</p>}
       {erroHorario && <p className="mt-1 text-xs text-red-700" role="alert">{erroHorario}</p>}
+      <p className="mt-1 text-xs text-gray-500">Feriados do calendário escolar publicado (Acadêmico › Calendário) fecham o atendimento o dia todo; recesso e férias, não.</p>
       <p className="mt-1 text-xs text-gray-500">Mudanças valem para os próximos atendimentos; prazos já calculados não mudam.</p>
     </fieldset>
     <button className={`${botaoClasses({ tamanho: "md" })} mt-4`} disabled={acao.ocupado || !!erroHorario} onClick={salvar}>{acao.ocupado ? "Salvando…" : "Salvar setor"}</button>
