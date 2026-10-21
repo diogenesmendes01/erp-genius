@@ -2,7 +2,7 @@ import { AlvoCampoPersonalizado, CorTag, Papel, TipoCampoPersonalizado } from "@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessaoComPapel, registrarEvento, type Resultado } from "@/server/_shared";
-import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
 // Idempotência só na criação (#166): a chave vai no Evento de criação (`TagSalva`/`CampoSalvo` com `de: null`);
 // na edição (com `id`) ela é ignorada.
@@ -58,9 +58,14 @@ export async function arquivarTag(id: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
     await prisma.$transaction(async (tx) => {
-      const tag = await tx.tag.findUnique({ where: { id } });
+      // Idempotência por natureza (#166, 5º lote): a linha travada serializa o clique duplo, e a tag já arquivada
+      // por quem repete devolve ok sem outro Evento. Arquivada por outra pessoa, segue recusada.
+      const [tag] = await tx.$queryRaw<{ ativo: boolean }[]>`SELECT ativo FROM "Tag" WHERE id = ${id} FOR UPDATE`;
       if (!tag) throw new ErroRegra("Tag não encontrada.");
-      if (!tag.ativo) throw new ErroRegra("Tag já arquivada.");
+      if (!tag.ativo) {
+        if (await ultimoEventoDoAutor(tx, { tipo: "TagArquivada", agregadoTipo: "Tag", agregadoId: id, autorId: autor.id })) return;
+        throw new ErroRegra("Tag já arquivada.");
+      }
       await tx.tag.update({ where: { id }, data: { ativo: false } });
       await registrarEvento(tx, {
         tipo: "TagArquivada", agregadoTipo: "Tag", agregadoId: id, autorId: autor.id,
@@ -128,9 +133,14 @@ export async function arquivarCampo(id: string, confirmacao: string): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
     await prisma.$transaction(async (tx) => {
-      const campo = await tx.campoPersonalizado.findUnique({ where: { id } });
+      // Idempotência por natureza (#166, 5º lote): como em `arquivarTag`. O reenvio também confere a
+      // confirmação: com outro nome, segue recusado.
+      const [campo] = await tx.$queryRaw<{ nome: string; arquivadoEm: Date | null }[]>`SELECT nome, "arquivadoEm" FROM "CampoPersonalizado" WHERE id = ${id} FOR UPDATE`;
       if (!campo) throw new ErroRegra("Campo não encontrado.");
-      if (campo.arquivadoEm) throw new ErroRegra("Campo já arquivado.");
+      if (campo.arquivadoEm) {
+        if (confirmacao.trim() === campo.nome && await ultimoEventoDoAutor(tx, { tipo: "CampoArquivado", agregadoTipo: "CampoPersonalizado", agregadoId: id, autorId: autor.id })) return;
+        throw new ErroRegra("Campo já arquivado.");
+      }
       if (confirmacao.trim() !== campo.nome) throw new ErroRegra("Digite o nome do campo exatamente para confirmar.");
       const agora = new Date();
       await tx.campoPersonalizado.update({ where: { id }, data: { arquivadoEm: agora } });

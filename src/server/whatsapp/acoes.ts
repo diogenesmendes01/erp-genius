@@ -67,6 +67,7 @@ import {
 import { ErroMotor } from "./motor/cliente";
 import { telefoneE164 as telefoneE164Schema } from "@/server/_shared/validacao";
 import { ONDE_MODELO_REGUA, ehModeloRegua } from "./modelos-regua";
+import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
 // Ações do braço API da fila de cobrança (doc 30 E2). Mesmos papéis que já operam a
 // cobrança manual (financeiro/acoes.ts). NENHUMA envia direto: gravam INTENÇÃO e chamam o
@@ -573,7 +574,13 @@ export async function registrarOptOutContato(contatoId: string): Promise<Resulta
         where: { id: contatoId, optOutEm: null },
         data: { optOutEm: new Date() },
       });
-      if (count === 0) throw new ErroRegra("Contato já está em opt-out.");
+      if (count === 0) {
+        // Idempotência por natureza (#166, 5º lote): o opt-out já registrado por quem repete devolve ok sem outro
+        // Evento (o `updateMany` espera o clique simultâneo e então não acha a linha). Registrado por outra pessoa
+        // ou pelo próprio contato, segue recusado.
+        if (await ultimoEventoDoAutor(tx, { tipo: "OptOutRegistrado", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId, autorId: autor.id })) return;
+        throw new ErroRegra("Contato já está em opt-out.");
+      }
       await registrarEvento(tx, {
         tipo: "OptOutRegistrado",
         agregadoTipo: "ContatoWhatsApp",
@@ -601,7 +608,13 @@ export async function removerOptOutContato(contatoId: string, evidencia = ""): P
         where: { id: contatoId, optOutEm: { not: null } },
         data: { optOutEm: null },
       });
-      if (count === 0) throw new ErroRegra("Contato não está em opt-out.");
+      if (count === 0) {
+        // Idempotência por natureza (#166, 5º lote): a mesma remoção, por quem repete e com a mesma evidência, devolve
+        // ok sem outro Evento.
+        const p = await ultimoEventoDoAutor(tx, { tipo: "OptOutRemovido", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId, autorId: autor.id });
+        if (p?.evidencia === evidencia.trim()) return;
+        throw new ErroRegra("Contato não está em opt-out.");
+      }
       await registrarEvento(tx, {
         tipo: "OptOutRemovido",
         agregadoTipo: "ContatoWhatsApp",

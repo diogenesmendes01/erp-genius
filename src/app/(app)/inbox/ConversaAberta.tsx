@@ -137,6 +137,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
             donoLinhaId={item.numeroDonoId}
             destinos={destinos}
             aoMudar={aoMudar}
+            fuso={fuso}
           />
         )}
       </header>
