@@ -13,6 +13,8 @@ import { hashSubstituicao } from "./substituicao-estado";
 const id = z.string().trim().min(1).max(100);
 const Decidir = z.object({ propostaId: id, aprovada: z.boolean(), motivo: z.string().trim().min(5).max(2000), pdfHashConferido: z.string().regex(/^[a-f0-9]{64}$/), transcricaoHashConferido: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 
+const ROTULO_ESTADO_PROCESSO: Record<string, string> = { PREPARADO: "preparado", ENVIANDO: "enviando", ENVIO_INCERTO: "envio incerto", ENVIADO: "enviado para assinatura", CANCELADO: "cancelado" };
+
 export async function decidirOrigemContratualHistorica(input: z.input<typeof Decidir>) {
   return executarAcao(async () => {
     const ator = await exigirSessaoComPapel(Papel.ADMINISTRADOR), d = Decidir.parse(input);
@@ -33,6 +35,9 @@ export async function decidirOrigemContratualHistorica(input: z.input<typeof Dec
       if (createHash("sha256").update(p.pdfAssinado).digest("hex") !== p.pdfHash || hashSubstituicao(p.transcricao as Prisma.JsonObject) !== p.transcricaoHash) throw new ErroRegra("A origem preservada exige conferência de integridade.");
       if (d.aprovada) {
         if (await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: p.matriculaId } } })) throw new ErroRegra("A matrícula já possui contrato assinado no sistema.");
+        // Contrato do sistema em assinatura: se o cliente assinar depois, a conclusão seria recusada e o documento ficaria sem destino.
+        const aberto = await tx.processoAssinaturaContratual.findFirst({ where: { matriculaId: p.matriculaId, estado: { not: "CANCELADO" }, conclusao: null }, select: { estado: true } });
+        if (aberto) throw new ErroRegra(`Há processo de assinatura do contrato em aberto nesta matrícula (${ROTULO_ESTADO_PROCESSO[aberto.estado]}). Cancele ou conclua o envio antes de aprovar a origem histórica.`);
         if (await tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: p.matriculaId, decisao: { is: { aprovada: true } } } })) throw new ErroRegra("A matrícula já possui origem contratual histórica aprovada.");
       }
       const decisao = await tx.decisaoOrigemContratualHistorica.create({ data: { propostaId: p.id, decisorId: ator.id, aprovada: d.aprovada, motivo: d.motivo, pdfHashConferido: d.pdfHashConferido, transcricaoHashConferido: d.transcricaoHashConferido } });

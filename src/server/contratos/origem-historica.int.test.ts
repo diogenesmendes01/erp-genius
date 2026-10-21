@@ -351,5 +351,8 @@ it("Origem histórica: data de assinatura posterior a hoje no fuso da escola é 
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "Pacific/Kiritimati" } });
   await expect(registrar(alvo.matriculaId, { transcricao: t, assinadoEm: amanha(hojeKiritimati), chaveIdempotencia: "origem-historica-amanha" })).rejects.toThrow(/não pode ser posterior a hoje/);
   const origem = await registrar(alvo.matriculaId, { transcricao: t, assinadoEm: hojeKiritimati, chaveIdempotencia: "origem-historica-hoje" });
+  // Fuso inválido gravado (validado na gravação; aqui forçado sem triggers): erro de configuração legível, não ZodError.
+  await adulterar(Prisma.sql`UPDATE "ConfiguracaoOperacional" SET "fusoInstitucional" = 'GMT-3' WHERE id = 'escola'`);
+  await expect(registrar(alvo.matriculaId, { transcricao: t, chaveIdempotencia: "origem-historica-fuso" })).rejects.toThrow("O fuso institucional configurado (GMT-3) não é reconhecido. Corrija a configuração da escola antes de registrar a origem histórica.");
   expect((await prisma.propostaOrigemContratualHistorica.findUniqueOrThrow({ where: { id: origem.id } })).assinadoEm.toISOString().slice(0, 10)).toBe(hojeKiritimati);
 });

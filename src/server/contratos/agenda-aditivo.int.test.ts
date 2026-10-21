@@ -33,6 +33,7 @@ import { consultarConferenciaFinalAditivo, registrarConferenciaFinalAditivo } fr
 import { formalizarEAplicarCondicoesAditivo } from "./aditivo-condicoes";
 import { criarAvisosAlteracaoAgendaTx, validarFonteAditivoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
 import { registrarOrigemContratualHistoricaTx } from "./origem-historica-tx";
+import { decidirOrigemContratualHistorica } from "./origem-historica";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 let encontroId: string;
@@ -305,16 +306,40 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual({ professorId: base.secretariaId, inicio: new Date("2099-10-12T15:00:00.000Z"), fim: new Date("2099-10-12T16:00:00.000Z"), fusoOrigem: "UTC" });
 });
 
+const pdfLegado = Buffer.from("%PDF-1.4 contrato legado assinado em papel");
+const registrarOrigemLegada = (chave: string) => prisma.$transaction(tx => registrarOrigemContratualHistoricaTx(tx, base.secretariaId, { matriculaId: base.matriculaId, referencia: "Contrato legado", assinadoEm: "2024-12-20", pdfAssinado: pdfLegado,
+  transcricao: { moeda: "CRC", aluno: { nome: "Aluno Original" }, taxa: { valor: "50.00", vencimento: "2025-01-05" }, aulas: { regime: "HORA_PARTICULAR", valorHora: "125.00" } },
+  motivo: "Contrato legado digitalizado e transcrito.", chaveIdempotencia: chave }));
+/** Altera o banco sem passar pelos triggers (simula o fim de um fluxo que este teste não percorre). */
+const semTriggers = (sql: Prisma.Sql) => prisma.$transaction(async tx => { await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica"); await tx.$executeRaw(sql); });
+
+// R2 rigorosa da #285 (5607490019, item 5): com o contrato do sistema em assinatura, aprovar a origem deixaria a
+// assinatura do cliente sem destino. A aprovação é recusada (ação e banco) até o processo ser cancelado.
+it("recusa aprovar origem histórica com processo de assinatura do contrato em aberto e aceita depois do cancelamento", async () => {
+  await truncarBanco();
+  base = await prepararFixtureSubstituicaoContratual(authMock, { porHora: true, semSubstituicao: true, ambiente: "PRODUCAO" });
+  expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId } })).toMatchObject({ estado: "ENVIADO" });
+  const origem = await registrarOrigemLegada("origem-historica-aberto");
+  const decisao = { propostaId: origem.id, aprovada: true, motivo: "PDF e transcrição conferidos.", pdfHashConferido: origem.pdfHash, transcricaoHashConferido: origem.transcricaoHash };
+  authMock.mockResolvedValue({ user: { id: base.adminId } });
+  expect(await decidirOrigemContratualHistorica(decisao)).toEqual({ ok: false, erro: "Há processo de assinatura do contrato em aberto nesta matrícula (enviado para assinatura). Cancele ou conclua o envio antes de aprovar a origem histórica." });
+  await expect(prisma.decisaoOrigemContratualHistorica.create({ data: { propostaId: origem.id, decisorId: base.adminId, aprovada: true, motivo: "Direto no banco.", pdfHashConferido: origem.pdfHash, transcricaoHashConferido: origem.transcricaoHash } }))
+    .rejects.toThrow(/cancele ou conclua o envio antes de aprovar a origem histórica/);
+  expect(await prisma.decisaoOrigemContratualHistorica.count()).toBe(0);
+  // Fim do cancelamento (o fluxo real passa por substituição ou desistência Q165, fora deste teste).
+  await semTriggers(Prisma.sql`UPDATE "ProcessoAssinaturaContratual" SET estado = 'CANCELADO' WHERE id = ${base.processoId}`);
+  expect(await decidirOrigemContratualHistorica(decisao)).toMatchObject({ ok: true, dado: { aprovada: true } });
+});
+
 // Revisão 5606023454 da #285: a conclusão assinada no sistema não entra numa matrícula com origem histórica aprovada
-// (trigger recusar_conclusao_com_origem_historica), mesmo vinda depois da origem.
+// (trigger recusar_conclusao_com_origem_historica). Com o item 5 da R2, a decisão não é mais aprovada com processo em
+// aberto; o trigger fica como última barreira e a decisão é gravada sem triggers para chegar a ele.
 it("recusa preservar conclusão assinada quando a matrícula já tem origem contratual histórica aprovada", async () => {
   await truncarBanco();
   base = await prepararFixtureSubstituicaoContratual(authMock, { porHora: true, semSubstituicao: true, ambiente: "PRODUCAO" });
-  const pdf = Buffer.from("%PDF-1.4 contrato legado assinado em papel");
-  const origem = await prisma.$transaction(tx => registrarOrigemContratualHistoricaTx(tx, base.secretariaId, { matriculaId: base.matriculaId, referencia: "Contrato legado", assinadoEm: "2024-12-20", pdfAssinado: pdf,
-    transcricao: { moeda: "CRC", aluno: { nome: "Aluno Original" }, taxa: { valor: "50.00", vencimento: "2025-01-05" }, aulas: { regime: "HORA_PARTICULAR", valorHora: "125.00" } },
-    motivo: "Contrato legado digitalizado e transcrito.", chaveIdempotencia: "origem-historica-q117" }));
-  await prisma.decisaoOrigemContratualHistorica.create({ data: { propostaId: origem.id, decisorId: base.adminId, aprovada: true, motivo: "PDF e transcrição conferidos.", pdfHashConferido: origem.pdfHash, transcricaoHashConferido: origem.transcricaoHash } });
+  const origem = await registrarOrigemLegada("origem-historica-q117");
+  await semTriggers(Prisma.sql`INSERT INTO "DecisaoOrigemContratualHistorica" (id,"propostaId","decisorId",aprovada,motivo,"pdfHashConferido","transcricaoHashConferido")
+    VALUES (${"decisao-" + origem.id},${origem.id},${base.adminId},true,'PDF e transcrição conferidos.',${origem.pdfHash},${origem.transcricaoHash})`);
   await expect(assinarFonte()).rejects.toThrow(/já possui origem contratual histórica aprovada/);
   expect(await prisma.conclusaoAssinaturaContratual.count({ where: { processoId: base.processoId } })).toBe(0);
 });
