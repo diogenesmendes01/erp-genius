@@ -63,3 +63,7 @@ it("sem propostas, mostra o estado vazio", async () => {
  mocks.consulta.mockResolvedValue({ ok: true, dado: d });
  expect(renderToStaticMarkup(await Page(entrada()))).toContain("Nenhuma proposta de troca registrada.");
 });
+it.each(["abc", "0", "-1", "1.5", "99999"])("?pagina=%s inválida cai na primeira página", async (pagina) => {
+ await Page({ ...entrada(), searchParams: Promise.resolve({ pagina }) });
+ expect(mocks.consulta).toHaveBeenCalledWith({ matriculaId: "m1", versaoCondicoesId: "v1", pagina: 1 });
+});

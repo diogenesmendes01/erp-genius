@@ -25,7 +25,9 @@ export default async function Pagina({ params, searchParams }: {
    consultarCabecalhoMatricula(usuario, matriculaId),
  ]);
  if (!versao) return <p role="status">Formalize as condições do aditivo antes de preparar a troca de moeda.</p>;
- const pagina = Number((await searchParams).pagina ?? 1);
+ // ?pagina inválida (texto, zero, negativa, fracionária ou acima do limite) cai na primeira página, sem erro na tela.
+ const solicitada = Number((await searchParams).pagina ?? 1);
+ const pagina = Number.isInteger(solicitada) && solicitada >= 1 && solicitada <= 10000 ? solicitada : 1;
  const r = await consultarMoedasAditivo({ matriculaId, versaoCondicoesId: versao.id, pagina });
  if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível" : r.erro}</p>;
  const d = r.dado, alvo = d.alvo;
@@ -34,7 +36,7 @@ export default async function Pagina({ params, searchParams }: {
  const vigencia = formatarInstanteExibicao(d.vigenciaInicio, fusoExibicao, "UTC");
  // As pendências comparam a cobertura (data civil) com o dia da vigência no fuso da escola, não no fuso pessoal.
  const diaEscola = (fuso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short" }).format(new Date(d.vigenciaInicio));
- return <main className="space-y-5"><VoltarPara href="/financeiro" />
+ return <main className="space-y-5"><VoltarPara href="/financeiro/acertos-moeda" />
  <h1 className="text-2xl">Troca de moeda por aditivo</h1>
  {cabecalho && <IdentificacaoRegistro rotulo="Aluno e matrícula desta troca" dados={{ aluno: cabecalho.aluno, alunoHref: `/alunos/${encodeURIComponent(cabecalho.alunoId)}`, matriculaCodigo: cabecalho.codigo, matriculaComplemento: cabecalho.produto }} />}
  <p>Versão contratual {d.versao}</p>

@@ -333,7 +333,7 @@ it("financeira estruturada: revisão dos efeitos usa a matrícula exata e não a
 });
 
 beforeEach(async (contexto) => {
-  await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { primeiraMensalidadeExigida: contexto.task.name.includes("PRODUCAO_MENSAL_VENCIMENTO"), camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), minutosAdiantamento: contexto.task.name.includes("PRODUCAO_HORA_ADIANTAMENTO") ? 120 : undefined, valorReferenciaHora: contexto.task.name.includes("REFERENCIA_150") ? "150" : undefined, semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined, fusoInstitucional: contexto.task.name.includes("MOEDA_FUSO_SP") ? "America/Sao_Paulo" : undefined });
+  await truncarBanco(); fixture = await prepararFixtureSubstituicaoContratual(authMock, { primeiraMensalidadeExigida: contexto.task.name.includes("PRODUCAO_MENSAL_VENCIMENTO"), camposCadastrais: contexto.task.name.includes("PRODUCAO_CADASTRO"), camposFinanceiros: contexto.task.name.startsWith("financeira estruturada:") || contexto.task.name.includes("PRODUCAO_MENSAL"), ambiente: contexto.task.name.includes("PRODUCAO") ? "PRODUCAO" : "SANDBOX", porHora: contexto.task.name.includes("PRODUCAO_HORA"), minutosAdiantamento: contexto.task.name.includes("PRODUCAO_HORA_ADIANTAMENTO") ? 120 : undefined, valorReferenciaHora: contexto.task.name.includes("REFERENCIA_150") ? "150" : undefined, semSubstituicao: contexto.task.name.includes("PRODUCAO_MENSAL"), valorServicoMensal: contexto.task.name.includes("PRODUCAO_MENSAL_Q162") ? "85000" : undefined, fusoInstitucional: contexto.task.name.includes("MOEDA_FUSO_SP") ? "America/Sao_Paulo" : undefined, campoMoeda: contexto.task.name.includes("PRODUCAO_HORA") && contexto.task.name.includes("MOEDA") });
   const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: fixture.processoId }, include: { artefato: { include: { conferencia: true } } } });
   const snapshot = z.object({ participantes: z.array(z.object({ identidade: IdentidadeSignatarioSchema })) }).parse(processo.artefato.conferencia.snapshot);
   const envio = await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: processo.id }, orderBy: { numero: "desc" } });
@@ -1935,15 +1935,13 @@ it("PRODUCAO_HORA_ADIANTAMENTO: cobrança alterada fora do aditivo continua recu
 
 // Q173 — aditivo de moeda (port da #62, 3d6aa061). Molde da Q172: Financeiro prepara, outro aprovador financeiro
 // decide e aplica após a vigência; a aplicação troca Matricula.moeda e nada é convertido.
-async function prepararAditivoMoeda(chave: string, vigenciaInicio = "2026-09-01T00:00:00Z") {
-  const aditivo = await concluirAditivoMensal({
-    vigenciaInicio, chaveIdempotencia: chave,
-    alteracoes: [
-      { origem: "MOEDA", novo: "USD", valorEstruturado: { tipo: "MOEDA", moeda: "USD" } },
-      { origem: "TAXA_VALOR", novo: "100.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "100", moeda: "USD" } },
-      { origem: "MENSALIDADE_VALOR", novo: "180.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "180", moeda: "USD" } },
-    ],
-  }, chave);
+const ALTERACOES_MOEDA_MENSAL: z.input<typeof PrepararAditivoContratualSchema>["alteracoes"] = [
+  { origem: "MOEDA", novo: "USD", valorEstruturado: { tipo: "MOEDA", moeda: "USD" } },
+  { origem: "TAXA_VALOR", novo: "100.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "100", moeda: "USD" } },
+  { origem: "MENSALIDADE_VALOR", novo: "180.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "180", moeda: "USD" } },
+];
+async function prepararAditivoMoeda(chave: string, vigenciaInicio = "2026-09-01T00:00:00Z", alteracoes = ALTERACOES_MOEDA_MENSAL) {
+  const aditivo = await concluirAditivoMensal({ vigenciaInicio, chaveIdempotencia: chave, alteracoes }, chave);
   authMock.mockResolvedValue({ user: { id: fixture.secretariaId } });
   const pedido = { ...aditivo.finalAlvo, revisaoHash: aditivo.revisaoHash };
   const condicoes = await registrarCondicoesFormalizadasAditivo(pedido);
@@ -1991,6 +1989,9 @@ it("PRODUCAO_MENSAL_MOEDA: Q173 troca a moeda só com a matrícula limpa, por ap
   expect(await decidirMoedaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Tentativa do próprio preparador", chaveIdempotencia: "q173-auto" })).toMatchObject({ ok: false });
   await expect(prisma.decisaoMoedaAditivo.create({ data: { propostaId: gravada.id, decisorId: financeiro.id, aprovada: true, motivo: "Tentativa direta no banco", fotografiaHash: gravada.fotografiaHash, chaveIdempotencia: "q173-auto-banco" } })).rejects.toThrow(/independente/);
   await expect(prisma.propostaMoedaAditivo.update({ where: { id: gravada.id }, data: { motivo: "Alterada depois" } })).rejects.toThrow(/imutáveis/);
+  // R1 do #284: Matricula.moeda só muda pela aplicação aprovada; UPDATE direto (ORM ou SQL) é recusado no banco.
+  await expect(prisma.matricula.update({ where: { id: fixture.matriculaId }, data: { moeda: "USD" } })).rejects.toThrow(/aplicação aprovada do aditivo de moeda/);
+  await expect(prisma.$executeRaw`UPDATE "Matricula" SET moeda='USD' WHERE id=${fixture.matriculaId}`).rejects.toThrow(/aplicação aprovada do aditivo de moeda/);
   expect((await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).moeda).toBe("CRC");
 
   authMock.mockResolvedValue({ user: { id: fixture.adminId } });
@@ -2001,9 +2002,20 @@ it("PRODUCAO_MENSAL_MOEDA: Q173 troca a moeda só com a matrícula limpa, por ap
   expect(await aplicarMoedaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "q173-aplicacao-preparador" })).toMatchObject({ ok: false });
   await expect(prisma.aplicacaoMoedaAditivo.create({ data: { decisaoId: decisao.ok ? decisao.dado!.id : "", executorId: financeiro.id, chaveIdempotencia: "q173-aplicacao-banco", fotografiaHash: gravada.fotografiaHash, moedaAnterior: "CRC", moedaNova: "USD" } })).rejects.toThrow(/aprovador/);
   authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  // C2: taxa reexpressa (100 USD, valor diferente do original) não cria nem altera cobrança.
+  const cobrancasAntes = await prisma.cobranca.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } });
   const aplicacao = await aplicarMoedaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "q173-aplicacao" });
   expect(aplicacao).toMatchObject({ ok: true, dado: { aplicada: true } });
   expect(await aplicarMoedaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "q173-aplicacao" })).toEqual(aplicacao);
+  expect((await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).moeda).toBe("USD");
+  // A aplicação já consumida não autoriza outra escrita, nem com o GUC forjado em outra transação.
+  if (!aplicacao.ok || !aplicacao.dado) throw new Error("Aplicação ausente");
+  const aplicacaoId = aplicacao.dado.id;
+  await expect(prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT set_config('erp_genius.aplicacao_moeda_173', ${aplicacaoId}, true)`;
+    await tx.$executeRaw`UPDATE "Matricula" SET moeda='CRC' WHERE id=${fixture.matriculaId}`;
+  })).rejects.toThrow(/aplicação aprovada do aditivo de moeda/);
+  await expect(prisma.matricula.update({ where: { id: fixture.matriculaId }, data: { moeda: "CRC" } })).rejects.toThrow(/aplicação aprovada do aditivo de moeda/);
   expect((await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).moeda).toBe("USD");
   expect(await prisma.aplicacaoMoedaAditivo.findMany()).toMatchObject([{ moedaAnterior: "CRC", moedaNova: "USD" }]);
   await expect(prisma.aplicacaoMoedaAditivo.deleteMany()).rejects.toThrow();
@@ -2019,6 +2031,7 @@ it("PRODUCAO_MENSAL_MOEDA: Q173 troca a moeda só com a matrícula limpa, por ap
   const geral = await aplicarCondicoesFormalizadasAditivo({ ...pedido, chaveIdempotencia: "q173-aplicacao-geral" });
   if (!geral.ok) throw new Error(JSON.stringify(geral));
   expect(await consultarEfeitosAditivo({ matriculaId: fixture.matriculaId, propostaId: aditivo.proposta.id })).toMatchObject({ ok: true, dado: { aplicado: true, aplicacoesCampos: expect.arrayContaining([{ campo: "MENSALIDADE_VALOR", aplicada: true }]) } });
+  expect(await prisma.cobranca.findMany({ where: { matriculaId: fixture.matriculaId }, orderBy: { id: "asc" } })).toEqual(cobrancasAntes);
   expect(await prisma.$transaction(tx => resolverMensalVigenteTx(tx, { matriculaId: fixture.matriculaId, inicioCobertura: new Date("2099-11-01T00:00:00Z"), fimCobertura: new Date("2099-11-30T00:00:00Z"), valorOriginal: "180.00", valorNegociadoOriginal: "180.00", moedaOriginal: "USD" }))).toMatchObject({ moeda: "USD", valorNegociado: "180" });
 }, 240_000);
 
@@ -2057,4 +2070,127 @@ it("PRODUCAO_MENSAL_MOEDA: aplicação só depois da vigência e com o mesmo fus
   expect(await decidirMoedaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Aprovação antes da vigência", chaveIdempotencia: "q173-vigencia-decisao" })).toEqual(decisao);
   await prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: { fusoInstitucional: "America/Sao_Paulo" } });
   await expect(prisma.$transaction(tx => tx.$queryRaw`SELECT conferir_fonte_moeda_aditivo_173(p) FROM "PropostaMoedaAditivo" p WHERE p.id=${gravada.id}`)).rejects.toThrow(/Fuso da escola/);
+}, 240_000);
+
+// Como nos cenários de consumo e compra: compensação e compra de horas exigem matrícula ativa com contrato confirmado.
+async function ativarComContratoConfirmado() {
+  const m = await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } });
+  const documentoId = m.contratoDocumentoId ?? (await prisma.documento.create({ data: { matriculaId: m.id, categoria: "CONTRATO", nome: "Contrato confirmado", url: "/api/files/q173-contrato.pdf" } })).id;
+  return prisma.matricula.update({ where: { id: m.id }, data: { status: "ATIVA", contratoOk: true, contratoDocumentoId: documentoId, confirmacaoContratoEm: m.confirmacaoContratoEm ?? new Date(), confirmacaoContratoPorId: m.confirmacaoContratoPorId ?? fixture.adminId } });
+}
+
+async function mensalidadeAgostoPaga(chave: string) {
+  const c = await prisma.cobranca.create({ data: { matriculaId: fixture.matriculaId, tipo: "MENSALIDADE", valorOriginal: 310, valorNegociado: 310, moeda: "CRC", vencimento: new Date("2026-08-05T12:00:00Z"), coberturaInicio: new Date("2026-08-01T00:00:00Z"), coberturaFim: new Date("2026-08-31T00:00:00Z") } });
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await registrarPagamento(c.id, { chaveIdempotencia: `${chave}-pagamento`, valorRecebido: 310, forma: "DINHEIRO", comentario: "Mensalidade de agosto recebida na moeda anterior." })).toMatchObject({ ok: true });
+  return prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } });
+}
+
+it("PRODUCAO_MENSAL_MOEDA: direito em andamento na moeda anterior impede a troca; chave reaproveitada em outra proposta é recusa conhecida", async () => {
+  const { proporMoedaAditivo, decidirMoedaAditivo, consultarMoedasAditivo } = await import("./moeda-aditivo");
+  const { prepararCompensacaoCobertura, decidirCompensacaoCobertura } = await import("@/server/matricula/compensacao-cobertura");
+  const { seedRelatoOfertaConfirmado } = await import("@/test/indisponibilidade-oferta");
+  const { versao, financeiro, entradaProposta } = await prepararAditivoMoeda("q173-direitos");
+  await quitarTaxaMoedaAnterior("q173-direitos");
+  await ativarComContratoConfirmado();
+  const mensalidade = await mensalidadeAgostoPaga("q173-direitos");
+  await seedRelatoOfertaConfirmado(fixture.matriculaId, "2026-08-10", "2026-08-11");
+  const consultar = async () => { authMock.mockResolvedValue({ user: { id: financeiro.id } }); return consultarMoedasAditivo({ matriculaId: fixture.matriculaId, versaoCondicoesId: versao.id }); };
+  const compensar = async (dia: string) => {
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: mensalidade.id } });
+    const p = await prepararCompensacaoCobertura({ matriculaId: fixture.matriculaId, cobrancaId: mensalidade.id, versaoCobranca: atual.versao, dias: [dia], motivo: "Compensar dia sem oferta", evidenciaCondicoes: "Condições contratuais conferidas", chaveIdempotencia: `q173-compensacao-${dia}` });
+    if (!p.ok || !p.dado) throw new Error(JSON.stringify(p));
+    return p.dado.id;
+  };
+
+  // Compensação de cobertura aguardando decisão: a troca é recusada e a tela diz o que falta.
+  const pendente = await compensar("2026-08-10");
+  expect(await consultar()).toMatchObject({ ok: true, dado: { alvo: { podePreparar: false, pendencias: [{ codigo: "COMPENSACAO_COBERTURA_PENDENTE", texto: expect.stringContaining("compensação de cobertura") }] } } });
+  expect(await proporMoedaAditivo({ ...entradaProposta, chaveIdempotencia: "q173-direitos-recusada" })).toMatchObject({ ok: false, podeRevisar: true, erro: expect.stringContaining("compensação de cobertura") });
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirCompensacaoCobertura({ id: pendente, aprovar: false, motivo: "Rejeitada para o teste da troca" })).toMatchObject({ ok: true });
+  expect(await consultar()).toMatchObject({ ok: true, dado: { alvo: { podePreparar: true, pendencias: [] } } });
+
+  // Chave do mesmo decisor reaproveitada em outra proposta: recusa conhecida, que libera revisar a tentativa.
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const primeira = await proporMoedaAditivo({ ...entradaProposta, chaveIdempotencia: "q173-direitos-p1" });
+  if (!primeira.ok || !primeira.dado) throw new Error(JSON.stringify(primeira));
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirMoedaAditivo({ propostaId: primeira.dado.id, aprovada: false, motivo: "Rejeitada para reaproveitar a chave", chaveIdempotencia: "q173-direitos-chave" })).toMatchObject({ ok: true });
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const segunda = await proporMoedaAditivo({ ...entradaProposta, chaveIdempotencia: "q173-direitos-p2" });
+  if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirMoedaAditivo({ propostaId: segunda.dado.id, aprovada: false, motivo: "Mesma chave em outra proposta", chaveIdempotencia: "q173-direitos-chave" })).toMatchObject({ ok: false, podeRevisar: true, erro: expect.stringContaining("outra decisão") });
+  expect(await decidirMoedaAditivo({ propostaId: segunda.dado.id, aprovada: false, motivo: "Rejeitada para seguir o teste", chaveIdempotencia: "q173-direitos-chave-2" })).toMatchObject({ ok: true });
+
+  // Dias de compensação aprovados e ainda não recompostos nem liquidados também bloqueiam, na ação e no banco.
+  const aprovada = await compensar("2026-08-11");
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirCompensacaoCobertura({ id: aprovada, aprovar: true, motivo: "Dia conferido" })).toMatchObject({ ok: true });
+  expect(await consultar()).toMatchObject({ ok: true, dado: { alvo: { podePreparar: false, pendencias: [{ codigo: "DIAS_COMPENSACAO_PENDENTES" }] } } });
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  expect(await proporMoedaAditivo({ ...entradaProposta, chaveIdempotencia: "q173-direitos-p3" })).toMatchObject({ ok: false, podeRevisar: true, erro: expect.stringContaining("dias de compensação") });
+  expect((await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).moeda).toBe("CRC");
+}, 240_000);
+
+it("PRODUCAO_HORA_ADIANTAMENTO_MOEDA: compra de horas consumida na moeda anterior vira histórico na prévia de encerramento", async () => {
+  const { proporMoedaAditivo, decidirMoedaAditivo, aplicarMoedaAditivo } = await import("./moeda-aditivo");
+  const { registrarCompraHorasAntecipadas } = await import("@/server/matricula/compra-horas");
+  const { reservarHorasCompradasParaEncontro } = await import("@/server/matricula/reserva-horas-compradas");
+  const { conferirRealizacaoHoras } = await import("@/server/matricula/consumo-horas");
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  const { carregarHorasEncerramentoTx } = await import("@/server/matricula/encerramento-horas-tx");
+  const { carregarContextoEncerramentoTx } = await import("@/server/matricula/encerramento-contexto-tx");
+  const { calcularSaldoHorasEncerramento } = await import("@/server/matricula/encerramento-horas");
+  await confirmarAceiteHora();
+  await quitarTaxaMoedaAnterior("q173-horas");
+  // Compra do adiantamento (120 minutos) paga na moeda anterior e inteiramente consumida antes da troca.
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: fixture.matriculaId, tipo: "HORA_PARTICULAR" } });
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await registrarPagamento(cobranca.id, { chaveIdempotencia: "q173-horas-adiantamento-pago", valorRecebido: cobranca.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Adiantamento recebido na moeda anterior." })).toMatchObject({ ok: true });
+  const m = await prisma.matricula.update({ where: { id: fixture.matriculaId }, data: { status: "ATIVA" } });
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  const professor = await criarUsuario(["PROFESSOR"]);
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const paga = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
+  const compra = await registrarCompraHorasAntecipadas({ alunoId: m.alunoId, matriculaId: m.id, cobrancaId: cobranca.id, versaoCobranca: paga.versao, minutosComprados: 120, evidenciaCondicoes: "Adiantamento contratado conferido", chaveIdempotencia: "q173-horas-compra" });
+  if (!compra.ok || !compra.dado) throw new Error(JSON.stringify(compra));
+  const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: m.id, professorId: professor.id, preparadorId: financeiro.id, inicio: new Date("2099-10-05T12:00:00Z"), fim: new Date("2099-10-05T14:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula paga com horas", chaveIdempotencia: "q173-horas-encontro", entradaHash: "fixture" } });
+  const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.dado.id, encontroId: encontro.id, motivo: "Reserva da aula contratada", chaveIdempotencia: "q173-horas-reserva" });
+  if (!reserva.ok || !reserva.dado) throw new Error(JSON.stringify(reserva));
+  await prisma.aulaDiario.create({ data: { encontroId: encontro.id, professorId: professor.id, ocorridaEm: encontro.inicio, conteudo: "Aula realizada", registros: { create: { alunoId: m.alunoId, nomeAluno: "Aluno", presente: true } } } });
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(new Date("2099-10-06T12:00:00Z"));
+    const revisao = await conferirRealizacaoHoras({ reservaId: reserva.dado.id });
+    if (!revisao.ok || !revisao.dado?.estadoDiario) throw new Error(JSON.stringify(revisao));
+    expect(await conferirRealizacaoHoras({ reservaId: reserva.dado.id, estadoDiario: revisao.dado.estadoDiario, motivo: "Realização conferida pelo Financeiro" })).toMatchObject({ ok: true });
+  } finally { vi.useRealTimers(); }
+  const { entradaProposta } = await prepararAditivoMoeda("q173-horas", "2026-09-01T00:00:00Z", [
+    { origem: "MOEDA", novo: "USD", valorEstruturado: { tipo: "MOEDA", moeda: "USD" } },
+    { origem: "TAXA_VALOR", novo: "100.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "100", moeda: "USD" } },
+    { origem: "HORA_VALOR", novo: "40.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "40", moeda: "USD" } },
+    { origem: "ADIANTAMENTO_VALOR", novo: "80.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "80", moeda: "USD" } },
+  ]);
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+
+  // Saldo zero na compra: a troca passa.
+  const proposta = await proporMoedaAditivo(entradaProposta);
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  authMock.mockResolvedValue({ user: { id: fixture.adminId } });
+  expect(await decidirMoedaAditivo({ propostaId: proposta.dado.id, aprovada: true, motivo: "Troca conferida", chaveIdempotencia: "q173-horas-decisao" })).toMatchObject({ ok: true });
+  expect(await aplicarMoedaAditivo({ propostaId: proposta.dado.id, chaveIdempotencia: "q173-horas-aplicacao" })).toMatchObject({ ok: true });
+
+  // Antes da correção, a compra CRC entrava na apuração em USD e o schema recusava ("outra matrícula ou moeda").
+  const origemHistorica = { compraId: compra.dado.id, matriculaId: m.id, moeda: "CRC", contratoVersaoId: "doc", recebimentoReferencia: cobranca.id, evidenciaCondicoes: "Compra contratada conferida", minutosComprados: 60, minutosReservados: 0, valorOriginal: "100.00", descontoOriginal: "0.00", valorPagoAlocado: "100.00", consumos: [{ id: "c1", minutos: 60, motivo: "AULA_REALIZADA" as const, evidencia: "Realização conferida" }], liquidacoesAnteriores: [] };
+  expect(() => calcularSaldoHorasEncerramento({ matriculaId: m.id, moeda: "USD", compras: [origemHistorica] })).toThrow(/outra matrícula ou moeda/);
+  const horas = await prisma.$transaction(tx => carregarHorasEncerramentoTx(tx, m.alunoId, m.id));
+  expect(horas).toMatchObject({ pendencias: [], origens: [], cobrancasCompras: [], calculo: { moeda: "USD", creditoApurado: "0.00", compras: [] } });
+  const contexto = await prisma.$transaction(tx => carregarContextoEncerramentoTx(tx, { alunoId: m.alunoId, matriculaId: m.id }));
+  expect(contexto.moeda).toBe("USD");
+  expect(contexto.cobrancas.map(c => c.id)).not.toContain(cobranca.id);
+  expect(contexto.cobrancas.filter(c => c.moeda !== "USD")).toEqual([]);
 }, 240_000);

@@ -381,3 +381,7 @@ Agregado Aluno; identifica pedido, rascunho, decisão e aprovação/rejeição. 
 ### RecebimentoRegistrado (Q87)
 
 Agregado `Recebimento`, na mesma transação do fato de caixa e das destinações. Preserva titular, pagador, valor/moeda, data/forma, hash material, referência do comprovante privado, comentário e destinações. O replay retorna o fato existente antes de emitir outro evento. A consulta financeira associa a prova somente quando ID do recebimento, matrícula e hash coincidem; ausência no legado não autoriza presumir prova.
+
+### Troca de moeda por aditivo (Q173)
+
+Agregado `Matricula`, cada um na transação do próprio registro imutável. `MoedaAditivoProposta`: propostaId, de, para, fuso (da escola, gravado na proposta) e fotografiaHash. `MoedaAditivoDecidida`: propostaId, decisaoId e aprovada; o motivo fica na decisão. `MoedaAditivoAplicada`: propostaId, aplicacaoId, de, para e fotografiaHash; na mesma transação, o trigger troca `Matricula.moeda` (única escrita aceita nessa coluna). A repetição idêntica devolve o registro existente sem novo evento. Nada é convertido: cobranças, créditos e compras de horas ficam na moeda em que nasceram, e a troca só passa com a matrícula sem pendências na moeda anterior.
