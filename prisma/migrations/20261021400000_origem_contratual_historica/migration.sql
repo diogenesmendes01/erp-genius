@@ -134,6 +134,12 @@ BEGIN
     IF EXISTS (SELECT 1 FROM "ConclusaoAssinaturaContratual" c JOIN "ProcessoAssinaturaContratual" p ON p.id = c."processoId" WHERE p."matriculaId" = o."matriculaId") THEN
       RAISE EXCEPTION 'A matrícula já possui contrato assinado no sistema';
     END IF;
+    -- Contrato do sistema em assinatura (qualquer processo não cancelado e sem conclusão): a conclusão seria recusada
+    -- depois (recusar_conclusao_com_origem_historica) e o documento assinado ficaria sem destino.
+    IF EXISTS (SELECT 1 FROM "ProcessoAssinaturaContratual" p WHERE p."matriculaId" = o."matriculaId" AND p.estado <> 'CANCELADO'
+      AND NOT EXISTS (SELECT 1 FROM "ConclusaoAssinaturaContratual" c WHERE c."processoId" = p.id)) THEN
+      RAISE EXCEPTION 'Há processo de assinatura do contrato em aberto nesta matrícula; cancele ou conclua o envio antes de aprovar a origem histórica';
+    END IF;
     IF EXISTS (SELECT 1 FROM "PropostaOrigemContratualHistorica" o2 JOIN "DecisaoOrigemContratualHistorica" d2 ON d2."propostaId" = o2.id AND d2.aprovada WHERE o2."matriculaId" = o."matriculaId") THEN
       RAISE EXCEPTION 'A matrícula já possui origem contratual histórica aprovada';
     END IF;
