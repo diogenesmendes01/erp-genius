@@ -299,8 +299,9 @@ it("driver simulado: cancela a solicitação de assinatura aberta pela desistên
   // Mesma chave: devolve o resultado gravado sem chamar o serviço de novo.
   expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-1" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: false, repetido: true } });
 
-  const confirmado = await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-2" });
-  expect(confirmado).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true, repetido: false } });
+  // Mesma chave em requisições simultâneas: ambas respondem o mesmo resultado (sem "chave reutilizada com outro resultado").
+  const simultaneos = await Promise.all([1, 2].map(() => executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-2" })));
+  for (const r of simultaneos) expect(r).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true } });
   expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-3" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true, repetido: true } });
   const intencao = await prisma.intencaoCancelamentoAssinatura.findUniqueOrThrow({ where: { processoId: base.processoId }, include: { observacoes: { orderBy: [{ registradaEm: "asc" }, { id: "asc" }] } } });
   expect(intencao).toMatchObject({ pedidoDesistenciaId: pedido.id, executorId: base.secretariaId, referenciaExterna: base.referenciaExternaFonte });

@@ -51,7 +51,8 @@ export function criarProvedorSimulado(armazem: ArmazemEnvelopeSimulado): Provedo
     async cancelarEnvelope(referenciaExterna) {
       const e = await armazem.porReferencia(referenciaExterna);
       if (!e) return { resultado: "INCERTO", evidencia: { simulado: true, motivo: "REFERENCIA_DESCONHECIDA" } };
-      if (e.situacao === "CANCELADO") return { resultado: "CANCELADO", evidencia: { simulado: true, repetido: true } };
+      // Mesma evidência do primeiro cancelamento: repetições simultâneas gravam o mesmo evidenciaHash.
+      if (e.situacao === "CANCELADO") return { resultado: "CANCELADO", evidencia: { simulado: true } };
       if (e.situacao !== "EM_ASSINATURA") return { resultado: "NAO_CANCELAVEL", evidencia: { simulado: true, situacao: e.situacao } };
       const situacao = await armazem.mudarSituacao(referenciaExterna, "EM_ASSINATURA", "CANCELADO");
       return situacao === "CANCELADO" ? { resultado: "CANCELADO", evidencia: { simulado: true } }

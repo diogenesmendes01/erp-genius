@@ -7,7 +7,7 @@ import { consultarConclusaoContratual } from "@/server/contratos/conclusao-consu
 import { consultarAceiteOriginal } from "@/server/contratos/aceite";
 import { ConferirAceite } from "../../ConferirAceite";
 import { consultarIntegracaoAssinatura } from "@/server/contratos/envio";
-import { rotuloFornecedorAssinatura } from "@/server/contratos/provedor-assinatura";
+import { conciliacaoLiberada, rotuloFornecedorAssinatura } from "@/server/contratos/provedor-assinatura";
 import { EnviarAssinatura } from "../../EnviarAssinatura";
 import { AvisoAssinaturaSimulada } from "../../AvisoAssinaturaSimulada";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
@@ -46,7 +46,8 @@ export default async function ConferenciaAssinaturaPage({ params, searchParams }
   const conferenciaAtual = atual ? d.historico.find((h) => h.revisaoHash === atual.hash) ?? null : null;
   const mesmoServico = !!integracao && (!processo || (processo.fornecedor === integracao.fornecedor && processo.ambiente === integracao.ambiente));
   const podeEnviar = mesmoServico && !!conferenciaAtual && (!processo || processo.estadoEnvio === "PREPARADO");
-  const podeConciliar = mesmoServico && !!processo && (processo.estadoEnvio === "ENVIANDO" || processo.estadoEnvio === "ENVIO_INCERTO");
+  // ENVIANDO recente pode ter a criação em voo: só ENVIO_INCERTO ou ENVIANDO vencido (B-1 da revisão rigorosa do #288).
+  const podeConciliar = mesmoServico && !!processo && conciliacaoLiberada(processo.estadoEnvio, processo.tentativaAtualIniciadaEm).liberada;
   return <div className="space-y-4">
     <VoltarPara href={`/matriculas/${id}/contrato`} para="Documentos da matrícula" />
     <h1 className="text-2xl">Conferência para assinatura</h1>

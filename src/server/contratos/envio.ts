@@ -6,7 +6,7 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { conferirAutor } from "./modelos-tx";
 import { iniciarTentativaAssinaturaTx, prepararProcessoEnvioTx, registrarResultadoEnvioTx } from "./envio-tx";
-import { consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, hashEvidenciaAssinatura, resultadoConciliacaoEnvio, type ProvedorAssinatura } from "./provedor-assinatura";
+import { conciliacaoLiberada, consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, hashEvidenciaAssinatura, resultadoConciliacaoEnvio, type ProvedorAssinatura } from "./provedor-assinatura";
 import { provedorAssinaturaAtivo } from "./provedor-assinatura-ativo";
 
 const id = z.string().trim().min(1).max(100);
@@ -81,9 +81,11 @@ export async function conciliarEnvioAssinatura(input: z.input<typeof Conciliar>)
         if (anterior) return { repetido: true as const, ...(anterior.payload as { processoId: string; estado: string }) };
       }
       const p = await tx.processoAssinaturaContratual.findFirst({ where: { id: d.processoId, matriculaId: d.matriculaId },
-        select: { id: true, estado: true, fornecedor: true, ambiente: true, tentativaAtual: true, tentativas: { orderBy: { numero: "desc" }, take: 1, select: { id: true, numero: true, _count: { select: { observacoes: true } } } } } });
+        select: { id: true, estado: true, fornecedor: true, ambiente: true, tentativaAtual: true, tentativas: { orderBy: { numero: "desc" }, take: 1, select: { id: true, numero: true, iniciadaEm: true, _count: { select: { observacoes: true } } } } } });
       if (!p) throw new ErroRegra("Processo de assinatura indisponível nesta matrícula.");
       if (p.estado !== "ENVIANDO" && p.estado !== "ENVIO_INCERTO") throw new ErroRegra("Este processo não possui envio pendente de conciliação.");
+      const liberacao = conciliacaoLiberada(p.estado, p.tentativas[0]?.iniciadaEm);
+      if (!liberacao.liberada) throw new ErroRegra(`Envio em andamento. Para não abrir um segundo envio, tente conciliar em ${liberacao.minutos ?? "alguns"} min.`);
       if (p.fornecedor !== provedor.fornecedor || p.ambiente !== provedor.ambiente) throw new ErroRegra("O processo pertence a outro serviço ou ambiente de assinatura. Concilie pela integração correspondente.");
       const tentativa = p.tentativas[0];
       if (!tentativa || tentativa.numero !== p.tentativaAtual) throw new ErroRegra("Tentativa atual não encontrada para conciliação.");

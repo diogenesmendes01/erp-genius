@@ -23,7 +23,7 @@ const render = async () => renderToStaticMarkup(await Page({ params: Promise.res
 const revisao = { hash: "revisao-atual", dados: { regraTaxa: "SEM_PAGAMENTO_PREVIO", taxa: { valor: "10.00", moeda: "BRL", confirmada: true },
   reserva: { status: "ATIVA", expiraEm: "2099-01-01T00:00:00.000Z" }, agenda: [], agendaParticular: null, participantes: [] } };
 const simulado = { ok: true, dado: { fornecedor: "SIMULADO", ambiente: "SANDBOX", simulado: true } };
-const processo = (estadoEnvio: string, fornecedor = "SIMULADO", ambiente = "SANDBOX") => ({ ok: true, dado: { processoId: "p", estadoEnvio, fornecedor, ambiente, conclusao: null } });
+const processo = (estadoEnvio: string, fornecedor = "SIMULADO", ambiente = "SANDBOX", tentativaAtualIniciadaEm: string | null = new Date().toISOString()) => ({ ok: true, dado: { processoId: "p", estadoEnvio, fornecedor, ambiente, tentativaAtualIniciadaEm, conclusao: null } });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -73,6 +73,14 @@ describe("envio integrado na conferência do original", () => {
     html = await render();
     expect(html).not.toContain("[CONCILIAR");
     expect(html).not.toContain("[ENVIAR");
+  });
+
+  it("ENVIANDO recente não oferece conciliação (a criação pode estar em voo); vencido oferece", async () => {
+    mocks.integracao.mockResolvedValue(simulado);
+    mocks.conclusao.mockResolvedValue(processo("ENVIANDO"));
+    expect(await render()).not.toContain("[CONCILIAR");
+    mocks.conclusao.mockResolvedValue(processo("ENVIANDO", "SIMULADO", "SANDBOX", new Date(Date.now() - 11 * 60_000).toISOString()));
+    expect(await render()).toContain("[CONCILIAR:p:");
   });
 
   it("processo simulado continua sinalizado mesmo com o driver desligado", async () => {

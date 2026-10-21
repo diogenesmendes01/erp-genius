@@ -6,7 +6,7 @@ import { Papel } from "@prisma/client";
 import { iniciarTentativaAditivoTx, prepararProcessoAditivoTx, registrarResultadoEnvioAditivoTx } from "./aditivo-envio-tx";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { conferirAutor } from "./modelos-tx";
-import { CamposDestinoAssinatura, consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, destinoAssinaturaCoerente, hashEvidenciaAssinatura, MENSAGEM_DESTINO_SIMULADO, resultadoConciliacaoEnvio } from "./provedor-assinatura";
+import { CamposDestinoAssinatura, consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, destinoAssinaturaCoerente, hashEvidenciaAssinatura, MENSAGEM_DESTINO_SIMULADO, resultadoConciliacaoEnvio, conciliacaoLiberada } from "./provedor-assinatura";
 import { provedorAssinaturaAtivo } from "./provedor-assinatura-ativo";
 const id = z.string().trim().min(1).max(100);
 const Preparar = z.object({ ...CamposDestinoAssinatura, matriculaId: id, propostaId: id, artefatoId: id, conferenciaId: id }).strict().refine(destinoAssinaturaCoerente, MENSAGEM_DESTINO_SIMULADO);
@@ -123,9 +123,11 @@ export async function conciliarEnvioAditivo(input: z.input<typeof AlvoProcesso>)
         if (anterior) return { repetido: true as const, ...(anterior.payload as { processoId: string; estado: string }) };
       }
       const p = await tx.processoAssinaturaAditivo.findFirst({ where: { id: d.processoId, propostaId: d.propostaId, proposta: { matriculaId: d.matriculaId } },
-        select: { id: true, estado: true, fornecedor: true, ambiente: true, tentativaAtual: true, tentativas: { orderBy: { numero: "desc" }, take: 1, select: { id: true, numero: true, _count: { select: { observacoes: true } } } } } });
+        select: { id: true, estado: true, fornecedor: true, ambiente: true, tentativaAtual: true, tentativas: { orderBy: { numero: "desc" }, take: 1, select: { id: true, numero: true, iniciadaEm: true, _count: { select: { observacoes: true } } } } } });
       if (!p) throw new ErroRegra("Processo de assinatura indisponível nesta matrícula e proposta.");
       if (p.estado !== "ENVIANDO" && p.estado !== "ENVIO_INCERTO") throw new ErroRegra("Este processo não possui envio pendente de conciliação.");
+      const liberacao = conciliacaoLiberada(p.estado, p.tentativas[0]?.iniciadaEm);
+      if (!liberacao.liberada) throw new ErroRegra(`Envio em andamento. Para não abrir um segundo envio, tente conciliar em ${liberacao.minutos ?? "alguns"} min.`);
       const tentativa = p.tentativas[0];
       if (!tentativa || tentativa.numero !== p.tentativaAtual) throw new ErroRegra("Tentativa atual não encontrada para conciliação.");
       return { repetido: false as const, provedor: provedorDoProcesso(p), processoId: p.id, tentativaId: tentativa.id, sequencia: tentativa._count.observacoes + 1 };

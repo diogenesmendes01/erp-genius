@@ -64,18 +64,37 @@ export interface ProvedorAssinatura {
   baixarAssinado(referenciaExterna: string): Promise<{ pdf: Uint8Array; evidencia: unknown } | null>;
 }
 
+/** Prazo máximo da chamada de criação do envelope: passado dele, o resultado é INCERTO (a criação pode ter
+ * acontecido) e o processo vai para ENVIO_INCERTO. */
+export const TIMEOUT_CRIACAO_ENVELOPE_MS = 2 * 60_000;
+/** Enquanto a tentativa está ENVIANDO e é mais nova que este prazo, a criação pode estar em voo: a conciliação
+ * é recusada, porque um AUSENTE agora devolveria o processo a PREPARADO e abriria um segundo envio. Precisa ser
+ * maior que TIMEOUT_CRIACAO_ENVELOPE_MS (folga para as duas transações em volta da chamada). */
+export const PRAZO_CONCILIACAO_ENVIANDO_MS = 10 * 60_000;
+
+/** Pode conciliar? ENVIO_INCERTO sempre; ENVIANDO só depois do prazo contado de `iniciadaEm`. */
+export function conciliacaoLiberada(estado: string, iniciadaEm: Date | string | null | undefined, agora = new Date()) {
+  if (estado === "ENVIO_INCERTO") return { liberada: true as const };
+  if (estado !== "ENVIANDO" || !iniciadaEm) return { liberada: false as const, minutos: null };
+  const restante = new Date(iniciadaEm).getTime() + PRAZO_CONCILIACAO_ENVIANDO_MS - agora.getTime();
+  return restante <= 0 ? { liberada: true as const } : { liberada: false as const, minutos: Math.max(1, Math.ceil(restante / 60_000)) };
+}
+
 export const hashEvidenciaAssinatura = (evidencia: unknown) =>
   createHash("sha256").update(JSON.stringify(evidencia ?? null)).digest("hex");
 
 const excecao = (e: unknown) => ({ resultado: "INCERTO" as const, evidencia: { motivo: "EXCECAO_DRIVER", mensagem: e instanceof Error ? e.message : String(e) } });
 
 /** Exceção do driver nunca prova ausência: vira INCERTO com a mensagem como evidência. */
-export async function criarEnvelopeSemPresumir(provedor: ProvedorAssinatura, envelope: EnvelopeParaAssinatura): Promise<ResultadoCriacaoEnvelope> {
+export async function criarEnvelopeSemPresumir(provedor: ProvedorAssinatura, envelope: EnvelopeParaAssinatura, timeoutMs = TIMEOUT_CRIACAO_ENVELOPE_MS): Promise<ResultadoCriacaoEnvelope> {
+  let relogio: ReturnType<typeof setTimeout> | undefined;
   try {
-    const r = await provedor.criarEnvelope(envelope);
+    const prazo = new Promise<never>((_, recusar) => { relogio = setTimeout(() => recusar(new Error("TIMEOUT_CRIACAO_ENVELOPE")), timeoutMs); });
+    const r = await Promise.race([provedor.criarEnvelope(envelope), prazo]);
     if (r.resultado === "REGISTRADO" && !r.referenciaExterna?.trim()) return { resultado: "INCERTO", evidencia: { motivo: "REFERENCIA_VAZIA", original: r.evidencia } };
     return r;
   } catch (e) { return excecao(e); }
+  finally { clearTimeout(relogio); }
 }
 
 export async function consultarEnvelopeSemPresumir(provedor: ProvedorAssinatura, chave: string): Promise<ResultadoConsultaEnvelope> {

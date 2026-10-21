@@ -24,7 +24,8 @@ export function lerDriverAssinatura(env: Record<string, string | undefined> = pr
     }
     return { tipo: "SIMULADO" };
   }
-  throw new ErroRegra(`ASSINATURA_DRIVER="${driver}" não é reconhecido. Use "simulado" ou deixe vazio; o fornecedor real (Q155) ainda não possui driver.`);
+  console.error(`[assinatura] ASSINATURA_DRIVER="${driver}" não é reconhecido (aceitos: vazio ou "simulado").`);
+  throw new ErroRegra("A integração de assinatura eletrônica está mal configurada. Avise a administração do sistema; o fornecedor real (Q155) ainda não possui driver.");
 }
 
 let simulado: ProvedorAssinatura | null = null;
