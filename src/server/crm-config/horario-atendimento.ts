@@ -3,6 +3,7 @@ import { z } from "zod";
 import { candidatosDaGrade } from "@/server/agenda/grade";
 import { dataHoraAvaliacaoLocal } from "@/server/avaliacoes/tempo";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
+import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 
 const HHMM = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Use o formato HH:MM.");
 const MAX_DIAS = 400;
@@ -57,26 +58,52 @@ function instanteLocal(data: string, hora: string, fuso: string): Date {
   return instanteLocal(somarDias(data, 1), "00:00", fuso);
 }
 
-function intervalosDoDia(cal: HorarioAtendimento, data: string): Intervalo[] {
-  if (cal.feriados.includes(data)) return [];
+/**
+ * Feriado da escola inteira (datas civis inclusivas, no fuso da escola). Vem do calendário escolar
+ * institucional (`VersaoCalendarioEscolar` aprovada vigente): não há cadastro paralelo de feriados para o SLA.
+ */
+export type FeriadoEscola = { inicio: string; fim: string };
+
+/**
+ * Feriados do calendário escolar que valem para o SLA: só os períodos `FERIADO`. Recesso e férias são do
+ * calendário letivo (não há aula), não fecham o atendimento. Com `desde` (AAAA-MM-DD), descarta os que
+ * terminaram antes. Períodos que não passam no schema avisam no log e contam como nenhum feriado: o cálculo
+ * roda no inbound, dentro da transação, e não pode lançar.
+ */
+export function feriadosDoCalendarioEscolar(periodos: unknown, desde?: string): FeriadoEscola[] {
+  const r = PeriodosCalendarioSchema.safeParse(periodos);
+  if (!r.success) {
+    console.warn("[sla] períodos do calendário escolar inválidos; prazo calculado sem os feriados da escola.");
+    return [];
+  }
+  return r.data
+    .filter((p) => p.tipo === "FERIADO" && (desde === undefined || p.fim >= desde))
+    .map((p) => ({ inicio: p.inicio, fim: p.fim }))
+    .sort((a, b) => a.inicio.localeCompare(b.inicio) || a.fim.localeCompare(b.fim));
+}
+
+function intervalosDoDia(cal: HorarioAtendimento, data: string, feriadosEscola: readonly FeriadoEscola[]): Intervalo[] {
+  if (cal.feriados.includes(data) || feriadosEscola.some((f) => f.inicio <= data && data <= f.fim)) return [];
   const dia = diaDaSemana(data);
   return cal.intervalos.filter((i) => i.dia === dia).sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
 /**
  * Vencimento do prazo de `minutos` a partir de `inicio`, contando só dentro do calendário (no fuso da
- * escola). Sem calendário ou sem intervalos, a contagem é corrida. Fora do horário, o relógio começa na
+ * escola). Feriados do setor (`calendario.feriados`) e da escola (`feriadosEscola`) se somam e fecham o dia
+ * inteiro, como um dia sem horário; feriado em dia sem atendimento (fim de semana) não muda nada.
+ * Sem calendário ou sem intervalos, a contagem é corrida e ignora feriados. Fora do horário, o relógio começa na
  * próxima abertura; a sobra do dia passa para o próximo dia de atendimento. Se o prazo não couber em
  * 400 dias do calendário (dias de atendimento todos em feriados), avisa no log e conta corrido; nunca lança.
  */
-export function prazoVenceEm(inicio: Date, minutos: number, calendario: HorarioAtendimento | null, fuso: string): Date {
+export function prazoVenceEm(inicio: Date, minutos: number, calendario: HorarioAtendimento | null, fuso: string, feriadosEscola: readonly FeriadoEscola[] = []): Date {
   if (!calendario || calendario.intervalos.length === 0) return new Date(inicio.getTime() + minutos * 60_000);
   let restante = minutos * 60_000;
   let cursor = inicio.getTime();
   const primeiroDia = dataHoraAvaliacaoLocal(inicio, fuso).slice(0, 10);
   for (let k = 0; k < MAX_DIAS; k++) {
     const data = somarDias(primeiroDia, k);
-    for (const i of intervalosDoDia(calendario, data)) {
+    for (const i of intervalosDoDia(calendario, data, feriadosEscola)) {
       const abre = instanteLocal(data, i.inicio, fuso).getTime();
       const fecha = instanteLocal(data, i.fim, fuso).getTime();
       if (fecha <= cursor) continue;
@@ -94,9 +121,9 @@ export function prazoVenceEm(inicio: Date, minutos: number, calendario: HorarioA
   return new Date(inicio.getTime() + minutos * 60_000);
 }
 
-/** O instante está dentro de um intervalo de atendimento (fechamento exclusivo; feriado fica fora). */
-export function dentroDoHorario(instante: Date, calendario: HorarioAtendimento, fuso: string): boolean {
+/** O instante está dentro de um intervalo de atendimento (fechamento exclusivo; feriado do setor ou da escola fica fora). */
+export function dentroDoHorario(instante: Date, calendario: HorarioAtendimento, fuso: string, feriadosEscola: readonly FeriadoEscola[] = []): boolean {
   const data = dataHoraAvaliacaoLocal(instante, fuso).slice(0, 10);
   const t = instante.getTime();
-  return intervalosDoDia(calendario, data).some((i) => instanteLocal(data, i.inicio, fuso).getTime() <= t && t < instanteLocal(data, i.fim, fuso).getTime());
+  return intervalosDoDia(calendario, data, feriadosEscola).some((i) => instanteLocal(data, i.inicio, fuso).getTime() <= t && t < instanteLocal(data, i.fim, fuso).getTime());
 }
