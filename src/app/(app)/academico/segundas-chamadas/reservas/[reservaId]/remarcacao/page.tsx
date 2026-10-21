@@ -22,7 +22,10 @@ function periodo(inicio: string, fim: string, fuso: string) {
  */
 function prazo(valor: string, fuso: string, origem: "AGENDA" | "ESCOLA" | undefined) {
   const e = formatarInstanteExibicao(/(?:Z|[+-]\d\d:\d\d)$/i.test(valor) ? valor : `${valor}Z`, null, fuso);
-  return `${e.texto} (${e.fuso}${origem === "ESCOLA" ? ", fuso da escola" : origem === "AGENDA" ? ", fuso da agenda" : ""})`;
+  const rotulo = origem === "ESCOLA" ? "fuso da escola" : origem === "AGENDA" ? "fuso da agenda" : "fuso";
+  // Fuso não reconhecido (defensivo: o servidor não manda): diz que saiu em UTC, como na substituição.
+  if (e.fuso !== fuso) return `${e.texto} (UTC; ${rotulo} não reconhecido: ${fuso})`;
+  return `${e.texto} (${e.fuso}${origem ? `, ${rotulo}` : ""})`;
 }
 function Agenda({ valor, preferencia }: { valor: unknown; preferencia: string | null }) {
   const r = agendaSchema.safeParse(valor);

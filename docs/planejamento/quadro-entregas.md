@@ -4420,3 +4420,17 @@ Branch `claude/fuso-pessoal-telas-3`, a partir do 2º lote (#289, já no `main`,
     - `segunda-chamada.int` (consulta de remarcação: fuso do prazo = agenda): OK.
   - `tsc` dirigido (alterados e importadores, 145 arquivos): saída 0. O `tsc --noEmit` completo foi morto por falta de memória (4 GB): fica com o CI.
   - `eslint . --max-warnings 40`: saída 0, com 0 erros e 40 avisos (a linha de base).
+- **Correções das reviews do #290** (5605939307 e 5605944129):
+  - **B1:** em `/academico/reposicoes`, o prazo da etapa e o "Expira em" da liberação eram digitados em UTC quando não havia preferência. Agora a página usa `fusoDoCampoLocal(preferência, escola)`, e 25/10 23:59 em São Paulo vira `2026-10-26T02:59Z`. Nenhuma outra entrada caía em UTC.
+  - **FIN-04, replay (menor 1 e C3):** `mesmaDataDigitadaNaEscola` compara com o dia que a escola vê no registro existente. Em Pacific/Auckland e Pacific/Honolulu, outro dia com a mesma chave é recusado. Um registro antigo que a escola vê em outro dia (Sydney) também é recusado, sem duplicar o caixa.
+  - **Menores:**
+    - comentário de `diaCivilDoPagamento` atualizado;
+    - a experimental intocada volta como o instante gravado (hora repetida do horário de verão), com o limite documentado no diário e na agenda do aditivo;
+    - a trava "conversao-local" passa a pegar `new Date`/`Date.parse` sobre `*.target.value` nos handlers do campo e `valueAsNumber`/`valueAsDate`;
+    - na remarcação, o rótulo do prazo com fuso não reconhecido mostra "UTC; … não reconhecido";
+    - o texto do `datetime-local` sem fuso vira erro de validação legível.
+  - **Evidências:**
+    - trava e testes tocados (26 arquivos, 211 testes) OK em UTC e em São Paulo;
+    - financeiro, `_shared` e comercial: 72 arquivos e 560 testes OK nos dois TZ;
+    - `tsc` dirigido: saída 0; lint dos alterados: 0.
+    - A integração não rodou, porque o cluster de teste está com o checkpoint parado (vários `DROP DATABASE` pendentes, inclusive o do `erp_genius_test_fuso3`). O `recebimentos-destinados.int` foi atualizado para a regra nova.

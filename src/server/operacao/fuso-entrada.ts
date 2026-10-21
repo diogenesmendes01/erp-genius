@@ -30,6 +30,10 @@ export type PrecisaoCampoLocal = "minuto" | "segundo" | "milissegundo";
  * Valor de um `datetime-local` para o instante no fuso (valor inicial, `max`). Fuso inválido usa "UTC" — o mesmo
  * fallback de `fusoDoCampoLocal`, então a tela que mostra o fuso resolvido continua coerente. Valor que não é data
  * (ou ausente) vira "" (campo vazio), sem lançar.
+ * Limite (menor 4 da review do #290): um instante na hora REPETIDA do fim do horário de verão (ex.: 01:30 de 01/11
+ * em America/New_York) é escrito como o texto ambíguo, e `instanteDoCampoLocal` o recusa se for reenviado sem
+ * mudança. A experimental do funil reenvia o instante gravado quando o campo não muda; no diário e na agenda do
+ * aditivo, a pessoa escolhe outro horário (a mensagem diz que ele se repete). Raro, e nunca grava o instante errado.
  */
 export function valorCampoLocal(instante: Date | string | null | undefined, fuso: string, precisao: PrecisaoCampoLocal = "minuto"): string {
   if (instante == null || instante === "") return "";

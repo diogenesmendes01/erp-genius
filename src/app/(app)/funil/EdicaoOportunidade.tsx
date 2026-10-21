@@ -148,9 +148,10 @@ type CamposDatas = { followUp: string; experimental: string; proposta: string };
 export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferenciaFusoExibicao = null }: { oportunidade: DetalheOportunidade; podeEditar: boolean; fuso: string; preferenciaFusoExibicao?: string | null }) {
   const { acao, concluiu } = useAcaoSecao();
   const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
+  const experimentalInicial = valorCampoLocal(op.dataExperimental, fusoExperimental);
   const [f, setF] = useState<CamposDatas>({
     followUp: dataCivil(op.proximoFollowUp, fuso),
-    experimental: valorCampoLocal(op.dataExperimental, fusoExperimental),
+    experimental: experimentalInicial,
     proposta: dataCivil(op.dataProposta, fuso),
   });
 
@@ -178,7 +179,11 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
             const enviados = f;
             const dados = {
               proximoFollowUp: enviados.followUp,
-              dataExperimental: enviados.experimental, fusoDataExperimental: fusoExperimental,
+              // Experimental intocada volta como o instante gravado (menor 4 da review do #290): na hora repetida do fim
+              // do horário de verão, o texto inicial é ambíguo e a conversão o recusaria, travando salvar só o follow-up.
+              ...(op.dataExperimental && enviados.experimental === experimentalInicial
+                ? { dataExperimental: new Date(op.dataExperimental).toISOString() }
+                : { dataExperimental: enviados.experimental, fusoDataExperimental: fusoExperimental }),
               dataProposta: enviados.proposta,
             };
             concluiu(await acao.executar(() => atualizarDatas(op.id, dados), "Datas atualizadas."));

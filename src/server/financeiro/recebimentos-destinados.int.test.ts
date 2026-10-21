@@ -207,17 +207,23 @@ it("data digitada vai ao meio-dia da escola: 05/10 digitado em Sydney exibe 05/1
 
 it("reenvio do mesmo form antes e depois da correção não duplica o recebimento; outro dia com a mesma chave é recusado", async () => {
   const base = (chave: string) => ({ ...entrada(chave), valorRecebido: 20, destinos: [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: 20, evidencia: "Saldo antecipado sem cobrança definida.", chaveIdempotencia: "credito-sem-destino" }] });
-  // Antes: o formulário antigo, aberto num navegador em Sydney, mandava o meio-dia de lá (05/10 12:00 +11:00).
-  const antigo = await registrarRecebimentoDestinado({ ...base("fin04-replay-antes-0001"), dataPagamento: "2026-10-05T01:00:00.000Z" });
+  // Antes: o formulário antigo mandava o meio-dia do navegador. Num navegador no fuso da escola (o caso comum), o
+  // reenvio com o form novo é a mesma operação.
+  const antigo = await registrarRecebimentoDestinado({ ...base("fin04-replay-antes-0001"), dataPagamento: "2026-10-05T15:00:00.000Z" });
   expect(antigo.ok, antigo.ok ? "" : antigo.erro).toBe(true);
   const novo = await registrarRecebimentoDestinado({ ...base("fin04-replay-antes-0001"), dataPagamento: "2026-10-05" });
   expect(novo).toEqual(antigo);
+  // Registro antigo de Sydney (05/10 12:00 +11:00), que a escola vê como 04/10: o reenvio com 05/10 é recusado, sem
+  // duplicar (C3 da review do #290: o replay compara com o dia que a escola vê).
+  const sydney = await registrarRecebimentoDestinado({ ...base("fin04-replay-sydney-0001"), dataPagamento: "2026-10-05T01:00:00.000Z" });
+  expect(sydney.ok).toBe(true);
+  expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-sydney-0001"), dataPagamento: "2026-10-05" })).toEqual({ ok: false, erro: "Identificador de pagamento já usado para outra operação." });
   // Depois → antes (aba antiga ainda aberta repete a mesma tentativa): também é a mesma operação.
   const primeiro = await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-05" });
   expect(primeiro.ok, primeiro.ok ? "" : primeiro.erro).toBe(true);
   expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-05T01:00:00.000Z" })).toEqual(primeiro);
   expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-05" })).toEqual(primeiro);
-  expect(await prisma.recebimento.count({ where: { chaveIdempotencia: { in: ["fin04-replay-antes-0001", "fin04-replay-depois-0001"] } } })).toBe(2);
+  expect(await prisma.recebimento.count({ where: { chaveIdempotencia: { in: ["fin04-replay-antes-0001", "fin04-replay-depois-0001", "fin04-replay-sydney-0001"] } } })).toBe(3);
   // Outro dia digitado com a mesma chave continua sendo outra operação.
   expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-06" })).toEqual({ ok: false, erro: "Identificador de pagamento já usado para outra operação." });
 });

@@ -4,6 +4,9 @@ import { dinheiro, statusEmAbertoPorVencimento } from "./regras";
 import { createHash } from "node:crypto";
 import { saldoLiquidoAcertoTaxa } from "@/server/contratos/aditivo-acerto-taxa-calculo";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { dataCivilInstitucional, fusoIanaValido } from "@/server/operacao/fuso";
+import { diaCivilDoPagamento } from "@/server/operacao/fuso-exibicao";
+import { instanteDaGrade } from "@/server/agenda/grade";
 
 export type DestinoRecebimento = { tipo: TipoDestinacaoRecebimento; cobrancaId?: string; valor: number; evidencia: string; chaveIdempotencia: string };
 
@@ -39,17 +42,33 @@ export function diasDoMeioDiaDigitado(instante: Date): string[] {
   return [-1, 0, 1].map((d) => base + d * 24 * HORA).filter((dia) => t >= dia + 12 * HORA - 14 * HORA && t <= dia + 12 * HORA + 12 * HORA)
     .map((dia) => new Date(dia).toISOString().slice(0, 10));
 }
-/** Os dois instantes podem ser a mesma data digitada ao meio-dia (de fusos diferentes). */
-export function mesmaDataDigitada(a: Date, b: Date): boolean {
-  const dias = diasDoMeioDiaDigitado(a);
-  return diasDoMeioDiaDigitado(b).some((d) => dias.includes(d));
+/**
+ * Replay do FIN-04 (C3 e menor 1 das reviews do #290): a nova entrada é o MESMO dia que a escola VÊ no registro
+ * existente (`diaCivilDoPagamento`, o dia exibido nas telas)? A comparação é exata, não "meio-dia de algum fuso" nos
+ * dois lados: em escolas a UTC−10 ou menos, ou a UTC+12 ou mais, o meio-dia da escola cai na janela que é meio-dia de
+ * dois dias, e outro dia digitado com a mesma chave passava como replay (ex.: Pacific/Auckland, 04/10 e depois 05/10).
+ * - Entrada nova (data digitada → meio-dia da escola): o dia digitado tem de ser o dia visto no existente.
+ * - Entrada de um formulário antigo (ISO, meio-dia do navegador): o dia visto no existente tem de estar entre os dias
+ *   de que esse instante pode ser o meio-dia (`diasDoMeioDiaDigitado`).
+ * Consequência aceita: registro antigo de um navegador muito a leste ou a oeste (que a escola já vê em OUTRO dia,
+ * ex.: Sydney 05/10 visto como 04/10 em São Paulo) não casa com o reenvio de 05/10: é recusado como "já usado",
+ * coerente com o que a escola vê, e nunca duplica o caixa.
+ */
+export function mesmaDataDigitadaNaEscola(existente: Date, entrada: Date, fusoEscola: string): boolean {
+  if (!fusoIanaValido(fusoEscola)) return false;
+  const visto = diaCivilDoPagamento(existente, fusoEscola);
+  const diaDaEntrada = dataCivilInstitucional(entrada, fusoEscola);
+  let meioDiaDaEscola = false;
+  try { meioDiaDaEscola = instanteDaGrade(diaDaEntrada, "12:00", fusoEscola).getTime() === entrada.getTime(); } catch { meioDiaDaEscola = false; }
+  return meioDiaDaEscola ? diaDaEntrada === visto : diasDoMeioDiaDigitado(entrada).includes(visto);
 }
 
 /**
  * Cria um fato de caixa único e suas destinações materiais FIN-04.
  * `dataDigitada`: a data veio digitada (AAAA-MM-DD) e foi gravada ao meio-dia. No REPLAY da mesma chave, a data
  * gravada por outra convenção de meio-dia (o do navegador, antes da correção do lote 3 do fuso pessoal; o da escola,
- * depois) para o MESMO dia digitado não é outra operação: devolve o recebimento existente, sem duplicar o caixa.
+ * depois) para o MESMO dia que a escola vê no registro existente não é outra operação: devolve o recebimento
+ * existente, sem duplicar o caixa (`mesmaDataDigitadaNaEscola`).
  */
 export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, input: {
   titularMatriculaId: string; pagadorId?: string | null; chaveIdempotencia: string; autorId: string; valorRecebido: number; forma: FormaPagamento; dataPagamento: Date;
@@ -76,7 +95,7 @@ export async function receberComDestinacoesTx(tx: Prisma.TransactionClient, inpu
   await bloquearMatriculas(tx, [input.titularMatriculaId]);
   const existente = await tx.recebimento.findUnique({ where: { chaveIdempotencia: input.chaveIdempotencia }, include: { destinacoes: { orderBy: { chaveIdempotencia: "asc" } } } });
   if (existente) {
-    const iguais = existente.titularMatriculaId === input.titularMatriculaId && existente.pagadorId === (input.pagadorId ?? null) && existente.autorId === input.autorId && existente.moeda === input.moeda && existente.forma === input.forma && existente.informeId === (input.informeId ?? null) && existente.valor.equals(valorOriginal) && (!existente.hashDados || existente.hashDados === hashDados || (!!input.dataDigitada && mesmaDataDigitada(existente.dataPagamento, input.dataPagamento) && existente.hashDados === hashCom(existente.dataPagamento))) && existente.destinacoes.length === destinos.length && existente.destinacoes.every((d, i) => d.tipo === destinos[i].tipo && d.cobrancaId === (destinos[i].cobrancaId ?? null) && d.valor.equals(dinheiro(destinos[i].valor)) && d.evidencia === destinos[i].evidencia && d.chaveIdempotencia === destinos[i].chaveIdempotencia);
+    const iguais = existente.titularMatriculaId === input.titularMatriculaId && existente.pagadorId === (input.pagadorId ?? null) && existente.autorId === input.autorId && existente.moeda === input.moeda && existente.forma === input.forma && existente.informeId === (input.informeId ?? null) && existente.valor.equals(valorOriginal) && (!existente.hashDados || existente.hashDados === hashDados || (!!input.dataDigitada && mesmaDataDigitadaNaEscola(existente.dataPagamento, input.dataPagamento, await fusoDaEscola(tx)) && existente.hashDados === hashCom(existente.dataPagamento))) && existente.destinacoes.length === destinos.length && existente.destinacoes.every((d, i) => d.tipo === destinos[i].tipo && d.cobrancaId === (destinos[i].cobrancaId ?? null) && d.valor.equals(dinheiro(destinos[i].valor)) && d.evidencia === destinos[i].evidencia && d.chaveIdempotencia === destinos[i].chaveIdempotencia);
     if (!iguais) throw new ErroRegra("Identificador de pagamento já usado para outra operação.");
     return existente;
   }
