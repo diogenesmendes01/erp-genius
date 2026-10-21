@@ -583,6 +583,15 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma linha financeira nesta página.",
     "compacto · Nenhuma linha financeira da migração para conciliar.",
   ],
+  // Q171/Q167C: destinação do excedente e uso do saldo restrito a serviços.
+  "src/app/(app)/financeiro/permuta/excedente/[matriculaId]/page.tsx": [
+    "bloco · Nenhuma cobrança desta matrícula foi compensada por permuta.",
+    "bloco · Nenhuma destinação registrada.",
+    "bloco · Nenhum saldo de serviços nesta matrícula.",
+    "bloco · Nenhuma cobrança em aberto abatível agora (ou há uso aguardando decisão, cobrança em pausa ou compro",
+    "bloco · Saldo totalmente utilizado.",
+    "bloco · Nenhum uso registrado.",
+  ],
   "src/app/(app)/financeiro/permuta/page.tsx": [
     "bloco · Nenhum acordo nesta página.",
     "bloco · Nenhum acordo de permuta registrado.",
