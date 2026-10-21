@@ -9,6 +9,7 @@ import type { listarContextoRetomada, listarPropostasRetomada } from "@/server/r
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -29,9 +30,11 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
   const [motivo, setMotivo] = useState("");
   const [datas, setDatas] = useState<Record<string, string>>({});
   const [motivosDecisao, setMotivosDecisao] = useState<Record<string, string>>({});
-  // Idempotentes por natureza (#166): a proposta pendente idêntica, do mesmo solicitante, é devolvida sem novo
-  // registro; a mesma decisão, do mesmo aprovador e com o mesmo motivo, também (server/retomada/acoes.ts).
+  // Proposta com chave de idempotência (#166, N3 da R1 do #274): o reenvio da mesma tentativa devolve a proposta
+  // original mesmo se outra pessoa a rejeitou no intervalo; a chave só muda depois do sucesso. A mesma decisão, do
+  // mesmo aprovador e com o mesmo motivo, é devolvida por natureza (server/retomada/acoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // O resultado aparece junto da proposta nova ("proposta") ou da proposta decidida (id).
   const [alvo, setAlvo] = useState<string | null>(null);
   const ocupado = acao.ocupado;
@@ -49,7 +52,9 @@ export function RetomadasPainel({ contexto, propostas, erroConsulta, preferencia
     const d = await acao.executar(() => solicitarRetomada(contexto.alunoId, {
       opcao, motivo,
       novosVencimentos: opcao === "REPROGRAMAR_PARCELAS" ? contexto.parcelas.map((p) => ({ cobrancaId: p.cobrancaId, vencimento: datas[p.cobrancaId] ?? p.vencimento.slice(0, 10) })) : [],
+      chaveIdempotencia: tentativa.atual,
     }), "Proposta enviada. A retomada e os vencimentos aguardam aprovação de outra pessoa do Financeiro ou da Administração.");
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setOpcao(""); setMotivo(""); setDatas({});
     router.refresh();

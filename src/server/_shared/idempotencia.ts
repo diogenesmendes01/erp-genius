@@ -52,3 +52,22 @@ export async function repeticaoIdempotente(
   if (payload.entradaHash !== marca.entradaHash) throw new ErroRegra(alvo.mensagemConflito);
   return evento;
 }
+
+/**
+ * Idempotência por natureza (#166, 5º lote), para ações que levam um registro a um estado-alvo (arquivar, revogar,
+ * estornar...): quando o registro já está nele, o reenvio só é reconhecido se o último Evento `tipo` do agregado for
+ * de quem repete. Devolve o payload desse Evento (para conferir a entrada) ou `null` (o estado veio de outra pessoa
+ * ou de outro caminho, e a ação segue recusada como antes). Chame depois de travar a linha do registro.
+ */
+export async function ultimoEventoDoAutor(
+  tx: Prisma.TransactionClient,
+  alvo: { tipo: string; agregadoTipo: string; agregadoId: string; autorId: string },
+): Promise<Record<string, unknown> | null> {
+  const ultimo = await tx.evento.findFirst({
+    where: { tipo: alvo.tipo, agregadoTipo: alvo.agregadoTipo, agregadoId: alvo.agregadoId },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+    select: { autorId: true, payload: true },
+  });
+  if (!ultimo || ultimo.autorId !== alvo.autorId) return null;
+  return (ultimo.payload ?? {}) as Record<string, unknown>;
+}
