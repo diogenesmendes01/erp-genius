@@ -32,6 +32,7 @@ import { preservarConclusaoAssinaturaAditivoTx } from "./aditivo-conclusao-tx";
 import { consultarConferenciaFinalAditivo, registrarConferenciaFinalAditivo } from "./aditivo-conferencia-final";
 import { formalizarEAplicarCondicoesAditivo } from "./aditivo-condicoes";
 import { criarAvisosAlteracaoAgendaTx, validarFonteAditivoAgendaTx } from "@/server/comunicacoes-agenda/avisos";
+import { registrarOrigemContratualHistoricaTx } from "./origem-historica-tx";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 let encontroId: string;
@@ -302,4 +303,18 @@ it("Q117 aplica a agenda particular somente junto das condições formalizadas, 
   const cloneFiel = await prisma.evento.create({ data: { tipo: "CondicoesAditivoAplicadas", agregadoTipo: "Matricula", agregadoId: base.matriculaId, autorId: base.secretariaId, payload: eventoAplicado.payload as object } });
   await expect(prisma.avisoAlteracaoAgenda.create({ data: { id: "q117-aviso-clone-fiel", mudancaId: cloneFiel.id, eventoId: cloneFiel.id, matriculaId: base.matriculaId, alunoId: matricula.alunoId, canal: "EMAIL", contatoHash: "c".repeat(64), chave: "q117-aviso-clone-fiel" } })).rejects.toThrow("Origem do aviso inválida");
   expect(await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: encontroId }, select: { professorId: true, inicio: true, fim: true, fusoOrigem: true } })).toEqual({ professorId: base.secretariaId, inicio: new Date("2099-10-12T15:00:00.000Z"), fim: new Date("2099-10-12T16:00:00.000Z"), fusoOrigem: "UTC" });
+});
+
+// Revisão 5606023454 da #285: a conclusão assinada no sistema não entra numa matrícula com origem histórica aprovada
+// (trigger recusar_conclusao_com_origem_historica), mesmo vinda depois da origem.
+it("recusa preservar conclusão assinada quando a matrícula já tem origem contratual histórica aprovada", async () => {
+  await truncarBanco();
+  base = await prepararFixtureSubstituicaoContratual(authMock, { porHora: true, semSubstituicao: true, ambiente: "PRODUCAO" });
+  const pdf = Buffer.from("%PDF-1.4 contrato legado assinado em papel");
+  const origem = await prisma.$transaction(tx => registrarOrigemContratualHistoricaTx(tx, base.secretariaId, { matriculaId: base.matriculaId, referencia: "Contrato legado", assinadoEm: "2024-12-20", pdfAssinado: pdf,
+    transcricao: { moeda: "CRC", aluno: { nome: "Aluno Original" }, taxa: { valor: "50.00", vencimento: "2025-01-05" }, aulas: { regime: "HORA_PARTICULAR", valorHora: "125.00" } },
+    motivo: "Contrato legado digitalizado e transcrito.", chaveIdempotencia: "origem-historica-q117" }));
+  await prisma.decisaoOrigemContratualHistorica.create({ data: { propostaId: origem.id, decisorId: base.adminId, aprovada: true, motivo: "PDF e transcrição conferidos.", pdfHashConferido: origem.pdfHash, transcricaoHashConferido: origem.transcricaoHash } });
+  await expect(assinarFonte()).rejects.toThrow(/já possui origem contratual histórica aprovada/);
+  expect(await prisma.conclusaoAssinaturaContratual.count({ where: { processoId: base.processoId } })).toBe(0);
 });

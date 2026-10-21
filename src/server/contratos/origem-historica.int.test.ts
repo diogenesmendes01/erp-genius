@@ -278,8 +278,16 @@ it("Origem histórica no banco: moeda da matrícula, aditivo de taxa recusado se
     matriculaId: p.matriculaId, origemHistoricaId: p.origemHistoricaId, modeloId: p.modeloId, versao: p.versao + 1, preparadaPorId: p.preparadaPorId, vigenciaInicio: p.vigenciaInicio,
     motivo: p.motivo, baseHash: p.baseHash, alteracoesHash: p.alteracoesHash, snapshot, entradaHash: "d".repeat(64), chaveIdempotencia: "aditivo-historico-taxa-direto",
   } })).rejects.toThrow(/não admite aditivo de taxa/);
-  // A fonte é única também no banco: proposta com as duas fontes viola o CHECK.
+  // A proposta é imutável: o trigger recusa a troca de fonte antes de qualquer CHECK.
   await expect(prisma.$executeRaw`UPDATE "PropostaAditivoContratual" SET "conclusaoOriginalId" = 'x' WHERE id = ${p.id}`).rejects.toThrow();
+  // CHECK de fonte única exercitado de fato: com triggers (e FKs) desligados, só a constraint resta.
+  await expect(adulterar(Prisma.sql`UPDATE "PropostaAditivoContratual" SET "conclusaoOriginalId" = 'x' WHERE id = ${p.id}`)).rejects.toThrow(/PropostaAditivoContratual_fonte_unica/);
+  await expect(adulterar(Prisma.sql`UPDATE "PropostaAditivoContratual" SET "origemHistoricaId" = NULL WHERE id = ${p.id}`)).rejects.toThrow(/PropostaAditivoContratual_fonte_unica/);
+  const fotografia = (fontes: { conclusao: string | null; origem: string | null }, chave: string) => adulterar(Prisma.sql`
+    INSERT INTO "PropostaAgendaAditivoParticular" (id,"matriculaId","conclusaoFonteId","origemHistoricaId","preparadorId",fotografia,"fotografiaHash",pendencias,"chaveIdempotencia","entradaHash")
+    VALUES (${randomUUID()},${alvo.matriculaId},${fontes.conclusao},${fontes.origem},${secretariaId},'{}'::jsonb,${"e".repeat(64)},'[]'::jsonb,${chave},${"f".repeat(64)})`);
+  await expect(fotografia({ conclusao: "x", origem: origem.id }, "agenda-duas-fontes")).rejects.toThrow(/PropostaAgendaAditivoParticular_fonte_unica/);
+  await expect(fotografia({ conclusao: null, origem: null }, "agenda-sem-fonte")).rejects.toThrow(/PropostaAgendaAditivoParticular_fonte_unica/);
 });
 
 const pdfAdulterado = Buffer.from("%PDF-1.4 outro documento colocado no lugar do contrato legado");
