@@ -7,6 +7,8 @@ vi.mock("@/server/contratos/aditivos", () => ({ consultarAditivosContratuais: mo
 vi.mock("@/server/contratos/agenda-aditivo", () => ({ consultarPropostaAgendaAditivo: mocks.agenda }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("../CadastroContratualAplicado", () => ({ CadastroContratualAplicado: () => null }));
+// Lote 3 do fuso pessoal: a página resolve o fuso em que a vigência é digitada (pessoal; sem preferência, o da escola).
+vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("./Formularios", () => ({ PrepararAditivo: () => null }));
 
 import AditivosPage from "./page";
