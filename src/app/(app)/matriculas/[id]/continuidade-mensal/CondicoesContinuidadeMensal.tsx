@@ -33,10 +33,10 @@ const data = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "s
 /**
  * `vigenteDesde` é data civil e sai como está. Registro (`criadaEm`) e decisão (`decididaEm`) são instantes: o dia
  * no fuso pessoal de exibição; sem preferência, no da escola (antes, o dia UTC, que punha o registro da noite no dia
- * seguinte).
+ * seguinte). O fuso sai escrito junto do dia, como nas outras telas do lote (review do #289, item F).
  */
 export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao = null, fusoEscola }: { dados: Dados; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
-  const dia = (instante: string) => formatarInstanteExibicao(instante, preferenciaFusoExibicao, fusoEscola, "data").texto;
+  const dia = (instante: string) => { const x = formatarInstanteExibicao(instante, preferenciaFusoExibicao, fusoEscola, "data"); return `${x.texto} (${x.fuso})`; };
   const router = useRouter();
   // Preparar e decidir não levam chave de idempotência: na falha de transporte, conferir antes de repetir.
   // A decisão preserva a orientação própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.

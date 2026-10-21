@@ -20,16 +20,16 @@ const dados = {
 const render = (preferenciaFusoExibicao: string | null) =>
   renderToStaticMarkup(createElement(CondicoesContinuidadeMensal, { dados, preferenciaFusoExibicao, fusoEscola: "America/Sao_Paulo" }));
 
-describe("CondicoesContinuidadeMensal: registro e decisão no fuso pessoal", () => {
+describe("CondicoesContinuidadeMensal: registro e decisão no fuso pessoal, com o fuso escrito", () => {
   it("sem preferência: o dia da escola, não o dia UTC", () => {
     const html = render(null);
-    expect(html).toContain("Financeiro · 20/10/2026 · contrato vinculado");
-    expect(html).toContain("Sem contrato · 21/10/2026");
+    expect(html).toContain("Financeiro · 20/10/2026 (America/Sao_Paulo) · contrato vinculado");
+    expect(html).toContain("Sem contrato · 21/10/2026 (America/Sao_Paulo)");
   });
 
   it("com preferência: o dia no fuso pessoal", () => {
     const html = render("Asia/Tokyo");
-    expect(html).toContain("Financeiro · 21/10/2026 · contrato vinculado");
-    expect(html).toContain("Sem contrato · 22/10/2026");
+    expect(html).toContain("Financeiro · 21/10/2026 (Asia/Tokyo) · contrato vinculado");
+    expect(html).toContain("Sem contrato · 22/10/2026 (Asia/Tokyo)");
   });
 });

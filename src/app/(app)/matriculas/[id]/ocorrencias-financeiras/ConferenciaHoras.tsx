@@ -34,7 +34,9 @@ export function descreverAulaNaoCobravel(efeito: string) {
 /**
  * Horário do encontro, vigência das condições e limite de cancelamento são publicados no fuso da agenda
  * (`fusoOrigem`) e mantêm esse fuso. Comunicação, conferência e aplicação da declaração são instantes de registro:
- * saem no fuso pessoal de exibição (sem preferência, o da agenda), com o fuso dito.
+ * saem no fuso pessoal de exibição (sem preferência, o da agenda), com o fuso dito. A comunicação é o que se
+ * compara com o limite de cancelamento (no prazo ou tardio): quando o fuso exibido difere do da agenda, ela também
+ * sai no fuso da agenda, entre parênteses, para a comparação ficar no mesmo fuso (review do #289, item E).
  */
 export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenciaFusoExibicao = null }: { encontro: Dados["encontros"][number]; condicoes: Dados["condicoes"]; matricula: Dados["matricula"]; preferenciaFusoExibicao?: string | null }) {
   // Prévia é leitura sem chave; a conferência leva chave de idempotência estável. Cada uma preserva a orientação
@@ -45,6 +47,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenci
   const chave = useRef({ entrada: "", valor: "" });
   const data = (v: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(v));
   const instante = (v: string) => { const x = formatarInstanteExibicao(v, preferenciaFusoExibicao, e.fusoOrigem); return `${x.texto} (${x.fuso})`; };
+  const comunicacao = (v: string) => { const x = formatarInstanteExibicao(v, preferenciaFusoExibicao, e.fusoOrigem); return `${x.texto} (${x.fuso})${x.fuso === e.fusoOrigem ? "" : ` (na agenda: ${data(v)}, ${e.fusoOrigem})`}`; };
   const origem = { alunoId: matricula.alunoId, matriculaId: matricula.id, ocorrenciaId: e.ocorrencia?.id ?? "", condicoesId };
   async function carregarPrevia() {
     registro.limpar(); setPrevia(null);
@@ -63,7 +66,7 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenci
   }
   return <article className="space-y-3 rounded border p-4">
     <h2 className="font-medium">{data(e.inicio)} — {data(e.fim)} · {e.fusoOrigem}</h2>
-    {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotular(TIPO_OCORRENCIA_HORAS_LABEL, e.ocorrencia.tipo)} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {instante(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
+    {e.ocorrencia ? <><p>Informe v{e.ocorrencia.versao} · {rotular(TIPO_OCORRENCIA_HORAS_LABEL, e.ocorrencia.tipo)} · {e.ocorrencia.autor.nome}</p><p className="whitespace-pre-wrap">{e.ocorrencia.evidencia}</p>{e.ocorrencia.comunicadoEm && <p>Comunicação: {comunicacao(e.ocorrencia.comunicadoEm)}</p>}</> : <p>Aguardando informe docente.</p>}
     {e.conferencia ? <section className="space-y-2"><h3>Conferência registrada</h3>
       <p>{rotular(DESFECHO_OCORRENCIA_HORAS_LABEL, e.conferencia.desfecho)} · {e.conferencia.minutos} minutos · {e.conferencia.consumoAntecipacao ? "valor preservado da compra" : "valor apurado"}: {formatarMoeda(e.conferencia.valor, e.conferencia.moeda)}</p>
       <p>{e.conferencia.conferente.nome} · {instante(e.conferencia.conferidaEm)}</p><p>{e.conferencia.motivo}</p>
