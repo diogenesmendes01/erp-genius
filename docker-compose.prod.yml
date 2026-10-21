@@ -121,12 +121,11 @@ services:
   cron:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron
-          -o /dev/null -w "cron tick %{http_code}\n" || true;
-        sleep 300;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/cron -o /dev/null -w "cron tick %{http_code}\n" || true; sleep 300; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
@@ -137,12 +136,11 @@ services:
   cron-despacho:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/despacho
-          -o /dev/null -w "despacho tick %{http_code}\n" || true;
-        sleep 60;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/despacho -o /dev/null -w "despacho tick %{http_code}\n" || true; sleep 60; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
@@ -153,12 +151,11 @@ services:
   cron-portal-envios:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/portal-aluno/envios/cron
-          -o /dev/null -w "portal-envios tick %{http_code}\n" || true;
-        sleep 60;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/portal-aluno/envios/cron -o /dev/null -w "portal-envios tick %{http_code}\n" || true; sleep 60; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
@@ -169,12 +166,11 @@ services:
   cron-avisos-agenda:
     image: curlimages/curl:8.10.1
     restart: unless-stopped
-    command: >-
-      sh -c 'while true; do
-        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/agenda/avisos/cron
-          -o /dev/null -w "avisos-agenda tick %{http_code}\n" || true;
-        sleep 300;
-      done'
+    # Comando em uma linha só: no bloco >- as linhas mais indentadas mantêm \n e o sh quebraria o curl.
+    command:
+      - sh
+      - -c
+      - 'while true; do curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/agenda/avisos/cron -o /dev/null -w "avisos-agenda tick %{http_code}\n" || true; sleep 300; done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
     depends_on:
