@@ -161,6 +161,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   // Sem lista própria: a tela sobe direto para o Financeiro (é para lá que o "voltar" dela leva).
   "/financeiro/acertos-vencimento/*/*": "Acerto do vencimento",
   "/financeiro/acertos-adiantamento/*/*": "Acerto do adiantamento",
+  "/financeiro/acertos-moeda/*/*": "Troca de moeda",
   "/financeiro/continuidade": "Continuidade mensal",
   "/financeiro/desistencias": "Desistências",
   "/financeiro/migracao": "Conciliação da migração",

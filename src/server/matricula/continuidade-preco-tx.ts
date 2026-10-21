@@ -106,7 +106,10 @@ export async function resolverPrecoContinuidadeMensalTx(
       "A matrícula legada não possui fonte estruturada de preço mensal. Faça conferência específica.",
     );
   }
-  if (preparacao.regime !== "MENSALIDADE" || preparacao.moeda !== matricula.moeda) {
+  // Q173: depois de um aditivo de moeda aplicado, a preparação permanece na moeda original do contrato.
+  const moedaTrocada = preparacao.moeda !== matricula.moeda
+    && !!(await tx.aplicacaoMoedaAditivo.findFirst({ where: { moedaNova: matricula.moeda, decisao: { proposta: { matriculaId: matricula.id } } }, select: { id: true } }));
+  if (preparacao.regime !== "MENSALIDADE" || (preparacao.moeda !== matricula.moeda && !moedaTrocada)) {
     throw new ErroRegra("A fonte de preparação não corresponde a uma contratação mensal desta matrícula.");
   }
 
@@ -121,7 +124,7 @@ export async function resolverPrecoContinuidadeMensalTx(
   const componente = mensalidades[0];
   const referenciasMensais = componentes.success
     ? componentes.data.precos.filter(
-        (preco) => preco.tipoCobranca === "MENSALIDADE" && preco.moeda === matricula.moeda,
+        (preco) => preco.tipoCobranca === "MENSALIDADE" && preco.moeda === preparacao.moeda,
       )
     : [];
   if (referenciasMensais.length !== 1) {
@@ -164,14 +167,21 @@ export async function resolverPrecoContinuidadeMensalTx(
   // A condição é transcrição do preço autorizado em sua própria vigência. Ela
   // não congela o valor para períodos posteriores, que podem ter aditivo válido.
   const inicioRegra = new Date(`${vigente.regras.vigenteDesde}T00:00:00.000Z`);
-  const precoNaVigenciaDaRegra = await resolverMensalVigenteTx(tx, {
+  // Sem câmbio no sistema, não existe preço de tabela na moeda nova: depois da troca o valor de
+  // referência é o próprio valor contratado, e período anterior à troca não pode ser precificado nela.
+  const naMoedaVigente = <T extends { valorOriginal: string; valorNegociado: string; versaoAditivo: unknown }>(resolvido: T): T => {
+    if (!moedaTrocada) return resolvido;
+    if (!resolvido.versaoAditivo) throw new ErroRegra("O período é anterior à troca de moeda do contrato e exige conferência específica.");
+    return { ...resolvido, valorOriginal: resolvido.valorNegociado };
+  };
+  const precoNaVigenciaDaRegra = naMoedaVigente(await resolverMensalVigenteTx(tx, {
     matriculaId: matricula.id,
     inicioCobertura: inicioRegra,
     fimCobertura: inicioRegra,
     valorOriginal: valorOriginalReferencia,
     valorNegociadoOriginal: valorNegociadoPreparacao,
     moedaOriginal: matricula.moeda,
-  });
+  }));
   if (
     valorCanonico(vigente.regras.valorOriginal, "O valor original da condição") !==
       valorCanonico(precoNaVigenciaDaRegra.valorOriginal, "A referência autorizada") ||
@@ -181,14 +191,14 @@ export async function resolverPrecoContinuidadeMensalTx(
     throw new ErroRegra("A condição mensal não reproduz o preço autorizado na data de vigência.");
   }
 
-  const preco = await resolverMensalVigenteTx(tx, {
+  const preco = naMoedaVigente(await resolverMensalVigenteTx(tx, {
     matriculaId: matricula.id,
     inicioCobertura: dados.inicioCobertura,
     fimCobertura: dados.fimCobertura,
     valorOriginal: valorOriginalReferencia,
     valorNegociadoOriginal: valorNegociadoPreparacao,
     moedaOriginal: matricula.moeda,
-  });
+  }));
 
   return {
     preco,

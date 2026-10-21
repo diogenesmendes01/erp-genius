@@ -58,7 +58,13 @@ export async function carregarContextoEncerramentoTx(tx: Prisma.TransactionClien
               : null,
           })),
       );
+      // Q173: cobrança liquidada (ou cancelada) na moeda anterior a uma troca aplicada é histórico do contrato.
+      // A troca só é aplicada com a matrícula "limpa" e depois do fim da cobertura paga, então ela não entra no acerto.
+      const trocasMoeda = await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId: m.id } } }, select: { moedaAnterior: true } });
+      const moedasAnteriores = new Set(trocasMoeda.map((troca) => troca.moedaAnterior));
+      const historicaEmMoedaAnterior = (c: { moeda: string; status: string }) => c.moeda !== m.moeda && moedasAnteriores.has(c.moeda) && (c.status === "PAGO" || c.status === "CANCELADA");
       const cobrancas = m.cobrancas
+        .filter((c) => !historicaEmMoedaAnterior(c))
         .filter(
           (c) =>
             !c.aplicacoesPeriodoIntegral.some(
