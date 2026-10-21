@@ -189,3 +189,35 @@ it("pagamento sem data explícita conserva a data original ao repetir", async ()
   expect((await prisma.recebimento.findFirstOrThrow()).dataPagamento).toEqual(antes.dataPagamento);
   expect(await registrarPagamento(c1, { ...pagamento, dataPagamento: new Date("2001-01-01T00:00:00Z") })).toMatchObject({ ok: false });
 });
+
+// Item A da review do #289 (lote 3 do fuso pessoal nas telas): a data DIGITADA do FIN-04 (AAAA-MM-DD) é gravada ao
+// meio-dia da ESCOLA (antes: o meio-dia do navegador). Sem fuso configurado, a escola é America/Sao_Paulo.
+it("data digitada vai ao meio-dia da escola: 05/10 digitado em Sydney exibe 05/10 em Recebimento e Cobranca.pagoEm", async () => {
+  const { formatarDiaDoPagamento } = await import("@/server/operacao/fuso-exibicao");
+  const r = await registrarRecebimentoDestinado({ ...entrada("fin04-dia-digitado-0001"), dataPagamento: "2026-10-05",
+    valorRecebido: 100, destinos: [{ tipo: "COBRANCA" as const, cobrancaId: c1, valor: 100, evidencia: "Recibo da mensalidade de outubro.", chaveIdempotencia: `cobranca:${c1}` }] });
+  expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+  const recebimento = await prisma.recebimento.findFirstOrThrow({ where: { chaveIdempotencia: "fin04-dia-digitado-0001" } });
+  expect(recebimento.dataPagamento.toISOString()).toBe("2026-10-05T15:00:00.000Z");
+  const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: c1 } });
+  expect(cobranca.pagoEm?.toISOString()).toBe("2026-10-05T15:00:00.000Z");
+  expect(formatarDiaDoPagamento(recebimento.dataPagamento, "America/Sao_Paulo")).toBe("05/10/2026");
+  expect(formatarDiaDoPagamento(cobranca.pagoEm, "America/Sao_Paulo")).toBe("05/10/2026");
+});
+
+it("reenvio do mesmo form antes e depois da correção não duplica o recebimento; outro dia com a mesma chave é recusado", async () => {
+  const base = (chave: string) => ({ ...entrada(chave), valorRecebido: 20, destinos: [{ tipo: "CREDITO_SEM_DESTINO" as const, valor: 20, evidencia: "Saldo antecipado sem cobrança definida.", chaveIdempotencia: "credito-sem-destino" }] });
+  // Antes: o formulário antigo, aberto num navegador em Sydney, mandava o meio-dia de lá (05/10 12:00 +11:00).
+  const antigo = await registrarRecebimentoDestinado({ ...base("fin04-replay-antes-0001"), dataPagamento: "2026-10-05T01:00:00.000Z" });
+  expect(antigo.ok, antigo.ok ? "" : antigo.erro).toBe(true);
+  const novo = await registrarRecebimentoDestinado({ ...base("fin04-replay-antes-0001"), dataPagamento: "2026-10-05" });
+  expect(novo).toEqual(antigo);
+  // Depois → antes (aba antiga ainda aberta repete a mesma tentativa): também é a mesma operação.
+  const primeiro = await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-05" });
+  expect(primeiro.ok, primeiro.ok ? "" : primeiro.erro).toBe(true);
+  expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-05T01:00:00.000Z" })).toEqual(primeiro);
+  expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-05" })).toEqual(primeiro);
+  expect(await prisma.recebimento.count({ where: { chaveIdempotencia: { in: ["fin04-replay-antes-0001", "fin04-replay-depois-0001"] } } })).toBe(2);
+  // Outro dia digitado com a mesma chave continua sendo outra operação.
+  expect(await registrarRecebimentoDestinado({ ...base("fin04-replay-depois-0001"), dataPagamento: "2026-10-06" })).toEqual({ ok: false, erro: "Identificador de pagamento já usado para outra operação." });
+});

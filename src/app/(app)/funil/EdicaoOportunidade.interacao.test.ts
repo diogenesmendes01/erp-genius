@@ -111,14 +111,25 @@ describe("DatasOportunidade", () => {
     t.digitar("op-datas-followup", "2026-10-25");
     t.digitar("op-datas-proposta", "2026-10-27");
     await t.clicar("Salvar datas");
-    expect(acoes.atualizarDatas).toHaveBeenCalledWith("op1", { proximoFollowUp: "2026-10-25", dataExperimental: "", dataProposta: "2026-10-27" });
+    expect(acoes.atualizarDatas).toHaveBeenCalledWith("op1", { proximoFollowUp: "2026-10-25", dataExperimental: "", fusoDataExperimental: "America/Sao_Paulo", dataProposta: "2026-10-27" });
     expect(refreshMock).toHaveBeenCalled();
   });
-  it("a experimental vai como instante (ISO), preservando a hora", async () => {
+  // Lote 3 do fuso pessoal: a experimental vai como o texto digitado + o fuso escrito ao lado do campo (pessoal; sem
+  // preferência, o da escola); o servidor converte. Antes: `new Date(valor)` no fuso do navegador.
+  it("a experimental vai como texto + fuso do campo, sem conversão no navegador; hora preservada", async () => {
     const t = montar(DatasOportunidade, { oportunidade: op, podeEditar: true, fuso: "America/Sao_Paulo" });
     t.digitar("op-datas-experimental", "2026-10-22T18:30");
     await t.clicar("Salvar datas");
-    expect(acoes.atualizarDatas).toHaveBeenCalledWith("op1", expect.objectContaining({ dataExperimental: new Date("2026-10-22T18:30").toISOString() }));
+    expect(acoes.atualizarDatas).toHaveBeenCalledWith("op1", expect.objectContaining({ dataExperimental: "2026-10-22T18:30", fusoDataExperimental: "America/Sao_Paulo" }));
+    const comPreferencia = montar(DatasOportunidade, { oportunidade: op, podeEditar: true, fuso: "America/Sao_Paulo", preferenciaFusoExibicao: "Asia/Tokyo" });
+    comPreferencia.digitar("op-datas-experimental", "2026-10-22T18:30");
+    await comPreferencia.clicar("Salvar datas");
+    expect(acoes.atualizarDatas).toHaveBeenLastCalledWith("op1", expect.objectContaining({ dataExperimental: "2026-10-22T18:30", fusoDataExperimental: "Asia/Tokyo" }));
+  });
+  it("valor inicial da experimental no fuso do campo (não no do navegador); fuso inválido cai em UTC sem quebrar", () => {
+    const comExperimental = { ...op, dataExperimental: "2026-10-23T01:30:00.000Z" } as typeof op;
+    expect(montar(DatasOportunidade, { oportunidade: comExperimental, podeEditar: true, fuso: "America/Sao_Paulo" }).valor("op-datas-experimental")).toBe("2026-10-22T22:30");
+    expect(montar(DatasOportunidade, { oportunidade: comExperimental, podeEditar: true, fuso: "Lua/Base" }).valor("op-datas-experimental")).toBe("2026-10-23T01:30");
   });
   it("sem permissão não há campos nem botão", () => {
     const t = montar(DatasOportunidade, { oportunidade: op, podeEditar: false, fuso: "America/Sao_Paulo" });

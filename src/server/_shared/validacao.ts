@@ -76,25 +76,22 @@ export const dataOpcional = z.preprocess(
 );
 
 /**
- * Converte uma string "YYYY-MM-DDTHH:mm" (vinda de <input type="datetime-local">,
- * sem fuso) em Date na HORA LOCAL informada. Diferente de {@link paraDataLocal},
- * NÃO ancora no meio-dia: a hora digitada é preservada (issue #16 — não descartar o
- * horário da experimental). Date-only ("YYYY-MM-DD") cai no meio-dia da escola via
- * {@link paraDataLocal}; qualquer outro valor passa inalterado.
+ * Valor de data COM hora. O texto de um <input type="datetime-local"> ("YYYY-MM-DDTHH:mm", sem fuso) é RECUSADO aqui:
+ * antes virava `new Date(ano, mes, …)`, no fuso do PROCESSO (UTC em produção), e a hora digitada em São Paulo
+ * gravava 3 horas adiantada. A conversão é explícita, no fuso que a tela escreveu ao lado do campo, ANTES do schema
+ * (`exigirInstanteDoCampoLocal`, src/server/_shared/campo-local.ts; lote 3 do fuso pessoal nas telas). Date-only
+ * ("YYYY-MM-DD") cai no meio-dia da escola via {@link paraDataLocal}; instante ISO e Date passam inalterados.
  */
 export function paraDataHoraLocal(v: unknown): unknown {
   if (typeof v === "string" && DATA_HORA_LOCAL.test(v)) {
-    const [data, hora] = v.split("T");
-    const [ano, mes, dia] = data.split("-").map(Number);
-    const [h, min, seg] = hora.split(":").map(Number);
-    return new Date(ano, mes - 1, dia, h, min, seg || 0, 0);
+    throw new Error("Data e hora digitadas sem fuso: converta com exigirInstanteDoCampoLocal antes de validar.");
   }
   return paraDataLocal(v);
 }
 
 /**
- * Campo opcional de data COM hora (datetime-local). Preserva o horário digitado;
- * aceita também date-only (ancorado no meio-dia da escola). Vazio → undefined.
+ * Campo opcional de data COM hora: instante (ISO/Date, já convertido do datetime-local no fuso explícito); aceita
+ * também date-only (ancorado no meio-dia da escola). Vazio → undefined. Texto de datetime-local sem fuso é recusado.
  */
 export const dataHoraOpcional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : paraDataHoraLocal(v)),
