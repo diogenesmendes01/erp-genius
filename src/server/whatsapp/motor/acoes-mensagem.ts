@@ -45,50 +45,123 @@ async function apagadaPeloAutor(mensagemId: string): Promise<boolean> {
   const m = await prisma.mensagemWhatsApp.findUnique({ where: { id: mensagemId }, select: { atendimentoId: true, apagadaEm: true, autorId: true, direcao: true } });
   if (!m?.apagadaEm || !m.atendimentoId || m.direcao !== "SAIDA" || m.autorId !== u.id) return false;
   if (!(await atendimentoVisivel(u, m.atendimentoId, true))) return false;
-  const evento = await prisma.evento.findFirst({
-    where: { tipo: "MensagemWhatsAppApagada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId, autorId: u.id, payload: { path: ["mensagemId"], equals: mensagemId } },
+  return eventoDeApagarDoAutor(prisma, m.atendimentoId, mensagemId, u.id);
+}
+
+async function eventoDeApagarDoAutor(db: Prisma.TransactionClient, atendimentoId: string, mensagemId: string, autorId: string): Promise<boolean> {
+  const evento = await db.evento.findFirst({
+    where: { tipo: "MensagemWhatsAppApagada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId, payload: { path: ["mensagemId"], equals: mensagemId } },
     select: { id: true },
   });
   return !!evento;
 }
 
+/** Respostas em que o motor afirma que NÃO executou: só elas autorizam dizer "tente de novo". */
+const MOTOR_NAO_EXECUTOU = new Set<CodigoErroMotor>(["SEM_CONFIG", "NAO_ENVIADO", "LIMITE_RITMO", "NAO_AUTORIZADO", "NUMERO_INEXISTENTE", "ACAO_NAO_DISPONIVEL"]);
+const MSG_ACAO_NAO_CONFIRMADA = "O WhatsApp não confirmou a ação, e ela pode já ter sido feita. Confira a conversa antes de repetir.";
+
+/**
+ * Erro do motor para a tela. Só a recusa explícita (o motor não executou) diz "tente de novo"; timeout, rede,
+ * `RESULTADO_INCERTO` e respostas não reconhecidas dizem que a ação pode já ter acontecido (B2 da R2 do #291).
+ */
 function traduzir(e: unknown): never {
   if (e instanceof ErroMotor) {
     if (e.codigo === "LIMITE_RITMO") throw new ErroRegra(MENSAGEM_LIMITE_RITMO);
-    throw new ErroRegra("O motor do WhatsApp não executou a ação. Tente de novo em instantes.");
+    if (MOTOR_NAO_EXECUTOU.has(e.codigo)) throw new ErroRegra("O motor do WhatsApp não executou a ação. Tente de novo em instantes.");
+    throw new ErroRegra(MSG_ACAO_NAO_CONFIRMADA);
   }
   throw e;
 }
 
 /** A última edição desta mensagem é de `autorId` e deixou exatamente `texto`? (#166) */
-async function ultimaEdicaoIgual(mensagemId: string, atendimentoId: string, autorId: string, texto: string): Promise<boolean> {
-  const ultima = await prisma.evento.findFirst({
+async function ultimaEdicaoIgual(db: Prisma.TransactionClient, mensagemId: string, atendimentoId: string, autorId: string, texto: string): Promise<boolean> {
+  const ultima = await db.evento.findFirst({
     where: { tipo: "MensagemWhatsAppEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, payload: { path: ["mensagemId"], equals: mensagemId } },
     orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true, payload: true },
   });
   return ultima?.autorId === autorId && (ultima.payload as { depois?: unknown }).depois === texto;
 }
 
+// Tentativa de editar ou apagar (B3 da R2 do #291): a TX1 trava a mensagem e o verbo, reconhece o que já foi feito e
+// grava `MensagemWhatsAppAcaoIniciada` antes do motor; a TX2 grava o desfecho. Um pedido que encontra a tentativa
+// sem desfecho (o primeiro ainda no motor, ou caiu entre o motor e a TX2) é recusado sem chamar o motor.
+const TIPO_ACAO_INICIADA = "MensagemWhatsAppAcaoIniciada";
+const TIPO_ACAO_INCERTA = "MensagemWhatsAppAcaoIncerta";
+const TIPO_ACAO_NAO_EXECUTADA = "MensagemWhatsAppAcaoNaoExecutada";
+const MSG_ACAO_PENDENTE = "Esta ação ainda não foi confirmada pelo WhatsApp. Confira a conversa antes de repetir.";
+type VerboMensagem = "editar" | "apagar";
+
+async function abrirTentativaAcao(
+  tx: Prisma.TransactionClient,
+  alvo: { mensagemId: string; atendimentoId: string; autorId: string; verbo: VerboMensagem; tipoFeito: string; payload?: Record<string, string> },
+): Promise<string> {
+  const { mensagemId, atendimentoId, autorId, verbo } = alvo;
+  const ultima = await tx.evento.findFirst({
+    where: { tipo: TIPO_ACAO_INICIADA, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, AND: [
+      { payload: { path: ["mensagemId"], equals: mensagemId } }, { payload: { path: ["verbo"], equals: verbo } }] },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true },
+  });
+  if (ultima) {
+    // Edição e apagamento não duplicam nada para o contato: depois de um desfecho (feito, incerto ou recusado),
+    // um pedido novo pode chamar o motor de novo. Sem desfecho, não.
+    const desfecho = await tx.evento.findFirst({
+      where: { tipo: { in: [alvo.tipoFeito, TIPO_ACAO_INCERTA, TIPO_ACAO_NAO_EXECUTADA] }, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId,
+        payload: { path: ["tentativaId"], equals: ultima.id } },
+      select: { id: true },
+    });
+    if (!desfecho) throw new ErroRegra(MSG_ACAO_PENDENTE);
+  }
+  const tentativa = await registrarEvento(tx, {
+    tipo: TIPO_ACAO_INICIADA, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId,
+    payload: { mensagemId, verbo, ...alvo.payload },
+  });
+  return tentativa.id;
+}
+
+async function travarAcaoMensagem(tx: Prisma.TransactionClient, mensagemId: string, verbo: VerboMensagem) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`msg-acao:${mensagemId}:${verbo}`}, 0))`;
+  return tx.mensagemWhatsApp.findUniqueOrThrow({ where: { id: mensagemId }, select: { corpo: true, editadaEm: true, apagadaEm: true } });
+}
+
+/** Falha do motor depois da tentativa gravada: registra o desfecho e devolve a mensagem certa à tela. */
+async function fecharTentativaComFalha(alvo: { mensagemId: string; atendimentoId: string; autorId: string; tentativaId: string }, e: unknown): Promise<never> {
+  const naoExecutou = e instanceof ErroMotor && MOTOR_NAO_EXECUTOU.has(e.codigo);
+  await prisma.$transaction((tx) => registrarEvento(tx, {
+    tipo: naoExecutou ? TIPO_ACAO_NAO_EXECUTADA : TIPO_ACAO_INCERTA, agregadoTipo: "AtendimentoWhatsApp", agregadoId: alvo.atendimentoId, autorId: alvo.autorId,
+    payload: { mensagemId: alvo.mensagemId, tentativaId: alvo.tentativaId, codigo: e instanceof ErroMotor ? e.codigo : "ERRO" },
+  }));
+  return traduzir(e instanceof ErroMotor ? e : new ErroMotor("RESULTADO_INCERTO", 0));
+}
+
 /**
  * Edita a própria mensagem de texto até 15 min depois do envio (message.edit no motor).
  * Idempotente por natureza (#166): se a última edição já deixou o mesmo texto, devolve ok sem chamar o motor nem
- * gravar outro Evento (antes das checagens de tipo e de janela, para o reenvio tardio também).
+ * gravar outro Evento (antes das checagens de tipo e de janela, para o reenvio tardio também). Dois pedidos
+ * simultâneos geram uma chamada ao motor: a tentativa é gravada antes dela, sob a trava da mensagem.
  */
 export async function editarMensagemWhatsApp(input: { mensagemId: string; texto: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = EditarSchema.parse(input);
     const { u, m, numeroRef, mensagemIdMotor } = await mensagemPropria(dados.mensagemId, "editar");
-    if (m.editadaEm && m.corpo === dados.texto && await ultimaEdicaoIgual(m.id, m.atendimentoId!, u.id, dados.texto)) return undefined;
-    if (m.tipo !== "TEXTO") throw new ErroRegra("Só é possível editar mensagens de texto.");
-    if (Date.now() - m.criadoEm.getTime() > JANELA_EDICAO_MS) throw new ErroRegra("Só é possível editar até 15 minutos após o envio.");
+    const atendimentoId = m.atendimentoId!;
+    const aberto = await prisma.$transaction(async (tx) => {
+      const atual = await travarAcaoMensagem(tx, m.id, "editar");
+      if (atual.editadaEm && atual.corpo === dados.texto && await ultimaEdicaoIgual(tx, m.id, atendimentoId, u.id, dados.texto)) return null;
+      if (atual.apagadaEm) throw new ErroRegra("Esta mensagem já foi apagada.");
+      if (m.tipo !== "TEXTO") throw new ErroRegra("Só é possível editar mensagens de texto.");
+      if (Date.now() - m.criadoEm.getTime() > JANELA_EDICAO_MS) throw new ErroRegra("Só é possível editar até 15 minutos após o envio.");
+      const tentativaId = await abrirTentativaAcao(tx, { mensagemId: m.id, atendimentoId, autorId: u.id, verbo: "editar", tipoFeito: "MensagemWhatsAppEditada", payload: { texto: dados.texto } });
+      return { tentativaId, antes: atual.corpo };
+    });
+    if (!aberto) return undefined;
     try {
       await executarAcaoMotor(numeroRef, "message.edit", { messageId: mensagemIdMotor, text: dados.texto }, { origem: "HUMANO" });
-    } catch (e) { traduzir(e); }
+    } catch (e) { await fecharTentativaComFalha({ mensagemId: m.id, atendimentoId, autorId: u.id, tentativaId: aberto.tentativaId }, e); }
     await prisma.$transaction(async (tx) => {
       await tx.mensagemWhatsApp.update({ where: { id: m.id }, data: { corpo: dados.texto, editadaEm: new Date() } });
       await registrarEvento(tx, {
-        tipo: "MensagemWhatsAppEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId!, autorId: u.id,
-        payload: { mensagemId: m.id, antes: m.corpo, depois: dados.texto },
+        tipo: "MensagemWhatsAppEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id,
+        payload: { mensagemId: m.id, antes: aberto.antes, depois: dados.texto, tentativaId: aberto.tentativaId },
       });
     });
     revalidatePath("/inbox");
@@ -99,21 +172,32 @@ export async function editarMensagemWhatsApp(input: { mensagemId: string; texto:
 /**
  * Apaga para todos a própria mensagem (message.delete no motor); o corpo fica guardado, só `apagadaEm` marca.
  * Idempotente por natureza (#166): se quem repete já a apagou pelo ERP, devolve ok sem chamar o motor nem gravar
- * outro Evento. Apagada fora do ERP (pelo celular), segue "já foi apagada".
+ * outro Evento. Apagada fora do ERP (pelo celular), segue "já foi apagada". Dois pedidos simultâneos geram uma
+ * chamada ao motor: a tentativa é gravada antes dela, sob a trava da mensagem.
  */
 export async function apagarMensagemWhatsApp(input: { mensagemId: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const dados = ApagarSchema.parse(input);
     if (await apagadaPeloAutor(dados.mensagemId)) return undefined;
     const { u, m, numeroRef, mensagemIdMotor } = await mensagemPropria(dados.mensagemId, "apagar");
+    const atendimentoId = m.atendimentoId!;
+    const tentativaId = await prisma.$transaction(async (tx) => {
+      const atual = await travarAcaoMensagem(tx, m.id, "apagar");
+      if (atual.apagadaEm) {
+        if (await eventoDeApagarDoAutor(tx, atendimentoId, m.id, u.id)) return null;
+        throw new ErroRegra("Esta mensagem já foi apagada.");
+      }
+      return abrirTentativaAcao(tx, { mensagemId: m.id, atendimentoId, autorId: u.id, verbo: "apagar", tipoFeito: "MensagemWhatsAppApagada" });
+    });
+    if (!tentativaId) return undefined;
     try {
       await executarAcaoMotor(numeroRef, "message.delete", { messageId: mensagemIdMotor, forEveryone: true }, { origem: "HUMANO" });
-    } catch (e) { traduzir(e); }
+    } catch (e) { await fecharTentativaComFalha({ mensagemId: m.id, atendimentoId, autorId: u.id, tentativaId }, e); }
     await prisma.$transaction(async (tx) => {
       await tx.mensagemWhatsApp.update({ where: { id: m.id }, data: { apagadaEm: new Date() } });
       await registrarEvento(tx, {
-        tipo: "MensagemWhatsAppApagada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId!, autorId: u.id,
-        payload: { mensagemId: m.id, mensagemIdMotor },
+        tipo: "MensagemWhatsAppApagada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id,
+        payload: { mensagemId: m.id, mensagemIdMotor, tentativaId },
       });
     });
     revalidatePath("/inbox");
@@ -158,10 +242,8 @@ const TIPO_TENTATIVA_ENCAMINHAR = "MensagemWhatsAppEncaminhamentoIniciado";
 const TIPO_ENCAMINHADA = "MensagemWhatsAppEncaminhada";
 const TIPO_ENCAMINHAMENTO_INCERTO = "MensagemWhatsAppEncaminhamentoIncerto";
 const TIPO_ENCAMINHAMENTO_NAO_ENVIADO = "MensagemWhatsAppEncaminhamentoNaoEnviado";
-const MSG_ENCAMINHAMENTO_EM_ANDAMENTO = "Este encaminhamento ainda está em andamento. Aguarde e confira a conversa de destino antes de repetir.";
+const MSG_ENCAMINHAMENTO_EM_ANDAMENTO = "O resultado deste encaminhamento ainda não foi confirmado. Confira a conversa de destino antes de repetir: a mensagem pode já ter chegado.";
 const MSG_ENCAMINHAMENTO_INCERTO = "O WhatsApp não confirmou o encaminhamento, e a mensagem pode já ter chegado. Confira a conversa de destino; para encaminhar de novo, feche e abra o encaminhamento.";
-/** Respostas em que o motor afirma que NÃO executou: só elas liberam nova tentativa com a mesma chave. */
-const MOTOR_NAO_EXECUTOU = new Set<CodigoErroMotor>(["SEM_CONFIG", "NAO_ENVIADO", "LIMITE_RITMO", "NAO_AUTORIZADO", "NUMERO_INEXISTENTE", "ACAO_NAO_DISPONIVEL"]);
 
 type Sessao = Awaited<ReturnType<typeof exigirSessao>>;
 

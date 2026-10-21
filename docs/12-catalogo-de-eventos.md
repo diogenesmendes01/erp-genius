@@ -126,7 +126,7 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > segunda transação, com `tentativaId` = id do `...Iniciado`: `MensagemWhatsAppEncaminhada`, `MensagemWhatsAppEncaminhamentoIncerto`
 > (timeout, rede ou resposta ambígua do motor; o reenvio da mesma chave é recusado sem chamar o motor) ou
 > `MensagemWhatsAppEncaminhamentoNaoEnviado` (o motor afirmou que não executou; a mesma chave pode tentar de novo). Sem
-> desfecho, o reenvio recebe "em andamento"),
+> desfecho, o reenvio recebe "não confirmado, confira a conversa" e o motor não é chamado),
 > `RestricaoAulasSolicitada` e `LiberacaoAulasSolicitada` do agregado `Matricula` (hash de matrícula, pedido e motivo) e
 > `LinkPagamentoEnviado` do agregado `Cobranca` (hash de cobrança e link). Em todos, a busca vem depois da sessão e do
 > papel e antes das validações de estado: o reenvio da mesma tentativa devolve o registro original mesmo com a origem
@@ -135,8 +135,14 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar nem chamar o motor; o estado vindo
 > de outra pessoa, do despachante ou do celular segue recusado): `AtendimentoAssumido` e `AtendimentoDevolvido` (o
 > último Evento de responsável do atendimento é o de quem repete), `AtendimentoEncerrado` (pelo Inbox; a linha é
-> travada), `ParticipanteRevogado`, `MensagemAgendadaCancelada`, `MensagemWhatsAppEditada` (a última edição já deixou
-> o mesmo texto) e `MensagemWhatsAppApagada`.
+> travada), `ParticipanteRevogado`, `MensagemAgendadaCancelada` (só quando a intenção tem agregado; sem ele não há
+> Evento para reconhecer e o reenvio segue "já cancelada"), `MensagemWhatsAppEditada` (a última edição já deixou
+> o mesmo texto) e `MensagemWhatsAppApagada`. Editar e apagar gravam antes do motor, sob a trava da mensagem e do verbo,
+> `MensagemWhatsAppAcaoIniciada` (`{ mensagemId, verbo, texto? }`); o desfecho leva `tentativaId`: `MensagemWhatsAppEditada`
+> ou `MensagemWhatsAppApagada`, `MensagemWhatsAppAcaoIncerta` (timeout, rede, resultado incerto) ou
+> `MensagemWhatsAppAcaoNaoExecutada` (o motor recusou). Pedido que encontra a tentativa sem desfecho é recusado sem
+> chamar o motor; depois de um desfecho, um pedido novo pode chamar o motor de novo (editar e apagar não duplicam nada
+> para o contato).
 
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |
