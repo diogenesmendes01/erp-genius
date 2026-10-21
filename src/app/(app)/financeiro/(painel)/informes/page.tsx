@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { listarFilaInformesPagamento } from "@/server/financeiro/consultas";
 import { cursorDaLeitura, lerNavegacao, validarNavegacao } from "@/lib/cursor-fila";
 import type { ParametrosUrl } from "@/lib/pagina-url";
@@ -25,12 +26,13 @@ export default async function InformesFinanceiroPage({ searchParams }: { searchP
       </p>
     );
   }
-  const [fila, preferencia] = await Promise.all([listarFilaInformesPagamento(validacao.nav), consultarPreferenciaFusoEquipe()]);
+  const [fila, preferencia, fusoEscola] = await Promise.all([listarFilaInformesPagamento(validacao.nav), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   return (
     <InformesPagamento
       informes={fila.itens}
       fila={{ anterior: fila.anterior, proxima: fila.proxima, rota: ROTA, inicioDaFila: cursorDaLeitura(nav) !== null ? ROTA : null }}
       preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
+      fusoEscola={fusoEscola}
     />
   );
 }

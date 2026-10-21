@@ -2,10 +2,13 @@ import { Papel } from "@prisma/client";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { painelIA } from "@/server/crm-config/ia";
 import { IaPainel } from "./IaPainel";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 export default async function Pagina() {
   await exigirSessaoPagina(Papel.ADMINISTRADOR);
-  const p = await painelIA();
+  const [p, preferencia, fusoEscola] = await Promise.all([painelIA(), consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   const { config } = p;
   return (
     <section aria-labelledby="titulo-secao">
@@ -20,6 +23,7 @@ export default async function Pagina() {
         }}
         orcamento={{ situacao: p.orcamento.situacao, gastoUsd: p.orcamento.gastoUsd, limiteUsd: p.orcamento.limiteUsd }}
         chamadas={p.chamadas}
+        fusoExibicao={resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, fusoEscola)}
       />
     </section>
   );

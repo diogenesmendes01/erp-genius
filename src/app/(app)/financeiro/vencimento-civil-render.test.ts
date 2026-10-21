@@ -67,9 +67,9 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
       // O 1º useState da fila é o detalhe aberto (`aberta`): os filtros saíram do estado local para a URL (E4).
       return [chamadasUseState === 1 ? item : resolverEstadoInicial(inicial), vi.fn()];
     });
-    const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})), dashs, regua, podeOperar: false, podeBloquear: false }));
+    const fila = renderToStaticMarkup(createElement(FilaCobranca, { itens: [item], totalFila: 1, filtros: lerFiltrosFila({}), opcoes: opcoesDaFila([item], lerFiltrosFila({})), dashs, regua, podeOperar: false, podeBloquear: false, fusoEscola: "America/Sao_Paulo" }));
     mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
-    const fichaRenderizada = renderToStaticMarkup(createElement(FichaFinanceira, { dados: ficha }));
+    const fichaRenderizada = renderToStaticMarkup(createElement(FichaFinanceira, { dados: ficha, fusoEscola: "America/Sao_Paulo" }));
     const migracaoRenderizada = renderToStaticMarkup(createElement(ConferenciaFinanceiraMigracao, { dados: migracao }));
 
     for (const html of [fila, fichaRenderizada, migracaoRenderizada]) {
@@ -88,8 +88,8 @@ describe("projeção civil de vencimento nas telas financeiras", () => {
       cobrancas: [{ ...ficha.cobrancas[0], regularizacaoIntegral: { escolha: "CREDITO", aplicadaEm: "2026-01-01T02:30:00.000Z", href: "/historico" } }],
     };
     mocks.useState.mockImplementation((inicial: unknown) => [resolverEstadoInicial(inicial), vi.fn()]);
-    const preferida = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: "America/Costa_Rica" }));
-    const fallback = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: null }));
+    const preferida = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: "America/Costa_Rica", fusoEscola: "America/Sao_Paulo" }));
+    const fallback = renderToStaticMarkup(createElement(FichaFinanceira, { dados, preferenciaFusoExibicao: null, fusoEscola: "America/Sao_Paulo" }));
 
     expect(preferida).toContain("31/12/2025, 20:30");
     expect(preferida).toContain("horário exibido em America/Costa_Rica; origem UTC");
