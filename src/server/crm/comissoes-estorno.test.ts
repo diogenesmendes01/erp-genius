@@ -6,9 +6,15 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   updateMany: vi.fn(),
   registrarEvento: vi.fn(),
+  ultimoEvento: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => {
-  const tx = { comissao: { findUnique: mocks.findUnique, updateMany: mocks.updateMany } };
+  // A situação é lida com a linha travada (`SELECT ... FOR UPDATE`, #166 5º lote); `findUnique` segue como a fonte do mock.
+  const tx = {
+    comissao: { updateMany: mocks.updateMany },
+    $queryRaw: async () => { const c = await mocks.findUnique(); return c ? [c] : []; },
+    evento: { findFirst: mocks.ultimoEvento },
+  };
   return { prisma: { $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx) } };
 });
 vi.mock("@/server/_shared/sessao", async (original) => ({
@@ -26,6 +32,7 @@ describe("estornarComissao (regras)", () => {
     mocks.findUnique.mockReset().mockResolvedValue({ status: "APROVADA" });
     mocks.updateMany.mockReset().mockResolvedValue({ count: 1 });
     mocks.registrarEvento.mockReset();
+    mocks.ultimoEvento.mockReset().mockResolvedValue(null);
   });
 
   it.each([Papel.FINANCEIRO, Papel.ADMINISTRADOR])("%s pode estornar", async (papel) => {
@@ -58,7 +65,19 @@ describe("estornarComissao (regras)", () => {
     como(Papel.FINANCEIRO);
     mocks.findUnique.mockResolvedValue({ status: "ESTORNADA" });
     expect(await estornarComissao({ id: "c1", motivo: "ERRO_LANCAMENTO" })).toEqual({ ok: false, erro: "Comissão já estornada." });
+    mocks.ultimoEvento.mockResolvedValue({ autorId: "outra-pessoa", payload: { motivo: "ERRO_LANCAMENTO" } });
+    expect(await estornarComissao({ id: "c1", motivo: "ERRO_LANCAMENTO" })).toEqual({ ok: false, erro: "Comissão já estornada." });
     expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("o mesmo estorno, já feito por quem repete, devolve ok sem gravar (#166)", async () => {
+    como(Papel.FINANCEIRO);
+    mocks.findUnique.mockResolvedValue({ status: "ESTORNADA" });
+    mocks.ultimoEvento.mockResolvedValue({ autorId: "u1", payload: { de: "APROVADA", motivo: "ERRO_LANCAMENTO" } });
+    expect(await estornarComissao({ id: "c1", motivo: "ERRO_LANCAMENTO" })).toEqual({ ok: true, dado: undefined });
+    expect(await estornarComissao({ id: "c1", motivo: "OUTRO", detalhe: "Outro" })).toEqual({ ok: false, erro: "Comissão já estornada." });
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(mocks.registrarEvento).not.toHaveBeenCalled();
   });
 
   it("motivo OUTRO exige texto (vazio ou só espaços é recusado)", async () => {

@@ -24,7 +24,9 @@ export function OptOutContato({ contatoId, nome, optOut, podeReautorizar, aoMuda
   const [confirmar, setConfirmar] = useState(false);
   const [evidencia, setEvidencia] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
-  const remover = useAcaoCliente({ idempotente: false });
+  // Registrar e remover são idempotentes por natureza (#166, 5º lote): o reenvio de quem fez a ação (na remoção, com
+  // a mesma evidência) devolve ok sem outro Evento (server/whatsapp/acoes.ts).
+  const remover = useAcaoCliente({ idempotente: true });
 
   async function reautorizar() {
     setAviso(null);
@@ -55,7 +57,7 @@ export function OptOutContato({ contatoId, nome, optOut, podeReautorizar, aoMuda
           folha
           titulo={`Registrar o opt-out de ${nome}?`}
           confirmacao="opt-out"
-          idempotente={false}
+          idempotente
           acao={() => registrarOptOutContato(contatoId)}
           aoConcluir={() => { setConfirmar(false); setAviso("Opt-out registrado: automações bloqueadas."); aoMudar?.(); }}
           aoCancelar={() => setConfirmar(false)}

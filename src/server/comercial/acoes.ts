@@ -56,6 +56,7 @@ import {
 import { Temperatura } from "@prisma/client";
 import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -567,6 +568,15 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu
     await exigirLeadVisivel(id, autor);
     const dados = PerdaSchema.parse(input);
     await prisma.$transaction(async (tx) => {
+      // Idempotência por natureza (#166, 5º lote): a mesma perda, já registrada por quem repete, com o mesmo motivo
+      // e a mesma observação, devolve ok sem outro `LeadPerdido` (antes, cada reenvio gravava um). A trava do lead
+      // serializa o clique duplo. Qualquer outro caso segue como antes.
+      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
+      const atual = await tx.oportunidade.findUnique({ where: { id }, select: { etapa: true } });
+      if (atual?.etapa === EtapaLead.PERDIDO) {
+        const p = await ultimoEventoDoAutor(tx, { tipo: "LeadPerdido", agregadoTipo: "Lead", agregadoId: id, autorId: autor.id });
+        if (p && p.motivoPerda === dados.motivoPerda && p.observacao === (dados.observacao || null)) return;
+      }
       await tx.oportunidade.update({
         where: { id },
         data: { etapa: EtapaLead.PERDIDO, motivoPerda: dados.motivoPerda },
@@ -662,36 +672,51 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     const autor = await exigirSessao();
     exigirPapel(autor, Papel.PROFESSOR);
 
-    const lead = await prisma.oportunidade.findUnique({ where: { id: leadId } });
-    if (!lead) throw new ErroRegra("Lead não encontrado.");
-
-    // 2) etapa/agendamento: só vale enquanto há uma experimental agendada
-    if (!podeCheckinExperimental(lead.etapa)) {
-      throw new ErroRegra("Não há experimental agendada para check-in neste lead.");
-    }
-
-    // 3) escopo: o professor precisa estar atribuído a esta experimental (FK).
-    //    Admin (passa em temPapel mas não é professor literal) ignora o vínculo.
-    const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
-    if (!ehAdmin) {
-      if (!professorNoEscopoExperimental(lead.professorExperimentalId, autor.id)) {
-        throw new ErroPermissao("Esta experimental não está atribuída a você.");
-      }
-    }
-
     const etapa = compareceu ? EtapaLead.EXPERIMENTAL_REALIZADA : EtapaLead.NO_SHOW;
     const proximaAcao = compareceu ? "Comercial: apresentar proposta" : "Remarcar experimental";
+    const tipo = compareceu ? "ExperimentalRealizada" : "NoShow";
 
-    await prisma.$transaction(async (tx) => {
+    // Tudo na transação, com o lead travado: o clique duplo é serializado (antes, os dois gravavam o Evento).
+    const repetido = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${leadId} FOR UPDATE`;
+      const lead = await tx.oportunidade.findUnique({ where: { id: leadId } });
+      if (!lead) throw new ErroRegra("Lead não encontrado.");
+
+      // 2) escopo: o professor precisa estar atribuído a esta experimental (FK).
+      //    Admin (passa em temPapel mas não é professor literal) ignora o vínculo.
+      const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
+      if (!ehAdmin) {
+        if (!professorNoEscopoExperimental(lead.professorExperimentalId, autor.id)) {
+          throw new ErroPermissao("Esta experimental não está atribuída a você.");
+        }
+      }
+
+      // Idempotência por natureza (#166, 5º lote): o mesmo check-in, já registrado por quem repete, devolve ok sem
+      // gravar de novo. Vem antes da etapa, que o próprio check-in já mudou.
+      if (lead.etapa === etapa) {
+        const ultimo = await tx.evento.findFirst({
+          where: { agregadoTipo: "Lead", agregadoId: leadId, tipo: { in: ["ExperimentalRealizada", "NoShow"] } },
+          orderBy: { criadoEm: "desc" }, select: { tipo: true, autorId: true },
+        });
+        if (ultimo?.tipo === tipo && ultimo.autorId === autor.id) return true;
+      }
+
+      // 3) etapa/agendamento: só vale enquanto há uma experimental agendada
+      if (!podeCheckinExperimental(lead.etapa)) {
+        throw new ErroRegra("Não há experimental agendada para check-in neste lead.");
+      }
+
       await tx.oportunidade.update({ where: { id: leadId }, data: { etapa, proximaAcao } });
       await registrarEvento(tx, {
-        tipo: compareceu ? "ExperimentalRealizada" : "NoShow",
+        tipo,
         agregadoTipo: "Lead",
         agregadoId: leadId,
         autorId: autor.id,
         payload: { data: new Date().toISOString() },
       });
+      return false;
     });
+    if (repetido) return;
     revalidatePath("/home");
     revalidatePath("/funil");
   });
