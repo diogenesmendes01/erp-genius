@@ -13,7 +13,7 @@ import {
 import { formatarMoeda, formatarMoedaParaCampo, formatarValores, parseMoeda, type ValorMoeda } from "@/lib/dinheiro";
 import { rotuloVencimento, type VencimentoVisivel } from "@/lib/vencimento-civil";
 import { ajustarCobranca } from "@/server/ajustes/acoes";
-import { formatarDiaCivilGravado, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarDiaCivilGravado, formatarDiaDoPagamento, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Modal } from "@/components/Modal";
@@ -108,8 +108,10 @@ export interface FichaFinanceiraDados {
 }
 
 /**
- * `fusoEscola`: promessa e data do pagamento são datas civis gravadas (meio-dia da escola); saem no dia da escola,
- * sem fuso pessoal. Instantes (envio, conferência) seguem a preferência pessoal.
+ * `fusoEscola`: a promessa é data civil gravada e sai no dia da escola (`formatarDiaCivilGravado`). O último
+ * pagamento (`Cobranca.pagoEm`) é misto: data digitada ou instante real (ajuste, desistência, baixa sem data);
+ * sai pelo `formatarDiaDoPagamento`, o dia da escola para os dois. Nenhum dos dois usa o fuso pessoal.
+ * Instantes (envio, conferência) seguem a preferência pessoal.
  */
 export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEscola }: { dados: FichaFinanceiraDados; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const router = useRouter();
@@ -145,7 +147,7 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile titulo="Próximo vencimento" valor={t.proximoVenc ? formatarMoeda(t.proximoVenc.valor, t.proximoVenc.moeda) : "—"} sub={t.proximoVenc ? rotuloVencimento(t.proximoVenc.vencimento) : ""} />
-        <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? formatarDiaCivilGravado(t.ultimoPago.data, fusoEscola) : ""} />
+        <Tile titulo="Último pagamento" valor={t.ultimoPago ? formatarMoeda(t.ultimoPago.valor, t.ultimoPago.moeda) : "—"} sub={t.ultimoPago ? formatarDiaDoPagamento(t.ultimoPago.data, fusoEscola) : ""} />
         <Tile titulo="Em aberto" valor={formatarValores(t.emAberto)} />
         <Tile titulo="Em atraso" valor={formatarValores(t.emAtraso)} cls={t.emAtraso.some((v) => v.valor > 0) ? "text-red-600" : ""} />
       </div>

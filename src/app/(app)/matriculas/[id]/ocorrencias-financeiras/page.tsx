@@ -5,11 +5,13 @@ import { consultarOcorrenciasFinanceiras } from "@/server/matricula/ocorrencia-f
 import { ConferenciaHoras } from "./ConferenciaHoras";
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ cursor?: string }> }) {
   await exigirSessaoPagina(Papel.FINANCEIRO);
   const { id } = await params, { cursor } = await searchParams;
-  const r = await consultarOcorrenciasFinanceiras({ matriculaId: id, cursor });
+  const [r, preferencia] = await Promise.all([consultarOcorrenciasFinanceiras({ matriculaId: id, cursor }), consultarPreferenciaFusoEquipe()]);
+  const preferenciaFusoExibicao = preferencia.ok ? preferencia.dado?.fusoExibicao ?? null : null;
   if (!r.ok || !r.dado) return <p role="alert">{r.ok ? "Consulta indisponível." : r.erro}</p>;
   const d = r.dado;
   return <div className="space-y-4">
@@ -22,7 +24,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     {!d.encontros.length && (cursor
       ? <EstadoVazio bloco acao={<Link href={`/matriculas/${id}/ocorrencias-financeiras`} className="underline">Ir para a primeira página</Link>}>Nenhum encontro particular nesta página.</EstadoVazio>
       : <EstadoVazio bloco>Nenhum encontro particular registrado para esta matrícula.</EstadoVazio>)}
-    {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} />)}
+    {d.encontros.map(e => <ConferenciaHoras key={e.conferencia?.id ?? `${e.id}:${e.ocorrencia?.id ?? "sem-informe"}`} encontro={e} condicoes={d.condicoes} matricula={d.matricula} preferenciaFusoExibicao={preferenciaFusoExibicao} />)}
     {d.proximoCursor && <Link href={`/matriculas/${id}/ocorrencias-financeiras?cursor=${encodeURIComponent(d.proximoCursor)}`} className="underline">Próximos encontros</Link>}
   </div>;
 }

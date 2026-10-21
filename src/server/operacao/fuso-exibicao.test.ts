@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatarDiaCivilGravado, formatarInstanteExibicao, fusoInicialDeEntrada, resolverFusoExibicao } from "./fuso-exibicao";
+import { formatarDiaCivilGravado, formatarDiaDaEscola, formatarDiaDoPagamento, formatarInstanteExibicao, fusoInicialDeEntrada, resolverFusoExibicao } from "./fuso-exibicao";
 
 // docs/43 §6 item 6: o valor inicial de um campo de fuso de entrada.
 describe("fusoInicialDeEntrada", () => {
@@ -66,5 +66,43 @@ describe("formatarDiaCivilGravado: data civil gravada (promessa, pagamento) no d
     expect(formatarDiaCivilGravado("2026-10-05T00:00:00.000Z", "")).toBe("05/10/2026");
     expect(formatarDiaCivilGravado("x", "America/Sao_Paulo")).toBe("x");
     expect(formatarDiaCivilGravado(null, "America/Sao_Paulo")).toBe("—");
+  });
+});
+
+describe("formatarDiaDoPagamento: pagoEm/dataPagamento misto (data civil digitada ou instante real)", () => {
+  it("data digitada (meio-dia ou meia-noite da escola) sai no próprio dia", () => {
+    expect(formatarDiaDoPagamento("2026-10-05T15:00:00.000Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento("2026-10-05T03:00:00.000Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento("2026-10-05T03:00:00.000Z", "Asia/Tokyo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento("2026-10-04T15:00:00.000Z", "Asia/Tokyo")).toBe("05/10/2026");
+  });
+
+  it("gravação legada à meia-noite UTC é data civil: não recua um dia", () => {
+    expect(formatarDiaDoPagamento("2026-10-05T00:00:00.000Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento(new Date("2026-10-05T00:00:00.000Z"), "America/Costa_Rica")).toBe("05/10/2026");
+  });
+
+  it("instante real (ajuste, desistência, baixa sem data) sai no dia da escola, não no dia seguinte", () => {
+    // 05/10 às 22:30 em São Paulo: diaCivilGravado daria 06/10 (dia UTC), a review do #286 reproduziu
+    expect(formatarDiaDoPagamento("2026-10-06T01:30:00.000Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento("2026-10-06T01:30:00.123Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento("2026-10-05T23:59:59.999Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDoPagamento("2026-10-05T16:00:00.000Z", "Asia/Tokyo")).toBe("06/10/2026");
+  });
+
+  it("não usa a preferência pessoal; fuso da escola inválido cai no dia UTC; ausente e inválido", () => {
+    expect(formatarDiaDoPagamento("2026-10-06T01:30:00.000Z", "")).toBe("06/10/2026");
+    expect(formatarDiaDoPagamento("x", "America/Sao_Paulo")).toBe("x");
+    expect(formatarDiaDoPagamento(null, "America/Sao_Paulo")).toBe("—");
+    expect(formatarDiaDoPagamento(undefined, "America/Sao_Paulo", "")).toBe("");
+  });
+});
+
+describe("formatarDiaDaEscola: dia da escola sem lançar", () => {
+  it("dia da escola; fuso inválido cai no dia UTC; inválido e ausente", () => {
+    expect(formatarDiaDaEscola("2026-10-06T01:30:00.000Z", "America/Sao_Paulo")).toBe("05/10/2026");
+    expect(formatarDiaDaEscola("2026-10-06T01:30:00.000Z", "Fuso/Invalido")).toBe("06/10/2026");
+    expect(formatarDiaDaEscola("x", "America/Sao_Paulo")).toBe("x");
+    expect(formatarDiaDaEscola(null, "America/Sao_Paulo")).toBe("—");
   });
 });
