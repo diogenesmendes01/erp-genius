@@ -70,6 +70,10 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # Fase 2 — página de pagamento SIMULADA: "1" só em dev/demo, NUNCA em produção.
       PAGAMENTO_SIMULADO: ${PAGAMENTO_SIMULADO:-}
+      # Assinatura eletrônica (Q155): vazio = registro manual do assinado. "simulado" SÓ em UAT/demo: envio e
+      # cancelamento usam o driver SIMULADO (nada é enviado ao cliente; processos ficam SIMULADO/SANDBOX e as
+      # telas avisam). Não existe driver de fornecedor real ainda.
+      ASSINATURA_DRIVER: ${ASSINATURA_DRIVER:-}
       # Motor WhatsApp na rede interna do compose (nunca a internet).
       MOTOR_URL: http://motor:4317
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no Coolify}

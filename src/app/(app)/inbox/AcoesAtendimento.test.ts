@@ -6,7 +6,7 @@ import { Papel, DriverWhatsApp } from "@prisma/client";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.fn(), atribuirAtendimento: vi.fn(), convidarParticipante: vi.fn(), devolverParaFila: vi.fn(), revogarParticipante: vi.fn(), transferirAtendimento: vi.fn() }));
-vi.mock("@/server/whatsapp/acoes-conversa", () => ({ agendarMensagemNoAtendimento: vi.fn(), cancelarAgendamentoDoAtendimento: vi.fn(), registrarNotaAtendimento: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes-conversa", () => ({ agendarMensagemNoAtendimentoLocal: vi.fn(), agendarMensagemNoAtendimento: vi.fn(), cancelarAgendamentoDoAtendimento: vi.fn(), registrarNotaAtendimento: vi.fn() }));
 vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ listarConvitesEAgendamentos: vi.fn(() => new Promise(() => {})), listarPessoasParaAtendimento: vi.fn(), origemVisivelDaTransferencia: vi.fn() }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ encerrarAtendimentoWhatsApp: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
@@ -75,13 +75,18 @@ describe("AcoesAtendimento", () => {
 });
 
 describe("agendar recusa horário passado na própria tela", () => {
-  const agora = new Date("2026-10-17T12:00:00");
-  it("vazio, inválido, passado e agora são recusados; futuro passa", () => {
-    expect(validarQuando("", agora)).not.toBeNull();
-    expect(validarQuando("xx", agora)).not.toBeNull();
-    expect(validarQuando("2026-10-17T11:59", agora)).toBe("Escolha um horário no futuro.");
-    expect(validarQuando("2026-10-17T12:00", agora)).toBe("Escolha um horário no futuro.");
-    expect(validarQuando("2026-10-17T12:01", agora)).toBeNull();
+  // Lote 3 do fuso pessoal: o horário é lido no fuso escrito ao lado do campo, não no do navegador. `agora` é um
+  // instante absoluto; as expectativas passam em TZ=UTC e America/Sao_Paulo.
+  const agora = new Date("2026-10-17T15:00:00Z"); // 12:00 em São Paulo
+  it("vazio, inválido, passado e agora são recusados; futuro passa — no fuso do campo", () => {
+    expect(validarQuando("", "America/Sao_Paulo", agora)).not.toBeNull();
+    expect(validarQuando("xx", "America/Sao_Paulo", agora)).not.toBeNull();
+    expect(validarQuando("2026-10-17T11:59", "America/Sao_Paulo", agora)).toBe("Escolha um horário no futuro.");
+    expect(validarQuando("2026-10-17T12:00", "America/Sao_Paulo", agora)).toBe("Escolha um horário no futuro.");
+    expect(validarQuando("2026-10-17T12:01", "America/Sao_Paulo", agora)).toBeNull();
+    // O mesmo texto em UTC é 3 horas antes: já passou.
+    expect(validarQuando("2026-10-17T12:01", "UTC", agora)).toBe("Escolha um horário no futuro.");
+    expect(validarQuando("2026-10-17T12:01", "Fuso/Invalido", agora)).toMatch(/fuso válido/);
   });
 });
 
