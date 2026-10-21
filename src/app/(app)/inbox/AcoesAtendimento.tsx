@@ -17,7 +17,9 @@ import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
 import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
-import { agendarMensagemNoAtendimento, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { fusoDoCampoLocal, instanteDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { listarConvitesEAgendamentos, listarPessoasParaAtendimento, type AgendamentoAtivo, type ConviteAtivo } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "@/server/whatsapp/operacoes-atendimento";
 import { alternarFixada, silenciarConversa } from "@/server/whatsapp/preferencias";
@@ -46,12 +48,16 @@ export interface PropsAcoesAtendimento {
 const SILENCIO_HORAS = 8;
 const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
-/** Horário de agendamento: vazio, inválido ou que não é futuro são recusados na própria tela (a action revalida). */
-export function validarQuando(quando: string, agora: Date = new Date()): string | null {
+/**
+ * Horário de agendamento, lido no `fuso` escrito ao lado do campo (não no do navegador): vazio, inválido (inclusive
+ * horário pulado ou repetido no horário de verão) ou que não é futuro são recusados na própria tela. Quem converte
+ * de verdade é o servidor (agendarMensagemNoAtendimentoLocal), que revalida.
+ */
+export function validarQuando(quando: string, fuso: string, agora: Date = new Date()): string | null {
   if (!quando) return "Escolha o dia e a hora do envio.";
-  const t = new Date(quando).getTime();
-  if (Number.isNaN(t)) return "Data e hora inválidas.";
-  if (t <= agora.getTime()) return "Escolha um horário no futuro.";
+  const r = instanteDoCampoLocal(quando, fuso);
+  if (!r.ok) return r.erro;
+  if (r.instante.getTime() <= agora.getTime()) return "Escolha um horário no futuro.";
   return null;
 }
 
@@ -106,7 +112,7 @@ export function AcoesAtendimento({ atendimento, usuario, setoresDoNumero, fixada
       {dialogo === "convidar" && <DialogoPessoa atendimentoId={atendimento.id} modo="convidar" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Convite enviado.")} />}
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
-      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
+      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
       {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} fuso={fuso} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
@@ -281,7 +287,8 @@ function DialogoNota({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { a
   );
 }
 
-function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string }) {
+/** `fuso`: o de exibição do Inbox (pessoal; sem preferência, o da escola), escrito ao lado do campo. */
+function DialogoAgendar({ atendimentoId, fuso, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; fuso: string }) {
   // agendarMensagemNoAtendimento recebe chave de idempotência (#166): o reenvio não agenda um segundo envio ao contato.
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
@@ -290,10 +297,10 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
   const [erroQuando, setErroQuando] = useState<string | null>(null);
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const erro = validarQuando(quando);
+    const erro = validarQuando(quando, fuso);
     setErroQuando(erro);
     if (erro) return;
-    const d = await acao.executar(() => agendarMensagemNoAtendimento({ atendimentoId, texto, quando: new Date(quando).toISOString(), chaveIdempotencia: tentativa.atual }));
+    const d = await acao.executar(() => agendarMensagemNoAtendimentoLocal({ atendimentoId, texto, quandoLocal: quando, fuso, chaveIdempotencia: tentativa.atual }));
     tentativa.depoisDo(d);
     if (d?.tipo === "ok") aoConcluir();
   }
@@ -304,7 +311,7 @@ function DialogoAgendar({ atendimentoId, aoFechar, aoConcluir }: PropsDialogo & 
           {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={4} maxLength={4000} value={texto} onChange={(e) => setTexto(e.target.value)} />}
         </Campo>
         <Campo rotulo="Enviar em" obrigatorio erro={erroQuando}>
-          {(c) => <input {...c} type="datetime-local" className={CLASSE_CONTROLE} value={quando} onChange={(e) => { setQuando(e.target.value); setErroQuando(null); }} />}
+          {(c) => <CampoDataHoraLocal {...c} fuso={fuso} className={CLASSE_CONTROLE} value={quando} onChange={(e) => { setQuando(e.target.value); setErroQuando(null); }} />}
         </Campo>
         <FeedbackAcao erro={acao.erro} />
         <Rodape ocupado={acao.ocupado} aoFechar={aoFechar}><Botao type="submit" ocupado={acao.ocupado} disabled={!texto.trim()}>Agendar</Botao></Rodape>

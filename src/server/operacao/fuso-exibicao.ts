@@ -67,9 +67,9 @@ export function formatarDiaCivilGravado(valor: Date | string | null | undefined,
  * Dia de um campo de pagamento de semântica MISTA (`Cobranca.pagoEm`, `Recebimento.dataPagamento`, data do
  * informe). Ele guarda a data digitada, a gravação legada à meia-noite UTC ou um instante real (`new Date()`/
  * `agora` na baixa sem data, no ajuste que quita, na desistência; o instante histórico da baixa da migração).
- * A data digitada NÃO tem um formato só: `registrarPagamento`/ativação gravam o meio-dia da ESCOLA (por
- * `paraDataLocal`), mas o recebimento destinado (FIN-04, `RecebimentoDestinadoForm.tsx`) grava o meio-dia do
- * NAVEGADOR (`new Date(\`${data}T12:00:00\`)`, aceito por `z.coerce.date()` em `financeiro/acoes.ts`).
+ * A data digitada é gravada ao meio-dia da ESCOLA (`paraDataLocal`): em `registrarPagamento`/ativação e, a partir
+ * do #290, também no recebimento destinado (FIN-04). Registros ANTIGOS do FIN-04 (e o primeiro envio de um
+ * formulário antigo ainda aberto logo depois do deploy) guardam o meio-dia do NAVEGADOR.
  * Normalizar na gravação não é local: o mesmo valor alimenta `Recebimento.dataPagamento`, o hash de idempotência
  * e filtros por período. Por isso a leitura distingue:
  * - exatamente 00:00:00.000 UTC → data civil legada, o dia UTC (não recua um dia a oeste de Greenwich);
@@ -77,11 +77,11 @@ export function formatarDiaCivilGravado(valor: Date | string | null | undefined,
  *   meia-noite) da escola é o próprio dia; para um instante, o dia em que ele ocorreu na escola.
  * Limites:
  * - um instante real exatamente à meia-noite UTC, com milissegundo zero, é lido como data civil;
- * - FIN-04 com o navegador a ~12h ou mais a LESTE da escola (a rigor, mais de 12h; ex.: escola em São Paulo,
- *   navegador em Sydney): o meio-dia do navegador cai no dia ANTERIOR da escola, e a data sai um dia antes; com o
- *   navegador 12h ou mais a OESTE (escola em Tóquio, navegador em São Paulo), sai um dia depois. Com escolas no Brasil e nos EUA operadas dali, não acontece. A correção é no gravador
- *   (o form manda a data AAAA-MM-DD e o servidor a lê com `analisarComDatasDaEscola`, cuidando do `hashDados` nos
- *   reenvios) e vai num follow-up (lote 3), não aqui.
+ * - registros ANTIGOS do FIN-04 com o navegador a mais de 12h a LESTE da escola (ex.: escola em São Paulo,
+ *   navegador em Sydney): o meio-dia do navegador cai no dia ANTERIOR da escola, e a data sai um dia antes; a mais
+ *   de 12h a OESTE, um dia depois. Desde o #290 o gravador manda AAAA-MM-DD e o servidor grava o meio-dia da escola
+ *   (`analisarComDatasDaEscola`); o replay da mesma chave compara com o dia que a escola vê no registro existente
+ *   (`mesmaDataDigitadaNaEscola`, src/server/financeiro/recebimentos.ts).
  * Sem fuso pessoal: o dia do pagamento não muda conforme quem lê. Fuso da escola inválido usa o dia UTC.
  */
 export function diaCivilDoPagamento(gravada: Date, fusoEscola: string): string {
