@@ -56,28 +56,66 @@ async function cancelarIntencoesDoResponsavel(tx: Tx, atendimentoId: string, res
   });
 }
 
+/** Eventos que mudam o responsável do atendimento: o último deles diz quem deixou o estado atual. */
+const TIPOS_RESPONSAVEL = ["AtendimentoAssumido", "AtendimentoDevolvido", "AtendimentoAtribuido"];
+
+/**
+ * #166: o estado-alvo já foi alcançado por quem repete? Confere o último Evento do agregado entre `tipos`: ele
+ * precisa ser `tipo` e deste autor. Se o estado veio de outra pessoa (ou de fora do ERP), a ação segue recusada.
+ */
+async function ultimoEventoEhDoAutor(tx: Tx, alvo: { agregadoId: string; tipos: string[]; tipo: string; autorId: string; payload?: Record<string, string | null> }): Promise<boolean> {
+  const ultimo = await tx.evento.findFirst({
+    where: { agregadoTipo: "AtendimentoWhatsApp", agregadoId: alvo.agregadoId, tipo: { in: alvo.tipos } },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { tipo: true, autorId: true, payload: true },
+  });
+  if (!ultimo || ultimo.tipo !== alvo.tipo || ultimo.autorId !== alvo.autorId) return false;
+  const payload = (ultimo.payload ?? {}) as Record<string, unknown>;
+  return Object.entries(alvo.payload ?? {}).every(([k, v]) => payload[k] === v);
+}
+
 /** Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional). */
+/** O atendimento já é de `u` porque `u` o assumiu por último (#166): o reenvio não grava outro Evento. */
+async function jaAssumidoPor(tx: Tx, id: string, u: { id: string }): Promise<boolean> {
+  const atual = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { responsavelId: true, encerradoEm: true } });
+  if (atual?.responsavelId !== u.id || atual.encerradoEm) return false;
+  return ultimoEventoEhDoAutor(tx, { agregadoId: id, tipos: TIPOS_RESPONSAVEL, tipo: "AtendimentoAssumido", autorId: u.id, payload: { para: u.id } });
+}
+
+/**
+ * Assume da fila: só vence quem encontra o atendimento aberto e sem responsável (UPDATE condicional).
+ * Idempotente por natureza (#166): o reenvio de quem já o assumiu devolve ok sem outro Evento. Se o atendimento
+ * chegou a quem repete por atribuição de outra pessoa, ou está com outro, segue "já assumiu".
+ */
 export async function assumirAtendimento(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const id = IdSchema.parse(atendimentoId);
     const a = await atendimentoVisivel(u, id);
     if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
+    if (a.responsavelId === u.id && !a.encerradoEm && await prisma.$transaction((tx) => jaAssumidoPor(tx, id, u))) return;
     if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
     if (a.responsavelId !== null) throw new ErroRegra(MSG_JA_ASSUMIDO);
     if (!podeExecutar(u, "assumir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
-    await prisma.$transaction(async (tx) => {
+    const repetido = await prisma.$transaction(async (tx) => {
       const status = proximoStatus(a.status, "ASSUMIDO", true);
       const r = await tx.atendimentoWhatsApp.updateMany({ where: { id, responsavelId: null, encerradoEm: null }, data: { responsavelId: u.id, status } });
-      if (r.count !== 1) throw new ErroRegra(MSG_JA_ASSUMIDO);
+      // Clique duplo: o UPDATE do segundo espera o primeiro confirmar e não acha mais a fila.
+      if (r.count !== 1) {
+        if (await jaAssumidoPor(tx, id, u)) return true;
+        throw new ErroRegra(MSG_JA_ASSUMIDO);
+      }
       await exigirResponsavelEnxerga(tx, id, u);
       await registrarEvento(tx, { tipo: "AtendimentoAssumido", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: u.id, payload: { de: null, para: u.id } });
+      return false;
     });
-    revalidatePath("/inbox");
+    if (!repetido) revalidatePath("/inbox");
   });
 }
 
-/** Devolve à fila: zera o responsável, volta a ABERTO_SEM_RESPONSAVEL e cancela as intenções humanas pendentes dele. */
+/**
+ * Devolve à fila: zera o responsável, volta a ABERTO_SEM_RESPONSAVEL e cancela as intenções humanas pendentes dele.
+ * Idempotente por natureza (#166): se quem repete foi quem devolveu por último, devolve ok sem outro Evento.
+ */
 export async function devolverParaFila(atendimentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -87,7 +125,10 @@ export async function devolverParaFila(atendimentoId: string): Promise<Resultado
       const a = await atendimentoVisivel(u, id, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
-      if (a.responsavelId === null) throw new ErroRegra("Este atendimento já está na fila.");
+      if (a.responsavelId === null) {
+        if (await ultimoEventoEhDoAutor(tx, { agregadoId: id, tipos: TIPOS_RESPONSAVEL, tipo: "AtendimentoDevolvido", autorId: u.id })) return;
+        throw new ErroRegra("Este atendimento já está na fila.");
+      }
       if (!podeExecutar(u, "devolver", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
       const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id }, select: { status: true, responsavelId: true } });
       const anterior = atual.responsavelId;
@@ -130,6 +171,7 @@ const TransferirSchema = z.object({
   destino: z.enum(SETORES as [Setor, ...Setor[]]),
   destinoChave: z.string().min(1).nullable(),
   contexto: z.string().trim().min(12, "Descreva o contexto da transferência (mínimo de 12 caracteres).").max(1000),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 
 /**
@@ -166,12 +208,24 @@ async function resolverDestino(tx: Tx, destino: Setor, chave: string | null, tel
   return null;
 }
 
-/** Transferir = encerrar a origem e abrir outro atendimento no setor de destino (E3.3); o contexto da origem nunca muda. */
-export async function transferirAtendimento(input: { atendimentoId: string; destino: Setor; destinoChave: string | null; contexto: string }): Promise<Resultado<{ novoAtendimentoId: string }>> {
+/**
+ * Transferir = encerrar a origem e abrir outro atendimento no setor de destino (E3.3); o contexto da origem nunca muda.
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve o atendimento novo já aberto. A busca roda
+ * antes das validações de estado: com a origem já encerrada, o reenvio tardio recebe o mesmo atendimento.
+ */
+export async function transferirAtendimento(input: { atendimentoId: string; destino: Setor; destinoChave: string | null; contexto: string; chaveIdempotencia?: string }): Promise<Resultado<{ novoAtendimentoId: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
-    const dados = TransferirSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = TransferirSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
     const novoId = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra transferência. Confira os atendimentos da conversa antes de repetir.",
+        });
+        if (repetido) return String((repetido.payload as { novoId?: unknown }).novoId);
+      }
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${dados.atendimentoId} FOR UPDATE`;
       const a = await atendimentoVisivel(u, dados.atendimentoId, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
@@ -195,7 +249,7 @@ export async function transferirAtendimento(input: { atendimentoId: string; dest
       } catch (e) { comoErroRegra(e); }
       if (antes.has(novo.id)) throw new ErroRegra("Já existe um atendimento aberto neste setor e contexto para esta conversa.");
       if (!novo.atendimentoOrigemId) novo = await tx.atendimentoWhatsApp.update({ where: { id: novo.id }, data: { atendimentoOrigemId: a.id } });
-      const payload = { de: a.finalidade, para: dados.destino, origemId: a.id, novoId: novo.id, contexto: dados.contexto };
+      const payload = { de: a.finalidade, para: dados.destino, origemId: a.id, novoId: novo.id, contexto: dados.contexto, ...marca };
       for (const agregadoId of [a.id, novo.id]) {
         await registrarEvento(tx, { tipo: "AtendimentoTransferido", agregadoTipo: "AtendimentoWhatsApp", agregadoId, autorId: u.id, payload });
       }
@@ -280,7 +334,11 @@ async function avisarRevogado(tx: Prisma.TransactionClient, atendimento: { id: s
   await tx.$executeRaw`SELECT pg_notify(${CANAL_INBOX}, ${JSON.stringify(aviso)})`;
 }
 
-/** Revoga na hora (revogadoEm = agora, sem delete). Quem revoga: o concedente, o gerente do setor ou o administrador. */
+/**
+ * Revoga na hora (revogadoEm = agora, sem delete). Quem revoga: o concedente, o gerente do setor ou o administrador.
+ * Idempotente por natureza (#166): o reenvio de quem revogou devolve ok sem outro Evento; revogado por outra pessoa,
+ * segue recusado.
+ */
 export async function revogarParticipante(participanteId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -292,7 +350,15 @@ export async function revogarParticipante(participanteId: string): Promise<Resul
       if (!permitido) throw new ErroRegra(MSG_SEM_ALCADA);
       const agora = new Date();
       const r = await tx.participanteAtendimentoWhatsApp.updateMany({ where: { id, revogadoEm: null }, data: { revogadoEm: agora } });
-      if (r.count !== 1) throw new ErroRegra("Este convite já foi revogado.");
+      if (r.count !== 1) {
+        // #166: o reenvio de quem revogou devolve ok sem outro Evento (o UPDATE do clique duplo espera o primeiro).
+        const revogacao = await tx.evento.findFirst({
+          where: { tipo: "ParticipanteRevogado", agregadoTipo: "AtendimentoWhatsApp", agregadoId: p.atendimento.id, payload: { path: ["participanteId"], equals: id } },
+          select: { autorId: true },
+        });
+        if (revogacao?.autorId === u.id) return;
+        throw new ErroRegra("Este convite já foi revogado.");
+      }
       await avisarMudancaDeEscopo(tx, p.atendimento.id);
       await avisarRevogado(tx, p.atendimento, p.usuarioId);
       // Como devolver/atribuir: o que o revogado deixou pendente ou agendado fica CANCELADA, a menos que ele

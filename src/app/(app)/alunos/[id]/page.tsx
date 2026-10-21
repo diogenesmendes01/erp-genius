@@ -15,6 +15,7 @@ import { exigirSessaoPagina } from "@/server/_shared";
 import { nomeCompleto } from "@/lib/nome";
 import { impedimentoFluxoGlobal } from "@/server/matricula/limite-legado";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 
 export default async function AlunoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,7 +33,7 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
     podeEditarCadastroAluno(usuario) ? listarPaisesOperacionais() : Promise.resolve([]),
   ]);
   if (!dados) notFound();
-  const preferencia = await consultarPreferenciaFusoEquipe();
+  const [preferencia, fusoEscola] = await Promise.all([consultarPreferenciaFusoEquipe(), fusoDaEscola()]);
   const podeMovimentarGlobal = podeMovimentarAluno(usuario) && !await impedimentoFluxoGlobal(prisma, id);
   const { aluno, financeiro } = dados;
   const papeis = usuario.papeis;
@@ -144,6 +145,8 @@ export default async function AlunoDetalhePage({ params }: { params: Promise<{ i
           emitidoEmISO: c.emitidoEm.toISOString(),
         }))}
         podeEditar={podeMovimentarAluno(usuario)}
+        preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
+        fusoEscola={fusoEscola}
       />
     )}
     </div>

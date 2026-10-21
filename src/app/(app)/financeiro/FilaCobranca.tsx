@@ -15,7 +15,7 @@ import { enfileirarCobrancaWhatsApp, aprovarLoteCobranca, type EnvioApiResultado
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
-import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarDiaCivilGravado, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useDialogo } from "@/lib/dialogo";
 import { formatarCompetencia } from "@/lib/data-civil";
@@ -67,12 +67,12 @@ function chipCls(item: FilaCobrancaItem): string {
 }
 
 // Rótulo curto da próxima ação na linha (ex.: "D+7 · cobrar · há 7d").
-function rotuloAcaoCurto(item: FilaCobrancaItem): string {
+function rotuloAcaoCurto(item: FilaCobrancaItem, fusoEscola: string): string {
   if (item.estado === "em_conferencia") return "comprovante a conferir";
   if (item.precisaBloqueio) return `bloqueio pendente · há ${item.diasAtraso}d`;
   if (item.acessoBloqueado) return "acesso bloqueado";
   if (item.estado === "promessa" && item.promessaAte) {
-    return `promessa · paga ${new Date(item.promessaAte).toLocaleDateString("pt-BR")}`;
+    return `promessa · paga ${formatarDiaCivilGravado(item.promessaAte, fusoEscola)}`;
   }
   if (item.estado === "concluida") return "régua concluída";
   if (item.estado === "futuro") return "a vencer";
@@ -108,6 +108,7 @@ export function FilaCobranca({
   inicioDaFila = null,
   podeOperar,
   preferenciaFusoExibicao = null,
+  fusoEscola,
 }: {
   /** Cobranças do trecho exibido da visão atual (filtradas, ordenadas e recortadas no servidor). */
   itens: FilaCobrancaItem[];
@@ -127,6 +128,8 @@ export function FilaCobranca({
   podeOperar: boolean;
   podeBloquear: boolean;
   preferenciaFusoExibicao?: string | null;
+  /** Promessa é data civil gravada (meio-dia da escola): sai no dia da escola, sem fuso pessoal. */
+  fusoEscola: string;
 }) {
   const router = useRouter();
   const [aberta, setAberta] = useState<FilaCobrancaItem | null>(null);
@@ -446,7 +449,7 @@ export function FilaCobranca({
                   {item.envio?.status === "FALHOU" && (
                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-700">envio falhou</span>
                   )}
-                  <span className={"rounded-full px-2 py-0.5 text-[11px] " + chipCls(item)}>{rotuloAcaoCurto(item)}</span>
+                  <span className={"rounded-full px-2 py-0.5 text-[11px] " + chipCls(item)}>{rotuloAcaoCurto(item, fusoEscola)}</span>
                   <AcaoRapida
                     item={item}
                     podeOperar={podeOperar}
@@ -478,6 +481,7 @@ export function FilaCobranca({
           regua={regua}
           podeOperar={podeOperar}
           preferenciaFusoExibicao={preferenciaFusoExibicao}
+          fusoEscola={fusoEscola}
           onClose={() => setAberta(null)}
           onEnviarApi={() => pedirEnvioViaApi(aberta)}
           onPrepararManual={(texto) => prepararEnvioManual(aberta, texto)}
@@ -615,6 +619,7 @@ export function DetalheCobranca({
   regua,
   podeOperar,
   preferenciaFusoExibicao,
+  fusoEscola,
   onClose,
   onEnviarApi,
   onPrepararManual,
@@ -626,6 +631,7 @@ export function DetalheCobranca({
   regua: DegrauFila[];
   podeOperar: boolean;
   preferenciaFusoExibicao: string | null;
+  fusoEscola: string;
   onClose: () => void;
   onEnviarApi: () => void;
   onPrepararManual: (texto: string) => Promise<string | null>;
@@ -772,7 +778,7 @@ export function DetalheCobranca({
         {item.estado === "em_conferencia" && item.conferenciaAte && <p className="rounded bg-blue-50 p-3 text-sm text-blue-700">Lembretes suspensos para conferência até {textoInstanteOperacional(item.conferenciaAte, preferenciaFusoExibicao)}. O pagamento ainda não foi confirmado.</p>}
         {item.estado === "promessa" && item.promessaAte && (
           <div className="mx-5 mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-700">
-            Promessa de pagamento até {new Date(item.promessaAte).toLocaleDateString("pt-BR")} — fora da fila até lá.
+            Promessa de pagamento até {formatarDiaCivilGravado(item.promessaAte, fusoEscola)} — fora da fila até lá.
           </div>
         )}
 
