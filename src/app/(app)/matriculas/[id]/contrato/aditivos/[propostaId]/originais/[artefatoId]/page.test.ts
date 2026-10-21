@@ -92,6 +92,12 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(html).toContain("Simulado (nenhum documento sai do ERP)");
     mocks.processo.mockResolvedValue(processo("ENVIO_INCERTO"));
     expect(await render()).toContain("[CONCILIAR:proc]");
+    // ENVIANDO recente: a criação pode estar em voo, sem conciliação; vencido, com conciliação.
+    const enviando = (iniciadaEm: Date) => ({ ok: true, dado: { ...processo("ENVIANDO").dado, tentativaAtual: 1, tentativas: [{ numero: 1, iniciadaEm, temMaisObservacoes: false, paginaObservacoes: 1, observacoes: [] }] } });
+    mocks.processo.mockResolvedValue(enviando(new Date()));
+    expect(await render()).not.toContain("[CONCILIAR");
+    mocks.processo.mockResolvedValue(enviando(new Date(Date.now() - 11 * 60_000)));
+    expect(await render()).toContain("[CONCILIAR:proc]");
     mocks.processo.mockResolvedValue(processo("PREPARADO", "ZAPSIGN"));
     html = await render();
     expect(html).not.toContain("[ENVIAR");

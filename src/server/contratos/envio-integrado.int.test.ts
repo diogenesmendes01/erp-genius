@@ -22,6 +22,8 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { prepararFixtureSubstituicaoContratual } from "@/test/substituicao-contratual";
 import { conciliarEnvioAssinatura, consultarIntegracaoAssinatura, enviarContratoParaAssinatura } from "./envio";
 import { provedorAssinaturaAtivo } from "./provedor-assinatura-ativo";
+import { hashEvidenciaAssinatura } from "./provedor-assinatura";
+import { referenciaSimulada } from "./provedor-assinatura-simulado";
 
 let base: Awaited<ReturnType<typeof prepararFixtureSubstituicaoContratual>>;
 const driverAnterior = process.env.ASSINATURA_DRIVER;
@@ -106,6 +108,10 @@ it("resposta perdida vira ENVIO_INCERTO; só a conciliação pela chave da tenta
     } finally { simulado.consultarPorChave = consultar; }
   }
   expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: processo.id } })).toMatchObject({ estado: "ENVIO_INCERTO", referenciaExterna: null });
+  const tentativaId = (await prisma.tentativaEnvioAssinatura.findFirstOrThrow({ where: { processoId: processo.id } })).id;
+  const recusada = await prisma.observacaoEnvioAssinatura.findFirstOrThrow({ where: { tentativaId }, orderBy: [{ registradaEm: "desc" }, { id: "desc" }] });
+  expect(recusada).toMatchObject({ resultado: "INCERTO", referenciaExterna: null, evidenciaHash: hashEvidenciaAssinatura({ motivo: "ENVELOPE_RECUSADO_NO_SERVICO",
+    referenciaExterna: referenciaSimulada(`tentativa:${tentativaId}`), situacao: "RECUSADO", original: { simulado: true } }) });
   expect(await conciliarEnvioAssinatura({ matriculaId: "outra", processoId: processo.id })).toMatchObject({ ok: false });
   expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id, chaveIdempotencia: "conciliacao-contrato-1" })).toMatchObject({ ok: true, dado: { estado: "ENVIADO", repetido: false } });
   expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id, chaveIdempotencia: "conciliacao-contrato-1" })).toMatchObject({ ok: true, dado: { estado: "ENVIADO", repetido: true } });
@@ -116,4 +122,47 @@ it("resposta perdida vira ENVIO_INCERTO; só a conciliação pela chave da tenta
   expect(await prisma.envelopeAssinaturaSimulado.count()).toBe(1);
   const conciliacao = await prisma.evento.findFirstOrThrow({ where: { tipo: "ResultadoEnvioAssinaturaRegistrado", autorId: base.secretariaId, payload: { path: ["chaveIdempotencia"], equals: "conciliacao-contrato-1" } } });
   expect(conciliacao.payload).toMatchObject({ estado: "ENVIADO", resultado: "REGISTRADO" });
+});
+
+it("corrida (B-1): conciliação durante a criação em voo é recusada sem gravar nada; um só envelope e o segundo envio recusado", async () => {
+  process.env.ASSINATURA_DRIVER = "simulado";
+  const simulado = provedorAssinaturaAtivo()!;
+  const criar = simulado.criarEnvelope.bind(simulado);
+  let conciliacao: unknown = null, observacoesNaCorrida = -1;
+  simulado.criarEnvelope = async (envelope) => {
+    const p = await prisma.processoAssinaturaContratual.findFirstOrThrow({ where: { matriculaId: base.matriculaId } });
+    conciliacao = await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: p.id });
+    observacoesNaCorrida = await prisma.observacaoEnvioAssinatura.count();
+    return criar(envelope);
+  };
+  try {
+    expect(await enviarContratoParaAssinatura(alvo())).toMatchObject({ ok: true, dado: { tentativa: 1, estado: "ENVIADO" } });
+  } finally { simulado.criarEnvelope = criar; }
+  expect(conciliacao).toMatchObject({ ok: false, erro: expect.stringContaining("Envio em andamento") });
+  expect(observacoesNaCorrida).toBe(0);
+  expect(await enviarContratoParaAssinatura({ ...alvo(), chaveIdempotencia: "nova-chave-corrida" })).toMatchObject({ ok: false });
+  expect(await prisma.envelopeAssinaturaSimulado.count()).toBe(1);
+  const processo = await prisma.processoAssinaturaContratual.findFirstOrThrow({ where: { matriculaId: base.matriculaId } });
+  expect(processo).toMatchObject({ estado: "ENVIADO", tentativaAtual: 1 });
+  expect(processo.referenciaExterna).toBe((await prisma.envelopeAssinaturaSimulado.findFirstOrThrow()).referenciaExterna);
+});
+
+it("ENVIANDO vencido e AUSENTE no serviço volta a PREPARADO; ENVIANDO recente é recusado sem gravar", async () => {
+  process.env.ASSINATURA_DRIVER = "simulado";
+  const { prepararProcessoEnvioTx, iniciarTentativaAssinaturaTx } = await import("./envio-tx");
+  // Queda entre a transação da tentativa e a chamada externa: ENVIANDO sem envelope no serviço.
+  const processo = await prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { ...alvo(), executorId: base.secretariaId, fornecedor: "SIMULADO", ambiente: "SANDBOX" }));
+  const tentativa = await prisma.$transaction(tx => iniciarTentativaAssinaturaTx(tx, { processoId: processo.id, executorId: base.secretariaId }));
+  const pedido = { matriculaId: base.matriculaId, processoId: processo.id };
+  expect(await conciliarEnvioAssinatura(pedido)).toMatchObject({ ok: false, erro: expect.stringMatching(/Envio em andamento.*10 min/) });
+  expect(await prisma.observacaoEnvioAssinatura.count()).toBe(0);
+  await prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica");
+    await tx.$executeRaw`UPDATE "TentativaEnvioAssinatura" SET "iniciadaEm" = now() - interval '11 minutes' WHERE id = ${tentativa.tentativaId}`;
+  });
+  expect(await conciliarEnvioAssinatura(pedido)).toMatchObject({ ok: true, dado: { estado: "PREPARADO" } });
+  expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: processo.id } })).toMatchObject({ estado: "PREPARADO", referenciaExterna: null });
+  // Com a ausência provada, o envio pode seguir numa tentativa nova.
+  expect(await enviarContratoParaAssinatura({ ...alvo(), chaveIdempotencia: "depois-da-ausencia" })).toMatchObject({ ok: true, dado: { tentativa: 2, estado: "ENVIADO" } });
+  expect(await prisma.envelopeAssinaturaSimulado.count()).toBe(1);
 });

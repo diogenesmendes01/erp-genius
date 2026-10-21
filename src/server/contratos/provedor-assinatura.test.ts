@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cancelarEnvelopeSemPresumir, consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, DestinoAssinaturaSchema,
-  hashEvidenciaAssinatura, resultadoConciliacaoEnvio, type ProvedorAssinatura, type SituacaoEnvelope,
+  hashEvidenciaAssinatura, resultadoConciliacaoEnvio, conciliacaoLiberada, PRAZO_CONCILIACAO_ENVIANDO_MS, TIMEOUT_CRIACAO_ENVELOPE_MS, type ProvedorAssinatura, type SituacaoEnvelope,
 } from "./provedor-assinatura";
 import { armazemSimuladoEmMemoria, criarProvedorSimulado, referenciaSimulada } from "./provedor-assinatura-simulado";
 import { lerDriverAssinatura } from "./provedor-assinatura-ativo";
@@ -46,7 +46,8 @@ describe("provedor simulado", () => {
     expect(await p.cancelarEnvelope(referenciaExterna)).toMatchObject({ resultado: "NAO_CANCELAVEL" });
     const b = await p.criarEnvelope(envelope({ chave: "tentativa:t2" })) as { referenciaExterna: string };
     expect(await p.cancelarEnvelope(b.referenciaExterna)).toMatchObject({ resultado: "CANCELADO" });
-    expect(await p.cancelarEnvelope(b.referenciaExterna)).toMatchObject({ resultado: "CANCELADO", evidencia: { repetido: true } });
+    // Repetição devolve exatamente a mesma evidência (o hash gravado não varia entre chamadas iguais).
+    expect(await p.cancelarEnvelope(b.referenciaExterna)).toEqual({ resultado: "CANCELADO", evidencia: { simulado: true } });
     expect(await p.consultarPorChave("tentativa:t2")).toMatchObject({ situacao: "CANCELADO" });
     expect(await p.cancelarEnvelope("desconhecida")).toMatchObject({ resultado: "INCERTO", evidencia: { motivo: "REFERENCIA_DESCONHECIDA" } });
   });
@@ -63,6 +64,10 @@ describe("chamadas sem presunção", () => {
     expect(await criarEnvelopeSemPresumir(quebrado, envelope())).toEqual({ resultado: "INCERTO", evidencia: { motivo: "EXCECAO_DRIVER", mensagem: "timeout" } });
     expect(await consultarEnvelopeSemPresumir(quebrado, "tentativa:t1")).toMatchObject({ resultado: "INCERTO", evidencia: { motivo: "EXCECAO_DRIVER" } });
     expect(await cancelarEnvelopeSemPresumir(quebrado, "sim_x")).toMatchObject({ resultado: "INCERTO", evidencia: { motivo: "EXCECAO_DRIVER" } });
+  });
+  it("criação que passa do prazo é INCERTO (timeout explícito do port)", async () => {
+    const lento = { ...simulado(), criarEnvelope: () => new Promise(() => {}) } as unknown as ProvedorAssinatura;
+    expect(await criarEnvelopeSemPresumir(lento, envelope(), 20)).toEqual({ resultado: "INCERTO", evidencia: { motivo: "EXCECAO_DRIVER", mensagem: "TIMEOUT_CRIACAO_ENVELOPE" } });
   });
   it("referência vazia não confirma criação nem localização", async () => {
     const vazio = { ...simulado(),
@@ -95,6 +100,20 @@ describe("conciliação do envio pela situação do envelope (R1 C2)", () => {
   });
 });
 
+describe("conciliação liberada (B-1 da revisão rigorosa)", () => {
+  const agora = new Date("2026-10-21T12:00:00Z");
+  it("o prazo de ENVIANDO é maior que o timeout da criação", () => {
+    expect(PRAZO_CONCILIACAO_ENVIANDO_MS).toBeGreaterThan(TIMEOUT_CRIACAO_ENVELOPE_MS);
+  });
+  it("ENVIO_INCERTO sempre; ENVIANDO só depois do prazo; outros estados nunca", () => {
+    expect(conciliacaoLiberada("ENVIO_INCERTO", agora, agora)).toEqual({ liberada: true });
+    expect(conciliacaoLiberada("ENVIANDO", new Date(agora.getTime() - 60_000), agora)).toEqual({ liberada: false, minutos: 9 });
+    expect(conciliacaoLiberada("ENVIANDO", new Date(agora.getTime() - PRAZO_CONCILIACAO_ENVIANDO_MS), agora)).toEqual({ liberada: true });
+    expect(conciliacaoLiberada("ENVIANDO", null, agora)).toEqual({ liberada: false, minutos: null });
+    expect(conciliacaoLiberada("ENVIADO", agora, agora)).toEqual({ liberada: false, minutos: null });
+  });
+});
+
 describe("destino do processo", () => {
   it("SIMULADO só existe em SANDBOX", () => {
     expect(DestinoAssinaturaSchema.safeParse({ fornecedor: "SIMULADO", ambiente: "SANDBOX" }).success).toBe(true);
@@ -106,13 +125,16 @@ describe("destino do processo", () => {
 
 describe("driver ativo (ASSINATURA_DRIVER)", () => {
   afterEach(() => vi.restoreAllMocks());
-  it("vazio é registro manual; simulado só por valor explícito; desconhecido falha alto", () => {
+  it("vazio é registro manual; simulado só por valor explícito; desconhecido falha alto sem expor o valor", () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(lerDriverAssinatura({})).toEqual({ tipo: "MANUAL" });
     expect(lerDriverAssinatura({ ASSINATURA_DRIVER: "  " })).toEqual({ tipo: "MANUAL" });
     expect(lerDriverAssinatura({ ASSINATURA_DRIVER: "simulado", NODE_ENV: "test" })).toEqual({ tipo: "SIMULADO" });
     expect(lerDriverAssinatura({ ASSINATURA_DRIVER: " SIMULADO " })).toEqual({ tipo: "SIMULADO" });
     expect(() => lerDriverAssinatura({ ASSINATURA_DRIVER: "zapsign" })).toThrow(/Q155/);
-    expect(() => lerDriverAssinatura({ ASSINATURA_DRIVER: "1" })).toThrow(/ASSINATURA_DRIVER/);
+    expect(() => lerDriverAssinatura({ ASSINATURA_DRIVER: "valor-secreto" })).toThrow(/mal configurada/);
+    expect(() => lerDriverAssinatura({ ASSINATURA_DRIVER: "valor-secreto" })).not.toThrow(/valor-secreto/);
+    expect(erro).toHaveBeenCalledWith(expect.stringContaining("valor-secreto"));
   });
   it("em produção o simulado continua explícito e avisa no log, sem se passar por fornecedor real", () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
