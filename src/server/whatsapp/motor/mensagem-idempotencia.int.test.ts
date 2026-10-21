@@ -2,12 +2,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 
 // #166 (6º lote): comandos do menu da mensagem que saem pelo motor.
-// - Encaminhar recebe chave: o reenvio da mesma tentativa não encaminha de novo ao contato.
+// - Encaminhar recebe chave: o reenvio da mesma tentativa não encaminha de novo ao contato. A tentativa é gravada
+//   antes da chamada ao motor e o resultado depois, sem transação aberta durante a chamada (B1 da R1 do #291).
 // - Editar com o mesmo texto e apagar a mensagem já apagada por quem repete devolvem ok sem chamar o motor
 //   nem gravar outro Evento.
 
-const { authMock, acao } = vi.hoisted(() => ({ authMock: vi.fn(), acao: vi.fn() }));
-vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
+// Sessão: só `exigirSessao` é trocada (como empresas/empresa-idempotencia.int.test.ts), para os envios simultâneos
+// não esbarrarem no `import()` duplo do NextAuth mockado; os papéis continuam lidos do banco.
+const { sessao, acao } = vi.hoisted(() => ({ sessao: { usuarioId: "" }, acao: vi.fn() }));
+vi.mock("@/server/_shared/sessao", async (original) => {
+  const o = await original<typeof import("@/server/_shared/sessao")>();
+  const exigirSessao = async () => {
+    const u = await o.carregarUsuarioFresco(sessao.usuarioId);
+    if (!u) throw new o.ErroAutenticacao();
+    return u;
+  };
+  return { ...o, exigirSessao, exigirSessaoComPapel: async (...papeis: Papel[]) => { const u = await exigirSessao(); o.exigirPapel(u, ...papeis); return u; } };
+});
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("./acoes", () => ({ executarAcaoMotor: acao }));
 
@@ -16,9 +27,11 @@ import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "../atendimentos";
 import { apagarMensagemWhatsApp, editarMensagemWhatsApp, encaminharMensagemWhatsApp } from "./acoes-mensagem";
+import { ErroMotor, MENSAGEM_LIMITE_RITMO } from "./cliente";
 
-beforeEach(async () => { await truncarBanco(); authMock.mockReset(); acao.mockReset(); acao.mockResolvedValue({}); });
-const comoUsuario = async <T,>(u: { id: string }, f: () => Promise<T>) => { authMock.mockResolvedValue({ user: { id: u.id } }); return f(); };
+beforeEach(async () => { await truncarBanco(); sessao.usuarioId = ""; acao.mockReset(); acao.mockResolvedValue({}); });
+const comoUsuario = async <T,>(u: { id: string }, f: () => Promise<T>) => { sessao.usuarioId = u.id; return f(); };
+const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const contar = (tipo: string) => prisma.evento.count({ where: { tipo } });
 const chamadas = (verbo: string) => acao.mock.calls.filter((c) => c[1] === verbo).length;
 
@@ -83,6 +96,67 @@ describe("encaminharMensagemWhatsApp com chave (#166)", () => {
     expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).ok).toBe(true);
     expect((await comoUsuario(outro, () => encaminharMensagemWhatsApp(entrada))).ok).toBe(false);
     expect(chamadas("message.forward")).toBe(1);
+  });
+});
+
+describe("encaminhar com chave: tentativa antes do motor, resultado depois (B1/C2 da R1 do #291)", () => {
+  it("motor lento: nenhuma transação fica aberta; o reenvio no meio recebe 'em andamento' e o posterior, ok", async () => {
+    const { autor, m, destino } = await cenario();
+    const dest = await destino("+50688880002");
+    // Mais que o timeout padrão (5 s) de uma transação interativa do Prisma: com a transação presa, a gravação falharia.
+    acao.mockImplementation(async () => { await espera(6_000); return { key: { id: "FWD-LENTO" } }; });
+    const entrada = { mensagemId: m.id, atendimentoDestinoId: dest.id, chaveIdempotencia: "chave-fwd-lento" };
+    const primeiro = comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada));
+    while (!(await prisma.evento.count({ where: { tipo: "MensagemWhatsAppEncaminhamentoIniciado" } }))) await espera(50);
+    const noMeio = await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada));
+    expect(noMeio.ok).toBe(false);
+    if (!noMeio.ok) expect(noMeio.erro).toMatch(/em andamento/);
+    expect((await primeiro).ok).toBe(true);
+    expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).ok).toBe(true);
+    expect(chamadas("message.forward")).toBe(1);
+    expect(await contar("MensagemWhatsAppEncaminhada")).toBe(1);
+  }, 60_000);
+
+  it("dois envios simultâneos com a mesma chave encaminham uma vez só", async () => {
+    const { autor, m, destino } = await cenario();
+    const dest = await destino("+50688880002");
+    acao.mockImplementation(async () => { await espera(1_500); return { key: { id: "FWD-SIMULT" } }; });
+    const entrada = { mensagemId: m.id, atendimentoDestinoId: dest.id, chaveIdempotencia: "chave-fwd-simult" };
+    sessao.usuarioId = autor.id;
+    const rs = await Promise.all([encaminharMensagemWhatsApp(entrada), encaminharMensagemWhatsApp(entrada)]);
+    expect(rs.some((r) => r.ok), JSON.stringify(rs)).toBe(true);
+    for (const r of rs) if (!r.ok) expect(r.erro).toMatch(/em andamento/);
+    expect(chamadas("message.forward")).toBe(1);
+    expect(await contar("MensagemWhatsAppEncaminhada")).toBe(1);
+    expect(await contar("MensagemWhatsAppEncaminhamentoIniciado")).toBe(1);
+  }, 60_000);
+
+  it("timeout do motor vira incerto; o reenvio da mesma chave não encaminha de novo", async () => {
+    const { autor, m, destino } = await cenario();
+    const dest = await destino("+50688880002");
+    acao.mockRejectedValue(new ErroMotor("TIMEOUT", 0));
+    const entrada = { mensagemId: m.id, atendimentoDestinoId: dest.id, chaveIdempotencia: "chave-fwd-incerto" };
+    const r1 = await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada));
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) expect(r1.erro).toMatch(/não confirmou/);
+    expect(await contar("MensagemWhatsAppEncaminhamentoIncerto")).toBe(1);
+    acao.mockResolvedValue({ key: { id: "FWD-NAO" } });
+    expect(await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).toEqual(r1);
+    expect(chamadas("message.forward")).toBe(1);
+    expect(await contar("MensagemWhatsAppEncaminhada")).toBe(0);
+  });
+
+  it("recusa explícita do motor (limite de ritmo) libera nova tentativa com a mesma chave", async () => {
+    const { autor, m, destino } = await cenario();
+    const dest = await destino("+50688880002");
+    acao.mockRejectedValueOnce(new ErroMotor("LIMITE_RITMO", 409, "limite_ritmo"));
+    const entrada = { mensagemId: m.id, atendimentoDestinoId: dest.id, chaveIdempotencia: "chave-fwd-ritmo" };
+    expect(await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).toEqual({ ok: false, erro: MENSAGEM_LIMITE_RITMO });
+    expect(await contar("MensagemWhatsAppEncaminhamentoNaoEnviado")).toBe(1);
+    expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).ok).toBe(true);
+    expect((await comoUsuario(autor, () => encaminharMensagemWhatsApp(entrada))).ok).toBe(true);
+    expect(chamadas("message.forward")).toBe(2);
+    expect(await contar("MensagemWhatsAppEncaminhada")).toBe(1);
   });
 });
 

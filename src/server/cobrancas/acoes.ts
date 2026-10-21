@@ -99,6 +99,9 @@ async function solicitarAcesso(matriculaId: string, bloquear: boolean, motivo?: 
     const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(opcoes?.chaveIdempotencia), dados);
     const solicitacaoId = await prisma.$transaction(async (tx) => {
       if (marca) {
+        // Trava comum aos dois pedidos (C4 da R1 do #291): a de `repeticaoIdempotente` inclui o tipo, e restringir e
+        // liberar com a mesma chave ao mesmo tempo não se esperariam.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`idem:acesso-aulas:${autor.id}:${marca.chaveIdempotencia}`}, 0))`;
         const repetido = await repeticaoIdempotente(tx, {
           tipo: bloquear ? "RestricaoAulasSolicitada" : "LiberacaoAulasSolicitada", agregadoTipo: "Matricula", autorId: autor.id, marca,
           mensagemConflito: MSG_CONFLITO_ACESSO,

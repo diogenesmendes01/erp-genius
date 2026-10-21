@@ -4,25 +4,27 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // #207 (C4 da R1 e C2 da R2): as ações que tomam `FOR UPDATE` numa transação interativa conferem o escopo NELA.
 // Com o pool de UMA conexão, qualquer checagem que pedisse outra conexão ficaria esperando a da própria transação e
 // cairia no pool_timeout. Este arquivo cria o cliente com connection_limit=1 (antes de importar o prisma).
-const { authMock } = vi.hoisted(() => {
+const { authMock, motor } = vi.hoisted(() => {
   const url = new URL(process.env.DATABASE_URL!);
   url.searchParams.set("connection_limit", "1");
   url.searchParams.set("pool_timeout", "3");
   process.env.DATABASE_URL = url.toString();
   (globalThis as { prisma?: unknown }).prisma = undefined;
-  return { authMock: vi.fn() };
+  return { authMock: vi.fn(), motor: vi.fn() };
 });
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
+vi.mock("./motor/acoes", () => ({ executarAcaoMotor: motor }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
-import { atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "./acoes-atendimento";
+import { assumirAtendimento, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "./acoes-atendimento";
 import { registrarNotaAtendimento } from "./acoes-conversa";
-import { revisarFalhaEnvio } from "./operacoes-atendimento";
+import { encerrarAtendimentoWhatsApp, revisarFalhaEnvio } from "./operacoes-atendimento";
+import { encaminharMensagemWhatsApp } from "./motor/acoes-mensagem";
 
-beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
+beforeEach(async () => { await truncarBanco(); authMock.mockReset(); motor.mockReset(); });
 const como = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
 
 async function cenario() {
@@ -69,6 +71,42 @@ describe("ações do atendimento com pool de uma conexão", () => {
     como(v1);
     const r = await transferirAtendimento({ atendimentoId: a.id, destino: "SECRETARIA", destinoChave: null, contexto: "Dúvida sobre documentos da matrícula" });
     expect(r.ok).toBe(true);
+  });
+
+  // #166 (R1 do #291): os caminhos de repetição também leem na transação.
+  it("transferir com chave e o reenvio da mesma tentativa", async () => {
+    const { v1, a } = await cenario();
+    como(v1);
+    const entrada = { atendimentoId: a.id, destino: "SECRETARIA" as const, destinoChave: null, contexto: "Dúvida sobre documentos da matrícula", chaveIdempotencia: "chave-pool-transf" };
+    const r = await transferirAtendimento(entrada);
+    expect(r.ok).toBe(true);
+    expect(await transferirAtendimento(entrada)).toEqual(r);
+  });
+
+  it("devolver, assumir e encerrar repetidos por quem fez a ação", async () => {
+    const { v1, gc, a } = await cenario();
+    como(v1);
+    expect(await devolverParaFila(a.id)).toEqual({ ok: true });
+    expect(await devolverParaFila(a.id)).toEqual({ ok: true });
+    expect(await assumirAtendimento(a.id)).toEqual({ ok: true });
+    expect(await assumirAtendimento(a.id)).toEqual({ ok: true });
+    como(gc);
+    expect(await encerrarAtendimentoWhatsApp(a.id)).toEqual({ ok: true });
+    expect(await encerrarAtendimentoWhatsApp(a.id)).toEqual({ ok: true });
+  });
+
+  it("encaminhar mensagem com chave (B2 da R1 do #291: a leitura e o escopo usam a transação)", async () => {
+    const { v1, a, numero } = await cenario();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { driver: "MOTOR", sessao: "CONECTADO", providerRef: numero.id } });
+    const m = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: a.conversaId, atendimentoId: a.id, direcao: "SAIDA", driver: "MOTOR", corpo: "oi", origem: "HUMANO", autorId: v1.id, mensagemIdMotor: "c:3EB0P" } });
+    const c2 = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880002" } });
+    const dest = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: c2.id, finalidade: "COMERCIAL", responsavelId: v1.id }));
+    motor.mockResolvedValue({ key: { id: "FWD-POOL" } });
+    como(v1);
+    const entrada = { mensagemId: m.id, atendimentoDestinoId: dest.id, chaveIdempotencia: "chave-pool-fwd" };
+    expect(await encaminharMensagemWhatsApp(entrada)).toEqual({ ok: true });
+    expect(await encaminharMensagemWhatsApp(entrada)).toEqual({ ok: true });
+    expect(motor).toHaveBeenCalledTimes(1);
   });
 
   it("registrar nota interna", async () => {
