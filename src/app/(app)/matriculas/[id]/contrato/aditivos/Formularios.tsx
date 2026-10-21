@@ -12,7 +12,7 @@ import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
-type Fonte = { conclusaoId: string; conclusaoHash: string; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
+type Fonte = { tipo: "CONCLUSAO" | "ORIGEM_HISTORICA"; conclusaoId: string | null; conclusaoHash: string | null; origemHistoricaId: string | null; origemHash: string | null; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
 const acompanharFuso = () => () => {};
 const fusoNavegador = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "fuso local do navegador";
@@ -52,7 +52,7 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
     const chaveAtual = tentativa && tentativa !== conteudo ? crypto.randomUUID() : chave;
     if (chaveAtual !== chave) setChave(chaveAtual); if (tentativa !== conteudo) setTentativa(conteudo);
     // Sem mensagem de sucesso: o sucesso navega para a proposta registrada.
-    const d = await acao.executar(() => prepararAditivoContratual({ matriculaId, conclusaoOriginalId: fonte.conclusaoId, conclusaoHashEsperado: fonte.conclusaoHash,
+    const d = await acao.executar(() => prepararAditivoContratual({ matriculaId, ...(fonte.tipo === "ORIGEM_HISTORICA" ? { origemHistoricaId: fonte.origemHistoricaId!, origemHashEsperado: fonte.origemHash! } : { conclusaoOriginalId: fonte.conclusaoId!, conclusaoHashEsperado: fonte.conclusaoHash! }),
       modeloId: modelo.id, modeloHashEsperado: modelo.modeloHash, vigenciaInicio, alteracoes, ...politica, motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveAtual }));
     if (d?.tipo === "ok" && d.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(d.dado.id)}`);
   }}>

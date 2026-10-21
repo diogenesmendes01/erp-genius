@@ -43,7 +43,7 @@ const selectCom = (t: ReactNode, opcao: string) =>
 /** Monta o formulário, escolhe o modelo, a regra do ciclo (quando há cobertura) e os novos valores. */
 function montar(escolha: string, cobertura = true) {
   const campos: Origem[] = cobertura ? ["COBERTURA_INICIO", "COBERTURA_FIM"] : ["ALUNO_NOME"];
-  const props = { matriculaId: "matricula", fonte: { conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }] };
+  const props = { matriculaId: "matricula", fonte: { tipo: "CONCLUSAO" as const, conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), origemHistoricaId: null, origemHash: null, campos: campos.map(origem => ({ origem, rotulo: origem, anterior: "Anterior" })) }, modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }] };
   const tela = () => m.ganchos!.renderizar(PrepararAditivo, props);
   mudar(selectCom(tela(), "modelo"), "modelo");
   if (cobertura) mudar(selectCom(tela(), "PRESERVAR_REFERENCIA"), escolha);

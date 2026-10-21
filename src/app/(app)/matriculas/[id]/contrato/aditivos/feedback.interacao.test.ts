@@ -123,7 +123,7 @@ describe("ConferenciaFinalFormulario", () => {
 describe("PrepararAditivo", () => {
   const props = {
     matriculaId: "matricula",
-    fonte: { conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), campos: [{ origem: "ALUNO_NOME" as const, rotulo: "Nome do aluno", anterior: "Anterior" }] },
+    fonte: { tipo: "CONCLUSAO" as const, conclusaoId: "assinatura", conclusaoHash: "a".repeat(64), origemHistoricaId: null, origemHash: null, campos: [{ origem: "ALUNO_NOME" as const, rotulo: "Nome do aluno", anterior: "Anterior" }] },
     modelos: [{ id: "modelo", codigo: "AD", versao: 1, modeloHash: "b".repeat(64), titulo: "Modelo" }],
   };
   const tela = () => m.ganchos!.renderizar(PrepararAditivo, props);

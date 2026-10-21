@@ -722,6 +722,9 @@ export const MAPA_ESTADOS_VAZIOS: Record<string, string[]> = {
     "compacto · Nenhuma proposta nesta página.",
     "compacto · Nenhuma proposta de aditivo registrada para esta matrícula.",
   ],
+  "src/app/(app)/matriculas/[id]/contrato/origem-historica/page.tsx": [
+    "compacto · Nenhuma origem histórica registrada.",
+  ],
   "src/app/(app)/matriculas/[id]/contrato/originais/[artefatoId]/page.tsx": [
     "compacto · Nenhuma conferência registrada.",
   ],

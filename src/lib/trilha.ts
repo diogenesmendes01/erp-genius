@@ -185,6 +185,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
   "/matriculas/*/contrato/aditivos/*/alcadas": "Alçadas",
   "/matriculas/*/contrato/aditivos/*/originais/*": "Original para assinatura",
   "/matriculas/*/contrato/originais/*": "Original para assinatura",
+  "/matriculas/*/contrato/origem-historica": "Origem histórica",
   "/matriculas/*/contrato/previas/*": "Prévia contratual",
   "/matriculas/*/contrato/previas/*/participantes": "Participantes",
   "/matriculas/*/contrato/substituicoes": "Substituições",
