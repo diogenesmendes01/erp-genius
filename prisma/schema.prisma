@@ -4715,6 +4715,22 @@ model ArtefatoAditivoContratual {
     @@index([artefatoId, criadaEm])
   }
 
+/// Driver SIMULADO de assinatura eletrônica (ASSINATURA_DRIVER=simulado): é o "serviço" simulado, não um
+/// registro do ERP. Nenhum envelope daqui foi enviado a alguém. Os processos que apontam para ele têm
+/// fornecedor SIMULADO e ambiente SANDBOX (CHECK no banco).
+model EnvelopeAssinaturaSimulado {
+  id                String   @id @default(cuid())
+  chave             String   @unique
+  referenciaExterna String   @unique
+  nome              String
+  pdf               Bytes
+  pdfHash           String
+  signatarios       Json
+  situacao          String   @default("EM_ASSINATURA")
+  criadoEm          DateTime @default(now())
+  atualizadoEm      DateTime @updatedAt
+}
+
 model ProcessoAssinaturaAditivo {
   id String @id @default(cuid())
   propostaId String @unique

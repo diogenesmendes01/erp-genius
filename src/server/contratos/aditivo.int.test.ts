@@ -1932,3 +1932,60 @@ it("PRODUCAO_HORA_ADIANTAMENTO: cobrança alterada fora do aditivo continua recu
   expect(await pagarEntradaEAtivar(ctx.emitida.id, 375)).toMatchObject({ ok: false, erro: divergente });
   expect(await prisma.matricula.findUniqueOrThrow({ where: { id: fixture.matriculaId } })).toMatchObject({ status: expect.not.stringMatching(/^ATIVA$/) });
 }, 180_000);
+
+it("envio integrado do aditivo pelo driver simulado: SIMULADO só com o driver, incerteza só sai por conciliação e repetição idempotente", async () => {
+  const { enviarAditivoParaAssinatura, conciliarEnvioAditivo } = await import("./aditivo-envio");
+  const { provedorAssinaturaAtivo } = await import("./provedor-assinatura-ativo");
+  const { confirmar, alvo } = await prepararRevisaoOriginal();
+  const conferencia = await registrarConferenciaAssinaturaAditivo(confirmar);
+  if (!conferencia.ok || !conferencia.dado) throw new Error("Conferência indisponível");
+  const entradaProcesso = { ...alvo, conferenciaId: conferencia.dado.id, fornecedor: "SIMULADO" as const, ambiente: "SANDBOX" as const };
+  const anterior = process.env.ASSINATURA_DRIVER;
+  try {
+    delete process.env.ASSINATURA_DRIVER;
+    // Sem o driver simulado não se prepara processo SIMULADO (ele nunca seria enviado).
+    expect(await prepararProcessoAssinaturaAditivo(entradaProcesso)).toMatchObject({ ok: false, erro: expect.stringContaining("ASSINATURA_DRIVER=simulado") });
+    process.env.ASSINATURA_DRIVER = "simulado";
+    expect(await prepararProcessoAssinaturaAditivo({ ...entradaProcesso, ambiente: "PRODUCAO" })).toMatchObject({ ok: false });
+    const criado = await prepararProcessoAssinaturaAditivo(entradaProcesso);
+    if (!criado.ok || !criado.dado) throw new Error(JSON.stringify(criado));
+    const pedido = { matriculaId: alvo.matriculaId, propostaId: alvo.propostaId, processoId: criado.dado.id };
+    // O banco recusa SIMULADO fora de SANDBOX e referência que não seja do simulado — por CHECK, mesmo sem os triggers.
+    const semTriggers = (sql: string) => prisma.$transaction(async tx => { await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica"); await tx.$executeRawUnsafe(sql, criado.dado!.id); });
+    await expect(semTriggers(`UPDATE "ProcessoAssinaturaAditivo" SET ambiente = 'PRODUCAO' WHERE id = $1`)).rejects.toThrow(/simulado_sandbox_check/);
+    await expect(semTriggers(`UPDATE "ProcessoAssinaturaAditivo" SET "referenciaExterna" = 'externo-real' WHERE id = $1`)).rejects.toThrow(/referencia_simulada_check/);
+
+    delete process.env.ASSINATURA_DRIVER;
+    expect(await enviarAditivoParaAssinatura(pedido)).toMatchObject({ ok: false, erro: expect.stringContaining("não está configurada") });
+    expect(await prisma.tentativaEnvioAditivo.count()).toBe(0);
+
+    process.env.ASSINATURA_DRIVER = "simulado";
+    const simulado = provedorAssinaturaAtivo()!;
+    const criar = simulado.criarEnvelope.bind(simulado);
+    // Primeira chamada: o serviço cria o envelope, mas a resposta se perde (timeout).
+    simulado.criarEnvelope = async (envelope) => { await criar(envelope); throw new Error("timeout"); };
+    try {
+      expect(await enviarAditivoParaAssinatura({ ...pedido, chaveIdempotencia: "envio-aditivo-simulado-1" })).toMatchObject({ ok: true, dado: { tentativa: 1, estado: "ENVIO_INCERTO", repetido: false } });
+    } finally { simulado.criarEnvelope = criar; }
+    // A mesma chave devolve o resultado sem chamar o serviço; chave nova não repete a criação.
+    expect(await enviarAditivoParaAssinatura({ ...pedido, chaveIdempotencia: "envio-aditivo-simulado-1" })).toMatchObject({ ok: true, dado: { tentativa: 1, estado: "ENVIO_INCERTO", repetido: true } });
+    expect(await enviarAditivoParaAssinatura({ ...pedido, chaveIdempotencia: "envio-aditivo-simulado-2" })).toMatchObject({ ok: false });
+    expect(await prisma.tentativaEnvioAditivo.count()).toBe(1);
+    expect(await prisma.envelopeAssinaturaSimulado.count()).toBe(1);
+    const conciliado = await conciliarEnvioAditivo({ ...pedido, chaveIdempotencia: "conciliacao-aditivo-1" });
+    expect(conciliado).toMatchObject({ ok: true, dado: { estado: "ENVIADO", repetido: false } });
+    expect(await conciliarEnvioAditivo({ ...pedido, chaveIdempotencia: "conciliacao-aditivo-1" })).toMatchObject({ ok: true, dado: { estado: "ENVIADO", repetido: true } });
+    const processo = await prisma.processoAssinaturaAditivo.findUniqueOrThrow({ where: { id: criado.dado.id }, include: { tentativas: { include: { observacoes: { orderBy: { observadaEm: "asc" } } } } } });
+    expect(processo).toMatchObject({ fornecedor: "SIMULADO", ambiente: "SANDBOX", estado: "ENVIADO" });
+    expect(processo.referenciaExterna).toMatch(/^sim_[a-f0-9]{24}$/);
+    expect(processo.tentativas[0].observacoes.map(o => o.resultado)).toEqual(["INCERTO", "REGISTRADO"]);
+    // Evento em toda escrita: tentativa, resultados e o envelope simulado.
+    const eventos = await prisma.evento.findMany({ where: { tipo: { in: ["TentativaAssinaturaAditivoIniciada", "ResultadoEnvioAssinaturaAditivoRegistrado", "EnvelopeSimuladoCriado"] } }, orderBy: { criadoEm: "asc" } });
+    expect(eventos.map(e => e.tipo)).toEqual(["TentativaAssinaturaAditivoIniciada", "EnvelopeSimuladoCriado", "ResultadoEnvioAssinaturaAditivoRegistrado", "ResultadoEnvioAssinaturaAditivoRegistrado"]);
+    expect(eventos[3]).toMatchObject({ autorId: fixture.secretariaId, payload: expect.objectContaining({ chaveIdempotencia: "conciliacao-aditivo-1", estado: "ENVIADO" }) });
+    expect(await conciliarEnvioAditivo(pedido)).toMatchObject({ ok: false });
+    expect(await conciliarEnvioAditivo({ ...pedido, matriculaId: "outra-matricula" })).toMatchObject({ ok: false });
+  } finally {
+    if (anterior === undefined) delete process.env.ASSINATURA_DRIVER; else process.env.ASSINATURA_DRIVER = anterior;
+  }
+});

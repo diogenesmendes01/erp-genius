@@ -1836,6 +1836,7 @@ const MAPAS_DE_TELA: { arquivo: string; nome: string; motivo: string }[] = [
   { arquivo: "src/app/(app)/diario/encontros/[id]/correcao/CorrecaoAula.tsx", nome: "ternário reposicao.agendaParticular.statusBeneficio", motivo: "fragmento minúsculo no meio da frase do benefício (\"benefício reservado\", \"isenção excepcional registrada\")" },
   { arquivo: "src/app/(app)/diario/encontros/[id]/OcorrenciaParticular.tsx", nome: "nomes", motivo: "opção do informe docente, na voz do professor (\"Aluno faltou\", \"Cancelada pela escola\")" },
   { arquivo: "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/SegundaChamadaPainel.tsx", nome: "override item.reserva.status", motivo: "frase explicativa das reservas consumidas/liberadas (\"consumida por falta; encontro não realizado\"); as demais vêm do mapa central" },
+  { arquivo: "src/app/(app)/matriculas/[id]/contrato/resultado-envio.ts", nome: "MENSAGEM_RESULTADO_ENVIO", motivo: "mensagem do resultado do envio integrado de assinatura, com o próximo passo (\"Não repita o envio: concilie…\"); o rótulo do estado é ESTADO_ENVIO_ASSINATURA_LABEL" },
   { arquivo: "src/app/(app)/financeiro/AcessoAulasPainel.tsx", nome: "ternário m.status", motivo: "frase do acesso às aulas sob a guarda da liberação (\"Contrato pausado\", \"Contrato não ativo…\")" },
 ];
 /** Mapas fora das telas (src/lib, src/server) que não são rótulo do valor: mensagens, frases de documento, regras. */

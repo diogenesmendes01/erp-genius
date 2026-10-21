@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { FormaPagamento, Papel, Prisma } from "@prisma/client";
 
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
@@ -33,7 +33,10 @@ import { consultarDesistenciaPreparacao, registrarPedidoDesistenciaPreparacao } 
 import { decidirDesistenciaAdministrativa } from "./desistencia-administrativa";
 import { prepararAcertoDesistenciaContratual, decidirAcertoDesistenciaContratual } from "./desistencia-acerto-contratual";
 import { aplicarAcertoDesistenciaContratual } from "./desistencia-acerto-aplicacao";
-import { iniciarCancelamentoAssinaturaDesistencia } from "./desistencia-cancelamento-assinatura";
+import { executarCancelamentoAssinaturaDesistencia, iniciarCancelamentoAssinaturaDesistencia } from "./desistencia-cancelamento-assinatura";
+import { enviarContratoParaAssinatura } from "@/server/contratos/envio";
+import { provedorAssinaturaAtivo } from "@/server/contratos/provedor-assinatura-ativo";
+import { consultarDocumentosDesistenciaPreparacao } from "./desistencia-documental";
 import { efetivarPedidoDesistenciaPreparacao } from "./desistencia-efetivacao";
 import { receberTx } from "@/server/financeiro/recebimentos";
 import { registrarPagamento, registrarRecebimentoDestinado } from "@/server/financeiro/acoes";
@@ -153,7 +156,15 @@ beforeEach(async (contexto) => {
   await truncarBanco();
   const contratoSubstituido = contexto.task.name.includes("assinatura cancelada comprovada");
   const assinaturaAberta = contexto.task.name.includes("solicitação de assinatura aberta");
-  base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, semSubstituicao: !contratoSubstituido && !assinaturaAberta, ambiente: "PRODUCAO" });
+  const driverSimulado = contexto.task.name.includes("driver simulado");
+  if (driverSimulado) {
+    // Envio real pela ação, com o driver simulado: o processo nasce SIMULADO/SANDBOX com referência do simulado.
+    base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, semEnvio: true });
+    process.env.ASSINATURA_DRIVER = "simulado";
+    const envio = dado(await enviarContratoParaAssinatura({ matriculaId: base.matriculaId, artefatoId: base.artefatoFonteId, conferenciaId: base.conferenciaFonteId, chaveIdempotencia: "envio-simulado-q165" }));
+    const processo = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: envio.processoId } });
+    base = { ...base, processoId: processo.id, referenciaExternaFonte: processo.referenciaExterna! };
+  } else base = await prepararFixtureSubstituicaoContratual(authMock, { camposFinanceiros: true, semSubstituicao: !contratoSubstituido && !assinaturaAberta, ambiente: "PRODUCAO" });
   if (contratoSubstituido) await substituirEConfirmarContrato(); else if (!assinaturaAberta) await confirmarContratoReal();
   [financeiroPreparador, financeiroAprovador] = await Promise.all([
     criarUsuario([Papel.FINANCEIRO], "Financeiro preparador Q165"), criarUsuario([Papel.FINANCEIRO], "Financeiro aprovador Q165"),
@@ -245,6 +256,64 @@ it("bloqueia a efetivação Q165 enquanto houver solicitação de assinatura abe
   expect(await prisma.$transaction(tx => registrarObservacaoCancelamentoDesistenciaTx(tx, { intencaoId: intencao.id, pedidoId: pedido.id, processoId: base.processoId, chave: "cancelamento-desistencia-q165", resultado: "CONFIRMADO", referenciaExterna: base.referenciaExternaFonte, evidenciaHash: "d".repeat(64) }))).toMatchObject({ id: observacao.id, cancelamentoConfirmado: true });
   const efetivada = await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
     aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria efetivou após o cancelamento externo comprovado." });
+  expect(efetivada.ok, efetivada.ok ? undefined : efetivada.erro).toBe(true);
+  expect(efetivada).toMatchObject({ ok: true, dado: { status: "CANCELADA" } });
+});
+
+const driverAssinaturaOriginal = process.env.ASSINATURA_DRIVER;
+afterEach(() => { if (driverAssinaturaOriginal === undefined) delete process.env.ASSINATURA_DRIVER; else process.env.ASSINATURA_DRIVER = driverAssinaturaOriginal; });
+
+it("driver simulado: cancela a solicitação de assinatura aberta pela desistência, com incerteza conciliada e efetivação depois", async () => {
+  const cobranca = await prisma.cobranca.findFirstOrThrow({ where: { matriculaId: base.matriculaId }, orderBy: { id: "asc" } });
+  await prisma.$transaction(tx => receberTx(tx, { cobrancaId: cobranca.id, autorId: financeiroPreparador.id, chaveIdempotencia: "pagamento-driver-simulado-q165", valorRecebido: 100,
+    forma: "TRANSFERENCIA", dataPagamento: new Date("2099-10-13T12:00:00.000Z"), evidencia: "Pagamento identificado antes do acerto contratual.", permitirExcedente: true }));
+  expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId } })).toMatchObject({ fornecedor: "SIMULADO", ambiente: "SANDBOX", estado: "ENVIADO" });
+  const pedido = await registrarPedido();
+  const entrada = { pedidoId: pedido.id, processoId: base.processoId, estadoHash: pedido.estadoHash };
+  // Antes da decisão administrativa e do acerto aplicado o cancelamento é recusado, sem intenção nem chamada.
+  entrar(base.secretariaId);
+  expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-cedo-q165" })).toMatchObject({ ok: false, erro: expect.stringContaining("aplicação Q165") });
+  const decisao = await prepararEDecidir(pedido, "driver-simulado-q165");
+  expect((await aprovarAdministracao(pedido, "driver simulado")).ok).toBe(true);
+  const aplicacao = await aplicarDecisao(decisao.id, "driver-simulado-q165");
+  entrar(base.secretariaId);
+  expect(await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
+    aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria tentou efetivar com solicitação simulada aberta." })).toMatchObject({ ok: false });
+
+  entrar(financeiroAprovador.id);
+  expect(await executarCancelamentoAssinaturaDesistencia(entrada)).toMatchObject({ ok: false });
+  entrar(base.secretariaId);
+  delete process.env.ASSINATURA_DRIVER;
+  expect(await executarCancelamentoAssinaturaDesistencia(entrada)).toMatchObject({ ok: false, erro: expect.stringContaining("não está configurada") });
+  expect(await prisma.intencaoCancelamentoAssinatura.count()).toBe(0);
+
+  process.env.ASSINATURA_DRIVER = "simulado";
+  const simulado = provedorAssinaturaAtivo()!;
+  const cancelar = simulado.cancelarEnvelope.bind(simulado);
+  simulado.cancelarEnvelope = async () => { throw new Error("timeout"); };
+  try {
+    expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-1" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: false, repetido: false } });
+  } finally { simulado.cancelarEnvelope = cancelar; }
+  expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId } })).toMatchObject({ estado: "ENVIADO" });
+  expect(await consultarDocumentosDesistenciaPreparacao({ matriculaId: base.matriculaId })).toMatchObject({ ok: true, dado: { processos: [{ cancelamentoDesistencia: { situacao: "RESULTADO_INCERTO" }, cancelamentoSubstituicao: { situacao: "NAO_INICIADO" } }] } });
+  // Mesma chave: devolve o resultado gravado sem chamar o serviço de novo.
+  expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-1" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: false, repetido: true } });
+
+  const confirmado = await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-2" });
+  expect(confirmado).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true, repetido: false } });
+  expect(await executarCancelamentoAssinaturaDesistencia({ ...entrada, chaveIdempotencia: "cancelamento-q165-3" })).toMatchObject({ ok: true, dado: { cancelamentoConfirmado: true, repetido: true } });
+  const intencao = await prisma.intencaoCancelamentoAssinatura.findUniqueOrThrow({ where: { processoId: base.processoId }, include: { observacoes: { orderBy: [{ registradaEm: "asc" }, { id: "asc" }] } } });
+  expect(intencao).toMatchObject({ pedidoDesistenciaId: pedido.id, executorId: base.secretariaId, referenciaExterna: base.referenciaExternaFonte });
+  expect(intencao.observacoes.map(o => o.resultado)).toEqual(["INCERTO", "CONFIRMADO"]);
+  expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: base.processoId } })).toMatchObject({ estado: "CANCELADO" });
+  expect(await prisma.envelopeAssinaturaSimulado.findUniqueOrThrow({ where: { referenciaExterna: base.referenciaExternaFonte } })).toMatchObject({ situacao: "CANCELADO" });
+  const eventos = await prisma.evento.findMany({ where: { tipo: "ResultadoCancelamentoAssinaturaDesistenciaPreservado" }, orderBy: { criadoEm: "asc" } });
+  expect(eventos.map(e => [e.autorId, (e.payload as { cancelamentoConfirmado: boolean }).cancelamentoConfirmado])).toEqual([[base.secretariaId, false], [base.secretariaId, true]]);
+  expect(await prisma.evento.count({ where: { tipo: "EnvelopeSimuladoSituacaoAlterada" } })).toBe(1);
+  expect(await consultarDocumentosDesistenciaPreparacao({ matriculaId: base.matriculaId })).toMatchObject({ ok: true, dado: { processos: [{ estado: "CANCELADO", cancelamentoDesistencia: { situacao: "RESULTADO_CONFIRMADO" } }] } });
+
+  const efetivada = await efetivarPedidoDesistenciaPreparacao({ pedidoId: pedido.id, estadoHash: pedido.estadoHash,
+    aplicacaoAcertoDesistenciaContratualId: aplicacao.id, motivo: "Secretaria efetivou após o cancelamento simulado confirmado." });
   expect(efetivada.ok, efetivada.ok ? undefined : efetivada.erro).toBe(true);
   expect(efetivada).toMatchObject({ ok: true, dado: { status: "CANCELADA" } });
 });

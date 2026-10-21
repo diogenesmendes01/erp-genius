@@ -21,7 +21,9 @@ function dado<T>(r: { ok: boolean; dado?: T; erro?: string }): T {
 
 /** Fluxo contratual real no banco descartável. Apenas sessão e resultado do
  * transporte são simulados; prévia, PDF, emissão e revisões usam os serviços. */
-export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; /** Q172: contratação por hora com adiantamento emitido na entrada. */ minutosAdiantamento?: number; /** B1 da #264: preço de referência por hora diferente do negociado (125). */ valorReferenciaHora?: string; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string } = {}) {
+export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, opcoes: { primeiraMensalidadeExigida?: boolean; camposCadastrais?: boolean; camposFinanceiros?: boolean; ambiente?: "SANDBOX" | "PRODUCAO"; porHora?: boolean; /** Q172: contratação por hora com adiantamento emitido na entrada. */ minutosAdiantamento?: number; /** B1 da #264: preço de referência por hora diferente do negociado (125). */ valorReferenciaHora?: string; semSubstituicao?: boolean; valorServicoMensal?: string; fusoInstitucional?: string;
+  /** Envio integrado (driver de assinatura): devolve só o original conferido, sem processo; o teste cria o processo pela ação. */
+  semEnvio?: boolean } = {}) {
   const ambiente = opcoes.ambiente ?? "SANDBOX";
   const secretaria = await criarUsuario(["SECRETARIA_ACADEMICA"]);
   const admin = await criarUsuario(["ADMINISTRADOR"]);
@@ -93,6 +95,7 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
     return { artefatoId: artefato.id, conferenciaId: conferencia.id, revisaoHash: assinatura.revisao.hash };
   }
   const fonte = await original("fonte");
+  if (opcoes.semEnvio) return { secretariaId: secretaria.id, adminId: admin.id, matriculaId, processoId: "", artefatoFonteId: fonte.artefatoId, conferenciaFonteId: fonte.conferenciaId, conferenciaSubstitutoId: fonte.conferenciaId, artefatoSubstitutoId: fonte.artefatoId, revisaoFonteHash: fonte.revisaoHash, revisaoSubstitutoHash: fonte.revisaoHash, referenciaExternaFonte: "" };
   const processo = await prisma.$transaction(tx => prepararProcessoEnvioTx(tx, { matriculaId, artefatoId: fonte.artefatoId, conferenciaId: fonte.conferenciaId, executorId: secretaria.id, fornecedor: "ZAPSIGN", ambiente }));
   const tentativa = await prisma.$transaction(tx => iniciarTentativaAssinaturaTx(tx, { processoId: processo.id, executorId: secretaria.id }));
   const referenciaExternaFonte = "q116-fonte-simulada";
