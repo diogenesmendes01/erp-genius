@@ -97,3 +97,28 @@ describe("PainelOportunidade", () => {
     expect(render(base, ["funil.ver"], { abaInicial: "atividade" })).not.toContain("Registrar interação");
   });
 });
+
+// Fuso pessoal nas telas (pendência da Q176): instantes no fuso pessoal (sem ele, o da escola); o follow-up é data
+// civil da escola e sai como dia, sem hora nem fuso pessoal. Expectativas fixas: passam em TZ=UTC e America/Sao_Paulo.
+describe("PainelOportunidade: fuso pessoal de exibição", () => {
+  const op: DetalheOportunidade = { ...base, criadoEm: new Date("2026-10-21T02:30:00Z"), proximoFollowUp: new Date("2026-10-21T15:00:00Z") };
+  const detalhes = (extra: object) => render(op, GERENTE, { abaInicial: "detalhes", fuso: "America/Sao_Paulo", ...extra });
+
+  it("criação no fuso pessoal; sem preferência, no da escola", () => {
+    expect(detalhes({ preferenciaFusoExibicao: "America/Costa_Rica" })).toContain("20/10/2026, 20:30");
+    expect(detalhes({ preferenciaFusoExibicao: null })).toContain("20/10/2026, 23:30");
+  });
+
+  it("follow-up é o dia civil da escola, igual para qualquer preferência", () => {
+    for (const preferencia of ["America/Costa_Rica", "Asia/Tokyo", null]) {
+      const html = detalhes({ preferenciaFusoExibicao: preferencia });
+      expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*>21\/10\/2026</);
+    }
+  });
+  // C3 da review do #286: dataCivilInstitucional lança com fuso inválido; o painel cai no fallback como o resto.
+  it("fuso da escola inválido não derruba o painel: follow-up no dia UTC, instantes no fallback do helper", () => {
+    const html = detalhes({ fuso: "Fuso/Invalido", preferenciaFusoExibicao: null });
+    expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*>21\/10\/2026</);
+    expect(html).toContain("21/10/2026, 02:30");
+  });
+});

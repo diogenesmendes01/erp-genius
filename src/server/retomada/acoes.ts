@@ -1,6 +1,6 @@
 "use server";
 
-import { Papel, Prisma } from "@prisma/client";
+import { Papel, Prisma, type StatusAprovacao } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, registrarEvento, ErroRegra, ErroPermissao, type Resultado } from "@/server/_shared";
@@ -11,6 +11,8 @@ import { exigirFluxoGlobalSemMovimentacaoContratual } from "@/server/matricula/l
 import { DecidirRetomadaSchema, SolicitarRetomadaSchema, type DecidirRetomadaInput, type SolicitarRetomadaInput } from "./schema";
 import { SnapshotRetomadaSchema, dataDigitadaRetomada, exigirSnapshotRetomadaAtual, impedimentoRetomada, montarSnapshotRetomada, validarDatasNaoRetroativas } from "./regras";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 
 const SOLICITANTES: Papel[] = [Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO, Papel.ADMINISTRADOR];
 const APROVADORES: Papel[] = [Papel.FINANCEIRO, Papel.ADMINISTRADOR];
@@ -27,15 +29,41 @@ async function exigirUsuarioAtual(tx: Prisma.TransactionClient, id: string, pape
   }
 }
 
-export async function solicitarRetomada(alunoId: string, input: SolicitarRetomadaInput): Promise<Resultado<{ propostaId: string }>> {
+/**
+ * `chaveIdempotencia` (#166, N3 da R1 do #274): a marca vai no `RetomadaSolicitada`, na mesma transação da proposta.
+ * O reenvio da mesma tentativa devolve a proposta original mesmo depois que outra pessoa a decidiu; uma nova
+ * proposta deliberada usa chave nova. A proposta pendente idêntica, do mesmo solicitante, continua devolvida.
+ */
+export async function solicitarRetomada(alunoId: string, input: SolicitarRetomadaInput & { chaveIdempotencia?: string }): Promise<Resultado<{ propostaId: string; status: StatusAprovacao }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...SOLICITANTES);
     const dados = SolicitarRetomadaSchema.parse(input);
     if (!alunoId.trim()) throw new ErroRegra("Aluno obrigatório.");
-    const propostaId = await prisma.$transaction(async (tx) => {
+    // O hash ignora a ordem das datas: a mesma proposta pode chegar com as parcelas em outra ordem.
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), {
+      alunoId, opcao: dados.opcao, motivo: dados.motivo,
+      novosVencimentos: [...dados.novosVencimentos].sort((a, b) => a.cobrancaId.localeCompare(b.cobrancaId)),
+    });
+    const resultado = await prisma.$transaction(async (tx): Promise<{ propostaId: string; status: StatusAprovacao }> => {
+      await exigirUsuarioAtual(tx, autor.id, SOLICITANTES);
+      if (marca) {
+        // Antes das travas e das validações de estado: a proposta pode ter sido decidida desde a tentativa, e a
+        // chave reaproveitada com outro aluno (existente ou não) recebe a mesma recusa.
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "RetomadaSolicitada", agregadoTipo: "Aluno", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada para outra proposta de retomada. Recarregue a página e confira as propostas antes de repetir.",
+        });
+        if (repetido) {
+          // O status real (#282, C3): a proposta pode já ter sido decidida por outra pessoa desde a tentativa; a
+          // tela avisa em vez de anunciar uma proposta nova.
+          const original = await tx.propostaRetomada.findUniqueOrThrow({
+            where: { id: String((repetido.payload as { propostaId?: unknown }).propostaId) }, select: { id: true, status: true },
+          });
+          return { propostaId: original.id, status: original.status };
+        }
+      }
       await bloquearCalendarioAluno(tx, alunoId);
       await exigirFluxoGlobalSemMovimentacaoContratual(tx, alunoId);
-      await exigirUsuarioAtual(tx, autor.id, SOLICITANTES);
       const estado = await carregarEstadoRetomada(tx, alunoId);
       const impedimento = impedimentoRetomada(estado.aluno.status, estado.pausa?.id ?? null, estado.pausaRastreada, estado.matriculas);
       if (impedimento || !estado.pausa) throw new ErroRegra(impedimento ?? "Pausa não encontrada.");
@@ -51,7 +79,7 @@ export async function solicitarRetomada(alunoId: string, input: SolicitarRetomad
         // `SolicitarRetomadaSchema` ("Uma cobrança não pode receber duas datas."), antes da transação (#253, C3).
         const mesmasDatas = dados.opcao === "MANTER_VENCIMENTOS" || (!!diasAnteriores && diasAnteriores.size === dados.novosVencimentos.length &&
           dados.novosVencimentos.every((p) => diasAnteriores.get(p.cobrancaId) === p.vencimento));
-        if (pendente.solicitanteId === autor.id && pendente.pausaId === estado.pausa.id && pendente.opcao === dados.opcao && pendente.motivo === dados.motivo && mesmasDatas) return pendente.id;
+        if (pendente.solicitanteId === autor.id && pendente.pausaId === estado.pausa.id && pendente.opcao === dados.opcao && pendente.motivo === dados.motivo && mesmasDatas) return { propostaId: pendente.id, status: pendente.status };
         throw new ErroRegra("O aluno já tem uma proposta de retomada pendente. Aguarde a decisão ou solicite a rejeição antes de propor novamente.");
       }
       const snapshot = montarSnapshotRetomada(alunoId, estado.pausa.id, estado.matriculas, dados, new Date(), fuso);
@@ -59,11 +87,11 @@ export async function solicitarRetomada(alunoId: string, input: SolicitarRetomad
         alunoId, pausaId: estado.pausa.id, opcao: dados.opcao, motivo: dados.motivo, solicitanteId: autor.id, snapshot,
       } });
       await registrarEvento(tx, { tipo: "RetomadaSolicitada", agregadoTipo: "Aluno", agregadoId: alunoId, autorId: autor.id,
-        payload: { propostaId: proposta.id, pausaId: estado.pausa.id, opcao: dados.opcao, motivo: dados.motivo, parcelas: snapshot.alvos } });
-      return proposta.id;
+        payload: { propostaId: proposta.id, pausaId: estado.pausa.id, opcao: dados.opcao, motivo: dados.motivo, parcelas: snapshot.alvos, ...marca } });
+      return { propostaId: proposta.id, status: proposta.status };
     });
     revalidar(alunoId);
-    return { propostaId };
+    return resultado;
   });
 }
 

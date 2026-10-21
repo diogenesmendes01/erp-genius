@@ -1,91 +1,32 @@
 # 31 — WhatsApp: go-live (E5) — deploy, backup, monitoramento e rollout
 
 > Executa a **E5** do [`30`](30-whatsapp-spec-implementacao.md): fecha os gaps **A1–A8**
-> do [`28`](28-whatsapp-auditoria-gaps.md) e organiza a burocracia Meta + o rollout
+> do [`28`](28-whatsapp-auditoria-gaps.md) e organiza o rollout
 > shadow → piloto → geral do [`26`](26-whatsapp-v1.md). Artefatos: `Dockerfile` ·
-> `docker-compose.prod.yml` · `deploy/` · `scripts/backup-producao.sh` ·
-> `GET /api/whatsapp/health`.
+> `docker-compose.prod.yml` (VPS com Caddy) · `docker-compose.coolify.yml` (Coolify/Traefik) ·
+> `deploy/` · `scripts/backup-producao.sh` · `GET /api/whatsapp/health`.
+>
+> **Atualizado em 21/10/2026 para o estado do código.** O canal roda num único driver, o
+> **motor** (`whatsapp-web-baileys` em modo serviço, serviço `motor` dos composes). Meta Cloud
+> (WABA, `META_WA_*`) e Evolution API saíram do código na Fase 4 — a antiga §0 (burocracia Meta)
+> e os passos de webhook da Meta/Evolution não se aplicam mais (ficam no histórico do git).
+> Passo a passo do Coolify e variáveis: `SETUP.md` §Deploy no Coolify.
 
-## 0. Burocracia Meta (dia 1 — corre em paralelo a tudo)
+## 0. Pré-requisitos do canal (motor)
 
-Caminho crítico com prazo de TERCEIRO: a **verificação do negócio leva ~3–5 dias úteis** e
-pode voltar para correção. **Começar por ela, antes de qualquer infra** — o resto do go-live
-espera nela. Enquanto não sai: o canal roda em **shadow** e o braço manual (wa.me) opera
-normalmente, então nada da operação para.
+Sem prazo de terceiro: não há verificação de negócio nem aprovação de template. O que precisa
+estar pronto antes do deploy:
+- [ ] **Imagem publicada do motor** (`whatsapp-web-baileys`) — vai em `MOTOR_IMAGE`. O compose
+      recusa subir sem ela (`${MOTOR_IMAGE:?…}`).
+- [ ] **Segredos do motor**, cada um com no mínimo 32 caracteres (`openssl rand -hex 32`):
+      `MOTOR_API_KEY` (o ERP chama o motor com ela) e `MOTOR_WEBHOOK_SECRET` (HMAC dos eventos
+      que o motor manda ao ERP). Os dois entram no `app` **e** no `motor` do compose.
+- [ ] **Aparelho com o WhatsApp de cada número** à mão para parear (QR ou código, §1.3).
+      *Não use o número pessoal de um vendedor*: números são da escola (doc 08 §governança).
+- [ ] `CRON_SECRET` definido: protege todos os crons do compose e o `/api/whatsapp/health`.
 
-> Esta seção é **execução do dono** (exige a conta Meta da empresa, documentos e verificação
-> de identidade). O ERP já está pronto para receber os valores — o mapa está no §0.4.
-
-### 0.1 Antes de começar — tenha em mãos
-- [ ] **Meta Business Manager** (business.facebook.com) com a empresa cadastrada e você como
-      **administrador**.
-- [ ] **Documento da empresa**: registro/CNPJ + comprovante com **nome e endereço idênticos**
-      ao cadastro no Business Manager (divergência é a causa nº 1 de rejeição).
-- [ ] **Site da escola no ar**, com nome da empresa e forma de contato visíveis; e-mail
-      corporativo no mesmo domínio ajuda.
-- [ ] **Número NOVO para a cobrança**, capaz de receber **SMS ou ligação**, e que **não esteja
-      ativo no app do WhatsApp**. Se já tiver conta WhatsApp, é preciso **excluir a conta
-      daquele número** antes de registrá-lo na WABA — o histórico **não migra** (doc 26).
-      *Não use o número de vendas atual*: ele continua no Baileys/app do vendedor.
-- [ ] **Domínio com HTTPS** para o webhook — depende do deploy (§1). Pode ser feito em
-      paralelo, mas o webhook só é configurável depois que a stack estiver no ar.
-
-### 0.2 Ordem de execução (o que trava o quê)
-| # | Passo | Depende de | Prazo típico |
-|---|---|---|---|
-| 1 | **Verificação do negócio** no Business Manager | documentos (§0.1) | **3–5 dias úteis** |
-| 2 | **App Meta** + produto **WhatsApp** (developers.facebook.com) | — (pode em paralelo ao 1) | minutos |
-| 3 | **WABA** + registrar o número de cobrança (SMS/voz) | 2 (e 1, para limites melhores) | ~1h |
-| 4 | **System user** + **token permanente** | 2, 3 | minutos |
-| 5 | **Webhook** apontando para o ERP | deploy §1 no ar (HTTPS) | minutos |
-| 6 | **Templates** submetidos e aprovados | 4, 5 | horas a dias |
-
-**Token: nunca use o token temporário de teste em produção.** O token de desenvolvedor
-expira em 24h e derruba o canal — o de produção é o **system user token** (permanente).
-Permissões necessárias: **`whatsapp_business_messaging`** (enviar/receber) **e
-`whatsapp_business_management`** (gerir templates). Sem a segunda, o mapeador e o editor de
-templates da E4 quebram na Graph API.
-
-### 0.3 Enquanto a verificação não sai
-Dá para desenvolver e ensaiar tudo: **número de teste da Meta** (limitado a 5 destinatários
-whitelistados) + `WHATSAPP_LIVE` vazio (tudo `SIMULADA`). As telas, o cron, a inbox e as
-réguas funcionam ponta a ponta em ensaio.
-
-### 0.4 Mapa: o que a Meta te dá → onde entra no ERP
-| Valor | Onde pegar | Onde entra |
-|---|---|---|
-| Token permanente | System user → *Gerar token* (com as 2 permissões acima) | `META_WA_TOKEN` (`.env`) |
-| App Secret | App Meta → *Configurações › Básico* | `META_WA_APP_SECRET` (`.env`) — valida a assinatura do webhook |
-| Verify token | **você inventa** (string aleatória) | `META_WA_VERIFY_TOKEN` (`.env`) **e** cola no painel do webhook |
-| WABA ID | Business Manager → *Contas do WhatsApp* | `META_WA_WABA_ID` (`.env`) — usado pelos templates |
-| `phone_number_id` | WABA → o número registrado | **não é env**: vai no campo de referência do número em `/configuracao/whatsapp` |
-| URL do webhook | você configura na Meta | `https://<dominio>/api/whatsapp/webhook/meta` |
-| Campos do webhook | assinar na Meta | **`messages`** e **`message_template_status_update`** |
-
-### 0.5 Como validar cada etapa (com o que já existe no ERP)
-1. **Webhook**: ao salvar na Meta, ela chama o `GET` de verificação — se o `META_WA_VERIFY_TOKEN`
-   bater, a rota devolve o `hub.challenge` e a Meta aceita. Erro aqui = token divergente.
-2. **Token/permissões**: na tela do canal, clique em **"Sincronizar com a Meta"** (mapeador da
-   E4). Se listar os templates, o token e o `WABA_ID` estão certos; se falhar, falta a
-   permissão `whatsapp_business_management`.
-3. **Número**: cadastre-o em `/configuracao/whatsapp` com o `phone_number_id` na referência.
-4. **Canal**: `GET /api/whatsapp/health` (header `x-cron-secret`) → 200 = saudável.
-5. **Primeira mensagem real**: só depois do §6 (rollout), com `WHATSAPP_LIVE=1`.
-
-### 0.6 Armadilhas que causam rejeição/atraso
-- Nome/endereço do documento **diferente** do cadastro no Business Manager.
-- Site fora do ar, sem nome da empresa ou sem contato.
-- Número **ainda ativo no app do WhatsApp** ao tentar registrar na WABA.
-- Usar o **token de 24h** em produção (canal cai no dia seguinte).
-- Faltar `whatsapp_business_management` (templates não sincronizam).
-- Webhook sem HTTPS válido, ou devolvendo **5xx repetido** — a Meta **suspende a entrega**
-  (por isso o handler responde 200 mesmo com erro interno — gap A8).
-- Submeter template de cobrança como *marketing*: use **categoria `utility`** (os 4 da régua
-  já nascem assim no seed).
-
-**Referências oficiais:** [Access Tokens](https://developers.facebook.com/documentation/business-messaging/whatsapp/access-tokens/) ·
-[Business phone numbers](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/phone-numbers) ·
-[Cloud API (Postman)](https://www.postman.com/meta/whatsapp-business-platform/collection/wlk6lh4/whatsapp-cloud-api)
+O motor envia o texto dos templates como está (sem aprovação externa); a régua preenche as
+variáveis. Enquanto `WHATSAPP_LIVE` estiver vazio, tudo que passaria vira `SIMULADA` (§6).
 
 ## 1. Deploy (VPS) — gap A1
 Pré-requisitos: VPS Linux com Docker + compose plugin; DNS do domínio → IP da VPS.
@@ -98,10 +39,12 @@ cp deploy/env.production.example .env   # preencher (segredos: openssl rand -hex
 > abaixo e siga direto para **§1.2** (o quickstart migra um schema vazio e o restore
 > posterior colidiria). Instalação limpa (sem dados a importar): use o **§1.1**.
 
-O compose sobe, em ordem: **Postgres** (interno, SEM porta pública — bancos `erp` +
-`evolution`, gap A5) → **migrate** (`prisma migrate deploy`, aditivo) → **app** (Next
-standalone) → **Evolution API** (só na rede interna — doc 26: "fora da internet pública")
-→ **Caddy** (única borda; TLS automático — o webhook da Meta exige HTTPS).
+O compose sobe: **Postgres** (interno, SEM porta pública — só o banco `erp`; gap A5) →
+**migrate** (`prisma migrate deploy`, aditivo) → **app** (Next standalone) → **motor**
+(`image: ${MOTOR_IMAGE}`, `MOTOR_MODE: servico`, porta 4317 só na rede interna — doc 26: "fora
+da internet pública"; dados em volume `motor_data:/data`) → os quatro laços de cron (§2) →
+**Caddy** (única borda; TLS automático, `reverse_proxy app:3000` — o motor não passa por ele).
+No Coolify (`docker-compose.coolify.yml`) é igual, sem Caddy: o Traefik do Coolify faz a borda.
 
 ### 1.1 Instalação nova (banco vazio)
 ```bash
@@ -129,29 +72,44 @@ CANAL, não o ERP) — truncar `MensagemWhatsApp`, `ConversaWhatsApp`, `Intencao
 de DEV (ou é desligado) — dev e produção nunca mais compartilham banco (gap A5; em dev,
 sem `WHATSAPP_LIVE=1` nada dispara de verdade).
 
-### 1.3 Webhooks (depois da stack de pé)
-- **Meta**: no app da Meta, apontar para `https://<dominio>/api/whatsapp/webhook/meta`
-  com o `META_WA_VERIFY_TOKEN` do `.env`; assinar os campos `messages` e
-  `message_template_status_update`.
-- **Evolution**: configurado sozinho pelo fluxo "conectar via QR" da tela do canal
-  (aponta para `http://app:3000/...` na rede interna — evento Baileys nunca sai para a
-  internet).
+### 1.3 Motor e conexão dos números (depois da stack de pé)
+- **Webhook do motor**: nada a configurar à mão. O compose passa ao motor
+  `ERP_WEBHOOK_URL: http://app:3000/api/whatsapp/webhook/motor` (rede interna — evento do
+  WhatsApp nunca sai para a internet) e o ERP confere o HMAC com `MOTOR_WEBHOOK_SECRET`.
+  O app fala com o motor em `MOTOR_URL: http://motor:4317` usando `MOTOR_API_KEY`.
+- **Números**: em **Configuração › WhatsApp › Números** (só Administrador), cadastrar o número
+  (todo número novo nasce com driver `MOTOR`) e usar **Conectar**: o modal tem as abas **QR** e
+  **Código** (código de pareamento) e acompanha a sessão até `CONECTADO`.
+- **Número legado** (`META_CLOUD`/`BAILEYS` vindos de antes da Fase 4): não envia nem recebe;
+  converter ou desativar conforme `SETUP.md` §Números legados.
 
 ## 2. Cron — modelo de execução do despachante (gap A2)
 Uma instância do app; concorrência interna resolvida por **claim atômico** na intenção
 (`ENVIANDO` + prazo) com **recuperação de claim órfão** → `FALHOU` p/ fila humana (nunca
 re-envia sozinho — o driver pode ter enviado antes da queda). O tick é EXTERNO e
-idempotente (idempotência por degrau em banco):
-```cron
-# crontab de ROOT na VPS — a cada hora; a política decide o resto.
-# O crond NÃO herda o .env do compose: a própria linha carrega o arquivo (por isso o
-# `. ./.env` — e por isso o .env precisa de chmod 600 e crontab de root, não de usuário).
-5 * * * *  cd /opt/erp-genius && . ./.env && curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" https://<dominio>/api/whatsapp/cron > /dev/null
-```
-Teste na mão antes de confiar no agendamento: rode a linha inteira no shell e confira
-`{"executou": ...}` na resposta (401 = segredo não carregou).
-Tick horário (não diário): itens `ADIADA` (janela/teto/silêncio) re-tentam na hora certa.
-Rodar 2× não duplica nada — testado (`cron.int.test.ts`, `@@unique cobrancaId+passo`).
+idempotente (idempotência por degrau em banco).
+
+> **Superado:** a versão anterior desta seção pedia um crontab **horário** de root na VPS
+> (`5 * * * *` com `. ./.env`). Isso não é mais necessário nem recomendado: os próprios
+> composes (`docker-compose.prod.yml` e `docker-compose.coolify.yml`) sobem os laços abaixo.
+> Se a VPS ainda tiver aquela linha no crontab, remova-a (ela só duplicaria chamadas, que são
+> idempotentes).
+
+Serviços `cron*` do compose (imagem `curlimages/curl:8.10.1`, `restart: unless-stopped`,
+`POST` com header `x-cron-secret: $CRON_SECRET` para `http://app:3000` na rede interna):
+| Serviço | Rota | Intervalo | O que faz |
+|---|---|---|---|
+| `cron` | `/api/whatsapp/cron` | 5 min (`sleep 300`) | etapas de base: régua de cobrança, acesso, início de turmas, reservas, fechamento de comissões, lembretes de tarefas, alertas de SLA, Aria, dreno dos eventos do motor e uma passada do despachante |
+| `cron-despacho` | `/api/whatsapp/despacho` | 1 min (`sleep 60`) | só drena a fila (inclui mensagens agendadas vencidas) |
+| `cron-portal-envios` | `/api/portal-aluno/envios/cron` | 1 min (`sleep 60`) | e-mails do portal do aluno; com `EMAIL_PORTAL_ENVIO_ENABLED` ≠ `true` responde `{executou:false}` |
+| `cron-avisos-agenda` | `/api/agenda/avisos/cron` | 5 min (`sleep 300`) | avisos de alteração de agenda; com `COMUNICACOES_AGENDA_ENVIO_ENABLED` ≠ `true` responde `{executou:false}` |
+
+Cada laço fica numa linha só no compose (trava em `src/deploy/cron-despacho.test.ts`) e loga
+`<nome> tick <status HTTP>`: `docker compose logs cron` (ou a aba Logs do Coolify) mostra
+`cron tick 200`; `401` = `CRON_SECRET` divergente. `/api/financeiro/continuidade/cron` **não**
+é agendado pelo compose (ver `SETUP.md`).
+Com tick de 5 min (e despacho de 1 min), itens `ADIADA` (janela/teto/silêncio) re-tentam logo
+que vencem. Rodar 2× não duplica nada — testado (`cron.int.test.ts`, `@@unique cobrancaId+passo`).
 
 ## 3. Monitoramento (gap A7)
 `GET /api/whatsapp/health` (header `x-cron-secret`) → **200** saudável · **503** com a
@@ -159,16 +117,17 @@ lista de alertas no corpo. Cada estado da fila tem seu relógio (o contrato vive
 `saude.ts`); uma `ADIADA` esperando a janela abrir **não** é alerta — só o que já venceu:
 | Alerta | Gatilho | Significado | Ação |
 |---|---|---|---|
-| intenção PENDENTE há Xh | PENDENTE parada > 2h | tick não roda | checar crontab e `docker compose logs app` |
+| intenção PENDENTE há Xh | PENDENTE despachável parada > 2h | tick não roda | checar os serviços `cron`/`cron-despacho` e `docker compose logs app` |
 | intenção ADIADA venceu há Xh | `despacharAposEm` vencido > 2h sem redespachar | tick não roda | idem |
 | envio em claim expirado | `ENVIANDO` além do prazo do claim > 30min | despachante/recuperação parados | idem |
-| sessão "X" caiu | número BAILEYS ativo em `CAIU` | Baileys desconectou (fila acumula, nada se perde) | reconectar via QR na tela do canal |
+| sessão do número "X" caiu | número `MOTOR` ativo em `CAIU` | WhatsApp desconectou (fila acumula, nada se perde) | reconectar (QR/código) em Configuração › WhatsApp › Números |
+| número "X" ativo em driver legado | número ativo com driver ≠ `MOTOR` | não envia nem recebe | `SETUP.md` §Números legados |
+| Motor WhatsApp inalcançável | consulta ao motor falhou | eventos recebidos não chegam | `docker compose logs motor`; um 503 isolado na janela do backup é esperado (§4) |
+| N evento(s) falharam no motor | `GET /v1/eventos/falhos` do motor devolve eventos | eventos esgotaram as tentativas no motor | reenviar em `/v1/eventos/falhos` do motor |
 | N envio(s) falharam 24h | transição p/ `FALHOU` nas últimas 24h | itens voltaram à fila humana com motivo | tratar na fila de cobrança |
 | kill switch LIGADO | flag ligada | automação congelada de propósito | desligar quando o incidente passar |
 Monitor externo (UptimeRobot/Better Stack): keyword/status check no endpoint a cada 5min
-com o header. Segundo check no domínio raiz (o webhook da Meta é suspenso após 5xx
-repetidos — gap A8; o handler já responde 200 mesmo com erro interno, mas o monitor pega
-o app fora do ar).
+com o header, e um segundo check no domínio raiz (pega o app fora do ar).
 
 ## 4. Backup (gap A6) — o banco é o arquivo único das conversas
 `scripts/backup-producao.sh` (diário via cron às 03:15, retenção 14d): dump do `erp`
@@ -182,10 +141,11 @@ comentado no rodapé do script num compose limpo e conferir login + fila + threa
 Guardar cópia fora da VPS (rsync/rclone para storage externo).
 
 ## 5. Segredos (gap A4)
-Todos no `.env` da VPS (raiz do repo, fora do git; `chmod 600`). Rotação: trocar valor →
-`docker compose up -d` (recria só o app). O auth state Baileys mora no volume da
-Evolution + banco `evolution` — vazamento = takeover do número: acesso à VPS só por
-chave SSH, Evolution jamais exposta.
+Todos no `.env` da VPS (raiz do repo, fora do git; `chmod 600`) ou nas variáveis do Resource
+no Coolify. Rotação: trocar valor → `docker compose up -d` (recria os serviços afetados; ao
+trocar `MOTOR_API_KEY`/`MOTOR_WEBHOOK_SECRET`, app e motor juntos). As credenciais das sessões
+do WhatsApp e a chave do cofre do motor moram no volume `motor_data` — vazamento = takeover do
+número: acesso à VPS só por chave SSH, motor jamais exposto (sem `ports:` nos composes).
 
 ## 6. Rollout (doc 26 §rollout) + F34
 1. **Shadow** (estado atual): `WHATSAPP_LIVE` vazio OU política em `SHADOW` — cron gera
@@ -197,17 +157,19 @@ chave SSH, Evolution jamais exposta.
    e usar lote-com-aprovação; o cron desassistido só depois) · acompanhar `health` +
    métricas por degrau.
 4. **Geral**: degraus D-7/D-3/D0 em `AUTOMATICO` na tela de políticas.
-Freio em 1 clique: **kill switch** (tela do canal) congela a automação sem cancelar nada.
+Freio em 1 clique: **kill switch** (Configuração › WhatsApp › Política da régua) congela a
+automação sem cancelar nada.
 
 ## 7. Runbooks
-- **Sessão Baileys caiu**: health alerta → tela do canal → "conectar via QR" → celular
-  do dono do número escaneia. Fila drenou sozinha no próximo tick.
+- **Sessão do número caiu**: health alerta → Configuração › WhatsApp › Números → **Conectar**
+  (QR ou código de pareamento) no celular do número. A fila drena sozinha no próximo tick.
 - **Desligamento de vendedor (gap D30)**: (1) trocar `donoId` do número na tela do
-  canal; (2) desconectar o aparelho vinculado antigo (WhatsApp > aparelhos conectados);
+  canal (Números → Editar); (2) desconectar o aparelho vinculado antigo (WhatsApp > aparelhos conectados);
   (3) se o número era pessoal do vendedor, migrar o contato comercial para número da
   escola — números são da escola (doc 08 §governança).
-- **Trocar número de driver**: editar o número (tela do canal) — régua/inbox/histórico
-  não mudam (o driver é atributo do número, doc 26).
+- **Número legado (Meta/Evolution)**: não há troca de driver pela tela — todo número novo
+  nasce `MOTOR`. A conversão de um registro legado (mantendo conversas e histórico) está em
+  `SETUP.md` §Números legados.
 
 ## 8. Pré-condições NÃO técnicas (decidir antes do geral — dono)
 - **D23 base legal**: cláusula de comunicação/cobrança por WhatsApp no contrato de

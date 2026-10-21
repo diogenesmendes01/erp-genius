@@ -10,6 +10,7 @@ import { listarFiltros } from "@/server/crm/filtros-salvos";
 import { carregarFunil, lerFiltrosFunil } from "@/server/crm/funil";
 import { historicoOportunidade, obterOportunidade } from "@/server/crm/historico";
 import { capacidadesCrm } from "@/server/crm/permissoes";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { FunilCliente } from "./FunilCliente";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -25,13 +26,14 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
   const capacidades = [...capacidadesCrm(usuario.papeis)];
   const podeAtribuir = capacidades.includes("funil.atribuir");
 
-  const [colunas, salvos, vendedores, paises, config, oportunidade] = await Promise.all([
+  const [colunas, salvos, vendedores, paises, config, oportunidade, preferencia] = await Promise.all([
     carregarFunil(usuario, filtros),
     listarFiltros(usuario, "FUNIL"),
     listarVendedores(),
     listarPaisesOperacionais(),
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
     idAberto ? obterOportunidade(idAberto, usuario) : Promise.resolve(null),
+    consultarPreferenciaFusoEquipe(),
   ]);
   const historico = oportunidade ? ((await historicoOportunidade(oportunidade.id, usuario)) ?? []) : [];
 
@@ -77,6 +79,7 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
         vendedores={vendedores}
         paises={paises.map((p) => ({ id: p.id, nome: p.nome }))}
         fuso={config?.fusoInstitucional ?? undefined}
+        preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
         vazio={vazio}
       />
     </>

@@ -30,6 +30,13 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
       expect(motor).toContain("image: ${MOTOR_IMAGE:?defina");
       expect(motor).toContain("restart: unless-stopped");
     });
+    it("motor com healthcheck e limites de recursos", () => {
+      expect(motor).toMatch(/^\s+healthcheck:/m);
+      expect(motor).toMatch(/node.*fetch.*127\.0\.0\.1:4317\/api\/health/);
+      expect(motor).toMatch(/^\s+deploy:/m);
+      expect(motor).toMatch(/memory:/);
+      expect(motor).toMatch(/cpus:/);
+    });
     it("motor sem porta publicada", () => expect(motor).not.toMatch(/^\s+ports:/m));
     it("motor em modo serviço com webhook interno", () => {
       expect(motor).toContain("MOTOR_MODE: servico");
