@@ -127,7 +127,7 @@ describe("DatasOportunidade", () => {
     expect(acoes.atualizarDatas).toHaveBeenLastCalledWith("op1", expect.objectContaining({ dataExperimental: "2026-10-22T18:30", fusoDataExperimental: "Asia/Tokyo" }));
   });
   it("valor inicial da experimental no fuso do campo (não no do navegador); fuso inválido cai em UTC sem quebrar", () => {
-    const comExperimental = { ...op, dataExperimental: "2026-10-23T01:30:00.000Z" } as typeof op;
+    const comExperimental = { ...op, dataExperimental: new Date("2026-10-23T01:30:00.000Z") };
     expect(montar(DatasOportunidade, { oportunidade: comExperimental, podeEditar: true, fuso: "America/Sao_Paulo" }).valor("op-datas-experimental")).toBe("2026-10-22T22:30");
     expect(montar(DatasOportunidade, { oportunidade: comExperimental, podeEditar: true, fuso: "Lua/Base" }).valor("op-datas-experimental")).toBe("2026-10-23T01:30");
   });
