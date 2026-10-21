@@ -36,8 +36,9 @@ services:
     # SEM ports: banco na rede interna, nunca internet pública.
 
   # Migrações ANTES do app (prisma migrate deploy — aditivo e idempotente).
+  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
-    image: ${APP_IMAGE:?defina no Coolify}
+    image: ${APP_MIGRATE_IMAGE:?defina no Coolify}
     command: npx prisma migrate deploy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public

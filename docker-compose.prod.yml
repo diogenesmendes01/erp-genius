@@ -32,8 +32,9 @@ services:
     # ou túnel SSH — nunca porta pública (o banco atual em porta pública é o que a E5 aposenta).
 
   # Migrações ANTES do app (prisma migrate deploy é aditivo e idempotente — nunca reset).
+  # Usa a imagem do estágio builder, que tem Prisma CLI e prisma/migrations.
   migrate:
-    image: ${APP_IMAGE:?defina no .env}
+    image: ${APP_MIGRATE_IMAGE:?defina no .env}
     command: npx prisma migrate deploy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public

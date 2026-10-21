@@ -30,9 +30,12 @@ describe("Workflow de imagem — build e publicação no GHCR", () => {
     expect(image).toMatch(/tags:\s*\['v\*'\]/);
   });
 
-  it("tem concurrency configurado", () => {
-    expect(image).toMatch(/concurrency:/);
-    expect(image).toMatch(/group:/);
+  it("tem concurrency configurado (group: image-${{ github.ref }})", () => {
+    expect(image).toMatch(/concurrency:\s*\n\s*group:\s*image-\$\{\{\s*github\.ref\s*\}\}/);
+  });
+
+  it("concurrency cancel-in-progress true apenas para main", () => {
+    expect(image).toMatch(/cancel-in-progress:\s*\$\{\{\s*github\.ref\s*==\s*['"]refs\/heads\/main['"]\s*\}\}/);
   });
 
   it("permissões top-level são contents: read", () => {
@@ -40,7 +43,8 @@ describe("Workflow de imagem — build e publicação no GHCR", () => {
   });
 
   it("job publish tem packages: write", () => {
-    const publishJob = image.match(/publish:\s*\n([\s\S]*?)(?=\n\w+:|$)/)?.[1] ?? "";
+    // Corpo do job publish: da linha "  publish:" até o próximo job (linha "^  \w+:" sem espaços antes)
+    const publishJob = image.match(/^  publish:\s*\n((?:^    .*\n)*?)(?=^  \w+:|$)/m)?.[1] ?? "";
     expect(publishJob).toContain("packages: write");
   });
 
@@ -49,24 +53,62 @@ describe("Workflow de imagem — build e publicação no GHCR", () => {
     expect(uses.length).toBeGreaterThan(0);
     for (const use of uses) {
       // Deve ser: owner/repo@<sha> # vX.Y.Z
-      expect(use).toMatch(/@[0-9a-f]{40}\s*#\s*v\d+/);
+      expect(use).toMatch(/@[0-9a-f]{40}\s*#\s*v\d+\.\d+/);
     }
   });
 
-  it("build roda DEPOIS de typecheck, lint, test e build-next", () => {
-    const buildJob = image.match(/build:\s*\n([\s\S]*?)(?=\n\w+:|$)/)?.[1] ?? "";
-    expect(buildJob).toContain("needs: [typecheck, lint, test, build-next]");
+  it("SHAs das docker actions são reais (verificados)", () => {
+    const dockerActions = [
+      { name: "docker/setup-buildx-action", sha: "f87e5991a6d7451dcb8d9637bfbc97413f497069", version: "v4.4.1" },
+      { name: "docker/metadata-action", sha: "dc802804100637a589fabce1cb79ff13a1411302", version: "v6.2.0" },
+      { name: "docker/build-push-action", sha: "c3c9e263c25d99ce0380d002d59b67737d91b0dc", version: "v7.4.0" },
+      { name: "docker/login-action", sha: "dbcb813823bdd20940b903addbd779551569679f", version: "v4.6.0" },
+    ];
+    for (const { name, sha, version } of dockerActions) {
+      const uses = [...image.matchAll(new RegExp(`${name}@([0-9a-f]{40})\\s*#\\s*(v[\\d.]+)`, "g"))];
+      expect(uses.length).toBeGreaterThan(0);
+      for (const match of uses) {
+        expect(match[1]).toBe(sha);
+        expect(match[2]).toBe(version);
+      }
+    }
+  });
+
+  it("publish roda DEPOIS de typecheck, lint, test e build-next", () => {
+    const publishJob = image.match(/^  publish:\s*\n((?:^    .*\n)*?)(?=^  \w+:|$)/m)?.[1] ?? "";
+    expect(publishJob).toContain("needs: [typecheck, lint, test, build-next]");
   });
 
   it("publish roda APENAS em main ou tags v*", () => {
-    const publishJob = image.match(/publish:\s*\n([\s\S]*?)(?=\n\w+:|$)/)?.[1] ?? "";
-    expect(publishJob).toContain("if:");
-    expect(publishJob).toMatch(/refs\/heads\/main.*refs\/tags\/v/s);
+    const publishJob = image.match(/^  publish:\s*\n((?:^    .*\n)*?)(?=^  \w+:|$)/m)?.[1] ?? "";
+    expect(publishJob).toMatch(/if:.*refs\/heads\/main.*refs\/tags\/v/s);
   });
 
-  it("job publish imprime digest no summary", () => {
-    const publishJob = image.match(/publish:\s*\n([\s\S]*?)(?=\n\w+:|$)/)?.[1] ?? "";
+  it("job publish constrói duas imagens: app (runner) e migrate (builder)", () => {
+    // Captura o job publish completo: da linha "  publish:" até o fim do arquivo (não há mais jobs depois)
+    const publishJob = image.slice(image.indexOf("  publish:"));
+    // Imagem do app (runner)
+    expect(publishJob).toMatch(/target:\s*runner/);
+    expect(publishJob).toContain("push-app");
+    // Imagem do migrate (builder)
+    expect(publishJob).toMatch(/target:\s*builder/);
+    expect(publishJob).toContain("push-migrate");
+  });
+
+  it("job publish passa GIT_SHA como build-arg nas duas imagens", () => {
+    const publishJob = image.slice(image.indexOf("  publish:"));
+    const buildArgs = [...publishJob.matchAll(/build-args:\s*\|\s*\n\s*GIT_SHA=\$\{\{\s*github\.sha\s*\}\}/g)];
+    expect(buildArgs.length).toBe(2); // app e migrate
+  });
+
+  it("job publish imprime digests no summary (app e migrate)", () => {
+    const publishJob = image.slice(image.indexOf("  publish:"));
     expect(publishJob).toContain("GITHUB_STEP_SUMMARY");
-    expect(publishJob).toContain("digest");
+    expect(publishJob).toContain("APP_DIGEST");
+    expect(publishJob).toContain("MIGRATE_DIGEST");
+  });
+
+  it("não há job deploy (deploy é manual)", () => {
+    expect(image).not.toMatch(/^  deploy:\s*$/m);
   });
 });
