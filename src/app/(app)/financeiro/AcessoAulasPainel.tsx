@@ -7,7 +7,7 @@ import { bloquearAcesso, desbloquearAcesso, decidirSolicitacaoAcessoAulas } from
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
-import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
+import { useChavesPorAlvo } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -38,7 +38,8 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
   // mesmo decidida no meio); a chave só muda depois do sucesso. A decisão é idempotente por natureza: a mesma
   // decisão, do mesmo decisor e com o mesmo motivo, devolve ok sem gravar de novo (server/cobrancas/acoes.ts).
   const acao = useAcaoCliente({ idempotente: true });
-  const tentativa = useChaveIdempotencia();
+  // Uma tentativa por matrícula e pedido (C3 da R1 do #291): o incerto de uma não prende o pedido de outra.
+  const tentativas = useChavesPorAlvo();
   // O resultado aparece junto do formulário da matrícula ou da solicitação que disparou a ação.
   const [alvo, setAlvo] = useState<string | null>(null);
   const carregar = useCallback(async () => {
@@ -61,6 +62,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
   async function solicitar() {
     if (!form) return;
     setAlvo(`form:${form.matriculaId}`);
+    const tentativa = tentativas.para(`${form.matriculaId}:${form.bloquear ? "restringir" : "liberar"}`);
     const opcoes = { chaveIdempotencia: tentativa.atual };
     const d = await acao.executar(() => (form.bloquear ? bloquearAcesso(form.matriculaId, motivo, opcoes) : desbloquearAcesso(form.matriculaId, motivo, opcoes)), "Solicitação registrada. Outra pessoa da administração precisa decidir.");
     tentativa.depoisDo(d);

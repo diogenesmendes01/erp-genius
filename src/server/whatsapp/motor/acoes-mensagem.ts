@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
-import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { atendimentoVisivel } from "../atendimentos";
 import { despacharFila, despacharMensagemGrupo } from "../despachante";
 import { escopoGrupos, grupoNovoNoEscopo } from "../escopo";
@@ -15,7 +15,7 @@ import { midiaSaidaDoAutor } from "../midia";
 import type { ConteudoEspecial } from "../canal";
 import type { EnvioInboxResultado } from "../acoes";
 import { executarAcaoMotor } from "./acoes";
-import { ErroMotor, MENSAGEM_LIMITE_RITMO } from "./cliente";
+import { ErroMotor, MENSAGEM_LIMITE_RITMO, type CodigoErroMotor } from "./cliente";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { exigirMotorConectado } from "./capacidades";
 
@@ -153,86 +153,141 @@ export async function reagirMensagemWhatsApp(input: { mensagemId: string; emoji:
   });
 }
 
+const AGREGADO_ATENDIMENTO = "AtendimentoWhatsApp" as const;
+const TIPO_TENTATIVA_ENCAMINHAR = "MensagemWhatsAppEncaminhamentoIniciado";
+const TIPO_ENCAMINHADA = "MensagemWhatsAppEncaminhada";
+const TIPO_ENCAMINHAMENTO_INCERTO = "MensagemWhatsAppEncaminhamentoIncerto";
+const TIPO_ENCAMINHAMENTO_NAO_ENVIADO = "MensagemWhatsAppEncaminhamentoNaoEnviado";
+const MSG_ENCAMINHAMENTO_EM_ANDAMENTO = "Este encaminhamento ainda está em andamento. Aguarde e confira a conversa de destino antes de repetir.";
+const MSG_ENCAMINHAMENTO_INCERTO = "O WhatsApp não confirmou o encaminhamento, e a mensagem pode já ter chegado. Confira a conversa de destino; para encaminhar de novo, feche e abra o encaminhamento.";
+/** Respostas em que o motor afirma que NÃO executou: só elas liberam nova tentativa com a mesma chave. */
+const MOTOR_NAO_EXECUTOU = new Set<CodigoErroMotor>(["SEM_CONFIG", "NAO_ENVIADO", "LIMITE_RITMO", "NAO_AUTORIZADO", "NUMERO_INEXISTENTE", "ACAO_NAO_DISPONIVEL"]);
+
+type Sessao = Awaited<ReturnType<typeof exigirSessao>>;
+
+/** Origem própria e visível, destino no escopo de envio, mesmo número e motor conectado; lê tudo em `db`. */
+async function conferirEncaminhamento(u: Sessao, dados: { mensagemId: string; atendimentoDestinoId: string }, db: Prisma.TransactionClient) {
+  const m = await db.mensagemWhatsApp.findUnique({
+    where: { id: dados.mensagemId },
+    include: { numero: { select: { id: true, driver: true, providerRef: true, ativo: true, sessao: true } } },
+  });
+  if (!m?.atendimentoId || !(await atendimentoVisivel(u, m.atendimentoId, false, db))) throw new ErroRegra("Mensagem de origem fora do seu escopo.");
+  if (m.numero.driver !== "MOTOR" || !m.mensagemIdMotor) throw new ErroRegra("Esta mensagem não pode ser encaminhada neste canal.");
+  if (m.apagadaEm) throw new ErroRegra("Esta mensagem já foi apagada.");
+  const d = await atendimentoVisivel(u, dados.atendimentoDestinoId, true, db);
+  if (!d || d.encerradoEm) throw new ErroRegra("Destino fora do seu escopo.");
+  if (!d.numero.ativo) throw new ErroRegra("O destino está em número inativo.");
+  if (d.contato.optOutEm) throw new ErroRegra("O destino pediu para não receber mensagens (opt-out).");
+  if (d.numeroId !== m.numeroId) throw new ErroRegra("Encaminhe só entre conversas do mesmo número.");
+  exigirMotorConectado(m.numero);
+  const digitos = (d.contato.waId ?? d.contato.telefoneE164).replace(/\D/g, "");
+  return { m: { ...m, atendimentoId: m.atendimentoId, mensagemIdMotor: m.mensagemIdMotor }, d, chatId: `${digitos}@s.whatsapp.net`, numeroRef: m.numero.providerRef ?? m.numero.id };
+}
+type Encaminhamento = Awaited<ReturnType<typeof conferirEncaminhamento>>;
+type RespostaEncaminhar = { key?: { id?: string; remoteJid?: string } } | undefined;
+
+function chamarMotorEncaminhar(c: Encaminhamento): Promise<RespostaEncaminhar> {
+  return executarAcaoMotor(c.numeroRef, "message.forward", { messageId: c.m.mensagemIdMotor, chatId: c.chatId }, { origem: "HUMANO" });
+}
+
+/** Grava a mensagem no destino (o eco do celular pode ter chegado antes: o upsert não duplica) e o Evento. */
+async function gravarEncaminhada(tx: Prisma.TransactionClient, u: Sessao, c: Encaminhamento, resp: RespostaEncaminhar, tentativaId: string | null) {
+  const { m, d, chatId } = c;
+  const providerMessageId = resp?.key?.id ?? null;
+  const mensagemIdMotor = providerMessageId ? `${resp?.key?.remoteJid ?? chatId}:${providerMessageId}` : null;
+  let destinoMensagemId: string | null = null;
+  if (providerMessageId) {
+    const agora = new Date();
+    const gravada = await tx.mensagemWhatsApp.upsert({
+      where: { numeroId_providerMessageId: { numeroId: m.numeroId, providerMessageId } },
+      create: {
+        conversaId: d.transporteId, numeroId: m.numeroId, atendimentoId: d.id, direcao: "SAIDA", tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath,
+        status: "ENVIADA", statusEm: agora, enviadaEm: agora, driver: "MOTOR", origem: "HUMANO", providerMessageId, mensagemIdMotor, autorId: u.id, criadoEm: agora,
+      },
+      update: { origem: "HUMANO", autorId: u.id, atendimentoId: d.id, conversaId: d.transporteId, ...(mensagemIdMotor ? { mensagemIdMotor } : {}) },
+    });
+    destinoMensagemId = gravada.id;
+    await tx.conversaWhatsApp.updateMany({ where: { id: d.transporteId, OR: [{ ultimaMensagemEm: null }, { ultimaMensagemEm: { lt: gravada.criadoEm } }] }, data: { ultimaMensagemEm: gravada.criadoEm } });
+  }
+  await registrarEvento(tx, {
+    tipo: TIPO_ENCAMINHADA, agregadoTipo: AGREGADO_ATENDIMENTO, agregadoId: m.atendimentoId, autorId: u.id,
+    payload: { mensagemId: m.id, atendimentoDestinoId: d.id, destinoMensagemId, providerMessageId, ...(tentativaId ? { tentativaId } : {}) },
+  });
+}
+
+/**
+ * Desfecho da última tentativa desta chave (#166): `null` libera nova tentativa (o motor afirmou que não executou);
+ * "ok" é o encaminhamento já feito; os demais casos são recusados sem chamar o motor.
+ */
+async function desfechoDaChave(tx: Prisma.TransactionClient, primeira: { agregadoId: string }, autorId: string, chave: string): Promise<"ok" | null> {
+  const ultima = await tx.evento.findFirst({
+    where: { tipo: TIPO_TENTATIVA_ENCAMINHAR, agregadoTipo: AGREGADO_ATENDIMENTO, agregadoId: primeira.agregadoId, autorId, payload: { path: ["chaveIdempotencia"], equals: chave } },
+    orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { id: true },
+  });
+  const desfecho = ultima && await tx.evento.findFirst({
+    where: { tipo: { in: [TIPO_ENCAMINHADA, TIPO_ENCAMINHAMENTO_INCERTO, TIPO_ENCAMINHAMENTO_NAO_ENVIADO] }, agregadoTipo: AGREGADO_ATENDIMENTO, agregadoId: primeira.agregadoId, payload: { path: ["tentativaId"], equals: ultima.id } },
+    select: { tipo: true },
+  });
+  if (!desfecho) throw new ErroRegra(MSG_ENCAMINHAMENTO_EM_ANDAMENTO);
+  if (desfecho.tipo === TIPO_ENCAMINHADA) return "ok";
+  if (desfecho.tipo === TIPO_ENCAMINHAMENTO_INCERTO) throw new ErroRegra(MSG_ENCAMINHAMENTO_INCERTO);
+  return null;
+}
+
 /**
  * Encaminha pelo motor (message.forward) para outra conversa do MESMO número e registra a mensagem como HUMANO.
- * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa devolve ok sem encaminhar de novo ao contato. A busca
- * roda logo depois da sessão, antes das validações (o reenvio tardio, com a origem já apagada, também recebe ok), e
- * a trava da chave fica presa até o fim do envio: um reenvio que chega com o primeiro ainda no motor espera por ele.
+ * Com `chaveIdempotencia` (#166), no padrão do envio de assinatura (#288): a TX1 confere tudo e grava a tentativa
+ * (`MensagemWhatsAppEncaminhamentoIniciado`, com a marca) sob a trava da chave; o motor é chamado FORA de transação; a
+ * TX2 grava o resultado. Falha de rede, timeout ou resposta ambígua do motor viram `...EncaminhamentoIncerto`; a
+ * recusa explícita do motor (não executou), `...EncaminhamentoNaoEnviado`. O reenvio da mesma chave devolve ok se já
+ * encaminhou, recusa com "em andamento" ou "incerto" sem chamar o motor, e só tenta de novo depois de "não enviado".
+ * A busca roda antes das validações: o reenvio tardio, com a origem já apagada, também recebe ok.
  */
 export async function encaminharMensagemWhatsApp(input: { mensagemId: string; atendimentoDestinoId: string; chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const { chaveIdempotencia, ...dados } = EncaminharSchema.parse(input);
     const u = await exigirSessao();
     const marca = marcaIdempotencia(chaveIdempotencia, dados);
-    if (!marca) return encaminhar(u, dados, null, null);
-    // A transação segura a trava consultiva da chave durante a chamada ao motor (com folga sobre o timeout dele).
-    return prisma.$transaction(async (tx) => {
-      const repetido = await repeticaoIdempotente(tx, {
-        tipo: "MensagemWhatsAppEncaminhada", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+    if (!marca) {
+      const c = await conferirEncaminhamento(u, dados, prisma);
+      let resp: RespostaEncaminhar;
+      try { resp = await chamarMotorEncaminhar(c); } catch (e) { traduzir(e); }
+      await prisma.$transaction((tx) => gravarEncaminhada(tx, u, c, resp, null));
+      revalidatePath("/inbox");
+      return undefined;
+    }
+    const aberto = await prisma.$transaction(async (tx) => {
+      const primeira = await repeticaoIdempotente(tx, {
+        tipo: TIPO_TENTATIVA_ENCAMINHAR, agregadoTipo: AGREGADO_ATENDIMENTO, autorId: u.id, marca,
         mensagemConflito: "Esta tentativa já foi usada com outro destino. Confira a conversa de destino antes de repetir.",
       });
-      if (repetido) return undefined;
-      return encaminhar(u, dados, marca, tx);
-    }, { maxWait: 10_000, timeout: 45_000 });
-  });
-}
-
-async function encaminhar(
-  u: Awaited<ReturnType<typeof exigirSessao>>,
-  dados: { mensagemId: string; atendimentoDestinoId: string },
-  marca: MarcaIdempotencia | null,
-  txExterna: Prisma.TransactionClient | null,
-): Promise<undefined> {
-  {
-    const m = await prisma.mensagemWhatsApp.findUnique({
-      where: { id: dados.mensagemId },
-      include: { numero: { select: { id: true, driver: true, providerRef: true, ativo: true, sessao: true } } },
-    });
-    if (!m?.atendimentoId || !(await atendimentoVisivel(u, m.atendimentoId))) throw new ErroRegra("Mensagem de origem fora do seu escopo.");
-    if (m.numero.driver !== "MOTOR" || !m.mensagemIdMotor) throw new ErroRegra("Esta mensagem não pode ser encaminhada neste canal.");
-    if (m.apagadaEm) throw new ErroRegra("Esta mensagem já foi apagada.");
-    const d = await atendimentoVisivel(u, dados.atendimentoDestinoId, true);
-    if (!d || d.encerradoEm) throw new ErroRegra("Destino fora do seu escopo.");
-    if (!d.numero.ativo) throw new ErroRegra("O destino está em número inativo.");
-    if (d.contato.optOutEm) throw new ErroRegra("O destino pediu para não receber mensagens (opt-out).");
-    if (d.numeroId !== m.numeroId) throw new ErroRegra("Encaminhe só entre conversas do mesmo número.");
-    exigirMotorConectado(m.numero);
-
-    const digitos = (d.contato.waId ?? d.contato.telefoneE164).replace(/\D/g, "");
-    const chatId = `${digitos}@s.whatsapp.net`;
-    let resp: { key?: { id?: string; remoteJid?: string } } | undefined;
-    try {
-      resp = await executarAcaoMotor(m.numero.providerRef ?? m.numero.id, "message.forward", { messageId: m.mensagemIdMotor, chatId }, { origem: "HUMANO" });
-    } catch (e) { traduzir(e); }
-    const providerMessageId = resp?.key?.id ?? null;
-    const mensagemIdMotor = providerMessageId ? `${resp?.key?.remoteJid ?? chatId}:${providerMessageId}` : null;
-
-    const gravar = async (tx: Prisma.TransactionClient) => {
-      let destinoMensagemId: string | null = null;
-      if (providerMessageId) {
-        // O eco do celular pode ter chegado antes desta resposta: o upsert corrige para HUMANO sem duplicar.
-        const agora = new Date();
-        const gravada = await tx.mensagemWhatsApp.upsert({
-          where: { numeroId_providerMessageId: { numeroId: m.numeroId, providerMessageId } },
-          create: {
-            conversaId: d.transporteId, numeroId: m.numeroId, atendimentoId: d.id, direcao: "SAIDA", tipo: m.tipo, corpo: m.corpo, midiaPath: m.midiaPath,
-            status: "ENVIADA", statusEm: agora, enviadaEm: agora, driver: "MOTOR", origem: "HUMANO", providerMessageId, mensagemIdMotor, autorId: u.id, criadoEm: agora,
-          },
-          update: { origem: "HUMANO", autorId: u.id, atendimentoId: d.id, conversaId: d.transporteId, ...(mensagemIdMotor ? { mensagemIdMotor } : {}) },
-        });
-        destinoMensagemId = gravada.id;
-        await tx.conversaWhatsApp.updateMany({ where: { id: d.transporteId, OR: [{ ultimaMensagemEm: null }, { ultimaMensagemEm: { lt: gravada.criadoEm } }] }, data: { ultimaMensagemEm: gravada.criadoEm } });
-      }
-      await registrarEvento(tx, {
-        tipo: "MensagemWhatsAppEncaminhada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: m.atendimentoId!, autorId: u.id,
-        payload: { mensagemId: m.id, atendimentoDestinoId: d.id, destinoMensagemId, providerMessageId, ...marca },
+      if (primeira && await desfechoDaChave(tx, primeira, u.id, marca.chaveIdempotencia) === "ok") return null;
+      const c = await conferirEncaminhamento(u, dados, tx);
+      const tentativa = await registrarEvento(tx, {
+        tipo: TIPO_TENTATIVA_ENCAMINHAR, agregadoTipo: AGREGADO_ATENDIMENTO, agregadoId: c.m.atendimentoId, autorId: u.id,
+        payload: { mensagemId: c.m.id, atendimentoDestinoId: c.d.id, ...marca },
       });
-    };
-    if (txExterna) await gravar(txExterna);
-    else await prisma.$transaction(gravar);
+      return { c, tentativaId: tentativa.id };
+    });
+    if (!aberto) return undefined;
+    const { c, tentativaId } = aberto;
+    let resp: RespostaEncaminhar;
+    try {
+      resp = await chamarMotorEncaminhar(c);
+    } catch (e) {
+      const naoExecutou = e instanceof ErroMotor && MOTOR_NAO_EXECUTOU.has(e.codigo);
+      await prisma.$transaction((tx) => registrarEvento(tx, {
+        tipo: naoExecutou ? TIPO_ENCAMINHAMENTO_NAO_ENVIADO : TIPO_ENCAMINHAMENTO_INCERTO, agregadoTipo: AGREGADO_ATENDIMENTO, agregadoId: c.m.atendimentoId, autorId: u.id,
+        payload: { mensagemId: c.m.id, atendimentoDestinoId: c.d.id, tentativaId, codigo: e instanceof ErroMotor ? e.codigo : "ERRO" },
+      }));
+      revalidatePath("/inbox");
+      if (naoExecutou) traduzir(e);
+      throw new ErroRegra(MSG_ENCAMINHAMENTO_INCERTO);
+    }
+    await prisma.$transaction((tx) => gravarEncaminhada(tx, u, c, resp, tentativaId));
     revalidatePath("/inbox");
     return undefined;
-  }
+  });
 }
 
 const ConteudoSchema = z.discriminatedUnion("tipo", [

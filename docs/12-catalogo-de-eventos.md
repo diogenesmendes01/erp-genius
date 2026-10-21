@@ -121,8 +121,12 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `PoliticaComercialAlterada` | Salvar a régua comercial (lead-novo: estado/remetente/degraus — doc 27 C1); agregado `PoliticaComercial` | Gerente Com./Admin | `{ antes, depois }` |
 
 > **6º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em: `AtendimentoTransferido`
-> (nos dois Eventos, origem e novo; hash de atendimento, destino, chave do destino e contexto), `MensagemWhatsAppEncaminhada`
-> (hash de mensagem e atendimento de destino; a trava da chave fica presa durante a chamada ao motor),
+> (nos dois Eventos, origem e novo; hash de atendimento, destino, chave do destino e contexto), `MensagemWhatsAppEncaminhamentoIniciado`
+> (Evento novo, gravado antes da chamada ao motor; hash de mensagem e atendimento de destino. O desfecho entra numa
+> segunda transação, com `tentativaId` = id do `...Iniciado`: `MensagemWhatsAppEncaminhada`, `MensagemWhatsAppEncaminhamentoIncerto`
+> (timeout, rede ou resposta ambígua do motor; o reenvio da mesma chave é recusado sem chamar o motor) ou
+> `MensagemWhatsAppEncaminhamentoNaoEnviado` (o motor afirmou que não executou; a mesma chave pode tentar de novo). Sem
+> desfecho, o reenvio recebe "em andamento"),
 > `RestricaoAulasSolicitada` e `LiberacaoAulasSolicitada` do agregado `Matricula` (hash de matrícula, pedido e motivo) e
 > `LinkPagamentoEnviado` do agregado `Cobranca` (hash de cobrança e link). Em todos, a busca vem depois da sessão e do
 > papel e antes das validações de estado: o reenvio da mesma tentativa devolve o registro original mesmo com a origem
