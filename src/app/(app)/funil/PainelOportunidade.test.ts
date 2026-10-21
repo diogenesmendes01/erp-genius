@@ -115,4 +115,10 @@ describe("PainelOportunidade: fuso pessoal de exibição", () => {
       expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*>21\/10\/2026</);
     }
   });
+  // C3 da review do #286: dataCivilInstitucional lança com fuso inválido; o painel cai no fallback como o resto.
+  it("fuso da escola inválido não derruba o painel: follow-up no dia UTC, instantes no fallback do helper", () => {
+    const html = detalhes({ fuso: "Fuso/Invalido", preferenciaFusoExibicao: null });
+    expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*>21\/10\/2026</);
+    expect(html).toContain("21/10/2026, 02:30");
+  });
 });
