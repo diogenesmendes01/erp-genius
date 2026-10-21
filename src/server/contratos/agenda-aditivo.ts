@@ -56,11 +56,13 @@ export async function consultarOpcoesConferenciaAgendaAditivo(input: z.input<typ
       if (!atual?.ativo || !atual.papeis.some(p => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR || p === Papel.GERENTE_PEDAGOGICO)) throw new ErroRegra("Permissão operacional necessária.");
       const matricula = await tx.matricula.findFirst({ where: { id: d.matriculaId, status: "ATIVA" }, select: { id: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } });
       if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
-      const [encontros, professores] = await Promise.all([
+      const [encontros, professores, origensHistoricas] = await Promise.all([
         tx.encontroAgenda.findMany({ where: { matriculaId: matricula.id, finalidade: "AULA", turmaId: null, reposicaoIndividualId: null, agendaReposicaoIndividual: null, status: "PREVISTO", inicio: { gt: new Date() }, professorId: { not: null } }, orderBy: [{ inicio: "asc" }, { id: "asc" }], select: { id: true, inicio: true, fim: true, fusoOrigem: true, professor: { select: { id: true, nome: true } } } }),
         tx.usuario.findMany({ where: { ativo: true, papeis: { has: Papel.PROFESSOR } }, orderBy: [{ nome: "asc" }, { id: "asc" }], select: { id: true, nome: true } }),
+        // R2 da #285 (C6): sobre a origem histórica a tela avisa o limite do B1 antes da conferência.
+        tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: matricula.id, decisao: { is: { aprovada: true } } } }),
       ]);
-      return { matricula: { id: matricula.id, aluno: [matricula.aluno.primeiroNome, matricula.aluno.sobrenome].filter(Boolean).join(" ") }, encontros: encontros.map(e => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoOrigem: e.fusoOrigem, professorId: e.professor?.id ?? null, professor: e.professor?.nome ?? "Professor não disponível" })), professores };
+      return { matricula: { id: matricula.id, aluno: [matricula.aluno.primeiroNome, matricula.aluno.sobrenome].filter(Boolean).join(" ") }, fonteOrigemHistorica: origensHistoricas > 0, encontros: encontros.map(e => ({ id: e.id, inicio: e.inicio.toISOString(), fim: e.fim.toISOString(), fusoOrigem: e.fusoOrigem, professorId: e.professor?.id ?? null, professor: e.professor?.nome ?? "Professor não disponível" })), professores };
     }, { timeout: 30000 });
   });
 }

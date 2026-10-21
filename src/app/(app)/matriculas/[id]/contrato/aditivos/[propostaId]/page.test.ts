@@ -1,13 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), proposta: vi.fn(), efeitos: vi.fn(), preferencia: vi.fn(), acerto: vi.fn(), historico: vi.fn(), originais: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), proposta: vi.fn(), efeitos: vi.fn(), preferencia: vi.fn(), acerto: vi.fn(), historico: vi.fn(), originais: vi.fn(), decidir: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/contratos/aditivos", () => ({ consultarPropostaAditivo: mocks.proposta }));
 vi.mock("@/server/contratos/aditivo-efeitos-consulta", () => ({ consultarEfeitosAditivo: mocks.efeitos }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/contratos/aditivo-acerto-taxa-consulta", () => ({ consultarAcertoTaxaPorProposta: mocks.acerto }));
-vi.mock("../Formularios", () => ({ DecidirAditivo: () => null }));
+vi.mock("../Formularios", () => ({ DecidirAditivo: (props: unknown) => { mocks.decidir(props); return null; } }));
 vi.mock("../ParticipantesFormulario", () => ({ ParticipantesFormulario: () => null }));
 vi.mock("../ImpactosPainel", () => ({ ImpactosPainel: () => null }));
 vi.mock("../AcertoTaxaFormulario", () => ({ AcertoTaxaFormulario: () => null }));
@@ -103,5 +103,7 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
     expect(tela).toContain("Aditivo sobre contrato legado ainda não segue para assinatura; aguarda decisão.");
     expect(tela).toContain('href="/matriculas/m1/contrato/origem-historica"');
     expect(tela).not.toContain("Abrir documento assinado e preservado");
+    // R2 da #285 (C5): a decisão sobre a origem só oferece rejeitar, como numa versão superada.
+    expect(mocks.decidir).toHaveBeenLastCalledWith(expect.objectContaining({ propostaId: "p1", superada: true }));
   });
 });

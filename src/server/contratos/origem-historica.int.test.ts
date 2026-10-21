@@ -37,6 +37,7 @@ import { hashSubstituicao } from "./substituicao-estado";
 import { carregarBaseAditivoTx } from "./aditivo-estado";
 import { prepararProcessoAditivoTx } from "./aditivo-envio-tx";
 import { carregarConferenciaAgendaAditivoTx, registrarPropostaAgendaAditivoTx } from "./agenda-aditivo-tx";
+import { consultarOpcoesConferenciaAgendaAditivo } from "./agenda-aditivo";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
 
@@ -311,6 +312,9 @@ it("Agenda particular sobre origem histórica: integridade do PDF e da transcri�
   const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: alvo.matriculaId, professorId: professor.id, preparadorId: secretariaId, inicio: new Date("2099-10-10T15:00:00Z"), fim: new Date("2099-10-10T16:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Agenda contratada", chaveIdempotencia: "origem-historica-encontro", entradaHash: "fixture" } });
   const entrada = { matriculaId: alvo.matriculaId, encontros: [{ encontroId: encontro.id, professorNovoId: professor.id, inicioNovo: "2099-10-12T15:00:00Z", fimNovo: "2099-10-12T16:00:00Z", duracaoMinutos: 60, fusoOrigem: "UTC" }] };
 
+  // R2 (C6): a tela de opções sabe que a fonte é a origem histórica e avisa antes da conferência.
+  entrar(secretariaId);
+  expect(await consultarOpcoesConferenciaAgendaAditivo({ matriculaId: alvo.matriculaId })).toMatchObject({ ok: true, dado: { fonteOrigemHistorica: true, encontros: [expect.objectContaining({ id: encontro.id })] } });
   // Íntegra: a conferência (somente leitura) usa a origem histórica como fonte.
   const conferencia = await prisma.$transaction(tx => carregarConferenciaAgendaAditivoTx(tx, secretariaId, entrada));
   expect(conferencia).toMatchObject({ somenteConsulta: true, fonte: { tipo: "ORIGEM_HISTORICA", conclusaoId: origem.id, conclusaoHash: gravada.entradaHash }, pendencias: [] });
