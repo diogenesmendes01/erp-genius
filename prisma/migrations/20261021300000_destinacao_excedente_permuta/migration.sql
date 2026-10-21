@@ -221,6 +221,12 @@ BEGIN
     -- B3 da R1 da #283: excedente só de liquidação já feita; cobrança em aberto seguiria cobrando enquanto o crédito nasce.
     IF c.status<>'PAGO' OR c.saldo IS DISTINCT FROM 0 OR coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"+c."valorCompensadoPermuta" < c."valorNegociado"
     THEN RAISE EXCEPTION 'A destinação do excedente exige a cobrança quitada'; END IF;
+    -- B4 da R2 rigorosa da #283: o excedente fica amarrado à obrigação acordada, recalculado da própria cobrança (FOR UPDATE
+    -- acima): não passa da redução (liquidado − obrigação) nem do serviço próprio (permuta menos usos do saldo de serviços).
+    IF NEW."valorDevidoAcordado" > c."valorNegociado"
+      OR NEW."valorExcedente" > coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"+c."valorCompensadoPermuta"-NEW."valorDevidoAcordado"
+      OR NEW."valorExcedente" > c."valorCompensadoPermuta"-coalesce((SELECT sum(a.valor) FROM "AplicacaoCompensacaoPermuta" a WHERE a."cobrancaId"=c.id AND a."usoSaldoServicoId" IS NOT NULL),0)
+    THEN RAISE EXCEPTION 'Excedente acima da redução acordada ou do serviço compensado próprio'; END IF;
     IF EXISTS (SELECT 1 FROM "PropostaDestinacaoExcedentePermuta" o LEFT JOIN "DecisaoDestinacaoExcedentePermuta" d ON d."propostaId"=o.id WHERE o."cobrancaId"=NEW."cobrancaId" AND d.id IS NULL)
     THEN RAISE EXCEPTION 'Já existe destinação de excedente aguardando decisão para esta cobrança'; END IF;
     -- O cálculo do excedente não conhece destinações anteriores: uma segunda destinação contaria o mesmo excedente de novo.
@@ -262,6 +268,11 @@ BEGIN
   IF c.versao IS DISTINCT FROM p."versaoCobranca" THEN RAISE EXCEPTION 'A cobrança mudou depois da proposta; prepare nova destinação'; END IF;
   IF c.status<>'PAGO' OR c.saldo IS DISTINCT FROM 0 OR coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"+c."valorCompensadoPermuta" < c."valorNegociado"
   THEN RAISE EXCEPTION 'A destinação do excedente exige a cobrança quitada'; END IF;
+  -- B4 da R2 rigorosa da #283: mesma amarração da proposta, recalculada na aprovação.
+  IF p."valorDevidoAcordado" > c."valorNegociado"
+    OR p."valorExcedente" > coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"+c."valorCompensadoPermuta"-p."valorDevidoAcordado"
+    OR p."valorExcedente" > c."valorCompensadoPermuta"-coalesce((SELECT sum(a.valor) FROM "AplicacaoCompensacaoPermuta" a WHERE a."cobrancaId"=c.id AND a."usoSaldoServicoId" IS NOT NULL),0)
+  THEN RAISE EXCEPTION 'Excedente acima da redução acordada ou do serviço compensado próprio'; END IF;
   -- Q167C: sem a concordância das duas partes o excedente permanece pendente.
   IF (SELECT count(*) FROM "ConcordanciaDestinacaoExcedentePermuta" k WHERE k."propostaId"=p.id)<>2 THEN RAISE EXCEPTION 'A destinação exige a concordância do aluno ou responsável e da escola'; END IF;
   IF (SELECT coalesce(sum(valor),0) FROM "ItemDestinacaoExcedentePermuta" WHERE "propostaId"=p.id) IS DISTINCT FROM p."valorExcedente"

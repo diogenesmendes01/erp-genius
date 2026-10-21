@@ -46,10 +46,12 @@ export default async function Pagina({ params }: { params: Promise<{ matriculaId
  {d.cobrancas.map(c => <section key={c.id} className="space-y-2 rounded border p-4">
   <h3>{rotular(TIPO_COBRANCA_LABEL, c.tipo)} · vencimento {formatarDataCivil(c.vencimento)} · {rotular(STATUS_COBRANCA_LABEL, c.status)}</h3>
   <p>Negociado {formatarMoeda(c.valorNegociado, c.moeda)} · liquidado {formatarMoeda(c.liquidado, c.moeda)} (serviço compensado {formatarMoeda(c.permuta, c.moeda)})</p>
-  {c.fontes.origens.length > 0 && <ul className="list-disc pl-5">{c.fontes.origens.map(o => <li key={o.id}>{o.tipo === "PERMUTA" ? "Serviço (permuta)" : o.tipo === "CAIXA" ? "Caixa" : "Crédito"}: {formatarMoeda(o.valor, c.moeda)}</li>)}</ul>}
+  {c.fontes.origens.length > 0 && <ul className="list-disc pl-5">{c.fontes.origens.map(o => <li key={o.id}>{o.tipo === "PERMUTA" ? (o.usoSaldo ? "Serviço (uso do saldo de serviços)" : "Serviço (permuta)") : o.tipo === "CAIXA" ? "Caixa" : "Crédito"}: {formatarMoeda(o.valor, c.moeda)}</li>)}</ul>}
   {c.destinada ? <p role="status">Esta cobrança já possui destinação de excedente aprovada.</p>
    : c.emAndamento ? <p role="status">Há destinação aguardando decisão (veja abaixo).</p>
+   : !c.quitada ? <p role="status">A cobrança ainda está em aberto: a destinação do excedente só vale para cobrança quitada.</p>
    : !c.fontes.prontas ? <p role="status">As fontes de liquidação ainda não são finais: {c.fontes.pendencias.map(x => PENDENCIAS[x] ?? x).join(", ")}.</p>
+   : !c.fontes.origens.some(o => o.tipo === "PERMUTA" && !o.usoSaldo) ? <p role="status">O serviço compensado nesta cobrança veio do saldo de serviços, que não gera excedente: saldo restrito nunca vira crédito financeiro nem saldo novo.</p>
    : <ExcedenteFormulario modo="preparar" matriculaId={matriculaId} cobrancaId={c.id} moeda={c.moeda} origens={c.fontes.origens} />}
  </section>)}
  <h2 className="text-xl">Destinações propostas</h2>
