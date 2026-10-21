@@ -28,6 +28,7 @@ import type { FiltroHistoricoPessoa } from "@/server/crm/historico";
 import type { ItemHistorico } from "@/server/crm/historico";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import { FUSO_PADRAO } from "../funil/CartaoOportunidade";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { NovaOportunidade } from "../funil/NovaOportunidade";
 
 type Aba = "geral" | "historico" | "oportunidades" | "campos";
@@ -56,12 +57,14 @@ type Props = {
   hrefVoltar?: string;
   /** Links do filtro do histórico (mantêm a lista e a pessoa abertas). */
   hrefsHistorico?: Record<FiltroHistoricoPessoa, string>;
+  /** Fuso da escola: origem da exibição quando não há preferência pessoal. */
   fuso?: string;
+  /** Fuso pessoal de exibição (cadastro, histórico); inválido ou ausente, vale o da escola. */
+  preferenciaFusoExibicao?: string | null;
   abaInicial?: Aba;
 };
 
-const dataHora = (d: Date | string, fuso: string) =>
-  new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short", timeStyle: "short" }).format(new Date(d));
+const dataHora = (d: Date | string, preferencia: string | null, fuso: string) => formatarInstanteExibicao(d, preferencia, fuso).texto;
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
@@ -97,6 +100,7 @@ function FichaCorpo({
   hrefVoltar = "/contatos",
   hrefsHistorico,
   fuso = FUSO_PADRAO,
+  preferenciaFusoExibicao = null,
   abaInicial = "geral",
 }: Props) {
   const router = useRouter();
@@ -234,7 +238,7 @@ function FichaCorpo({
             <Linha rotulo="Cidade">{d.cidade ?? "Não informada"}</Linha>
             <Linha rotulo="Cargo">{d.cargo ?? "Não informado"}</Linha>
             <Linha rotulo="Origem">{d.origemCanal ? ORIGEM_CANAL_LABEL[d.origemCanal] : "Não informada"}</Linha>
-            <Linha rotulo="Cadastrado em">{dataHora(d.criadoEm, fuso)}</Linha>
+            <Linha rotulo="Cadastrado em">{dataHora(d.criadoEm, preferenciaFusoExibicao, fuso)}</Linha>
           </dl>
 
           <section aria-label="Tags" className="space-y-2">
@@ -340,7 +344,7 @@ function FichaCorpo({
                 <li key={h.id} className="border-b border-border-soft pb-2 text-sm">
                   <p className="font-medium">{h.rotulo}</p>
                   {h.texto && <p className="mt-1 whitespace-pre-wrap text-gray-800">{h.texto}</p>}
-                  <p className="text-xs text-gray-600">{[h.autor, dataHora(h.em, fuso)].filter(Boolean).join(" · ")}</p>
+                  <p className="text-xs text-gray-600">{[h.autor, dataHora(h.em, preferenciaFusoExibicao, fuso)].filter(Boolean).join(" · ")}</p>
                 </li>
               ))}
             </ol>

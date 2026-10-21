@@ -72,3 +72,12 @@ describe("PainelFiltros", () => {
     expect(paramsDaUrl({}).toString()).toBe("");
   });
 });
+
+// Fuso pessoal nas telas (pendência da Q176): a hora da última mensagem sai no fuso de exibição recebido da página
+// (o pessoal; sem ele, o da escola) — o mesmo resultado com o processo em UTC ou em America/Sao_Paulo.
+describe("ListaAtendimentos: hora no fuso de exibição", () => {
+  it("02:30Z é 23:30 em São Paulo e 20:30 em Costa Rica", () => {
+    expect(html({ ultimaMensagemEm: "2026-10-21T02:30:00.000Z" }, { fuso: "America/Sao_Paulo" })).toContain(">23:30<");
+    expect(html({ ultimaMensagemEm: "2026-10-21T02:30:00.000Z" }, { fuso: "America/Costa_Rica" })).toContain(">20:30<");
+  });
+});

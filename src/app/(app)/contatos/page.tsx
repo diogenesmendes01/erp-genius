@@ -13,6 +13,7 @@ import { CLASSES_COR_TAG } from "@/server/crm/tags";
 import { FichaContato } from "./FichaContato";
 import { ListaContatos } from "./ListaContatos";
 import { paramsDaLista } from "./params-lista";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -32,7 +33,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
   const podeMesclar = pode("contatos.mesclar");
   const podeExportar = usuario.papeis.includes(Papel.ADMINISTRADOR) || (usuario.permissoes ?? []).includes("dados.exportar_contatos");
 
-  const [lista, tags, vendedores, paises, config, detalhe, pares] = await Promise.all([
+  const [lista, tags, vendedores, paises, config, detalhe, pares, preferencia] = await Promise.all([
     listarContatos(usuario, filtros),
     tagsAtivas(),
     comercial ? listarVendedores() : Promise.resolve([]),
@@ -40,6 +41,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
     idAberto ? obterContato(idAberto, usuario) : Promise.resolve(null),
     podeMesclar ? paresDuplicados(usuario) : Promise.resolve([]),
+    consultarPreferenciaFusoEquipe(),
   ]);
   const [historico, campos] = detalhe
     ? await Promise.all([historicoPessoa(detalhe.id, usuario, filtroHistorico).then((h) => h ?? []), camposDaPessoa(detalhe.id, usuario)])
@@ -96,6 +98,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
               hrefVoltar={hrefLista("/contatos", { ...base, pagina: filtros.pagina })}
               hrefsHistorico={hrefsHistorico}
               fuso={config?.fusoInstitucional ?? undefined}
+              preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}
               abaInicial={hist ? "historico" : "geral"}
             />
           </div>
