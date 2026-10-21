@@ -6,7 +6,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { FORMA_PAGAMENTO_LABEL, STATUS_PAGAMENTO_INFORMADO_LABEL, rotular } from "@/lib/labels";
 import { conferirPagamento } from "@/server/financeiro/acoes";
 import type { listarInformesPagamento } from "@/server/financeiro/consultas";
-import { formatarDiaCivilGravado, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { formatarDiaDoPagamento, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
@@ -28,7 +28,7 @@ export function InformesPagamento({ informes, fila = null, preferenciaFusoExibic
   /** Só na fila do /financeiro (por cursor nos dois sentidos); a ficha do aluno mostra o histórico dele sem trechos. */
   fila?: FilaInformes | null;
   preferenciaFusoExibicao?: string | null;
-  /** A data do pagamento informada é data civil gravada (meio-dia da escola): sai no dia da escola, sem fuso pessoal. */
+  /** A data do pagamento informada é data digitada (meio-dia da escola) ou, sem data, o instante do informe: sai no dia da escola (`formatarDiaDoPagamento`), sem fuso pessoal. */
   fusoEscola: string;
 }) {
   const router = useRouter();
@@ -50,7 +50,7 @@ export function InformesPagamento({ informes, fila = null, preferenciaFusoExibic
       ? <EstadoVazio acao={<Link className="text-brand-700 underline" href={fila.inicioDaFila}>Ir para o início da fila</Link>}>Nenhum informe a partir deste ponto da fila: os seguintes já foram conferidos ou o link ficou antigo.</EstadoVazio>
       : <EstadoVazio>Nenhum informe neste atendimento.</EstadoVazio>)}
     {informes.map((i) => <article key={i.id} className="space-y-2 rounded-md border p-3 text-sm">
-      <p><strong>{i.aluno}</strong> · {i.cobranca} · {formatarMoeda(i.valor, i.moeda)} · {formatarDiaCivilGravado(i.dataPagamento, fusoEscola)}</p>
+      <p><strong>{i.aluno}</strong> · {i.cobranca} · {formatarMoeda(i.valor, i.moeda)} · {formatarDiaDoPagamento(i.dataPagamento, fusoEscola)}</p>
       <p>{rotular(STATUS_PAGAMENTO_INFORMADO_LABEL, i.status)} · {rotular(FORMA_PAGAMENTO_LABEL, i.forma)}</p>
       {i.status === "A_CONFERIR" && i.suspenderLembretesAte && <p className="text-xs text-gray-600">Prazo de conferência: {textoInstanteOperacional(i.suspenderLembretesAte, preferenciaFusoExibicao)}</p>}
       {i.comentario && <p>{i.comentario}</p>}

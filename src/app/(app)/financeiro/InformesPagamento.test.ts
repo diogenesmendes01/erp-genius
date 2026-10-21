@@ -46,5 +46,13 @@ describe("InformesPagamento", () => {
       expect(html).toContain("R$ 100,00 · 15/01/2026");
     }
   });
+  it("informe sem data (instante do envio) à noite na escola fica no dia da escola", () => {
+    for (const preferenciaFusoExibicao of ["Asia/Tokyo", null]) {
+      const html = renderToStaticMarkup(createElement(InformesPagamento, {
+        informes: [{ ...informes[0], dataPagamento: "2026-01-16T01:30:00.000Z" }], preferenciaFusoExibicao, fusoEscola: "America/Sao_Paulo",
+      }));
+      expect(html).toContain("R$ 100,00 · 15/01/2026");
+    }
+  });
 });
 

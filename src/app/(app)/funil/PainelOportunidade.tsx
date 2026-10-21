@@ -23,9 +23,7 @@ import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico"
 import { ModalPerda } from "./ModalPerda";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
-import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
-import { dataCivilInstitucional } from "@/server/operacao/fuso";
-import { formatarDataCivil } from "@/lib/data-civil";
+import { formatarDiaDaEscola, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 type Aba = "oportunidade" | "detalhes" | "atividade";
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -53,8 +51,11 @@ type Props = {
 
 /** Instante (criação, histórico, experimental): fuso pessoal de exibição; sem ele, o da escola. */
 const dataHora = (d: Date | string, preferencia: string | null, fuso: string) => formatarInstanteExibicao(d, preferencia, fuso).texto;
-/** O follow-up é data civil gravada no fuso da escola: sai como dia, sem hora e sem fuso pessoal (como no cartão). */
-const diaCivil = (d: Date | string, fuso: string) => formatarDataCivil(dataCivilInstitucional(new Date(d), fuso));
+/**
+ * O follow-up é data civil gravada no fuso da escola: sai como dia, sem hora e sem fuso pessoal (como no cartão).
+ * Fuso inválido não derruba o painel: cai no dia UTC, como os instantes caem no fallback do helper.
+ */
+const diaCivil = (d: Date | string, fuso: string) => formatarDiaDaEscola(d, fuso);
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
