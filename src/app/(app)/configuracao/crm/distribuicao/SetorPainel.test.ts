@@ -27,6 +27,10 @@ describe("tela de Distribuição e SLA", () => {
     expect(h).toContain("O alerta aparece no sino e na lista do Inbox uma vez por atendimento. Sem responsável, vai ao gerente do setor.");
   });
 
+  it("explica_que_feriados_vem_do_calendario_escolar", () => {
+    expect(html()).toContain("Feriados do calendário escolar publicado (Acadêmico › Calendário) fecham o atendimento o dia todo; recesso e férias, não.");
+  });
+
   it("aviso_sem_horario_quando_flag_ligada", () => {
     expect(html({ horario: null })).toContain("Sem horário cadastrado: o prazo conta direto, 24 h por dia.");
     expect(html({ horario: null, contarSoNoHorario: false })).not.toContain("Sem horário cadastrado");
