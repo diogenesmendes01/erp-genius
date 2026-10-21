@@ -29,6 +29,9 @@ export async function revogarCobertura(id: string) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
     await prisma.$transaction(async (tx) => {
+      // Idempotência por natureza (#166, 5º lote): já revogada devolve ok (como antes); a linha travada impede que o
+      // clique duplo grave dois `CoberturaRevogada`.
+      await tx.$queryRaw`SELECT id FROM "CoberturaCarteira" WHERE id = ${id} FOR UPDATE`;
       const atual = await tx.coberturaCarteira.findUnique({ where: { id }, include: { titular: { select: { gerenteComercialId: true } }, substituto: { select: { gerenteComercialId: true } } } });
       if (!atual) throw new ErroRegra("Cobertura não encontrada.");
       if (!autor.papeis.includes(Papel.ADMINISTRADOR) && (atual.titular.gerenteComercialId !== autor.id || atual.substituto.gerenteComercialId !== autor.id)) throw new ErroPermissao();

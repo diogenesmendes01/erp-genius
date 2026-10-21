@@ -170,11 +170,12 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
           </div>
         )}
       </Drawer>
+      {/* Cancelar é idempotente por natureza (#166, 5º lote): o mesmo cancelamento, de quem repete e com o mesmo motivo, devolve ok. */}
       {cancelando && tarefa && (
         <ConfirmarAcao
           titulo={`Cancelar a tarefa "${tarefa.titulo}"?`}
           confirmacao="cancelamento"
-          idempotente={false}
+          idempotente
           acao={() => cancelarTarefa(tarefa.id, tarefa.versao, motivo)}
           aoConcluir={() => { setCancelando(false); router.refresh(); }}
           aoCancelar={() => setCancelando(false)}
