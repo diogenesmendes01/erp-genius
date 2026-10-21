@@ -15,7 +15,9 @@ const MOTIVOS: { valor: MotivoEstorno; rotulo: string }[] = [
   { valor: "OUTRO", rotulo: "Outro motivo" },
 ];
 
-const FALHA_DE_REDE = { ok: false as const, erro: "Não foi possível confirmar o estorno. Confira a conexão, atualize a tela e veja se a comissão já aparece como estornada antes de tentar de novo." };
+// Idempotente por natureza (#166, 5º lote): o mesmo estorno, do mesmo autor e com o mesmo motivo, devolve ok sem
+// gravar de novo (server/crm/comissoes-estorno.ts), então a falha de rede pode ser repetida.
+const FALHA_DE_REDE = { ok: false as const, erro: "Não foi possível confirmar o estorno. Confira a conexão e tente de novo: o mesmo estorno não é gravado duas vezes." };
 
 /** Botão "Estornar" de uma linha do painel: pede o motivo e confirma; a tela só muda depois do `ok` do servidor. */
 export function EstornarComissao({ id, aluno, valor }: { id: string; aluno: string; valor: string }) {
@@ -30,7 +32,7 @@ export function EstornarComissao({ id, aluno, valor }: { id: string; aluno: stri
         <ConfirmarAcao
           titulo={`Estornar a comissão de ${aluno}?`}
           confirmacao="estorno"
-          idempotente={false}
+          idempotente
           acao={() => estornarComissaoDoPainel({ id, motivo, detalhe: detalhe.trim() || undefined }).catch(() => FALHA_DE_REDE)}
           aoConcluir={() => { setAberto(false); router.refresh(); }}
           aoCancelar={() => setAberto(false)}
