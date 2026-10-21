@@ -23,6 +23,9 @@ import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico"
 import { ModalPerda } from "./ModalPerda";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { dataCivilInstitucional } from "@/server/operacao/fuso";
+import { formatarDataCivil } from "@/lib/data-civil";
 
 type Aba = "oportunidade" | "detalhes" | "atividade";
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -41,13 +44,17 @@ type Props = {
   /** Países operacionais, para editar os dados da oportunidade. */
   paises?: { id: string; nome: string }[];
   aoFechar: () => void;
-  /** Fuso institucional para exibir datas; o padrão é o do CartaoOportunidade. */
+  /** Fuso institucional: regras e datas civis (follow-up); o padrão é o do CartaoOportunidade. */
   fuso?: string;
+  /** Fuso pessoal de exibição dos instantes; sem ele (ou inválido), o institucional. */
+  preferenciaFusoExibicao?: string | null;
   abaInicial?: Aba;
 };
 
-const dataHora = (d: Date | string, fuso: string) =>
-  new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, dateStyle: "short", timeStyle: "short" }).format(new Date(d));
+/** Instante (criação, histórico, experimental): fuso pessoal de exibição; sem ele, o da escola. */
+const dataHora = (d: Date | string, preferencia: string | null, fuso: string) => formatarInstanteExibicao(d, preferencia, fuso).texto;
+/** O follow-up é data civil gravada no fuso da escola: sai como dia, sem hora e sem fuso pessoal (como no cartão). */
+const diaCivil = (d: Date | string, fuso: string) => formatarDataCivil(dataCivilInstitucional(new Date(d), fuso));
 
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
@@ -58,7 +65,7 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, abaInicial = "oportunidade" }: Props) {
+export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade" }: Props) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
@@ -143,7 +150,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <dl>
               <Linha rotulo="Valor previsto">{op.valorPrevisto && op.moeda ? formatarMoeda(op.valorPrevisto, op.moeda) : "Não informado"}</Linha>
               <Linha rotulo="Próximo passo">{op.proximaAcao ?? "Sem próximo passo"}</Linha>
-              {op.dataExperimental && <Linha rotulo="Experimental">{dataHora(op.dataExperimental, fuso)}</Linha>}
+              {op.dataExperimental && <Linha rotulo="Experimental">{dataHora(op.dataExperimental, preferenciaFusoExibicao, fuso)}</Linha>}
               {op.etapa === EtapaLead.PERDIDO && op.motivoPerda && <Linha rotulo="Motivo da perda">{MOTIVO_PERDA_LABEL[op.motivoPerda]}</Linha>}
               <Linha rotulo="Responsável">
                 {podeAtribuir ? (
@@ -242,8 +249,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <dl>
               <Linha rotulo="Tipo">{op.b2b ? "Empresa (B2B)" : "Pessoa física"}</Linha>
               <Linha rotulo="País">{op.pais ?? "Não informado"}</Linha>
-              <Linha rotulo="Criada em">{dataHora(op.criadoEm, fuso)}</Linha>
-              {op.proximoFollowUp && <Linha rotulo="Próximo follow-up">{dataHora(op.proximoFollowUp, fuso)}</Linha>}
+              <Linha rotulo="Criada em">{dataHora(op.criadoEm, preferenciaFusoExibicao, fuso)}</Linha>
+              {op.proximoFollowUp && <Linha rotulo="Próximo follow-up">{diaCivil(op.proximoFollowUp, fuso)}</Linha>}
             </dl>
             {op.pessoaId && (
               <p className="text-sm">
@@ -283,7 +290,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 {[...historico].reverse().map((i) => (
                   <li key={i.id} className="border-b border-gray-200 py-2 text-sm">
                     <p className="text-gray-900">{i.rotulo}</p>
-                    <p className="text-xs text-gray-600">{dataHora(i.em, fuso)}{i.autor ? ` · ${i.autor}` : ""}</p>
+                    <p className="text-xs text-gray-600">{dataHora(i.em, preferenciaFusoExibicao, fuso)}{i.autor ? ` · ${i.autor}` : ""}</p>
                   </li>
                 ))}
               </ol>
