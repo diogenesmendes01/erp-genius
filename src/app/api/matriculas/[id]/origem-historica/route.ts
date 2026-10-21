@@ -19,6 +19,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const form = await request.formData();
     const arquivo = form.get("pdfAssinado");
     if (!(arquivo instanceof File)) return NextResponse.json({ erro: "Envie o PDF assinado." }, { status: 400, headers: privado });
+    // O corte por content-length não vale para upload chunked (sem o cabeçalho): confere o tamanho do arquivo antes de lê-lo.
+    if (arquivo.size > MAX_BYTES) return NextResponse.json({ erro: "PDF acima de 20 MiB." }, { status: 413, headers: privado });
     const pdfAssinado = Buffer.from(await arquivo.arrayBuffer());
     let transcricao: unknown;
     try { transcricao = JSON.parse(String(form.get("transcricao") ?? "")); } catch { return NextResponse.json({ erro: "Transcrição inválida." }, { status: 400, headers: privado }); }
