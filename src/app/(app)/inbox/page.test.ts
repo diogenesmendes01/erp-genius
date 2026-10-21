@@ -70,9 +70,12 @@ describe("InboxPage", () => {
     await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow("banco fora");
   });
 
-  it("mantém UTC como fallback quando não há preferência válida", async () => {
+  it("sem preferência válida, o fuso da escola (antes era UTC: a hora da lista e do balão saía errada no Brasil)", async () => {
+    sino.fuso.mockResolvedValue("America/Costa_Rica");
     mocks.preferencia.mockResolvedValue({ ok: false, erro: "preferência indisponível" });
-    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("inbox:null");
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("inbox:America/Costa_Rica");
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: null } });
+    expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("inbox:America/Costa_Rica");
   });
 
   it("não lê preferência nem lista se a guarda falhar", async () => {

@@ -31,7 +31,9 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir }: {
   aoConcluir?: () => void;
 }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166, 5º lote): a mesma perda, do mesmo autor e com o mesmo motivo e observação,
+  // devolve ok sem outro `LeadPerdido` (server/comercial/acoes.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   const [motivo, setMotivo] = useState<MotivoPerda | "">("");
   const [observacao, setObservacao] = useState("");
   const [erroLocal, setErroLocal] = useState<string | null>(null);

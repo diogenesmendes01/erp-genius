@@ -33,7 +33,8 @@ import { registrarEventoCobrancaEnviada } from "@/server/cobrancas/eventos";
 import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-aulas";
 import { PASSOS_POLITICA } from "@/server/whatsapp/schema";
 import { DIA_PREVISAO_COMISSAO_MAX, DIA_PREVISAO_COMISSAO_MIN, DiaPrevisaoComissaoSchema } from "./previsao-comissao";
-import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
+import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
@@ -248,11 +249,34 @@ export async function registrarCobrancaWhatsApp(
   });
 }
 
-/** Fecha o mês: comissões Aprovadas → Pagas. (doc 10: fechamento dia 30 · pagamento dia 05) */
-export async function fecharMesComissoes(): Promise<Resultado<{ pagas: number }>> {
+/**
+ * Fecha o mês: comissões Aprovadas → Pagas. (doc 10: fechamento dia 30 · pagamento dia 05)
+ *
+ * `chaveIdempotencia` (#166, 5º lote): a marca vai em cada `ComissaoPaga` deste fechamento, na mesma transação. O
+ * reenvio da mesma tentativa devolve quantas foram pagas sem pagar as comissões aprovadas depois dela; um novo
+ * fechamento deliberado usa chave nova. Sem chave, o comportamento de antes.
+ */
+export async function fecharMesComissoes(input: { chaveIdempotencia?: string } = {}): Promise<Resultado<{ pagas: number }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
-    const pagas = await prisma.$transaction((tx) => fecharComissoesAprovadasTx(tx, autor.id));
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { acao: "fecharMesComissoes" });
+    const pagas = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "ComissaoPaga", agregadoTipo: "Comissao", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada em outra operação. Recarregue a página e confira as comissões antes de repetir.",
+        });
+        if (repetido) {
+          // Mesma expressão e predicado do índice `Evento_idempotencia_idx` (ver `sqlBuscaIdempotente`).
+          const [{ n }] = await tx.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM "Evento"
+            WHERE "tipo" = 'ComissaoPaga' AND "autorId" = ${autor.id}
+              AND "payload" ? 'chaveIdempotencia' AND ("payload" ->> 'chaveIdempotencia') = ${marca.chaveIdempotencia}
+              AND "agregadoTipo" = 'Comissao'`;
+          return n;
+        }
+      }
+      return fecharComissoesAprovadasTx(tx, autor.id, null, marca);
+    });
     if (pagas === 0) throw new ErroRegra("Nenhuma comissão aprovada para pagar.");
     revalidatePath("/financeiro", "layout");
     return { pagas };
@@ -270,6 +294,7 @@ export async function fecharComissoesAprovadasTx(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   autorId: string | null,
   aprovadasAntesDe: Date | null = null,
+  marca: MarcaIdempotencia | null = null,
 ): Promise<number> {
   const bloqueadas = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "Comissao" WHERE status = 'APROVADA' ORDER BY id FOR UPDATE`;
   const aprovadas = await tx.comissao.findMany({
@@ -297,7 +322,7 @@ export async function fecharComissoesAprovadasTx(
       agregadoTipo: "Comissao",
       agregadoId: c.id,
       autorId,
-      payload: { pagaEm: agora.toISOString(), valor: numero(c.valor), moeda: c.moeda, politicaId: c.politicaId },
+      payload: { pagaEm: agora.toISOString(), valor: numero(c.valor), moeda: c.moeda, politicaId: c.politicaId, ...marca },
     });
   }
   return aprovadas.length;

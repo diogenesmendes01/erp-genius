@@ -1,4 +1,5 @@
-import { FusoInstitucionalSchema } from "./fuso";
+import { formatarDataCivil } from "@/lib/data-civil";
+import { FusoInstitucionalSchema, diaCivilGravado } from "./fuso";
 
 /** Preferência só interpreta instantes já persistidos; não muda fontes ou datas civis. */
 export function resolverFusoExibicao(preferencia: string | null | undefined, fusoOrigem: string) {
@@ -21,13 +22,43 @@ export function fusoInicialDeEntrada(institucional: string | null | undefined, p
   return "";
 }
 
-export function formatarInstanteExibicao(valor: Date | string, preferencia: string | null | undefined, fusoOrigem: string) {
+/**
+ * Estilos de um INSTANTE na tela. Todos levam `timeZone` explícito: a tela nunca depende do fuso do servidor
+ * (SSR) nem do navegador. "dataHora" é o padrão histórico ("20/10/2026, 20:30").
+ */
+const ESTILOS_INSTANTE = {
+  dataHora: { dateStyle: "short", timeStyle: "short" },
+  data: { dateStyle: "short" },
+  hora: { hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
+  diaMesHora: { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
+} as const satisfies Record<string, Intl.DateTimeFormatOptions>;
+export type EstiloInstante = keyof typeof ESTILOS_INSTANTE;
+
+/**
+ * Helper central de exibição de instantes (docs/43 §6 item 6; fuso pessoal nas telas). A preferência pessoal
+ * vale quando é um IANA válido; senão, o fuso de origem (o da escola, nas telas operacionais). Datas civis
+ * (vencimento, promessa, nascimento) NÃO passam por aqui: ver `formatarDiaCivilGravado` e `formatarDataCivil`.
+ */
+export function formatarInstanteExibicao(valor: Date | string, preferencia: string | null | undefined, fusoOrigem: string, estilo: EstiloInstante = "dataHora") {
   const instante = new Date(valor);
   if (!Number.isFinite(instante.getTime())) return { texto: String(valor), fuso: resolverFusoExibicao(preferencia, fusoOrigem) };
   const fuso = resolverFusoExibicao(preferencia, fusoOrigem);
   try {
-    return { texto: new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fuso }).format(instante), fuso };
+    return { texto: new Intl.DateTimeFormat("pt-BR", { ...ESTILOS_INSTANTE[estilo], timeZone: fuso }).format(instante), fuso };
   } catch {
     return { texto: instante.toISOString(), fuso: "UTC" };
   }
+}
+
+/**
+ * Data civil GRAVADA como instante (promessa de pagamento, data do pagamento): o dia da escola pelo mesmo critério
+ * da régua (`diaCivilGravado`), sem fuso pessoal — um dia civil não muda conforme quem lê. Fuso da escola
+ * inválido usa o dia UTC; valor que não é data volta como está; ausente vira `ausente`.
+ */
+export function formatarDiaCivilGravado(valor: Date | string | null | undefined, fusoEscola: string, ausente = "—"): string {
+  if (valor == null || valor === "") return ausente;
+  const instante = new Date(valor);
+  if (!Number.isFinite(instante.getTime())) return String(valor);
+  const fuso = FusoInstitucionalSchema.safeParse(fusoEscola);
+  return formatarDataCivil(fuso.success ? diaCivilGravado(instante, fuso.data) : instante.toISOString().slice(0, 10), ausente);
 }
