@@ -126,6 +126,17 @@ describe("DatasOportunidade", () => {
     await comPreferencia.clicar("Salvar datas");
     expect(acoes.atualizarDatas).toHaveBeenLastCalledWith("op1", expect.objectContaining({ dataExperimental: "2026-10-22T18:30", fusoDataExperimental: "Asia/Tokyo" }));
   });
+  // Menor 4 da review do #290: experimental gravada na hora repetida do fim do horário de verão (01:30 de 01/11 em
+  // Nova York existe duas vezes). Salvar só o follow-up não pode falhar por causa dela: intocada, vai o instante gravado.
+  it("experimental intocada vai como o instante gravado, mesmo na hora repetida do horário de verão", async () => {
+    const naHoraRepetida = { ...op, dataExperimental: new Date("2026-11-01T05:30:00.000Z") };
+    const t = montar(DatasOportunidade, { oportunidade: naHoraRepetida, podeEditar: true, fuso: "America/New_York" });
+    expect(t.valor("op-datas-experimental")).toBe("2026-11-01T01:30");
+    t.digitar("op-datas-followup", "2026-11-03");
+    await t.clicar("Salvar datas");
+    expect(acoes.atualizarDatas).toHaveBeenLastCalledWith("op1", expect.objectContaining({ proximoFollowUp: "2026-11-03", dataExperimental: "2026-11-01T05:30:00.000Z" }));
+    expect(acoes.atualizarDatas.mock.lastCall![1]).not.toHaveProperty("fusoDataExperimental");
+  });
   it("valor inicial da experimental no fuso do campo (não no do navegador); fuso inválido cai em UTC sem quebrar", () => {
     const comExperimental = { ...op, dataExperimental: new Date("2026-10-23T01:30:00.000Z") };
     expect(montar(DatasOportunidade, { oportunidade: comExperimental, podeEditar: true, fuso: "America/Sao_Paulo" }).valor("op-datas-experimental")).toBe("2026-10-22T22:30");

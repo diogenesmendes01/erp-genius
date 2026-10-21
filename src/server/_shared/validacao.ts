@@ -82,9 +82,12 @@ export const dataOpcional = z.preprocess(
  * (`exigirInstanteDoCampoLocal`, src/server/_shared/campo-local.ts; lote 3 do fuso pessoal nas telas). Date-only
  * ("YYYY-MM-DD") cai no meio-dia da escola via {@link paraDataLocal}; instante ISO e Date passam inalterados.
  */
+/** Mensagem de data e hora digitadas sem fuso (texto do datetime-local que chegou ao schema sem ser convertido). */
+export const MSG_DATA_HORA_SEM_FUSO = "Data e hora digitadas sem fuso ou inválidas: confira o horário e informe o fuso.";
+
 export function paraDataHoraLocal(v: unknown): unknown {
   if (typeof v === "string" && DATA_HORA_LOCAL.test(v)) {
-    throw new Error("Data e hora digitadas sem fuso: converta com exigirInstanteDoCampoLocal antes de validar.");
+    throw new Error(MSG_DATA_HORA_SEM_FUSO);
   }
   return paraDataLocal(v);
 }
@@ -94,7 +97,16 @@ export function paraDataHoraLocal(v: unknown): unknown {
  * também date-only (ancorado no meio-dia da escola). Vazio → undefined. Texto de datetime-local sem fuso é recusado.
  */
 export const dataHoraOpcional = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? undefined : paraDataHoraLocal(v)),
+  (v, ctx) => {
+    if (v === "" || v === null || v === undefined) return undefined;
+    // Texto de datetime-local sem fuso (inclusive malformado, como segundos ":60"): erro de validação legível na
+    // tela, não "erro inesperado" (menor 7 da review do #290). A conversão certa vem antes, com o fuso explícito.
+    if (typeof v === "string" && DATA_HORA_LOCAL.test(v)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MSG_DATA_HORA_SEM_FUSO });
+      return z.NEVER;
+    }
+    return paraDataHoraLocal(v);
+  },
   z.coerce.date().optional(),
 );
 

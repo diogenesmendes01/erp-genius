@@ -123,7 +123,9 @@ describe("paraDataHoraLocal: texto de datetime-local nunca no fuso do processo (
 describe("dataHoraOpcional (schema datetime-local)", () => {
   it("aceita o instante já convertido e recusa o texto do datetime-local sem fuso", () => {
     expect(dataHoraOpcional.parse("2026-06-22T12:15:00.000Z")).toEqual(new Date("2026-06-22T12:15:00.000Z"));
-    expect(() => dataHoraOpcional.parse("2026-06-22T09:15")).toThrow(/sem fuso/);
+    expect(dataHoraOpcional.safeParse("2026-06-22T09:15").error?.issues[0]?.message).toMatch(/sem fuso/);
+    // Malformado (segundos :60): também erro de validação legível, não exceção solta.
+    expect(dataHoraOpcional.safeParse("2026-06-22T09:15:60").error?.issues[0]?.message).toMatch(/sem fuso/);
   });
   it("trata vazio/null/undefined como undefined", () => {
     expect(dataHoraOpcional.parse("")).toBeUndefined();

@@ -180,5 +180,5 @@ it("prazo vigente no fuso da agenda ou da escola, escrito; fuso inválido cai em
   consulta.mockResolvedValue(conferencia("America/Costa_Rica", "ESCOLA"));
   expect(await render()).toContain("20/09/2026, 20:30 (America/Costa_Rica, fuso da escola)");
   consulta.mockResolvedValue(conferencia("Lua/Base", "AGENDA"));
-  expect(await render()).toContain("21/09/2026, 02:30 (UTC, fuso da agenda)");
+  expect(await render()).toContain("21/09/2026, 02:30 (UTC; fuso da agenda não reconhecido: Lua/Base)");
 });
