@@ -326,6 +326,8 @@ it("driver simulado: cancela a solicitação de assinatura aberta pela desistên
 it.each([
   ["origemReconferenciaDeltaDesistenciaId", "origem-delta-fixture"],
   ["origemRevisaoCorrecaoAulaId", "origem-q175-fixture"],
+  // Q171/Q167C: crédito financeiro do excedente de permuta destinado no acordo (nona origem).
+  ["origemExcedentePermutaId", "origem-q171-fixture"],
 ] as const)("fotografia Q165 Node/SQL coincide com crédito de %s", async (origem, origemId) => {
   const { fotografiaQ165 } = await import("./desistencia-acerto-contratual");
   const pedido = await registrarPedido(`pedido-q165-${origemId}`);

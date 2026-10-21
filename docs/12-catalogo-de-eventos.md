@@ -120,6 +120,30 @@ Evento: tabelas operacionais (doc 29 regra 3).
 | `ConfigComercialAlterada` | Salvar a config comercial (auto-lead / saudação — fase doc 27 C1); agregado `ConfigComercial` | Gerente Com./Admin | `{ antes, depois }` (`antes: null` na 1ª materialização) |
 | `PoliticaComercialAlterada` | Salvar a régua comercial (lead-novo: estado/remetente/degraus — doc 27 C1); agregado `PoliticaComercial` | Gerente Com./Admin | `{ antes, depois }` |
 
+> **6º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em: `AtendimentoTransferido`
+> (nos dois Eventos, origem e novo; hash de atendimento, destino, chave do destino e contexto), `MensagemWhatsAppEncaminhamentoIniciado`
+> (Evento novo, gravado antes da chamada ao motor; hash de mensagem e atendimento de destino. O desfecho entra numa
+> segunda transação, com `tentativaId` = id do `...Iniciado`: `MensagemWhatsAppEncaminhada`, `MensagemWhatsAppEncaminhamentoIncerto`
+> (timeout, rede ou resposta ambígua do motor; o reenvio da mesma chave é recusado sem chamar o motor) ou
+> `MensagemWhatsAppEncaminhamentoNaoEnviado` (o motor afirmou que não executou; a mesma chave pode tentar de novo). Sem
+> desfecho, o reenvio recebe "não confirmado, confira a conversa" e o motor não é chamado),
+> `RestricaoAulasSolicitada` e `LiberacaoAulasSolicitada` do agregado `Matricula` (hash de matrícula, pedido e motivo) e
+> `LinkPagamentoEnviado` do agregado `Cobranca` (hash de cobrança e link). Em todos, a busca vem depois da sessão e do
+> papel e antes das validações de estado: o reenvio da mesma tentativa devolve o registro original mesmo com a origem
+> encerrada, a mensagem apagada, a solicitação decidida ou a cobrança paga. A mesma chave com outra entrada recebe a
+> mesma recusa, exista o alvo ou não.
+> Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar nem chamar o motor; o estado vindo
+> de outra pessoa, do despachante ou do celular segue recusado): `AtendimentoAssumido` e `AtendimentoDevolvido` (o
+> último Evento de responsável do atendimento é o de quem repete), `AtendimentoEncerrado` (pelo Inbox; a linha é
+> travada), `ParticipanteRevogado`, `MensagemAgendadaCancelada` (só quando a intenção tem agregado; sem ele não há
+> Evento para reconhecer e o reenvio segue "já cancelada"), `MensagemWhatsAppEditada` (a última edição já deixou
+> o mesmo texto) e `MensagemWhatsAppApagada`. Editar e apagar gravam antes do motor, sob a trava da mensagem e do verbo,
+> `MensagemWhatsAppAcaoIniciada` (`{ mensagemId, verbo, texto? }`); o desfecho leva `tentativaId`: `MensagemWhatsAppEditada`
+> ou `MensagemWhatsAppApagada`, `MensagemWhatsAppAcaoIncerta` (timeout, rede, resultado incerto) ou
+> `MensagemWhatsAppAcaoNaoExecutada` (o motor recusou). Pedido que encontra a tentativa sem desfecho é recusado sem
+> chamar o motor; depois de um desfecho, um pedido novo pode chamar o motor de novo (editar e apagar não duplicam nada
+> para o contato).
+
 ## Alunos (agregado `Aluno`)
 | Evento | Gatilho | Quem | Payload |
 |---|---|---|---|
@@ -412,3 +436,11 @@ Envio, conciliação e cancelamento passam pelo port `ProvedorAssinatura` (`src/
 | `ResultadoCancelamentoAssinaturaDesistenciaPreservado` (alterado) | `Matricula` | Observação nova do cancelamento Q165. Agora é gravado **depois** da transição (`CANCELADO` quando confirmado), na mesma transação | Secretaria que acionou (`autorId`, antes nulo) | `{ intencaoId, observacaoId, processoId, resultado, cancelamentoConfirmado, chaveIdempotencia?, entradaHash? }` |
 
 Conciliação: `ENCONTRADO` só confirma o envio com o envelope `EM_ASSINATURA` ou `ASSINADO`. Envelope `CANCELADO` ou `RECUSADO` no serviço fica `INCERTO`, com o motivo na evidência (o `evidenciaHash` da observação). `ENVIANDO` só é conciliado depois de `PRAZO_CONCILIACAO_ENVIANDO_MS` contado de `iniciadaEm`. Antes disso a ação é recusada e nada é gravado. Nenhum destes eventos comprova assinatura, aceite ou efeito contratual: processos `SIMULADO` ficam em `SANDBOX`, e o banco exige `PRODUCAO` para efeito real.
+
+### Destinação do excedente de permuta (Q171/Q167C)
+
+Agregado `Matricula`, cada um na transação do próprio registro. `DestinacaoExcedentePermutaProposta`: propostaId, cobrancaId, valorExcedente, moeda e os itens (`SALDO_SERVICOS`/`CREDITO_FINANCEIRO` com valor); a chave de idempotência mora na própria proposta. `ConcordanciaExcedentePermutaRegistrada`: propostaId, concordanciaId e parte (`ALUNO_OU_RESPONSAVEL`/`ESCOLA`); nome, meio e evidência ficam no registro imutável. `DestinacaoExcedentePermutaDecidida`: propostaId, decisaoId, aprovada, motivo e os destinos criados (id do saldo de serviços; id da origem e do crédito financeiro). A repetição idêntica devolve o registro existente sem novo evento. Não altera a cobrança nem a compensação original.
+
+### Uso do saldo restrito a serviços (Q171)
+
+Agregado `Matricula`. `UsoSaldoServicoPermutaProposto`: propostaId, saldoId, cobrancaId, valor e moeda. `UsoSaldoServicoPermutaDecidido`: propostaId, decisaoId, aprovada, motivo e aplicacaoId (a `AplicacaoCompensacaoPermuta` criada na mesma transação da aprovação; nula na rejeição). O uso abate a cobrança como serviço compensado; não é recebimento nem crédito financeiro e nunca vira devolução.

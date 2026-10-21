@@ -811,6 +811,10 @@ export const MAPA_BOTOES: Record<string, string[]> = {
     // Decidir a compensação (L2142, #175): rejeitar é perigo; aprovar só abre o ConfirmarAcao.
     "<button> Enviando… · Rejeitar · Aprovar e compensar · Decidir → perigo|secundario/sm",
   ],
+  // Q171/Q167C: destinação do excedente e uso do saldo restrito a serviços (um botão por formulário, como acertos-adiantamento).
+  "financeiro/permuta/excedente/[matriculaId]/Formulario.tsx": [
+    "<button> Registrado · Processando… · Repetir mesma tentativa · prepar → secundario/lg",
+  ],
   "financeiro/recebimentos/RecebimentoDestinadoForm.tsx": [
     "<button> Destinar → fantasma/sm",
     "<button> Remover → perigo/sm",

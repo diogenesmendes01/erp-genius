@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { agendarMensagem, cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
 import { despacharFila } from "./despachante";
@@ -83,6 +84,18 @@ export async function agendarMensagemNoAtendimento(input: { atendimentoId: strin
     revalidatePath("/inbox");
     return r.dado!;
   });
+}
+
+/**
+ * Agendamento com o horário DIGITADO (lote 3 do fuso pessoal nas telas): `quandoLocal` é o texto do `datetime-local`,
+ * lido no `fuso` que o Inbox escreve ao lado do campo (pessoal; sem preferência, o da escola) e convertido AQUI.
+ * Antes, o navegador fazia `new Date(valor)` no fuso do dispositivo. O resto (acesso, janela, idempotência pela
+ * chave) é o de `agendarMensagemNoAtendimento`, com o instante convertido.
+ */
+export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  const r = await executarAcao(async () => exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString());
+  if (!r.ok) return { ok: false, erro: r.erro };
+  return agendarMensagemNoAtendimento({ atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, chaveIdempotencia: input.chaveIdempotencia });
 }
 
 /** Cancela uma mensagem agendada pelo atendimento: ela precisa ser deste atendimento; autoria e estado ficam em `cancelarMensagemAgendada`. */

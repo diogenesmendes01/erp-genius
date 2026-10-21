@@ -22,7 +22,7 @@ vi.mock("@/server/matricula/desistencia-efetivacao", () => ({ efetivarPedidoDesi
 
 import { PedidoFormulario } from "./PedidoFormulario";
 import { EfetivacaoFormulario } from "./EfetivacaoFormulario";
-import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
 import type { ReactNode } from "react";
@@ -63,7 +63,8 @@ describe("EfetivacaoFormulario", () => {
     nome: "efetivar desistência", tela, action: m.efetivar,
     acionar: () => submeter(tela(), valores),
     respostaOk: { ok: true, dado: { id: "pedido-1", matriculaId: "matricula-1", status: "CANCELADA" } },
-    sucesso: "Desistência efetivada. As reservas disponíveis desta contratação foram liberadas.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    // #166: a efetivação é idempotente por natureza; na falha de rede, reenviar sem alterar.
+    sucesso: "Desistência efetivada. As reservas disponíveis desta contratação foram liberadas.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => rotuloDoBotao(tela()) === "Efetivando…",
   });
 
