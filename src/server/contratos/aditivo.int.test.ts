@@ -2154,21 +2154,44 @@ it("PRODUCAO_HORA_ADIANTAMENTO_MOEDA: compra de horas consumida na moeda anterio
   const m = await prisma.matricula.update({ where: { id: fixture.matriculaId }, data: { status: "ATIVA" } });
   const financeiro = await criarUsuario(["FINANCEIRO"]);
   const professor = await criarUsuario(["PROFESSOR"]);
+  // R2 do #284 (B1): adiantamento pago sem compra registrada impede a troca, na checagem TS e no banco.
+  const { consultarAlvoMoedaTx } = await import("./aditivo-moeda");
+  const alvoSintetico = () => prisma.$transaction(tx => consultarAlvoMoedaTx(tx, m.id, { condicoes: { MOEDA: { tipo: "MOEDA", moeda: "USD" } }, vigenciaInicio: new Date("2026-09-01T00:00:00Z") }));
+  const noBanco = async () => (await prisma.$queryRaw<Array<{ p: string[] }>>`SELECT pendencias_moeda_antiga_173(${m.id}, 'CRC', '2026-09-01T00:00:00'::timestamp, 'UTC') AS p`)[0].p;
+  expect(await alvoSintetico()).toMatchObject({ podePreparar: false, pendencias: expect.arrayContaining([{ codigo: "ADIANTAMENTO_SEM_COMPRA", texto: expect.stringContaining("sem compra registrada") }]) });
+  expect(await noBanco()).toContain("ADIANTAMENTO_SEM_COMPRA");
   authMock.mockResolvedValue({ user: { id: financeiro.id } });
   const paga = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobranca.id } });
   const compra = await registrarCompraHorasAntecipadas({ alunoId: m.alunoId, matriculaId: m.id, cobrancaId: cobranca.id, versaoCobranca: paga.versao, minutosComprados: 120, evidenciaCondicoes: "Adiantamento contratado conferido", chaveIdempotencia: "q173-horas-compra" });
   if (!compra.ok || !compra.dado) throw new Error(JSON.stringify(compra));
-  const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: m.id, professorId: professor.id, preparadorId: financeiro.id, inicio: new Date("2099-10-05T12:00:00Z"), fim: new Date("2099-10-05T14:00:00Z"), fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula paga com horas", chaveIdempotencia: "q173-horas-encontro", entradaHash: "fixture" } });
-  const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.dado.id, encontroId: encontro.id, motivo: "Reserva da aula contratada", chaveIdempotencia: "q173-horas-reserva" });
-  if (!reserva.ok || !reserva.dado) throw new Error(JSON.stringify(reserva));
-  await prisma.aulaDiario.create({ data: { encontroId: encontro.id, professorId: professor.id, ocorridaEm: encontro.inicio, conteudo: "Aula realizada", registros: { create: { alunoId: m.alunoId, nomeAluno: "Aluno", presente: true } } } });
-  vi.useFakeTimers({ toFake: ["Date"] });
-  try {
-    vi.setSystemTime(new Date("2099-10-06T12:00:00Z"));
-    const revisao = await conferirRealizacaoHoras({ reservaId: reserva.dado.id });
-    if (!revisao.ok || !revisao.dado?.estadoDiario) throw new Error(JSON.stringify(revisao));
-    expect(await conferirRealizacaoHoras({ reservaId: reserva.dado.id, estadoDiario: revisao.dado.estadoDiario, motivo: "Realização conferida pelo Financeiro" })).toMatchObject({ ok: true });
-  } finally { vi.useRealTimers(); }
+  // Registrada a compra, o que falta passa a ser o saldo de horas, não o adiantamento.
+  expect(await noBanco()).toEqual(["SALDO_HORAS_PRE_PAGAS"]);
+  // Consumo dos 120 minutos: 119 numa aula em 2099 (relógio do Node avançado) e 1 numa aula real que começa em
+  // segundos. O banco exige reserva de aula futura (inicio > CURRENT_TIMESTAMP) e correção de aula já terminada
+  // (clock_timestamp), então a aula curta é a que o B2 corrige depois de terminar, sem deslocar linhas no banco.
+  const consumir = async (inicio: Date, fim: Date, chave: string, agora?: Date) => {
+    const encontro = await prisma.encontroAgenda.create({ data: { matriculaId: m.id, professorId: professor.id, preparadorId: financeiro.id, inicio, fim, fusoOrigem: "UTC", status: "PREVISTO", motivo: "Aula paga com horas", chaveIdempotencia: `q173-horas-encontro-${chave}`, entradaHash: "fixture" } });
+    authMock.mockResolvedValue({ user: { id: financeiro.id } });
+    const reserva = await reservarHorasCompradasParaEncontro({ compraId: compra.dado!.id, encontroId: encontro.id, motivo: "Reserva da aula contratada", chaveIdempotencia: `q173-horas-reserva-${chave}` });
+    if (!reserva.ok || !reserva.dado) throw new Error(JSON.stringify(reserva));
+    return { encontro, reservaId: reserva.dado.id, confirmar: async () => {
+      await prisma.aulaDiario.create({ data: { encontroId: encontro.id, professorId: professor.id, ocorridaEm: encontro.inicio, conteudo: "Aula realizada", registros: { create: { alunoId: m.alunoId, matriculaId: m.id, nomeAluno: "Aluno", presente: true, participacao: "PRESENTE" } } } });
+      if (agora) { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(agora); }
+      try {
+        authMock.mockResolvedValue({ user: { id: financeiro.id } });
+        const revisao = await conferirRealizacaoHoras({ reservaId: reserva.dado!.id });
+        if (!revisao.ok || !revisao.dado?.estadoDiario) throw new Error(JSON.stringify(revisao));
+        expect(await conferirRealizacaoHoras({ reservaId: reserva.dado!.id, estadoDiario: revisao.dado.estadoDiario, motivo: "Realização conferida pelo Financeiro" })).toMatchObject({ ok: true });
+      } finally { if (agora) vi.useRealTimers(); }
+    } };
+  };
+  const inicioCurta = new Date(Math.ceil((Date.now() + 8_000) / 1000) * 1000);
+  const curta = await consumir(inicioCurta, new Date(inicioCurta.getTime() + 60_000), "curta");
+  const longa = await consumir(new Date("2099-10-05T12:00:00Z"), new Date("2099-10-05T13:59:00Z"), "longa", new Date("2099-10-06T12:00:00Z"));
+  await longa.confirmar();
+  await new Promise(resolver => setTimeout(resolver, Math.max(0, curta.encontro.fim.getTime() + 1_500 - Date.now())));
+  await curta.confirmar();
+  expect(await noBanco()).toEqual([]);
   const { entradaProposta } = await prepararAditivoMoeda("q173-horas", "2026-09-01T00:00:00Z", [
     { origem: "MOEDA", novo: "USD", valorEstruturado: { tipo: "MOEDA", moeda: "USD" } },
     { origem: "TAXA_VALOR", novo: "100.00 USD", valorEstruturado: { tipo: "DINHEIRO", valor: "100", moeda: "USD" } },
@@ -2193,7 +2216,27 @@ it("PRODUCAO_HORA_ADIANTAMENTO_MOEDA: compra de horas consumida na moeda anterio
   expect(contexto.moeda).toBe("USD");
   expect(contexto.cobrancas.map(c => c.id)).not.toContain(cobranca.id);
   expect(contexto.cobrancas.filter(c => c.moeda !== "USD")).toEqual([]);
-}, 240_000);
+
+  // R2 do #284 (B2): correção de aula proposta DEPOIS da troca, sobre aula paga com a compra CRC. A devolução de minutos
+  // recriaria saldo na moeda antiga, sem caminho para usar nem liquidar: a revisão é recusada, com o motivo, e nada é estornado.
+  const { revisarCorrecaoAula, proporCorrecaoAula } = await import("@/server/diario/correcao-aula");
+  const { proporRevisaoFinanceiraCorrecaoAula } = await import("@/server/financeiro/revisao-correcao-aula");
+  await prisma.encontroAgenda.update({ where: { id: curta.encontro.id }, data: { status: "MINISTRADO" } });
+  authMock.mockResolvedValue({ user: { id: professor.id } });
+  const atual = await revisarCorrecaoAula({ encontroId: curta.encontro.id });
+  if (!atual.ok || !atual.dado) throw new Error(JSON.stringify(atual));
+  const correcao = await proporCorrecaoAula({ encontroId: curta.encontro.id, estadoHash: atual.dado.estadoHash, versaoEsperada: atual.dado.versaoAtual, motivo: "Aula lançada, mas não realizada por falha da escola.", evidencia: "Registro da coordenação sobre a indisponibilidade.", chaveIdempotencia: "q173-b2-correcao",
+    alteracao: { conteudo: "Aula não realizada: indisponibilidade de responsabilidade da escola.", registros: atual.dado.snapshot.registros.map(r => ({ registroId: r.registroId, participacao: r.participacao, observacao: r.observacao })) } });
+  if (!correcao.ok || !correcao.dado) throw new Error(JSON.stringify(correcao));
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  expect(await proporRevisaoFinanceiraCorrecaoAula({ propostaCorrecaoAulaId: correcao.dado.id, tipo: "AULA_NAO_COBRAVEL", motivo: "Aula não ocorreu; os minutos pré-pagos deveriam voltar.", chaveIdempotencia: "q173-b2-revisao" }))
+    .toMatchObject({ ok: false, erro: expect.stringContaining("antes da troca de moeda da matrícula para USD") });
+  // O banco também recusa: a fotografia não sai. O guard do estorno é a segunda barreira, para uma aplicação que chegasse até ele.
+  expect((await prisma.$queryRaw<Array<{ f: unknown }>>`SELECT q23_fotografia_nao_cobravel_175(${correcao.dado.id}) AS f`)[0].f).toBeNull();
+  expect(await prisma.propostaRevisaoFinanceiraCorrecaoAula.count()).toBe(0);
+  expect(await prisma.estornoConsumoHorasCompradas.count()).toBe(0);
+  expect(await noBanco()).toEqual([]);
+}, 300_000);
 
 it("envio integrado do aditivo pelo driver simulado: SIMULADO só com o driver, incerteza só sai por conciliação e repetição idempotente", async () => {
   const { enviarAditivoParaAssinatura, conciliarEnvioAditivo } = await import("./aditivo-envio");

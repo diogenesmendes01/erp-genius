@@ -269,12 +269,20 @@ it("Q173 × Q171: saldo restrito disponível e destinação de excedente sem dec
   expect(await alvo()).toMatchObject({ moedaAtual: "CRC", moedaNova: "USD", podePreparar: false, pendencias: [{ codigo: "SALDO_SERVICOS_PERMUTA", texto: expect.stringContaining("saldo restrito") }] });
   expect(await noBanco()).toEqual(["SALDO_SERVICOS_PERMUTA"]);
 
-  // Uso total do saldo numa mensalidade de 20: a reserva já zera o disponível; aprovada, a cobrança fica quitada.
+  // Uso total do saldo numa mensalidade de 20. M1 da R2: o uso pendente não esconde o saldo, porque pode ser
+  // rejeitado depois da troca; só o uso aprovado zera.
   const proxima = await novaCobranca(TipoCobranca.MENSALIDADE, 20);
+  entrar(financeiroId);
+  const rejeitado = await propor({ cobrancaId: proxima.id, valor: "20.00", chaveIdempotencia: "q173-uso-rejeitado" });
+  if (!rejeitado.ok || !rejeitado.dado) throw new Error(JSON.stringify(rejeitado));
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "SALDO_SERVICOS_PERMUTA"]);
+  entrar(aprovadorId);
+  expect(await decidirUsoSaldoServicoPermuta({ propostaId: rejeitado.dado.id, aprovada: false, motivo: "Aluno pediu outro destino para o saldo." })).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "SALDO_SERVICOS_PERMUTA"]);
   entrar(financeiroId);
   const uso = await propor({ cobrancaId: proxima.id, valor: "20.00", chaveIdempotencia: "q173-uso-total" });
   if (!uso.ok || !uso.dado) throw new Error(JSON.stringify(uso));
-  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO"]);
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "SALDO_SERVICOS_PERMUTA"]);
   entrar(aprovadorId);
   expect(await decidirUsoSaldoServicoPermuta({ propostaId: uso.dado.id, aprovada: true, motivo: "Saldo restante usado antes da troca de moeda." })).toMatchObject({ ok: true, dado: { aprovada: true } });
   expect(await alvo()).toMatchObject({ podePreparar: true, pendencias: [] });
