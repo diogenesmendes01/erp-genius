@@ -12,11 +12,15 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "seed:whatsapp": "tsx prisma/seed-whatsapp.ts",
+    "seed:qa": "tsx prisma/seed-qa.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "node scripts/test-db.mjs start",
     "test:db:stop": "node scripts/test-db.mjs stop",
-    "test:int": "vitest run -c vitest.integration.config.ts"
+    "test:int": "vitest run -c vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:codegen": "playwright codegen"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -41,6 +45,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.16.11",
     "@types/react": "^18.3.11",

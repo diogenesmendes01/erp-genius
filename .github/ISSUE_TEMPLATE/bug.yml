@@ -1,0 +1,126 @@
+name: Bug
+description: Defeito encontrado em teste (UAT) ou em uso
+title: "[Módulo] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Preencha com cuidado: alguém que nunca viu o sistema precisa
+        conseguir repetir o problema só lendo esta issue. **Nunca cole senhas, tokens ou dados
+        reais de alunos.**
+
+  - type: dropdown
+    id: ambiente
+    attributes:
+      label: Ambiente
+      options:
+        - UAT v1
+        - Desenvolvimento local
+        - Produção
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modulo
+    attributes:
+      label: Módulo
+      options:
+        - Login / sessão
+        - Configuração (países, catálogo, turmas, usuários)
+        - CRM (leads, pipeline, inbox)
+        - WhatsApp
+        - Matrícula
+        - Alunos
+        - Financeiro (cobranças, pagamentos, aprovações, comissões)
+        - Permissões (papel vê ou faz algo que não devia)
+        - Outro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severidade
+    attributes:
+      label: Severidade
+      description: Crítico = impede fluxo principal ou corrompe dados, sem contorno. Alto = fluxo principal com contorno, ou regra de negócio errada com impacto financeiro/permissão. Médio = funcionalidade secundária ou validação. Baixo = texto/visual.
+      options:
+        - Crítico
+        - Alto
+        - Médio
+        - Baixo
+    validations:
+      required: true
+
+  - type: input
+    id: papel
+    attributes:
+      label: Papel e usuário usados
+      description: Só o papel e o e-mail de teste. Nunca a senha.
+      placeholder: "Vendedor (joao@genius.com)"
+    validations:
+      required: true
+
+  - type: input
+    id: roteiro
+    attributes:
+      label: ID do cenário no roteiro
+      description: Ex. FIN-12. Se não veio do roteiro, escreva "exploratório".
+      placeholder: "FIN-12"
+    validations:
+      required: true
+
+  - type: textarea
+    id: passos
+    attributes:
+      label: Passos para reproduzir
+      description: Numerados, a partir do login. Inclua os dados usados (código do lead, nome do aluno, valor).
+      placeholder: |
+        1. Logar como Vendedor
+        2. Abrir Alunos → A-00012 → Financeiro
+        3. Clicar em Renegociar na cobrança C-00034
+        4. Escolher Desconto, 12%, vigência "Apenas esta cobrança", confirmar
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado
+      description: O que deveria acontecer e por quê (doc, roteiro ou decisão do gestor).
+    validations:
+      required: true
+
+  - type: textarea
+    id: obtido
+    attributes:
+      label: Resultado obtido
+      description: O que aconteceu. Copie a mensagem de erro exata se houver.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidência
+      description: Arraste aqui print, vídeo ou o trace do Playwright (.zip). Sem dados sensíveis.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: frequencia
+    attributes:
+      label: Frequência
+      options:
+        - Sempre
+        - Às vezes
+        - Só uma vez
+    validations:
+      required: true
+
+  - type: textarea
+    id: observacoes
+    attributes:
+      label: Observações
+      description: Contorno encontrado, hipótese de causa, relação com outra issue.
+    validations:
+      required: false

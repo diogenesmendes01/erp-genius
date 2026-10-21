@@ -48,6 +48,11 @@
 | [`16-plano-execucao.md`](16-plano-execucao.md) | **Plano mestre** de documentação + implementação (checklist) |
 | [`15-decisoes-adr.md`](15-decisoes-adr.md) | Log de decisões e pendências em aberto |
 
+### 5. Testar (QA)
+| Doc | Conteúdo |
+|---|---|
+| [`qa/README.md`](qa/README.md) | **Kit do QA (UAT v1)**: onboarding, usuários por papel, roteiro de testes manuais, fluxo de bugs, auditoria código × docs e testes E2E (Playwright em `e2e/`) |
+
 ## Convenções da documentação
 - **Idioma:** pt-BR.
 - **Numeração:** os arquivos `04`–`06` mantêm a numeração legada ("Fase 1") no nome; o

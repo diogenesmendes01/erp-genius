@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Fluxo de bugs e etiquetas
+    url: https://github.com/diogenesmendes01/erp-genius/blob/main/docs/qa/04-fluxo-de-bugs.md
+    about: Como preencher, severidades, quadro e o que fazer com divergências doc × código.
