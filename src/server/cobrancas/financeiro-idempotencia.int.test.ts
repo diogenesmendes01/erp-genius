@@ -57,6 +57,19 @@ beforeEach(async () => {
 describe("registrarPromessaPagamento com chave (#166)", () => {
   const promessas = () => prisma.evento.count({ where: { tipo: "PromessaPagamento" } });
 
+  // C3 da R2 do #267 (lote 4): a repetição é procurada antes das validações de estado.
+  it("reenvio tardio: a cobrança foi cancelada depois da promessa; a mesma chave devolve ok sem nova promessa", async () => {
+    const c = await mensalidade();
+    const primeira = await registrarPromessaPagamento(c.id, amanha(), "chave-promessa-tardia");
+    expect(primeira.ok, primeira.ok ? undefined : primeira.erro).toBe(true);
+    await prisma.cobranca.update({ where: { id: c.id }, data: { status: "CANCELADA" } });
+    expect(await registrarPromessaPagamento(c.id, amanha(), "chave-promessa-tardia")).toEqual(primeira);
+    expect(await promessas()).toBe(1);
+    const nova = await registrarPromessaPagamento(c.id, amanha(), "chave-promessa-tardia-2");
+    expect(nova.ok).toBe(false);
+    expect(await promessas()).toBe(1);
+  });
+
   it("a mesma chave (inclusive em envio simultâneo) grava uma promessa só e devolve o mesmo resultado", async () => {
     const c = await mensalidade();
     const [a, b] = await Promise.all([

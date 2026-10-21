@@ -103,6 +103,34 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
     // A marca mora no `MensagemAgendada` do atendimento; o agendamento pelo CRM nem sempre grava esse Evento.
     if (d.chaveIdempotencia && !d.atendimentoId) throw new ErroRegra("Chave de idempotência só no agendamento pelo atendimento.");
+    // Idempotência (#166): a chave e o hash da entrada vão no payload do `MensagemAgendada`; o reenvio devolve
+    // a mesma intenção em vez de agendar um segundo envio ao contato.
+    const marca = d.atendimentoId
+      ? marcaIdempotencia(d.chaveIdempotencia, {
+        atendimentoId: d.atendimentoId, numeroId: d.numeroId, texto: d.texto,
+        agendadaPara: new Date(d.agendadaPara).toISOString(), validaAte: d.validaAte ? new Date(d.validaAte).toISOString() : null,
+      })
+      : null;
+    const alvoRepeticao = marca && {
+      tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", autorId: autor.id, marca,
+      mensagemConflito: "Esta tentativa já foi usada com outra mensagem ou outro horário. Confira os agendamentos do atendimento antes de repetir.",
+    };
+    const intencaoDe = (e: { payload: unknown }) => String((e.payload as { intencaoId?: unknown }).intencaoId);
+    if (alvoRepeticao) {
+      // C3 da R2 do #267: a repetição é procurada antes das validações de horário, janela, encerramento e
+      // opt-out. O reenvio tardio da tentativa já gravada devolve a mesma mensagem em vez de um erro. A busca
+      // se repete dentro da transação de criação, que é quem serializa os envios simultâneos.
+      const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvoRepeticao));
+      if (repetido) return { id: intencaoDe(repetido) };
+    }
+    // N1 da R1 do #274: sem repetição, o escopo vem antes das validações de horário e janela. Assim quem não vê o
+    // atendimento recebe a mesma resposta para um id existente e um inexistente.
+    const a = d.atendimentoId ? await atendimentoVisivel(autor, d.atendimentoId, true) : null;
+    if (d.atendimentoId) {
+      if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
+      if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
+      if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
+    }
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
@@ -110,23 +138,11 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     // horário de silêncio é barrado aqui, no fuso da escola, antes de gravar.
     await exigirAgendamentoNaJanela(quando);
 
-    if (d.atendimentoId) {
-      const a = await atendimentoVisivel(autor, d.atendimentoId, true);
-      if (!a || a.encerradoEm) throw new ErroRegra("Atendimento não encontrado.");
-      if (a.numeroId !== d.numeroId) throw new ErroRegra("Número de envio indisponível.");
-      if (a.contato.optOutEm) throw new ErroRegra("Contato pediu para não receber mensagens.");
-      // Idempotência (#166): a chave e o hash da entrada vão no payload do `MensagemAgendada`; o reenvio devolve
-      // a mesma intenção em vez de agendar um segundo envio ao contato.
-      const marca = marcaIdempotencia(d.chaveIdempotencia, {
-        atendimentoId: a.id, numeroId: d.numeroId, texto: d.texto, agendadaPara: quando.toISOString(), validaAte: validaAte?.toISOString() ?? null,
-      });
+    if (a) {
       const id = await prisma.$transaction(async (tx) => {
-        if (marca) {
-          const repetido = await repeticaoIdempotente(tx, {
-            tipo: "MensagemAgendada", agregadoTipo: "AtendimentoWhatsApp", autorId: autor.id, marca,
-            mensagemConflito: "Esta tentativa já foi usada com outra mensagem ou outro horário. Confira os agendamentos do atendimento antes de repetir.",
-          });
-          if (repetido) return String((repetido.payload as { intencaoId?: unknown }).intencaoId);
+        if (alvoRepeticao) {
+          const repetido = await repeticaoIdempotente(tx, alvoRepeticao);
+          if (repetido) return intencaoDe(repetido);
         }
         const m = await tx.intencaoMensagem.create({
           data: { numeroId: a.numeroId, atendimentoId: a.id, contatoId: a.contatoId, origem: "HUMANO", tipo: "TEXTO", corpoRenderizado: d.texto, agendadaPara: quando, validaAte, autorId: autor.id },

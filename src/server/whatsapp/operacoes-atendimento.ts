@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { nomeCompleto } from "@/lib/nome";
 import { ErroPermissao, ErroRegra, executarAcao, exigirSessao, exigirSessaoComPapel, temPapel, registrarEvento, type Resultado } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { garantirContato } from "./identidade";
 import { atendimentoVisivel, encerrarAtendimentoNaTransacao, garantirAtendimento } from "./atendimentos";
 import { donosDeLinhaVisiveis, ehLinhaComercial } from "./linha-comercial";
@@ -109,13 +111,27 @@ export async function listarOpcoesAtendimento(): Promise<OpcoesAtendimento> {
     comercial: ehLinhaComercial(n) && (temPapel(u, Papel.ADMINISTRADOR) || (!!n.donoId && donos.has(n.donoId))) })), comercial };
 }
 
-const AbrirSchema = z.object({ numeroId: z.string().min(1), destinoChave: z.string().min(1) });
+const AbrirSchema = z.object({ numeroId: z.string().min(1), destinoChave: z.string().min(1), chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
 
-/** O cliente escolhe um identificador interno. Telefones são resolvidos somente no servidor. */
+/**
+ * O cliente escolhe um identificador interno. Telefones são resolvidos somente no servidor.
+ * O atendimento é por upsert, mas cada abertura grava `AtendimentoInstitucionalAberto`. Com `chaveIdempotencia`
+ * (#166), o reenvio da mesma tentativa devolve o atendimento já aberto sem gravar outro Evento; a busca vem antes
+ * das validações de destino, para o reenvio tardio também receber o mesmo atendimento.
+ */
 export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirSchema>): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
-    const dados = AbrirSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = AbrirSchema.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, dados);
+    const alvoRepeticao = marca && {
+      tipo: "AtendimentoInstitucionalAberto", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+      mensagemConflito: "Esta tentativa já foi usada com outro destinatário ou outro canal. Confira a lista de atendimentos antes de repetir.",
+    };
+    if (alvoRepeticao) {
+      const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvoRepeticao));
+      if (repetido) return { id: repetido.agregadoId };
+    }
     const opcoes = await listarOpcoesAtendimento();
     const destino = opcoes.destinos.find((d) => d.chave === dados.destinoChave);
     const canal = opcoes.numeros.find((n) => n.id === dados.numeroId);
@@ -169,6 +185,11 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
     if (!telefone) throw new ErroRegra("A secretaria precisa cadastrar um destinatário válido para essa finalidade.");
     const escopo = await escopoAtendimentos(u);
     const atendimento = await prisma.$transaction(async (tx) => {
+      // De novo dentro da transação: é a trava da chave que serializa dois envios simultâneos.
+      if (alvoRepeticao) {
+        const repetido = await repeticaoIdempotente(tx, alvoRepeticao);
+        if (repetido) return { id: repetido.agregadoId };
+      }
       const contato = await garantirContato(tx, { telefoneE164: telefone!, nomeExibicao: nome, responsavelId,
         leadId: destino.leadId, alunoId: destino.finalidade === "FINANCEIRO" ? contatoAlunoId : responsavelId ? null : destino.alunoId });
       const a = await garantirAtendimento(tx, { numeroId: dados.numeroId, contatoId: contato.id, finalidade: destino.finalidade,
@@ -186,7 +207,7 @@ export async function abrirAtendimentoInstitucional(input: z.input<typeof AbrirS
         throw new ErroRegra(`Este atendimento já está com ${dono?.nome ?? "outro atendente"}; peça para ser incluído como participante.`);
       }
       await registrarEvento(tx, { tipo: "AtendimentoInstitucionalAberto", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id,
-        autorId: u.id, payload: { finalidade: a.finalidade, leadId: a.leadId, alunoId: a.alunoId, turmaId: a.turmaId, matriculaId: a.matriculaId } });
+        autorId: u.id, payload: { finalidade: a.finalidade, leadId: a.leadId, alunoId: a.alunoId, turmaId: a.turmaId, matriculaId: a.matriculaId, ...marca } });
       return a;
     });
     revalidatePath("/inbox");

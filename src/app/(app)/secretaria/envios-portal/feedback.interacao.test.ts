@@ -23,7 +23,7 @@ vi.mock("@/server/portal-aluno/conciliacao-envio", () => ({ registrarEvidenciaEn
 import { ConciliacaoEnvio } from "./ConciliacaoEnvio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import type { ItemFilaEnviosPortalAluno } from "@/server/portal-aluno/fila-envios";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, botao, criarGanchos, elementos, formularioFalso, submeter } from "@/test/tela-sem-dom";
 
@@ -48,7 +48,7 @@ describe("ConciliacaoEnvio", () => {
   };
   contratoFeedbackSeparado({
     nome: "registrar evidência", tela, action: m.registrar, acionar: registrarEvidencia,
-    sucesso: "Evidência registrada.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE, ocupado,
+    sucesso: "Evidência registrada.", incerto: MSG_RESULTADO_INCERTO, ocupado,
   });
 
   contratoFeedbackSeparado({

@@ -7,7 +7,7 @@
 // não aceita outro nome para ela neste módulo.
 import * as identidade from "./identidade";
 
-export async function prepararConvitePortalAluno(input: { alunoId: string }) {
+export async function prepararConvitePortalAluno(input: { alunoId: string; chaveIdempotencia?: string }) {
   return identidade.prepararConvitePortalAluno(input);
 }
 

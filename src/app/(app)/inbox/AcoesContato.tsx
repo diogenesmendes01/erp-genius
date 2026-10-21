@@ -53,7 +53,9 @@ type Aberto = null | "nome" | "vincular" | "desvincular";
 
 export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMudar }: PropsAcoesContato) {
   const [aberto, setAberto] = useState<Aberto>(null);
-  const criar = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): com a conversa já vinculada, o servidor devolve a mesma oportunidade (e o
+  // mesmo `criado` do vínculo feito por quem repete), sem gravar outro Evento (criarLeadDaConversa).
+  const criar = useAcaoCliente({ idempotente: true });
 
   async function criarOportunidade() {
     const d = await criar.executar(() => criarLeadDaConversa(atendimentoId),

@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { abrirAtendimentoInstitucional, type OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
-// abrirAtendimentoInstitucional (operacoes-atendimento.ts) grava um evento novo a cada chamada e não recebe
-// chave de idempotência: resultado incerto manda conferir a lista antes de repetir.
+// abrirAtendimentoInstitucional (operacoes-atendimento.ts) recebe chave de idempotência (#166): o reenvio da
+// mesma tentativa devolve o atendimento já aberto sem gravar outro Evento. A chave só muda depois do sucesso.
 
 export function NovoAtendimento({ opcoes }: { opcoes: OpcoesAtendimento }) {
   const router = useRouter();
   const [destino, setDestino] = useState("");
   const [numero, setNumero] = useState("");
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const destinoSelecionado = opcoes.destinos.find((item) => item.chave === destino);
   // SPEC-ERP-005 §5.5: assunto comercial sai só pelas linhas comerciais do usuário.
   const numeros = destinoSelecionado?.finalidade === "COMERCIAL" ? opcoes.numeros.filter((n) => n.comercial) : opcoes.numeros;
@@ -23,7 +25,8 @@ export function NovoAtendimento({ opcoes }: { opcoes: OpcoesAtendimento }) {
   return <div className="space-y-3">
     <form className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-3" onSubmit={async (e) => {
       e.preventDefault();
-      const d = await acao.executar(() => abrirAtendimentoInstitucional({ destinoChave: destino, numeroId: numero }));
+      const d = await acao.executar(() => abrirAtendimentoInstitucional({ destinoChave: destino, numeroId: numero, chaveIdempotencia: tentativa.atual }));
+      tentativa.depoisDo(d);
       if (d?.tipo === "ok") { router.push(`/inbox?c=${d.dado!.id}`); }
     }}>
       <label className="grid min-w-0 max-w-full gap-1 text-sm">Finalidade e destinatário
