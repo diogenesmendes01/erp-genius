@@ -62,6 +62,32 @@ services:
       MOTOR_URL: http://motor:4317
       MOTOR_API_KEY: ${MOTOR_API_KEY:?defina no .env}
       MOTOR_WEBHOOK_SECRET: ${MOTOR_WEBHOOK_SECRET:?defina no .env}
+      # --- Variáveis opcionais lidas pelo app (sem repasse aqui, o valor do painel/.env NÃO chega ao container).
+      # E-mail institucional (Resend): portal do aluno e avisos de agenda por e-mail. Vazio = sem envio de e-mail.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_INSTITUCIONAL_REMETENTE: ${EMAIL_INSTITUCIONAL_REMETENTE:-}
+      # Portal do aluno: envio dos e-mails de acesso (POST /api/portal-aluno/envios/cron) só com "true".
+      EMAIL_PORTAL_ENVIO_ENABLED: ${EMAIL_PORTAL_ENVIO_ENABLED:-false}
+      # Origem HTTPS pública do portal, sem caminho (ex.: https://erp.exemplo.com); base dos links nos e-mails.
+      PORTAL_ALUNO_URL_PUBLICA: ${PORTAL_ALUNO_URL_PUBLICA:-}
+      # Google Drive de gravações — leitura (player): conta de serviço + drive compartilhado.
+      # Chave privada em uma linha só, com \n literais (o app converte).
+      GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL:-}
+      GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY:-}
+      DRIVE_ORGANIZACAO_ID: ${DRIVE_ORGANIZACAO_ID:-}
+      # Google Drive de gravações — publicação/fixação de revisão (credencial separada, com escrita).
+      GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL:-}
+      GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY:-}
+      # Habilitações operacionais (só "true" liga; padrão seguro "false").
+      # Emissão mensal recorrente (POST /api/financeiro/continuidade/cron).
+      CONTINUIDADE_MENSAL_EMISSAO_ENABLED: ${CONTINUIDADE_MENSAL_EMISSAO_ENABLED:-false}
+      # Avisos de alteração de agenda (POST /api/agenda/avisos/cron e o despachante do WhatsApp).
+      COMUNICACOES_AGENDA_ENVIO_ENABLED: ${COMUNICACOES_AGENDA_ENVIO_ENABLED:-false}
+      # Avisos de quantidade de aulas (Q38) alcançarem provedores.
+      COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED: ${COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED:-false}
+      # Agendadores: cron-portal-envios (60 s) e cron-avisos-agenda (5 min) estão abaixo. ATENÇÃO: este
+      # compose NÃO agenda /api/financeiro/continuidade/cron — ligar CONTINUIDADE_MENSAL_EMISSAO_ENABLED exige
+      # um agendador externo (POST com header x-cron-secret).
     volumes:
       # Mídia do WhatsApp + comprovantes/documentos (entra no backup — doc 31 §backup).
       - uploads:/app/data/uploads
@@ -116,6 +142,38 @@ services:
         curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/whatsapp/despacho
           -o /dev/null -w "despacho tick %{http_code}\n" || true;
         sleep 60;
+      done'
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?defina no .env}
+    depends_on:
+      - app
+
+  # E-MAILS DO PORTAL DO ALUNO a cada minuto (convite/recuperação/troca de e-mail). Com
+  # EMAIL_PORTAL_ENVIO_ENABLED diferente de "true" a rota responde {executou:false} sem tocar o banco.
+  cron-portal-envios:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    command: >-
+      sh -c 'while true; do
+        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/portal-aluno/envios/cron
+          -o /dev/null -w "portal-envios tick %{http_code}\n" || true;
+        sleep 60;
+      done'
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?defina no .env}
+    depends_on:
+      - app
+
+  # AVISOS DE ALTERAÇÃO DE AGENDA a cada 5 min (mesma cadência da régua). Com
+  # COMUNICACOES_AGENDA_ENVIO_ENABLED diferente de "true" a rota responde {executou:false} sem tocar o banco.
+  cron-avisos-agenda:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    command: >-
+      sh -c 'while true; do
+        curl -sS -X POST -H "x-cron-secret: $$CRON_SECRET" http://app:3000/api/agenda/avisos/cron
+          -o /dev/null -w "avisos-agenda tick %{http_code}\n" || true;
+        sleep 300;
       done'
     environment:
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
