@@ -11,7 +11,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import { credenciaisDe, type PapelE2E } from "./usuarios";
 
 /** Pasta das sessões salvas. Está no .gitignore: contém cookies de sessão. */
@@ -23,9 +23,21 @@ export function caminhoSessao(papel: PapelE2E): string {
 }
 
 /**
+ * Menu lateral (Sidebar) da equipe: <nav aria-label="Navegação principal"> em
+ * src/components/Sidebar.tsx (NavLinks). Só aparece a partir de 768 px de largura
+ * (o projeto "chromium" usa 1280 px). No celular a mesma lista fica numa gaveta com
+ * outro rótulo ("Menu de navegação", src/components/BarraMobile.tsx), por isso o
+ * localizador é pelo rótulo, e não por "nav" solto.
+ */
+export function menuPrincipal(page: Page): Locator {
+  return page.getByRole("navigation", { name: "Navegação principal", exact: true });
+}
+
+/**
  * Faz login pela tela, como um usuário faria, e espera chegar na Home.
- * Seletores: os campos usam name="email" e name="senha" (src/app/login/page.tsx)
- * e o botão tem o texto "Entrar".
+ * Seletores (src/app/login/page.tsx): os campos usam name="email" e name="senha"
+ * (vêm do register() do react-hook-form) e o botão de envio tem o texto "Entrar"
+ * (vira "Entrando…" enquanto envia).
  */
 export async function login(page: Page, papel: PapelE2E): Promise<void> {
   const { email, senha } = credenciaisDe(papel);
@@ -35,9 +47,10 @@ export async function login(page: Page, papel: PapelE2E): Promise<void> {
   await page.locator('input[name="senha"]').fill(senha);
   await page.getByRole("button", { name: "Entrar" }).click();
 
-  // Após o login a aplicação faz router.push("/home").
+  // Sem callbackUrl na URL, a aplicação faz router.push("/home") após o login
+  // (destinoAposLogin em src/lib/destino-interno.ts).
   await page.waitForURL("**/home");
-  await expect(page.locator("aside nav")).toBeVisible();
+  await expect(menuPrincipal(page)).toBeVisible();
 }
 
 /** Opções extras que os specs podem configurar com test.use({ ... }). */
@@ -51,7 +64,7 @@ interface OpcoesE2E {
  * Exemplo:
  *   test.describe("Professor", () => {
  *     test.use({ papel: "PROFESSOR" });
- *     test("PER-09a ...", async ({ page }) => { ... });
+ *     test("PER-01a ...", async ({ page }) => { ... });
  *   });
  */
 export const test = base.extend<OpcoesE2E>({
@@ -71,7 +84,7 @@ export const test = base.extend<OpcoesE2E>({
       throw new Error(
         `[e2e] Sessão de ${papel} não encontrada em ${arquivo}. Ela é criada pelo projeto ` +
           '"setup" (e2e/auth.setup.ts). Rode pelo `npm run test:e2e` (que executa o setup antes) ' +
-          "e confira se a senha do papel está no .env.e2e.",
+          "e confira se a senha do papel está no .env.e2e (papel sem senha é pulado no setup).",
       );
     }
     await usar(arquivo);
