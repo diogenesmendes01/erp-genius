@@ -31,7 +31,7 @@ const dados = {
   matriculaId: "m", codigo: "M-1", moeda: "BRL", impedimento: null, podePreparar: true, documentoId: "d",
   versoes: [{ id: "v1", versao: 1, status: "PENDENTE", preparador: { nome: "Financeiro" }, criadaEm: "2026-01-01T00:00:00Z", regras: null, naoConferida: false, motivo: "Transcrição", decisor: null, motivoDecisao: null, decididaEm: null, podeDecidir: true }],
 } as unknown as Parameters<typeof CondicoesContinuidadeMensal>[0]["dados"];
-const tela = () => m.ganchos!.renderizar(CondicoesContinuidadeMensal, { dados });
+const tela = () => m.ganchos!.renderizar(CondicoesContinuidadeMensal, { dados, fusoEscola: "America/Sao_Paulo" });
 
 /** Escolhe o valor de um <select> controlado pelo id (o onChange recebe o evento nativo). */
 const escolher = (id: string, valor: string) =>
