@@ -4233,6 +4233,42 @@ Branch `claude/issue-170-restante`, base `main` 8d3febe5. Nenhuma migration. Cad
   - `npm run build`: saída 0.
   - Integração dos módulos tocados, em 4 blocos (comercial, cobranças, empresas, turmas, Aria, política da secretaria e regra de turma; financeiro e portal do aluno; CRM e Inbox; WhatsApp): 133 arquivos e 1.029 testes OK, incluindo os 7 arquivos novos (`*-idempotencia.int.test.ts`) e os casos de reenvio tardio do C3. Na rodada em bloco, `crm/ficha-dados.int.test.ts` (mesclagem, não tocada) estourou o tempo de 2 testes com o build rodando junto e passou ao ser repetido sozinho; `whatsapp/linha-comercial.int.test.ts` (LC-06) fixava "segundo clique é recusado" e passou a fixar o mesmo lead devolvido sem outro vínculo.
 
+
+### SLA: feriados no prazo da 1ª resposta — 2026-10-21
+
+Branch `claude/sla-feriados`, base `main` e68adb37. Continua o SLA do #241 ("horário por setor; feriados depois", D2 do plano `docs/superpowers/plans/2026-10-19-sla-completo.md`).
+
+- **Sem cadastro novo:** o sistema já tem o calendário escolar institucional (`VersaoCalendarioEscolar`, períodos `FERIADO`/`RECESSO`/`FERIAS`, versão global aprovada por outra pessoa, tela em Acadêmico › Calendário, âncora `calendario-escola`). O SLA passou a consultá-lo; não há model `Feriado` nem migration. A premissa da D2 ("versionado por turma") não confere e ficou anotada no plano.
+- **Cálculo** (`crm-config/horario-atendimento.ts`): `prazoVenceEm` e `dentroDoHorario` recebem `feriadosEscola` (intervalos de datas civis inclusivas). Feriado do setor (`horario.feriados`, que já existia sem tela) e feriado da escola se somam e fecham o dia inteiro, como um dia sem horário; feriado em dia sem atendimento (fim de semana) não muda o prazo. Datas civis no fuso da escola, nunca do servidor. Contagem corrida (sem horário ou `contarSoNoHorario` desligado) ignora feriados.
+- **Fonte** (`crm-config/feriados-escola.ts#feriadosDaEscola`): períodos `FERIADO` da versão aprovada mais recente; pendente ou reprovada não vale; descarta os já terminados antes do dia do início. Recesso e férias não entram (são do calendário letivo). Períodos inválidos avisam no log e contam como nenhum feriado (o cálculo roda no inbound, na transação, e não lança). Sem a âncora advisory: é leitura de versões imutáveis, e travar a âncora serializaria todo inbound com a agenda. `feriadosDaEscola` entrou em `SOMENTE_LEITURA` da trava `crm-config/auditoria.test.ts`.
+- **Uso:** `whatsapp/status-atendimento.ts#prazoRespostaEm` passa os feriados da escola ao `prazoVenceEm`.
+- **Sem recálculo retroativo (D7):** prazos já gravados em `AtendimentoWhatsApp.prazoRespostaEm` não mudam quando um calendário com feriado novo é aprovado (ou um feriado é removido); vale para os atendimentos cujo prazo é calculado depois. Recalcular mexeria em prazos e métricas já exibidos e, por um UPDATE em massa em `AtendimentoWhatsApp`, dispararia `notificar_inbox`. Teste de integração cobre o caso.
+- **Tela:** Distribuição e SLA ganhou a linha "Feriados do calendário escolar publicado (Acadêmico › Calendário) fecham o atendimento o dia todo; recesso e férias, não."
+- **Perguntas ao dono (escolhido o mais simples):** recesso e férias deveriam fechar o atendimento? Feriado por setor precisa de tela (o campo existe e é respeitado, mas não é editável)? O calendário escolar é aprovado pela Gestão Pedagógica: está ok que ele valha para o SLA do Comercial e do Financeiro?
+- **TDD:** unitários `crm-config/horario-atendimento-feriados.test.ts` (prazo que cruza feriado, período de vários dias, início dentro do feriado, feriado no fim de semana com e sem atendimento no sábado, setor × escola, corrido, dia civil em America/Sao_Paulo e em UTC) e integração `whatsapp/feriados-sla.int.test.ts` (aprovado vale; pendente/reprovado não; versão aprovada mais recente; recesso/férias não; setor + escola; corrido; fuso da escola America/Costa_Rica; prazo gravado não recalcula). Ambos vermelhos contra o código da `main` antes da implementação (13 de 15 unitários, 5 de 9 de integração; os que passavam são as guardas de "não pular").
+- **Evidências** (Postgres 16 descartável na 54329, banco `erp_genius_test_slaf` com `migrate deploy` do zero, perfil temporário desfeito, banco e cluster apagados ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run` completo: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo.
+  - Integração de `src/server/{whatsapp,crm-config,inbox,agenda,relatorios}`: saída 0, 92 arquivos, 718 testes.
+  - `npm run build`: saída 0.
+
+
+### Deploy: repasse das variáveis de ambiente ao app e agendadores do portal e da agenda — 2026-10-21
+
+Branch `claude/compose-env-repasse`, base `main` 80ba5d88. Bug de deploy: o `environment` do serviço `app` em `docker-compose.coolify.yml` (e em `docker-compose.prod.yml`) só citava 11 variáveis; as demais lidas pelo código, definidas no painel do Coolify ou no `.env` da VPS, não chegavam ao container.
+
+- **Repasse** (dois composes): `RESEND_API_KEY`, `EMAIL_INSTITUCIONAL_REMETENTE`, `PORTAL_ALUNO_URL_PUBLICA`, `GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY`, `DRIVE_ORGANIZACAO_ID`, `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY` com `${VAR:-}`; `EMAIL_PORTAL_ENVIO_ENABLED`, `CONTINUIDADE_MENSAL_EMISSAO_ENABLED`, `COMUNICACOES_AGENDA_ENVIO_ENABLED`, `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` com `${VAR:-false}`. Nenhuma virou obrigatória.
+- **Agendadores novos** (dois composes, mesmo padrão de `cron`/`cron-despacho`): `cron-portal-envios` (POST `/api/portal-aluno/envios/cron` a cada 60 s) e `cron-avisos-agenda` (POST `/api/agenda/avisos/cron` a cada 5 min; sem cadência definida em código/docs, ficou a da régua). Conferido no código: com a flag diferente de `"true"`, as duas rotas respondem `{executou:false}` logo após conferir o `x-cron-secret`, sem tocar o banco (coberto pelos `route.test.ts` existentes).
+- **Pendência:** `/api/financeiro/continuidade/cron` continua sem agendador nos composes (documentado no compose, nos envs de exemplo e no SETUP.md); ligar `CONTINUIDADE_MENSAL_EMISSAO_ENABLED` exige agendador externo.
+- **Healthcheck do motor: não adicionado.** O repo não tem a imagem do motor (`MOTOR_IMAGE` externa): não dá para saber se ela traz `wget`/`curl` nem qual rota de saúde expõe (`/v1/health` aparece só num teste do cliente, como caminho arbitrário).
+- **Observações:** `PAGAMENTO_SIMULADO` não é lida por nenhum código atual (só comentários); mantida no compose. `.env.example` reorganizado com `[obrigatória]`/`[opcional]` e sem o bloco duplicado do motor (o segundo `MOTOR_URL="http://motor:4317"` sobrescrevia o de dev). `SETUP.md §Coolify` ganhou as variáveis novas.
+- **Trava** (`src/deploy/compose-env.test.ts`): varre `src` (`process.env.X`, `process.env["X"]`, `ambiente.X`, `env.X`) e exige cada variável de produção no `environment` do `app` dos dois composes, flags `*_ENABLED` com `:-false`, e a variável listada em `.env.example` e `deploy/env.production.example` (fora as montadas pelo compose: `DATABASE_URL`, `NEXTAUTH_URL`, `MOTOR_URL`). Exclusão explícita: só de teste (`FAKE_PRISMA`, `GUARD`, `GUARD_GRADES`, `TZ`, `PRISMA_TESTE_TIMEOUT_MS`, `HOMOLOGACAO_UI_*`, `QA_*`; o teste falha se alguma delas for lida fora de arquivo de teste) e da imagem (`NODE_ENV`, `GIT_SHA`, conferidas no Dockerfile). Contra os composes da main, falha em 13 casos. `cron-despacho.test.ts` estendido para os dois agendadores novos.
+- **Evidências:**
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `TZ=UTC vitest run`: 819 arquivos, 6.210 testes OK (antes dos agendadores); depois deles, `src/deploy` + rotas dos dois crons: 6 arquivos, 134 testes OK.
+  - `docker compose -f … config` nos dois composes: saída 0, serviços `cron-portal-envios` e `cron-avisos-agenda` presentes e flags resolvidas como `"false"`.
+
 ### Idempotência, 5º lote (#166) — 2026-10-21
 
 - **Escopo:** o N3 da R1 do #274 e 12 ações que criam registro, enviam mensagem ou mexem em dinheiro. A #166 continua aberta. Os testes de integração do N3 entraram primeiro e falharam contra o servidor de `main` (6 dos 9 casos novos; os 3 da retomada que passaram em `main` cobrem o reenvio simultâneo, a chave nova e a chave de outro autor, e ficam como trava de regressão). A implementação veio depois.

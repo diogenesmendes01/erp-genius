@@ -53,6 +53,8 @@ const SOMENTE_LEITURA = new Set([
   // leituras reais que o plano não listou
   "rascunhoAtual", "respostasRapidasDoCompositor", "respostasParaAria", "listarPerfisNumero", "uploadIdPorUrl", "exigirEdicaoDoSetor",
   "podeDevolverParaAria",
+  // Feriados da escola para o SLA: lê a versão aprovada vigente do calendário escolar.
+  "feriadosDaEscola",
 ]);
 
 /** Remoções físicas aceitas, ancoradas em arquivo + chamada. */
