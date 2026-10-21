@@ -1,7 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), assinatura: vi.fn(), processo: vi.fn(), conclusao: vi.fn(), final: vi.fn(), condicoes: vi.fn(), aplicacao: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), assinatura: vi.fn(), processo: vi.fn(), conclusao: vi.fn(), final: vi.fn(), condicoes: vi.fn(), aplicacao: vi.fn(), preferencia: vi.fn(), integracao: vi.fn().mockResolvedValue({ ok: true, dado: null }) }));
+vi.mock("@/server/contratos/envio", () => ({ consultarIntegracaoAssinatura: mocks.integracao }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("../../../EnvioAditivoFormulario", () => ({ EnvioAditivoFormulario: (p: { modo: string; processoId: string }) => `[${p.modo}:${p.processoId}]` }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/contratos/aditivo-assinatura", () => ({ consultarAssinaturaAditivo: mocks.assinatura }));
@@ -70,6 +73,34 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(html).toContain("Página 2");
     expect(html).toContain("tentativaObservacoes=3&amp;paginaObservacoes=1");
     expect(html).toContain("pagina=7&amp;paginaTentativas=2");
+  });
+
+  it("envio integrado só com o driver do mesmo serviço e conferência atual; simulado sinalizado", async () => {
+    mocks.sessao.mockResolvedValue({}); mocks.preferencia.mockResolvedValue({ ok: true, dado: null });
+    const revisao = { hash: "rev", dados: { ambiente: "SANDBOX", versaoProposta: 1, conferenciaVersao: 1, modelo: { codigo: "A", versao: 1 }, vigenciaInicio: "2099-01-01T00:00:00.000Z", participantes: [] } };
+    mocks.assinatura.mockResolvedValue({ ok: true, dado: { revisao, historico: [{ id: "conf", autor: "S", criadaEm: new Date("2026-10-01T00:00:00Z"), motivo: "ok", revisaoHash: "rev" }], pendencia: null, temProxima: false } });
+    mocks.conclusao.mockResolvedValue({ ok: true, dado: null }); mocks.aplicacao.mockResolvedValue({ ok: true, dado: null });
+    const processo = (estado: string, fornecedor = "SIMULADO") => ({ ok: true, dado: { id: "proc", fornecedor, ambiente: "SANDBOX", estado, tentativaAtual: 0, referenciaExterna: null, criadoEm: new Date("2026-10-01T00:00:00Z"), paginaTentativas: 1, temMaisTentativas: false, tentativas: [] } });
+    const render = async () => renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m", propostaId: "p", artefatoId: "a" }), searchParams: Promise.resolve({}) }));
+    mocks.processo.mockResolvedValue(processo("PREPARADO"));
+    let html = await render();
+    expect(html).not.toContain("[ENVIAR");
+    expect(html).toContain("Integração de assinatura SIMULADA");
+    mocks.integracao.mockResolvedValue({ ok: true, dado: { fornecedor: "SIMULADO", ambiente: "SANDBOX", simulado: true } });
+    html = await render();
+    expect(html).toContain("[ENVIAR:proc]");
+    expect(html).toContain("Simulado (nenhum documento sai do ERP)");
+    mocks.processo.mockResolvedValue(processo("ENVIO_INCERTO"));
+    expect(await render()).toContain("[CONCILIAR:proc]");
+    mocks.processo.mockResolvedValue(processo("PREPARADO", "ZAPSIGN"));
+    html = await render();
+    expect(html).not.toContain("[ENVIAR");
+    expect(html).not.toContain("SIMULADA");
+    mocks.processo.mockResolvedValue({ ok: true, dado: null });
+    html = await render();
+    expect(html).toContain('<option value="SIMULADO">');
+    mocks.integracao.mockResolvedValue({ ok: true, dado: null });
+    expect(await render()).not.toContain('<option value="SIMULADO">');
   });
 
   // Revisão R1 da #134 (B2/B5): a volta ao início das conferências preserva tentativas e observações.
