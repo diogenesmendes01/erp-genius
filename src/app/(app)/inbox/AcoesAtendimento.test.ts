@@ -14,7 +14,7 @@ vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), sile
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { Setor } from "@/server/whatsapp/setor";
 import { Modal } from "@/components/Modal";
-import { AcoesAtendimento, DialogoPendentes, DialogoPessoa, DialogoTransferir, validarQuando } from "./AcoesAtendimento";
+import { AcoesAtendimento, DialogoPendentes, DialogoPessoa, DialogoTransferir, quandoPendente, validarQuando } from "./AcoesAtendimento";
 import { ConversaAberta, textoOrigem } from "./ConversaAberta";
 
 type Opcoes = { papeis?: Papel[]; responsavelId?: string | null; finalidade?: Setor; status?: string; linhaComercial?: boolean; donoLinhaId?: string | null };
@@ -23,7 +23,7 @@ const html = (o: Opcoes = {}) =>
     atendimento: { id: "a1", finalidade: o.finalidade ?? "COMERCIAL", responsavelId: o.responsavelId === undefined ? "eu" : o.responsavelId, status: o.status ?? "EM_ATENDIMENTO" },
     usuario: { id: "eu", papeis: o.papeis ?? [Papel.VENDEDOR] },
     setoresDoNumero: ["COMERCIAL", "SECRETARIA"], fixada: false, silenciada: false,
-    linhaComercial: o.linhaComercial, donoLinhaId: o.donoLinhaId,
+    linhaComercial: o.linhaComercial, donoLinhaId: o.donoLinhaId, fuso: "America/Sao_Paulo",
   } as never));
 const htmlTransferir = (o: { setoresDoNumero: Setor[]; finalidade: Setor }) =>
   renderToStaticMarkup(createElement(DialogoTransferir, { atendimentoId: "a1", aoFechar: vi.fn(), aoConcluir: vi.fn(), ...o }));
@@ -108,7 +108,7 @@ describe("revogar convite e cancelar agendamento pedem confirmação; diálogos 
     expect(html({ papeis: [Papel.FINANCEIRO], responsavelId: null, finalidade: "FINANCEIRO", status: "ABERTO_SEM_RESPONSAVEL" })).toContain("Convites e agendamentos"); // pode agendar
   });
   it("o diálogo abre como folha (bottom sheet) e carrega a lista", () => {
-    const h = renderToStaticMarkup(createElement(DialogoPendentes, { atendimentoId: "a1", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
+    const h = renderToStaticMarkup(createElement(DialogoPendentes, { atendimentoId: "a1", fuso: "America/Sao_Paulo", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
     expect(h).toContain("Convites e agendamentos"); expect(h).toContain("Carregando");
     expect(h).toContain("items-end");
   });
@@ -142,10 +142,19 @@ describe("diálogos carregam fora do render (efeito, não chamada no corpo do co
     vi.mocked(consultas.listarConvitesEAgendamentos).mockClear();
     const h = renderToStaticMarkup(createElement(DialogoPessoa, { atendimentoId: "a1", modo: "atribuir", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
     expect(h).toContain("Carregando…");
-    renderToStaticMarkup(createElement(DialogoPendentes, { atendimentoId: "a1", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
+    renderToStaticMarkup(createElement(DialogoPendentes, { atendimentoId: "a1", fuso: "America/Sao_Paulo", aoFechar: vi.fn(), aoConcluir: vi.fn() }));
     expect(consultas.listarPessoasParaAtendimento).not.toHaveBeenCalled();
     expect(consultas.listarConvitesEAgendamentos).not.toHaveBeenCalled();
     const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8");
     expect(fonte).not.toMatch(/setCarregou|as Resultado\b/);
+  });
+});
+
+// Fuso pessoal nas telas (pendência da Q176): o fim do convite e o horário do agendamento saíam no fuso do
+// navegador (Intl sem timeZone). Agora no fuso de exibição resolvido pela página; o resultado não depende do TZ.
+describe("convites e agendamentos no fuso de exibição", () => {
+  it("o mesmo instante, em São Paulo e em Costa Rica, cruzando o dia", () => {
+    expect(quandoPendente("2026-10-21T02:30:00.000Z", "America/Sao_Paulo")).toBe("20/10/2026, 23:30");
+    expect(quandoPendente("2026-10-21T02:30:00.000Z", "America/Costa_Rica")).toBe("20/10/2026, 20:30");
   });
 });

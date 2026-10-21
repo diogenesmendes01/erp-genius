@@ -4269,6 +4269,20 @@ Branch `claude/compose-env-repasse`, base `main` 80ba5d88. Bug de deploy: o `env
   - `TZ=UTC vitest run`: 819 arquivos, 6.210 testes OK (antes dos agendadores); depois deles, `src/deploy` + rotas dos dois crons: 6 arquivos, 134 testes OK.
   - `docker compose -f … config` nos dois composes: saída 0, serviços `cron-portal-envios` e `cron-avisos-agenda` presentes e flags resolvidas como `"false"`.
 
+
+### Fuso pessoal nas telas restantes (1º lote: telas operacionais) — 2026-10-21
+
+Branch `claude/fuso-pessoal-telas`, base `main` 239001ad. Pendência da Q176 ("fuso pessoal nas telas restantes, que está parcial: a #159 cobriu parte"). Só exibição: regras de negócio continuam no fuso da escola (`fusoDaEscola`, `dataCivilInstitucional`, `diaCivilGravado`) e datas civis continuam como data civil. Sem migration.
+
+- **Helper central** (`src/server/operacao/fuso-exibicao.ts`): `formatarInstanteExibicao` ganhou o 4º parâmetro `estilo` (`dataHora`, padrão e igual ao de antes; `data`; `hora`, 24 h; `diaMesHora`), sempre com `timeZone` explícito. Novo `formatarDiaCivilGravado(valor, fusoEscola)`: data civil gravada como instante (promessa, data do pagamento) sai como o dia da escola pelo mesmo critério da régua, sem fuso pessoal.
+- **Telas ajustadas:**
+  - Inbox: a página entrega o fuso já resolvido (pessoal; sem ele, o da escola; antes caía em UTC); hora da lista (`ListaAtendimentos`), do balão (`BalaoMensagem`), da Aria (`PainelAria`) e de convites/agendamentos (`AcoesAtendimento`, que formatava no fuso do navegador).
+  - CRM: painel da oportunidade no funil (criação, experimental, histórico no fuso pessoal; o próximo follow-up passou a sair como dia civil da escola, sem a hora 12:00), ficha do contato, histórico da Aria, chamadas da IA em Configuração › CRM › IA (`toLocaleString` sem fuso).
+  - Financeiro: promessa na fila de cobrança e na ficha financeira, data do pagamento nos informes e "último pagamento" da ficha (eram `toLocaleDateString` no fuso do processo; a gravação legada à meia-noite UTC dava o dia anterior com o servidor em São Paulo); recebimento existente na conciliação da migração.
+  - Aluno: data do teste de nível e da emissão do certificado (fuso pessoal), nascimento (data civil, sem `new Date`); validação pública do certificado no fuso da escola.
+- **Trava** (`src/app/fuso-pessoal-telas.test.ts`): pelo AST, em todo `.ts`/`.tsx` de produção de `src/app` e `src/components` (fora `src/app/api`), acusa `toLocaleDateString`/`toLocaleTimeString` sem `timeZone`, `toLocaleString` sem `timeZone` que não é de número, `Intl.DateTimeFormat` sem `timeZone` e getters do relógio local (`getHours`, `getDate`, `getTimezoneOffset`…). Opções opacas e arquivo que não analisa contam. Exceções com motivo, uma por achado: os campos de entrada `datetime-local` da experimental (5 getters) e do diário (`getTimezoneOffset`), e a detecção do fuso do navegador no aditivo. Fora do alcance (declarado): `timeZone` presente com o fuso errado.
+- **Fica para o próximo lote:** telas que já passam `timeZone`, mas com o fuso de origem/da reserva em instantes (Secretaria › Reservas, matrícula: reserva, nova reserva, ocorrências financeiras, indisponibilidade de oferta, compensações, aditivos/agenda; segundas chamadas; presença histórica da migração) — é preciso separar, uma a uma, o que é instante do que é horário publicado no fuso da agenda; e o fuso de ENTRADA dos campos `datetime-local` (agendar mensagem no Inbox, experimental, diário), que ainda leem no relógio do navegador.
+
 ### Idempotência, 5º lote (#166) — 2026-10-21
 
 - **Escopo:** o N3 da R1 do #274 e 12 ações que criam registro, enviam mensagem ou mexem em dinheiro. A #166 continua aberta. Os testes de integração do N3 entraram primeiro e falharam contra o servidor de `main` (6 dos 9 casos novos; os 3 da retomada que passaram em `main` cobrem o reenvio simultâneo, a chave nova e a chave de outro autor, e ficam como trava de regressão). A implementação veio depois.
