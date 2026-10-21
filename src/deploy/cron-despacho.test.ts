@@ -20,3 +20,48 @@ for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
     });
   });
 }
+
+// Agendadores do portal do aluno e dos avisos de agenda: antes as rotas existiam sem ninguém chamá-las.
+// Com a flag desligada a rota responde {executou:false} (coberto nos testes das rotas).
+const NOVOS_CRONS = [
+  { servico: "cron-portal-envios", rota: "http://app:3000/api/portal-aluno/envios/cron", sono: "sleep 60" },
+  { servico: "cron-avisos-agenda", rota: "http://app:3000/api/agenda/avisos/cron", sono: "sleep 300" },
+];
+for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
+  describe(`${arq}: agendadores do portal e da agenda`, () => {
+    const texto = fs.readFileSync(path.resolve(process.cwd(), arq), "utf8").replace(/\r\n/g, "\n");
+    it.each(NOVOS_CRONS)("$servico faz POST autenticado em laço", ({ servico, rota, sono }) => {
+      const m = texto.match(new RegExp(`^  ${servico}:\\n([\\s\\S]*?)(?=\\n  \\S|\\nvolumes:|(?![\\s\\S]))`, "m"));
+      expect(m, servico).not.toBeNull();
+      const corpo = m![1];
+      expect(corpo).toContain("image: curlimages/curl:8.10.1");
+      expect(corpo).toContain("restart: unless-stopped");
+      expect(corpo).toContain("while true");
+      expect(corpo).toContain("-X POST");
+      expect(corpo).toContain('-H "x-cron-secret: $$CRON_SECRET"');
+      expect(corpo).toContain(rota);
+      expect(corpo).toContain(sono);
+      expect(corpo).toMatch(/CRON_SECRET: \$\{CRON_SECRET:\?defina/);
+      expect(corpo).toMatch(/depends_on:\n\s+- app/);
+      expect(corpo).not.toMatch(/^\s+ports:/m);
+    });
+  });
+}
+
+// Em `command: >-` as linhas mais indentadas preservam a quebra de linha: o sh encerrava o curl antes do
+// `-o /dev/null -w ...` (e o `|| true` ficava preso ao comando errado). Todo laço de cron fica numa linha só.
+for (const arq of ["docker-compose.prod.yml", "docker-compose.coolify.yml"]) {
+  describe(`${arq}: laços de cron em linha única`, () => {
+    const texto = fs.readFileSync(path.resolve(process.cwd(), arq), "utf8").replace(/\r\n/g, "\n");
+    it("nenhum command de cron usa bloco dobrado", () => {
+      expect(texto).not.toMatch(/command: >-\n\s+sh -c 'while true/);
+    });
+    it("cada curl leva -o /dev/null e || true na mesma linha", () => {
+      const linhas = texto.split("\n").filter((l) => l.includes("while true; do curl"));
+      expect(linhas.length).toBe(4);
+      for (const l of linhas) {
+        expect(l).toMatch(/curl -sS -X POST .* -o \/dev\/null -w "[^"]+" \|\| true; sleep \d+; done'$/);
+      }
+    });
+  });
+}
