@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
+import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { conferirAutor } from "./modelos-tx";
 import { consultarEstadoAssinaturaAditivoTx } from "./aditivo-assinatura-estado";
@@ -19,8 +20,14 @@ async function estado(tx: Prisma.TransactionClient, p: { matriculaId: string; pr
   if (!c || c.artefatoId !== p.artefatoId || hashSubstituicao(c.snapshot) !== c.revisaoHash || c.revisaoHash !== e.revisaoHash) throw new ErroRegra("A conferência interna não corresponde ao original atual.");
   return e;
 }
+/** A base da origem histórica tem ambiente HISTORICO, que o envio não aceita; a mensagem diz o motivo real. */
+async function recusarOrigemHistoricaTx(tx: Prisma.TransactionClient, propostaId: string) {
+  const p = await tx.propostaAditivoContratual.findUnique({ where: { id: propostaId }, select: { origemHistoricaId: true } });
+  if (p?.origemHistoricaId) throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
+}
 export async function prepararProcessoAditivoTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = Preparar.parse(entrada); await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`; await bloquearMatriculas(tx, [d.matriculaId]);
+  await recusarOrigemHistoricaTx(tx, d.propostaId);
   const e = await estado(tx, d);
   await tx.$queryRaw`SELECT id FROM "Usuario" WHERE id = ${autorId} FOR SHARE`; await conferirAutor(tx, autorId);
   if (e.dados.ambiente !== d.ambiente) throw new ErroRegra("O ambiente do envio precisa corresponder ao original preservado.");
@@ -36,6 +43,7 @@ export async function iniciarTentativaAditivoTx(tx: Prisma.TransactionClient, au
   const d = z.object({ processoId: z.string().min(1) }).strict().parse(entrada); await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   let p = await tx.processoAssinaturaAditivo.findUnique({ where: { id: d.processoId } }); if (!p) throw new ErroRegra("Processo não encontrado.");
   const proposta = await tx.propostaAditivoContratual.findUniqueOrThrow({ where: { id: p.propostaId } }); await bloquearMatriculas(tx, [proposta.matriculaId]);
+  if (proposta.origemHistoricaId) throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   await tx.$queryRaw`SELECT id FROM "ProcessoAssinaturaAditivo" WHERE id = ${p.id} FOR UPDATE`;
   p = await tx.processoAssinaturaAditivo.findUniqueOrThrow({ where: { id: p.id } });
   if (p.estado !== "PREPARADO" || p.referenciaExterna) throw new ErroRegra("O envio já foi iniciado ou exige conciliação.");

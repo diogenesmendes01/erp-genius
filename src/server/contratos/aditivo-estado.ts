@@ -14,6 +14,7 @@ import { extrairOrigemEstruturadaAditivo } from "./aditivo-origem-estruturada";
 import { validarCoerenciaValoresAditivo } from "./aditivo-coerencia";
 import { carregarCadeiaAditivoTx } from "./aditivo-cadeia";
 import { representarValorAlteracaoAditivo } from "./aditivo-valores";
+import { origemHistoricaIntegra } from "./fonte-contratual-tx";
 
 type EntradaFonte = { matriculaId: string; conclusaoOriginalId?: string; conclusaoHashEsperado?: string; origemHistoricaId?: string; origemHashEsperado?: string };
 
@@ -24,9 +25,7 @@ async function carregarFonteBaseTx(tx: Prisma.TransactionClient, d: EntradaFonte
     const o = await tx.propostaOrigemContratualHistorica.findFirst({ where: { id: d.origemHistoricaId, matriculaId: d.matriculaId }, include: { decisao: true } });
     if (!o?.decisao?.aprovada) throw new ErroRegra("Origem contratual histórica indisponível ou não aprovada nesta matrícula.");
     await tx.$queryRaw`SELECT id FROM "PropostaOrigemContratualHistorica" WHERE id = ${o.id} FOR UPDATE`;
-    if (o.entradaHash !== d.origemHashEsperado || createHash("sha256").update(o.pdfAssinado).digest("hex") !== o.pdfHash
-      || hashSubstituicao(o.transcricao as Prisma.JsonObject) !== o.transcricaoHash || hashSubstituicao(o.projecao as Prisma.JsonObject) !== o.projecaoHash
-      || o.decisao.pdfHashConferido !== o.pdfHash || o.decisao.transcricaoHashConferido !== o.transcricaoHash) throw new ErroRegra("Confira a origem histórica e sua integridade antes de propor o aditivo.");
+    if (o.entradaHash !== d.origemHashEsperado || !origemHistoricaIntegra(o)) throw new ErroRegra("Confira a origem histórica e sua integridade antes de propor o aditivo.");
     if (await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: d.matriculaId } } })
       || await tx.propostaOrigemContratualHistorica.count({ where: { id: { not: o.id }, matriculaId: d.matriculaId, decisao: { is: { aprovada: true } } } }))
       throw new ErroRegra("Há mais de uma fonte contratual nesta matrícula. Resolva a fonte antes de propor condições.");

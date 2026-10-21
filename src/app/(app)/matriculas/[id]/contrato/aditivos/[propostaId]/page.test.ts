@@ -95,4 +95,13 @@ describe("proposta de aditivo — fiação das páginas dos painéis", () => {
       expect(tela).toContain("O adiantamento já recebeu pagamento ou crédito.");
     });
   });
+
+  // Revisão R1 da #285 (B1): proposta sobre a origem histórica avisa que não segue para assinatura.
+  it("origem histórica: aviso de que o aditivo sobre contrato legado não segue para assinatura", async () => {
+    mocks.proposta.mockResolvedValue({ ok: true, dado: { id: "p1", versao: 1, preparadaPor: "Ana", criadaEm: "2026-10-01T10:00:00.000Z", motivo: "Ajuste", ambiente: "HISTORICO", artefatoOriginalId: null, conclusaoOriginalId: null, origemHistoricaId: "o1", documento: { titulo: "Aditivo", secoes: [] }, impactos: [], vigenciaInicio: "2026-11-01T00:00:00.000Z", alteracoes: [], superada: false, decisao: null, podeDecidir: true, propostaHash: "h" } });
+    const tela = renderToStaticMarkup(await PropostaAditivoPage({ params: Promise.resolve({ id: "m1", propostaId: "p1" }), searchParams: Promise.resolve({}) }));
+    expect(tela).toContain("Aditivo sobre contrato legado ainda não segue para assinatura; aguarda decisão.");
+    expect(tela).toContain('href="/matriculas/m1/contrato/origem-historica"');
+    expect(tela).not.toContain("Abrir documento assinado e preservado");
+  });
 });

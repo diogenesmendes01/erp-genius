@@ -5,11 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { exigirSessaoComPapel, ErroRegra, registrarEvento } from "@/server/_shared";
 import { conferirAutor } from "./modelos-tx";
 import { hashSubstituicao } from "./substituicao-estado";
+import { DataCivilSchema } from "@/server/matricula/cobertura";
+import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { projetarOrigemHistorica, TranscricaoOrigemHistoricaSchema } from "./origem-historica-transcricao";
 
 const id = z.string().trim().min(1).max(100);
 export const RegistrarOrigemHistoricaSchema = z.object({
-  matriculaId: id, referencia: z.string().trim().min(2).max(200), assinadoEm: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  matriculaId: id, referencia: z.string().trim().min(2).max(200), assinadoEm: DataCivilSchema,
   pdfAssinado: z.instanceof(Buffer).refine(b => b.length > 5 && b.length <= 20 * 1024 * 1024 && b.subarray(0, 5).toString() === "%PDF-", "PDF assinado inválido ou maior que 20 MiB."),
   transcricao: TranscricaoOrigemHistoricaSchema, motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().trim().min(8).max(200),
 }).strict();
@@ -33,6 +35,11 @@ export async function registrarOrigemContratualHistoricaTx(tx: Prisma.Transactio
   if (!matricula) throw new ErroRegra("Matrícula não encontrada.");
   if (matricula.moeda !== transcricao.moeda) throw new ErroRegra(`A matrícula está em ${matricula.moeda}; a transcrição declara ${transcricao.moeda}. Alinhe a moeda antes de registrar a origem.`);
   if (matricula.preparacaoComercial && matricula.preparacaoComercial.regime !== transcricao.aulas.regime) throw new ErroRegra("O regime transcrito diverge da preparação comercial da matrícula.");
+  // Data civil de assinatura do PDF legado: nunca posterior a hoje no fuso da escola (o guard do banco confere o mesmo).
+  const configuracao = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } });
+  if (!configuracao?.fusoInstitucional) throw new ErroRegra("Configure o fuso institucional antes de registrar a origem histórica.");
+  const hoje = dataCivilInstitucional(new Date(), configuracao.fusoInstitucional);
+  if (d.assinadoEm > hoje) throw new ErroRegra(`A data de assinatura (${d.assinadoEm}) não pode ser posterior a hoje (${hoje}) no fuso da escola.`);
   if (await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: d.matriculaId } } })) throw new ErroRegra("A matrícula já possui contrato assinado no sistema.");
   if (await tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: d.matriculaId, decisao: { is: { aprovada: true } } } })) throw new ErroRegra("A matrícula já possui origem contratual histórica aprovada.");
   if (await tx.propostaOrigemContratualHistorica.count({ where: { matriculaId: d.matriculaId, decisao: null } })) throw new ErroRegra("Já existe origem contratual histórica aguardando conferência.");

@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
+import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
+import { origemHistoricaIntegra } from "./fonte-contratual-tx";
 import { PeriodosCalendarioSchema } from "@/server/agenda/calendario-schema";
 import { conferirDiasNaoLetivos } from "@/server/agenda/calendario-intervalo";
 import { hashPropostaAgendaAditivo, PrepararAgendaAditivoSchema, PropostaAgendaAditivoSchema, textoAgendaAditivo } from "./agenda-aditivo-schema";
@@ -41,6 +43,9 @@ export async function carregarConferenciaAgendaAditivoTx(tx: Prisma.TransactionC
   if (origensHistoricas.length) {
     if (origensHistoricas.length > 1 || await tx.conclusaoAssinaturaContratual.count({ where: { processo: { matriculaId: matricula.id } } })) throw new ErroRegra("Confira a fonte contratual vigente antes da alteração de agenda.");
     await tx.$queryRaw`SELECT id FROM "PropostaOrigemContratualHistorica" WHERE id = ${origensHistoricas[0].id} FOR UPDATE`;
+    // Mesma conferência de integridade da base do aditivo (carregarFonteBaseTx): PDF, transcrição, projeção e hashes declarados.
+    const preservada = await tx.propostaOrigemContratualHistorica.findUniqueOrThrow({ where: { id: origensHistoricas[0].id }, include: { decisao: true } });
+    if (!origemHistoricaIntegra(preservada)) throw new ErroRegra("Confira a origem histórica e sua integridade antes da alteração de agenda.");
     fonte = { id: origensHistoricas[0].id, entradaHash: origensHistoricas[0].entradaHash, concluidaEm: origensHistoricas[0].assinadoEm, tipo: "ORIGEM_HISTORICA" };
   } else {
     const fontes = await tx.conclusaoAssinaturaContratual.findMany({
@@ -128,6 +133,10 @@ export async function registrarPropostaAgendaAditivoTx(tx: Prisma.TransactionCli
   const d = RegistrarAgendaAditivoSchema.parse(input);
   const conferenciaEntrada = PrepararAgendaAditivoSchema.parse({ matriculaId: d.matriculaId, encontros: d.encontros });
   const conferencia = await carregarConferenciaAgendaAditivoTx(tx, preparadorId, conferenciaEntrada);
+  // A fotografia só serve a um aditivo; sobre a origem histórica ele ainda não segue para assinatura (B1 da #285).
+  // O INSERT abaixo mantém as duas fontes para quando o dono decidir o ambiente de assinatura.
+  const tipoFonte: "CONCLUSAO" | "ORIGEM_HISTORICA" = conferencia.fonte.tipo;
+  if (conferencia.fonte.tipo === "ORIGEM_HISTORICA") throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   if (conferencia.pendencias.length) throw new ErroRegra("Resolva as pendências da conferência antes de registrar a proposta de agenda.");
   const fotografia = conferencia.proposta, fotografiaHash = hashPropostaAgendaAditivo(fotografia);
   const entradaHash = hashSubstituicao({ preparadorId, entrada: conferenciaEntrada, fotografiaHash });
@@ -143,7 +152,7 @@ export async function registrarPropostaAgendaAditivoTx(tx: Prisma.TransactionCli
   await tx.$executeRaw(Prisma.sql`
     INSERT INTO "PropostaAgendaAditivoParticular"
       (id,"matriculaId","conclusaoFonteId","origemHistoricaId","preparadorId",fotografia,"fotografiaHash",pendencias,"chaveIdempotencia","entradaHash")
-    VALUES (${id},${fotografia.matriculaId},${conferencia.fonte.tipo === "CONCLUSAO" ? fotografia.fonteContratualId : null},${conferencia.fonte.tipo === "ORIGEM_HISTORICA" ? fotografia.fonteContratualId : null},${preparadorId},${JSON.stringify(fotografia)}::jsonb,${fotografiaHash},'[]'::jsonb,${d.chaveIdempotencia},${entradaHash})`);
+    VALUES (${id},${fotografia.matriculaId},${tipoFonte === "CONCLUSAO" ? fotografia.fonteContratualId : null},${tipoFonte === "ORIGEM_HISTORICA" ? fotografia.fonteContratualId : null},${preparadorId},${JSON.stringify(fotografia)}::jsonb,${fotografiaHash},'[]'::jsonb,${d.chaveIdempotencia},${entradaHash})`);
   return { id, fotografiaHash, proposta: fotografia };
 }
 

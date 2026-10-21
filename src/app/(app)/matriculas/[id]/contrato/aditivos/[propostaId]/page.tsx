@@ -14,6 +14,7 @@ import { ImpactosPainel } from "../ImpactosPainel";
 import { consultarAcertoTaxaPorProposta } from "@/server/contratos/aditivo-acerto-taxa-consulta";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
+import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
 const dominios = { CADASTRO: "Dados deste contrato", CONTRATUAL: "Condições contratadas", CONDICOES_FUTURAS: "Próximas cobranças", COBRANCA_EMITIDA: "Cobranças existentes", AGENDA: "Agenda" };
 export default async function PropostaAditivoPage({ params, searchParams }: { params: Promise<{ id: string; propostaId: string }>; searchParams: Promise<{ paginaConferencias?: string; paginaOriginais?: string }> }) {
   const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA); const { id, propostaId } = await params;
@@ -31,7 +32,7 @@ export default async function PropostaAditivoPage({ params, searchParams }: { pa
   const paginaOriginalInformada = Number((await searchParams).paginaOriginais ?? 1);
   const paginaOriginais = Number.isInteger(paginaOriginalInformada) && paginaOriginalInformada >= 1 && paginaOriginalInformada <= 100000 ? paginaOriginalInformada : 1;
   return <div className="space-y-5"><VoltarPara href={`/matriculas/${encodeURIComponent(id)}/contrato/aditivos`} para="Propostas" /><h1 className="text-2xl">Proposta de aditivo · versão {d.versao}</h1><p>Preparada por {d.preparadaPor} em {data(d.criadaEm)}.</p><p className="whitespace-pre-wrap">{d.motivo}</p>{d.ambiente === "SANDBOX" && <p role="status">Ambiente de teste: esta fonte não comprova formalização em produção.</p>}
-    {d.origemHistoricaId ? <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/origem-historica`}>Fonte: origem contratual histórica (contrato legado transcrito e conferido)</Link> : <>
+    {d.origemHistoricaId ? <><Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/contrato/origem-historica`}>Fonte: origem contratual histórica (contrato legado transcrito e conferido)</Link><p role="alert">{MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA} Esta proposta não pode ser aprovada nem enviada; pode apenas ser consultada ou rejeitada.</p></> : <>
     <a className="underline" href={`/api/matriculas/${encodeURIComponent(id)}/originais/${encodeURIComponent(d.artefatoOriginalId ?? "")}/pdf`} target="_blank" rel="noopener noreferrer">Abrir PDF do original preservado</a>
     <a className="block underline" href={`/api/matriculas/${encodeURIComponent(id)}/assinaturas/${encodeURIComponent(d.conclusaoOriginalId ?? "")}/pdf`} target="_blank" rel="noopener noreferrer">Abrir documento assinado e preservado</a></>}
     <a className="block underline" href={`/api/matriculas/${encodeURIComponent(id)}/aditivos/${encodeURIComponent(d.id)}/previa-pdf`} target="_blank" rel="noopener noreferrer">Abrir prévia do aditivo em PDF (sem assinatura)</a>

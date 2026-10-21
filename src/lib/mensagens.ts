@@ -15,3 +15,8 @@ export const MSG_ATIVACAO_INCERTA = "Resultado não confirmado: não sabemos se 
 
 // O pedido de recuperação não revela se a conta existe e pode ser repetido sem efeito além de outro aviso à escola.
 export const MSG_RECUPERACAO_INCERTA = "Resultado não confirmado: não sabemos se o pedido chegou à escola. Verifique sua conexão e solicite de novo.";
+
+// Origem contratual histórica (contrato legado): o envio de aditivo para assinatura só aceita SANDBOX/PRODUCAO e o dono
+// ainda não decidiu se o aditivo sobre contrato legado é assinado em PRODUCAO. Enquanto isso, nada é preparado,
+// aprovado ou enviado sobre essa fonte, e a tela diz o porquê.
+export const MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA = "Aditivo sobre contrato legado ainda não segue para assinatura; aguarda decisão.";
