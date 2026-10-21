@@ -91,3 +91,20 @@ export async function cancelarEnvelopeSemPresumir(provedor: ProvedorAssinatura, 
   try { return await provedor.cancelarEnvelope(referenciaExterna); }
   catch (e) { return excecao(e); }
 }
+
+export type ResultadoConciliacaoEnvio = { resultado: "REGISTRADO" | "NAO_CRIADO" | "INCERTO"; referenciaExterna: string | null; evidencia: unknown };
+
+/**
+ * Conciliação do envio a partir da consulta pela chave da tentativa. Só envelope encontrado e ainda válido
+ * (em assinatura ou já assinado) confirma o envio; ausência positiva prova que nada foi criado. Envelope
+ * CANCELADO ou RECUSADO no serviço NÃO vira ENVIADO: o processo só passa a CANCELADO pelos fluxos que o
+ * banco reconhece (substituição ou desistência Q165), então fica INCERTO com o motivo explícito, para
+ * conferência humana.
+ */
+export function resultadoConciliacaoEnvio(consulta: ResultadoConsultaEnvelope): ResultadoConciliacaoEnvio {
+  if (consulta.resultado === "AUSENTE") return { resultado: "NAO_CRIADO", referenciaExterna: null, evidencia: consulta.evidencia };
+  if (consulta.resultado === "INCERTO") return { resultado: "INCERTO", referenciaExterna: null, evidencia: consulta.evidencia };
+  if (consulta.situacao === "EM_ASSINATURA" || consulta.situacao === "ASSINADO") return { resultado: "REGISTRADO", referenciaExterna: consulta.referenciaExterna, evidencia: consulta.evidencia };
+  return { resultado: "INCERTO", referenciaExterna: null,
+    evidencia: { motivo: consulta.situacao === "CANCELADO" ? "ENVELOPE_CANCELADO_NO_SERVICO" : "ENVELOPE_RECUSADO_NO_SERVICO", referenciaExterna: consulta.referenciaExterna, situacao: consulta.situacao, original: consulta.evidencia } };
+}

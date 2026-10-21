@@ -6,7 +6,7 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared"
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { conferirAutor } from "./modelos-tx";
 import { iniciarTentativaAssinaturaTx, prepararProcessoEnvioTx, registrarResultadoEnvioTx } from "./envio-tx";
-import { consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, hashEvidenciaAssinatura, type ProvedorAssinatura } from "./provedor-assinatura";
+import { consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, hashEvidenciaAssinatura, resultadoConciliacaoEnvio, type ProvedorAssinatura } from "./provedor-assinatura";
 import { provedorAssinaturaAtivo } from "./provedor-assinatura-ativo";
 
 const id = z.string().trim().min(1).max(100);
@@ -90,11 +90,11 @@ export async function conciliarEnvioAssinatura(input: z.input<typeof Conciliar>)
       return { repetido: false as const, processoId: p.id, tentativaId: tentativa.id, sequencia: tentativa._count.observacoes + 1 };
     });
     if (pendente.repetido) return { processoId: pendente.processoId, estado: pendente.estado, repetido: true };
-    const consulta = await consultarEnvelopeSemPresumir(provedor, chaveTentativa(pendente.tentativaId));
-    const resultado = consulta.resultado === "ENCONTRADO" ? "REGISTRADO" as const : consulta.resultado === "AUSENTE" ? "NAO_CRIADO" as const : "INCERTO" as const;
+    // Envelope cancelado/recusado no serviço não confirma o envio: fica INCERTO com o motivo (resultadoConciliacaoEnvio).
+    const conciliado = resultadoConciliacaoEnvio(await consultarEnvelopeSemPresumir(provedor, chaveTentativa(pendente.tentativaId)));
     const registrado = await prisma.$transaction((tx) => registrarResultadoEnvioTx(tx, {
-      processoId: pendente.processoId, tentativaId: pendente.tentativaId, chave: `conciliacao:${pendente.tentativaId}:${pendente.sequencia}`, resultado,
-      referenciaExterna: consulta.resultado === "ENCONTRADO" ? consulta.referenciaExterna : null, evidenciaHash: hashEvidenciaAssinatura(consulta.evidencia),
+      processoId: pendente.processoId, tentativaId: pendente.tentativaId, chave: `conciliacao:${pendente.tentativaId}:${pendente.sequencia}`, resultado: conciliado.resultado,
+      referenciaExterna: conciliado.referenciaExterna, evidenciaHash: hashEvidenciaAssinatura(conciliado.evidencia),
       autorId: autor.id, ...(marca ? { marca } : {}),
     }), { timeout: 30000 });
     return { processoId: pendente.processoId, estado: registrado.estado, repetido: false };
