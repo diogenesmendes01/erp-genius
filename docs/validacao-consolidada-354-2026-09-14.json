@@ -1,0 +1,28 @@
+{
+  "incremento": 354,
+  "data": "2026-09-14",
+  "unitarios": {
+    "falhos": 0,
+    "pendentes": 0,
+    "arquivos": 89,
+    "aprovados": 828
+  },
+  "integracao": {
+    "duracaoSegundos": 680.36,
+    "falhos": 0,
+    "pendentes": 0,
+    "arquivos": 54,
+    "aprovados": 710
+  },
+  "alteracaoCodigo": false,
+  "novoBuild": false,
+  "migration": false,
+  "homologacaoVisual": false,
+  "producao": false,
+  "auditoria": "docs/planejamento/revisao-consumidores-contratuais-354.md",
+  "limites": [
+    "Correções dos consumidores identificados ainda pendentes",
+    "Requisitos incompletos da SPEC não comprovados pela regressão",
+    "Migração de dados reais e homologação operacional pendentes"
+  ]
+}

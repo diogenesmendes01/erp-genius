@@ -1,0 +1,22 @@
+{
+  "incremento": 204,
+  "data": "2026-09-12",
+  "integracao": {
+    "aprovados": 49,
+    "falhas": 0,
+    "pendentes": 0
+  },
+  "reteste": {
+    "aprovados": 2,
+    "falhas": 0,
+    "naoSelecionados": 47
+  },
+  "build": "Next.js 16.3.5, TypeScript e 46 páginas estáticas aprovados",
+  "lint": "arquivos alterados aprovados",
+  "schema": "96 migrations locais, sem diferenças",
+  "limites": [
+    "Última regressão integral no incremento 201",
+    "Consumo de Q110 na emissão e conferência contratual, ainda não na ativação completa",
+    "Sem ensaio interativo do navegador ou operação externa"
+  ]
+}

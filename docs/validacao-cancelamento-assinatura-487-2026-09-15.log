@@ -1,0 +1,4 @@
+[MIXED_EXPORTS] Entry module "vitest.integration.config.ts" is using named (including "DATABASE_URL_TESTE", "default") and default exports together. Consumers of your bundle will have to use `chunk.default` to access the default export, which may not be what you want. Use `output.exports: "named"` to disable this warning.
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+JSON report written to C:/Users/Mendes/.codex/worktrees/de19/erp-genius/docs/validacao-cancelamento-assinatura-487-2026-09-15.json

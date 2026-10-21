@@ -1,0 +1,13 @@
+{
+  "incremento": 264,
+  "data": "2026-09-13",
+  "escopo": "Consulta e interface de proposta e decisão independente de prorrogação de recuperação",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 49, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 51 },
+  "migrationAdicional": false,
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false,
+  "producao": false
+}

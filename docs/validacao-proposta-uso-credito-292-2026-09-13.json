@@ -1,0 +1,19 @@
+{
+  "incremento": 292,
+  "data": "2026-09-13",
+  "escopo": "Preparação versionada de proposta de uso de crédito em cobrança, sem aprovação ou aplicação",
+  "integracao": { "aprovados": 14, "falhos": 0, "arquivos": ["src/server/matricula/compra-horas.int.test.ts"] },
+  "coberturaNova": ["Proposta idempotente com normalização monetária", "Versionamento preservado", "Crédito, cobrança e recebimentos não alterados", "Limites de crédito e saldo", "Estado, moeda e matrícula conferidos", "Outro aluno e professor sem acesso", "Proposta imutável e incompatibilidade de vínculo recusada também por SQL"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "schemaDiff": "vazio",
+  "migrations": 138,
+  "migrationNova": "20260914050000_proposta_uso_credito",
+  "ultimaRegressaoIntegral": 283,
+  "dependenciaApurada": "Saldo/recebimento/quitação ainda pressupõem dinheiro recebido; aprovação de crédito exige movimento sem caixa e adaptação dos consumidores antes de aplicar",
+  "limites": ["Proposta não reserva nem utiliza crédito", "Aprovação e aplicação ainda pendentes", "Destinação entre contratos do mesmo aluno ainda pendente", "Devolução e concorrência com uso ainda pendentes", "Objetivo geral não concluído"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

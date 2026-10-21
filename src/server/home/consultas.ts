@@ -1,119 +1,32 @@
 import {
   EtapaLead,
-  StatusComissao,
   StatusMatricula,
-  StatusCobranca,
   Papel,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
 import { numero } from "@/server/_shared/decimal";
-import type { UsuarioSessao } from "@/server/_shared";
+import { exigirPapel, ErroAutenticacao, type UsuarioSessao } from "@/server/_shared";
+import { escopoRelatorio } from "@/server/relatorios/escopo";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { dataCivilInstitucional, inicioDoDiaInstitucional, inicioDoDiaSeguinteInstitucional, inicioDoMesInstitucional } from "@/server/operacao/fuso";
+import { progressoMetas } from "@/server/metas/metas";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { escopoTurmasDocente } from "@/server/diario/permissoes";
 
-const DIAS_PROPOSTA_PARADA = 5; // doc 09: "proposta parada há X dias" (default; tunável — P10)
 const SLA_MINUTOS = 60; // SLA do 1º contato (default; tunável — P10, doc 10 §10)
 
-function hojeIntervalo() {
-  const ini = new Date();
-  ini.setHours(0, 0, 0, 0);
-  const fim = new Date();
-  fim.setHours(23, 59, 59, 999);
-  return { ini, fim };
-}
 
-function inicioDoMes() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-export type Prioridade = "quente" | "atencao" | "agenda" | "proposta";
-
-export interface ItemFila {
-  id: string;
-  nome: string;
-  prioridade: Prioridade;
-  motivo: string;
-}
-
-export async function dadosHomeVendedor(usuario: UsuarioSessao) {
-  const { ini, fim } = hojeIntervalo();
-  const agora = new Date();
-  const limiteProposta = new Date(agora.getTime() - DIAS_PROPOSTA_PARADA * 86400000);
-
-  const leads = await prisma.lead.findMany({
-    where: {
-      vendedorDonoId: usuario.id,
-      etapa: { notIn: [EtapaLead.PERDIDO, EtapaLead.MATRICULADO] },
-    },
-    orderBy: { criadoEm: "desc" },
-  });
-
-  const fila: ItemFila[] = [];
-  for (const l of leads) {
-    if (l.etapa === EtapaLead.NOVO) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "quente", motivo: "Lead novo sem 1º contato" });
-    } else if (l.proximoFollowUp && l.proximoFollowUp < agora) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "atencao", motivo: "Follow-up vencido" });
-    } else if (l.dataExperimental && l.dataExperimental >= ini && l.dataExperimental <= fim) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "agenda", motivo: "Experimental hoje" });
-    } else if (l.etapa === EtapaLead.PROPOSTA && l.dataProposta && l.dataProposta < limiteProposta) {
-      fila.push({ id: l.id, nome: l.nome, prioridade: "proposta", motivo: "Proposta parada" });
-    }
-  }
-  const ordem: Record<Prioridade, number> = { quente: 0, atencao: 1, agenda: 2, proposta: 3 };
-  fila.sort((a, b) => ordem[a.prioridade] - ordem[b.prioridade]);
-
-  const leadsNovos = leads.filter((l) => l.etapa === EtapaLead.NOVO).length;
-  const followVencidos = leads.filter((l) => l.proximoFollowUp && l.proximoFollowUp < agora).length;
-  const experimentaisHoje = leads.filter(
-    (l) => l.dataExperimental && l.dataExperimental >= ini && l.dataExperimental <= fim,
-  ).length;
-
-  const comissoes = await prisma.comissao.findMany({
-    where: { vendedorId: usuario.id, status: { in: [StatusComissao.PENDENTE, StatusComissao.APROVADA] } },
-    select: { valor: true, moeda: true },
-  });
-  // Por moeda — antes somava CRC+USD e rotulava com a moeda da PRIMEIRA comissão (errado).
-  const comissaoPrevista = somarPorMoeda(comissoes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })));
-
-  // kanban resumido
-  const agrup = await prisma.lead.groupBy({
-    by: ["etapa"],
-    where: { vendedorDonoId: usuario.id },
-    _count: { _all: true },
-  });
-  const kanban = agrup.map((g) => ({ etapa: g.etapa, total: g._count._all }));
-
-  // meta do mês (matrículas via comissões aprovadas/pagas neste mês)
-  const matriculasMes = await prisma.comissao.count({
-    where: { vendedorId: usuario.id, criadoEm: { gte: inicioDoMes() } },
-  });
-
-  // agenda de hoje (experimentais)
-  const agenda = leads
-    .filter((l) => l.dataExperimental && l.dataExperimental >= ini && l.dataExperimental <= fim)
-    .map((l) => ({ id: l.id, nome: l.nome, hora: l.dataExperimental!.toISOString() }))
-    .sort((a, b) => a.hora.localeCompare(b.hora));
-
-  // SLA do dia (1º contato): leads que saíram de NOVO ÷ total; atrasados = NOVO além do limite
-  const limiteSla = new Date(agora.getTime() - SLA_MINUTOS * 60000);
-  const atrasadosSla = leads.filter((l) => l.etapa === EtapaLead.NOVO && l.criadoEm < limiteSla).length;
-  const respondidos = leads.filter((l) => l.etapa !== EtapaLead.NOVO).length;
-  const slaPct = leads.length > 0 ? Math.round((respondidos / leads.length) * 100) : 100;
-
-  return {
-    cards: { leadsNovos, followVencidos, experimentaisHoje, comissaoPrevista },
-    sla: { pct: slaPct, atrasados: atrasadosSla },
-    fila,
-    agenda,
-    kanban,
-    metaMes: { feitas: matriculasMes, meta: 20 },
-  };
-}
-
-export async function dadosHomeProfessor(usuario: UsuarioSessao) {
+/**
+ * A mesma referência temporal governa o card de próxima aula e a lista de
+ * check-ins pendentes. Ela é capturada no servidor para que uma aba aberta em
+ * outro fuso, ou um relógio local incorreto, não escolha outra aula.
+ */
+export async function dadosHomeProfessor(usuario: UsuarioSessao, agora = new Date()) {
+  if (!usuario?.id) throw new ErroAutenticacao();
+  exigirPapel(usuario, Papel.PROFESSOR);
   const turmas = await prisma.turma.findMany({
-    where: { professorId: usuario.id },
+    where: escopoTurmasDocente(usuario.id),
     orderBy: { criadoEm: "desc" },
     include: {
       modalidade: true,
@@ -126,7 +39,7 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
   // Experimentais para check-in (agendadas) — só as ATRIBUÍDAS a este professor
   // (escopo, Issue #13). O vínculo é a FK `professorExperimentalId` (fonte de
   // verdade). Sem atribuição = nada aparece, e o check-in também é bloqueado.
-  const experimentais = await prisma.lead.findMany({
+  const experimentais = await prisma.oportunidade.findMany({
     where: {
       professorExperimentalId: usuario.id,
       etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
@@ -135,6 +48,14 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
     orderBy: { dataExperimental: "asc" },
     select: { id: true, nome: true, dataExperimental: true },
   });
+
+  const proximaExperimental = experimentais.find((e) => e.dataExperimental! >= agora);
+  // B9 (doc 32): check-in VENCIDO — aula já passou (além da tolerância) sem Compareceu/
+  // Faltou. Sem o check-in a recuperação de no-show (C2) nunca dispara; o professor é o
+  // responsável e a Home é o canal do alerta.
+  const config = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const toleranciaMs = (config?.checkInToleranciaMinutos ?? 30) * 60_000;
+  const limiteCheckIn = new Date(Date.now() - toleranciaMs);
 
   return {
     turmas: turmas.map((t) => ({
@@ -147,55 +68,95 @@ export async function dadosHomeProfessor(usuario: UsuarioSessao) {
       id: e.id,
       nome: e.nome,
       data: e.dataExperimental!.toISOString(),
+      vencida: e.dataExperimental! < limiteCheckIn,
     })),
+    // Check-in atrasado permanece disponível na lista. Somente o destaque
+    // "Próxima" exige uma ocorrência ainda futura (o instante igual a agora
+    // ainda é atendível nesta referência capturada).
+    proximaExperimental: proximaExperimental
+      ? {
+          id: proximaExperimental.id,
+          nome: proximaExperimental.nome,
+          data: proximaExperimental.dataExperimental!.toISOString(),
+        }
+      : null,
   };
 }
 
-export async function dadosHomeGerente() {
-  const { ini, fim } = hojeIntervalo();
+/**
+ * "Hoje" e "mês" da tela inicial são o dia e o mês civis da escola (Q176), nunca os do servidor, que roda em UTC.
+ * O dia vai do primeiro instante válido do dia (`inicioDoDiaInstitucional`) ao do dia seguinte, exclusivo.
+ */
+export async function dadosHomeGerente(usuario: UsuarioSessao, agora = new Date()) {
+  if (!usuario?.id) throw new ErroAutenticacao();
+  exigirPapel(usuario, Papel.GERENTE_COMERCIAL);
+  const escopo = await escopoComercialAtual(usuario);
+  const escopoMatriculas = usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { lead: { is: escopo } };
+  const fuso = await fusoDaEscola();
+  const inicioHoje = inicioDoDiaInstitucional(agora, fuso);
+  const inicioAmanha = inicioDoDiaSeguinteInstitucional(agora, fuso);
+  const inicioMes = inicioDoMesInstitucional(agora, fuso);
 
   const [leadsHoje, totalLeads, matriculados, matriculasMes] = await Promise.all([
-    prisma.lead.count({ where: { criadoEm: { gte: ini, lte: fim } } }),
-    prisma.lead.count(),
-    prisma.lead.count({ where: { etapa: EtapaLead.MATRICULADO } }),
-    prisma.matricula.count({ where: { status: StatusMatricula.ATIVA, ativadaEm: { gte: inicioDoMes() } } }),
+    prisma.oportunidade.count({ where: { AND: [escopo], criadoEm: { gte: inicioHoje, lt: inicioAmanha } } }),
+    prisma.oportunidade.count({ where: escopo }),
+    prisma.oportunidade.count({ where: { AND: [escopo], etapa: EtapaLead.MATRICULADO } }),
+    prisma.matricula.count({ where: { ...escopoMatriculas, status: StatusMatricula.ATIVA, ativadaEm: { gte: inicioMes } } }),
   ]);
 
   const conversao = totalLeads > 0 ? Math.round((matriculados / totalLeads) * 100) : 0;
 
   const limiteSla = new Date(Date.now() - SLA_MINUTOS * 60000);
-  const alertasSla = await prisma.lead.count({
-    where: { etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
+  const alertasSla = await prisma.oportunidade.count({
+    where: { AND: [escopo], etapa: EtapaLead.NOVO, criadoEm: { lt: limiteSla } },
   });
 
-  // receita: cobranças pagas no mês, agrupada por moeda (nunca soma CRC+USD num total só).
-  const pagasMes = await prisma.cobranca.findMany({
-    where: { status: StatusCobranca.PAGO, pagoEm: { gte: inicioDoMes() } },
-    select: { valorRecebido: true, valorNegociado: true, moeda: true },
+  // Cada recebimento entra no mês em que ocorreu, inclusive baixa parcial.
+  const pagasMes = await prisma.recebimento.findMany({
+    where: { dataPagamento: { gte: inicioMes }, cobranca: { matricula: escopoMatriculas } },
+    select: { valor: true, moeda: true },
   });
+  // B9 (doc 32): experimentais já ocorridas (além da tolerância) sem check-in do professor
+  // — o gerente cobra; sem o check-in a recuperação de no-show (C2) não dispara.
+  const configComercial = await prisma.configComercial.findUnique({ where: { id: "comercial" } });
+  const limiteCheckIn = new Date(Date.now() - (configComercial?.checkInToleranciaMinutos ?? 30) * 60_000);
+  const checkInsVencidos = await prisma.oportunidade.count({
+    where: { AND: [escopo], etapa: EtapaLead.EXPERIMENTAL_AGENDADA, dataExperimental: { not: null, lt: limiteCheckIn } },
+  });
+
   const receitaMes = somarPorMoeda(
-    pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valorRecebido ?? c.valorNegociado) })),
+    pagasMes.map((c) => ({ moeda: c.moeda, valor: numero(c.valor) })),
   );
 
   // ranking simples por matrículas (leads matriculados por dono)
   const vendedores = await prisma.usuario.findMany({
-    where: { papeis: { has: Papel.VENDEDOR }, ativo: true },
+    where: { papeis: { has: Papel.VENDEDOR }, ativo: true, ...(usuario.papeis.includes(Papel.ADMINISTRADOR) ? {} : { gerenteComercialId: usuario.id }) },
     select: { id: true, nome: true },
   });
   const ranking = await Promise.all(
     vendedores.map(async (v) => ({
       nome: v.nome,
-      matriculados: await prisma.lead.count({
+      matriculados: await prisma.oportunidade.count({
         where: { vendedorDonoId: v.id, etapa: EtapaLead.MATRICULADO },
       }),
     })),
   );
   ranking.sort((a, b) => b.matriculados - a.matriculados);
 
-  const funil = await prisma.lead.groupBy({ by: ["etapa"], _count: { _all: true } });
+  const funil = await prisma.oportunidade.groupBy({ by: ["etapa"], where: escopo, _count: { _all: true } });
+
+  // Meta de matrículas do mês corrente (Q9): soma das metas do escopo; null quando ninguém definiu meta.
+  const competencia = dataCivilInstitucional(agora, fuso).slice(0, 7);
+  const metasMes = (await progressoMetas({ competencias: [competencia], escopo: await escopoRelatorio(usuario) })).filter((p) => p.metrica === "MATRICULAS");
+  const metaGeral = metasMes.find((p) => p.usuarioId === null);
+  const metaMatriculasMes = metaGeral
+    ? { meta: metaGeral.meta, realizado: metaGeral.realizado }
+    : metasMes.length
+      ? { meta: metasMes.reduce((s, p) => s + p.meta, 0), realizado: metasMes.reduce((s, p) => s + p.realizado, 0) }
+      : null;
 
   return {
-    kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla },
+    kpis: { leadsHoje, conversao, matriculasMes, receitaMes, alertasSla, checkInsVencidos, metaMatriculasMes },
     ranking,
     equipe: vendedores.map((v) => v.nome),
     funil: funil.map((f) => ({ etapa: f.etapa, total: f._count._all })),

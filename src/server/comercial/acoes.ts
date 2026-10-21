@@ -1,9 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, EtapaLead, CategoriaDocumento } from "@prisma/client";
+import { Papel, EtapaLead, CategoriaDocumento, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { hashEntrada, marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
+import { exigirArquivoVinculavel } from "@/server/uploads/autorizacao";
 import {
   exigirSessao,
   exigirSessaoComPapel,
@@ -12,9 +16,6 @@ import {
   executarAcao,
   ErroRegra,
   ErroPermissao,
-  temPapel,
-  ehEtapaManual,
-  transicaoManualPermitida,
   resolverDonoLead,
   normalizarTelefoneE164,
   podeCheckinExperimental,
@@ -22,6 +23,8 @@ import {
   type Resultado,
   type UsuarioSessao,
 } from "@/server/_shared";
+import { moverEtapaTx } from "@/server/crm/mover-etapa";
+import { escopoPessoas, garantirPessoaTx } from "@/server/crm/pessoas";
 import {
   EVENTO_EXPERIMENTAL_ATRIBUIDA,
   professorAtribuido,
@@ -34,26 +37,25 @@ async function ddiDoPais(paisId?: string | null): Promise<string> {
 }
 import {
   LeadSchema,
+  CriarLeadSchema,
   ResumoSchema,
   DatasSchema,
   InteracaoSchema,
   PerdaSchema,
   AgendarExperimentalSchema,
-  ConfigComercialSchema,
-  ReguaComercialSchema,
   NotaInternaSchema,
   type LeadInput,
+  type CriarLeadInput,
   type ResumoInput,
   type DatasInput,
   type InteracaoInput,
   type PerdaInput,
   type AgendarExperimentalInput,
-  type ConfigComercialInput,
-  type ReguaComercialInput,
   type NotaInternaInput,
 } from "./schema";
 import { Temperatura } from "@prisma/client";
-import { CADENCIAS_COMERCIAIS } from "./regua-fabrica";
+import { analisarComDatasDaEscola } from "@/server/_shared/validacao";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 /** Valida que `professorId` aponta para um usuário com papel PROFESSOR. */
 async function exigirProfessorValido(professorId: string) {
@@ -66,45 +68,159 @@ async function exigirProfessorValido(professorId: string) {
 
 const PAPEIS_COMERCIAL: Papel[] = [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 
-function revalidarLead(id?: string) {
-  revalidatePath("/leads");
-  revalidatePath("/pipeline");
+const DATA_CIVIL_LITERAL = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * O banco mantém datas como instantes. No evento, porém, conservamos também a
+ * data civil que a pessoa informou quando ela estava explícita e válida. Isso
+ * evita que uma leitura histórica escolha retroativamente um fuso inexistente.
+ */
+function dataCivilOriginal(valor: unknown, normalizada: Date | undefined) {
+  if (typeof valor !== "string" || !normalizada) return null;
+  const partes = DATA_CIVIL_LITERAL.exec(valor);
+  if (!partes) return null;
+  const [ano, mes, dia] = partes.slice(1).map(Number);
+  const calendario = new Date(Date.UTC(ano, mes - 1, dia));
+  if (calendario.getUTCFullYear() !== ano || calendario.getUTCMonth() !== mes - 1 || calendario.getUTCDate() !== dia) return null;
+  return normalizada.getFullYear() === ano && normalizada.getMonth() === mes - 1 && normalizada.getDate() === dia ? valor : null;
+}
+
+function revalidarLead() {
+  revalidatePath("/funil");
   // A inbox mostra o funil do lead no cockpit da thread — mudou o lead, a thread reflete.
   revalidatePath("/inbox");
-  if (id) revalidatePath(`/leads/${id}`);
 }
 
 /** Carrega o lead garantindo que o usuário pode vê-lo (vendedor só os próprios). */
-async function exigirLeadVisivel(id: string, usuario: UsuarioSessao) {
-  const lead = await prisma.lead.findUnique({ where: { id } });
-  if (!lead) throw new ErroRegra("Lead não encontrado.");
-  const amplo = temPapel(usuario, Papel.GERENTE_COMERCIAL); // Admin passa em temPapel
-  if (!amplo && lead.vendedorDonoId !== usuario.id) throw new ErroPermissao();
+async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  exigirPapel(usuario, ...PAPEIS_COMERCIAL);
+  const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
+  if (!lead) throw new ErroPermissao("Oportunidade fora da sua carteira.");
   return lead;
 }
 
-export async function criarLead(input: LeadInput): Promise<Resultado<{ id: string }>> {
+async function exigirDestinoComercial(usuario: UsuarioSessao, id: string | null, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  if (!id) {
+    if (!usuario.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroRegra("Selecione um vendedor da sua equipe.");
+    return;
+  }
+  const destino = await tx.usuario.findFirst({ where: { id, ativo: true, papeis: { has: Papel.VENDEDOR } }, select: { id: true, gerenteComercialId: true } });
+  if (!destino) throw new ErroRegra("Selecione um vendedor ativo.");
+  if (!usuario.papeis.includes(Papel.ADMINISTRADOR) && destino.id !== usuario.id &&
+    !(usuario.papeis.includes(Papel.GERENTE_COMERCIAL) && destino.gerenteComercialId === usuario.id)) {
+    throw new ErroPermissao("O vendedor não pertence à sua equipe.");
+  }
+}
+
+async function exigirDocumentoPermitido(leadId: string, categoria: CategoriaDocumento, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+  if (!Object.values(CategoriaDocumento).includes(categoria)) throw new ErroRegra("Categoria inválida.");
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return;
+  if (categoria === CategoriaDocumento.OUTRO) throw new ErroRegra("Classifique o documento pela finalidade antes de compartilhá-lo.");
+  if (usuario.papeis.includes(Papel.SECRETARIA_ACADEMICA)) {
+    const matricula = await tx.matricula.findUnique({ where: { leadId }, select: { secretariaAssumiuEm: true } });
+    if (matricula?.secretariaAssumiuEm) return;
+    // Acumular secretaria não revoga a coleta inicial já autorizada pela carteira.
+    if (!usuario.papeis.some((p) => p === Papel.VENDEDOR || p === Papel.GERENTE_COMERCIAL || p === Papel.PROFESSOR)) throw new ErroPermissao("Assuma a matrícula antes de alterar os documentos administrativos.");
+  }
+  if (categoria === CategoriaDocumento.TESTE_NIVEL && usuario.papeis.includes(Papel.PROFESSOR)) {
+    const experimental = await tx.oportunidade.findFirst({ where: { id: leadId, professorExperimentalId: usuario.id }, select: { id: true } });
+    if (experimental) return;
+  }
+  await exigirLeadVisivel(leadId, usuario, tx);
+  const matricula = await tx.matricula.findUnique({ where: { leadId }, select: { secretariaAssumiuEm: true } });
+  if (matricula?.secretariaAssumiuEm && categoria !== CategoriaDocumento.PROPOSTA) throw new ErroPermissao("Solicite a correção documental à secretaria.");
+}
+
+export async function criarLead(input: CriarLeadInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const dados = LeadSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = CriarLeadSchema.parse(input);
+    // Idempotência (#166): a chave e o hash da entrada vão no payload do `LeadCriado`.
+    const marca = chaveIdempotencia ? { chaveIdempotencia, entradaHash: hashEntrada(dados) } : null;
 
     // Vendedor vira dono por padrão; só gerente/admin podem atribuir a outro vendedor.
     // O servidor ignora qualquer vendedorDonoId enviado por um vendedor (doc 09).
     const donoId = resolverDonoLead(autor, dados.vendedorDonoId);
+    await exigirDestinoComercial(autor, donoId);
     const ddi = await ddiDoPais(dados.paisId);
 
     const id = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "LeadCriado", agregadoTipo: "Lead", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se a oportunidade já aparece antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
       const codigo = await gerarCodigo("lead");
-      const lead = await tx.lead.create({
+      const telefoneE164 = normalizarTelefoneE164(dados.telefoneE164, ddi);
+      // `Empresa` não tem dono nem carteira; o escopo possível é o cadastro estar ativo. Inexistente ou
+      // inativa devolve a mesma mensagem, em vez de estourar a FK (P2003) num erro genérico.
+      let empresaId = dados.empresaId || null;
+      if (dados.criarEmpresa && (empresaId || dados.pessoaId)) {
+        throw new ErroRegra("Oportunidade de empresa nova não leva empresa nem contato já existentes.");
+      }
+      if (empresaId) {
+        const empresa = await tx.empresa.findFirst({ where: { id: empresaId, ativo: true }, select: { id: true } });
+        if (!empresa) throw new ErroRegra("Empresa não encontrada.");
+      } else if (dados.criarEmpresa) {
+        // Ruling (C2 da R1 do #196): no modo Empresa a oportunidade nasce ligada a uma `Empresa` prospect, criada
+        // com o nome e o contato digitados, e nenhuma `Pessoa` recebe o nome da empresa. Participantes
+        // (`ParticipanteOportunidade`) entram depois, pela ficha.
+        const codigoEmpresa = await gerarCodigo("empresa", tx);
+        const empresa = await tx.empresa.create({
+          data: {
+            codigo: codigoEmpresa,
+            nome: dados.nome,
+            paisId: dados.paisId || null,
+            contatoTelefone: telefoneE164,
+            contatoEmail: dados.email || null,
+            origemCanal: dados.origemCanal ?? null,
+          },
+        });
+        empresaId = empresa.id;
+        await registrarEvento(tx, {
+          tipo: "EmpresaCriada",
+          agregadoTipo: "Empresa",
+          agregadoId: empresa.id,
+          autorId: autor.id,
+          payload: { codigo: codigoEmpresa, nome: empresa.nome, origem: "oportunidade" },
+        });
+      }
+      // Comportamento intencional nesta fase (R1 do PR #194, C2): com `pessoaId` informado, o telefone não
+      // entra em `ContatoWhatsApp`; e o `email` digitado só vai para a Pessoa quando ela é criada aqui (via
+      // `garantirPessoaTx`). Pessoa já existente — informada, achada pelo contato ou pelo aluno/responsável —
+      // não tem telefone nem e-mail atualizados por esta ação.
+      let pessoaId = dados.pessoaId || null;
+      if (pessoaId) {
+        // Fora do escopo do autor (ou lápide) é indistinguível de inexistente: não vaza o contato.
+        const existente = await tx.pessoa.findFirst({
+          where: { AND: [{ id: pessoaId }, await escopoPessoas(autor, tx)] },
+          select: { id: true },
+        });
+        if (!existente) throw new ErroRegra("Contato não encontrado.");
+      } else if (!dados.criarEmpresa) {
+        pessoaId = (
+          await garantirPessoaTx(
+            tx,
+            { nome: dados.nome, telefoneE164, email: dados.email || null, origemCanal: dados.origemCanal },
+            autor.id,
+          )
+        ).pessoaId;
+      }
+      const lead = await tx.oportunidade.create({
         data: {
           codigo,
           nome: dados.nome,
-          telefoneE164: normalizarTelefoneE164(dados.telefoneE164, ddi),
+          telefoneE164,
+          pessoaId,
+          origemCanal: dados.origemCanal ?? null,
+          empresaId,
           paisId: dados.paisId || null,
           segmento: dados.segmento,
           temperatura: dados.temperatura,
-          b2b: dados.b2b,
+          b2b: dados.criarEmpresa || dados.b2b,
           vendedorDonoId: donoId,
           origemCampanha: dados.origemCampanha || null,
           origemConjunto: dados.origemConjunto || null,
@@ -120,7 +236,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
         agregadoTipo: "Lead",
         agregadoId: lead.id,
         autorId: autor.id,
-        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b },
+        payload: { codigo, nome: lead.nome, segmento: lead.segmento, b2b: lead.b2b, pessoaId, empresaId, ...marca },
       });
       if (donoId) {
         await registrarEvento(tx, {
@@ -134,7 +250,7 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
       return lead.id;
     });
 
-    revalidarLead(id);
+    revalidarLead();
     return { id };
   });
 }
@@ -146,24 +262,33 @@ export async function criarLead(input: LeadInput): Promise<Resultado<{ id: strin
 /**
  * NOTA INTERNA sobre o lead: comentário da equipe, **nunca enviado ao contato**.
  * Distinta de `registrarInteracao` (que registra um contato REAL — ligação/presencial).
+ * Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra nota (a chave vai no payload do Evento).
  */
-export async function registrarNotaInterna(leadId: string, input: NotaInternaInput): Promise<Resultado> {
+export async function registrarNotaInterna(leadId: string, input: NotaInternaInput & { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(leadId, autor);
     const { nota } = NotaInternaSchema.parse(input);
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { leadId, nota });
 
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "NotaInterna", agregadoTipo: "Lead", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra nota. Recarregue a página e confira se a nota já aparece no histórico antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "NotaInterna",
         agregadoTipo: "Lead",
         agregadoId: leadId,
         autorId: autor.id,
-        payload: { nota },
+        payload: { nota, ...marca },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -177,7 +302,7 @@ export async function definirTemperatura(leadId: string, temperatura: Temperatur
     if (lead.temperatura === temperatura) return;
 
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id: leadId }, data: { temperatura } });
+      await tx.oportunidade.update({ where: { id: leadId }, data: { temperatura } });
       await registrarEvento(tx, {
         tipo: "LeadEditado",
         agregadoTipo: "Lead",
@@ -186,7 +311,7 @@ export async function definirTemperatura(leadId: string, temperatura: Temperatur
         payload: { de: lead.temperatura, temperatura, campo: "temperatura" },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -194,12 +319,17 @@ export async function editarLead(id: string, input: LeadInput): Promise<Resultad
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    await exigirLeadVisivel(id, autor);
     const dados = LeadSchema.parse(input);
     const ddi = await ddiDoPais(dados.paisId);
 
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${id} FOR UPDATE`;
+      const leadAtual = await exigirLeadVisivel(id, autor, tx);
+      const matricula = await tx.matricula.findUnique({ where: { leadId: id }, select: { secretariaAssumiuEm: true } });
+      const alteraCadastro = dados.nome !== leadAtual.nome || normalizarTelefoneE164(dados.telefoneE164, ddi) !== leadAtual.telefoneE164 || (dados.paisId || null) !== leadAtual.paisId;
+      if (matricula?.secretariaAssumiuEm && alteraCadastro && !autor.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA)) throw new ErroPermissao("A secretaria assumiu a matrícula. Solicite a correção cadastral.");
+      await tx.oportunidade.update({
         where: { id },
         data: {
           nome: dados.nome,
@@ -225,7 +355,7 @@ export async function editarLead(id: string, input: LeadInput): Promise<Resultad
         payload: { nome: dados.nome, temperatura: dados.temperatura },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -233,13 +363,13 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const lead = await exigirLeadVisivel(id, autor);
+    await exigirLeadVisivel(id, autor);
     const dados = ResumoSchema.parse(input);
     // Evento na MESMA transação da mutação (issue #1: resumo alterava sem auditoria).
     // Tipo específico ResumoAtualizado com payload completo, consumido pela linha
     // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           interesse: dados.interesse || null,
@@ -265,7 +395,7 @@ export async function atualizarResumo(id: string, input: ResumoInput): Promise<R
         },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -273,13 +403,13 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const lead = await exigirLeadVisivel(id, autor);
-    const dados = DatasSchema.parse(input);
+    await exigirLeadVisivel(id, autor);
+    const dados = analisarComDatasDaEscola(DatasSchema, input, await fusoDaEscola());
     // Evento na MESMA transação da mutação (issue #1: datas alteravam sem auditoria).
     // Tipo específico DatasAtualizadas com payload completo, consumido pela linha
     // do tempo da ficha do lead (issue #43).
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           proximoFollowUp: dados.proximoFollowUp ?? null,
@@ -294,12 +424,14 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
         autorId: autor.id,
         payload: {
           proximoFollowUp: dados.proximoFollowUp?.toISOString() ?? null,
+          proximoFollowUpCivil: dataCivilOriginal(input.proximoFollowUp, dados.proximoFollowUp),
           dataExperimental: dados.dataExperimental?.toISOString() ?? null,
           dataProposta: dados.dataProposta?.toISOString() ?? null,
+          dataPropostaCivil: dataCivilOriginal(input.dataProposta, dados.dataProposta),
         },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -307,55 +439,39 @@ export async function moverEtapa(id: string, etapa: EtapaLead): Promise<Resultad
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    const lead = await exigirLeadVisivel(id, autor);
-    if (lead.etapa === etapa) return;
-
-    // Etapas geradas por evento (Exp. Realizada, Proposta, Aguardando Matrícula…)
-    // e saídas paralelas (Perdido/Matriculado) NÃO se movem por arraste.
-    if (!ehEtapaManual(etapa)) {
-      throw new ErroRegra(
-        "Esta etapa é definida por uma ação específica (agendar/realizar experimental, " +
-          "enviar proposta, marcar perdido ou converter em matrícula), não pelo arraste.",
-      );
-    }
-    // Valida a máquina de estados origem→destino — bloqueia saltos inválidos no
-    // backend mesmo que o client envie um destino fora da sequência (doc 10 §1).
-    if (!transicaoManualPermitida(lead.etapa, etapa)) {
-      throw new ErroRegra(
-        `Transição inválida: não é possível mover de "${lead.etapa}" para "${etapa}".`,
-      );
-    }
-    await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id }, data: { etapa } });
-      await registrarEvento(tx, {
-        tipo: "EtapaAlterada",
-        agregadoTipo: "Lead",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { de: lead.etapa, para: etapa, origem: "manual" },
-      });
-    });
-    revalidarLead(id);
+    // Máquina de estados, trava da linha e Evento na mesma transação: ver crm/mover-etapa.ts.
+    await prisma.$transaction((tx) => moverEtapaTx(tx, autor, id, etapa));
+    revalidarLead();
   });
 }
 
-export async function registrarInteracao(id: string, input: InteracaoInput): Promise<Resultado> {
+/** Com `chaveIdempotencia` (#166), o reenvio da mesma tentativa não grava outra interação (a chave vai no payload do Evento). */
+export async function registrarInteracao(id: string, input: InteracaoInput & { chaveIdempotencia?: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirPapel(autor, ...PAPEIS_COMERCIAL);
     await exigirLeadVisivel(id, autor);
     const dados = InteracaoSchema.parse(input);
+    const payload = { canal: dados.canal || null, nota: dados.nota };
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), { leadId: id, ...payload });
     // Evento gravado em transação (issue #1): consistente com o restante do domínio.
     await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "InteracaoRegistrada", agregadoTipo: "Lead", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outra interação. Recarregue a página e confira o histórico antes de repetir.",
+        });
+        if (repetido) return;
+      }
       await registrarEvento(tx, {
         tipo: "InteracaoRegistrada",
         agregadoTipo: "Lead",
         agregadoId: id,
         autorId: autor.id,
-        payload: { canal: dados.canal || null, nota: dados.nota },
+        payload: { ...payload, ...marca },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -382,7 +498,7 @@ export async function agendarExperimental(
     const anterior = await professorAtribuido(prisma, id);
     const mudouProfessor = professorId !== anterior;
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: {
           etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
@@ -392,6 +508,9 @@ export async function agendarExperimental(
           // vale para o novo horário (review PR #56). Sem este reset o lead ficaria
           // "confirmado" para sempre e a resposta ao novo lembrete nem gravaria evento.
           experimentalConfirmadaEm: null,
+          // B8 (doc 32): remarcar É a ação humana que o pedido de REAGENDAR esperava —
+          // libera a cadência pré-experimental para a ocorrência nova.
+          aguardandoReagendamentoEm: null,
         },
       });
       await registrarEvento(tx, {
@@ -413,7 +532,7 @@ export async function agendarExperimental(
         });
       }
     });
-    revalidarLead(id);
+    revalidarLead();
     revalidatePath("/home");
   });
 }
@@ -425,7 +544,7 @@ export async function enviarProposta(id: string): Promise<Resultado> {
     await exigirLeadVisivel(id, autor);
     await prisma.$transaction(async (tx) => {
       const agora = new Date();
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: { etapa: EtapaLead.PROPOSTA, dataProposta: agora },
       });
@@ -437,7 +556,7 @@ export async function enviarProposta(id: string): Promise<Resultado> {
         payload: { data: agora.toISOString() },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -448,7 +567,7 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu
     await exigirLeadVisivel(id, autor);
     const dados = PerdaSchema.parse(input);
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id },
         data: { etapa: EtapaLead.PERDIDO, motivoPerda: dados.motivoPerda },
       });
@@ -460,7 +579,7 @@ export async function marcarPerdido(id: string, input: PerdaInput): Promise<Resu
         payload: { motivoPerda: dados.motivoPerda, observacao: dados.observacao || null },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }
 
@@ -470,10 +589,20 @@ export async function anexarDocumentoLead(
 ): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_COMERCIAL);
-    await exigirLeadVisivel(leadId, autor);
     if (!doc.url) throw new ErroRegra("Faça o upload do arquivo antes de salvar.");
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${leadId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${leadId} FOR UPDATE`;
+      await exigirDocumentoPermitido(leadId, doc.categoria, autor, tx);
+      await exigirArquivoVinculavel(autor, doc.url, { leadId, categoriaDocumento: doc.categoria }, tx);
+      // Idempotência por natureza (#166): cada upload tem URL própria, e o lead está travado acima. O reenvio do
+      // mesmo upload, com a mesma categoria e o mesmo nome, devolve o documento já anexado sem gravar outro
+      // registro nem outro Evento; com outro nome é recusado.
+      const jaAnexado = await tx.documento.findFirst({ where: { leadId, url: doc.url, arquivado: false }, select: { categoria: true, nome: true } });
+      if (jaAnexado) {
+        if (jaAnexado.categoria === doc.categoria && jaAnexado.nome === doc.nome) return;
+        throw new ErroRegra("Este arquivo já está anexado a esta oportunidade com outro nome. Recarregue a página e confira os documentos.");
+      }
       await tx.documento.create({
         data: { leadId, categoria: doc.categoria, nome: doc.nome, url: doc.url },
       });
@@ -485,7 +614,7 @@ export async function anexarDocumentoLead(
         payload: { categoria: doc.categoria, nome: doc.nome },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
   });
 }
 
@@ -493,21 +622,30 @@ export async function anexarDocumentoLead(
 export async function arquivarDocumentoLead(documentoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    exigirPapel(autor, ...PAPEIS_COMERCIAL);
     const doc = await prisma.documento.findUnique({ where: { id: documentoId } });
     if (!doc) throw new ErroRegra("Documento não encontrado.");
-    await exigirLeadVisivel(doc.leadId, autor);
+    if (!doc.leadId) throw new ErroPermissao("Use a secretaria para alterar o documento da matrícula.");
+    const leadId = doc.leadId;
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${leadId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Matricula" WHERE "leadId" = ${leadId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Documento" WHERE id = ${documentoId} FOR UPDATE`;
+      await exigirDocumentoPermitido(leadId, doc.categoria, autor, tx);
+      // Estado-alvo (#166): o documento já arquivado não é arquivado de novo nem ganha outro Evento.
+      const atual = await tx.documento.findUnique({ where: { id: documentoId }, select: { arquivado: true } });
+      if (atual?.arquivado) return;
+      const contratoEmUso = await tx.matricula.findFirst({ where: { contratoDocumentoId: documentoId, contratoOk: true }, select: { id: true } });
+      if (contratoEmUso) throw new ErroRegra("Registre a substituição contratual antes de arquivar um contrato confirmado.");
       await tx.documento.update({ where: { id: documentoId }, data: { arquivado: true } });
       await registrarEvento(tx, {
         tipo: "DocumentoArquivado",
         agregadoTipo: "Lead",
-        agregadoId: doc.leadId,
+        agregadoId: leadId,
         autorId: autor.id,
         payload: { documentoId, nome: doc.nome },
       });
     });
-    revalidarLead(doc.leadId);
+    revalidarLead();
   });
 }
 
@@ -524,7 +662,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     const autor = await exigirSessao();
     exigirPapel(autor, Papel.PROFESSOR);
 
-    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.oportunidade.findUnique({ where: { id: leadId } });
     if (!lead) throw new ErroRegra("Lead não encontrado.");
 
     // 2) etapa/agendamento: só vale enquanto há uma experimental agendada
@@ -545,7 +683,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     const proximaAcao = compareceu ? "Comercial: apresentar proposta" : "Remarcar experimental";
 
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id: leadId }, data: { etapa, proximaAcao } });
+      await tx.oportunidade.update({ where: { id: leadId }, data: { etapa, proximaAcao } });
       await registrarEvento(tx, {
         tipo: compareceu ? "ExperimentalRealizada" : "NoShow",
         agregadoTipo: "Lead",
@@ -555,8 +693,7 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
       });
     });
     revalidatePath("/home");
-    revalidatePath("/leads");
-    revalidatePath("/pipeline");
+    revalidatePath("/funil");
   });
 }
 
@@ -575,7 +712,7 @@ export async function atribuirProfessorExperimental(
 
     const anterior = await professorAtribuido(prisma, leadId);
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({
+      await tx.oportunidade.update({
         where: { id: leadId },
         data: { professorExperimentalId: professorId },
       });
@@ -587,164 +724,12 @@ export async function atribuirProfessorExperimental(
         payload: { de: anterior, professorId },
       });
     });
-    revalidarLead(leadId);
+    revalidarLead();
     revalidatePath("/home");
   });
 }
 
-// Config comercial C1 (doc 27): auto-lead + saudação. Alçada = Gerente Comercial (dono da
-// automação comercial) + Admin. Evento auditável (antes→depois) — mudar quem o robô fala
-// em nome da escola é uma ação sensível.
-export async function salvarConfigComercial(input: ConfigComercialInput): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-    const dados = ConfigComercialSchema.parse(input);
-
-    await prisma.$transaction(async (tx) => {
-      const antes = await tx.configComercial.findUnique({ where: { id: "comercial" } });
-      await tx.configComercial.upsert({
-        where: { id: "comercial" },
-        create: { id: "comercial", ...dados },
-        update: dados,
-      });
-      await registrarEvento(tx, {
-        tipo: "ConfigComercialAlterada",
-        agregadoTipo: "ConfigComercial",
-        agregadoId: "comercial",
-        autorId: autor.id,
-        payload: {
-          antes: antes
-            ? { autoLeadAtivo: antes.autoLeadAtivo, saudacaoEstado: antes.saudacaoEstado, saudacaoTexto: antes.saudacaoTexto }
-            : null,
-          depois: dados,
-        },
-      });
-    });
-    revalidatePath("/configuracao/whatsapp");
-  });
-}
-
-// Régua comercial "lead novo sem resposta" (doc 27 C1). Gerente Comercial/Admin. A ORDEM
-// dos passos é lei de código (regua-fabrica) — a UI só edita offset/ativo/template + estado.
-export async function salvarReguaComercial(input: ReguaComercialInput): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-    const dados = ReguaComercialSchema.parse(input);
-    if (dados.janelaFim <= dados.janelaInicio) throw new ErroRegra("A janela precisa terminar depois de começar.");
-
-    // Só passos da cadência CANÔNICA daquele cenário entram (ordem imutável — review PR #54).
-    const cadencia = CADENCIAS_COMERCIAIS.find((c) => c.chave === dados.chave);
-    if (!cadencia) throw new ErroRegra(`Cenário de régua desconhecido: ${dados.chave}.`);
-    const rotuloPorPasso = new Map(cadencia.degraus.map((d) => [d.passo, d.rotulo]));
-    for (const d of dados.degraus) {
-      if (!rotuloPorPasso.has(d.passo)) throw new ErroRegra(`Passo desconhecido na cadência: ${d.passo}.`);
-    }
-
-    // A ORDEM CANÔNICA é lei (review PR #55 P2). O motor corta o progresso pela ordem de
-    // fábrica, mas o loader ordena os degraus por OFFSET: se a UI gravasse +4h antes de
-    // +30min, o +4h sairia primeiro e o +30min ficaria eliminado para sempre (forward-only).
-    // Exige-se, então: todos os passos, uma única vez, com offsets ESTRITAMENTE CRESCENTES
-    // na ordem de fábrica. Vale para as três cadências — inclusive a pré-experimental, cujos
-    // offsets são NEGATIVOS (-24h antes de -2h continua sendo "estritamente crescente").
-    const ordemFabrica = cadencia.degraus.map((d) => d.passo);
-    const offsetPorPasso = new Map(dados.degraus.map((d) => [d.passo, d.offsetMinutos]));
-    if (offsetPorPasso.size !== dados.degraus.length) {
-      throw new ErroRegra("Cada passo da cadência pode aparecer uma única vez.");
-    }
-    const faltando = ordemFabrica.filter((p) => !offsetPorPasso.has(p));
-    if (faltando.length > 0) {
-      throw new ErroRegra(`A cadência precisa trazer todos os passos. Faltam: ${faltando.join(", ")}.`);
-    }
-    let offsetAnterior: number | null = null;
-    let passoAnterior: string | null = null;
-    for (const passo of ordemFabrica) {
-      const offset = offsetPorPasso.get(passo)!;
-      if (offsetAnterior !== null && offset <= offsetAnterior) {
-        throw new ErroRegra(
-          `A ordem da cadência é fixa: o intervalo de ${passo} precisa ser maior que o de ${passoAnterior}.`,
-        );
-      }
-      offsetAnterior = offset;
-      passoAnterior = passo;
-    }
-
-    // Prontidão (como na cobrança): armar (SHADOW/ATIVA) exige número remetente ativo.
-    if (dados.estado !== "DESLIGADA") {
-      if (!dados.numeroRemetenteId) throw new ErroRegra("Defina o número remetente antes de armar a régua.");
-      const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
-      if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
-      // Remetente OFICIAL: TODO degrau ativo precisa de template APROVADO na Meta (review
-      // PR #55 P1). +3d/+7d caem fora da janela de 24h — sem template aprovado o envio falha
-      // na API. A régua não pode ser armada num estado que só quebra na hora do disparo.
-      if (remetente.driver === "META_CLOUD") {
-        const ativos = dados.degraus.filter((d) => d.ativo);
-        const ids = ativos.map((d) => d.templateId).filter((id): id is string => !!id);
-        const templates = ids.length
-          ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids } }, select: { id: true, statusMeta: true } })
-          : [];
-        const statusPorId = new Map(templates.map((t) => [t.id, t.statusMeta]));
-        const semAprovacao = ativos.filter((d) => !d.templateId || statusPorId.get(d.templateId) !== "APROVADO");
-        if (semAprovacao.length > 0) {
-          throw new ErroRegra(
-            `No número oficial, todo degrau ativo precisa de template aprovado na Meta. Pendentes: ${semAprovacao
-              .map((d) => d.passo)
-              .join(", ")}.`,
-          );
-        }
-      }
-    }
-
-    await prisma.$transaction(async (tx) => {
-      const existente = await tx.politicaComercial.findUnique({
-        where: { chave: dados.chave },
-        include: { degraus: true },
-      });
-      const politicaId = existente
-        ? existente.id
-        : (await tx.politicaComercial.create({ data: { chave: cadencia.chave, nome: cadencia.nome } })).id;
-
-      await tx.politicaComercial.update({
-        where: { id: politicaId },
-        data: {
-          estado: dados.estado,
-          numeroRemetenteId: dados.numeroRemetenteId,
-          janelaInicio: dados.janelaInicio,
-          janelaFim: dados.janelaFim,
-          tetoPorContatoDia: dados.tetoPorContatoDia,
-        },
-      });
-      for (const d of dados.degraus) {
-        await tx.degrauComercial.upsert({
-          where: { politicaId_passo: { politicaId, passo: d.passo } },
-          create: {
-            politicaId,
-            passo: d.passo,
-            offsetMinutos: d.offsetMinutos,
-            rotulo: rotuloPorPasso.get(d.passo)!,
-            ativo: d.ativo,
-            templateId: d.templateId,
-          },
-          update: { offsetMinutos: d.offsetMinutos, ativo: d.ativo, templateId: d.templateId },
-        });
-      }
-      await registrarEvento(tx, {
-        tipo: "PoliticaComercialAlterada",
-        agregadoTipo: "PoliticaComercial",
-        agregadoId: politicaId,
-        autorId: autor.id,
-        payload: {
-          antes: existente
-            ? { estado: existente.estado, numeroRemetenteId: existente.numeroRemetenteId }
-            : null,
-          depois: { estado: dados.estado, numeroRemetenteId: dados.numeroRemetenteId, degraus: dados.degraus },
-        },
-      });
-    });
-    revalidatePath("/configuracao/whatsapp");
-  });
-}
-
-/** Redistribuir lead (Gerente Comercial/Admin) — dono = comissão, registra histórico. */
+/** Redistribui a carteira; beneficiários de comissões anteriores permanecem intactos. */
 export async function atribuirDono(
   id: string,
   vendedorId: string,
@@ -752,12 +737,17 @@ export async function atribuirDono(
 ): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
-    const lead = await prisma.lead.findUnique({ where: { id } });
-    if (!lead) throw new ErroRegra("Lead não encontrado.");
-    const novo = await prisma.usuario.findUnique({ where: { id: vendedorId } });
-    if (!novo) throw new ErroRegra("Vendedor não encontrado.");
     await prisma.$transaction(async (tx) => {
-      await tx.lead.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
+      await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${id} FOR UPDATE`;
+      const lead = await exigirLeadVisivel(id, autor, tx);
+      await exigirDestinoComercial(autor, vendedorId, tx);
+      if (lead.vendedorDonoId === vendedorId) return;
+      await tx.oportunidade.update({ where: { id }, data: { vendedorDonoId: vendedorId } });
+      // Responsável preenchido conta como assumido (regra do backfill da M2): quem estava "Na fila" passa a
+      // EM_ATENDIMENTO; AGUARDANDO_CLIENTE e EM_ATENDIMENTO mantêm o status.
+      await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null, status: "ABERTO_SEM_RESPONSAVEL" }, data: { responsavelId: vendedorId, status: "EM_ATENDIMENTO" } });
+      await tx.atendimentoWhatsApp.updateMany({ where: { leadId: id, finalidade: "COMERCIAL", encerradoEm: null }, data: { responsavelId: vendedorId } });
+      if (lead.vendedorDonoId) await tx.intencaoMensagem.updateMany({ where: { OR: [{ leadId: id }, { atendimento: { is: { leadId: id, finalidade: "COMERCIAL" } } }], origem: "HUMANO", autorId: lead.vendedorDonoId, status: { in: ["PENDENTE", "ADIADA"] } }, data: { status: "CANCELADA", motivoFalha: "Carteira transferida; revisar responsável antes de enviar." } });
       await registrarEvento(tx, {
         tipo: "LeadAtribuido",
         agregadoTipo: "Lead",
@@ -766,6 +756,6 @@ export async function atribuirDono(
         payload: { de: lead.vendedorDonoId, para: vendedorId, motivo: motivo || null },
       });
     });
-    revalidarLead(id);
+    revalidarLead();
   });
 }

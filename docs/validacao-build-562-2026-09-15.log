@@ -1,0 +1,10 @@
+▲ Next.js 16.3.5 (Turbopack)
+✓ Running next.config.mjs took 15ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.8s
+  Running TypeScript ...
+src/server/avaliacoes/segunda-chamada.int.test.ts(541,25): error TS2339: Property 'status' does not exist on type '{ id: string; status: string; } | { reservaId: string; tipo: "CANCELAMENTO_ESCOLA" | "CANCELAMENTO_ALUNO" | "FALTA" | "IMPEDIMENTO_ESCOLA"; ocorridaEm: string; motivo: string; evidencia: string; }'.
+  Property 'status' does not exist on type '{ reservaId: string; tipo: "CANCELAMENTO_ESCOLA" | "CANCELAMENTO_ALUNO" | "FALTA" | "IMPEDIMENTO_ESCOLA"; ocorridaEm: string; motivo: string; evidencia: string; }'.
+Failed to type check.
+

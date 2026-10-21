@@ -1,0 +1,38 @@
+import { Papel } from "@prisma/client";
+import { exigirSessaoPagina } from "@/server/_shared";
+import { consultarHistoricoPreparacaoRecuperacao } from "@/server/avaliacoes/recuperacao-preparacao-historico";
+import { IdentificacaoAvaliacao } from "../../../avaliacoes/Identificacao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { Paginacao } from "@/components/Paginacao";
+import { hrefLista, lerPagina, lerTexto, type ParametrosUrl } from "@/lib/pagina-url";
+
+export default async function HistoricoPreparacao({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
+  await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO);
+  const q = await searchParams, alocacaoId = lerTexto(q, "alocacaoId"), pagina = lerPagina(q);
+  const [resultado, preferencia] = await Promise.all([
+    consultarHistoricoPreparacaoRecuperacao({ alocacaoId, pagina }),
+    consultarPreferenciaFusoEquipe(),
+  ]);
+  if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
+  const d = resultado.dado;
+  const fuso = resolverFusoExibicao(preferencia.ok ? preferencia.dado?.fusoExibicao : null, "UTC");
+  const dataHora = (valor: string) => formatarInstanteExibicao(valor, fuso, "UTC").texto;
+  const caminhoPlanos = `/academico/recuperacoes/planos?${new URLSearchParams({ alocacaoId: d.alocacaoId })}`;
+
+  return <section className="space-y-4">
+    <VoltarPara href={caminhoPlanos} para="Planos de recuperação" />
+    <h1 className="text-2xl font-medium">Histórico de autorizações de preparação</h1>
+    <IdentificacaoAvaliacao dados={d.identificacao} />
+    {d.historico.map(autorizacao => <article key={autorizacao.id} className="space-y-1 rounded border p-3">
+      <p>Autorizada por {autorizacao.autorizador.nome}, em {dataHora(autorizacao.criadaEm)} ({fuso}; origem UTC).</p>
+      <p>Prazo até {dataHora(autorizacao.prazoAte)} ({fuso}; origem UTC).</p>
+      <p>Propostas preparadas com esta autorização: {autorizacao.quantidadePropostas}.</p>
+      <p className="whitespace-pre-wrap">{autorizacao.motivo}</p>
+    </article>)}
+    {!d.historico.length && <EstadoVazio bloco>Nenhuma autorização de preparação registrada.</EstadoVazio>}
+    <Paginacao pagina={pagina} temProxima={d.temProxima} href={(p) => hrefLista("/academico/recuperacoes/planos/autorizacoes-preparacao", { alocacaoId: d.alocacaoId, pagina: p })} rotulo="Páginas do histórico de autorizações de preparação" />
+  </section>;
+}

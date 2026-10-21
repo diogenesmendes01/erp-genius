@@ -1,0 +1,19 @@
+{
+  "incremento": 247,
+  "data": "2026-09-13",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 25,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 49,
+    "ajustePosterior": "Fallback de identificação; TypeScript/lint repetidos"
+  },
+  "homologacaoInterativa": false,
+  "migrationsNovas": 0
+}

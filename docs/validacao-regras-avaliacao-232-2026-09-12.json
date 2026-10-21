@@ -1,0 +1,42 @@
+{
+  "incremento": 232,
+  "data": "2026-09-12",
+  "migration": {
+    "nome": "20260913030000_regras_avaliacao",
+    "total": 105,
+    "ambiente": "PostgreSQL local descartavel erp_genius_test",
+    "schema_diff": "vazio"
+  },
+  "unitarios": {
+    "arquivos": [
+      "src/server/avaliacoes/calculo.test.ts",
+      "src/server/avaliacoes/regra-schema.test.ts"
+    ],
+    "aprovados": 40,
+    "falhas": 0
+  },
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/regras.int.test.ts",
+    "aprovados": 10,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lint_direcionado": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "resultado": "aprovado",
+    "paginas_estaticas": 47,
+    "rotas_novas": [
+      "/academico/regras",
+      "/academico/regras/[nivelId]"
+    ]
+  },
+  "ensaio_interativo": "nao executado",
+  "regressao_integral": "nao executada neste incremento; ultima 221",
+  "limites": [
+    "Sem atribuicao/migracao de regra nas turmas",
+    "Sem registro de notas, frequencia ou fechamento",
+    "Sem portal academico integrado",
+    "Sem producao ou envios externos"
+  ]
+}

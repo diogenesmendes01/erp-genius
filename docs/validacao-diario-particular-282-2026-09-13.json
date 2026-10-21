@@ -1,0 +1,19 @@
+{
+  "incremento": 282,
+  "data": "2026-09-13",
+  "escopo": "Diário particular por encontro da matrícula e conclusão por exceção independente de gravação",
+  "integracao": { "aprovados": 83, "falhos": 0, "arquivos": ["src/server/diario/diario.int.test.ts", "src/server/matricula/reserva-vaga.int.test.ts"], "distribuicao": "16 diário; 67 reserva/preparação" },
+  "unitarios": { "aprovados": 12, "arquivo": "src/server/diario/diario.test.ts" },
+  "cenariosNovos": ["Professor atribuído consulta e registra somente o aluno do contrato", "Sem dados pessoais privados ou financeiros na chamada", "Outro professor e usuário inativo recusados", "Histórico insuficiente do próprio contrato exige conferência", "Edição concorrente obsoleta recusada", "Vínculo do diário preservado no banco", "Conclusão por exceção exige outra pessoa", "Aula concluída não permite edição direta", "Falta particular não comprova aula ministrada", "Nenhuma cobrança criada pelo diário"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado sem avisos",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "migration": "20260914010000_diario_particular",
+  "migrations": 129,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 279,
+  "limites": ["Conclusão regular com gravação integrada permanece pendente", "Regularização de autoria por responsável designado e correção aprovada ainda precisam atender particulares", "Histórico contratual de encerramento incompleto exige conferência", "Apuração financeira e saldo de horas não são implementados pelo diário"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

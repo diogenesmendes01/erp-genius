@@ -15,10 +15,10 @@ Saídas paralelas: **Perdido** (vendedor, com motivo) · **No-show** (professor,
 ### Aluno
 `Ativo ⇄ Pausado` · `Ativo → Encerrado`.
 
+Pausado → Ativo exige proposta de retomada aprovada por outra pessoa do Financeiro ou da Administração. A proposta permite manter vencimentos ou reprogramar as parcelas restantes; nada é aplicado antes da decisão. Consulte [D13 — retomada](39-retomada-com-aprovacao.md).
+
 ### Matrícula
-`Rascunho → Aguardando → Ativa → Encerrada`. **Ativa** quando **Contrato OK + Taxa paga +
-1ª mensalidade paga** (`contratoOk && pagamentoTaxaOk && primeiraMensalidadeOk` — decisão P7,
-doc 15); Admin/Gerente pode ativar com pendência (`ativadaComPendencia`).
+`Rascunho → Aguardando → Ativa → Encerrada`. **Ativa** exige contrato aceito com evidência e taxa confirmada. A configuração operacional pode exigir também a primeira mensalidade; os indicadores isolados não substituem a comprovação. As pré-condições valem também para administradores. Aluno pausado ou encerrado não pode ter matrícula ativada para contornar a retomada (D10/D13, docs 36/39).
 (`Cancelada` = encerramento precoce — dispara estorno de comissão, ver §3.)
 
 ### Cobrança
@@ -32,16 +32,18 @@ doc 15); Admin/Gerente pode ativar com pendência (`ativadaComPendencia`).
 `Planejada → Aberta → Em andamento → Concluída` (enum `StatusTurma`: `PLANEJADA · ABERTA ·
 EM_ANDAMENTO · CONCLUIDA`).
 
-## 2. Permissões (matriz autoritativa)
+## 2. Permissões (resumo; política detalhada no doc 36)
+
+Papéis, registros, campos e condições são detalhados na [política aprovada](36-politica-de-acesso-aprovada.md), que prevalece sobre resumos anteriores.
 
 | Papel | Pode | Não pode |
 |---|---|---|
 | **Vendedor** | Criar/editar lead · agendar experimental · criar matrícula · **solicitar** desconto | Encerrar aluno · alterar cobrança · **aprovar** desconto |
-| **Secretaria Acadêmica** | Criar aluno · trocar turma · pausar · reativar · encerrar · registrar pagamento | Renegociar/aprovar |
+| **Secretaria Acadêmica** | Criar aluno · trocar turma equivalente · solicitar mudança de nível e executar decisão pedagógica vigente · pausar · propor retomada · encerrar · informar pagamento para conferência | Aprovar mudança pedagógica pelo papel de Secretaria · aprovar retomada ou confirmar o próprio informe |
 | **Professor** | Ver turmas · ver alunos · **check-in** experimental | Nada além disso |
-| **Financeiro** | Registrar pagamento · criar ajuste · cobrar aluno · ver aluno | Movimentação acadêmica |
+| **Financeiro** | Registrar pagamento · criar ajuste · cobrar aluno · ver aluno · propor/aprovar retomada com revisão independente | Aprovar a própria proposta · demais movimentações acadêmicas |
 | **Gerente Comercial** | Tudo do vendedor + **aprovar desconto** · **redistribuir leads** · **aprovar comissão** | Config de sistema |
-| **Gerente Pedagógico** | Decide turma/progressão · movimentações acadêmicas | Financeiro |
+| **Gerente Pedagógico** | Solicita mudança de nível · emite decisão pedagógica independente · transfere entre turmas equivalentes | Aprovar a própria solicitação · executar mudança excepcional sem papel de Secretaria/Administração · financeiro |
 | **Administrador** | **Tudo** | — |
 
 ## 3. Comissão

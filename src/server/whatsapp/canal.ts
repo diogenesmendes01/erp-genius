@@ -1,4 +1,4 @@
-import type { DriverWhatsApp } from "@prisma/client";
+import type { DriverWhatsApp, OrigemEnvio } from "@prisma/client";
 
 // PORTA do canal (doc 26 §Camada 0): interface única que os drivers implementam.
 // REGRA DE FRONTEIRA (doc 29): só o despachante importa drivers; régua/inbox/lote gravam
@@ -8,7 +8,7 @@ export interface NumeroCanal {
   id: string;
   telefoneE164: string;
   driver: DriverWhatsApp;
-  /** META_CLOUD: phone_number_id · BAILEYS: nome da instância Evolution. */
+  /** MOTOR: id do número no motor (`NumeroWhatsApp.id`). */
   providerRef: string | null;
 }
 
@@ -32,23 +32,63 @@ export interface EnvioMidia {
   legenda?: string | null;
 }
 
+export interface OpcoesEnvio {
+  /** UUID gerado pelo ERP antes do envio; separa o eco do ERP do eco do celular. */
+  clientMessageId: string;
+  origem: OrigemEnvio;
+  /** Id da mensagem citada no motor (`<jid>:<id>`), quando a saída é uma resposta. */
+  citarMensagemIdMotor?: string | null;
+}
+
 export interface ResultadoEnvio {
   providerMessageId: string;
+  mensagemIdMotor?: string | null;
 }
+
+export type ConteudoEspecial =
+  | { tipo: "FIGURINHA" }
+  | { tipo: "GIF" }
+  | { tipo: "ENQUETE"; nome: string; opcoes: string[]; maxEscolhas: number }
+  | { tipo: "LOCALIZACAO"; latitude: number; longitude: number; nome?: string }
+  | { tipo: "CONTATO"; contatoJid: string };
 
 /** Falha de driver com motivo estável (vai para IntencaoMensagem.motivoFalha e fila humana). */
 export class ErroDriver extends Error {
+  readonly reprocessavel: boolean;
+  readonly adiarMs: number;
   constructor(
     public readonly motivo: string,
     mensagem?: string,
+    opcoes?: { reprocessavel?: boolean; adiarMs?: number },
   ) {
     super(mensagem ?? motivo);
     this.name = "ErroDriver";
+    this.reprocessavel = opcoes?.reprocessavel ?? false;
+    this.adiarMs = opcoes?.adiarMs ?? 60_000;
   }
 }
 
+/** `destino` é E.164 ou JID (contém "@"). */
 export interface CanalWhatsApp {
-  enviarTexto(numero: NumeroCanal, paraE164: string, corpo: string): Promise<ResultadoEnvio>;
-  enviarTemplate(numero: NumeroCanal, paraE164: string, template: EnvioTemplate): Promise<ResultadoEnvio>;
-  enviarMidia(numero: NumeroCanal, paraE164: string, midia: EnvioMidia): Promise<ResultadoEnvio>;
+  enviarTexto(numero: NumeroCanal, destino: string, corpo: string, opcoes: OpcoesEnvio): Promise<ResultadoEnvio>;
+  enviarTemplate(numero: NumeroCanal, destino: string, template: EnvioTemplate, opcoes: OpcoesEnvio): Promise<ResultadoEnvio>;
+  enviarMidia(numero: NumeroCanal, destino: string, midia: EnvioMidia, opcoes: OpcoesEnvio): Promise<ResultadoEnvio>;
+  enviarConteudo?(
+    numero: NumeroCanal,
+    destino: string,
+    conteudo: ConteudoEspecial,
+    midia: EnvioMidia | null,
+    opcoes: OpcoesEnvio,
+  ): Promise<ResultadoEnvio>;
+}
+
+/** Mensagem única para recusar número META_CLOUD (legado) enquanto ele não tiver driver no despachante. */
+export const MENSAGEM_META_CLOUD_SEM_ENVIO = "Meta Cloud ainda não tem envio disponível.";
+
+/**
+ * Drivers em que a automação (régua/lote) pode enviar. Só o MOTOR: é o único driver em `DRIVERS`
+ * do despachante, então armar automação em outro só falharia no envio.
+ */
+export function driverAceitaAutomacao(driver: DriverWhatsApp): boolean {
+  return driver === "MOTOR";
 }

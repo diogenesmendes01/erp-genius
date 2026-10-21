@@ -1,0 +1,28 @@
+{
+  "incremento": 219,
+  "data": "2026-09-12",
+  "integracaoDirecionada": {
+    "success": true,
+    "numTotalTests": 61,
+    "numPassedTests": 5,
+    "numFailedTests": 0,
+    "numPendingTests": 56
+  },
+  "unitariosAprovados": 5,
+  "typescript": "aprovado",
+  "lintTrecho": "aprovado",
+  "diffCheck": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "paginasEstaticas": 46,
+    "resultado": "aprovado"
+  },
+  "migrationsLocais": 102,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 201,
+  "limites": [
+    "Agendador externo e capacidade operacional pendentes de validacao",
+    "Resolucao aprovada e retomada de reservas pendentes",
+    "Sem producao, importacao ou envio externo"
+  ]
+}

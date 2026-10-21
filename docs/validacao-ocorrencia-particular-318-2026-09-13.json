@@ -1,0 +1,9 @@
+{
+ "incremento":318,"data":"2026-09-13","escopo":"Informe docente persistido por encontro particular",
+ "integracao":{"aprovados":13,"falhos":0,"arquivos":2,"novos":6},
+ "typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas","schemaDiff":"vazio","migrations":150,
+ "ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "falhaCorrigida":"Conversão explícita do relógio do PostgreSQL para UTC em migration adicional",
+ "limites":["Interface docente pendente","Conferência financeira por versão e condições contratuais pendente","Emissão parcial e integração à apuração/encerramento pendentes"],
+ "producao":false,"enviosExternos":false
+}

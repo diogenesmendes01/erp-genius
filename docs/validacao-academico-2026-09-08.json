@@ -1,0 +1,1395 @@
+{
+  "data": "2026-09-08T13:57:14.762Z",
+  "decisao": "D14 — mudança excepcional de nível com parecer, aprovação independente e execução acadêmica",
+  "ambiente": "Build standalone local, usuários fictícios e PostgreSQL descartável em localhost:54329/erp_genius_test. Sem implantação nem migração em produção.",
+  "observacao": "Código local não commitado. Casos específicos são subconjuntos dos totais globais, sem soma duplicada. Os registros históricos de auditoria e de validação D01–D13 foram preservados.",
+  "unitarios": {
+    "comando": "npm test -- --reporter=json --outputFile=node_modules/.implementation/academico-unit-global.json",
+    "relatorioBrutoLocal": "node_modules/.implementation/academico-unit-global.json",
+    "inicio": "2026-09-08T13:39:36.871Z",
+    "fim": "2026-09-08T13:39:38.196Z",
+    "total": 571,
+    "aprovados": 571,
+    "falhas": 0,
+    "arquivos": 50,
+    "casosEspecificos": [
+      {
+        "arquivo": "src/server/academico/regras.test.ts",
+        "status": "passed",
+        "total": 34,
+        "casos": [
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica confirmação de horário undefined não autoriza solicitação ou execução",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica confirmação de horário false não autoriza solicitação ou execução",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica confirmação de horário \"true\" não autoriza solicitação ou execução",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica confirmação de horário 1 não autoriza solicitação ou execução",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica confirmação de horário null não autoriza solicitação ou execução",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica justificativa inválida não autoriza nenhuma etapa ()",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica justificativa inválida não autoriza nenhuma etapa (     )",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica justificativa inválida não autoriza nenhuma etapa (abcd)",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica justificativa inválida não autoriza nenhuma etapa (xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica normaliza espaços de justificativas sem converter aprovação não booleana",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica dispensa curta ou anexada à rejeição não substitui um parecer",
+            "status": "passed"
+          },
+          {
+            "nome": "entradas que autorizam uma mudança acadêmica pessoas distintas são necessárias independentemente dos papéis acumulados",
+            "status": "passed"
+          },
+          {
+            "nome": "equivalência, matrícula e capacidade distingue mesmo nível de exceção e não trata idioma ou modalidade diferente como autorização pedagógica",
+            "status": "passed"
+          },
+          {
+            "nome": "equivalência, matrícula e capacidade legado sem matrícula conserva operação; havendo matrícula exige ativa compatível",
+            "status": "passed"
+          },
+          {
+            "nome": "equivalência, matrícula e capacidade aluno pausado, encerrado ou sem turma não pode movimentar",
+            "status": "passed"
+          },
+          {
+            "nome": "equivalência, matrícula e capacidade vaga é real e destino concluído, expirado ou igual à origem não recebe transferência",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico ordenação do banco e ocupação não invalidam o pedido, mas não reservam vaga",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após alocação recriada na mesma turma",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após instante da alocação",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após última movimentação",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após movimento novo com mesmo timestamp",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após status da matrícula",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após matrícula adicionada",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após produto da matrícula",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após idioma do produto",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após horário da turma",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após dias da turma",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após nível da turma",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após currículo do nível",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após duração da modalidade",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após capacidade da turma",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após professor da turma",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico invalida aprovação após vínculo docente recriado",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação vinculada ao estado acadêmico snapshot não verificável ou pertencente a outro aluno não autoriza execução",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/alunos/movimentacao.test.ts",
+        "status": "passed",
+        "total": 9,
+        "casos": [
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico secretaria transfere dentro do mesmo nível e idioma",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico secretaria não decide avanço de A1 para B2, mesmo com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico GERENTE_PEDAGOGICO não aplica exceção direta mesmo com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico ADMINISTRADOR não aplica exceção direta mesmo com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico turma concluída não recebe transferência",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico equivalência não dispensa confirmação de horário",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico pedido acadêmico aberto impede outra transferência direta",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico encerramento libera vaga sem apagar histórico da alocação",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico papel pedagógico não edita documento administrativo",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/diario/diario.test.ts",
+        "status": "passed",
+        "total": 12,
+        "casos": [
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro ex-professor da turma lê só seus snapshots e não edita",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro saída de aluno congela apenas seu registro pessoal",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro retorno do aluno não reabre presença anterior à nova alocação",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro retorno do professor não reabre aulas do vínculo encerrado",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro papel de vendedor não mantém leitura por autoria histórica",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro gestão pedagógica consulta sem assumir autoria docente",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro docente atual registra nome obtido no servidor e presença",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro perda da turma bloqueia edição direta pelo ID",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro papel docente revogado após a autenticação bloqueia gravação",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro professor desativado após a autenticação não grava em sua antiga turma",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro docente não altera presença histórica de aluno transferido",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro não fabrica aula anterior ao início conhecido do vínculo",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "integracoes": {
+    "comando": "npm run test:int -- --reporter=json --outputFile=node_modules/.implementation/academico-integration-global.json",
+    "relatorioBrutoLocal": "node_modules/.implementation/academico-integration-global.json",
+    "inicio": "2026-09-08T13:44:21.112Z",
+    "fim": "2026-09-08T13:45:46.153Z",
+    "total": 390,
+    "aprovados": 390,
+    "falhas": 0,
+    "arquivos": 34,
+    "casosEspecificos": [
+      {
+        "arquivo": "src/server/academico/fluxo.int.test.ts",
+        "status": "passed",
+        "total": 53,
+        "casos": [
+          {
+            "nome": "solicitação, parecer, decisão e execução separados SECRETARIA_ACADEMICA solicita sem alterar turma, situação ou contrato",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados GERENTE_PEDAGOGICO solicita sem alterar turma, situação ou contrato",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados ADMINISTRADOR solicita sem alterar turma, situação ou contrato",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados aprovação não move o aluno; execução preserva valores, recebimentos, nível inicial e histórico",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados sem parecer exige dispensa motivada; dispensa não representa um parecer docente",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados rejeição independe de parecer e libera um novo pedido, conservando a decisão anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados SECRETARIA_ACADEMICA executa uma aprovação independente sem exigir terceira pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados ADMINISTRADOR executa uma aprovação independente sem exigir terceira pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados GP solicitante pode ser aprovado por outro GP; acúmulo de papéis não autoriza autoaprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados parecer repetido é idempotente e não pode ser reescrito depois da decisão",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados cancelamento motivado de PENDENTE preserva histórico e libera a fila",
+            "status": "passed"
+          },
+          {
+            "nome": "solicitação, parecer, decisão e execução separados cancelamento motivado de APROVADA preserva histórico e libera a fila",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas PROFESSOR não abre pedido excepcional",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas VENDEDOR não abre pedido excepcional",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas FINANCEIRO não abre pedido excepcional",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas GERENTE_COMERCIAL não abre pedido excepcional",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas professor atual vê somente a projeção acadêmica e só pode emitir parecer",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas professor alheio não obtém pedido conhecido nem publica parecer por ID",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas fim do vínculo docente revoga consulta e parecer mesmo com turma professorId legado",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas parecer histórico de professor com papel revogado exige dispensa para nova aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas parecer histórico de professor com usuário desativado exige dispensa para nova aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas GP aprova mas não executa sem papel de secretaria; financeiro não recebe a fila acadêmica",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas usuário sem papel e sessão inválida não consultam ou alteram pedidos por ID",
+            "status": "passed"
+          },
+          {
+            "nome": "papéis, vínculos e projeções acadêmicas IDs adversariais não viram aluno, turma, aprovação ou execução válidos",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção SECRETARIA_ACADEMICA transfere equivalente diretamente, mas não muda nível pela ação antiga",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção GERENTE_PEDAGOGICO transfere equivalente diretamente, mas não muda nível pela ação antiga",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção ADMINISTRADOR transfere equivalente diretamente, mas não muda nível pela ação antiga",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção pedido excepcional não substitui transferência equivalente e não muda idioma ou modalidade",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção matrícula RASCUNHO não autoriza mudança acadêmica de aluno ativo",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção matrícula AGUARDANDO não autoriza mudança acadêmica de aluno ativo",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção matrícula ENCERRADA não autoriza mudança acadêmica de aluno ativo",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção matrícula CANCELADA não autoriza mudança acadêmica de aluno ativo",
+            "status": "passed"
+          },
+          {
+            "nome": "movimentação equivalente e limite contratual da exceção matrícula ativa de outro curso não autoriza a transferência; legado sem matrícula pode seguir",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de horário",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de nível",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de modalidade",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de matrícula",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de produto",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de nova matrícula",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente aprovação é recusada após alteração de professor",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente execução revalida horário alterado depois da aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente pausa e retomada reais invalidam a aprovação mesmo restaurando ATIVO e a turma original",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente alocação encerrada e recriada na mesma turma não reutiliza aprovação anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente revogação do solicitante impede execução sem apagar aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente revogação do aprovador impede execução sem apagar aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "decisão não pode ser aplicada sobre um estado diferente revogação do executor impede execução sem apagar aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição revogação durante lock real invalida aprovação com sessão já carregada",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição revogação durante lock real invalida execução com sessão já carregada",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição revogação durante lock real invalida aprovador na execução com sessão já carregada",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição pedidos concorrentes ou repetidos mantêm no máximo um aberto por aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição execuções concorrentes e replay deixam exatamente uma nova alocação e movimentação",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição duas aprovações não reservam a última vaga; somente uma execução a ocupa",
+            "status": "passed"
+          },
+          {
+            "nome": "concorrência, revogação durante espera e repetição cancelamento e execução concorrentes produzem um único estado terminal coerente",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/academico/visibilidade.int.test.ts",
+        "status": "passed",
+        "total": 6,
+        "casos": [
+          {
+            "nome": "mudança acadêmica revoga vínculos atuais e preserva o diário solicitar/aprovar preserva acesso; executar revoga ficha, conversa e mídia do professor anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "mudança acadêmica revoga vínculos atuais e preserva o diário mensagem humana pendente do professor anterior é cancelada no despacho após a execução",
+            "status": "passed"
+          },
+          {
+            "nome": "mudança acadêmica revoga vínculos atuais e preserva o diário execução que aguarda Aluno termina antes do diário concorrente, sem deadlock nem nova aula após a saída",
+            "status": "passed"
+          },
+          {
+            "nome": "mudança acadêmica revoga vínculos atuais e preserva o diário diário relê a atribuição docente alterada enquanto aguardava o aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "mudança acadêmica revoga vínculos atuais e preserva o diário diário revalida papel revogado enquanto aguardava o aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "mudança acadêmica revoga vínculos atuais e preserva o diário diário revalida desativação revogado enquanto aguardava o aluno",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/diario/diario.int.test.ts",
+        "status": "passed",
+        "total": 7,
+        "casos": [
+          {
+            "nome": "D08 — diário persistido, transferência e revogação registra autoria, captura o nome no servidor e conserva os eventos anteriores",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação aluno transferido conserva snapshot em leitura sem abrir cadastro ou contatos atuais",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação troca de professor fecha o vínculo e mantém apenas as próprias aulas em leitura",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação voltar à turma não reabre os registros de um vínculo docente encerrado",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação retorno do aluno conserva a presença do período anterior em leitura",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação papel revogado no banco bloqueia leitura e escrita com o mesmo cookie",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação desativação invalida o acesso atual sem apagar a autoria histórica",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/turmas/integridade-academica.int.test.ts",
+        "status": "passed",
+        "total": 18,
+        "casos": [
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas não altera nível em turma com alocação ativa=true",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas não altera nível em turma com alocação ativa=false",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas não altera modalidade em turma com alocação ativa=true",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas não altera modalidade em turma com alocação ativa=false",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas administração também não altera o currículo de turma com histórico",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas turma sem alocações pode corrigir nível e modalidade antes de receber alunos",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas rejeita tentativa de alterar online pelo payload e preserva o formato cadastrado",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas conta a reserva de aluno pausado para não reduzir capacidade abaixo da ocupação",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas reduz capacidade até a ocupação atual sem contar alocações históricas",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas mantém edição de professor e horário sem reescrever currículo ou alocações",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas reconta ocupação depois de esperar a matrícula que ocupa a última vaga",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas alocação incluída durante a espera impede alterar o nível da turma antes vazia",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas editar revalida permissão após papel enquanto aguarda lock",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas editar revalida permissão após desativação enquanto aguarda lock",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas status revalida permissão após papel enquanto aguarda lock",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas status revalida permissão após desativação enquanto aguarda lock",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas conclusão encerra o vínculo docente uma única vez",
+            "status": "passed"
+          },
+          {
+            "nome": "integridade das turmas no fluxo de mudanças acadêmicas status fora do enum é recusado sem gravação",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "coberturaNova": {
+    "unitariosRegrasAcademicas": 34,
+    "integracoesFluxo": 53,
+    "integracoesTurmas": 18,
+    "integracoesVisibilidade": 6,
+    "verificacoes": [
+      "Autorização por papel e vínculo atual, inclusive após espera por bloqueios",
+      "Parecer docente obrigatório ou dispensa justificada pela gestão",
+      "Sem autoaprovação, inclusive administrador e papéis acumulados",
+      "Proposta não altera turma nem reserva vaga; execução independente revalida as condições",
+      "Repetições idempotentes e uma única solicitação aberta por aluno",
+      "Cancelamento com motivo e histórico preservado",
+      "Concorrência por vaga, alteração de turma e escrita de diário",
+      "Perda de contato, conversa e arquivos atuais pelo professor anterior, com histórico das próprias aulas em leitura",
+      "Invalidação de propostas obsoletas, inclusive pausa e retomada da mesma alocação",
+      "Preservação de contrato, preço, parcelas, recebimentos e diário"
+    ]
+  },
+  "typescript": {
+    "comando": "npx tsc --noEmit --pretty false",
+    "resultado": "aprovado",
+    "exitCode": 0
+  },
+  "build": {
+    "comando": "npm run build",
+    "resultado": "aprovado",
+    "exitCode": 0,
+    "versaoNext": "16.2.9",
+    "paginasEstaticasGeradas": 34,
+    "standaloneIniciadoLocalmente": true
+  },
+  "lint": {
+    "comando": "npm run lint -- --format json --output-file node_modules/.implementation/academico-lint-global.json",
+    "erros": 0,
+    "avisos": 9,
+    "detalhes": [
+      {
+        "arquivo": "src/app/(app)/financeiro/FinanceiroPainel.tsx",
+        "erros": 0,
+        "avisos": 2,
+        "mensagens": [
+          {
+            "linha": 116,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1
+          },
+          {
+            "linha": 402,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/(app)/home/HomeGerente.tsx",
+        "erros": 0,
+        "avisos": 2,
+        "mensagens": [
+          {
+            "linha": 54,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1
+          },
+          {
+            "linha": 54,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/(app)/pipeline/KanbanBoard.tsx",
+        "erros": 0,
+        "avisos": 4,
+        "mensagens": [
+          {
+            "linha": 18,
+            "regra": "@typescript-eslint/no-unused-vars",
+            "severidade": 1
+          },
+          {
+            "linha": 217,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1
+          },
+          {
+            "linha": 217,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1
+          },
+          {
+            "linha": 239,
+            "regra": "react-hooks/purity",
+            "severidade": 1
+          }
+        ]
+      },
+      {
+        "arquivo": "src/components/Sidebar.tsx",
+        "erros": 0,
+        "avisos": 1,
+        "mensagens": [
+          {
+            "linha": 38,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1
+          }
+        ]
+      }
+    ]
+  },
+  "lintScripts": {
+    "comando": "npx eslint scripts/validacao/academico-navegador.mjs scripts/validacao/http-acesso.mjs --format json --output-file node_modules/.implementation/academico-lint-scripts.json",
+    "erros": 0,
+    "avisos": 0
+  },
+  "http": {
+    "comando": "node scripts/validacao/http-acesso.mjs",
+    "data": "2026-09-08T13:46:35.016Z",
+    "verificacoesHttp": 32,
+    "checksumsMigracoes": 45,
+    "resultados": [
+      {
+        "id": "migration:20260718180000_config_comercial_saudacao_estado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260618184248_init",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120001_matricula_justificativa_sem_preco",
+        "passou": true
+      },
+      {
+        "id": "migration:20260618184300_precos_movimentacao_ativacao",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619084650_lead_valor_documentos_nivel_inicial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260706184221_whatsapp_provider_ref_variaveis",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619100435_matricula_meses_plano",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622130000_aluno_cadastro_completo",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619144107_documento_arquivado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620090000_aluno_genero_email",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620100000_turma_nome_online_datafim",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622140000_turma_agenda_estruturada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620110000_usuario_dados_professor",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622090000_lead_professor_experimental",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718120000_comercial_c1_autolead_saudacao",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_cobranca_comprovante_nome",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622150000_turma_horario_inicio_fim",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_integridade_alocacao_preco",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_matricula_preco_referencia_ausente",
+        "passou": true
+      },
+      {
+        "id": "migration:20260713173011_intencao_status_enviando",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_preco_ativo_unico",
+        "passou": true
+      },
+      {
+        "id": "migration:20260626120000_taxa_cambio",
+        "passou": true
+      },
+      {
+        "id": "migration:20260626160000_matricula_acesso_bloqueado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260702100000_dinheiro_decimal",
+        "passou": true
+      },
+      {
+        "id": "migration:20260713231338_whatsapp_e3_inbox_midia",
+        "passou": true
+      },
+      {
+        "id": "migration:20260706183913_whatsapp_canal_bimotor",
+        "passou": true
+      },
+      {
+        "id": "migration:20260714120000_numero_provider_ref_unico_por_driver",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718160000_conversa_capturada_em",
+        "passou": true
+      },
+      {
+        "id": "migration:20260714200000_intencao_atualizado_em",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720160000_lead_experimental_confirmada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718170000_backfill_conversa_capturada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720160000_idempotencia_comercial_por_politica",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718200000_lead_referral_cru",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720120000_regua_comercial_lead_novo",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720170000_idempotencia_comercial_indice_parcial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720180000_ocorrencia_cadencia_comercial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907010000_politica_acesso_recebimentos",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907020000_diario_correcoes",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907030000_upload_finalidade",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908010000_documentos_matricula",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908020000_configuracao_operacional",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908030000_acesso_aulas",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908040000_retomada_aprovada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908050000_ciclo_cobranca_retomada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908060000_mudanca_academica_aprovada",
+        "passou": true
+      },
+      {
+        "id": "/configuracao/operacao",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/secretaria",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/carteiras",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/diario",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/comissoes",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/financeiro",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/inbox",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/configuracao/catalogo",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "GP não recebe configuração financeira no HTML",
+        "passou": true
+      },
+      {
+        "id": "/configuracao/operacao",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/configuracao/usuarios",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/configuracao/catalogo",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/alunos/{alunoFicticio}",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "Professor não recebe contato pessoal no HTML da ficha",
+        "passou": true
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/alunos/{alunoFicticio}/academico",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "Professor não recebe contato pessoal nem financeiro na ficha acadêmica",
+        "passou": true
+      },
+      {
+        "id": "/alunos/{alunoFicticio}/financeiro",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "Exportação negada sem capacidade",
+        "passou": true,
+        "status": 403
+      },
+      {
+        "id": "Usuário desativado não envia arquivo com cookie anterior",
+        "passou": true,
+        "status": 401
+      },
+      {
+        "id": "Usuário desativado não baixa modelo com cookie anterior",
+        "passou": true,
+        "status": 401
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/login"
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/alunos/{alunoFicticio}/academico",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/alunos/{alunoFicticio}/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/alunos/{alunoFicticio}/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/alunos/{alunoFicticio}/academico",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      }
+    ]
+  },
+  "navegador": {
+    "execucao": "Interação real no navegador local: Secretaria solicita mudança A1 para A2; Professor da origem registra parecer; outra pessoa da Gerência Pedagógica aprova; Secretaria reconfirma o horário e executa; consulta do histórico mostra os autores de cada etapa.",
+    "observado": [
+      "Secretaria sem botão de aprovação",
+      "Professor somente com formulário de parecer, sem decisão ou execução",
+      "Gerência Pedagógica aprova e passa a aguardar execução pela Secretaria, sem botão de execução",
+      "Solicitar e aprovar preservam a alocação de origem",
+      "Após executar, a fila aberta fica vazia e o histórico mostra o estado Executada e as autorias"
+    ],
+    "consoleErros": [],
+    "verificacaoPersistencia": {
+      "fases": [
+        {
+          "comando": "node scripts/validacao/academico-navegador.mjs verificar-pendente",
+          "data": "2026-09-08T13:48:22.422Z",
+          "estado": "PENDENTE",
+          "resultados": [
+            {
+              "id": "Estado da solicitação PENDENTE",
+              "passou": true
+            },
+            {
+              "id": "Contrato, cobranças, recebimentos e diário preservados",
+              "passou": true
+            },
+            {
+              "id": "Uma única alocação ativa",
+              "passou": true
+            },
+            {
+              "id": "Autoria da solicitação pela secretaria",
+              "passou": true
+            },
+            {
+              "id": "Origem, destino e confirmação de horário registrados",
+              "passou": true
+            },
+            {
+              "id": "Movimentação somente após execução",
+              "passou": true
+            },
+            {
+              "id": "Decisão por pessoa independente",
+              "passou": true
+            },
+            {
+              "id": "Parecer docente fundamenta a aprovação",
+              "passou": true
+            },
+            {
+              "id": "Execução e histórico da origem coerentes",
+              "passou": true
+            }
+          ]
+        },
+        {
+          "comando": "node scripts/validacao/academico-navegador.mjs verificar-aprovada",
+          "data": "2026-09-08T13:53:12.107Z",
+          "estado": "APROVADA",
+          "resultados": [
+            {
+              "id": "Estado da solicitação APROVADA",
+              "passou": true
+            },
+            {
+              "id": "Contrato, cobranças, recebimentos e diário preservados",
+              "passou": true
+            },
+            {
+              "id": "Uma única alocação ativa",
+              "passou": true
+            },
+            {
+              "id": "Autoria da solicitação pela secretaria",
+              "passou": true
+            },
+            {
+              "id": "Origem, destino e confirmação de horário registrados",
+              "passou": true
+            },
+            {
+              "id": "Movimentação somente após execução",
+              "passou": true
+            },
+            {
+              "id": "Decisão por pessoa independente",
+              "passou": true
+            },
+            {
+              "id": "Parecer docente fundamenta a aprovação",
+              "passou": true
+            },
+            {
+              "id": "Execução e histórico da origem coerentes",
+              "passou": true
+            }
+          ]
+        },
+        {
+          "comando": "node scripts/validacao/academico-navegador.mjs verificar",
+          "data": "2026-09-08T13:54:10.582Z",
+          "estado": "EXECUTADA",
+          "resultados": [
+            {
+              "id": "Estado da solicitação EXECUTADA",
+              "passou": true
+            },
+            {
+              "id": "Contrato, cobranças, recebimentos e diário preservados",
+              "passou": true
+            },
+            {
+              "id": "Uma única alocação ativa",
+              "passou": true
+            },
+            {
+              "id": "Autoria da solicitação pela secretaria",
+              "passou": true
+            },
+            {
+              "id": "Origem, destino e confirmação de horário registrados",
+              "passou": true
+            },
+            {
+              "id": "Movimentação somente após execução",
+              "passou": true
+            },
+            {
+              "id": "Decisão por pessoa independente",
+              "passou": true
+            },
+            {
+              "id": "Parecer docente fundamenta a aprovação",
+              "passou": true
+            },
+            {
+              "id": "Execução e histórico da origem coerentes",
+              "passou": true
+            }
+          ]
+        }
+      ],
+      "verificacoesPorFase": 9,
+      "aprovadas": 27,
+      "falhas": 0,
+      "observacao": "São nove verificações em três estados da mesma jornada. Na fase pendente, ainda não se exige um parecer; a etapa registra somente que a regra será exigida para aprovação."
+    },
+    "limite": "Dispensa de parecer, autoaprovação negada, revogação de autorização, transferências equivalentes e concorrência foram cobertas por testes automatizados; não foram repetidas integralmente no navegador."
+  },
+  "limites": [
+    "A mudança preserva idioma, modalidade e formato online/presencial. Troca de curso, produto ou contrato exige fluxo próprio.",
+    "O modelo mantém uma alocação ativa por aluno; múltiplos cursos simultâneos não foram implementados.",
+    "Compatibilidade de horário é confirmação humana registrada, sem detecção automática de conflitos do aluno.",
+    "Não há reserva de vaga na aprovação. A execução deve revalidar ocupação e condições.",
+    "Cadastros legados ativos sem matrícula formal continuam aceitos sem criação de matrícula; os que possuem matrícula precisam de curso ativo compatível.",
+    "Envios pendentes do professor anterior perdem autorização; uma chamada já entregue ao provedor externo não pode ser recolhida.",
+    "Sem envio por provedor real de WhatsApp nem integração ou validação de plataformas externas de aula.",
+    "Homologação pela equipe da escola, implantação e migração de dados reais permanecem etapas operacionais."
+  ],
+  "arquivosVerificados": [
+    {
+      "arquivo": "prisma/schema.prisma",
+      "sha256": "88433c850bea1c5174b66caf0f0025d2d33b1105c87d584b7f8700bdf7ed555a"
+    },
+    {
+      "arquivo": "prisma/migrations/20260908060000_mudanca_academica_aprovada/migration.sql",
+      "sha256": "965b0fe93eeb59a441478079b143c7f7dbb6e382b29b6f8d855d666ce417bbe8"
+    },
+    {
+      "arquivo": "src/server/academico/acoes.ts",
+      "sha256": "e5f50193154b90559f0cf9c7763e2d3b60549ca88b708dce16e52ef3d1e1aff3"
+    },
+    {
+      "arquivo": "src/server/academico/consultas.ts",
+      "sha256": "3a8b1e75771510e5eccb0ee59f716b33ed251dd74a4d1e2b63fe90457a519aad"
+    },
+    {
+      "arquivo": "src/server/academico/estado.ts",
+      "sha256": "5b3403395636730159b53b4b5cc6f2ad1398daba7db3d20027f0cd7e3078636e"
+    },
+    {
+      "arquivo": "src/server/academico/fluxo.int.test.ts",
+      "sha256": "83c1724afa79e64c45e67e114815cda510a9d40a78cd20567b26685487c874e9"
+    },
+    {
+      "arquivo": "src/server/academico/regras.test.ts",
+      "sha256": "c5fffd69a182936bb9d19232bb23e34c5d441b20ad21498ac0dea2fcbcfb269a"
+    },
+    {
+      "arquivo": "src/server/academico/regras.ts",
+      "sha256": "1f16821f1cd37ea54766026574a6c6a6c99e7a249c178a136fb5f2983898ebe8"
+    },
+    {
+      "arquivo": "src/server/academico/schema.ts",
+      "sha256": "ff452c7cff5e7a396e08e850a843f5a3a6d8396dbbfec27d500e1f976dc81ad6"
+    },
+    {
+      "arquivo": "src/server/academico/visibilidade.int.test.ts",
+      "sha256": "83f56d4db61579352074e20b3dcbbafdc152988785dac8eb2ce09159089dc7fe"
+    },
+    {
+      "arquivo": "src/server/alunos/acoes.ts",
+      "sha256": "b4aa9511945858e86faa79cacad11606eef75e9480946c525badfac90759b128"
+    },
+    {
+      "arquivo": "src/server/alunos/schema.ts",
+      "sha256": "a934f35da7186ae74afa73ff4df5fa998bcb8f6e05ae01e9b68e968f033501dc"
+    },
+    {
+      "arquivo": "src/server/alunos/movimentacao.test.ts",
+      "sha256": "8f4899098e8a23b6ad10c949f656b03883a0b05298afd3039f0d4d9bf106f254"
+    },
+    {
+      "arquivo": "src/server/turmas/acoes.ts",
+      "sha256": "a260be75b6f07a28536dc8bf6eb5cafdb7a09ab3c5d08563f0239e5851e6469c"
+    },
+    {
+      "arquivo": "src/server/turmas/integridade-academica.int.test.ts",
+      "sha256": "a285ce0c6ba8757f084553bedef2b2600bf6ccf81938cf2319feefc4ad33acab"
+    },
+    {
+      "arquivo": "src/server/diario/acoes.ts",
+      "sha256": "72d3001b3ccbba3f6dfeebe430f1d008382b291e9c6da203bc35a10c1e69df5f"
+    },
+    {
+      "arquivo": "src/server/diario/diario.test.ts",
+      "sha256": "0e788c33368e290de58cad381b49202b8dfddb4214a4500462e2377d934b9c3f"
+    },
+    {
+      "arquivo": "src/server/diario/diario.int.test.ts",
+      "sha256": "aee3882387db5c4e13f580ebf40f8142ea33b725d3251ff79fdc8be66ec61bea"
+    },
+    {
+      "arquivo": "src/server/whatsapp/escopo.ts",
+      "sha256": "53ed82079b6f5917fd38947bc0bc972317b7045202ef2bad33e2514f50aded8d"
+    },
+    {
+      "arquivo": "src/server/whatsapp/despachante.ts",
+      "sha256": "0419e449d78d4187b29faa9750ab6c2eaa38a19c7a20f92075492d2c0fe686fd"
+    },
+    {
+      "arquivo": "src/lib/nav.ts",
+      "sha256": "3aad2fff1c33dd065fc9e373441f5ffc645c3548e1f48157bc159325fcdf156c"
+    },
+    {
+      "arquivo": "src/app/(app)/academico/MudancasAcademicasPainel.tsx",
+      "sha256": "26ebf7edf66d84bf14e82325ea0b4421d1b9a5d4ad72937488fe635a61f5dc5e"
+    },
+    {
+      "arquivo": "src/app/(app)/academico/page.tsx",
+      "sha256": "d268a2ae1a9cbfe41443f4f38894d39faa85b060406fbaa1f9a523951e6c71a8"
+    },
+    {
+      "arquivo": "src/app/(app)/alunos/[id]/academico/page.tsx",
+      "sha256": "a4e50f8f7f37f3f61453aae5d23bbd3d809c37cba7cab569270b120d7bf06a7b"
+    },
+    {
+      "arquivo": "src/app/(app)/alunos/[id]/FichaAluno.tsx",
+      "sha256": "16b7ed93c2ddab81c267b56d21439526d394610c13dd388e8efd47c9f1798564"
+    },
+    {
+      "arquivo": "src/app/(app)/alunos/[id]/page.tsx",
+      "sha256": "b85a930abf0c660ad6d6fa9ff300eb5f635169ed4e86c902d3a87c0f35f63993"
+    },
+    {
+      "arquivo": "scripts/validacao/academico-navegador.mjs",
+      "sha256": "ebaca30c5c097903bbd178cd21c24e0b2fb9b83aeb40d8c3d6c64a03669abadf"
+    },
+    {
+      "arquivo": "scripts/validacao/http-acesso.mjs",
+      "sha256": "05fe137249ba786cad90a7f33241a81eaf70d9843cb05b132ccbc1b57bab440d"
+    }
+  ]
+}

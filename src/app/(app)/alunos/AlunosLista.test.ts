@@ -1,0 +1,179 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { StatusAluno } from "@prisma/client";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+// useTransition simulado: `pendente.valor` decide se a navegação está em andamento no render.
+const pendente = vi.hoisted(() => ({ valor: false }));
+vi.mock("react", async (original) => {
+  const react = await original<typeof import("react")>();
+  return { ...react, useTransition: () => [pendente.valor, (f: () => void) => f()] as const };
+});
+vi.mock("./ImportarAlunosModal", () => ({ ImportarAlunosModal: () => null }));
+// Captura as opções passadas a useFiltrosUrl (o caminho com JavaScript: buscar/filtrar navega pelo
+// hrefDosCampos da tela) — revisão R1 da #136, B5.
+const capturado = vi.hoisted(() => ({ opcoes: [] as { campos: Record<string, string>; hrefDosCampos: (c: Record<string, string>) => string }[] }));
+vi.mock("@/lib/filtros-url", async (original) => {
+  const real = await original<typeof import("@/lib/filtros-url")>();
+  // O handler de clique sai marcado com o href que o gerou (R3 da #136, B10).
+  return { ...real, useFiltrosUrl: (o: Parameters<typeof real.useFiltrosUrl>[0]) => {
+    capturado.opcoes.push(o as never);
+    const r = real.useFiltrosUrl(o);
+    return { ...r, aoClicar: (href: string) => Object.assign(r.aoClicar(href), { navegaPara: href }) };
+  } };
+});
+// Cada <Link> renderizado: o href do link e o handler do clique (com JavaScript, o clique simples segue o
+// handler, não o href) — R3 da #136, B10.
+const links = vi.hoisted(() => ({ lista: [] as { href: string; texto: string; onClick?: { navegaPara?: string } }[] }));
+vi.mock("next/link", async () => {
+  const { createElement: h } = await import("react");
+  const texto = (c: unknown): string => typeof c === "string" ? c : Array.isArray(c) ? c.map(texto).join("") : "";
+  return { default: ({ href, onClick, children, ...resto }: { href: string; onClick?: { navegaPara?: string }; children?: unknown }) => {
+    links.lista.push({ href: String(href), texto: texto(children), onClick });
+    return h("a", { href, ...resto }, children as never);
+  } };
+});
+
+
+import { AlunosLista, type AlunoRow } from "./AlunosLista";
+import { lerFiltrosAlunos } from "@/server/alunos/filtros";
+
+const aluno = (i: number): AlunoRow => ({ id: `a${i}`, codigo: `A-${i}`, nome: `Aluno ${i}`, status: StatusAluno.ATIVO, pais: "Costa Rica", turmas: [], financeiro: null });
+const opcoes = { paises: [{ id: "p1", nome: "Costa Rica" }], turmas: [{ id: "t1", label: "T-01 · Inglês · Inglês B1" }] };
+const render = (props: Partial<Parameters<typeof AlunosLista>[0]>) =>
+  renderToStaticMarkup(createElement(AlunosLista, { alunos: [], total: 0, totalBase: 0, filtros: lerFiltrosAlunos({}), opcoes, exibirFinanceiro: false, ...props }));
+
+describe("AlunosLista (filtros na URL)", () => {
+  it("cabeçalho quebra linha no celular: botões em pílula não espremem o texto em duas linhas (DS-C)", () => {
+    const html = render({ podeCadastrar: true });
+    expect(html).toContain('<div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h1');
+  });
+
+  it("formulário de busca com os filtros atuais preenchidos e opções do servidor (por id)", () => {
+    const html = render({ alunos: [aluno(1)], total: 1, totalBase: 1, filtros: lerFiltrosAlunos({ busca: "ana", pais: "p1", turma: "t1" }) });
+    expect(html).toMatch(/<form[^>]*action="\/alunos"/);
+    expect(html).toContain('role="search"');
+    expect(html).toContain('value="ana"');
+    expect(html).toContain('<option value="p1" selected="">Costa Rica</option>');
+    expect(html).toContain('<option value="t1" selected="">T-01 · Inglês · Inglês B1</option>');
+    expect(html).toContain('href="/alunos"'); // limpar filtros
+  });
+
+  it("campos controlados refletem os filtros da URL (sem recriar o formulário — sem `key`)", () => {
+    const pausado = render({ totalBase: 5, filtros: lerFiltrosAlunos({ status: "PAUSADO", busca: "ana" }) });
+    expect(pausado).toContain('<option value="PAUSADO" selected="">');
+    expect(pausado).toContain('value="ana"');
+    const limpo = render({ totalBase: 5, filtros: lerFiltrosAlunos({}) });
+    expect(limpo).not.toContain('value="ana"');
+    expect(limpo).toContain('<option value="" selected="">Todos os status</option>');
+  });
+
+  it("carregando: botão desativado com \"Buscando…\", contador e tabela aria-busy", () => {
+    pendente.valor = true;
+    try {
+      const html = render({ alunos: [aluno(1)], total: 1, totalBase: 1 });
+      expect(html).toMatch(/<button[^>]*type="submit"[^>]*disabled=""[^>]*>Buscando…<\/button>/);
+      expect(html).toContain('aria-busy="true"');
+      expect(html).not.toContain("1–1 de 1 aluno");
+    } finally {
+      pendente.valor = false;
+    }
+    const parado = render({ alunos: [aluno(1)], total: 1, totalBase: 1 });
+    expect(parado).toContain('aria-busy="false"');
+    expect(parado).toMatch(/<button[^>]*type="submit"(?![^>]*\sdisabled="")[^>]*>Buscar<\/button>/);
+  });
+
+  it("contador N de M distingue o recorte do total do escopo", () => {
+    expect(render({ alunos: [aluno(1), aluno(2)], total: 2, totalBase: 40, filtros: lerFiltrosAlunos({ status: "ATIVO" }) }))
+      .toContain("1–2 de 2 alunos encontrados (de 40 no total)");
+    expect(render({ alunos: [aluno(1)], total: 1, totalBase: 1 })).toContain("1–1 de 1 aluno");
+  });
+
+  it("estado vazio: base vazia × filtro sem resultado × página vazia sem filtro", () => {
+    expect(render({ totalBase: 0 })).toContain("Nenhum aluno cadastrado no seu alcance.");
+    expect(render({ totalBase: 12, total: 0, filtros: lerFiltrosAlunos({ busca: "zzz" }) })).toContain("Nenhum aluno com esses filtros.");
+    // Página além do fim sem filtro (a página redireciona; aqui é a salvaguarda): sem "401–400 de 120".
+    const alem = render({ totalBase: 120, total: 120, filtros: lerFiltrosAlunos({ pagina: "9" }) });
+    expect(alem).toContain("Nenhum aluno nesta página.");
+    expect(alem).not.toContain("com esses filtros");
+    expect(alem).not.toMatch(/\d+–\d+ de/);
+  });
+
+  it("paginação preserva os filtros nos links", () => {
+    const html = render({ alunos: Array.from({ length: 50 }, (_, i) => aluno(i)), total: 120, totalBase: 120, filtros: lerFiltrosAlunos({ status: "ATIVO", pagina: "2" }) });
+    expect(html).toContain('aria-label="Páginas de alunos"');
+    expect(html).toContain('href="/alunos?status=ATIVO"'); // anterior → página 1
+    expect(html).toContain('href="/alunos?status=ATIVO&amp;pagina=3"');
+    expect(html).toContain("51–100 de 120 alunos");
+  });
+
+  it("cabeçalhos ordenáveis (E1): Aluno, País e Status; padrão = Aluno crescente; links com os filtros e sem a página", () => {
+    const html = render({ alunos: [aluno(1)], total: 120, totalBase: 120, filtros: lerFiltrosAlunos({ status: "ATIVO", pagina: "2" }), exibirFinanceiro: true });
+    expect(html.match(/aria-sort="/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-sort="ascending"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=nome&amp;dir=desc"[^>]*>Aluno</);
+    expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
+    expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
+    // Turma (várias por aluno) e Financeiro (calculado em memória) não ordenam.
+    expect(html).toContain('<th class="px-4 py-2 font-medium">Turma</th>');
+    expect(html).toContain('<th class="px-4 py-2 font-medium">Financeiro</th>');
+    expect(html).not.toContain('type="hidden"');
+  });
+
+  it("ordem escolhida: coluna marcada; paginação, limpar e formulário sem JavaScript mantêm a ordem", () => {
+    const html = render({
+      alunos: Array.from({ length: 50 }, (_, i) => aluno(i)), total: 120, totalBase: 120,
+      filtros: lerFiltrosAlunos({ busca: "ana", ordem: "pais", dir: "desc", pagina: "2" }),
+    });
+    expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
+    expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?busca=ana&amp;ordem=nome&amp;dir=asc"[^>]*>Aluno</);
+    expect(html).toContain('href="/alunos?busca=ana&amp;ordem=pais&amp;dir=desc&amp;pagina=3"');
+    expect(html).toMatch(/<a[^>]*href="\/alunos\?ordem=pais&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
+    expect(html).toContain('<input type="hidden" name="ordem" value="pais"/>');
+    expect(html).toContain('<input type="hidden" name="dir" value="desc"/>');
+  });
+
+  it("coluna Financeiro segue a permissão, não os dados da página", () => {
+    expect(render({ exibirFinanceiro: true })).toContain(">Financeiro<");
+    expect(render({ exibirFinanceiro: false })).not.toContain(">Financeiro<");
+  });
+});
+
+describe("AlunosLista: a ordem escolhida sobrevive à busca com JavaScript e à volta ao início (R1 da #136, B5)", () => {
+  it("buscar/filtrar com JavaScript leva ordem e direção", () => {
+    render({ alunos: [aluno(1)], total: 1, totalBase: 1, filtros: lerFiltrosAlunos({ ordem: "pais", dir: "desc" }) });
+    const o = capturado.opcoes.at(-1)!;
+    const href = o.hrefDosCampos({ ...o.campos, busca: "maria" });
+    expect(href).toContain("busca=maria");
+    expect(href).toContain("ordem=pais&dir=desc");
+  });
+
+  it("página além do fim: \"Ir para a primeira página\" mantém a ordem", () => {
+    const html = render({ alunos: [], total: 5, totalBase: 5, filtros: lerFiltrosAlunos({ ordem: "pais", dir: "desc", pagina: "3" }) });
+    // Exatamente a página 1 (sem `pagina`), mantendo a ordem — R2 da #136, B8.
+    expect(html).toMatch(new RegExp('<a[^>]*href="/alunos[?]ordem=pais&amp;dir=desc"[^>]*>Ir para a primeira página</a>'));
+  });
+});
+
+describe("AlunosLista: com JavaScript, o clique de cada link vai para o MESMO href do link (R3 da #136, B10)", () => {
+  const cliques = (props: Parameters<typeof render>[0]) => {
+    links.lista = [];
+    render(props);
+    return links.lista;
+  };
+  const CASOS: [nome: string, props: Parameters<typeof render>[0], esperados: string[]][] = [
+    ["página além do fim, com ordem: \"Ir para a primeira página\"", { alunos: [], total: 5, totalBase: 5, filtros: lerFiltrosAlunos({ ordem: "pais", dir: "desc", pagina: "3" }) }, ["Ir para a primeira página", "País"]],
+    ["filtro sem resultado: os dois \"Limpar filtros\" (barra e vazio)", { alunos: [], total: 0, totalBase: 5, filtros: lerFiltrosAlunos({ busca: "x", ordem: "pais", dir: "desc" }) }, ["Limpar filtros", "País"]],
+    ["lista com resultados e ordem: colunas, paginação e limpar", { alunos: [aluno(1)], total: 60, totalBase: 60, filtros: lerFiltrosAlunos({ busca: "ana", ordem: "pais", dir: "desc", pagina: "2" }) }, ["Aluno", "País", "Limpar filtros"]],
+  ];
+  for (const [nome, props, esperados] of CASOS) {
+    it(nome, () => {
+      const lista = cliques(props);
+      // Todo link da lista navega pelo handler da transição, e o handler vai para o href do próprio link.
+      const daLista = lista.filter((l) => l.href === "/alunos" || l.href.startsWith("/alunos?"));
+      expect(daLista.filter((l) => !l.onClick).map((l) => `${l.texto} ${l.href}`), "link da lista sem clique na transição").toEqual([]);
+      expect(daLista.filter((l) => l.onClick?.navegaPara !== l.href).map((l) => `${l.texto}: href ${l.href} · clique ${l.onClick?.navegaPara}`)).toEqual([]);
+      for (const texto of esperados) expect(daLista.some((l) => l.texto === texto), texto).toBe(true);
+    });
+  }
+});

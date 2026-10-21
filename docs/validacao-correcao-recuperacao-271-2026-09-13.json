@@ -1,0 +1,22 @@
+{
+  "incremento": 271,
+  "data": "2026-09-13",
+  "escopo": "Correção de nota/comentário de recuperação com decisão independente, consolidação e interface",
+  "integracao": {
+    "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+    "aprovados": 53,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "paginasEstaticas": 52
+  },
+  "migration": "20260913233000_correcao_recuperacao",
+  "schemaDiff": "vazio",
+  "banco": "descartável local",
+  "ultimaRegressaoIntegral": 265,
+  "homologacaoInterativa": false,
+  "producao": false
+}

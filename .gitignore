@@ -36,6 +36,12 @@ next-env.d.ts
 # Postgres de teste (npm run test:db)
 .testdb/
 
+# Arquivos intermediários de validação; relatórios finais ficam em docs/.
+/tmp/
+
+# Identidade local do banco descartável de cada worktree.
+/.erp-test-profile
+
 # testes E2E (Playwright) — ver e2e/README.md
 # .env.e2e tem senhas do UAT; e2e/.auth/ tem cookies de sessão. Nunca versionar.
 .env.e2e

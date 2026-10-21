@@ -1,0 +1,15 @@
+{
+  "incremento": 259,
+  "data": "2026-09-13",
+  "escopo": "Realização de recuperação e consumo individual por habilidade",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 46, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "migration": "20260913200000_realizacao_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false,
+  "limites": ["Nota de recuperação e conferência independente ainda pendentes", "Sem publicação em produção"]
+}

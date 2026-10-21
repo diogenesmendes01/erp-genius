@@ -1,0 +1,487 @@
+[MIXED_EXPORTS] Entry module "vitest.integration.config.ts" is using named (including "DATABASE_URL_TESTE", "default") and default exports together. Consumers of your bundle will have to use `chunk.default` to access the default export, which may not be what you want. Use `output.exports: "named"` to disable this warning.
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.11 C:/Users/Mendes/.codex/worktrees/de19/erp-genius
+
+stdout | src/server/avaliacoes/impactos-progressao-tx.int.test.ts:296:1 > não executa aprovação antiga com revisão pendente mesmo após restaurar a presença
+prisma:error 
+Invalid `expect(prisma.solicitacaoMudancaAcademica.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/impactos-progressao-tx.int.test.ts:311:51
+
+  308 const executada = await executarMudancaAcademica(solicitacaoId, { motivo: "Tentativa de usar aprovação anterior à revisão.", horarioCompativel: true });
+  309 expect(executada).toMatchObject({ ok: false });
+  310 expect(JSON.stringify(executada)).toContain("revisão de correção pendente");
+→ 311 await expect(prisma.solicitacaoMudancaAcademica.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Mudança acadêmica possui revisão de correção pendente antes da execução", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/impactos-progressao-tx.int.test.ts:318:1 > correção publicada abre revisão da progressão executada e exige novo fechamento para reconfirmar
+prisma:error 
+Invalid `tx.aprovacaoCorrecaoAula.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/impactos-progressao-tx.int.test.ts:227:37
+
+  224 const { impactosHash, ...impactos } = await carregarImpactosCorrecaoAulaTx(tx, gestorId, proposta.dado.id);
+  225 if (adulterar === "IMPACTOS") impactos.progressao = impactos.progressao.map(fonte => ({ ...fonte, impactos: [] }));
+  226 if (adulterar === "PARTICIPACAO") impactos.comparacao.registros = impactos.comparacao.registros.map(registro => ({ ...registro, participacaoAlterada: false }));
+→ 227 return tx.aprovacaoCorrecaoAula.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Impactos Q23 omitem ou falsificam alteração de participação", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/impactos-progressao-tx.int.test.ts:318:1 > correção publicada abre revisão da progressão executada e exige novo fechamento para reconfirmar
+prisma:error 
+Invalid `tx.aprovacaoCorrecaoAula.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/impactos-progressao-tx.int.test.ts:227:37
+
+  224 const { impactosHash, ...impactos } = await carregarImpactosCorrecaoAulaTx(tx, gestorId, proposta.dado.id);
+  225 if (adulterar === "IMPACTOS") impactos.progressao = impactos.progressao.map(fonte => ({ ...fonte, impactos: [] }));
+  226 if (adulterar === "PARTICIPACAO") impactos.comparacao.registros = impactos.comparacao.registros.map(registro => ({ ...registro, participacaoAlterada: false }));
+→ 227 return tx.aprovacaoCorrecaoAula.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Impactos Q23 omitem ou falsificam alteração de participação", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+ ✓ src/server/avaliacoes/impactos-progressao-tx.int.test.ts (6 tests) 11592ms
+   ✓ não executa aprovação antiga com revisão pendente mesmo após restaurar a presença  1800ms
+   ✓ correção publicada abre revisão da progressão executada e exige novo fechamento para reconfirmar  2958ms
+   ✓ segue A→B→C por aplicações reais e retorna a progressão APROVADA, sem proposta não aplicada ou outra matrícula  1289ms
+   ✓ preserva o formato e localiza a mesma progressão depois de EXECUTADA  1326ms
+   ✓ persiste a revisão da progressão em C quando uma correção aprovada alcança A→B→C  2405ms
+   ✓ reconfirma progressão real após corrigir a fonte da reposição, exigindo novo fechamento  1812ms
+stdout | src/server/diario/diario.int.test.ts:156:3 > D08 — diário persistido, transferência e revogação > conclui sem gravação apenas com chamada completa e aprovação independente do estado revisado
+prisma:error 
+Invalid `expect(prisma.excecaoGravacaoEncontro.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/diario.int.test.ts:195:49
+
+  192 expect(historicoExcecoes.dado.itens).toHaveLength(2);
+  193 expect((await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: e.id } })).status).toBe("MINISTRADO");
+  194 expect(await prisma.cobranca.count()).toBe(0);
+→ 195 await expect(prisma.excecaoGravacaoEncontro.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Exceção de gravação deve permanecer preservada", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/diario.int.test.ts:156:3 > D08 — diário persistido, transferência e revogação > conclui sem gravação apenas com chamada completa e aprovação independente do estado revisado
+prisma:error 
+Invalid `expect(prisma.decisaoExcecaoGravacao.deleteMany()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/diario.int.test.ts:196:48
+
+  193 expect((await prisma.encontroAgenda.findUniqueOrThrow({ where: { id: e.id } })).status).toBe("MINISTRADO");
+  194 expect(await prisma.cobranca.count()).toBe(0);
+  195 await expect(prisma.excecaoGravacaoEncontro.update({ where: { id: nova.dado.id }, data: { motivo: "Alteração indevida" } })).rejects.toThrow();
+→ 196 await expect(prisma.decisaoExcecaoGravacao.deleteMany(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Decisão deve permanecer preservada", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/diario.int.test.ts:484:1 > chamada registra impedimento no contrato conferido sem reclassificar registros antigos
+prisma:error 
+Invalid `expect(prisma.registroAulaAluno.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/diario.int.test.ts:497:41
+
+  494 expect((await listarAulasDiario(await exigirSessao())).aulas.find(a => a.id === r.dado!.id)?.registros).toMatchObject([{ participacao: "IMPEDIDO_POR_RESTRICAO" }]);
+  495 expect(await listarChamadaEncontro({ encontroId: e.id })).toMatchObject({ ok: true, dado: { alunos: [{ participacao: "IMPEDIDO_POR_RESTRICAO", podeClassificar: true }] } });
+  496 expect(await prisma.registroAulaAluno.findMany({ where: { aulaId: c.aulaId } })).toMatchObject([{ matriculaId: null, participacao: null }]);
+→ 497 await expect(prisma.registroAulaAluno.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Preserve a identidade contratual do registro da aula", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/diario.int.test.ts:484:1 > chamada registra impedimento no contrato conferido sem reclassificar registros antigos
+prisma:error 
+Invalid `expect(prisma.registroAulaAluno.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/diario.int.test.ts:498:41
+
+  495 expect(await listarChamadaEncontro({ encontroId: e.id })).toMatchObject({ ok: true, dado: { alunos: [{ participacao: "IMPEDIDO_POR_RESTRICAO", podeClassificar: true }] } });
+  496 expect(await prisma.registroAulaAluno.findMany({ where: { aulaId: c.aulaId } })).toMatchObject([{ matriculaId: null, participacao: null }]);
+  497 await expect(prisma.registroAulaAluno.update({ where: { id: registro.id }, data: { matriculaId: null } })).rejects.toThrow();
+→ 498 await expect(prisma.registroAulaAluno.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "23514", message: "a nova linha da relação \"RegistroAulaAluno\" viola a restrição de verificação \"registro_aula_participacao_coerente\"", severity: "ERRO", detail: Some("Registro que falhou contém (cmu2agc2700nx12nl6ksa2iak, cmu2agc2700nv12nlg5p98l3c, cmu2agc1a00nf12nl5az31vod, Ana Santos, t, Acesso à aula restrito, cmu2agc1r00nq12nl07b0ypka, IMPEDIDO_POR_RESTRICAO)."), column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/diario.int.test.ts:501:1 > particular usa contrato próprio, protege autoria e conclui com exceção independente
+prisma:error 
+Invalid `expect(prisma.aulaDiario.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/diario.int.test.ts:526:34
+
+  523 const editavel = { ...d, aulaId: salvo.dado.id, estadoAnterior: atual.dado.estadoAnterior, conteudo: "Conteúdo revisado" };
+  524 expect((await salvarDiarioParticular(editavel)).ok).toBe(true);
+  525 expect((await salvarDiarioParticular(editavel)).ok).toBe(false);
+→ 526 await expect(prisma.aulaDiario.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Contexto e autoria do diário são preservados", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+ ✓ src/server/diario/diario.int.test.ts (20 tests) 17303ms
+     ✓ diário legado espera calendário antes de bloquear a turma, sem inverter a ordem da conclusão  943ms
+     ✓ exige conferência de vínculos históricos sobrepostos; mesmo contrato=true  851ms
+     ✓ exige conferência de vínculos históricos sobrepostos; mesmo contrato=false  826ms
+     ✓ conclui sem gravação apenas com chamada completa e aprovação independente do estado revisado  929ms
+     ✓ autoriza substituto apenas no encontro atribuído e preserva o titular da turma  953ms
+     ✓ registra autoria, captura o nome no servidor e conserva os eventos anteriores  844ms
+     ✓ aluno transferido conserva snapshot em leitura sem abrir cadastro ou contatos atuais  875ms
+     ✓ primeira chamada atrasada usa o vínculo encerrado na transferência  834ms
+     ✓ não oculta matrícula encerrada com histórico insuficiente na chamada antiga  845ms
+     ✓ matrícula pausada não ganha chamada porque o aluno possui outro contrato ativo  851ms
+     ✓ chamada anterior à pausa usa histórico do contrato e aula durante a pausa é recusada  869ms
+     ✓ aguarda alteração concorrente da matrícula e relê o estado antes de gravar  849ms
+     ✓ troca de professor fecha o vínculo e mantém apenas as próprias aulas em leitura  829ms
+     ✓ voltar à turma não reabre os registros de um vínculo docente encerrado  853ms
+     ✓ retorno do aluno conserva a presença do período anterior em leitura  823ms
+     ✓ papel revogado no banco bloqueia leitura e escrita com o mesmo cookie  831ms
+     ✓ desativação invalida o acesso atual sem apagar a autoria histórica  813ms
+   ✓ chamada registra impedimento no contrato conferido sem reclassificar registros antigos  882ms
+   ✓ particular usa contrato próprio, protege autoria e conclui com exceção independente  930ms
+   ✓ particular exige elegibilidade do próprio contrato e falta não conclui aula  871ms
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.designacaoRegularizacaoAula.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:84:51
+
+  81 });
+  82 
+  83 it("banco protege a designação e a revogação contra reescrita e valida papéis", async () => {
+→ 84   await expect(prisma.designacaoRegularizacaoAula.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Designação exige gestor pedagógico ou administrador ativo", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.designacaoRegularizacaoAula.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:87:51
+
+  84 await expect(prisma.designacaoRegularizacaoAula.create({ data: { ...entrada(), designadorId: secretariaId, entradaHash: "a".repeat(64) } })).rejects.toThrow();
+  85 const a = await designarRegularizacaoAula(entrada());
+  86 if (!a.ok || !a.dado) throw new Error(JSON.stringify(a));
+→ 87 await expect(prisma.designacaoRegularizacaoAula.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Aula já possui designação de regularização vigente", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.designacaoRegularizacaoAula.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:88:51
+
+  85 const a = await designarRegularizacaoAula(entrada());
+  86 if (!a.ok || !a.dado) throw new Error(JSON.stringify(a));
+  87 await expect(prisma.designacaoRegularizacaoAula.create({ data: { ...entrada(), chaveIdempotencia: "duplicada-direta-466", designadorId: gestorId, entradaHash: "b".repeat(64) } })).rejects.toThrow();
+→ 88 await expect(prisma.designacaoRegularizacaoAula.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Designações de regularização de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.designacaoRegularizacaoAula.delete()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:89:51
+
+  86 if (!a.ok || !a.dado) throw new Error(JSON.stringify(a));
+  87 await expect(prisma.designacaoRegularizacaoAula.create({ data: { ...entrada(), chaveIdempotencia: "duplicada-direta-466", designadorId: gestorId, entradaHash: "b".repeat(64) } })).rejects.toThrow();
+  88 await expect(prisma.designacaoRegularizacaoAula.update({ where: { id: a.dado.id }, data: { responsavelId: professorId } })).rejects.toThrow();
+→ 89 await expect(prisma.designacaoRegularizacaoAula.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Designações de regularização de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.revogacaoDesignacaoRegularizacaoAula.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:90:60
+
+  87 await expect(prisma.designacaoRegularizacaoAula.create({ data: { ...entrada(), chaveIdempotencia: "duplicada-direta-466", designadorId: gestorId, entradaHash: "b".repeat(64) } })).rejects.toThrow();
+  88 await expect(prisma.designacaoRegularizacaoAula.update({ where: { id: a.dado.id }, data: { responsavelId: professorId } })).rejects.toThrow();
+  89 await expect(prisma.designacaoRegularizacaoAula.delete({ where: { id: a.dado.id } })).rejects.toThrow();
+→ 90 await expect(prisma.revogacaoDesignacaoRegularizacaoAula.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Revogação exige gestor pedagógico ou administrador ativo", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.revogacaoDesignacaoRegularizacaoAula.delete()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:93:60
+
+  90 await expect(prisma.revogacaoDesignacaoRegularizacaoAula.create({ data: { designacaoId: a.dado.id, revogadorId: secretariaId, motivo: "Secretaria tenta revogar indevidamente." } })).rejects.toThrow();
+  91 const r = await revogarRegularizacaoAula({ designacaoId: a.dado.id, motivo: "Revogação registrada pela gestão responsável." });
+  92 if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+→ 93 await expect(prisma.revogacaoDesignacaoRegularizacaoAula.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Revogações de designação de regularização de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:83:1 > banco protege a designação e a revogação contra reescrita e valida papéis
+prisma:error 
+Invalid `expect(prisma.revogacaoDesignacaoRegularizacaoAula.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:94:60
+
+  91 const r = await revogarRegularizacaoAula({ designacaoId: a.dado.id, motivo: "Revogação registrada pela gestão responsável." });
+  92 if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+  93 await expect(prisma.revogacaoDesignacaoRegularizacaoAula.delete({ where: { id: r.dado.id } })).rejects.toThrow();
+→ 94 await expect(prisma.revogacaoDesignacaoRegularizacaoAula.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Revogações de designação de regularização de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso
+prisma:error 
+Invalid `expect(prisma.publicacaoGravacaoAula.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:264:48
+
+  261 expect(await prisma.publicacaoGravacaoAula.count()).toBe(1);
+  262 const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
+  263 expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
+→ 264 await expect(prisma.publicacaoGravacaoAula.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Publicações de gravação de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso
+prisma:error 
+Invalid `expect(prisma.publicacaoGravacaoAula.delete()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:265:48
+
+  262 const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
+  263 expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
+  264 await expect(prisma.publicacaoGravacaoAula.update({ where: { id: p.id }, data: { arquivoOficialId: "video-outro" } })).rejects.toThrow();
+→ 265 await expect(prisma.publicacaoGravacaoAula.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Publicações de gravação de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso-concorrente
+prisma:error 
+Invalid `expect(prisma.publicacaoGravacaoAula.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:264:48
+
+  261 expect(await prisma.publicacaoGravacaoAula.count()).toBe(1);
+  262 const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
+  263 expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
+→ 264 await expect(prisma.publicacaoGravacaoAula.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Publicações de gravação de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso-concorrente
+prisma:error 
+Invalid `expect(prisma.publicacaoGravacaoAula.delete()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:265:48
+
+  262 const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
+  263 expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
+  264 await expect(prisma.publicacaoGravacaoAula.update({ where: { id: p.id }, data: { arquivoOficialId: "video-outro" } })).rejects.toThrow();
+→ 265 await expect(prisma.publicacaoGravacaoAula.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Publicações de gravação de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso-reposicao
+prisma:error 
+Invalid `expect(prisma.publicacaoGravacaoAula.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:264:48
+
+  261 expect(await prisma.publicacaoGravacaoAula.count()).toBe(1);
+  262 const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
+  263 expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
+→ 264 await expect(prisma.publicacaoGravacaoAula.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Publicações de gravação de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso-reposicao
+prisma:error 
+Invalid `expect(prisma.publicacaoGravacaoAula.delete()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:265:48
+
+  262 const p = await prisma.publicacaoGravacaoAula.findFirstOrThrow();
+  263 expect(p).toMatchObject({ encontroId, publicadorId: professorId, arquivoOficialId: "video-oficial", driveOrganizacaoId: "drive-escola" });
+  264 await expect(prisma.publicacaoGravacaoAula.update({ where: { id: p.id }, data: { arquivoOficialId: "video-outro" } })).rejects.toThrow();
+→ 265 await expect(prisma.publicacaoGravacaoAula.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Publicações de gravação de aula são imutáveis", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: sucesso-reposicao
+prisma:error 
+Invalid `expect(prisma.materialReposicaoGravacao.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:302:53
+
+  299 if (!material.ok || !material.dado) throw new Error(JSON.stringify(material));
+  300 expect(await prisma.materialReposicaoGravacao.findUnique({ where: { id: material.dado.materialId } })).toMatchObject({ publicacaoAulaId: fonte.id, arquivoOficialId: "video-oficial" });
+  301 expect(await publicarMaterialReposicaoGravacao({ reposicaoId: pedido.dado.id, usarGravacaoAulaOriginal: true })).toMatchObject({ ok: false });
+→ 302 await expect(prisma.materialReposicaoGravacao.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "O vínculo à publicação da aula é imutável", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stderr | src/server/diario/regularizacao-designacao.int.test.ts:228:118 > registro de gravação confere fonte, chamada e autorização: indisponivel
+Error: Vídeo indisponível
+    at C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/diario/regularizacao-designacao.int.test.ts:244:74
+    at file:///C:/Users/Mendes/.codex/worktrees/de19/erp-genius/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20
+
+ ✓ src/server/diario/regularizacao-designacao.int.test.ts (15 tests) 13458ms
+   ✓ designa uma vez, preserva a aula e revoga sem apagar a atribuição original  918ms
+   ✓ recusa papel indevido, responsável inativo e aula futura  823ms
+   ✓ banco protege a designação e a revogação contra reescrita e valida papéis  815ms
+   ✓ designado PROFESSOR consulta e regulariza somente a aula atribuída, preservando autoria  963ms
+   ✓ designado GERENTE_PEDAGOGICO consulta e regulariza somente a aula atribuída, preservando autoria  945ms
+   ✓ designado ADMINISTRADOR consulta e regulariza somente a aula atribuída, preservando autoria  977ms
+   ✓ designação de particular preserva contrato, professor e financeiro  850ms
+   ✓ fila limita professor às designações vigentes e histórico fica com a gestão  860ms
+   ✓ pagina pendências sem duplicar encontros nem devolver histórico na fila  824ms
+   ✓ registro de gravação confere fonte, chamada e autorização: sucesso  957ms
+   ✓ registro de gravação confere fonte, chamada e autorização: sucesso-concorrente  991ms
+   ✓ registro de gravação confere fonte, chamada e autorização: sucesso-reposicao  978ms
+   ✓ registro de gravação confere fonte, chamada e autorização: indisponivel  865ms
+   ✓ registro de gravação confere fonte, chamada e autorização: chamada-alterada  854ms
+   ✓ registro de gravação confere fonte, chamada e autorização: papel-revogado  835ms
+ ❯ src/server/academico/visibilidade.int.test.ts (6 tests | 1 failed) 9302ms
+     ✓ solicitar/aprovar preserva acesso; executar revoga ficha, conversa e mídia do professor anterior  1285ms
+     ✓ mensagem humana pendente do professor anterior é cancelada no despacho após a execução  1101ms
+     × transferência concorrente preserva chamada anterior e recusa aula ocorrida após a saída 4158ms
+     ✓ diário relê a atribuição docente alterada enquanto aguardava o aluno  951ms
+     ✓ diário revalida papel revogado enquanto aguardava o aluno  915ms
+     ✓ diário revalida desativação revogado enquanto aguardava o aluno  892ms
+ ✓ src/server/secretaria/politica.int.test.ts (11 tests) 9198ms
+     ✓ aceite preserva as condições mensais conferidas e recusa cobertura incompleta  904ms
+     ✓ confere cobertura e vencimento apenas na preparação autorizada, preservando valores  855ms
+     ✓ somente secretaria assume; repetição mantém autoria, dono comercial e comissão  798ms
+     ✓ vendedor edita cadastro inicial; após assunção só contexto comercial e pedido de correção  854ms
+     ✓ acumular secretaria não remove a coleta documental inicial da própria carteira  802ms
+     ✓ nega carteira alheia e valores inviáveis antes de abrir pedido; rejeição não altera cadastro  812ms
+     ✓ correção documental exige documento novo, vigente e do mesmo atendimento  833ms
+     ✓ documento legado não pode ser republicado em categoria com outra finalidade  819ms
+     ✓ confirma contrato vigente, preserva evidência e bloqueia arquivo até substituição  857ms
+     ✓ matrícula sem lead tem anexo/aceite próprios e impede reutilização em outra matrícula do aluno  841ms
+     ✓ confirmar e arquivar simultaneamente nunca deixam contrato confirmado com documento arquivado  821ms
+ ✓ src/server/academico/progressao-fechamento.int.test.ts (4 tests) 4252ms
+   ✓ registra o pedido, mas nega sua aprovação sem uma versão suficiente de fechamento  1011ms
+   ✓ autoriza a exceção de nível somente com fechamento suficiente atual, parecer dispensado de forma justificada e execução da Secretaria  1092ms
+   ✓ não troca o fechamento aprovado por uma versão final posterior durante a execução  1100ms
+   ✓ mantém a solicitação aprovada sem execução quando uma correção oficial torna o fechamento anterior obsoleto  1049ms
+ ✓ src/server/cobrancas/acesso-aulas.int.test.ts (12 tests) 9793ms
+     ✓ distingue a pausa do contrato da restrição financeira e preserva o outro contrato  849ms
+     ✓ D+29 não bloqueia; D+30 com saldo parcial restringe uma única vez  804ms
+     ✓ informe a conferir pausa lembretes, mas não libera acesso nem impede D+30  801ms
+     ✓ baixa financeira libera restrição automática ao quitar a dívida elegível  811ms
+     ✓ quitação preserva restrição manual legada e não fabrica desbloqueio  830ms
+     ✓ Secretaria solicita com motivo; somente outra pessoa ADM decide; reenvio é idempotente  821ms
+     ✓ acúmulo de ADMIN+FIN não autoriza aprovar a própria solicitação  820ms
+     ✓ rejeição conserva acesso e registra a decisão independente  812ms
+     ✓ liberação manual aprovada mantém restrição automática enquanto houver dívida D+30  810ms
+     ✓ revogar ADM após login bloqueia decisão e professor não consulta o painel financeiro  799ms
+     ✓ aprovação com versão manual alterada é negada e pode ser rejeitada para liberar nova solicitação  813ms
+     ✓ cron autenticado aplica D+30 com política WhatsApp desligada, sem despachar mensagens reais  822ms
+ ✓ src/server/cobrancas/conferencia.int.test.ts (8 tests) 6855ms
+     ✓ fila usa a turma do contrato cobrado e não a de outra contratação do aluno  896ms
+     ✓ default de 48h é congelado no informe; replay não estende prazo e configuração só altera novos  887ms
+     ✓ só a cobrança relacionada fica suspensa, mesmo havendo outras parcelas da mesma matrícula  849ms
+     ✓ rejeição e término do prazo removem suspensão sem baixar cobrança nem descartar evidência  824ms
+     ✓ intenção anterior ao informe é adiada até o prazo; rejeição libera o próximo despacho imediatamente  840ms
+     ✓ após rejeitar um informe, outro pendente mantém a suspensão e determina o prazo restante  884ms
+     ✓ prazo vencido libera intenção sem exigir rejeição artificial do informe  846ms
+     ✓ informe recebido após o claim também impede chamar o driver  827ms
+ ✓ src/server/matricula/ativacao.int.test.ts (5 tests) 1020ms
+ ✓ src/server/whatsapp/ciclo-cobranca.int.test.ts (10 tests) 8427ms
+     ✓ versão invalida intenção anterior à pausa mesmo ao manter vencimento e ciclo  854ms
+     ✓ degrau enviado no ciclo 0 permite nova intenção no ciclo 1, preservando o histórico  863ms
+     ✓ repetição do mesmo ciclo não duplica intenção ou envio  834ms
+     ✓ manter datas preserva a deduplicação de degrau já enviado  838ms
+     ✓ duas reaberturas concorrentes preservam uma única intenção no ciclo  862ms
+     ✓ ciclo anterior é recusado antes do envio, inclusive sem assinatura (legado=false)  834ms
+     ✓ ciclo anterior é recusado antes do envio, inclusive sem assinatura (legado=true)  815ms
+     ✓ evento legado sem ciclo deduplica ciclo 0 e não suprime ciclo 1  833ms
+     ✓ resposta do provedor após reprogramação mantém o envio no ciclo original  857ms
+     ✓ registro manual usa o ciclo exibido antes da reprogramação  835ms
+stdout | src/server/avaliacoes/regra-turma.int.test.ts:67:1 > não permite substituir regra ou nível por edição direta, mesmo antes do início
+prisma:error 
+Invalid `expect(prisma.turma.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/regra-turma.int.test.ts:69:29
+
+  66 
+  67 it("não permite substituir regra ou nível por edição direta, mesmo antes do início", async () => {
+  68   const r1 = await regra(1), t = await novaTurma(), r2 = await regra(2);
+→ 69   await expect(prisma.turma.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Mudança de regra da turma exige revisão e aprovação específica", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/regra-turma.int.test.ts:67:1 > não permite substituir regra ou nível por edição direta, mesmo antes do início
+prisma:error 
+Invalid `expect(prisma.turma.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/regra-turma.int.test.ts:70:29
+
+  67 it("não permite substituir regra ou nível por edição direta, mesmo antes do início", async () => {
+  68   const r1 = await regra(1), t = await novaTurma(), r2 = await regra(2);
+  69   await expect(prisma.turma.update({ where: { id: t.id }, data: { regraAvaliacaoId: r2.id } })).rejects.toThrow("aprovação específica");
+→ 70   await expect(prisma.turma.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Mudança de regra da turma exige revisão e aprovação específica", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/regra-turma.int.test.ts:67:1 > não permite substituir regra ou nível por edição direta, mesmo antes do início
+prisma:error 
+Invalid `expect(prisma.turma.create()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/regra-turma.int.test.ts:71:29
+
+  68 const r1 = await regra(1), t = await novaTurma(), r2 = await regra(2);
+  69 await expect(prisma.turma.update({ where: { id: t.id }, data: { regraAvaliacaoId: r2.id } })).rejects.toThrow("aprovação específica");
+  70 await expect(prisma.turma.update({ where: { id: t.id }, data: { regraAvaliacaoId: null } })).rejects.toThrow("aprovação específica");
+→ 71 await expect(prisma.turma.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Regra inicial é selecionada da publicação vigente, não informada livremente", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/regra-turma.int.test.ts:67:1 > não permite substituir regra ou nível por edição direta, mesmo antes do início
+prisma:error 
+Invalid `expect(prisma.turma.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/regra-turma.int.test.ts:75:29
+
+  72 const nivel = await prisma.nivel.findUniqueOrThrow({ where: { id: nivelId } });
+  73 const n2 = await prisma.nivel.create({ data: { idiomaId: nivel.idiomaId, codigo: "A2", ordem: 2 } });
+  74 expect(await editarTurma(t.id, { ...entradaTurma(), nivelId: n2.id })).toMatchObject({ ok: false, erro: expect.stringContaining("regras de avaliação") });
+→ 75 await expect(prisma.turma.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Nível com regra vinculada não pode mudar por edição direta", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/regra-turma.int.test.ts:80:1 > turmas em andamento e concluídas conservam a publicação vinculada
+prisma:error 
+Invalid `expect(prisma.turma.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/regra-turma.int.test.ts:87:31
+
+  84 const r2 = await regra(2);
+  85 for (const t of [t1, t2]) {
+  86   expect((await prisma.turma.findUniqueOrThrow({ where: { id: t.id } })).regraAvaliacaoId).toBe(r1.id);
+→ 87   await expect(prisma.turma.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Mudança de regra da turma exige revisão e aprovação específica", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+stdout | src/server/avaliacoes/regra-turma.int.test.ts:80:1 > turmas em andamento e concluídas conservam a publicação vinculada
+prisma:error 
+Invalid `expect(prisma.turma.update()` invocation in
+C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/avaliacoes/regra-turma.int.test.ts:87:31
+
+  84 const r2 = await regra(2);
+  85 for (const t of [t1, t2]) {
+  86   expect((await prisma.turma.findUniqueOrThrow({ where: { id: t.id } })).regraAvaliacaoId).toBe(r1.id);
+→ 87   await expect(prisma.turma.update(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "P0001", message: "Mudança de regra da turma exige revisão e aprovação específica", severity: "ERRO", detail: None, column: None, hint: None }), transient: false })
+
+ ✓ src/server/avaliacoes/regra-turma.int.test.ts (6 tests) 5091ms
+   ✓ nova turma usa última publicação do nível e mantém a versão após novas publicações  925ms
+   ✓ preserva turmas anteriores sem inventar regra histórica ou de outro nível  809ms
+   ✓ não permite substituir regra ou nível por edição direta, mesmo antes do início  831ms
+   ✓ turmas em andamento e concluídas conservam a publicação vinculada  837ms
+   ✓ importação XLSX de turma futura usa a mesma publicação e registra sua referência  876ms
+   ✓ criação concorrente espera publicação em curso e usa a versão confirmada  813ms
+ ✓ src/server/alunos/cadastro.int.test.ts (7 tests) 5627ms
+     ✓ Secretaria consulta cadastro e financeiro individual, edita e registra autoria  858ms
+     ✓ PROFESSOR recebe contexto pedagógico e não altera cadastro por chamada direta  808ms
+     ✓ GERENTE_PEDAGOGICO recebe contexto pedagógico e não altera cadastro por chamada direta  801ms
+     ✓ papéis VEN+PRO não usam vínculo de turma para liberar documento ou financeiro comercial  795ms
+     ✓ Secretaria revogada perde escrita e projeção privada na próxima operação  795ms
+     ✓ Secretaria desativada não altera cadastro usando o cookie anterior  763ms
+     ✓ tipo de documento de outro país é rejeitado sem editar aluno nem auditoria  807ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/academico/visibilidade.int.test.ts:264:3 > mudança acadêmica revoga vínculos atuais e preserva o diário > transferência concorrente preserva chamada anterior e recusa aula ocorrida após a saída
+AssertionError: As ações devem alcançar os locks reais da matrícula e do aluno: [{"pid":63200,"consulta":"SELECT id FROM \"Aluno\" WHERE id = $1 FOR UPDATE","bloqueadores":[63192]}]: expected 1 to be greater than or equal to 2
+ ❯ esperarBloqueados src/server/academico/visibilidade.int.test.ts:191:120
+    189|     await new Promise((resolve) => setTimeout(resolve, 20));
+    190|   }
+    191|   expect(esperas.length, `As ações devem alcançar os locks reais da ma…
+       |                                                                                                                        ^
+    192|   return esperas;
+    193| }
+ ❯ src/server/academico/visibilidade.int.test.ts:276:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 11 passed (12)
+      Tests  1 failed | 109 passed (110)
+   Start at  03:25:41
+   Duration  106.78s (transform 967ms, setup 0ms, import 2.43s, tests 101.92s, environment 1ms)
+
+JSON report written to C:/Users/Mendes/.codex/worktrees/de19/erp-genius/docs/validacao-falhas-estavel-482-2026-09-15.json

@@ -1,0 +1,7 @@
+{
+ "incremento":319,"data":"2026-09-13","escopo":"Interface docente e consulta dos informes de ocorrência",
+ "integracao":{"aprovados":6,"falhos":0,"arquivos":1},
+ "typescript":"aprovado no build","lint":"aprovado","build":"aprovado, 52 páginas",
+ "novaMigration":false,"ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Sem homologação interativa","Conferência financeira e emissão integradas pendentes"],"producao":false,"enviosExternos":false
+}

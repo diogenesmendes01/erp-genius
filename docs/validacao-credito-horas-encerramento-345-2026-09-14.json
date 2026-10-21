@@ -1,0 +1,6 @@
+{
+ "incremento":345,"data":"2026-09-14","escopo":"Crédito de cobrança por hora já paga no encerramento aprovado",
+ "integracao":{"aprovados":23,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado",
+ "migration":false,"novoBuild":false,"homologacaoVisual":false,
+ "limites":["Cenários combinados com antecipações pendentes","Execução de devolução não abrangida por este teste","Escopo integral ainda incompleto"],"producao":false,"enviosExternos":false
+}

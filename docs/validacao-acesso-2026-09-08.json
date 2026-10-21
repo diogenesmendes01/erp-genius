@@ -1,0 +1,3977 @@
+{
+  "data": "2026-09-08T11:38:04.979Z",
+  "escopo": "Implementação local da política de acesso e decisões operacionais D01 a D12, com limites descritos no doc 38.",
+  "revisaoBase": "bc858aff15e39666ac9e2aba045148034791de12",
+  "alteracoesCommitadas": false,
+  "ambiente": {
+    "banco": "PostgreSQL descartável localhost:54329/erp_genius_test",
+    "http": "http://127.0.0.1:3017",
+    "producaoAlterada": false,
+    "mensagensExternasEnviadas": false
+  },
+  "unitarios": {
+    "iniciadoEm": "2026-09-08T11:32:01.468Z",
+    "total": 482,
+    "aprovados": 482,
+    "falhas": 0,
+    "pendentes": 0,
+    "arquivos": [
+      {
+        "arquivo": "src/lib/dinheiro.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "dinheiro — formatação por moeda usa símbolo e casas decimais corretos por moeda",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — formatação por moeda moeda desconhecida cai para o próprio código ISO (nunca quebra)",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — formatação por moeda semSimbolo devolve só o número formatado",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — formatação por moeda valor inválido vira 0 (não NaN)",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — agregação por moeda agrupa por moeda e NUNCA mistura moedas diferentes",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — agregação por moeda normaliza a moeda (caixa/espaços) ao agrupar",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — agregação por moeda lista vazia retorna lista vazia",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — agregação por moeda formatarValores junta as moedas inline; vazio vira travessão",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — consolidação multi-moeda (pivô USD, reporting-only) consolida em USD (pivô): CRC→USD + USD",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — consolidação multi-moeda (pivô USD, reporting-only) consolida em outra moeda via pivô (USD→alvo)",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — consolidação multi-moeda (pivô USD, reporting-only) moeda sem taxa é ignorada e reportada em faltando (total honesto)",
+            "status": "passed"
+          },
+          {
+            "nome": "dinheiro — consolidação multi-moeda (pivô USD, reporting-only) sem taxa para a própria moeda-alvo → total 0 e alvo em faltando",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/lib/guards.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "papeisTem (guard de leitura de página) Administrador passa em qualquer leitura",
+            "status": "passed"
+          },
+          {
+            "nome": "papeisTem (guard de leitura de página) autoriza só quando tem um dos papéis alvo",
+            "status": "passed"
+          },
+          {
+            "nome": "papeisTem (guard de leitura de página) nega leitura quando não há papel adequado (sem dados vazios acidentais)",
+            "status": "passed"
+          },
+          {
+            "nome": "papeisTem (guard de leitura de página) financeiro: Financeiro e Gerente Comercial leem; Vendedor/Professor não",
+            "status": "passed"
+          },
+          {
+            "nome": "papeisTem (guard de leitura de página) alunos: Secretaria/Pedagógico/Financeiro/Professor leem; Vendedor não",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/lib/rate-limit-login.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "rate-limit do login bloqueia após MAX_FALHAS na janela e trata e-mails separadamente",
+            "status": "passed"
+          },
+          {
+            "nome": "rate-limit do login desbloqueia quando as falhas saem da janela deslizante",
+            "status": "passed"
+          },
+          {
+            "nome": "rate-limit do login login bem-sucedido zera o contador",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/ajustes/aprovacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "aprovação independente na equipe atual aprova o desconto da equipe dentro da alçada",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação independente na equipe atual acumular Financeiro não amplia o alcance comercial da aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação independente na equipe atual cobertura de carteira não concede aprovação sobre o titular coberto",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação independente na equipe atual alçada elevada depois do pedido não autoriza a aprovação pendente",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação independente na equipe atual bolsa não herda automaticamente a capacidade de aprovar desconto",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovação independente na equipe atual não altera o valor da comissão paga enquanto o ajuste aguardava o bloqueio",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/ajustes/consultas.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "projeção financeira operacional — política 36 ausência de identidade nega por padrão",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 VENDEDOR usa projeção própria, sem obter extrato operacional",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 PROFESSOR usa projeção própria, sem obter extrato operacional",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 GERENTE_PEDAGOGICO usa projeção própria, sem obter extrato operacional",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 GERENTE_COMERCIAL usa projeção própria, sem obter extrato operacional",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 FINANCEIRO pode consultar atendimento financeiro individual",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 SECRETARIA_ACADEMICA pode consultar atendimento financeiro individual",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 ADMINISTRADOR pode consultar atendimento financeiro individual",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 sessão antiga de vendedor não chega à consulta de valores",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 usuário desativado é barrado antes do banco financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 recusa identidade passada diferente da sessão",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 KPIs individuais usam saldo após pagamento parcial",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção financeira operacional — política 36 aluno inexistente não devolve estrutura com dados de outro",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/ajustes/regras-ajuste.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "ehAumento / aumentoPermitido detecta aumento quando valorPara > valorDe",
+            "status": "passed"
+          },
+          {
+            "nome": "ehAumento / aumentoPermitido só ALTERACAO_VALOR pode aumentar",
+            "status": "passed"
+          },
+          {
+            "nome": "validarDirecaoAjuste desconto deve ter valorPara <= valorDe",
+            "status": "passed"
+          },
+          {
+            "nome": "validarDirecaoAjuste recusa aumento disfarçado de desconto",
+            "status": "passed"
+          },
+          {
+            "nome": "validarDirecaoAjuste permite aumento explícito em ALTERACAO_VALOR",
+            "status": "passed"
+          },
+          {
+            "nome": "descontoPercentual calcula o percentual de redução",
+            "status": "passed"
+          },
+          {
+            "nome": "descontoPercentual é 0 para aumento ou base zero",
+            "status": "passed"
+          },
+          {
+            "nome": "precisaAprovacaoDesconto Financeiro/Admin (sem limite) nunca precisa de aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "precisaAprovacaoDesconto Vendedor: desconto dentro do limite aplica direto",
+            "status": "passed"
+          },
+          {
+            "nome": "precisaAprovacaoDesconto Vendedor: desconto acima do limite vai para aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "precisaAprovacaoDesconto Vendedor: desconto total acima do limite vai para aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "precisaAprovacaoDesconto Vendedor com limite NULO não vira ilimitado: qualquer desconto precisa de aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "precisaAprovacaoDesconto aumento (descontoPct <= 0) não exige aprovação por limite",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/alunos/consultas.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "escopoAlunos (visibilidade row-level, doc 07) sem usuário → sem acesso",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoAlunos (visibilidade row-level, doc 07) Admin / Secretaria / Pedagógico / Financeiro veem todos os alunos",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoAlunos (visibilidade row-level, doc 07) Professor só vê alunos alocados nas turmas dele",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoAlunos (visibilidade row-level, doc 07) Professor que também é Secretaria vê todos (papel amplo prevalece)",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoAlunos (visibilidade row-level, doc 07) FAIL-CLOSED: usuário sem papel amplo nem professor não vê NADA (review PR #48)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeVerFinanceiroAluno (projeção pedagógica, doc 10) sem usuário → nega",
+            "status": "passed"
+          },
+          {
+            "nome": "podeVerFinanceiroAluno (projeção pedagógica, doc 10) Professor 'puro' NÃO vê financeiro do aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "podeVerFinanceiroAluno (projeção pedagógica, doc 10) Somente Admin/Secretaria/Financeiro recebem financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "podeVerFinanceiroAluno (projeção pedagógica, doc 10) Professor que também é papel amplo vê financeiro (amplo prevalece)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeMovimentarAluno (visão somente leitura do professor, doc 10) sem usuário → nega",
+            "status": "passed"
+          },
+          {
+            "nome": "podeMovimentarAluno (visão somente leitura do professor, doc 10) Professor 'puro' NÃO movimenta (somente leitura)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeMovimentarAluno (visão somente leitura do professor, doc 10) Financeiro vê aluno mas NÃO faz movimentação acadêmica (doc 10)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeMovimentarAluno (visão somente leitura do professor, doc 10) Secretaria, Pedagógico e Admin movimentam",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasTurma usa só a ocupação ativa (ignora histórico inativo)",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasTurma turma cheia por alocações ativas não tem vaga",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasTurma turma só com alocações inativas volta a ter todas as vagas",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasTurma nunca retorna negativo mesmo se a ocupação exceder a capacidade",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/alunos/importacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "importação de alunos — parsers mapeia cabeçalhos (com acento, caixa e dica de formato)",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de alunos — parsers reimporta o próprio modelo: cabeçalho obrigatório com ' *' casa",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de alunos — parsers resolve gênero por rótulo e abreviação",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de alunos — parsers resolve escolaridade por rótulo",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de alunos — parsers resolve sim/não para boolean (vazio = undefined)",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de alunos — parsers resolve país ISO por código ou nome",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de alunos — parsers resolve data AAAA-MM-DD para meio-dia local",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/alunos/movimentacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico secretaria transfere dentro do mesmo nível e idioma",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico secretaria não decide avanço de A1 para B2, mesmo com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico gestão pedagógica precisa justificar exceção",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico turma concluída não recebe transferência",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico encerramento libera vaga sem apagar histórico da alocação",
+            "status": "passed"
+          },
+          {
+            "nome": "transferência respeita autoridade e estado acadêmico papel pedagógico não edita documento administrativo",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/alunos/projecao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade papéis pedagógicos \"PROFESSOR\" não recebem dinheiro nem campos privados",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade papéis pedagógicos \"GERENTE_PEDAGOGICO\" não recebem dinheiro nem campos privados",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade papéis pedagógicos \"PROFESSOR\" não recebem dinheiro nem campos privados",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade papéis pedagógicos \"GERENTE_PEDAGOGICO\" não recebem dinheiro nem campos privados",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade Secretaria com papel professor conserva capacidade cadastral e financeiro individual",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade sem identidade não consulta aluno, turma ou lista",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade professor removido da turma perde a ficha atual",
+            "status": "passed"
+          },
+          {
+            "nome": "projeção de alunos — regras por campo e finalidade vendedor não ganha ficha de turma nem edição por conhecer o ID",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/diario/diario.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro ex-professor da turma lê só seus snapshots e não edita",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro saída de aluno congela apenas seu registro pessoal",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro retorno do aluno não reabre presença anterior à nova alocação",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro retorno do professor não reabre aulas do vínculo encerrado",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro papel de vendedor não mantém leitura por autoria histórica",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro gestão pedagógica consulta sem assumir autoria docente",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro docente atual registra nome obtido no servidor e presença",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro perda da turma bloqueia edição direta pelo ID",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro docente não altera presença histórica de aluno transferido",
+            "status": "passed"
+          },
+          {
+            "nome": "diário mantém história de autoria sem reabrir cadastro não fabrica aula anterior ao início conhecido do vínculo",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/captura.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "classificarRespostaExperimental keywords genéricas NÃO confirmam (conjunto conservador)",
+            "status": "passed"
+          },
+          {
+            "nome": "classificarRespostaExperimental só o que o template pede confirma — com trim e caixa indiferentes",
+            "status": "passed"
+          },
+          {
+            "nome": "classificarRespostaExperimental pedido de reagendamento é reconhecido",
+            "status": "passed"
+          },
+          {
+            "nome": "classificarRespostaExperimental frase que CONTÉM a keyword não vale (match exato, não substring)",
+            "status": "passed"
+          },
+          {
+            "nome": "classificarRespostaExperimental corpo vazio/ausente (mídia, sticker) não classifica nada",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/consultas.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "consulta comercial não amplia carteira ex-vendedor não consulta ficha nem lista mesmo mantendo propriedade antiga",
+            "status": "passed"
+          },
+          {
+            "nome": "consulta comercial não amplia carteira filtro de outro vendedor é interseção, preservando carteira obrigatória",
+            "status": "passed"
+          },
+          {
+            "nome": "consulta comercial não amplia carteira gerente sem equipe não ganha escopo global",
+            "status": "passed"
+          },
+          {
+            "nome": "consulta comercial não amplia carteira vendedor perde projeção documental administrativa após assunção",
+            "status": "passed"
+          },
+          {
+            "nome": "consulta comercial não amplia carteira vendedor também secretaria conserva documento pelo papel cadastral",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/experimental.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "dadosHomeProfessor lista as experimentais atribuídas ao professor (via FK)",
+            "status": "passed"
+          },
+          {
+            "nome": "checkinExperimental professor vinculado consegue fazer check-in",
+            "status": "passed"
+          },
+          {
+            "nome": "checkinExperimental professor NÃO vinculado é barrado (ErroPermissao)",
+            "status": "passed"
+          },
+          {
+            "nome": "checkinExperimental experimental sem professor atribuído (FK null) barra o professor",
+            "status": "passed"
+          },
+          {
+            "nome": "checkinExperimental admin ignora o vínculo e faz check-in mesmo sem FK",
+            "status": "passed"
+          },
+          {
+            "nome": "checkinExperimental recusa quando não há experimental agendada (etapa errada)",
+            "status": "passed"
+          },
+          {
+            "nome": "agendarExperimental grava a FK do professor ao agendar com professorId",
+            "status": "passed"
+          },
+          {
+            "nome": "agendarExperimental agenda sem professor: persiste FK null quando professorId ausente",
+            "status": "passed"
+          },
+          {
+            "nome": "agendarExperimental reagendar com 'Definir depois' limpa a FK e audita a remoção",
+            "status": "passed"
+          },
+          {
+            "nome": "agendarExperimental reagendar ZERA a confirmação da experimental anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "agendarExperimental reagendar sem mudar o professor não duplica o evento de vínculo",
+            "status": "passed"
+          },
+          {
+            "nome": "agendarExperimental não agenda experimental de lead fora da carteira autorizada",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/schema.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "TIPOS_MUDAM_ETAPA inclui a mudança manual de etapa",
+            "status": "passed"
+          },
+          {
+            "nome": "TIPOS_MUDAM_ETAPA inclui as ações que avançam o funil sem 'EtapaAlterada' explícito",
+            "status": "passed"
+          },
+          {
+            "nome": "TIPOS_MUDAM_ETAPA não contém duplicatas",
+            "status": "passed"
+          },
+          {
+            "nome": "ETAPAS_MANUAIS não inclui as etapas de fluxo próprio (perdido/matriculado/no-show)",
+            "status": "passed"
+          },
+          {
+            "nome": "DatasSchema — dataExperimental preserva horário (issue #16) aceita datetime-local e mantém a hora agendada",
+            "status": "passed"
+          },
+          {
+            "nome": "DatasSchema — dataExperimental preserva horário (issue #16) aceita data simples (date-only) sem hora explícita → meio-dia local",
+            "status": "passed"
+          },
+          {
+            "nome": "DatasSchema — dataExperimental preserva horário (issue #16) proximoFollowUp e dataProposta continuam date-only (meio-dia local)",
+            "status": "passed"
+          },
+          {
+            "nome": "DatasSchema — dataExperimental preserva horário (issue #16) campos vazios viram undefined (não sobrescrevem)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/cobrancas/acesso-aulas-regras.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "restrição de aulas por dívida elegível 0 dias não geram restrição automática",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível 15 dias não geram restrição automática",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível 29 dias não geram restrição automática",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível 30 dias com saldo parcial geram restrição automática",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível 31 dias com saldo parcial geram restrição automática",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível 90 dias com saldo parcial geram restrição automática",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível quitada ou cancelada não restringe: {\"status\":\"CANCELADA\"}",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível quitada ou cancelada não restringe: {\"status\":\"PAGO\"}",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível quitada ou cancelada não restringe: {\"saldo\":0}",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível saldo legado desconta recebimentos em vez de cobrar o valor cheio",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível somente saldo efetivamente regularizado deixa de gerar restrição",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas por dívida elegível regularização automática preserva o componente manual",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/cobrancas/regua-ancora.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) encerrada (lead respondeu/mudou etapa/opt-out) → sai da régua",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) no ponto da âncora, nada feito → D0 devido",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) 45min depois, D0 feito → +30min devido e ATRASADO (já passou dos 30)",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) 45min depois, NADA feito → pula direto pro +30min (D0 superado, não metralha)",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) 10min depois, D0 feito → futuro (o +30min ainda não chegou)",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) 8 dias depois, todos feitos → concluída",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) 8 dias depois, nada feito → +7d devido (backlog nunca some)",
+            "status": "passed"
+          },
+          {
+            "nome": "proximaAcaoAncora — régua ancorada em evento (minutos) granularidade de MINUTOS: +4h (240min) arma aos 240, não aos 239",
+            "status": "passed"
+          },
+          {
+            "nome": "selecionarDegrau — núcleo genérico compartilhado com a cobrança escolhe o mais avançado que chegou e não foi feito",
+            "status": "passed"
+          },
+          {
+            "nome": "selecionarDegrau — núcleo genérico compartilhado com a cobrança posição antes do 1º offset → futuro",
+            "status": "passed"
+          },
+          {
+            "nome": "selecionarDegrau — núcleo genérico compartilhado com a cobrança todos feitos após o último offset → concluída",
+            "status": "passed"
+          },
+          {
+            "nome": "selecionarDegrau — núcleo genérico compartilhado com a cobrança política vazia nunca conclui nem arma",
+            "status": "passed"
+          },
+          {
+            "nome": "selecionarDegrau — núcleo genérico compartilhado com a cobrança corte de progresso: feito um degrau do meio, os anteriores nunca mais armam",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso forward-only (review PR #54) âncora: enviado o +30min, o recálculo NÃO volta pro D0",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso forward-only (review PR #54) âncora: cadência executada em ordem nunca retrocede",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso forward-only (review PR #54) cobrança: enviado o D+3 num backlog, o recálculo NÃO volta pro D0/D-7",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso forward-only (review PR #54) cobrança: régua feita em ordem completa → concluída (contra-prova, comportamento preservado)",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso sobrevive à edição da política (review PR #54, 2ª passada) cobrança: D+3 feito e depois REMOVIDO/desativado da política → NÃO volta pro D0",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso sobrevive à edição da política (review PR #54, 2ª passada) cobrança: D+3 feito e depois RE-OFFSETADO para -10 → NÃO volta pro D0",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso sobrevive à edição da política (review PR #54, 2ª passada) cobrança: com o degrau removido, a régua segue PARA FRENTE quando o próximo chega",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso sobrevive à edição da política (review PR #54, 2ª passada) âncora com ordem imutável: passo feito removido da cadência → não retrocede",
+            "status": "passed"
+          },
+          {
+            "nome": "corte de progresso sobrevive à edição da política (review PR #54, 2ª passada) núcleo: feito ausente dos degraus atuais mas presente na ordem segura o corte",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/cobrancas/regua.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "regua — diferencaEmDias (dias de calendário, ignora hora) conta dias de calendário independentemente da hora",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — proximaAcao por degrau (caminho feliz) D-7: lembrete no dia (7 dias antes), template amigável",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — proximaAcao por degrau (caminho feliz) D-3: com D-7 já feito",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — proximaAcao por degrau (caminho feliz) D0: cobrança no vencimento (D-7/D-3 feitos)",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — proximaAcao por degrau (caminho feliz) D+3: cobrança de atraso, template vencida",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — proximaAcao por degrau (caminho feliz) D+15 mantém ID histórico como cobrança final; restrição é independente em D+30",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — BACKLOG (dias pulados não somem) D-7 não enviado e a data já passou → continua devido, marcado atrasado na ação",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — BACKLOG (dias pulados não somem) o degrau mais avançado que chegou vence os anteriores não cumpridos",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — BACKLOG (dias pulados não somem) se o degrau atual foi feito mas o próximo ainda não chegou → futuro",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — estados especiais quitada (paga/cancelada) sai da régua",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — estados especiais promessa vigente deixa a cobrança dormente",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — estados especiais promessa vencida é ignorada — volta a cobrar normalmente",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — estados especiais futuro: antes do primeiro degrau (D-7) não há ação",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — estados especiais concluida: todos os degraus cumpridos",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — política como dado (doc 26/30: proximaAcao recebe os degraus) sem o parâmetro, usa a REGUA de fábrica (compatibilidade)",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — política como dado (doc 26/30: proximaAcao recebe os degraus) política customizada muda offsets: D-3 configurado para -5 dias dispara no dia -5",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — política como dado (doc 26/30: proximaAcao recebe os degraus) degrau desativado (fora da política) nunca é devido — superação continua valendo",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — política como dado (doc 26/30: proximaAcao recebe os degraus) política vazia (tudo desativado) nunca gera ação nem conclusão",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — política como dado (doc 26/30: proximaAcao recebe os degraus) passos feitos de degraus removidos da política não ressuscitam a ação (fatos históricos)",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — política como dado (doc 26/30: proximaAcao recebe os degraus) conclusão respeita o último degrau DA POLÍTICA (não o da fábrica)",
+            "status": "passed"
+          },
+          {
+            "nome": "regua — prioridade (menor = mais urgente) cobrança final precede cobranças anteriores e lembretes",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/financeiro/operacoes.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "pagamentos e conferência pela ação pública a secretaria informa sem escrever recebimento ou saldo",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública SECRETARIA_ACADEMICA recebe sucesso financeiro se o recálculo falhar após o commit",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública FINANCEIRO recebe sucesso financeiro se o recálculo falhar após o commit",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública conferência confirmar=true preserva a decisão se o recálculo falhar após o commit",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública conferência confirmar=false preserva a decisão se o recálculo falhar após o commit",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública cada informe conserva o prazo de 48 horas mesmo se a configuração mudar antes do replay",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública SEC não consulta os informes globais, mas consulta atendimento individual",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública acumular FIN e SEC não permite conferir o próprio informe",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública a conferência rejeita mudança de moeda antes de movimentar saldo",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamentos e conferência pela ação pública versão anterior do informe não pode ser confirmada",
+            "status": "passed"
+          },
+          {
+            "nome": "fechamento de comissões não inclui comissão aprovada depois de selecionar e bloquear o lote",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/financeiro/regras.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 preserva centavos sem erro de soma binária",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 saldo desconta todos os pagamentos parciais e não fica negativo",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 duas reduções sucessivas continuam contra a referência original",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 a alçada de mensalidade não cobre a taxa e vice-versa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 ausência de configuração não libera qualquer desconto",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel ADMINISTRADOR não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel GERENTE_COMERCIAL não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel VENDEDOR não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel GERENTE_PEDAGOGICO não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel PROFESSOR não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel FINANCEIRO não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 o acúmulo do papel SECRETARIA_ACADEMICA não simula outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 comissão percentual usa a taxa e arredonda dinheiro",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 comissão fixa não muda quando a taxa recebe desconto",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 não inventa base, valor ou tipo de comissão",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 não reativa matrícula CANCELADA pelo formulário de ativação",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 não reativa matrícula ENCERRADA pelo formulário de ativação",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 não reativa matrícula ATIVA pelo formulário de ativação",
+            "status": "passed"
+          },
+          {
+            "nome": "contratos financeiros aprovados D01/D06/D07 taxa cancelada não é evidência de quitação",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/financeiro/schema.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "PagamentoSchema — comprovante recusa valor que seria arredondado para zero no informe",
+            "status": "passed"
+          },
+          {
+            "nome": "PagamentoSchema — comprovante exige comprovante em formas que geram prova (transferência/GreenPay)",
+            "status": "passed"
+          },
+          {
+            "nome": "PagamentoSchema — comprovante aceita transferência quando o comprovante é anexado",
+            "status": "passed"
+          },
+          {
+            "nome": "PagamentoSchema — comprovante não exige comprovante para dinheiro/cartão",
+            "status": "passed"
+          },
+          {
+            "nome": "PagamentoSchema — comprovante trata string vazia de comprovante como ausente (e bloqueia transferência)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/matricula/conclusao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados SECRETARIA_ACADEMICA conclui sem criar baixa; primeira mensalidade é opcional por padrão",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados FINANCEIRO conclui sem criar baixa; primeira mensalidade é opcional por padrão",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados ADMINISTRADOR conclui sem criar baixa; primeira mensalidade é opcional por padrão",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados contratoOk sozinho não supre contratoDocumentoId",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados contratoOk sozinho não supre confirmacaoContratoEm",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados contratoOk sozinho não supre confirmacaoContratoPorId",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados documento arquivado, ausente ou de outra matrícula não permite conclusão",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados um contrato do lead originador também pode ser evidência do aceite",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados informe a conferir e flags antigas não completam a taxa parcialmente recebida",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados status PAGO sem confirmação financeira suficiente não conta: {\"valorRecebido\":null}",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados status PAGO sem confirmação financeira suficiente não conta: {\"pagoEm\":null}",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados status PAGO sem confirmação financeira suficiente não conta: {\"valorRecebido\":\"40\"}",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados a opção de exigir primeira mensalidade é consultada na execução",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados o caminho legado receber e ativar também nega antes da baixa se faltar aceite",
+            "status": "passed"
+          },
+          {
+            "nome": "conclusão de matrícula — contrato aceito e pagamentos confirmados vendedor não conclui matrícula por chamada direta",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/matricula/escopo.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "podeConverterLead vendedor converte lead do próprio escopo (dono/designado)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeConverterLead vendedor NÃO converte lead de outro vendedor",
+            "status": "passed"
+          },
+          {
+            "nome": "podeConverterLead vendedor NÃO converte lead sem dono",
+            "status": "passed"
+          },
+          {
+            "nome": "podeConverterLead Gerente Comercial converte qualquer lead (visibilidade global)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeConverterLead Administrador converte qualquer lead",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/matricula/permissoes.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "permissões do fluxo de matrícula (#8) conjuntos de papéis condizem com o esperado",
+            "status": "passed"
+          },
+          {
+            "nome": "permissões do fluxo de matrícula (#8) quem só pode criar NÃO pode ativar (causa raiz da matrícula parcial)",
+            "status": "passed"
+          },
+          {
+            "nome": "permissões do fluxo de matrícula (#8) quem só pode ativar não tem papel de criar isoladamente",
+            "status": "passed"
+          },
+          {
+            "nome": "permissões do fluxo de matrícula (#8) quem tem os dois papéis pode usar o fluxo atômico criar+ativar",
+            "status": "passed"
+          },
+          {
+            "nome": "permissões do fluxo de matrícula (#8) secretaria acumular vendedor não concede caixa implicitamente",
+            "status": "passed"
+          },
+          {
+            "nome": "permissões do fluxo de matrícula (#8) Administrador pode tudo",
+            "status": "passed"
+          },
+          {
+            "nome": "permissões do fluxo de matrícula (#8) sem papéis não pode nada",
+            "status": "passed"
+          },
+          {
+            "nome": "podeAtivarMatricula (regra de ativação) permite Financeiro e Secretaria Acadêmica",
+            "status": "passed"
+          },
+          {
+            "nome": "podeAtivarMatricula (regra de ativação) permite Administrador (passa em qualquer verificação)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeAtivarMatricula (regra de ativação) nega Vendedor e Gerente Comercial",
+            "status": "passed"
+          },
+          {
+            "nome": "podeAtivarMatricula (regra de ativação) nega usuário sem papéis",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/matricula/schema.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "MatriculaSchema — exceção de preço não expõe mais um boolean livre excecaoPreco",
+            "status": "passed"
+          },
+          {
+            "nome": "MatriculaSchema — exceção de preço a string \"false\" NÃO é coagida para true (bug do z.coerce.boolean)",
+            "status": "passed"
+          },
+          {
+            "nome": "MatriculaSchema — exceção de preço aceita justificativa textual e a normaliza (trim)",
+            "status": "passed"
+          },
+          {
+            "nome": "MatriculaSchema — exceção de preço justificativa é opcional (ausência = sem exceção)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/matricula/validacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "validarOfertaPais passa quando o produto é oferecido no país",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPais bloqueia quando não é oferecido / inexistente",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasDisponiveis desconta apenas as alocações ativas e nunca fica negativo",
+            "status": "passed"
+          },
+          {
+            "nome": "validarTurmaParaProduto passa para turma aberta, coerente e com vaga",
+            "status": "passed"
+          },
+          {
+            "nome": "validarTurmaParaProduto bloqueia turma não aberta",
+            "status": "passed"
+          },
+          {
+            "nome": "validarTurmaParaProduto bloqueia modalidade divergente do produto",
+            "status": "passed"
+          },
+          {
+            "nome": "validarTurmaParaProduto bloqueia idioma divergente do produto",
+            "status": "passed"
+          },
+          {
+            "nome": "validarTurmaParaProduto bloqueia turma sem vaga (apenas alocações ativas contam)",
+            "status": "passed"
+          },
+          {
+            "nome": "validarTurmaParaProduto ignora alocações inativas ao contar a vaga",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco passa com matrícula + mensalidade ativos e não marca ausência",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco bloqueia (ErroRegra) quando falta preço e não há justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco trata justificativa só de espaços como vazia (bloqueia)",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco ignora preços de outro país/produto ou inativos",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco bloqueia (ErroPermissao) com justificativa mas SEM papel autorizado",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco permite e marca ausência com justificativa + papel autorizado",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco integração com papel (como na Server Action) vendedor comum NÃO força a exceção mesmo com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco integração com papel (como na Server Action) gerente comercial pode, com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco integração com papel (como na Server Action) administrador pode, com justificativa",
+            "status": "passed"
+          },
+          {
+            "nome": "validarOfertaPreco integração com papel (como na Server Action) nem gerente prossegue sem justificativa",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/paises/tipos-documento.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "tipos documentais preservam referências existentes renomeia por ID, mantendo vínculo dos alunos",
+            "status": "passed"
+          },
+          {
+            "nome": "tipos documentais preservam referências existentes formulário legado idêntico mantém o ID",
+            "status": "passed"
+          },
+          {
+            "nome": "tipos documentais preservam referências existentes nega remoção de documento em uso",
+            "status": "passed"
+          },
+          {
+            "nome": "tipos documentais preservam referências existentes nega ID de outro país",
+            "status": "passed"
+          },
+          {
+            "nome": "tipos documentais preservam referências existentes remove somente tipo sem referência",
+            "status": "passed"
+          },
+          {
+            "nome": "tipos documentais preservam referências existentes nega duas atualizações para uma identidade",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/_shared/alocacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "alocarPagamento paga tudo quando o valor cobre o total (ordem taxa → mensalidade)",
+            "status": "passed"
+          },
+          {
+            "nome": "alocarPagamento cobre só a primeira cobrança e deixa a segunda pendente (parcial)",
+            "status": "passed"
+          },
+          {
+            "nome": "alocarPagamento aplica parcial na segunda cobrança sem marcá-la como quitada",
+            "status": "passed"
+          },
+          {
+            "nome": "alocarPagamento não quita nada quando o valor é zero",
+            "status": "passed"
+          },
+          {
+            "nome": "alocarPagamento calcula troco quando o valor excede o total",
+            "status": "passed"
+          },
+          {
+            "nome": "alocarPagamento ignora valor negativo (trata como zero)",
+            "status": "passed"
+          },
+          {
+            "nome": "ativação: decisão depende SÓ da taxa pagamento cobre a taxa → pode ATIVAR (taxa quitada)",
+            "status": "passed"
+          },
+          {
+            "nome": "ativação: decisão depende SÓ da taxa pagamento NÃO cobre a taxa → NÃO ativa (fica AGUARDANDO)",
+            "status": "passed"
+          },
+          {
+            "nome": "ativação: decisão depende SÓ da taxa a 1ª mensalidade nunca participa da decisão de ativar",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/_shared/decimal.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "numero / numeroOuNull converte Decimal para number e preserva number",
+            "status": "passed"
+          },
+          {
+            "nome": "numero / numeroOuNull numeroOuNull trata null/undefined e preserva zero",
+            "status": "passed"
+          },
+          {
+            "nome": "semDecimais converte Decimal em qualquer profundidade, preservando Date e o resto",
+            "status": "passed"
+          },
+          {
+            "nome": "semDecimais não muta o objeto original",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/_shared/regras.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "calcularComissao é a porcentagem da taxa",
+            "status": "passed"
+          },
+          {
+            "nome": "vencimentoMensalidade usa o dia escolhido no mês atual (offset 0)",
+            "status": "passed"
+          },
+          {
+            "nome": "vencimentoMensalidade avança meses com o offset (vira o ano)",
+            "status": "passed"
+          },
+          {
+            "nome": "vencimentoPrimeiraMensalidade vence 30 dias após o início da 1ª aula, ajustado ao dia escolhido",
+            "status": "passed"
+          },
+          {
+            "nome": "vencimentoPrimeiraMensalidade respeita o dia de vencimento selecionado (ex.: 20)",
+            "status": "passed"
+          },
+          {
+            "nome": "vencimentoPrimeiraMensalidade vira o mês/ano quando início + 30 dias cruza a virada",
+            "status": "passed"
+          },
+          {
+            "nome": "vencimentoPrimeiraMensalidade sem data de início da turma, usa o fallback (+30 dias)",
+            "status": "passed"
+          },
+          {
+            "nome": "ehEtapaManual aceita as etapas que o vendedor controla por arraste",
+            "status": "passed"
+          },
+          {
+            "nome": "ehEtapaManual recusa etapas geradas por evento de domínio",
+            "status": "passed"
+          },
+          {
+            "nome": "ehEtapaManual recusa etapas de fluxo próprio (Perdido / Matriculado / No-show)",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida permite o avanço passo-a-passo no trecho do vendedor",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida permite correções voltando uma casa",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida trata mesma etapa como no-op permitido",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida bloqueia saltos para etapas geradas por evento",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida bloqueia saltos para saídas paralelas e matrícula",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida bloqueia pular etapas para frente (Novo → Qualificado)",
+            "status": "passed"
+          },
+          {
+            "nome": "transicaoManualPermitida permite retomar o trabalho manual após etapas de evento",
+            "status": "passed"
+          },
+          {
+            "nome": "podeAtribuirOutroDono permite gerente comercial e admin",
+            "status": "passed"
+          },
+          {
+            "nome": "podeAtribuirOutroDono nega vendedor",
+            "status": "passed"
+          },
+          {
+            "nome": "resolverDonoLead vendedor sempre vira o próprio dono, ignorando o id enviado",
+            "status": "passed"
+          },
+          {
+            "nome": "resolverDonoLead gerente atribui ao vendedor escolhido (ou nenhum)",
+            "status": "passed"
+          },
+          {
+            "nome": "resolverDonoLead admin atribui ao vendedor escolhido",
+            "status": "passed"
+          },
+          {
+            "nome": "resolverDonoLead vendedor que também é gerente pode atribuir a outro",
+            "status": "passed"
+          },
+          {
+            "nome": "aplicarBaixa (pagamento parcial — issue #1) baixa total quita a cobrança",
+            "status": "passed"
+          },
+          {
+            "nome": "aplicarBaixa (pagamento parcial — issue #1) baixa parcial deixa saldo e não quita",
+            "status": "passed"
+          },
+          {
+            "nome": "aplicarBaixa (pagamento parcial — issue #1) ACUMULA baixas parciais — a 2ª baixa nunca reduz o recebido",
+            "status": "passed"
+          },
+          {
+            "nome": "aplicarBaixa (pagamento parcial — issue #1) baixas parciais sucessivas quitam quando somam o negociado",
+            "status": "passed"
+          },
+          {
+            "nome": "aplicarBaixa (pagamento parcial — issue #1) recebimento acima do negociado quita e zera o saldo (não fica negativo)",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasDisponiveis / temVaga (contagem de vagas — issue #1) desconta da capacidade APENAS as alocações ativas informadas",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasDisponiveis / temVaga (contagem de vagas — issue #1) turma cheia não tem vaga",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasDisponiveis / temVaga (contagem de vagas — issue #1) nunca devolve vagas negativas",
+            "status": "passed"
+          },
+          {
+            "nome": "vagasDisponiveis / temVaga (contagem de vagas — issue #1) contar inativas (bug) inflaria o ocupado e tiraria vaga indevidamente",
+            "status": "passed"
+          },
+          {
+            "nome": "diffCampos (auditoria enxuta — issue #1) inclui só os campos que mudaram",
+            "status": "passed"
+          },
+          {
+            "nome": "diffCampos (auditoria enxuta — issue #1) devolve mapas vazios quando nada muda",
+            "status": "passed"
+          },
+          {
+            "nome": "chave de negócio do preço (Issue #18) é estável e independente da identidade do registro",
+            "status": "passed"
+          },
+          {
+            "nome": "chave de negócio do preço (Issue #18) muda quando qualquer parte da combinação difere",
+            "status": "passed"
+          },
+          {
+            "nome": "chave de negócio do preço (Issue #18) serializa de forma determinística (mesma ordem de campos)",
+            "status": "passed"
+          },
+          {
+            "nome": "irmaosParaInativar — cenário de reativação (Issue #18) inativa o irmão ativo da mesma combinação ao reativar um preço antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "irmaosParaInativar — cenário de reativação (Issue #18) nunca inclui o próprio preço sendo reativado",
+            "status": "passed"
+          },
+          {
+            "nome": "irmaosParaInativar — cenário de reativação (Issue #18) ignora ativos de outras combinações (país/produto/modalidade/tipo)",
+            "status": "passed"
+          },
+          {
+            "nome": "irmaosParaInativar — cenário de reativação (Issue #18) inativa todos os irmãos ativos da chave (cenário de dados legados)",
+            "status": "passed"
+          },
+          {
+            "nome": "irmaosParaInativar — cenário de reativação (Issue #18) não inativa nada quando não há outro ativo (apenas liga o registro)",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento pagamento parcial não quita e gera saldo pelo valor atual",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento parciais sucessivos ACUMULAM e o saldo cai pelo total recebido",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento quita só quando o ACUMULADO cobre o valor negociado",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento pagamento total de uma vez quita",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento bloqueia recebimento acima do negociado por padrão",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento aceita excedente como crédito explícito quando permitido",
+            "status": "passed"
+          },
+          {
+            "nome": "acumularPagamento rejeita valor não positivo",
+            "status": "passed"
+          },
+          {
+            "nome": "avaliarPrecoReferencia não há ausência quando taxa + mensalidade existem",
+            "status": "passed"
+          },
+          {
+            "nome": "avaliarPrecoReferencia marca ausência quando falta a mensalidade",
+            "status": "passed"
+          },
+          {
+            "nome": "avaliarPrecoReferencia marca ausência total quando não há preços ativos",
+            "status": "passed"
+          },
+          {
+            "nome": "avaliarPrecoReferencia ignora tipos extras irrelevantes (ex.: certificado)",
+            "status": "passed"
+          },
+          {
+            "nome": "podeCheckinExperimental só permite quando a experimental está AGENDADA",
+            "status": "passed"
+          },
+          {
+            "nome": "podeCheckinExperimental recusa quando o check-in já foi feito ou o lead saiu do fluxo",
+            "status": "passed"
+          },
+          {
+            "nome": "professorNoEscopoExperimental só está no escopo o professor atribuído à experimental",
+            "status": "passed"
+          },
+          {
+            "nome": "professorNoEscopoExperimental recusa outro professor",
+            "status": "passed"
+          },
+          {
+            "nome": "professorNoEscopoExperimental recusa quando não há professor atribuído",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/_shared/resultado.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "executarAcao retorna {ok:true, dado} no sucesso",
+            "status": "passed"
+          },
+          {
+            "nome": "executarAcao mapeia ErroRegra para a mensagem",
+            "status": "passed"
+          },
+          {
+            "nome": "executarAcao mapeia ErroPermissao",
+            "status": "passed"
+          },
+          {
+            "nome": "executarAcao usa a 1ª mensagem do ZodError",
+            "status": "passed"
+          },
+          {
+            "nome": "executarAcao erro inesperado vira mensagem genérica",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/_shared/sessao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "temPapel Administrador passa em qualquer verificação",
+            "status": "passed"
+          },
+          {
+            "nome": "temPapel retorna true só quando tem um dos papéis alvo",
+            "status": "passed"
+          },
+          {
+            "nome": "exigirPapel não lança quando autorizado",
+            "status": "passed"
+          },
+          {
+            "nome": "exigirPapel lança ErroPermissao quando não autorizado",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/_shared/validacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "validarDocumento (cpf) aceita CPF válido (com ou sem máscara)",
+            "status": "passed"
+          },
+          {
+            "nome": "validarDocumento (cpf) recusa CPF com dígito verificador errado ou repetido",
+            "status": "passed"
+          },
+          {
+            "nome": "validarDocumento (cpf) validador desconhecido → não validado (false), nunca lança",
+            "status": "passed"
+          },
+          {
+            "nome": "calcularDocumentoValido (flag Aluno.documentoValido) documento VÁLIDO para algum validador do país → true",
+            "status": "passed"
+          },
+          {
+            "nome": "calcularDocumentoValido (flag Aluno.documentoValido) documento INVÁLIDO para os validadores do país → false (mas não lança)",
+            "status": "passed"
+          },
+          {
+            "nome": "calcularDocumentoValido (flag Aluno.documentoValido) AUSÊNCIA de documento (null/undefined/vazio/só espaços) → false",
+            "status": "passed"
+          },
+          {
+            "nome": "calcularDocumentoValido (flag Aluno.documentoValido) aceita se passar em QUALQUER validador do país (1+ tipos)",
+            "status": "passed"
+          },
+          {
+            "nome": "calcularDocumentoValido (flag Aluno.documentoValido) país sem tipos de documento ou só validadores desconhecidos → false",
+            "status": "passed"
+          },
+          {
+            "nome": "telefoneE164 (bloqueia) aceita formato internacional",
+            "status": "passed"
+          },
+          {
+            "nome": "telefoneE164 (bloqueia) recusa sem + ou com caracteres inválidos",
+            "status": "passed"
+          },
+          {
+            "nome": "paraDataLocal (date-only → meio-dia local, sem recuar 1 dia) ancora 'YYYY-MM-DD' no meio-dia LOCAL do dia digitado",
+            "status": "passed"
+          },
+          {
+            "nome": "paraDataLocal (date-only → meio-dia local, sem recuar 1 dia) deixa valores não-date-only passarem inalterados (Date, datetime ISO)",
+            "status": "passed"
+          },
+          {
+            "nome": "dataOpcional (schema compartilhado) converte string date-only para Date no dia digitado",
+            "status": "passed"
+          },
+          {
+            "nome": "dataOpcional (schema compartilhado) trata vazio/null/undefined como undefined",
+            "status": "passed"
+          },
+          {
+            "nome": "paraDataHoraLocal (datetime-local → preserva a hora, issue #16) converte 'YYYY-MM-DDTHH:mm' mantendo a hora LOCAL digitada",
+            "status": "passed"
+          },
+          {
+            "nome": "paraDataHoraLocal (datetime-local → preserva a hora, issue #16) aceita segundos opcionais",
+            "status": "passed"
+          },
+          {
+            "nome": "paraDataHoraLocal (datetime-local → preserva a hora, issue #16) date-only cai no meio-dia local (reusa paraDataLocal)",
+            "status": "passed"
+          },
+          {
+            "nome": "paraDataHoraLocal (datetime-local → preserva a hora, issue #16) deixa outros valores passarem inalterados",
+            "status": "passed"
+          },
+          {
+            "nome": "dataHoraOpcional (schema datetime-local) preserva o horário do datetime-local",
+            "status": "passed"
+          },
+          {
+            "nome": "dataHoraOpcional (schema datetime-local) trata vazio/null/undefined como undefined",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/turmas/importacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "importação de turmas — parsers mapeia cabeçalhos (acento, caixa, dica de formato)",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers reimporta o próprio modelo: cabeçalho com sufixo obrigatório ' *' casa",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers resolve dias da semana de várias grafias (sem dígito cru ambíguo)",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers expande faixas (Segunda a Sexta)",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers resolve sim/não e datas",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers resolve modalidade por nome",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers resolve nível por código ou rótulo completo",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers código nu AMBÍGUO entre idiomas retorna null; rótulo completo desambígua",
+            "status": "passed"
+          },
+          {
+            "nome": "importação de turmas — parsers resolve professor por nome ou e-mail; vazio = null",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/turmas/schema.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "TurmaSchema — agenda estruturada aceita turma completa (dias + horário + período)",
+            "status": "passed"
+          },
+          {
+            "nome": "TurmaSchema — agenda estruturada exige modalidade e nível",
+            "status": "passed"
+          },
+          {
+            "nome": "TurmaSchema — agenda estruturada exige ao menos um dia da semana",
+            "status": "passed"
+          },
+          {
+            "nome": "TurmaSchema — agenda estruturada valida o formato dos horários (HH:MM)",
+            "status": "passed"
+          },
+          {
+            "nome": "TurmaSchema — agenda estruturada exige horário de fim depois do início",
+            "status": "passed"
+          },
+          {
+            "nome": "TurmaSchema — agenda estruturada exige início e fim, e fim depois do início",
+            "status": "passed"
+          },
+          {
+            "nome": "frequência → dias por semana extrai o número da frequência",
+            "status": "passed"
+          },
+          {
+            "nome": "frequência → dias por semana retorna null quando não há número (ex.: Particular)",
+            "status": "passed"
+          },
+          {
+            "nome": "rótulo derivado dias/horário ordena os dias e anexa o intervalo de horário",
+            "status": "passed"
+          },
+          {
+            "nome": "rótulo derivado dias/horário emMinutos converte HH:MM",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/turmas/vinculo-docente.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "períodos docentes acompanham a atribuição da turma substituição fecha antigo e inicia novo no mesmo instante, sem retroagir",
+            "status": "passed"
+          },
+          {
+            "nome": "períodos docentes acompanham a atribuição da turma edição sem troca de professor não redefine início do vínculo",
+            "status": "passed"
+          },
+          {
+            "nome": "períodos docentes acompanham a atribuição da turma conclusão fecha período sem criar outro",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/uploads/autorizacao.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "download privado por finalidade URL canônica mantém caminho privado",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade comprovante informado ainda pendente é legível por SECRETARIA_ACADEMICA",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade comprovante informado ainda pendente é legível por FINANCEIRO",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade comprovante informado ainda pendente é legível por ADMINISTRADOR",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade VENDEDOR não recebe comprovante financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade GERENTE_COMERCIAL não recebe comprovante financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade PROFESSOR não recebe comprovante financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade GERENTE_PEDAGOGICO não recebe comprovante financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade professor só lê teste de nível na experimental atribuída",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade vendedor perde contrato administrativo depois da secretaria assumir",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade mídia exige atendimento, mesmo que o número seja conhecido",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade arquivo sem agregado não é servível nem ao admin",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade documento de matrícula sem lead segue a projeção administrativa",
+            "status": "passed"
+          },
+          {
+            "nome": "download privado por finalidade registro de finalidade incompatível com o documento bloqueia download",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio autor fixa contexto real e só altera registro ainda na versão lida",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio nega primeiro vínculo de upload feito por outra pessoa",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio mesmo autor não reutiliza prova vinculada a outra cobrança",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio vínculo concorrente perde sem sobrescrever o vencedor",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio mesmo contexto permite confirmação independente sem trocar autor",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio nega URL externa e metadado de outro aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio a finalidade fixada no upload impede recategorizar o mesmo arquivo",
+            "status": "passed"
+          },
+          {
+            "nome": "associação de uploads não permite reutilizar arquivo alheio legado precisa comprovar categoria no objeto original",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/elegibilidade.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "validade do domínio no despacho (W01–W05) lead novo elegível passa; assumir o atendimento cancela a intenção já criada",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) fromMe e resposta humana entram na consulta de encerramento",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) experimental vencida, reagendada ou com pedido de reagendamento não recebe lembrete antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) lead e contato precisam continuar vinculados",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) falha envio_interrompido permanece em revisão; cron não repete",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) falha resultado_incerto permanece em revisão; cron não repete",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) falha timeout permanece em revisão; cron não repete",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) falha erro_inesperado permanece em revisão; cron não repete",
+            "status": "passed"
+          },
+          {
+            "nome": "validade do domínio no despacho (W01–W05) adiamento preserva seu prazo; só simulação/cancelamento corrigível podem renascer",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/escopo.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "escopoNumeros admin vê tudo",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoNumeros financeiro/secretaria veem números de COBRANCA",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoNumeros gerente comercial supervisiona VENDAS; vendedor só os números que possui",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoNumeros papéis acumulam (financeiro + vendedor)",
+            "status": "passed"
+          },
+          {
+            "nome": "escopoNumeros papel sem acesso → fail-closed (não casa com nada)",
+            "status": "passed"
+          },
+          {
+            "nome": "usuarioVeNumero (autorização de mídia por objeto) espelha o escopo: papel × finalidade × dono",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/inbound.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "ehPedidoOptOut aceita as keywords exatas, com espaços e caixa variados",
+            "status": "passed"
+          },
+          {
+            "nome": "ehPedidoOptOut frase que só contém a palavra não conta",
+            "status": "passed"
+          },
+          {
+            "nome": "sessaoDeEstadoEvolution mapeia os estados do connection.update para o enum do número",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/meta-templates.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "corpoParaMeta converte variáveis amigáveis para posicionais na ordem de aparição",
+            "status": "passed"
+          },
+          {
+            "nome": "corpoParaMeta variável repetida ganha posição nova (regra da Meta)",
+            "status": "passed"
+          },
+          {
+            "nome": "corpoParaMeta corpo sem variáveis passa intacto e sem exemplos",
+            "status": "passed"
+          },
+          {
+            "nome": "corpoParaMeta chave desconhecida não é tratada como variável",
+            "status": "passed"
+          },
+          {
+            "nome": "statusMetaParaLocal mapeia o ciclo da Meta para o enum local",
+            "status": "passed"
+          },
+          {
+            "nome": "submeterTemplateNaMeta — criar × editar sem metaTemplateId cria na WABA (name+language no corpo)",
+            "status": "passed"
+          },
+          {
+            "nome": "submeterTemplateNaMeta — criar × editar com metaTemplateId edita o template existente (POST /<id>, sem name/language)",
+            "status": "passed"
+          },
+          {
+            "nome": "submeterTemplateNaMeta — criar × editar edição sem confirmação da Meta vira erro claro",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/midia.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "midiaSaidaDoAutor aceita só o anexo do próprio autor em whatsapp-out",
+            "status": "passed"
+          },
+          {
+            "nome": "midiaSaidaDoAutor recusa anexo de outro usuário, outra pasta e agregados de fora",
+            "status": "passed"
+          },
+          {
+            "nome": "midiaSaidaDoAutor recusa traversal e caminhos malformados",
+            "status": "passed"
+          },
+          {
+            "nome": "lerMidiaParaEnvio — defesa em profundidade recusa caminho fora de whatsapp-out mesmo que exista no storage",
+            "status": "passed"
+          },
+          {
+            "nome": "lerMidiaParaEnvio — defesa em profundidade recusa caminho que nem é do /api/files",
+            "status": "passed"
+          },
+          {
+            "nome": "tipoPorMime normaliza mime com codecs e mapeia para o enum",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/render.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "whatsapp/render — renderizarTemplate substitui {nome} {valor} {vencimento} e devolve as variáveis NA ORDEM de aparição",
+            "status": "passed"
+          },
+          {
+            "nome": "whatsapp/render — renderizarTemplate variável repetida entra duas vezes nas posicionais (fidelidade ao corpo)",
+            "status": "passed"
+          },
+          {
+            "nome": "whatsapp/render — renderizarTemplate {link} ausente vira vazio sem quebrar",
+            "status": "passed"
+          },
+          {
+            "nome": "whatsapp/render — renderizarTemplate idioma muda o locale da data (pt-BR usa dd/mm/aaaa)",
+            "status": "passed"
+          },
+          {
+            "nome": "whatsapp/render — renderizarTemplate todos os textos de fábrica renderizam sem sobrar variável",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/api/upload/route.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "upload usa estado atual da sessão cookie válido de usuário desativado recebe 401 sem gravação",
+            "status": "passed"
+          },
+          {
+            "nome": "upload usa estado atual da sessão papel comercial revogado não autoriza envio com dados antigos do JWT",
+            "status": "passed"
+          },
+          {
+            "nome": "upload usa estado atual da sessão upload autorizado registra autoria e deriva extensão do tipo permitido",
+            "status": "passed"
+          },
+          {
+            "nome": "upload usa estado atual da sessão Secretaria envia contrato diretamente para matrícula assumida",
+            "status": "passed"
+          },
+          {
+            "nome": "upload usa estado atual da sessão vendedor não envia documento diretamente para matrícula",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/api/alunos/modelo/route.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "modelo de 'alunos' exige estado atual nega sessão ausente antes de consultar o catálogo",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'alunos' exige estado atual desativação invalida o cookie administrativo",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'alunos' exige estado atual revogação do papel bloqueia o download apesar do JWT antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'alunos' exige estado atual admin atual recebe uma planilha legível com as opções autorizadas",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'turmas' exige estado atual nega sessão ausente antes de consultar o catálogo",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'turmas' exige estado atual desativação invalida o cookie administrativo",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'turmas' exige estado atual revogação do papel bloqueia o download apesar do JWT antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "modelo de 'turmas' exige estado atual admin atual recebe uma planilha legível com as opções autorizadas",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/api/files/[...path]/route.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "GET /api/files/[...path] 401 sem sessão",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] usuário autorizado lê o arquivo (200) e marca como privado",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] usuário autenticado sem escopo recebe 403 e NÃO lê o arquivo",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] arquivo órfão (sem agregado) -> 403",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] cookie de usuário desativado não baixa arquivo",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] revogar papel financeiro bloqueia o próximo download com o mesmo cookie",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] path traversal bloqueado (400) antes de qualquer leitura",
+            "status": "passed"
+          },
+          {
+            "nome": "GET /api/files/[...path] extensão não permitida -> 400",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "integracaoGlobal": {
+    "iniciadoEm": "2026-09-08T11:23:14.920Z",
+    "total": 267,
+    "aprovados": 267,
+    "falhas": 0,
+    "pendentes": 0,
+    "arquivos": [
+      {
+        "arquivo": "src/lib/codigo.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "gerarCodigo (integração) 30 gerações concorrentes produzem 30 códigos únicos e sequenciais",
+            "status": "passed"
+          },
+          {
+            "nome": "gerarCodigo (integração) chaves diferentes têm contadores independentes",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/acesso/politica.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "administração de capacidades e alçadas (AC06/AC20) gerente não cria usuário nem concede permissão; administrador grava concessões auditadas",
+            "status": "passed"
+          },
+          {
+            "nome": "administração de capacidades e alçadas (AC06/AC20) administrador não aumenta sua alçada, adiciona papel ou concede a si uma capacidade",
+            "status": "passed"
+          },
+          {
+            "nome": "administração de capacidades e alçadas (AC06/AC20) não aceita gerente inexistente, sem papel ou inativo",
+            "status": "passed"
+          },
+          {
+            "nome": "administração de capacidades e alçadas (AC06/AC20) revogar capacidade ou desativar depois do login bloqueia a próxima operação",
+            "status": "passed"
+          },
+          {
+            "nome": "equipe e cobertura temporária (AC02/AC07/AC08) gerente vê só sua equipe; filtro alheio não aumenta o conjunto",
+            "status": "passed"
+          },
+          {
+            "nome": "equipe e cobertura temporária (AC02/AC07/AC08) cobertura respeita início, término e revogação, sem conceder exportação/transferência",
+            "status": "passed"
+          },
+          {
+            "nome": "equipe e cobertura temporária (AC02/AC07/AC08) não concede nem revoga cobertura de outra equipe por ID direto",
+            "status": "passed"
+          },
+          {
+            "nome": "equipe e cobertura temporária (AC02/AC07/AC08) transferência atualiza atendimento e cancela intenção humana, preservando autoria/comissão",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/ajustes/ficha.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "ficha financeira — escopo row-level (doc 07) vendedor usa projeção comercial sem extrato, responsáveis ou histórico financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "ficha financeira — escopo row-level (doc 07) vendedor sem carteira recebe null na projeção comercial",
+            "status": "passed"
+          },
+          {
+            "nome": "ficha financeira — escopo row-level (doc 07) papel amplo (Financeiro) vê qualquer ficha",
+            "status": "passed"
+          },
+          {
+            "nome": "ficha financeira — escopo row-level (doc 07) valores chegam como number puro (borda Decimal → number), somas por moeda corretas",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/alunos/cadastro.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função Secretaria consulta cadastro e financeiro individual, edita e registra autoria",
+            "status": "passed"
+          },
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função PROFESSOR recebe contexto pedagógico e não altera cadastro por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função GERENTE_PEDAGOGICO recebe contexto pedagógico e não altera cadastro por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função papéis VEN+PRO não usam vínculo de turma para liberar documento ou financeiro comercial",
+            "status": "passed"
+          },
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função Secretaria revogada perde escrita e projeção privada na próxima operação",
+            "status": "passed"
+          },
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função Secretaria desativada não altera cadastro usando o cookie anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "cadastro acadêmico persistido — capacidade e projeção por função tipo de documento de outro país é rejeitado sem editar aluno nem auditoria",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/catalogo/permissoes.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "configuração por domínio — política 36 GP mantém currículo sem receber nem alterar a configuração financeira",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração por domínio — política 36 professor não ganha manutenção curricular nem consulta de configuração por ser docente",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração por domínio — política 36 revogar GP no banco invalida o cookie anterior na próxima manutenção",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/cobrancas/acesso-aulas.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual D+29 não bloqueia; D+30 com saldo parcial restringe uma única vez",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual informe a conferir pausa lembretes, mas não libera acesso nem impede D+30",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual baixa financeira libera restrição automática ao quitar a dívida elegível",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual quitação preserva restrição manual legada e não fabrica desbloqueio",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual Secretaria solicita com motivo; somente outra pessoa ADM decide; reenvio é idempotente",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual acúmulo de ADMIN+FIN não autoriza aprovar a própria solicitação",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual rejeição conserva acesso e registra a decisão independente",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual liberação manual aprovada mantém restrição automática enquanto houver dívida D+30",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual revogar ADM após login bloqueia decisão e professor não consulta o painel financeiro",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual aprovação com versão manual alterada é negada e pode ser rejeitada para liberar nova solicitação",
+            "status": "passed"
+          },
+          {
+            "nome": "restrição de aulas — automatismo D+30 e autorização manual cron autenticado aplica D+30 com política WhatsApp desligada, sem despachar mensagens reais",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/cobrancas/conferencia.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "prazo de conferência do informe default de 48h é congelado no informe; replay não estende prazo e configuração só altera novos",
+            "status": "passed"
+          },
+          {
+            "nome": "prazo de conferência do informe só a cobrança relacionada fica suspensa, mesmo havendo outras parcelas da mesma matrícula",
+            "status": "passed"
+          },
+          {
+            "nome": "prazo de conferência do informe rejeição e término do prazo removem suspensão sem baixar cobrança nem descartar evidência",
+            "status": "passed"
+          },
+          {
+            "nome": "régua e despachante revalidam a conferência intenção anterior ao informe é adiada até o prazo; rejeição libera o próximo despacho imediatamente",
+            "status": "passed"
+          },
+          {
+            "nome": "régua e despachante revalidam a conferência após rejeitar um informe, outro pendente mantém a suspensão e determina o prazo restante",
+            "status": "passed"
+          },
+          {
+            "nome": "régua e despachante revalidam a conferência prazo vencido libera intenção sem exigir rejeição artificial do informe",
+            "status": "passed"
+          },
+          {
+            "nome": "régua e despachante revalidam a conferência informe recebido após o claim também impede chamar o driver",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/captura.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "auto-lead (gap 17 dedupe) config ligada + 1º inbound de telefone desconhecido → cria lead com dono e origem do referral",
+            "status": "passed"
+          },
+          {
+            "nome": "auto-lead (gap 17 dedupe) telefone que JÁ é lead → vincula o contato, NÃO cria lead novo (dedupe)",
+            "status": "passed"
+          },
+          {
+            "nome": "auto-lead (gap 17 dedupe) telefone que já é ALUNO → vincula ao aluno, sem lead",
+            "status": "passed"
+          },
+          {
+            "nome": "auto-lead (gap 17 dedupe) config desligada → nenhum lead é criado",
+            "status": "passed"
+          },
+          {
+            "nome": "auto-lead (gap 17 dedupe) número de COBRANÇA nunca auto-captura",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) saudação ligada → intenção reativa enfileirada e SIMULADA (sem live), NÃO cancelada pela trava S1",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) contraste: automação CRON NÃO-reativa no mesmo número Baileys é CANCELADA pela trava S1",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) auto-lead e saudação são independentes: só saudação ligada → saudação vai, sem lead",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) opt-out na 1ª mensagem → sem captura e sem saudação",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) só o 1º inbound dispara — a 2ª mensagem não duplica lead nem saudação",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) kill switch congela a saudação reativa (freio de emergência) — review PR #53 P1",
+            "status": "passed"
+          },
+          {
+            "nome": "saudação reativa (isenta de janela/trava S1 — gap C20) dois inbounds CONCORRENTES do mesmo contato criam UM lead e UMA saudação (claim atômico)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/config-comercial.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "salvarConfigComercial gerente comercial salva; a config materializa e vira evento auditável",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarConfigComercial armar a saudação (SHADOW/ATIVA) sem texto é recusado (Zod refine)",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarConfigComercial vendedor não tem alçada",
+            "status": "passed"
+          },
+          {
+            "nome": "carregarSaudacoesSimuladas (ensaio observável — review PR #53) lista as saudações reativas SIMULADAs com contato, texto e horário; ignora as reais",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/leads.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "row-level de leitura (doc 07) vendedor lista SÓ os próprios leads",
+            "status": "passed"
+          },
+          {
+            "nome": "row-level de leitura (doc 07) gerente comercial enxerga a equipe atribuída e nega outra carteira",
+            "status": "passed"
+          },
+          {
+            "nome": "row-level de leitura (doc 07) ficha de lead de OUTRO vendedor não abre (retorna null, sem vazar)",
+            "status": "passed"
+          },
+          {
+            "nome": "evento na mesma transação (doc 10 §9 / doc 12) criarLead grava LeadCriado + LeadAtribuido com o autor correto",
+            "status": "passed"
+          },
+          {
+            "nome": "evento na mesma transação (doc 10 §9 / doc 12) papel sem permissão (professor) não cria lead NEM evento — nada persiste",
+            "status": "passed"
+          },
+          {
+            "nome": "evento na mesma transação (doc 10 §9 / doc 12) papéis frescos: papel revogado no banco derruba a ação mesmo com sessão 'antiga'",
+            "status": "passed"
+          },
+          {
+            "nome": "evento na mesma transação (doc 10 §9 / doc 12) lead nasce na etapa NOVO (máquina de estados, doc 10 §1)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/comercial/regua-comercial.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "salvarReguaComercial × ordem canônica da cadência cadência completa e crescente é aceita e materializa os 5 degraus",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × ordem canônica da cadência offset fora da ordem de fábrica (+4h antes do +30min) é recusado",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × ordem canônica da cadência empate de offset também é recusado (a ordem é ESTRITA)",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × ordem canônica da cadência passo repetido é recusado",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × ordem canônica da cadência cadência com passo faltando é recusada (a UI não pode 'sumir' com um degrau)",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × ordem canônica da cadência passo fora da cadência canônica é recusado",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × cadência de offsets NEGATIVOS (pré-experimental) offsets de fábrica (-1440 então -120) são aceitos e materializam os 2 degraus",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × cadência de offsets NEGATIVOS (pré-experimental) offsets invertidos (-2h antes do -24h) são recusados",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × template aprovado no remetente OFICIAL META_CLOUD sem template nos degraus ativos: armar em SHADOW é recusado",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × template aprovado no remetente OFICIAL META_CLOUD com templates ainda EM_REVISAO: armar em ATIVA é recusado",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × template aprovado no remetente OFICIAL contra-prova: com todos os templates APROVADOS, a régua arma no oficial",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × template aprovado no remetente OFICIAL degrau INATIVO sem template não trava o oficial (a exigência é só dos ativos)",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarReguaComercial × template aprovado no remetente OFICIAL no BAILEYS a mesma cadência sem template nenhum arma (texto livre — Camada 2 não vale)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/diario/diario.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "D08 — diário persistido, transferência e revogação registra autoria, captura o nome no servidor e conserva os eventos anteriores",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação aluno transferido conserva snapshot em leitura sem abrir cadastro ou contatos atuais",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação troca de professor fecha o vínculo e mantém apenas as próprias aulas em leitura",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação voltar à turma não reabre os registros de um vínculo docente encerrado",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação retorno do aluno conserva a presença do período anterior em leitura",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação papel revogado no banco bloqueia leitura e escrita com o mesmo cookie",
+            "status": "passed"
+          },
+          {
+            "nome": "D08 — diário persistido, transferência e revogação desativação invalida o acesso atual sem apagar a autoria histórica",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/financeiro/politica.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "pagamento informado e ledger real SEC informa sem baixa/ativação; FIN diferente confirma exatamente uma vez",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamento informado e ledger real acumular SEC+FIN não permite confirmar próprio informe nem contornar pela baixa direta",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamento informado e ledger real rejeitar preserva evidência e não movimenta saldo",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamento informado e ledger real duas baixas parciais concorrentes acumulam, replay não duplica e KPI considera parciais",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico vendedor fora da carteira não altera cobrança",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico ajuste após parcial reconcilia saldo e verifica desconto acumulado",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico admin solicitante não aprova próprio pedido; alteração invalida snapshot",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico fixa e paga conservam o valor quando a taxa muda",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico transferência retira a aprovação da equipe, inclusive quando GC acumula FIN",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico fechamento concorrente com desconto conserva exatamente o valor registrado como pago",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável sem regra não usa percentual padrão do formulário",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável regra fixa é aplicada no servidor e nova versão preserva a comissão anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável limite separado na criação encaminha aprovação e mantém referência até decisão",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável país pausado não permite criar novo contrato",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável a conclusão exige contrato real e preserva primeira mensalidade já paga",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável informe a conferir não ativa; confirmação independente libera a conclusão",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável opção que exige primeira mensalidade bloqueia até sua confirmação",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável ativação com novo recebimento considera a taxa parcialmente confirmada",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável estado CANCELADA não reativa nem altera recebimentos",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável estado ENCERRADA não reativa nem altera recebimentos",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/operacao/acoes.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria banco assume 48h e primeira mensalidade opcional quando a configuração nasce sem valores",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria administrador altera as duas opções e audita os valores anteriores, novos e o autor",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria FINANCEIRO não administra configuração por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria SECRETARIA_ACADEMICA não administra configuração por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria GERENTE_COMERCIAL não administra configuração por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria GERENTE_PEDAGOGICO não administra configuração por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria VENDEDOR não administra configuração por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria PROFESSOR não administra configuração por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria revogar papel ou desativar depois do login impede mudança e não grava auditoria de sucesso",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria aceita somente booleano e prazo inteiro de 1 a 720 horas",
+            "status": "passed"
+          },
+          {
+            "nome": "configuração operacional: defaults, permissão e auditoria alterações simultâneas criam um singleton e preservam a cadeia anterior→novo na auditoria",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/matricula/ativacao.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "ativação com contrato aceito — decisão de 08/09/2026 contrato aceito e taxa confirmada geram cronograma, comissão e lead matriculado",
+            "status": "passed"
+          },
+          {
+            "nome": "ativação com contrato aceito — decisão de 08/09/2026 API combinada sem contrato aceito desfaz tudo mesmo com valor suficiente",
+            "status": "passed"
+          },
+          {
+            "nome": "ativação com contrato aceito — decisão de 08/09/2026 papel sem ativação (vendedor puro) não executa o fluxo atômico",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/secretaria/politica.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "D05: assunção e solicitação de correção somente secretaria assume; repetição mantém autoria, dono comercial e comissão",
+            "status": "passed"
+          },
+          {
+            "nome": "D05: assunção e solicitação de correção vendedor edita cadastro inicial; após assunção só contexto comercial e pedido de correção",
+            "status": "passed"
+          },
+          {
+            "nome": "D05: assunção e solicitação de correção acumular secretaria não remove a coleta documental inicial da própria carteira",
+            "status": "passed"
+          },
+          {
+            "nome": "D05: assunção e solicitação de correção nega carteira alheia e valores inviáveis antes de abrir pedido; rejeição não altera cadastro",
+            "status": "passed"
+          },
+          {
+            "nome": "D05: assunção e solicitação de correção correção documental exige documento novo, vigente e do mesmo atendimento",
+            "status": "passed"
+          },
+          {
+            "nome": "evidência contratual e finalidade imutável (AC28) documento legado não pode ser republicado em categoria com outra finalidade",
+            "status": "passed"
+          },
+          {
+            "nome": "evidência contratual e finalidade imutável (AC28) confirma contrato vigente, preserva evidência e bloqueia arquivo até substituição",
+            "status": "passed"
+          },
+          {
+            "nome": "evidência contratual e finalidade imutável (AC28) matrícula sem lead tem anexo/aceite próprios e impede reutilização em outra matrícula do aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "evidência contratual e finalidade imutável (AC28) confirmar e arquivar simultaneamente nunca deixam contrato confirmado com documento arquivado",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/uploads/arquivos.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo upload fixa matrícula e categoria antes da associação; categoria e matrícula não mudam",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo download de CONTRATO da matrícula devolve bytes somente para funções autorizadas",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo download de COMPROVANTE da matrícula devolve bytes somente para funções autorizadas",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo arquivo pedagógico exige atribuição atual e perde acesso após revogação sem novo login",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo cookie da Secretaria desativada não envia nem baixa documentos existentes",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo outro operador não captura upload ainda sem vínculo",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo legado de lead conserva categoria e não vira teste pedagógico ou documento de outro lead",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo legado da matrícula permanece no objeto original mesmo quando o aluno é o mesmo",
+            "status": "passed"
+          },
+          {
+            "nome": "arquivos privados persistidos — identidade, objeto, finalidade e conteúdo comprovante vinculado pela Secretaria permite conferência financeira sem trocar autor",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/acesso-atendimento.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "D02: atendimento comercial segue carteira/equipe/cobertura atual dono do número não herda o lead; transferência revoga anterior e mensagem humana pendente",
+            "status": "passed"
+          },
+          {
+            "nome": "D02: atendimento comercial segue carteira/equipe/cobertura atual cobertura vence sem compartilhar registros fora da carteira",
+            "status": "passed"
+          },
+          {
+            "nome": "D02: atendimento comercial segue carteira/equipe/cobertura atual A06: busca e vinculação comercial não abrem cadastro de alunos nem outra carteira",
+            "status": "passed"
+          },
+          {
+            "nome": "D04: finalidade pedagógica e contexto legado PRO+FIN recebe só mensagens pedagógicas nesse assunto; telefone não aparece no payload",
+            "status": "passed"
+          },
+          {
+            "nome": "D04: finalidade pedagógica e contexto legado abertura e envio institucionais funcionam; chave de turma alheia é negada",
+            "status": "passed"
+          },
+          {
+            "nome": "D04: finalidade pedagógica e contexto legado mensagem legada só entra no contexto por classificação administrativa auditada",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W01: mudança de etapa cancela uma intenção adiada",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W02: aula vencida cancela o lembrete mesmo que já esteja na fila",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W03: saída fromMe encerra o cron e o despacho pendente",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W04: REAGENDAR cancela e não renasce para a agenda anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W05: claim interrompido fica FALHOU e enfileirador não reabre",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W06: pagamento total impede texto com saldo antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W06: pagamento parcial impede texto com saldo antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "W01–W07: intenção velha nunca chama o driver W07 e AC06: número inativo ou autor revogado bloqueiam envio humano",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/acoes.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "enfileirarCobrancaWhatsApp (origem HUMANO) enfileira o degrau devido e despacha — sem WHATSAPP_LIVE vira SIMULADA",
+            "status": "passed"
+          },
+          {
+            "nome": "enfileirarCobrancaWhatsApp (origem HUMANO) sem destino → erro claro e nada enfileirado",
+            "status": "passed"
+          },
+          {
+            "nome": "enfileirarCobrancaWhatsApp (origem HUMANO) sem papel de cobrança (Vendedor) → negado",
+            "status": "passed"
+          },
+          {
+            "nome": "aprovarLoteCobranca (origem LOTE) itens válidos entram; inválidos voltam com motivo, sem derrubar o lote",
+            "status": "passed"
+          },
+          {
+            "nome": "regra S6 — vencimento renegociado reseta os passos no replay passos anteriores à renegociação são ignorados; a régua recomeça da data nova",
+            "status": "passed"
+          },
+          {
+            "nome": "regra S6 — vencimento renegociado reseta os passos no replay sem renegociação, o passo antigo continua valendo (contra-prova)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/cron-comercial.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "rodarLeadNovoSemResposta política DESLIGADA → não roda",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta lead frio há 45min → enfileira o +30min; despacho vira SIMULADA (shadow)",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta lead ainda novo há 10min → futuro (o +30min não chegou), nada enfileirado",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta stop: lead respondeu (2º inbound depois da âncora) → encerrada, nada enfileirado",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta stop: etapa avançou (QUALIFICADO) → encerrada",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta stop: etapa EM_ATENDIMENTO (vendedor assumiu) → encerrada, nada enfileirado",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta stop: opt-out do contato → nem entra na varredura",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta idempotência: passo já cumprido (evento) não re-enfileira",
+            "status": "passed"
+          },
+          {
+            "nome": "rodarLeadNovoSemResposta forward-only ponta a ponta: +30min cumprido, aos 5h o devido é +4h (não volta)",
+            "status": "passed"
+          },
+          {
+            "nome": "enfileirarIntencaoComercial × identidade da política políticas DIFERENTES com o mesmo passo no mesmo lead: as duas enfileiram",
+            "status": "passed"
+          },
+          {
+            "nome": "enfileirarIntencaoComercial × identidade da política contra-prova: a MESMA política + passo no mesmo lead não re-enfileira",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/cron-experimental.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "pré-experimental (24h/2h ANTES — offsets negativos) faltando 3h → dispara o degrau de 24h antes (o de 2h ainda não chegou)",
+            "status": "passed"
+          },
+          {
+            "nome": "pré-experimental (24h/2h ANTES — offsets negativos) faltando 1h → dispara o degrau de 2h antes (o mais avançado que chegou)",
+            "status": "passed"
+          },
+          {
+            "nome": "pré-experimental (24h/2h ANTES — offsets negativos) faltando 30h → nada devido ainda (antes do 1º degrau)",
+            "status": "passed"
+          },
+          {
+            "nome": "pré-experimental (24h/2h ANTES — offsets negativos) a aula JÁ COMEÇOU → encerrada: lembrete atrasado nunca é enviado",
+            "status": "passed"
+          },
+          {
+            "nome": "pré-experimental (24h/2h ANTES — offsets negativos) lead fora de EXPERIMENTAL_AGENDADA não entra na varredura",
+            "status": "passed"
+          },
+          {
+            "nome": "recuperação de no-show aula perdida há 45min + etapa NO_SHOW → dispara o +30min",
+            "status": "passed"
+          },
+          {
+            "nome": "recuperação de no-show lead que remarcou (voltou p/ EXPERIMENTAL_AGENDADA) sai da recuperação",
+            "status": "passed"
+          },
+          {
+            "nome": "recuperação de no-show forward-only: +30min cumprido, 1 dia depois o devido é o +1d",
+            "status": "passed"
+          },
+          {
+            "nome": "ocorrência: cada ciclo nasce com a cadência limpa experimental REAGENDADA: o -24h do ciclo anterior não cumpre o do novo horário",
+            "status": "passed"
+          },
+          {
+            "nome": "ocorrência: cada ciclo nasce com a cadência limpa SEGUNDO no-show do mesmo lead: o +30min da falta anterior não cumpre o da nova",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) \"SIM\" confirma a presença e grava o evento",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) \"REAGENDAR\" só sinaliza (evento) — quem remarca é o vendedor",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) frase que contém 'sim' NÃO confirma (match exato e conservador)",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) lead sem experimental agendada: 'SIM' não confirma nada",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) (a) sem lembrete pré-experimental enviado, 'sim' NÃO confirma",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) (b) com o lembrete DESTA ocorrência, 'sim' confirma",
+            "status": "passed"
+          },
+          {
+            "nome": "confirmação da experimental por keyword (fallback Baileys — doc 27) (c) lembrete da ocorrência ANTERIOR não vale para a experimental remarcada",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/cron.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) D-7 devido → intenção SIMULADA com corpo renderizado; NENHUM evento/mensagem real",
+            "status": "passed"
+          },
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) idempotência: segunda rodada não duplica a intenção (SIMULADA reabre a MESMA linha)",
+            "status": "passed"
+          },
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) destino S2: responsável FINANCEIRO com telefone vence o telefone do aluno (Kids nunca o aluno)",
+            "status": "passed"
+          },
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) sem destino (S2): sem telefone algum → intenção não nasce, contabiliza semDestino",
+            "status": "passed"
+          },
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) degrau cumprido MANUALMENTE ontem não é re-enviado pelo cron (mesmo evento, mesma projeção)",
+            "status": "passed"
+          },
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) TRAVA S1 (lei): número remetente Baileys → cron não roda",
+            "status": "passed"
+          },
+          {
+            "nome": "cron da régua — enfileira e o despachante simula (shadow) política DESLIGADA (nascimento de fábrica) → nada acontece",
+            "status": "passed"
+          },
+          {
+            "nome": "despachante — guard-rails LEI DO DESPACHANTE: inbound do contato cancela intenção automática ainda na fila",
+            "status": "passed"
+          },
+          {
+            "nome": "despachante — guard-rails claim ENVIANDO: em voo não é tocado; órfão (stale) vira FALHOU envio_interrompido",
+            "status": "passed"
+          },
+          {
+            "nome": "despachante — guard-rails retry de webhook não duplica mensagem (dedupe por providerMessageId)",
+            "status": "passed"
+          },
+          {
+            "nome": "despachante — guard-rails opt-out (lei) cancela; fora da janela adia",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/despachante-comercial.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "silêncio pós-inbound × inbound-ÂNCORA da cadência (review PR #55 P1) o inbound que ANCOROU a cadência não a silencia — o +30min devido SAI",
+            "status": "passed"
+          },
+          {
+            "nome": "silêncio pós-inbound × inbound-ÂNCORA da cadência (review PR #55 P1) contra-prova: inbound POSTERIOR à âncora volta a silenciar (ADIADA por 72h)",
+            "status": "passed"
+          },
+          {
+            "nome": "janela no FUSO DO LEAD (S3 · review PR #55 P1) madrugada no país do lead ADIA, mesmo sendo horário comercial em SP",
+            "status": "passed"
+          },
+          {
+            "nome": "janela no FUSO DO LEAD (S3 · review PR #55 P1) contra-prova: no MESMO instante, lead sem país (default SP) está dentro e sai",
+            "status": "passed"
+          },
+          {
+            "nome": "teto por contato/dia × saudação reativa (review PR #55 P2) teto 1 já 'gasto' por uma saudação REATIVA: o degrau comercial ainda sai",
+            "status": "passed"
+          },
+          {
+            "nome": "teto por contato/dia × saudação reativa (review PR #55 P2) contra-prova: a MESMA saída, não reativa, consome o teto e adia o degrau",
+            "status": "passed"
+          },
+          {
+            "nome": "idempotência do degrau comercial inclui a CHAVE da cadência (review PR #55 P2) evento de OUTRA cadência com o mesmo nome de passo não cancela este degrau",
+            "status": "passed"
+          },
+          {
+            "nome": "idempotência do degrau comercial inclui a CHAVE da cadência (review PR #55 P2) evento da MESMA chave + passo, mas de OUTRA ocorrência, não cancela este degrau",
+            "status": "passed"
+          },
+          {
+            "nome": "idempotência do degrau comercial inclui a CHAVE da cadência (review PR #55 P2) contra-prova: evento da MESMA chave + passo + ocorrência cancela (degrau já cumprido)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/despachante.live.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "shadow por política × WHATSAPP_LIVE=1 (P1-3) política SHADOW: LOTE vira SIMULADA — o driver NUNCA é chamado no ensaio",
+            "status": "passed"
+          },
+          {
+            "nome": "shadow por política × WHATSAPP_LIVE=1 (P1-3) política ATIVA: o MESMO lote envia de verdade (contra-prova)",
+            "status": "passed"
+          },
+          {
+            "nome": "shadow por política × WHATSAPP_LIVE=1 (P1-3) política SHADOW: origem HUMANO atravessa o ensaio (decisão humana envia)",
+            "status": "passed"
+          },
+          {
+            "nome": "shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #53 2ª passada) saudação em SHADOW: SIMULADA mesmo com live — o driver NÃO é chamado",
+            "status": "passed"
+          },
+          {
+            "nome": "shadow PRÓPRIO da saudação reativa × WHATSAPP_LIVE=1 (review PR #53 2ª passada) saudação ATIVA: a MESMA reativa envia de verdade (contra-prova) — em Baileys, sem trava S1",
+            "status": "passed"
+          },
+          {
+            "nome": "cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys) ATIVA: a cadência ENVIA no Baileys (trava S1 NÃO cancela) — review doc 27",
+            "status": "passed"
+          },
+          {
+            "nome": "cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys) SHADOW: mesmo com live, a cadência SIMULA (ensaio próprio da política comercial)",
+            "status": "passed"
+          },
+          {
+            "nome": "cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys) META_CLOUD sem template APROVADO: a cadência FALHA sem tocar o driver",
+            "status": "passed"
+          },
+          {
+            "nome": "cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys) META_CLOUD com template só EM_REVISAO também falha (aprovado é aprovado)",
+            "status": "passed"
+          },
+          {
+            "nome": "cadência comercial × WHATSAPP_LIVE=1 (doc 27 — S1 liberada no Baileys) contra-prova: com template APROVADO, o MESMO degrau sai como template na Meta",
+            "status": "passed"
+          },
+          {
+            "nome": "mídia no despacho (P1-2 — defesa em profundidade) midiaPath fora de whatsapp-out/ FALHA sem tocar o driver (exfiltração barrada)",
+            "status": "passed"
+          },
+          {
+            "nome": "mídia no despacho (P1-2 — defesa em profundidade) midiaPath do próprio storage de envio é entregue ao driver",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/destinatario-atual.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "destinatário atual para novos envios; histórico permanece autorizado troca de telefone do lead revoga envio HUMANO, preservando o histórico comercial",
+            "status": "passed"
+          },
+          {
+            "nome": "destinatário atual para novos envios; histórico permanece autorizado troca de telefone do lead revoga envio CRON, preservando o histórico comercial",
+            "status": "passed"
+          },
+          {
+            "nome": "destinatário atual para novos envios; histórico permanece autorizado troca do telefone do aluno bloqueia o contato antigo e abre novo atendimento no destinatário atual",
+            "status": "passed"
+          },
+          {
+            "nome": "destinatário atual para novos envios; histórico permanece autorizado trocar o guardião revoga o contato antigo mesmo se o telefone do novo for igual",
+            "status": "passed"
+          },
+          {
+            "nome": "destinatário atual para novos envios; histórico permanece autorizado cadastro de um guardião sem telefone não permite continuar enviando para o aluno",
+            "status": "passed"
+          },
+          {
+            "nome": "encerramento respeita a finalidade e inbound retorna à triagem PRO+FIN consulta sua experimental, mas não usa Financeiro para encerrar assunto PEDAGOGICO",
+            "status": "passed"
+          },
+          {
+            "nome": "encerramento respeita a finalidade e inbound retorna à triagem inbound não reabre contexto COMERCIAL encerrado e fica na triagem administrativa",
+            "status": "passed"
+          },
+          {
+            "nome": "encerramento respeita a finalidade e inbound retorna à triagem inbound não reabre contexto FINANCEIRO encerrado e fica na triagem administrativa",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/inbox.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "escopo do atendimento (doc 36) vendedor vê o atendimento atribuído; financeiro não recebe o assunto comercial",
+            "status": "passed"
+          },
+          {
+            "nome": "enviarTextoInbox (origem HUMANO na MESMA fila) grava intenção HUMANO e despacha — sem WHATSAPP_LIVE vira SIMULADA",
+            "status": "passed"
+          },
+          {
+            "nome": "enviarTextoInbox (origem HUMANO na MESMA fila) fora do escopo → negado; opt-out → bloqueado com mensagem clara",
+            "status": "passed"
+          },
+          {
+            "nome": "enviarTextoInbox (origem HUMANO na MESMA fila) kill switch congela a AUTOMAÇÃO mas não a resposta humana (S13)",
+            "status": "passed"
+          },
+          {
+            "nome": "opt-out (S10) keyword exata no inbound marca o contato e grava o evento",
+            "status": "passed"
+          },
+          {
+            "nome": "opt-out (S10) frase que só contém a palavra não marca",
+            "status": "passed"
+          },
+          {
+            "nome": "opt-out (S10) botão da thread registra e o duplo clique não duplica",
+            "status": "passed"
+          },
+          {
+            "nome": "silêncio pós-inbound tratado (S4/E3) inbound não tratado ADIA o cron; tratar libera",
+            "status": "passed"
+          },
+          {
+            "nome": "silêncio pós-inbound tratado (S4/E3) vendedor não pode retomar régua (alçada de cobrança)",
+            "status": "passed"
+          },
+          {
+            "nome": "cobrancaAtiva na thread — só papéis de cobrança (P1-1) financeiro recebe a cobrança; vendedor recebe null MESMO com contato vinculado a aluno devedor",
+            "status": "passed"
+          },
+          {
+            "nome": "posse do anexo no envio de mídia (P1-2) URL que não é do storage de envio do PRÓPRIO autor é recusada",
+            "status": "passed"
+          },
+          {
+            "nome": "roteamento de webhook por driver (P2-6) mesmo providerRef em drivers diferentes: cada mensagem cai no número do SEU driver",
+            "status": "passed"
+          },
+          {
+            "nome": "cockpit do vendedor na thread (funil sem sair da conversa) thread traz o lead com os destinos MANUAIS válidos (etapa de evento nunca entra)",
+            "status": "passed"
+          },
+          {
+            "nome": "cockpit do vendedor na thread (funil sem sair da conversa) papel sem alçada comercial não recebe o lead na thread (gate no servidor, não no botão)",
+            "status": "passed"
+          },
+          {
+            "nome": "cockpit do vendedor na thread (funil sem sair da conversa) lead de OUTRO vendedor vinculado ao número de A não vaza o cockpit (escopo row-level P1)",
+            "status": "passed"
+          },
+          {
+            "nome": "cockpit do vendedor na thread (funil sem sair da conversa) nota interna vira EVENTO e nunca mensagem/intenção — não sai para o contato",
+            "status": "passed"
+          },
+          {
+            "nome": "cockpit do vendedor na thread (funil sem sair da conversa) temperatura em 1 clique grava evento; lead de outro vendedor é negado",
+            "status": "passed"
+          },
+          {
+            "nome": "vincularContatoWhatsApp vendedor vincula ao PRÓPRIO lead; lead alheio é negado; evento auditável",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/politica.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "salvarPoliticaRegua DESLIGADA salva livre: materializa o registro + degraus + evento antes→depois",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarPoliticaRegua LEI: D+15 (bloquear) vira MANUAL mesmo que a UI mande AUTOMATICO",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarPoliticaRegua armar sem remetente → erro; trava S1: remetente Baileys + degrau automático → erro",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarPoliticaRegua prontidão S15: número oficial exige template APROVADO nos degraus armados",
+            "status": "passed"
+          },
+          {
+            "nome": "salvarPoliticaRegua não-admin é negado",
+            "status": "passed"
+          },
+          {
+            "nome": "acionarKillSwitchRegua liga/desliga com evento; sem política salva ainda → erro claro",
+            "status": "passed"
+          },
+          {
+            "nome": "carregarPoliticaConfig sem registro devolve a fábrica (id null); com registro devolve o dado salvo",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/saude.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "medirSaudeCanal — fila por estado canal vazio e política de fábrica → saudável",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado PENDENTE parada além do limiar → alerta de cron parado",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado ADIADA com despacho no FUTURO é saudável (noite/teto — não é incidente)",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado ADIADA VENCIDA há horas sem redespachar → alerta",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado claim ENVIANDO expirado sem recuperação → alerta (cron nem recuperou o órfão)",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado kill switch LIGADO: PENDENTE parada é esperada — só o alerta do kill switch dispara",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado sessão Baileys caída em número ativo → alerta; número inativo não conta",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado falhas24h conta pela TRANSIÇÃO para FALHOU (atualizadoEm), não pela criação",
+            "status": "passed"
+          },
+          {
+            "nome": "medirSaudeCanal — fila por estado último inbound aparece (webhook vivo)",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/api/exportacoes/[tipo]/route.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "D09: geração/download de XLSX com escopo e campos autorizados sem concessão específica nega e não registra exportação",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: geração/download de XLSX com escopo e campos autorizados arquivo real ignora tentativa de aumentar colunas/IDs e contém só carteira/projeção permitida",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: geração/download de XLSX com escopo e campos autorizados alunos exportados por professor mantêm vínculo atual e não entregam campos financeiros/contato",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: geração/download de XLSX com escopo e campos autorizados nomes iniciados com igual são texto no XLSX, sem fórmula executável",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: revalidação depois da geração e antes da resposta revogar a concessão durante geração bloqueia entrega e auditoria de sucesso",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: revalidação depois da geração e antes da resposta transferir carteira durante geração impede download dos registros antigos",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: revalidação depois da geração e antes da resposta desativar usuário depois da geração rejeita até cookie anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "D09: revalidação depois da geração e antes da resposta revogação de cobertura durante geração impede exportar a carteira coberta",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "integracaoFinanceiraAposUltimoAjuste": {
+    "observacao": "Subconjunto repetido após ajuste pós-commit, sem somar ao total global.",
+    "iniciadoEm": "2026-09-08T11:32:01.763Z",
+    "total": 20,
+    "aprovados": 20,
+    "falhas": 0,
+    "pendentes": 0,
+    "arquivos": [
+      {
+        "arquivo": "src/server/financeiro/politica.int.test.ts",
+        "status": "passed",
+        "cenarios": [
+          {
+            "nome": "pagamento informado e ledger real SEC informa sem baixa/ativação; FIN diferente confirma exatamente uma vez",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamento informado e ledger real acumular SEC+FIN não permite confirmar próprio informe nem contornar pela baixa direta",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamento informado e ledger real rejeitar preserva evidência e não movimenta saldo",
+            "status": "passed"
+          },
+          {
+            "nome": "pagamento informado e ledger real duas baixas parciais concorrentes acumulam, replay não duplica e KPI considera parciais",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico vendedor fora da carteira não altera cobrança",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico ajuste após parcial reconcilia saldo e verifica desconto acumulado",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico admin solicitante não aprova próprio pedido; alteração invalida snapshot",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico fixa e paga conservam o valor quando a taxa muda",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico transferência retira a aprovação da equipe, inclusive quando GC acumula FIN",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, aprovação vinculada e histórico fechamento concorrente com desconto conserva exatamente o valor registrado como pago",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável sem regra não usa percentual padrão do formulário",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável regra fixa é aplicada no servidor e nova versão preserva a comissão anterior",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável limite separado na criação encaminha aprovação e mantém referência até decisão",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável país pausado não permite criar novo contrato",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável a conclusão exige contrato real e preserva primeira mensalidade já paga",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável informe a conferir não ativa; confirmação independente libera a conclusão",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável opção que exige primeira mensalidade bloqueia até sua confirmação",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável ativação com novo recebimento considera a taxa parcialmente confirmada",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável estado CANCELADA não reativa nem altera recebimentos",
+            "status": "passed"
+          },
+          {
+            "nome": "matrícula e comissão configurável estado ENCERRADA não reativa nem altera recebimentos",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "typescript": {
+    "comando": "npx tsc --noEmit --pretty false",
+    "codigoSaida": 0
+  },
+  "build": {
+    "comando": "npm run build",
+    "codigoSaida": 0,
+    "modo": "Next.js 16.2.9 standalone",
+    "inicioLocalVerificado": true
+  },
+  "lint": {
+    "erros": 0,
+    "avisos": 9,
+    "ocorrencias": [
+      {
+        "arquivo": "src/app/(app)/financeiro/FinanceiroPainel.tsx",
+        "mensagens": [
+          {
+            "linha": 110,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1,
+            "mensagem": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\app\\(app)\\financeiro\\FinanceiroPainel.tsx:110:59\n  108 |   useEffect(() => {\n  109 |     const saved = window.localStorage.getItem(MOEDA_CONS_KEY);\n> 110 |     if (saved && cotacoes.some((c) => c.moeda === saved)) setMoedaCons(saved);\n      |                                                           ^^^^^^^^^^^^ Avoid calling setState() directly within an effect\n  111 |   }, [cotacoes]);\n  112 |   function escolherMoeda(m: string) {\n  113 |     setMoedaCons(m);"
+          },
+          {
+            "linha": 394,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1,
+            "mensagem": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\app\\(app)\\financeiro\\FinanceiroPainel.tsx:394:5\n  392 |   // com o valor canônico (senão o campo ficaria com o texto antigo digitado).\n  393 |   useEffect(() => {\n> 394 |     setVals(Object.fromEntries(editaveis.map((c) => [c.moeda, c.unidadesPorUsd != null ? String(c.unidadesPorUsd) : \"\"])));\n      |     ^^^^^^^ Avoid calling setState() directly within an effect\n  395 |     // eslint-disable-next-line react-hooks/exhaustive-deps\n  396 |   }, [cotacoes]);\n  397 |"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/(app)/home/HomeGerente.tsx",
+        "mensagens": [
+          {
+            "linha": 54,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          },
+          {
+            "linha": 54,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/(app)/pipeline/KanbanBoard.tsx",
+        "mensagens": [
+          {
+            "linha": 18,
+            "regra": "@typescript-eslint/no-unused-vars",
+            "severidade": 1,
+            "mensagem": "'ETAPAS_MANUAIS' is defined but never used."
+          },
+          {
+            "linha": 217,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          },
+          {
+            "linha": 217,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          },
+          {
+            "linha": 239,
+            "regra": "react-hooks/purity",
+            "severidade": 1,
+            "mensagem": "Error: Cannot call impure function during render\n\n`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\app\\(app)\\pipeline\\KanbanBoard.tsx:239:30\n  237 |             let itens = porEtapa.get(col) ?? [];\n  238 |             if (col === EtapaLead.PERDIDO && periodoPerdido > 0) {\n> 239 |               const limite = Date.now() - periodoPerdido * 86400000;\n      |                              ^^^^^^^^^^ Cannot call impure function\n  240 |               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);\n  241 |             }\n  242 |             return <Coluna key={col} etapa={col} leads={itens} />;"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/components/Sidebar.tsx",
+        "mensagens": [
+          {
+            "linha": 38,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1,
+            "mensagem": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\components\\Sidebar.tsx:38:5\n  36 |   const [dark, setDark] = useState(false);\n  37 |   useEffect(() => {\n> 38 |     setDark(document.documentElement.classList.contains(\"dark\"));\n     |     ^^^^^^^ Avoid calling setState() directly within an effect\n  39 |   }, []);\n  40 |\n  41 |   function alternar() {"
+          }
+        ]
+      }
+    ]
+  },
+  "http": {
+    "data": "2026-09-08T11:32:55.209Z",
+    "total": 18,
+    "aprovados": 18,
+    "verificacoes": [
+      {
+        "id": "/configuracao/operacao",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/secretaria",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/carteiras",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/diario",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/comissoes",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/financeiro",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/inbox",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/configuracao/catalogo",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "GP não recebe configuração financeira no HTML",
+        "passou": true
+      },
+      {
+        "id": "/configuracao/operacao",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/configuracao/usuarios",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/configuracao/catalogo",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/alunos/cmtslbu9g000dw8c5iqhx3b4n",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "Professor não recebe contato pessoal no HTML da ficha",
+        "passou": true
+      },
+      {
+        "id": "/alunos/cmtslbu9g000dw8c5iqhx3b4n/financeiro",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "Exportação negada sem capacidade",
+        "passou": true,
+        "status": 403
+      },
+      {
+        "id": "Usuário desativado não envia arquivo com cookie anterior",
+        "passou": true,
+        "status": 401
+      },
+      {
+        "id": "Usuário desativado não baixa modelo com cookie anterior",
+        "passou": true,
+        "status": 401
+      }
+    ]
+  },
+  "migracoes": {
+    "total": 42,
+    "aprovadas": 42,
+    "verificacoes": [
+      {
+        "id": "migration:20260718180000_config_comercial_saudacao_estado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260618184248_init",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120001_matricula_justificativa_sem_preco",
+        "passou": true
+      },
+      {
+        "id": "migration:20260618184300_precos_movimentacao_ativacao",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619084650_lead_valor_documentos_nivel_inicial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260706184221_whatsapp_provider_ref_variaveis",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619100435_matricula_meses_plano",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622130000_aluno_cadastro_completo",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619144107_documento_arquivado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620090000_aluno_genero_email",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620100000_turma_nome_online_datafim",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622140000_turma_agenda_estruturada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620110000_usuario_dados_professor",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622090000_lead_professor_experimental",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718120000_comercial_c1_autolead_saudacao",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_cobranca_comprovante_nome",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622150000_turma_horario_inicio_fim",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_integridade_alocacao_preco",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_matricula_preco_referencia_ausente",
+        "passou": true
+      },
+      {
+        "id": "migration:20260713173011_intencao_status_enviando",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_preco_ativo_unico",
+        "passou": true
+      },
+      {
+        "id": "migration:20260626120000_taxa_cambio",
+        "passou": true
+      },
+      {
+        "id": "migration:20260626160000_matricula_acesso_bloqueado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260702100000_dinheiro_decimal",
+        "passou": true
+      },
+      {
+        "id": "migration:20260713231338_whatsapp_e3_inbox_midia",
+        "passou": true
+      },
+      {
+        "id": "migration:20260706183913_whatsapp_canal_bimotor",
+        "passou": true
+      },
+      {
+        "id": "migration:20260714120000_numero_provider_ref_unico_por_driver",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718160000_conversa_capturada_em",
+        "passou": true
+      },
+      {
+        "id": "migration:20260714200000_intencao_atualizado_em",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720160000_lead_experimental_confirmada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718170000_backfill_conversa_capturada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720160000_idempotencia_comercial_por_politica",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718200000_lead_referral_cru",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720120000_regua_comercial_lead_novo",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720170000_idempotencia_comercial_indice_parcial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720180000_ocorrencia_cadencia_comercial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907010000_politica_acesso_recebimentos",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907020000_diario_correcoes",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907030000_upload_finalidade",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908010000_documentos_matricula",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908020000_configuracao_operacional",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908030000_acesso_aulas",
+        "passou": true
+      }
+    ]
+  },
+  "navegador": {
+    "tipo": "Conferência interativa do build local no navegador integrado",
+    "usuario": "Administrador fictício de teste",
+    "verificacoes": [
+      "Login de credenciais concluiu e abriu /home.",
+      "/configuracao/operacao exibiu primeira mensalidade opcional e suspensão de 48 horas.",
+      "Habilitação da primeira mensalidade e prazo de 72 horas foram salvos, com confirmação na tela, e persistiram após recarga.",
+      "Primeira mensalidade opcional e 48 horas foram restaurados, salvos e conferidos após nova recarga.",
+      "/secretaria renderizou a matrícula fictícia existente; não houve execução de ativação nesta conferência de interface.",
+      "/financeiro renderizou a fila e o painel de acesso às aulas, sem erro de console.",
+      "Formulário de política de comissão alternou de percentual para valor fixo; nenhuma política com valores inventados foi publicada."
+    ],
+    "errosConsoleObservados": 0,
+    "limitacao": "Não corresponde a execução de todas as jornadas ponta a ponta nem a teste de sala externa/provedor real."
+  },
+  "limites": [
+    "Retomada financeira após pausa aguarda decisão: reprogramar parcelas ou preservar calendário original.",
+    "Restrição operacional do ERP entregue; bloqueio efetivo em LMS/sala externa depende de integração ainda ausente.",
+    "Agendamento externo do cron institucional precisa ser ativado no ambiente de implantação.",
+    "Fluxo completo de solicitação, aprovação pedagógica e execução de exceção acadêmica ainda não entregue.",
+    "Homologação com equipes da escola, dados reais e implantação não realizadas.",
+    "Matriz genérica de capacidades proposta no doc 37 não equivale a um editor genérico de todas as permissões."
+  ],
+  "documentacao": {
+    "linksLocaisVerificados": 93,
+    "linksAusentes": 0,
+    "diffCheck": "aprovado, respeitando CRLF do Windows"
+  },
+  "auxiliarBancoTeste": {
+    "sintaxeNode": "aprovada",
+    "eslint": "sem erros ou avisos",
+    "encerramento": "PostgreSQL de teste encerrado com pg_ctl; aba temporária e servidor HTTP encerrados"
+  }
+}

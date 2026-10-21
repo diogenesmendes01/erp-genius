@@ -2,14 +2,16 @@ import { IconAlertTriangle } from "@tabler/icons-react";
 import { ETAPA_LABEL } from "@/lib/labels";
 import { formatarValores } from "@/lib/dinheiro";
 import type { dadosHomeGerente } from "@/server/home/consultas";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = Awaited<ReturnType<typeof dadosHomeGerente>>;
 
-function Kpi({ titulo, valor }: { titulo: string; valor: string }) {
+function Kpi({ titulo, valor, detalhe }: { titulo: string; valor: string; detalhe?: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-surface p-4">
       <div className="text-2xl font-medium text-gray-800">{valor}</div>
       <div className="text-xs text-gray-500">{titulo}</div>
+      {detalhe && <div data-kpi-detalhe="" className="mt-1 text-xs text-gray-500">{detalhe}</div>}
     </div>
   );
 }
@@ -23,7 +25,13 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi titulo="Leads hoje" valor={String(kpis.leadsHoje)} />
         <Kpi titulo="Conversão" valor={`${kpis.conversao}%`} />
-        <Kpi titulo="Matrículas no mês" valor={String(kpis.matriculasMes)} />
+        {/* O número grande conta matrículas ativadas no mês; a meta (Q9) mede outra coisa — leads que entraram
+            em Matriculado no funil, no mês da escola — e por isso fica num subtexto com o critério escrito. */}
+        <Kpi
+          titulo="Matrículas ativadas no mês"
+          valor={String(kpis.matriculasMes)}
+          detalhe={kpis.metaMatriculasMes ? `Meta do funil: ${kpis.metaMatriculasMes.realizado} de ${kpis.metaMatriculasMes.meta} leads em Matriculado` : undefined}
+        />
         <Kpi titulo="Recebido no mês" valor={formatarValores(kpis.receitaMes)} />
       </div>
 
@@ -34,11 +42,23 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
         </div>
       )}
 
+      {kpis.checkInsVencidos > 0 && (
+        // B9 (doc 32): experimental já ocorrida sem check-in do professor — sem ele a
+        // recuperação de no-show (C2) não dispara; o gerente cobra o registro.
+        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          <IconAlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            Check-in vencido: <strong>{kpis.checkInsVencidos}</strong> experimental(is) já ocorrida(s) sem
+            registro de Compareceu/Faltou.
+          </span>
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
           <h2 className="mb-3 font-medium">Ranking de vendedores</h2>
           {ranking.length === 0 ? (
-            <p className="text-sm text-gray-400">Sem vendedores.</p>
+            <EstadoVazio>Sem vendedores.</EstadoVazio>
           ) : (
             <ol className="flex flex-col gap-1 text-sm">
               {ranking.map((r, i) => (
@@ -51,7 +71,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
               ))}
             </ol>
           )}
-          <p className="mt-2 text-xs text-gray-400">Critério "justo" (volume/qualidade) — refinar (P10).</p>
+          <p className="mt-2 text-xs text-gray-400">Critério &quot;justo&quot; (volume/qualidade) — refinar (P10).</p>
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-surface p-4">
@@ -70,7 +90,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Equipe</h2>
         {dados.equipe.length === 0 ? (
-          <p className="text-sm text-gray-400">Sem vendedores ativos.</p>
+          <EstadoVazio>Sem vendedores ativos.</EstadoVazio>
         ) : (
           <div className="flex flex-wrap gap-2">
             {dados.equipe.map((nome) => (

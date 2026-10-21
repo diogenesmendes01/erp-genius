@@ -1,0 +1,13 @@
+{
+  "incremento": 250,
+  "data": "2026-09-13",
+  "escopo": "Consulta de gestão e interface de designação, troca e revogação",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 30, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "ultimaRegressaoIntegral": 245,
+  "migrationsNovas": 0,
+  "homologacaoInterativa": false,
+  "pendencias": ["Lançamento pelo substituto com autoria histórica distinta", "Demais fluxos da SPEC"]
+}

@@ -1,0 +1,59 @@
+import { Papel, type Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import type { UsuarioSessao } from "./sessao";
+import { congelar, memoPorRequisicao } from "./memo-requisicao";
+
+/**
+ * Carteira é um vínculo atual: comissão histórica e número remetente não o substituem.
+ *
+ * ATENÇÃO (#262 B19): o funil (ordem "tempo" e perdidos com período) e a carteira traduzem este `where`
+ * para SQL cru em `src/server/crm/oportunidade-sql.ts` (`whereOportunidadeEmSql`). O tradutor só aceita as
+ * três formas devolvidas hoje — `{}` (admin), `{ id: "__sem_acesso__" }` e `{ vendedorDonoId: { in: [...] } }` —
+ * e RECUSA com erro qualquer outra (falha fechada: essas telas dariam 500 em vez de vazar ou esconder dados).
+ * Quem acrescentar uma forma nova aqui (outro campo, `OR`, `NOT`, relação...) precisa ensiná-la ao tradutor;
+ * `src/server/crm/escopo-comercial-sql.test.ts` trava o formato e quebra antes da produção.
+ */
+export async function escopoComercialAtual(
+  usuario: UsuarioSessao,
+  tx: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<Prisma.OportunidadeWhereInput> {
+  if (!usuario?.id) return { id: "__sem_acesso__" };
+  // Memo por requisição só fora de transação (ganho rápido 15): dentro de uma tx, o escopo tem de
+  // ser lido NELA (isolamento), então nunca vem do memo. A chave é primitiva (id + papéis) — o objeto
+  // usuário muda de identidade entre chamadas.
+  // Identidade de referência com o singleton: um client derivado ($extends) ou uma tx cai no ramo
+  // sem memo — o custo é só perder o memo, nunca ler fora da transação.
+  if (tx === prisma) return escopoMemo(usuario.id, JSON.stringify([...usuario.papeis].sort()));
+  return calcularEscopo(usuario, tx);
+}
+
+const escopoMemo = memoPorRequisicao((id: string, papeisJson: string) =>
+  calcularEscopo({ id, nome: "", papeis: JSON.parse(papeisJson) as Papel[] }, prisma).then(congelar));
+
+async function calcularEscopo(
+  usuario: UsuarioSessao,
+  tx: Prisma.TransactionClient | typeof prisma,
+): Promise<Prisma.OportunidadeWhereInput> {
+  if (usuario.papeis.includes(Papel.ADMINISTRADOR)) return {};
+  const vendedor = usuario.papeis.includes(Papel.VENDEDOR);
+  const gerente = usuario.papeis.includes(Papel.GERENTE_COMERCIAL);
+  if (!vendedor && !gerente) return { id: "__sem_acesso__" };
+  const titulares = new Set<string>();
+  if (vendedor) {
+    titulares.add(usuario.id);
+    const agora = new Date();
+    const coberturas = await tx.coberturaCarteira.findMany({
+      where: { substitutoId: usuario.id, inicio: { lte: agora }, fim: { gt: agora }, revogadaEm: null },
+      select: { titularId: true },
+    });
+    for (const cobertura of coberturas) titulares.add(cobertura.titularId);
+  }
+  if (gerente) {
+    const equipe = await tx.usuario.findMany({
+      where: { gerenteComercialId: usuario.id },
+      select: { id: true },
+    });
+    for (const membro of equipe) titulares.add(membro.id);
+  }
+  return titulares.size ? { vendedorDonoId: { in: [...titulares] } } : { id: "__sem_acesso__" };
+}

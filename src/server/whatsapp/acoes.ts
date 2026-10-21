@@ -1,7 +1,8 @@
 "use server";
+import { referenciaDestinoCobranca } from "./elegibilidade";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, type OrigemEnvio, type SessaoNumero } from "@prisma/client";
+import { DriverWhatsApp, Papel, StatusCobranca, type OrigemEnvio, type SessaoNumero } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { contentTypePorExtensao } from "@/lib/uploads";
 import {
@@ -10,27 +11,30 @@ import {
   exigirSessao,
   exigirSessaoComPapel,
   registrarEvento,
+  temPapel,
   type Resultado,
 } from "@/server/_shared";
 import { montarReguaPorCobranca } from "@/server/cobrancas/consultas";
 import { REGUA } from "@/server/cobrancas/regua";
 import { POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "@/server/cobrancas/fabrica";
-import { carregarPoliticaRegua, type PoliticaCarregada } from "@/server/cobrancas/politica";
-import { escopoLeads } from "@/server/comercial/consultas";
+import { carregarPoliticaRegua, traduzirDegrausPolitica, type PoliticaCarregada } from "@/server/cobrancas/politica";
+import { contarAlcanceRegua, type AlcanceRegua } from "./alcance-regua";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
-import { buscarPessoasVinculo, conversaVisivel, type PessoasVinculo } from "./consultas";
+import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
+import { executarAcaoMotor } from "./motor/acoes";
 import { escopoConversas } from "./escopo";
+import { garantirAtendimento } from "./atendimentos";
+import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial";
+import { criarLeadDeInboundWhatsApp, resolverPessoaPorTelefone } from "@/server/comercial/captura";
 import { enfileirarIntencaoCobranca } from "./fila";
 import { garantirContato, resolverDestinoCobranca, INCLUDE_DESTINO } from "./identidade";
-import {
-  ErroMeta,
-  sincronizarTemplatesWaba,
-  submeterTemplateNaMeta,
-  type ResultadoSync,
-} from "./meta-templates";
 import { midiaSaidaDoAutor, tipoPorMime } from "./midia";
 import { renderizarTemplate } from "./render";
+import { nomeConhecidoDoContato } from "./nome-contato";
+import { driverAceitaAutomacao, MENSAGEM_META_CLOUD_SEM_ENVIO } from "./canal";
+import { contatoIndividual } from "./grupos";
 import {
   LoteCobrancaSchema,
   EnviarMidiaInboxSchema,
@@ -40,20 +44,29 @@ import {
   TemplateWhatsAppSchema,
   TratarConversaSchema,
   VincularContatoSchema,
+  EditarNomeContatoSchema,
   type EnviarMidiaInboxInput,
   type EnviarTextoInboxInput,
   type LoteCobrancaInput,
   type NumeroWhatsAppInput,
+  type ConfiguracaoAvisosAgendaInput,
+  ConfiguracaoAvisosAgendaSchema,
   type PoliticaReguaInput,
   type TemplateWhatsAppInput,
   type TratarConversaInput,
   type VincularContatoInput,
+  type EditarNomeContatoInput,
 } from "./schema";
 import {
-  conectarInstanciaEvolution,
-  consultarEstadoInstancia,
-  type ResultadoConexao,
+  conectarNumeroMotor,
+  consultarSessaoMotor,
+  desconectarNumeroMotor,
+  garantirNumeroNoMotor,
+  parearNumeroMotor,
 } from "./sessao";
+import { ErroMotor } from "./motor/cliente";
+import { telefoneE164 as telefoneE164Schema } from "@/server/_shared/validacao";
+import { ONDE_MODELO_REGUA, ehModeloRegua } from "./modelos-regua";
 
 // Ações do braço API da fila de cobrança (doc 30 E2). Mesmos papéis que já operam a
 // cobrança manual (financeiro/acoes.ts). NENHUMA envia direto: gravam INTENÇÃO e chamam o
@@ -76,6 +89,7 @@ async function prepararCanal(): Promise<CanalPronto> {
   const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: politica.numeroRemetenteId } });
   if (!numero || !numero.ativo) throw new ErroRegra("O número remetente da cobrança está inativo.");
   const templates = await prisma.templateWhatsApp.findMany({
+    where: ONDE_MODELO_REGUA,
     select: { id: true, nome: true, corpo: true, idioma: true },
   });
   return { politica, numeroId: numero.id, templates: new Map(templates.map((t) => [t.id, t])) };
@@ -87,7 +101,7 @@ async function enfileirarDegrauDevido(
   cobrancaId: string,
   origem: OrigemEnvio,
   autorId: string,
-): Promise<{ passo: string; resultado: "criada" | "reaberta" | "ja_existente" }> {
+): Promise<{ passo: string; cicloCobranca: number; resultado: "criada" | "reaberta" | "ja_existente" }> {
   const cobranca = await prisma.cobranca.findUnique({ where: { id: cobrancaId }, include: INCLUDE_DESTINO });
   if (!cobranca) throw new ErroRegra("Cobrança não encontrada.");
   if (cobranca.status !== StatusCobranca.PENDENTE && cobranca.status !== StatusCobranca.ATRASADO) {
@@ -96,7 +110,7 @@ async function enfileirarDegrauDevido(
 
   const hoje = new Date();
   const regua = await montarReguaPorCobranca(
-    [{ id: cobranca.id, vencimento: cobranca.vencimento, acessoBloqueado: cobranca.matricula.acessoBloqueado }],
+    [{ id: cobranca.id, vencimento: cobranca.vencimento, cicloRegua: cobranca.cicloRegua, acessoBloqueado: cobranca.matricula.acessoBloqueado }],
     hoje,
     canal.politica.degraus,
   );
@@ -107,7 +121,7 @@ async function enfileirarDegrauDevido(
 
   const destino = resolverDestinoCobranca(cobranca);
   if (!destino) {
-    throw new ErroRegra("Sem destino: cadastre o telefone do responsável financeiro (ou do aluno adulto).");
+    throw new ErroRegra("Sem destino: confira o pagador e o telefone desta matrícula; contratos sem referência suficiente exigem conferência.");
   }
 
   const tId = canal.politica.templateIdPorPasso.get(calc.passo) ?? null;
@@ -129,12 +143,14 @@ async function enfileirarDegrauDevido(
   const resultado = await prisma.$transaction(async (tx) => {
     const contato = await garantirContato(tx, {
       telefoneE164: destino.telefoneE164,
-      alunoId: destino.responsavelId ? null : destino.alunoId,
+      alunoId: destino.contatoAlunoId,
       responsavelId: destino.responsavelId,
       nomeExibicao: destino.nome,
     });
     return enfileirarIntencaoCobranca(tx, {
       cobrancaId: cobranca.id,
+      referenciaCalendario: { versao: cobranca.versao, vencimento: cobranca.vencimento.toISOString(), cicloRegua: cobranca.cicloRegua },
+          referenciaDestino: referenciaDestinoCobranca(destino),
       passo,
       numeroId: canal.numeroId,
       contatoId: contato.id,
@@ -146,7 +162,7 @@ async function enfileirarDegrauDevido(
       autorId,
     });
   });
-  return { passo, resultado };
+  return { passo, cicloCobranca: cobranca.cicloRegua, resultado };
 }
 
 export interface EnvioApiResultado {
@@ -161,16 +177,16 @@ export async function enfileirarCobrancaWhatsApp(cobrancaId: string): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(...PAPEIS_ENVIO);
     const canal = await prepararCanal();
-    const { passo } = await enfileirarDegrauDevido(canal, cobrancaId, "HUMANO", autor.id);
-
-    await despacharFila();
+    const { passo, cicloCobranca } = await enfileirarDegrauDevido(canal, cobrancaId, "HUMANO", autor.id);
 
     const intencao = await prisma.intencaoMensagem.findUnique({
-      where: { cobrancaId_passo: { cobrancaId, passo } },
-      select: { status: true, motivoFalha: true },
+      where: { cobrancaId_passo_cicloCobranca: { cobrancaId, passo, cicloCobranca } },
+      select: { id: true },
     });
-    revalidatePath("/financeiro");
-    return { passo, status: intencao?.status ?? "PENDENTE", motivo: intencao?.motivoFalha ?? null };
+    if (intencao) await despacharFila(new Date(), { intencaoId: intencao.id });
+    const final = intencao ? await prisma.intencaoMensagem.findUnique({ where: { id: intencao.id } }) : null;
+    revalidatePath("/financeiro", "layout");
+    return { passo, status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
   });
 }
 
@@ -201,8 +217,13 @@ export async function aprovarLoteCobranca(input: LoteCobrancaInput): Promise<Res
       }
     }
 
-    const despacho = await despacharFila();
-    revalidatePath("/financeiro");
+    const intenções = await prisma.intencaoMensagem.findMany({ where: { cobrancaId: { in: cobrancaIds }, autorId: autor.id, origem: "LOTE", status: "PENDENTE" }, select: { id: true } });
+    const despacho = { despachadas: 0, simuladas: 0, falhas: 0 };
+    for (const i of intenções) {
+      const r = await despacharFila(new Date(), { intencaoId: i.id });
+      despacho.despachadas += r.despachadas; despacho.simuladas += r.simuladas; despacho.falhas += r.falhas;
+    }
+    revalidatePath("/financeiro", "layout");
     return {
       enfileiradas,
       puladas,
@@ -226,7 +247,7 @@ export interface EnvioInboxResultado {
 }
 
 async function despacharIntencaoInbox(intencaoId: string): Promise<EnvioInboxResultado> {
-  await despacharFila();
+  await despacharFila(new Date(), { intencaoId });
   const final = await prisma.intencaoMensagem.findUnique({
     where: { id: intencaoId },
     select: { status: true, motivoFalha: true },
@@ -240,7 +261,7 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { conversaId, texto } = EnviarTextoInboxSchema.parse(input);
-    const conversa = await conversaVisivel(autor, conversaId);
+    const conversa = await conversaVisivel(autor, conversaId, true);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (conversa.contato.optOutEm) {
@@ -250,6 +271,7 @@ export async function enviarTextoInbox(input: EnviarTextoInboxInput): Promise<Re
     const intencao = await prisma.intencaoMensagem.create({
       data: {
         numeroId: conversa.numeroId,
+        atendimentoId: conversa.id,
         contatoId: conversa.contatoId,
         origem: "HUMANO",
         tipo: "TEXTO",
@@ -266,7 +288,7 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const { conversaId, url, legenda } = EnviarMidiaInboxSchema.parse(input);
-    const conversa = await conversaVisivel(autor, conversaId);
+    const conversa = await conversaVisivel(autor, conversaId, true);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (!conversa.numero.ativo) throw new ErroRegra("Este número está inativo.");
     if (conversa.contato.optOutEm) {
@@ -290,6 +312,7 @@ export async function enviarMidiaInbox(input: EnviarMidiaInboxInput): Promise<Re
     const intencao = await prisma.intencaoMensagem.create({
       data: {
         numeroId: conversa.numeroId,
+        atendimentoId: conversa.id,
         contatoId: conversa.contatoId,
         origem: "HUMANO",
         tipo,
@@ -309,7 +332,17 @@ export async function marcarConversaLida(conversaId: string): Promise<Resultado>
     const conversa = await conversaVisivel(autor, conversaId);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
     if (conversa.naoLidas > 0) {
-      await prisma.conversaWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
+      await prisma.atendimentoWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
+    }
+    // Marca como lida no WhatsApp sem bloquear: motor fora do ar não impede a leitura local.
+    if (conversa.numero.driver === "MOTOR") {
+      const digitos = (conversa.contato.waId ?? conversa.contato.telefoneE164).replace(/\D/g, "");
+      try {
+        void executarAcaoMotor(conversa.numero.providerRef ?? conversa.numero.id, "message.read", { chatId: `${digitos}@s.whatsapp.net` })
+          .catch((e) => console.error("[marcarConversaLida] message.read falhou:", e instanceof Error ? e.name : "erro"));
+      } catch (e) {
+        console.error("[marcarConversaLida] message.read falhou:", e instanceof Error ? e.name : "erro");
+      }
     }
     revalidatePath("/inbox");
   });
@@ -325,9 +358,10 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
     const { conversaId, motivo } = TratarConversaSchema.parse(input);
     const conversa = await conversaVisivel(autor, conversaId);
     if (!conversa) throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+    if (conversa.finalidade !== "FINANCEIRO") throw new ErroRegra("Retomada de cobrança exige atendimento financeiro.");
 
     await prisma.$transaction(async (tx) => {
-      await tx.conversaWhatsApp.update({
+      await tx.atendimentoWhatsApp.update({
         where: { id: conversaId },
         data: { inboundTratadoEm: new Date() },
       });
@@ -346,11 +380,84 @@ export async function marcarConversaTratada(input: TratarConversaInput): Promise
   });
 }
 
+/**
+ * "Criar lead" numa conversa de linha comercial (SPEC-ERP-005 §5.3, LC-D05). Mesmo miolo da
+ * auto-captura (código, LeadCriado, LeadAtribuido), com autor = sessão e dono = dono atual da linha.
+ * Dedupe (gap 17): telefone que já é lead só vincula; aluno/responsável não vira lead por aqui.
+ */
+export async function criarLeadDaConversa(atendimentoId: string): Promise<Resultado<{ leadId: string; criado: boolean }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.ADMINISTRADOR);
+    const alcance = await conversaVisivel(autor, atendimentoId);
+    if (!alcance || alcance.finalidade !== "COMERCIAL" || !ehLinhaComercial(alcance.numero)) {
+      throw new ErroRegra("Conversa fora de uma linha comercial do seu escopo.");
+    }
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Trava o atendimento: o segundo clique simultâneo espera o primeiro e encontra o lead já vinculado.
+      await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${alcance.id} FOR UPDATE`;
+      const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({
+        where: { id: alcance.id }, include: { conversa: { include: { contato: true, numero: true } } },
+      });
+      const contato = contatoIndividual(atual.conversa);
+      if (atual.leadId) {
+        // Estado-alvo (#166): a conversa já tem oportunidade. O reenvio devolve a mesma, sem gravar outro Evento;
+        // `criado` vem do vínculo que este autor gravou (a tela repete a mesma mensagem de sucesso).
+        const vinculo = await tx.evento.findFirst({
+          where: { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contato.id, autorId: autor.id },
+          orderBy: { criadoEm: "desc" }, select: { payload: true },
+        });
+        const p = (vinculo?.payload ?? {}) as { alvo?: { id?: unknown }; via?: unknown };
+        return { leadId: atual.leadId, criado: p.alvo?.id === atual.leadId && p.via === "criar_lead_linha" };
+      }
+      if (atual.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
+      let leadId = contato.leadId;
+      let criado = false;
+      if (!leadId) {
+        const pessoa = await resolverPessoaPorTelefone(tx, contato.telefoneE164);
+        if (pessoa.leadId) leadId = pessoa.leadId;
+        else if (pessoa.alunoId || pessoa.responsavelId) {
+          throw new ErroRegra("Este telefone já pertence a um aluno ou responsável. Cadastre o lead pela tela de Leads, conferindo o cadastro.");
+        } else {
+          leadId = await criarLeadDeInboundWhatsApp(tx, {
+            telefoneE164: contato.telefoneE164,
+            nomeExibicao: nomeConhecidoDoContato(contato),
+            // Linha sem dono: quem cria assume se for vendedor; gestão cria sem dono (atribui depois).
+            // `papeis.includes`, não temPapel: o administrador "tem" todo papel e viraria dono do lead.
+            donoId: atual.conversa.numero.donoId ?? (autor.papeis.includes(Papel.VENDEDOR) ? autor.id : null),
+            autorId: autor.id,
+            origem: "whatsapp_linha",
+          });
+          criado = true;
+        }
+        await tx.contatoWhatsApp.update({ where: { id: contato.id }, data: { leadId } });
+      }
+      // Condicional: dois cliques concorrentes não gravam dois leads na mesma conversa.
+      const marcado = await tx.atendimentoWhatsApp.updateMany({ where: { id: atual.id, leadId: null }, data: { leadId } });
+      if (!marcado.count) throw new ErroRegra("Esta conversa já tem lead.");
+      await registrarEvento(tx, {
+        tipo: "ContatoVinculado",
+        agregadoTipo: "ContatoWhatsApp",
+        agregadoId: contato.id,
+        autorId: autor.id,
+        payload: {
+          alvo: { tipo: "lead", id: leadId },
+          via: criado ? "criar_lead_linha" : "lead_existente_linha",
+          antes: { alunoId: contato.alunoId, responsavelId: contato.responsavelId, leadId: contato.leadId },
+        },
+      });
+      return { leadId, criado };
+    });
+    revalidatePath("/inbox");
+    revalidatePath("/funil");
+    return resultado;
+  });
+}
+
 /** Busca de pessoas para o vínculo (client-side da inbox — respeita escopoLeads). */
-export async function buscarVinculosInbox(q: string): Promise<Resultado<PessoasVinculo>> {
+export async function buscarVinculosInbox(q: string, atendimentoId?: string): Promise<Resultado<PessoasVinculo>> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    return buscarPessoasVinculo(autor, q);
+    return buscarPessoasVinculo(autor, q, atendimentoId);
   });
 }
 
@@ -358,39 +465,48 @@ export async function buscarVinculosInbox(q: string): Promise<Resultado<PessoasV
 export async function vincularContatoWhatsApp(input: VincularContatoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
-    const { contatoId, alvo } = VincularContatoSchema.parse(input);
-
-    // Guard: o contato precisa estar em alguma conversa visível ao usuário.
-    const alcance = await prisma.conversaWhatsApp.findFirst({
-      where: { contatoId, ...escopoConversas(autor) },
-      select: { id: true },
-    });
-    if (!alcance) throw new ErroRegra("Contato fora do seu escopo.");
+    const { contatoId, alvo, atendimentoId } = VincularContatoSchema.parse(input);
+    const alcance = atendimentoId ? await conversaVisivel(autor, atendimentoId, true) : null;
+    if (!alcance || alcance.contatoId !== contatoId || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para vinculação.");
 
     const contato = await prisma.contatoWhatsApp.findUnique({ where: { id: contatoId } });
     if (!contato) throw new ErroRegra("Contato não encontrado.");
 
     let data: { alunoId?: string; responsavelId?: string; leadId?: string };
     if (alvo.tipo === "aluno") {
-      const aluno = await prisma.aluno.findUnique({ where: { id: alvo.id }, select: { id: true } });
-      if (!aluno) throw new ErroRegra("Aluno não encontrado.");
+      if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) || alcance.finalidade === "COMERCIAL") throw new ErroRegra("Vínculo de aluno exige atendimento da secretaria/financeiro.");
+      const aluno = await prisma.aluno.findFirst({ where: { id: alvo.id, telefoneE164: contato.telefoneE164 }, select: { id: true } });
+      if (!aluno) throw new ErroRegra("Telefone do contato não corresponde ao aluno informado.");
+      if (alcance.finalidade === "FINANCEIRO" && aluno.id !== alcance.alunoId) {
+        throw new ErroRegra("O atendimento financeiro permanece no aluno e na matrícula já selecionados.");
+      }
+      if (contato.alunoId && contato.alunoId !== aluno.id) throw new ErroRegra("Vínculo existente deve ser corrigido pela administração com revisão do histórico.");
       data = { alunoId: aluno.id };
     } else if (alvo.tipo === "responsavel") {
-      const resp = await prisma.responsavel.findUnique({ where: { id: alvo.id }, select: { id: true } });
-      if (!resp) throw new ErroRegra("Responsável não encontrado.");
+      if (!temPapel(autor, Papel.SECRETARIA_ACADEMICA) || !alcance.alunoId || alcance.finalidade === "COMERCIAL") throw new ErroRegra("Selecione um atendimento do aluno para vincular responsável.");
+      const resp = await prisma.responsavel.findFirst({ where: { id: alvo.id, telefoneE164: contato.telefoneE164, alunos: { some: {
+        alunoId: alcance.alunoId, ...(alcance.finalidade === "FINANCEIRO" ? { papel: "FINANCEIRO" as const } : {}),
+      } } }, select: { id: true } });
+      if (!resp) throw new ErroRegra("Responsável fora da finalidade ou vínculo deste atendimento.");
+      if (contato.responsavelId && contato.responsavelId !== resp.id) throw new ErroRegra("Contato já vinculado a outro responsável.");
       data = { responsavelId: resp.id };
     } else {
-      // Vendedor só vincula aos PRÓPRIOS leads (mesmo row-level das telas).
-      const lead = await prisma.lead.findFirst({
-        where: { id: alvo.id, ...escopoLeads(autor) },
+      if (alcance.finalidade !== "COMERCIAL" || !temPapel(autor, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL)) throw new ErroRegra("Vínculo de lead exige atendimento comercial.");
+      const lead = await prisma.oportunidade.findFirst({
+        where: { AND: [{ id: alvo.id, telefoneE164: contato.telefoneE164 }, await escopoComercialAtual(autor)] },
         select: { id: true },
       });
       if (!lead) throw new ErroRegra("Lead não encontrado ou fora do seu escopo.");
+      if (contato.leadId && contato.leadId !== lead.id) throw new ErroRegra("Contato já vinculado a outro lead. Preserve o contexto histórico.");
       data = { leadId: lead.id };
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.contatoWhatsApp.update({ where: { id: contatoId }, data });
+      await garantirAtendimento(tx, { numeroId: alcance.numeroId, contatoId, finalidade: alcance.finalidade,
+        leadId: data.leadId ?? alcance.leadId,
+        alunoId: alcance.finalidade === "FINANCEIRO" ? alcance.alunoId : data.alunoId ?? alcance.alunoId,
+        turmaId: alcance.turmaId, matriculaId: alcance.finalidade === "FINANCEIRO" ? alcance.matriculaId : undefined });
       await registrarEvento(tx, {
         tipo: "ContatoVinculado",
         agregadoTipo: "ContatoWhatsApp",
@@ -406,12 +522,48 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
   });
 }
 
+/**
+ * Editar o nome salvo do contato pela thread: corrige o nome que a pessoa usa no perfil ou o que
+ * veio errado. Vale o mesmo alcance de quem responde a conversa; o pedagógico não expõe o contato.
+ * Vazio limpa o nome salvo (a tela volta ao perfil do WhatsApp ou ao número). Cadastro de aluno,
+ * lead e responsável não é editado aqui: continua no cadastro de cada um.
+ */
+export async function editarNomeContatoWhatsApp(input: EditarNomeContatoInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessao();
+    const { atendimentoId, nome, nomeAnterior } = EditarNomeContatoSchema.parse(input);
+    // Corrigir um rótulo não envia nada: basta ver o atendimento (encerrado ou com pagador trocado inclusive).
+    const alcance = await conversaVisivel(autor, atendimentoId);
+    if (!alcance || alcance.finalidade === "PEDAGOGICO") throw new ErroRegra("Atendimento fora do seu escopo para editar o contato.");
+    // O contato é um só para todas as linhas e áreas: quem não vê todos os atendimentos dele não o renomeia.
+    if (!await contatoSoNoAlcance(autor, alcance.contatoId)) {
+      throw new ErroRegra("Este contato também é atendido por outra área. Peça à administração para corrigir o nome.");
+    }
+    const depois = nome || null;
+    if (nomeAnterior === depois) return;
+    await prisma.$transaction(async (tx) => {
+      // Condicional ao nome que a tela carregou: quem editou antes não é sobrescrito às cegas.
+      const { count } = await tx.contatoWhatsApp.updateMany({ where: { id: alcance.contatoId, nomeExibicao: nomeAnterior },
+        data: { nomeExibicao: depois, nomeEditadoEm: new Date() } });
+      if (count === 0) throw new ErroRegra("O nome do contato mudou enquanto você editava. Recarregue a conversa e tente de novo.");
+      await registrarEvento(tx, {
+        tipo: "ContatoRenomeado",
+        agregadoTipo: "ContatoWhatsApp",
+        agregadoId: alcance.contatoId,
+        autorId: autor.id,
+        payload: { antes: nomeAnterior, depois },
+      });
+    });
+    revalidatePath("/inbox");
+  });
+}
+
 /** Opt-out manual (botão da thread — S10) e a reativação, ambos auditáveis (D26/D27). */
 export async function registrarOptOutContato(contatoId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     const alcance = await prisma.conversaWhatsApp.findFirst({
-      where: { contatoId, ...escopoConversas(autor) },
+      where: { AND: [{ contatoId }, await escopoConversas(autor)] },
       select: { id: true },
     });
     if (!alcance) throw new ErroRegra("Contato fora do seu escopo.");
@@ -434,11 +586,12 @@ export async function registrarOptOutContato(contatoId: string): Promise<Resulta
   });
 }
 
-export async function removerOptOutContato(contatoId: string): Promise<Resultado> {
+export async function removerOptOutContato(contatoId: string, evidencia = ""): Promise<Resultado> {
   return executarAcao(async () => {
-    const autor = await exigirSessao();
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    if (evidencia.trim().length < 12 || evidencia.length > 1000) throw new ErroRegra("Registre a evidência da nova autorização do contato (12 a 1000 caracteres).");
     const alcance = await prisma.conversaWhatsApp.findFirst({
-      where: { contatoId, ...escopoConversas(autor) },
+      where: { AND: [{ contatoId }, await escopoConversas(autor)] },
       select: { id: true },
     });
     if (!alcance) throw new ErroRegra("Contato fora do seu escopo.");
@@ -454,7 +607,7 @@ export async function removerOptOutContato(contatoId: string): Promise<Resultado
         agregadoTipo: "ContatoWhatsApp",
         agregadoId: contatoId,
         autorId: autor.id,
-        payload: {},
+        payload: { evidencia: evidencia.trim() },
       });
     });
     revalidatePath("/inbox");
@@ -486,24 +639,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
     });
     if (conflito) throw new ErroRegra("Já existe um número cadastrado com este telefone.");
 
-    // providerRef identifica o número DENTRO do driver (review PR #51 P2-6): duplicado
-    // deixaria o roteamento dos webhooks ambíguo — mensagem cairia na conversa errada.
-    if (dados.providerRef) {
-      const refDuplicada = await prisma.numeroWhatsApp.findFirst({
-        where: {
-          providerRef: dados.providerRef,
-          driver: dados.driver,
-          ...(dados.id ? { id: { not: dados.id } } : {}),
-        },
-        select: { rotulo: true },
-      });
-      if (refDuplicada) {
-        throw new ErroRegra(
-          `Esta referência (phone_number_id/instância) já está no número "${refDuplicada.rotulo}".`,
-        );
-      }
-    }
-
+    let driverEditado: string = dados.driver;
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
         const antes = await tx.numeroWhatsApp.findUnique({ where: { id: dados.id } });
@@ -513,13 +649,13 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
           data: {
             telefoneE164: dados.telefoneE164,
             rotulo: dados.rotulo,
-            driver: dados.driver,
             finalidade: dados.finalidade,
-            providerRef: dados.providerRef,
             donoId: dados.donoId,
             ativo: dados.ativo,
           },
         });
+        // Edição preserva driver e providerRef do registro (número legado não vira MOTOR aqui).
+        driverEditado = antes.driver;
         // Auditoria D26 (inclui troca de driver): antes → depois.
         await registrarEvento(tx, {
           tipo: "NumeroWhatsAppAlterado",
@@ -539,9 +675,9 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
             depois: {
               telefoneE164: dados.telefoneE164,
               rotulo: dados.rotulo,
-              driver: dados.driver,
+              driver: antes.driver,
               finalidade: dados.finalidade,
-              providerRef: dados.providerRef,
+              providerRef: antes.providerRef,
               donoId: dados.donoId,
               ativo: dados.ativo,
             },
@@ -555,11 +691,12 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
           rotulo: dados.rotulo,
           driver: dados.driver,
           finalidade: dados.finalidade,
-          providerRef: dados.providerRef,
           donoId: dados.donoId,
           ativo: dados.ativo,
         },
       });
+      // providerRef de número MOTOR = id (numeroId do motor).
+      await tx.numeroWhatsApp.update({ where: { id: criado.id }, data: { providerRef: criado.id } });
       await registrarEvento(tx, {
         tipo: "NumeroWhatsAppCriado",
         agregadoTipo: "NumeroWhatsApp",
@@ -570,48 +707,151 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
       return criado.id;
     });
 
-    revalidatePath("/configuracao/whatsapp");
+    // Cadastro no motor fora da transação: motor fora do ar não desfaz o número (o conectar refaz).
+    if (driverEditado === "MOTOR") {
+      try {
+        await garantirNumeroNoMotor({ providerRef: id, rotulo: dados.rotulo });
+      } catch (e) {
+        console.error("[salvarNumeroWhatsApp] cadastro no motor fica para o conectar:", e);
+      }
+    }
+
+    // Linha comercial (SPEC-ERP-005 LC-15): conversas desta linha que estavam na triagem passam já
+    // para a inbox do dono. O cron repete o backfill; falha aqui não desfaz o número salvo.
+    if (dados.finalidade === "VENDAS" && dados.ativo) {
+      try {
+        await adotarMensagensOrfasDaLinha({ numeroId: id, limiteConversas: 500 });
+      } catch (e) {
+        console.error("[salvarNumeroWhatsApp] adoção das conversas da linha fica para o cron:", e);
+      }
+      revalidatePath("/inbox");
+    }
+    revalidatePath("/configuracao/whatsapp", "layout");
     return { id };
+  });
+}
+
+/**
+ * Configura o caminho proativo de agenda (D38): número AGENDA do motor com o texto do template,
+ * Número de outro driver é recusado.
+ */
+export async function salvarConfiguracaoAvisosAgenda(input: ConfiguracaoAvisosAgendaInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const dados = ConfiguracaoAvisosAgendaSchema.parse(input);
+    const [numero, template] = await Promise.all([
+      prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroAvisosAgendaId } }),
+      prisma.templateWhatsApp.findUnique({ where: { id: dados.templateAvisosAgendaId } }),
+    ]);
+    if (!numero || !numero.ativo || numero.finalidade !== "AGENDA" || numero.driver !== "MOTOR") {
+      throw new ErroRegra("Escolha um número de agenda ativo do motor WhatsApp.");
+    }
+    if (!ehModeloRegua(template)) throw new ErroRegra("Escolha um template de agenda.");
+    if (/\{[^}]+\}/.test(template.corpo.replace(/\{(nome|horarios)\}/g, "")) || !template.corpo.includes("{horarios}")) {
+      throw new ErroRegra("O template de agenda deve usar somente {nome} e {horarios}, incluindo {horarios}.");
+    }
+    await prisma.$transaction(async (tx) => {
+      const antes = await tx.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { numeroAvisosAgendaId: true, templateAvisosAgendaId: true } });
+      // Nada mudou (ex.: reenvio após resultado incerto): sem upsert nem Evento, como aplicarSlaSetor.
+      if (antes?.numeroAvisosAgendaId === numero.id && antes.templateAvisosAgendaId === template.id) return;
+      await tx.configuracaoOperacional.upsert({
+        where: { id: "escola" }, create: { id: "escola", numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },
+        update: { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id, alteradaPorId: autor.id },
+      });
+      await registrarEvento(tx, { tipo: "ConfiguracaoAvisosAgendaAlterada", agregadoTipo: "ConfiguracaoOperacional", agregadoId: "escola", autorId: autor.id,
+        payload: { antes, depois: { numeroAvisosAgendaId: numero.id, templateAvisosAgendaId: template.id } } });
+    });
+    revalidatePath("/configuracao/whatsapp", "layout");
+    return undefined;
   });
 }
 
 export interface ConexaoQrResultado {
   qrBase64: string | null;
+  codigoPareamento: string | null;
   estado: SessaoNumero;
   erro: string | null;
 }
 
-/** Fluxo "conectar via QR" (doc 26 §Camada 0/E3) — só números BAILEYS. */
+async function numeroMotorParaSessao(numeroId: string) {
+  const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
+  if (!numero) throw new ErroRegra("Número não encontrado.");
+  if (numero.driver !== "MOTOR") throw new ErroRegra("Só números do motor WhatsApp conectam por aqui.");
+  return numero;
+}
+
+/** Fluxo "conectar via QR" (doc 26 §Camada 0/E3) — só números do motor. */
 export async function conectarNumeroQr(numeroId: string): Promise<Resultado<ConexaoQrResultado>> {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
-    if (!numero) throw new ErroRegra("Número não encontrado.");
-    if (numero.driver !== "BAILEYS") throw new ErroRegra("Só números Baileys conectam via QR.");
+    const numero = await numeroMotorParaSessao(numeroId);
     if (!numero.ativo) throw new ErroRegra("Número inativo.");
+    const r = await conectarNumeroMotor({ id: numero.id, providerRef: numero.id, rotulo: numero.rotulo });
+    revalidatePath("/configuracao/whatsapp", "layout");
+    return r;
+  });
+}
 
-    let providerRef = numero.providerRef;
-    if (!providerRef) {
-      providerRef = `genius${numero.telefoneE164.replace(/\D/g, "")}`;
-      await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { providerRef } });
-    }
-
-    const r: ResultadoConexao = await conectarInstanciaEvolution({ id: numero.id, providerRef });
-    revalidatePath("/configuracao/whatsapp");
+/** Pareamento por código (alternativa ao QR). */
+export async function parearNumeroPorCodigo(numeroId: string, telefoneE164: string): Promise<Resultado<ConexaoQrResultado>> {
+  return executarAcao(async () => {
+    await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const telefone = telefoneE164Schema.parse(telefoneE164);
+    const numero = await numeroMotorParaSessao(numeroId);
+    if (!numero.ativo) throw new ErroRegra("Número inativo.");
+    const r = await parearNumeroMotor({ id: numero.id, providerRef: numero.id, rotulo: numero.rotulo }, telefone);
+    revalidatePath("/configuracao/whatsapp", "layout");
     return r;
   });
 }
 
 /** Poll do estado da sessão (tela do número). */
-export async function consultarSessaoNumero(numeroId: string): Promise<Resultado<{ sessao: SessaoNumero }>> {
+export async function consultarSessaoNumero(
+  numeroId: string,
+): Promise<Resultado<{ sessao: SessaoNumero; qrBase64: string | null; codigoPareamento: string | null }>> {
   return executarAcao(async () => {
     await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
     if (!numero) throw new ErroRegra("Número não encontrado.");
-    if (numero.driver !== "BAILEYS" || !numero.providerRef) return { sessao: numero.sessao };
-    const sessao = await consultarEstadoInstancia({ id: numero.id, providerRef: numero.providerRef });
-    revalidatePath("/configuracao/whatsapp");
-    return { sessao };
+    if (numero.driver !== "MOTOR") return { sessao: numero.sessao, qrBase64: null, codigoPareamento: null };
+    let r;
+    try {
+      r = await consultarSessaoMotor({ id: numero.id, providerRef: numero.id, rotulo: numero.rotulo });
+    } catch {
+      // Motor fora do ar no poll: devolve o último estado conhecido.
+      return { sessao: numero.sessao, qrBase64: null, codigoPareamento: null };
+    }
+    revalidatePath("/configuracao/whatsapp", "layout");
+    return r;
+  });
+}
+
+/** Logout do número no motor; exige novo pareamento. Grava Evento. */
+export async function desconectarNumero(numeroId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const numero = await numeroMotorParaSessao(numeroId);
+    try {
+      await desconectarNumeroMotor({ id: numero.id, providerRef: numero.id });
+    } catch (e) {
+      if (e instanceof ErroMotor && e.codigo === "NUMERO_INEXISTENTE") {
+        // O motor nunca conheceu este número: nada a desligar lá.
+      } else {
+        throw new ErroRegra("Não foi possível desconectar no motor agora. Tente de novo em instantes.");
+      }
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "DESCONECTADO" } });
+      await registrarEvento(tx, {
+        tipo: "NumeroWhatsAppDesconectado",
+        agregadoTipo: "NumeroWhatsApp",
+        agregadoId: numero.id,
+        autorId: autor.id,
+        payload: { de: numero.sessao },
+      });
+    });
+    revalidatePath("/configuracao/whatsapp", "layout");
+    return undefined;
   });
 }
 
@@ -625,22 +865,10 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
         const antes = await tx.templateWhatsApp.findUnique({ where: { id: dados.id } });
-        if (!antes) throw new ErroRegra("Template não encontrado.");
-        // Nome+idioma são a identidade na Meta: só muda quem nunca foi submetido
-        // (review PR #51 P2-4 — a edição na Meta não aceita trocar nem name nem language).
-        if (dados.nome !== antes.nome && antes.metaTemplateId) {
-          throw new ErroRegra("Template já submetido à Meta não pode mudar de nome — crie um novo.");
-        }
-        if (dados.idioma !== antes.idioma && antes.metaTemplateId) {
-          throw new ErroRegra("Template já submetido à Meta não pode mudar de idioma — crie um novo.");
-        }
-        const mudouConteudo =
-          dados.corpo !== antes.corpo || dados.idioma !== antes.idioma || dados.categoria !== antes.categoria;
-        // Edição de aprovado volta ao rascunho (doc 26 §Camada 2): precisa re-submeter.
-        const statusMeta = mudouConteudo && antes.statusMeta === "APROVADO" ? "RASCUNHO" : antes.statusMeta;
+        if (!antes || !ehModeloRegua(antes)) throw new ErroRegra("Template não encontrado.");
         await tx.templateWhatsApp.update({
           where: { id: dados.id },
-          data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria, statusMeta },
+          data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },
         });
         await registrarEvento(tx, {
           tipo: "TemplateAlterado",
@@ -648,8 +876,8 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
           agregadoId: dados.id,
           autorId: autor.id,
           payload: {
-            antes: { corpo: antes.corpo, idioma: antes.idioma, categoria: antes.categoria, statusMeta: antes.statusMeta },
-            depois: { corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria, statusMeta },
+            antes: { corpo: antes.corpo, idioma: antes.idioma, categoria: antes.categoria },
+            depois: { corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },
           },
         });
         return dados.id;
@@ -670,57 +898,8 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
       return criado.id;
     });
 
-    revalidatePath("/configuracao/whatsapp");
+    revalidatePath("/configuracao/whatsapp", "layout");
     return { id };
-  });
-}
-
-/** Submete o template à revisão da Meta (Marco 2). Status final volta pelo webhook. */
-export async function submeterTemplateMeta(templateId: string): Promise<Resultado> {
-  return executarAcao(async () => {
-    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const template = await prisma.templateWhatsApp.findUnique({ where: { id: templateId } });
-    if (!template) throw new ErroRegra("Template não encontrado.");
-    if (template.statusMeta === "EM_REVISAO") throw new ErroRegra("Template já está em revisão na Meta.");
-    if (template.statusMeta === "APROVADO") throw new ErroRegra("Template já aprovado — edite-o para re-submeter.");
-
-    let metaTemplateId: string;
-    try {
-      ({ metaTemplateId } = await submeterTemplateNaMeta(template));
-    } catch (e) {
-      if (e instanceof ErroMeta) throw new ErroRegra(`Meta recusou a submissão: ${e.message}`);
-      throw e;
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.templateWhatsApp.update({
-        where: { id: templateId },
-        data: { statusMeta: "EM_REVISAO", metaTemplateId },
-      });
-      await registrarEvento(tx, {
-        tipo: "TemplateSubmetido",
-        agregadoTipo: "TemplateWhatsApp",
-        agregadoId: templateId,
-        autorId: autor.id,
-        payload: { metaTemplateId },
-      });
-    });
-    revalidatePath("/configuracao/whatsapp");
-  });
-}
-
-/** Mapeador (Marco 1): sincroniza a WABA → status/ids locais + importa aprovados. */
-export async function sincronizarTemplatesMeta(): Promise<Resultado<ResultadoSync>> {
-  return executarAcao(async () => {
-    await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    try {
-      const r = await sincronizarTemplatesWaba();
-      revalidatePath("/configuracao/whatsapp");
-      return r;
-    } catch (e) {
-      if (e instanceof ErroMeta) throw new ErroRegra(`Sincronização falhou: ${e.message}`);
-      throw e;
-    }
   });
 }
 
@@ -728,17 +907,50 @@ export async function sincronizarTemplatesMeta(): Promise<Resultado<ResultadoSyn
 
 const TIPO_ROTULO_POR_PASSO = new Map(REGUA.map((d) => [d.passo, { tipo: d.tipo, rotulo: d.rotulo }]));
 
+/** Degraus do formulário com tipo e rótulo fixos do passo; D+15 conserva envio manual (a restrição de aulas é a D+30). */
+function degrausComTipoFixo(degraus: ReturnType<typeof PoliticaReguaSchema.parse>["degraus"]) {
+  return degraus.map((d) => {
+    const fixo = TIPO_ROTULO_POR_PASSO.get(d.passo);
+    if (!fixo) throw new ErroRegra(`Passo desconhecido: ${d.passo}.`);
+    return { ...d, tipo: fixo.tipo, rotulo: fixo.rotulo, modo: d.passo === "D+15" ? ("MANUAL" as const) : d.modo };
+  });
+}
+
+/**
+ * Estimativa de alcance da ativação da régua (docs/42 L2517), só leitura: quantas pessoas recebem mensagem
+ * automática se a política do formulário passar a valer agora. Os degraus do formulário passam pela mesma
+ * tradução da política guardada (traduzirDegrausPolitica) e a contagem usa a regra do cron (decidirEnvioCron,
+ * em alcance-regua.ts) — nada é gravado nem enviado. Mesma alçada de salvar a política.
+ */
+export async function estimarAlcanceRegua(input: PoliticaReguaInput): Promise<Resultado<AlcanceRegua>> {
+  return executarAcao(async () => {
+    await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const dados = PoliticaReguaSchema.parse(input);
+    const degraus = degrausComTipoFixo(dados.degraus);
+    const ids = degraus.map((d) => d.templateId).filter((x): x is string => !!x);
+    const templates = ids.length ? await prisma.templateWhatsApp.findMany({ where: { id: { in: ids }, ...ONDE_MODELO_REGUA }, select: { id: true, nome: true } }) : [];
+    const nomePorId = new Map(templates.map((t) => [t.id, t.nome]));
+    const politica = traduzirDegrausPolitica(
+      degraus.map((d) => ({ ...d, templateNome: d.templateId ? nomePorId.get(d.templateId) ?? null : null })),
+    );
+    return contarAlcanceRegua(politica, new Date());
+  });
+}
+
 export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = PoliticaReguaSchema.parse(input);
 
-    // LEI (doc 26/30): D+15 (bloquear) nunca automatiza — força MANUAL mesmo que a UI minta.
-    const degraus = dados.degraus.map((d) => {
-      const fixo = TIPO_ROTULO_POR_PASSO.get(d.passo);
-      if (!fixo) throw new ErroRegra(`Passo desconhecido: ${d.passo}.`);
-      return { ...d, tipo: fixo.tipo, rotulo: fixo.rotulo, modo: fixo.tipo === "bloquear" ? ("MANUAL" as const) : d.modo };
-    });
+    // D+15 conserva envio manual. A restrição automática de aulas tem política própria D+30.
+    const degraus = degrausComTipoFixo(dados.degraus);
+
+    // Degrau só aponta para modelo de automação: resposta rápida do Inbox (mesma tabela) não entra na régua.
+    const idsTemplate = [...new Set(degraus.map((d) => d.templateId).filter((x): x is string => !!x))];
+    if (idsTemplate.length) {
+      const validos = await prisma.templateWhatsApp.count({ where: { id: { in: idsTemplate }, ...ONDE_MODELO_REGUA } });
+      if (validos !== idsTemplate.length) throw new ErroRegra("Template inválido num degrau: escolha um modelo de automação.");
+    }
 
     // Prontidão (S15): armar a política (SHADOW/ATIVA) valida o canal por número
     // (doc 26: "degrau só arma se o template estiver pronto para o driver do remetente").
@@ -747,28 +959,19 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       const remetente = await prisma.numeroWhatsApp.findUnique({ where: { id: dados.numeroRemetenteId } });
       if (!remetente || !remetente.ativo) throw new ErroRegra("Número remetente inexistente ou inativo.");
 
+      // C1 da R1 do #213: META_CLOUD (legado) não tem driver no despachante, então armar a política
+      // nele (automático, lote ou manual) só geraria intenções que falham com driver_indisponivel.
+      if (remetente.driver === DriverWhatsApp.META_CLOUD) {
+        throw new ErroRegra(`${MENSAGEM_META_CLOUD_SEM_ENVIO} Troque o remetente por um número do motor WhatsApp antes de armar a política.`);
+      }
+
       const automaticos = degraus.filter((d) => d.ativo && d.modo === "AUTOMATICO");
-      // TRAVA S1 (lei): régua automática exige driver oficial.
-      if (remetente.driver !== "META_CLOUD" && automaticos.length > 0) {
+      // Trava de driver (S1 revogada para MOTOR, D38): automação exige número do motor.
+      if (!driverAceitaAutomacao(remetente.driver) && automaticos.length > 0) {
         throw new ErroRegra(
-          "Trava do cron (S1): degraus automáticos exigem número com driver oficial (Meta Cloud). " +
+          "Trava do cron: degraus automáticos exigem número do motor WhatsApp. " +
             "Troque o remetente ou deixe os degraus em manual/lote.",
         );
-      }
-      if (remetente.driver === "META_CLOUD") {
-        const armados = degraus.filter((d) => d.ativo && d.modo !== "MANUAL");
-        const templates = await prisma.templateWhatsApp.findMany({
-          where: { id: { in: armados.map((d) => d.templateId).filter((x): x is string => !!x) } },
-          select: { id: true, statusMeta: true },
-        });
-        const aprovado = new Map(templates.map((t) => [t.id, t.statusMeta === "APROVADO"]));
-        const pendentes = armados.filter((d) => !d.templateId || !aprovado.get(d.templateId));
-        if (pendentes.length > 0) {
-          throw new ErroRegra(
-            `Degrau(s) ${pendentes.map((d) => d.passo).join(", ")} sem template APROVADO na Meta — ` +
-              "aprove os templates (tela ao lado) antes de armar a política em número oficial.",
-          );
-        }
       }
     }
 
@@ -862,8 +1065,8 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
       });
     });
 
-    revalidatePath("/configuracao/whatsapp");
-    revalidatePath("/financeiro"); // timeline do drawer lê a política do banco (E2)
+    revalidatePath("/configuracao/whatsapp", "layout");
+    revalidatePath("/financeiro", "layout"); // timeline do drawer lê a política do banco (E2)
   });
 }
 
@@ -888,7 +1091,7 @@ export async function acionarKillSwitchRegua(ligado: boolean): Promise<Resultado
         payload: { antes: { killSwitch: politica.killSwitch }, depois: { killSwitch: ligado } },
       });
     });
-    revalidatePath("/configuracao/whatsapp");
-    revalidatePath("/financeiro");
+    revalidatePath("/configuracao/whatsapp", "layout");
+    revalidatePath("/financeiro", "layout");
   });
 }

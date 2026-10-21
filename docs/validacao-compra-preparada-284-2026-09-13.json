@@ -1,0 +1,15 @@
+{
+  "incremento": 284,
+  "data": "2026-09-13",
+  "escopo": "Compra de horas vinculada ao adiantamento da preparação aceita",
+  "integracao": { "aprovados": 71, "falhos": 0, "arquivos": ["src/server/matricula/compra-horas.int.test.ts", "src/server/matricula/reserva-vaga.int.test.ts"] },
+  "cobertura": ["Adiantamento por hora aceito, ativado e pago", "Quantidade diferente do contrato recusada sem criar compra", "Registro e repetição preservam recebimentos", "Memória identifica preparação, condições e emissão", "Preço negociado acima da referência não gera desconto negativo", "Compras legadas mantêm conferência e idempotência"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "novaMigration": false,
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Reservas e consumos de horas ainda precisam de persistência", "Validade, pausa e acerto do saldo ainda incompletos", "Novas compras fora do adiantamento inicial exigem condições próprias", "Sem homologação interativa"],
+  "producao": false,
+  "enviosExternos": false
+}

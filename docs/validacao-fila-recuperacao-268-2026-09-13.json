@@ -1,0 +1,13 @@
+{
+  "incremento": 268,
+  "data": "2026-09-13",
+  "escopo": "Fila do professor e detalhe limitado da tentativa designada",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 51, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 52 },
+  "migrationAdicional": false,
+  "ultimaRegressaoIntegral": 265,
+  "homologacaoInterativa": false,
+  "producao": false
+}

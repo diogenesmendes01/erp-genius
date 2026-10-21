@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { criarProduto } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
+import { botaoClasses } from "@/components/Botao";
 
 export interface ProdutoRow {
   id: string;
@@ -13,7 +17,7 @@ export interface ProdutoRow {
 }
 
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function ProdutosPainel({
   produtos,
@@ -27,31 +31,26 @@ export function ProdutosPainel({
   const router = useRouter();
   const [idiomaId, setIdiomaId] = useState(idiomas[0]?.id ?? "");
   const [modalidadeId, setModalidadeId] = useState(modalidades[0]?.id ?? "");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // criarProduto recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve o
+  // produto já criado, em vez do erro "Já existe um produto".
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
 
   async function adicionar() {
     if (!idiomaId || !modalidadeId) return;
-    setErro(null);
-    setSalvando(true);
-    const res = await criarProduto({ idiomaId, modalidadeId });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
-    router.refresh();
+    const d = await acao.executar(() => criarProduto({ idiomaId, modalidadeId, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
+    if (d?.tipo === "ok") router.refresh();
   }
 
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Produtos</h2>
       <p className="mb-3 text-sm text-gray-500">Unidade vendável = idioma × modalidade.</p>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Idioma</th>
               <th className="px-4 py-2 font-medium">Modalidade</th>
@@ -73,14 +72,14 @@ export function ProdutosPainel({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
+        <select aria-label="Idioma do novo produto" value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
           {idiomas.map((i) => (
             <option key={i.id} value={i.id}>
               {i.nome}
             </option>
           ))}
         </select>
-        <select value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls}>
+        <select aria-label="Modalidade do novo produto" value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls}>
           {modalidades.map((m) => (
             <option key={m.id} value={m.id}>
               {m.nome}
@@ -89,12 +88,13 @@ export function ProdutosPainel({
         </select>
         <button
           onClick={adicionar}
-          disabled={salvando}
-          className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          disabled={acao.ocupado}
+          className={botaoClasses({ tamanho: "lg" })}
         >
           <IconPlus className="h-4 w-4" /> Adicionar produto
         </button>
       </div>
+      <FeedbackAcao erro={acao.erro} className="mt-3" />
     </section>
   );
 }

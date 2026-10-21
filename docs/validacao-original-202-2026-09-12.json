@@ -1,0 +1,30 @@
+{
+  "incremento": 202,
+  "data": "2026-09-12",
+  "unitarios": {
+    "arquivo": "src/server/contratos/pdf-previa.test.ts",
+    "aprovados": 3
+  },
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "aprovados": 48,
+    "falhas": 0
+  },
+  "reteste": {
+    "aprovados": 1,
+    "falhas": 0,
+    "naoSelecionados": 47,
+    "motivo": "Caso documental repetido após ajustes de integridade e vínculo"
+  },
+  "build": "Next.js 16.3.5 aprovado; 45 páginas; sem alerta de tracing dinâmico no build final",
+  "typescript": "aprovado após ajuste de tipo do fixture JSON",
+  "eslint": "arquivos alterados sem erros ou avisos",
+  "migrations": 94,
+  "schema": "sem diferenças",
+  "pdf": "validacao-pdf-original-2026-09-12.json",
+  "limites": [
+    "Última regressão integral: incremento 201; rodada 202 direcionada.",
+    "Sem ensaio interativo do formulário no navegador.",
+    "Sem envio externo, assinatura, aceite, produção ou dados reais."
+  ]
+}

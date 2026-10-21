@@ -1,0 +1,328 @@
+[
+  {
+    "corpo": "F07.7",
+    "criterio": "F07.7.Aceite.1",
+    "texto": "Trocar ID do aluno/reposição/material, usar token reutilizado/expirado ou sessão revogada não abre acesso. E-mail individual ausente deixa pendência sem conta fictícia.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/gravacoes/drive.ts",
+      "src/server/gravacoes/autorizacao.ts",
+      "src/server/portal-aluno/identidade.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.ts"
+    ],
+    "testes": [
+      "src/server/gravacoes/drive.test.ts",
+      "src/server/gravacoes/autorizacao.int.test.ts",
+      "src/server/portal-aluno/identidade.int.test.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.test.ts"
+    ],
+    "pendencia": "Conferência integral das asserções e da jornada ainda pendente; existência de testes não comprova todo o critério.",
+    "justificativa": "Conferência integral das asserções e da jornada ainda pendente; existência de testes não comprova todo o critério."
+  },
+  {
+    "corpo": "F07.7",
+    "criterio": "F07.7.Aceite.2",
+    "texto": "Gravação inicia, avança e retoma pelo ERP; requisição não expõe credencial/link público nem carrega o vídeo inteiro na memória do servidor.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/gravacoes/drive.ts",
+      "src/server/gravacoes/autorizacao.ts",
+      "src/server/portal-aluno/identidade.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.ts"
+    ],
+    "testes": [
+      "src/server/gravacoes/drive.test.ts",
+      "src/server/gravacoes/autorizacao.int.test.ts",
+      "src/server/portal-aluno/identidade.int.test.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.test.ts"
+    ],
+    "pendencia": "Conferência integral das asserções e da jornada ainda pendente; existência de testes não comprova todo o critério.",
+    "justificativa": "Conferência integral das asserções e da jornada ainda pendente; existência de testes não comprova todo o critério."
+  },
+  {
+    "corpo": "F07.7",
+    "criterio": "F07.7.Aceite.3",
+    "texto": "Revogação impede novas leituras e interrompe fluxo ativo segundo verificação de autorização do serviço; documentar dados já transmitidos/bufferizados como limite técnico, sem prometer impedir captura.",
+    "status": "parcial",
+    "codigo": [
+      "src/server/gravacoes/drive.ts",
+      "src/server/gravacoes/autorizacao.ts",
+      "src/server/portal-aluno/identidade.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.ts",
+      "src/server/gravacoes/stream-autorizado.ts",
+      "src/server/gravacoes/reproducao-continua.ts",
+      "src/server/gravacoes/aula-institucional.ts"
+    ],
+    "testes": [
+      "src/server/gravacoes/drive.test.ts",
+      "src/server/gravacoes/autorizacao.int.test.ts",
+      "src/server/portal-aluno/identidade.int.test.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.test.ts",
+      "src/server/gravacoes/stream-autorizado.test.ts",
+      "src/server/portal-aluno/sessao-capturada.int.test.ts",
+      "src/server/gravacoes/aula-institucional.test.ts"
+    ],
+    "pendencia": "610/611 adicionaram revalidação durante transmissão; falta homologação de comportamento/performance no provedor real. Sessão de funcionário não oferece revogação isolada de JWT no modelo atual.",
+    "justificativa": "Testes verificam revogação entre leituras e durante read pendente, cancelamento da origem e sessão capturada contra DB. Rotas aluno/equipe usam wrapper. Buffer já transmitido permanece limite técnico."
+  },
+  {
+    "corpo": "F07.7",
+    "criterio": "F07.7.Aceite.4",
+    "texto": "Falhas de permissão, material, intervalo de bytes ou provedor geram resposta/pendência coerentes, sem exposição de outro arquivo. Verificar versão para não misturar trechos de materiais diferentes.",
+    "status": "parcial",
+    "codigo": [
+      "src/server/gravacoes/drive.ts",
+      "src/server/gravacoes/autorizacao.ts",
+      "src/server/portal-aluno/identidade.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.ts"
+    ],
+    "testes": [
+      "src/server/gravacoes/drive.test.ts",
+      "src/server/gravacoes/autorizacao.int.test.ts",
+      "src/server/portal-aluno/identidade.int.test.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.test.ts"
+    ],
+    "pendencia": "Adaptador valida Drive, tipo e intervalo de bytes, mas não fixa/confronta revisão do arquivo entre requisições. Substituição do conteúdo no mesmo fileId pode misturar trechos de versões diferentes.",
+    "justificativa": "MetadadosDrive e fields não incluem revisão/version/ETag; requisição alt=media não aplica condição de versão. drive.test.ts cobre Range e metadados, não alteração de conteúdo entre trechos."
+  },
+  {
+    "corpo": "F07.7",
+    "criterio": "F07.7.Aceite.5",
+    "texto": "Homologação mede latência, concorrência, memória, banda, limites e custo no ambiente real autorizado antes de habilitar a reprodução em produção.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/gravacoes/drive.ts",
+      "src/server/gravacoes/autorizacao.ts",
+      "src/server/portal-aluno/identidade.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.ts"
+    ],
+    "testes": [
+      "src/server/gravacoes/drive.test.ts",
+      "src/server/gravacoes/autorizacao.int.test.ts",
+      "src/server/portal-aluno/identidade.int.test.ts",
+      "src/app/api/portal-aluno/reposicoes/[id]/video/route.test.ts"
+    ],
+    "pendencia": "Não há evidência auditada de medição no ambiente real: latência, concorrência, memória, banda e custo.",
+    "justificativa": "Não há evidência auditada de medição no ambiente real: latência, concorrência, memória, banda e custo."
+  },
+  {
+    "corpo": "N01",
+    "criterio": "N01.Aceite.1",
+    "texto": "Proposta rejeitada ou transação revertida não envia aviso de alteração aplicada; conjunto aprovado gera comunicação consolidada sem duplicação.",
+    "status": "parcial",
+    "codigo": [
+      "src/server/portal-aluno/identidade.ts",
+      "src/server/whatsapp/fila.ts",
+      "src/server/whatsapp/despachante.ts"
+    ],
+    "testes": [
+      "src/server/portal-aluno/identidade.int.test.ts"
+    ],
+    "pendencia": "O despachante de identidade recebe callback; comentário no código descreve futuro despachante Resend. Não foi localizada integração Resend concreta. Fila WhatsApp existente não comprova produtor de avisos consolidados da agenda.",
+    "justificativa": "O despachante de identidade recebe callback; comentário no código descreve futuro despachante Resend. Não foi localizada integração Resend concreta. Fila WhatsApp existente não comprova produtor de avisos consolidados da agenda."
+  },
+  {
+    "corpo": "N01",
+    "criterio": "N01.Aceite.2",
+    "texto": "Destinatário revogado ou contato alterado é reavaliado; token expirado não é reenviado como convite válido.",
+    "status": "parcial",
+    "codigo": [
+      "src/server/portal-aluno/identidade.ts",
+      "src/server/whatsapp/fila.ts",
+      "src/server/whatsapp/despachante.ts"
+    ],
+    "testes": [
+      "src/server/portal-aluno/identidade.int.test.ts"
+    ],
+    "pendencia": "O despachante de identidade recebe callback; comentário no código descreve futuro despachante Resend. Não foi localizada integração Resend concreta. Fila WhatsApp existente não comprova produtor de avisos consolidados da agenda.",
+    "justificativa": "O despachante de identidade recebe callback; comentário no código descreve futuro despachante Resend. Não foi localizada integração Resend concreta. Fila WhatsApp existente não comprova produtor de avisos consolidados da agenda."
+  },
+  {
+    "corpo": "N01",
+    "criterio": "N01.Aceite.3",
+    "texto": "Falha de canal não vira entrega; repetição de retorno do provedor não duplica eventos ou muda destinatário por engano.",
+    "status": "parcial",
+    "codigo": [
+      "src/server/portal-aluno/identidade.ts",
+      "src/server/whatsapp/fila.ts",
+      "src/server/whatsapp/despachante.ts"
+    ],
+    "testes": [
+      "src/server/portal-aluno/identidade.int.test.ts"
+    ],
+    "pendencia": "O despachante de identidade recebe callback; comentário no código descreve futuro despachante Resend. Não foi localizada integração Resend concreta. Fila WhatsApp existente não comprova produtor de avisos consolidados da agenda.",
+    "justificativa": "O despachante de identidade recebe callback; comentário no código descreve futuro despachante Resend. Não foi localizada integração Resend concreta. Fila WhatsApp existente não comprova produtor de avisos consolidados da agenda."
+  },
+  {
+    "corpo": "N01",
+    "criterio": "N01.Aceite.4",
+    "texto": "Homologar domínio/remetente, recebimento de convite e recuperação, limites/picos e falhas antes de habilitar envios reais.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/portal-aluno/identidade.ts",
+      "src/server/whatsapp/fila.ts",
+      "src/server/whatsapp/despachante.ts"
+    ],
+    "testes": [
+      "src/server/portal-aluno/identidade.int.test.ts"
+    ],
+    "pendencia": "Sem evidência de homologação real do domínio/remetente, convites, recuperação e capacidade.",
+    "justificativa": "Sem evidência de homologação real do domínio/remetente, convites, recuperação e capacidade."
+  },
+  {
+    "corpo": "M01",
+    "criterio": "M01.Aceite.1",
+    "texto": "Reexecutar lote/linha não duplica aluno, contrato, vínculo ou pagamento; colisões de origem aparecem para revisão.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/alunos/importacao.ts",
+      "src/server/turmas/importacao.ts",
+      "src/app/api/alunos/importar/route.ts",
+      "src/app/api/turmas/importar/route.ts"
+    ],
+    "testes": [
+      "src/server/alunos/importacao.test.ts",
+      "src/server/turmas/importacao.test.ts"
+    ],
+    "pendencia": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados.",
+    "justificativa": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados."
+  },
+  {
+    "corpo": "M01",
+    "criterio": "M01.Aceite.2",
+    "texto": "Datas provisórias e divergências da fonte não se tornam histórico confirmado. Financeiro separa pagamento original de meses cobertos antecipadamente.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/alunos/importacao.ts",
+      "src/server/turmas/importacao.ts",
+      "src/app/api/alunos/importar/route.ts",
+      "src/app/api/turmas/importar/route.ts"
+    ],
+    "testes": [
+      "src/server/alunos/importacao.test.ts",
+      "src/server/turmas/importacao.test.ts"
+    ],
+    "pendencia": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados.",
+    "justificativa": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados."
+  },
+  {
+    "corpo": "M01",
+    "criterio": "M01.Aceite.3",
+    "texto": "Conciliação confere contagens, vínculos e valores por moeda; configuração/dados incompletos bloqueiam a operação dependente sem impedir examinar outros conjuntos.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/alunos/importacao.ts",
+      "src/server/turmas/importacao.ts",
+      "src/app/api/alunos/importar/route.ts",
+      "src/app/api/turmas/importar/route.ts"
+    ],
+    "testes": [
+      "src/server/alunos/importacao.test.ts",
+      "src/server/turmas/importacao.test.ts"
+    ],
+    "pendencia": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados.",
+    "justificativa": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados."
+  },
+  {
+    "corpo": "M01",
+    "criterio": "M01.Aceite.4",
+    "texto": "Importação/ensaio não dispara convites, cobranças recorrentes, lembretes ou devoluções. Carga final tem relatório de validação e rastreabilidade.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/alunos/importacao.ts",
+      "src/server/turmas/importacao.ts",
+      "src/app/api/alunos/importar/route.ts",
+      "src/app/api/turmas/importar/route.ts"
+    ],
+    "testes": [
+      "src/server/alunos/importacao.test.ts",
+      "src/server/turmas/importacao.test.ts"
+    ],
+    "pendencia": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados.",
+    "justificativa": "Importadores de cadastro encontrados; falta conferir carga de contratos, recebimentos, cobertura e conciliação por origem. Ensaio/carga real não comprovados."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.1",
+    "texto": "Agenda alterada concorrentemente com publicação, substituição e particular conserva disponibilidade e aprovações; mensagem só após aplicação.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.2",
+    "texto": "Professor removido, aluno transferido/pausado e entrega antiga mantêm autoria, elegibilidade, restrições e acesso limitado.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.3",
+    "texto": "Aluno com contrato mensal e contrato por hora: pausa/encerramento seletivo preserva o excluído; operação coletiva valida todos os selecionados. D13/D14 não escolhem matrícula errada nem encerram outras alocações silenciosamente.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.4",
+    "texto": "Crédito usado enquanto chega pagamento ou devolução não duplica saldo; fechamento parcial, complemento e encerramento reconciliam com os recebimentos.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.5",
+    "texto": "Fim de mês, ano bissexto, fuso e dia não útil produzem datas/valores esperados; autoaprovação e acesso por ID não autorizado falham.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.6",
+    "texto": "Relatórios distinguem validado localmente, integração homologada e apto à operação; lacuna de produção não é marcada como entregue por teste com substituto de serviço.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  },
+  {
+    "corpo": "V01",
+    "criterio": "V01.Aceite.7",
+    "texto": "Jornada COM01/DCT01–DCT03 confere reserva, emissão e ativação nos quatro caminhos iniciais, nova negociação do mesmo aluno, assinatura por etapas, desistência com concorrência/resultado incerto, substituição e aditivo com vigência; incorporar MAT-17–MAT-29 e DOC-01–DOC-19.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [
+      "docs/validacao-unitaria-609-2026-09-16.json"
+    ],
+    "pendencia": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério.",
+    "justificativa": "Regressão unitária atual disponível; integração atual em execução. Exige cruzar cenários compostos, interface e limites de homologação; regressão verde isolada não encerra este critério."
+  }
+]

@@ -1,0 +1,5 @@
+{
+ "incremento":343,"data":"2026-09-14","escopo":"Encerramento efetivado com horas faturadas e outro contrato preservado",
+ "integracao":{"aprovados":21,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","ultimoBuild":342,"ultimaSuiteUnitariaIntegral":342,
+ "migration":false,"limites":["Cenário sem ajuste do saldo faturado","Antecipações e compensações em conjunto pendentes","Homologação visual pendente"],"producao":false,"enviosExternos":false
+}

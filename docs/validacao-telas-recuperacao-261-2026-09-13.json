@@ -1,0 +1,14 @@
+{
+  "incremento": 261,
+  "data": "2026-09-13",
+  "escopo": "Consultas autorizadas e telas de listagem, lançamento e conferência de notas de recuperação",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 47, "falhas": 0 },
+  "revalidacaoFinal": { "cenario": "oficializa recuperação sem apagar a origem", "aprovados": 1, "demaisNaoExecutados": 46, "motivo": "Retirar papel de gestão para comprovar acesso histórico do ex-professor" },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 50 },
+  "migrationAdicional": false,
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false,
+  "producao": false
+}

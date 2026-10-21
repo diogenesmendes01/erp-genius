@@ -1,0 +1,97 @@
+import { Suspense } from "react";
+import Link from "next/link";
+import { Papel } from "@prisma/client";
+import { exigirSessaoPagina } from "@/server/_shared";
+import { consultarReposicoesEquipe } from "@/server/diario/reposicao-consulta";
+import { consultarOperacaoEntregaReposicao } from "@/server/diario/reposicao-entrega-operacional";
+import { ReposicoesEquipe, SolicitarReposicao } from "@/app/(app)/diario/reposicoes/ReposicoesEquipe";
+import type { OperacaoEntrega } from "@/app/(app)/diario/reposicoes/OperacaoEntregaReposicao";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { VoltarPara } from "@/components/VoltarPara";
+import { EstadoVazio } from "@/components/EstadoVazio";
+import { botaoClasses } from "@/components/Botao";
+import { EsqueletoCartoes } from "@/components/Esqueleto";
+import { buscarMatriculasParaReposicao, LIMITE_BUSCA_REPOSICAO } from "@/server/diario/reposicao-busca-matricula";
+import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
+
+export default async function ReposicoesEquipePage({ searchParams }: { searchParams: Promise<{ matriculaId?: string; cursor?: string; origemCursor?: string; busca?: string }> }) {
+  const usuario = await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO, Papel.ADMINISTRADOR);
+  const podeOperarEntrega = usuario.papeis.includes(Papel.GERENTE_PEDAGOGICO) || usuario.papeis.includes(Papel.ADMINISTRADOR);
+  const { matriculaId, cursor, origemCursor, busca: buscaBruta } = await searchParams;
+  const busca = (buscaBruta ?? "").trim().slice(0, 100);
+  const preferencia = await consultarPreferenciaFusoEquipe();
+  const preferenciaFusoExibicao = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
+  const fusoExibicao = resolverFusoExibicao(preferenciaFusoExibicao, "UTC");
+  const encontradas = !matriculaId && busca.length >= 2 ? await buscarMatriculasParaReposicao({ busca }) : null;
+  return <div className="space-y-5">
+    <VoltarPara href="/academico" />
+    {!matriculaId && <EscolherMatricula busca={busca} r={encontradas} />}
+    {/* A consulta da matrícula e uma por gravação autorizada (Conteudo) não seguram mais a página inteira
+        (docs/42 /academico/reposicoes #2): o "voltar" sai antes e o esqueleto ocupa o lugar do conteúdo. O key
+        é só a matrícula (identidade do registro): trocar de matrícula recomeça o painel com o esqueleto. Trocar
+        de página NÃO remonta, para não apagar a justificativa que estiver sendo digitada em SolicitarReposicao
+        (docs/43 §6 item 3; trava formularios-preservados) — a navegação do App Router mantém a tela anterior até
+        a nova chegar. */}
+    {matriculaId && <Suspense key={matriculaId} fallback={<EsqueletoCartoes rotulo="reposições da matrícula" cartoes={2} />}>
+      <Conteudo matriculaId={matriculaId} cursor={cursor} origemCursor={origemCursor} podeOperarEntrega={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+    </Suspense>}
+  </div>;
+}
+
+// Sem `?matriculaId=` a tela era um beco (docs/42 L1244; docs/43 §6 item 7): só a frase "abra pelo contexto da
+// matrícula". Agora ela dá a busca e a lista para escolher a matrícula, e diz o outro caminho (a ficha do aluno).
+function EscolherMatricula({ busca, r }: { busca: string; r: Awaited<ReturnType<typeof buscarMatriculasParaReposicao>> | null }) {
+  return <>
+    <h1 className="text-2xl font-medium">Reposições individuais</h1>
+    <p>Escolha a matrícula para consultar a ausência de origem e o histórico acadêmico. Também é possível abrir pela ficha do aluno, em mudanças acadêmicas.</p>
+    <form method="get" action="/academico/reposicoes" role="search" aria-label="Buscar matrícula para reposições" className="flex flex-wrap items-center gap-2">
+      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar matrícula por aluno ou código" placeholder="Aluno ou código da matrícula…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
+      <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
+      {busca && <Link href="/academico/reposicoes" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
+    </form>
+    {!r ? <p className="text-sm text-gray-600">Digite ao menos duas letras do nome do aluno ou o código da matrícula. <Link className="text-brand-700 underline" href="/alunos">Abrir a lista de alunos</Link></p>
+      : !r.ok || !r.dado ? <p role="alert">{r.ok ? "Busca indisponível." : r.erro}</p>
+      : <>
+        {r.dado.itens.length ? <ul className="space-y-2" aria-label="Matrículas encontradas">{r.dado.itens.map((m) => <li key={m.id} className="rounded border p-3">
+          <Link className="text-brand-700 underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(m.id)}`}>{m.codigo ?? "Matrícula sem código"} · {m.aluno}</Link>
+          <span className="text-sm text-gray-600"> · {m.produto} · {rotular(STATUS_MATRICULA_LABEL, m.status)}</span>
+        </li>)}</ul> : <EstadoVazio bloco acao={<Link className="underline" href="/alunos">Abrir a lista de alunos</Link>}>Nenhuma matrícula encontrada para “{busca}”.</EstadoVazio>}
+        {r.dado.maisResultados && <p className="text-sm text-gray-600">Mostrando as {LIMITE_BUSCA_REPOSICAO} matrículas mais recentes da busca. Refine pelo código ou pelo nome completo.</p>}
+      </>}
+  </>;
+}
+
+async function Conteudo({ matriculaId, cursor, origemCursor, podeOperarEntrega, fusoExibicao, preferenciaFusoExibicao }: { matriculaId: string; cursor?: string; origemCursor?: string; podeOperarEntrega: boolean; fusoExibicao: string; preferenciaFusoExibicao: string | null }) {
+  const r = await consultarReposicoesEquipe({ matriculaId, cursor, origemCursor });
+  if (!r.ok) return <p role="alert">{r.erro}</p>;
+  if (!r.dado) return <p role="alert">Não foi possível consultar as reposições desta matrícula.</p>;
+  const dado = r.dado;
+  const gravacoesAutorizadas = dado.reposicoes.filter((reposicao) => reposicao.modalidade === "GRAVACAO" && reposicao.decisao?.aprovada);
+  const paines = podeOperarEntrega ? await Promise.all(gravacoesAutorizadas.map(async (reposicao) => ({
+    reposicaoId: reposicao.id,
+    painel: await consultarOperacaoEntregaReposicao({ reposicaoId: reposicao.id, matriculaId: dado.matricula.id }),
+  }))) : [];
+  const operacoes: Record<string, OperacaoEntrega> = {};
+  let houveErroOperacional = false;
+  for (const { reposicaoId, painel } of paines) {
+    if (painel.ok && painel.dado) operacoes[reposicaoId] = painel.dado;
+    else houveErroOperacional = true;
+  }
+  return <>
+    <p className="text-sm text-gray-600">Matrícula {dado.matricula.codigo}. A frequência original permanece registrada; uma autorização não conclui nem regulariza a reposição.</p>
+    {!dado.matricula.ativa && <p role="status">A matrícula não está ativa. O histórico permanece disponível, mas não há solicitação ou decisão disponível.</p>}
+    {!podeOperarEntrega && gravacoesAutorizadas.length > 0 && <p role="status">Material, prazo, liberações e indisponibilidades da gravação são operados somente pela Gestão Pedagógica ou Administração.</p>}
+    {houveErroOperacional && <p role="alert">Não foi possível carregar o estado operacional de uma reposição gravada. Atualize a consulta antes de operar.</p>}
+    {dado.matricula.ativa && dado.origensElegiveis.length > 0 && <section className="space-y-4" aria-label="Ausências disponíveis para solicitação">
+      <h2 className="text-xl font-medium">Solicitar a partir de ausência conferida</h2>
+      {dado.origensElegiveis.map((origem) => {
+        const rejeitadaAntes = dado.reposicoes.some((reposicao) => reposicao.origem.aulaOriginalId === origem.aulaOriginalId && reposicao.decisao && !reposicao.decisao.aprovada);
+        return <div key={origem.aulaOriginalId} className="space-y-2"><SolicitarReposicao origem={{ ...origem, matriculaId: dado.matricula.id }} />{rejeitadaAntes && <p role="status" className="text-sm text-gray-600">Há pedido anterior rejeitado para esta ausência no histórico abaixo. Um novo pedido precisa de nova justificativa e seguirá nova decisão independente.</p>}</div>;
+      })}
+      {dado.proximoOrigemCursor && <Link className="inline-block text-sm text-brand-700 underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(matriculaId)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}&origemCursor=${encodeURIComponent(dado.proximoOrigemCursor)}`}>Ausências anteriores disponíveis</Link>}
+    </section>}
+    <ReposicoesEquipe reposicoes={dado.reposicoes} operacoes={operacoes} mostrarRelatoEquipe={!podeOperarEntrega} mostrarCorrecoes={podeOperarEntrega} fusoExibicao={fusoExibicao} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+    {dado.proximoCursor && <Link className="inline-block text-sm text-brand-700 underline" href={`/academico/reposicoes?matriculaId=${encodeURIComponent(matriculaId)}&cursor=${encodeURIComponent(dado.proximoCursor)}`}>Reposições anteriores</Link>}
+  </>;
+}

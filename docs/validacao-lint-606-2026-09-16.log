@@ -1,0 +1,12 @@
+
+C:\Users\Mendes\.codex\worktrees\de19\erp-genius\src\server\matricula\continuidade-emissao-tx.ts
+  10:7  warning  'civil' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\de19\erp-genius\src\server\matricula\continuidade-estado-tx.ts
+  13:97  warning  'conferirOrigensConcorrentesAposRecomposicaoTx' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\de19\erp-genius\src\server\matricula\continuidade-recomposicao-tx.test.ts
+  9:20  warning  'matriculaId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 3 problems (0 errors, 3 warnings)
+

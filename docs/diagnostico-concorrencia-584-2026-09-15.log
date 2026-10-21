@@ -1,0 +1,59 @@
+[MIXED_EXPORTS] Entry module "vitest.integration.config.ts" is using named (including "DATABASE_URL_TESTE", "default") and default exports together. Consumers of your bundle will have to use `chunk.default` to access the default export, which may not be what you want. Use `output.exports: "named"` to disable this warning.
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.11 C:/Users/Mendes/.codex/worktrees/de19/erp-genius
+
+ ↓ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > proposta não cria fatos; aprovação independente aplica agenda e reserva uma única vez
+ ↓ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > dia não letivo exige justificativa e autorização explícita sem alterar o calendário
+ ↓ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > mudança de calendário impede aplicação sem fatos parciais e permite rejeitar
+stderr | src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > reconfere conflito surgido após proposta e impede duplicação concorrente
+Error: Cannot find module 'C:\Users\Mendes\.codex\worktrees\de19\erp-genius\node_modules\next\server' imported from C:\Users\Mendes\.codex\worktrees\de19\erp-genius\node_modules\next-auth\lib\env.js
+Did you mean to import "next/server.js"?
+    at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+    at moduleResolve (node:internal/modules/esm/resolve:865:10)
+    at defaultResolve (node:internal/modules/esm/resolve:992:11)
+    at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:691:20)
+    at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:708:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:740:52)
+    at ModuleLoader.#resolve (node:internal/modules/esm/loader:673:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:593:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:253:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///C:/Users/Mendes/.codex/worktrees/de19/erp-genius/node_modules/next/server'
+}
+
+ × src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > reconfere conflito surgido após proposta e impede duplicação concorrente 1342ms
+   → [{"ok":true,"dado":{"decisaoId":"efea611e-6c68-428b-9f0c-49ed172862f5","encontroId":"agenda-inicial-segunda:efea611e-6c68-428b-9f0c-49ed172862f5","reservaId":"reserva-agenda-inicial-segunda:efea611e-6c68-428b-9f0c-49ed172862f5","agendaId":"agenda-inicial-segunda:efea611e-6c68-428b-9f0c-49ed172862f5"}},{"ok":false,"erro":"Erro inesperado. Tente novamente."}]: expected false to be true // Object.is equality
+ ↓ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > Secretaria pode propor; professor e usuário inativo não podem preparar; Secretaria não aprova
+ ↓ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > banco impede autoaprovação e alteração da proposta fora das ações
+ ↓ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > aprovação direta no banco reconfere aula coletiva conflitante e reverte a decisão
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts > reconfere conflito surgido após proposta e impede duplicação concorrente
+AssertionError: [{"ok":true,"dado":{"decisaoId":"efea611e-6c68-428b-9f0c-49ed172862f5","encontroId":"agenda-inicial-segunda:efea611e-6c68-428b-9f0c-49ed172862f5","reservaId":"reserva-agenda-inicial-segunda:efea611e-6c68-428b-9f0c-49ed172862f5","agendaId":"agenda-inicial-segunda:efea611e-6c68-428b-9f0c-49ed172862f5"}},{"ok":false,"erro":"Erro inesperado. Tente novamente."}]: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/server/avaliacoes/segunda-chamada-agenda-inicial.int.test.ts:152:67
+    150|   await prisma.encontroAgenda.update({ where: { id: colisao.id }, data…
+    151|   const resultados = await Promise.all([decidirAgendaInicialSegundaCha…
+    152|   expect(resultados.every(r => r.ok), JSON.stringify(resultados)).toBe…
+       |                                                                   ^
+    153|   expect(await prisma.reservaSegundaChamada.count()).toBe(1);
+    154|   expect(await prisma.encontroAgenda.count({ where: { finalidade: "SEG…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  23:33:31
+   Duration  3.28s (transform 182ms, setup 0ms, import 268ms, tests 1.34s, environment 0ms)
+

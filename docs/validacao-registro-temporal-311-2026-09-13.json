@@ -1,0 +1,6 @@
+{
+ "incremento":311,"data":"2026-09-13","escopo":"Registro temporal do encerramento e leitura histórica",
+ "unitarios":{"aprovados":807,"arquivos":87},"integracao":{"encerramentoExecucaoFinal":8,"diarioExecucaoAnterior":16,"falhosNaExecucaoFinal":0},
+ "typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas","schemaDiff":"vazio","migrations":146,
+ "ultimaRegressaoIntegralIntegracao":298,"limites":["Fixação do fuso na prévia pendente","Aplicação de estado/vínculos/acesso e encerramento completo pendentes","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

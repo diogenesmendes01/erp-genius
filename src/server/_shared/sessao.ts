@@ -1,13 +1,31 @@
 import { Papel } from "@prisma/client";
+import { CABECALHO_CAMINHO, enderecoDoLogin } from "@/lib/destino-interno";
+import { congelar, memoPorRequisicao } from "./memo-requisicao";
 
 // Guards de Server Action (ver docs/13 §"Padrão de Server Action" e §"Regras inegociáveis").
 // Permissão SEMPRE verificada no servidor — o menu role-aware é só UX, não segurança.
 
-/** Usuário autenticado, com o que as ações precisam (id + papéis). */
+/**
+ * Usuário autenticado, com o que as ações precisam (id + papéis). `permissoes` é opcional
+ * de propósito: só `carregarUsuarioFresco` o preenche; fixtures de teste em todo o
+ * repositório constroem este objeto sem essa coluna, e torná-la obrigatória quebraria ~150
+ * delas sem relação com este ganho rápido. Nunca leia `usuario.permissoes` diretamente —
+ * use `temPermissao(usuario, capacidade)` abaixo, que trata ausência como negada.
+ */
 export interface UsuarioSessao {
   id: string;
   nome: string;
   papeis: Papel[];
+  permissoes?: string[];
+}
+
+/**
+ * `permissoes` ausente (fixture de teste, ou um caminho que ainda não carregou a sessão via
+ * `carregarUsuarioFresco`) é tratado como SEM a permissão — nunca copie `?? []` direto num
+ * novo call site: quem esquecer o `??` aqui lança em vez de silenciosamente liberar acesso.
+ */
+export function temPermissao(usuario: UsuarioSessao, capacidade: string): boolean {
+  return (usuario.permissoes ?? []).includes(capacidade);
 }
 
 /** Lançado quando não há sessão válida. */
@@ -39,23 +57,53 @@ export class ErroRegra extends Error {
  * do login; sem esta releitura, revogar um papel ou desativar um usuário só valeria no
  * próximo login (risco apontado no doc 16 §limitações). Custo: 1 query por ação/página.
  * Retorna null quando o usuário não existe mais ou foi desativado (sessão inválida).
+ *
+ * `permissoes` incluído no select para `ExportarPlanilha.tsx` não precisar de um segundo
+ * `findUnique` só para essa coluna (ganho rápido 15 da auditoria, parte segura).
+ *
+ * Memoizado POR REQUISIÇÃO (memoPorRequisicao): layout, página e consultas de uma mesma renderização
+ * leem a linha uma vez só. Cada requisição nova relê — a frescura continua a mesma. É o ÚNICO memo
+ * de usuário: papeisDaSessao (lib/guards) também passa por aqui, para a árvore não ler duas vezes.
  */
-async function carregarUsuarioFresco(id: string): Promise<UsuarioSessao | null> {
+export const carregarUsuarioFresco = memoPorRequisicao(async (id: string): Promise<UsuarioSessao | null> => {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o Prisma.
   const { prisma } = await import("@/lib/prisma");
   const atual = await prisma.usuario.findUnique({
     where: { id },
-    select: { nome: true, papeis: true, ativo: true },
+    select: { nome: true, papeis: true, ativo: true, permissoes: true },
   });
   if (!atual || !atual.ativo) return null;
-  return { id, nome: atual.nome, papeis: atual.papeis };
+  return congelar({ id, nome: atual.nome, papeis: atual.papeis, permissoes: atual.permissoes });
+});
+
+/**
+ * Usuário EXCLUSIVO do portal (review PR #60): o papel ALUNO existe só para o /portal.
+ * Quem tem apenas ALUNO não opera NENHUMA tela ou ação interna — a barreira é fail-closed
+ * aqui no núcleo (toda página passa por exigirSessaoPagina/exigirPapelLeitura e toda ação
+ * por exigirSessao), não espalhada por tela.
+ */
+export function apenasPortal(usuario: UsuarioSessao): boolean {
+  return usuario.papeis.length > 0 && usuario.papeis.every((p) => p === Papel.ALUNO);
 }
 
 /**
  * Exige uma sessão autenticada e retorna o usuário (papéis frescos do banco).
  * Use no início de toda Server Action.
+ * Usuário só-portal (papel ALUNO) é NEGADO: nenhuma Server Action interna é dele — o
+ * portal é leitura via página própria (review PR #60).
  */
 export async function exigirSessao(): Promise<UsuarioSessao> {
+  return (await exigirSessaoComPrazo()).usuario;
+}
+
+export { prazoDoToken } from "@/lib/prazo-sessao";
+
+/**
+ * Como `exigirSessao`, mas devolve também o prazo do JWT com que a requisição chegou (`expiraEm`, em ms; null
+ * se o token não o traz). Para conexões longas, como o SSE do Inbox (B9, #201 C6), que fecham quando a sessão
+ * com que abriram vence.
+ */
+export async function exigirSessaoComPrazo(): Promise<{ usuario: UsuarioSessao; expiraEm: number | null }> {
   // import dinâmico: mantém este módulo (guards/erros puros) testável sem carregar o NextAuth.
   const { auth } = await import("@/lib/auth");
   const session = await auth();
@@ -63,7 +111,9 @@ export async function exigirSessao(): Promise<UsuarioSessao> {
   if (!user?.id) throw new ErroAutenticacao();
   const usuario = await carregarUsuarioFresco(user.id);
   if (!usuario) throw new ErroAutenticacao();
-  return usuario;
+  if (apenasPortal(usuario)) throw new ErroPermissao("Acesso restrito ao portal do aluno.");
+  const expiraEm = typeof session?.expiraEm === "number" && Number.isFinite(session.expiraEm) ? session.expiraEm : null;
+  return { usuario, expiraEm };
 }
 
 /** O usuário tem pelo menos um dos papéis informados? (Admin sempre passa.) */
@@ -88,6 +138,23 @@ export async function exigirSessaoComPapel(...alvo: Papel[]): Promise<UsuarioSes
 }
 
 /**
+ * Endereço do login que devolve a pessoa à página pedida (docs/42 /login #2; docs/43 §6 item 8): o proxy
+ * (src/proxy.ts) informa o caminho num cabeçalho e o login o recebe em `callbackUrl`, só se for interno
+ * (enderecoDoLogin valida). Fora de uma requisição (testes, scripts) ou sem o cabeçalho, `/login` puro.
+ */
+async function loginComVolta(): Promise<string> {
+  try {
+    const { headers } = await import("next/headers");
+    return enderecoDoLogin((await headers()).get(CABECALHO_CAMINHO));
+  } catch (e) {
+    // O sinal de renderização dinâmica do Next segue adiante (na prática o auth() acima já o lançou); o resto —
+    // headers() chamado fora de uma requisição — só perde a volta.
+    if (e && typeof e === "object" && (e as { digest?: unknown }).digest === "DYNAMIC_SERVER_USAGE") throw e;
+    return "/login";
+  }
+}
+
+/**
  * Guard de PÁGINA (Server Component). Diferente das Server Actions (que lançam e
  * devolvem {ok:false}), aqui bloqueamos a renderização ANTES de qualquer consulta:
  * sem sessão → /login; sem papel → /acesso-negado. Retorna o usuário para reuso
@@ -100,15 +167,21 @@ export async function exigirSessaoPagina(...alvo: Papel[]): Promise<UsuarioSessa
   const session = await auth();
   const user = session?.user;
   if (!user?.id) {
-    redirect("/login");
+    redirect(await loginComVolta());
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
   }
   // Papéis frescos do banco (mesma razão de exigirSessao): usuário desativado ou com
   // papel revogado cai AGORA, não no próximo login.
   const usuario = await carregarUsuarioFresco(user.id);
   if (!usuario) {
-    redirect("/login");
+    redirect(await loginComVolta());
     throw new ErroAutenticacao(); // inalcançável: redirect lança NEXT_REDIRECT.
+  }
+  // Usuário só-portal (review PR #60): qualquer rota interna redireciona para o /portal (fail-closed). O /portal
+  // explica que a área do aluno tem acesso próprio e leva à entrada dela (C4 da #170).
+  if (apenasPortal(usuario)) {
+    if (!alvo.includes(Papel.ALUNO)) redirect("/portal");
+    return usuario;
   }
   if (alvo.length > 0 && !temPapel(usuario, ...alvo)) redirect("/acesso-negado");
   return usuario;

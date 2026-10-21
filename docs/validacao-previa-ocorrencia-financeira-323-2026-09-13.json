@@ -1,0 +1,6 @@
+{
+ "incremento":323,"data":"2026-09-13","escopo":"Prévia financeira com origens persistidas",
+ "integracao":{"aprovados":8,"falhos":0,"arquivos":1,"cenariosNovos":3},"typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas","novaMigration":false,
+ "ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Persistência da conferência financeira pendente","Interface e emissão parcial pendentes","Cadeia de documentos/aditivos históricos ainda não suportada no leitor"],"producao":false,"enviosExternos":false
+}

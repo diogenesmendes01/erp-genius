@@ -1,0 +1,5 @@
+{
+ "incremento":331,"data":"2026-09-14","escopo":"Revalidação transacional do fechamento por hora",
+ "integracao":{"aprovados":13,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","ultimoBuild":330,
+ "migration":false,"limites":["Componente interno exige autorização do chamador","Decisão e emissão ainda não integradas","Rascunhos anteriores sem datas nas origens exigem nova preparação"],"producao":false,"enviosExternos":false
+}

@@ -1,0 +1,36 @@
+{
+  "incremento": 214,
+  "paginas": 2,
+  "bytes": 22612,
+  "sha256": "6782ba910ca338827be2ba32c1c1b9642a1eb91532836249c41ba5a04389a226",
+  "reproducaoIdentica": true,
+  "dados": "ficticios",
+  "encontrosFixos": 24,
+  "encontroFlexivel": 1,
+  "inspecaoVisual": "aprovada nas duas páginas renderizadas; sem corte, sobreposição ou glifos ausentes",
+  "extracao": {
+    "encontros90Minutos": 24,
+    "encontros75Minutos": 1,
+    "acentos": "preservados",
+    "viradaData": "01/10/2099 23:30 a 02/10/2099 01:00",
+    "fusos": "America/Sao_Paulo e America/Costa_Rica",
+    "trechoFinal": "preservado",
+    "numeracao": "1 de 2 e 2 de 2"
+  },
+  "testesPdf": 3,
+  "integracoesDirecionadas": 4,
+  "integracoesNaoSelecionadas": 56,
+  "lint": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "typescript": "aprovado",
+    "paginasEstaticas": 46,
+    "resultado": "aprovado"
+  },
+  "ultimaRegressaoIntegral": 201,
+  "limites": [
+    "Demonstração fictícia de formatação, não contrato operacional",
+    "Emissão, assinatura e ativação particulares ainda pendentes"
+  ],
+  "diffCheck": "aprovado"
+}

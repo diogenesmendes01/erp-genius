@@ -1,0 +1,15 @@
+{
+  "incremento": 316,
+  "data": "2026-09-13",
+  "escopo": "Ação autenticada e interface de efetivação do acerto",
+  "integracao": {"aprovados": 32, "falhos": 0, "arquivos": 2},
+  "typescript": "aprovado no build",
+  "lint": "aprovado nos nove arquivos alterados",
+  "build": "aprovado, 52 páginas",
+  "novaMigration": false,
+  "ultimaSuiteUnitariaIntegral": 311,
+  "ultimaRegressaoIntegralIntegracao": 298,
+  "limites": ["Apuração persistida de particulares por hora pendente", "Regime legado e cancelamentos cobráveis exigem integração adicional", "Consumidores acadêmicos e de acesso ainda exigem verificação", "Sem homologação interativa"],
+  "producao": false,
+  "enviosExternos": false
+}

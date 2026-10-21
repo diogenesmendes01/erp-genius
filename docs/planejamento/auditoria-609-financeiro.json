@@ -1,0 +1,372 @@
+[
+  {
+    "corpo": "B01",
+    "criterio": "B01.Aceite.1",
+    "texto": "Referência 31 gera último dia do mês curto e volta a 31; regra de dia não útil usa referência contratual configurada, sem deslocar cobertura ou aplicar recesso escolar.",
+    "status": "verificado",
+    "codigo": [
+      "src/server/matricula/cobertura.ts",
+      "src/server/matricula/continuidade-vencimento-financeiro.ts"
+    ],
+    "testes": [
+      "src/server/matricula/cobertura.test.ts",
+      "src/server/matricula/continuidade-vencimento-financeiro.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Cobertura civil e vencimento financeiro usam referência de ciclo e ajuste sem consultar recesso."
+  },
+  {
+    "corpo": "B01",
+    "criterio": "B01.Aceite.2",
+    "texto": "Contratos com inclusão/exclusão do dia e desconto antes/depois do proporcional produzem a memória correspondente; condição ausente não vira padrão oculto.",
+    "status": "verificado",
+    "codigo": [
+      "src/server/matricula/encerramento-calculo.ts",
+      "src/server/matricula/condicoes-encerramento.ts"
+    ],
+    "testes": [
+      "src/server/matricula/encerramento-calculo.test.ts",
+      "src/server/matricula/condicoes-encerramento.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Os testes exercitam INCLUIR/EXCLUIR, os dois métodos de desconto, dias civis inclusive fevereiro e ausência de condição/padrão."
+  },
+  {
+    "corpo": "B01",
+    "criterio": "B01.Aceite.3",
+    "texto": "Preço novo não altera documento/serviço passado; unidades por hora preservam minutos/60 e total dos itens.",
+    "status": "verificado",
+    "codigo": [
+      "src/server/matricula/continuidade-preco-tx.ts",
+      "src/server/matricula/fechamento-horas-tx.ts"
+    ],
+    "testes": [
+      "src/server/matricula/condicoes-horas.int.test.ts",
+      "src/server/matricula/fechamento-horas-periodo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Condições/preço são versionados e a integração de horas prova 75 minutos e valor apurado sem Float; documentos/valores já aplicados são preservados pelo fluxo de condições."
+  },
+  {
+    "corpo": "B01",
+    "criterio": "B01.Aceite.4",
+    "texto": "Configuração de adiantamento distingue valor e horas; falta de preço/unidade aplicável impede exigir um valor inventado. Ofertas mensais preservam configuração de primeira mensalidade.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/compra-horas-preparacao.ts",
+      "src/server/matricula/preparacao-comercial-tx.ts"
+    ],
+    "testes": [
+      "src/server/matricula/reserva-vaga.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "B01",
+    "criterio": "B01.Aceite.5",
+    "texto": "Dois contratos do mesmo aluno preservam vínculos e acesso independentes; unicidade não impede contratos distintos nem permite duplicar o mesmo vínculo. Leituras/transferências/retomadas usam o contrato identificado.",
+    "status": "verificado",
+    "codigo": [
+      "prisma/schema.prisma",
+      "src/server/matricula/pausa-proposta.ts",
+      "src/server/matricula/encerramento-solicitacao.ts",
+      "src/server/matricula/reserva-horas-compradas.ts"
+    ],
+    "testes": [
+      "src/server/matricula/alocacao.int.test.ts",
+      "src/server/matricula/pausa-proposta.int.test.ts",
+      "src/server/matricula/encerramento-solicitacao.int.test.ts",
+      "src/server/matricula/compra-horas.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O conjunto prova alocação por matrícula, contrato excluído inalterado, seleção coletiva sem aplicação parcial, FK contra outro aluno, encerramento por ids e reserva de horas recusando outro contrato."
+  },
+  {
+    "corpo": "B02",
+    "criterio": "B02.Aceite.1",
+    "texto": "Uma antecipação destinada a vários períodos conserva um único recebimento original e alocações cuja soma confere; não duplicar caixa por mês quitado.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/financeiro/recebimentos.ts",
+      "prisma/schema.prisma"
+    ],
+    "testes": [
+      "src/server/matricula/periodo-integral.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "B02",
+    "criterio": "B02.Aceite.2",
+    "texto": "Uso concorrente e devolução do mesmo crédito não ultrapassam saldo; rejeição/cancelamento libera somente a reserva correspondente e conserva histórico.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/periodo-integral.ts",
+      "src/server/financeiro/uso-credito-proposta.ts"
+    ],
+    "testes": [
+      "src/server/matricula/periodo-integral.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "B02",
+    "criterio": "B02.Aceite.3",
+    "texto": "Resposta externa incerta não vira devolução confirmada nem permite repetir saída automaticamente; conciliação registra resultado e evidência.",
+    "status": "nao_auditado",
+    "codigo": [],
+    "testes": [],
+    "pendencia": "Não foi localizada nesta passada uma implementação/teste de devolução externa incerta com conciliação e evidência.",
+    "justificativa": "Não foi localizada nesta passada uma implementação/teste de devolução externa incerta com conciliação e evidência."
+  },
+  {
+    "corpo": "B02",
+    "criterio": "B02.Aceite.4",
+    "texto": "Autor não aprova o próprio ajuste; papel sem capacidade não aprova/executa; revogação durante análise é revalidada.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/financeiro/uso-credito-decisao.ts",
+      "src/server/matricula/periodo-integral.ts"
+    ],
+    "testes": [
+      "src/server/matricula/periodo-integral.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "B02",
+    "criterio": "B02.Aceite.5",
+    "texto": "Status, relatórios, lembretes e acesso distinguem dívida remanescente de crédito/compensação; não preencher valorRecebido com dinheiro fictício.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/financeiro/recebimentos.ts",
+      "src/server/cobrancas/acesso-aulas.ts"
+    ],
+    "testes": [
+      "src/server/cobrancas/acesso-aulas.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "F07.5",
+    "criterio": "F07.5.Aceite.1",
+    "texto": "Mesmo período não é cobrado novamente ao passar A1→A2; sem continuidade/contrato/oferta válidos a geração não ocorre. Atraso do diário não cria extensão.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/continuidade-emissao-tx.ts",
+      "src/server/matricula/continuidade-estado-tx.ts"
+    ],
+    "testes": [
+      "src/server/matricula/continuidade-emissao-sql.int.test.ts",
+      "src/server/matricula/continuidade-emissao-cron.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "F07.5",
+    "criterio": "F07.5.Aceite.2",
+    "texto": "Pausa preserva o período iniciado, mesmo se o vencimento for futuro; retomada aprova cobertura e vencimentos juntos, sem sobreposição.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/pausa-execucao.ts",
+      "src/server/matricula/continuidade-retomada-tx.ts"
+    ],
+    "testes": [
+      "src/server/matricula/pausa-proposta.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "F07.5",
+    "criterio": "F07.5.Aceite.3",
+    "texto": "Encerramento calcula dias civis reais e regra de inclusão do contrato, descontos na ordem correta e multa separada; data aprovada não é aumentada pela demora interna.",
+    "status": "verificado",
+    "codigo": [
+      "src/server/matricula/encerramento-calculo.ts",
+      "src/server/matricula/encerramento-multa.ts",
+      "src/server/matricula/encerramento-previa-calculo.ts"
+    ],
+    "testes": [
+      "src/server/matricula/encerramento-calculo.test.ts",
+      "src/server/matricula/encerramento-acerto.test.ts",
+      "src/server/matricula/encerramento-previa-calculo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O conjunto cobre dias civis reais, INCLUIR/EXCLUIR, desconto antes/depois, multa separada e preservação da data conferida."
+  },
+  {
+    "corpo": "F07.5",
+    "criterio": "F07.5.Aceite.4",
+    "texto": "Período inteiro sem oferta mantém escolha Q67; parte sem oferta mantém compensação de dias Q70. Ao encerrar, somente dias ainda devidos entram no acerto Q83, sem dupla compensação.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/recomposicao-cobertura.ts",
+      "src/server/matricula/compensacao-cobertura.ts"
+    ],
+    "testes": [
+      "src/server/matricula/compensacao-cobertura.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "F07.5",
+    "criterio": "F07.5.Aceite.5",
+    "texto": "Cobrança final única depende de concordância e aprovação, vincula originais como substituídas e não duplica dívida. Encerramento efetiva pela data aprovada sem exigir quitação.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/encerramento-efetivar.ts",
+      "src/server/matricula/encerramento-aplicar-cobrancas.ts"
+    ],
+    "testes": [
+      "src/server/matricula/encerramento-acerto.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "F07.5",
+    "criterio": "F07.5.Aceite.6",
+    "texto": "Seleção de um contrato preserva os demais; seleção coletiva mostra acertos por contrato/modelo e aplica somente o conjunto aprovado válido. Mudança de seleção/impacto exige revisão; falha não encerra parte por acidente. Histórico/acesso geral não bloqueia contrato excluído ainda ativo.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/pausa-proposta.ts",
+      "src/server/matricula/encerramento-contexto.ts"
+    ],
+    "testes": [
+      "src/server/matricula/pausa-proposta.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "P01",
+    "criterio": "P01.Aceite.1",
+    "texto": "Ativação por hora usa contrato, taxa e adiantamento configurado; não exige/cria mensalidade fictícia e não dispara mesesPlano. Configuração de adiantamento exigido sem pagamento confirmado bloqueia.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/ativacao-preparacao-tx.ts",
+      "src/server/matricula/entrada-particular-consulta.ts"
+    ],
+    "testes": [
+      "src/server/matricula/reserva-vaga.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "P01",
+    "criterio": "P01.Aceite.2",
+    "texto": "Encontro de 75 minutos cobra 1,25 hora contratada. Diferença de duração financeira exige ajuste aprovado; não ler gravação pendente como falta/não realização automaticamente.",
+    "status": "verificado",
+    "codigo": [
+      "src/server/matricula/fechamento-horas-tx.ts",
+      "src/server/matricula/ocorrencia-particular.ts"
+    ],
+    "testes": [
+      "src/server/matricula/condicoes-horas.int.test.ts",
+      "src/server/matricula/ocorrencia-horas.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "A integração prova 75 minutos = 1,25 hora/156,25, recusa cálculo divergente e mantém classificação financeira separada de gravação pendente."
+  },
+  {
+    "corpo": "P01",
+    "criterio": "P01.Aceite.3",
+    "texto": "Cancelamento no prazo não cobra; tardio/falta cobra integral sem presença. Escola cancela sem consumo/cobrança e mantém escolha do aluno entre remarcação/crédito, com as aprovações correspondentes.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/ocorrencia-particular.ts",
+      "src/server/matricula/agenda-particular-estado.ts"
+    ],
+    "testes": [
+      "src/server/matricula/ocorrencia-particular.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "P01",
+    "criterio": "P01.Aceite.4",
+    "texto": "Fechamento incompleto mostra ocorrências pendentes; parcial só é emitida depois de aprovação independente. Complementares conservam período/origem e incluem apenas ocorrências ainda não cobradas. Falha/repetição não duplica.",
+    "status": "verificado",
+    "codigo": [
+      "src/server/matricula/fechamento-horas.ts",
+      "src/server/matricula/fechamento-horas-emissao.ts",
+      "src/server/matricula/fechamento-horas-revalidacao-tx.ts"
+    ],
+    "testes": [
+      "src/server/matricula/condicoes-horas.int.test.ts",
+      "src/server/matricula/fechamento-horas-periodo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "A integração cobre pendência, parcial aprovada, complementar por origem/período, repetição idempotente e vedação de reemitir ocorrência."
+  },
+  {
+    "corpo": "P01",
+    "criterio": "P01.Aceite.5",
+    "texto": "Antecipação não reaparece como nova dívida; pausa conserva saldo/tempo de validade; encerramento usa preço/condições originais e gera crédito aprovado sem novas aulas por contrato encerrado.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/compra-horas.ts",
+      "src/server/matricula/encerramento-horas.ts"
+    ],
+    "testes": [
+      "src/server/matricula/condicoes-horas.int.test.ts"
+    ],
+    "pendencia": "A evidência listada é parcial; falta revisar o conjunto de fluxos e asserções deste critério composto antes de concluir a aceitação.",
+    "justificativa": "Foram localizados os caminhos indicados, mas esta auditoria não confirmou todos os elementos do critério pelo conjunto completo de código e testes; ausência dessa confirmação é lacuna de inspeção, não gap funcional declarado."
+  },
+  {
+    "corpo": "P01",
+    "criterio": "P01.Aceite.6",
+    "texto": "Pausar/encerrar a particular selecionada não bloqueia o curso regular de outro contrato; incluir ambos na proposta confere cada saldo/cobertura antes de aplicar. O acesso a uma particular pausada não é liberado apenas porque o curso regular continua ativo.",
+    "status": "nao_auditado",
+    "codigo": [
+      "src/server/matricula/pausa-proposta.ts",
+      "src/server/matricula/encerramento-contexto.ts"
+    ],
+    "testes": [
+      "src/server/matricula/pausa-proposta.int.test.ts"
+    ],
+    "pendencia": "Revisar especificamente o controle de acesso de encontro particular pausado diante de matrícula regular ativa; os testes localizados cobrem isolamento de reserva/seleção, não essa leitura de acesso ponta a ponta.",
+    "justificativa": "Pausa e reservas preservam contratos distintos (`pausa-proposta.int.test.ts`, `compra-horas.int.test.ts`), mas a auditoria não confirmou a asserção de acesso da particular pausada com curso regular ativo. Não é gap funcional declarado."
+  },
+  {
+    "corpo": "P02",
+    "criterio": "P02.Aceite.1",
+    "texto": "Serviço parcial compensa apenas a fração comprovada pelo acordo, e o saldo restante mantém condições aplicáveis.",
+    "status": "nao_implementado",
+    "codigo": [],
+    "testes": [],
+    "pendencia": "Implementar o acordo de permuta e sua evidência/aprovação; sem isso o critério não tem fonte executável.",
+    "justificativa": "Busca literal em `src/` e `prisma/` por permuta, contrapartida e acordo não encontrou implementação nem migration; as únicas ocorrências retornadas pertencem à especificação. Portanto não há modelo, ação ou teste de P02 a vincular."
+  },
+  {
+    "corpo": "P02",
+    "criterio": "P02.Aceite.2",
+    "texto": "Mesmo serviço/evidência não compensa duas cobranças acima do valor autorizado; correção mantém antes/depois e nova aprovação.",
+    "status": "nao_implementado",
+    "codigo": [],
+    "testes": [],
+    "pendencia": "Implementar o acordo de permuta e sua evidência/aprovação; sem isso o critério não tem fonte executável.",
+    "justificativa": "Busca literal em `src/` e `prisma/` por permuta, contrapartida e acordo não encontrou implementação nem migration; as únicas ocorrências retornadas pertencem à especificação. Portanto não há modelo, ação ou teste de P02 a vincular."
+  },
+  {
+    "corpo": "P02",
+    "criterio": "P02.Aceite.3",
+    "texto": "Compensação não aparece como dinheiro recebido nem converte automaticamente o acordo em bolsa/isenção.",
+    "status": "nao_implementado",
+    "codigo": [],
+    "testes": [],
+    "pendencia": "Implementar o acordo de permuta e sua evidência/aprovação; sem isso o critério não tem fonte executável.",
+    "justificativa": "Busca literal em `src/` e `prisma/` por permuta, contrapartida e acordo não encontrou implementação nem migration; as únicas ocorrências retornadas pertencem à especificação. Portanto não há modelo, ação ou teste de P02 a vincular."
+  }
+]

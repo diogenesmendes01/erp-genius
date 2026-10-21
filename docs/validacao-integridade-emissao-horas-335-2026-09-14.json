@@ -1,0 +1,6 @@
+{
+ "incremento":335,"data":"2026-09-14","escopo":"Integridade do conjunto de emissão por hora",
+ "integracaoFinal":{"aprovados":16,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","ultimoBuild":333,
+ "migrationsBaseDescartavel":157,"schemaDiff":"vazio","falhaCorrigida":"Propagação da rejeição de conjunto incompleto mediante verificação explícita antes do retorno",
+ "limites":["Cenários parciais e sobreposição de períodos pendentes","Interface e encerramento pendentes","Ajustes posteriores precisam de integração"],"producao":false,"enviosExternos":false
+}

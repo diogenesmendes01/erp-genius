@@ -1,0 +1,16 @@
+{
+  "incremento": 294,
+  "data": "2026-09-13",
+  "escopo": "Compra de horas com quitação integral por crédito ou mista, mantendo origens e caixa",
+  "integracao": { "aprovados": 19, "falhos": 0, "arquivos": ["src/server/matricula/compra-horas.int.test.ts"] },
+  "typescript": "aprovado, incluindo verificação pelo build após mudanças finais",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "migrationsNovas": 0,
+  "ultimaRegressaoIntegral": 283,
+  "coberturaNova": ["Compra com crédito integral e valorRecebido nulo", "Compra com dinheiro mais crédito aprovado", "Preço e desconto originais preservados", "Memória de liquidação com referências às origens", "Idempotência sem recebimento duplicado", "Consulta apresenta composição sem snapshot bruto"],
+  "limites": ["Encerramento com crédito aplicado pendente de adaptação conjunta", "Devoluções pendentes", "Destinação entre contratos pendente", "Objetivo geral não concluído"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

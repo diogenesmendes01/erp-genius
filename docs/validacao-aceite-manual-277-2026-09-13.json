@@ -1,0 +1,19 @@
+{
+  "incremento": 277,
+  "data": "2026-09-13",
+  "escopo": "Bloqueio de aceite manual e flags legadas na preparação comercial; conferência integrada pendente",
+  "integracao": {
+    "arquivos": ["src/server/matricula/reserva-vaga.int.test.ts", "src/server/secretaria/politica.int.test.ts", "src/server/matricula/ativacao.int.test.ts"],
+    "aprovados": 77,
+    "falhasFinais": 0,
+    "execucoes": "Primeira execução: 75/77, com duas expectativas de contagem de anexo corrigidas. Nova execução: 61/61 de reserva-vaga. Os 16 casos de Secretaria/ativação passaram na primeira execução; código executável não mudou depois."
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "novaMigration": false,
+  "ultimaRegressaoIntegral": 273,
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

@@ -1,0 +1,19 @@
+{
+  "incremento": 290,
+  "data": "2026-09-13",
+  "escopo": "Proposta, conferência e publicação independente de particular remarcada, vinculada ao cancelamento original",
+  "integracao": { "aprovados": 31, "falhosFinais": 0, "arquivos": ["src/server/agenda/cancelamento-particular.int.test.ts", "src/server/matricula/compra-horas.int.test.ts", "src/server/agenda/rascunho.int.test.ts"] },
+  "correcaoDuranteValidacao": "A conferência de calendário recebia nome/tipo além dos campos aceitos pelo schema estrito de intervalos. Corrigida a projeção id/inicio/fim e repetidos os testes, incluindo feriado atravessado à meia-noite.",
+  "coberturaNova": ["Aprovação independente e publicação idempotente", "Origem cancelada e duração preservadas", "Remarcação duplicada recusada", "Feriado em parte do intervalo exige exceção específica", "Conflito surgido após proposta impede publicação", "Professor inativo e matrícula pausada bloqueiam aprovação", "Rejeição de proposta inviável", "Ciclo pago exige liberação financeira antes da remarcação e permite reutilizar horas sem novo recebimento/cobrança"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "schemaDiff": "vazio",
+  "migrations": 136,
+  "migrationNova": "20260914040000_remarcacao_particular",
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Alternativa de crédito financeiro de Q95 ainda pendente", "Notificações Q38 ainda não integradas", "Publicação não reserva saldo financeiro automaticamente", "Mudança de duração/preço exige fluxo próprio", "SQL reforça integridade estrutural; conferência completa de calendário e conflitos permanece no serviço"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

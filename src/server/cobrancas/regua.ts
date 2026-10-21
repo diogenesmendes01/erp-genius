@@ -1,4 +1,5 @@
 import type { ModeloWhatsapp } from "@/server/financeiro/schema";
+import { dataCivilInstitucional, diaCivilGravado, diasCivisDesde } from "@/server/operacao/fuso";
 
 // CÉREBRO da cobrança (doc 24). Função PURA, determinística, sem IA: dada uma cobrança, o que
 // já foi feito e a data de hoje, decide qual é a ação devida na RÉGUA. O "braço" (humano hoje,
@@ -24,7 +25,7 @@ export const REGUA: readonly DegrauRegua[] = [
   { passo: "D0", offsetDias: 0, tipo: "cobrar", template: "dados", rotulo: "Cobrança no vencimento" },
   { passo: "D+3", offsetDias: 3, tipo: "cobrar", template: "vencida", rotulo: "Cobrança · 3 dias de atraso" },
   { passo: "D+7", offsetDias: 7, tipo: "cobrar", template: "vencida", rotulo: "Cobrança · 7 dias de atraso" },
-  { passo: "D+15", offsetDias: 15, tipo: "bloquear", template: "firme", rotulo: "Bloqueio de acesso · 15 dias" },
+  { passo: "D+15", offsetDias: 15, tipo: "cobrar", template: "firme", rotulo: "Cobrança final · 15 dias de atraso" },
 ] as const;
 
 // (doc 26/30) A REGUA acima é o DEFAULT DE FÁBRICA. Em runtime a política pode vir do banco
@@ -41,6 +42,7 @@ export const REGUA: readonly DegrauRegua[] = [
 export const ORDEM_PASSOS: readonly PassoRegua[] = ["D-7", "D-3", "D0", "D+3", "D+7", "D+15"];
 
 export type EstadoCobranca =
+  | "em_conferencia" // comprovante informado, sem quitação; lembretes suspensos até o prazo
   | "quitada" // paga/cancelada — fora da régua
   | "promessa" // promessa de pagamento vigente — dormente até a data prometida
   | "futuro" // ainda não chegou no primeiro degrau (ou os que chegaram já foram feitos)
@@ -53,7 +55,7 @@ export interface ResultadoRegua {
   degrau: DegrauRegua | null;
   /** A data do degrau já passou e ele não foi cumprido (backlog) — não é "ação no dia". */
   atrasadaNaAcao: boolean;
-  /** hoje − vencimento, em dias de calendário (negativo = antes do vencimento). */
+  /** hoje − vencimento, em dias de calendário da escola (negativo = antes do vencimento). */
   diasAtraso: number;
   /** Menor = mais urgente. Para ordenar a fila (UI pode refinar por valor/risco). */
   prioridade: number;
@@ -70,13 +72,16 @@ export interface EntradaRegua {
   promessaAte?: Date | null;
 }
 
-function inicioDoDia(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
+// Q176 (#164): o dia da régua vira à meia-noite do fuso da escola (`fusoDaEscola()`), nunca no
+// relógio do servidor. Em produção o processo roda em UTC, e o dia virava às 21h de Brasília.
 
-/** Diferença em dias de calendário entre `a` e `b` (a − b), ignorando hora. */
-export function diferencaEmDias(a: Date, b: Date): number {
-  return Math.round((inicioDoDia(a).getTime() - inicioDoDia(b).getTime()) / 86400000);
+// `diaCivilGravado` e `diasCivisDesde` moram em operacao/fuso (ref. #247): o atraso da mensalidade
+// fora da régua usa o mesmo critério. Reexportados aqui para os chamadores da régua.
+export { diaCivilGravado, diasCivisDesde };
+
+/** A data prometida (AAAA-MM-DD) já passou no calendário da escola? Hoje ainda vale. */
+export function promessaNoPassado(ate: string, agora: Date, fuso: string): boolean {
+  return ate < dataCivilInstitucional(agora, fuso);
 }
 
 /** Prioridade do degrau (menor = mais urgente): bloquear < cobrar (mais atraso) < lembrar. */
@@ -163,16 +168,18 @@ export function selecionarDegrau<D extends { offset: number; chave: string }>(
 export function proximaAcao(
   entrada: EntradaRegua,
   hoje: Date,
+  /** Fuso da escola (`fusoDaEscola()`): define quando o dia vira. */
+  fuso: string,
   politica: readonly DegrauRegua[] = REGUA,
 ): ResultadoRegua {
-  const diasAtraso = diferencaEmDias(hoje, entrada.vencimento);
+  const diasAtraso = diasCivisDesde(hoje, entrada.vencimento, fuso);
   const promessaAte = entrada.promessaAte ?? null;
 
   if (entrada.quitada) {
     return { estado: "quitada", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 999, promessaAte };
   }
   // Promessa vigente = data prometida ainda não passou (>= hoje). Dormente até lá.
-  if (promessaAte && diferencaEmDias(promessaAte, hoje) >= 0) {
+  if (promessaAte && diasCivisDesde(hoje, promessaAte, fuso) <= 0) {
     return { estado: "promessa", degrau: null, atrasadaNaAcao: false, diasAtraso, prioridade: 900, promessaAte };
   }
 

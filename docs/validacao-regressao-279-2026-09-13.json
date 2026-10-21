@@ -1,0 +1,991 @@
+{
+  "incremento": 279,
+  "data_local": "2026-09-13",
+  "unitarios": {
+    "total": 791,
+    "aprovados": 791,
+    "falhos": 0,
+    "pendentes": 0,
+    "sucesso": true,
+    "arquivos": [
+      {
+        "arquivo": "src/lib/dinheiro.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/lib/exceljs-compatibilidade.test.ts",
+        "estado": "passed",
+        "aprovados": 1,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/lib/guards.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/lib/rate-limit-login.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/academico/regras.test.ts",
+        "estado": "passed",
+        "aprovados": 38,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/ajustes/aprovacao.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/ajustes/consultas.test.ts",
+        "estado": "passed",
+        "aprovados": 13,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/ajustes/regras-ajuste.test.ts",
+        "estado": "passed",
+        "aprovados": 13,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/agenda/calendario-intervalo.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/agenda/grade.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/agenda/replanejamento-ajustes.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/agenda/replanejamento-conflitos.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/agenda/replanejamento-grade.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/alunos/consultas.test.ts",
+        "estado": "passed",
+        "aprovados": 17,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/alunos/importacao.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/alunos/movimentacao.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/alunos/projecao.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/calculo.test.ts",
+        "estado": "passed",
+        "aprovados": 27,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/regra-schema.test.ts",
+        "estado": "passed",
+        "aprovados": 13,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/tempo.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/captura.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/consultas.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/experimental.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/schema.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/contratos/conclusao-assinatura.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/contratos/exigencias-assinatura.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/contratos/pdf-previa.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/contratos/preencher-modelo.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/cobrancas/acesso-aulas-regras.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/cobrancas/eventos.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/cobrancas/regua-ancora.test.ts",
+        "estado": "passed",
+        "aprovados": 22,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/cobrancas/regua.test.ts",
+        "estado": "passed",
+        "aprovados": 21,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/financeiro/operacoes.test.ts",
+        "estado": "passed",
+        "aprovados": 11,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/financeiro/regras.test.ts",
+        "estado": "passed",
+        "aprovados": 19,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/financeiro/schema.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/diario/diario.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/operacao/fuso.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/adiantamento-proposto.test.ts",
+        "estado": "passed",
+        "aprovados": 2,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/admissao-turma.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/alcada-preparacao.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/cobertura.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/conclusao.test.ts",
+        "estado": "passed",
+        "aprovados": 20,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/cronograma-cobertura.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-acerto.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-calculo.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-compensacao.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-horas.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-multa.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-outras-cobrancas.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-previa-calculo.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/entrada-particular-pagamentos.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/escopo.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/historico-situacao.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/movimentacoes-detalhes.test.ts",
+        "estado": "passed",
+        "aprovados": 2,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/ocorrencia-horas.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/permissoes.test.ts",
+        "estado": "passed",
+        "aprovados": 11,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/plano-cobrancas-entrada.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/recomposicao-cobertura.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/reserva-particular-cron.test.ts",
+        "estado": "passed",
+        "aprovados": 2,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/retomada-cobertura.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/saldo-horas.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/schema.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/validacao.test.ts",
+        "estado": "passed",
+        "aprovados": 19,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/retomada/regras.test.ts",
+        "estado": "passed",
+        "aprovados": 31,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/paises/tipos-documento.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/turmas/importacao.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/turmas/schema.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/turmas/vinculo-docente.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/elegibilidade.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/escopo.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/fila-snapshot.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/inbound.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/meta-templates.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/midia.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/render.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/uploads/autorizacao.test.ts",
+        "estado": "passed",
+        "aprovados": 22,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/_shared/alocacao.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/_shared/decimal.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/_shared/regras.test.ts",
+        "estado": "passed",
+        "aprovados": 62,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/_shared/resultado.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/_shared/sessao.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/_shared/validacao.test.ts",
+        "estado": "passed",
+        "aprovados": 20,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/app/api/upload/route.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/app/api/alunos/modelo/route.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/app/api/files/[...path]/route.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/app/api/whatsapp/cron/route.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      }
+    ]
+  },
+  "integracao": {
+    "total": 635,
+    "aprovados": 635,
+    "falhos": 0,
+    "pendentes": 0,
+    "sucesso": true,
+    "arquivos": [
+      {
+        "arquivo": "src/lib/codigo.int.test.ts",
+        "estado": "passed",
+        "aprovados": 2,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/acesso/politica.int.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/academico/fluxo.int.test.ts",
+        "estado": "passed",
+        "aprovados": 55,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/academico/visibilidade.int.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/alunos/cadastro.int.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/agenda/rascunho.int.test.ts",
+        "estado": "passed",
+        "aprovados": 14,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/ajustes/ficha.int.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/catalogo/permissoes.int.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts",
+        "estado": "passed",
+        "aprovados": 53,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/migracao-regra.int.test.ts",
+        "estado": "passed",
+        "aprovados": 14,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/regra-turma.int.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/avaliacoes/regras.int.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/cobrancas/acesso-aulas.int.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/cobrancas/conferencia.int.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/contratos/modelos.int.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/diario/diario.int.test.ts",
+        "estado": "passed",
+        "aprovados": 14,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/captura.int.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/config-comercial.int.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/leads.int.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/comercial/regua-comercial.int.test.ts",
+        "estado": "passed",
+        "aprovados": 13,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/financeiro/politica.int.test.ts",
+        "estado": "passed",
+        "aprovados": 20,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/operacao/acoes.int.test.ts",
+        "estado": "passed",
+        "aprovados": 13,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/retomada/fluxo.int.test.ts",
+        "estado": "passed",
+        "aprovados": 36,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/secretaria/politica.int.test.ts",
+        "estado": "passed",
+        "aprovados": 11,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/alocacao.int.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/ativacao.int.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/cobertura.int.test.ts",
+        "estado": "passed",
+        "aprovados": 2,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/compensacao-cobertura.int.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/compra-horas.int.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/condicoes-encerramento.int.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/encerramento-solicitacao.int.test.ts",
+        "estado": "passed",
+        "aprovados": 5,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/janela-admissao.int.test.ts",
+        "estado": "passed",
+        "aprovados": 3,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/pausa-previa.int.test.ts",
+        "estado": "passed",
+        "aprovados": 4,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/pausa-proposta.int.test.ts",
+        "estado": "passed",
+        "aprovados": 26,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+        "estado": "passed",
+        "aprovados": 63,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/uploads/arquivos.int.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/turmas/integridade-academica.int.test.ts",
+        "estado": "passed",
+        "aprovados": 20,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/acesso-atendimento.int.test.ts",
+        "estado": "passed",
+        "aprovados": 14,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/acoes.int.test.ts",
+        "estado": "passed",
+        "aprovados": 6,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/ciclo-cobranca.int.test.ts",
+        "estado": "passed",
+        "aprovados": 10,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/cron-comercial.int.test.ts",
+        "estado": "passed",
+        "aprovados": 11,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/cron-experimental.int.test.ts",
+        "estado": "passed",
+        "aprovados": 17,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/cron.int.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/despachante-comercial.int.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/despachante.live.int.test.ts",
+        "estado": "passed",
+        "aprovados": 12,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/destinatario-atual.int.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/inbox.int.test.ts",
+        "estado": "passed",
+        "aprovados": 18,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/politica.int.test.ts",
+        "estado": "passed",
+        "aprovados": 7,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/server/whatsapp/saude.int.test.ts",
+        "estado": "passed",
+        "aprovados": 9,
+        "falhos": 0,
+        "pendentes": 0
+      },
+      {
+        "arquivo": "src/app/api/exportacoes/[tipo]/route.int.test.ts",
+        "estado": "passed",
+        "aprovados": 8,
+        "falhos": 0,
+        "pendentes": 0
+      }
+    ]
+  },
+  "ajusteUnitarios": "Fixtures da ativação atualizadas para o aceite integrado; novo caso recusa flags legadas sem aceite. Primeira execução teve 11 falhas; execução final completa aprovada.",
+  "lint": {
+    "erros": 0,
+    "avisos": 3
+  },
+  "typescript": "aprovado",
+  "schemaDiff": "vazio",
+  "migrations": 128,
+  "build": {
+    "incremento": 278,
+    "paginasEstaticas": 52,
+    "mesmoCodigoExecutavel": true
+  },
+  "banco": "descartável local; integração em processo único",
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

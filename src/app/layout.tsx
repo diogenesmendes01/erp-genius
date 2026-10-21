@@ -2,19 +2,16 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-// Design system (docs/18 §Tipografia): apenas DOIS pesos — regular (400) e medium (500).
-// Não carregamos semibold/bold para manter a UI densa e consistente com o DS.
-const anthropicSans = localFont({
-  src: [
-    { path: "./fonts/AnthropicSans-Text-Regular.otf", weight: "400", style: "normal" },
-    { path: "./fonts/AnthropicSans-Text-Medium.otf", weight: "500", style: "normal" },
-  ],
+// Design system (docs/18 §Tipografia): Roboto variável (100–900); a UI usa os pesos 400, 500 e 600.
+const roboto = localFont({
+  src: [{ path: "./fonts/roboto-variable.woff2", weight: "100 900", style: "normal" }],
   variable: "--font-sans",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ERP Genius",
+  // Cada tela pode dar o próprio título (ex.: "M-000123 · Ana Silva · ERP Genius"); sem título, fica "ERP Genius".
+  title: { default: "ERP Genius", template: "%s · ERP Genius" },
   description: "Gestão escolar da Escola Genius",
 };
 
@@ -23,7 +20,7 @@ const temaScript = `(function(){try{var t=localStorage.getItem('tema');if(t==='d
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={anthropicSans.variable} suppressHydrationWarning>
+    <html lang="pt-BR" className={roboto.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: temaScript }} />
       </head>

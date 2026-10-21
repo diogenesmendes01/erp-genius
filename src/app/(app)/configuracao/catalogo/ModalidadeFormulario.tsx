@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Segmento } from "@prisma/client";
 import { ModalidadeSchema, type ModalidadeInput } from "@/server/catalogo/schema";
 import { criarModalidade, editarModalidade } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
+import { botaoClasses } from "@/components/Botao";
+import { SEGMENTO_LABEL } from "@/lib/labels";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
-const SEGMENTOS: { value: Segmento; label: string }[] = [
-  { value: Segmento.ADULTO, label: "Adulto" },
-  { value: Segmento.KIDS, label: "Kids" },
-  { value: Segmento.TEENS, label: "Teens" },
-  { value: Segmento.EMPRESA, label: "Empresa" },
-];
+const SEGMENTOS: { value: Segmento; label: string }[] = Object.values(Segmento).map((value) => ({ value, label: SEGMENTO_LABEL[value] }));
 
 export interface ModalidadeParaEditar {
   id: string;
@@ -37,12 +36,15 @@ export function ModalidadeFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
+  // criarModalidade recebe chave de idempotência (#166): o reenvio depois de um resultado incerto devolve a
+  // modalidade já criada. A edição continua sem chave: o formulário é outro (`modalidade` fixa na montagem).
+  const acao = useAcaoCliente({ idempotente: !modalidade });
+  const tentativa = useChaveIdempotencia();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ModalidadeInput>({
     resolver: zodResolver(ModalidadeSchema),
     defaultValues: modalidade ?? {
@@ -57,14 +59,11 @@ export function ModalidadeFormulario({
   });
 
   async function onSubmit(data: ModalidadeInput) {
-    setErro(null);
-    const res = modalidade
-      ? await editarModalidade(modalidade.id, data)
-      : await criarModalidade(data);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    const d = await acao.executar<unknown>(() => modalidade
+      ? editarModalidade(modalidade.id, data)
+      : criarModalidade({ ...data, chaveIdempotencia: tentativa.atual }));
+    if (!modalidade) tentativa.depoisDo(d);
+    if (d?.tipo !== "ok") return;
     router.refresh();
     onClose();
   }
@@ -75,15 +74,15 @@ export function ModalidadeFormulario({
         {modalidade ? `Editar modalidade — ${modalidade.nome}` : "Nova modalidade"}
       </h3>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Nome</label>
-          <input {...register("nome")} placeholder="Regular" className={inputCls} />
-          {errors.nome && <p className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-nome">Nome</label>
+          <input id="modalidade-nome" {...register("nome")} placeholder="Regular" className={inputCls} aria-invalid={errors.nome ? true : undefined} aria-describedby={errors.nome ? "modalidade-nome-erro" : undefined} />
+          {errors.nome && <p id="modalidade-nome-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.nome.message}</p>}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Segmento</label>
-          <select {...register("segmento")} className={inputCls}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-segmento">Segmento</label>
+          <select id="modalidade-segmento" {...register("segmento")} className={inputCls}>
             {SEGMENTOS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
@@ -92,53 +91,53 @@ export function ModalidadeFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Frequência</label>
-          <input {...register("frequencia")} placeholder="1x/semana" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-frequencia">Frequência</label>
+          <input id="modalidade-frequencia" {...register("frequencia")} placeholder="1x/semana" className={inputCls} aria-invalid={errors.frequencia ? true : undefined} aria-describedby={errors.frequencia ? "modalidade-frequencia-erro" : undefined} />
           {errors.frequencia && (
-            <p className="mt-1 text-xs text-red-600">{errors.frequencia.message}</p>
+            <p id="modalidade-frequencia-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.frequencia.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Horas/aula</label>
-          <input type="number" step="0.5" {...register("horasAula")} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-horas-aula">Horas/aula</label>
+          <input id="modalidade-horas-aula" type="number" step="0.5" {...register("horasAula")} className={inputCls} aria-invalid={errors.horasAula ? true : undefined} aria-describedby={errors.horasAula ? "modalidade-horas-aula-erro" : undefined} />
           {errors.horasAula && (
-            <p className="mt-1 text-xs text-red-600">{errors.horasAula.message}</p>
+            <p id="modalidade-horas-aula-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.horasAula.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Duração por nível</label>
-          <input {...register("duracaoPorNivel")} placeholder="3 meses" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-duracao-por-nivel">Duração por nível</label>
+          <input id="modalidade-duracao-por-nivel" {...register("duracaoPorNivel")} placeholder="3 meses" className={inputCls} aria-invalid={errors.duracaoPorNivel ? true : undefined} aria-describedby={errors.duracaoPorNivel ? "modalidade-duracao-por-nivel-erro" : undefined} />
           {errors.duracaoPorNivel && (
-            <p className="mt-1 text-xs text-red-600">{errors.duracaoPorNivel.message}</p>
+            <p id="modalidade-duracao-por-nivel-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.duracaoPorNivel.message}</p>
           )}
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Aulas por nível (opcional)</label>
-          <input type="number" {...register("aulasPorNivel")} placeholder="12" className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-aulas-por-nivel">Aulas por nível (opcional)</label>
+          <input id="modalidade-aulas-por-nivel" type="number" {...register("aulasPorNivel")} placeholder="12" className={inputCls} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Mínimo para abrir</label>
-          <input type="number" {...register("minimoAbrir")} className={inputCls} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-minimo-abrir">Mínimo para abrir</label>
+          <input id="modalidade-minimo-abrir" type="number" {...register("minimoAbrir")} className={inputCls} aria-invalid={errors.minimoAbrir ? true : undefined} aria-describedby={errors.minimoAbrir ? "modalidade-minimo-abrir-erro" : undefined} />
           {errors.minimoAbrir && (
-            <p className="mt-1 text-xs text-red-600">{errors.minimoAbrir.message}</p>
+            <p id="modalidade-minimo-abrir-erro" role="alert" className="mt-1 text-xs text-red-600">{errors.minimoAbrir.message}</p>
           )}
         </div>
       </div>
 
-      {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} className="mt-4" />
 
       <div className="mt-5 flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          disabled={acao.ocupado}
+          className={botaoClasses({ tamanho: "lg" })}
         >
-          {isSubmitting ? "Salvando…" : "Salvar modalidade"}
+          {acao.ocupado ? "Salvando…" : "Salvar modalidade"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
         >
           Cancelar
         </button>

@@ -1,0 +1,15 @@
+{
+  "incremento": 296,
+  "data": "2026-09-13",
+  "escopo": "Carregamento de compras, consumos, reservas e créditos reais na prévia de encerramento",
+  "integracao": { "aprovados": 26, "falhos": 0, "arquivos": ["compra-horas.int.test.ts", "encerramento-solicitacao.int.test.ts"] },
+  "typescript": "aprovado no build final",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "migrationsNovas": 0,
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Consolidação dos componentes sem sobreposição ainda pendente", "Aprovação e efetivação financeira integral ainda pendentes", "Apuração não emite crédito nem devolve dinheiro", "Objetivo geral não concluído"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

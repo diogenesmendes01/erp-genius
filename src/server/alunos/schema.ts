@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Genero, Escolaridade } from "@prisma/client";
 import { emailSchema, dataOpcional, codigoISOOpcional } from "@/server/_shared/validacao";
+import { HorarioCompativelSchema } from "@/server/academico/schema";
 
 // Movimentações do aluno (ver docs/09 §Alunos). Motivos de encerramento = lista fechada.
 export const MOTIVOS_ENCERRAMENTO = [
@@ -30,8 +31,11 @@ export const EncerrarSchema = z
 export type EncerrarInput = z.input<typeof EncerrarSchema>;
 
 export const TrocarTurmaSchema = z.object({
+  matriculaId: z.string().min(1).optional(),
+  alocacaoOrigemId: z.string().min(1).optional(),
   turmaDestinoId: z.string().min(1, "Selecione a turma de destino"),
   justificativa: z.string().optional(),
+  horarioCompativel: HorarioCompativelSchema,
 });
 export type TrocarTurmaInput = z.input<typeof TrocarTurmaSchema>;
 

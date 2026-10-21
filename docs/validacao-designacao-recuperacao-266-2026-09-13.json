@@ -1,0 +1,16 @@
+{
+  "incremento": 266,
+  "data": "2026-09-13",
+  "escopo": "Designação por tentativa de recuperação, autorização limitada e autoria separada",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 51, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "migration": "20260913220000_designacao_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 51 },
+  "ultimaRegressaoIntegral": 265,
+  "homologacaoInterativa": false,
+  "producao": false,
+  "limites": ["Tela de designação e fila própria ainda pendentes", "Sem fluxo para regularizar realização antiga de outro professor"]
+}

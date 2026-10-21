@@ -1,0 +1,64 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+const mocks = vi.hoisted(() => ({ consultar: vi.fn(), sessao: vi.fn(), preferencia: vi.fn(), usuario: vi.fn(async () => ({ permissoes: [] })) }));
+vi.mock("@/server/_shared", async () => ({
+  exigirSessaoComPapel: mocks.sessao,
+  temPermissao: (await vi.importActual<typeof import("@/server/_shared/sessao")>("@/server/_shared/sessao")).temPermissao,
+}));
+vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findUniqueOrThrow: mocks.usuario } } }));
+vi.mock("@/server/financeiro/permuta-servico", () => ({ consultarPermutas: mocks.consultar, listarCobrancasParaPermuta: vi.fn() }));
+vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
+vi.mock("./PermutaOperacional", () => ({ PermutaOperacional: ({ preferenciaFusoExibicao, podeAprovar }: { preferenciaFusoExibicao: string | null; podeAprovar: boolean }) => `preferência=${preferenciaFusoExibicao} aprovar=${podeAprovar}` }));
+import Page from "./page";
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.sessao.mockResolvedValue({ id: "pedagogico", papeis: ["GERENTE_PEDAGOGICO"] });
+  mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
+});
+it("permite navegar além dos cinquenta primeiros acordos", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: Array.from({ length: 50 }, (_, id) => ({ id })) });
+  const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
+  expect(mocks.consultar).toHaveBeenCalledWith(2);
+  expect(html).toContain('/financeiro/permuta?pagina=1');
+  expect(html).toContain('/financeiro/permuta?pagina=3');
+});
+it("página vazia conserva retorno e não oferece próxima", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
+  const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ pagina: "2" }) }));
+  expect(html).toContain("Nenhum acordo nesta página");
+  // Revisão R1 da #134 (B5): a volta ao início faz parte do vazio da página seguinte.
+  expect(html).toContain('<a class="underline" href="/financeiro/permuta">Ir para a primeira página</a>');
+  expect(html).toContain("Anterior");
+  expect(html).not.toContain("Próxima");
+});
+it("inicia na primeira página sem link anterior", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
+  const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+  expect(mocks.consultar).toHaveBeenCalledWith(1);
+  expect(html).not.toContain("Anterior");
+  expect(html).toContain("Nenhum acordo de permuta registrado.");
+  expect(html).not.toContain("nesta página");
+});
+
+it("lê a preferência somente depois da guarda e a encaminha à saída histórica", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
+  const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+  expect(html).toContain("preferência=America/Costa_Rica");
+});
+
+it("não consulta acordos ou preferência quando a guarda falha", async () => {
+  mocks.sessao.mockRejectedValue(new Error("Sem sessão"));
+  await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow("Sem sessão");
+  expect(mocks.consultar).not.toHaveBeenCalled();
+  expect(mocks.preferencia).not.toHaveBeenCalled();
+});
+
+// C11 da #170: `financeiro.aprovar_acertos` vem do usuário da sessão, sem reler `usuario` no banco.
+it("financeiro com a capacidade aprova; sem ela, não — sem reler o usuário", async () => {
+  mocks.consultar.mockResolvedValue({ ok: true, dado: [] });
+  mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: ["financeiro.aprovar_acertos"] });
+  expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("aprovar=true");
+  mocks.sessao.mockResolvedValue({ id: "fin", papeis: ["FINANCEIRO"], permissoes: [] });
+  expect(renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))).toContain("aprovar=false");
+  expect(mocks.usuario).not.toHaveBeenCalled();
+});

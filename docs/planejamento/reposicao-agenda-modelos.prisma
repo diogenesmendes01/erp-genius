@@ -1,0 +1,209 @@
+// F07 / Q11, Q14, Q16, Q19, Q25, Q26, Q49, Q50, Q51 e Q61.
+// Fragmento para o schema.prisma; a migration correspondente é
+// 20260915003000_agenda_reposicao. É domínio acadêmico: não há cobrança,
+// OcorrenciaParticular, ReservaAgendaParticular, preço nem hora contratada.
+
+enum ReferenciaPeriodoBeneficioReposicao {
+  CIVIL
+  CICLO_MATRICULA
+}
+
+enum UnidadePeriodoBeneficioReposicao {
+  DIAS
+  MESES
+}
+
+enum StatusReservaBeneficioReposicao {
+  RESERVADA
+  CONSUMIDA
+  DEVOLVIDA
+  ISENTA_EXCECAO
+}
+
+// Fonte versionada da oferta. Alterar quantidade, duração ou referência abre
+// uma nova proposta; nunca altera a regra que o vínculo já herdou.
+model PropostaRegraBeneficioReposicaoOferta {
+  id String @id @default(cuid())
+  produtoPaisId String
+  produtoPais ProdutoPais @relation(fields: [produtoPaisId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  permiteParticular Boolean
+  referencia ReferenciaPeriodoBeneficioReposicao
+  unidade UnidadePeriodoBeneficioReposicao
+  duracaoPeriodo Int
+  quantidadePorPeriodo Int
+  antecedenciaCancelamentoMinutos Int
+  autorId String
+  autor Usuario @relation("AutorRegraBeneficioReposicao", fields: [autorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoRegraBeneficioReposicaoOferta?
+  snapshots BeneficioReposicaoParticularMatricula[]
+  @@unique([produtoPaisId, versao])
+  @@unique([autorId, chaveIdempotencia])
+}
+
+model DecisaoRegraBeneficioReposicaoOferta {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaRegraBeneficioReposicaoOferta @relation(fields: [propostaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorRegraBeneficioReposicao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+// Snapshot aplicado ao vínculo a partir de uma regra de oferta aprovada. Não
+// existe API de quantidade/prazo livres: Q50/Q61 só criam novo snapshot no
+// próximo período e preservam reservas dos snapshots anteriores.
+model BeneficioReposicaoParticularMatricula {
+  id String @id @default(cuid())
+  matriculaId String
+  matricula Matricula @relation(fields: [matriculaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  regraOfertaId String
+  regraOferta PropostaRegraBeneficioReposicaoOferta @relation(fields: [regraOfertaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  referencia ReferenciaPeriodoBeneficioReposicao
+  unidade UnidadePeriodoBeneficioReposicao
+  duracaoPeriodo Int
+  // Obrigatória somente no ciclo, registrada ao aplicar o benefício para o
+  // vínculo. Nunca há fallback para criadoEm/ativadaEm.
+  referenciaCiclo DateTime? @db.Date
+  quantidadePorPeriodo Int
+  antecedenciaCancelamentoMinutos Int
+  vigenteAPartirDe DateTime @db.Date
+  aplicadoPorId String
+  aplicadoPor Usuario @relation("AplicadorBeneficioReposicao", fields: [aplicadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  agendas AgendaReposicaoIndividual[]
+  @@unique([aplicadoPorId, chaveIdempotencia])
+  @@unique([matriculaId, vigenteAPartirDe])
+  @@index([matriculaId, vigenteAPartirDe])
+}
+
+// Um pedido PARTICULAR recebe no máximo um encontro; uma tentativa depois de
+// falta/cancelamento tardio nasce como outro pedido Q51. O encontro tem uma FK
+// explícita para o pedido e esta tabela confere os dois lados.
+model AgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  reposicaoId String @unique
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  encontroId String @unique
+  encontro EncontroAgenda @relation("EncontroAgendaReposicaoIndividual", fields: [encontroId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  beneficioId String?
+  beneficio BeneficioReposicaoParticularMatricula? @relation(fields: [beneficioId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  periodoInicio DateTime? @db.Date
+  periodoFimExclusivo DateTime? @db.Date
+  statusBeneficio StatusReservaBeneficioReposicao @default(RESERVADA)
+  autorizacaoExcecaoId String? @unique
+  autorizacaoExcecao AutorizacaoExcecaoReposicaoParticular? @relation(fields: [autorizacaoExcecaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  excecaoId String? @unique
+  excecaoDiaNaoLetivo ExcecaoAgendaReposicaoIndividual? @relation(fields: [excecaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  reservadoPorId String
+  reservadoPor Usuario @relation("ReservadorAgendaReposicao", fields: [reservadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  motivo String
+  criadaEm DateTime @default(now())
+  consumidaEm DateTime?
+  devolvidaEm DateTime?
+  motivoDevolucao String?
+  @@index([beneficioId, periodoInicio, periodoFimExclusivo, statusBeneficio])
+}
+
+// Q19: uma rejeição não bloqueia a nova proposta. Só a exceção decidida e
+// exatamente igual ao encontro agendado pode cobrir aquele intervalo.
+model ExcecaoAgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  professorId String
+  professor Usuario @relation("ProfessorExcecaoAgendaReposicao", fields: [professorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  inicio DateTime
+  fim DateTime
+  fusoOrigem String
+  solicitanteId String
+  solicitante Usuario @relation("SolicitanteExcecaoAgendaReposicao", fields: [solicitanteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoExcecaoAgendaReposicaoIndividual?
+  agenda AgendaReposicaoIndividual?
+  @@unique([reposicaoId, versao])
+  @@unique([solicitanteId, chaveIdempotencia])
+  @@index([reposicaoId, inicio, fim])
+}
+
+model DecisaoExcecaoAgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  excecaoId String @unique
+  excecao ExcecaoAgendaReposicaoIndividual @relation(fields: [excecaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorExcecaoAgendaReposicao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+// Q34: benefício excepcional é autorizado no pedido específico, em versões e
+// decisão independente; não vira uma OcorrenciaParticular nem altera saldo.
+model AutorizacaoExcecaoReposicaoParticular {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  solicitanteId String
+  solicitante Usuario @relation("SolicitanteExcecaoBeneficioReposicao", fields: [solicitanteId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  motivo String
+  evidencia String
+  chaveIdempotencia String
+  entradaHash String
+  criadaEm DateTime @default(now())
+  decisao DecisaoAutorizacaoExcecaoReposicaoParticular?
+  agenda AgendaReposicaoIndividual?
+  @@unique([reposicaoId, versao])
+  @@unique([solicitanteId, chaveIdempotencia])
+}
+
+model DecisaoAutorizacaoExcecaoReposicaoParticular {
+  id String @id @default(cuid())
+  autorizacaoId String @unique
+  autorizacao AutorizacaoExcecaoReposicaoParticular @relation(fields: [autorizacaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decisorId String
+  decisor Usuario @relation("DecisorExcecaoBeneficioReposicao", fields: [decisorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+// Adições às relações existentes:
+// model Usuario {
+//   regrasBeneficioReposicaoAutoria PropostaRegraBeneficioReposicaoOferta[] @relation("AutorRegraBeneficioReposicao")
+//   regrasBeneficioReposicaoDecididas DecisaoRegraBeneficioReposicaoOferta[] @relation("DecisorRegraBeneficioReposicao")
+//   beneficiosReposicaoAplicados BeneficioReposicaoParticularMatricula[] @relation("AplicadorBeneficioReposicao")
+//   agendasReposicaoReservadas AgendaReposicaoIndividual[] @relation("ReservadorAgendaReposicao")
+//   excecoesAgendaReposicaoSolicitadas ExcecaoAgendaReposicaoIndividual[] @relation("SolicitanteExcecaoAgendaReposicao")
+//   excecoesAgendaReposicaoDecididas DecisaoExcecaoAgendaReposicaoIndividual[] @relation("DecisorExcecaoAgendaReposicao")
+//   excecoesAgendaReposicaoDocente ExcecaoAgendaReposicaoIndividual[] @relation("ProfessorExcecaoAgendaReposicao")
+//   excecoesBeneficioReposicaoSolicitadas AutorizacaoExcecaoReposicaoParticular[] @relation("SolicitanteExcecaoBeneficioReposicao")
+//   excecoesBeneficioReposicaoDecididas DecisaoAutorizacaoExcecaoReposicaoParticular[] @relation("DecisorExcecaoBeneficioReposicao")
+// }
+// model ProdutoPais { regrasBeneficioReposicao PropostaRegraBeneficioReposicaoOferta[] }
+// model Matricula { beneficiosReposicaoParticular BeneficioReposicaoParticularMatricula[] }
+// model ReposicaoIndividual {
+//   agendaParticular AgendaReposicaoIndividual?
+//   excecoesAgendaParticular ExcecaoAgendaReposicaoIndividual[]
+//   excecoesBeneficioParticular AutorizacaoExcecaoReposicaoParticular[]
+//   encontroParticularAgendado EncontroAgenda? @relation("EncontroReposicaoAgendado")
+// }
+// model EncontroAgenda {
+//   agendaReposicaoIndividual AgendaReposicaoIndividual? @relation("EncontroAgendaReposicaoIndividual")
+//   reposicaoIndividualId String? @unique
+//   reposicaoIndividualAgendada ReposicaoIndividual? @relation("EncontroReposicaoAgendado", fields: [reposicaoIndividualId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+// }

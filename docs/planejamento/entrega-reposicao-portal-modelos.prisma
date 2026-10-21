@@ -1,0 +1,153 @@
+// RASCUNHO 183 correspondente a 20260915009000_entrega_reposicao_portal.sql.
+// Não integrar automaticamente: acrescentar inversos em Usuario, ContaPortalAluno
+// e ReposicaoIndividual quando a migration for revisada/aplicada.
+
+enum ProvedorMaterialReposicao {
+  GOOGLE_DRIVE
+}
+
+enum SituacaoCorrecaoEntregaReposicao {
+  PENDENTE
+  RESPONDIDA
+  CANCELADA
+}
+
+enum SituacaoRelatoMaterialReposicao {
+  ABERTO
+  CONFIRMADO
+  DESCARTADO
+}
+
+model MaterialReposicaoGravacao {
+  id String @id @default(cuid())
+  reposicaoId String @unique
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  provedor ProvedorMaterialReposicao
+  arquivoOficialId String // identificador Drive; nunca URL pública
+  disponivel Boolean @default(true)
+  publicadoPorId String
+  publicadoPor Usuario @relation("MaterialReposicaoPublicado", fields: [publicadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  publicadoEm DateTime
+  criadaEm DateTime @default(now())
+  disponibilizacao DisponibilizacaoEntregaReposicao?
+  relatos RelatoIndisponibilidadeMaterialReposicao[]
+  indisponibilidades IndisponibilidadeMaterialReposicao[]
+}
+
+model DisponibilizacaoEntregaReposicao {
+  id String @id @default(cuid())
+  reposicaoId String @unique
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  materialId String @unique
+  material MaterialReposicaoGravacao @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  disponibilizadaEm DateTime
+  prazoBaseMinutos Int
+  prazoInicialAte DateTime
+  publicadaPorId String
+  publicadaPor Usuario @relation("DisponibilizacaoEntregaPublicada", fields: [publicadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadaEm DateTime @default(now())
+}
+
+model RelatoIndisponibilidadeMaterialReposicao {
+  id String @id @default(cuid())
+  materialId String
+  material MaterialReposicaoGravacao @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  contaPortalAlunoId String?
+  contaPortalAluno ContaPortalAluno? @relation("RelatoMaterialConta", fields: [contaPortalAlunoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  relatadoPorId String?
+  relatadoPor Usuario? @relation("RelatoMaterialEquipe", fields: [relatadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  descricao String
+  situacao SituacaoRelatoMaterialReposicao @default(ABERTO)
+  criadaEm DateTime @default(now())
+  confirmadoEm DateTime?
+  indisponibilidade IndisponibilidadeMaterialReposicao?
+  @@index([materialId, situacao, criadaEm])
+}
+
+model IndisponibilidadeMaterialReposicao {
+  id String @id @default(cuid())
+  materialId String
+  material MaterialReposicaoGravacao @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  relatoId String @unique
+  relato RelatoIndisponibilidadeMaterialReposicao @relation(fields: [relatoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  confirmadaPorId String
+  confirmadaPor Usuario @relation("IndisponibilidadeMaterialConfirmada", fields: [confirmadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  inicio DateTime
+  fim DateTime?
+  motivo String
+  criadaEm DateTime @default(now())
+  // índice parcial SQL: um único intervalo com fim NULL por material
+}
+
+model SolicitacaoCorrecaoEntregaReposicao {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  entregaId String @unique
+  entrega EntregaReposicaoGravacao @relation("EntregaCorrigida", fields: [entregaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  solicitadaPorId String
+  solicitadaPor Usuario @relation("CorrecaoEntregaSolicitada", fields: [solicitadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  comentario String
+  prazoBaseMinutos Int
+  prazoAte DateTime
+  situacao SituacaoCorrecaoEntregaReposicao @default(PENDENTE)
+  respondidaEm DateTime?
+  criadaEm DateTime @default(now())
+  resposta EntregaReposicaoGravacao? @relation("RespostaCorrecao")
+  prorrogacoes ProrrogacaoPrazoReposicao[]
+  // índice parcial SQL: uma única solicitação PENDENTE por reposição
+}
+
+model ProrrogacaoPrazoReposicao {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  solicitacaoCorrecaoId String?
+  solicitacaoCorrecao SolicitacaoCorrecaoEntregaReposicao? @relation(fields: [solicitacaoCorrecaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  versao Int
+  prazoAnterior DateTime
+  novoPrazo DateTime
+  motivo String
+  autorizadaPorId String
+  autorizadaPor Usuario @relation("ProrrogacaoPrazoReposicaoAutorizada", fields: [autorizadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadaEm DateTime @default(now())
+  // índices parciais SQL: versão por reposição (entrega) ou por correção
+}
+
+model LiberacaoEntregaReposicao {
+  id String @id @default(cuid())
+  reposicaoId String
+  reposicao ReposicaoIndividual @relation(fields: [reposicaoId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  contaId String
+  conta ContaPortalAluno @relation(fields: [contaId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  inicio DateTime
+  expiraEm DateTime
+  motivo String
+  autorizadaPorId String
+  autorizadaPor Usuario @relation("LiberacaoEntregaReposicaoAutorizada", fields: [autorizadaPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  criadaEm DateTime @default(now())
+  @@index([reposicaoId, contaId, expiraEm])
+}
+
+// Inversos a integrar (a cópia temporária tmp/schema-183/schema.prisma foi
+// validada com estes nomes):
+// Em Usuario: materiaisReposicaoPublicados @relation("MaterialReposicaoPublicado"),
+// disponibilizacoesEntregaReposicaoPublicadas @relation("DisponibilizacaoEntregaPublicada"),
+// relatosMaterialReposicaoEquipe @relation("RelatoMaterialEquipe"),
+// indisponibilidadesMaterialReposicaoConfirmadas @relation("IndisponibilidadeMaterialConfirmada"),
+// correcoesEntregaReposicaoSolicitadas @relation("CorrecaoEntregaSolicitada"),
+// prorrogacoesPrazoReposicaoAutorizadas @relation("ProrrogacaoPrazoReposicaoAutorizada")
+// e liberacoesEntregaReposicaoAutorizadas @relation("LiberacaoEntregaReposicaoAutorizada").
+// Em ContaPortalAluno: entregasReposicaoGravacao @relation("EntregaReposicaoContaPortal"),
+// relatosMaterialReposicao @relation("RelatoMaterialConta") e liberacoesEntregaReposicao.
+// Em ReposicaoIndividual: materialGravacao, disponibilizacaoEntrega,
+// correcoesEntrega, prorrogacoesPrazo e liberacoesEntrega.
+// Em EntregaReposicaoGravacao, integrar:
+// contaPortalAlunoId String?
+// contaPortalAluno ContaPortalAluno? @relation(...)
+// solicitacaoCorrecaoId String? @unique
+// solicitacaoCorrecao SolicitacaoCorrecaoEntregaReposicao? @relation("RespostaCorrecao", ...)
+// correcaoSolicitada SolicitacaoCorrecaoEntregaReposicao? @relation("EntregaCorrigida")
+// Em ConfiguracaoOperacional, integrar campos nullable:
+// prazoPrimeiraEntregaReposicaoMinutos Int?
+// prazoRespostaCorrecaoReposicaoMinutos Int?

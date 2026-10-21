@@ -1,0 +1,5 @@
+{
+ "incremento":334,"data":"2026-09-14","escopo":"Emissão interna e origens faturadas do fechamento por hora",
+ "integracao":{"aprovados":16,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","ultimoBuild":333,
+ "migrationsBaseDescartavel":156,"schemaDiff":"vazio","limites":["Executor interno, sem ação pública ou interface","Integridade do conjunto e proteção de alterações da cobrança pendentes","Cenários adicionais de emissão parcial e concorrência pendentes","Integração ao encerramento pendente"],"producao":false,"enviosExternos":false
+}

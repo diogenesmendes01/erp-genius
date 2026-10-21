@@ -1,0 +1,6 @@
+{
+ "incremento":332,"data":"2026-09-14","escopo":"Decisão independente do fechamento por hora",
+ "integracao":{"aprovados":14,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","build":"aprovado","paginasEstaticasGeradas":52,
+ "migrationsBaseDescartavel":155,"schemaDiff":"vazio","homologacaoVisual":false,
+ "limites":["Formulário de decisão pendente","Emissão deve revalidar origens novamente","Emissão e itens faturados pendentes"],"producao":false,"enviosExternos":false
+}

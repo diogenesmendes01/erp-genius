@@ -1,0 +1,285 @@
+{
+  "total": 520,
+  "aprovados": 519,
+  "falhas": 1,
+  "pendentes": 0,
+  "arquivos": [
+    {
+      "arquivo": "src/lib/codigo.int.test.ts",
+      "status": "passed",
+      "testes": 2,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/academico/fluxo.int.test.ts",
+      "status": "passed",
+      "testes": 55,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/academico/visibilidade.int.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/acesso/politica.int.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/agenda/rascunho.int.test.ts",
+      "status": "passed",
+      "testes": 14,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/ajustes/ficha.int.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/alunos/cadastro.int.test.ts",
+      "status": "failed",
+      "testes": 7,
+      "falhas": [
+        {
+          "teste": "cadastro acadêmico persistido — capacidade e projeção por função PROFESSOR recebe contexto pedagógico e não altera cadastro por chamada direta",
+          "mensagens": [
+            "AssertionError: expected '{\"aluno\":{\"id\":\"cmtyv1840001dm5db7kci…' not to match /DOCUMENTO_PRIVADO|50688887777|contato…/\n    at C:/Users/Mendes/.codex/worktrees/de19/erp-genius/src/server/alunos/cadastro.int.test.ts:69:39\n    at file:///C:/Users/Mendes/.codex/worktrees/de19/erp-genius/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+          ]
+        }
+      ]
+    },
+    {
+      "arquivo": "src/server/catalogo/permissoes.int.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/cobrancas/acesso-aulas.int.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/cobrancas/conferencia.int.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/diario/diario.int.test.ts",
+      "status": "passed",
+      "testes": 14,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/captura.int.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/config-comercial.int.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/leads.int.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/regua-comercial.int.test.ts",
+      "status": "passed",
+      "testes": 13,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/financeiro/politica.int.test.ts",
+      "status": "passed",
+      "testes": 20,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/operacao/acoes.int.test.ts",
+      "status": "passed",
+      "testes": 13,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/retomada/fluxo.int.test.ts",
+      "status": "passed",
+      "testes": 36,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/secretaria/politica.int.test.ts",
+      "status": "passed",
+      "testes": 11,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/alocacao.int.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/ativacao.int.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/cobertura.int.test.ts",
+      "status": "passed",
+      "testes": 2,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/compensacao-cobertura.int.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/compra-horas.int.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/condicoes-encerramento.int.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-solicitacao.int.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/janela-admissao.int.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/pausa-previa.int.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/pausa-proposta.int.test.ts",
+      "status": "passed",
+      "testes": 26,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+      "status": "passed",
+      "testes": 39,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/turmas/integridade-academica.int.test.ts",
+      "status": "passed",
+      "testes": 20,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/uploads/arquivos.int.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/acesso-atendimento.int.test.ts",
+      "status": "passed",
+      "testes": 14,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/acoes.int.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/ciclo-cobranca.int.test.ts",
+      "status": "passed",
+      "testes": 10,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/cron-comercial.int.test.ts",
+      "status": "passed",
+      "testes": 11,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/cron-experimental.int.test.ts",
+      "status": "passed",
+      "testes": 17,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/cron.int.test.ts",
+      "status": "passed",
+      "testes": 11,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/despachante-comercial.int.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/despachante.live.int.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/destinatario-atual.int.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/inbox.int.test.ts",
+      "status": "passed",
+      "testes": 18,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/politica.int.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/saude.int.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/app/api/exportacoes/[tipo]/route.int.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+-- RASCUNHO migration 179 (20260915005000_segunda_chamada) — NÃO aplicar nem mover para prisma/migrations.
+--
+-- Objetivo: ciclo completo Q146–Q152 de segunda chamada. Não cria ou altera qualquer
+-- reserva/nota de recuperação, reposição de frequência, particular, contrato ou financeiro.
+-- Todas as datas são timestamptz e a referência temporal do banco é UTC.
+--
+-- 1. ALTER TYPE "FinalidadeEncontroAgenda" ADD VALUE 'SEGUNDA_CHAMADA'; criar os enums e tabelas de `segunda-chamada-modelos.prisma`, com FKs ON DELETE RESTRICT
+--    para Matrícula, AlocaçãoTurma, Turma, VersãoRegraAvaliacao, Usuário e EncontroAgenda.
+--    `AgendaSegundaChamada.encontroId` é UNIQUE: um encontro não pode ser inferido ou
+--    reutilizado por pedidos diferentes.
+--
+-- 2. Alterar `VersaoLancamentoAvaliacao` apenas com
+--      "segundaChamadaRealizacaoId" text UNIQUE NULL REFERENCES "RealizacaoSegundaChamada"(id) RESTRICT.
+--    Trigger: esta FK só aceita realização CONSUMIDA_REALIZACAO, da mesma matrícula,
+--    alocação, turma, regra e código do registro; requer AgendaSegundaChamada e ReservaSegundaChamada em CONSUMIDA_REALIZACAO; não aceita recuperação; uma realização
+--    alimenta uma única versão normal. A oficialização continua pela DecisaoLancamentoAvaliacao
+--    e deve continuar independente de autor e realizador (Q142).
+--
+-- 3. Trigger de decisão da proposta: autor professor ou gestão pedagógica ativos com escopo;
+--    decisor gestão/Admin ativo e diferente do autor; hash da proposta e pendência da avaliação
+--    ainda exatos. Aprovar não cria reserva, agenda, nota ou consumo.
+--
+-- 4. Trigger de disponibilização (Q149): só proposta aprovada, uma vez; início >= decisão e <=
+--    clock_timestamp(); copiar `segundaChamada.prazoRealizacaoMinutos` da regra vinculada em
+--    `prazoRegraMinutos` e `prazoAte`; não usar COALESCE/default de prazo. Prorrogação é versão
+--    incremental, requer motivo e decisão de outro gestor; só decisão aprovada altera prazo
+--    vigente. Expirar sem ocorrência não consome saldo.
+--
+-- 5. Trigger de reserva/agenda (Q147/Q148): exigir disponibilização e prazo vigente; contar,
+--    para exatamente (matrícula, regra, avaliação), RESERVADA e os três CONSUMIDA. Comparar
+--    com limite configurado da regra + extras aprovados, sem quantidade padrão. A agenda exige
+--    professor permitido (titular vigente ou DesignacaoSegundaChamada vigente), encontro PREVISTO de finalidade SEGUNDA_CHAMADA
+--    e data dentro do prazo. Proibir AULA, RECUPERACAO e REPOSICAO mesmo quando turma/matrícula coincidirem. Lock por chave matrícula/regra/avaliação evita exceder saldo em paralelo.
+--
+-- 6. Ocorrência é append-only e troca a reserva uma única vez: cancelamento da escola e do aluno
+--    antes da antecedência copiada liberam; cancelamento tardio e FALTA consomem e mantêm a nota
+--    pendente, sem zero; realização consome. IMPEDIMENTO_ESCOLA preserva pendência/revisão, sem
+--    falta atribuída. Não apagar ou reaproveitar uma realização/entrega já consumida.
+--
+-- 7. Q151: matrícula pausada/encerrada mantém toda consulta em leitura. Nova agenda, ocorrência
+--    futura e realização exigem AutorizacaoEspecialSegundaChamada vigente, mesma pendência,
+--    motivo e prazo; não reativa vínculo, cobrança, acesso a aulas, nem concede extra. Registro
+--    factual anterior à mudança permanece permitido com autoria/data auditáveis.
+--
+-- 8. Q152: DesignacaoSegundaChamada só libera a proposta identificada e no intervalo vigente.
+--    Não altera autor, evidência, lançamentos existentes, prazo, limite ou extras. Designado não
+--    pode oficializar sua própria nota; correção mantém fluxo independente.
+--
+-- 9. Trigger de linkage deve também rejeitar INSERT/UPDATE de RealizacaoSegundaChamada.lancamentoOriginalId quando o id não for a mesma versão com segundaChamadaRealizacaoId, e rejeitar versão normal submetida sem realização correspondente. A decisão de oficialização já existente continua a única forma de oficializar a nota.
+--
+-- 10. Restringir UPDATE/DELETE das propostas, decisões, disponibilizações, prorrogações,
+--    ocorrências, realização, extras, autorizações e designações a trigger de imutabilidade.
+--    Registrar eventos tipados para cada transição.
+

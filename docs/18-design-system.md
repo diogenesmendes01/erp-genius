@@ -11,18 +11,23 @@
 - **Sentence case sempre:** nada de Title Case nem CAIXA ALTA (inclusive sem `uppercase` no CSS).
 
 ## Tipografia
-- Fonte: **Anthropic Sans**, carregada localmente via `next/font/local` em
-  [`src/app/layout.tsx`](../src/app/layout.tsx) (arquivos `.otf` em `src/app/fonts/`), exposta
-  na variável `--font-sans`. `globals.css` referencia `var(--font-sans)`.
-- **Padrão de pesos (canônico):** apenas **regular (400)** e **medium (500)** — nada de
-  negrito pesado (`font-bold` evitado; use `font-medium`).
-  > **Nota de alinhamento:** a implementação atual em `layout.tsx` ainda registra quatro pesos
-  > (400/500/600/700); a redução para 400/500 está sendo alinhada em PR de front-end. Esta doc
-  > descreve o padrão **pretendido** — ao alinhar, mantenha só 400/500.
+- Fonte: **Roboto variável** (eixo de peso 100–900, `font-display: swap`), carregada localmente via
+  `next/font/local` em [`src/app/layout.tsx`](../src/app/layout.tsx) (`roboto-variable.woff2` e
+  `LICENSE-Roboto.txt`, Apache 2.0, em `src/app/fonts/`), exposta na variável `--font-sans`. A pilha é
+  `var(--font-sans), "Segoe UI", Roboto, system-ui, sans-serif`.
+- **Padrão de pesos (canônico):** **regular (400)**, **medium (500)** e **semibold (600)** — nada acima de
+  600 (`font-bold` evitado; use `font-semibold`). Elementos que o navegador deixa em negrito por padrão
+  (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 600 em `globals.css`.
+  `src/app/tipografia.test.ts` confere a fonte, o hash e falha se um peso maior voltar ao código.
 
 ## Cantos & bordas
-- Raios: `rounded-md` = 8px · `rounded-lg` = 10px · `rounded-xl` = 12px · `rounded-full` (chips/avatar).
+- Raios: `rounded-md` = 8px (campo, cartão pequeno) · `rounded-item` = 10px (item de lista) · `rounded-lg`/`rounded-xl` = 12px (painel) · `rounded-dialog` = 14px · `rounded-full` (botão, chip, avatar).
 - Bordas: 1px na cor `--border` (preto 10% no claro; branco 12% no escuro).
+
+## Campos de formulário
+- Rótulo (`ROTULO_CAMPO` em `src/components/Campo.tsx`): `text-sm font-medium text-gray-800` (14 px, peso 500). Dica e erro seguem em 12 px.
+- Base em `globals.css` (`@layer base`): `input` (exceto checkbox/radio), `select` e `textarea` com fundo `--surface-muted` e raio 8 px; `:disabled` usa `--text-disabled` e `cursor: not-allowed`; abaixo de 767 px, `min-height: 44px` (exceto `textarea`); `textarea` com `resize: vertical` e `min-height: 90px` quando tem mais de uma linha (o de `rows="1"`, como o compositor do Inbox, fica compacto). Os seletores de `input` e do `textarea` de várias linhas vão em `:where(...)`, com especificidade zero: o Tailwind 3 não emite cascade layers, e é isso que faz a classe utilitária explícita (`bg-surface`, `rounded-*`, `min-h-*`) vencer a base.
+- Trava: `src/components/Campo.test.ts` e `src/app/design-system.test.ts`.
 
 ## Ícones
 - **Tabler** (`@tabler/icons-react`), versão **outline** (componentes `Icon*`, não `Icon*Filled`).
@@ -36,34 +41,162 @@
   texto escuro; escuro = fundo escuro + texto claro).
 
 ## Tokens — Neutros
-| Papel | Token | Claro | Escuro |
-|---|---|---|---|
-| Fundo da página | `--bg-page` | `#FAFAF7` | `#1B1B1A` |
-| Superfície (cards) | `--surface` | `#FFFFFF` | `#242422` |
-| Superfície sutil | `--surface-muted` | `#F4F4F0` | `#2B2B29` |
-| Neutro (chips) | `--neutral-muted` | `#EFEEE9` | `#2F2F2C` |
-| Texto primário | `--text-primary` | `#1A1A19` | `#ECECEA` |
-| Texto secundário | `--text-secondary` | `#5F5E5A` | `#A7A6A1` |
-| Texto terciário | `--text-terciary` | `#88877F` | `#6E6D68` |
-| Borda | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.12)` |
+Valores do design system (`docs/planejamento/design-system-referencia.md`, v1.0 de 14/10/2026). **R** = literal do
+spec; **A** = adaptação para manter as travas de contraste do ERP.
+
+| Papel | Token | Claro | Escuro | Origem |
+|---|---|---|---|---|
+| Fundo da página | `--bg-page` | `#F7F5F3` | `#161717` | R |
+| Superfície (cards) | `--surface` | `#FFFFFF` | `#161717` | R |
+| Superfície sutil | `--surface-muted` | `#F7F5F3` | `#1D1F1F` | R `surface-alt` |
+| Superfície elevada | `--surface-raised` | `#FFFFFF` | `#1D1F1F` | R |
+| Neutro (chips, hover opaco) | `--neutral-muted` | `#EDEDED` | `#2A2C2C` | A: a seleção cabe sobre ele |
+| Realce / pressionado | `--highlight` / `--pressed` | `rgba(194,189,184,.15)` / `rgba(0,0,0,.2)` | `rgba(255,255,255,.1)` / `rgba(255,255,255,.2)` | R |
+| Texto primário | `--text-primary` | `#0A0A0A` | `#FAFAFA` | R |
+| Texto secundário | `--text-secondary` | `rgba(0,0,0,.6)` | `rgba(255,255,255,.6)` | R `text-muted` |
+| Texto terciário (placeholder) | `--text-terciary` | `#6D6C64` | `#8F9192` | A: o spec não tem terciário |
+| Texto desabilitado | `--text-disabled` | `#BDBDBD` | `#424445` | R (só controle desabilitado) |
+| Borda (card) | `--border` | `rgba(0,0,0,.10)` | `rgba(255,255,255,.10)` | R `divider` |
+| Borda suave | `--border-soft` | `rgba(0,0,0,.20)` | `rgba(255,255,255,.10)` | R `outline-soft` |
+| Borda (controle — input/select, `gray-300`) | `--border-control` | `#858383` | `#757778` | A claro (o R `#959393` dá 2,81:1) |
+
+Razões medidas pela trava (`src/app/contraste-nucleo.ts`):
+
+| Par | Claro | Escuro |
+|---|---|---|
+| `--border-control` sobre página / cartão / sutil / neutro (≥ 3:1, WCAG 1.4.11) | 3,47 / 3,77 / 3,47 / 3,22 | 3,99 / 3,99 / 3,68 / 3,12 |
+| `--text-terciary` sobre página / cartão / sutil (≥ 4,5:1, 1.4.3) | 4,85 / 5,28 / 4,85 | 5,67 / 5,67 / 5,23 |
+| `--brand-text` sobre página / cartão (≥ 4,5:1) | 6,96 / 7,57 | 7,51 / 7,51 |
+
+> A borda de controle antiga (`rgba(0,0,0,.44)`) cai para 3,17–3,24:1 no antigo claro; o `#959393` do spec
+> dá 2,81:1 sobre `#F7F5F3`, por isso a adaptação.
 
 ## Tokens — Semânticos (fundo / texto — repare a inversão)
 | Cor | Token bg / text | Claro (bg / text) | Escuro (bg / text) |
 |---|---|---|---|
-| Info (azul) | `--info-bg` / `--info-text` | `#E6F1FB` / `#0C447C` | `#0C447C` / `#B5D4F4` |
-| Sucesso (verde) | `--success-bg` / `--success-text` | `#EAF3DE` / `#27500A` | `#27500A` / `#C0DD97` |
-| Aviso (âmbar) | `--warning-bg` / `--warning-text` | `#FAEEDA` / `#633806` | `#633806` / `#FAC775` |
-| Perigo/atraso (vermelho) | `--danger-bg` / `--danger-text` | `#FCEBEB` / `#791F1F` | `#791F1F` / `#F7C1C1` |
+| Info (azul) | `--info-bg` / `--info-text` | `#E6F1FB` / `#0064D1` | `#10283A` / `#53BDEB` |
+| Sucesso (verde) | `--success-bg` / `--success-text` | `#D9FDD3` / `#15603E` | `#103529` / `#71EB85` |
+| Aviso (âmbar) | `--warning-bg` / `--warning-text` | `#FFF7E5` / `#7A4F00` | `#362C1F` / `#FFD279` |
+| Perigo/atraso (vermelho) | `--danger-bg` / `--danger-text` | `#FDE8EB` / `#B3002B` | `#321622` / `#FB5061` |
+| IA (roxo — sugestões do copiloto, doc 27 C3) | `--ai-bg` / `--ai-text` | `#F2F0F9` / `#6A53BD` | `#2B2A37` / `#AD9FFA` |
+| Temperatura Frio | `--cold-text` | `#007DAA` | `#5BB0D7` |
+| Balão / compositor (Fase 3) | `--entry` / `--entry-accent` / `--composer` | `#FFFFFF` / `#D9FDD3` / `#FFFFFF` | `#242626` / `#144D37` / `#242626` |
 
-> **Ações sólidas** (botões de confirmar/destrutivo) usam `--danger-solid` / `--success-solid`
-> (texto branco nos dois modos) — distintas dos badges. Marca: `--brand` (botão primário),
-> `--brand-text` (links), `--brand-bg` (estado ativo).
+> Adaptações (A): `--info-text` claro (o `#007BFC` do spec dá 4,01:1), `--warning-text` claro (o `#FFB938` é
+> indicador, não texto) e `--danger-text` claro (`#EA0038` dá 3,93:1).
+>
+> **IA** tem cor própria de propósito — é o único sinal visual que diz "isto foi gerado por
+> IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6A53BD`, não
+> inverte: o mesmo valor nos dois temas, 5,86:1 com branco) é o botão de aceitar/aplicar sugestão,
+> sempre com texto branco. Nisso ele difere do `--brand-solid`, que tem um valor por tema (`#1B8755`
+> no claro, `#21C063` no escuro) e leva `text-on-brand` (ver o quadro abaixo).
+
+### Registro: o texto de antes da Fase 0
+Os valores citados abaixo (`#6D28D9`, `#4338CA`, `#6264EC`) são os anteriores à Fase 0 e não valem mais; os atuais
+estão no quadro de semânticos acima e no de marca e ações sólidas abaixo.
+
+> Antes da Fase 0: a **IA** tinha cor própria de propósito — o único sinal visual que diz "isto foi gerado por
+> IA", nunca reaproveite `--ai-*` fora de sugestão do copiloto. `--ai-solid` (`#6D28D9`, não
+> inverte: o mesmo valor nos dois temas) é o botão de aceitar/aplicar sugestão, sempre com texto
+> branco. Nisso ele difere do `--brand-solid`, que desde a #157 tem um valor por tema (`#4338CA` no
+> claro, `#6264EC` no escuro; ver o quadro abaixo).
+
+## Tokens — Marca e ações sólidas
+| Papel | Token | Claro | Escuro |
+|---|---|---|---|
+| Accent (checkbox/radio, foco, barra sem texto) | `--brand` | `#1DAA61` | `#21C063` |
+| Texto/link da marca | `--brand-text` | `#15603E` | `#21C063` |
+| Fundo suave (hover, item ativo) | `--brand-bg` | `#D9FDD3` | `#103529` |
+| Texto sobre `--brand-bg` | `--brand-strong` | `#15603E` | `#D9FDD3` |
+| Contorno tingido | `--brand-border` | `#B7EBC0` | `#1E5C40` |
+| Fundo sólido (botão primário e seleção com texto) | `--brand-solid` | `#1B8755` | `#21C063` |
+| Texto sobre `--brand-solid` / `--success-solid` | `--on-brand-solid` | `#FFFFFF` (4,52:1) | `#0A0A0A` (8,28:1) |
+| Sólido de sucesso | `--success-solid` | `#1B8755` | `#21C063` |
+| Sólido destrutivo (texto branco) | `--danger-solid` | `#EA0038` (4,61:1) | `#C4002F` (6,20:1) |
+| Sólido da IA (texto branco) | `--ai-solid` | `#6A53BD` (5,86:1) | `#6A53BD` (5,86:1) |
+
+> **O texto sobre o sólido não é mais sempre branco.** No escuro o verde clareia (`#21C063`), então o texto do
+> botão primário e da seleção é escuro (`--on-brand-solid`). `TEXTO_SOBRE_SOLIDO` em
+> `src/app/contraste-mapa.ts` guarda o par de cada sólido (`--brand-solid` e `--success-solid` com
+> `--on-brand-solid`; `--danger-solid` e `--ai-solid` com branco) e a trava confere ≥ 4,5:1 nos dois temas.
+>
+> `--brand` é accent, contorno de foco e barra sem texto; **nunca** fundo de texto (branco sobre ele dá 3,06:1
+> no claro e 2,32:1 no escuro). `--brand-text` / `text-brand-700` são links, só texto — nunca fundo.
+>
+> **`--brand-solid` cumpre duas contas nos dois temas:** o texto do par ≥ 4,5:1 (WCAG 1.4.3) e ele sobre a
+> página, o cartão, a superfície sutil e o neutro ≥ 3:1 (WCAG 1.4.11; é o fundo que mostra qual aba ou chip está
+> selecionado).
+>
+> | Tema | `--brand-solid` | Texto sobre ele | sobre `--bg-page` / `--surface` / `--surface-muted` / `--neutral-muted` |
+> |---|---|---|---|
+> | Claro | `#1B8755` | 4,52:1 | 4,16 / 4,52 / 4,16 / 3,86:1 |
+> | Escuro | `#21C063` | 8,28:1 | 7,51 / 7,51 / 6,93 / 5,88:1 |
+>
+> `--neutral-muted` entrou na conta da seleção (antes ficava de fora porque, no escuro de então, nenhuma cor
+> cumpria as duas contas sobre ele). O autoteste de `selecaoImpossivelSobre` segue com hex fixo.
+>
+> **Hover do primário** (`hover:brightness-95`, `src/components/Botao.tsx`) escurece o fundo só enquanto o
+> ponteiro está em cima; a conta de 3:1 vale para o estado em repouso, que é o que mostra a seleção.
+
+## Tokens — Sombras
+`--shadow-popover` (`0 5px 20px #0002` / `0 6px 24px #0006`) e `--shadow-dialog` (`0 15px 60px #0006`, igual nos
+dois temas) são as únicas sombras do sistema: menu/popover e modal/drawer. Ficam fora da conta de contraste.
+
+## Camadas
+
+Modal, confirmação e drawer são camadas elevadas: fundo `bg-surface-raised`, `shadow-dialog`, véu `bg-black/60`.
+- **Modal** (`Modal.tsx`, e `ConfirmarAcao` sobre ele): `max-h-[90dvh] w-full max-w-[calc(100vw-24px)] overflow-y-auto rounded-dialog border border-gray-200 bg-surface-raised p-6 shadow-dialog`; largura `sm:w-[460px]` e, com a propriedade `larga`, `sm:w-[640px]`. Título `text-xl font-medium`; ações `mt-6 flex flex-wrap justify-end gap-3`.
+- **Drawer**: `bg-surface-raised shadow-dialog` com borda `border-s border-gray-200` (ou `border-e` pela esquerda).
+- Escape, contenção de Tab, devolução do foco e `inert` seguem como antes (`useDialogo`).
+
+## Primitivos — Chip, ItemLista, Avatar e Menu
+Base das Fases 2 e 3 (`src/components`). Todos usam só tokens; `bg-brand-bg` é o `--brand-bg` (accent-soft) e `text-brand-800` o `--brand-strong`.
+- **`Chip`** (`{ selecionado, onClick, children, contagem? }`): `<button type="button" aria-pressed>` em pílula, `border-border-soft`, `max-sm:min-h-11 min-h-8`. Selecionado `bg-brand-bg text-brand-800 border-transparent`; normal `text-gray-600 hover:bg-highlight`.
+- **`ItemLista`** (`{ titulo, resumo?, meta?, inicio?, selecionado?, href?, onClick? }`): `min-h-[76px] rounded-item p-3 gap-3 hover:bg-highlight`; título e resumo com `truncate`. Selecionado: `aria-current="true"` e `bg-brand-bg text-brand-800`. Com `href` vira link; sem, botão.
+- **`Avatar`** (`{ nome, tamanho?: 32 | 40 | 48, quadrado? }`): até 2 iniciais em `bg-brand-bg text-brand-800`; sem nome mostra `#`; `quadrado` (B2B) usa `rounded-md`, senão `rounded-full`.
+- **`Menu`** (`{ rotulo, gatilho, itens }`, cliente): `role="menu"`/`menuitem`, painel `min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover`, item `px-5 py-3 hover:bg-highlight`. Setas/Home/End circulam; Escape fecha e devolve o foco ao gatilho.
+- **`src/lib/popover.ts`**: `posicaoPopover` (abaixo por padrão, acima se não couber; 6 px da âncora e 8 px das bordas) e `proximoIndiceMenu`, funções puras testadas.
+
+## Avisos e movimento reduzido
+`src/components/Aviso.tsx` é a caixa única de aviso: `rounded-md p-3 text-sm` + tom. `info` = `bg-surface-muted`;
+`sucesso` = `bg-green-100 text-green-700 border-s-[3px] border-green-700`; `atencao` = `bg-amber-100 text-amber-800
+border-s-[3px] border-amber-600`; `erro` = `bg-red-100 text-red-700 border-s-[3px] border-red-600`. Papel: `alert`
+no erro, `status` nos outros (`papel="nenhum"` quando a região anunciante é outra, como a sr-only do
+`MensagemStatus`). `FeedbackAcao`, `MensagemStatus` (com `tom`), `ErroArea` (via `EstadoRota aviso="erro"`) e
+`AvisoFusoNaoConfigurado` usam o `Aviso` sem mudar suas props. O esqueleto pulsa (`animate-pulse`); o
+`@media (prefers-reduced-motion: reduce)` de `globals.css` desliga animação, transição e rolagem suave.
 
 ## Como usar no código
 As shades do Tailwind estão **mapeadas para os tokens** (ex.: `text-gray-600` → `--text-secondary`,
-`bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Então:
+`bg-green-100 text-green-700` → badge sucesso que inverte sozinho, `bg-surface` → card). Cores novas: `on-brand`, `surface-raised`, `highlight`, `pressed`, `border-soft`, `disabled`, `entry`, `entry-accent`, `composer`, `cold-700`; `brand-bg` = `--brand-bg`; `brand-800` = `--brand-strong`. Fonte `font-sans` = `var(--font-sans)` com Segoe UI/Roboto de reserva. Então:
 - **Card:** `bg-surface border border-gray-200 rounded-lg`.
 - **Badge:** `rounded-full bg-{cor}-100 text-{cor}-700` (inverte no dark automaticamente).
-- **Botão primário:** `bg-brand-600 text-white`. **Destrutivo:** `bg-danger text-white`.
+- **Botão primário:** `bg-brand-solid text-on-brand hover:brightness-95`. **Destrutivo:** `bg-danger text-white`. Todo botão é pílula (`rounded-full`), com 44 px de altura mínima abaixo de `sm`. Secundário: `border-border-soft`, sem fundo, hover `bg-highlight`. Tamanhos: `sm px-3 py-1`, `md px-4 py-1.5`, `lg px-[22px] py-2.5`. Desabilitado não usa opacidade: `bg-surface-muted text-disabled border-gray-200`. `<Botao ocupado>` marca `aria-busy` e desabilita (cursor `progress`).
+- **Indicador de estado ativo** (aba selecionada, passo concluído, chip marcado): `bg-brand-solid text-on-brand`.
+  `bg-brand-500`/`bg-brand-600` (que clareiam no escuro) **nunca** levam `text-white`, em nenhuma
+  forma de `className`; ficam para fundo sem texto (barra de progresso). A trava é
+  `src/app/contraste.test.ts`, que também recalcula pelos tokens do `globals.css` o contraste do
+  texto de cada fundo sólido (o par de `TEXTO_SOBRE_SOLIDO`, ≥ 4,5:1), da borda de controle sobre cada
+  superfície (≥ 3:1) e do `--brand-solid` sobre a página, o cartão, a superfície sutil e o neutro (≥ 3:1),
+  nos dois temas. `text-white` sobre `bg-brand-solid` é reprovado: no escuro o branco sobre o verde `#21C063`
+  não passa; `text-on-brand` (`--on-brand-solid`) é branco no claro e preto no escuro.
 - **Texto:** `text-gray-800/600/400` = primário/secundário/terciário.
-- Evite hex literal e `shadow-*`; novas cores entram como token novo no `globals.css`.
+- Evite hex literal; a única sombra é de camada flutuante: `shadow-popover` (menu, popover) e `shadow-dialog` (modal, drawer). Nenhuma outra `shadow-*`; novas cores entram como token novo no `globals.css`.
+- **Só use as shades mapeadas no `tailwind.config.ts`** (`gray`, `brand`/`brand-solid`, `green`,
+  `red`, `amber`, `blue`, `indigo`, `orange`, `ai`/`ai-solid`, `danger`, `success`). Qualquer
+  outra cor (`rose`, `emerald`, `sky`, `slate`, `violet`, `purple`, `cyan`, `teal`, `yellow`,
+  `lime`, `fuchsia`, `pink`, `zinc`, `neutral`, `stone`, ou uma shade fora das listadas) cai na
+  paleta padrão do Tailwind, que **não inverte** no dark. Dobre pro equivalente semântico:
+  `rose`→`red`, `emerald`→`green`, `sky`→`blue`, `slate`→`gray`. Se nenhum couber, é sinal de
+  precisar um token novo (como `--ai-*`) — não invente shade solta.
+- `src/app/paleta.test.ts` trava as duas regras acima em `src/app`, `src/components` e `src/lib`:
+  falha com cor fora do mapa, shade não listada (inclusive sob `dark:`/`hover:`), sombra
+  (`shadow-*`, `drop-shadow-*`, `shadow-[…]`) ou cor arbitrária (`bg-[#…]`, `rgb()`, `hsl()`). Ele lê o mapa direto do `tailwind.config.ts` — mapear uma shade
+  nova no config já a libera.
+
+## Navegação
+
+- **Sidebar:** `bg-surface-muted border-e border-gray-200`, largura `w-56`. Item `min-h-10 max-sm:min-h-11 rounded-item px-3 text-sm text-gray-800 hover:bg-highlight`; item ativo (`aria-current="page"`) `bg-brand-bg text-brand-800 font-medium` (seleção suave). Contador de não lidas `rounded-full bg-brand-solid text-on-brand`; avatar `bg-brand-bg text-brand-800`.
+- **Barra mobile:** mesmos estados da sidebar (`rounded-item`, `hover:bg-highlight`, `bg-surface-muted`); botões com `max-sm:min-h-11 max-sm:min-w-11`; itens da gaveta (a mesma `NavLinks`) com `max-sm:min-h-11`.
+- **Sub-abas:** pílula `rounded-full px-3 py-1.5 text-sm max-sm:min-h-11`; ativa `bg-brand-solid text-on-brand font-medium`, inativa `text-gray-600 hover:bg-highlight`.
+- A estrutura de menus (`src/lib/nav.ts`) não muda. A trilha (`Trilha.tsx`) não precisou de ajuste: já usa só tokens.

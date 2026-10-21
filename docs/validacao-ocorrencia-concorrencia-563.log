@@ -1,0 +1,80 @@
+[MIXED_EXPORTS] Entry module "vitest.integration.config.ts" is using named (including "DATABASE_URL_TESTE", "default") and default exports together. Consumers of your bundle will have to use `chunk.default` to access the default export, which may not be what you want. Use `output.exports: "named"` to disable this warning.
+
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.11 C:/Users/Mendes/.codex/worktrees/de19/erp-genius
+
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > autoriza independentemente uma avaliação pendente e não cria recuperação, agenda ou nota
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > veda autoaprovação, reaproveita somente o reenvio idêntico e expõe histórico paginado
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > não presume saldo: uma regra publicada com limite zero bloqueia a proposta sem criar autorização
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > não reserva AULA nem encontro de outro contrato, e reenvio concorrente reserva uma vez
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > recusa realização dentro de indisponibilidade docente aprovada
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > matrícula pausada exige autorização especial identificada para realização
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > pagina histórico de autorização da segunda chamada isolando a avaliação e o cursor
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > realização consome uma vez e a nota submetida fica vinculada ao lançamento original
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > prorrogação rejeitada não estende o prazo vigente da reserva
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > professor designado registra somente sua segunda chamada enquanto mantém atribuição
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > registra nota de segunda chamada autorizada após encerramento sem reativar contratos
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > regulariza nota de segunda chamada por designação específica sem trocar o realizador
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > não restaura designação antiga quando a substituição mais recente expira
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > gestão consulta a designação temporal com histórico paginado e projeção limitada
+stderr | src/server/avaliacoes/segunda-chamada.int.test.ts > registra CANCELAMENTO_ESCOLA com evidência real e preserva o consumo false
+Error: Cannot find module 'C:\Users\Mendes\.codex\worktrees\de19\erp-genius\node_modules\next\server' imported from C:\Users\Mendes\.codex\worktrees\de19\erp-genius\node_modules\next-auth\lib\env.js
+Did you mean to import "next/server.js"?
+    at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+    at moduleResolve (node:internal/modules/esm/resolve:865:10)
+    at defaultResolve (node:internal/modules/esm/resolve:992:11)
+    at ModuleLoader.#cachedDefaultResolve (node:internal/modules/esm/loader:691:20)
+    at ModuleLoader.#resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:708:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:740:52)
+    at ModuleLoader.#resolve (node:internal/modules/esm/loader:673:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:593:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:253:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///C:/Users/Mendes/.codex/worktrees/de19/erp-genius/node_modules/next/server'
+}
+
+ × src/server/avaliacoes/segunda-chamada.int.test.ts > registra CANCELAMENTO_ESCOLA com evidência real e preserva o consumo false 1359ms
+   → expected { ok: false, …(1) } to deeply equal { ok: true, dado: { …(2) } }
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > registra CANCELAMENTO_ALUNO com evidência real e preserva o consumo true
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > registra CANCELAMENTO_ALUNO com evidência real e preserva o consumo false
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > registra FALTA com evidência real e preserva o consumo false
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > registra IMPEDIMENTO_ESCOLA com evidência real e preserva o consumo false
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > não registra falta antes do encontro nem ocorrência futura
+ ↓ src/server/avaliacoes/segunda-chamada.int.test.ts > banco preserva a reserva e exige ocorrência correspondente ao consumo
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/avaliacoes/segunda-chamada.int.test.ts > registra CANCELAMENTO_ESCOLA com evidência real e preserva o consumo false
+AssertionError: expected { ok: false, …(1) } to deeply equal { ok: true, dado: { …(2) } }
+
+- Expected
++ Received
+
+  {
+-   "dado": {
+-     "id": "c5e4dfaa-f444-4691-b7a3-f56d997b0035",
+-     "status": "LIBERADA_CANCELAMENTO_ESCOLA",
+-   },
+-   "ok": true,
++   "erro": "Erro inesperado. Tente novamente.",
++   "ok": false,
+  }
+
+ ❯ src/server/avaliacoes/segunda-chamada.int.test.ts:540:23
+    538|   expect(await registrarOcorrenciaSegundaChamadaLocal({ ...dados, evid…
+    539|   const [resultado, concorrente] = await Promise.all([registrarOcorren…
+    540|   expect(concorrente).toEqual(resultado);
+       |                       ^
+    541|   if (!resultado.ok || !resultado.dado) throw new Error(JSON.stringify…
+    542|   expect(resultado.dado.status).toBe(status);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 skipped (21)
+   Start at  20:51:54
+   Duration  3.15s (transform 270ms, setup 0ms, import 356ms, tests 1.36s, environment 0ms)
+

@@ -1,0 +1,8 @@
+{
+ "incremento": 303, "data": "2026-09-13",
+ "escopo": "Guarda interna transacional anterior à efetivação do acerto",
+ "integracao": { "aprovados": 7, "falhos": 0 }, "typescript": "aprovado", "lintDirecionado": "aprovado",
+ "buildUltimoIncremento": 302, "migrationsNovas": 0, "ultimaRegressaoIntegral": 298,
+ "limites": ["Guarda não grava os efeitos finais", "Aplicação pública transacional ainda pendente", "Objetivo geral não concluído"],
+ "homologacaoInterativa": false, "producao": false, "enviosExternos": false
+}

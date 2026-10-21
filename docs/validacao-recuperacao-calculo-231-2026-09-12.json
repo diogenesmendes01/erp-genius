@@ -1,0 +1,19 @@
+{
+  "incremento": 231,
+  "data": "2026-09-12",
+  "unitarios": {
+    "arquivo": "src/server/avaliacoes/calculo.test.ts",
+    "aprovados": 27,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lint_direcionado": "aprovado",
+  "diff_check": "aprovado",
+  "escopo": "Efeito puro da recuperacao Q133 e reconferencia Q129/Q130",
+  "limites": [
+    "Sem persistencia, autorizacao ou UI",
+    "Sem consumo de oportunidades",
+    "Sem frequencia ou fechamento",
+    "Sem build ou regressao integral neste incremento"
+  ]
+}

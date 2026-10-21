@@ -1,0 +1,5 @@
+{
+ "incremento":341,"data":"2026-09-14","escopo":"Destinação financeira por hora na conferência de encerramento",
+ "integracaoInicial":{"aprovados":29,"falhos":0,"arquivos":2},"integracaoFinalAmpliada":{"aprovados":21,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","ultimoBuild":340,
+ "migration":false,"limites":["Consolidação e execução completas por hora pendentes","Reservas antecipadas e cancelamentos da escola precisam de cobertura conjunta","Homologação visual pendente"],"producao":false,"enviosExternos":false
+}

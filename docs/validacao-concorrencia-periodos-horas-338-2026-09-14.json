@@ -1,0 +1,6 @@
+{
+ "incremento":338,"data":"2026-09-14","escopo":"Concorrência de períodos sobrepostos e regressão unitária",
+ "integracaoDirecionada":{"aprovados":18,"falhos":0,"arquivos":1},"unitariosIntegrais":{"aprovados":824,"falhos":0,"arquivos":89},
+ "typescript":"aprovado","lint":"aprovado","ultimoBuild":337,"ultimaRegressaoIntegralIntegracao":298,
+ "migration":false,"limites":["Detalhes das origens e complementares pendentes","Encerramento e ajustes pendentes","Homologação visual pendente"],"producao":false,"enviosExternos":false
+}

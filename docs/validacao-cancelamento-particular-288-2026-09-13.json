@@ -1,0 +1,22 @@
+{
+  "incremento": 288,
+  "data": "2026-09-13",
+  "escopo": "Solicitação, aprovação independente e aplicação do cancelamento acadêmico de particular pela escola",
+  "integracao": {
+    "aprovados": 41,
+    "falhosFinais": 0,
+    "execucoes": [{ "arquivos": ["cancelamento-particular.int.test.ts", "compra-horas.int.test.ts", "diario.int.test.ts"], "aprovados": 27 }, { "arquivos": ["rascunho.int.test.ts"], "aprovados": 14 }],
+    "ajusteDuranteValidacao": "A asserção de projeção da lista esperava oito campos; atualizada para incluir o novo booleano particular, mantendo o controle de campos e sem expor matrícula ou dados financeiros. Os 14 testes foram repetidos e passaram."
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "schemaDiff": "vazio",
+  "migrations": 134,
+  "migrationNova": "20260914030000_cancelamento_particular",
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Q95 ainda parcial: escolha do aluno, remarcação/crédito e liberação das horas aguardam integração", "Diário ou consumo existente exige correção própria ainda incompleta", "Notificações externas não integradas", "Comparação completa de estado e aplicação da agenda garantidas pelo serviço; SQL preserva proposta/decisão e separação de aprovador"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

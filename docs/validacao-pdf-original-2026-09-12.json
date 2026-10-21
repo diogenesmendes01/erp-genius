@@ -1,0 +1,24 @@
+{
+  "paginas": 3,
+  "sha256": "f177365c9582541441d0e870ca0062dcf8ad659b7b7c55d3e8f350e04bed79d7",
+  "bytes": 22174,
+  "reproducaoIdentica": true,
+  "gerador": {
+    "versao": "contrato-original-1",
+    "pdfkit": "0.20.2",
+    "fontkit": "2.0.4",
+    "fontes": [
+      {
+        "nome": "NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      },
+      {
+        "nome": "NotoSans-Bold.ttf",
+        "sha256": "c976e4b1b99edc88775377fcc21692ca4bfa46b6d6ca6522bfda505b28ff9d6a"
+      }
+    ]
+  },
+  "dados": "ficticios",
+  "inspecaoVisual": "3 páginas renderizadas a 95 dpi e inspecionadas: acentos, margens, cabeçalhos e rodapés legíveis, sem cortes/sobreposições.",
+  "extracaoTexto": "pypdf: nomes acentuados, último trecho, valor e cabeçalhos verificados."
+}

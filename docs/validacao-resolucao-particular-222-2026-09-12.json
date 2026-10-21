@@ -1,0 +1,26 @@
+{
+  "incremento": 222,
+  "data": "2026-09-12",
+  "integracaoDirecionada": {
+    "success": true,
+    "numTotalTests": 61,
+    "numPassedTests": 4,
+    "numFailedTests": 0,
+    "numPendingTests": 57
+  },
+  "typescript": "aprovado",
+  "lintTrecho": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "paginasEstaticas": 46,
+    "resultado": "aprovado"
+  },
+  "migrationsLocais": 103,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 221,
+  "limites": [
+    "Acoes no servidor; consulta e interface da resolucao particular pendentes",
+    "Retomada com nova reserva e assinatura externa pendentes",
+    "Sem producao ou envio externo"
+  ]
+}

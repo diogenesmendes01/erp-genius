@@ -102,3 +102,153 @@ Outros usuários de teste (mesma senha `genius123`), para ver o menu mudar por p
   `GET /api/files/[...path]`, que **exige sessão válida e autorização por papel/escopo**
   sobre o objeto que referencia o arquivo (ex.: a cobrança/lead correspondente). O envio é por
   `POST /api/upload` (também autenticado). A pasta `data/uploads/` está no `.gitignore`.
+
+
+## Variáveis novas (Fases 1–3, ago/2026)
+
+| Variável | Para quê | Default |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Aria (Fase 5, ADR-F5-01). Sem a chave, a IA roda o provedor local determinístico "simulado" e nada chama a rede. Com a chave, a Aria chama a API da Anthropic e, quando estiver `ATIVA`, pode responder clientes. Os modelos ficam em Configurações › CRM › IA (não há variável de modelo). | vazio |
+| `PAGAMENTO_SIMULADO` | Habilita o botão de pagar da página `/pagar/[token]` (dev/demo) | vazio |
+
+Rotas públicas novas: `/pagar/[token]` (link de pagamento do gateway simulado) e
+`/certificado/[codigo]` (validação pública de certificado). Portal do aluno em `/portal`
+(papel `ALUNO`; a secretaria cria o acesso na ficha do aluno). O tick do cron
+(`POST /api/whatsapp/cron`, header `x-cron-secret`) roda as etapas de base: régua de cobrança,
+acesso, início de turmas, reservas, fechamento mensal de comissões, lembretes de tarefas, eventos
+do motor e despacho da fila (as cadências comerciais C4, o copiloto e a gestão C5 saíram do tick)
+— em produção o serviço `cron` do `docker-compose.prod.yml` bate a cada 5 minutos.
+
+---
+
+## Deploy no Coolify (v4.3.23+)
+
+O ERP Genius pode ser implantado no **Coolify** (VPS com Traefik como proxy reverso).
+Use o arquivo **`docker-compose.coolify.yml`** — ele não usa Caddy (o Traefik do Coolify
+cuida de TLS e domínio) e nenhum serviço publica porta no host.
+
+### Pré-requisitos
+
+1. **Coolify** v4.3.23+ instalado na VPS (Traefik ocupando portas 80/443).
+2. **DNS**: registro A apontando `erp.geniusidiomas.com` para o IP da VPS.
+3. **Portas 80 e 443** liberadas no firewall (Traefik escuta HTTPS público).
+
+### Passo a passo
+
+1. **Criar Resource** no Coolify:
+   - Tipo: **Docker Compose** (Source: Git).
+   - **Repository**: apontar para este repo (branch `main`).
+   - **Compose File**: `docker-compose.coolify.yml`.
+
+2. **Domínio do serviço `app`**:
+   - No painel do Coolify, aba "Configuration" → "Domains for app":
+   - Preencher: **`https://erp.geniusidiomas.com:3000`** (a porta `:3000` é interna;
+     o Coolify gera os labels do Traefik automaticamente).
+   - O público acessa **`https://erp.geniusidiomas.com`** (porta 443 padrão).
+
+3. **Variáveis de ambiente** (aba "Environment Variables"):
+
+   | Variável | Obrigatória | O que é | Exemplo / como obter |
+   |---|---|---|---|
+   | `DOMINIO_APP` | ✅ | Domínio público do app (sem https://) | `erp.geniusidiomas.com` |
+   | `POSTGRES_USER` | ✅ | Usuário do banco | `erp` |
+   | `POSTGRES_PASSWORD` | ✅ | Senha do banco (URL-safe, sem `/+=`) | `openssl rand -hex 32` |
+   | `AUTH_SECRET` | ✅ | Segredo do Auth.js (sessão) | `npx auth secret` ou `openssl rand -base64 32` |
+   | `CRON_SECRET` | ✅ | Segredo do cron (header `x-cron-secret`) | `openssl rand -hex 32` |
+   | `MOTOR_IMAGE` | ✅ | Imagem publicada do motor WhatsApp | tag da imagem do `whatsapp-web-baileys` |
+   | `MOTOR_API_KEY` | ✅ | API key ERP → motor (mínimo 32 caracteres) | `openssl rand -hex 32` |
+   | `MOTOR_WEBHOOK_SECRET` | ✅ | Segredo do HMAC motor → ERP (mínimo 32 caracteres) | `openssl rand -hex 32` |
+   | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
+   | `ANTHROPIC_API_KEY` | | Aria (opcional). Vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a API da Anthropic e, quando `ATIVA`, pode enviar mensagens. Modelos em Configurações › CRM › IA | chave da API Anthropic |
+   | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
+   | `RESEND_API_KEY` | | Chave do Resend (e-mail do portal do aluno e avisos de agenda). Vazio = sem e-mail | chave da API Resend |
+   | `EMAIL_INSTITUCIONAL_REMETENTE` | | Remetente dos e-mails (domínio verificado no Resend) | `nao-responda@geniusidiomas.com` |
+   | `EMAIL_PORTAL_ENVIO_ENABLED` | | Liga os e-mails de acesso do portal (só `true` liga) | `false` até homologar |
+   | `PORTAL_ALUNO_URL_PUBLICA` | se o envio do portal estiver ligado | Origem HTTPS pública, sem caminho — base dos links dos e-mails | `https://erp.geniusidiomas.com` |
+   | `GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL` | | Conta de serviço de leitura do Drive de gravações (player) | e-mail da conta de serviço |
+   | `GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY` | | Chave privada dessa conta (uma linha, `\n` literais) | campo `private_key` do JSON |
+   | `DRIVE_ORGANIZACAO_ID` | | ID do drive compartilhado autorizado | ID do shared drive |
+   | `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_EMAIL` | | Conta de serviço separada, com escrita, para publicar/fixar revisões | e-mail da conta de serviço |
+   | `GOOGLE_DRIVE_PUBLICACAO_SERVICE_ACCOUNT_PRIVATE_KEY` | | Chave privada da conta de publicação | campo `private_key` do JSON |
+   | `CONTINUIDADE_MENSAL_EMISSAO_ENABLED` | | Liga a emissão mensal recorrente (só `true` liga) | `false` até ativação |
+   | `COMUNICACOES_AGENDA_ENVIO_ENABLED` | | Liga os avisos de alteração de agenda (só `true` liga) | `false` até homologar |
+   | `COMUNICACOES_AGENDA_QUANTIDADE_ENVIO_ENABLED` | | Liga os avisos de quantidade de aulas (Q38) (só `true` liga) | `false` até homologar |
+
+   > **Repasse ao container**: o Coolify só entrega ao app as variáveis citadas no `environment` do
+   > serviço `app` em `docker-compose.coolify.yml`. Variável nova lida pelo código precisa entrar lá
+   > (o teste `src/deploy/compose-env.test.ts` falha se faltar).
+   >
+   > **Agendadores**: o compose sobe `cron` (régua, 5 min), `cron-despacho` (60 s), `cron-portal-envios`
+   > (`/api/portal-aluno/envios/cron`, 60 s) e `cron-avisos-agenda` (`/api/agenda/avisos/cron`, 5 min). Com a
+   > flag desligada, as duas últimas rotas só respondem `{executou:false}`. **Exceção**:
+   > `/api/financeiro/continuidade/cron` não é agendado — ao ligar `CONTINUIDADE_MENSAL_EMISSAO_ENABLED`,
+   > configure um agendador (ex.: Scheduled Task do Coolify ou cron da VPS) com `POST` e header
+   > `x-cron-secret: $CRON_SECRET`.
+
+   > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
+   > As marcadas como obrigatórias (`${VAR:?...}`) bloqueiam o deploy se estiverem vazias.
+
+4. **Deploy**:
+   - Clique em "Deploy" no Coolify.
+   - O Traefik emite certificado TLS (Let's Encrypt) e roteia
+     `https://erp.geniusidiomas.com` → serviço `app` porta 3000 (interna).
+   - O Coolify monitora o healthcheck do app (`/api/ready`: readiness do container
+     com validação do banco e Prisma, sem autenticação) e marca o deploy como
+     bem-sucedido após 3 checks OK. `/api/health` continua como pure liveness
+     (sem dependências externas).
+   - **Nota**: `/api/whatsapp/health` (saúde do *canal* WhatsApp, protegido com
+     `x-cron-secret`) é para monitores externos (UptimeRobot etc.), não para liveness
+     do container Docker.
+
+5. **Deploy automático**:
+   - Cada merge no branch `main` dispara um novo deploy (webhook Git do Coolify).
+
+### Números legados (Meta Cloud / Evolution) depois da Fase 4E
+
+Meta Cloud e Evolution saíram do código: um número ativo com driver `META_CLOUD` ou `BAILEYS`
+não envia nem recebe mais nada. A saúde do canal (`/api/whatsapp/health`) acusa cada um com o
+alerta "Número … ativo em driver legado". Para cada número do alerta:
+
+1. **Reparear a linha no motor.** O telefone é único em `NumeroWhatsApp`, então a mesma linha não
+   pode ser cadastrada de novo como número novo. O integrador converte o registro (as conversas e o
+   histórico ficam no mesmo número), com o app de pé e o motor no ar:
+
+   ```sql
+   UPDATE "NumeroWhatsApp"
+      SET driver = 'MOTOR', "providerRef" = id, sessao = 'DESCONECTADO'
+    WHERE id = '<id do número legado>';
+   ```
+
+   Depois, em **Configuração → WhatsApp → Números**, use **Conectar** (QR ou código de pareamento).
+2. **Desativar o número legado** que não vai para o motor: **Editar** → desmarcar **Número ativo**.
+   O número fica inativo (soft delete) e sai do alerta.
+3. Confira `/api/whatsapp/health`: nenhum alerta de driver legado.
+
+### Backup diário e o alerta de motor parado
+
+`scripts/backup-producao.sh` (cron diário às 03:15, retenção 14 dias) para o serviço `motor` só
+durante o `tar` do volume `motor_data` (o PGlite grava em arquivo) e o religa em seguida, também em
+erro. Nesses segundos, um poll do monitor em `/api/whatsapp/health` pode receber **um 503 isolado**
+com o alerta "Motor WhatsApp inalcançável": é esperado e não pede ação. Investigue só se o 503 se
+repetir depois da janela do backup ou aparecer fora desse horário (confira `/var/log/erp-backup.log`).
+
+### Diferenças em relação ao docker-compose.prod.yml
+
+- **Sem Caddy**: o Traefik do Coolify cuida de TLS e roteamento.
+- **Sem portas publicadas**: nenhum serviço tem `ports:` no compose.
+- **Sem `db-init`**: o único banco Postgres é o do app; o motor guarda seus dados no volume `motor_data`.
+- **Domínio**: vem da variável mágica `SERVICE_FQDN_APP_3000` (gerada pelo Coolify).
+- **Healthcheck**: endpoint `/api/ready` (readiness do container com validação de DB
+  e Prisma, sem autenticação). `/api/health` continua como pure liveness.
+  Diferente de `/api/whatsapp/health` (saúde do *canal* WhatsApp, protegido).
+
+### Troubleshooting
+
+- **`no available server` no Traefik**: confira se o domínio foi preenchido com a porta
+  interna `:3000` no campo "Domains for app" (ex.: `https://erp.geniusidiomas.com:3000`).
+- **Certificado TLS não gerado**: aguarde alguns minutos (Let's Encrypt pode demorar).
+  Se persistir, verifique se o DNS aponta para a VPS e se as portas 80/443 estão abertas.
+- **App não sobe**: veja os logs do Coolify (aba "Logs" do Resource). Variáveis obrigatórias
+  ausentes bloqueiam o deploy com erro claro.
+- **Motor sem conexão**: o serviço `motor` só é acessível na rede interna do
+  compose. O app se comunica via `http://motor:4317` (nunca HTTPS público).

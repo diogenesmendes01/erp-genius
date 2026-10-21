@@ -1,0 +1,13 @@
+{
+  "incremento": 262,
+  "data": "2026-09-13",
+  "escopo": "Consulta, preparação e decisão de planos de recuperação pela interface",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 48, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 51 },
+  "migrationAdicional": false,
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false,
+  "producao": false
+}

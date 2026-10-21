@@ -1,0 +1,6 @@
+{
+ "incremento":321,"data":"2026-09-13","escopo":"Condições contratuais de cobrança por hora",
+ "integracao":{"aprovados":4,"falhos":0,"arquivos":1},"typescript":"aprovado no build","lint":"aprovado","build":"aprovado, 52 páginas","migrations":152,"schemaDiff":"vazio",
+ "ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Interface pendente","Seleção e revalidação da versão por ocorrência pendentes","Geração das condições em novos PDFs/aditivos pendente"],"producao":false,"enviosExternos":false
+}

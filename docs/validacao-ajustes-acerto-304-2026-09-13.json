@@ -1,0 +1,8 @@
+{
+ "incremento": 304, "data": "2026-09-13", "escopo": "Aplicação interna dos ajustes por cobrança na transação do acerto",
+ "integracao": { "aprovados": 7, "falhos": 0 }, "typescript": "aprovado", "lintDirecionado": "aprovado",
+ "schemaDiff": "vazio", "migrations": 142, "buildUltimoIncremento": 302, "ultimaRegressaoIntegral": 298,
+ "coberturaNova": ["Valor e saldo ajustados com histórico da origem", "Dinheiro recebido e vencimento preservados", "Falha posterior reverte histórico e cobrança"],
+ "limites": ["Integração aos demais efeitos do encerramento pendente", "Não há ação pública para aplicar ajustes isolados", "Objetivo geral não concluído"],
+ "producao": false, "enviosExternos": false, "homologacaoInterativa": false
+}

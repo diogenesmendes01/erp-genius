@@ -1,0 +1,32 @@
+{
+  "incremento": 211,
+  "data": "2026-09-12",
+  "integracao": {
+    "arquivos": [
+      "src/server/matricula/reserva-vaga.int.test.ts",
+      "src/server/agenda/rascunho.int.test.ts"
+    ],
+    "success": true,
+    "numTotalTests": 74,
+    "numPassedTests": 74,
+    "numFailedTests": 0,
+    "numPendingTests": 0
+  },
+  "typescript": "aprovado",
+  "lintTrecho": "aprovado",
+  "diffCheck": "aprovado",
+  "build": {
+    "next": "16.3.5",
+    "paginasEstaticas": 46,
+    "resultado": "aprovado"
+  },
+  "migrationsLocais": 101,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 201,
+  "limites": [
+    "Seleção/revisão particular no formulário pendente",
+    "Contrato, emissão, assinatura e ativação/consumo particulares pendentes",
+    "Sem produção, importação ou envio externo",
+    "Sem ensaio interativo"
+  ]
+}

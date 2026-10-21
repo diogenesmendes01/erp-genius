@@ -1,0 +1,14 @@
+{
+  "incremento": 253,
+  "data": "2026-09-13",
+  "escopo": "Proposta versionada de recuperação baseada em notas oficiais regulares",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 36, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "migration": "20260913140000_proposta_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false
+}

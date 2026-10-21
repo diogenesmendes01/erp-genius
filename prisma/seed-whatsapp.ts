@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { REGUA } from "../src/server/cobrancas/regua";
 import { MODOS_FABRICA, POLITICA_COBRANCA_NOME, TEXTOS_FABRICA } from "../src/server/cobrancas/fabrica";
-import { CADENCIAS_COMERCIAIS } from "../src/server/comercial/regua-fabrica";
 
 // Seed do canal WhatsApp (doc 30 E1): templates de fábrica + política padrão da régua.
 // Idempotente (upsert por nome) e SEGURO: a política nasce DESLIGADA e sem número
@@ -47,39 +46,6 @@ export async function semearWhatsApp(prisma: PrismaClient): Promise<void> {
     });
   }
   console.log(`WhatsApp: política "${POLITICA_COBRANCA_NOME}" garantida (DESLIGADA) com ${REGUA.length} degraus.`);
-
-  // 3. Réguas COMERCIAIS (doc 27 C1/C2): lead-novo, pré-experimental e no-show — todas
-  //    DESLIGADAS, com os templates de fábrica. Idempotente (não sobrescreve edições).
-  for (const cadencia of CADENCIAS_COMERCIAIS) {
-    for (const d of cadencia.degraus) {
-      const t = await prisma.templateWhatsApp.upsert({
-        where: { nome: d.template },
-        create: { nome: d.template, corpo: d.texto, idioma: "es", categoria: "marketing", statusMeta: "RASCUNHO" },
-        update: {},
-      });
-      templates.set(d.template, t.id);
-    }
-    const politicaComercial = await prisma.politicaComercial.upsert({
-      where: { chave: cadencia.chave },
-      create: { chave: cadencia.chave, nome: cadencia.nome, estado: "DESLIGADA" },
-      update: {},
-    });
-    for (const d of cadencia.degraus) {
-      await prisma.degrauComercial.upsert({
-        where: { politicaId_passo: { politicaId: politicaComercial.id, passo: d.passo } },
-        create: {
-          politicaId: politicaComercial.id,
-          passo: d.passo,
-          offsetMinutos: d.offsetMinutos,
-          rotulo: d.rotulo,
-          ativo: true,
-          templateId: templates.get(d.template) ?? null,
-        },
-        update: {},
-      });
-    }
-    console.log(`WhatsApp: régua comercial "${cadencia.nome}" garantida (DESLIGADA) com ${cadencia.degraus.length} degraus.`);
-  }
 }
 
 // Execução direta (npm run seed:whatsapp) — quando importado pelo seed.ts, não roda.

@@ -1,0 +1,3 @@
+src/server/whatsapp/destinatario-financeiro.ts(65,14): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/server/whatsapp/fila-snapshot.test.ts(48,3): error TS2741: Property 'referenciaDestino' is missing in type '{ cobrancaId: string; referenciaCalendario: { versao: number; vencimento: string; cicloRegua: number; }; passo: "D-7"; numeroId: string; contatoId: string; origem: "CRON"; autorId: null; corpoRenderizado: string; variaveis: never[]; templateId: string; politicaId: string; }' but required in type 'EnfileirarCobranca'.

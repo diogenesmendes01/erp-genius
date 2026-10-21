@@ -1,0 +1,18 @@
+{
+  "incremento": 286,
+  "data": "2026-09-13",
+  "escopo": "Consumo das horas reservadas por realização conferida",
+  "integracao": { "aprovados": 23, "arquivos": ["src/server/matricula/compra-horas.int.test.ts", "src/server/diario/diario.int.test.ts"], "verificacaoFinal": "7 testes de compras repetidos após acrescentar bloqueio de edição ao cenário" },
+  "cobertura": ["Realização com presença e conteúdo", "Não exige conclusão por gravação", "Falta não autoriza consumo por realização", "Revisão desatualizada recusada", "Concorrência e repetição não duplicam consumo", "Reserva e consumo exibidos separadamente", "Não cria recebimento ou conclui aula", "Diário consumido exige correção com revisão financeira"],
+  "lintDirecionado": "aprovado",
+  "typescript": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "migration": "20260914020000_consumo_horas_realizadas",
+  "migrations": 131,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Falta/cancelamento cobrável e liberação não integrados", "Correção aprovada de consumo pendente", "Validade, pausa e acerto do saldo incompletos"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

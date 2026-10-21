@@ -1,6 +1,6 @@
 import { Papel } from "@prisma/client";
-import { auth } from "@/lib/auth";
-import { SubTabs } from "./_componentes/SubTabs";
+import { exigirSessaoPagina } from "@/server/_shared";
+import { SubTabs } from "@/components/SubTabs";
 import { tabsParaPapeis } from "./_componentes/tabs";
 
 export default async function ConfiguracaoLayout({
@@ -8,17 +8,16 @@ export default async function ConfiguracaoLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const papeis = (session?.user?.papeis ?? []) as Papel[];
+  const { papeis } = await exigirSessaoPagina(Papel.GERENTE_PEDAGOGICO, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA);
   const tabs = tabsParaPapeis(papeis).map((t) => ({ href: t.href, label: t.label }));
 
   return (
     <div>
       <h1 className="text-2xl font-medium">Configuração</h1>
       <p className="mt-1 text-sm text-gray-500">
-        O backstage que abastece todas as telas.
+        Configurações disponíveis para sua função.
       </p>
-      <SubTabs tabs={tabs} />
+      <SubTabs tabs={tabs} ariaLabel="Seções da configuração" />
       <div className="mt-6">{children}</div>
     </div>
   );

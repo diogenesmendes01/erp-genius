@@ -1,0 +1,1022 @@
+{
+  "data": "2026-09-08T12:27:47.338Z",
+  "decisao": "D13 — retomada após pausa mediante proposta aprovada",
+  "ambiente": "Build standalone local, dados fictícios e PostgreSQL descartável em localhost:54329/erp_genius_test. Sem implantação nem migração de produção.",
+  "observacao": "Resultados referentes ao código local não commitado. Casos específicos são subconjuntos dos totais globais, sem soma duplicada. Registros históricos da auditoria e da validação D01–D12 foram preservados.",
+  "unitarios": {
+    "comando": "npm test -- --reporter=json --outputFile=node_modules/.implementation/retomada-unit-global.json",
+    "inicio": "2026-09-08T12:13:46.136Z",
+    "fim": "2026-09-08T12:13:47.389Z",
+    "total": 532,
+    "aprovados": 532,
+    "falhas": 0,
+    "arquivos": 49,
+    "casosEspecificos": [
+      {
+        "arquivo": "src/server/cobrancas/eventos.test.ts",
+        "status": "passed",
+        "total": 9,
+        "casos": [
+          {
+            "nome": "ciclo no histórico de envios de cobrança envio legado sem ciclo pertence somente ao ciclo 0",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança preserva ciclo explícito 0",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança preserva ciclo explícito 1",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança preserva ciclo explícito 12",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança ciclo inválido -1 não cumpre passo de outro ciclo",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança ciclo inválido 1.5 não cumpre passo de outro ciclo",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança ciclo inválido 1 não cumpre passo de outro ciclo",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança ciclo inválido null não cumpre passo de outro ciclo",
+            "status": "passed"
+          },
+          {
+            "nome": "ciclo no histórico de envios de cobrança grava o ciclo do envio informado sem consultar o calendário depois do provedor",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/retomada/regras.test.ts",
+        "status": "passed",
+        "total": 31,
+        "casos": [
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-02-29",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2028-02-30",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-04-31",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-13-01",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-00-10",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-09-00",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-9-08",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 08/09/2026",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida 2026-09-08T12:00:00Z",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não normaliza a data inválida  2026-09-08",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada aceita dia bissexto real e mantém o dia de calendário local",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada exige decisão booleana e motivo significativo nas duas etapas",
+            "status": "passed"
+          },
+          {
+            "nome": "entrada da retomada não permite datas em MANTER nem duas datas para a mesma parcela",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira seleciona somente dívida mensal de matrícula ativa e da pausa correspondente",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira saldo parcial legado usa recebimentos; divergência explícita exige conciliação",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira bloqueia pausa legada ambígua e permite legado sem canceladas ou pausa rastreada",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira snapshot preserva centavos como strings e independe da ordem retornada pelo banco",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira MANTER aceita vencimentos antigos sem alterar a fonte; REPROGRAMAR troca só as datas propostas",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira reprogramação exige exatamente o conjunto elegível, sem omissões, taxa ou IDs duplicados",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira rejeita data retroativa na proposta e revalida quando o tempo passa até a aprovação",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após recebimento parcial",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após ajuste negociado",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após parcela adicionada",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após parcela removida",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após vencimento alterado",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após versão alterada",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após ciclo da régua alterado",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após matrícula encerrada",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após duração alterada",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida o snapshot após origem do cancelamento alterada",
+            "status": "passed"
+          },
+          {
+            "nome": "conjunto elegível e memória financeira invalida aluno, pausa, conjunto de matrículas ou conjunto de alvos diferente",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/fila-snapshot.test.ts",
+        "status": "passed",
+        "total": 10,
+        "casos": [
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização cron descarta texto antigo se vencimento muda antes do enqueue (versão 2)",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização cron descarta texto antigo se vencimento muda antes do enqueue (versão 1)",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização cron sem alteração grava texto e assinatura com o mesmo vencimento",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização cron continua nas demais cobranças quando uma delas muda",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização próxima rodada renderiza o calendário novo em vez de reaproveitar o texto descartado",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização clique humano recebe erro de revisão sem despachar corpo antigo",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização lote mantém o item alterado na lista de puladas, sem intenção",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização mudança apenas de versão também invalida a quantia que já foi renderizada",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização simulação legítima reabre; snapshot vencido não sobrescreve a intenção simulada",
+            "status": "passed"
+          },
+          {
+            "nome": "texto de cobrança conserva o calendário usado na renderização não reabre o mesmo ciclo quando outro worker já tomou a intenção simulada",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "integracoes": {
+    "comando": "npm run test:int -- --reporter=json --outputFile=node_modules/.implementation/retomada-integration-global.json",
+    "inicio": "2026-09-08T12:14:17.844Z",
+    "fim": "2026-09-08T12:15:29.495Z",
+    "total": 313,
+    "aprovados": 313,
+    "falhas": 0,
+    "arquivos": 31,
+    "casosEspecificos": [
+      {
+        "arquivo": "src/server/retomada/fluxo.int.test.ts",
+        "status": "passed",
+        "total": 36,
+        "casos": [
+          {
+            "nome": "pausa e retomada sem recriar a dívida pausa cancela só mensalidades futuras pendentes, registra a origem e preserva taxas, pagamentos e cancelamento manual",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida reativarAluno legado não contorna a proposta, mesmo por administrador",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida SECRETARIA_ACADEMICA propõe sem alterar aluno, calendário ou recebimentos",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida FINANCEIRO propõe sem alterar aluno, calendário ou recebimentos",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida ADMINISTRADOR propõe sem alterar aluno, calendário ou recebimentos",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida MANTER reabre só parcelas da pausa atual, com vencimentos e memória financeira originais",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida REPROGRAMAR aplica novas datas aos remanescentes mantendo IDs, saldo parcial, recebimentos e histórico",
+            "status": "passed"
+          },
+          {
+            "nome": "pausa e retomada sem recriar a dívida rejeição preserva pausa e calendário, audita outra pessoa e permite uma nova proposta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada VENDEDOR não propõe nem consulta o conteúdo financeiro por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada GERENTE_COMERCIAL não propõe nem consulta o conteúdo financeiro por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada GERENTE_PEDAGOGICO não propõe nem consulta o conteúdo financeiro por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada PROFESSOR não propõe nem consulta o conteúdo financeiro por chamada direta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada solicitante [ 'ADMINISTRADOR' ] não aprova nem rejeita a própria proposta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada solicitante [ Array(2) ] não aprova nem rejeita a própria proposta",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada secretaria consulta a ficha individual, mas não decide nem recebe fila global ou snapshot bruto",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada revalida a sessão para propor e decidir com papel revogado",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada revalida a sessão para propor e decidir com pessoa desativada",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada perda de autorização do solicitante impede aplicar, mas outra pessoa pode rejeitar e destravar a fila",
+            "status": "passed"
+          },
+          {
+            "nome": "alçadas, revogação e projeções da retomada revogação enquanto a aprovação aguarda o calendário invalida a autorização já lida",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente recusa aprovação após pagamento e preserva a mudança posterior",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente recusa aprovação após ajuste e preserva a mudança posterior",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente recusa aprovação após nova parcela e preserva a mudança posterior",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente recusa aprovação após matrícula encerrada e preserva a mudança posterior",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente recusa aprovação após aluno encerrado e preserva a mudança posterior",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente recusa aprovação após nova pausa e preserva a mudança posterior",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente rejeita datas inválidas, retroativas, omissões e cobranças alheias sem deixar proposta parcial",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente não normaliza saldo parcial divergente ao propor retomada",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente duas propostas concorrentes deixam apenas uma pendente e não aplicam calendário",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente replay de REPROGRAMAR com entrada invertida reutiliza a proposta sem evento ou aplicação adicional",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente aprovações concorrentes e replay aplicam a retomada exatamente uma vez",
+            "status": "passed"
+          },
+          {
+            "nome": "proposta não se aplica sobre um calendário diferente aprovar e rejeitar ao mesmo tempo produzem uma decisão coerente e uma única aplicação possível",
+            "status": "passed"
+          },
+          {
+            "nome": "legado, ativação e acesso às aulas pausa legada com cancelamento ambíguo=false não presume origem financeira",
+            "status": "passed"
+          },
+          {
+            "nome": "legado, ativação e acesso às aulas pausa legada com cancelamento ambíguo=true não presume origem financeira",
+            "status": "passed"
+          },
+          {
+            "nome": "legado, ativação e acesso às aulas concluir e ativar matrícula AGUARDANDO de aluno PAUSADO não geram calendário nem baixa",
+            "status": "passed"
+          },
+          {
+            "nome": "legado, ativação e acesso às aulas concluir e ativar matrícula AGUARDANDO de aluno ENCERRADO não geram calendário nem baixa",
+            "status": "passed"
+          },
+          {
+            "nome": "legado, ativação e acesso às aulas MANTER recalcula D30; REPROGRAMAR regulariza só o componente automático e preserva bloqueio manual",
+            "status": "passed"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/server/whatsapp/ciclo-cobranca.int.test.ts",
+        "status": "passed",
+        "total": 10,
+        "casos": [
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp versão invalida intenção anterior à pausa mesmo ao manter vencimento e ciclo",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp degrau enviado no ciclo 0 permite nova intenção no ciclo 1, preservando o histórico",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp repetição do mesmo ciclo não duplica intenção ou envio",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp manter datas preserva a deduplicação de degrau já enviado",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp duas reaberturas concorrentes preservam uma única intenção no ciclo",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp ciclo anterior é recusado antes do envio, inclusive sem assinatura (legado=false)",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp ciclo anterior é recusado antes do envio, inclusive sem assinatura (legado=true)",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp evento legado sem ciclo deduplica ciclo 0 e não suprime ciclo 1",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp resposta do provedor após reprogramação mantém o envio no ciclo original",
+            "status": "passed"
+          },
+          {
+            "nome": "calendário da cobrança e histórico de WhatsApp registro manual usa o ciclo exibido antes da reprogramação",
+            "status": "passed"
+          }
+        ]
+      }
+    ]
+  },
+  "typescript": {
+    "comando": "npx tsc --noEmit --pretty false",
+    "resultado": "aprovado",
+    "exitCode": 0
+  },
+  "build": {
+    "comando": "npm run build",
+    "resultado": "aprovado",
+    "exitCode": 0,
+    "versaoNext": "16.2.9",
+    "paginasEstaticasGeradas": 33,
+    "standaloneIniciadoLocalmente": true
+  },
+  "lint": {
+    "comando": "npm run lint",
+    "erros": 0,
+    "avisos": 9,
+    "detalhes": [
+      {
+        "arquivo": "src/app/(app)/financeiro/FinanceiroPainel.tsx",
+        "erros": 0,
+        "avisos": 2,
+        "mensagens": [
+          {
+            "linha": 116,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1,
+            "mensagem": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\app\\(app)\\financeiro\\FinanceiroPainel.tsx:116:59\n  114 |   useEffect(() => {\n  115 |     const saved = window.localStorage.getItem(MOEDA_CONS_KEY);\n> 116 |     if (saved && cotacoes.some((c) => c.moeda === saved)) setMoedaCons(saved);\n      |                                                           ^^^^^^^^^^^^ Avoid calling setState() directly within an effect\n  117 |   }, [cotacoes]);\n  118 |   function escolherMoeda(m: string) {\n  119 |     setMoedaCons(m);"
+          },
+          {
+            "linha": 402,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1,
+            "mensagem": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\app\\(app)\\financeiro\\FinanceiroPainel.tsx:402:5\n  400 |   // com o valor canônico (senão o campo ficaria com o texto antigo digitado).\n  401 |   useEffect(() => {\n> 402 |     setVals(Object.fromEntries(editaveis.map((c) => [c.moeda, c.unidadesPorUsd != null ? String(c.unidadesPorUsd) : \"\"])));\n      |     ^^^^^^^ Avoid calling setState() directly within an effect\n  403 |     // eslint-disable-next-line react-hooks/exhaustive-deps\n  404 |   }, [cotacoes]);\n  405 |"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/(app)/home/HomeGerente.tsx",
+        "erros": 0,
+        "avisos": 2,
+        "mensagens": [
+          {
+            "linha": 54,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          },
+          {
+            "linha": 54,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          }
+        ]
+      },
+      {
+        "arquivo": "src/app/(app)/pipeline/KanbanBoard.tsx",
+        "erros": 0,
+        "avisos": 4,
+        "mensagens": [
+          {
+            "linha": 18,
+            "regra": "@typescript-eslint/no-unused-vars",
+            "severidade": 1,
+            "mensagem": "'ETAPAS_MANUAIS' is defined but never used."
+          },
+          {
+            "linha": 217,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          },
+          {
+            "linha": 217,
+            "regra": "react/no-unescaped-entities",
+            "severidade": 1,
+            "mensagem": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`."
+          },
+          {
+            "linha": 239,
+            "regra": "react-hooks/purity",
+            "severidade": 1,
+            "mensagem": "Error: Cannot call impure function during render\n\n`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\app\\(app)\\pipeline\\KanbanBoard.tsx:239:30\n  237 |             let itens = porEtapa.get(col) ?? [];\n  238 |             if (col === EtapaLead.PERDIDO && periodoPerdido > 0) {\n> 239 |               const limite = Date.now() - periodoPerdido * 86400000;\n      |                              ^^^^^^^^^^ Cannot call impure function\n  240 |               itens = itens.filter((l) => new Date(l.ultimaAcaoEm).getTime() >= limite);\n  241 |             }\n  242 |             return <Coluna key={col} etapa={col} leads={itens} />;"
+          }
+        ]
+      },
+      {
+        "arquivo": "src/components/Sidebar.tsx",
+        "erros": 0,
+        "avisos": 1,
+        "mensagens": [
+          {
+            "linha": 38,
+            "regra": "react-hooks/set-state-in-effect",
+            "severidade": 1,
+            "mensagem": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nC:\\Users\\Mendes\\.codex\\worktrees\\de19\\erp-genius\\src\\components\\Sidebar.tsx:38:5\n  36 |   const [dark, setDark] = useState(false);\n  37 |   useEffect(() => {\n> 38 |     setDark(document.documentElement.classList.contains(\"dark\"));\n     |     ^^^^^^^ Avoid calling setState() directly within an effect\n  39 |   }, []);\n  40 |\n  41 |   function alternar() {"
+          }
+        ]
+      }
+    ]
+  },
+  "http": {
+    "comando": "node scripts/validacao/http-acesso.mjs",
+    "data": "2026-09-08T12:16:00.087Z",
+    "verificacoesHttp": 18,
+    "checksumsMigracoes": 44,
+    "resultados": [
+      {
+        "id": "migration:20260718180000_config_comercial_saudacao_estado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260618184248_init",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120001_matricula_justificativa_sem_preco",
+        "passou": true
+      },
+      {
+        "id": "migration:20260618184300_precos_movimentacao_ativacao",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619084650_lead_valor_documentos_nivel_inicial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260706184221_whatsapp_provider_ref_variaveis",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619100435_matricula_meses_plano",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622130000_aluno_cadastro_completo",
+        "passou": true
+      },
+      {
+        "id": "migration:20260619144107_documento_arquivado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620090000_aluno_genero_email",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620100000_turma_nome_online_datafim",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622140000_turma_agenda_estruturada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260620110000_usuario_dados_professor",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622090000_lead_professor_experimental",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718120000_comercial_c1_autolead_saudacao",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_cobranca_comprovante_nome",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622150000_turma_horario_inicio_fim",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_integridade_alocacao_preco",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_matricula_preco_referencia_ausente",
+        "passou": true
+      },
+      {
+        "id": "migration:20260713173011_intencao_status_enviando",
+        "passou": true
+      },
+      {
+        "id": "migration:20260622120000_preco_ativo_unico",
+        "passou": true
+      },
+      {
+        "id": "migration:20260626120000_taxa_cambio",
+        "passou": true
+      },
+      {
+        "id": "migration:20260626160000_matricula_acesso_bloqueado",
+        "passou": true
+      },
+      {
+        "id": "migration:20260702100000_dinheiro_decimal",
+        "passou": true
+      },
+      {
+        "id": "migration:20260713231338_whatsapp_e3_inbox_midia",
+        "passou": true
+      },
+      {
+        "id": "migration:20260706183913_whatsapp_canal_bimotor",
+        "passou": true
+      },
+      {
+        "id": "migration:20260714120000_numero_provider_ref_unico_por_driver",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718160000_conversa_capturada_em",
+        "passou": true
+      },
+      {
+        "id": "migration:20260714200000_intencao_atualizado_em",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720160000_lead_experimental_confirmada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718170000_backfill_conversa_capturada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720160000_idempotencia_comercial_por_politica",
+        "passou": true
+      },
+      {
+        "id": "migration:20260718200000_lead_referral_cru",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720120000_regua_comercial_lead_novo",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720170000_idempotencia_comercial_indice_parcial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260720180000_ocorrencia_cadencia_comercial",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907010000_politica_acesso_recebimentos",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907020000_diario_correcoes",
+        "passou": true
+      },
+      {
+        "id": "migration:20260907030000_upload_finalidade",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908010000_documentos_matricula",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908020000_configuracao_operacional",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908030000_acesso_aulas",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908040000_retomada_aprovada",
+        "passou": true
+      },
+      {
+        "id": "migration:20260908050000_ciclo_cobranca_retomada",
+        "passou": true
+      },
+      {
+        "id": "/configuracao/operacao",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/secretaria",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/carteiras",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/diario",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/comissoes",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/financeiro",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/inbox",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/configuracao/catalogo",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "GP não recebe configuração financeira no HTML",
+        "passou": true
+      },
+      {
+        "id": "/configuracao/operacao",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/configuracao/usuarios",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "/configuracao/catalogo",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "/alunos/cmtsmv8rg000du4y6xunlnmsm",
+        "passou": true,
+        "status": 200,
+        "redirecionamento": null
+      },
+      {
+        "id": "Professor não recebe contato pessoal no HTML da ficha",
+        "passou": true
+      },
+      {
+        "id": "/alunos/cmtsmv8rg000du4y6xunlnmsm/financeiro",
+        "passou": true,
+        "status": 307,
+        "redirecionamento": "/acesso-negado"
+      },
+      {
+        "id": "Exportação negada sem capacidade",
+        "passou": true,
+        "status": 403
+      },
+      {
+        "id": "Usuário desativado não envia arquivo com cookie anterior",
+        "passou": true,
+        "status": 401
+      },
+      {
+        "id": "Usuário desativado não baixa modelo com cookie anterior",
+        "passou": true,
+        "status": 401
+      }
+    ]
+  },
+  "navegador": {
+    "data": "2026-09-08T12:24:46.118Z",
+    "execucao": "Interação real pelo navegador local: secretaria fictícia pausa aluno, visualiza as duas opções e propõe reprogramação; Financeiro fictício independente confere e aprova.",
+    "observadoAntesDaDecisao": [
+      "Aluno ainda pausado",
+      "Vencimentos originais nas cobranças",
+      "Proposta pendente com comparação de datas e saldo parcial",
+      "Secretaria sem botão de aprovação"
+    ],
+    "observadoDepoisDaDecisao": [
+      "Mensagem de aprovação aplicada",
+      "Fila pendente passou de 1 para 0",
+      "Aluno ativo"
+    ],
+    "consoleErros": [],
+    "verificacaoPersistencia": {
+      "comando": "node scripts/validacao/retomada-navegador.mjs verificar",
+      "total": 8,
+      "aprovados": 8,
+      "resultados": [
+        {
+          "id": "Aluno retomado após aprovação",
+          "passou": true
+        },
+        {
+          "id": "Aprovação por outra pessoa com motivo",
+          "passou": true
+        },
+        {
+          "id": "Escolha aprovada foi reprogramação",
+          "passou": true
+        },
+        {
+          "id": "Parcelas e recebimentos mantidos sem duplicação",
+          "passou": true
+        },
+        {
+          "id": "Cobrança preservada MATRICULA 2026-07-10",
+          "passou": true
+        },
+        {
+          "id": "Cobrança preservada MENSALIDADE 2026-08-09",
+          "passou": true
+        },
+        {
+          "id": "Cobrança preservada MENSALIDADE 2026-09-23",
+          "passou": true
+        },
+        {
+          "id": "Cobrança preservada MENSALIDADE 2026-10-23",
+          "passou": true
+        }
+      ]
+    },
+    "limite": "A jornada de manutenção de vencimentos e os caminhos negativos foram cobertos por testes automatizados; não foram repetidos integralmente no navegador."
+  },
+  "limites": [
+    "A pausa existente abrange o aluno e suas matrículas ativas; pausa independente por curso não foi implementada.",
+    "Pausas legadas com cancelamentos sem origem e saldos inconsistentes exigem conciliação; não foi presumida a origem dos dados reais.",
+    "Sem envio por provedor real de WhatsApp nem validação de plataforma externa de aulas.",
+    "Implantação, migração de dados reais e homologação pela equipe da escola permanecem etapas de operação."
+  ],
+  "arquivosVerificados": [
+    {
+      "arquivo": "prisma/schema.prisma",
+      "sha256": "49f53e2629c9504ca5f1ccdf0846e4447ded78be34727ab2b3b6ee6305d3149e"
+    },
+    {
+      "arquivo": "prisma/migrations/20260908040000_retomada_aprovada/migration.sql",
+      "sha256": "86a0ef96691574c2928d0e458604d901b652a0283e32beb0932eec1588a8f6f6"
+    },
+    {
+      "arquivo": "prisma/migrations/20260908050000_ciclo_cobranca_retomada/migration.sql",
+      "sha256": "cb9d7634c88735120d9aa75a2dc6244bd5315d9fcfce7d027499dfcaa013ae63"
+    },
+    {
+      "arquivo": "src/server/retomada/acoes.ts",
+      "sha256": "295b01f1ee86f04437650a0c1d11a3702188cdcc1414ed269f692c16de660bcc"
+    },
+    {
+      "arquivo": "src/server/retomada/consultas.ts",
+      "sha256": "cf90a5a09aab0053d7a7d91f6f6bfbcf623c5591415925b51aafc7198ef80c51"
+    },
+    {
+      "arquivo": "src/server/retomada/estado.ts",
+      "sha256": "28e06dc69155d2b1427cb409eb9eaad48d32e92356b09ea948cb9b39d2ecadcf"
+    },
+    {
+      "arquivo": "src/server/retomada/fluxo.int.test.ts",
+      "sha256": "93c5a5badc05fb7b6db7baed205192e2668fd622933cd93dd639dedff1edb7b6"
+    },
+    {
+      "arquivo": "src/server/retomada/regras.test.ts",
+      "sha256": "7dfcb5c8ac673c20db31f9a795d5fb4f859339d7ba9f45c4daa43f3c81fd2afb"
+    },
+    {
+      "arquivo": "src/server/retomada/regras.ts",
+      "sha256": "6b598d40c1093bd7fb8ef7e107347627efd6205ef0a22c42a3e8e4433788a20a"
+    },
+    {
+      "arquivo": "src/server/retomada/schema.ts",
+      "sha256": "df57eddac0314325758195846d62eb4cf6da91b79e0780c2aff682dfec6cd097"
+    },
+    {
+      "arquivo": "src/server/alunos/acoes.ts",
+      "sha256": "e00e0cac041f67bd4dff47a920b8324c2ea5d276c1f78bda65df6acdb8d1b00f"
+    },
+    {
+      "arquivo": "src/server/matricula/acoes.ts",
+      "sha256": "af3a9980a166860c26d147f9c4638026dd2aa86ebafd555e7ecc6505a198f52d"
+    },
+    {
+      "arquivo": "src/server/matricula/ativacao.ts",
+      "sha256": "8ba8f5ba2778b878fc2a696c6f97b65ebb04f5c8d466645d352ec632c031d158"
+    },
+    {
+      "arquivo": "src/server/whatsapp/fila.ts",
+      "sha256": "0b921515c252ccd4276f6ae86d22f2466de953e52e5e9491ea4a7f92eba70ac3"
+    },
+    {
+      "arquivo": "src/server/whatsapp/cron.ts",
+      "sha256": "ab83dc33db7743ee10a14db87a9cb606b009aa2e61fe6dac2c7f04a1f662f998"
+    },
+    {
+      "arquivo": "src/server/whatsapp/acoes.ts",
+      "sha256": "685aa7908aa4c62b94a05f6021056c01f33de1260b03d75988bb47602000ec78"
+    },
+    {
+      "arquivo": "src/server/whatsapp/elegibilidade.ts",
+      "sha256": "38a8b7f5145a271fa9112af642a8f21e6dafe02e3a46d8b392eef3b593cde5de"
+    },
+    {
+      "arquivo": "src/server/whatsapp/despachante.ts",
+      "sha256": "0419e449d78d4187b29faa9750ab6c2eaa38a19c7a20f92075492d2c0fe686fd"
+    },
+    {
+      "arquivo": "src/server/whatsapp/ciclo-cobranca.int.test.ts",
+      "sha256": "f8f2603fc139726cefe8702145a1f8a0381918e4d5908a2efbea029c293b25ab"
+    },
+    {
+      "arquivo": "src/server/whatsapp/fila-snapshot.test.ts",
+      "sha256": "ee57c95a319198d86ba80cfbd19b3f27836d6162c7b81db0d421555a3212eb92"
+    },
+    {
+      "arquivo": "src/server/cobrancas/eventos.ts",
+      "sha256": "5a61ea4a8b4176304e2b138d34b65ecf1e18df9c5cfb4a63ce9074d0f19406fc"
+    },
+    {
+      "arquivo": "src/server/cobrancas/eventos.test.ts",
+      "sha256": "c8aa0becf86b68a942e0c1e24065d3e08f96040fbd98cb4258695a3d71770039"
+    },
+    {
+      "arquivo": "src/server/cobrancas/consultas.ts",
+      "sha256": "e5b68c36eb7ccbec106aada02ddeaaff324d64d2b25b0cf8842e1bf4244284aa"
+    },
+    {
+      "arquivo": "src/server/ajustes/consultas.ts",
+      "sha256": "22c67fb3ac3808a458ff9e1c9accb64a600b426ce7ff01edd26eb74998c38729"
+    },
+    {
+      "arquivo": "src/app/(app)/financeiro/RetomadasPainel.tsx",
+      "sha256": "6fa0be9c1aa174f7c584b2a52ba8308ef8414f56834826c72fae86709e5bedb3"
+    },
+    {
+      "arquivo": "src/app/(app)/financeiro/FinanceiroPainel.tsx",
+      "sha256": "0e88bcde05cc14463ee5df6ed0e2a23dc85742f37106f198aaffb6e29f3facab"
+    },
+    {
+      "arquivo": "src/app/(app)/financeiro/FilaCobranca.tsx",
+      "sha256": "f29389cdb8c4f2f966d7884816e53687b741cae52cafaf36c309f0e7dbc62d8e"
+    },
+    {
+      "arquivo": "src/app/(app)/financeiro/page.tsx",
+      "sha256": "a496488a29a49d73e72602989ae5f15d5a67f18a61855d3020f2d4147311253e"
+    },
+    {
+      "arquivo": "src/app/(app)/alunos/[id]/FichaAluno.tsx",
+      "sha256": "11a97177ec4399445b8368096afb180ca72ae3af6446bb7a99eb152e04e7c3b0"
+    },
+    {
+      "arquivo": "src/app/(app)/alunos/[id]/financeiro/page.tsx",
+      "sha256": "cc00882d6f2622e69b51eeaf37c23063aa8575a77633a4af5c23da3d2013f132"
+    },
+    {
+      "arquivo": "scripts/validacao/retomada-navegador.mjs",
+      "sha256": "de4e1778b2ccf2bba0af25bf9f0818fb671bf716df9eb4bd07c536850e3bb25d"
+    }
+  ]
+}

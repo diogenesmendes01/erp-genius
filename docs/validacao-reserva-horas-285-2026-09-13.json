@@ -1,0 +1,18 @@
+{
+  "incremento": 285,
+  "data": "2026-09-13",
+  "escopo": "Reserva persistente de horas compradas para encontro particular existente",
+  "integracao": { "aprovados": 6, "falhos": 0, "arquivo": "src/server/matricula/compra-horas.int.test.ts" },
+  "cobertura": ["Disputa concorrente pelo saldo", "Repetição idempotente", "Mesmo encontro não pode ser reservado duas vezes", "Banco recusa ultrapassar quantidade comprada", "Outro contrato do aluno recusado", "Matrícula pausada não reserva", "Recebimentos preservados"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "migration": "20260914013000_reserva_horas_compradas",
+  "migrations": 130,
+  "schemaDiff": "vazio",
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Consumo, liberação e ajustes da reserva ainda não implementados", "Validade e pausa ainda precisam de integração", "Mudanças posteriores da agenda exigem conferência das reservas", "Consulta inicial limitada a 100 encontros futuros"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

@@ -1,0 +1,13 @@
+{
+  "executadoEm": "2026-09-11T21:15:51.054Z",
+  "ambiente": "Banco local descartável; dados fictícios",
+  "alcance": "Registro da proposta e aprovação independente pela interface. Não valida recomposição, liquidação, rejeição ou perfis não administrativos no navegador.",
+  "checks": {
+    "propostaUnica": true,
+    "aprovadaPorOutraPessoa": true,
+    "diaCorretoAindaSemDestinacao": true,
+    "origemCorreta": true,
+    "cobrancaPreservada": true,
+    "contratosPreservados": true
+  }
+}

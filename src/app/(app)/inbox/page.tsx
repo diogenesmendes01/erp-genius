@@ -1,37 +1,75 @@
 import { Papel } from "@prisma/client";
-import { exigirSessaoPagina, temPapel } from "@/server/_shared";
+import { ErroPermissao, exigirSessaoPagina, temPapel } from "@/server/_shared";
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
-import { carregarThread, listarConversas } from "@/server/whatsapp/consultas";
-import { InboxCliente } from "./InboxCliente";
+import { lerFiltrosInbox } from "@/server/inbox/filtros";
+import { decodificarCursor } from "@/server/inbox/cursor";
+import { listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
+import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
+import { InboxNovo } from "./InboxNovo";
+import { NovoAtendimento } from "./NovoAtendimento";
+import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
+import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { listarNotificacoes } from "@/server/crm/notificacoes";
+import { fusoDaEscola } from "@/server/relatorios/atendimento";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { SinoNotificacoes } from "../tarefas/SinoNotificacoes";
 
-// INBOX MÍNIMA (doc 26 §Camada 3 · doc 30 E3): lista (não-lidas primeiro) + thread +
-// texto livre + mídia + vínculo + ação rápida de cobrança. Guard de página ANTES de
-// qualquer consulta; o row-level real é o escopo do número (whatsapp/escopo.ts).
+// Inbox novo (Fase 3): lista paginada por cursor + conversa + painel; tempo real por SSE (sem polling).
+// Guard de página ANTES de qualquer consulta; o row-level real é o escopo do atendimento (whatsapp/escopo.ts).
+// Triagem e revisão de envio moram no painel da conversa (PainelTriagem): a triagem vai a quem `listarTriagemWhatsApp`
+// aceita (administrador ou responsável pela triagem do número), a revisão só ao administrador. O guard real é do servidor.
+
+const um = (v: string | string[] | undefined): string | undefined => (Array.isArray(v) ? v[0] : v);
 
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ c?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const usuario = await exigirSessaoPagina(...PAPEIS_INBOX);
-  const { c } = await searchParams;
+  const parametros = await searchParams;
+  const c = um(parametros.c) || null;
+  const filtros = lerFiltrosInbox(parametros);
+  const bruto = um(parametros.cursor);
+  const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
+  const admin = temPapel(usuario, Papel.ADMINISTRADOR);
+  // listarTriagemWhatsApp recusa (ErroPermissao) quem não é administrador nem responsável pela triagem de um número.
+  const triagemOuNula = () => listarTriagemWhatsApp().catch((e: unknown) => {
+    if (e instanceof ErroPermissao) return null;
+    throw e;
+  });
 
-  const [conversas, thread] = await Promise.all([
-    listarConversas(usuario),
-    c ? carregarThread(usuario, c) : Promise.resolve(null),
+  const [inicial, opcoes, triagem, revisoes, preferencia, opcoesFiltro, notificacoes, fusoEscola] = await Promise.all([
+    listarAtendimentosPagina(usuario, filtros, cursor),
+    listarOpcoesAtendimento(),
+    triagemOuNula(),
+    admin ? listarRevisoesEnvio() : Promise.resolve(null),
+    consultarPreferenciaFusoEquipe(),
+    opcoesFiltroInbox(usuario),
+    // Sino (SLA): o aviso de prazo estourado abre o atendimento aqui (?c=).
+    listarNotificacoes(usuario),
+    fusoDaEscola(),
   ]);
-
-  // Alçadas das ações rápidas seguem o doc 12: promessa/pagamento = Financeiro/Secretaria.
-  const podeCobranca = temPapel(usuario, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA);
+  // Deep link (?c=) fora da primeira página ou dos filtros: o item entra na lista (o escopo continua valendo).
+  if (c && !inicial.itens.some((i) => i.id === c)) {
+    const item = await obterItemListaInbox(usuario, c);
+    if (item) inicial.itens = [item, ...inicial.itens];
+  }
+  const fuso = (preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null;
 
   return (
     <div>
-      <h1 className="text-2xl font-medium">Inbox</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Conversas de WhatsApp dos números da escola — vendas e respostas de cobrança.
-      </p>
-      <div className="mt-6">
-        <InboxCliente conversas={conversas} thread={thread} podeCobranca={podeCobranca} />
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-medium">Inbox</h1>
+        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={resolverFusoExibicao(fuso, fusoEscola)} fusoEscola={fusoEscola} />
+      </div>
+      <div className="mt-4">
+        <NovoAtendimento opcoes={opcoes} />
+      </div>
+      <div className="mt-4">
+        <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
+          destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
+          triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} />
       </div>
     </div>
   );

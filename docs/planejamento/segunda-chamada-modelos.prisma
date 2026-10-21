@@ -1,0 +1,246 @@
+// Fragmento para a migration 179 — copiar para schema somente junto com os inversos listados ao fim.
+// Não aplicar como migration neste worktree.
+enum StatusReservaSegundaChamada {
+ RESERVADA
+ LIBERADA_CANCELAMENTO_ESCOLA
+ LIBERADA_CANCELAMENTO_TEMPESTIVO
+ CONSUMIDA_REALIZACAO
+ CONSUMIDA_FALTA
+ CONSUMIDA_CANCELAMENTO_TARDIO
+ PENDENCIA_ESCOLA
+}
+model PropostaSegundaChamada {
+ id String @id @default(cuid())
+ matriculaId String
+ matricula Matricula @relation(fields:[matriculaId],references:[id],onDelete:Restrict)
+ alocacaoId String
+ alocacao AlocacaoTurma @relation(fields:[alocacaoId],references:[id],onDelete:Restrict)
+ turmaId String
+ turma Turma @relation(fields:[turmaId],references:[id],onDelete:Restrict)
+ nivelId String
+ nivel Nivel @relation(fields:[nivelId],references:[id],onDelete:Restrict)
+ regraId String
+ regra VersaoRegraAvaliacao @relation(fields:[regraId],references:[id],onDelete:Restrict)
+ codigoAvaliacao String
+ autorId String
+ autor Usuario @relation("AutorSegundaChamada",fields:[autorId],references:[id],onDelete:Restrict)
+ motivo String
+ evidencias String
+ chaveIdempotencia String
+ entradaHash String
+ snapshot Json
+ estadoHash String
+ criadaEm DateTime @default(now())
+ decisao DecisaoSegundaChamada?
+ disponibilizacao DisponibilizacaoSegundaChamada?
+ reservas ReservaSegundaChamada[]
+ designacoes DesignacaoSegundaChamada[]
+ @@unique([autorId,chaveIdempotencia] )
+ @@index([matriculaId,regraId,codigoAvaliacao])
+}
+model DecisaoSegundaChamada {
+id String @id @default(cuid())
+ propostaId String @unique
+ proposta PropostaSegundaChamada @relation(fields:[propostaId],references:[id],onDelete:Restrict)
+ decisorId String
+ decisor Usuario @relation("DecisorSegundaChamada",fields:[decisorId],references:[id],onDelete:Restrict)
+ aprovada Boolean
+ motivo String
+ criadaEm DateTime @default(now())
+}
+model DisponibilizacaoSegundaChamada {
+id String @id @default(cuid())
+ propostaId String @unique
+ proposta PropostaSegundaChamada @relation(fields:[propostaId],references:[id],onDelete:Restrict)
+ autorId String
+ autor Usuario @relation("AutorDisponibilizacaoSegundaChamada",fields:[autorId],references:[id],onDelete:Restrict)
+ disponibilizadaEm DateTime
+ prazoRegraMinutos Int
+ prazoAte DateTime
+ condicoes String
+ evidenciaComunicacao String
+ criadaEm DateTime @default(now())
+ prorrogacoes PropostaProrrogacaoSegundaChamada[]
+}
+model PropostaProrrogacaoSegundaChamada {
+id String @id @default(cuid())
+ disponibilizacaoId String
+ disponibilizacao DisponibilizacaoSegundaChamada @relation(fields:[disponibilizacaoId],references:[id],onDelete:Restrict)
+ preparadorId String
+ preparador Usuario @relation("PreparadorProrrogacaoSegundaChamada",fields:[preparadorId],references:[id],onDelete:Restrict)
+ versao Int
+ prazoAnterior DateTime
+ novoPrazo DateTime
+ motivo String
+ chaveIdempotencia String
+ entradaHash String
+ criadaEm DateTime @default(now())
+ decisao DecisaoProrrogacaoSegundaChamada?
+ @@unique([disponibilizacaoId,versao])
+ @@unique([preparadorId,chaveIdempotencia])
+}
+model DecisaoProrrogacaoSegundaChamada {
+id String @id @default(cuid())
+ propostaId String @unique
+ proposta PropostaProrrogacaoSegundaChamada @relation(fields:[propostaId],references:[id],onDelete:Restrict)
+ decisorId String
+ decisor Usuario @relation("DecisorProrrogacaoSegundaChamada",fields:[decisorId],references:[id],onDelete:Restrict)
+ aprovada Boolean
+ motivo String
+ criadaEm DateTime @default(now())
+}
+model ReservaSegundaChamada {
+id String @id @default(cuid())
+ propostaId String
+ proposta PropostaSegundaChamada @relation(fields:[propostaId],references:[id],onDelete:Restrict)
+ matriculaId String
+ matricula Matricula @relation(fields:[matriculaId],references:[id],onDelete:Restrict)
+ regraId String
+ regra VersaoRegraAvaliacao @relation(fields:[regraId],references:[id],onDelete:Restrict)
+ codigoAvaliacao String
+ reservadaPorId String
+ reservadaPor Usuario @relation("ReservadorSegundaChamada",fields:[reservadaPorId],references:[id],onDelete:Restrict)
+ reservadaEm DateTime
+ status StatusReservaSegundaChamada
+ regraCancelamentoMinutos Int
+ agenda AgendaSegundaChamada?
+ ocorrencias OcorrenciaSegundaChamada[]
+ realizacao RealizacaoSegundaChamada?
+ @@index([matriculaId,regraId,codigoAvaliacao,status])
+}
+model AgendaSegundaChamada {
+id String @id @default(cuid())
+ reservaId String @unique
+ reserva ReservaSegundaChamada @relation(fields:[reservaId],references:[id],onDelete:Restrict)
+ encontroId String @unique
+ encontro EncontroAgenda @relation(fields:[encontroId],references:[id],onDelete:Restrict)
+ agendadaPorId String
+ agendadaPor Usuario @relation("AgendadorSegundaChamada",fields:[agendadaPorId],references:[id],onDelete:Restrict)
+ criadaEm DateTime @default(now())
+}
+model OcorrenciaSegundaChamada {
+id String @id @default(cuid())
+ reservaId String
+ reserva ReservaSegundaChamada @relation(fields:[reservaId],references:[id],onDelete:Restrict)
+ registradaPorId String
+ registradaPor Usuario @relation("RegistradorOcorrenciaSegundaChamada",fields:[registradaPorId],references:[id],onDelete:Restrict)
+ status StatusReservaSegundaChamada
+ ocorridaEm DateTime
+ motivo String
+ evidencia String
+ criadaEm DateTime @default(now())
+ @@index([reservaId,ocorridaEm])
+}
+model RealizacaoSegundaChamada {
+id String @id @default(cuid())
+ reservaId String @unique
+ reserva ReservaSegundaChamada @relation(fields:[reservaId],references:[id],onDelete:Restrict)
+ professorId String
+ professor Usuario @relation("ProfessorRealizacaoSegundaChamada",fields:[professorId],references:[id],onDelete:Restrict)
+ registradaPorId String
+ registradaPor Usuario @relation("RegistradorRealizacaoSegundaChamada",fields:[registradaPorId],references:[id],onDelete:Restrict)
+ realizadaEm DateTime
+ evidencia String
+ criadaEm DateTime @default(now())
+ lancamentoOriginalId String? @unique
+ lancamentoOriginal VersaoLancamentoAvaliacao? @relation("LancamentoOriginalSegundaChamada")
+}
+model PropostaExtraSegundaChamada {
+id String @id @default(cuid())
+ matriculaId String
+ matricula Matricula @relation(fields:[matriculaId],references:[id],onDelete:Restrict)
+ alocacaoId String
+ alocacao AlocacaoTurma @relation(fields:[alocacaoId],references:[id],onDelete:Restrict)
+ regraId String
+ regra VersaoRegraAvaliacao @relation(fields:[regraId],references:[id],onDelete:Restrict)
+ codigoAvaliacao String
+ quantidade Int
+ autorId String
+ autor Usuario @relation("AutorExtraSegundaChamada",fields:[autorId],references:[id],onDelete:Restrict)
+ motivo String
+ evidencias String
+ chaveIdempotencia String
+ entradaHash String
+ criadaEm DateTime @default(now())
+ decisao DecisaoExtraSegundaChamada?
+ @@unique([autorId,chaveIdempotencia])
+ @@index([matriculaId,regraId,codigoAvaliacao])
+}
+model DecisaoExtraSegundaChamada {
+id String @id @default(cuid())
+ propostaId String @unique
+ proposta PropostaExtraSegundaChamada @relation(fields:[propostaId],references:[id],onDelete:Restrict)
+ decisorId String
+ decisor Usuario @relation("DecisorExtraSegundaChamada",fields:[decisorId],references:[id],onDelete:Restrict)
+ aprovada Boolean
+ motivo String
+ criadaEm DateTime @default(now())
+}
+model AutorizacaoEspecialSegundaChamada {
+id String @id @default(cuid())
+ matriculaId String
+ matricula Matricula @relation(fields:[matriculaId],references:[id],onDelete:Restrict)
+ alocacaoId String
+ alocacao AlocacaoTurma @relation(fields:[alocacaoId],references:[id],onDelete:Restrict)
+ regraId String
+ regra VersaoRegraAvaliacao @relation(fields:[regraId],references:[id],onDelete:Restrict)
+ codigoAvaliacao String
+ autorizadorId String
+ autorizador Usuario @relation("AutorizadorEspecialSegundaChamada",fields:[autorizadorId],references:[id],onDelete:Restrict)
+ motivo String
+ prazoAte DateTime
+ chaveIdempotencia String
+ entradaHash String
+ criadaEm DateTime @default(now())
+ @@unique([autorizadorId,chaveIdempotencia])
+ @@index([matriculaId,regraId,codigoAvaliacao,prazoAte])
+}
+model DesignacaoSegundaChamada {
+id String @id @default(cuid())
+ propostaId String
+ proposta PropostaSegundaChamada @relation(fields:[propostaId],references:[id],onDelete:Restrict)
+ professorId String
+ professor Usuario @relation("ProfessorDesignacaoSegundaChamada",fields:[professorId],references:[id],onDelete:Restrict)
+ gestorId String
+ gestor Usuario @relation("GestorDesignacaoSegundaChamada",fields:[gestorId],references:[id],onDelete:Restrict)
+ versao Int
+ inicio DateTime
+ fim DateTime?
+ motivo String
+ chaveIdempotencia String
+ entradaHash String
+ criadaEm DateTime @default(now())
+ @@unique([propostaId,versao])
+ @@unique([gestorId,chaveIdempotencia])
+ @@index([propostaId,professorId,inicio])
+}
+
+// Inversos obrigatórios a enxertar nos modelos existentes:
+// Usuario: propostasSegundaChamada PropostaSegundaChamada[] @relation("AutorSegundaChamada")
+ decisoesSegundaChamada DecisaoSegundaChamada[] @relation("DecisorSegundaChamada")
+ disponibilizacoesSegundaChamada DisponibilizacaoSegundaChamada[] @relation("AutorDisponibilizacaoSegundaChamada")
+ prorrogacoesSegundaChamada PropostaProrrogacaoSegundaChamada[] @relation("PreparadorProrrogacaoSegundaChamada")
+ decisoesProrrogacaoSegundaChamada DecisaoProrrogacaoSegundaChamada[] @relation("DecisorProrrogacaoSegundaChamada")
+ reservasSegundaChamada ReservaSegundaChamada[] @relation("ReservadorSegundaChamada")
+ agendasSegundaChamada AgendaSegundaChamada[] @relation("AgendadorSegundaChamada")
+ ocorrenciasSegundaChamada OcorrenciaSegundaChamada[] @relation("RegistradorOcorrenciaSegundaChamada")
+ realizacoesSegundaChamada RealizacaoSegundaChamada[] @relation("ProfessorRealizacaoSegundaChamada")
+ realizacoesSegundaChamadaRegistradas RealizacaoSegundaChamada[] @relation("RegistradorRealizacaoSegundaChamada")
+ extrasSegundaChamada PropostaExtraSegundaChamada[] @relation("AutorExtraSegundaChamada")
+ decisoesExtraSegundaChamada DecisaoExtraSegundaChamada[] @relation("DecisorExtraSegundaChamada")
+ autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[] @relation("AutorizadorEspecialSegundaChamada")
+ designacoesSegundaChamadaGestao DesignacaoSegundaChamada[] @relation("GestorDesignacaoSegundaChamada")
+ designacoesSegundaChamadaRecebidas DesignacaoSegundaChamada[] @relation("ProfessorDesignacaoSegundaChamada").
+// Matricula: propostasSegundaChamada PropostaSegundaChamada[]
+ reservasSegundaChamada ReservaSegundaChamada[]
+ extrasSegundaChamada PropostaExtraSegundaChamada[]
+ autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[]. AlocacaoTurma: propostasSegundaChamada PropostaSegundaChamada[]
+ extrasSegundaChamada PropostaExtraSegundaChamada[]
+ autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[]. Turma: propostasSegundaChamada PropostaSegundaChamada[]. Nivel: propostasSegundaChamada PropostaSegundaChamada[]. VersaoRegraAvaliacao: propostasSegundaChamada PropostaSegundaChamada[]
+ reservasSegundaChamada ReservaSegundaChamada[]
+ extrasSegundaChamada PropostaExtraSegundaChamada[]
+ autorizacoesEspeciaisSegundaChamada AutorizacaoEspecialSegundaChamada[]. EncontroAgenda: agendaSegundaChamada AgendaSegundaChamada?. VersaoLancamentoAvaliacao: segundaChamadaRealizacaoId String? @unique
+ segundaChamadaRealizacao RealizacaoSegundaChamada? @relation("LancamentoOriginalSegundaChamada", fields:[segundaChamadaRealizacaoId], references:[id], onDelete:Restrict).
+
+
+

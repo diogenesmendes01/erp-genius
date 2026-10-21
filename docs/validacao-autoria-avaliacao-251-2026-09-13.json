@@ -1,0 +1,20 @@
+{
+  "incremento": 251,
+  "data": "2026-09-13",
+  "escopo": "Lançamento designado, autoria da realização e da regularização, conferência independente",
+  "integracao": {
+    "aprovados": 62,
+    "falhas": 0,
+    "execucaoUnica": true,
+    "arquivos": { "lancamentos.int.test.ts": 32, "migracao-regra.int.test.ts": 14, "regra-turma.int.test.ts": 6, "regras.int.test.ts": 10 }
+  },
+  "falhaCorrigida": "Comparação de timestamp UTC com relógio local SQL no teste de realização atual; corrigida por migration 115",
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "migrations": ["20260913120000_autoria_avaliacao", "20260913130000_utc_autoria_avaliacao"],
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false
+}

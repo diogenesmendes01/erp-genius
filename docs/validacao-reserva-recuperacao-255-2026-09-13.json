@@ -1,0 +1,14 @@
+{
+  "incremento": 255,
+  "data": "2026-09-13",
+  "escopo": "Reserva por matrícula/nível/habilidade com limite e concorrência",
+  "integracao": { "arquivo": "src/server/avaliacoes/lancamentos.int.test.ts", "aprovados": 40, "falhas": 0 },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": { "status": "aprovado", "next": "16.3.5", "paginasEstaticas": 49 },
+  "migration": "20260913160000_reserva_tentativa_recuperacao",
+  "ambienteMigration": "PostgreSQL local descartável de testes",
+  "ultimaRegressaoIntegral": 245,
+  "homologacaoInterativa": false
+}

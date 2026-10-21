@@ -1,0 +1,9 @@
+# Incremento 562 — ocorrências reais de segunda chamada
+
+O painel substitui os botões que enviavam justificativas e evidências fixas por um formulário com tipo, data/hora local, fuso, motivo e evidência informados pela gestão. Oferece cancelamento pela escola, cancelamento pelo aluno, falta e impedimento da escola apenas para reserva ainda reservada. O servidor determina se o cancelamento do aluno é tempestivo ou tardio pela antecedência gravada na reserva.
+
+A ação rejeita ocorrência futura, anterior à reserva e falta anterior ao início agendado. Reenvio idêntico pelo mesmo autor autorizado retorna o registro existente, sem duplicar evento; divergência mantém o registro anterior. Cancelamento/impedimento da escola não cria consumo, realização ou nota. Falta/cancelamento tardio consome a oportunidade sem lançar zero. Novas reservas criadas pela ação de agenda gravam reservadaEm explicitamente em UTC; dados antigos não foram reinterpretados.
+
+Validação: 20 integrações aprovadas, zero falhas e zero não selecionados (`docs/validacao-ocorrencias-final-562-2026-09-15.json`), cobrindo os cinco resultados de ocorrência, evidência obrigatória, autorização, preservação de data/conteúdo, reenvio sem duplicação e negativos temporais. ESLint e build aprovados (`docs/validacao-build-final-562-2026-09-15.log`). O primeiro build identificou união de tipos indevida no adaptador; a saída foi corrigida e validada novamente. Agentes Terra implementaram formulário/adaptador e ação, com revisão e testes pelo orquestrador.
+
+Limites: não houve ensaio interativo ou implantação. Ainda faltam guards SQL para OcorrenciaSegundaChamada e transições de ReservaSegundaChamada; a escrita direta não possui ainda as mesmas proteções da ação. Tratamento completo da agenda após cancelamento e demais fluxos continuam exigindo revisão. Este incremento não representa conclusão da SPEC nem aptidão de produção.

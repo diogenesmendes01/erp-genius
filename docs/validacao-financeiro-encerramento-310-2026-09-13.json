@@ -1,0 +1,6 @@
+{
+ "incremento":310,"data":"2026-09-13","escopo":"Núcleo financeiro integrado de encerramento",
+ "integracao":{"aprovados":29,"falhos":0,"reexecucaoFinalEncerramento":7},
+ "typescript":"aprovado","lint":"aprovado sem avisos","ultimoBuild":309,"ultimaSuiteUnitariaIntegral":307,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Núcleo interno; efeitos acadêmicos e temporais pendentes","Ação pública com controle de repetição ainda pendente","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

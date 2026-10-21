@@ -1,0 +1,38 @@
+{
+  "incremento": 236,
+  "data": "2026-09-12",
+  "migration": "20260913060000_lancamento_avaliacao",
+  "ambiente": "PostgreSQL local descartável",
+  "integracoes": [
+    {
+      "escopo": "lancamentos.int.test.ts",
+      "aprovados": 11
+    },
+    {
+      "escopo": "src/server/avaliacoes",
+      "arquivos": 4,
+      "aprovados": 41,
+      "porArquivo": {
+        "lancamentos.int.test.ts": 11,
+        "migracao-regra.int.test.ts": 14,
+        "regra-turma.int.test.ts": 6,
+        "regras.int.test.ts": 10
+      }
+    }
+  ],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "schemaDiff": "vazio",
+  "build": {
+    "status": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 47
+  },
+  "regressaoIntegral": "Não repetida; referência incremento 235",
+  "limitacoes": [
+    "Sem tela de lançamento ou portal de notas",
+    "Sem correção de nota oficial, consolidação persistida, oportunidades ou fechamento",
+    "Sem regularização histórica de contrato encerrado ou designação específica",
+    "Sem homologação interativa ou produção"
+  ]
+}

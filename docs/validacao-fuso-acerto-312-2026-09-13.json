@@ -1,0 +1,6 @@
+{
+ "incremento":312,"data":"2026-09-13","escopo":"Fuso institucional preservado na versão do acerto",
+ "integracao":{"aprovados":30,"falhos":0,"arquivos":2},"typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas",
+ "ultimaSuiteUnitariaIntegral":311,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Efeitos acadêmicos e ação completa pendentes","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

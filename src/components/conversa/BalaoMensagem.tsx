@@ -1,0 +1,113 @@
+"use client";
+
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { IconAlertCircle, IconCheck, IconChecks, IconChevronDown, IconClock, IconStar } from "@tabler/icons-react";
+import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
+import { resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { ORIGEM_ENVIO_LABEL } from "@/lib/labels";
+import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
+import { CartaoPix, type PixDados } from "./CartaoPix";
+import { EnqueteLeitura, type EnqueteDados } from "./EnqueteLeitura";
+import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
+import { MidiaMensagem, temMidia, VisualizadorMidia } from "./VisualizadorMidia";
+
+export type ComandoMensagem = "favoritar" | "encaminhar" | "copiar" | "editar" | "apagar" | "reagir" | "responder";
+
+/** Quem escreveu: o celular, a Aria, a pessoa da equipe, o sistema ou o participante (entrada em grupo). */
+export function autorDaMensagem(m: Pick<MensagemThread, "direcao" | "origem" | "autorNome" | "participanteNome">): string | null {
+  if (m.direcao === "ENTRADA") return m.participanteNome;
+  if (m.origem === "CELULAR" || m.origem === "IA") return ORIGEM_ENVIO_LABEL[m.origem];
+  if (m.origem === "CRON" || m.origem === "LOTE" || m.origem === "GESTAO") return "Sistema";
+  return m.autorNome;
+}
+
+const STATUS: Record<string, { rotulo: string; icone: ReactNode; erro?: boolean }> = {
+  NA_FILA: { rotulo: "Enviando", icone: <IconClock size={16} aria-hidden /> },
+  ENVIADA: { rotulo: "Enviada", icone: <IconCheck size={16} aria-hidden /> },
+  ENTREGUE: { rotulo: "Entregue", icone: <IconChecks size={16} aria-hidden /> },
+  LIDA: { rotulo: "Lida", icone: <IconChecks size={16} className="text-brand" aria-hidden /> },
+  FALHOU: { rotulo: "Não enviada", icone: <IconAlertCircle size={16} aria-hidden />, erro: true },
+};
+
+function hora(iso: string, fuso: string | null): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  try { return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: resolverFusoExibicao(fuso, "UTC") }).format(d); }
+  catch { return iso; }
+}
+
+interface ItemAcao { cmd: ComandoMensagem; rotulo: string; recurso?: RecursoMotor; perigo?: boolean }
+
+export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAberto = false, enquete, pix }: {
+  m: MensagemThread; fuso: string | null; aoComando: (c: ComandoMensagem) => void; recursos: (r: RecursoMotor) => boolean;
+  /** Comandos que quem usa o balão trata; os demais não aparecem no menu. Sem a lista, o menu vem completo. */
+  comandos?: readonly ComandoMensagem[];
+  /** Estado inicial do menu (testes de marcação). */
+  menuAberto?: boolean;
+  /** Dados estruturados quando a thread os traz; sem eles, a mensagem aparece só como texto. */
+  enquete?: EnqueteDados; pix?: PixDados;
+}) {
+  const [menu, setMenu] = useState(menuAberto);
+  const [visualizador, setVisualizador] = useState(false);
+  const raiz = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const fora = (e: MouseEvent) => { if (!raiz.current?.contains(e.target as Node)) setMenu(false); };
+    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(false); };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", tecla);
+    return () => { document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", tecla); };
+  }, [menu]);
+
+  const saida = m.direcao === "SAIDA";
+  const autor = autorDaMensagem(m);
+  const st = saida ? STATUS[m.status] ?? STATUS.ENVIADA : null;
+  const todos: ItemAcao[] = [
+    { cmd: "responder", rotulo: "Responder" },
+    ...(m.corpo ? [{ cmd: "copiar" as const, rotulo: "Copiar" }] : []),
+    { cmd: "reagir", rotulo: "Reagir", recurso: "reagir" },
+    { cmd: "encaminhar", rotulo: "Encaminhar", recurso: "encaminhar" },
+    { cmd: "favoritar", rotulo: m.favorita ? "Remover dos favoritos" : "Favoritar" },
+    ...(saida && m.tipo === "TEXTO" ? [{ cmd: "editar" as const, rotulo: "Editar", recurso: "editar" as const }] : []),
+    { cmd: "apagar", rotulo: "Apagar", recurso: "apagar", perigo: true },
+  ];
+  const itens = comandos ? todos.filter((i) => comandos.includes(i.cmd)) : todos;
+
+  return (
+    <div data-mensagem-id={m.id} className={`flex ${saida ? "justify-end" : "justify-start"}`}>
+      <div ref={raiz} className={`relative max-w-[80%] rounded-lg px-3 py-2 text-sm ${saida ? "bg-entry-accent" : "bg-entry"}`}>
+        {autor && <span className="mb-1 block text-xs font-semibold text-gray-600">{autor}</span>}
+        {m.templateNome && <small className="block text-gray-600">Modelo: {m.templateNome}</small>}
+        {temMidia(m) && <MidiaMensagem m={m} aoAbrir={() => setVisualizador(true)} />}
+        {enquete && <EnqueteLeitura enquete={enquete} />}
+        {pix && <CartaoPix pix={pix} />}
+        {m.corpo && !enquete && !pix && <p className="whitespace-pre-wrap break-words">{m.corpo}</p>}
+        <div className="mt-1 flex items-center justify-end gap-1 text-xs text-gray-600">
+          {m.apagada && <span>Apagada para todos</span>}
+          {m.favorita && <IconStar size={12} aria-label="Favorita" />}
+          <time dateTime={m.criadoEm}>{hora(m.criadoEm, fuso)}</time>
+          {st && <span title={st.rotulo} className={`inline-flex items-center gap-0.5 ${st.erro ? "text-red-700" : ""}`}>{st.icone}{st.erro && <span>{st.rotulo}</span>}</span>}
+        </div>
+        <button type="button" aria-label="Opções da mensagem" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}
+          className="absolute right-1 top-1 rounded hover:bg-highlight"><IconChevronDown size={16} aria-hidden /></button>
+        {menu && (
+          <div role="menu" aria-label="Opções da mensagem" className={`absolute right-0 top-7 z-20 ${CLASSE_PAINEL_MENU}`}>
+            {itens.map((i) => {
+              const indisponivel = !!i.recurso && !recursos(i.recurso);
+              const classeItem = `${CLASSE_ITEM_MENU} ${i.perigo ? "text-red-700" : "text-gray-800"}`;
+              return (
+                <div key={i.cmd}>
+                  <button type="button" role="menuitem" aria-label={i.rotulo} disabled={indisponivel}
+                    onClick={() => { setMenu(false); aoComando(i.cmd); }}
+                    className={classeItem}>{i.rotulo}</button>
+                  {indisponivel && <small className="block px-5 pb-1 text-xs text-gray-600">{AVISO_RECURSO_MOTOR}</small>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {visualizador && <VisualizadorMidia m={m} aoFechar={() => setVisualizador(false)} />}
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,5 @@
 import { Papel } from "@prisma/client";
+import { memoPorRequisicao } from "@/server/_shared/memo-requisicao";
 
 // Guards server-side por papel para Server Components (page.tsx).
 // Diferente dos guards de Server Action (src/server/_shared/sessao.ts), estes rodam na
@@ -10,19 +11,21 @@ import { Papel } from "@prisma/client";
  * Papéis da sessão atual (vazio se não autenticado). Admin é tratado pelos helpers abaixo.
  * Papéis FRESCOS do banco — nunca do JWT (mesma regra de `_shared/sessao.ts`): papel
  * revogado ou usuário desativado perde a leitura AGORA, não no próximo login.
+ *
+ * Memoizado por requisição (ganho rápido 15): várias leituras na mesma renderização viram uma.
  */
-export async function papeisDaSessao(): Promise<Papel[]> {
+export const papeisDaSessao = memoPorRequisicao(async (): Promise<Papel[]> => {
   // imports dinâmicos: mantém papeisTem() (regra pura) testável sem carregar NextAuth/Prisma
   // (mesmo padrão de src/server/_shared/sessao.ts).
   const { auth } = await import("@/lib/auth");
   const session = await auth();
   const id = session?.user?.id;
   if (!id) return [];
-  const { prisma } = await import("@/lib/prisma");
-  const atual = await prisma.usuario.findUnique({ where: { id }, select: { papeis: true, ativo: true } });
-  if (!atual || !atual.ativo) return [];
-  return atual.papeis;
-}
+  // O mesmo memo de usuário de exigirSessao/exigirSessaoPagina: uma leitura por requisição na árvore
+  // inteira, mesmo quando a página usa os dois guards. Inativo ou inexistente → sem papéis.
+  const { carregarUsuarioFresco } = await import("@/server/_shared/sessao");
+  return (await carregarUsuarioFresco(id))?.papeis ?? [];
+});
 
 /** O conjunto de papéis tem pelo menos um dos alvos? (Administrador sempre passa.) */
 export function papeisTem(papeis: Papel[], ...alvo: Papel[]): boolean {

@@ -1,0 +1,8 @@
+{
+ "incremento": 302, "data": "2026-09-13", "escopo": "Vencimento explícito de multa no plano aprovado",
+ "unitarios": { "aprovados": 12, "falhos": 0 }, "integracao": { "aprovados": 7, "falhos": 0 },
+ "lintDirecionado": "aprovado", "typescript": "aprovado no build", "build": { "aprovado": true, "paginasEstaticas": 52 },
+ "migrationsNovas": 0, "ultimaRegressaoIntegral": 298,
+ "limites": ["Efetivação financeira ainda pendente", "Objetivo geral não concluído"],
+ "homologacaoInterativa": false, "producao": false, "enviosExternos": false
+}

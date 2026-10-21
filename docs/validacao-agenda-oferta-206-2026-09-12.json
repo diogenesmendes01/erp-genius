@@ -1,0 +1,30 @@
+{
+  "incremento": 206,
+  "data": "2026-09-12",
+  "escopo": "Forma de agenda por oferta; Q111 ainda incompleta",
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "success": true,
+    "numTotalTests": 52,
+    "numPassedTests": 52,
+    "numFailedTests": 0,
+    "numPendingTests": 0
+  },
+  "typescript": "aprovado",
+  "lintArquivosAlterados": "aprovado",
+  "build": {
+    "resultado": "aprovado",
+    "next": "16.3.5",
+    "paginasEstaticas": 46
+  },
+  "migrationsLocais": 98,
+  "schemaDiff": "vazio",
+  "banco": "descartavel localhost:54329/erp_genius_test",
+  "regressaoIntegralMaisRecente": 201,
+  "limites": [
+    "Reserva individual e captura de horários contratuais pendentes",
+    "Dados legados não classificados não comprovam Q111",
+    "Sem ensaio interativo, produção, importação ou envio externo",
+    "Q155 sem resposta"
+  ]
+}

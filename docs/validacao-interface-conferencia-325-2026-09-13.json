@@ -1,0 +1,6 @@
+{
+ "incremento":325,"data":"2026-09-13","escopo":"Interface financeira da ocorrência e consulta histórica",
+ "integracao":{"aprovados":9,"falhos":0,"arquivos":1},"typescript":"aprovado no build","lint":"aprovado","build":"aprovado, 52 páginas","novaMigration":false,
+ "ultimaSuiteUnitariaIntegral":317,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Sem homologação interativa","Fechamento/emissão transacional pendentes","Revisão de efeitos e antecipações pendentes"],"producao":false,"enviosExternos":false
+}

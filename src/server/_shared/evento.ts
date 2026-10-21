@@ -6,9 +6,25 @@ import { Prisma } from "@prisma/client";
 
 /** Agregados conhecidos (mantém consistência com o catálogo de eventos). */
 export type AgregadoTipo =
+  | "RegraAvaliacao"
+  | "ModeloContratual"
+  | "ConfiguracaoOperacional"
+  | "PoliticaComissao"
+  | "CoberturaCarteira"
+  | "AtendimentoWhatsApp"
+  | "PagamentoInformado"
+  | "Recebimento"
+  | "SolicitacaoCorrecaoCadastro"
+  | "AulaDiario"
+  | "EncontroAgenda"
+  | "VinculoDocente"
+  | "Exportacao"
+  | "Importacao"
   | "Lead"
   | "Matricula"
   | "Aluno"
+  // D14: a mescla de contatos repõe o cadastro do responsável (CadastroAcademicoRepontado).
+  | "Responsavel"
   | "Cobranca"
   | "Comissao"
   | "Turma"
@@ -18,18 +34,38 @@ export type AgregadoTipo =
   | "Modalidade"
   | "Nivel"
   | "Produto"
+  | "ProdutoPais"
   | "Preco"
   | "TaxaCambio"
   // Canal WhatsApp (docs 26/30). Conversa/Mensagem NÃO são agregados de Evento:
   // são tabelas operacionais (doc 29 regra 3 — "Evento = auditoria; tabela = operacional").
   | "NumeroWhatsApp"
   | "ContatoWhatsApp"
+  | "GrupoWhatsApp"
   | "TemplateWhatsApp"
+  | "IntencaoMensagem"
   | "PoliticaRegua"
-  // Fase comercial (doc 27): config de automação comercial (auto-lead + saudação) e a
-  // régua comercial editável (lead-novo e demais cadências).
-  | "ConfigComercial"
-  | "PoliticaComercial";
+  // "ConfigComercial" e "PoliticaComercial" (auto-lead, saudação e régua comercial do CRM antigo) saíram
+  // com a remoção do CRM antigo; os eventos já gravados continuam no histórico.
+  | "LotePreparacaoMigracao"
+  // Fase 2 (doc 03): financeiro automatizado + B2B.
+  | "ConfigFinanceiro"
+  | "Empresa"
+  | "FaturaB2B"
+  // Fase 2 CRM (2.M1+): hub de identidade, tarefas, tags, campos e filtros do CRM.
+  | "Pessoa"
+  | "Tarefa"
+  | "Tag"
+  | "CampoPersonalizado"
+  | "FiltroSalvo"
+  // Fase 5 (ADR-F5-01): Aria, relatórios e configurações do CRM.
+  | "AgenteIA"
+  | "VersaoAgenteIA"
+  | "AcaoAgenteIA"
+  | "FonteConhecimento"
+  | "ConfigIA"
+  | "MetaComercial"
+  | "ConfigSetorAtendimento";
 
 export interface EntradaEvento {
   /** Nome do evento em PascalCase (ex.: "MatriculaAtivada"). */
@@ -50,7 +86,7 @@ export interface EntradaEvento {
  *
  * @example
  * await prisma.$transaction(async (tx) => {
- *   await tx.lead.update({ ... });
+ *   await tx.oportunidade.update({ ... });
  *   await registrarEvento(tx, {
  *     tipo: "EtapaAlterada", agregadoTipo: "Lead", agregadoId, autorId,
  *     payload: { de, para },
@@ -60,8 +96,8 @@ export interface EntradaEvento {
 export async function registrarEvento(
   tx: Prisma.TransactionClient,
   entrada: EntradaEvento,
-): Promise<void> {
-  await tx.evento.create({
+) {
+  return tx.evento.create({
     data: {
       tipo: entrada.tipo,
       agregadoTipo: entrada.agregadoTipo,

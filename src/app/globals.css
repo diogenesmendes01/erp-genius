@@ -9,82 +9,176 @@
    ============================================================ */
 :root {
   color-scheme: light; /* controles nativos (select, input, scrollbar) no padrão claro */
+  /* Valores do design system (DESIGN-SYSTEM.md v1.0, cópia em docs/planejamento/design-system-referencia.md).
+     R = literal do spec; A = adaptação para manter as travas de contraste (motivo em docs/18-design-system.md). */
+
   /* Neutros */
-  --bg-page: #fafaf7;
+  --bg-page: #f7f5f3;
   --surface: #ffffff;
-  --surface-muted: #f4f4f0;
-  --neutral-muted: #efeee9;
+  --surface-muted: #f7f5f3;
+  --surface-raised: #ffffff;
+  /* A: chip/hover opaco; a seleção (--brand-solid) cabe sobre ele nos dois temas (3,86 e 5,88:1). */
+  --neutral-muted: #ededed;
+  --highlight: rgba(194, 189, 184, 0.15);
+  --pressed: rgba(0, 0, 0, 0.2);
   --border: rgba(0, 0, 0, 0.1);
-  --text-primary: #1a1a19;
-  --text-secondary: #5f5e5a;
-  --text-terciary: #88877f;
+  --border-soft: rgba(0, 0, 0, 0.2);
+  /* Borda de controle (input/select — border-gray-300). A: o #959393 do spec dá 2,81:1 sobre
+     #f7f5f3 (< 3:1 da WCAG 1.4.11); #858383 dá 3,47:1. */
+  --border-control: #858383;
+  --text-primary: #0a0a0a;
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  /* A: o spec não tem terciário; cor de todo placeholder, ≥ 4,5:1 sobre página, cartão e controle. */
+  --text-terciary: #6d6c64;
+  /* Só para controle desabilitado (isento de contraste na WCAG 1.4.3). */
+  --text-disabled: #bdbdbd;
 
   /* Marca */
-  --brand: #4338ca;
-  --brand-text: #3730a3;
-  --brand-bg: #eef2ff;
-  --brand-border: #c7d2fe;
+  /* --brand: accent de checkbox/radio, contorno de foco e barra sem texto; nunca fundo de texto. */
+  --brand: #1daa61;
+  /* A: o #1b8755 do spec dá 4,16:1 sobre a página; usa accent-strong (>= 4,5:1 sobre página e cartão). */
+  --brand-text: #15603e;
+  --brand-bg: #d9fdd3;
+  --brand-strong: #15603e;
+  --brand-border: #b7ebc0;
+  /* Fundo de botão primário e de todo indicador de seleção com texto (aba ativa, passo, chip marcado),
+     sempre com text-on-brand-solid. Duas exigências nos dois temas (trava em src/app/contraste.test.ts
+     e design-system.test.ts): --on-brand-solid sobre ele >= 4,5:1 (1.4.3) e ele sobre página, cartão e
+     superfícies sutil e neutra >= 3:1 (1.4.11). No claro: 4,52:1 com branco. */
+  --brand-solid: #1b8755;
+  --on-brand-solid: #ffffff;
 
   /* Semânticas (fundo / texto) */
   --info-bg: #e6f1fb;
-  --info-text: #0c447c;
-  --success-bg: #eaf3de;
-  --success-text: #27500a;
-  --warning-bg: #faeeda;
-  --warning-text: #633806;
-  --danger-bg: #fcebeb;
-  --danger-text: #791f1f;
+  /* A: o #007bfc do spec dá 4,01:1 sobre o fundo; #0064d1 passa. */
+  --info-text: #0064d1;
+  --success-bg: #d9fdd3;
+  --success-text: #15603e;
+  --warning-bg: #fff7e5;
+  /* A: o #ffb938 do spec é indicador, não texto. */
+  --warning-text: #7a4f00;
+  --danger-bg: #fde8eb;
+  /* A: o #ea0038 dá 3,93:1 como texto; #b3002b passa. */
+  --danger-text: #b3002b;
 
-  /* Ações sólidas (texto branco nos dois modos) */
-  --danger-solid: #b91c1c;
-  --success-solid: #2f7a12;
+  /* Ações sólidas. success usa o texto do verde (--on-brand-solid); danger, branco. */
+  --danger-solid: #ea0038;
+  --success-solid: #1b8755;
+
+  /* IA (conteúdo gerado pela Aria): identidade visual própria, deliberadamente
+     distinta do resto da UI, para o operador reconhecer "isto foi gerado por IA" de
+     relance. Mesmo padrão bg/text que os outros semânticos (inverte no dark);
+     --ai-solid é o botão primário de aceitar sugestão, não inverte (mesmo valor e texto branco nos
+     dois temas) — ao contrário do --brand-solid, que tem um tom próprio no escuro (ver .dark). */
+  --ai-bg: #f2f0f9;
+  --ai-text: #6a53bd;
+  --ai-border: #ddd0f8;
+  --ai-solid: #6a53bd;
+
+  /* Temperatura Frio (A, da UI final) */
+  --cold-text: #007daa;
+
+  /* Balão e compositor (Fase 3) */
+  --entry: #ffffff;
+  --entry-accent: #d9fdd3;
+  --composer: #ffffff;
+
+  /* Camadas flutuantes: as únicas com sombra (menu/popover e modal/drawer). Fora da conta de contraste. */
+  --shadow-popover: 0 5px 20px #0002;
+  --shadow-dialog: 0 15px 60px #0006;
 }
 
 .dark {
   color-scheme: dark; /* controles nativos no padrão escuro */
-  --bg-page: #1b1b1a;
-  --surface: #242422;
-  --surface-muted: #2b2b29;
-  --neutral-muted: #2f2f2c;
-  --border: rgba(255, 255, 255, 0.12);
-  --text-primary: #ececea;
-  --text-secondary: #a7a6a1;
-  --text-terciary: #6e6d68;
+  --bg-page: #161717;
+  --surface: #161717;
+  --surface-muted: #1d1f1f;
+  --surface-raised: #1d1f1f;
+  --neutral-muted: #2a2c2c;
+  --highlight: rgba(255, 255, 255, 0.1);
+  --pressed: rgba(255, 255, 255, 0.2);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-soft: rgba(255, 255, 255, 0.1);
+  --border-control: #757778;
+  --text-primary: #fafafa;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  /* A: placeholder >= 4,5:1 (o spec não tem terciário). */
+  --text-terciary: #8f9192;
+  --text-disabled: #424445;
 
-  --brand: #6366f1;
-  --brand-text: #a5b4fc;
-  --brand-bg: #1f1d33;
-  --brand-border: rgba(255, 255, 255, 0.14);
+  --brand: #21c063;
+  --brand-text: #21c063;
+  --brand-bg: #103529;
+  --brand-strong: #d9fdd3;
+  --brand-border: #1e5c40;
+  /* No escuro o verde clareia, então o texto sobre ele é escuro (--on-brand-solid): 8,28:1. */
+  --brand-solid: #21c063;
+  --on-brand-solid: #0a0a0a;
 
-  --info-bg: #0c447c;
-  --info-text: #b5d4f4;
-  --success-bg: #27500a;
-  --success-text: #c0dd97;
-  --warning-bg: #633806;
-  --warning-text: #fac775;
-  --danger-bg: #791f1f;
-  --danger-text: #f7c1c1;
+  --info-bg: #10283a;
+  --info-text: #53bdeb;
+  --success-bg: #103529;
+  --success-text: #71eb85;
+  --warning-bg: #362c1f;
+  --warning-text: #ffd279;
+  --danger-bg: #321622;
+  --danger-text: #fb5061;
 
-  --danger-solid: #b91c1c;
-  --success-solid: #2f7a12;
+  /* A: o escuro escurece o vermelho para o texto branco passar (6,20:1). */
+  --danger-solid: #c4002f;
+  --success-solid: #21c063;
+
+  --ai-bg: #2b2a37;
+  --ai-text: #ad9ffa;
+  --ai-border: rgba(196, 181, 253, 0.3);
+  --ai-solid: #6a53bd;
+
+  --cold-text: #5bb0d7;
+
+  --entry: #242626;
+  --entry-accent: #144d37;
+  --composer: #242626;
+
+  --shadow-popover: 0 6px 24px #0006;
 }
 
 @layer base {
   html {
     font-family:
-      var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-      Helvetica, Arial, sans-serif;
+      var(--font-sans), "Segoe UI", Roboto, system-ui, sans-serif;
   }
   body {
     background-color: var(--bg-page);
     color: var(--text-primary);
   }
-  /* Campos de formulário seguem os tokens nos dois temas (sem branco fixo nativo). */
+  /* Campos de formulário seguem os tokens nos dois temas (sem branco fixo nativo). Superfície sutil e
+     raio 8; checkbox/radio ficam de fora. Tailwind 3 não emite cascade layers: quem decide é a
+     especificidade. O :where() zera a do input (seria 0-2-1 e ganharia de .bg-surface/.rounded-lg),
+     então classe utilitária vence esta base também no input. */
+  :where(input:not([type="checkbox"]):not([type="radio"])),
+  select,
+  textarea {
+    background-color: var(--surface-muted);
+    border-radius: 8px;
+  }
   input,
   select,
   textarea {
-    background-color: var(--surface);
     color: var(--text-primary);
+  }
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    color: var(--text-disabled);
+    cursor: not-allowed;
+  }
+  textarea {
+    resize: vertical;
+  }
+  /* 90 px só para textarea de várias linhas: o de uma linha (rows="1", ex.: compositor do Inbox) fica
+     compacto. :where() deixa min-h-* utilitário vencer. */
+  :where(textarea:not([rows="1"])) {
+    min-height: 90px;
   }
   input::placeholder,
   textarea::placeholder {
@@ -95,4 +189,60 @@
   input[type="radio"] {
     accent-color: var(--brand);
   }
+
+  /* Pesos em uso: 400, 500 e 600 (ver docs/18). Headings, dt, b, strong e th pedem negrito (700)
+     por padrão; aqui são levados a 600, peso real da Roboto variável. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  dt,
+  b,
+  strong,
+  th {
+    font-weight: 600;
+  }
+
+  /* Indicador de foco único para todo o app — cobre os controles que hoje usam
+     outline-none sem substituto visível ao navegar por teclado (ganho rápido 7).
+     Tailwind v3 não emite CSS Cascade Layers nativas: @layer base só reposiciona
+     o bloco onde @tailwind base foi expandido, então esta regra sempre compila
+     ANTES das utilities (inclusive .outline-none). Por isso a seletor NÃO pode
+     usar :where() — :where() zera a especificidade do grupo, empatando 0-1-0 com
+     a de .outline-none (uma classe), e em empate quem vem depois no CSS
+     compilado (a utility) vence. O seletor abaixo, sem :where(), fica com
+     especificidade 0-1-1 (tag + pseudo-classe) — 0-2-0 no caso de [tabindex] —
+     sempre maior que 0-1-0, então vence outline-none em qualquer ordem, sem
+     precisar tocar nos ~51 outline-none que já existem nos inputs/selects. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  /* Evita o zoom automático do iOS Safari em campo com font-size < 16px, sem alterar
+     a densidade no desktop (ganho rápido 10). */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+    /* Alvo de toque de 44 px (checkbox/radio ficam de fora). textarea fica de fora: mantém os 90 px. */
+    :where(input:not([type="checkbox"]):not([type="radio"])),
+    select {
+      min-height: 44px;
+    }
+  }
+}
+
+/* Movimento reduzido: quem pediu menos movimento ao sistema não vê animação nem transição (esqueleto, hover, rolagem suave). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
 }

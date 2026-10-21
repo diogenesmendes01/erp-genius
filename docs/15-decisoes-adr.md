@@ -41,6 +41,11 @@
 | D31 | **Integridade de dados (issue #1):** índices únicos PARCIAIS — 1 alocação ATIVA por aluno · 1 preço ATIVO por país+produto+modalidade+tipoCobrança (migration `integridade_alocacao_preco`) | ✅ | [11](11-modelo-de-dados.md) |
 | D18 | **`MovimentacaoAluno` tipada** criada na Fase 0 (coexiste com `Evento`) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
 | D19 | **Ativação** exige `contratoOk + pagamentoTaxaOk + primeiraMensalidadeOk`; exceção "com pendência" (Admin/Gerente) | ✅ | [11](11-modelo-de-dados.md), [12](12-catalogo-de-eventos.md) |
+| D38 | Revogação de S1/D34 para o driver MOTOR (Fase 4): régua de cobrança automática e avisos de agenda rodam no motor próprio; ritmo por número no motor (M8); BAILEYS legado segue barrado; a porta aceita um driver Meta no futuro | ✅ | [30](30-whatsapp-spec-implementacao.md) §S1, plano 04 |
+| D37 | **Fase 3 (ago/2026):** acadêmico com progressão HÍBRIDA — o sistema calcula média ponderada (avaliações com peso) e frequência % e SUGERE a aprovação (média ≥70 · frequência ≥75%); aprovar é ação humana (secretaria/pedagógico) que emite o certificado com código público de validação (`/certificado/[codigo]`). Portal do aluno = papel `ALUNO` + vínculo 1:1 `Aluno.usuarioId` (projeção só dos próprios dados) | ✅ | [03](03-roadmap.md) |
+| D36 | **Fase 2 (ago/2026):** gateway de pagamento por DRIVER (contrato: gerar link + webhook de conciliação pela baixa COMPARTILHADA). Driver SIMULADO local (`/pagar/[token]`, botão só com `PAGAMENTO_SIMULADO=1`); GreenPay/PIX/Boleto/Cartão = drivers futuros (P1 segue aberta como escolha de provedor). B2B: matrícula corporativa nasce ATIVA (lastro = contrato da empresa, sem taxa individual nem comissão automática); mensalidades agrupadas em FATURA ÚNICA por empresa×competência; pagar a fatura baixa em lote | ✅ | [03](03-roadmap.md) |
+| D35 | **C4 (ago/2026):** matrícula AUTOMÁTICA — contrato OK + taxa PAGA numa matrícula AGUARDANDO ativam na mesma transação do gatilho (nasce DESLIGADA); turma por auto-alocação HÍBRIDA (evento `TurmaSugerida`; o consultor confirma). Assinatura digital real (DocuSign) entra pelo mesmo ponto (`marcarContratoAssinado`) no futuro | ✅ | [27](27-comercial-automacoes-ia.md) |
+| D34 | **Exceção comercial à trava S1 (B5, doc 32):** as cadências COMERCIAIS (C1/C2) e a saudação reativa disparam automaticamente **no Baileys** (número de vendas), abrindo exceção à lei "régua automática exige driver oficial" — que segue valendo para a COBRANÇA. Limites da exceção: cohort explícito em modo piloto (B1) · teto/janela/pacing próprios da política · kill switch global · validade por degrau (B3/B4) · revalidação de estado no despacho (B7). **Risco aceito e monitorado:** sessão não oficial pode cair/ser banida — rollout gradual + stop imediato (doc 32 §4/§6); homologação definitiva só na WABA (doc 31) | ✅ | [30](30-whatsapp-spec-implementacao.md) §S1, [32](32-comercial-c1-c2-piloto-baileys.md) |
 | D33 | **Deploy = VPS + Docker Compose** (Postgres interno sem porta pública · app Next standalone · Evolution só na rede interna · Caddy TLS como única borda); processo sempre-vivo exigido pelo canal (webhook + sessão Baileys) descarta serverless; mídia segue em disco/volume (S9) com backup diário testado (`scripts/backup-producao.sh`); banco por ambiente fecha o gap A5 | ✅ | [31](31-whatsapp-go-live.md) |
 
 ---
@@ -155,3 +160,46 @@ código: ao LER campo monetário do Prisma, converta na borda (ver `_shared/deci
 Fechados: card do Kanban com **última ação**, **idade da etapa** e **SLA** (projeção de eventos
 via `listarLeads`); **Perdido filtrável por período** (30/90/todos); linha de **certificado**
 (Costa Rica) na matrícula; botão **"solicitar abertura de turma"** (evento `AberturaTurmaSolicitada`).
+
+### ADR-F5-01 — A Aria (agente de IA) pode enviar mensagem e executar ações no CRM ✅
+**Contexto.** O copiloto (C3, doc 27) era só-leitura: "a IA nunca envia mensagem" e "a IA nunca é
+autora de mutação" (antigos `src/server/ia/tipos.ts:3-5` e `acoes.ts:148` em `f8a9c0e`). O copiloto
+foi removido na Fase 1 e a Fase 5 entrega a Aria (atendimento comercial e triagem de setor).
+
+**Decisão.** Esses dois princípios ficam **revogados** para a Aria, com as salvaguardas abaixo.
+- O modelo **propõe**; o servidor **decide**: lista branca de ações, matriz etapa × ação, faixas de
+  confiança (executa a partir de 80, transfere abaixo de 50), gatilhos determinísticos de handoff,
+  validador de valores e a máquina de estados da oportunidade.
+- Estado `DESLIGADA` (padrão) → `SHADOW` → `ATIVA`; em `SHADOW` nada sai e nada muda no CRM.
+- Só texto e documentos da base; sem figurinha, GIF, editar ou apagar; não responde em grupos; preço
+  só de `PrecoReferencia`; desconto acima do limite passa por `Aprovacao{tipo: DESCONTO}`.
+- Pausa quando humano responde (ERP ou celular); primeira mensagem do atendimento se identifica como
+  assistente virtual; respostas saem como `IntencaoMensagem` reativa `origem: IA` pelo despachante.
+- Orçamento mensal (padrão US$ 100, alerta em 80%, estouro = `SO_SUGERIR` ou `PAUSAR`); só os modelos
+  `claude-sonnet-5-5` e `claude-haiku-5-5`; chave só em `ANTHROPIC_API_KEY`, nunca no banco.
+- Sem `ANTHROPIC_API_KEY` nada chama a rede; testes usam provedor simulado.
+
+**Autoria (DF5-2).** A Aria não é `Usuario`. Mutação feita por ela grava `Evento` com `autorId`
+nulo e `payload.ator = "ARIA"` + `payload.acaoAgenteIAId` (helper `payloadDaAria`,
+`src/server/aria/ator.ts`), ligando o evento ao registro `AcaoAgenteIA`; toda ação é reversível ou
+registra `motivoIrreversivel`.
+
+**Banco.** Migration `20261018010000_aria_base`: remove `SugestaoIA` e
+`ConfigComercial.copilotoAtivo/copilotoQuietudeMinutos`; cria `AgenteIA`, `VersaoAgenteIA` (no máximo
+1 rascunho e 1 publicada, por índice parcial), `TurnoAgenteIA`, `AcaoAgenteIA`, `ChamadaIA`, `ConfigIA`
+e as colunas de pausa em `AtendimentoWhatsApp`.
+
+**Versões da configuração (Task 8).** `VersaoAgenteIA` guarda no máximo 1 `RASCUNHO` e 1 `PUBLICADA`;
+publicar arquiva a anterior (`ARQUIVADA`), nada é apagado.
+- **Descarte do rascunho = única remoção física permitida** (exceção à regra "sem delete físico de
+  dado de negócio"). Motivo: o rascunho ainda não é dado de negócio — nenhum turno, ação, chamada ou
+  evento o referencia (só versões publicadas regem a Aria) e ele existe só como edição em andamento
+  de uma pessoa. Arquivá-lo deixaria versões-fantasma que nunca valeram, brigaria com o índice parcial
+  de 1 rascunho e poluiria a numeração/diff. O descarte fica auditado em `Evento`
+  `AgenteIARascunhoDescartado` na mesma transação (com o número do rascunho).
+- **Gerente não salva nem publica rascunho cuja matriz o Admin alterou.** `validarAlteracaoPorPapel`
+  compara o rascunho com a versão publicada atual (ou `configPadrao()` sem publicada) em salvar,
+  publicar e restaurar. Se o Admin mudou no rascunho algo fora da alçada do Gerente (matriz, limites
+  acima da alçada etc.), o Gerente não consegue salvá-lo nem publicá-lo, mesmo sem ter sido ele quem
+  mudou: assim ele não "assina" nem coloca no ar uma alteração que não poderia fazer. Para seguir,
+  o Admin publica, ou o rascunho é descartado e refeito.

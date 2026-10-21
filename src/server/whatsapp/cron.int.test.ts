@@ -1,3 +1,4 @@
+import { DriverWhatsApp } from "@prisma/client";
 import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco, eventosDo } from "@/test/integracao";
@@ -28,7 +29,7 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     expect(r.despacho?.despachadas).toBe(0);
 
     const intencao = await prisma.intencaoMensagem.findUnique({
-      where: { cobrancaId_passo: { cobrancaId: cobranca.id, passo: "D-7" } },
+      where: { cobrancaId_passo_cicloCobranca: { cobrancaId: cobranca.id, passo: "D-7", cicloCobranca: 0 } },
     });
     expect(intencao?.status).toBe("SIMULADA");
     expect(intencao?.corpoRenderizado).toContain("Maria");
@@ -98,9 +99,20 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
     expect(await prisma.intencaoMensagem.count()).toBe(0);
   });
 
-  it("TRAVA S1 (lei): número remetente Baileys → cron não roda", async () => {
+  it("cron de cobrança enfileira em número MOTOR (S1 revogada, D38)", async () => {
     const agora = agoraAs(10);
-    await seedCanal({ driver: "BAILEYS" });
+    await seedCanal({ driver: "MOTOR", estado: "SHADOW" });
+    await seedCobranca({ vencimento: diasDepois(agora, 7) });
+
+    const r = await rodarCronRegua(agora);
+    expect(r.motivoParada).not.toBe("trava_driver_oficial");
+    expect(r.enfileiradas).toBeGreaterThan(0);
+    expect(await prisma.intencaoMensagem.count()).toBeGreaterThan(0);
+  });
+
+  it("BAILEYS legado continua barrado: número remetente Baileys → cron não roda", async () => {
+    const agora = agoraAs(10);
+    await seedCanal({ driver: DriverWhatsApp.BAILEYS });
     await seedCobranca({ vencimento: diasDepois(agora, 7) });
 
     const r = await rodarCronRegua(agora);
@@ -121,33 +133,34 @@ describe("cron da régua — enfileira e o despachante simula (shadow)", () => {
 });
 
 describe("despachante — guard-rails", () => {
-  it("LEI DO DESPACHANTE: inbound do contato cancela intenção automática ainda na fila", async () => {
+  it.each([{ intervalo: 60_000, esperado: "CANCELADA" }, { intervalo: -60_000, esperado: "ADIADA" }])("LEI DO DESPACHANTE: inbound relativo à criação ($intervalo ms) resulta em $esperado", async ({ intervalo, esperado }) => {
     const agora = agoraAs(23); // fora da janela [9,20] → a intenção fica ADIADA na fila
     const { numero } = await seedCanal({ janela: [9, 20] });
     const { cobranca } = await seedCobranca({ vencimento: diasDepois(agora, 7) });
 
     await rodarCronRegua(agora);
-    const antes = await prisma.intencaoMensagem.findFirst();
-    expect(antes?.status).toBe("ADIADA");
+    const antes = await prisma.intencaoMensagem.findFirstOrThrow();
+    expect(antes.status).toBe("ADIADA");
 
-    // Responsável responde no número da escola → lei cancela no ingresso.
+    // Relacionar ao relógio real da criação, sem depender de rodar antes das 23h01.
+    // Mensagem anterior preserva a intenção; mensagem posterior a cancela.
     const resultado = await processarMensagemNormalizada({
       numeroProviderRef: numero.providerRef,
       contatoWaId: "50688887777",
       providerMessageId: "wamid.teste.1",
       corpo: "posso pagar sexta?",
       tipo: "TEXTO",
-      driver: "META_CLOUD",
+      driver: "MOTOR",
       fromMe: false,
-      quando: new Date(agora.getTime() + 60_000),
+      quando: new Date(antes.criadaEm.getTime() + intervalo),
     });
     expect(resultado).toBe("gravada");
 
     const depois = await prisma.intencaoMensagem.findUnique({
-      where: { cobrancaId_passo: { cobrancaId: cobranca.id, passo: "D-7" } },
+      where: { cobrancaId_passo_cicloCobranca: { cobrancaId: cobranca.id, passo: "D-7", cicloCobranca: 0 } },
     });
-    expect(depois?.status).toBe("CANCELADA");
-    expect(depois?.motivoFalha).toBe("conversa_viva");
+    expect(depois?.status).toBe(esperado);
+    expect(depois?.motivoFalha).toBe(intervalo > 0 ? "conversa_viva" : "fora_da_janela");
   });
 
   it("claim ENVIANDO: em voo não é tocado; órfão (stale) vira FALHOU envio_interrompido", async () => {
@@ -181,7 +194,7 @@ describe("despachante — guard-rails", () => {
       providerMessageId: "wamid.dup",
       corpo: "oi",
       tipo: "TEXTO" as const,
-      driver: "META_CLOUD" as const,
+      driver: "MOTOR" as const,
       fromMe: false,
       quando: new Date(),
     };
@@ -199,7 +212,7 @@ describe("despachante — guard-rails", () => {
     const r1 = await rodarCronRegua(agora);
     expect(r1.despacho?.adiadas).toBe(1);
     const adiada = await prisma.intencaoMensagem.findUnique({
-      where: { cobrancaId_passo: { cobrancaId: cobranca.id, passo: "D-7" } },
+      where: { cobrancaId_passo_cicloCobranca: { cobrancaId: cobranca.id, passo: "D-7", cicloCobranca: 0 } },
     });
     expect(adiada?.status).toBe("ADIADA");
     expect(adiada?.motivoFalha).toBe("fora_da_janela");

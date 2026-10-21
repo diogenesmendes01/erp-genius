@@ -1,0 +1,6 @@
+{
+ "incremento":313,"data":"2026-09-13","escopo":"Estado e vínculos das matrículas encerradas",
+ "integracao":{"aprovados":8,"falhos":0},"typescript":"aprovado","lint":"aprovado","ultimoBuild":312,
+ "ultimaSuiteUnitariaIntegral":311,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Agenda futura e conclusão repetível do pedido pendentes","Sem ação pública completa","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

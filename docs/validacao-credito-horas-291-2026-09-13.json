@@ -1,0 +1,19 @@
+{
+  "incremento": 291,
+  "data": "2026-09-13",
+  "escopo": "Conversão aprovada de reserva de horas cancelada pela escola em crédito monetário da matrícula",
+  "integracao": { "aprovados": 35, "falhosFinais": 0, "arquivos": ["src/server/matricula/compra-horas.int.test.ts", "src/server/agenda/cancelamento-particular.int.test.ts", "src/server/diario/diario.int.test.ts"] },
+  "correcaoDuranteValidacao": "Comparação da memória de cálculo passou a usar igualdade estrutural, pois a ordem das propriedades muda no JSONB. Os testes de crédito foram repetidos e passaram, incluindo proposta realmente desatualizada.",
+  "cobertura": ["Escolha documentada e aprovação independente", "Exclusão entre crédito e remarcação", "Valor pago original com desconto preservado", "Créditos parciais totalizam exatamente o valor pago", "Proposta desatualizada exige nova conferência", "Crédito e decisão na mesma transação", "Crédito imutável", "Reserva de horas convertidas recusada no serviço e SQL", "Pagamentos e cobrança preservados"],
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": { "aprovado": true, "paginasEstaticas": 52 },
+  "schemaDiff": "vazio",
+  "migrations": 137,
+  "migrationNova": "20260914043000_credito_horas_canceladas",
+  "ultimaRegressaoIntegral": 283,
+  "limites": ["Uso e devolução do crédito ainda pendentes", "Outras origens de crédito precisam de fluxo próprio", "Notificações externas não integradas", "Q95 e objetivo geral não concluídos integralmente"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

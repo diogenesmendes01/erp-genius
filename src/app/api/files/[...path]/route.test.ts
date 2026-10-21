@@ -7,6 +7,8 @@ const authMock = vi.fn();
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 
 const cobrancaFindFirst = vi.fn();
+const informeFindFirst = vi.fn();
+const registroFindUnique = vi.fn();
 const documentoFindFirst = vi.fn();
 const usuarioFindUnique = vi.fn();
 const mensagemFindFirst = vi.fn(async () => null);
@@ -14,13 +16,16 @@ const intencaoFindFirst = vi.fn(async () => null);
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     cobranca: { findFirst: (...a: unknown[]) => cobrancaFindFirst(...a) },
+    pagamentoInformado: { findFirst: (...a: unknown[]) => informeFindFirst(...a) },
+    registroUpload: { findUnique: (...a: unknown[]) => registroFindUnique(...a) },
     documento: { findFirst: (...a: unknown[]) => documentoFindFirst(...a) },
     usuario: { findUnique: (...a: unknown[]) => usuarioFindUnique(...a) },
     // 3º ramo (E3): mídia de mensagem WhatsApp — null = a URL não é mídia do canal.
-    mensagemWhatsApp: { findFirst: (...a: unknown[]) => mensagemFindFirst() },
-    intencaoMensagem: { findFirst: (...a: unknown[]) => intencaoFindFirst() },
+    mensagemWhatsApp: { findFirst: () => mensagemFindFirst() },
+    intencaoMensagem: { findFirst: () => intencaoFindFirst() },
   },
 }));
+vi.mock("@/server/whatsapp/escopo", () => ({ escopoAtendimentos: async () => ({ id: { in: [] } }) }));
 
 const readFileMock = vi.fn();
 vi.mock("fs/promises", () => ({ readFile: (...a: unknown[]) => readFileMock(...a) }));
@@ -42,6 +47,8 @@ function comoUsuario(id: string, papeis: Papel[]) {
 beforeEach(() => {
   authMock.mockReset();
   cobrancaFindFirst.mockReset().mockResolvedValue(null);
+  informeFindFirst.mockReset().mockResolvedValue(null);
+  registroFindUnique.mockReset().mockResolvedValue(null);
   documentoFindFirst.mockReset().mockResolvedValue(null);
   usuarioFindUnique.mockReset().mockResolvedValue(null);
   readFileMock.mockReset().mockResolvedValue(Buffer.from("PDFDATA"));
@@ -62,6 +69,7 @@ describe("GET /api/files/[...path]", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
     expect(res.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(await res.text()).toBe("PDFDATA");
     expect(readFileMock).toHaveBeenCalled();
   });
 
@@ -78,6 +86,22 @@ describe("GET /api/files/[...path]", () => {
     comoUsuario("u1", [Papel.ADMINISTRADOR]);
     const res = await GET(req, ctx(["orfao.pdf"]));
     expect(res.status).toBe(403);
+    expect(readFileMock).not.toHaveBeenCalled();
+  });
+
+  it("cookie de usuário desativado não baixa arquivo", async () => {
+    comoUsuario("u1", [Papel.FINANCEIRO]);
+    usuarioFindUnique.mockResolvedValue({ nome: "U", papeis: [Papel.FINANCEIRO], ativo: false });
+    expect((await GET(req, ctx(["a.pdf"]))).status).toBe(401);
+    expect(cobrancaFindFirst).not.toHaveBeenCalled();
+    expect(readFileMock).not.toHaveBeenCalled();
+  });
+
+  it("revogar papel financeiro bloqueia o próximo download com o mesmo cookie", async () => {
+    comoUsuario("u1", [Papel.FINANCEIRO]);
+    usuarioFindUnique.mockResolvedValue({ nome: "U", papeis: [Papel.PROFESSOR], ativo: true });
+    cobrancaFindFirst.mockResolvedValue({ id: "c1" });
+    expect((await GET(req, ctx(["a.pdf"]))).status).toBe(403);
     expect(readFileMock).not.toHaveBeenCalled();
   });
 

@@ -2,55 +2,12 @@ import type { SessaoNumero } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 
-// SESSÃO BAILEYS (doc 26 §Camada 0/E3): estado por número + fluxo "conectar via QR" na
-// tela do número. A Evolution API gerencia a instância (1 por número, nome =
-// NumeroWhatsApp.providerRef); desconexão degrada para "acumula na fila + alerta" — a
-// fila já segura sozinha (despachante marca FALHOU e o item volta à fila humana).
-// Este módulo NÃO é a porta de mensagens (canal.ts): é gestão de instância — só as
-// ações de config e os webhooks usam.
+import { chamarMotor, ErroMotor } from "./motor/cliente";
 
-interface RespostaEvolution {
-  ok: boolean;
-  status: number;
-  json: Record<string, unknown>;
-}
-
-async function chamarEvolutionApi(
-  rota: string,
-  metodo: "GET" | "POST" | "DELETE",
-  body?: unknown,
-): Promise<RespostaEvolution> {
-  const base = process.env.EVOLUTION_URL;
-  const apikey = process.env.EVOLUTION_APIKEY;
-  if (!base || !apikey) {
-    return { ok: false, status: 0, json: { message: "EVOLUTION_URL/EVOLUTION_APIKEY não configurados." } };
-  }
-  try {
-    const resposta = await fetch(`${base.replace(/\/$/, "")}/${rota}`, {
-      method: metodo,
-      headers: { apikey, "Content-Type": "application/json" },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    const json = (await resposta.json().catch(() => ({}))) as Record<string, unknown>;
-    return { ok: resposta.ok, status: resposta.status, json };
-  } catch (e) {
-    return { ok: false, status: 0, json: { message: e instanceof Error ? e.message : "Falha de rede." } };
-  }
-}
-
-/** connection.update da Evolution → enum SessaoNumero. */
-export function sessaoDeEstadoEvolution(state: string | null | undefined): SessaoNumero | null {
-  switch (state) {
-    case "open":
-      return "CONECTADO";
-    case "connecting":
-      return "AGUARDANDO_QR";
-    case "close":
-      return "CAIU";
-    default:
-      return null;
-  }
-}
+// SESSÃO DO NÚMERO (doc 26 §Camada 0/E3): estado por número + fluxo "conectar via QR" na tela do
+// número. O motor gerencia a sessão (1 por número, numeroId = NumeroWhatsApp.providerRef = id);
+// desconexão degrada para "acumula na fila + alerta" — a fila já segura sozinha. Este módulo NÃO é
+// a porta de mensagens (canal.ts): é gestão de sessão — só as ações de config e os webhooks usam.
 
 /**
  * Aplica um estado de sessão ao número e grava os EVENTOS de domínio nas transições
@@ -90,108 +47,145 @@ export async function aplicarEstadoSessao(
   });
 }
 
-/** Idem, mas resolvendo o número pela instância (webhooks da Evolution). */
-export async function aplicarEstadoSessaoPorInstancia(
-  instancia: string,
-  state: string | null | undefined,
-): Promise<void> {
-  const nova = sessaoDeEstadoEvolution(state);
-  if (!nova) return;
-  const numero = await prisma.numeroWhatsApp.findFirst({
-    where: { providerRef: instancia, driver: "BAILEYS" },
-    select: { id: true },
-  });
-  if (!numero) return;
-  await aplicarEstadoSessao(numero.id, nova, "webhook");
-}
-
 export interface ResultadoConexao {
   qrBase64: string | null;
+  codigoPareamento: string | null;
   estado: SessaoNumero;
   erro: string | null;
 }
 
-// Eventos que a instância manda para o nosso webhook (base64: true poupa a chamada de
-// download de mídia — ver midia.ts).
-const EVENTOS_WEBHOOK = ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE", "QRCODE_UPDATED"];
+export interface NumeroMotor {
+  id: string;
+  providerRef: string;
+  rotulo: string;
+}
 
-function urlWebhookEvolution(): string | null {
-  const base = process.env.EVOLUTION_WEBHOOK_PUBLIC_URL ?? process.env.NEXTAUTH_URL;
-  if (!base) return null;
-  return `${base.replace(/\/$/, "")}/api/whatsapp/webhook/evolution`;
+interface SessaoMotor {
+  status?: string;
+  erro?: string;
+  qr?: string;
+  codigoPareamento?: string;
+}
+
+/** status do motor (ConnectionStatus do Baileys) → enum SessaoNumero. */
+export function sessaoDeStatusMotor(status: string | null | undefined): SessaoNumero | null {
+  switch (status) {
+    case "qr":
+    case "connecting":
+      return "AGUARDANDO_QR";
+    case "connected":
+      return "CONECTADO";
+    case "reconnecting":
+    case "error":
+      return "CAIU";
+    case "logged_out":
+    case "disconnected":
+      return "DESCONECTADO";
+    default:
+      return null;
+  }
+}
+
+function mensagemErroMotor(e: unknown): string {
+  if (e instanceof ErroMotor) {
+    switch (e.codigo) {
+      case "SEM_CONFIG":
+        return "Motor WhatsApp não configurado.";
+      case "INDISPONIVEL":
+      case "TIMEOUT":
+        return "Motor WhatsApp indisponível no momento. Tente de novo em instantes.";
+      case "NAO_AUTORIZADO":
+        return "Motor WhatsApp recusou a chave de acesso.";
+      case "NUMERO_INEXISTENTE":
+        return "O motor não conhece este número.";
+      default:
+        return `Motor WhatsApp recusou a operação (${e.codigo}).`;
+    }
+  }
+  return e instanceof Error ? e.message : "Falha ao falar com o motor.";
+}
+
+const rotaNumero = (ref: string) => `/v1/numeros/${encodeURIComponent(ref)}`;
+
+/** Cadastra (ou atualiza o rótulo) o número no motor. Idempotente. */
+export async function garantirNumeroNoMotor(n: { providerRef: string; rotulo: string }): Promise<void> {
+  await chamarMotor(rotaNumero(n.providerRef), { metodo: "PUT", json: { rotulo: n.rotulo } });
+}
+
+async function lerSessao(ref: string): Promise<SessaoMotor> {
+  const r = await chamarMotor<{ sessao?: SessaoMotor }>(rotaNumero(ref), { metodo: "GET" });
+  return r?.sessao ?? {};
+}
+
+async function resultadoDe(n: NumeroMotor, sessao: SessaoMotor, via: "conectar" | "poll"): Promise<ResultadoConexao> {
+  const qrBase64 = sessao.qr ?? null;
+  const codigoPareamento = sessao.codigoPareamento ?? null;
+  let estado = sessaoDeStatusMotor(sessao.status);
+  // Sem QR nem código ainda e sem status conhecido: a sessão espera leitura.
+  if (!estado) estado = qrBase64 || codigoPareamento ? "AGUARDANDO_QR" : "DESCONECTADO";
+  if (estado === "DESCONECTADO" && via === "conectar") estado = "AGUARDANDO_QR";
+  await aplicarEstadoSessao(n.id, estado, via);
+  return { qrBase64, codigoPareamento, estado, erro: estado === "CONECTADO" ? null : sessao.erro ?? null };
 }
 
 /**
- * Fluxo "conectar via QR" (doc 26 §Camada 0): garante a instância na Evolution, aponta o
- * webhook para cá e devolve o QR atual. O estado local vira AGUARDANDO_QR; a confirmação
- * de conexão chega pelo webhook (connection.update) ou pelo poll da tela.
+ * Fluxo "conectar via QR": garante o número no motor (refaz o cadastro se o salvar falhou),
+ * inicia a sessão e lê o QR atual. O estado local vira AGUARDANDO_QR; a confirmação chega
+ * pelo evento sessao.estado ou pelo poll da tela.
  */
-export async function conectarInstanciaEvolution(numero: {
-  id: string;
-  providerRef: string;
-}): Promise<ResultadoConexao> {
-  // 1. Cria a instância se ainda não existe (409/403 = já existe — segue o jogo).
-  const criacao = await chamarEvolutionApi("instance/create", "POST", {
-    instanceName: numero.providerRef,
-    integration: "WHATSAPP-BAILEYS",
-    qrcode: true,
-  });
-  if (!criacao.ok && criacao.status !== 403 && criacao.status !== 409) {
-    const msg = typeof criacao.json.message === "string" ? criacao.json.message : `Evolution HTTP ${criacao.status}`;
-    // Instância já existente devolve mensagens variadas por versão — só falha de verdade
-    // quando nem o connect abaixo responde.
-    if (criacao.status === 0) return { qrBase64: null, estado: "DESCONECTADO", erro: msg };
+export async function conectarNumeroMotor(n: NumeroMotor): Promise<ResultadoConexao> {
+  try {
+    await garantirNumeroNoMotor(n);
+    await chamarMotor(`${rotaNumero(n.providerRef)}/conectar`, { metodo: "POST" });
+    const sessao = await lerSessao(n.providerRef);
+    const r = await resultadoDe(n, sessao, "conectar");
+    if (r.estado === "AGUARDANDO_QR" && !r.qrBase64 && !r.erro) {
+      return { ...r, erro: "O motor ainda não gerou o QR — tente de novo." };
+    }
+    return r;
+  } catch (e) {
+    return { qrBase64: null, codigoPareamento: null, estado: "DESCONECTADO", erro: mensagemErroMotor(e) };
   }
-
-  // 2. Webhook da instância → nossa rota (token compartilhado no header apikey).
-  const url = urlWebhookEvolution();
-  const token = process.env.EVOLUTION_WEBHOOK_TOKEN;
-  if (url && token) {
-    await chamarEvolutionApi(`webhook/set/${numero.providerRef}`, "POST", {
-      webhook: {
-        enabled: true,
-        url,
-        byEvents: false,
-        base64: true,
-        headers: { apikey: token },
-        events: EVENTOS_WEBHOOK,
-      },
-    });
-  }
-
-  // 3. QR atual (a Evolution renova o QR sozinha; a tela re-chama para atualizar).
-  const conexao = await chamarEvolutionApi(`instance/connect/${numero.providerRef}`, "GET");
-  if (!conexao.ok) {
-    const msg = typeof conexao.json.message === "string" ? conexao.json.message : `Evolution HTTP ${conexao.status}`;
-    return { qrBase64: null, estado: "DESCONECTADO", erro: msg };
-  }
-
-  // Já conectado? o connect devolve a instância sem QR.
-  const instancia = conexao.json.instance as { state?: string } | undefined;
-  if (instancia?.state === "open") {
-    await aplicarEstadoSessao(numero.id, "CONECTADO", "conectar");
-    return { qrBase64: null, estado: "CONECTADO", erro: null };
-  }
-
-  const qr =
-    (typeof conexao.json.base64 === "string" && conexao.json.base64) ||
-    (typeof (conexao.json.qrcode as { base64?: string } | undefined)?.base64 === "string" &&
-      (conexao.json.qrcode as { base64: string }).base64) ||
-    null;
-
-  await aplicarEstadoSessao(numero.id, "AGUARDANDO_QR", "conectar");
-  return { qrBase64: qr, estado: "AGUARDANDO_QR", erro: qr ? null : "A Evolution não devolveu um QR — tente de novo." };
 }
 
-/** Poll do estado real na Evolution (botão/intervalo da tela do número). */
-export async function consultarEstadoInstancia(numero: {
-  id: string;
-  providerRef: string;
-}): Promise<SessaoNumero> {
-  const r = await chamarEvolutionApi(`instance/connectionState/${numero.providerRef}`, "GET");
-  const state = (r.json.instance as { state?: string } | undefined)?.state;
-  const nova = sessaoDeEstadoEvolution(state ?? null);
-  if (nova) await aplicarEstadoSessao(numero.id, nova, "poll");
-  const atual = await prisma.numeroWhatsApp.findUnique({ where: { id: numero.id }, select: { sessao: true } });
-  return atual?.sessao ?? "DESCONECTADO";
+/** Pareamento por código (alternativa ao QR). */
+export async function parearNumeroMotor(n: NumeroMotor, telefoneE164: string): Promise<ResultadoConexao> {
+  try {
+    await garantirNumeroNoMotor(n);
+    const r = await chamarMotor<{ codigoPareamento?: string }>(`${rotaNumero(n.providerRef)}/pareamento`, {
+      metodo: "POST",
+      json: { telefone: telefoneE164 },
+    });
+    const codigo = r?.codigoPareamento ?? null;
+    await aplicarEstadoSessao(n.id, "AGUARDANDO_QR", "conectar");
+    return {
+      qrBase64: null,
+      codigoPareamento: codigo,
+      estado: "AGUARDANDO_QR",
+      erro: codigo ? null : "O motor não devolveu o código — tente de novo.",
+    };
+  } catch (e) {
+    return { qrBase64: null, codigoPareamento: null, estado: "DESCONECTADO", erro: mensagemErroMotor(e) };
+  }
+}
+
+/** Poll do estado real no motor (botão/intervalo da tela do número). */
+export async function consultarSessaoMotor(
+  n: NumeroMotor | { id: string; providerRef: string; rotulo?: string },
+): Promise<{ sessao: SessaoNumero; qrBase64: string | null; codigoPareamento: string | null }> {
+  const s = await lerSessao(n.providerRef);
+  const nova = sessaoDeStatusMotor(s.status);
+  if (nova) await aplicarEstadoSessao(n.id, nova, "poll");
+  const atual = await prisma.numeroWhatsApp.findUnique({ where: { id: n.id }, select: { sessao: true } });
+  return {
+    sessao: atual?.sessao ?? "DESCONECTADO",
+    qrBase64: s.qr ?? null,
+    codigoPareamento: s.codigoPareamento ?? null,
+  };
+}
+
+/** Logout no motor (exige novo pareamento) e sessão local DESCONECTADO. */
+export async function desconectarNumeroMotor(n: { id: string; providerRef: string }): Promise<void> {
+  await chamarMotor(`${rotaNumero(n.providerRef)}/desconectar`, { metodo: "POST" });
+  await aplicarEstadoSessao(n.id, "DESCONECTADO", "conectar");
 }

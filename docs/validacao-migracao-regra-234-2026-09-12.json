@@ -1,0 +1,30 @@
+{
+  "incremento": 234,
+  "data": "2026-09-12",
+  "migration": {
+    "nome": "20260913050000_migracao_regra_turma",
+    "total": 107,
+    "ambiente": "erp_genius_test local descartavel",
+    "schema_diff": "vazio"
+  },
+  "integracao": {
+    "arquivos": [
+      "src/server/avaliacoes/migracao-regra.int.test.ts",
+      "src/server/avaliacoes/regra-turma.int.test.ts",
+      "src/server/avaliacoes/regras.int.test.ts"
+    ],
+    "aprovados": 28,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lint_direcionado": "aprovado",
+  "diff_check": "aprovado",
+  "build": "nao executado; ultimo 233",
+  "regressao_integral": "nao executada; ultima 221",
+  "limites": [
+    "Tela de migracao pendente",
+    "Historico iniciado sem regra requer fluxo proprio",
+    "Registro de notas ainda pendente",
+    "Sem ensaio interativo ou producao"
+  ]
+}

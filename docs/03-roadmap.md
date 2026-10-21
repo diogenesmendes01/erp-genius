@@ -1,5 +1,7 @@
 # Roadmap — ERP Genius (revisado)
 
+> Integração da SPEC em 21/09/2026: os status Fases 0–3 abaixo descrevem a linha histórica da main. O aceite atual está em [quadro-entregas](planejamento/quadro-entregas.md). Diário/notas/portal/ativação usam os fluxos refinados; os atalhos antigos, a conciliação simulada sem ledger e a criação de contratos corporativos em lote não estão liberados nesta entrega.
+
 > Filosofia: **primeiro operar tudo manualmente no sistema → depois automatizar →
 > depois dinheiro → depois acadêmico.** Cada fase entrega algo usável.
 
@@ -14,7 +16,11 @@
 **Sem automações nem integrações.**
 **Objetivo:** conseguir operar a escola inteira **manualmente** dentro do sistema.
 
-## Fase 1 — CRM operacional (automações)
+> **Status (ago/2026):** Fases 0–3 **implementadas** — as automações nascem DESLIGADAS
+> (regra de ouro do doc 27) e as integrações externas (WABA, DocuSign, GreenPay) ficam
+> por trás de drivers (simulado local). Detalhe por fase no [`16`](16-plano-execucao.md).
+
+## Fase 1 — CRM operacional (automações) ✅
 - Captura de leads (origem inteligente)
 - Distribuição (dono do lead) + SLA
 - WhatsApp (Cloud API direto)
@@ -22,7 +28,7 @@
 - Aula experimental / avaliação
 - Matrícula (máquina de estados + DocuSign)
 
-## Fase 2 — Financeiro (automação/integração)
+## Fase 2 — Financeiro (automação/integração) ✅
 > A base **manual** (cobranças, baixa, inadimplência, comissões, visão geral) já está na Fase 0.
 > A Fase 2 adiciona **automação e integração** por cima dela.
 
@@ -31,7 +37,7 @@
 **Integrações:** GreenPay · PIX · Boleto · Cartão.
 **Comissão:** apuração automática · fechamento mensal · relatório por vendedor.
 
-## Fase 3 — Acadêmico
+## Fase 3 — Acadêmico ✅
 - Turmas (online e — a confirmar — presencial em Campinas)
 - Frequência
 - Notas

@@ -1,0 +1,15 @@
+{
+  "incremento": 317,
+  "data": "2026-09-13",
+  "escopo": "Núcleo de apuração do fechamento por hora",
+  "unitarios": {"aprovados": 821, "falhos": 0, "arquivos": 88, "novos": 14},
+  "typescript": "aprovado",
+  "lint": "aprovado",
+  "ultimaIntegracaoDirecionada": 316,
+  "ultimaRegressaoIntegralIntegracao": 298,
+  "ultimoBuild": 316,
+  "novaMigration": false,
+  "limites": ["Leitura e persistência das ocorrências pendentes", "Aprovação parcial e emissão transacional pendentes", "Sem interface ou homologação operacional"],
+  "producao": false,
+  "enviosExternos": false
+}

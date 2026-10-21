@@ -1,0 +1,889 @@
+[
+  {
+    "corpo": "F07.1",
+    "criterio": "F07.1-1",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/calendario.ts",
+      "src/server/agenda/calendario-intervalo.ts",
+      "src/server/agenda/replanejamento-tx.ts"
+    ],
+    "testes": [
+      "src/server/agenda/calendario-intervalo.test.ts",
+      "src/server/agenda/replanejamento-grade.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Turmas mistas recebem os mesmos bloqueios institucionais, inclusive quando a data local da turma difere da escola."
+  },
+  {
+    "corpo": "F07.1",
+    "criterio": "F07.1-2",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/calendario.ts",
+      "src/server/agenda/calendario-intervalo.ts",
+      "src/server/agenda/replanejamento-tx.ts"
+    ],
+    "testes": [
+      "src/server/agenda/calendario-intervalo.test.ts",
+      "src/server/agenda/replanejamento-grade.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Troca de fuso de exibição não muda a decisão de disponibilidade; intervalo de aula que cruza dia não letivo exige exceção específica."
+  },
+  {
+    "corpo": "F07.1",
+    "criterio": "F07.1-3",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/calendario.ts",
+      "src/server/agenda/calendario-intervalo.ts",
+      "src/server/agenda/replanejamento-tx.ts"
+    ],
+    "testes": [
+      "src/server/agenda/calendario-intervalo.test.ts",
+      "src/server/agenda/replanejamento-grade.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Alteração global com turmas publicadas somente entra em vigor pelo conjunto aprovado de F07.3; não antecipar avisos."
+  },
+  {
+    "corpo": "F07.2",
+    "criterio": "F07.2-1",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/grade.ts",
+      "src/server/agenda/rascunho.ts",
+      "src/server/agenda/conflitos.ts"
+    ],
+    "testes": [
+      "src/server/agenda/grade.test.ts",
+      "src/server/agenda/rascunho.int.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Início fora da grade/feriado encontra próximo dia válido e mantém meta; gerar duas vezes não duplica encontros."
+  },
+  {
+    "corpo": "F07.2",
+    "criterio": "F07.2-2",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/grade.ts",
+      "src/server/agenda/rascunho.ts",
+      "src/server/agenda/conflitos.ts"
+    ],
+    "testes": [
+      "src/server/agenda/grade.test.ts",
+      "src/server/agenda/rascunho.int.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: 23h–1h é um encontro e confere todo o intervalo; turma anterior encerrada libera o horário futuro."
+  },
+  {
+    "corpo": "F07.2",
+    "criterio": "F07.2-3",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/grade.ts",
+      "src/server/agenda/rascunho.ts",
+      "src/server/agenda/conflitos.ts"
+    ],
+    "testes": [
+      "src/server/agenda/grade.test.ts",
+      "src/server/agenda/rascunho.int.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Duas publicações simultâneas para o mesmo professor/intervalo não passam ambas, inclusive particular versus turma."
+  },
+  {
+    "corpo": "F07.2",
+    "criterio": "F07.2-4",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/grade.ts",
+      "src/server/agenda/rascunho.ts",
+      "src/server/agenda/conflitos.ts"
+    ],
+    "testes": [
+      "src/server/agenda/grade.test.ts",
+      "src/server/agenda/rascunho.int.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Rascunho sem professor não permite publicar/alocar por chamada direta; relógio inicia turma somente por encontro oficial, sem marcar aula ministrada."
+  },
+  {
+    "corpo": "F07.3",
+    "criterio": "F07.3-1",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-ajustes.ts"
+    ],
+    "testes": [
+      "src/server/agenda/replanejamento-snapshot.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts",
+      "src/server/agenda/replanejamento-ajustes.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Aumento/redução afeta exatamente as turmas permitidas e respeita exceções locais; início automático impede redução indevida por diário atrasado."
+  },
+  {
+    "corpo": "F07.3",
+    "criterio": "F07.3-2",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-ajustes.ts"
+    ],
+    "testes": [
+      "src/server/agenda/replanejamento-snapshot.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts",
+      "src/server/agenda/replanejamento-ajustes.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Conflito, nova turma afetada ou alteração concorrente invalida a proposta; falha não publica subconjunto e nova aprovação examina versão atual."
+  },
+  {
+    "corpo": "F07.3",
+    "criterio": "F07.3-3",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-ajustes.ts"
+    ],
+    "testes": [
+      "src/server/agenda/replanejamento-snapshot.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts",
+      "src/server/agenda/replanejamento-ajustes.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Cancelamento mantém origem e reposição, sem contar ambos para a meta; substituto recebe somente os encontros atribuídos."
+  },
+  {
+    "corpo": "F07.3",
+    "criterio": "F07.3-4",
+    "status": "parcial",
+    "codigo": [
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-tx.ts",
+      "src/server/agenda/replanejamento-ajustes.ts"
+    ],
+    "testes": [
+      "src/server/agenda/replanejamento-snapshot.test.ts",
+      "src/server/agenda/replanejamento-conflitos.test.ts",
+      "src/server/agenda/replanejamento-ajustes.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Aviso de N01 só nasce após aplicação efetiva e repetição não duplica mudança ou envio."
+  },
+  {
+    "corpo": "F07.4",
+    "criterio": "F07.4-1",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/acoes.ts",
+      "src/server/diario/correcao-aula.ts",
+      "src/server/diario/participacao.ts"
+    ],
+    "testes": [
+      "src/server/diario/diario.int.test.ts",
+      "src/server/diario/correcao-aula.int.test.ts",
+      "src/server/diario/participacao.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Aluno transferido depois da aula permanece elegível na chamada antiga; aluno que entrou depois não aparece. Ausência de evidência não inventa presença."
+  },
+  {
+    "corpo": "F07.4",
+    "criterio": "F07.4-2",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/acoes.ts",
+      "src/server/diario/correcao-aula.ts",
+      "src/server/diario/participacao.ts"
+    ],
+    "testes": [
+      "src/server/diario/diario.int.test.ts",
+      "src/server/diario/correcao-aula.int.test.ts",
+      "src/server/diario/participacao.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Presença sem gravação ou gravação sem presença não conclui normalmente; exceção válida exige justificativa/decisão independente."
+  },
+  {
+    "corpo": "F07.4",
+    "criterio": "F07.4-3",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/acoes.ts",
+      "src/server/diario/correcao-aula.ts",
+      "src/server/diario/participacao.ts"
+    ],
+    "testes": [
+      "src/server/diario/diario.int.test.ts",
+      "src/server/diario/correcao-aula.int.test.ts",
+      "src/server/diario/participacao.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Correção preserva antes/depois e resultado vigente até aplicação aprovada; designação pontual não libera outra aula."
+  },
+  {
+    "corpo": "F07.4",
+    "criterio": "F07.4-4",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/acoes.ts",
+      "src/server/diario/correcao-aula.ts",
+      "src/server/diario/participacao.ts"
+    ],
+    "testes": [
+      "src/server/diario/diario.int.test.ts",
+      "src/server/diario/correcao-aula.int.test.ts",
+      "src/server/diario/participacao.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Impedimento por restrição permanece no denominador sem presença até reposição válida; retirada de bloqueio não altera chamada automaticamente."
+  },
+  {
+    "corpo": "F07.6",
+    "criterio": "F07.6-1",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/reposicao-agenda.ts",
+      "src/server/diario/reposicao-entrega-operacional.ts",
+      "src/server/avaliacoes/frequencia-reposicoes-tx.ts"
+    ],
+    "testes": [
+      "src/server/diario/reposicao-periodo.int.test.ts",
+      "src/server/diario/reposicao-agenda.int.test.ts",
+      "src/server/avaliacoes/impactos-reposicao-tx.int.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Reserva usa período da particular e confere saldo; remarcação entre períodos libera/reserva corretamente, sem devolver consumo anterior por falta/tardio."
+  },
+  {
+    "corpo": "F07.6",
+    "criterio": "F07.6-2",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/reposicao-agenda.ts",
+      "src/server/diario/reposicao-entrega-operacional.ts",
+      "src/server/avaliacoes/frequencia-reposicoes-tx.ts"
+    ],
+    "testes": [
+      "src/server/diario/reposicao-periodo.int.test.ts",
+      "src/server/diario/reposicao-agenda.int.test.ts",
+      "src/server/avaliacoes/impactos-reposicao-tx.int.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Cota inicial integral, sem acumular livre; nova versão/plano no próximo período honra reservas sem conceder saldo duplicado."
+  },
+  {
+    "corpo": "F07.6",
+    "criterio": "F07.6-3",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/reposicao-agenda.ts",
+      "src/server/diario/reposicao-entrega-operacional.ts",
+      "src/server/avaliacoes/frequencia-reposicoes-tx.ts"
+    ],
+    "testes": [
+      "src/server/diario/reposicao-periodo.int.test.ts",
+      "src/server/diario/reposicao-agenda.int.test.ts",
+      "src/server/avaliacoes/impactos-reposicao-tx.int.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Aprovação de reposição regulariza a aula original uma única vez e preserva ausência/impedimento e tentativa anterior. Particular vendida de P01 não consome essa cota."
+  },
+  {
+    "corpo": "F07.6",
+    "criterio": "F07.6-4",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/reposicao-agenda.ts",
+      "src/server/diario/reposicao-entrega-operacional.ts",
+      "src/server/avaliacoes/frequencia-reposicoes-tx.ts"
+    ],
+    "testes": [
+      "src/server/diario/reposicao-periodo.int.test.ts",
+      "src/server/diario/reposicao-agenda.int.test.ts",
+      "src/server/avaliacoes/impactos-reposicao-tx.int.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Vencimento bloqueia envio novo, não avaliação de entrega existente; indisponibilidade confirmada devolve só tempo restante, sem duplicar intervalos."
+  },
+  {
+    "corpo": "F07.6",
+    "criterio": "F07.6-5",
+    "status": "parcial",
+    "codigo": [
+      "src/server/diario/reposicao-agenda.ts",
+      "src/server/diario/reposicao-entrega-operacional.ts",
+      "src/server/avaliacoes/frequencia-reposicoes-tx.ts"
+    ],
+    "testes": [
+      "src/server/diario/reposicao-periodo.int.test.ts",
+      "src/server/diario/reposicao-agenda.int.test.ts",
+      "src/server/avaliacoes/impactos-reposicao-tx.int.test.ts"
+    ],
+    "pendencia": "Não foi executado neste trabalho o cenário integrado completo que combina todas as condições do aceite.",
+    "justificativa": "A leitura identificou implementação e testes focados para partes do fluxo; a evidência listada não demonstra, por si só, todos os predicados do critério composto.",
+    "texto": "Aceite: Exceção Q34 não cobra nem consome benefício; alteração de resultado concluído exige outra pessoa e preserva versões/autoria."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-01",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.ts",
+      "src/server/avaliacoes/lancamento-tx.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O caso \"vincula ao contrato da alocação\" cria segunda matrícula do mesmo aluno, confirma a matrícula do registro, bloqueia inserção cruzada no banco e verifica que a consulta não expõe a outra matrícula.",
+    "texto": "Cenário: Aluno com dois contratos recebe avaliação em um deles\nResultado esperado: Resultados vinculados ao contrato/contexto correto; não alterar nem expor os do outro contrato por herança da identidade."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-02",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/consolidado.ts",
+      "src/server/avaliacoes/consolidado-tx.ts",
+      "src/server/avaliacoes/frequencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts",
+      "src/server/avaliacoes/calculo.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "A consulta agrega resultado, frequência e pendências; os testes verificam habilidades, memória e cálculo. Não foi localizada, nesta leitura, asserção única que confira simultaneamente a projeção de frequência e a referência da regra para a consulta consolidada.",
+    "texto": "Cenário: Consultar resultado consolidado\nResultado esperado: Identificar habilidades e frequência que o fundamentam, com regra de origem; fórmula/escala somente após sua definição."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-03",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/consolidado.ts",
+      "src/server/avaliacoes/impactos-progressao-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts",
+      "src/server/avaliacoes/impactos-progressao-tx.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "O teste de consolidação confirma que a matrícula permanece ATIVA após resultado completo. A leitura não conferiu cenário de turma encerrada e o fluxo integral de mudança aprovada, portanto não cobre todo o enunciado.",
+    "texto": "Cenário: Turma termina ou aluno recebe resultado acadêmico favorável\nResultado esperado: Não transferir nível, ativar contrato ou alterar cobrança automaticamente; manter o fluxo de mudança aprovado."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-04",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/calculo.ts",
+      "src/server/avaliacoes/regras-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/calculo.test.ts",
+      "src/server/avaliacoes/regras.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há testes de configuração inválida e regra incompleta recusadas. Falta comprovação direta, na leitura feita, da projeção de pendência ao consumidor para toda combinação de regra necessária ausente.",
+    "texto": "Cenário: Regra acadêmica necessária está incompleta\nResultado esperado: Mostrar pendência e impedir cálculo/decisão dependente, sem presumir nota, peso ou mínimo."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-05",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/lancamento-schema.ts",
+      "src/server/avaliacoes/lancamento-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "O teste de lançamento inválido cobre valor fora da escala e ausência em submissão; a estrutura aceita comentário. Não foi encontrada asserção explícita que cubra, no mesmo teste, comentário opcional e a exibição persistida da escala de origem.",
+    "texto": "Cenário: Lançar nota válida, fora da escala ou deixar sem lançamento; incluir/omitir comentário\nResultado esperado: Aceitar nota válida com comentário opcional; rejeitar valor fora dos limites configurados. Ausência de lançamento permanece identificada, sem virar zero. Identificar escala de origem e não criar conceito/rubrica por inferência."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-06",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/consolidado.ts",
+      "src/server/avaliacoes/calculo.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts",
+      "src/server/avaliacoes/calculo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O cenário \"consolida só notas oficiais\" verifica intermediária e final ainda pendentes, geral nulo até a oficialização e memória por habilidade; depois confirma cálculo sem alterar a matrícula. O cálculo também conserva ausência como pendência.",
+    "texto": "Cenário: Consultar percurso com avaliações intermediárias e etapa final ainda sem resultado\nResultado esperado: Identificar notas de cada avaliação/etapa e o que ainda falta, sem apagar intermediárias, inventar final ou transformar ausência em zero. Composição só usa regras suficientes; nenhum resultado executa progressão automaticamente."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-07",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/calculo.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/calculo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Os testes cobrem intermediária somente de fala, final distribuída em instrumentos distintos e rejeição da cobertura final incompleta, separando cobertura de resultado.",
+    "texto": "Cenário: Avaliação intermediária só de fala; etapa final distribuída por instrumentos\nResultado esperado: Intermediária não exige notas/zeros das outras habilidades. Final confere cobertura das quatro no conjunto, sem exigir as quatro em cada instrumento; cobertura prevista não equivale a notas lançadas ou resultado concluído."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-08",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/calculo.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/calculo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O teste de composição confere pesos de avaliação, ignora habilidade fora do escopo, conserva peso/pendência quando nota é ausente ou rascunho e rejeita peso, escala, nota, duplicidade e cobertura inválidos.",
+    "texto": "Cenário: Consolidar habilidade com avaliações de pesos diferentes e outras que não a avaliam\nResultado esperado: Aplicar soma(nota × peso)/soma(pesos aplicáveis), sem agrupar por etapa ou incluir habilidade fora do escopo. Mostrar notas/pesos de origem; ausência exigida, regra incompleta, escala incompatível ou denominador inválido impedem apresentar resultado como completo. Repetição não duplica nota/peso."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-09",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/calculo.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/calculo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O cenário altera peso da habilidade independentemente dos pesos de avaliação e verifica numerador/denominador geral e memória; os casos de configuração inválida e pendência impedem resultado completo.",
+    "texto": "Cenário: Consolidar quatro habilidades com pesos próprios, distintos dos pesos das avaliações\nResultado esperado: Calcular soma(resultado × peso da habilidade)/soma(pesos das habilidades), mostrando memória e resultados individuais. Não usar frequência como nota nem trocar os dois níveis de pesos. Resultado ausente/configuração inválida não produz média completa por exclusão silenciosa."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-10",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/calculo.ts",
+      "src/server/avaliacoes/fechamento-elegibilidade.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/calculo.test.ts",
+      "src/server/avaliacoes/fechamento-elegibilidade.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há prova de mínimo individual não compensado pela média e de resultado insuficiente sem progressão. Não foi localizada asserção explícita da igualdade exata ao mínimo nem da ausência de regra no mesmo conjunto de evidências.",
+    "texto": "Cenário: Média geral atinge mínimo, mas uma habilidade não; conferir também igualdade ao mínimo e regra ausente\nResultado esperado: Critério de notas só é cumprido quando os cinco requisitos são atendidos. Igualdade atinge o mínimo configurado; falta de regra/resultado gera pendência. Não compensar habilidade insuficiente por média alta nem executar a mudança automaticamente."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-11",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/frequencia.ts",
+      "src/server/avaliacoes/excecao-frequencia.ts",
+      "src/server/avaliacoes/frequencia-reposicoes-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/excecao-frequencia.int.test.ts",
+      "src/server/avaliacoes/frequencia-integracao.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "As integrações mantêm frequência real, recusam decisão com fonte alterada e demonstram que reposição regulariza uma única aula sem fabricar presença; o teste de exceção exige decisão independente.",
+    "texto": "Cenário: Frequência abaixo do mínimo; tentar aprovação comum, autoexceção ou exceção válida\nResultado esperado: Exigir regularização ou decisão específica independente com motivo/evidências, ligada à matrícula/contexto/regra. Manter percentual real e mínimos de nota. Rejeitar autoaprovação, inclusive por acúmulo de papéis; reposição não duplica frequência e exceção não fabrica presença."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-12",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/recuperacao-proposta.ts",
+      "src/server/avaliacoes/recuperacao-reserva-tx.ts",
+      "src/server/avaliacoes/calculo.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts",
+      "src/server/avaliacoes/calculo.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Os cenários de plano cobrem habilidade insuficiente e insuficiência somente geral; o cálculo preserva origem, limita o efeito às habilidades abrangidas e não substitui frequência, avaliação pendente ou particular.",
+    "texto": "Cenário: Uma habilidade insuficiente ou apenas média geral abaixo do mínimo\nResultado esperado: Plano identifica habilidades necessárias e motivo/requisitos de origem, sem exigir todas por padrão. Tentativas preservam avaliações anteriores e contexto da matrícula; recuperação não fabrica frequência, consumo de benefício ou cobrança, e aplica a regra de Q133 somente ao resultado válido das habilidades abrangidas."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-13",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/calculo.ts",
+      "src/server/avaliacoes/recuperacao-nota.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/calculo.test.ts",
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O cálculo prova melhoria, igualdade e redução em ordem histórica, preserva antes/depois e recalcula só a habilidade abrangida; integrações confirmam oficialização e idempotência da nota de recuperação.",
+    "texto": "Cenário: Aplicar recuperação maior, menor, igual e repetir a mesma tentativa válida\nResultado esperado: Maior atualiza habilidade; menor/igual fica no histórico sem reduzir resultado. Recalcular média geral e conferir mínimos, sem alterar habilidades fora do plano, duplicar peso ou executar progressão. Preservar resultado antes/depois e avaliações originais."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-14",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/recuperacao-reserva-tx.ts",
+      "src/server/avaliacoes/disponibilidade-recuperacao-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts",
+      "src/server/avaliacoes/disponibilidade-recuperacao-tx.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Os testes exercem saldo por habilidade, concorrência da última reserva, cancelamento parcial e nova versão sem reiniciar saldo; a consulta separa cada habilidade e preserva reserva/consumo/liberação.",
+    "texto": "Cenário: Conferir plano com fala e escrita e contagens válidas diferentes; repetir consulta/registro\nResultado esperado: Exibir/conferir limite de cada habilidade no nível da matrícula, sem consumo de habilidade alheia, contador global do aluno ou duplicação por repetição. Limite esgotado de fala não esgota escrita; eventos de reserva, consumo e liberação seguem Q137."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-15",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/recuperacao-proposta.ts",
+      "src/server/avaliacoes/recuperacao-decisao.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O cenário de plano exige decisor independente, bloqueia autor com papéis acumulados, preserva aprovação no replay e rejeita fonte/versão superada antes de nova aprovação.",
+    "texto": "Cenário: Professor prepara plano; gestão prepara outro; tentar autoaprovar ou alterar plano aprovado\nResultado esperado: Exigir aprovador distinto autorizado em ambos os casos, revalidando vínculo, versão e limites. Mudança relevante exige nova aprovação; rascunho ou decisão comum de progressão não substitui autorização do plano. Preservar autoria real."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-16",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/recuperacao-disponibilizacao.ts",
+      "src/server/avaliacoes/recuperacao-prazo.ts",
+      "src/server/avaliacoes/recuperacao-prorrogacao.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "As asserções cobrem separação entre decisão e disponibilização, prazo nascido de disponibilização comprovada sem reinício e prorrogação independente que conserva o prazo original.",
+    "texto": "Cenário: Aprovar internamente sem disponibilizar; disponibilizar com condições; repetir envio; vencer prazo ou solicitar prorrogação\nResultado esperado: Iniciar contagem somente na disponibilização efetiva com condições, registrar início/limite e informar aluno. Repetição não reinicia prazo. Prorrogação exige motivo e outro aprovador autorizado; indisponibilidade da escola gera pendência/revisão, sem presumir falta ou zero. Vencimento isolado não consome tentativa nem aprova."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-17",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/recuperacao-reserva-tx.ts",
+      "src/server/avaliacoes/recuperacao-realizacao.ts",
+      "src/server/avaliacoes/recuperacao-cancelamento.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Há cenários de reservas concorrentes, realização que consome apenas habilidade aplicada e cancelamento escolar que libera uma vez apenas pendentes, conservando fatos e limites.",
+    "texto": "Cenário: Reservar simultaneamente o último saldo; realizar, faltar, cancelar dentro/fora do prazo e cancelar pela escola; repetir eventos\nResultado esperado: Impedir reserva acima do limite por habilidade e duplicação de consumo/liberação. Realização consome mesmo sem melhora; falta/tardio consomem sem zero/presença; tempestivo ou escola liberam. Preservar ocorrência e regra aplicada; simples vencimento não consome."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-18",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/fechamento-elegibilidade.ts",
+      "src/server/avaliacoes/impactos-progressao-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/fechamento-elegibilidade.test.ts",
+      "src/server/avaliacoes/impactos-progressao-tx.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "A elegibilidade bloqueia mínimo geral ou individual insuficiente inclusive após recuperação/exceção de frequência; os impactos não executam progressão por inferência.",
+    "texto": "Cenário: Tentar progredir com mínimo geral ou individual insuficiente, inclusive após recuperação ou com exceção de frequência\nResultado esperado: Bloquear progressão por insuficiência de nota, sem caminho de dispensa administrativa. Preservar notas e histórico; não criar tentativa extra, avaliação, alteração financeira ou mudança automática de nível."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-19",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/lancamento-tx.ts",
+      "src/server/portal-aluno/resultados.ts",
+      "src/app/portal-aluno/resultados/page.tsx"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts",
+      "src/server/portal-aluno/resultados.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O lançamento oficial passa por validação de habilidade/escala e decisão independente. O teste do portal expõe somente a avaliação oficial e comentário destinado ao aluno, exclui rascunho; a página é de consulta e não oferece entrega/prova. A disponibilização não cria nota sem lançamento oficial.",
+    "texto": "Cenário: Registrar resultado de avaliação externa e acessar área do aluno\nResultado esperado: Permitir registro por responsável autorizado com regras de notas/habilidades aplicáveis. Não exigir nem oferecer entrega/prova acadêmica no portal por este módulo; manter entregas das reposições por gravação no fluxo próprio. Não gerar nota por simples disponibilização."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-20",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/regras.ts",
+      "src/server/avaliacoes/regras-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/regras.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Os testes cobrem proposta da gestão, autoaprovação inclusive no banco, decisão independente, versão vigente e publicação sem reescrever resultados.",
+    "texto": "Cenário: Professor sugere regra; gestão prepara; preparador tenta publicar e outra pessoa autorizada aprova\nResultado esperado: Sugestão não publica regra; exigir proposta da Gestão Pedagógica e aprovação independente autorizada. Preservar versão aprovada, autoria e condições; publicar não altera resultados ou regras de turmas existentes silenciosamente."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-21",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/migracao-regra.ts",
+      "src/server/avaliacoes/migracao-regra-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/migracao-regra.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "As integrações distinguem turma futura, revisão/aprovação para migração, turma em andamento e publicação posterior que não troca regra automaticamente; preservam referências e impactos históricos.",
+    "texto": "Cenário: Publicar regra com turmas novas, não iniciadas, em andamento e concluídas\nResultado esperado: Novas usam nova versão; não iniciadas só migram mediante revisão/aprovação independente. Bloquear migração de regra em turma já iniciada, sem depender de lançamento tardio de diário/notas. Preservar regras e resultados das turmas em andamento e concluídas."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-22",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/lancamentos.ts",
+      "src/server/avaliacoes/lancamento-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "Os cenários cobrem rascunho/submissão/oficialização, notas ausentes pendentes, autooficialização vedada, concorrência e preservação de autoria e versões.",
+    "texto": "Cenário: Professor submete avaliação; tenta oficializá-la sozinho; gestão confere\nResultado esperado: Exigir pessoa distinta autorizada para oficializar cada avaliação. Preservar notas ausentes como pendentes, autoria e versão conferida; rascunho não se torna resultado oficial. Não executar mudança de nível ou presumir divulgação ao aluno."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-23",
+    "status": "verificado",
+    "codigo": [
+      "src/server/portal-aluno/resultados.ts",
+      "src/server/portal-aluno/fechamentos.ts",
+      "src/app/portal-aluno/resultados/page.tsx"
+    ],
+    "testes": [
+      "src/server/portal-aluno/resultados.int.test.ts",
+      "src/server/portal-aluno/fechamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "O serviço deriva aluno exclusivamente da sessão, filtra versões oficializadas e não projeta rascunho nem dados de outra matrícula; os testes verificam esses bloqueios. A página separa acompanhamento parcial de fechamento confirmado e mostra pendências/frequência sem anunciar progressão.",
+    "texto": "Cenário: Aluno consulta avaliação oficial e rascunho, consolidado incompleto e outra matrícula/aluno\nResultado esperado: Exibir somente dados autorizados do próprio aluno/matrícula e avaliações oficiais, comentários destinados a ele e pendências. Distinguir parcial/final; preservar frequência e regularizações sem duplicar. Bloquear dados alheios, rascunhos e anúncio de progressão não aprovada."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-24",
+    "status": "verificado",
+    "codigo": [
+      "src/server/avaliacoes/correcao.ts",
+      "src/server/avaliacoes/correcao-decisao-tx.ts",
+      "src/server/avaliacoes/impactos-progressao-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/lancamentos.int.test.ts"
+    ],
+    "pendencia": null,
+    "justificativa": "As integrações provam proposta com anterior preservado, decisor independente, correções em cadeia, bloqueio de versão/decisões concorrentes e materialização de revisão de progressão sem mover matrícula automaticamente.",
+    "texto": "Cenário: Corrigir nota oficial para valor menor; autoaprovar; corrigir após progressão executada\nResultado esperado: Exigir proposta de responsável vigente/gestão e aprovação independente; manter anterior até aplicação válida. Preservar histórico e recalcular efeitos, sem aplicar regra de melhor recuperação a um erro. Abrir pendência para progressão afetada, sem mover aluno ou desfazer matrícula automaticamente."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-25",
+    "status": "parcial",
+    "codigo": [
+      "src/server/whatsapp/consultas-inbox.ts",
+      "src/server/whatsapp/destinatario-atual.ts"
+    ],
+    "testes": [
+      "src/server/whatsapp/consultas-inbox.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Responsável financeiro solicita consulta acadêmica ou conta no portal\nResultado esperado: Exigir conferência de autorização para atendimento pela equipe; não criar acesso acadêmico automático por vínculo financeiro nem conta/área de responsável neste recorte. Preservar acesso próprio do aluno."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-26",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/segunda-chamada.ts",
+      "src/server/avaliacoes/segunda-chamada-ocorrencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/segunda-chamada.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Aluno não realiza avaliação; escola deixa de oferecê-la; segunda chamada autorizada é realizada\nResultado esperado: Manter pendência sem zero, distinguir responsabilidade da escola e exigir proposta/aprovação independente. Nota obtida preenche avaliação original, sem duplicar peso, consumir recuperação ou regularizar frequência por inferência. Não criar cobrança adicional."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-27",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/segunda-chamada.ts",
+      "src/server/avaliacoes/segunda-chamada-ocorrencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/segunda-chamada.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Conferir limites de duas avaliações pendentes e de outro contrato\nResultado esperado: Manter contagens por avaliação/matrícula, sem esgotar oportunidades alheias ou consumir recuperação/particulares. Não consumir por cancelamento ou falta de oferta da escola; exigir quantidade configurada sem padrão oculto."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-28",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/segunda-chamada.ts",
+      "src/server/avaliacoes/segunda-chamada-ocorrencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/segunda-chamada.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Disputar última oportunidade e repetir eventos de realização/falta/cancelamento\nResultado esperado: Impedir excesso e duplicação de reserva/consumo. Realização fornece nota original; falta/tardio consomem mantendo nota pendente; tempestivo/escola liberam. Preservar ocorrência e antecedência aplicada; não consumir limite de recuperação."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-29",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/segunda-chamada.ts",
+      "src/server/avaliacoes/segunda-chamada-ocorrencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/segunda-chamada.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Aprovar sem disponibilizar; disponibilizar com condições; vencer prazo; prorrogar\nResultado esperado: Iniciar relógio somente com disponibilização e condições, registrar/informar limite e impedir reinício por repetição. Exigir justificativa e outro aprovador na prorrogação. Vencimento isolado não consome nem gera zero/falta; impedimento da escola gera pendência/revisão."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-30",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/segunda-chamada.ts",
+      "src/server/avaliacoes/segunda-chamada-ocorrencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/segunda-chamada-extra.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Esgotar limite e propor quantidade extra; tentar autoaprovar ou reaplicar decisão\nResultado esperado: Exigir aprovação independente e identificar contexto, quantidade, motivo/evidências. Acrescentar autorização específica sem apagar consumo, duplicar crédito de oportunidade ou alterar limite de outros alunos/habilidades; manter notas e demais aprovações."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-31",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/recuperacao-operacao.ts",
+      "src/server/avaliacoes/recuperacao-reserva-tx.ts",
+      "src/server/avaliacoes/recuperacao-decisao.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/recuperacao-autorizacao-especial.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Pausar um contrato com avaliação antiga sem lançamento e recuperação futura; liberar pendência específica\nResultado esperado: Manter leitura e regularização da avaliação anterior; bloquear realização futura sem autorização específica válida. Liberação não amplia para outras pendências, contratos, gravações ou cobrança; limites e aprovações continuam exigidos."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-32",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/segunda-chamada.ts",
+      "src/server/avaliacoes/segunda-chamada-ocorrencia-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/segunda-chamada-designacao.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Professor sai com avaliação pendente; gestão designa substituto\nResultado esperado: Liberar somente avaliações atribuídas ao novo professor, registrar motivo e preservar autoria real anterior. Não alterar prazos/limites ou permitir autooficialização/correção; professor anterior não recupera acesso de edição."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-33",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/equivalencia-proposta.ts",
+      "src/server/avaliacoes/equivalencia-execucao.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/equivalencia-execucao.int.test.ts",
+      "src/server/avaliacoes/equivalencia-transferencia.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Transferir entre turmas com avaliações/regras diferentes\nResultado esperado: Exigir mapeamento e aprovação independente de equivalência; conservar notas/autoria de origem e identificar exigências pendentes no destino. Impedir dupla ponderação e nota inventada; não alterar regras da turma ou dispensar mínimos. Execução da transferência conserva fluxo aplicável."
+  },
+  {
+    "corpo": "ACA",
+    "criterio": "ACA-34",
+    "status": "parcial",
+    "codigo": [
+      "src/server/avaliacoes/fechamento.ts",
+      "src/server/avaliacoes/fechamento-estado-tx.ts"
+    ],
+    "testes": [
+      "src/server/avaliacoes/fechamento-academico.int.test.ts",
+      "src/server/avaliacoes/pendencias-fechamento-tx.int.test.ts"
+    ],
+    "pendencia": "Falta inspeção caso a caso das asserções e execução da suíte de integração para afirmar o aceite integral.",
+    "justificativa": "Há superfície de implementação e teste relacionada, mas esta auditoria documental não elevou critério composto a verificado sem conferir todas as asserções e efeitos negativos descritos.",
+    "texto": "Cenário: Fechar consolidado com pendências; fechar resultado completo insuficiente; alterar por recuperação/correção posterior\nResultado esperado: Bloquear fechamento incompleto; exigir confirmação da gestão. Admitir final insuficiente sem aprovar progressão ou encerrar contrato/cobrança. Nova alteração autorizada gera versão rastreável, preservando resultado e fechamento anteriores."
+  }
+]

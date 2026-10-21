@@ -1,9 +1,20 @@
 import { z } from "zod";
-import { Segmento, Temperatura, EtapaLead, MotivoPerda } from "@prisma/client";
-import { dataOpcional, dataHoraOpcional } from "@/server/_shared/validacao";
+import { Segmento, Temperatura, EtapaLead, MotivoPerda, OrigemCanal } from "@prisma/client";
+import { dataOpcional, dataHoraOpcional, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
+import { parseMoeda } from "@/lib/dinheiro";
 
 // Lead — CRM (ver docs/08, docs/09). Telefone livre → normalizado p/ E.164 no servidor (doc 19 §4.3).
 const telefoneOpcional = z.string().optional();
+
+// parseMoeda (não Number direto): "1.234" digitado não pode virar 1234 por acidente
+// (ver docs/42-auditoria-frontend-ux.md, ganho rápido 13). null explícito ("" ou ausente)
+// passa direto; qualquer outra coisa não numérica no formato esperado vira NaN e o
+// z.number() seguinte rejeita com mensagem clara, em vez de gravar silenciosamente.
+function valorMonetarioOpcional(v: unknown) {
+  if (v === "" || v == null) return null;
+  if (typeof v === "number") return v;
+  return parseMoeda(String(v)) ?? NaN;
+}
 
 export const LeadSchema = z.object({
   nome: z.string().min(1, "Informe o nome"),
@@ -13,16 +24,27 @@ export const LeadSchema = z.object({
   temperatura: z.nativeEnum(Temperatura).default(Temperatura.MORNO),
   b2b: z.boolean().optional().default(false),
   vendedorDonoId: z.string().optional(),
+  // CRM: liga a oportunidade a uma Pessoa existente (senão o servidor resolve por telefone/cria).
+  pessoaId: z.string().optional(),
+  email: z.string().trim().email("E-mail inválido").optional().or(z.literal("")),
+  origemCanal: z.nativeEnum(OrigemCanal).optional(),
+  // CRM B2B: `empresaId` liga uma `Empresa` ativa existente; `criarEmpresa` cria a `Empresa` com o `nome` informado
+  // e não cria `Pessoa` (Ruling do C2 da R1 do #196: nenhuma Pessoa recebe o nome da empresa).
+  empresaId: z.string().optional(),
+  criarEmpresa: z.boolean().optional().default(false),
   origemCampanha: z.string().optional(),
   origemConjunto: z.string().optional(),
   origemAnuncio: z.string().optional(),
   origemPalavra: z.string().optional(),
   // valor da oportunidade (doc 09 §Ficha do Lead)
-  valorPrevisto: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0).nullable()).optional(),
+  valorPrevisto: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
   planoPrevisto: z.string().optional(),
-  comissaoPrevista: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().min(0).nullable()).optional(),
+  comissaoPrevista: z.preprocess(valorMonetarioOpcional, z.number().min(0).nullable()).optional(),
 });
 export type LeadInput = z.input<typeof LeadSchema>;
+/** Criação pela tela (#166): a mesma chave até o sucesso; o reenvio devolve a oportunidade já criada. */
+export const CriarLeadSchema = LeadSchema.extend({ chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
+export type CriarLeadInput = z.input<typeof CriarLeadSchema>;
 
 export const ResumoSchema = z.object({
   interesse: z.string().optional(),
@@ -64,39 +86,6 @@ export const InteracaoSchema = z.object({
 });
 export type InteracaoInput = z.input<typeof InteracaoSchema>;
 
-// Régua comercial "lead novo sem resposta" (doc 27 C1). Nasce DESLIGADA; armar
-// (SHADOW/ATIVA) exige número remetente (validado na ação). A ORDEM dos passos é lei de
-// código — aqui só offset/ativo/template por degrau.
-export const DegrauComercialSchema = z.object({
-  passo: z.string().min(1),
-  // Offset NEGATIVO é legítimo: a cadência pré-experimental dispara ANTES da âncora (-24h,
-  // -2h), como o D-7/D-3 da cobrança. O piso em 0, herdado da C1, tornava a cadência de
-  // fábrica da C2 impossível de salvar. ±30 dias.
-  offsetMinutos: z.number().int().min(-43200).max(43200),
-  ativo: z.boolean(),
-  templateId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v ? v : null)),
-});
-
-export const ReguaComercialSchema = z.object({
-  /** Cenário da cadência (lead-novo, pré-experimental, no-show — doc 27 C1/C2). */
-  chave: z.string().min(1),
-  estado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
-  numeroRemetenteId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v ? v : null)),
-  janelaInicio: z.number().int().min(0).max(23),
-  janelaFim: z.number().int().min(1).max(24),
-  tetoPorContatoDia: z.number().int().min(1).max(10),
-  degraus: z.array(DegrauComercialSchema).min(1),
-});
-export type ReguaComercialInput = z.input<typeof ReguaComercialSchema>;
-
 // NOTA INTERNA (cockpit da inbox): comentário da equipe sobre o lead. É DISTINTA de
 // `InteracaoRegistrada` — aquela registra um contato REAL com o cliente (ligação,
 // presencial); esta nunca sai do ERP e jamais é enviada ao contato.
@@ -104,20 +93,6 @@ export const NotaInternaSchema = z.object({
   nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "Nota longa demais (máx. 2000)."),
 });
 export type NotaInternaInput = z.input<typeof NotaInternaSchema>;
-
-// Config comercial C1 (doc 27): auto-lead (toggle) + saudação (shadow próprio
-// DESLIGADA/SHADOW/ATIVA — doc 27 §regra de ouro). Texto exigido fora de DESLIGADA.
-export const ConfigComercialSchema = z
-  .object({
-    autoLeadAtivo: z.boolean(),
-    saudacaoEstado: z.enum(["DESLIGADA", "SHADOW", "ATIVA"]),
-    saudacaoTexto: z.string().trim().max(1024, "Texto longo demais (máx. 1024)."),
-  })
-  .refine((c) => c.saudacaoEstado === "DESLIGADA" || c.saudacaoTexto.length >= 2, {
-    message: "Escreva o texto da saudação antes de armá-la.",
-    path: ["saudacaoTexto"],
-  });
-export type ConfigComercialInput = z.input<typeof ConfigComercialSchema>;
 
 export const PerdaSchema = z
   .object({

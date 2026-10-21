@@ -11,8 +11,8 @@ import type { UsuarioSessao } from "@/server/_shared";
 const u = (id: string, ...papeis: Papel[]): UsuarioSessao => ({ id, nome: "T", papeis });
 
 describe("escopoAlunos (visibilidade row-level, doc 07)", () => {
-  it("sem usuário → sem restrição (compat. com chamadas internas)", () => {
-    expect(escopoAlunos()).toEqual({});
+  it("sem usuário → sem acesso", () => {
+    expect(escopoAlunos()).toEqual({ id: { in: [] } });
   });
 
   it("Admin / Secretaria / Pedagógico / Financeiro veem todos os alunos", () => {
@@ -24,7 +24,7 @@ describe("escopoAlunos (visibilidade row-level, doc 07)", () => {
 
   it("Professor só vê alunos alocados nas turmas dele", () => {
     expect(escopoAlunos(u("prof-1", Papel.PROFESSOR))).toEqual({
-      alocacoes: { some: { ativa: true, turma: { professorId: "prof-1" } } },
+      alocacoes: { some: { ativa: true, turma: { professorId: "prof-1", status: { not: "CONCLUIDA" }, vinculosDocentes: { some: { professorId: "prof-1", inicio: { lte: expect.any(Date) }, fim: null } } } } },
     });
   });
 
@@ -41,18 +41,18 @@ describe("escopoAlunos (visibilidade row-level, doc 07)", () => {
 });
 
 describe("podeVerFinanceiroAluno (projeção pedagógica, doc 10)", () => {
-  it("sem usuário → permite (chamadas internas)", () => {
-    expect(podeVerFinanceiroAluno()).toBe(true);
+  it("sem usuário → nega", () => {
+    expect(podeVerFinanceiroAluno()).toBe(false);
   });
 
   it("Professor 'puro' NÃO vê financeiro do aluno", () => {
     expect(podeVerFinanceiroAluno(u("prof-1", Papel.PROFESSOR))).toBe(false);
   });
 
-  it("Papéis amplos veem financeiro (Admin/Secretaria/Pedagógico/Financeiro)", () => {
+  it("Somente Admin/Secretaria/Financeiro recebem financeiro", () => {
     expect(podeVerFinanceiroAluno(u("x", Papel.ADMINISTRADOR))).toBe(true);
     expect(podeVerFinanceiroAluno(u("x", Papel.SECRETARIA_ACADEMICA))).toBe(true);
-    expect(podeVerFinanceiroAluno(u("x", Papel.GERENTE_PEDAGOGICO))).toBe(true);
+    expect(podeVerFinanceiroAluno(u("x", Papel.GERENTE_PEDAGOGICO))).toBe(false);
     expect(podeVerFinanceiroAluno(u("x", Papel.FINANCEIRO))).toBe(true);
   });
 
@@ -62,8 +62,8 @@ describe("podeVerFinanceiroAluno (projeção pedagógica, doc 10)", () => {
 });
 
 describe("podeMovimentarAluno (visão somente leitura do professor, doc 10)", () => {
-  it("sem usuário → permite (chamadas internas)", () => {
-    expect(podeMovimentarAluno()).toBe(true);
+  it("sem usuário → nega", () => {
+    expect(podeMovimentarAluno()).toBe(false);
   });
 
   it("Professor 'puro' NÃO movimenta (somente leitura)", () => {

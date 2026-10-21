@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { criarTurma, editarTurma } from "@/server/turmas/acoes";
-import { diasPorSemanaDaFrequencia } from "@/server/turmas/schema";
+import type { TurmaInput } from "@/server/turmas/schema";
+import {
+  diasPorSemanaDaFrequencia,
+  duracaoIntervaloEmMinutos,
+  horarioFimPorDuracao,
+} from "@/server/turmas/schema";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
+import { botaoClasses } from "@/components/Botao";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 // 0=Dom … 6=Sáb. Exibição começando na segunda (uso comum no BR).
 const DIAS = [
@@ -41,6 +50,35 @@ export interface Opcao {
 
 export interface ModalidadeOpcao extends Opcao {
   frequencia: string;
+  horasAula: number;
+}
+
+export function destinoPrepararGrade(turmaId: string): string {
+  return `/academico/grades/nova?turmaId=${encodeURIComponent(turmaId)}`;
+}
+
+type ResultadoFormulario = { ok: boolean; erro?: string; dado?: unknown };
+type AcoesFormulario = {
+  criar: (input: TurmaInput) => Promise<ResultadoFormulario>;
+  editar: (turmaId: string, input: TurmaInput) => Promise<ResultadoFormulario>;
+};
+
+/** Caminho acionado pelo submit: criação navega; edição apenas atualiza e fecha o diálogo. */
+export async function submeterTurma(
+  turmaId: string | undefined,
+  input: TurmaInput,
+  acoes: AcoesFormulario,
+): Promise<{ ok: true; destino?: string } | { ok: false; erro: string }> {
+  if (turmaId) {
+    const resultado = await acoes.editar(turmaId, input);
+    return resultado.ok ? { ok: true } : { ok: false, erro: resultado.erro ?? "Turma não confirmada." };
+  }
+  const resultado = await acoes.criar(input);
+  const id = typeof resultado.dado === "object" && resultado.dado !== null && "id" in resultado.dado
+    ? (resultado.dado as { id?: unknown }).id
+    : null;
+  if (!resultado.ok || typeof id !== "string") return { ok: false, erro: resultado.erro ?? "Turma não confirmada." };
+  return { ok: true, destino: destinoPrepararGrade(id) };
 }
 
 export function TurmaFormulario({
@@ -49,16 +87,26 @@ export function TurmaFormulario({
   niveis,
   professores,
   onClose,
+  aoMudarOcupado,
+  aoMudarAlterado,
 }: {
   turma?: TurmaParaEditar;
   modalidades: ModalidadeOpcao[];
   niveis: Opcao[];
   professores: Opcao[];
   onClose: () => void;
+  /** Avisa quem envolve o formulário (o diálogo) que há um salvamento em curso — para não fechar no meio. */
+  aoMudarOcupado?: (ocupado: boolean) => void;
+  /** Avisa o diálogo se há algo preenchido e não salvo — para o fundo/Escape pedirem confirmação antes de descartar. */
+  aoMudarAlterado?: (alterado: boolean) => void;
 }) {
   const router = useRouter();
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // A criação recebe chave de idempotência (#166): o reenvio da mesma tentativa devolve a turma já criada em vez
+  // de outra com novo código; a chave só muda depois do sucesso. A edição segue sem chave: a falha de rede manda
+  // conferir a lista antes de repetir.
+  const acao = useAcaoCliente({ idempotente: !turma });
+  const tentativa = useChaveIdempotencia();
+  useEffect(() => { aoMudarOcupado?.(acao.ocupado); }, [acao.ocupado, aoMudarOcupado]);
 
   const [nome, setNome] = useState(turma?.nome ?? "");
   const [modalidadeId, setModalidadeId] = useState(turma?.modalidadeId ?? "");
@@ -68,12 +116,24 @@ export function TurmaFormulario({
   const [horarioInicio, setHorarioInicio] = useState(turma?.horarioInicio ?? "");
   const [horarioFim, setHorarioFim] = useState(turma?.horarioFim ?? "");
   const [dataInicio, setDataInicio] = useState(turma?.dataInicio ?? "");
-  const [dataFim, setDataFim] = useState(turma?.dataFim ?? "");
+  const [dataFim] = useState(turma?.dataFim ?? "");
   const [capacidade, setCapacidade] = useState(turma?.capacidade ?? 12);
   const [rolling, setRolling] = useState(turma?.rolling ?? false);
+  // Algo diferente do que o formulário abriu (docs/43 §6 item 3; docs/42 L2395): o diálogo não descarta sem confirmar.
+  const alterado = JSON.stringify([nome, modalidadeId, nivelId, professorId, diasSemana, horarioInicio, horarioFim, dataInicio, capacidade, rolling])
+    !== JSON.stringify([turma?.nome ?? "", turma?.modalidadeId ?? "", turma?.nivelId ?? "", turma?.professorId ?? "", turma?.diasSemana ?? [], turma?.horarioInicio ?? "", turma?.horarioFim ?? "", turma?.dataInicio ?? "", turma?.capacidade ?? 12, turma?.rolling ?? false]);
+  useEffect(() => { aoMudarAlterado?.(alterado); }, [alterado, aoMudarAlterado]);
 
   const modalidadeSel = modalidades.find((m) => m.id === modalidadeId);
   const diasRequeridos = modalidadeSel ? diasPorSemanaDaFrequencia(modalidadeSel.frequencia) : null;
+  const duracaoModalidadeMinutos = modalidadeSel ? modalidadeSel.horasAula * 60 : null;
+  const horarioFimDerivado = /^([01]?\d|2[0-3]):[0-5]\d$/.test(horarioInicio) && modalidadeSel &&
+    duracaoModalidadeMinutos !== null && Number.isInteger(duracaoModalidadeMinutos) && duracaoModalidadeMinutos > 0
+    ? horarioFimPorDuracao(horarioInicio, duracaoModalidadeMinutos)
+    : null;
+  const horarioFimEfetivo = turma ? horarioFim : horarioFimDerivado?.horarioFim ?? "";
+  const diasMudaram = !turma || [...diasSemana].sort().join(",") !== [...turma.diasSemana].sort().join(",");
+  const modalidadeMudou = !turma || modalidadeId !== turma.modalidadeId;
 
   function toggleDia(n: number) {
     setDiasSemana((atual) => (atual.includes(n) ? atual.filter((d) => d !== n) : [...atual, n]));
@@ -83,26 +143,24 @@ export function TurmaFormulario({
     if (!modalidadeId) return "Selecione a modalidade.";
     if (!nivelId) return "Selecione o nível.";
     if (diasSemana.length === 0) return "Selecione os dias da semana.";
-    if (diasRequeridos !== null && diasSemana.length !== diasRequeridos)
+    if ((modalidadeMudou || diasMudaram) && diasRequeridos !== null && diasSemana.length !== diasRequeridos)
       return `A modalidade ${modalidadeSel?.label} é ${modalidadeSel?.frequencia}: selecione exatamente ${diasRequeridos} dia(s) — você marcou ${diasSemana.length}.`;
     const reHora = /^([01]?\d|2[0-3]):[0-5]\d$/;
     if (!reHora.test(horarioInicio)) return "Informe o horário de início (HH:MM).";
-    if (!reHora.test(horarioFim)) return "Informe o horário de fim (HH:MM).";
-    if (horarioFim <= horarioInicio) return "O horário de fim deve ser depois do início.";
+    if (!reHora.test(horarioFimEfetivo)) return "Selecione uma modalidade com duração válida.";
+    if (turma && duracaoIntervaloEmMinutos(horarioInicio, horarioFim) <= 0)
+      return "O intervalo da aula deve ter duração positiva.";
     if (!dataInicio) return "Informe a data de início.";
-    if (!dataFim) return "Informe a data de fim.";
-    if (dataFim <= dataInicio) return "A data de fim deve ser depois da data de início.";
+    if (dataFim && dataFim <= dataInicio) return "A data de fim deve ser depois da data de início.";
     return null;
   }
 
   async function onSubmit() {
     const e = validar();
     if (e) {
-      setErro(e);
+      acao.setErro(e);
       return;
     }
-    setErro(null);
-    setSalvando(true);
     const input = {
       nome: nome || undefined,
       modalidadeId,
@@ -110,16 +168,20 @@ export function TurmaFormulario({
       professorId: professorId || undefined,
       diasSemana,
       horarioInicio,
-      horarioFim,
+      horarioFim: horarioFimEfetivo,
       dataInicio,
-      dataFim,
+      dataFim: turma ? dataFim || undefined : undefined,
       capacidade,
       rolling,
     };
-    const res = turma ? await editarTurma(turma.id, input) : await criarTurma(input);
-    if (!res.ok) {
-      setErro(res.erro);
-      setSalvando(false);
+    const desfecho = await acao.executar(async () => {
+      const res = await submeterTurma(turma?.id, input, { criar: (i) => criarTurma({ ...i, chaveIdempotencia: tentativa.atual }), editar: editarTurma });
+      return res.ok ? { ok: true as const, dado: res.destino } : res;
+    });
+    tentativa.depoisDo(desfecho);
+    if (desfecho?.tipo !== "ok") return;
+    if (desfecho.dado) {
+      router.push(desfecho.dado);
       return;
     }
     router.refresh();
@@ -127,13 +189,14 @@ export function TurmaFormulario({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-surface p-5">
+    <div className="rounded-dialog border border-gray-200 bg-surface-raised p-5">
       <h3 className="mb-4 text-sm font-medium">{turma ? "Editar turma" : "Nova turma"}</h3>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
         <div className="md:col-span-3">
-          <label className="mb-1 block text-xs text-gray-600">Nome da turma (opcional)</label>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-nome">Nome da turma (opcional)</label>
           <input
+            id="turma-nome"
             className={inputCls}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -141,8 +204,8 @@ export function TurmaFormulario({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Modalidade</label>
-          <select className={inputCls} value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-modalidade">Modalidade</label>
+          <select id="turma-modalidade" className={inputCls} value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)}>
             <option value="">Selecione…</option>
             {modalidades.map((m) => (
               <option key={m.id} value={m.id}>
@@ -152,8 +215,8 @@ export function TurmaFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Nível</label>
-          <select className={inputCls} value={nivelId} onChange={(e) => setNivelId(e.target.value)}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-nivel">Nível</label>
+          <select id="turma-nivel" className={inputCls} value={nivelId} onChange={(e) => setNivelId(e.target.value)}>
             <option value="">Selecione…</option>
             {niveis.map((n) => (
               <option key={n.id} value={n.id}>
@@ -163,8 +226,8 @@ export function TurmaFormulario({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Professor (opcional)</label>
-          <select className={inputCls} value={professorId} onChange={(e) => setProfessorId(e.target.value)}>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-professor">Professor (opcional)</label>
+          <select id="turma-professor" className={inputCls} value={professorId} onChange={(e) => setProfessorId(e.target.value)}>
             <option value="">—</option>
             {professores.map((p) => (
               <option key={p.id} value={p.id}>
@@ -177,7 +240,7 @@ export function TurmaFormulario({
 
       {/* Agenda (calendário real) */}
       <div className="mt-4 border-t border-gray-100 pt-4">
-        <label className="mb-1 block text-xs text-gray-600">
+        <div className="mb-1 block text-xs text-gray-600">
           Dias da semana
           {diasRequeridos !== null && modalidadeSel && (
             <span className="ml-1 text-gray-400">
@@ -187,20 +250,21 @@ export function TurmaFormulario({
           {modalidadeSel && diasRequeridos === null && (
             <span className="ml-1 text-gray-400">— {modalidadeSel.frequencia}: marque os dias</span>
           )}
-        </label>
-        <div className="flex flex-wrap gap-2">
+        </div>
+        <div role="group" aria-label="Dias da semana" className="flex flex-wrap gap-2">
           {DIAS.map((d) => {
             const ativo = diasSemana.includes(d.n);
             return (
               <button
                 key={d.n}
                 type="button"
+                aria-pressed={ativo}
                 onClick={() => toggleDia(d.n)}
                 className={
-                  "rounded-md border px-3 py-1.5 text-sm " +
+                  "rounded-full border px-3 py-1.5 text-sm max-sm:min-h-11 " +
                   (ativo
-                    ? "border-brand-600 bg-brand-600 text-white"
-                    : "border-gray-300 text-gray-600 hover:bg-gray-50")
+                    ? "border-brand-solid bg-brand-solid text-on-brand"
+                    : "border-border-soft text-gray-600 hover:bg-highlight")
                 }
               >
                 {d.label}
@@ -210,26 +274,51 @@ export function TurmaFormulario({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-5">
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Horário de início</label>
-          <input type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-inicio">Horário de início</label>
+          <input id="turma-horario-inicio" type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-gray-600">Horário de fim</label>
-          <input type="time" className={inputCls} value={horarioFim} onChange={(e) => setHorarioFim(e.target.value)} />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-600">Data de início</label>
-          <input type="date" className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-600">Data de fim</label>
-          <input type="date" className={inputCls} value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-600">Capacidade</label>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-fim">
+            Horário de fim {turma ? "" : "derivado"}
+          </label>
           <input
+            id="turma-horario-fim"
+            type="time"
+            className={inputCls}
+            value={horarioFimEfetivo}
+            onChange={(e) => setHorarioFim(e.target.value)}
+            readOnly={!turma}
+            aria-describedby={turma ? undefined : "fim-derivado"}
+          />
+          {!turma && (
+            <p id="fim-derivado" className="mt-1 text-xs text-gray-500">
+              {horarioFimDerivado
+                ? `A modalidade define ${modalidadeSel?.horasAula} h de aula${horarioFimDerivado.atravessaDia ? "; termina no dia seguinte." : "."}`
+                : "Selecione a modalidade e informe o início para calcular o término."}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-data-inicio">Data de início</label>
+          <input id="turma-data-inicio" type="date" className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+        </div>
+        {turma ? (
+          <div>
+            <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-data-fim">Data final de referência (legado)</label>
+            <input id="turma-data-fim" type="date" className={inputCls} value={dataFim} readOnly />
+            <p className="mt-1 text-xs text-gray-500">A referência histórica é preservada nesta edição.</p>
+          </div>
+        ) : (
+          <div className="pt-6 text-xs text-gray-500">
+            A previsão de término será calculada ao gerar a agenda, conforme a quantidade de aulas do nível.
+          </div>
+        )}
+        <div>
+          <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-capacidade">Capacidade</label>
+          <input
+            id="turma-capacidade"
             type="number"
             className={inputCls}
             value={capacidade}
@@ -243,21 +332,22 @@ export function TurmaFormulario({
         Turma rolling (porta de entrada Pré A1)
       </label>
 
-      {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
+      <FeedbackAcao erro={acao.erro} className="mt-4" />
 
       <div className="mt-5 flex gap-2">
         <button
           type="button"
           onClick={onSubmit}
-          disabled={salvando}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          disabled={acao.ocupado}
+          className={botaoClasses({ tamanho: "lg" })}
         >
-          {salvando ? "Salvando…" : "Salvar turma"}
+          {acao.ocupado ? "Salvando…" : "Salvar turma"}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          disabled={acao.ocupado}
+          className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
         >
           Cancelar
         </button>

@@ -1,0 +1,281 @@
+{
+ "7.1": [
+  {
+   "nome": "page.tsx",
+   "valor": 177,
+   "nota": ""
+  },
+  {
+   "nome": "loading.tsx",
+   "valor": 2,
+   "nota": "páginas cobertas por herança: 3/177"
+  },
+  {
+   "nome": "error.tsx",
+   "valor": 0,
+   "nota": "páginas cobertas por herança: 0/177"
+  },
+  {
+   "nome": "not-found.tsx",
+   "valor": 0,
+   "nota": ""
+  },
+  {
+   "nome": "global-error.*",
+   "valor": 0,
+   "nota": ""
+  },
+  {
+   "nome": "notFound() (linhas)",
+   "valor": 17,
+   "nota": "arquivos: 15"
+  },
+  {
+   "nome": "<Suspense (linhas)",
+   "valor": 0,
+   "nota": ""
+  }
+ ],
+ "7.2": [
+  {
+   "nome": "arquivos com bg-brand-700",
+   "valor": 65,
+   "nota": ""
+  },
+  {
+   "nome": "bg-white (linhas)",
+   "valor": 40,
+   "nota": "arquivos: 20"
+  },
+  {
+   "nome": "shades fora do mapa (ocorrências)",
+   "valor": 98,
+   "nota": "arquivos: 29"
+  },
+  {
+   "nome": "classes dark: (linhas)",
+   "valor": 3,
+   "nota": ""
+  },
+  {
+   "nome": "shadow- (linhas)",
+   "valor": 5,
+   "nota": "inclui shadow-none e textos"
+  },
+  {
+   "nome": "% classe de cor fora do token",
+   "valor": "4.2%",
+   "nota": "98 / (98 + 2258 mapeadas)"
+  }
+ ],
+ "7.3": [
+  {
+   "nome": "strings distintas do botão primário (critério da auditoria)",
+   "valor": 32,
+   "nota": "bg-brand-600|700 em className literal"
+  },
+  {
+   "nome": "strings distintas do botão primário (com bg-brand-solid)",
+   "valor": 32,
+   "nota": ""
+  },
+  {
+   "nome": "arquivos que usam Botao/botaoClasses",
+   "valor": 0,
+   "nota": ""
+  },
+  {
+   "nome": "importações de @/components/*",
+   "valor": 21,
+   "nota": ""
+  },
+  {
+   "nome": "componentes em src/components",
+   "valor": 8,
+   "nota": ""
+  },
+  {
+   "nome": "headings h1-h3 sem font-medium na classe",
+   "valor": "146 de 645",
+   "nota": "sem regra global"
+  },
+  {
+   "nome": "font-semibold (linhas)",
+   "valor": 8,
+   "nota": ""
+  },
+  {
+   "nome": "mapas de rótulo ad-hoc (src/app + src/components)",
+   "valor": 29,
+   "nota": ""
+  },
+  {
+   "nome": "enum cru em texto ({x.status|situacao|estado|tipo} fora de atributo)",
+   "valor": 31,
+   "nota": "arquivos: 21; heurística — a auditoria leu caso a caso"
+  },
+  {
+   "nome": "{valor} {moeda} cru (linhas)",
+   "valor": 44,
+   "nota": ""
+  },
+  {
+   "nome": "data ISO crua (.vencimento/.competencia/.coberturaInicio em {…})",
+   "valor": 16,
+   "nota": ""
+  },
+  {
+   "nome": "redações distintas de \"Resultado não confirmado\"",
+   "valor": 25,
+   "nota": "usos de MSG_*_INCERT*: 0"
+  },
+  {
+   "nome": "códigos de spec na tela (Q23|Q92|Q165|M01|(S15)) em src/app",
+   "valor": 14,
+   "nota": "linhas; inclui comentários"
+  }
+ ],
+ "7.4": [
+  {
+   "nome": "controles sem nome acessível",
+   "valor": 187,
+   "nota": "29 arquivos; de 1085 controles (819 dentro de <label>, 64 com aria-label, 15 com id↔htmlFor). Heurística estática: não segue {...props}"
+  },
+  {
+   "nome": "aria-invalid (ocorrências)",
+   "valor": 0,
+   "nota": "required: 619"
+  },
+  {
+   "nome": "overlays fixed inset-0 com role=dialog + aria-modal + Escape",
+   "valor": "1 de 9",
+   "nota": "ImportarAlunosModal.tsx, FichaFinanceira.tsx, ImportarTurmasModal.tsx, TurmasPainel.tsx, NumerosPainel.tsx, FilaCobranca.tsx, KanbanBoard.tsx, Drawer.tsx, PagamentoModal.tsx; usos de <Modal/<Drawer: 2"
+  },
+  {
+   "nome": "regra focus-visible em globals.css (linhas)",
+   "valor": 0,
+   "nota": ""
+  },
+  {
+   "nome": "outline-none sem focus:ring na linha",
+   "valor": 37,
+   "nota": "outline-none total (linhas): 51"
+  },
+  {
+   "nome": "telas com setErro e sem role=\"alert\"",
+   "valor": 34,
+   "nota": "34 se FeedbackAcao/MensagemStatus contarem como live region (de 136 com setErro)"
+  },
+  {
+   "nome": "skip link / aria-current (Sidebar + (app)/layout)",
+   "valor": "0 / 0",
+   "nota": ""
+  },
+  {
+   "nome": "pares de token reprovando AA",
+   "valor": "4 famílias (#fff/--brand, --border, --brand-border, --text-terciary)",
+   "nota": "claro: --text-terciary/--bg-page 3.451; claro: --border/--bg-page 1.253; claro: --brand-border/--bg-page 1.426; claro: --text-terciary/--surface 3.609; claro: --border/--surface 1.254; claro: --brand-border/--surface 1.492; claro: --text-terciary/--surface-muted 3.273; claro: --border/--surface-muted 1.252; claro: --brand-border/--surface-muted 1.353; escuro: --text-terciary/--bg-page 3.325; escuro: --border/--bg-page 1.433; escuro: --brand-border/--bg-page 1.535; escuro: --text-terciary/--surface 2.999; escuro: --border/--surface 1.457; escuro: --brand-border/--surface 1.560; escuro: --text-terciary/--surface-muted 2.736; escuro: --border/--surface-muted 1.464; escuro: --brand-border/--surface-muted 1.565; escuro: #fff/--brand 4.467"
+  }
+ ],
+ "7.5": [
+  {
+   "nome": "arquivos com useSearchParams",
+   "valor": 0,
+   "nota": "arquivos com useFiltrosUrl: 0; page.tsx que leem searchParams: 97"
+  },
+  {
+   "nome": "placeholder=\"Buscar (linhas em src/app)",
+   "valor": 6,
+   "nota": ""
+  },
+  {
+   "nome": "contador \"de {itens.length}\"",
+   "valor": 1,
+   "nota": "padrão amplo {a} de {b}: 4"
+  },
+  {
+   "nome": "tabelas 7+ colunas sem overflow-x",
+   "valor": "2 de 6 tabelas largas (40 tabelas em 30 arquivos)",
+   "nota": "por arquivo (≥7 <th> no arquivo e nenhum overflow-x): 3; wrappers overflow-hidden sem overflow-x: 20"
+  },
+  {
+   "nome": "paginações só para frente (\"Próxima\" sem \"Anterior\")",
+   "valor": "31 de 61",
+   "nota": "arquivos que usam <Paginacao: 0"
+  },
+  {
+   "nome": "aria-sort (linhas)",
+   "valor": 0,
+   "nota": "usos de <ColunaOrdenavel: 0"
+  }
+ ],
+ "7.6": [
+  {
+   "nome": "client components com server action e sem catch",
+   "valor": "55 de 200",
+   "nota": "55 se useAcaoCliente/executarAcaoCliente contar como catch central"
+  },
+  {
+   "nome": "fluxos que terminam só em router.refresh()",
+   "valor": "80 de 169",
+   "nota": "78 se mensagem de sucesso via useAcaoCliente/FeedbackAcao/MensagemStatus contar"
+  },
+  {
+   "nome": ".focus() / scrollIntoView (linhas)",
+   "valor": "0 / 1",
+   "nota": "tsx + src/lib"
+  },
+  {
+   "nome": "dinheiro em type=number step=0.01",
+   "valor": 16,
+   "nota": "varredura de tag multilinha: 17; usos de <CampoMoeda: 0"
+  },
+  {
+   "nome": "campos de fuso em texto (name=\"fuso)",
+   "valor": 22,
+   "nota": "defaultValue=\"UTC\" (linhas, inclui comentários): 10; usos de <CampoFuso: 0"
+  }
+ ],
+ "extras": [
+  {
+   "nome": "grid-cols-2 sem prefixo de breakpoint (ocorrências)",
+   "valor": 25,
+   "nota": ""
+  },
+  {
+   "nome": "page/layout com metadata ou generateMetadata",
+   "valor": 2,
+   "nota": ""
+  },
+  {
+   "nome": "classes de mostrar/esconder por breakpoint (md:hidden | hidden md:)",
+   "valor": 0,
+   "nota": ""
+  },
+  {
+   "nome": "toISOString() impresso como texto (seguido de texto, ponto ou tag)",
+   "valor": 8,
+   "nota": "toISOString() em qualquer {…} (inclui valor de campo e payload): 23"
+  },
+  {
+   "nome": "beforeunload",
+   "valor": 0,
+   "nota": ""
+  },
+  {
+   "nome": "window.confirm / confirm(",
+   "valor": 1,
+   "nota": ""
+  },
+  {
+   "nome": "<textarea com minLength (textarea crus)",
+   "valor": 254,
+   "nota": "usos de <CampoTexto: 0"
+  },
+  {
+   "nome": "<p>Nenhum… cru (estado vazio sem componente)",
+   "valor": 129,
+   "nota": "usos de <EstadoVazio: 0"
+  }
+ ]
+}

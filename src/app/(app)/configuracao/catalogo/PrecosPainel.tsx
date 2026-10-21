@@ -4,8 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
 import { TipoCobranca } from "@prisma/client";
-import { formatarMoeda } from "@/lib/dinheiro";
-import { criarPreco, alternarPrecoAtivo } from "@/server/catalogo/acoes";
+import { formatarMoeda, parseMoeda } from "@/lib/dinheiro";
+import { criarPreco, definirPrecoAtivo } from "@/server/catalogo/acoes";
+import { CampoMoeda } from "@/components/CampoMoeda";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
+import { botaoClasses } from "@/components/Botao";
+import { EstadoVazioLinha } from "@/components/EstadoVazio";
+import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
 
 export interface PrecoRow {
   id: string;
@@ -24,15 +32,7 @@ export interface ProdutoOpcao {
 }
 
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-
-export const TIPO_LABEL: Record<TipoCobranca, string> = {
-  MATRICULA: "Taxa de matrícula",
-  MENSALIDADE: "Mensalidade",
-  HORA_PARTICULAR: "Hora particular",
-  MATERIAL: "Material",
-  CERTIFICADO: "Certificado",
-};
+  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function PrecosPainel({
   precos,
@@ -45,8 +45,13 @@ export function PrecosPainel({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Tudo aqui é seguro de repetir: criarPreco recebe chave de idempotência (#166), e o reenvio depois de um
+  // resultado incerto devolve o preço já criado, sem aposentá-lo com uma cópia; definirPrecoAtivo recebe o
+  // estado-alvo (B4, #175 C2; C2 da revisão do #242), então repeti-lo não desfaz nada.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
+  // Onde mostrar o resultado: no formulário de novo preço ou na linha do preço alternado.
+  const [origem, setOrigem] = useState<string | null>(null);
 
   const [paisId, setPaisId] = useState(paises[0]?.id ?? "");
   const [produtoId, setProdutoId] = useState(produtos[0]?.id ?? "");
@@ -57,32 +62,54 @@ export function PrecosPainel({
   const moedaPais = paises.find((p) => p.id === paisId)?.moedaLocal ?? "";
 
   async function salvar() {
-    setErro(null);
-    setSalvando(true);
-    const res = await criarPreco({
+    setOrigem("novo");
+    // Nunca ?? 0 aqui: texto inválido no valor criaria um preço de referência ZERO, que
+    // matrículas passariam a usar como preço negociado — silencioso.
+    const valorNumero = parseMoeda(valor);
+    if (valorNumero === null) {
+      acao.setErro("Informe o valor, com no máximo duas casas decimais.");
+      return;
+    }
+    const d = await acao.executar(() => criarPreco({
       paisId,
       produtoId,
       tipoCobranca,
-      valor: valor === "" ? 0 : Number(valor),
+      valor: valorNumero,
       versaoEstudo: versaoEstudo || undefined,
-    });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+      chaveIdempotencia: tentativa.atual,
+    }));
+    tentativa.depoisDo(d);
+    if (d?.tipo !== "ok") return;
     setValor("");
     setVersao("");
     setAberto(false);
     router.refresh();
   }
 
-  async function alternar(id: string) {
-    setErro(null);
-    const res = await alternarPrecoAtivo(id);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+  async function reativar(id: string) {
+    setOrigem(id);
+    const d = await acao.executar(() => definirPrecoAtivo(id, true), "Preço reativado.");
+    if (d?.tipo === "ok") router.refresh();
   }
+
+  // Desativar o preço ativo deixa a combinação país × produto × tipo sem preço de referência (docs/42 L2340): o
+  // botão só abre a confirmação, que nomeia a combinação e avisa quando não resta outro preço ativo; a action roda
+  // no ConfirmarAcao, que mostra a falha. Reativar continua direto.
+  const [desativando, setDesativando] = useState<PrecoRow | null>(null);
+  function pedirDesativacao(p: PrecoRow) {
+    setOrigem(p.id);
+    acao.limpar();
+    setDesativando(p);
+  }
+  function desativado(p: PrecoRow) {
+    setDesativando(null);
+    setOrigem(p.id);
+    acao.setSucesso("Preço desativado.");
+    router.refresh();
+  }
+  const mesmaCombinacao = (a: PrecoRow, b: PrecoRow) =>
+    a.pais.nome === b.pais.nome && a.produto.idioma.nome === b.produto.idioma.nome && a.produto.modalidade.nome === b.produto.modalidade.nome && a.tipoCobranca === b.tipoCobranca;
+  const restaAtivo = (p: PrecoRow) => precos.some((o: PrecoRow) => o.id !== p.id && o.ativo && mesmaCombinacao(o, p));
 
   return (
     <section>
@@ -91,7 +118,7 @@ export function PrecosPainel({
         {!aberto && (
           <button
             onClick={() => setAberto(true)}
-            className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            className={botaoClasses({ tamanho: "md" })}
           >
             <IconPlus className="h-4 w-4" /> Novo preço
           </button>
@@ -100,14 +127,13 @@ export function PrecosPainel({
       <p className="mb-3 text-sm text-gray-500">
         País × produto × tipo de cobrança. Um novo preço substitui o ativo anterior (vira histórico).
       </p>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
       {aberto && (
         <div className="mb-4 rounded-lg border border-gray-200 bg-surface p-5">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-600">País</label>
-              <select value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"}>
+              <label htmlFor="precos-pais" className="mb-1 block text-xs text-gray-600">País</label>
+              <select id="precos-pais" value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"}>
                 {paises.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.nome}
@@ -116,8 +142,8 @@ export function PrecosPainel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Produto</label>
-              <select value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className={inputCls + " w-full"}>
+              <label htmlFor="precos-produto" className="mb-1 block text-xs text-gray-600">Produto</label>
+              <select id="precos-produto" value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className={inputCls + " w-full"}>
                 {produtos.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label}
@@ -126,45 +152,47 @@ export function PrecosPainel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Tipo de cobrança</label>
+              <label htmlFor="precos-tipo-cobranca" className="mb-1 block text-xs text-gray-600">Tipo de cobrança</label>
               <select
+                id="precos-tipo-cobranca"
                 value={tipoCobranca}
                 onChange={(e) => setTipo(e.target.value as TipoCobranca)}
                 className={inputCls + " w-full"}
               >
-                {Object.values(TipoCobranca).map((t) => (
+                {Object.values(TipoCobranca).filter(t => t !== TipoCobranca.MULTA_ENCERRAMENTO).map((t) => (
                   <option key={t} value={t}>
-                    {TIPO_LABEL[t]}
+                    {TIPO_COBRANCA_LABEL[t]}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
-              <input
-                type="number"
-                step="0.01"
+              <label htmlFor="precos-valor" className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
+              <CampoMoeda
+                id="precos-valor"
+                moeda={moedaPais}
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onChange={setValor}
                 className={inputCls + " w-full"}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Versão do estudo (opcional)</label>
-              <input value={versaoEstudo} onChange={(e) => setVersao(e.target.value)} className={inputCls + " w-full"} />
+              <label htmlFor="precos-versao-estudo" className="mb-1 block text-xs text-gray-600">Versão do estudo (opcional)</label>
+              <input id="precos-versao-estudo" value={versaoEstudo} onChange={(e) => setVersao(e.target.value)} className={inputCls + " w-full"} />
             </div>
           </div>
+          <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-4" />
           <div className="mt-4 flex gap-2">
             <button
               onClick={salvar}
-              disabled={salvando}
-              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+              disabled={acao.ocupado}
+              className={botaoClasses({ tamanho: "lg" })}
             >
-              {salvando ? "Salvando…" : "Salvar preço"}
+              {acao.ocupado ? "Salvando…" : "Salvar preço"}
             </button>
             <button
               onClick={() => setAberto(false)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              className={botaoClasses({ variante: "secundario", tamanho: "lg" })}
             >
               Cancelar
             </button>
@@ -172,9 +200,9 @@ export function PrecosPainel({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">País</th>
               <th className="px-4 py-2 font-medium">Produto</th>
@@ -186,11 +214,9 @@ export function PrecosPainel({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {precos.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-400">
+              <EstadoVazioLinha colSpan={6}>
                   Nenhum preço cadastrado.
-                </td>
-              </tr>
+                </EstadoVazioLinha>
             ) : (
               precos.map((p) => (
                 <tr key={p.id} className={"hover:bg-gray-50 " + (p.ativo ? "" : "text-gray-400")}>
@@ -198,7 +224,7 @@ export function PrecosPainel({
                   <td className="px-4 py-3">
                     {p.produto.idioma.nome} · {p.produto.modalidade.nome}
                   </td>
-                  <td className="px-4 py-3">{TIPO_LABEL[p.tipoCobranca]}</td>
+                  <td className="px-4 py-3">{TIPO_COBRANCA_LABEL[p.tipoCobranca]}</td>
                   <td className="px-4 py-3">
                     {formatarMoeda(p.valor, p.moeda)}
                   </td>
@@ -213,9 +239,10 @@ export function PrecosPainel({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => alternar(p.id)} className="text-xs text-gray-500 hover:text-gray-800">
+                    <button onClick={() => (p.ativo ? pedirDesativacao(p) : reativar(p.id))} disabled={acao.ocupado || desativando !== null} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
+                    <FeedbackAcao erro={origem === p.id ? acao.erro : null} sucesso={origem === p.id ? acao.sucesso : undefined} className="mt-1 text-left" />
                   </td>
                 </tr>
               ))
@@ -223,6 +250,28 @@ export function PrecosPainel({
           </tbody>
         </table>
       </div>
+
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar o preço de ${desativando.produto.idioma.nome} · ${desativando.produto.modalidade.nome} em ${desativando.pais.nome}?`}
+          confirmacao="desativação do preço"
+          idempotente
+          acao={() => definirPrecoAtivo(desativando.id, false)}
+          aoConcluir={() => desativado(desativando)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>
+            {TIPO_COBRANCA_LABEL[desativando.tipoCobranca]} de {formatarMoeda(desativando.valor, desativando.moeda)} passa ao histórico.
+          </p>
+          {restaAtivo(desativando) ? (
+            <p>Outro preço ativo da mesma combinação continua valendo.</p>
+          ) : (
+            <p>
+              <strong>Não resta outro preço ativo</strong> para {desativando.pais.nome} × {desativando.produto.idioma.nome} · {desativando.produto.modalidade.nome} × {TIPO_COBRANCA_LABEL[desativando.tipoCobranca]}: novas matrículas desse produto ficam sem preço de referência até você reativar este ou criar outro.
+            </p>
+          )}
+        </ConfirmarAcao>
+      )}
     </section>
   );
 }

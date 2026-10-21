@@ -1,0 +1,7 @@
+{
+ "incremento":329,"data":"2026-09-14","escopo":"Interface de histórico dos fechamentos por hora",
+ "build":"aprovado","paginasEstaticasGeradas":52,"typescript":"aprovado","lint":"aprovado",
+ "ultimaIntegracaoDirecionada":328,"ultimoSchemaDiffVazio":327,"homologacaoVisual":false,
+ "limites":["Preparação pela interface pendente","Detalhamento das destinações e identificação das pendências incompletos","Aprovação e emissão pendentes"],
+ "producao":false,"enviosExternos":false
+}

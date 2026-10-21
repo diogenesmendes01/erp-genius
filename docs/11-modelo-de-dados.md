@@ -1,11 +1,15 @@
 # Modelo de Dados — referência do schema
 
-> Descrição **fiel** de [`prisma/schema.prisma`](../prisma/schema.prisma). Fonte da verdade é o
-> schema; este doc o explica. Em divergência, vale o schema (e atualiza-se este doc).
+> **Cobertura parcial em 08/09/2026:** este inventário ainda não incorpora as novas
+> estruturas de D01–D14, como recebimentos, coberturas, diário, retomadas e solicitações
+> acadêmicas. Fonte canônica: [`prisma/schema.prisma`](../prisma/schema.prisma) e migrações.
+> Situação das entregas e referências no [doc 41](41-situacao-consolidada-do-projeto.md).
 >
 > ⚠️ As seções "Modelo de dados" dos docs [`02`](02-arquitetura.md) e [`04`](04-fase1-dominio.md)
 > são **rascunhos antigos** (citam entidades que não existem mais, ex.: `Mensalidade`,
-> `Disciplina`, `Nota`, `LinhaCobranca`, `NegociacaoLog`). **Este doc 11 é a referência atual.**
+> `Disciplina`, `Nota`, `LinhaCobranca`, `NegociacaoLog`). Este doc 11 descreve a estrutura
+> anterior às ampliações indicadas acima; não usar seu inventário como prova de ausência
+> de uma entidade no código atual.
 
 ## Princípio: estado + log de eventos
 O banco combina **entidades de estado** (consulta rápida) com uma tabela **`Evento`**

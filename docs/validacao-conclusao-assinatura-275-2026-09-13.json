@@ -1,0 +1,27 @@
+{
+  "incremento": 275,
+  "data": "2026-09-13",
+  "escopo": "Preservação interna da conclusão de assinaturas; adaptador e aceite final ainda pendentes",
+  "unitarios": {
+    "arquivo": "src/server/contratos/conclusao-assinatura.test.ts",
+    "aprovados": 9
+  },
+  "integracao": {
+    "arquivo": "src/server/matricula/reserva-vaga.int.test.ts",
+    "aprovados": 61,
+    "falhas": 0
+  },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado",
+  "build": {
+    "status": "aprovado",
+    "paginasEstaticas": 52
+  },
+  "migration": "20260914000000_conclusao_assinatura",
+  "schemaDiff": "vazio",
+  "migrations": 127,
+  "ultimaRegressaoIntegral": 273,
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

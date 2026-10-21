@@ -1,0 +1,79 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+
+const caminho = vi.hoisted(() => ({ valor: "/financeiro/comissoes" }));
+vi.mock("next/navigation", () => ({ usePathname: () => caminho.valor }));
+
+import { BarraAbasFinanceiro } from "./BarraAbasFinanceiro";
+
+const render = (abas: Parameters<typeof BarraAbasFinanceiro>[0]["abas"], contagem = {}, c = "/financeiro/comissoes") => {
+  caminho.valor = c;
+  return renderToStaticMarkup(createElement(BarraAbasFinanceiro, { abas, contagem }));
+};
+
+describe("barra de abas do financeiro (E8: uma rota por aba)", () => {
+  it("cada aba é um link para a sua rota e só a ativa (pelo caminho) leva aria-current", () => {
+    const html = render(["comissoes", "descontos", "aprovacoes"]);
+    const links = [...html.matchAll(/<a[^>]*href="([^"]+)"[^>]*>([^<]*)<\/a>/g)].map((m) => [m[1], m[2]]);
+    expect(links).toEqual([
+      ["/financeiro/comissoes", "Comissões"],
+      ["/financeiro/descontos", "Descontos"],
+      ["/financeiro/aprovacoes", "Aprovações"],
+    ]);
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/<a(?=[^>]*href="\/financeiro\/comissoes")(?=[^>]*aria-current="page")[^>]*>/);
+    expect(html).toContain('aria-label="Seções do financeiro"');
+  });
+
+  it("a aba ativa segue o caminho (inclusive subcaminho da aba); fora das abas, nenhuma ativa", () => {
+    expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancas")).toMatch(/<a(?=[^>]*href="\/financeiro\/cobrancas")(?=[^>]*aria-current="page")/);
+    // Subcaminho da aba (ex.: um detalhe futuro sob a aba) mantém a aba ativa.
+    expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancas/detalhe")).toMatch(/<a(?=[^>]*href="\/financeiro\/cobrancas")(?=[^>]*aria-current="page")/);
+    // Prefixo de texto não é subcaminho: /financeiro/cobrancasx não ativa Cobranças.
+    expect(render(["cobrancas", "comissoes"], {}, "/financeiro/cobrancasx")).not.toContain('aria-current="page"');
+    expect(render(["cobrancas", "comissoes"], {}, "/financeiro/permuta")).not.toContain('aria-current="page"');
+  });
+
+  it("aba ativa: fundo bg-brand-solid com texto on-brand; nunca bg-brand-500/600, que clareia no escuro (docs/43 §6 item 5)", () => {
+    const html = render(["comissoes", "descontos"]);
+    const classeDe = (href: string) => html.match(new RegExp(`<a(?=[^>]*\\shref="${href}")[^>]*\\sclass="([^"]*)"`))?.[1].split(" ") ?? [];
+    expect(classeDe("/financeiro/comissoes")).toEqual(expect.arrayContaining(["bg-brand-solid", "font-medium", "text-on-brand"]));
+    expect(classeDe("/financeiro/descontos")).toEqual(expect.arrayContaining(["text-gray-600"]));
+    expect(classeDe("/financeiro/descontos")).not.toContain("bg-brand-solid");
+    expect(classeDe("/financeiro/descontos")).not.toContain("text-white");
+    expect(html).not.toMatch(/bg-brand-(?:500|600)/);
+  });
+
+  it("as contagens das filas pendentes aparecem no rótulo", () => {
+    const html = render(["cobrancas", "informes", "retomadas", "aprovacoes"], { informes: 2, retomadas: 0, aprovacoes: 1 }, "/financeiro/cobrancas");
+    expect(html).toContain(">A conferir (2)<");
+    expect(html).toContain(">Retomadas (0)<");
+    expect(html).toContain(">Aprovações (1)<");
+    expect(render(["aprovacoes"], { aprovacoes: 0 })).toContain(">Aprovações<");
+  });
+
+  it("abas em pílula como a SubTabs: rounded-full, hover translúcido e 44 px no celular (DS-C)", () => {
+    const html = render(["comissoes", "descontos"]);
+    for (const m of html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)) {
+      const cls = m[1].split(" ");
+      expect(cls).toContain("rounded-full");
+      expect(cls).toContain("max-sm:min-h-11");
+      expect(cls).not.toContain("rounded-md");
+    }
+    expect(html).toContain("hover:bg-highlight");
+  });
+
+  it("abaixo de sm, faixa só rolável na horizontal como a SubTabs (C45) e a aba ativa trazida para a vista (C6, #263)", () => {
+    // No navegador a 375 px, as 9 abas do financeiro quebravam em 3 linhas enquanto as demais áreas já rolavam.
+    const html = render(["cobrancas", "informes", "retomadas", "comissoes", "descontos", "cambio"], {}, "/financeiro/cambio");
+    const nav = html.match(/^<nav[^>]*\sclass="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(nav).toEqual(expect.arrayContaining(["flex", "max-sm:flex-nowrap", "max-sm:overflow-x-auto", "max-sm:p-1", "sm:flex-wrap"]));
+    expect(nav).not.toContain("flex-wrap");
+    const links = [...html.matchAll(/<a[^>]*\sclass="([^"]*)"/g)].map((m) => m[1].split(" "));
+    expect(links).toHaveLength(6);
+    for (const c of links) expect(c).toEqual(expect.arrayContaining(["shrink-0", "whitespace-nowrap"]));
+    // O efeito não roda no render estático: a rolagem até a aba ativa é conferida com o React DOM de verdade
+    // em BarraAbasFinanceiro.efeito.test.ts.
+  });
+});

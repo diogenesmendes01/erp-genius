@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconPlus } from "@tabler/icons-react";
-import { criarIdioma, alternarIdiomaAtivo } from "@/server/catalogo/acoes";
+import { criarIdioma, definirIdiomaAtivo } from "@/server/catalogo/acoes";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
+import { botaoClasses } from "@/components/Botao";
 
 export interface IdiomaRow {
   id: string;
@@ -14,43 +19,57 @@ export interface IdiomaRow {
 }
 
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
+  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // Tudo aqui é seguro de repetir: criarIdioma recebe chave de idempotência (#166), e o reenvio depois de um
+  // resultado incerto devolve o idioma já criado; definirIdiomaAtivo recebe o estado-alvo (B4, #175 C2; C2 da
+  // revisão do #242), então repeti-lo não desfaz nada.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
+  // Onde mostrar o resultado: na linha do idioma alternado ou junto do botão "Adicionar".
+  const [origem, setOrigem] = useState<string | null>(null);
 
   async function adicionar() {
     if (!nome.trim()) return;
-    setErro(null);
-    setSalvando(true);
-    const res = await criarIdioma({ nome: nome.trim() });
-    setSalvando(false);
-    if (!res.ok) {
-      setErro(res.erro);
-      return;
-    }
+    setOrigem("novo");
+    const d = await acao.executar(() => criarIdioma({ nome: nome.trim(), chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
+    if (d?.tipo !== "ok") return;
     setNome("");
     router.refresh();
   }
 
-  async function alternar(id: string) {
-    setErro(null);
-    const res = await alternarIdiomaAtivo(id);
-    if (!res.ok) setErro(res.erro);
-    else router.refresh();
+  async function ativar(id: string) {
+    setOrigem(id);
+    const d = await acao.executar(() => definirIdiomaAtivo(id, true), "Idioma ativado.");
+    if (d?.tipo === "ok") router.refresh();
+  }
+
+  // Desativar o idioma atinge os produtos que o usam (docs/42 L2340): o botão só abre a confirmação, que nomeia o
+  // idioma e conta os produtos; a action roda no ConfirmarAcao, que mostra a falha. Ativar continua direto.
+  const [desativando, setDesativando] = useState<IdiomaRow | null>(null);
+  function pedirDesativacao(i: IdiomaRow) {
+    setOrigem(i.id);
+    acao.limpar();
+    setDesativando(i);
+  }
+  function desativado(i: IdiomaRow) {
+    setDesativando(null);
+    setOrigem(i.id);
+    acao.setSucesso("Idioma desativado.");
+    router.refresh();
   }
 
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Idiomas</h2>
-      {erro && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="bg-gray-100 text-left text-xs text-gray-500">
             <tr>
               <th className="px-4 py-2 font-medium">Idioma</th>
               <th className="px-4 py-2 font-medium">Níveis</th>
@@ -77,11 +96,13 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
-                    onClick={() => alternar(i.id)}
-                    className="text-xs text-gray-500 hover:text-gray-800"
+                    onClick={() => (i.ativo ? pedirDesativacao(i) : ativar(i.id))}
+                    disabled={acao.ocupado || desativando !== null}
+                    className={botaoClasses({ variante: i.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
                   >
                     {i.ativo ? "Desativar" : "Ativar"}
                   </button>
+                  <FeedbackAcao erro={origem === i.id ? acao.erro : null} sucesso={origem === i.id ? acao.sucesso : undefined} className="mt-1 text-left" />
                 </td>
               </tr>
             ))}
@@ -93,18 +114,37 @@ export function IdiomasPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
         <input
           value={nome}
           onChange={(e) => setNome(e.target.value)}
+          aria-label="Nome do novo idioma"
           placeholder="Novo idioma (ex.: Inglês)"
           className={inputCls + " w-64"}
           onKeyDown={(e) => e.key === "Enter" && adicionar()}
         />
         <button
           onClick={adicionar}
-          disabled={salvando}
-          className="flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          disabled={acao.ocupado}
+          className={botaoClasses({ tamanho: "lg" })}
         >
           <IconPlus className="h-4 w-4" /> Adicionar
         </button>
       </div>
+      <FeedbackAcao erro={origem === "novo" ? acao.erro : null} className="mt-3" />
+
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar ${desativando.nome}?`}
+          confirmacao="desativação do idioma"
+          idempotente
+          acao={() => definirIdiomaAtivo(desativando.id, false)}
+          aoConcluir={() => desativado(desativando)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>
+            {desativando._count.produtos === 1 ? "1 produto usa este idioma" : `${desativando._count.produtos} produtos usam este idioma`}
+            {desativando.niveis.length ? ` (${desativando.niveis.length === 1 ? "1 nível" : `${desativando.niveis.length} níveis`})` : ""}.
+          </p>
+          <p>O idioma passa a inativo no catálogo. Os produtos, as matrículas e as turmas que já existem continuam cadastrados; para voltar, use &quot;Ativar&quot; nesta lista.</p>
+        </ConfirmarAcao>
+      )}
     </section>
   );
 }

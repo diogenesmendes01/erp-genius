@@ -1,0 +1,86 @@
+// RASCUNHO 185 — root integra no schema depois de revisar. Não é migration.
+enum ResultadoCancelamentoAgendaReposicao {
+  DEVOLVE_BENEFICIO
+  CONSOME_BENEFICIO
+  ISENTA_SEM_SALDO
+}
+
+model PropostaCancelamentoAgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  agendaId String
+  agenda AgendaReposicaoIndividual @relation(fields: [agendaId], references: [id], onDelete: Restrict)
+  encontroId String
+  encontro EncontroAgenda @relation("EncontroCancelamentoReposicao", fields: [encontroId], references: [id], onDelete: Restrict)
+  autorId String
+  autor Usuario @relation("AutorCancelamentoAgendaReposicao", fields: [autorId], references: [id], onDelete: Restrict)
+  versao Int
+  motivo String
+  evidencia String
+  solicitadaEm DateTime @default(now())
+  estado Json
+  chaveIdempotencia String
+  entradaHash String
+  decisao DecisaoCancelamentoAgendaReposicaoIndividual?
+  @@unique([agendaId, versao])
+  @@unique([autorId, chaveIdempotencia])
+}
+
+model DecisaoCancelamentoAgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaCancelamentoAgendaReposicaoIndividual @relation(fields: [propostaId], references: [id], onDelete: Restrict)
+  decisorId String
+  decisor Usuario @relation("DecisorCancelamentoAgendaReposicao", fields: [decisorId], references: [id], onDelete: Restrict)
+  aprovada Boolean
+  resultado ResultadoCancelamentoAgendaReposicao?
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+model PropostaRemarcacaoAgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  agendaId String
+  agenda AgendaReposicaoIndividual @relation(fields: [agendaId], references: [id], onDelete: Restrict)
+  encontroOriginalId String
+  encontroOriginal EncontroAgenda @relation("EncontroOriginalRemarcacaoReposicao", fields: [encontroOriginalId], references: [id], onDelete: Restrict)
+  professorId String
+  professor Usuario @relation("ProfessorRemarcacaoAgendaReposicao", fields: [professorId], references: [id], onDelete: Restrict)
+  inicio DateTime
+  fim DateTime
+  fusoOrigem String
+  autorId String
+  autor Usuario @relation("AutorRemarcacaoAgendaReposicao", fields: [autorId], references: [id], onDelete: Restrict)
+  versao Int
+  motivo String
+  evidencia String
+  estado Json
+  chaveIdempotencia String
+  entradaHash String
+  decisao DecisaoRemarcacaoAgendaReposicaoIndividual?
+  @@unique([agendaId, versao])
+  @@unique([autorId, chaveIdempotencia])
+}
+
+model DecisaoRemarcacaoAgendaReposicaoIndividual {
+  id String @id @default(cuid())
+  propostaId String @unique
+  proposta PropostaRemarcacaoAgendaReposicaoIndividual @relation(fields: [propostaId], references: [id], onDelete: Restrict)
+  decisorId String
+  decisor Usuario @relation("DecisorRemarcacaoAgendaReposicao", fields: [decisorId], references: [id], onDelete: Restrict)
+  encontroNovoId String? @unique
+  encontroNovo EncontroAgenda? @relation("EncontroNovoRemarcacaoReposicao", fields: [encontroNovoId], references: [id], onDelete: Restrict)
+  aprovada Boolean
+  motivo String
+  decididaEm DateTime @default(now())
+}
+
+// Inversos a integrar (a cópia validada está em
+// docs/planejamento/reposicao-ciclo-schema.prisma):
+// Usuario: propostas/decisões de cancelamento e remarcação, além de
+// remarcacoesAgendaReposicaoDocente, todos com os nomes de relação acima.
+// EncontroAgenda: reposicaoIndividualId perde @unique; mantém a relação
+// "EncontroReposicaoAgendado" e ganha propostasCancelamentoReposicao,
+// propostasRemarcacaoReposicaoOrigem e decisoesRemarcacaoReposicaoNovo.
+// ReposicaoIndividual.encontroParticularAgendado passa a
+// encontrosParticularesAgendados EncontroAgenda[] @relation("EncontroReposicaoAgendado").
+// AgendaReposicaoIndividual ganha propostasCancelamento e propostasRemarcacao.

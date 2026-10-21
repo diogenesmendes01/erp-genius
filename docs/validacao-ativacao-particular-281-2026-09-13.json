@@ -1,0 +1,23 @@
+{
+  "incremento": 281,
+  "data": "2026-09-13",
+  "escopo": "Ativação de particulares mensais e por hora com conversão da reserva em encontros da matrícula",
+  "integracao": {
+    "aprovados": 83,
+    "falhasFinais": 0,
+    "arquivos": ["src/server/matricula/reserva-vaga.int.test.ts", "src/server/matricula/ativacao.int.test.ts", "src/server/secretaria/politica.int.test.ts"],
+    "casosNovos": 4,
+    "cobertura": ["Grade fixa mensal com primeira mensalidade exigida", "Grade fixa por hora com adiantamento exigido", "Flexível mensal com emissão da primeira mensalidade na ativação", "Flexível por hora sem adiantamento e sem mensalidade fictícia", "Aceite integrado de produção simulado", "Professor inativo bloqueia", "Reversão após criar encontros", "Ativações concorrentes e repetição pública", "Preservação de outro contrato e alocação do aluno", "Agenda permanece ocupada após uso da reserva"],
+    "ajustePrimeiraExecucao": "Quatro cenários completaram a ativação e falharam na consulta final de conflito por reutilizar versão antiga da oferta; a consulta passou a usar a oferta atual, sem alterar a versão contratada."
+  },
+  "unitariosDirecionados": { "aprovados": 30, "arquivos": ["src/server/matricula/conclusao.test.ts", "src/server/matricula/entrada-particular-pagamentos.test.ts"] },
+  "typescript": "aprovado",
+  "lintDirecionado": "aprovado sem avisos",
+  "build": { "status": "aprovado", "paginasEstaticas": 52 },
+  "novaMigration": false,
+  "ultimaRegressaoIntegral": 279,
+  "limites": ["Diário/chamada individual ainda requer implementação própria", "Apuração e saldo persistente de horas não são concluídos pela ativação", "Múltiplas alocações em turmas e situação global legada ainda pendentes", "Integração real com fornecedor de assinatura pendente", "Exceção de dia não letivo para reserva particular ainda exige integração própria"],
+  "homologacaoInterativa": false,
+  "producao": false,
+  "enviosExternos": false
+}

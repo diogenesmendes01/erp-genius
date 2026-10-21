@@ -1,0 +1,6 @@
+{
+ "incremento":315,"data":"2026-09-13","escopo":"Executor transacional e conclusão única do acerto",
+ "integracao":{"aprovados":32,"falhos":0,"arquivos":2},"typescript":"aprovado","lint":"aprovado","build":"aprovado, 52 páginas","migrations":148,"schemaDiff":"vazio",
+ "ultimaSuiteUnitariaIntegral":311,"ultimaRegressaoIntegralIntegracao":298,
+ "limites":["Transporte autenticado e interface pendentes","Composição com apurações/reservas e consumidores ainda exige verificação","Sem homologação interativa"],"producao":false,"enviosExternos":false
+}

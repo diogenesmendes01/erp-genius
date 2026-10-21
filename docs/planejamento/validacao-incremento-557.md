@@ -1,0 +1,9 @@
+# Incremento 557 — fila e detalhe docente de segunda chamada
+
+As rotas `/academico/segundas-chamadas/minhas` e `/academico/segundas-chamadas/minhas/[reservaId]` oferecem fila paginada e detalhe restrito ao professor do encontro, com vínculo titular atual ou designação vigente da proposta. O detalhe apresenta identificação mínima, avaliação, horários e estado da realização/nota; não abre o consolidado ou a turma inteira. Usuário desativado ou sem atribuição não recebe o detalhe.
+
+O professor registra a realização com data efetiva, fuso e evidência. A interface permite informar fato histórico depois de terminado o encontro, mas não presume autorização: a ação confere a data e o histórico contratual. A nota usa a data imutável da realização e as habilidades/escala da regra, e é submetida à conferência independente. O estado exibido distingue submissão de oficialização. Reenvios idênticos recuperam os mesmos registros, sem duplicar eventos; conteúdo alterado não substitui silenciosamente o registro anterior.
+
+Consultas e interface preparadas por dois agentes Terra; revisão do orquestrador corrigiu uso de UTC nas consultas históricas e preservou lançamento tardio. Adaptador local e testes acrescentados pelo orquestrador. Validação final: onze testes de segunda chamada aprovados, zero falhas e zero não selecionados (`docs/validacao-docente-final-557-2026-09-15.json`), incluindo escopo, cursor, usuário desativado e reenvios. ESLint e build final aprovados (`docs/validacao-build-final-557-2026-09-15.log`). Os formulários usam estado explícito de envio e chave da nota capturada antes do await.
+
+Não houve ensaio interativo no navegador ou implantação. Rejeição de nota com nova submissão, regularização por professor distinto, pendências sem reserva e auditoria completa dos guards continuam exigindo trabalho. Q163 permanece pendente. Este incremento não comprova conclusão da Q151/Q152 nem da SPEC geral.

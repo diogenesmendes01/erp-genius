@@ -1,0 +1,5 @@
+{
+ "incremento":339,"data":"2026-09-14","escopo":"Identificação de encontros e navegação para cobranças anteriores",
+ "integracao":{"aprovados":18,"falhos":0,"arquivos":1},"typescript":"aprovado","lint":"aprovado","build":"aprovado","paginasEstaticasGeradas":52,
+ "migration":false,"homologacaoVisual":false,"limites":["Documento contratual e detalhes de antecipações pendentes","Encerramento e ajustes pendentes"],"producao":false,"enviosExternos":false
+}

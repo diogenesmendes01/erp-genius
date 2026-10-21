@@ -1,0 +1,5 @@
+{
+ "incremento":342,"data":"2026-09-14","escopo":"Origem do faturamento por hora na memória do acerto",
+ "integracao":{"aprovados":31,"falhos":0,"arquivos":2},"unitariosIntegrais":{"aprovados":825,"falhos":0,"arquivos":89},"typescript":"aprovado","lint":"aprovado","build":"aprovado","paginasEstaticasGeradas":52,
+ "migration":false,"limites":["Execução integral do encerramento por hora pendente","Apresentação das origens na revisão e ajustes pendentes","Reservas antecipadas e homologação visual pendentes"],"producao":false,"enviosExternos":false
+}

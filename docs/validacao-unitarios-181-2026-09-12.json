@@ -1,0 +1,452 @@
+{
+  "total": 699,
+  "aprovados": 699,
+  "falhas": 0,
+  "pendentes": 0,
+  "arquivos": [
+    {
+      "arquivo": "src/lib/dinheiro.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/lib/guards.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/lib/rate-limit-login.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/academico/regras.test.ts",
+      "status": "passed",
+      "testes": 38,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/agenda/calendario-intervalo.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/agenda/grade.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/agenda/replanejamento-ajustes.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/agenda/replanejamento-conflitos.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/agenda/replanejamento-grade.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/ajustes/aprovacao.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/ajustes/consultas.test.ts",
+      "status": "passed",
+      "testes": 13,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/ajustes/regras-ajuste.test.ts",
+      "status": "passed",
+      "testes": 13,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/alunos/consultas.test.ts",
+      "status": "passed",
+      "testes": 17,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/alunos/importacao.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/alunos/movimentacao.test.ts",
+      "status": "passed",
+      "testes": 10,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/alunos/projecao.test.ts",
+      "status": "passed",
+      "testes": 10,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/cobrancas/acesso-aulas-regras.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/cobrancas/eventos.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/cobrancas/regua-ancora.test.ts",
+      "status": "passed",
+      "testes": 22,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/cobrancas/regua.test.ts",
+      "status": "passed",
+      "testes": 21,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/captura.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/consultas.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/experimental.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/comercial/schema.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/financeiro/operacoes.test.ts",
+      "status": "passed",
+      "testes": 11,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/financeiro/regras.test.ts",
+      "status": "passed",
+      "testes": 19,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/financeiro/schema.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/diario/diario.test.ts",
+      "status": "passed",
+      "testes": 12,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/operacao/fuso.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/adiantamento-proposto.test.ts",
+      "status": "passed",
+      "testes": 2,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/admissao-turma.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/alcada-preparacao.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/cobertura.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/conclusao.test.ts",
+      "status": "passed",
+      "testes": 19,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/cronograma-cobertura.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-acerto.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-calculo.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-compensacao.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-horas.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-multa.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-outras-cobrancas.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/encerramento-previa-calculo.test.ts",
+      "status": "passed",
+      "testes": 7,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/escopo.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/historico-situacao.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/movimentacoes-detalhes.test.ts",
+      "status": "passed",
+      "testes": 2,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/ocorrencia-horas.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/permissoes.test.ts",
+      "status": "passed",
+      "testes": 11,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/recomposicao-cobertura.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/retomada-cobertura.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/saldo-horas.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/schema.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/matricula/validacao.test.ts",
+      "status": "passed",
+      "testes": 19,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/retomada/regras.test.ts",
+      "status": "passed",
+      "testes": 31,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/paises/tipos-documento.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/turmas/importacao.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/turmas/schema.test.ts",
+      "status": "passed",
+      "testes": 10,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/turmas/vinculo-docente.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/uploads/autorizacao.test.ts",
+      "status": "passed",
+      "testes": 22,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/elegibilidade.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/escopo.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/fila-snapshot.test.ts",
+      "status": "passed",
+      "testes": 10,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/inbound.test.ts",
+      "status": "passed",
+      "testes": 3,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/meta-templates.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/midia.test.ts",
+      "status": "passed",
+      "testes": 6,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/whatsapp/render.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/_shared/alocacao.test.ts",
+      "status": "passed",
+      "testes": 9,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/_shared/decimal.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/_shared/regras.test.ts",
+      "status": "passed",
+      "testes": 62,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/_shared/resultado.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/_shared/sessao.test.ts",
+      "status": "passed",
+      "testes": 4,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/server/_shared/validacao.test.ts",
+      "status": "passed",
+      "testes": 20,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/app/api/upload/route.test.ts",
+      "status": "passed",
+      "testes": 5,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/app/api/alunos/modelo/route.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    },
+    {
+      "arquivo": "src/app/api/files/[...path]/route.test.ts",
+      "status": "passed",
+      "testes": 8,
+      "falhas": []
+    }
+  ]
+}

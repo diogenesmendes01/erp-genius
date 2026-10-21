@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import type { DegrauConfig, NumeroConfig, PoliticaConfig, TemplateConfig } from "@/server/whatsapp/consultas";
-import { acionarKillSwitchRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
+import { acionarKillSwitchRegua, estimarAlcanceRegua, salvarPoliticaRegua } from "@/server/whatsapp/acoes";
+import type { AlcanceRegua } from "@/server/whatsapp/alcance-regua";
+import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { useAcaoCliente } from "@/lib/acao-cliente";
+import type { Resultado } from "@/server/_shared/resultado";
+import { botaoClasses } from "@/components/Botao";
+import { DRIVER_WHATSAPP_LABEL, rotular } from "@/lib/labels";
+import { AlteracaoPendente } from "@/components/AlteracaoPendente";
+import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
+import { politicaAlterada } from "./alteracoes-pendentes";
 
 // POLÍTICA DA RÉGUA COMO DADO (doc 26 §Camada 1 · doc 30 E4): por degrau (offset,
 // template, modo, ativo) e global (janela, dias, teto, silêncio, kill switch, remetente,
 // estado desligada/shadow/ativa). LEIS fora da config: D+15 nunca automatiza; trava S1
-// (cron só em driver oficial); prontidão S15 validada no servidor ao armar.
+// (automação só no motor próprio — D38): número de outro driver não arma a política; prontidão S15 validada no servidor ao armar.
 
-const btnPri = "rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60";
+const btnPri = botaoClasses({ tamanho: "md" });
 const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
 
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
@@ -21,6 +31,35 @@ const ESTADO_HINT: Record<string, string> = {
   SHADOW: "Ensaio: o cron gera intenções SIMULADAS — nada é enviado de verdade.",
   ATIVA: "Valendo: degraus automáticos disparam sozinhos dentro da janela.",
 };
+
+/** A estimativa de alcance da ativação (docs/42 L2517), pedida ao servidor quando a confirmação abre. */
+type EstadoAlcance = { estado: "carregando" } | { estado: "pronto"; alcance: AlcanceRegua } | { estado: "indisponivel"; motivo: string };
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+/** Quantas pessoas recebem: o número primeiro, e o que fica de fora (sem destino) ou depende de aprovação (lote). */
+function TextoAlcance({ alcance }: { alcance: EstadoAlcance | null }) {
+  if (!alcance || alcance.estado === "carregando") return <p>Calculando quantas pessoas vão receber…</p>;
+  if (alcance.estado === "indisponivel") return <p>Não foi possível estimar quantas pessoas vão receber: {alcance.motivo}</p>;
+  const a = alcance.alcance;
+  return (
+    <>
+      <p>
+        <strong>{a.pessoas === 1 ? "1 pessoa vai receber" : `${a.pessoas} pessoas vão receber`}</strong> mensagem automática de cobrança
+        na próxima rodada da régua ({plural(a.cobrancas, "cobrança com degrau automático devido hoje", "cobranças com degrau automático devido hoje")}).
+      </p>
+      {a.semDestino > 0 && <p>{plural(a.semDestino, "cobrança devida não tem", "cobranças devidas não têm")} destinatário financeiro válido e não {a.semDestino === 1 ? "recebe" : "recebem"}.</p>}
+      {a.emLote > 0 && <p>{plural(a.emLote, "cobrança entra", "cobranças entram")} no degrau de lote e só {a.emLote === 1 ? "sai" : "saem"} quando alguém aprovar o lote na fila.</p>}
+      <p>É a contagem de agora: as travas da régua (janela, teto por contato, silêncio depois de resposta, opt-out) ainda podem adiar ou barrar parte dos envios.</p>
+    </>
+  );
+}
+
+/** Janela e dias em texto: "9h às 20h, seg, ter, qua, qui, sex". */
+function textoJanela(inicio: number, fim: number, dias: number[]): string {
+  const nomes = [...dias].sort((a: number, b: number) => a - b).map((d: number) => DIAS[d]).filter((nome: string | undefined): nome is string => !!nome);
+  return `${inicio}h às ${fim}h, ${nomes.length ? nomes.join(", ") : "nenhum dia marcado"}`;
+}
 
 export function PoliticaPainel({
   politica,
@@ -43,12 +82,24 @@ export function PoliticaPainel({
     numeroRemetenteId: politica.numeroRemetenteId ?? "",
     degraus: politica.degraus as DegrauConfig[],
   });
-  const [erro, setErro] = useState<string | null>(null);
-  const [nota, setNota] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  // C32 da #170: política na tela diferente da salva → marca e aviso ao sair (o refresh traz a salva nova).
+  const sujo = politicaAlterada(form, politica);
+  useAvisoAoSair(sujo);
+  // Nenhuma das duas actions recebe chave de idempotência (o kill switch grava o estado-alvo, mas sem
+  // chave): resultado incerto manda conferir antes de repetir.
+  const acao = useAcaoCliente({ idempotente: false });
+  // O resultado aparece junto do botão que o disparou (kill switch no topo, salvar no rodapé).
+  const [origem, setOrigem] = useState<"kill" | "salvar" | null>(null);
+
+  async function run<T>(secao: "kill" | "salvar", disparar: () => Promise<Resultado<T>>, sucesso: string) {
+    setOrigem(secao);
+    return acao.executar(disparar, sucesso);
+  }
+  const feedback = (secao: "kill" | "salvar") => (
+    <FeedbackAcao erro={origem === secao ? acao.erro : null} sucesso={origem === secao ? acao.sucesso : null} className="mt-3" />
+  );
 
   const remetente = numeros.find((n) => n.id === form.numeroRemetenteId) ?? null;
-  const aprovadoPorId = new Map(templates.map((t) => [t.id, t.statusMeta === "APROVADO"]));
 
   function mudarDegrau(passo: string, patch: Partial<DegrauConfig>) {
     setForm((f) => ({
@@ -57,36 +108,80 @@ export function PoliticaPainel({
     }));
   }
 
-  async function salvar() {
-    setSalvando(true);
-    setErro(null);
-    setNota(null);
-    const r = await salvarPoliticaRegua({
+  // Sair de desligada/ensaio para ATIVA põe a régua a mandar mensagens reais a clientes (docs/42 L2517):
+  // o Salvar, nesse caso, só abre a confirmação com remetente, janela, teto e degraus armados — o mesmo
+  // rigor do go-live do piloto. Salvar sem ativar continua direto.
+  const ativando = politica.estado !== "ATIVA" && form.estado === "ATIVA";
+  const [confirmar, setConfirmar] = useState<"salvar" | "kill" | null>(null);
+
+  function dadosPolitica() {
+    return {
       ...form,
       numeroRemetenteId: form.numeroRemetenteId || undefined,
-      degraus: form.degraus.map((d) => ({
+      degraus: form.degraus.map((d: DegrauConfig) => ({
         passo: d.passo as "D-7" | "D-3" | "D0" | "D+3" | "D+7" | "D+15",
         offsetDias: d.offsetDias,
         modo: d.modo as "AUTOMATICO" | "MANUAL" | "LOTE",
         ativo: d.ativo,
         templateId: d.templateId ?? undefined,
       })),
-    });
-    setSalvando(false);
-    if (!r.ok) return setErro(r.erro ?? "Erro ao salvar.");
-    setNota("Política salva — cron, fila e timeline passam a ler esta configuração.");
+    };
+  }
+  const SUCESSO_SALVAR = "Política salva — cron, fila e timeline passam a ler esta configuração.";
+
+  // Quantas pessoas recebem (docs/42 L2517): estimado no servidor, com a regra do cron e os degraus do formulário,
+  // quando a confirmação da ativação abre. Só a resposta do último pedido vale (o diálogo pode ter sido reaberto).
+  const [alcance, setAlcance] = useState<EstadoAlcance | null>(null);
+  const pedidoAlcance = useRef(0);
+  async function estimarAlcance() {
+    const pedido = ++pedidoAlcance.current;
+    setAlcance({ estado: "carregando" });
+    let proximo: EstadoAlcance;
+    try {
+      const r = await estimarAlcanceRegua(dadosPolitica());
+      proximo = r.ok && r.dado ? { estado: "pronto", alcance: r.dado } : { estado: "indisponivel", motivo: r.ok ? "a consulta não devolveu a contagem." : r.erro };
+    } catch {
+      proximo = { estado: "indisponivel", motivo: "falha de rede. Confira a fila de cobrança antes de ativar." };
+    }
+    if (pedido === pedidoAlcance.current) setAlcance(proximo);
+  }
+
+  async function salvar() {
+    if (ativando) {
+      setOrigem("salvar");
+      acao.limpar();
+      setConfirmar("salvar");
+      await estimarAlcance();
+      return;
+    }
+    const desfecho = await run("salvar", () => salvarPoliticaRegua(dadosPolitica()), SUCESSO_SALVAR);
+    if (desfecho?.tipo === "ok") router.refresh();
+  }
+
+  // O kill switch congela (ou destrava) TODA a automação de cobrança (docs/42 L2516): confirmação nos
+  // dois sentidos, dizendo o que para ou o que volta a sair.
+  function pedirKill() {
+    setOrigem("kill");
+    acao.limpar();
+    setConfirmar("kill");
+  }
+
+  function killConcluido(ligado: boolean) {
+    setConfirmar(null);
+    setOrigem("kill");
+    acao.setSucesso(ligado ? "Kill switch LIGADO — automação congelada (nada se perde)." : "Kill switch desligado.");
+    setForm((f) => ({ ...f, killSwitch: ligado }));
     router.refresh();
   }
 
-  async function alternarKill() {
-    setErro(null);
-    const ligar = !form.killSwitch;
-    const r = await acionarKillSwitchRegua(ligar);
-    if (!r.ok) return setErro(r.erro ?? "Erro no kill switch.");
-    setForm((f) => ({ ...f, killSwitch: ligar }));
-    setNota(ligar ? "Kill switch LIGADO — automação congelada (nada se perde)." : "Kill switch desligado.");
-    router.refresh();
-  }
+  const nomeTemplate = new Map(templates.map((t: TemplateConfig): [string, string] => [t.id, t.nome]));
+  // Degraus que disparam depois de ativar (ativos, fora do D+15, que é sempre aprovação humana), por modo.
+  const armados = (modo: string) => form.degraus
+    .filter((d: DegrauConfig) => d.ativo && d.tipo !== "bloquear" && d.modo === modo)
+    .map((d: DegrauConfig) => `${d.passo} (${d.templateId ? nomeTemplate.get(d.templateId) ?? "template" : "texto de fábrica"})`)
+    .join("; ");
+  const armadosAutomaticos = armados("AUTOMATICO");
+  const armadosEmLote = armados("LOTE");
 
   return (
     <section>
@@ -99,20 +194,15 @@ export function PoliticaPainel({
           </p>
         </div>
         <button
-          onClick={alternarKill}
-          className={
-            "rounded-md px-3 py-1.5 text-sm font-medium " +
-            (form.killSwitch
-              ? "bg-danger text-white hover:opacity-90"
-              : "border border-red-300 text-red-700 hover:bg-red-50")
-          }
+          onClick={pedirKill}
+          disabled={acao.ocupado}
+          className={botaoClasses({ variante: form.killSwitch ? "perigo" : "secundario" })}
         >
           {form.killSwitch ? "Kill switch LIGADO — destravar" : "Kill switch"}
         </button>
       </div>
 
-      {erro && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {nota && <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{nota}</p>}
+      {feedback("kill")}
 
       <div className="mt-4 rounded-lg border border-gray-200 bg-surface p-4">
         {/* Config global */}
@@ -142,13 +232,13 @@ export function PoliticaPainel({
                 .filter((n) => n.ativo)
                 .map((n) => (
                   <option key={n.id} value={n.id}>
-                    {n.rotulo} ({n.driver === "META_CLOUD" ? "oficial" : "baileys"})
+                    {n.rotulo} ({rotular(DRIVER_WHATSAPP_LABEL, n.driver)})
                   </option>
                 ))}
             </select>
-            {remetente && remetente.driver !== "META_CLOUD" && (
+            {remetente && remetente.driver !== "MOTOR" && (
               <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
-                <IconAlertTriangle className="h-3 w-3" /> trava S1: degraus automáticos exigem número oficial
+                <IconAlertTriangle className="h-3 w-3" /> Degraus automáticos exigem número do motor WhatsApp.
               </span>
             )}
           </label>
@@ -177,11 +267,12 @@ export function PoliticaPainel({
           </label>
           <div className="text-xs text-gray-600">
             Dias da semana
-            <div className="mt-1.5 flex flex-wrap gap-1">
+            <div role="group" aria-label="Dias da semana" className="mt-1.5 flex flex-wrap gap-1">
               {DIAS.map((d, i) => (
                 <button
                   key={d}
                   type="button"
+                  aria-pressed={form.diasSemana.includes(i)}
                   onClick={() =>
                     setForm((f) => ({
                       ...f,
@@ -193,7 +284,7 @@ export function PoliticaPainel({
                   className={
                     "rounded-full px-2 py-0.5 text-[11px] " +
                     (form.diasSemana.includes(i)
-                      ? "bg-brand-600 text-white"
+                      ? "bg-brand-solid text-on-brand"
                       : "border border-gray-300 text-gray-500 hover:bg-gray-50")
                   }
                 >
@@ -243,9 +334,6 @@ export function PoliticaPainel({
             <tbody>
               {form.degraus.map((d) => {
                 const bloquear = d.tipo === "bloquear";
-                const precisaAprovado =
-                  remetente?.driver === "META_CLOUD" && d.ativo && d.modo !== "MANUAL" && form.estado !== "DESLIGADA";
-                const templateOk = d.templateId ? aprovadoPorId.get(d.templateId) : false;
                 return (
                   <tr key={d.passo} className="border-b border-gray-100 last:border-0">
                     <td className="py-2 pr-3">
@@ -257,6 +345,7 @@ export function PoliticaPainel({
                         type="number"
                         min={-30}
                         max={90}
+                        aria-label={`${d.passo} — offset (dias)`}
                         className={inputCls + " w-20"}
                         value={d.offsetDias}
                         onChange={(e) => mudarDegrau(d.passo, { offsetDias: Number(e.target.value) })}
@@ -267,6 +356,7 @@ export function PoliticaPainel({
                         <span className="text-xs text-gray-500">manual (lei: aprovação humana sempre)</span>
                       ) : (
                         <select
+                          aria-label={`${d.passo} — modo`}
                           className={inputCls}
                           value={d.modo}
                           onChange={(e) => mudarDegrau(d.passo, { modo: e.target.value })}
@@ -283,6 +373,7 @@ export function PoliticaPainel({
                       ) : (
                         <span className="flex items-center gap-1.5">
                           <select
+                            aria-label={`${d.passo} — template`}
                             className={inputCls + " max-w-48"}
                             value={d.templateId ?? ""}
                             onChange={(e) => mudarDegrau(d.passo, { templateId: e.target.value || null })}
@@ -290,21 +381,17 @@ export function PoliticaPainel({
                             <option value="">— texto de fábrica —</option>
                             {templates.map((t) => (
                               <option key={t.id} value={t.id}>
-                                {t.nome} {t.statusMeta === "APROVADO" ? "✓" : `(${t.statusMeta.toLowerCase().replace("_", " ")})`}
+                                {t.nome}
                               </option>
                             ))}
                           </select>
-                          {precisaAprovado && !templateOk && (
-                            <span title="Número oficial: degrau armado exige template aprovado na Meta (S15)">
-                              <IconAlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-                            </span>
-                          )}
                         </span>
                       )}
                     </td>
                     <td className="py-2">
                       <input
                         type="checkbox"
+                        aria-label={`${d.passo} — ativo`}
                         className="h-3.5 w-3.5 accent-brand-600"
                         checked={d.ativo}
                         onChange={(e) => mudarDegrau(d.passo, { ativo: e.target.checked })}
@@ -320,13 +407,71 @@ export function PoliticaPainel({
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[11px] text-gray-400">
             Defaults de fábrica: D-7/D-3/D0 automáticos · D+3/D+7 lote · D+15 aprovação. Armar (shadow/ativa) valida a
-            prontidão: número oficial exige template aprovado nos degraus automáticos/lote.
+            prontidão: só número do motor WhatsApp arma a política; no motor vale o texto do template.
           </p>
-          <button className={btnPri} disabled={salvando} onClick={salvar}>
-            {salvando ? "Salvando…" : "Salvar política"}
-          </button>
+          <div className="flex shrink-0 items-center gap-3">
+            <AlteracaoPendente sujo={sujo} />
+            <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+              {acao.ocupado && origem === "salvar" ? "Salvando…" : "Salvar política"}
+            </button>
+          </div>
         </div>
+        {feedback("salvar")}
       </div>
+
+      {confirmar === "kill" && (
+        <ConfirmarAcao
+          titulo={form.killSwitch ? "Destravar a automação de cobrança?" : "Congelar toda a automação de cobrança?"}
+          confirmacao={form.killSwitch ? "destravamento" : "congelamento"}
+          idempotente={false}
+          acao={() => acionarKillSwitchRegua(!form.killSwitch)}
+          aoConcluir={() => killConcluido(!form.killSwitch)}
+          aoCancelar={() => setConfirmar(null)}
+        >
+          {form.killSwitch ? (
+            <>
+              <p>A automação volta a seguir o estado salvo da régua. {ESTADO_HINT[politica.estado]}</p>
+              {politica.estado === "ATIVA" && (
+                <p>
+                  Mensagens reais voltam a sair para os clientes: cobranças com degrau devido são enviadas dentro da janela
+                  ({textoJanela(politica.janelaInicio, politica.janelaFim, politica.diasSemana)}), e o que ficou parado na fila
+                  enquanto a automação estava congelada volta a andar.
+                </p>
+              )}
+            </>
+          ) : (
+            <p>Nenhuma mensagem automática de cobrança sai enquanto o kill switch estiver ligado. O que estava na fila fica parado, sem se perder, até alguém destravar.</p>
+          )}
+        </ConfirmarAcao>
+      )}
+
+      {confirmar === "salvar" && (
+        <ConfirmarAcao
+          titulo="Ativar a régua de cobrança e enviar mensagens reais?"
+          confirmacao="ativação da régua"
+          idempotente={false}
+          acao={() => salvarPoliticaRegua(dadosPolitica())}
+          aoConcluir={() => {
+            setConfirmar(null);
+            setOrigem("salvar");
+            acao.setSucesso(SUCESSO_SALVAR);
+            router.refresh();
+          }}
+          aoCancelar={() => setConfirmar(null)}
+        >
+          <p>A régua sai {politica.estado === "SHADOW" ? "do ensaio" : "de desligada"} e passa a <strong>ativa</strong>: os degraus abaixo disparam com mensagens reais aos clientes.</p>
+          <ul className="list-disc space-y-0.5 pl-5">
+            <li>Remetente: {remetente ? `${remetente.rotulo} (${rotular(DRIVER_WHATSAPP_LABEL, remetente.driver)})` : "nenhum escolhido"}</li>
+            <li>Janela: {textoJanela(form.janelaInicio, form.janelaFim, form.diasSemana)} (hora local do contato)</li>
+            <li>Teto: {form.tetoPorContatoDia} {form.tetoPorContatoDia === 1 ? "mensagem automática" : "mensagens automáticas"} por contato/dia</li>
+            <li>Automáticos (saem sozinhos): {armadosAutomaticos || "nenhum"}</li>
+            <li>Em lote (saem quando alguém aprova o lote): {armadosEmLote || "nenhum"}</li>
+          </ul>
+          <TextoAlcance alcance={alcance} />
+          {form.killSwitch && <p>O kill switch está ligado: nada sai até alguém destravar.</p>}
+          <p>Mensagem enviada não volta atrás; para parar depois, use o kill switch.</p>
+        </ConfirmarAcao>
+      )}
     </section>
   );
 }
