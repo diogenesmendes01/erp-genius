@@ -174,7 +174,7 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     expect(atendimentos[0].naoLidas).toBe(1); // a saída não conta como não lida
   });
 
-  it("LC-06: 'Criar lead' grava o lead no mesmo atendimento, com autoria; segundo clique é recusado", async () => {
+  it("LC-06: 'Criar lead' grava o lead no mesmo atendimento, com autoria; segundo clique devolve o mesmo lead (#166)", async () => {
     await linhaDe(vendedorA);
     await mensagem("linha-a");
     await mensagem("linha-a");
@@ -195,8 +195,11 @@ describe("LC-05/LC-06: histórico único da conversa", () => {
     expect(criado?.autorId).toBe(vendedorA.id);
     expect(criado?.payload).toMatchObject({ origem: "whatsapp_linha" });
 
-    expect((await criarLeadDaConversa(conversa.id)).ok).toBe(false);
+    // Idempotente por natureza (#166, lote 4): o segundo clique devolve a mesma oportunidade, sem outro vínculo.
+    const vinculos = await prisma.evento.count({ where: { tipo: "ContatoVinculado" } });
+    expect(await criarLeadDaConversa(conversa.id)).toEqual(r);
     expect(await prisma.oportunidade.count()).toBe(1);
+    expect(await prisma.evento.count({ where: { tipo: "ContatoVinculado" } })).toBe(vinculos);
   });
 
   it("vincular um lead da carteira também não abre outro atendimento", async () => {

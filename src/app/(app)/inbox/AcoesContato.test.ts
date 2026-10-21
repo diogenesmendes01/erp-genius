@@ -118,7 +118,7 @@ describe("AcoesContato: interação", () => {
     expect(marcacao(tela())).toContain("Oportunidade criada e vinculada à conversa.");
   });
 
-  it("Criar oportunidade com falha de transporte manda conferir antes de repetir (sem chave de idempotência)", async () => {
+  it("Criar oportunidade com falha de transporte manda repetir (idempotente por natureza, #166)", async () => {
     acoes.criarLeadDaConversa.mockRejectedValueOnce(new Error("rede"));
     m.g = criarGanchos();
     const p = props({ podeCriarLead: true });
@@ -126,7 +126,8 @@ describe("AcoesContato: interação", () => {
     clicarBotao(tela(), "Criar oportunidade");
     await esvaziar();
     expect(p.aoMudar).not.toHaveBeenCalled();
-    expect(marcacao(tela())).toContain(MSG_RESULTADO_INCERTO_SEM_CHAVE);
+    expect(marcacao(tela())).toContain(MSG_RESULTADO_INCERTO);
+    expect(marcacao(tela())).not.toContain(MSG_RESULTADO_INCERTO_SEM_CHAVE);
   });
 
   it("Editar nome grava pelo editarNomeContatoWhatsApp com o nome lido (gravação condicional)", async () => {

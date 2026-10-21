@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Papel, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
+import { Papel, Prisma, StatusCobranca, StatusComissao, FormaPagamento } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
@@ -170,12 +170,21 @@ export async function conferirPagamento(informeId: string, input: { versao: numb
 }
 
 /** Publicação versionada: fecha a vigência anterior, sem alterar comissões existentes. */
+/** A versão gravada corresponde à entrada (valores nas casas decimais das colunas: 5,2 e 12,2). */
+function mesmaPoliticaComissao(
+  p: { tipo: string; percentual: Prisma.Decimal | null; valorFixo: Prisma.Decimal | null; moeda: string; vigenteEm: Date; base: string },
+  d: { tipo: string; percentual: number | null; valorFixo: number | null; moeda: string; vigenteEm: Date },
+): boolean {
+  const igual = (a: Prisma.Decimal | null, b: number | null) => (a === null || b === null ? a === b : a.equals(new Prisma.Decimal(b).toDecimalPlaces(2)));
+  return p.base === "TAXA_MATRICULA" && p.tipo === d.tipo && p.moeda === d.moeda && p.vigenteEm.getTime() === d.vigenteEm.getTime()
+    && igual(p.percentual, d.percentual) && igual(p.valorFixo, d.valorFixo);
+}
+
 export async function publicarPoliticaComissao(input: PoliticaComissaoInput): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL);
     await exigirCapacidade(autor, "comissao.configurar");
     const dados = PoliticaComissaoSchema.parse(input);
-    if (dados.vigenteEm.getTime() < Date.now() - 60_000) throw new ErroRegra("Publique a política com vigência atual ou futura.");
     await prisma.$transaction(async (tx) => {
       // Todos os publicadores bloqueiam a mesma oferta; não há duas versões simultâneas.
       await tx.$queryRaw`SELECT id FROM "Produto" WHERE id = ${dados.produtoId} FOR UPDATE`;
@@ -183,6 +192,11 @@ export async function publicarPoliticaComissao(input: PoliticaComissaoInput): Pr
       const produto = await tx.produto.findUnique({ where: { id: dados.produtoId } });
       if (!pais || !produto || pais.moedaLocal !== dados.moeda) throw new ErroRegra("Oferta/moeda inválida para a política.");
       const anterior = await tx.politicaComissao.findFirst({ where: { paisId: pais.id, produtoId: produto.id }, orderBy: { versao: "desc" } });
+      // Estado-alvo (#166): a última versão já é exatamente esta, publicada por este autor. O reenvio devolve ok
+      // sem abrir outra versão nem gravar outro Evento (antes recusava com "deve começar depois"). Vem antes da
+      // checagem de vigência, para o reenvio tardio de uma política "a partir de agora" também ser reconhecido.
+      if (anterior && anterior.criadaPorId === autor.id && mesmaPoliticaComissao(anterior, dados)) return;
+      if (dados.vigenteEm.getTime() < Date.now() - 60_000) throw new ErroRegra("Publique a política com vigência atual ou futura.");
       if (anterior && dados.vigenteEm <= anterior.vigenteEm) throw new ErroRegra("A nova versão deve começar depois da versão anterior.");
       if (anterior) await tx.politicaComissao.update({ where: { id: anterior.id }, data: { encerraEm: dados.vigenteEm } });
       const politica = await tx.politicaComissao.create({ data: {

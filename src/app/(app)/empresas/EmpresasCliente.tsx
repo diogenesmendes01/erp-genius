@@ -7,6 +7,7 @@ import type { EmpresaResumo } from "@/server/empresas/consultas";
 import { salvarEmpresa } from "@/server/empresas/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { useFiltrosUrl } from "@/lib/filtros-url";
 import { Paginacao } from "@/components/Paginacao";
 import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
@@ -64,12 +65,14 @@ export function EmpresasCliente({
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState("");
   const [paisId, setPaisId] = useState("");
-  // salvarEmpresa não recebe chave de idempotência (server/empresas/acoes.ts:41 — sem id, cria uma
-  // empresa nova a cada chamada, :68): resultado incerto manda conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // A criação recebe chave de idempotência (#166): o reenvio da mesma tentativa devolve a empresa já criada em vez
+  // de outra com novo código. A chave só muda depois do sucesso.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
 
   async function criar() {
-    const d = await acao.executar(() => salvarEmpresa({ nome, paisId }));
+    const d = await acao.executar(() => salvarEmpresa({ nome, paisId, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     setCriando(false);
     setNome("");

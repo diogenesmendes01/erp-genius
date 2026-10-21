@@ -13,9 +13,9 @@ import { botaoClasses } from "@/components/Botao";
 
 export function PoliticasComissao({ dados, preferenciaFusoExibicao = null }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  // Publicar sem chave de idempotência (server/financeiro/acoes.ts:170): repetir cria outra versão
-  // da política — conferir a lista antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166): se a última versão já é exatamente esta, publicada por quem repete, o
+  // servidor devolve ok sem abrir outra versão nem gravar outro Evento (publicarPoliticaComissao).
+  const acao = useAcaoCliente({ idempotente: true });
   const [tipo, setTipo] = useState<"PERCENTUAL" | "VALOR_FIXO">("PERCENTUAL");
   // Precisa virar estado (não FormData) pra CampoMoeda, que só existe no ramo VALOR_FIXO —
   // e pra resolver a moeda do país selecionado, também precisa virar estado.

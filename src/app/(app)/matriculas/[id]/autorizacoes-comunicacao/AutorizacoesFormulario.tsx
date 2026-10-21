@@ -12,10 +12,11 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 type Item = { id: string; responsavelId: string; evidencia: string; vigenteEm: string; revogadaEm: string | null; motivoRevogacao: string | null; responsavel: { nome: string }; autorizadaPor: { nome: string }; revogadaPor: { nome: string } | null };
 export function AutorizacoesFormulario({ matriculaId, responsaveis, historico, preferenciaFusoExibicao = null }: { matriculaId: string; responsaveis: { id: string; nome: string }[]; historico: Item[]; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter();
-  // Registro e revogação: dois grupos de ação, cada um com seu feedback junto do próprio botão. Sem chave
-  // de idempotência: na falha de transporte, conferir antes de repetir (MSG_RESULTADO_INCERTO_SEM_CHAVE).
-  const registro = useAcaoCliente({ idempotente: false });
-  const revogacao = useAcaoCliente({ idempotente: false });
+  // Registro e revogação: dois grupos de ação, cada um com seu feedback junto do próprio botão. Idempotentes por
+  // natureza (#166): a autorização vigente com a mesma evidência é devolvida, e a revogação repetida pelo mesmo
+  // autor com o mesmo motivo devolve ok; nenhuma das duas grava Evento (comunicacoes-agenda/autorizacoes.ts).
+  const registro = useAcaoCliente({ idempotente: true });
+  const revogacao = useAcaoCliente({ idempotente: true });
   // Autorização cuja revogação foi enviada por último: o resultado aparece no cartão dela.
   const [revogacaoAlvo, setRevogacaoAlvo] = useState<string | null>(null);
   const ocupado = registro.ocupado || revogacao.ocupado;

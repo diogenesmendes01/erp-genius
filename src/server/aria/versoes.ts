@@ -84,7 +84,9 @@ async function comLimites(u: UsuarioSessao) {
 
 /** Serializa os editores: cria a linha do agente se faltar e a trava até o fim da transação. */
 async function travarAgente(tx: Tx): Promise<void> {
-  await tx.agenteIA.upsert({ where: { id: ID_AGENTE }, create: { id: ID_AGENTE }, update: {} });
+  // ON CONFLICT em vez de `upsert`: no primeiro uso, dois salvamentos simultâneos não colidem na criação da linha
+  // (o upsert do Prisma lê e depois insere, e o segundo caía na chave única; #166, lote 4).
+  await tx.$executeRaw`INSERT INTO "AgenteIA" ("id") VALUES (${ID_AGENTE}) ON CONFLICT ("id") DO NOTHING`;
   await tx.$queryRaw`SELECT "id" FROM "AgenteIA" WHERE "id" = ${ID_AGENTE} FOR UPDATE`;
 }
 
@@ -169,6 +171,14 @@ export async function salvarRascunho(input: {
       const pub = await versaoPublicada(tx);
       if ((pub?.id ?? null) !== input.baseVersaoId) throw new ErroRegra(MSG_CONFIG_MUDOU);
       validarAlteracaoPorPapel(u, pub?.config ?? configPadrao(), config);
+      // Estado-alvo (#166): o rascunho atual já tem exatamente esta configuração, sobre a mesma versão publicada.
+      // O reenvio depois de um resultado incerto chega com o token antigo; em vez de "o rascunho mudou", devolve o
+      // rascunho como está, sem gravar nem registrar outro Evento.
+      const atual = await tx.versaoAgenteIA.findFirst({ where: { status: "RASCUNHO" } });
+      const configAtual = atual && ConfigAriaSchema.safeParse(atual.config);
+      if (atual && configAtual?.success && atual.baseVersaoId === (pub?.id ?? null) && diffConfig(configAtual.data, config).length === 0) {
+        return { versaoId: atual.id, atualizadoEm: atual.atualizadoEm };
+      }
       const r = await gravarRascunho(tx, config, pub?.id ?? null, u.id, input.rascunho);
       await registrarEvento(tx, {
         tipo: "AgenteIARascunhoSalvo",
@@ -195,6 +205,12 @@ export async function publicarRascunho(input: {
     const u = await comLimites(sessao);
     return prisma.$transaction(async (tx) => {
       await travarAgente(tx);
+      // Estado-alvo (#166): o rascunho aberto na tela já foi publicado por este autor, com a mesma nota, e segue
+      // como a versão em uso. O reenvio devolve o mesmo número, sem arquivar nem registrar nada de novo.
+      if (input.rascunho) {
+        const ja = await tx.versaoAgenteIA.findUnique({ where: { id: input.rascunho.id } });
+        if (ja?.status === "PUBLICADA" && ja.publicadaPorId === u.id && (ja.notaPublicacao ?? null) === nota) return { numero: ja.numero };
+      }
       const rascunho = await rascunhoConferido(tx, input.rascunho);
       if (!rascunho) throw new ErroRegra("Não há rascunho para publicar.");
       const pub = await versaoPublicada(tx);
@@ -229,6 +245,14 @@ export async function descartarRascunho(aberto: RascunhoAberto): Promise<Resulta
     await exigirCapacidade(u, "editarComportamento");
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
+      // Estado-alvo (#166): o rascunho aberto na tela já foi descartado por este autor. O reenvio devolve ok sem
+      // registrar outro descarte.
+      if (aberto && !(await tx.versaoAgenteIA.findUnique({ where: { id: aberto.id }, select: { id: true } }))) {
+        const descarte = await tx.evento.findFirst({
+          where: { tipo: "AgenteIARascunhoDescartado", agregadoTipo: "VersaoAgenteIA", agregadoId: aberto.id, autorId: u.id }, select: { id: true },
+        });
+        if (descarte) return;
+      }
       const rascunho = await rascunhoConferido(tx, aberto);
       if (!rascunho) throw new ErroRegra("Não há rascunho para descartar.");
       await tx.versaoAgenteIA.delete({ where: { id: rascunho.id } });

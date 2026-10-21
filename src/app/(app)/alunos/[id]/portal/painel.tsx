@@ -7,6 +7,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -18,9 +19,13 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
   alunoId: string; emailCadastro: string | null; conta: { emailVerificado: string | null; temSenha: boolean; ativa: boolean } | null; trocas: Troca[]; podeDecidir: boolean; preferenciaFusoExibicao: string | null;
 }) {
   const router = useRouter();
-  // Convite, troca e decisão não recebem chave de idempotência (server/portal-aluno/actions.ts:12-22).
-  // Conferir a situação antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // Reenvio reconhecido pelo servidor (#166, server/portal-aluno/identidade.ts). Convite: com chave de idempotência
+  // (B1 da R1 do #274), o reenvio da mesma tentativa devolve o convite original mesmo depois que o cron o despachou;
+  // a chave só muda depois do sucesso, e um novo clique é reemissão deliberada. Troca pendente idêntica, do mesmo
+  // autor, e a mesma decisão, do mesmo decisor e com o mesmo motivo: devolvidas por natureza. Nenhum reenvio gera
+  // outro e-mail.
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativaConvite = useChaveIdempotencia();
   // Origem do resultado ("convite", "troca" ou "decisao:<id>"): aparece junto do botão.
   const [alvo, setAlvo] = useState<string | null>(null);
   const instanteAdministrativo = (valor: string) => {
@@ -29,7 +34,8 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
   };
   async function convite() {
     setAlvo("convite");
-    const d = await acao.executar(() => prepararConvitePortalAluno({ alunoId }), (dado) => dado?.situacao === "PENDENTE_EMAIL" ? "Acesso pendente: cadastre e confirme um e-mail individual." : "Convite preparado. O envio depende da configuração institucional.");
+    const d = await acao.executar(() => prepararConvitePortalAluno({ alunoId, chaveIdempotencia: tentativaConvite.atual }), (dado) => dado?.situacao === "PENDENTE_EMAIL" ? "Acesso pendente: cadastre e confirme um e-mail individual." : "Convite preparado. O envio depende da configuração institucional.");
+    tentativaConvite.depoisDo(d);
     if (d?.tipo === "ok") router.refresh();
   }
   async function troca(evento: FormEvent<HTMLFormElement>) {
@@ -62,7 +68,7 @@ export function PainelAcessoPortalAluno({ alunoId, emailCadastro, conta, trocas,
     <section className="rounded border bg-surface p-4"><h2 className="font-medium">Convite individual</h2><p className="mt-1 text-sm text-gray-600">Não há senha nem link para copiar nesta tela.</p><button onClick={convite} disabled={acao.ocupado} className={`${botaoClasses({ tamanho: "lg" })} mt-3`}>Preparar convite</button><FeedbackAcao erro={alvo === "convite" ? acao.erro : null} sucesso={alvo === "convite" ? acao.sucesso : undefined} className="mt-3" /></section>
     <section className="rounded border bg-surface p-4"><h2 className="font-medium">Troca assistida de e-mail</h2><form onSubmit={troca} className="mt-3 grid gap-3"><label className="text-sm">Novo e-mail<input required name="novoEmail" type="email" className="mt-1 w-full rounded border px-3 py-2" /></label><label className="text-sm">Motivo<CampoTexto required minLength={5} name="motivo" className="mt-1 w-full rounded border px-3 py-2" /></label><label className="text-sm">Evidência de identidade e vínculo<CampoTexto required minLength={5} name="evidencia" className="mt-1 w-full rounded border px-3 py-2" /></label><FeedbackAcao erro={alvo === "troca" ? acao.erro : null} sucesso={alvo === "troca" ? acao.sucesso : undefined} /><button disabled={acao.ocupado} className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} justify-self-start`}>Preparar validação</button></form></section>
     <section className="rounded border bg-surface p-4"><h2 className="font-medium">Solicitações de troca</h2>{!trocas.length ? <EstadoVazio className="mt-2">Nenhuma solicitação.</EstadoVazio> : <div className="mt-3 space-y-3">{trocas.map((troca) => <article key={troca.id} className="rounded border p-3 text-sm"><p>{troca.novoEmail} · {rotular(SITUACAO_TROCA_EMAIL_PORTAL_ALUNO_LABEL, troca.situacao)}</p><p className="mt-1 text-gray-600">Preparada em {instanteAdministrativo(troca.criadaEm)}</p>{troca.novoEmailVerificadoEm && <p className="mt-1 text-gray-600">Novo endereço confirmado em {instanteAdministrativo(troca.novoEmailVerificadoEm)}</p>}{troca.decisao && <p className="mt-1">Decisão {troca.decisao.aprovada ? "aprovada" : "rejeitada"} em {instanteAdministrativo(troca.decisao.criadaEm)}.</p>}{podeDecidir && troca.situacao === "PENDENTE_DECISAO" && <form onSubmit={(evento) => { evento.preventDefault(); if (!acao.ocupado) setAplicando({ id: troca.id, novoEmail: troca.novoEmail, motivo: String(new FormData(evento.currentTarget).get("motivo") ?? "") }); }} className="mt-3 flex flex-wrap gap-2"><input required name="motivo" aria-label={`Motivo da decisão sobre a troca para ${troca.novoEmail}`} placeholder="Motivo da decisão" className="min-w-48 flex-1 rounded border px-2 py-1" /><button disabled={acao.ocupado} className={botaoClasses({ tamanho: "sm" })}>Aprovar e aplicar</button><button type="button" disabled={acao.ocupado} onClick={(evento) => { const formulario = evento.currentTarget.form; if (formulario) void rejeitar(troca.id, String(new FormData(formulario).get("motivo") ?? "")); }} className={botaoClasses({ variante: "perigo", tamanho: "sm" })}>Rejeitar</button></form>}<FeedbackAcao erro={alvo === `decisao:${troca.id}` ? acao.erro : null} sucesso={alvo === `decisao:${troca.id}` ? acao.sucesso : undefined} className="mt-3" /></article>)}</div>}</section>
-    {aplicando && <ConfirmarAcao titulo={`Aplicar a troca do e-mail do portal para ${aplicando.novoEmail}?`} confirmacao="troca de e-mail" idempotente={false}
+    {aplicando && <ConfirmarAcao titulo={`Aplicar a troca do e-mail do portal para ${aplicando.novoEmail}?`} confirmacao="troca de e-mail" idempotente
       acao={() => decidirTrocaEmailPortalAluno({ solicitacaoId: aplicando.id, aprovar: true, motivo: aplicando.motivo })}
       aoConcluir={() => aplicada(aplicando.id)} aoCancelar={() => setAplicando(null)}>
       <p>O acesso do aluno ao portal passa de {conta?.emailVerificado ?? "sem e-mail confirmado"} para {aplicando.novoEmail}, e a senha atual deixa de valer.</p>

@@ -56,7 +56,8 @@ describe("Painel do portal — decidir a troca de e-mail", () => {
     const [c] = confirmacoes(tela());
     expect(c.props.titulo).toBe("Aplicar a troca do e-mail do portal para novo@example.test?");
     expect(c.props.confirmacao).toBe("troca de e-mail");
-    expect(c.props.idempotente).toBe(false);
+    // Idempotente por natureza (#166): a mesma decisão repetida devolve a já tomada, sem aplicar de novo.
+    expect(c.props.idempotente).toBe(true);
     const consequencia = texto(c.props.children).replace(/\s+/g, " ");
     expect(consequencia).toContain("antigo@example.test para novo@example.test");
     expect(consequencia).toContain("As sessões abertas e os links de acesso já enviados ao aluno são revogados na hora");

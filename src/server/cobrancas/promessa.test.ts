@@ -13,7 +13,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     cobranca: { findUnique: m.cobranca },
     configuracaoOperacional: { findUnique: async () => null }, // fusoDaEscola() → America/Sao_Paulo
-    $transaction: async (fn: (tx: object) => Promise<unknown>) => fn({}),
+    // A cobrança é lida dentro da transação (C3 da R2 do #267: a repetição vem antes das validações).
+    $transaction: async (fn: (tx: object) => Promise<unknown>) => fn({ cobranca: { findUnique: m.cobranca } }),
   },
 }));
 vi.mock("@/server/_shared", async (original) => ({
