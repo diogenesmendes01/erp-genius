@@ -961,3 +961,30 @@ it("Q175 não recalcula a comissão sobre a aula zerada nem sobre o crédito ger
   expect(await prisma.evento.count({ where: { agregadoTipo: "Comissao" } })).toBe(eventosAntes);
   expect(await prisma.evento.count({ where: { tipo: "ComissaoRecalculada" } })).toBe(0);
 }, 120_000);
+
+it("Q173 (R2 do #284, B3): aula por hora da moeda anterior ainda não faturada impede a troca até o fechamento ser pago", async () => {
+  const { d } = await prepararPreviaFinanceira();
+  const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
+  const { conferirOcorrenciaHoras } = await import("./ocorrencia-financeira-conferir");
+  const { consultarAlvoMoedaTx } = await import("@/server/contratos/aditivo-moeda");
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
+  const pendencias = async (vigencia: string) => (await prisma.$queryRaw<Array<{ p: string[] }>>`SELECT pendencias_moeda_antiga_173(${matriculaId}, 'CRC', ${vigencia}::timestamp, 'UTC') AS p`)[0].p;
+  const alvo = () => prisma.$transaction(tx => consultarAlvoMoedaTx(tx, matriculaId, { condicoes: { MOEDA: { tipo: "MOEDA", moeda: "USD" } }, vigenciaInicio: new Date("2026-03-01T00:00:00Z") }));
+  // Encontro de 10/01 ainda sem conferência: anterior à vigência de 01/03, bloqueia; com vigência anterior ao encontro, não.
+  expect(await pendencias("2026-03-01T00:00:00")).toEqual(["HORAS_A_FATURAR"]);
+  expect(await pendencias("2026-01-01T00:00:00")).toEqual([]);
+  // Conferida (156,25 CRC) e ainda não faturada: continua bloqueando, na checagem TS e no banco.
+  const previa = await preverConferenciaOcorrenciaHoras(d); if (!previa.ok || !previa.dado) throw new Error("Prévia ausente");
+  const conf = await conferirOcorrenciaHoras({ ...d, estadoPrevia: previa.dado.estadoPrevia, motivo: "Conferência antes da troca de moeda", chaveIdempotencia: "q173-b3-conferencia" });
+  if (!conf.ok || !conf.dado) throw new Error(JSON.stringify(conf));
+  expect(await alvo()).toMatchObject({ podePreparar: false, pendencias: [{ codigo: "HORAS_A_FATURAR", texto: expect.stringContaining("não faturada") }] });
+  // Fechada: a cobrança em aberto bloqueia; paga, a matrícula fica limpa. A cobrança do fechamento não é adiantamento.
+  const emissao = await emitirCobrancaDaPrevia(d, "q173-b3-fechamento");
+  expect(await pendencias("2026-03-01T00:00:00")).toEqual(["COBRANCA_EM_ABERTO"]);
+  login(adminId);
+  const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } });
+  expect(await registrarPagamento(cobranca.id, { chaveIdempotencia: "q173-b3-pagamento", valorRecebido: cobranca.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Aula por hora recebida antes da troca." })).toMatchObject({ ok: true });
+  expect(await pendencias("2026-03-01T00:00:00")).toEqual([]);
+  expect(await alvo()).toMatchObject({ podePreparar: true, pendencias: [] });
+});
