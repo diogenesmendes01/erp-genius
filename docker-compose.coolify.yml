@@ -1,5 +1,7 @@
 # Deploy do ERP Genius no Coolify (v4.3.23+)
-# Build pack: Docker Compose · repo Git · deploy automático no merge do main.
+# Build pack: Docker Compose · repo Git · imagem pré-construída no GHCR.
+# O build acontece no GitHub Actions (.github/workflows/image.yml), não na VPS.
+# O Coolify APENAS puxa a imagem validada (variável APP_IMAGE com digest).
 #
 # Coolify cuida do domínio e TLS via Traefik (porta 80/443 ocupadas por ele), portanto
 # o Caddy é OMITIDO. Nenhum serviço publica porta no host — o Traefik roteia o app na
@@ -35,9 +37,7 @@ services:
 
   # Migrações ANTES do app (prisma migrate deploy — aditivo e idempotente).
   migrate:
-    build:
-      context: .
-      target: builder
+    image: ${APP_IMAGE:?defina no Coolify}
     command: npx prisma migrate deploy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
@@ -47,13 +47,7 @@ services:
     restart: "no"
 
   app:
-    build:
-      context: .
-      args:
-        # SHA do commit para o /api/health (#165). SOURCE_COMMIT é variável pré-definida do Coolify; no
-        # build ela só traz o commit com "Include Source Commit in Build" ligado (General → Build). Desligado,
-        # ou fora do Coolify, o /api/health responde "desconhecido".
-        GIT_SHA: ${SOURCE_COMMIT:-}
+    image: ${APP_IMAGE:?defina no Coolify}
     restart: unless-stopped
     environment:
       # Coolify gera SERVICE_FQDN_APP_3000 a partir do domínio configurado no painel.

@@ -146,10 +146,26 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
      o Coolify gera os labels do Traefik automaticamente).
    - O público acessa **`https://erp.geniusidiomas.com`** (porta 443 padrão).
 
-3. **Variáveis de ambiente** (aba "Environment Variables"):
+3. **Login no GHCR na VPS** (uma vez):
+
+   O Coolify precisa de credenciais para puxar a imagem do app do GHCR. Na VPS, rode:
+
+   ```bash
+   docker login ghcr.io -u <seu-usuario-github>
+   ```
+
+   Quando pedir a senha, use um **Personal Access Token** (PAT) do GitHub com escopo `read:packages`:
+   - Criar em: https://github.com/settings/tokens/new
+   - Escopo mínimo: `read:packages`
+   - Guarde o token em local seguro (só aparece uma vez)
+
+   > **Nota:** o login fica salvo em `/root/.docker/config.json` e persiste entre deploys.
+
+4. **Variáveis de ambiente** (aba "Environment Variables"):
 
    | Variável | Obrigatória | O que é | Exemplo / como obter |
    |---|---|---|---|
+   | `APP_IMAGE` | ✅ | Imagem do app publicada no GHCR (pinada por digest) | `ghcr.io/diogenesmendes01/erp-genius@sha256:abc123...` (ver abaixo) |
    | `DOMINIO_APP` | ✅ | Domínio público do app (sem https://) | `erp.geniusidiomas.com` |
    | `POSTGRES_USER` | ✅ | Usuário do banco | `erp` |
    | `POSTGRES_PASSWORD` | ✅ | Senha do banco (URL-safe, sem `/+=`) | `openssl rand -hex 32` |
@@ -188,7 +204,47 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
    > As marcadas como obrigatórias (`${VAR:?...}`) bloqueiam o deploy se estiverem vazias.
 
-4. **Deploy**:
+   **Como obter o digest da imagem `APP_IMAGE`:**
+
+   Após cada merge na `main`, o workflow `.github/workflows/image.yml` constrói e publica a imagem no GHCR.
+   O digest aparece no **job summary** do GitHub Actions (aba "Summary" do workflow).
+
+   Formato da variável `APP_IMAGE`:
+   ```
+   ghcr.io/diogenesmendes01/erp-genius@sha256:<digest-completo>
+   ```
+
+   Exemplo:
+   ```
+   APP_IMAGE=ghcr.io/diogenesmendes01/erp-genius@sha256:abc123def456...
+   ```
+
+   > **Importante:** sempre use o digest (`@sha256:...`), nunca uma tag (`main`, `latest`). O digest
+   > garante que o Coolify sempre puxe a mesma versão validada da imagem. Tags mutáveis podem apontar
+   > para imagens diferentes em cada pull.
+
+   **Variáveis de build-time (NEXT_PUBLIC_*):**
+
+   O Next.js embute variáveis `NEXT_PUBLIC_*` no JavaScript do cliente **durante o build** (não em runtime).
+   Atualmente o ERP não usa nenhuma variável `NEXT_PUBLIC_*`, então não há ação necessária.
+
+   **Se você adicionar variáveis `NEXT_PUBLIC_*` no futuro:**
+   - Elas precisam ser definidas **no GitHub Actions** (arquivo `.github/workflows/image.yml`, job `build` ou `publish`).
+   - Não adianta definir no Coolify: o build acontece no CI, não na VPS.
+   - Documente cada variável nova em `.env.example` e aqui no SETUP.md.
+
+   **Webhook opcional do Coolify (deploy automático):**
+
+   O workflow pode disparar o deploy no Coolify automaticamente após publicar a imagem. Para isso:
+
+   1. No Coolify, vá em "Webhooks" do Resource e copie a URL do webhook.
+   2. No GitHub, vá em "Settings" → "Variables and secrets" → "Actions".
+   3. Crie uma **variable** `COOLIFY_WEBHOOK` com a URL do webhook (ex.: `https://coolify.exemplo.com/api/...`).
+   4. Crie um **secret** `COOLIFY_TOKEN` com o token de autenticação do Coolify (se aplicável).
+
+   Se essas variáveis não existirem, o workflow pula o deploy silenciosamente (o workflow continua funcionando).
+
+5. **Deploy**:
    - Clique em "Deploy" no Coolify.
    - O Traefik emite certificado TLS (Let's Encrypt) e roteia
      `https://erp.geniusidiomas.com` → serviço `app` porta 3000 (interna).
@@ -200,8 +256,32 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
      `x-cron-secret`) é para monitores externos (UptimeRobot etc.), não para liveness
      do container Docker.
 
-5. **Deploy automático**:
-   - Cada merge no branch `main` dispara um novo deploy (webhook Git do Coolify).
+6. **Deploy automático**:
+   - Cada merge no branch `main` dispara o build e publicação da imagem no GHCR.
+   - Se o webhook do Coolify estiver configurado, o deploy é disparado automaticamente.
+   - Caso contrário, atualize manualmente a variável `APP_IMAGE` no Coolify com o novo digest.
+
+### Rollback (voltar para uma versão anterior)
+
+Se um deploy causar problemas, você pode voltar para uma versão anterior **sem tocar no código**:
+
+1. **Encontre o digest da versão anterior:**
+   - Vá em "Actions" → workflow "Build e publicação de imagem" → run anterior.
+   - Na aba "Summary", copie o digest da imagem publicada.
+
+2. **Atualize a variável `APP_IMAGE` no Coolify:**
+   - Vá em "Environment Variables" do Resource.
+   - Cole o digest antigo em `APP_IMAGE`:
+     ```
+     APP_IMAGE=ghcr.io/diogenesmendes01/erp-genius@sha256:<digest-antigo>
+     ```
+
+3. **Redesploy no Coolify:**
+   - Clique em "Redeploy" no painel do Coolify.
+   - O Coolify puxa a imagem antiga (validada) e reinicia os containers.
+
+> **Nota:** o rollback é instantâneo (sem recompilar) e 100% confiável, pois o digest aponta
+> para a mesma imagem binária que estava rodando antes. Não há "drift" de dependências ou ambiente.
 
 ### Números legados (Meta Cloud / Evolution) depois da Fase 4E
 

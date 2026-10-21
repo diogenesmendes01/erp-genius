@@ -1,0 +1,234 @@
+# Build, validação e publicação da imagem Docker no GHCR.
+# Roda em push na main e em tags v* (manual em outras branches apenas constrói, sem publicar).
+# A imagem validada é publicada no GHCR e o Coolify apenas puxa — o build não compete mais
+# pelos recursos da VPS (app uuid thpvwxk6figfp347ajznvzhl).
+name: Build e publicação de imagem
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+# Concurrency: builds de tags/main mais recentes não podem ser sobrescritos por builds antigos.
+# Push na main: um grupo por SHA, nada é cancelado (cada commit tem seu próprio histórico).
+# Tag: um grupo por ref, builds concorrentes são serializados (cancel-in-progress: false).
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Typecheck, lint e testes devem passar ANTES de buildar a imagem.
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
+      - name: TypeScript (tsc --noEmit)
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
+        run: npx tsc --noEmit
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: ESLint (eslint . --max-warnings 40)
+        run: npx eslint . --max-warnings 40
+
+  test:
+    name: test (${{ matrix.tz }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [UTC, America/Sao_Paulo]
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
+      NEXT_TELEMETRY_DISABLED: "1"
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Gerar os tipos de rota do Next
+        run: npx next typegen
+      - name: Testes unitários (npm test)
+        run: npm test
+
+  build-next:
+    name: build Next.js
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+      - name: Gerar o client do Prisma
+        run: npx prisma generate
+      - name: Build de produção (npm run build)
+        env:
+          NODE_OPTIONS: --max-old-space-size=5120
+        run: npm run build
+
+  # Build da imagem Docker — roda SEMPRE (push, tag, manual) mas só publica se passou nos checks.
+  build:
+    name: build imagem
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, test, build-next]
+    timeout-minutes: 40
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@854fcceb61431b02df24266bcd8a9d11ba5e160c # v4.0.1
+
+      - name: Extrair metadados da imagem
+        id: meta
+        uses: docker/metadata-action@38ab50f236a5e9a06126ca31b35eb726e3fe8e4e # v7.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short,prefix=sha-
+
+      - name: Build da imagem (sem publicação)
+        id: build
+        uses: docker/build-push-action@67c2fb0e01ef070ab5ba6e89b77a79948f8e8019 # v7.0.0
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+
+  # Publicação no GHCR — só roda em push na main ou tags v*.
+  publish:
+    name: publicar no GHCR
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@854fcceb61431b02df24266bcd8a9d11ba5e160c # v4.0.1
+
+      - name: Login no GHCR
+        uses: docker/login-action@5139682d94efc37792e6b54386b5b470a68a4737 # v4.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extrair metadados da imagem
+        id: meta
+        uses: docker/metadata-action@38ab50f236a5e9a06126ca31b35eb726e3fe8e4e # v7.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short,prefix=sha-
+
+      - name: Build e publicação da imagem
+        id: push
+        uses: docker/build-push-action@67c2fb0e01ef070ab5ba6e89b77a79948f8e8019 # v7.0.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+
+      - name: Imprimir digest no job summary
+        run: |
+          echo "## 🐳 Imagem publicada no GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.push.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Referência completa por digest:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # Job opcional: dispara o webhook do Coolify se o secret estiver definido.
+  # Pula silenciosamente se COOLIFY_WEBHOOK ausente (permite o workflow rodar sem Coolify configurado).
+  deploy:
+    name: disparar deploy no Coolify
+    runs-on: ubuntu-latest
+    needs: publish
+    if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
+    timeout-minutes: 5
+    steps:
+      - name: Disparar webhook do Coolify (se configurado)
+        if: vars.COOLIFY_WEBHOOK != ''
+        run: |
+          curl -X POST "${{ vars.COOLIFY_WEBHOOK }}" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+        continue-on-error: true
