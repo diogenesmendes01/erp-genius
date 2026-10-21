@@ -4324,7 +4324,7 @@ Branch `claude/docs-whatsapp-e-nits`, base `main` 239001ad. Só documentação e
 
 ### Idempotência, 6º lote (#166) — 2026-10-21
 
-Branch `claude/idempotencia-lote6`, base `main` 239001ad. Não toca as ações nem os arquivos do 5º lote (PR #282, ainda aberto). A #166 continua aberta.
+Branch `claude/idempotencia-lote6`, base `main` 239001ad, com `main` mesclada depois do 5º lote (PR #282). Não toca as ações do 5º lote. A #166 continua aberta.
 
 - **Escopo:** 20 ações que criam registro, enviam pelo WhatsApp ou mexem em dinheiro. Os testes de integração entraram primeiro e rodaram contra o servidor de `main`: 18 de 29 casos falharam; os 11 que passaram (sem chave, chave de outro autor, estado vindo de outra pessoa) ficam como trava de regressão.
 - **Criações com chave** (`repeticaoIdempotente` depois da sessão e do papel, busca antes das validações de estado, escopo por autor; `useChaveIdempotencia` na tela):
@@ -4337,7 +4337,12 @@ Branch `claude/idempotencia-lote6`, base `main` 239001ad. Não toca as ações n
   - Mensagem pelo motor: editar com o mesmo texto da última edição de quem repete e apagar a mensagem que ele mesmo apagou pelo ERP. Apagada pelo celular (sem Evento), segue "já foi apagada".
 - **Idempotentes por natureza, só na tela** (conferido no servidor, que já devolvia a decisão ou a efetivação existente): decisão da solicitação de acesso às aulas, efetivação da desistência, decisão administrativa e decisão financeira da desistência, decisão e efetivação do acerto de encerramento, atribuir atendimento. As decisões já usavam a mensagem própria de decisão incerta ("reenvie a mesma decisão"); as efetivações passam de "recarregue antes de repetir" para "reenvie sem alterar os dados".
 - **Fica como está:** fixar conversa no Inbox alterna o estado (o reenvio desfaria o primeiro clique); continua com `idempotente: false`, agora num executor separado de assumir/devolver. O pagamento simulado da página pública `/pagar` não baixa a cobrança (`baixarCobrancaTx` exige autor), então não há o que repetir.
-- **Restam 105 linhas** com `idempotente: false` ou `idempotente={false}` fora de testes e de `src/server` (eram 116 em `main`, na mesma contagem; somando o 5º lote, ficam 92).
+- **Restam 92 linhas** com `idempotente: false` ou `idempotente={false}` fora de testes e de `src/server` (103 em `main` depois do 5º lote, na mesma contagem). O encerramento usa `ultimoEventoDoAutor` do 5º lote; assumir e devolver usam um helper local, porque o último Evento de responsável é procurado entre três tipos.
 - **Testes atualizados** porque fixavam o comportamento antigo: o segundo `revogarParticipante` em `whatsapp/participantes.int.test.ts` (agora ok, com um Evento); a chamada de `encaminharMensagemWhatsApp` em `inbox/AcoesMensagem.test.ts` (leva a chave); a mensagem de resultado incerto das efetivações em `movimentacoes/feedback.interacao.test.ts` e `desistencia/feedback.interacao.test.ts`.
 - **Arquivos novos:** `cobrancas/acesso-aulas-idempotencia`, `matricula/link-pagamento-idempotencia`, `whatsapp/atendimento-idempotencia` e `whatsapp/motor/mensagem-idempotencia` (`*.int.test.ts`). Os três primeiros trocam só `exigirSessao` (como `empresa-idempotencia`), para o envio simultâneo não esbarrar no `import()` duplo do NextAuth mockado.
-- **Evidências** (banco descartável `erp_genius_test_idem6`, `migrate deploy`; perfil temporário desfeito e banco apagado ao fim): ver o PR.
+- **Evidências** (banco descartável `erp_genius_test_idem6`, `migrate deploy`; perfil temporário desfeito e banco apagado ao fim). A máquina estava sob carga (load ~20 em 4 núcleos) e o Postgres compartilhado entrou em recuperação no meio da rodada; a integração foi repetida depois que ele voltou.
+  - `tsc --noEmit`: saída 0, antes e depois do merge da `main`.
+  - `eslint . --max-warnings 40`: 0 erros e 40 avisos (linha de base), antes e depois do merge.
+  - `npm test` antes do merge: 819 arquivos e 6.218 testes; em UTC, 2 falharam por timeout de carga (`colunas-ordenaveis`, `paginacao-dois-sentidos`), em America/Sao_Paulo, 1 (`campos-texto`, timeout fixo de 120 s). Os três passam repetidos isolados. Inclui a trava `crm-config/auditoria.test.ts`.
+  - `npm run build`: saída 0 (a primeira tentativa parou em "Failed to type check" sem diagnóstico, com a memória da máquina esgotada; repetida, passou).
+  - Integração: os 19 arquivos que chamam as ações tocadas mais `whatsapp/linha-comercial`, `crm/carteira` e `crm/funil-carteira-equivalencia`: 22 arquivos e 247 testes OK. A rodada por diretório inteiro (`whatsapp`, `inbox`, `crm`, `cobrancas`) não terminou dentro do limite de uma hora por causa da carga.
