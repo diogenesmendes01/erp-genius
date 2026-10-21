@@ -559,7 +559,7 @@ export function FichaAluno({
                 )}
               </span>
             </Linha>
-            <Linha rotulo="Nascimento">{aluno.nascimento ? new Date(aluno.nascimento).toLocaleDateString("pt-BR") : "—"}</Linha>
+            <Linha rotulo="Nascimento">{formatarDataCivil(aluno.nascimento?.slice(0, 10))}</Linha>
             <Linha rotulo="Gênero">{aluno.genero ? GENERO_LABEL[aluno.genero] : "—"}</Linha>
             <Linha rotulo="Nacionalidade">
               {[aluno.nacionalidade, aluno.segundaNacionalidade].filter(Boolean).map(nomePaisISO).join(" · ") || "—"}
