@@ -77,8 +77,10 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda }: { matri
 }
 
 export function DecidirAditivo({ propostaId, propostaHash, superada }: { propostaId: string; propostaHash: string; superada: boolean }) {
-  // A decisão não leva chave; na falha de transporte vale a mensagem própria de decisão (MSG_DECISAO_INCERTA).
-  const router = useRouter(), acao = useAcaoCliente({ idempotente: false });
+  // A decisão não leva chave, mas é idempotente por natureza (#166, 7º lote): a mesma decisão, do mesmo decisor e com o
+  // mesmo motivo, devolve a decisão gravada (decidirAditivoContratualTx). Na falha de transporte vale a mensagem própria
+  // de decisão (MSG_DECISAO_INCERTA).
+  const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   const pendente = acao.ocupado;
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => { e.preventDefault(); const dados = new FormData(e.currentTarget), decisao = dados.get("decisao"); if (decisao !== "aprovar" && decisao !== "rejeitar") { acao.limpar(); acao.setErro("Escolha uma decisão."); return; }
     const d = await acao.executar(() => decidirAditivoContratual({ propostaId, propostaHashEsperado: propostaHash, aprovada: decisao === "aprovar", motivo: String(dados.get("motivo") ?? "") }), "Decisão registrada.");

@@ -15,7 +15,9 @@ export function textoPausaAria(motivo: MotivoPausaAtendimentoIA | null): string 
 
 /** Bloco "Aria" do painel do atendimento: pausa com "Devolver para Aria" (só com escopo de envio) e sugestões a aprovar ou rejeitar. */
 export function PainelAria({ atendimentoId, aria, fuso, aoMudar }: { atendimentoId: string; aria: AriaDoAtendimento | null | undefined; fuso: string | null; aoMudar(): void }) {
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166, 7º lote): devolver a quem já está com a Aria não grava nada, e aprovar ou rejeitar
+  // de novo a sugestão que a mesma pessoa já decidiu devolve ok sem enviar a resposta outra vez (server/aria/historico.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   if (!aria || (!aria.pausada && aria.sugestoes.length === 0)) return null;
 
   const hora = (iso: string) => formatarInstanteExibicao(iso, fuso, "UTC", "hora").texto;

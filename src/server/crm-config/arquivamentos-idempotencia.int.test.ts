@@ -21,7 +21,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { arquivarCampo, arquivarTag } from "./tags-campos";
-import { cancelarTarefa, criarTarefa } from "@/server/crm/tarefas";
+import { cancelarTarefa, concluirTarefa, criarTarefa } from "@/server/crm/tarefas";
 import { revogarCobertura } from "@/server/acesso/coberturas";
 import { registrarOptOutContato, removerOptOutContato } from "@/server/whatsapp/acoes";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
@@ -73,6 +73,23 @@ describe("cancelar tarefa repetido (#166)", () => {
     expect((await cancelarTarefa(r.dado.id, versao, "Cliente desistiu")).ok).toBe(true);
     expect(await eventos("TarefaCancelada")).toBe(1);
     expect(await cancelarTarefa(r.dado.id, versao, "Outro motivo")).toEqual({ ok: false, erro: "Só tarefas abertas podem ser canceladas." });
+  });
+});
+
+describe("concluir tarefa repetido (#166, 7º lote)", () => {
+  it("a mesma conclusão, inclusive em clique duplo e com a versão já vencida, grava um Evento; outro resultado ou outra pessoa segue recusado", async () => {
+    entrar(vendedorId);
+    const r = await criarTarefa({ titulo: "Ligar", tipo: "OUTRO" });
+    if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+    const { versao } = await prisma.tarefa.findUniqueOrThrow({ where: { id: r.dado.id } });
+    const [a, b] = await Promise.all([concluirTarefa(r.dado.id, versao, "Cliente atendeu"), concluirTarefa(r.dado.id, versao, "Cliente atendeu")]);
+    expect([a.ok, b.ok], JSON.stringify([a, b])).toEqual([true, true]);
+    expect((await concluirTarefa(r.dado.id, versao, "Cliente atendeu")).ok).toBe(true);
+    expect(await eventos("TarefaConcluida")).toBe(1);
+    expect(await concluirTarefa(r.dado.id, versao, "Outro resultado")).toEqual({ ok: false, erro: "Só tarefas abertas podem ser concluídas." });
+    entrar(gerenteId);
+    expect(await concluirTarefa(r.dado.id, versao, "Cliente atendeu")).toEqual({ ok: false, erro: "Só tarefas abertas podem ser concluídas." });
+    expect(await eventos("TarefaConcluida")).toBe(1);
   });
 });
 

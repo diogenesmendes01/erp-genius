@@ -161,7 +161,20 @@ export async function decidirAprovacao(aprovacaoId: string, input: DecisaoInput)
       const aprovacao = await tx.aprovacao.findUnique({ where: { id: aprovacaoId } });
       if (!aprovacao) throw new ErroRegra("Aprovação não encontrada.");
       exigirConferenciaIndependente(aprovacao.solicitanteId, autor.id);
-      if (aprovacao.status !== StatusAprovacao.PENDENTE) throw new ErroRegra("Pedido já decidido.");
+      if (aprovacao.status !== StatusAprovacao.PENDENTE) {
+        // Idempotência por natureza (#166, 7º lote): a mesma decisão, de quem já decidiu e com o mesmo motivo, devolve
+        // ok sem aplicar o desconto nem gravar Evento de novo. A linha travada acima serializa o clique duplo.
+        // Decidido por outra pessoa, ou com outra decisão, segue recusado com a mesma mensagem.
+        const mesmoStatus = aprovacao.status === (dados.aprovar ? StatusAprovacao.APROVADA : StatusAprovacao.REJEITADA);
+        if (mesmoStatus && aprovacao.aprovadorId === autor.id) {
+          const anterior = await tx.evento.findFirst({
+            where: { tipo: "AprovacaoDecidida", autorId: autor.id, payload: { path: ["aprovacaoId"], equals: aprovacaoId } },
+            orderBy: { criadoEm: "desc" }, select: { payload: true },
+          });
+          if (anterior && ((anterior.payload ?? {}) as { motivo?: unknown }).motivo === (dados.motivo ?? null)) return;
+        }
+        throw new ErroRegra("Pedido já decidido.");
+      }
       const parsed = SnapshotSchema.safeParse(aprovacao.payload);
       if (!parsed.success) throw new ErroRegra("Pedido antigo sem versão de segurança. Solicite novamente.");
       const snapshot = parsed.data;

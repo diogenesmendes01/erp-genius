@@ -67,7 +67,7 @@ import {
 import { ErroMotor } from "./motor/cliente";
 import { telefoneE164 as telefoneE164Schema } from "@/server/_shared/validacao";
 import { ONDE_MODELO_REGUA, ehModeloRegua } from "./modelos-regua";
-import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 
 // Ações do braço API da fila de cobrança (doc 30 E2). Mesmos papéis que já operam a
 // cobrança manual (financeiro/acoes.ts). NENHUMA envia direto: gravam INTENÇÃO e chamam o
@@ -503,6 +503,16 @@ export async function vincularContatoWhatsApp(input: VincularContatoInput): Prom
     }
 
     await prisma.$transaction(async (tx) => {
+      // Idempotência por natureza (#166, 7º lote): com a linha do contato travada (serializa o clique duplo), o contato já
+      // ligado a este cadastro por quem repete, pelo último vínculo dele, devolve ok sem outro `ContatoVinculado`.
+      const [atual] = await tx.$queryRaw<{ alunoId: string | null; responsavelId: string | null; leadId: string | null }[]>`
+        SELECT "alunoId", "responsavelId", "leadId" FROM "ContatoWhatsApp" WHERE id = ${contatoId} FOR UPDATE`;
+      const campo = alvo.tipo === "aluno" ? "alunoId" : alvo.tipo === "responsavel" ? "responsavelId" : "leadId";
+      if (atual?.[campo] === alvo.id) {
+        const p = await ultimoEventoDoAutor(tx, { tipo: "ContatoVinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: contatoId, autorId: autor.id });
+        const vinculado = (p?.alvo ?? {}) as { tipo?: unknown; id?: unknown };
+        if (vinculado.tipo === alvo.tipo && vinculado.id === alvo.id) return;
+      }
       await tx.contatoWhatsApp.update({ where: { id: contatoId }, data });
       await garantirAtendimento(tx, { numeroId: alcance.numeroId, contatoId, finalidade: alcance.finalidade,
         leadId: data.leadId ?? alcance.leadId,
@@ -546,7 +556,14 @@ export async function editarNomeContatoWhatsApp(input: EditarNomeContatoInput): 
       // Condicional ao nome que a tela carregou: quem editou antes não é sobrescrito às cegas.
       const { count } = await tx.contatoWhatsApp.updateMany({ where: { id: alcance.contatoId, nomeExibicao: nomeAnterior },
         data: { nomeExibicao: depois, nomeEditadoEm: new Date() } });
-      if (count === 0) throw new ErroRegra("O nome do contato mudou enquanto você editava. Recarregue a conversa e tente de novo.");
+      if (count === 0) {
+        // Idempotência por natureza (#166, 7º lote): a mesma troca de nome, já feita por quem repete (último
+        // `ContatoRenomeado` do contato, com o mesmo antes e depois), devolve ok. Outra edição no meio segue recusada.
+        const p = await ultimoEventoDoAutor(tx, { tipo: "ContatoRenomeado", agregadoTipo: "ContatoWhatsApp", agregadoId: alcance.contatoId, autorId: autor.id });
+        const atual = await tx.contatoWhatsApp.findUnique({ where: { id: alcance.contatoId }, select: { nomeExibicao: true } });
+        if (p && (p.antes ?? null) === nomeAnterior && (p.depois ?? null) === depois && atual?.nomeExibicao === depois) return;
+        throw new ErroRegra("O nome do contato mudou enquanto você editava. Recarregue a conversa e tente de novo.");
+      }
       await registrarEvento(tx, {
         tipo: "ContatoRenomeado",
         agregadoTipo: "ContatoWhatsApp",
@@ -873,12 +890,16 @@ export async function desconectarNumero(numeroId: string): Promise<Resultado> {
 export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
-    const dados = TemplateWhatsAppSchema.parse(input);
+    const { chaveIdempotencia, ...dados } = TemplateWhatsAppSchema.parse(input);
 
     const id = await prisma.$transaction(async (tx) => {
       if (dados.id) {
+        await tx.$queryRaw`SELECT id FROM "TemplateWhatsApp" WHERE id = ${dados.id} FOR UPDATE`;
         const antes = await tx.templateWhatsApp.findUnique({ where: { id: dados.id } });
         if (!antes || !ehModeloRegua(antes)) throw new ErroRegra("Template não encontrado.");
+        // Estado-alvo (#166, 7º lote): o reenvio da mesma edição não grava outro `TemplateAlterado`. A linha travada
+        // serializa o clique duplo.
+        if (antes.nome === dados.nome && antes.corpo === dados.corpo && antes.idioma === dados.idioma && antes.categoria === dados.categoria) return dados.id;
         await tx.templateWhatsApp.update({
           where: { id: dados.id },
           data: { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria },
@@ -896,6 +917,16 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
         return dados.id;
       }
 
+      // Criação com chave (#166, 7º lote): a marca vai no `TemplateCriado`. O reenvio da mesma tentativa devolve o
+      // template já criado em vez de cair em "Já existe um template com este nome.".
+      const marca = marcaIdempotencia(chaveIdempotencia, { nome: dados.nome, corpo: dados.corpo, idioma: dados.idioma, categoria: dados.categoria });
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "TemplateCriado", agregadoTipo: "TemplateWhatsApp", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada para outro template. Recarregue a página antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
       const conflito = await tx.templateWhatsApp.findUnique({ where: { nome: dados.nome }, select: { id: true } });
       if (conflito) throw new ErroRegra("Já existe um template com este nome.");
       const criado = await tx.templateWhatsApp.create({
@@ -906,7 +937,7 @@ export async function salvarTemplateWhatsApp(input: TemplateWhatsAppInput): Prom
         agregadoTipo: "TemplateWhatsApp",
         agregadoId: criado.id,
         autorId: autor.id,
-        payload: { nome: dados.nome, idioma: dados.idioma, categoria: dados.categoria },
+        payload: { nome: dados.nome, idioma: dados.idioma, categoria: dados.categoria, ...marca },
       });
       return criado.id;
     });
@@ -989,6 +1020,9 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
     }
 
     await prisma.$transaction(async (tx) => {
+      // Estado-alvo (#166, 7º lote): a trava serializa o clique duplo (antes, dois primeiros salvamentos simultâneos
+      // criavam duas políticas), e o reenvio que não muda nada não grava outro `PoliticaReguaAlterada`.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('politica-regua:COBRANCA', 0))`;
       const existente = await tx.politicaRegua.findFirst({
         where: { escopo: "COBRANCA" },
         include: { degraus: true },
@@ -1028,6 +1062,9 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
               .map((d) => ({ passo: d.passo, offsetDias: d.offsetDias, modo: d.modo, ativo: d.ativo, templateId: d.templateId })),
           }
         : null;
+
+      const depois = snapshot(dados, degraus);
+      if (antes && mesmaPolitica(antes, depois)) return;
 
       const politicaId = existente
         ? existente.id
@@ -1074,13 +1111,27 @@ export async function salvarPoliticaRegua(input: PoliticaReguaInput): Promise<Re
         agregadoTipo: "PoliticaRegua",
         agregadoId: politicaId,
         autorId: autor.id,
-        payload: { antes, depois: snapshot(dados, degraus) },
+        payload: { antes, depois },
       });
     });
 
     revalidatePath("/configuracao/whatsapp", "layout");
     revalidatePath("/financeiro", "layout"); // timeline do drawer lê a política do banco (E2)
   });
+}
+
+type RetratoPolitica = { degraus: { passo: string }[] } & Record<string, unknown>;
+
+/**
+ * Mesma configuração da régua? Degraus comparados por passo (a ordem gravada é a do offset; a do formulário, a da
+ * tela), e o campo ausente no formulário (`undefined`) vale o `null` gravado.
+ */
+function mesmaPolitica(a: RetratoPolitica, b: RetratoPolitica): boolean {
+  const normal = (p: RetratoPolitica) => JSON.stringify(
+    { ...p, degraus: [...p.degraus].sort((x, y) => x.passo.localeCompare(y.passo)) },
+    (_chave, valor: unknown) => (valor === undefined ? null : valor),
+  );
+  return normal(a) === normal(b);
 }
 
 /** Freio de emergência: liga/desliga o kill switch sem mexer no resto da política. */
@@ -1092,16 +1143,19 @@ export async function acionarKillSwitchRegua(ligado: boolean): Promise<Resultado
       orderBy: { criadoEm: "asc" },
     });
     if (!politica) throw new ErroRegra("A política ainda não foi salva — não há automação para frear.");
-    if (politica.killSwitch === ligado) return;
 
     await prisma.$transaction(async (tx) => {
+      // Estado-alvo (#166, 7º lote): a releitura com a linha travada serializa o clique duplo, que antes gravava dois
+      // Eventos (a conferência do estado era feita fora da transação).
+      const [atual] = await tx.$queryRaw<{ killSwitch: boolean }[]>`SELECT "killSwitch" FROM "PoliticaRegua" WHERE id = ${politica.id} FOR UPDATE`;
+      if (!atual || atual.killSwitch === ligado) return;
       await tx.politicaRegua.update({ where: { id: politica.id }, data: { killSwitch: ligado } });
       await registrarEvento(tx, {
         tipo: "PoliticaReguaAlterada",
         agregadoTipo: "PoliticaRegua",
         agregadoId: politica.id,
         autorId: autor.id,
-        payload: { antes: { killSwitch: politica.killSwitch }, depois: { killSwitch: ligado } },
+        payload: { antes: { killSwitch: atual.killSwitch }, depois: { killSwitch: ligado } },
       });
     });
     revalidatePath("/configuracao/whatsapp", "layout");

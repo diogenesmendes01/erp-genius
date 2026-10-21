@@ -66,12 +66,14 @@ const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
 // Abas do /financeiro como componentes independentes (E8 — uma rota por aba). Cada rota monta só a
 // sua aba; as que executam ações carregam o próprio executor (useAcaoCliente) e o próprio retorno.
-// Câmbio, configuração e aprovações: nenhuma action recebe chave de idempotência — resultado incerto manda
-// conferir antes de repetir. O fechamento de comissões recebe chave (#166, 5º lote).
+// Câmbio, configuração e aprovações são idempotentes por natureza (#166, 7º lote): o reenvio de quem já decidiu a
+// aprovação (mesma decisão e motivo), já gravou as mesmas cotações ou já deixou a configuração no estado pedido
+// devolve ok sem gravar de novo (server/ajustes/acoes.ts e server/financeiro/acoes.ts). O fechamento de comissões
+// recebe chave (#166, 5º lote).
 
 function useExecutorFinanceiro() {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: true });
   // Recebe uma fábrica, não a promise já criada: com a trava do executor fechada, a action nem começa.
   async function run<T>(disparar: () => Promise<Resultado<T>>) {
     const d = await acao.executar(disparar);

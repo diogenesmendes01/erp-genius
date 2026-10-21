@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { telefoneE164 } from "@/server/_shared/validacao";
+import { ChaveIdempotenciaSchema, telefoneE164 } from "@/server/_shared/validacao";
 
 // Zod do módulo whatsapp (padrão docs/13). As ações da fila, da inbox e das telas de
 // config validam aqui.
@@ -111,6 +111,8 @@ export const TemplateWhatsAppSchema = z.object({
     .trim()
     .regex(/^[a-z]{2}(_[A-Z]{2})?$/, "Código de idioma da Meta (ex.: es, pt_BR)."),
   categoria: z.enum(["utility", "marketing"]).default("utility"),
+  /** Só na criação (#166, 7º lote): a chave da tentativa. Na edição (com `id`) é ignorada. */
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
 export type TemplateWhatsAppInput = z.input<typeof TemplateWhatsAppSchema>;
 

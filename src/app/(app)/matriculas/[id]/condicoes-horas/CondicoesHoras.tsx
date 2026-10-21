@@ -11,13 +11,16 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
-  // Preparar e decidir não levam chave de idempotência: na falha de transporte, conferir antes de repetir.
-  // A decisão preserva a orientação própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.
-  const router = useRouter(), preparo = useAcaoCliente({ idempotente: false }), decisao = useAcaoCliente({ idempotente: false });
+  // #166, 7º lote: o preparo leva a chave da tentativa (o reenvio devolve a versão já preparada) e a decisão é idempotente
+  // por natureza (a mesma decisão, do mesmo decisor e com o mesmo motivo, devolve ok). A decisão preserva a orientação
+  // própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.
+  const router = useRouter(), preparo = useAcaoCliente({ idempotente: true }), decisao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [versaoDecidida, setVersaoDecidida] = useState<string | null>(null);
   const ocupado = preparo.ocupado || decisao.ocupado;
   const [valorHora, setValorHora] = useState("");
@@ -37,11 +40,12 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
       let vigenteDesde: string;
       try { vigenteDesde = instanteDaGrade(String(f.get("data")), String(f.get("hora")), d.fuso!).toISOString(); }
       catch (e) { preparo.limpar(); preparo.setErro(e instanceof Error ? e.message : "Informe data e hora válidas para o início de vigência."); return; }
-      const r = await preparo.executar(() => prepararCondicoesHoras({ matriculaId: d.matriculaId, documentoId: d.documentoId!, motivo: String(f.get("motivo")), regras: {
+      const r = await preparo.executar(() => prepararCondicoesHoras({ matriculaId: d.matriculaId, documentoId: d.documentoId!, motivo: String(f.get("motivo")), chaveIdempotencia: tentativa.atual, regras: {
         moeda: d.moeda, unidadeMinutos: 60, valorHora: valorHoraNumero.toFixed(2), antecedenciaCancelamentoMinutos: Number(f.get("antecedencia")),
         vigenteDesde,
         clausulaPreco: String(f.get("preco")), clausulaCancelamento: String(f.get("cancelamento")),
       } }), "Versão preparada para revisão independente.");
+      tentativa.depoisDo(r);
       if (r?.tipo === "ok") router.refresh();
     }}>
       <fieldset disabled={ocupado} className="space-y-3"><legend>Nova transcrição do contrato confirmado</legend>

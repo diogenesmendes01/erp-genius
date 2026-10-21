@@ -107,9 +107,14 @@ describe("desvincularContatoWhatsApp", () => {
       .toEqual({ ok: false, erro: "Este contato não está mais vinculado a esse cadastro. Recarregue a conversa." });
     expect(await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "aluno", id: "x" }, motivo: MOTIVO }))
       .toEqual({ ok: false, erro: "Neste atendimento só se desfaz o vínculo com a oportunidade." });
-    // Repetir depois de desvincular não grava um segundo evento.
+    // Repetir depois de desvincular não grava um segundo evento. Desde o 7º lote da #166, o mesmo desvínculo, de quem o
+    // fez e com o mesmo motivo, devolve ok; com outro motivo ou de outra pessoa, segue recusado.
     expect((await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: MOTIVO })).ok).toBe(true);
-    expect((await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: MOTIVO })).ok).toBe(false);
+    expect((await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: MOTIVO })).ok).toBe(true);
+    expect((await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: `${MOTIVO}, outra vez` })).ok).toBe(false);
+    comoUsuario(c.gerente);
+    expect(await desvincularContatoWhatsApp({ atendimentoId: c.at.id, alvo: { tipo: "lead", id: c.lead.id }, motivo: MOTIVO }))
+      .toEqual({ ok: false, erro: "Este contato não está mais vinculado a esse cadastro. Recarregue a conversa." });
     expect(await prisma.evento.count({ where: { tipo: "ContatoDesvinculado" } })).toBe(1);
   });
 

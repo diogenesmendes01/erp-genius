@@ -67,7 +67,26 @@ describe("estado operacional da Aria", () => {
     expect((await reativarAria()).ok).toBe(true);
     expect((await situacaoAria()).pausada).toBe(false);
     expect((await eventosDo("AgenteIA", "aria")).some((e) => e.tipo === "AriaReativada")).toBe(true);
-    expect((await reativarAria()).ok).toBe(false);
+    // #166, 7º lote: reativar de novo, por quem reativou, devolve ok sem outro Evento; outra pessoa segue recusada.
+    expect((await reativarAria()).ok).toBe(true);
+    expect((await eventosDo("AgenteIA", "aria")).filter((e) => e.tipo === "AriaReativada")).toHaveLength(1);
+    logado(admin);
+    expect(await reativarAria()).toEqual({ ok: false, erro: "A Aria não está pausada." });
+  });
+
+  it("pausar e reativar repetidos gravam 1 Evento cada (#166)", async () => {
+    logado(gerente);
+    expect((await pausarAria({ motivo: "Campanha nova" })).ok).toBe(true);
+    expect((await pausarAria({ motivo: "Campanha nova" })).ok).toBe(true);
+    expect(await pausarAria({ motivo: "Outro motivo" })).toEqual({ ok: false, erro: "A Aria já está pausada." });
+    logado(admin);
+    expect(await pausarAria({ motivo: "Campanha nova" })).toEqual({ ok: false, erro: "A Aria já está pausada." });
+    logado(gerente);
+    expect((await reativarAria()).ok).toBe(true);
+    expect((await reativarAria()).ok).toBe(true);
+    const eventos = await eventosDo("AgenteIA", "aria");
+    expect(eventos.filter((e) => e.tipo === "AriaPausada")).toHaveLength(1);
+    expect(eventos.filter((e) => e.tipo === "AriaReativada")).toHaveLength(1);
   });
 
   it("gerente_liga_mas_nao_desliga_supervisao", async () => {

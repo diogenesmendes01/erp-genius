@@ -85,9 +85,9 @@ export function PoliticaPainel({
   // C32 da #170: política na tela diferente da salva → marca e aviso ao sair (o refresh traz a salva nova).
   const sujo = politicaAlterada(form, politica);
   useAvisoAoSair(sujo);
-  // Nenhuma das duas actions recebe chave de idempotência (o kill switch grava o estado-alvo, mas sem
-  // chave): resultado incerto manda conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // As duas actions gravam o estado-alvo e são idempotentes por natureza (#166, 7º lote): a mesma política, ou o kill
+  // switch já no estado pedido, devolve ok sem gravar outro Evento (server/whatsapp/acoes.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   // O resultado aparece junto do botão que o disparou (kill switch no topo, salvar no rodapé).
   const [origem, setOrigem] = useState<"kill" | "salvar" | null>(null);
 
@@ -423,7 +423,7 @@ export function PoliticaPainel({
         <ConfirmarAcao
           titulo={form.killSwitch ? "Destravar a automação de cobrança?" : "Congelar toda a automação de cobrança?"}
           confirmacao={form.killSwitch ? "destravamento" : "congelamento"}
-          idempotente={false}
+          idempotente
           acao={() => acionarKillSwitchRegua(!form.killSwitch)}
           aoConcluir={() => killConcluido(!form.killSwitch)}
           aoCancelar={() => setConfirmar(null)}
@@ -449,7 +449,7 @@ export function PoliticaPainel({
         <ConfirmarAcao
           titulo="Ativar a régua de cobrança e enviar mensagens reais?"
           confirmacao="ativação da régua"
-          idempotente={false}
+          idempotente
           acao={() => salvarPoliticaRegua(dadosPolitica())}
           aoConcluir={() => {
             setConfirmar(null);

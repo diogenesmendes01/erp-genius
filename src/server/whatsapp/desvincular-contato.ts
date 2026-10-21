@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
+import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 import { podeExecutar, TIPOS_DESVINCULAVEIS, type TipoVinculoContato } from "@/server/inbox/permissoes";
 import { conversaVisivel } from "./consultas-inbox";
 import { CHAVE_LINHA } from "./linha-comercial";
@@ -45,7 +46,14 @@ export async function desvincularContatoWhatsApp(input: DesvincularContatoInput)
       const contato = await tx.contatoWhatsApp.findUniqueOrThrow({
         where: { id: alcance.contatoId }, select: { alunoId: true, responsavelId: true, leadId: true },
       });
-      if (contato[campo] !== alvo.id) throw new ErroRegra("Este contato não está mais vinculado a esse cadastro. Recarregue a conversa.");
+      if (contato[campo] !== alvo.id) {
+        // Idempotência por natureza (#166, 7º lote): o mesmo desvínculo, já feito por quem repete e com o mesmo motivo
+        // (último `ContatoDesvinculado` do contato), devolve ok sem outro Evento. Outro caso segue recusado.
+        const p = await ultimoEventoDoAutor(tx, { tipo: "ContatoDesvinculado", agregadoTipo: "ContatoWhatsApp", agregadoId: alcance.contatoId, autorId: autor.id });
+        const desfeito = (p?.alvo ?? {}) as { tipo?: unknown; id?: unknown };
+        if (p && desfeito.tipo === alvo.tipo && desfeito.id === alvo.id && p.motivo === motivo) return;
+        throw new ErroRegra("Este contato não está mais vinculado a esse cadastro. Recarregue a conversa.");
+      }
       await tx.contatoWhatsApp.update({ where: { id: alcance.contatoId }, data: { [campo]: null } });
       // Linha de vendas: o lead do atendimento da linha veio do vínculo; fora dela, o lead é o contexto do atendimento.
       const linha = alvo.tipo === "lead"

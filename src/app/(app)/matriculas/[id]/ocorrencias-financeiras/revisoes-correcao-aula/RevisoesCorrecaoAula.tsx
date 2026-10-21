@@ -59,9 +59,9 @@ export function RevisoesCorrecaoAula({ dados }: { matriculaId: string; dados: Da
   });
   const decidir = (propostaId: string, aprovada: boolean, form: HTMLFormElement) => iniciar(async () => {
     setAlvo(`decidir:${propostaId}`); setErro(""); setSucesso("");
-    // Decisão sem chave de idempotência (revisao-correcao-aula.ts:62); só a repetição idêntica pelo mesmo
-    // decisor é reconhecida (:68-70). Conferir antes de repetir.
-    const d = await executarAcaoCliente(() => decidirRevisaoFinanceiraCorrecaoAula({ propostaId, aprovada, motivo: String(new FormData(form).get("motivo") ?? "") }), { idempotente: false });
+    // Decisão sem chave, idempotente por natureza (#166, 7º lote): a repetição idêntica pelo mesmo decisor devolve a
+    // decisão gravada (decidirRevisaoFinanceiraCorrecaoAula), então reenviar a mesma decisão é seguro.
+    const d = await executarAcaoCliente(() => decidirRevisaoFinanceiraCorrecaoAula({ propostaId, aprovada, motivo: String(new FormData(form).get("motivo") ?? "") }), { idempotente: true });
     if (d.tipo !== "ok") { setErro(d.mensagem); return; }
     setSucesso(aprovada ? "Revisão aprovada; a gestão ainda precisa publicar a correção. Se houver acerto financeiro, ele só acontece nessa publicação." : "Revisão rejeitada; o histórico foi preservado."); router.refresh();
   });

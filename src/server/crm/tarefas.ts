@@ -279,7 +279,15 @@ export async function concluirTarefa(id: string, versao: number, resultado?: str
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const texto = z.string().trim().max(2000, "O resultado deve ter até 2000 caracteres.").optional().parse(resultado) || null;
     await prisma.$transaction(async (tx) => {
+      // Idempotência por natureza (#166, 7º lote), como em `cancelarTarefa`: a linha travada serializa o clique duplo, e a
+      // mesma conclusão, já feita por quem repete e com o mesmo resultado, devolve ok sem outro Evento nem outra
+      // interação no lead. Vem antes da versão, que a própria conclusão já mudou. O escopo continua conferido primeiro.
+      await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id = ${id} FOR UPDATE`;
       const t = await carregarVisivel(tx, autor, id);
+      if (t.status === "CONCLUIDA" && t.concluidaPorId === autor.id && (t.resultado ?? null) === texto) {
+        const p = await ultimoEventoDoAutor(tx, { tipo: "TarefaConcluida", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id });
+        if (p && (p.resultado ?? null) === texto) return;
+      }
       if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser concluídas.");
       await gravar(tx, t, versao, "ABERTA", { status: "CONCLUIDA", concluidaEm: new Date(), concluidaPorId: autor.id, resultado: texto });
       await registrarEvento(tx, { tipo: "TarefaConcluida", agregadoTipo: "Tarefa", agregadoId: id, autorId: autor.id, payload: { resultado: texto } });

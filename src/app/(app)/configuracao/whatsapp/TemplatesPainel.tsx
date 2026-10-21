@@ -6,6 +6,7 @@ import { IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import type { TemplateConfig } from "@/server/whatsapp/consultas";
 import { salvarTemplateWhatsApp } from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { useAcaoCliente, type MensagemSucesso } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 import { botaoClasses } from "@/components/Botao";
@@ -34,8 +35,10 @@ const FORM_VAZIO: FormTemplate = { nome: "", corpo: "", idioma: "es", categoria:
 export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) {
   const router = useRouter();
   const [form, setForm] = useState<FormTemplate | null>(null);
-  // A action de salvar não recebe chave de idempotência: resultado incerto manda conferir antes de repetir.
-  const acao = useAcaoCliente({ idempotente: false });
+  // #166, 7º lote: a criação leva a chave da tentativa (o reenvio devolve o template já criado) e a edição grava o
+  // estado-alvo (a mesma edição não grava outro Evento).
+  const acao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   // O resultado aparece no formulário (salvar).
   const [origem, setOrigem] = useState<string | null>(null);
   const ocupado = acao.ocupado;
@@ -50,7 +53,8 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
   async function salvar() {
     if (!form) return;
     const dados = form;
-    const d = await run("form", () => salvarTemplateWhatsApp(dados), "Template salvo.");
+    const d = await run("form", () => salvarTemplateWhatsApp(dados.id ? dados : { ...dados, chaveIdempotencia: tentativa.atual }), "Template salvo.");
+    if (!dados.id) tentativa.depoisDo(d);
     if (d?.tipo === "ok") setForm(null);
   }
 

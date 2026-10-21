@@ -35,7 +35,9 @@ const CAMPO = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
 export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Aprovar, rejeitar e desfazer são idempotentes por natureza (#166, 7º lote): o reenvio de quem já decidiu ou desfez
+  // devolve ok sem efetivar a ação da Aria de novo (server/aria/historico.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   const [desfazendo, setDesfazendo] = useState<ItemHistoricoAria | null>(null);
   const quando = (iso: string) => formatarInstanteExibicao(iso, fuso, "UTC", "diaMesHora").texto;
 
@@ -153,7 +155,7 @@ export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props)
         <ConfirmarAcao
           titulo={`Desfazer ${ACAO_AGENTE_IA_LABEL[desfazendo.acao].toLowerCase()} de ${desfazendo.contato}?`}
           confirmacao="o desfazer"
-          idempotente={false}
+          idempotente
           acao={() => desfazerAcaoAria(desfazendo.id)}
           aoConcluir={() => { setDesfazendo(null); acao.setSucesso("Ação desfeita."); router.refresh(); }}
           aoCancelar={() => setDesfazendo(null)}

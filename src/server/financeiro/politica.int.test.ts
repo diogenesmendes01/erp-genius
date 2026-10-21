@@ -136,6 +136,22 @@ describe("alçadas, aprovação vinculada e histórico", () => {
     expect((await decidirAprovacao(ap.id, { aprovar: true })).ok).toBe(false);
     expect((await prisma.aprovacao.findUniqueOrThrow({ where: { id: ap.id } })).status).toBe("PENDENTE");
   });
+  it("a mesma decisão, de quem decidiu, devolve ok sem aplicar o desconto de novo; outra decisão ou outra pessoa segue recusada (#166)", async () => {
+    await prisma.usuario.update({ where: { id: ven.id }, data: { limiteDescontoTaxaPct: 5 } });
+    entrar(ven.id); expect((await ajustarCobranca(desconto(50))).ok).toBe(true);
+    const ap = await prisma.aprovacao.findFirstOrThrow();
+    entrar(adm.id);
+    const [a, b] = await Promise.all([decidirAprovacao(ap.id, { aprovar: true }), decidirAprovacao(ap.id, { aprovar: true })]);
+    expect([a.ok, b.ok], JSON.stringify([a, b])).toEqual([true, true]);
+    expect((await decidirAprovacao(ap.id, { aprovar: true })).ok).toBe(true);
+    expect(await prisma.evento.count({ where: { tipo: "AprovacaoDecidida" } })).toBe(1);
+    expect(Number((await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } })).valorNegociado)).toBe(50);
+    expect(await decidirAprovacao(ap.id, { aprovar: false })).toEqual({ ok: false, erro: "Pedido já decidido." });
+    expect(await decidirAprovacao(ap.id, { aprovar: true, motivo: "Outro motivo" })).toEqual({ ok: false, erro: "Pedido já decidido." });
+    const outro = await criarUsuario([Papel.ADMINISTRADOR]); entrar(outro.id);
+    expect(await decidirAprovacao(ap.id, { aprovar: true })).toEqual({ ok: false, erro: "Pedido já decidido." });
+    expect(await prisma.evento.count({ where: { tipo: "AprovacaoDecidida" } })).toBe(1);
+  });
   it("fixa e paga conservam o valor quando a taxa muda", async () => {
     await prisma.comissao.createMany({ data: [
       { matriculaId, vendedorId: ven.id, tipo: "VALOR_FIXO", percentual: 0, valorFixo: 30, valor: 30, moeda: "CRC" },

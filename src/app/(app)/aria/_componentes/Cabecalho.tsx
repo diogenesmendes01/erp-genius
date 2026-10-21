@@ -31,7 +31,9 @@ const DICA_ESTADO = "Desligada não faz nada. Sombra simula e registra o que far
 
 export function Cabecalho({ nome, funcao, versaoPublicada, estado, pausada, motivoPausa, supervisao, podeMudarEstado, podePausar, verProvedor }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Idempotente por natureza (#166, 7º lote): o mesmo estado não grava nada, e pausar (com o mesmo motivo) ou reativar
+  // de novo, por quem já o fez, devolve ok sem outro Evento (server/aria/estado.ts).
+  const acao = useAcaoCliente({ idempotente: true });
   const [motivo, setMotivo] = useState("");
   const [pedindoMotivo, setPedindoMotivo] = useState(false);
 

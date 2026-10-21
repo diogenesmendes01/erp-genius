@@ -72,10 +72,28 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
     expect(await prisma.evento.findFirstOrThrow({ where: { tipo: "AcaoAriaAprovada", agregadoTipo: "AcaoAgenteIA", agregadoId: s.id } })).toMatchObject({ autorId: c.gerente.id });
   });
 
-  it("aprovar_duas_vezes_falha", async () => {
+  it("aprovar_duas_vezes_pelo_mesmo_decisor_devolve_ok_sem_reaplicar (#166)", async () => {
     const s = await sugTag();
-    await aprovarAcaoAria(s.id);
+    expect((await aprovarAcaoAria(s.id)).ok).toBe(true);
+    expect((await aprovarAcaoAria(s.id)).ok).toBe(true);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaAprovada" } })).toBe(1);
+    expect(await tags()).toHaveLength(1);
+    // Outra pessoa, ou a rejeição da já aprovada, segue recusada com a mesma mensagem.
+    expect(await rejeitarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta sugestão já foi decidida." });
+    const outro = await criarUsuario([Papel.ADMINISTRADOR], "Outro admin");
+    logado(outro);
     expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta sugestão já foi decidida." });
+  });
+
+  it("aprovar_resposta_repetida_nao_envia_de_novo (#166)", async () => {
+    const r = await prisma.$transaction(async (tx) => {
+      const ctx = await montarContextoTurno(c.at.id, tx);
+      return executarResposta(tx, { turnoId: c.turno.id, ctx, texto: "Podemos conversar.", documentoId: null, destino: "SUGERIR", simulado: false, confianca: 70, fontes: [], nomeAria: "Aria" });
+    });
+    if (!("acao" in r)) throw new Error("bloqueada");
+    expect((await aprovarAcaoAria(r.acao.id)).ok).toBe(true);
+    expect((await aprovarAcaoAria(r.acao.id)).ok).toBe(true);
+    expect(await prisma.intencaoMensagem.count()).toBe(1);
   });
 
   it("gerente_so_na_propria_equipe", async () => {
@@ -112,7 +130,11 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
     expect(await acao(s)).toMatchObject({ status: "REJEITADA", decididaPorId: c.gerente.id, payload: { motivoRejeicao: "Não é o momento" } });
     expect(await tags()).toHaveLength(0);
     expect(await prisma.evento.count({ where: { tipo: "AcaoAriaRejeitada" } })).toBe(1);
+    // #166, 7º lote: a mesma rejeição (mesmo motivo) devolve ok sem outro Evento; outro motivo segue recusado.
+    expect((await rejeitarAcaoAria(s.id, "Não é o momento")).ok).toBe(true);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaRejeitada" } })).toBe(1);
     expect(await rejeitarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta sugestão já foi decidida." });
+    expect(await aprovarAcaoAria(s.id)).toEqual({ ok: false, erro: "Esta sugestão já foi decidida." });
   });
 
   it("aprovar_resposta_sugerida_cria_intencao_ia", async () => {
@@ -171,6 +193,11 @@ describe("histórico da Aria: aprovar, rejeitar, desfazer", () => {
     expect(await acao(e)).toMatchObject({ status: "DESFEITA", desfeitaPorId: c.gerente.id });
     expect(await prisma.evento.count({ where: { tipo: "TagRemovida", autorId: c.gerente.id } })).toBe(1);
     expect(await prisma.evento.count({ where: { tipo: "AcaoAriaDesfeita", agregadoId: e.id } })).toBe(1);
+    // #166, 7º lote: o desfazer repetido por quem desfez devolve ok sem reverter de novo; outra pessoa segue recusada.
+    expect((await desfazerAcaoAria(e.id)).ok).toBe(true);
+    expect(await prisma.evento.count({ where: { tipo: "AcaoAriaDesfeita", agregadoId: e.id } })).toBe(1);
+    expect(await prisma.evento.count({ where: { tipo: "TagRemovida" } })).toBe(1);
+    logado(await criarUsuario([Papel.ADMINISTRADOR], "Outro admin"));
     expect(await desfazerAcaoAria(e.id)).toEqual({ ok: false, erro: "Esta ação já foi desfeita." });
   });
 

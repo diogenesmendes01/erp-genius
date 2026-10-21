@@ -21,7 +21,7 @@ vi.mock("@/server/matricula/condicoes-horas", () => ({ consultarCondicoesHoras: 
 
 import { CondicoesHoras } from "./CondicoesHoras";
 import { CampoMoeda } from "@/components/CampoMoeda";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
 
@@ -43,8 +43,20 @@ describe("CondicoesHoras", () => {
   contratoFeedbackSeparado({
     nome: "preparar condições por hora", preparar: () => digitarPreco("100,00"), tela, action: m.preparar,
     acionar: () => submeter(tela(), valoresPreparo, 0),
-    sucesso: "Versão preparada para revisão independente.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Versão preparada para revisão independente.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => fieldsets()[0].props.disabled === true && elementos(tela()).some((n) => n.type === "button" && texto(n.props.children) === "Registrando…"),
+  });
+
+  it("a chave da tentativa se mantém depois da falha de rede e muda depois do sucesso (#166)", async () => {
+    let n = 0;
+    vi.stubGlobal("crypto", { randomUUID: () => `chave-${++n}` });
+    m.ganchos = criarGanchos();
+    digitarPreco("100,00");
+    m.preparar.mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValue({ ok: true, dado: { id: "v2", versao: 2 } });
+    await submeter(tela(), valoresPreparo, 0);
+    await submeter(tela(), valoresPreparo, 0);
+    await submeter(tela(), valoresPreparo, 0);
+    expect(m.preparar.mock.calls.map(([entrada]) => (entrada as { chaveIdempotencia?: string }).chaveIdempotencia)).toEqual(["chave-1", "chave-1", "chave-2"]);
   });
 
   contratoFeedbackSeparado({

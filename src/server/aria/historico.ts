@@ -47,7 +47,13 @@ export async function aprovarAcaoAria(id: string): Promise<Resultado> {
     await prisma.$transaction(async (tx) => {
       const acao = await travarAcao(tx, id);
       await exigirEscopo(tx, u, acao);
-      if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
+      if (acao.status !== "SUGERIDA") {
+        // Idempotência por natureza (#166, 7º lote): a sugestão já aprovada por quem repete devolve ok, sem efetivar a
+        // ação de novo (a resposta ao contato não sai duas vezes) nem gravar outro Evento. A linha travada serializa o
+        // clique duplo. Decidida por outra pessoa, ou rejeitada, segue recusada com a mesma mensagem.
+        if (acao.status === "APROVADA" && acao.decididaPorId === u.id) return;
+        throw new ErroRegra(MSG_JA_DECIDIDA);
+      }
       if (acao.expiraEm && acao.expiraEm.getTime() <= Date.now()) throw new ErroRegra("Esta sugestão expirou.");
       const r = acao.acao === "RESPONDER" || acao.acao === "ENVIAR_DOCUMENTO" ? await efetivarRespostaSugerida(tx, acao) : await aplicarAcao(tx, acao);
       await tx.acaoAgenteIA.update({ where: { id }, data: { status: "APROVADA", decididaPorId: u.id, decididaEm: new Date(), eventoId: r.eventoId } });
@@ -63,7 +69,12 @@ export async function rejeitarAcaoAria(id: string, motivo?: string): Promise<Res
     await prisma.$transaction(async (tx) => {
       const acao = await travarAcao(tx, id);
       await exigirEscopo(tx, u, acao);
-      if (acao.status !== "SUGERIDA") throw new ErroRegra(MSG_JA_DECIDIDA);
+      if (acao.status !== "SUGERIDA") {
+        // Idempotência por natureza (#166, 7º lote): a mesma rejeição, de quem rejeitou e com o mesmo motivo, devolve ok.
+        const motivoGravado = ((acao.payload ?? {}) as Dados).motivoRejeicao ?? null;
+        if (acao.status === "REJEITADA" && acao.decididaPorId === u.id && motivoGravado === m) return;
+        throw new ErroRegra(MSG_JA_DECIDIDA);
+      }
       const payload = { ...((acao.payload ?? {}) as Dados), ...(m ? { motivoRejeicao: m } : {}) } as Prisma.InputJsonObject;
       await tx.acaoAgenteIA.update({ where: { id }, data: { status: "REJEITADA", decididaPorId: u.id, decididaEm: new Date(), payload } });
       await eventoAcao(tx, "AcaoAriaRejeitada", acao, u.id, { motivo: m });
@@ -166,7 +177,11 @@ export async function desfazerAcaoAria(id: string): Promise<Resultado> {
     await prisma.$transaction(async (tx) => {
       const acao = await travarAcao(tx, id);
       await exigirEscopo(tx, u, acao);
-      if (acao.status === "DESFEITA") throw new ErroRegra("Esta ação já foi desfeita.");
+      if (acao.status === "DESFEITA") {
+        // Idempotência por natureza (#166, 7º lote): o desfazer repetido por quem desfez devolve ok, sem reverter de novo.
+        if (acao.desfeitaPorId === u.id) return;
+        throw new ErroRegra("Esta ação já foi desfeita.");
+      }
       if (acao.status !== "EXECUTADA" && acao.status !== "APROVADA") throw new ErroRegra("Só ações executadas ou aprovadas podem ser desfeitas.");
       if (!acao.reversivel) throw new ErroRegra(acao.motivoIrreversivel ?? "Esta ação não pode ser desfeita.");
       await reverter(tx, u, acao);
