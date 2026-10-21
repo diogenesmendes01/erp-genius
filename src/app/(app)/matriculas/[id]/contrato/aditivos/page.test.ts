@@ -43,3 +43,23 @@ describe("aditivos contratuais — vazios paginados", () => {
     expect(html).toContain('href="/matriculas/m1/contrato/aditivos?pagina=1&amp;modelos=2">Ir para a primeira página</a>');
   });
 });
+
+// Revisão R1 da #285 (B1): sobre a origem histórica o aditivo ainda não segue para assinatura; a tela avisa e não
+// oferece a preparação (o servidor também a recusa).
+describe("aditivos contratuais — origem histórica", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.sessao.mockResolvedValue({});
+    mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "UTC" } });
+  });
+  it("avisa que o aditivo sobre contrato legado não segue para assinatura e não mostra a preparação", async () => {
+    mocks.aditivos.mockResolvedValue({ ok: true, dado: {
+      matricula: { aluno: "Ana" }, fonte: { tipo: "ORIGEM_HISTORICA", artefatoId: null, ambiente: "HISTORICO" },
+      modelos: [{ id: "modelo" }], paginaModelos: 1, maisModelos: false, propostas: [], pagina: 1, maisPropostas: false, cadastroContratual: null,
+    } });
+    const html = renderToStaticMarkup(await AditivosPage({ params: Promise.resolve({ id: "m1" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Aditivo sobre contrato legado ainda não segue para assinatura; aguarda decisão.");
+    expect(html).toContain("a preparação de aditivo sobre esta fonte está suspensa");
+    expect(html).not.toContain("Nenhum modelo de aditivo aprovado");
+  });
+});

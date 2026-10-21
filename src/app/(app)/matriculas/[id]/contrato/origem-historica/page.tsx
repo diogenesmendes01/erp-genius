@@ -8,6 +8,7 @@ import { DecidirOrigemHistorica, RegistrarOrigemHistorica } from "./Formularios"
 import { VoltarPara } from "@/components/VoltarPara";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_PROPOSTA_DECIDIDA_LABEL } from "@/lib/labels";
+import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
 
 export default async function Pagina({ params }: { params: Promise<{ id: string }> }) {
  await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA);
@@ -22,6 +23,7 @@ export default async function Pagina({ params }: { params: Promise<{ id: string 
  <section className="space-y-2 rounded border p-4"><h2 className="text-xl">Como funciona</h2>
   <p>Contrato legado assinado fora do sistema: quem prepara envia o PDF assinado e transcreve as condições; outro administrador abre o PDF, relê a transcrição e registra a conferência declarando os hashes conferidos. Aprovada, a origem passa a ser a fonte contratual dos aditivos desta matrícula.</p>
   <p>Aditivos sobre a origem histórica não alteram taxa de matrícula, vencimento da primeira mensalidade nem adiantamento: são fatos de entrada já vividos. Uma matrícula nunca tem contrato assinado no sistema e origem histórica ao mesmo tempo.</p>
+  <p role="status">{MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA} Até lá, a origem aprovada fica registrada e conferida, mas nenhum aditivo é preparado sobre ela.</p>
  </section>
  {d.podeRegistrar ? <RegistrarOrigemHistorica matriculaId={id} moeda={d.matricula.moeda} regime={d.matricula.regime} /> : <p role="status">{d.impedimento}</p>}
  <h2 className="text-xl">Registros</h2>

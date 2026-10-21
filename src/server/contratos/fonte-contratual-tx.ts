@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra } from "@/server/_shared";
+import { hashSubstituicao } from "./substituicao-estado";
 
 // A fonte contratual de uma matrícula é exatamente uma: a conclusão assinada no sistema ou a origem contratual
 // histórica aprovada (contrato legado: PDF + transcrição com conferência dupla). Os leitores da cadeia de
@@ -10,6 +12,17 @@ const RegimeSchema = z.object({ condicoes: z.object({ aulas: z.object({ regime: 
 export type FonteContratual =
   | { tipo: "CONCLUSAO"; id: string; hash: string; previa: unknown; regime: "MENSALIDADE" | "HORA_PARTICULAR"; processoId: string; estado: string; ambiente: string; artefatoId: string }
   | { tipo: "ORIGEM_HISTORICA"; id: string; hash: string; previa: unknown; regime: "MENSALIDADE" | "HORA_PARTICULAR"; pdfHash: string; transcricaoHash: string; projecaoHash: string; referencia: string; assinadoEm: Date };
+
+type OrigemPreservada = { pdfAssinado: Uint8Array; pdfHash: string; transcricao: Prisma.JsonValue; transcricaoHash: string; projecao: Prisma.JsonValue; projecaoHash: string;
+  decisao: { pdfHashConferido: string; transcricaoHashConferido: string } | null };
+
+/** Integridade da origem histórica antes de usá-la como fonte: bytes do PDF, transcrição e projeção batem com os hashes
+ * preservados, e a conferência dupla declarou exatamente esses hashes. A base do aditivo e a agenda usam a mesma regra. */
+export function origemHistoricaIntegra(o: OrigemPreservada) {
+  return createHash("sha256").update(o.pdfAssinado).digest("hex") === o.pdfHash
+    && hashSubstituicao(o.transcricao as Prisma.JsonObject) === o.transcricaoHash && hashSubstituicao(o.projecao as Prisma.JsonObject) === o.projecaoHash
+    && o.decisao?.pdfHashConferido === o.pdfHash && o.decisao.transcricaoHashConferido === o.transcricaoHash;
+}
 
 /** Lê a fonte contratual vigente da matrícula sem bloquear nada. `null` quando não há fonte única utilizável. */
 export async function carregarFonteContratualTx(tx: Prisma.TransactionClient, matriculaId: string): Promise<{ fonte: FonteContratual | null; impedimento: string | null }> {

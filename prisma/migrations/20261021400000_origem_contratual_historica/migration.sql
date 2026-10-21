@@ -72,9 +72,10 @@ ALTER TABLE "PropostaAgendaAditivoParticular" ADD CONSTRAINT "PropostaAgendaAdit
   CHECK (num_nonnulls("conclusaoFonteId", "origemHistoricaId") = 1);
 
 -- Proposta: administrador ativo; PDF íntegro; matrícula sem conclusão assinada nem origem aprovada; projeção coerente
--- com a moeda da matrícula e com o regime da preparação comercial, quando houver (a mesma regra da ação).
+-- com a moeda da matrícula e com o regime da preparação comercial, quando houver; data de assinatura não posterior a
+-- hoje no fuso da escola (a mesma regra da ação).
 CREATE FUNCTION guardar_origem_contratual_historica() RETURNS TRIGGER LANGUAGE plpgsql AS $$
-DECLARE u "Usuario"%ROWTYPE; m "Matricula"%ROWTYPE; regime_preparado TEXT;
+DECLARE u "Usuario"%ROWTYPE; m "Matricula"%ROWTYPE; regime_preparado TEXT; fuso_escola TEXT;
 BEGIN
   IF TG_OP <> 'INSERT' THEN RAISE EXCEPTION 'Origem contratual histórica é imutável'; END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended('calendario-escola', 0));
@@ -84,6 +85,11 @@ BEGIN
   IF NOT FOUND OR NOT u.ativo OR NOT (u.papeis && ARRAY['SECRETARIA_ACADEMICA','ADMINISTRADOR']::"Papel"[]) THEN RAISE EXCEPTION 'Preparação exige Secretaria ou Administração ativa'; END IF;
   IF encode(sha256(NEW."pdfAssinado"), 'hex') IS DISTINCT FROM NEW."pdfHash" OR substring(NEW."pdfAssinado" FROM 1 FOR 5) <> decode('255044462d', 'hex') THEN
     RAISE EXCEPTION 'PDF assinado inválido ou hash divergente';
+  END IF;
+  SELECT "fusoInstitucional" INTO fuso_escola FROM "ConfiguracaoOperacional" WHERE id = 'escola';
+  IF fuso_escola IS NULL THEN RAISE EXCEPTION 'Configure o fuso institucional antes de registrar a origem histórica'; END IF;
+  IF NEW."assinadoEm"::date > (clock_timestamp() AT TIME ZONE fuso_escola)::date THEN
+    RAISE EXCEPTION 'A data de assinatura não pode ser posterior a hoje no fuso da escola';
   END IF;
   IF jsonb_typeof(NEW.transcricao) IS DISTINCT FROM 'object' OR jsonb_typeof(NEW.projecao) IS DISTINCT FROM 'object'
     OR NEW.projecao->'condicoes'->'aulas'->>'regime' NOT IN ('MENSALIDADE','HORA_PARTICULAR')
