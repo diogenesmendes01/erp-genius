@@ -31,6 +31,14 @@ export async function decidirAlcadaAditivoTx(tx: Prisma.TransactionClient, autor
   const ator = await tx.usuario.findUnique({ where: { id: autorId }, select: { ativo: true, papeis: true, permissoes: true } });
   if (!ator || !podeDecidir(ator, d.alcada)) throw new ErroPermissao();
   if (autorId === p.preparadaPorId) throw new ErroRegra("A pessoa que preparou o aditivo não pode aprovar sua própria alçada.");
+  // Idempotência por natureza (#166, 7º lote): a mesma decisão da alçada, do mesmo decisor, com o mesmo motivo e sobre a
+  // mesma proposta, devolve a decisão gravada antes das conferências de estado (proposta mais recente, base mudada), que
+  // um reenvio tardio não deve receber como erro. Decisão diferente segue o fluxo de antes e é recusada mais abaixo.
+  const repetida = await tx.decisaoAlcadaAditivo.findUnique({ where: { propostaId_alcada: { propostaId: p.id, alcada: d.alcada } } });
+  if (repetida && repetida.decisorId === autorId && repetida.aprovada === d.aprovada && repetida.motivo === d.motivo
+    && repetida.propostaHash === p.entradaHash && d.propostaHash === p.entradaHash) {
+    return { id: repetida.id, alcada: repetida.alcada, aprovada: repetida.aprovada };
+  }
   if (!p.decisao?.aprovada || p.decisao.propostaHash !== p.entradaHash || p.entradaHash !== d.propostaHash || hashSubstituicao(p.snapshot) !== p.entradaHash) throw new ErroRegra("A aprovação administrativa e a proposta revisada são obrigatórias.");
   if (await tx.propostaAditivoContratual.count({ where: { matriculaId: p.matriculaId, versao: { gt: p.versao } } })) throw new ErroRegra("Existe proposta de aditivo mais recente.");
   const s = p.snapshot as Prisma.JsonObject, contexto = await carregarBaseAditivoTx(tx, s.entrada, p.versao);

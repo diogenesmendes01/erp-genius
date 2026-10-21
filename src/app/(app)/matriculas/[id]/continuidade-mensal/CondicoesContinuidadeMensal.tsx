@@ -11,6 +11,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
@@ -31,10 +32,12 @@ const data = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "s
 
 export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
   const router = useRouter();
-  // Preparar e decidir não levam chave de idempotência: na falha de transporte, conferir antes de repetir.
-  // A decisão preserva a orientação própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.
-  const preparo = useAcaoCliente({ idempotente: false });
-  const decisao = useAcaoCliente({ idempotente: false });
+  // #166, 7º lote: o preparo leva a chave da tentativa (o reenvio devolve a versão já preparada) e a decisão é idempotente
+  // por natureza (a mesma decisão, do mesmo decisor e com o mesmo motivo, devolve ok). A decisão preserva a orientação
+  // própria (MSG_DECISAO_INCERTA). Um estado por grupo de ação; o ocupado trava os dois.
+  const preparo = useAcaoCliente({ idempotente: true });
+  const decisao = useAcaoCliente({ idempotente: true });
+  const tentativa = useChaveIdempotencia();
   const [versaoDecidida, setVersaoDecidida] = useState<string | null>(null);
   const ocupado = preparo.ocupado || decisao.ocupado;
   const periodo = useInicioDoPeriodo();
@@ -69,6 +72,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
         matriculaId: d.matriculaId,
         documentoId,
         motivo: String(formulario.get("motivo")),
+        chaveIdempotencia: tentativa.atual,
         regras: {
           continuidadeContratada: { contratada: true, clausula: String(formulario.get("clausula")), evidenciaId: documentoId },
           regraCobertura,
@@ -95,6 +99,7 @@ export function CondicoesContinuidadeMensal({ dados: d }: { dados: Dados }) {
               },
         },
       }), "Versão preparada para revisão independente.");
+      tentativa.depoisDo(resultado);
       if (resultado?.tipo === "ok") router.refresh();
     }}>
       <fieldset disabled={ocupado} className="space-y-3">

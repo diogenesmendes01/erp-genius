@@ -94,8 +94,9 @@ export function AcoesContato({ atendimentoId, acoes, fuso, optOut = false, aoMud
 
 export function EditarNomeContato({ atendimentoId, acoes, aoFechar, aoMudar }: { atendimentoId: string; acoes: AcoesContatoInbox; aoFechar(): void; aoMudar?: () => void }) {
   const [nome, setNome] = useState(acoes.nomeSalvo ?? "");
-  // A gravação é condicional ao nome lido: depois de um sucesso que não chegou, reenviar não devolve o mesmo registro.
-  const salvar = useAcaoCliente({ idempotente: false });
+  // A gravação é condicional ao nome lido e idempotente por natureza (#166, 7º lote): depois de um sucesso que não chegou,
+  // reenviar a mesma troca, de quem a fez, devolve ok sem outro Evento (editarNomeContatoWhatsApp).
+  const salvar = useAcaoCliente({ idempotente: true });
   const aviso = avisoCadastroDoNome(acoes);
   const id = useId();
   const idNota = `${id}-nota`, idDica = `${id}-dica`;
@@ -182,7 +183,7 @@ export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { a
           folha
           titulo={`Vincular esta conversa a ${escolha.nome} (${escolha.como})?`}
           confirmacao="vínculo"
-          idempotente={false}
+          idempotente
           acao={() => vincularContatoWhatsApp({ contatoId: acoes.contatoId, atendimentoId, alvo: escolha.alvo })}
           aoConcluir={() => { setEscolha(null); setAviso(`Contato vinculado a ${escolha.nome}.`); aoMudar?.(); }}
           aoCancelar={() => setEscolha(null)}
@@ -238,7 +239,7 @@ export function DesvincularContato({ atendimentoId, vinculos, aoFechar, aoMudar 
           folha
           titulo={`Desvincular esta conversa de ${escolha.nome} (${COMO_VINCULO[escolha.tipo]})?`}
           confirmacao="desvínculo"
-          idempotente={false}
+          idempotente
           acao={() => desvincularContatoWhatsApp({ atendimentoId, alvo: { tipo: escolha.tipo, id: escolha.id }, motivo: motivo.trim() })}
           aoConcluir={() => { setConfirmar(false); setEscolha(null); setMotivo(""); setAviso(`Contato desvinculado de ${escolha.nome}.`); aoMudar?.(); }}
           aoCancelar={() => setConfirmar(false)}

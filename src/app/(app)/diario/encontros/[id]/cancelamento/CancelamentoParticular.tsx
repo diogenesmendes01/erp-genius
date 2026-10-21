@@ -15,9 +15,9 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
   // A chave só é trocada quando o motivo/origem mudam, e o servidor devolve a solicitação existente
   // quando ela se repete (server/agenda/cancelamento-particular.ts:46-49): reenviar é seguro.
   const proposta = useAcaoCliente({ idempotente: true });
-  // A decisão não recebe chave (cancelamento-particular.ts:60); só a repetição idêntica pelo mesmo
-  // decisor é reconhecida (:71-73). Conferir antes de repetir.
-  const decisao = useAcaoCliente({ idempotente: false });
+  // A decisão não recebe chave, mas é idempotente por natureza (#166, 7º lote): a repetição idêntica pelo mesmo decisor
+  // devolve a decisão gravada (decidirCancelamentoParticular), então reenviar a mesma decisão é seguro.
+  const decisao = useAcaoCliente({ idempotente: true });
   // O erro da decisão aparece na solicitação cujo formulário a disparou.
   const [alvo, setAlvo] = useState<string | null>(null);
   const pendente = proposta.ocupado || decisao.ocupado;

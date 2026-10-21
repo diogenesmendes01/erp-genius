@@ -961,3 +961,31 @@ it("Q175 não recalcula a comissão sobre a aula zerada nem sobre o crédito ger
   expect(await prisma.evento.count({ where: { agregadoTipo: "Comissao" } })).toBe(eventosAntes);
   expect(await prisma.evento.count({ where: { tipo: "ComissaoRecalculada" } })).toBe(0);
 }, 120_000);
+
+// #166, 7º lote: o preparo recebe a chave da tentativa (marca no `CondicoesHorasPreparadas`) e a decisão é idempotente por
+// natureza. Cobre a mesma chave (inclusive simultânea e depois de decidida), a chave com outra entrada, a chave nova
+// e a decisão repetida pelo mesmo decisor.
+it("preparo com chave e decisão repetida não gravam de novo (#166)", async () => {
+  const chave = "tentativa-condicoes-1";
+  const [a, b] = await Promise.all([prepararCondicoesHoras({ ...input(), chaveIdempotencia: chave }), prepararCondicoesHoras({ ...input(), chaveIdempotencia: chave })]);
+  if (!a.ok || !b.ok || !a.dado) throw new Error(JSON.stringify([a, b]));
+  expect(b.dado).toEqual(a.dado);
+  expect(await prisma.condicoesHorasMatricula.count()).toBe(1);
+  expect(await prepararCondicoesHoras({ ...input(), motivo: "Outra transcrição das condições", chaveIdempotencia: chave }))
+    .toEqual({ ok: false, erro: "Esta tentativa já foi usada para outra proposta de condições. Recarregue a página antes de repetir." });
+  login(adminId);
+  const d = { id: a.dado.id, aprovar: false, motivo: "Transcrição conferida e rejeitada" };
+  const [c, e] = await Promise.all([decidirCondicoesHoras(d), decidirCondicoesHoras(d)]);
+  expect([c.ok, e.ok], JSON.stringify([c, e])).toEqual([true, true]);
+  expect((await decidirCondicoesHoras(d)).ok).toBe(true);
+  expect(await decidirCondicoesHoras({ ...d, motivo: "Outro motivo da decisão" })).toEqual({ ok: false, erro: "Esta versão já recebeu decisão." });
+  expect(await decidirCondicoesHoras({ ...d, aprovar: true })).toEqual({ ok: false, erro: "Esta versão já recebeu decisão." });
+  expect(await prisma.evento.count({ where: { tipo: "CondicoesHorasDecididas" } })).toBe(1);
+  // Reenvio tardio da mesma tentativa, já decidida: devolve a versão original, sem outra.
+  login(secretariaId);
+  expect(await prepararCondicoesHoras({ ...input(), chaveIdempotencia: chave })).toEqual({ ok: true, dado: a.dado });
+  expect(await prisma.evento.count({ where: { tipo: "CondicoesHorasPreparadas" } })).toBe(1);
+  // Chave nova é uma nova versão deliberada.
+  const nova = await prepararCondicoesHoras({ ...input(), chaveIdempotencia: "tentativa-condicoes-2" });
+  expect(nova.ok && nova.dado?.versao, JSON.stringify(nova)).toBe(2);
+});

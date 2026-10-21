@@ -34,7 +34,7 @@ import { reavaliarAcessoAutomaticoDaCobranca } from "@/server/cobrancas/acesso-a
 import { PASSOS_POLITICA } from "@/server/whatsapp/schema";
 import { DIA_PREVISAO_COMISSAO_MAX, DIA_PREVISAO_COMISSAO_MIN, DiaPrevisaoComissaoSchema } from "./previsao-comissao";
 import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
-import { marcaIdempotencia, repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
+import { marcaIdempotencia, repeticaoIdempotente, ultimoEventoDoAutor, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
 const PAPEIS_BAIXA: Papel[] = [Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA];
@@ -334,7 +334,10 @@ export async function salvarConfigFinanceiro(input: { fechamentoComissaoAutomati
     const autor = await exigirSessaoComPapel(...PAPEIS_COMISSAO);
     const ligado = !!input.fechamentoComissaoAutomatico;
     await prisma.$transaction(async (tx) => {
+      // Estado-alvo (#166, 7º lote): a trava serializa o clique duplo, e o reenvio que não muda nada não grava Evento.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('config-financeiro', 0))`;
       const antes = await tx.configFinanceiro.findUnique({ where: { id: "financeiro" } });
+      if (antes && antes.fechamentoComissaoAutomatico === ligado) return;
       await tx.configFinanceiro.upsert({
         where: { id: "financeiro" },
         create: { id: "financeiro", fechamentoComissaoAutomatico: ligado },
@@ -386,6 +389,24 @@ export async function salvarDiaPrevisaoComissao(input: { dia: number }): Promise
   });
 }
 
+const FONTE_COTACOES = "open.er-api.com";
+
+/**
+ * Idempotência por natureza das cotações (#166, 7º lote). A trava serializa o clique duplo; o reenvio de quem gravou por
+ * último exatamente as mesmas cotações, pela mesma via (manual ou fonte pública), não grava outra linha nem outro Evento.
+ * Se outra pessoa gravou depois, o reenvio grava como antes. As entradas são comparadas campo a campo: o payload volta
+ * do jsonb com as chaves reordenadas.
+ */
+async function cotacoesJaGravadasPeloAutor(
+  tx: Prisma.TransactionClient, autorId: string, entradas: { moeda: string; unidadesPorUsd: number }[], fonte: string | null,
+): Promise<boolean> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('taxas-cambio', 0))`;
+  const p = await ultimoEventoDoAutor(tx, { tipo: "TaxasCambioDefinidas", agregadoTipo: "TaxaCambio", agregadoId: "cambio", autorId });
+  if (!p || (p.fonte ?? null) !== fonte || !Array.isArray(p.entradas)) return false;
+  const texto = (lista: { moeda?: unknown; unidadesPorUsd?: unknown }[]) => lista.map((e) => `${String(e.moeda)}=${Number(e.unidadesPorUsd)}`).join("|");
+  return texto(p.entradas as { moeda?: unknown; unidadesPorUsd?: unknown }[]) === texto(entradas);
+}
+
 /**
  * Salva cotações de câmbio (Fase B) — uma linha NOVA por moeda (append-only, vigenteEm=agora),
  * preservando o histórico. Só consolidação/leitura: NÃO altera nenhuma cobrança/comissão.
@@ -400,6 +421,7 @@ export async function salvarTaxasCambio(
 
     const agora = new Date();
     await prisma.$transaction(async (tx) => {
+      if (await cotacoesJaGravadasPeloAutor(tx, autor.id, entradas, null)) return;
       for (const e of entradas) {
         await tx.taxaCambio.create({
           data: { moeda: e.moeda, unidadesPorUsd: e.unidadesPorUsd, vigenteEm: agora },
@@ -461,6 +483,7 @@ export async function atualizarCotacoesAutomatico(): Promise<
 
     const agora = new Date();
     await prisma.$transaction(async (tx) => {
+      if (await cotacoesJaGravadasPeloAutor(tx, autor.id, entradas, FONTE_COTACOES)) return;
       for (const e of entradas) {
         await tx.taxaCambio.create({
           data: { moeda: e.moeda, unidadesPorUsd: e.unidadesPorUsd, vigenteEm: agora },
@@ -471,7 +494,7 @@ export async function atualizarCotacoesAutomatico(): Promise<
         agregadoTipo: "TaxaCambio",
         agregadoId: "cambio",
         autorId: autor.id,
-        payload: { fonte: "open.er-api.com", entradas, vigenteEm: agora.toISOString() },
+        payload: { fonte: FONTE_COTACOES, entradas, vigenteEm: agora.toISOString() },
       });
     });
     revalidatePath("/financeiro", "layout");

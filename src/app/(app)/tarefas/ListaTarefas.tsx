@@ -28,7 +28,9 @@ type Props = {
 
 export function ListaTarefas({ itens, agora, fusoEscola, fusoExibicao, params = {} }: Props) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  // Concluir é idempotente por natureza (#166, 7º lote): a mesma conclusão, de quem já concluiu, devolve ok sem outro
+  // Evento (server/crm/tarefas.ts), então o lote pode ser reenviado depois de um resultado incerto.
+  const acao = useAcaoCliente({ idempotente: true });
   const [marcadas, setMarcadas] = useState<string[]>([]);
   const instante = useMemo(() => new Date(agora), [agora]);
 

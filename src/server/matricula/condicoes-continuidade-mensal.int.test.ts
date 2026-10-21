@@ -182,3 +182,31 @@ it.each(["MES_ANTERIOR", "MES_COBERTURA", "MES_SEGUINTE"] as const)("preserva re
   expect(await consultarCondicoesContinuidadeMensal(matriculaId)).toMatchObject({ ok: true, dado: { versoes: [{ regras: { referenciaVencimento } }] } });
   expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: c.id } })).toEqual(c);
 });
+
+// #166, 7º lote: o preparo recebe a chave da tentativa (marca no `CondicoesContinuidadeMensalPreparadas`) e a decisão é idempotente por
+// natureza. Cobre a mesma chave (inclusive simultânea e depois de decidida), a chave com outra entrada, a chave nova
+// e a decisão repetida pelo mesmo decisor.
+it("preparo com chave e decisão repetida não gravam de novo (#166)", async () => {
+  const chave = "tentativa-condicoes-1";
+  const [a, b] = await Promise.all([prepararCondicoesContinuidadeMensal({ ...input(), chaveIdempotencia: chave }), prepararCondicoesContinuidadeMensal({ ...input(), chaveIdempotencia: chave })]);
+  if (!a.ok || !b.ok || !a.dado) throw new Error(JSON.stringify([a, b]));
+  expect(b.dado).toEqual(a.dado);
+  expect(await prisma.condicoesContinuidadeMensalMatricula.count()).toBe(1);
+  expect(await prepararCondicoesContinuidadeMensal({ ...input(), motivo: "Outra transcrição das condições", chaveIdempotencia: chave }))
+    .toEqual({ ok: false, erro: "Esta tentativa já foi usada para outra proposta de condições. Recarregue a página antes de repetir." });
+  login(adminId);
+  const d = { id: a.dado.id, aprovar: false, motivo: "Transcrição conferida e rejeitada" };
+  const [c, e] = await Promise.all([decidirCondicoesContinuidadeMensal(d), decidirCondicoesContinuidadeMensal(d)]);
+  expect([c.ok, e.ok], JSON.stringify([c, e])).toEqual([true, true]);
+  expect((await decidirCondicoesContinuidadeMensal(d)).ok).toBe(true);
+  expect(await decidirCondicoesContinuidadeMensal({ ...d, motivo: "Outro motivo da decisão" })).toEqual({ ok: false, erro: "Esta versão já recebeu decisão." });
+  expect(await decidirCondicoesContinuidadeMensal({ ...d, aprovar: true })).toEqual({ ok: false, erro: "Esta versão já recebeu decisão." });
+  expect(await prisma.evento.count({ where: { tipo: "CondicoesContinuidadeMensalDecididas" } })).toBe(1);
+  // Reenvio tardio da mesma tentativa, já decidida: devolve a versão original, sem outra.
+  login(secretariaId);
+  expect(await prepararCondicoesContinuidadeMensal({ ...input(), chaveIdempotencia: chave })).toEqual({ ok: true, dado: a.dado });
+  expect(await prisma.evento.count({ where: { tipo: "CondicoesContinuidadeMensalPreparadas" } })).toBe(1);
+  // Chave nova é uma nova versão deliberada.
+  const nova = await prepararCondicoesContinuidadeMensal({ ...input(), chaveIdempotencia: "tentativa-condicoes-2" });
+  expect(nova.ok && nova.dado?.versao, JSON.stringify(nova)).toBe(2);
+});

@@ -448,6 +448,26 @@ it("financeira estruturada: exige decisões financeira e comercial independentes
   expect(await prisma.processoAssinaturaContratual.count()).toBe(1);
 });
 
+it("financeira estruturada: o reenvio tardio da mesma decisão de alçada devolve a decisão gravada (#166)", async () => {
+  const p = await preparar({ alteracoes: [{ origem: "MENSALIDADE_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } }] });
+  await decidir(p);
+  const financeiro = await criarUsuario(["FINANCEIRO"]);
+  await prisma.usuario.update({ where: { id: financeiro.id }, data: { permissoes: ["financeiro.aprovar_acertos"] } });
+  const entradaAlcada = { matriculaId: fixture.matriculaId, propostaId: p.id, propostaHash: p.propostaHash, alcada: "FINANCEIRA" as const, aprovada: true, motivo: "Condições financeiras conferidas na proposta" };
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  const a = await decidirAlcadaAditivo(entradaAlcada);
+  expect(a).toMatchObject({ ok: true });
+  expect(await decidirAlcadaAditivo(entradaAlcada)).toEqual(a);
+  // Uma proposta mais recente no intervalo não transforma o reenvio da mesma decisão em erro.
+  const nova = await preparar({ chaveIdempotencia: "aditivo-alcada-nova-proposta" });
+  expect(nova.versao).toBe(2);
+  authMock.mockResolvedValue({ user: { id: financeiro.id } });
+  expect(await decidirAlcadaAditivo(entradaAlcada)).toEqual(a);
+  expect(await decidirAlcadaAditivo({ ...entradaAlcada, motivo: "Alteração da decisão já registrada" })).toMatchObject({ ok: false });
+  expect(await prisma.decisaoAlcadaAditivo.count()).toBe(1);
+  expect(await prisma.evento.count({ where: { tipo: "AlcadaAditivoDecidida" } })).toBe(1);
+});
+
 it("financeira estruturada: acúmulo de papéis não autoriza autoaprovação de alçada", async () => {
   const p = await preparar({ alteracoes: [{ origem: "MENSALIDADE_VALOR", novo: "500.00 CRC", valorEstruturado: { tipo: "DINHEIRO", valor: "500", moeda: "CRC" } }] });
   await decidir(p);

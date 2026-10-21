@@ -8,6 +8,7 @@ import {
   registrarEvento,
   type Resultado,
 } from "../_shared";
+import { ultimoEventoDoAutor } from "../_shared/idempotencia";
 import type { ConfigAria } from "./config-schema";
 import { capacidadesAria, type CapacidadeAria } from "./permissoes-tela";
 import { versaoPublicada } from "./versoes";
@@ -23,7 +24,9 @@ async function exigir(u: Parameters<typeof capacidadesAria>[0], cap: CapacidadeA
 }
 
 async function travarAgente(tx: Tx): Promise<void> {
-  await tx.agenteIA.upsert({ where: { id: ID_AGENTE }, create: { id: ID_AGENTE }, update: {} });
+  // ON CONFLICT em vez de `upsert`, como em `versoes.ts` (#166, lote 4): no primeiro uso, dois cliques simultâneos em
+  // pausar ou mudar o estado não colidem na criação da linha (o upsert do Prisma lê e depois insere; #166, 7º lote).
+  await tx.$executeRaw`INSERT INTO "AgenteIA" ("id") VALUES (${ID_AGENTE}) ON CONFLICT ("id") DO NOTHING`;
   await tx.$queryRaw`SELECT "id" FROM "AgenteIA" WHERE "id" = ${ID_AGENTE} FOR UPDATE`;
 }
 
@@ -79,7 +82,12 @@ export async function pausarAria(input: { motivo: string }): Promise<Resultado> 
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
       const atual = await tx.agenteIA.findUniqueOrThrow({ where: { id: ID_AGENTE } });
-      if (atual.pausadoEm) throw new ErroRegra("A Aria já está pausada.");
+      if (atual.pausadoEm) {
+        // Idempotência por natureza (#166, 7º lote): a mesma pausa, de quem pausou e com o mesmo motivo, devolve ok sem
+        // outro Evento (o agente travado acima serializa o clique duplo). Pausada por outra pessoa, segue recusada.
+        if (atual.pausadoPorId === u.id && atual.motivoPausa === motivo) return;
+        throw new ErroRegra("A Aria já está pausada.");
+      }
       await tx.agenteIA.update({
         where: { id: ID_AGENTE },
         data: { pausadoEm: new Date(), pausadoPorId: u.id, motivoPausa: motivo },
@@ -102,7 +110,11 @@ export async function reativarAria(): Promise<Resultado> {
     await prisma.$transaction(async (tx) => {
       await travarAgente(tx);
       const atual = await tx.agenteIA.findUniqueOrThrow({ where: { id: ID_AGENTE } });
-      if (!atual.pausadoEm) throw new ErroRegra("A Aria não está pausada.");
+      if (!atual.pausadoEm) {
+        // Idempotência por natureza (#166, 7º lote): reativada por último por quem repete, devolve ok sem outro Evento.
+        if (await ultimoEventoDoAutor(tx, { tipo: "AriaReativada", agregadoTipo: "AgenteIA", agregadoId: ID_AGENTE, autorId: u.id })) return;
+        throw new ErroRegra("A Aria não está pausada.");
+      }
       await tx.agenteIA.update({
         where: { id: ID_AGENTE },
         data: { pausadoEm: null, pausadoPorId: null, motivoPausa: null },

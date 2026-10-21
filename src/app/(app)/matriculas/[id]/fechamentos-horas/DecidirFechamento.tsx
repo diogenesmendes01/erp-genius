@@ -9,8 +9,10 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 
 export function DecidirFechamento({ alunoId, matriculaId, rascunhoId }: { alunoId: string; matriculaId: string; rascunhoId: string }) {
-  // A decisão não leva chave de idempotência; na falha de transporte vale a orientação própria (MSG_DECISAO_INCERTA).
-  const router = useRouter(), acao = useAcaoCliente({ idempotente: false }), [decisao, setDecisao] = useState("");
+  // Idempotente por natureza (#166, 7º lote): a mesma decisão, do mesmo decisor, com a mesma confirmação e o mesmo motivo,
+  // devolve a decisão gravada (server/matricula/fechamento-horas-decisao.ts). Na falha de transporte vale a orientação
+  // própria (MSG_DECISAO_INCERTA): reenviar a mesma decisão.
+  const router = useRouter(), acao = useAcaoCliente({ idempotente: true }), [decisao, setDecisao] = useState("");
   return <form className="space-y-3 rounded border p-4" onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);
     const d = await acao.executar(() => decidirFechamentoHoras({ alunoId, matriculaId, rascunhoId, aprovar: decisao === "APROVAR",

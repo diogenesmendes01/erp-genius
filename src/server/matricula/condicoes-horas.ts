@@ -2,7 +2,8 @@
 import { z } from "zod";
 import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
+import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento, ChaveIdempotenciaSchema } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { RegrasHorasSchema } from "./condicoes-horas-schema";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
@@ -49,19 +50,27 @@ async function exigirAutor(tx: Prisma.TransactionClient, id: string, papeis: Pap
   const u = await tx.usuario.findUnique({ where: { id }, select: { ativo: true, papeis: true } });
   if (!u?.ativo || !u.papeis.some((p) => papeis.includes(p))) throw new ErroPermissao();
 }
-const Preparar = z.object({ matriculaId: z.string().min(1), documentoId: z.string().min(1), regras: RegrasHorasSchema, motivo: z.string().trim().min(5).max(2000) }).strict();
+const Preparar = z.object({ matriculaId: z.string().min(1), documentoId: z.string().min(1), regras: RegrasHorasSchema, motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: ChaveIdempotenciaSchema.optional() }).strict();
 export async function prepararCondicoesHoras(input: z.input<typeof Preparar>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
-    const d = Preparar.parse(input);
+    const { chaveIdempotencia, ...d } = Preparar.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, d);
     return prisma.$transaction(async (tx) => {
       await bloquearMatriculas(tx, [d.matriculaId]);
       await exigirAutor(tx, autor.id, [Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR]);
+      // Criação com chave (#166, 7º lote): a marca vai no `CondicoesHorasPreparadas`. O reenvio da mesma tentativa devolve
+      // a versão já preparada, mesmo que ela tenha sido decidida no intervalo; a busca vem antes das validações de estado.
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, { tipo: "CondicoesHorasPreparadas", agregadoTipo: "Matricula", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada para outra proposta de condições. Recarregue a página antes de repetir." });
+        if (repetido) { const p = repetido.payload as { condicoesId: string; versao: number }; return { id: p.condicoesId, versao: p.versao }; }
+      }
       await exigirFonte(tx, d.matriculaId, d.documentoId, d.regras);
       if (await tx.condicoesHorasMatricula.count({ where: { matriculaId: d.matriculaId, status: "PENDENTE" } })) throw new ErroRegra("Já existe versão aguardando decisão.");
       const ultima = await tx.condicoesHorasMatricula.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { versao: true } });
       const c = await tx.condicoesHorasMatricula.create({ data: { ...d, versao: (ultima?.versao ?? 0) + 1, preparadorId: autor.id } });
-      await registrarEvento(tx, { tipo: "CondicoesHorasPreparadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { condicoesId: c.id, versao: c.versao, documentoId: d.documentoId } });
+      await registrarEvento(tx, { tipo: "CondicoesHorasPreparadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { condicoesId: c.id, versao: c.versao, documentoId: d.documentoId, ...marca } });
       return { id: c.id, versao: c.versao };
     });
   });
@@ -77,7 +86,12 @@ export async function decidirCondicoesHoras(input: { id: string; aprovar: boolea
       await exigirAutor(tx, autor.id, [Papel.ADMINISTRADOR]);
       const c = await tx.condicoesHorasMatricula.findUniqueOrThrow({ where: { id: d.id } });
       if (c.preparadorId === autor.id) throw new ErroRegra("Outra pessoa deve decidir a proposta.");
-      if (c.status !== "PENDENTE") throw new ErroRegra("Esta versão já recebeu decisão.");
+      if (c.status !== "PENDENTE") {
+        // Idempotência por natureza (#166, 7º lote): a mesma decisão, de quem já decidiu e com o mesmo motivo, devolve ok
+        // sem gravar de novo (a matrícula travada acima serializa o clique duplo). Outra decisão segue recusada.
+        if (c.decisorId === autor.id && c.status === (d.aprovar ? "APROVADA" : "REJEITADA") && c.motivoDecisao === d.motivo) return;
+        throw new ErroRegra("Esta versão já recebeu decisão.");
+      }
       if (d.aprovar) await exigirFonte(tx, c.matriculaId, c.documentoId, c.regras);
       await tx.condicoesHorasMatricula.update({ where: { id: c.id }, data: { status: d.aprovar ? "APROVADA" : "REJEITADA", decisorId: autor.id, decididaEm: new Date(), motivoDecisao: d.motivo } });
       await registrarEvento(tx, { tipo: "CondicoesHorasDecididas", agregadoTipo: "Matricula", agregadoId: c.matriculaId, autorId: autor.id, payload: { condicoesId: c.id, aprovada: d.aprovar, motivo: d.motivo } });

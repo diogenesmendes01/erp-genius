@@ -208,6 +208,22 @@ Evento: tabelas operacionais (doc 29 regra 3).
 > `OptOutRemovido` (mesma evidência). Nesses casos a linha do registro é travada, para o clique duplo não gravar dois
 > Eventos.
 
+> **7º lote (#166).** A marca (`chaveIdempotencia`, `entradaHash`) passa a ir também em: `CondicoesHorasPreparadas` e
+> `CondicoesContinuidadeMensalPreparadas` (hash de matrícula, documento, regras e motivo; a busca vem antes das
+> validações de fonte e de versão pendente, então o reenvio devolve a versão original mesmo já decidida) e
+> `TemplateCriado` (hash de nome, corpo, idioma e categoria; o reenvio devolve o template em vez de "Já existe um
+> template com este nome."). Sem marca, por estado-alvo (o reenvio de quem já fez a ação devolve ok sem gravar nem
+> reexecutar o efeito; o estado vindo de outra pessoa segue recusado ou, onde antes gravava, grava como antes):
+> `AprovacaoDecidida` (mesma decisão e motivo, do mesmo aprovador; o desconto não é aplicado de novo),
+> `CondicoesHorasDecididas` e `CondicoesContinuidadeMensalDecididas` (mesma decisão e motivo), `AlcadaAditivoDecidida`
+> (a repetição exata passa a ser reconhecida antes das conferências de proposta mais recente e de base),
+> `AcaoAriaAprovada` (a resposta ao contato não é efetivada de novo), `AcaoAriaRejeitada` (mesmo motivo),
+> `AcaoAriaDesfeita`, `AriaPausada` (mesmo motivo), `AriaReativada`, `ContatoVinculado` (mesmo alvo),
+> `ContatoRenomeado` (mesmo antes e depois), `ContatoDesvinculado` (mesmo alvo e motivo). Não gravam quando nada muda:
+> `ConfigFinanceiroAlterada`, `TemplateAlterado`, `PoliticaReguaAlterada` (salvar e kill switch) e
+> `TaxasCambioDefinidas` (as mesmas cotações, pela mesma via, gravadas por último por quem repete). A trava (linha ou
+> advisory lock) serializa o clique duplo; o primeiro salvamento simultâneo da régua não cria mais duas políticas.
+
 ---
 
 ## Exportação e LGPD (agregado `Exportacao`)

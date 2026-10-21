@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
   sessao: vi.fn(), visivel: vi.fn(), soNoAlcance: vi.fn(), evento: vi.fn(),
-  tx: { contatoWhatsApp: { updateMany: vi.fn() } },
+  // `evento.findFirst` e `contatoWhatsApp.findUnique`: a conferência da repetição (#166, 7º lote) quando a gravação
+  // condicional não acha o nome carregado. Sem Evento do autor, a recusa é a de antes.
+  tx: { contatoWhatsApp: { updateMany: vi.fn(), findUnique: vi.fn(async () => ({ nomeExibicao: "Y" })) }, evento: { findFirst: vi.fn(async () => null) } },
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: (fn: (tx: unknown) => unknown) => fn(m.tx) } }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
