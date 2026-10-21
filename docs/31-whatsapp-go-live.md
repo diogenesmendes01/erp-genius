@@ -48,9 +48,9 @@ No Coolify (`docker-compose.coolify.yml`) é igual, sem Caddy: o Traefik do Cool
 
 ### 1.1 Instalação nova (banco vazio)
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d
 ```
-O serviço `migrate` cria o schema do zero antes do app subir. Fim.
+O serviço `migrate` cria o schema do zero antes do app subir. A imagem já foi construída no CI. Fim.
 
 ### 1.2 Migração do banco atual (traz dados)
 O restore vai em banco **vazio, ANTES** de qualquer migration (dump completo por cima de
@@ -59,7 +59,7 @@ schema já migrado colide em constraints e deixa restauração parcial):
 docker compose -f docker-compose.prod.yml up -d db      # SÓ o banco (cria erp vazio)
 pg_dump -Fc "$DATABASE_URL_ATUAL" > antes.dump
 docker compose -f docker-compose.prod.yml exec -T db pg_restore -U erp -d erp --no-owner < antes.dump
-docker compose -f docker-compose.prod.yml up -d --build  # AGORA a stack: migrate aplica só o delta
+docker compose -f docker-compose.prod.yml up -d  # AGORA a stack: migrate aplica só o delta (imagem do CI)
 ```
 O dump carrega a tabela `_prisma_migrations`, então o `migrate deploy` aplica apenas as
 migrations mais novas que o backup — fluxo determinístico. **Validar**: login + fila de
