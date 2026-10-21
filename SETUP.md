@@ -165,7 +165,8 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
 
    | Variável | Obrigatória | O que é | Exemplo / como obter |
    |---|---|---|---|
-   | `APP_IMAGE` | ✅ | Imagem do app publicada no GHCR (pinada por digest) | `ghcr.io/diogenesmendes01/erp-genius@sha256:abc123...` (ver abaixo) |
+   | `APP_IMAGE` | ✅ | Imagem do app (runner) publicada no GHCR (pinada por digest) | `ghcr.io/diogenesmendes01/erp-genius@sha256:abc123...` (ver abaixo) |
+   | `APP_MIGRATE_IMAGE` | ✅ | Imagem do migrate (builder) publicada no GHCR (pinada por digest) | `ghcr.io/diogenesmendes01/erp-genius/migrate@sha256:def456...` (ver abaixo) |
    | `DOMINIO_APP` | ✅ | Domínio público do app (sem https://) | `erp.geniusidiomas.com` |
    | `POSTGRES_USER` | ✅ | Usuário do banco | `erp` |
    | `POSTGRES_PASSWORD` | ✅ | Senha do banco (URL-safe, sem `/+=`) | `openssl rand -hex 32` |
@@ -204,24 +205,23 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    > **Importante**: variáveis sem valor ficam vazias (sintaxe `${VAR:-}` no compose).
    > As marcadas como obrigatórias (`${VAR:?...}`) bloqueiam o deploy se estiverem vazias.
 
-   **Como obter o digest da imagem `APP_IMAGE`:**
+   **Como obter os digests das imagens:**
 
-   Após cada merge na `main`, o workflow `.github/workflows/image.yml` constrói e publica a imagem no GHCR.
-   O digest aparece no **job summary** do GitHub Actions (aba "Summary" do workflow).
+   Após cada merge na `main`, o workflow `.github/workflows/image.yml` constrói e publica duas imagens no GHCR:
+   - **App (runner)**: a imagem final do app Next.js standalone
+   - **Migrate (builder)**: a imagem com Prisma CLI e migrations para o serviço `migrate`
 
-   Formato da variável `APP_IMAGE`:
-   ```
-   ghcr.io/diogenesmendes01/erp-genius@sha256:<digest-completo>
-   ```
+   Os digests aparecem no **job summary** do GitHub Actions (aba "Summary" do workflow).
 
-   Exemplo:
+   Formato das variáveis:
    ```
-   APP_IMAGE=ghcr.io/diogenesmendes01/erp-genius@sha256:abc123def456...
+   APP_IMAGE=ghcr.io/diogenesmendes01/erp-genius@sha256:<digest-app>
+   APP_MIGRATE_IMAGE=ghcr.io/diogenesmendes01/erp-genius/migrate@sha256:<digest-migrate>
    ```
 
    > **Importante:** sempre use o digest (`@sha256:...`), nunca uma tag (`main`, `latest`). O digest
    > garante que o Coolify sempre puxe a mesma versão validada da imagem. Tags mutáveis podem apontar
-   > para imagens diferentes em cada pull.
+   > para imagens diferentes em cada pull. As duas imagens têm o mesmo SHA do commit embutido.
 
    **Variáveis de build-time (NEXT_PUBLIC_*):**
 
@@ -233,16 +233,40 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    - Não adianta definir no Coolify: o build acontece no CI, não na VPS.
    - Documente cada variável nova em `.env.example` e aqui no SETUP.md.
 
-   **Webhook opcional do Coolify (deploy automático):**
+   **Ordem da virada (cutover):**
 
-   O workflow pode disparar o deploy no Coolify automaticamente após publicar a imagem. Para isso:
+   Ao fazer a migração pela primeira vez, siga esta ordem para evitar que o deploy falhe:
 
-   1. No Coolify, vá em "Webhooks" do Resource e copie a URL do webhook.
-   2. No GitHub, vá em "Settings" → "Variables and secrets" → "Actions".
-   3. Crie uma **variable** `COOLIFY_WEBHOOK` com a URL do webhook (ex.: `https://coolify.exemplo.com/api/...`).
-   4. Crie um **secret** `COOLIFY_TOKEN` com o token de autenticação do Coolify (se aplicável).
+   1. **No Coolify, DESLIGAR o auto-deploy por Git:**
+      - Vá em "Configuration" do Resource
+      - Desmarque "Auto Deploy" (se estiver ligado)
+   
+   2. **Mergear o PR no GitHub**
+      - O merge adiciona a exigência de `APP_IMAGE` e `APP_MIGRATE_IMAGE` nos composes
+   
+   3. **Aguardar o workflow publicar as imagens:**
+      - Acesse "Actions" no GitHub
+      - Aguarde o workflow "Build e publicação de imagem" completar
+      - Copie os digests do job summary
+   
+   4. **Fazer login no GHCR na VPS** (se ainda não foi feito, ver seção 3)
+   
+   5. **Definir as variáveis no Coolify:**
+      - Vá em "Environment Variables"
+      - Defina `APP_IMAGE` com o digest da imagem do app
+      - Defina `APP_MIGRATE_IMAGE` com o digest da imagem do migrate
+   
+   6. **Deploy manual no Coolify:**
+      - Clique em "Redeploy"
+      - O Coolify puxa as imagens do GHCR e reinicia os containers
 
-   Se essas variáveis não existirem, o workflow pula o deploy silenciosamente (o workflow continua funcionando).
+   A partir deste ponto, você pode reativar o auto-deploy por Git se desejar, mas lembre-se de que
+   cada merge na `main` exige atualizar manualmente os digests no Coolify. O auto-deploy por Git não
+   funciona mais porque as imagens vêm do GHCR, não do build na VPS.
+
+   > **Deploy automático não está implementado:** o workflow não atualiza os digests no Coolify
+   > automaticamente. Você deve atualizar `APP_IMAGE` e `APP_MIGRATE_IMAGE` manualmente no painel
+   > do Coolify após cada merge e redesployar.
 
 5. **Deploy**:
    - Clique em "Deploy" no Coolify.
@@ -265,20 +289,21 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
 
 Se um deploy causar problemas, você pode voltar para uma versão anterior **sem tocar no código**:
 
-1. **Encontre o digest da versão anterior:**
+1. **Encontre os digests da versão anterior:**
    - Vá em "Actions" → workflow "Build e publicação de imagem" → run anterior.
-   - Na aba "Summary", copie o digest da imagem publicada.
+   - Na aba "Summary", copie os digests das duas imagens publicadas.
 
-2. **Atualize a variável `APP_IMAGE` no Coolify:**
+2. **Atualize as variáveis no Coolify:**
    - Vá em "Environment Variables" do Resource.
-   - Cole o digest antigo em `APP_IMAGE`:
+   - Cole os digests antigos:
      ```
-     APP_IMAGE=ghcr.io/diogenesmendes01/erp-genius@sha256:<digest-antigo>
+     APP_IMAGE=ghcr.io/diogenesmendes01/erp-genius@sha256:<digest-antigo-app>
+     APP_MIGRATE_IMAGE=ghcr.io/diogenesmendes01/erp-genius/migrate@sha256:<digest-antigo-migrate>
      ```
 
 3. **Redesploy no Coolify:**
    - Clique em "Redeploy" no painel do Coolify.
-   - O Coolify puxa a imagem antiga (validada) e reinicia os containers.
+   - O Coolify puxa as imagens antigas (validadas) e reinicia os containers.
 
 > **Nota:** o rollback é instantâneo (sem recompilar) e 100% confiável, pois o digest aponta
 > para a mesma imagem binária que estava rodando antes. Não há "drift" de dependências ou ambiente.

@@ -16,7 +16,7 @@ const DA_IMAGEM = ["NODE_ENV", "GIT_SHA"];
 // Montadas pelo compose a partir de outras variáveis (não aparecem cruas no env de produção).
 const DERIVADAS_NO_COMPOSE = ["DATABASE_URL", "NEXTAUTH_URL", "MOTOR_URL"];
 // Definidas no compose mas não repassadas ao app (são usadas na definição de serviços, não no environment).
-const DO_COMPOSE = ["APP_IMAGE", "MOTOR_IMAGE"];
+const DO_COMPOSE = ["APP_IMAGE", "APP_MIGRATE_IMAGE", "MOTOR_IMAGE"];
 
 const soTeste = (v: string) => SO_TESTE_EXATAS.has(v) || SO_TESTE_PREFIXOS.some((p) => v.startsWith(p));
 const ehArquivoDeTeste = (arq: string) => /\.test\.tsx?$/.test(arq) || arq.split(/[\\/]/).includes("test");
@@ -98,10 +98,10 @@ for (const arq of ["docker-compose.coolify.yml", "docker-compose.prod.yml"]) {
     it("app não tem build: (build acontece no CI)", () => {
       expect(secao(compose, "app")).not.toMatch(/^\s*build:/m);
     });
-    it("migrate usa a mesma imagem do app", () => {
-      expect(secao(compose, "migrate")).toMatch(/^\s*image:\s+\$\{APP_IMAGE:\?[^}]+\}/m);
+    it("migrate usa image: ${APP_MIGRATE_IMAGE:?...} (builder stage com Prisma CLI)", () => {
+      expect(secao(compose, "migrate")).toMatch(/^\s*image:\s+\$\{APP_MIGRATE_IMAGE:\?[^}]+\}/m);
     });
-    it("migrate não tem build: (usa a imagem validada)", () => {
+    it("migrate não tem build: (usa a imagem validada do builder)", () => {
       expect(secao(compose, "migrate")).not.toMatch(/^\s*build:/m);
     });
     it("motor usa image: ${MOTOR_IMAGE:?...} (obrigatório)", () => {
