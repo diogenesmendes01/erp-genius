@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cancelarEnvelopeSemPresumir, consultarEnvelopeSemPresumir, criarEnvelopeSemPresumir, DestinoAssinaturaSchema,
-  hashEvidenciaAssinatura, type ProvedorAssinatura,
+  hashEvidenciaAssinatura, resultadoConciliacaoEnvio, type ProvedorAssinatura, type SituacaoEnvelope,
 } from "./provedor-assinatura";
 import { armazemSimuladoEmMemoria, criarProvedorSimulado, referenciaSimulada } from "./provedor-assinatura-simulado";
 import { lerDriverAssinatura } from "./provedor-assinatura-ativo";
@@ -75,6 +75,23 @@ describe("chamadas sem presunção", () => {
   it("hash de evidência é estável e hexadecimal", () => {
     expect(hashEvidenciaAssinatura({ a: 1 })).toBe(hashEvidenciaAssinatura({ a: 1 }));
     expect(hashEvidenciaAssinatura(undefined)).toMatch(/^[a-f0-9]{64}$/);
+  });
+});
+
+describe("conciliação do envio pela situação do envelope (R1 C2)", () => {
+  // Driver fake que devolve cada situação na consulta pela chave.
+  const fake = (situacao: SituacaoEnvelope) => ({ ...simulado(),
+    consultarPorChave: async () => ({ resultado: "ENCONTRADO" as const, referenciaExterna: "ref-1", situacao, evidencia: { fake: true } }) }) as ProvedorAssinatura;
+  it.each(["EM_ASSINATURA", "ASSINADO"] as const)("%s confirma o envio com a referência", async (situacao) => {
+    expect(resultadoConciliacaoEnvio(await consultarEnvelopeSemPresumir(fake(situacao), "tentativa:t1"))).toEqual({ resultado: "REGISTRADO", referenciaExterna: "ref-1", evidencia: { fake: true } });
+  });
+  it.each([["CANCELADO", "ENVELOPE_CANCELADO_NO_SERVICO"], ["RECUSADO", "ENVELOPE_RECUSADO_NO_SERVICO"]] as const)("%s não vira ENVIADO: fica INCERTO com motivo explícito", async (situacao, motivo) => {
+    expect(resultadoConciliacaoEnvio(await consultarEnvelopeSemPresumir(fake(situacao), "tentativa:t1"))).toEqual({ resultado: "INCERTO", referenciaExterna: null,
+      evidencia: { motivo, referenciaExterna: "ref-1", situacao, original: { fake: true } } });
+  });
+  it("ausência positiva é NAO_CRIADO; dúvida segue INCERTO", () => {
+    expect(resultadoConciliacaoEnvio({ resultado: "AUSENTE", evidencia: {} })).toMatchObject({ resultado: "NAO_CRIADO", referenciaExterna: null });
+    expect(resultadoConciliacaoEnvio({ resultado: "INCERTO", evidencia: {} })).toMatchObject({ resultado: "INCERTO", referenciaExterna: null });
   });
 });
 

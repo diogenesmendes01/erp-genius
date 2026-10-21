@@ -98,13 +98,21 @@ it("resposta perdida vira ENVIO_INCERTO; só a conciliação pela chave da tenta
   try {
     expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id })).toMatchObject({ ok: true, dado: { estado: "ENVIO_INCERTO" } });
   } finally { simulado.consultarPorChave = consultar; }
+  // R1 C2: envelope cancelado ou recusado no serviço não confirma o envio; o processo segue incerto.
+  for (const situacao of ["CANCELADO", "RECUSADO"] as const) {
+    simulado.consultarPorChave = async (chave) => { const r = await consultar(chave); return r.resultado === "ENCONTRADO" ? { ...r, situacao } : r; };
+    try {
+      expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id })).toMatchObject({ ok: true, dado: { estado: "ENVIO_INCERTO" } });
+    } finally { simulado.consultarPorChave = consultar; }
+  }
+  expect(await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: processo.id } })).toMatchObject({ estado: "ENVIO_INCERTO", referenciaExterna: null });
   expect(await conciliarEnvioAssinatura({ matriculaId: "outra", processoId: processo.id })).toMatchObject({ ok: false });
   expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id, chaveIdempotencia: "conciliacao-contrato-1" })).toMatchObject({ ok: true, dado: { estado: "ENVIADO", repetido: false } });
   expect(await conciliarEnvioAssinatura({ matriculaId: base.matriculaId, processoId: processo.id, chaveIdempotencia: "conciliacao-contrato-1" })).toMatchObject({ ok: true, dado: { estado: "ENVIADO", repetido: true } });
   const final = await prisma.processoAssinaturaContratual.findUniqueOrThrow({ where: { id: processo.id }, include: { tentativas: { include: { observacoes: { orderBy: [{ registradaEm: "asc" }, { id: "asc" }] } } } } });
   expect(final.estado).toBe("ENVIADO");
   expect(final.tentativas).toHaveLength(1);
-  expect(final.tentativas[0].observacoes.map(o => o.resultado)).toEqual(["INCERTO", "INCERTO", "REGISTRADO"]);
+  expect(final.tentativas[0].observacoes.map(o => o.resultado)).toEqual(["INCERTO", "INCERTO", "INCERTO", "INCERTO", "REGISTRADO"]);
   expect(await prisma.envelopeAssinaturaSimulado.count()).toBe(1);
   const conciliacao = await prisma.evento.findFirstOrThrow({ where: { tipo: "ResultadoEnvioAssinaturaRegistrado", autorId: base.secretariaId, payload: { path: ["chaveIdempotencia"], equals: "conciliacao-contrato-1" } } });
   expect(conciliacao.payload).toMatchObject({ estado: "ENVIADO", resultado: "REGISTRADO" });
