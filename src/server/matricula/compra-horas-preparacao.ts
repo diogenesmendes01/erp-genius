@@ -12,7 +12,8 @@ export async function conferirCompraPreparadaTx(tx: Prisma.TransactionClient, m:
   const condicoes = await tx.condicoesEntradaPreparacao.findFirstOrThrow({ where: { matriculaId: m.id }, orderBy: { versao: "desc" } });
   const original = planejarCobrancasEntrada(condicoes.dados).find(i => i.tipo === "HORA_PARTICULAR");
   // Q172: aditivo de adiantamento aplicado antes do pagamento redefine minutos e valor contratados.
-  const aditivo = await tx.aplicacaoAdiantamentoAditivo.findFirst({ where: { decisao: { proposta: { cobrancaId: c.id, matriculaId: m.id } } }, orderBy: { versaoCobrancaDepois: "desc" }, select: { id: true, minutosNovos: true, valorNovo: true } });
+  // `aprovada: true` repete a regra do trigger `guardar_aplicacao_adiantamento_172` (defesa em profundidade).
+  const aditivo = await tx.aplicacaoAdiantamentoAditivo.findFirst({ where: { decisao: { aprovada: true, proposta: { cobrancaId: c.id, matriculaId: m.id } } }, orderBy: { versaoCobrancaDepois: "desc" }, select: { id: true, minutosNovos: true, valorNovo: true } });
   const previsto = original && aditivo ? { ...original, minutos: aditivo.minutosNovos, valor: aditivo.valorNovo.toFixed(2) } : original;
   const item = await tx.itemEmissaoEntrada.findFirst({ where: { cobrancaId: c.id, matriculaId: m.id, emissao: { condicoesId: condicoes.id, etapa: "CONFERENCIA_SECRETARIA", conferenciaInicial: { isNot: null } } }, select: { emissaoId: true } });
   if (!previsto || !item || previsto.minutos !== minutos || previsto.moeda !== c.moeda || !new Prisma.Decimal(previsto.valor).equals(c.valorNegociado))
