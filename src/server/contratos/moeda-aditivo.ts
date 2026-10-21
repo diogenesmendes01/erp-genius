@@ -87,6 +87,9 @@ export async function decidirMoedaAditivo(input: unknown) {
         if (p.decisao.decisorId !== autor.id || p.decisao.aprovada !== d.aprovada || p.decisao.motivo !== d.motivo || p.decisao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("A proposta já recebeu outra decisão.");
         return { id: p.decisao.id, aprovada: p.decisao.aprovada };
       }
+      // A chave é única por decisor: reaproveitada em outra proposta é recusa conhecida, não erro desconhecido.
+      if (await tx.decisaoMoedaAditivo.findUnique({ where: { decisorId_chaveIdempotencia: { decisorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } }, select: { id: true } }))
+        throw new ErroRegra("A chave já corresponde a outra decisão. Gere uma nova tentativa.");
       if (d.aprovada) {
         const v = await conferirVersao(tx, p.matriculaId, p.versaoCondicoesId);
         const alvo = await consultarAlvoMoedaTx(tx, p.matriculaId, v);
@@ -113,6 +116,8 @@ export async function aplicarMoedaAditivo(input: unknown) {
         if (p.decisao.aplicacao.executorId !== autor.id || p.decisao.aplicacao.chaveIdempotencia !== d.chaveIdempotencia) throw new ErroRegra("Aplicação já registrada com outra chave.");
         return { id: p.decisao.aplicacao.id, aplicada: true };
       }
+      if (await tx.aplicacaoMoedaAditivo.findUnique({ where: { executorId_chaveIdempotencia: { executorId: autor.id, chaveIdempotencia: d.chaveIdempotencia } }, select: { id: true } }))
+        throw new ErroRegra("A chave já corresponde a outra aplicação. Gere uma nova tentativa.");
       const versao = await conferirVersao(tx, p.matriculaId, p.versaoCondicoesId);
       if (versao.vigenciaInicio > new Date()) throw new ErroRegra("Aguarde a vigência aprovada antes de aplicar a moeda.");
       const alvo = await consultarAlvoMoedaTx(tx, p.matriculaId, versao);
@@ -159,5 +164,26 @@ export async function consultarMoedasAditivo(input: unknown) {
         })),
       };
     });
+  });
+}
+
+/** Lista do Financeiro: aditivos que formalizam troca de moeda, com o estado da troca de cada versão. */
+export async function listarAditivosParaTrocaMoeda(pagina = 1) {
+  return executarAcao(async () => {
+    await exigirSessaoComPapel(Papel.FINANCEIRO);
+    if (!Number.isInteger(pagina) || pagina < 1 || pagina > 10000) throw new ErroRegra("Página inválida.");
+    const versoes = await prisma.versaoCondicoesAditivo.findMany({
+      where: { condicoes: { path: ["MOEDA"], not: Prisma.AnyNull } },
+      orderBy: [{ registradaEm: "desc" }, { id: "desc" }], skip: (pagina - 1) * 30, take: 31,
+      select: { id: true, matriculaId: true, propostaId: true, versao: true,
+        matricula: { select: { codigo: true, moeda: true, aluno: { select: { primeiroNome: true, sobrenome: true } } } },
+        propostasMoeda: { orderBy: [{ criadaEm: "desc" }, { id: "desc" }], take: 1, select: { decisao: { select: { aprovada: true, aplicacao: { select: { id: true } } } } } } },
+    });
+    return { temProxima: versoes.length > 30, itens: versoes.slice(0, 30).map(v => {
+      const ultima = v.propostasMoeda[0];
+      const estado = !ultima ? null : ultima.decisao?.aplicacao ? "APLICADA" : ultima.decisao ? (ultima.decisao.aprovada ? "APROVADA" : "REJEITADA") : "PENDENTE";
+      return { versaoId: v.id, matriculaId: v.matriculaId, propostaId: v.propostaId, versao: v.versao, matriculaCodigo: v.matricula.codigo,
+        aluno: `${v.matricula.aluno.primeiroNome} ${v.matricula.aluno.sobrenome ?? ""}`.trim(), moedaAtual: v.matricula.moeda, estado };
+    }) };
   });
 }

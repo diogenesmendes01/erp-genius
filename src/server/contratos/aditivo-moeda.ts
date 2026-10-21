@@ -9,6 +9,12 @@ export const ROTULOS_PENDENCIA_MOEDA: Record<string, string> = {
   COBERTURA_MENSAL_ALEM_DA_VIGENCIA: "Existe mensalidade na moeda anterior cuja cobertura alcança a vigência do aditivo. A troca só vale a partir do fim dessa cobertura.",
   SALDO_HORAS_PRE_PAGAS: "Há saldo ou reserva pendente de horas pré-pagas compradas na moeda anterior. Consuma, libere com crédito ou liquide antes da troca.",
   PERMUTA_VIGENTE: "Há acordo de permuta vigente na moeda anterior. Encerre ou aguarde o fim da vigência.",
+  // R1 do #284: direitos em andamento que, depois da troca, não teriam mais caminho. Nada é convertido.
+  COMPENSACAO_COBERTURA_PENDENTE: "Há compensação de cobertura aguardando decisão sobre mensalidade da moeda anterior. Decida antes da troca.",
+  DIAS_COMPENSACAO_PENDENTES: "Há dias de compensação aprovados sobre mensalidade da moeda anterior ainda não recompostos nem liquidados. Destine-os antes da troca.",
+  PERIODO_INTEGRAL_PENDENTE: "Há proposta de período integral sobre cobrança da moeda anterior aguardando decisão ou aplicação. Conclua antes da troca.",
+  PERMUTA_SERVICO_SEM_COMPENSACAO: "Há serviço de permuta confirmado em acordo da moeda anterior sem compensação aprovada. Compense antes da troca.",
+  REVISAO_CORRECAO_AULA_DEVOLVE_MINUTOS: "Há revisão financeira de correção de aula pendente que devolveria minutos a uma compra de horas da moeda anterior. Decida antes da troca.",
 };
 
 export type PendenciaMoeda = { codigo: string; texto: string };

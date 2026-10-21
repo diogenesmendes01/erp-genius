@@ -10,8 +10,13 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
     liquidacaoAcerto: true,
     reservas: { orderBy: { id: "asc" }, include: { consumo: { include: { estorno: { select: { id: true } }, conferenciaOcorrencia: { select: { id: true, desfecho: true } } } }, decisoesLiberacao: { where: { aprovada: true }, include: { proposta: true, credito: true } } } },
   } });
+  // Q173: compra na moeda anterior a uma troca aplicada é histórico do contrato. A troca só foi aplicada com
+  // saldo zero nessa compra, então ela não entra no acerto (como as cobranças em encerramento-contexto-tx).
+  const trocasMoeda = await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId } } }, select: { moedaAnterior: true } });
+  const moedasAnteriores = new Set(trocasMoeda.map((troca) => troca.moedaAnterior));
   const pendencias: string[] = [];
-  const origens = compras.map(c => {
+  const historicas = new Set<string>();
+  const origens = compras.flatMap(c => {
     const consumos: { id: string; minutos: number; motivo: "AULA_REALIZADA" | "FALTA_COBRAVEL" | "CANCELAMENTO_TARDIO_COBRAVEL"; evidencia: string }[] = [];
     const liquidacoesAnteriores: { id: string; minutos: number; valor: string; referenciaAcerto: string }[] = [];
     if (c.liquidacaoAcerto) liquidacoesAnteriores.push({ id: c.liquidacaoAcerto.id, minutos: c.liquidacaoAcerto.minutos, valor: c.liquidacaoAcerto.valor.toFixed(2), referenciaAcerto: c.liquidacaoAcerto.decisaoId });
@@ -36,11 +41,18 @@ export async function carregarHorasEncerramentoTx(tx: Prisma.TransactionClient, 
         liquidacoesAnteriores.push({ id: decisao.credito.id, minutos: r.minutos, valor: decisao.credito.valorInicial.toFixed(2), referenciaAcerto: decisao.id });
       } else minutosReservados += r.minutos;
     }
+    if (c.moeda !== m.moeda && moedasAnteriores.has(c.moeda)) {
+      const destinados = [...consumos, ...liquidacoesAnteriores].reduce((s, x) => s + x.minutos, 0);
+      // Nada é convertido: saldo que reaparecesse na moeda antiga fica visível como pendência, nunca é somado.
+      if (minutosReservados || destinados < c.minutosComprados) pendencias.push(`A compra ${c.id} na moeda anterior (${c.moeda}) ainda tem minutos sem destino; resolva sem converter antes de apurar o encerramento.`);
+      else historicas.add(c.id);
+      return [];
+    }
     if (minutosReservados) pendencias.push(`Resolva as reservas da compra ${c.id} antes de apurar seu encerramento.`);
-    return { compraId: c.id, matriculaId, moeda: c.moeda, contratoVersaoId: c.documentoId,
+    return [{ compraId: c.id, matriculaId, moeda: c.moeda, contratoVersaoId: c.documentoId,
       recebimentoReferencia: c.cobrancaId, evidenciaCondicoes: c.evidenciaCondicoes,
-      minutosComprados: c.minutosComprados, minutosReservados, valorOriginal: c.valorOriginal.toFixed(2), descontoOriginal: c.descontoOriginal.toFixed(2), valorPagoAlocado: c.valorPagoAlocado.toFixed(2), consumos, liquidacoesAnteriores };
+      minutosComprados: c.minutosComprados, minutosReservados, valorOriginal: c.valorOriginal.toFixed(2), descontoOriginal: c.descontoOriginal.toFixed(2), valorPagoAlocado: c.valorPagoAlocado.toFixed(2), consumos, liquidacoesAnteriores }];
   });
-  return { pendencias, cobrancasCompras: compras.map(c => c.cobrancaId), origens,
+  return { pendencias, cobrancasCompras: compras.filter(c => !historicas.has(c.id)).map(c => c.cobrancaId), origens,
     calculo: pendencias.length ? null : calcularSaldoHorasEncerramento({ matriculaId, moeda: m.moeda, compras: origens }) };
 }
