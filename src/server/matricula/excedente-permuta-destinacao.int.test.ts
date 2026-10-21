@@ -169,3 +169,33 @@ it("Q171: rejeição não cria destino e libera nova proposta; cobrança alterad
   expect(await decidirDestinacaoExcedentePermuta({ propostaId: segunda.dado.id, aprovada: true, motivo: "Tentativa com cobrança já alterada." })).toMatchObject({ ok: false });
   expect(await prisma.decisaoDestinacaoExcedentePermuta.count()).toBe(1);
 });
+
+it("Q171 (B3 da R1 da #283): cobrança ainda em aberto não recebe destinação de excedente, na ação e no banco", async () => {
+  // Mensalidade de 100 com 50 de permuta e nada mais: segue PENDENTE com saldo 50.
+  const aberta = await prisma.cobranca.create({ data: { matriculaId, tipo: TipoCobranca.MENSALIDADE, moeda: "CRC", valorOriginal: 100, valorNegociado: 100, saldo: 100, vencimento: new Date("2099-11-01T00:00:00Z") } });
+  entrar(financeiroId);
+  const acordo = await prepararAcordoPermuta({ matriculaId, vigenciaInicio: "2099-11-01", vigenciaFim: "2099-11-30", moeda: "CRC", unidade: UnidadePermutaServico.HORA, quantidadePactuada: "1.00", valorPorUnidade: "50.00", contrapartida: "Serviço pedagógico efetivamente prestado à escola.", formulaDescricao: "Uma hora comprovada equivale a cinquenta colones.", cobrancas: [{ cobrancaId: aberta.id, valorMaximo: "50.00" }], chaveIdempotencia: "q171-b3-acordo" });
+  if (!acordo.ok || !acordo.dado) throw new Error(JSON.stringify(acordo));
+  entrar(pedagogicoId);
+  const confirmacao = await confirmarServicoPermuta({ acordoId: acordo.dado.id, periodoInicio: "2099-11-01", periodoFim: "2099-11-01", quantidadeComprovada: "1.00", referenciaServico: "Q171-B3-SERVICO", evidencia: "Diário pedagógico confirma a hora prestada à escola.", chaveIdempotencia: "q171-b3-confirmacao" });
+  if (!confirmacao.ok || !confirmacao.dado) throw new Error(JSON.stringify(confirmacao));
+  entrar(financeiroId);
+  const proposta = await proporCompensacaoPermuta({ confirmacaoId: confirmacao.dado.id, destinos: [{ cobrancaId: aberta.id, valor: "50.00" }], chaveIdempotencia: "q171-b3-proposta" });
+  if (!proposta.ok || !proposta.dado) throw new Error(JSON.stringify(proposta));
+  entrar(aprovadorId);
+  expect(await decidirCompensacaoPermuta({ propostaId: proposta.dado.id, aprovar: true, motivo: "Acordo, confirmação, proposta e destino conferidos." })).toMatchObject({ ok: true });
+  const atual = await prisma.cobranca.findUniqueOrThrow({ where: { id: aberta.id } });
+  expect(atual).toMatchObject({ status: "PENDENTE" });
+  expect(atual.saldo?.toFixed(2)).toBe("50.00");
+  const creditosAntes = await prisma.creditoMatricula.count();
+  // Ação: o cenário da revisão (obrigação 5, crédito financeiro) é recusado enquanto a cobrança cobra.
+  entrar(financeiroId);
+  expect(await prepararDestinacaoExcedentePermuta({ matriculaId, cobrancaId: aberta.id, valorDevidoAcordado: "5.00", itens: [{ tipo: "CREDITO_FINANCEIRO", valor: "45.00" }],
+    motivo: "Tentativa de destinar excedente de cobrança em aberto.", chaveIdempotencia: "q171-b3-destinacao" })).toMatchObject({ ok: false, erro: expect.stringContaining("cobrança quitada") });
+  // Banco: a proposta gravada direto também é recusada.
+  const hash = "b3".padEnd(64, "0");
+  await expect(prisma.propostaDestinacaoExcedentePermuta.create({ data: { matriculaId, cobrancaId: aberta.id, versaoCobranca: atual.versao, moeda: "CRC", valorDevidoAcordado: 5, valorExcedente: 45,
+    fotografia: {}, fotografiaHash: hash, preparadorId: financeiroId, motivo: "Gravada direto no banco.", chaveIdempotencia: "q171-b3-banco", entradaHash: hash } })).rejects.toThrow(/cobrança quitada/);
+  expect(await prisma.propostaDestinacaoExcedentePermuta.count({ where: { cobrancaId: aberta.id } })).toBe(0);
+  expect(await prisma.creditoMatricula.count()).toBe(creditosAntes);
+});

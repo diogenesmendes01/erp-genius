@@ -4,6 +4,11 @@
 -- valendo sem reescrita. A aplicação passa a ter exatamente uma origem: destino de proposta OU uso de saldo.
 -- Diferença em relação à #62: como a compensação por permuta da main (permuta-servico.ts), o uso recusa
 -- cobrança suspensa ou cancelada por pausa e cobrança com comprovante a conferir, na ação e aqui.
+-- Recorte da R1 da #283 (B2 e item menor): o uso abate SÓ MENSALIDADE, o mesmo tipo que a permuta da main aceita
+-- (corpo original de validar_aplicacao_permuta_223). Os fluxos que leem valorCompensadoPermuta foram escritos para
+-- permuta em mensalidade: em HORA_PARTICULAR a Q175 (q23_fotografia_nao_cobravel_175) devolveria a aula paga com saldo
+-- como GERA_CREDITO (crédito financeiro), e em MATRICULA o acerto de taxa (crédito de taxa fora da projeção de permuta)
+-- falharia ou ignoraria a permuta. Hora particular e taxa ficam para conferência específica, sem redefinir essas funções.
 -- validar_aplicacao_permuta_223: cópia da definição vigente (20260917148000, nenhuma migration posterior a
 -- redefine) com o ramo do uso ANTES do corpo original, que fica idêntico (inclusive a ordem dos bloqueios).
 -- AlterTable
@@ -64,7 +69,7 @@ CREATE FUNCTION saldo_servico_permuta_disponivel_171(saldo_id TEXT, ignorar_prop
 $$;
 
 
--- Proposta: Financeiro ativo; cobrança da mesma matrícula e moeda do saldo, aberta, dos tipos abatíveis, fora de
+-- Proposta: Financeiro ativo; cobrança da mesma matrícula e moeda do saldo, MENSALIDADE aberta (ver nota abaixo), fora de
 -- pausa e sem comprovante a conferir; valor dentro do saldo disponível e do saldo da cobrança.
 CREATE FUNCTION guardar_proposta_uso_saldo_servico_171() RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE u "Usuario"%ROWTYPE; s "SaldoServicoPermuta"%ROWTYPE; c "Cobranca"%ROWTYPE;
@@ -78,8 +83,8 @@ BEGIN
   IF u.id IS NULL OR NOT u.ativo OR NOT (u.papeis && ARRAY['FINANCEIRO','ADMINISTRADOR']::"Papel"[]) THEN RAISE EXCEPTION 'Preparação exige Financeiro ativo'; END IF;
   IF s.id IS NULL OR s."matriculaId" IS DISTINCT FROM NEW."matriculaId" OR s.moeda IS DISTINCT FROM NEW.moeda THEN RAISE EXCEPTION 'Saldo de serviços incompatível com a matrícula ou a moeda'; END IF;
   IF c.id IS NULL OR c."matriculaId" IS DISTINCT FROM NEW."matriculaId" OR c.moeda IS DISTINCT FROM NEW.moeda OR c.versao IS DISTINCT FROM NEW."versaoCobranca"
-    OR c.tipo NOT IN ('MENSALIDADE','HORA_PARTICULAR','MATRICULA') OR c.status NOT IN ('PENDENTE','ATRASADO') OR c.saldo IS NULL OR NEW.valor > c.saldo
-  THEN RAISE EXCEPTION 'O saldo de serviços só abate mensalidade, hora particular ou taxa em aberto da mesma matrícula, na mesma moeda e até o saldo da cobrança'; END IF;
+    OR c.tipo<>'MENSALIDADE' OR c.status NOT IN ('PENDENTE','ATRASADO') OR c.saldo IS NULL OR NEW.valor > c.saldo
+  THEN RAISE EXCEPTION 'O saldo de serviços só abate mensalidade em aberto da mesma matrícula, na mesma moeda e até o saldo da cobrança'; END IF;
   IF c."suspensaPorItemPausaId" IS NOT NULL OR c."canceladaPorPausaId" IS NOT NULL OR EXISTS (SELECT 1 FROM "PagamentoInformado" i WHERE i."cobrancaId"=c.id AND i.status='A_CONFERIR')
   THEN RAISE EXCEPTION 'Cobrança em pausa ou com comprovante a conferir não recebe uso do saldo de serviços'; END IF;
   IF NEW.valor > saldo_servico_permuta_disponivel_171(s.id, NEW.id) THEN RAISE EXCEPTION 'Valor acima do saldo de serviços disponível'; END IF;
@@ -132,7 +137,7 @@ BEGIN
   SELECT * INTO cobranca FROM "Cobranca" WHERE id=NEW."cobrancaId" FOR UPDATE;
   IF uso.id IS NULL OR NOT uso.aprovada OR proposta_uso.id IS NULL OR NEW."cobrancaId" IS DISTINCT FROM proposta_uso."cobrancaId" OR NEW.valor IS DISTINCT FROM proposta_uso.valor
     OR cobranca."matriculaId" IS DISTINCT FROM proposta_uso."matriculaId" OR cobranca.moeda IS DISTINCT FROM proposta_uso.moeda OR cobranca.versao IS DISTINCT FROM proposta_uso."versaoCobranca"
-    OR cobranca.tipo NOT IN ('MENSALIDADE','HORA_PARTICULAR','MATRICULA') OR cobranca.status NOT IN ('PENDENTE','ATRASADO') OR cobranca.saldo IS NULL OR NEW.valor>cobranca.saldo
+    OR cobranca.tipo<>'MENSALIDADE' OR cobranca.status NOT IN ('PENDENTE','ATRASADO') OR cobranca.saldo IS NULL OR NEW.valor>cobranca.saldo
     OR cobranca."suspensaPorItemPausaId" IS NOT NULL OR cobranca."canceladaPorPausaId" IS NOT NULL
   THEN RAISE EXCEPTION 'Aplicação do saldo de serviços exige uso aprovado e cobrança na versão proposta'; END IF;
   RETURN NEW;
@@ -146,3 +151,15 @@ BEGIN
  IF EXISTS (SELECT 1 FROM "PropostaCompensacaoPermuta" p JOIN "ConfirmacaoServicoPermuta" c ON c.id=p."confirmacaoId" JOIN "AcordoPermutaCobranca" e ON e."acordoId"=c."acordoId" AND e."cobrancaId"=NEW."cobrancaId" WHERE p.id=destino."propostaId" AND NEW.valor+coalesce((SELECT sum(ap.valor) FROM "AplicacaoCompensacaoPermuta" ap JOIN "DestinoPropostaCompensacaoPermuta" dp ON dp.id=ap."destinoId" JOIN "PropostaCompensacaoPermuta" pp ON pp.id=dp."propostaId" JOIN "ConfirmacaoServicoPermuta" cp ON cp.id=pp."confirmacaoId" WHERE cp."acordoId"=c."acordoId" AND ap."cobrancaId"=NEW."cobrancaId"),0)>e."valorMaximo") THEN RAISE EXCEPTION 'Limite cumulativo da cobrança excedido'; END IF;
  RETURN NEW;
 END $$;
+
+-- B1 da R1 da #283 (saldo restrito nunca vira dinheiro): o uso aprovado do saldo é uma aplicação de permuta da
+-- cobrança abatida. Ela NÃO pode ser origem de excedente: se fosse, uma destinação posterior nessa cobrança mandaria
+-- o valor para CREDITO_FINANCEIRO (dinheiro) ou o reciclaria como saldo novo. A recusa vale para qualquer item.
+-- Trigger própria, para não reescrever guardar_destinacao_excedente_permuta_171 (20261021300000).
+CREATE FUNCTION guardar_origem_excedente_uso_saldo_171() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM "AplicacaoCompensacaoPermuta" a WHERE a.id=NEW."aplicacaoPermutaId" AND a."usoSaldoServicoId" IS NOT NULL)
+  THEN RAISE EXCEPTION 'Uso do saldo de serviços não é origem de excedente: saldo restrito nunca vira crédito financeiro nem saldo novo'; END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER guardar_origem_excedente_uso_saldo_171 BEFORE INSERT ON "OrigemExcedentePermuta" FOR EACH ROW EXECUTE FUNCTION guardar_origem_excedente_uso_saldo_171();

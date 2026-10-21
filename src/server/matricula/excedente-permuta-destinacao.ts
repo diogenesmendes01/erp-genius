@@ -53,6 +53,13 @@ async function bloquear(tx: Prisma.TransactionClient, matriculaId: string, cobra
 
 /** Fotografia = fontes reais da cobrança + aritmética do excedente. É recalculada na decisão; qualquer mudança invalida a proposta. */
 async function apurarTx(tx: Prisma.TransactionClient, d: { matriculaId: string; cobrancaId: string; valorDevidoAcordado: string; distribuicao?: { origemId: string; valor: string }[] }) {
+  // B3 da R1 da #283: o excedente é fato sobre liquidação JÁ feita. Com a cobrança em aberto, o crédito nasceria
+  // enquanto ela continua cobrando o valor original (o ajuste de cobrança com permuta é bloqueado).
+  const cobranca = await tx.cobranca.findUnique({ where: { id: d.cobrancaId }, select: { status: true, saldo: true, valorNegociado: true, valorRecebido: true, valorLiquidadoCredito: true, valorCompensadoPermuta: true } });
+  if (!cobranca || cobranca.status !== "PAGO" || cobranca.saldo === null || !cobranca.saldo.isZero()
+    || new Prisma.Decimal(cobranca.valorRecebido ?? 0).plus(cobranca.valorLiquidadoCredito).plus(cobranca.valorCompensadoPermuta).lt(cobranca.valorNegociado)) {
+    throw new ErroRegra("A destinação do excedente exige a cobrança quitada (paga, sem saldo e com liquidação de pelo menos o valor negociado).");
+  }
   const fontes = await carregarOrigensExcedentePermutaTx(tx, { matriculaId: d.matriculaId, cobrancaId: d.cobrancaId });
   if (fontes.status !== "PRONTA") throw new ErroRegra(`As fontes de liquidação desta cobrança ainda não são finais: ${fontes.pendencias.map((pendencia) => pendencia.codigo).join(", ")}`);
   const calculo = calcularExcedentePermuta({ cobrancaId: d.cobrancaId, versaoCobranca: fontes.fotografia.versaoCobranca, moeda: fontes.fotografia.moeda,
@@ -60,6 +67,10 @@ async function apurarTx(tx: Prisma.TransactionClient, d: { matriculaId: string; 
   if (calculo.status === "DISTRIBUICAO_MISTA_PENDENTE") throw new ErroRegra("A redução mistura fontes de liquidação. Informe a distribuição por origem acordada antes de propor a destinação.");
   if (calculo.status === "SEM_EXCEDENTE_SERVICO" || !calculo.excedentesServico.length) throw new ErroRegra("Esta cobrança não possui excedente de serviço a destinar com a obrigação informada.");
   const fotografia = JSON.parse(JSON.stringify({ fontes: fontes.fotografia, origens: fontes.origens, calculo })) as Prisma.JsonObject;
+  // B1 da R1 da #283 (saldo restrito nunca vira dinheiro): o uso aprovado do saldo de serviços (cadeia com saldoServicoId)
+  // é liquidação da cobrança, mas não é origem de excedente; destiná-lo o mandaria a crédito financeiro ou o reciclaria.
+  const usosSaldo = new Set(fontes.fotografia.cadeias.filter((cadeia) => cadeia.saldoServicoId).map((cadeia) => cadeia.origemId));
+  if (calculo.excedentesServico.some((e) => usosSaldo.has(e.aplicacaoPermutaId))) throw new ErroRegra("O uso do saldo de serviços não é origem de excedente: saldo restrito nunca vira crédito financeiro nem saldo novo. Distribua a redução às compensações de permuta propriamente ditas.");
   return { fotografia, fotografiaHash: hashSubstituicao(fotografia), versaoCobranca: fontes.fotografia.versaoCobranca, moeda: fontes.fotografia.moeda,
     valorExcedente: new Prisma.Decimal(calculo.excedenteServico), excedentes: calculo.excedentesServico };
 }

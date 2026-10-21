@@ -218,6 +218,9 @@ BEGIN
     IF u.id IS NULL OR NOT u.ativo OR NOT (u.papeis && ARRAY['FINANCEIRO','ADMINISTRADOR']::"Papel"[]) THEN RAISE EXCEPTION 'Preparação exige Financeiro ativo'; END IF;
     IF c.id IS NULL OR c."matriculaId" IS DISTINCT FROM NEW."matriculaId" OR c.versao IS DISTINCT FROM NEW."versaoCobranca" OR c.moeda IS DISTINCT FROM NEW.moeda
       OR c."valorCompensadoPermuta" <= 0 THEN RAISE EXCEPTION 'Cobrança incompatível, desatualizada ou sem compensação por permuta'; END IF;
+    -- B3 da R1 da #283: excedente só de liquidação já feita; cobrança em aberto seguiria cobrando enquanto o crédito nasce.
+    IF c.status<>'PAGO' OR c.saldo IS DISTINCT FROM 0 OR coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"+c."valorCompensadoPermuta" < c."valorNegociado"
+    THEN RAISE EXCEPTION 'A destinação do excedente exige a cobrança quitada'; END IF;
     IF EXISTS (SELECT 1 FROM "PropostaDestinacaoExcedentePermuta" o LEFT JOIN "DecisaoDestinacaoExcedentePermuta" d ON d."propostaId"=o.id WHERE o."cobrancaId"=NEW."cobrancaId" AND d.id IS NULL)
     THEN RAISE EXCEPTION 'Já existe destinação de excedente aguardando decisão para esta cobrança'; END IF;
     -- O cálculo do excedente não conhece destinações anteriores: uma segunda destinação contaria o mesmo excedente de novo.
@@ -257,6 +260,8 @@ BEGIN
   THEN RAISE EXCEPTION 'Decisão exige aprovador financeiro independente'; END IF;
   IF NOT NEW.aprovada THEN RETURN NEW; END IF;
   IF c.versao IS DISTINCT FROM p."versaoCobranca" THEN RAISE EXCEPTION 'A cobrança mudou depois da proposta; prepare nova destinação'; END IF;
+  IF c.status<>'PAGO' OR c.saldo IS DISTINCT FROM 0 OR coalesce(c."valorRecebido",0)+c."valorLiquidadoCredito"+c."valorCompensadoPermuta" < c."valorNegociado"
+  THEN RAISE EXCEPTION 'A destinação do excedente exige a cobrança quitada'; END IF;
   -- Q167C: sem a concordância das duas partes o excedente permanece pendente.
   IF (SELECT count(*) FROM "ConcordanciaDestinacaoExcedentePermuta" k WHERE k."propostaId"=p.id)<>2 THEN RAISE EXCEPTION 'A destinação exige a concordância do aluno ou responsável e da escola'; END IF;
   IF (SELECT coalesce(sum(valor),0) FROM "ItemDestinacaoExcedentePermuta" WHERE "propostaId"=p.id) IS DISTINCT FROM p."valorExcedente"

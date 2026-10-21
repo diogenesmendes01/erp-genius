@@ -4285,3 +4285,10 @@ Branch `claude/port-62-q171`, base `main` 80ba5d88. Origem: #62 `5f2354ee` (dest
   - `vitest run`: 818 arquivos, 6.128 testes OK em TZ=UTC e em TZ=America/Sao_Paulo (inclui a trava `crm-config/auditoria.test.ts`).
   - Integração de `src/server/financeiro` e `src/server/matricula` (permuta, desistência, Q165, Q167): 58 arquivos e 488 testes OK; `financeiro/politica.int.test.ts` (baixas parciais concorrentes, não tocado) falhou uma vez com o build rodando junto e passou ao ser repetido sozinho.
   - `npm run build`: saída 0.
+- **Correções da revisão (R1 `5602744571` e R1 rigorosa `5603911810`):**
+  - **B1/C2, saldo restrito nunca vira dinheiro:** o uso aprovado do saldo não é origem de excedente. A recusa vale na ação (`apurarTx`) e no banco (`guardar_origem_excedente_uso_saldo_171` em `OrigemExcedentePermuta`).
+  - **B2 e item menor:** o uso abate só `MENSALIDADE`, como a permuta da `main`, na ação e no banco. Em hora particular, a Q175 devolveria a aula paga com saldo como crédito financeiro. Em taxa, o acerto de taxa não conhece a permuta e o uso falhava com exceção do banco. Nenhuma função vigente foi redefinida. Isso é mais estreito que a decisão de 21/09 (ver a nota da Q171 em `decisoes-2026-09-21.md`).
+  - **B3:** a destinação exige cobrança `PAGO`, com saldo 0 e liquidado ≥ `valorNegociado`, na ação e nos guards da proposta e da decisão.
+  - **C3:** a nota da Q171 explica que `valorDevidoAcordado` é digitado na proposta.
+  - As mudanças entraram nas próprias migrations `20261021300000`/`310000`. O corpo original de `validar_aplicacao_permuta_223` continua idêntico (`diff -w`).
+  - Testes novos: `saldo-servico-permuta-uso.int.test.ts` com 4 casos (B1 na ação e no banco; tipos fora de mensalidade recusados na ação e no banco) e `excedente-permuta-destinacao.int.test.ts` com 4 casos (B3 na ação e no banco). Com o guard do banco removido, o caso B1 fica vermelho.

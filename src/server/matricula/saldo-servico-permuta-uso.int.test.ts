@@ -78,6 +78,13 @@ it("Q171: saldo de serviços abate cobrança aberta da mesma matrícula e moeda,
   const alheia = await prisma.cobranca.create({ data: { matriculaId: outraMatricula.id, tipo: TipoCobranca.MENSALIDADE, moeda: "CRC", valorOriginal: 40, valorNegociado: 40, saldo: 40, vencimento: new Date("2099-11-01T00:00:00Z") } });
   entrar(financeiroId);
   expect(await propor({ cobrancaId: material.id })).toMatchObject({ ok: false, erro: expect.stringContaining("apenas mensalidade") });
+  // R1 da #283 (B2 e item menor): hora particular (Q175 devolveria a aula paga com saldo como crédito financeiro) e taxa
+  // (acerto de taxa não conhece a permuta) ficam fora, na ação e no banco, com mensagem clara.
+  const hora = await novaCobranca(TipoCobranca.HORA_PARTICULAR, 30), taxaMatricula = await novaCobranca(TipoCobranca.MATRICULA, 30);
+  for (const c of [hora, taxaMatricula]) {
+    expect(await propor({ cobrancaId: c.id, valor: "5.00" })).toMatchObject({ ok: false, erro: expect.stringContaining("Hora particular e taxa exigem conferência") });
+    await expect(prisma.propostaUsoSaldoServicoPermuta.create({ data: { saldoId, matriculaId, cobrancaId: c.id, versaoCobranca: c.versao, moeda: "CRC", valor: 5, motivo: "Direto no banco", preparadorId: financeiroId, chaveIdempotencia: `q171-uso-tipo-${c.tipo}`, entradaHash: "x" } })).rejects.toThrow(/só abate mensalidade/);
+  }
   expect(await propor({ cobrancaId: usd.id })).toMatchObject({ ok: false, erro: expect.stringContaining("USD") });
   expect(await propor({ cobrancaId: alheia.id })).toMatchObject({ ok: false, erro: expect.stringContaining("mesma matrícula") });
   expect(await propor({ cobrancaId: proxima.id, valor: "25.00" })).toMatchObject({ ok: false, erro: expect.stringContaining("saldo de serviços disponível (20.00 CRC)") });
@@ -109,8 +116,8 @@ it("Q171: saldo de serviços abate cobrança aberta da mesma matrícula e moeda,
   expect(await prisma.creditoMatricula.count()).toBe(1);
   const painel = await consultarUsosSaldoServicoPermuta({ matriculaId });
   expect(painel).toMatchObject({ ok: true, dado: { saldos: [{ id: saldoId, valorInicial: "20.00", usadoAprovado: "15.00", disponivel: "5.00" }], propostas: [{ estado: "APROVADA", valor: "15.00", decisao: { aplicacaoId: aplicacao.id } }] } });
-  // O restante abate a taxa e quita a cobrança; o saldo então zera.
-  const taxa = await novaCobranca(TipoCobranca.MATRICULA, 5);
+  // O restante abate outra mensalidade e a quita; o saldo então zera.
+  const taxa = await novaCobranca(TipoCobranca.MENSALIDADE, 5);
   entrar(financeiroId);
   const segunda = await propor({ cobrancaId: taxa.id, valor: "5.00", chaveIdempotencia: "q171-uso-3" });
   if (!segunda.ok || !segunda.dado) throw new Error(JSON.stringify(segunda));
@@ -164,3 +171,40 @@ it("Q171: rejeição devolve a reserva do saldo; cobrança alterada depois da pr
 });
 
 
+
+it("Q171 (B1 da R1 da #283): uso do saldo de serviços não é origem de excedente — nem crédito financeiro nem saldo novo, na ação e no banco", async () => {
+  // A próxima mensalidade é quitada inteira com o saldo de serviços (20); um acerto posterior reduziria a obrigação.
+  const proxima = await novaCobranca(TipoCobranca.MENSALIDADE, 20);
+  entrar(financeiroId);
+  const uso = await propor({ cobrancaId: proxima.id, valor: "20.00", chaveIdempotencia: "q171-uso-b1" });
+  if (!uso.ok || !uso.dado) throw new Error(JSON.stringify(uso));
+  entrar(aprovadorId);
+  expect(await decidirUsoSaldoServicoPermuta({ propostaId: uso.dado.id, aprovada: true, motivo: "Saldo de serviços conferido para quitar a mensalidade." })).toMatchObject({ ok: true, dado: { aprovada: true } });
+  const aplicacaoUso = await prisma.aplicacaoCompensacaoPermuta.findFirstOrThrow({ where: { cobrancaId: proxima.id } });
+  expect(aplicacaoUso.usoSaldoServicoId).toBeTruthy();
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: proxima.id } })).toMatchObject({ status: "PAGO" });
+  const creditosAntes = await prisma.creditoMatricula.count(), saldosAntes = await prisma.saldoServicoPermuta.count();
+  entrar(financeiroId);
+  const destinar = (valorDevidoAcordado: string, itens: { tipo: "SALDO_SERVICOS" | "CREDITO_FINANCEIRO"; valor: string }[], chave: string) => prepararDestinacaoExcedentePermuta({ matriculaId, cobrancaId: proxima.id, valorDevidoAcordado,
+    itens, motivo: "Acerto reduziu a mensalidade quitada com saldo de serviços.", chaveIdempotencia: chave });
+  // Ação: o cenário da revisão (obrigação 0, crédito 20) e as variantes parcial e para saldo novo são recusados.
+  for (const [devido, itens, chave] of [
+    ["0.00", [{ tipo: "CREDITO_FINANCEIRO", valor: "20.00" }], "q171-b1-credito-total"],
+    ["10.00", [{ tipo: "SALDO_SERVICOS", valor: "5.00" }, { tipo: "CREDITO_FINANCEIRO", valor: "5.00" }], "q171-b1-misto"],
+    ["10.00", [{ tipo: "SALDO_SERVICOS", valor: "10.00" }], "q171-b1-saldo"],
+  ] as const) expect(await destinar(devido, [...itens], chave)).toMatchObject({ ok: false, erro: expect.stringContaining("não é origem de excedente") });
+  expect(await prisma.propostaDestinacaoExcedentePermuta.count({ where: { cobrancaId: proxima.id } })).toBe(0);
+  // Banco: a origem do excedente apontando para a aplicação do uso é recusada já na gravação, antes de qualquer decisão.
+  const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: proxima.id } });
+  const hash = "b1".padEnd(64, "0");
+  const direta = await prisma.propostaDestinacaoExcedentePermuta.create({ data: { matriculaId, cobrancaId: proxima.id, versaoCobranca: cobranca.versao, moeda: "CRC", valorDevidoAcordado: 0, valorExcedente: 20,
+    fotografia: {}, fotografiaHash: hash, preparadorId: financeiroId, motivo: "Gravada direto no banco.", chaveIdempotencia: "q171-b1-banco", entradaHash: hash } });
+  await expect(prisma.origemExcedentePermuta.create({ data: { propostaId: direta.id, aplicacaoPermutaId: aplicacaoUso.id, valor: 20 } })).rejects.toThrow(/não é origem de excedente/);
+  expect(await prisma.origemExcedentePermuta.count({ where: { propostaId: direta.id } })).toBe(0);
+  // Sem origem, a proposta direta também não pode ser aprovada (itens e origens precisam somar o excedente).
+  await prisma.itemDestinacaoExcedentePermuta.create({ data: { propostaId: direta.id, tipo: "CREDITO_FINANCEIRO", valor: 20 } });
+  for (const parte of ["ALUNO_OU_RESPONSAVEL", "ESCOLA"]) await prisma.concordanciaDestinacaoExcedentePermuta.create({ data: { propostaId: direta.id, parte, nomeDeclarante: "Declarante B1", meio: "WhatsApp", evidencia: "Concordância gravada direto no banco.", registradaPorId: financeiroId } });
+  await expect(prisma.decisaoDestinacaoExcedentePermuta.create({ data: { propostaId: direta.id, decisorId: aprovadorId, aprovada: true, motivo: "Aprovação direta no banco", fotografiaHash: hash } })).rejects.toThrow(/somar exatamente/);
+  expect(await prisma.creditoMatricula.count()).toBe(creditosAntes);
+  expect(await prisma.saldoServicoPermuta.count()).toBe(saldosAntes);
+});
