@@ -310,7 +310,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="flex min-h-0 flex-1 overflow-hidden rounded-item border">
       <section aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-r ${COLUNA_LISTA}`}>
         {opcoesFiltro && <div role="region" aria-label="Filtros de conversas" className="min-h-0 max-h-[50%] shrink-0 overflow-y-auto"><PainelFiltros filtros={filtros} setores={opcoesFiltro.setores} numeros={opcoesFiltro.numeros} /></div>}
-        <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} />
+        <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} usuarioId={usuario.id} />
       </section>
 
       <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>

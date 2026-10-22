@@ -4748,3 +4748,12 @@ Implementação e verificação local concluídas; revisão independente e publi
 - Sem schema/migração, transporte externo, pacote/lock ou modificação da casca #308. Preview e autenticação fictícia preparados/parados pelo integrador. Protótipo offline tem outra navegação; não se afirma paridade integral com a casca futura.
 
 - Fechamento DEV: TSC final heap8192 sessão39406 exit0 após simplificação mobile. Fonte sem alterações após recorte359/TSC/lintdirigido. Global integrado e TESTER continuam pendentes.
+
+### Inbox E1.7 — #312: item visual da lista — 2026-10-22
+
+**Estado: implementação parcial DEV; prova visual/virtualização real/QA/global pendentes.** Branch codex/inbox-e1-312 sobref56d6c5e. SPEC docs/specs/inbox-item-conversa.md; ledger output/inbox-312-report.md. Liberação parcial autorizou fonte/testes/docs, mantendo CLI/núcleo/esperas/READMEharness com DEV A308 até congelamento.
+
+- ItemConversa consome produtores309: avatar44, nome14/600, hora mono/fuso pessoal, prévia13, contador, pino/silenciada e badges, seleção neutra/aria-current. Número/meta antigos removidos do item; Lista preserva VirtualList/paginação/EstadoVazio e InboxNovo apenas passa usuarioId. threshold100/estimativa104 não representam altura fixa.
+- Ruling aprovado: relógio visual único passa a acordar no vencimento estrito+1ms ou fronteira que muda texto/cor de prazo vencido, sem rede/polling. Não acorda em60s quando texto ainda é1min;29→30 e59→60 atualizam localmente. Cleanup/lista/StrictMode/teto/sleep/invaliddatas testados; APIs302 preservadas.
+- TDDRED módulo/helper ausentes, consumidores4falhas e relógio real10falhas/1passou; GREEN6arquivos65testes0. GuardRED2falhas em34arquivos; mapa registra só nova linha de seleção por arquivo/nome/quantidade, sem alterar análise geral. GREENamplo97215 exit0:34arquivos422testes; TSC95079heap8192 exit0; lintdirigido10arquivos exit0/0avisos. Sem full/DBsuite nesta etapa. Ledger distingue falha de limitaçãoSVG do DOM e expectativa de fixture corrigida.
+- Grupo é somente contrato de render: trigger impede Atendimento real emgrupo. Não desabilitar trigger/semear registro inválido; Ventura demo é individualB2B. Prova visual precisa3tamanhos2temas e teste real>100comalturasvariáveis/foco/scroll, ainda não realizados. Nenhuma homologação/PR/push pelo DEV.

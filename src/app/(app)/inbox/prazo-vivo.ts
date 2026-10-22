@@ -25,7 +25,7 @@ export function esperaAteProximo(proximo: number | null, agora: number): number 
   return proximo === null ? null : Math.min(Math.max(proximo - agora + 1, 0), TETO_TIMER_MS);
 }
 
-/** Snapshot estável entre vencimentos; assinar/desassinar é o ciclo de vida do único timer. */
+/** Snapshot estável entre mudanças visuais; uma assinatura mantém um único timer local. */
 function criarRelogioDosPrazos(itens: ItemListaInbox[]) {
   let agora = Date.now();
   return {
@@ -34,9 +34,9 @@ function criarRelogioDosPrazos(itens: ItemListaInbox[]) {
       let timer: ReturnType<typeof setTimeout> | undefined;
       const armar = () => {
         const referencia = Date.now();
-        // A regra é estrita (<): o prazo igual a agora ainda precisa acordar em +1 ms.
-        const espera = esperaAteProximo(proximoEstouroEm(itens, referencia - 1), referencia);
-        if (espera === null) return;
+        const proximo = proximaMudancaVisualEm(itens, referencia);
+        if (proximo === null) return;
+        const espera = Math.min(proximo - referencia, TETO_TIMER_MS);
         timer = setTimeout(() => {
           agora = Date.now();
           notificar();
@@ -54,4 +54,18 @@ export function useAgoraDosPrazos(itens: ItemListaInbox[]): number {
   // Uma lista SSE nova usa o relógio atual já no primeiro render e substitui a assinatura anterior.
   const relogio = useMemo(() => criarRelogioDosPrazos(itens), [itens]);
   return useSyncExternalStore(relogio.assinar, relogio.ler, relogio.ler);
+}
+
+/** Próximo instante que muda o badge: vencimento estrito ou minuto visível seguinte. */
+export function proximaMudancaVisualEm(itens: ItemListaInbox[], agora: number): number | null {
+  let proxima: number | null = null;
+  for (const item of itens) {
+    if (item.grupo || item.status === "ENCERRADO" || !item.prazoRespostaEm) continue;
+    const prazo = new Date(item.prazoRespostaEm).getTime();
+    if (!Number.isFinite(prazo)) continue;
+    // O primeiro minuto já é mostrado desde prazo+1ms: prazo+60s não muda texto/cor.
+    const instante = prazo >= agora ? prazo + 1 : prazo + Math.max(2, Math.floor((agora - prazo) / 60_000) + 1) * 60_000;
+    if (proxima === null || instante < proxima) proxima = instante;
+  }
+  return proxima;
 }
