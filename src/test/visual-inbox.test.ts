@@ -6,6 +6,7 @@ import {
   ESTADOS, TAMANHOS, TEMAS, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo,
 } from "../../scripts/visual/nucleo-captura.mjs";
 import { exigirBancoDescartavel } from "../../scripts/visual/demo-inbox";
+import { autenticarApp, esperarConteudoApp } from "../../scripts/visual/espera-app.mjs";
 
 describe("harness visual do Inbox", () => {
   it("CLI documenta as opções sem abrir browser nem banco", () => {
@@ -57,5 +58,59 @@ describe("harness visual do Inbox", () => {
       "postgres://postgres:teste@localhost:54329/erp_genius_test?schema=production",
       "not-a-url",
     ]) expect(() => exigirBancoDescartavel(url), url).toThrow("banco descartável");
+  });
+
+  it("aguarda mensagem e painel reais da fixture antes da captura, mesmo após a região aparecer", async () => {
+    let liberarMensagem!: () => void;
+    let liberarPainel!: () => void;
+    const mensagem = new Promise<void>((resolve) => { liberarMensagem = resolve; });
+    const painel = new Promise<void>((resolve) => { liberarPainel = resolve; });
+    const esperas: string[] = [];
+    const locator = (nome: string, promessa: Promise<void> = Promise.resolve()) => ({
+      waitFor: async () => { esperas.push(nome); await promessa; },
+      getByText: (texto: string) => locator(texto, mensagem),
+    });
+    const pagina = {
+      getByRole: (_role: string, opcoes: { name: string }) => locator(opcoes.name, opcoes.name === "Painel Comercial" ? painel : Promise.resolve()),
+    };
+    let terminou = false;
+    const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "conversa", "desktop").then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    liberarMensagem();
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    liberarPainel();
+    await espera;
+    expect(esperas).toContain("Quero saber o valor do Inglês Intensivo B1.");
+    expect(esperas).toContain("Painel Comercial");
+  });
+
+  it("aguarda a nota interna específica no estado do compositor humano", async () => {
+    let liberarNota!: () => void;
+    const nota = new Promise<void>((resolve) => { liberarNota = resolve; });
+    const conversa = {
+      waitFor: async () => undefined,
+      getByText: () => ({ waitFor: async () => undefined }),
+      getByRole: () => ({ getByText: () => ({ waitFor: () => nota }) }),
+    };
+    const pagina = { getByRole: (_role: string, opcoes: { name: string }) => opcoes.name === "Conversa" ? conversa : { waitFor: async () => undefined } };
+    let terminou = false;
+    const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "humano-compositor", "desktop").then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    liberarNota();
+    await espera;
+    expect(terminou).toBe(true);
+  });
+
+  it("autentica via CSRF e confirma sessão antes de abrir o Inbox", async () => {
+    const chamadas: string[] = [];
+    const request = {
+      get: async (url: string) => { chamadas.push(`GET ${url}`); return { ok: () => true, json: async () => url.endsWith("csrf") ? { csrfToken: "csrf-local" } : { user: { email: "admin@genius.com" } } }; },
+      post: async (url: string, opcoes: { form: Record<string, string> }) => { chamadas.push(`POST ${url}`); expect(opcoes.form).toMatchObject({ csrfToken: "csrf-local", email: "admin@genius.com", senha: "genius123" }); return { ok: () => true, status: () => 200 }; },
+    };
+    await autenticarApp({ request } as unknown as Parameters<typeof autenticarApp>[0], "http://127.0.0.1:3017", "admin@genius.com", "genius123");
+    expect(chamadas).toEqual(["GET http://127.0.0.1:3017/api/auth/csrf", "POST http://127.0.0.1:3017/api/auth/callback/credentials", "GET http://127.0.0.1:3017/api/auth/session"]);
   });
 });
