@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { DriverWhatsApp } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { truncarBanco } from "@/test/integracao";
 import { criarDemoInbox } from "../../scripts/visual/demo-inbox";
@@ -14,7 +15,7 @@ afterAll(() => prisma.$disconnect());
 
 describe("fixture visual do Inbox no perfil descartável", () => {
   it("semeia sete atendimentos só do cenário, repete sem duplicar e repara caso parcial", async () => {
-    const externo = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5500000000999", rotulo: "Outro cenário", driver: "BAILEYS", finalidade: "VENDAS" } });
+    const externo = await prisma.numeroWhatsApp.create({ data: { telefoneE164: "+5500000000999", rotulo: "Outro cenário", driver: DriverWhatsApp.BAILEYS, finalidade: "VENDAS" } });
     const ids = await criarDemoInbox(prisma);
     expect(Object.keys(ids).sort()).toEqual(["beatriz", "fernanda", "lucas", "mariana", "semNome", "thiago", "ventura"]);
     expect(await prisma.atendimentoWhatsApp.count({ where: { id: { in: Object.values(ids) } } })).toBe(7);
