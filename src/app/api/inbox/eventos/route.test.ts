@@ -15,7 +15,8 @@ vi.mock("@/server/_shared/sessao", async (orig) => {
   };
 });
 vi.mock("@/server/inbox/barramento", () => ({ assinarInbox: vi.fn(() => m.sair), iniciarEscuta: vi.fn(async () => {}) }));
-import { GET, REVALIDAR_MS, RETRY_MS, VIDA_MAX_MS } from "./route";
+import { GET } from "./route";
+import { REVALIDAR_MS, RETRY_MS, VIDA_MAX_MS } from "./limites";
 
 const AGORA = new Date("2026-10-19T12:00:00.000Z").getTime();
 const usuario = (papeis: Papel[]) => ({ id: "u1", nome: "U", papeis });
