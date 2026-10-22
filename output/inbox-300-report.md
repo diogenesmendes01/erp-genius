@@ -18,6 +18,8 @@ Rebase de `aa91a47f` para a base publicada #299 `729a0fe7` sem conflito; a difer
 
 ## Pendências
 
-Recorte pós-refatoração: `nota-interna.int.test.ts` e `consultas-pagina.int.test.ts`, 2 arquivos / 26 testes, sessão `10696`, saída 0; `inbox.int.test.ts`, 1 arquivo / 19 testes, sessão `27335`, saída 0. Ambos no Node 22.23.2 e banco `dev-gravacoes`, nenhum ignorado. ESLint dos 7 TypeScript tocados com `--max-warnings 0` saiu 0. Ainda pendem revisão TESTER, Vitest completo, lint global e homologação. A apresentação das notas na UI fica na #301.
+Recorte pós-refatoração: `nota-interna.int.test.ts` e `consultas-pagina.int.test.ts`, 2 arquivos / 26 testes, sessão `10696`, saída 0; `inbox.int.test.ts`, 1 arquivo / 19 testes, sessão `27335`, saída 0. Ambos no Node 22.23.2 e banco `dev-gravacoes`, nenhum ignorado. ESLint dos 7 TypeScript tocados com `--max-warnings 0` saiu 0. A apresentação das notas na UI fica na #301.
 
-TSC global com heap 8192 no Node 22.23.2 inicialmente saiu 1 por inferência implícita de `any[]` no teste novo; após declarar `{ id: string }[]`, repetição com saída 0. Vitest completo, lint global, review e homologação ainda pendem.
+TSC global com heap 8192 no Node 22.23.2 inicialmente saiu 1 por inferência implícita de `any[]` no teste novo; após declarar `{ id: string }[]`, repetição com saída 0.
+
+Gates globais no SHA de código `288c62e1` (Node 22.23.2): TSC `--noEmit` com heap 8192 saída 0; Vitest completo sem filtro `--maxWorkers=2`, 840 arquivos / 6.478 testes, sessão `47978` até saída 0, nenhum ignorado; ESLint global `.` com `--max-warnings 40`, sessão `61365` até saída 0, 0 erros / 40 avisos herdados. Revisão TESTER e homologação seguem pendentes.
