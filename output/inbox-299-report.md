@@ -1,6 +1,14 @@
 # Relatório DEV B — #299
 
-Estado em 22/10/2026: implementação em revisão, com aceite visual e homologação pendentes. Branch `codex/inbox-e0-299`, base inicial `7e4810e5e6c4f25a00497fe743e0ea4abfb0c6ee`; revisão inicial no antigo commit `201f0a9daaeb23c5447a6f351729298fb3db60f2`. A branch está empilhada sobre a #298 publicada no PR #381, HEAD `1ce8e5820094e988a56da4868aedb037fdbd22df`, que incorpora o baseline Windows `3dbd3df803ef840bf2190cec9d4fc98d4a05a755` (PR #380). O SHA corrente é a ponta da branch.
+Estado final em 22/10/2026: **implementação e validação concluídas; PR em publicação**. TESTER aprovou a fonte `aa91a47f`, com 36/36 testes direcionados e captura visual de leitura2→0 em seis combinações de viewport/tema e um deep link. Branch `codex/inbox-e0-299`, empilhada sobre #298/PR#381 (`1ce8e582`), que incorpora o baseline Windows/PR#380. O commit de publicação adiciona somente documentação, PNGs e manifesto JSON; não altera fonte/testes/harness. As pendências nas seções cronológicas abaixo são históricas e foram resolvidas conforme o aceite final. Sem merge/deploy ou WhatsApp real.
+
+## Aceite final independente
+
+Parecer em `output/inbox-299-visual/qa/inbox-299-final-review.md`. O TESTER conferiu que a fonte de produção após rebase é idêntica à aprovada em208b993d; o último ajuste de teste somente tipou mocks. Recorte4arquivos/36testes saída0. O integrador repetiu esses36 testes comNode22.23.2, saída0 no checkout aa91a47f; os gates globais e as capturas abaixo usaramNode24.16.0, sem atribuir-lhes novo runtime.
+
+Capturas em `output/inbox-299-visual/depois/`:25PNGs e manifesto, sessões10654/16170 saída0. Em1440×900,1024×768,390×844, claro/escuro, cada fixture começou com2 não lidas e chegou a0 no atendimento, com preferência pessoal lida e badge removido do DOM. Deep link `?c=` também confirmado. `pageerror=[]`; overlay/chave React duplicada preexistentes registrados no parecer. Nenhuma integração externa foi ativada. Os recortes mostram o item antes/depois, inclusive no mobile.
+
+TSC,840arquivos/6478testes unitários e lint global (0erros/40avisos) passaram na fonte invariável pré-rebase documental; integração13/13 no dev-gravacoes também passou. CI está condicionado à base main do workflow: redirecionar após integrar381 para executar automaticamente. SPEC/quadro e arquivos de evidência descrevem os limites.
 
 ## Alterações
 
