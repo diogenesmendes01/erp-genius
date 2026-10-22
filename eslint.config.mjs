@@ -12,6 +12,8 @@ const config = [
       "dist/**",
       "coverage/**",
       "next-env.d.ts",
+      // Protótipo exportado do Claude Design (referência, não é código do app).
+      "docs/planejamento/inbox-prototipo/prototipo/**",
     ],
   },
   ...nextCoreWebVitals,
