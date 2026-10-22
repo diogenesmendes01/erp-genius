@@ -40,7 +40,6 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
   "src/app/(app)/financeiro/BarraAbasFinanceiro.tsx": 2, // aba ativa da barra de seções (marca = selecionada): o <Link> e o literal
-  "src/app/(app)/matriculas/nova/MatriculaFormulario.tsx": 1, // bolinha numerada da etapa do assistente (ativa = marca)
   "src/app/(app)/matriculas/[id]/page.tsx": 1, // seções do registro da matrícula (card de grade)
   "src/app/(app)/funil/PainelOportunidade.tsx": 1, // aba do painel da oportunidade (role=tab, selecionada = marca)
   "src/app/(app)/contatos/FichaContato.tsx": 1, // aba da ficha do contato (role=tab, selecionada = marca)
@@ -55,7 +54,6 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
   // selecionada = fundo) e a célula do emoji (item de grade).
   "src/components/conversa/SeletorEmoji.tsx": 4,
   "src/components/Menu.tsx": 1, // item do menu de ações (role=menuitem, hover translúcido): o papel é do menu, não do Botao
-  "src/components/Sidebar.tsx": 1, // contador de não lidas (o item ativo agora é seleção suave, bg-brand-bg)
   "src/components/SubTabs.tsx": 2, // sub-aba ativa (docs/18: seleção, não ação; fundo bg-brand-solid): o literal e o <Link>
 };
 
@@ -210,10 +208,18 @@ export function botoesCrus(fonte: string): string[] {
     andar(raiz);
     return { texto: partes.join(" ").trim(), usaBotao };
   };
+  const classeEmElementoSemAcao = (n: ts.Node): boolean => {
+    let ancestral: ts.Node | undefined = n.parent;
+    while (ancestral && !ts.isJsxAttribute(ancestral) && !ts.isSourceFile(ancestral)) ancestral = ancestral.parent;
+    if (!ancestral || !ts.isJsxAttribute(ancestral) || ancestral.name.getText(sf) !== "className") return false;
+    const elemento = ancestral.parent?.parent;
+    return !!elemento && (ts.isJsxOpeningElement(elemento) || ts.isJsxSelfClosingElement(elemento))
+      && !["button", "Link", "a"].includes(elemento.tagName.getText(sf));
+  };
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
       const t = n.text.split(/\s+/);
-      if (!t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && (t.includes("text-white") || t.includes("text-on-brand"))) achados.push(`primário: "${n.text}"`);
+      if (!classeEmElementoSemAcao(n) && !t.some((x) => x.startsWith("file:")) && PRIMARIO.test(n.text) && (t.includes("text-white") || t.includes("text-on-brand"))) achados.push(`primário: "${n.text}"`);
     }
     if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ["button", "Link", "a"].includes(n.tagName.getText(sf))) {
       const tag = n.tagName.getText(sf);
@@ -1270,6 +1276,8 @@ describe("botões nas áreas migradas", () => {
   it("o detector pega todas as formas: atributo, expressão, template, concatenação, brand-600, secundário curto", () => {
     const casos = [
       '<button className="rounded-md bg-brand-solid px-4 py-2 text-sm text-white">x</button>',
+      '<button className="rounded-full bg-brand-solid px-1.5 text-on-brand">x</button>',
+      '<Link href="/x" className="rounded-full bg-brand-solid px-1.5 text-on-brand">x</Link>',
       '<button className={"rounded-md bg-brand-solid px-4 py-2 text-white"}>x</button>',
       "<button className={`rounded bg-brand-solid px-3 py-2 text-white ${a}`}>x</button>",
       '<button className="rounded bg-brand-600 px-3 py-2 text-white">x</button>',
@@ -1296,6 +1304,9 @@ describe("botões nas áreas migradas", () => {
       'const btnSec = botaoClasses({ variante: "secundario" }); <button className={btnSec + " mt-3"}>x</button>',
       '<input className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />',
       '<input className="file:bg-brand-solid file:text-white text-sm" />',
+      '<span className="rounded-full bg-brand-solid px-1.5 text-on-brand">3</span>',
+      '<span className={"rounded-full bg-brand-solid px-1.5 text-on-brand"}>3</span>',
+      '<div className="rounded-full bg-brand-solid px-1.5 text-on-brand">3</div>',
       '<button className="text-sm text-brand-700 hover:underline">x</button>',
       '<Link href="/x" className="block rounded border p-3 underline">Card da lista</Link>',
       '<Link href="/x" className={botaoClasses({ variante: "secundario" })}>Abrir</Link>',
