@@ -131,7 +131,7 @@ describe("revogar convite e cancelar agendamento pedem confirmação; diálogos 
     expect(ambos).toContain("h-dvh w-full max-w-none rounded-none");
   });
   it("revogar e cancelar só rodam dentro da prop `acao` de um ConfirmarAcao (fonte)", () => {
-    const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8");
+    const fonte = readFileSync("src/app/(app)/inbox/AcoesAtendimento.tsx", "utf8").replace(/\r\n/g, "\n");
     const usos = (nome: string) => fonte.match(new RegExp(`${nome}\\(`, "g"))?.length ?? 0;
     expect(usos("revogarParticipante")).toBe(1);
     expect(usos("cancelarAgendamentoDoAtendimento")).toBe(1);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { botaoClasses } from "@/components/Botao";
-import { ABAS_ARIA, ROTULO_ABA, type AbaAria } from "./abas";
+import { ABAS_ARIA, ROTULO_ABA, type AbaAria } from "./abas-aria";
 
 /** Abas da Aria: links reais (`?aba=`), uma ativa por vez; rolam na horizontal no celular. */
 export function Abas({ ativa }: { ativa: AbaAria }) {
