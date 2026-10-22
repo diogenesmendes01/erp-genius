@@ -16,6 +16,7 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
       anteriorId: true,
       proposta: { select: { snapshot: true, entradaHash: true, matriculaId: true } },
       propostasVencimento: { where: { decisao: { aprovada: true, aplicacao: { isNot: null } } }, select: { decisao: { select: { aplicacao: { select: { id: true } } } } } },
+      propostasMoeda: { where: { decisao: { aprovada: true, aplicacao: { isNot: null } } }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], select: { decisao: { select: { aplicacao: { select: { id: true } } } } } },
       propostasAdiantamento: { where: { decisao: { aprovada: true, aplicacao: { isNot: null } } }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }], select: { decisao: { select: { aplicacao: { select: { id: true } } } } } },
       conjuntosImpactosTaxa: { where: { status: "COMPLETO", matriculaId, decisao: { aprovada: true } }, select: { id: true, propostaAditivoId: true }, orderBy: [{ criadaEm: "desc" }, { id: "desc" }] },
       conjuntosImpactosCobertura: {
@@ -68,6 +69,7 @@ export async function carregarAplicacoesCamposTx(tx: Prisma.TransactionClient, m
         ? { id: coberturaCompleta.id, decisaoId: coberturaCompleta.decisao.id, politica: coberturaCompleta.cicloFuturo, aplicadaEm: new Date(Math.max(...aplicacoesAfetadas.map(a => a.aplicadaEm.getTime()))).toISOString() }
         : null,
       conjuntoTaxaCompletoId: v.conjuntosImpactosTaxa.find(c => c.propostaAditivoId === v.propostaId)?.id ?? null, aplicacaoGeralId: v.aplicacao?.id ?? null, aplicacaoVencimentoId: v.propostasVencimento[0]?.decisao?.aplicacao?.id ?? null,
-      aplicacaoAdiantamentoId: v.propostasAdiantamento[0]?.decisao?.aplicacao?.id ?? null };
+      aplicacaoAdiantamentoId: v.propostasAdiantamento[0]?.decisao?.aplicacao?.id ?? null,
+      aplicacaoMoedaId: v.propostasMoeda[0]?.decisao?.aplicacao?.id ?? null };
   });
 }

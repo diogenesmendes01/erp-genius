@@ -97,3 +97,13 @@ it("a prova de cobertura não libera taxa pendente", () => {
  expect(projetarAplicacoesPorCampo([a]).TAXA_VALOR.aplicacaoId).toBeNull();
  expect(()=>conferirAplicacaoDireta([a],a.id)).toThrow("fluxo próprio");
 });
+
+it("Q173: a aplicação de moeda prova MOEDA e taxa/adiantamento reexpressos da mesma versão, não a mensalidade", () => {
+ const moeda = { tipo: "MOEDA", moeda: "USD" }, taxa = { tipo: "DINHEIRO", valor: "100", moeda: "USD" }, mensal = { tipo: "DINHEIRO", valor: "180", moeda: "USD" };
+ const versao = { ...v(1, { MOEDA: moeda, TAXA_VALOR: taxa, MENSALIDADE_VALOR: mensal }), aplicacaoMoedaId: "troca", conjuntoTaxaCompletoId: "conjunto" };
+ const r = projetarAplicacoesPorCampo([versao]);
+ expect(r.MOEDA.aplicacaoId).toBe("troca"); expect(r.TAXA_VALOR.aplicacaoId).toBe("troca"); expect(r.MENSALIDADE_VALOR.aplicacaoId).toBeNull();
+ // Sem a troca aplicada, nada disso fica provado; taxa sem moeda na mesma versão segue exigindo o conjunto Q170.
+ expect(projetarAplicacoesPorCampo([{ ...versao, aplicacaoMoedaId: null }]).TAXA_VALOR.aplicacaoId).toBeNull();
+ expect(projetarAplicacoesPorCampo([{ ...v(1, { TAXA_VALOR: taxa }), aplicacaoMoedaId: "troca", conjuntoTaxaCompletoId: "conjunto" }]).TAXA_VALOR.aplicacaoId).toBe("conjunto");
+});

@@ -256,3 +256,62 @@ it("Q171 (B4 da R2 rigorosa da #283): no banco, o excedente fica amarrado à obr
   });
   expect(await prisma.creditoMatricula.count()).toBe(creditosAntes);
 });
+
+it("Q173 × Q171: saldo restrito disponível e destinação de excedente sem decisão impedem a troca de moeda; depois do uso total a troca fica liberada", async () => {
+  const { consultarAlvoMoedaTx } = await import("@/server/contratos/aditivo-moeda");
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "UTC" }, update: { fusoInstitucional: "UTC" } });
+  // Vigência da troca depois de todos os acordos: só os itens da Q171 podem pesar.
+  const versao = { condicoes: { MOEDA: { tipo: "MOEDA", moeda: "USD" } }, vigenciaInicio: new Date("2100-01-01T00:00:00Z") };
+  const alvo = () => prisma.$transaction(tx => consultarAlvoMoedaTx(tx, matriculaId, versao));
+  const noBanco = async () => (await prisma.$queryRaw<Array<{ p: string[] }>>`SELECT pendencias_moeda_antiga_173(${matriculaId}, 'CRC', '2100-01-01T00:00:00'::timestamp, 'UTC') AS p`)[0].p;
+
+  // Saldo restrito de 20 CRC disponível: nunca vira dinheiro e não teria cobrança em USD onde ser usado.
+  expect(await alvo()).toMatchObject({ moedaAtual: "CRC", moedaNova: "USD", podePreparar: false, pendencias: [{ codigo: "SALDO_SERVICOS_PERMUTA", texto: expect.stringContaining("saldo restrito") }] });
+  expect(await noBanco()).toEqual(["SALDO_SERVICOS_PERMUTA"]);
+
+  // Uso total do saldo numa mensalidade de 20. M1 da R2: o uso pendente não esconde o saldo, porque pode ser
+  // rejeitado depois da troca; só o uso aprovado zera.
+  const proxima = await novaCobranca(TipoCobranca.MENSALIDADE, 20);
+  entrar(financeiroId);
+  const rejeitado = await propor({ cobrancaId: proxima.id, valor: "20.00", chaveIdempotencia: "q173-uso-rejeitado" });
+  if (!rejeitado.ok || !rejeitado.dado) throw new Error(JSON.stringify(rejeitado));
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "SALDO_SERVICOS_PERMUTA"]);
+  entrar(aprovadorId);
+  expect(await decidirUsoSaldoServicoPermuta({ propostaId: rejeitado.dado.id, aprovada: false, motivo: "Aluno pediu outro destino para o saldo." })).toMatchObject({ ok: true, dado: { aprovada: false } });
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "SALDO_SERVICOS_PERMUTA"]);
+  entrar(financeiroId);
+  const uso = await propor({ cobrancaId: proxima.id, valor: "20.00", chaveIdempotencia: "q173-uso-total" });
+  if (!uso.ok || !uso.dado) throw new Error(JSON.stringify(uso));
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "SALDO_SERVICOS_PERMUTA"]);
+  entrar(aprovadorId);
+  expect(await decidirUsoSaldoServicoPermuta({ propostaId: uso.dado.id, aprovada: true, motivo: "Saldo restante usado antes da troca de moeda." })).toMatchObject({ ok: true, dado: { aprovada: true } });
+  expect(await alvo()).toMatchObject({ podePreparar: true, pendencias: [] });
+
+  // Destinação de excedente aguardando decisão criaria saldo restrito ou crédito na moeda antiga: bloqueia.
+  const c = await novaCobranca(TipoCobranca.MENSALIDADE, 100);
+  await prisma.$transaction((tx) => receberComDestinacoesTx(tx, {
+    titularMatriculaId: matriculaId, chaveIdempotencia: "q173-caixa", autorId: financeiroId, valorRecebido: 50, forma: "DINHEIRO", moeda: "CRC", dataPagamento: new Date("2099-11-01T12:00:00Z"),
+    destinos: [{ tipo: TipoDestinacaoRecebimento.COBRANCA, cobrancaId: c.id, valor: 50, evidencia: "Caixa identificado para a mensalidade da troca.", chaveIdempotencia: "q173-caixa-destino" }],
+  }));
+  entrar(financeiroId);
+  const acordo = await prepararAcordoPermuta({ matriculaId, vigenciaInicio: "2099-11-01", vigenciaFim: "2099-11-30", moeda: "CRC", unidade: UnidadePermutaServico.HORA, quantidadePactuada: "1.00", valorPorUnidade: "50.00", contrapartida: "Serviço pedagógico efetivamente prestado à escola.", formulaDescricao: "Uma hora comprovada equivale a cinquenta colones.", cobrancas: [{ cobrancaId: c.id, valorMaximo: "50.00" }], chaveIdempotencia: "q173-acordo" });
+  if (!acordo.ok || !acordo.dado) throw new Error(JSON.stringify(acordo));
+  entrar(pedagogicoId);
+  const confirmacao = await confirmarServicoPermuta({ acordoId: acordo.dado.id, periodoInicio: "2099-11-02", periodoFim: "2099-11-02", quantidadeComprovada: "1.00", referenciaServico: "Q173-SERVICO", evidencia: "Diário pedagógico confirma a hora prestada à escola.", chaveIdempotencia: "q173-confirmacao" });
+  if (!confirmacao.ok || !confirmacao.dado) throw new Error(JSON.stringify(confirmacao));
+  // Serviço confirmado ainda sem compensação também é direito em andamento na moeda anterior.
+  expect(await noBanco()).toEqual(["COBRANCA_EM_ABERTO", "PERMUTA_SERVICO_SEM_COMPENSACAO"]);
+  entrar(financeiroId);
+  const compensacao = await proporCompensacaoPermuta({ confirmacaoId: confirmacao.dado.id, destinos: [{ cobrancaId: c.id, valor: "50.00" }], chaveIdempotencia: "q173-compensacao" });
+  if (!compensacao.ok || !compensacao.dado) throw new Error(JSON.stringify(compensacao));
+  entrar(aprovadorId);
+  expect(await decidirCompensacaoPermuta({ propostaId: compensacao.dado.id, aprovar: true, motivo: "Acordo, confirmação, proposta e destino conferidos." })).toMatchObject({ ok: true });
+  expect(await alvo()).toMatchObject({ podePreparar: true, pendencias: [] });
+  const origem = await prisma.aplicacaoCompensacaoPermuta.findFirstOrThrow({ where: { cobrancaId: c.id } });
+  entrar(financeiroId);
+  const destinacao = await prepararDestinacaoExcedentePermuta({ matriculaId, cobrancaId: c.id, valorDevidoAcordado: "70.00", distribuicao: [{ origemId: origem.id, valor: "30.00" }],
+    itens: [{ tipo: "SALDO_SERVICOS", valor: "30.00" }], motivo: "Acerto reduziu a mensalidade antes da troca de moeda.", chaveIdempotencia: "q173-destinacao" });
+  if (!destinacao.ok || !destinacao.dado) throw new Error(JSON.stringify(destinacao));
+  expect(await alvo()).toMatchObject({ podePreparar: false, pendencias: [{ codigo: "DESTINACAO_EXCEDENTE_PENDENTE", texto: expect.stringContaining("destinação de excedente") }] });
+  expect(await noBanco()).toEqual(["DESTINACAO_EXCEDENTE_PENDENTE"]);
+});

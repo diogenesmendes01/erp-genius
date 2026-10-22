@@ -163,7 +163,7 @@ export async function obterResumoComercialFinanceiro(alunoId: string, usuario: U
       id: true, codigo: true, moeda: true, status: true,
       aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
       produto: { select: { idioma: { select: { nome: true } }, modalidade: { select: { nome: true } } } },
-      cobrancas: { where: { tipo: { in: ["MATRICULA", "MENSALIDADE"] } }, orderBy: { vencimento: "asc" }, select: { id: true, tipo: true, valorOriginal: true, valorNegociado: true, status: true } },
+      cobrancas: { where: { tipo: { in: ["MATRICULA", "MENSALIDADE"] } }, orderBy: { vencimento: "asc" }, select: { id: true, tipo: true, moeda: true, valorOriginal: true, valorNegociado: true, status: true } },
       comissoes: { where: atual.papeis.includes(Papel.ADMINISTRADOR) ? {} : atual.papeis.includes(Papel.GERENTE_COMERCIAL) ? { OR: [{ vendedorId: atual.id }, { vendedor: { gerenteComercialId: atual.id } }] } : { vendedorId: atual.id }, select: { id: true, valor: true, moeda: true, tipo: true, percentual: true, status: true } },
     },
   });
@@ -176,7 +176,8 @@ export async function obterResumoComercialFinanceiro(alunoId: string, usuario: U
     pagamentoInicialConfirmado: m.cobrancas.find((c) => c.tipo === "MATRICULA")?.status === "PAGO",
     precos: (["MATRICULA", "MENSALIDADE"] as const).flatMap((tipo) => {
       const c = m.cobrancas.find((c) => c.tipo === tipo);
-      return c ? [{ id: c.id, tipo, referencia: c.valorOriginal, valor: c.valorNegociado }] : [];
+      // Q173: a primeira cobrança pode estar na moeda anterior a uma troca; o rótulo segue a moeda da própria cobrança.
+      return c ? [{ id: c.id, tipo, moeda: c.moeda, referencia: c.valorOriginal, valor: c.valorNegociado }] : [];
     }), comissoes: m.comissoes,
   })) });
 }
