@@ -1,6 +1,12 @@
 # #302 — Prazo estourado vivo
 
-Estado em 22/10/2026: implementação, recortes e gates globais aprovados no código `1740a337`; **aguarda TESTER e captura visual coordenada**. Branch `codex/inbox-e0-302` criada do congelamento #298 `ed50a770cef1f3623ba3d3abfe7fcb9c72746da7` e rebaseada, por coordenação do integrador, sobre o fechamento `1ce8e5820094e988a56da4868aedb037fdbd22df` (PR#381). O conflito foi apenas no quadro: preservado o fechamento final da #298 e acrescentada a nova entrada #302. Escrita exclusiva no worktree DEV A, perfil local `dev-email`. Nenhum banco ou servidor foi iniciado para esta implementação.
+Estado final em 22/10/2026: **implementação e validação concluídas; PR em publicação**. TESTER aprovou o código `1740a337` e o commit documental `133b935e`, com 19/19 testes dirigidos e aceite visual no aplicativo. Branch `codex/inbox-e0-302`, baseada em `1ce8e582` (PR #381). O integrador consolida somente documentação, capturas e manifestos; nenhuma fonte ou teste mudou depois dos gates. As pendências nas seções cronológicas abaixo foram resolvidas conforme o aceite final. Sem merge/deploy.
+
+## Aceite final e runtime
+
+Parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Capturas antes/depois em `output/inbox-302-visual/{antes,depois}/`: 48 PNGs e dois manifestos, com seis combinações de tamanho/tema por fase. As mesmas páginas permaneceram abertas, sem reload: na base o selo continuou ausente após vencer (0→0); depois apareceu automaticamente (0→1). Prazo do banco intacto e `pageerror=[]`. Sessão ANTES do integrador `24336` e DEPOIS do TESTER `31652`, ambas saída 0, com Node 22.23.2. O integrador também inspecionou o recorte móvel escuro vencido e repetiu os 19 testes de prazo no Node 22, saída 0.
+
+Os gates globais registrados abaixo foram executados com Node 24.16.0. A captura e o recorte adicional no Node 22 identificam explicitamente a validação posterior; não atribuímos à suíte global um runtime diferente. Nenhum transporte externo foi ativado. A mudança cobre o selo dos itens carregados; o filtro de servidor permanece pontual. O overlay preexistente de desenvolvimento não encobre o selo nos recortes. CI só dispara para base main; redirecionar após integrar o pré-requisito #381.
 
 ## SPEC e limites
 
