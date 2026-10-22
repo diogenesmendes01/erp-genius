@@ -1,13 +1,13 @@
-import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
+import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consultas-inbox";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 
 /** Página da thread: `antes`/`depois` são os cursores da primeira/última mensagem; `temMais` vale no sentido pedido. */
-export interface PaginaHistorico { mensagens: MensagemThread[]; antes: string | null; depois: string | null; temMais: boolean }
+export interface PaginaHistorico { mensagens: MensagemThread[]; notas?: NotaInternaThread[] | null; antes: string | null; depois: string | null; temMais: boolean }
 export interface FonteHistorico {
   pagina(atendimentoId: string, o: { antes?: string; depois?: string }, signal?: AbortSignal): Promise<PaginaHistorico>;
 }
 export interface EstadoHistorico {
-  atendimentoId: string; mensagens: MensagemThread[];
+  atendimentoId: string; mensagens: MensagemThread[]; notas: NotaInternaThread[];
   antes: string | null; depois: string | null; temMaisAntes: boolean; temMaisDepois: boolean;
   carregando: boolean; carregandoAntigas: boolean; carregandoNovas: boolean; erro: string;
 }
@@ -15,7 +15,7 @@ export interface EstadoHistorico {
 export const LIMITE_HISTORICO = 600;
 const PAGINAS_POR_RODADA = 10;
 export const historicoVazio: EstadoHistorico = {
-  atendimentoId: "", mensagens: [], antes: null, depois: null, temMaisAntes: false, temMaisDepois: false,
+  atendimentoId: "", mensagens: [], notas: [], antes: null, depois: null, temMaisAntes: false, temMaisDepois: false,
   carregando: false, carregandoAntigas: false, carregandoNovas: false, erro: "",
 };
 
@@ -75,7 +75,7 @@ export class HistoricoConversa {
       const p = await this.fonte.pagina(atendimentoId, {}, this.controller.signal);
       if (g !== this.geracao) return;
       this.bordas(p);
-      this.publicar({ mensagens: [...p.mensagens].sort(comparar).slice(-LIMITE_HISTORICO), antes: p.antes, depois: p.depois,
+      this.publicar({ mensagens: [...p.mensagens].sort(comparar).slice(-LIMITE_HISTORICO), notas: p.notas ?? [], antes: p.antes, depois: p.depois,
         temMaisAntes: p.temMais, temMaisDepois: false, carregando: false, erro: "" });
       this.podarBordas();
       this.drenar(g);
@@ -97,7 +97,7 @@ export class HistoricoConversa {
       if (g !== this.geracao) return;
       this.antesDe.clear(); this.depoisDe.clear();
       this.bordas(p);
-      this.publicar({ mensagens: [...p.mensagens].sort(comparar).slice(-LIMITE_HISTORICO), antes: p.antes, depois: p.depois,
+      this.publicar({ mensagens: [...p.mensagens].sort(comparar).slice(-LIMITE_HISTORICO), ...(p.notas != null ? { notas: p.notas } : {}), antes: p.antes, depois: p.depois,
         temMaisAntes: p.temMais, temMaisDepois: false, carregando: false, erro: "" });
       this.podarBordas();
       this.drenar(g);
@@ -153,7 +153,7 @@ export class HistoricoConversa {
           if (ini >= todas.length) { await this.abrir(this.id); return; }
           todas = todas.slice(ini); cortou = true;
         }
-        this.publicar({ mensagens: todas, depois: p.mensagens.length ? p.depois : s.depois, temMaisDepois: p.temMais,
+        this.publicar({ mensagens: todas, ...(p.notas != null ? { notas: p.notas } : {}), depois: p.mensagens.length ? p.depois : s.depois, temMaisDepois: p.temMais,
           ...(cortou ? { temMaisAntes: true, antes: this.antesDe.get(todas[0].id) ?? s.antes } : {}) });
         this.podarBordas();
         if (!p.temMais || !p.mensagens.length) break;
