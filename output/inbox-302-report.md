@@ -1,6 +1,6 @@
 # #302 — Prazo estourado vivo
 
-Estado em 22/10/2026: implementação e recorte dirigidos preparados; **aguarda TESTER, janela de gates globais e captura visual coordenada**. Branch `codex/inbox-e0-302` criada do congelamento #298 `ed50a770cef1f3623ba3d3abfe7fcb9c72746da7` e rebaseada, por coordenação do integrador, sobre o fechamento `1ce8e5820094e988a56da4868aedb037fdbd22df` (PR#381). O conflito foi apenas no quadro: preservado o fechamento final da #298 e acrescentada a nova entrada #302. Escrita exclusiva no worktree DEV A, perfil local `dev-email`. Nenhum banco ou servidor foi iniciado para esta implementação.
+Estado em 22/10/2026: implementação, recortes e gates globais aprovados no código `1740a337`; **aguarda TESTER e captura visual coordenada**. Branch `codex/inbox-e0-302` criada do congelamento #298 `ed50a770cef1f3623ba3d3abfe7fcb9c72746da7` e rebaseada, por coordenação do integrador, sobre o fechamento `1ce8e5820094e988a56da4868aedb037fdbd22df` (PR#381). O conflito foi apenas no quadro: preservado o fechamento final da #298 e acrescentada a nova entrada #302. Escrita exclusiva no worktree DEV A, perfil local `dev-email`. Nenhum banco ou servidor foi iniciado para esta implementação.
 
 ## SPEC e limites
 
@@ -35,6 +35,17 @@ Cobertura pura: menor futuro, passados, grupos, encerrados, vazio/sem prazo/inv�
 
 ## Pendências e contrato visual
 
-TSC, lint global com baseline40 e suíte unitária global ainda dependem da janela do integrador, para não concorrer com DEV B. Não reutilizar os resultados globais da #298 como se cobrissem este código. TESTER deve revisar o SHA exato entregue em seu worktree/banco.
+A janela global foi liberada pelo integrador após a conclusão do DEV B; resultados próprios desta issue estão abaixo. Não reutilizados os gates da #298. TESTER deve revisar o SHA exato entregue em seu worktree/banco.
 
 Captura visual posterior coordenada: selo aparecendo sem reload em atendimento fictício, 1440×900, 1024×768 e 390×844, temas claro/escuro, com evidência antes/depois ou vídeo. Nenhum transporte externo deve ser ativado. O teste de interação cobre o comportamento temporal, mas não substitui a homologação visual. Sem push/PR/merge/deploy neste papel; integrador publica um PR por issue. Não marcar #302 concluída enquanto faltarem esses gates.
+
+## Gates globais finais no SHA de código `1740a33712e0b7f1cbef26008a6e4ca1e23ef8cc`
+
+O rebase sobre `1ce8e582` antecedeu os três gates. Somente o quadro teve conflito documental, resolvido preservando a entrada final da #298 e a nova #302; nenhum código precisou de resolução.
+
+- `NODE_OPTIONS=--max-old-space-size=8192 node_modules/.bin/tsc.cmd --noEmit`: **exit 0**, sessão `39736`, conclusão terminal `e2d961`.
+- `node_modules/.bin/vitest.cmd run --reporter=json --outputFile=output/inbox-302-unitarias.json`: **exit 0**, sessão `86563`, conclusão `bfba79`; JSON conferido em `e90e6a`: **841 arquivos, 6.485 testes aprovados, zero falhas, pendentes ou todo**, sem filtro de nome. Essa é a suíte unitária completa configurada; `*.int.test.ts` continua excluído pela configuração normal. Relatório JSON fica apenas local, fora do commit.
+- `node_modules/.bin/eslint.cmd . --max-warnings 40`: **exit 0**, sessão `23565`, conclusão `724e49`, **zero erros e 40 avisos preexistentes**, sem exclusões adicionais; o hook novo não acrescentou avisos.
+- `git diff 1ce8e5820094e988a56da4868aedb037fdbd22df HEAD --check`: **exit 0**, `e90e6a`.
+
+Cada processo foi acompanhado na própria sessão até o código final; nenhum ficou ativo. Esta consolidação posterior modifica apenas o relatório/quadro, sem repetir gates ou mudar a fonte validada. Re-review TESTER e captura visual do selo ao vencer sem reload continuam pendentes; implementação não está marcada como entrega concluída.
