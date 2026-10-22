@@ -34,3 +34,11 @@ describe("selo pessoal de conversas", () => {
     expect(mudar).toHaveBeenCalledTimes(1); sairNovo();
   });
 });
+
+it("rótulo acessível flexiona uma conversa e preserva plural/99+/zero", () => {
+  const html = (inicial: number) => renderToStaticMarkup(createElement(SeloNaoLidasInbox, { inicial, variante: "pilula" }));
+  expect(html(1)).toContain('1<span class="sr-only"> conversa não lida</span>');
+  expect(html(2)).toContain('2<span class="sr-only"> conversas não lidas</span>');
+  expect(html(120)).toContain('99+<span class="sr-only"> conversas não lidas</span>');
+  expect(html(0)).toBe("");
+});

@@ -50,5 +50,5 @@ export function SeloNaoLidasInbox({ inicial, variante }: { inicial: number; vari
   const total = useNaoLidasInbox(inicial);
   if (total <= 0) return null;
   if (variante === "ponto") return <span aria-hidden className="absolute right-1 top-1 h-2 w-2 rounded-full bg-brand-solid" />;
-  return <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">{total > 99 ? "99+" : total}<span className="sr-only"> conversas não lidas</span></span>;
+  return <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">{total > 99 ? "99+" : total}<span className="sr-only">{total === 1 ? " conversa não lida" : " conversas não lidas"}</span></span>;
 }
