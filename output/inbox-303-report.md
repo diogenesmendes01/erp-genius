@@ -1,6 +1,6 @@
 # #303 — Anexos sem formulário desabilitados com motivo
 
-Estado em 22/10/2026: implementação e testes dirigidos aprovados; **aguarda gates globais coordenados, TESTER e captura visual**. Branch `codex/inbox-e0-303` sobre #302 congelada `133b935ed71e20af4f9f517762131dc4ce98d8fd`, worktree exclusivo DEV A, perfil `dev-email`.
+Estado em 22/10/2026: implementação, testes dirigidos e gates globais aprovados em Node22.23.2; **aguarda TESTER e captura visual**. Branch `codex/inbox-e0-303` sobre #302 congelada `133b935ed71e20af4f9f517762131dc4ce98d8fd`, worktree exclusivo DEV A, perfil `dev-email`.
 
 ## SPEC
 
@@ -24,4 +24,15 @@ Compositor tem agora22 testes; inclui capacidades vazias, completas e parciais, 
 
 ## Pendências
 
-Janela do integrador para TSC/lint global (baseline40)/suíte unitária completa, sem concorrência com DEV B. Re-review TESTER do SHA exato. Captura posterior coordenada do menu com número MOTOR em fixture descartável, três viewports/dois temas conforme contrato visual, sem envio externo; registrar capacidades recebidas e os três motivos novos. Não há servidor/DB iniciado pelo DEV A. Sem push/PR/merge/deploy; integrador publica por issue. #303 não concluída antes desses gates.
+A janela global reservada pelo integrador foi utilizada conforme os resultados abaixo. Re-review TESTER do SHA exato. Captura posterior coordenada do menu com número MOTOR em fixture descartável, três viewports/dois temas conforme contrato visual, sem envio externo; registrar capacidades recebidas e os três motivos novos. Não há servidor/DB iniciado pelo DEV A. Sem push/PR/merge/deploy; integrador publica por issue. #303 não concluída antes desses gates.
+
+## Gates globais próprios no código `fe051d41d937c3f7a85b09479c034cb7f87b18a2`
+
+Todos executados por `C:/Users/Mendes/AppData/Local/hermes/node/node.exe` (**v22.23.2**), sem instalação/regeneração de dependências e sem filtros adicionais:
+
+- `NODE_OPTIONS=--max-old-space-size=8192 node.exe node_modules/typescript/bin/tsc --noEmit`: **exit 0**, sessão `77141`, conclusão `5a9fe1`.
+- `node.exe node_modules/vitest/vitest.mjs run --reporter=json --outputFile=output/inbox-303-unitarias.json`: **exit 0**, sessão `11868`, conclusão `f1e2f3`. JSON conferido em `542732`: **841 arquivos, 6.488 testes aprovados, zero falhas, pendentes ou todo**, sem filtro de nome. É a suíte unitária completa configurada; integração `*.int.test.ts` permanece excluída pela configuração normal. JSON apenas local, fora do commit.
+- `node.exe node_modules/eslint/bin/eslint.js . --max-warnings 40`: **exit 0**, sessão `61660`, conclusão `53d5b7`, **zero erros e 40 avisos preexistentes**, sem exclusões adicionais. Nenhum aviso acrescentado pela #303.
+- `git diff 133b935ed71e20af4f9f517762131dc4ce98d8fd HEAD --check`: **exit 0**, `542732`.
+
+Cada sessão foi acompanhada até o exit code final, sem processos ativos. A consolidação posterior altera somente relatório/quadro, sem modificar fonte/testes nem repetir gates. TESTER e captura do menu MOTOR seguem pendentes; não declarar a issue concluída antes dessas evidências.
