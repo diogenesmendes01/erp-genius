@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconArrowLeft, IconLayoutSidebarRight } from "@tabler/icons-react";
+import { Botao } from "@/components/Botao";
 import { Avatar } from "@/components/Avatar";
 import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
 import { itensDaThread } from "@/components/conversa/itens-thread";
@@ -38,7 +39,9 @@ export interface PropsConversaAberta {
   triagem?: ItemTriagem[] | null;
   revisoes?: RevisaoEnvio[] | null;
   aoVoltar(): void;
-  aoAbrirPainel(): void;
+  aoAlternarPainel(): void;
+  painelAberto?: boolean;
+  painelAuto?: boolean;
   /** Uma ação do cabeçalho concluiu (a tela recarrega a lista). */
   aoMudar(): void;
 }
@@ -84,7 +87,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
   return item.status === "ENCERRADO" ? false : podeEnviar;
 }
 
-export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAbrirPainel, aoMudar }: PropsConversaAberta) {
+export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, triagem = null, revisoes = null, aoVoltar, aoAlternarPainel, painelAberto, aoMudar }: PropsConversaAberta) {
   const rolagem = useRef<HTMLDivElement>(null);
   const origemId = item?.atendimentoOrigemId ?? null;
   const [origem, setOrigem] = useState<{ de: string; setor: Setor | null }>({ de: "", setor: null });
@@ -111,7 +114,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     <>
       <header className="space-y-2 border-b p-3">
         <div className="flex items-center gap-2">
-          <button type="button" aria-label="Voltar para a lista" onClick={aoVoltar} className="min-[700px]:hidden"><IconArrowLeft size={20} aria-hidden /></button>
+          <button type="button" aria-label="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconArrowLeft size={20} aria-hidden /></button>
           {item && <Avatar nome={item.contatoNome} tamanho={32} />}
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{item?.contatoNome ?? "Conversa"}</p>
@@ -125,7 +128,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
               </p>
             )}
           </div>
-          <button type="button" aria-label="Detalhes da conversa" onClick={aoAbrirPainel} className="min-[1100px]:hidden"><IconLayoutSidebarRight size={20} aria-hidden /></button>
+          <Botao variante="fantasma" tamanho="sm" aria-label="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel} className="aria-pressed:bg-highlight"><IconLayoutSidebarRight size={20} aria-hidden /></Botao>
         </div>
         {item && !item.grupo && (
           <AcoesAtendimento
