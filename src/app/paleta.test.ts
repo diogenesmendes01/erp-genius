@@ -24,13 +24,13 @@ const CORES_SEM_TOM = new Set<string>([
 ]);
 const NAO_E_COR: Record<string, readonly string[]> = {
   text: ["xs", "sm", "base", "lg", "xl", "left", "center", "right", "justify", "start", "end", "ellipsis", "clip", "wrap", "nowrap", "balance", "pretty"],
-  bg: ["fixed", "local", "scroll", "bottom", "center", "left", "right", "top", "repeat", "no-repeat", "repeat-x", "repeat-y", "repeat-round", "repeat-space", "auto", "cover", "contain", "none"],
+  bg: ["fixed", "local", "scroll", "bottom", "center", "left", "right", "top", "repeat", "no-repeat", "repeat-x", "repeat-y", "repeat-round", "repeat-space", "auto", "cover", "contain", "none", "origin-border", "clip-text"],
   border: ["t", "r", "b", "l", "x", "y", "s", "e", "solid", "dashed", "dotted", "double", "hidden", "none", "collapse", "separate"],
   ring: ["inset", "offset"], outline: ["none", "dashed", "dotted", "double"], divide: ["x", "y", "solid", "dashed", "dotted", "double", "none"],
-  decoration: ["solid", "double", "dotted", "dashed", "wavy", "auto", "clone", "slice"], accent: ["auto"], fill: ["none"], stroke: ["none"],
+  decoration: ["solid", "double", "dotted", "dashed", "wavy", "auto", "clone", "slice", "from-font"], accent: ["auto"], fill: ["none"], stroke: ["none"],
 };
 const UTILITARIO_SEM_TOM =
-  /(?<![\w-])(?:[a-z0-9-]+:)*!?(bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+(?:-[a-z]+)*)(?:\/\d+)?(?![\w-])/g;
+  /(?<![\w-])(?:[a-z0-9-]+:)*!?(bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+(?:-[a-z]+)*)(?:\/\d+)?(?![\w-])/g;
 
 function corSemToken(texto: string): string[] {
   return [...texto.matchAll(UTILITARIO_SEM_TOM)]
@@ -75,6 +75,15 @@ describe("paleta do design system", () => {
     expect(corSemToken('"bg-brand-solid text-on-brand bg-brand-bg bg-surface-raised border-border-soft divide-border-soft bg-ai-solid text-white bg-transparent border-current"')).toEqual([]);
     expect(corSemToken('"text-sm text-left border-t border-dashed outline-none ring-inset bg-cover text-start text-2xl"')).toEqual([]);
     expect(corSemToken('"text-brand-700 bg-gray-100"')).toEqual([]);
+  });
+
+  it("aceita utilitários de origem, recorte e espessura que geram CSS", () => {
+    expect(corSemToken('"bg-origin-border bg-clip-text decoration-from-font"')).toEqual([]);
+  });
+
+  it("detecta from, via e to sem cor DEFAULT, sem acusar tom existente", () => {
+    expect(corSemToken('"from-brand via-brand to-brand from-brand-500"'))
+      .toEqual(["from-brand", "via-brand", "to-brand"]);
   });
 
   it("nenhum literal TypeScript de UI usa cor sem tom ausente do Tailwind", () => {

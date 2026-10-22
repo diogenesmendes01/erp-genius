@@ -24,3 +24,9 @@ Os sete usos sem CSS que o detector encontrou no código-base eram: `ListaAtendi
 - Lint global ainda não executado, por pausa coordenada. Repetir TSC, suíte completa e lint com código 0 antes de declarar a entrega concluída.
 - Aceite visual exigido pela issue: capturas antes/depois em 1440×900, 1024×768 e 390×844, claro/escuro, incluindo contador não lido, ✓✓, enquete, painel e devolução. O harness da E1 ainda não está integrado; capturas e comparação ficam pendentes para revisão com a tela.
 - Node local v24.16.0, enquanto `.nvmrc` declara 22. Nenhuma integração de banco foi executada; não há mudança de banco nesta issue.
+
+## Revisão TESTER do detector — 22/10/2026
+
+O TESTER revisou o commit `53a5821fb02e3df6def85749729e49e1c86fb579` e encontrou dois casos do detector. Confirmei com o Tailwind local compilado em memória, usando conteúdo bruto isolado: `bg-origin-border`, `bg-clip-text`, `decoration-from-font` e `from-brand-500` geram CSS; `from-brand`, `via-brand` e `to-brand` não geram. O primeiro script de inspeção passou a configuração como caminho e varreu o projeto, portanto não isolava as classes; a prova válida passou o objeto de `tailwind.config.ts` com `content: [{ raw: ... }]` e conferiu os seletores CSS exatos. `docs/18-design-system.md:8` proíbe gradientes; `bg-gradient-to-r` permanece ofensor intencional da trava.
+
+Dois testes de regressão em `paleta.test.ts` falharam antes do ajuste (2 falhas/7 testes): um acusava três utilitários com CSS, o outro deixava passar três cores sem `DEFAULT`. A classificação passou a aceitar apenas `bg-origin-border`, `bg-clip-text` e `decoration-from-font`, e a regex cobre também `from`, `via` e `to`. Recorte pós-ajuste: **6 arquivos, 45 testes, código 0, nenhum ignorado**. ESLint dirigido dos 11 arquivos TS/TSX da #298: **código 0, sem saída**. A validação global e o aceite visual continuam pendentes no commit desta correção; não foi executada nova suíte global por coordenação do integrador.
