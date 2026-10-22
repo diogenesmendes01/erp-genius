@@ -34,6 +34,13 @@ describe("marcar lida e digitando pelo motor", () => {
     expect(acao).toHaveBeenCalledWith(numero.id, "message.read", { chatId: "50688880001@s.whatsapp.net" });
     expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: at.id } })).naoLidas).toBe(0);
   });
+  it("sessão desconectada zera naoLidas sem chamar message.read", async () => {
+    const { autor, numero, at } = await cenario();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "CAIU" } });
+    expect((await comoUsuario(autor, () => marcarConversaLida(at.id))).ok).toBe(true);
+    expect(acao).not.toHaveBeenCalled();
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: at.id } })).naoLidas).toBe(0);
+  });
   it("motor indisponível não impede zerar naoLidas", async () => {
     const { autor, at } = await cenario();
     acao.mockRejectedValue(new Error("motor fora"));

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ErroRegra, executarAcao, exigirSessao, type Resultado } from "@/server/_shared";
 import { atendimentoVisivel } from "./atendimentos";
+import { marcarConversaLida } from "./acoes";
 
 // Preferências pessoais: tabelas operacionais, sem Evento (precedente: marcarConversaLida em acoes.ts).
 
@@ -59,6 +60,13 @@ export async function marcarLida(atendimentoId: string): Promise<Resultado> {
       where: chave(usuarioId, conversaId), create: { usuarioId, conversaId, lidaAte }, update: { lidaAte, marcadaNaoLida: false } });
     revalidatePath("/inbox");
   });
+}
+
+/** Registra a leitura pessoal e, se autorizada, a leitura compartilhada e no motor. */
+export async function marcarAtendimentoLido(atendimentoId: string): Promise<Resultado> {
+  const pessoal = await marcarLida(atendimentoId);
+  if (!pessoal.ok) return pessoal;
+  return marcarConversaLida(atendimentoId);
 }
 
 export async function alternarFavorita(mensagemId: string): Promise<Resultado> {
