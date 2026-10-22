@@ -2,11 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconQrcode, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
+import { IconQrcode, IconPencil, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import type { NumeroConfig, ResponsavelTriagem } from "@/server/whatsapp/consultas";
 import { salvarSetoresNumero } from "@/server/whatsapp/acoes-numero";
 import { SETORES, podeTriarSetores, type Setor } from "@/server/whatsapp/setor";
-import { conectarNumeroQr, consultarSessaoNumero, desconectarNumero, parearNumeroPorCodigo, salvarNumeroWhatsApp } from "@/server/whatsapp/acoes";
+import {
+  conectarNumeroQr,
+  consultarSessaoNumero,
+  desativarNumeroWhatsApp,
+  desconectarNumero,
+  excluirNumeroWhatsApp,
+  parearNumeroPorCodigo,
+  reativarNumeroWhatsApp,
+  salvarNumeroWhatsApp,
+} from "@/server/whatsapp/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { Chip } from "@/components/Chip";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -20,10 +29,13 @@ import { numeroAlterado, setoresAlterados } from "./alteracoes-pendentes";
 import { DRIVER_WHATSAPP_LABEL, FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 
 // TELA DO NÚMERO (doc 26 §Camada 0/E3): cadastro, estado da sessão no motor WhatsApp, conexão por QR ou
-// código de pareamento e desconexão. Todo número novo nasce MOTOR (sem escolha de driver). Soft-delete via ativo.
+// código de pareamento e desconexão. Todo número novo nasce MOTOR (sem escolha de driver).
+// Desativar desliga a sessão no motor e mantém o número na lista; Excluir também desliga e tira o número
+// desta tela, sem apagar conversas nem mensagens (recadastrar o mesmo telefone o restaura).
 
 const btnPri = botaoClasses({ tamanho: "md" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
+const btnPerigo = botaoClasses({ variante: "perigo", tamanho: "sm" });
 const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 
 const SESSAO_BADGE: Record<string, { label: string; cls: string }> = {
@@ -39,7 +51,6 @@ interface FormNumero {
   rotulo: string;
   finalidade: "COBRANCA" | "VENDAS" | "AGENDA";
   donoId: string;
-  ativo: boolean;
 }
 
 const FORM_VAZIO: FormNumero = {
@@ -47,7 +58,6 @@ const FORM_VAZIO: FormNumero = {
   rotulo: "",
   finalidade: "COBRANCA",
   donoId: "",
-  ativo: true,
 };
 
 export function NumerosPainel({
@@ -66,6 +76,8 @@ export function NumerosPainel({
   const acao = useAcaoCliente({ idempotente: false });
   const [qrDe, setQrDe] = useState<NumeroConfig | null>(null);
   const [desconectando, setDesconectando] = useState<NumeroConfig | null>(null);
+  const [desativando, setDesativando] = useState<NumeroConfig | null>(null);
+  const [excluindo, setExcluindo] = useState<NumeroConfig | null>(null);
   // C32 da #170: formulário aberto com mudança → marca e aviso ao sair (fechar ou salvar desliga).
   const sujo = numeroAlterado(form, numeros);
   useAvisoAoSair(sujo);
@@ -76,6 +88,21 @@ export function NumerosPainel({
     const d = await acao.executar(() => salvarNumeroWhatsApp(dados), "Número salvo.");
     if (d?.tipo !== "ok") return;
     setForm(null);
+    router.refresh();
+  }
+
+  // Ativar volta direto (sem efeito externo: o número ainda precisa ser pareado). Desativar e Excluir
+  // passam pela confirmação, que roda a action e mostra a falha dentro dela.
+  async function reativar(n: NumeroConfig) {
+    const d = await acao.executar(() => reativarNumeroWhatsApp(n.id), `${n.rotulo} reativado. Conecte de novo por QR ou código.`);
+    if (d?.tipo === "ok") router.refresh();
+  }
+
+  function concluido(mensagem: string) {
+    setDesativando(null);
+    setExcluindo(null);
+    if (form?.id && form.id === excluindo?.id) setForm(null); // o número saiu da tela: não há o que editar
+    acao.setSucesso(mensagem);
     router.refresh();
   }
 
@@ -129,7 +156,7 @@ export function NumerosPainel({
                     {n.donoNome && <span className="text-gray-500">dono: {n.donoNome}</span>}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {n.driver === "MOTOR" && n.ativo && (
                     <button type="button" className={btnSec} onClick={() => setQrDe(n)}>
                       <span className="flex items-center gap-1">
@@ -137,7 +164,8 @@ export function NumerosPainel({
                       </span>
                     </button>
                   )}
-                  {n.driver === "MOTOR" && n.ativo && n.sessao !== "DESCONECTADO" && (
+                  {/* Também para inativo: número desativado antes desta regra pode ter ficado com a sessão viva. */}
+                  {n.driver === "MOTOR" && n.sessao !== "DESCONECTADO" && (
                     <button type="button" className={btnSec} onClick={() => setDesconectando(n)}>
                       Desconectar
                     </button>
@@ -152,12 +180,36 @@ export function NumerosPainel({
                         rotulo: n.rotulo,
                         finalidade: n.finalidade as FormNumero["finalidade"],
                         donoId: n.donoId ?? "",
-                        ativo: n.ativo,
                       })
                     }
                   >
                     <span className="flex items-center gap-1">
                       <IconPencil className="h-3.5 w-3.5" /> Editar
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={botaoClasses({ variante: n.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
+                    disabled={acao.ocupado}
+                    onClick={() => {
+                      acao.limpar();
+                      if (n.ativo) setDesativando(n);
+                      else void reativar(n);
+                    }}
+                  >
+                    {n.ativo ? "Desativar" : "Ativar"}
+                  </button>
+                  <button
+                    type="button"
+                    className={btnPerigo}
+                    disabled={acao.ocupado}
+                    onClick={() => {
+                      acao.limpar();
+                      setExcluindo(n);
+                    }}
+                  >
+                    <span className="flex items-center gap-1">
+                      <IconTrash className="h-3.5 w-3.5" /> Excluir
                     </span>
                   </button>
                 </div>
@@ -222,16 +274,7 @@ export function NumerosPainel({
               </select>
             </label>
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-gray-600">
-              <input
-                type="checkbox"
-                className="h-3.5 w-3.5 accent-brand-600"
-                checked={form.ativo}
-                onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
-              />
-              Número ativo
-            </label>
+          <div className="mt-3 flex items-center justify-end gap-3">
             <AlteracaoPendente sujo={sujo} />
             <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
               {acao.ocupado ? "Salvando…" : "Salvar número"}
@@ -260,6 +303,41 @@ export function NumerosPainel({
         >
           O número deixa de enviar e receber mensagens até ser pareado de novo por QR ou código. Mensagens
           pendentes ficam na fila e saem depois da reconexão.
+        </ConfirmarAcao>
+      )}
+      {desativando && (
+        <ConfirmarAcao
+          titulo={`Desativar o número ${desativando.rotulo}?`}
+          confirmacao={`desativação de ${desativando.rotulo}`}
+          idempotente
+          acao={() => desativarNumeroWhatsApp(desativando.id)}
+          aoConcluir={() => concluido(`${desativando.rotulo} desativado.`)}
+          aoCancelar={() => setDesativando(null)}
+        >
+          <p>
+            {desativando.rotulo} ({desativando.telefoneE164}) é desconectado do WhatsApp e para de enviar e receber
+            mensagens. Mensagens na fila ou agendadas por este número não saem: falham como remetente inativo.
+          </p>
+          <p>O número continua nesta lista; para voltar a usá-lo, clique em &quot;Ativar&quot; e conecte de novo.</p>
+        </ConfirmarAcao>
+      )}
+      {excluindo && (
+        <ConfirmarAcao
+          titulo={`Excluir o número ${excluindo.rotulo}?`}
+          confirmacao={`exclusão de ${excluindo.rotulo}`}
+          idempotente
+          acao={() => excluirNumeroWhatsApp(excluindo.id)}
+          aoConcluir={() => concluido(`${excluindo.rotulo} excluído.`)}
+          aoCancelar={() => setExcluindo(null)}
+        >
+          <p>
+            {excluindo.rotulo} ({excluindo.telefoneE164}) é desconectado do WhatsApp, para de enviar e receber e sai
+            desta tela. Mensagens na fila ou agendadas por este número não saem.
+          </p>
+          <p>
+            Conversas, mensagens e o histórico continuam guardados. Para usar este telefone de novo, cadastre-o em
+            &quot;Novo número&quot;: o cadastro antigo volta com o histórico.
+          </p>
         </ConfirmarAcao>
       )}
       {qrDe && <QrModal numero={qrDe} onClose={() => { setQrDe(null); router.refresh(); }} />}

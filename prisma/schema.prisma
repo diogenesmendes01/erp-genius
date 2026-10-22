@@ -2416,6 +2416,9 @@ model NumeroWhatsApp {
   triagemResponsavelId String? // responsável pela triagem do número (null = ADMINISTRADOR, Q2 provisória)
   triagemResponsavel   Usuario?         @relation("TriagemNumeroWhatsApp", fields: [triagemResponsavelId], references: [id], onDelete: SetNull)
   ativo        Boolean          @default(true)
+  // Excluído pelo admin: some da configuração, mas conversas, mensagens e Eventos continuam ligados a ele.
+  // Sempre inativo e desconectado. Recadastrar o mesmo telefone restaura este registro (autor no Evento).
+  excluidoEm   DateTime?
   criadoEm     DateTime         @default(now())
   perfilNome   String?
   perfilRecado String?
