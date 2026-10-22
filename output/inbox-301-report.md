@@ -20,4 +20,4 @@ Estado em 22/10/2026: implementação em revisão. Branch `codex/inbox-e0-301`, 
 
 ## Pendências
 
-Vitest completo da combinação #301 + #304 pelo integrador, revisão TESTER e aceite manual/visual em duas sessões nos três viewports e dois temas. Sem instalação ou envio externo.
+Revisão TESTER e aceite visual concluídos: seis contextos, duas sessões,24 PNGs depois, nota inicial/nova sem reload e zero nova mensagem no banco. Parecer e evidências em `output/inbox-301-visual/`. Integrador verificou a combinação E0 `7657c528`:845 arquivos/6526 testes sessão99285 exit0, TSC40124 exit0, lint5709 exit0/40avisos; integrações dirigidas26+13 testes sessões87157/56869 exit0. Código301 não mudou após a revisão. Publicação do PR em andamento; sem merge/deploy/envio externo.
