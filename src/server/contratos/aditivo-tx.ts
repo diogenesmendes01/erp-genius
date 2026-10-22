@@ -1,8 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
+import { MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA } from "@/lib/mensagens";
 import { conferirAutor } from "./modelos-tx";
 import { carregarBaseAditivoTx } from "./aditivo-estado";
 import { recusarAditivoDeRegime } from "./aditivo-coerencia";
+import { bloquearFontePropostaTx } from "./fonte-contratual-tx";
 import { hashSubstituicao } from "./substituicao-estado";
 import { DecidirAditivoContratualSchema, PrepararAditivoContratualSchema } from "./aditivo-schema";
 
@@ -17,6 +19,9 @@ async function conferirAtor(tx: Prisma.TransactionClient, id: string, decidir = 
 export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = PrepararAditivoContratualSchema.parse(entrada);
   recusarAditivoDeRegime(d.alteracoes);
+  // Sem decisão do dono sobre o ambiente de assinatura do aditivo sobre contrato legado, ele não seria formalizado:
+  // nada é preparado sobre a origem histórica (também não por replay de chave).
+  if (d.origemHistoricaId) throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
   await conferirAtor(tx, autorId);
   const anterior = await tx.propostaAditivoContratual.findUnique({ where: { preparadaPorId_chaveIdempotencia: { preparadaPorId: autorId, chaveIdempotencia: d.chaveIdempotencia } } });
@@ -33,7 +38,7 @@ export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, 
   const snapshot = json({ ...contexto, versao, preparadaPorId: autorId, motivo: d.motivo, entrada: d });
   const entradaHash = hashSubstituicao(snapshot as Prisma.JsonObject);
   const proposta = await tx.propostaAditivoContratual.create({ data: {
-    matriculaId: d.matriculaId, conclusaoOriginalId: d.conclusaoOriginalId, modeloId: d.modeloId,
+    matriculaId: d.matriculaId, conclusaoOriginalId: contexto.conclusaoOriginalId, origemHistoricaId: contexto.origemHistoricaId, modeloId: d.modeloId,
     versao, preparadaPorId: autorId, vigenciaInicio: new Date(contexto.vigenciaInicio), motivo: d.motivo,
     baseHash: contexto.baseHash, alteracoesHash: contexto.alteracoesHash, snapshot, entradaHash, chaveIdempotencia: d.chaveIdempotencia, propostaAgendaId,
   } });
@@ -45,10 +50,11 @@ export async function prepararAditivoContratualTx(tx: Prisma.TransactionClient, 
 export async function decidirAditivoContratualTx(tx: Prisma.TransactionClient, autorId: string, entrada: unknown) {
   const d = DecidirAditivoContratualSchema.parse(entrada);
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
-  const p = await tx.propostaAditivoContratual.findUnique({ where: { id: d.propostaId }, include: { decisao: true, conclusaoOriginal: { select: { processoId: true } } } });
+  const p = await tx.propostaAditivoContratual.findUnique({ where: { id: d.propostaId }, include: { decisao: true } });
   if (!p) throw new ErroRegra("Proposta de aditivo não encontrada.");
+  if (d.aprovada && p.origemHistoricaId) throw new ErroRegra(MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA);
   await tx.$queryRaw`SELECT id FROM "Matricula" WHERE id = ${p.matriculaId} FOR UPDATE`;
-  await tx.$queryRaw`SELECT id FROM "ProcessoAssinaturaContratual" WHERE id = ${p.conclusaoOriginal.processoId} FOR UPDATE`;
+  await bloquearFontePropostaTx(tx, p);
   await conferirAtor(tx, autorId, true);
   if (autorId === p.preparadaPorId) throw new ErroRegra("Outra pessoa da Administração deve decidir esta proposta.");
   if (p.entradaHash !== d.propostaHashEsperado || hashSubstituicao(p.snapshot) !== p.entradaHash) throw new ErroRegra("A decisão não corresponde à proposta revisada.");
