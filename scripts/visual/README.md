@@ -96,3 +96,5 @@ um mapa dos valores originais. Reaplicar depois de nova renderização.
 O teste do DOM real usa Chrome já instalado, sem baixar navegador:
 `PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
 Esse teste dirigido de navegador é separado da suíte unitária Vitest.
+
+Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.
