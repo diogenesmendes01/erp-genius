@@ -24,9 +24,16 @@ const CORES_SEM_TOM = new Set<string>([
 ]);
 const NAO_E_COR: Record<string, readonly string[]> = {
   text: ["xs", "sm", "base", "lg", "xl", "left", "center", "right", "justify", "start", "end", "ellipsis", "clip", "wrap", "nowrap", "balance", "pretty"],
-  bg: ["fixed", "local", "scroll", "bottom", "center", "left", "right", "top", "repeat", "no-repeat", "repeat-x", "repeat-y", "repeat-round", "repeat-space", "auto", "cover", "contain", "none", "origin-border", "clip-text"],
+  bg: [
+    "fixed", "local", "scroll", "bottom", "center", "left", "right", "top", "left-bottom", "left-top", "right-bottom", "right-top",
+    "repeat", "no-repeat", "repeat-x", "repeat-y", "repeat-round", "repeat-space", "auto", "cover", "contain", "none",
+    "origin-border", "origin-padding", "origin-content", "clip-border", "clip-padding", "clip-content", "clip-text",
+    "blend-normal", "blend-multiply", "blend-screen", "blend-overlay", "blend-darken", "blend-lighten", "blend-color-dodge",
+    "blend-color-burn", "blend-hard-light", "blend-soft-light", "blend-difference", "blend-exclusion", "blend-hue",
+    "blend-saturation", "blend-color", "blend-luminosity",
+  ],
   border: ["t", "r", "b", "l", "x", "y", "s", "e", "solid", "dashed", "dotted", "double", "hidden", "none", "collapse", "separate"],
-  ring: ["inset", "offset"], outline: ["none", "dashed", "dotted", "double"], divide: ["x", "y", "solid", "dashed", "dotted", "double", "none"],
+  ring: ["inset", "offset"], outline: ["none", "dashed", "dotted", "double"], divide: ["x", "y", "x-reverse", "y-reverse", "solid", "dashed", "dotted", "double", "none"],
   decoration: ["solid", "double", "dotted", "dashed", "wavy", "auto", "clone", "slice", "from-font"], accent: ["auto"], fill: ["none"], stroke: ["none"],
 };
 const UTILITARIO_SEM_TOM =
@@ -79,6 +86,21 @@ describe("paleta do design system", () => {
 
   it("aceita utilitários de origem, recorte e espessura que geram CSS", () => {
     expect(corSemToken('"bg-origin-border bg-clip-text decoration-from-font"')).toEqual([]);
+  });
+
+  it("aceita as famílias não-cor completas que o Tailwind local compila", () => {
+    const familias = [
+      ["bg-origin-border", "bg-origin-padding", "bg-origin-content"],
+      ["bg-clip-border", "bg-clip-padding", "bg-clip-content", "bg-clip-text"],
+      ["bg-left-bottom", "bg-left-top", "bg-right-bottom", "bg-right-top"],
+      ["bg-blend-normal", "bg-blend-multiply", "bg-blend-screen", "bg-blend-overlay", "bg-blend-darken", "bg-blend-lighten",
+        "bg-blend-color-dodge", "bg-blend-color-burn", "bg-blend-hard-light", "bg-blend-soft-light", "bg-blend-difference",
+        "bg-blend-exclusion", "bg-blend-hue", "bg-blend-saturation", "bg-blend-color", "bg-blend-luminosity"],
+      ["divide-x-reverse", "divide-y-reverse", "decoration-from-font"],
+    ];
+    for (const classes of familias) expect(corSemToken(`"${classes.join(" ")}"`)).toEqual([]);
+    expect(corSemToken('"bg-origin-brand bg-clip-brand bg-blend-brand bg-gradient-to-r"'))
+      .toEqual(["bg-origin-brand", "bg-clip-brand", "bg-blend-brand", "bg-gradient-to-r"]);
   });
 
   it("detecta from, via e to sem cor DEFAULT, sem acusar tom existente", () => {
