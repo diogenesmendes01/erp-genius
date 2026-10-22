@@ -21,6 +21,7 @@ const NAO_E_DINHEIRO_CRU: Record<string, number> = {
   "src/app/(app)/diario/reposicoes/ReposicoesEquipe.tsx#previa.saldo": 1, // saldo de reposições (quantidade)
   "src/app/(app)/academico/segundas-chamadas/[alocacaoId]/[codigoAvaliacao]/page.tsx#estado.saldo": 1, // tentativas
   "src/app/(app)/matriculas/[id]/contrato/TextoPrevia.tsx#c.valor": 1, // valor de campo do contrato (texto)
+  "src/app/(app)/matriculas/[id]/contrato/origem-historica/page.tsx#c.valor": 1, // campo transcrito do contrato legado (texto já com a moeda)
   "src/app/(app)/alunos/[id]/movimentacoes/OutrasCobrancasResumo.tsx#uso.creditoId": 1, // identificador
 };
 
