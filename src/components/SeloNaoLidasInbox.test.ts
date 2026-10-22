@@ -42,3 +42,58 @@ it("rótulo acessível flexiona uma conversa e preserva plural/99+/zero", () => 
   expect(html(120)).toContain('99+<span class="sr-only"> conversas não lidas</span>');
   expect(html(0)).toBe("");
 });
+
+function respostaLenta(status = 200) {
+  let controle!: ReadableStreamDefaultController<Uint8Array>;
+  let encerrada = false;
+  const corpo = new ReadableStream<Uint8Array>({ start(c) { controle = c; } });
+  return {
+    resposta: new Response(corpo, { status }),
+    fechar(texto = '{"total":99}') { if (encerrada) return; encerrada = true; controle.enqueue(new TextEncoder().encode(texto)); controle.close(); },
+    falhar() { if (encerrada) return; encerrada = true; controle.error(Error("falha de corpo")); },
+  };
+}
+describe("um GET real até o término do corpo", () => {
+  it("geração obsoleta drena corpo antes de iniciar a única repetição do remount", async () => {
+    const lenta = respostaLenta();
+    const buscar = vi.fn().mockResolvedValueOnce(lenta.resposta).mockImplementation(async () => resposta(8));
+    const loja = criarLojaNaoLidas(2, buscar), notificar = vi.fn();
+    const sair = loja.subscribe(notificar); loja.recontar(); sair();
+    const sairNovo = loja.subscribe(notificar); loja.recontar(); loja.recontar();
+    try {
+      await tick(); expect(buscar).toHaveBeenCalledTimes(1);
+      expect(lenta.resposta.bodyUsed).toBe(true); expect(loja.valor()).toBe(2); expect(notificar).not.toHaveBeenCalled();
+      lenta.fechar(); await vi.waitFor(() => expect(loja.valor()).toBe(8));
+      expect(buscar).toHaveBeenCalledTimes(2); expect(notificar).toHaveBeenCalledTimes(1);
+    } finally { lenta.fechar(); sairNovo(); await tick(); }
+  });
+  it.each([401, 403])("auth%s limpa total e pendência, mas ainda consome o corpo", async status => {
+    const lenta = respostaLenta(status), buscar = vi.fn(async () => lenta.resposta), loja = criarLojaNaoLidas(9, buscar);
+    loja.recontar(); loja.recontar();
+    try {
+      await tick(); expect(loja.valor()).toBe(0); expect(lenta.resposta.bodyUsed).toBe(true);
+      expect(buscar).toHaveBeenCalledTimes(1); lenta.fechar('{"erro":"sem acesso"}');
+      await tick(); expect(buscar).toHaveBeenCalledTimes(1); expect(loja.valor()).toBe(0);
+    } finally { lenta.fechar(); await tick(); }
+  });
+  it.each(["fechar", "falhar"] as const)("5xx mantém total e espera corpo%s antes da pendente", async terminar => {
+    const lenta = respostaLenta(503);
+    const buscar = vi.fn().mockResolvedValueOnce(lenta.resposta).mockImplementation(async () => resposta(4));
+    const loja = criarLojaNaoLidas(2, buscar); loja.recontar(); loja.recontar();
+    try {
+      await tick(); expect(buscar).toHaveBeenCalledTimes(1); expect(loja.valor()).toBe(2); expect(lenta.resposta.bodyUsed).toBe(true);
+      lenta[terminar](); await vi.waitFor(() => expect(loja.valor()).toBe(4)); expect(buscar).toHaveBeenCalledTimes(2);
+    } finally { lenta.fechar(); await tick(); }
+  });
+  it.each(["fechar", "falhar"] as const)("JSON em leitura%s não abre segunda busca; dispose ignora valor antigo", async terminar => {
+    const lenta = respostaLenta(), buscar = vi.fn().mockResolvedValueOnce(lenta.resposta).mockImplementation(async () => resposta(6));
+    const loja = criarLojaNaoLidas(2, buscar), notificar = vi.fn(), sair = loja.subscribe(notificar);
+    loja.recontar(); await tick(); expect(lenta.resposta.bodyUsed).toBe(true);
+    sair(); const sairNovo = loja.subscribe(notificar); loja.recontar();
+    try {
+      await tick(); expect(buscar).toHaveBeenCalledTimes(1); expect(loja.valor()).toBe(2);
+      if (terminar === "fechar") lenta.fechar("JSON inválido"); else lenta.falhar();
+      await vi.waitFor(() => expect(loja.valor()).toBe(6)); expect(buscar).toHaveBeenCalledTimes(2); expect(notificar).toHaveBeenCalledTimes(1);
+    } finally { lenta.fechar(); sairNovo(); await tick(); }
+  });
+});
