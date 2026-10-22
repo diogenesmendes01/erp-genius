@@ -1,0 +1,751 @@
+{
+  "fase": "depois",
+  "fonte": "4c2424ab0df7465212cb1927d049517162232901",
+  "perfil": "tester",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 795.453125,
+          "y": 621,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 641,
+          "y": 622,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 795.453125,
+        "y": 643,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "884px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 1051,
+          "y": 545,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 797.359375,
+          "y": 546,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 797.359375,
+          "y": 566,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 1051,
+        "y": 567,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "884px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 795.453125,
+          "y": 621,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 641,
+          "y": 622,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 795.453125,
+        "y": 643,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "884px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 1051,
+          "y": 545,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 797.359375,
+          "y": 546,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 797.359375,
+          "y": 566,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 1051,
+        "y": 567,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "884px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 755.453125,
+          "y": 675,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 601,
+          "y": 676,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 755.453125,
+        "y": 697,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "752px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 955,
+          "y": 599,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 701.359375,
+          "y": 600,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 701.359375,
+          "y": 620,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 796,
+        "y": 621,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "752px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 755.453125,
+          "y": 675,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 601,
+          "y": 676,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 755.453125,
+        "y": 697,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "752px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 955,
+          "y": 599,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 701.359375,
+          "y": 600,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 701.359375,
+          "y": 620,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 796,
+        "y": 621,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "752px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 195.453125,
+          "y": 634,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 635,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 656,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "828px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 337,
+          "y": 538,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 539,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 559,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 560,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "828px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 195.453125,
+          "y": 634,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 635,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 656,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "828px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 337,
+          "y": 538,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 539,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 559,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 560,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "828px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 390,
+      "height": 320,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 195.453125,
+          "y": 200,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 201,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 236,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "304px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 320,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 337,
+          "y": 190,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 191,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 211,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 244,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "304px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    },
+    {
+      "width": 390,
+      "height": 320,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 195.453125,
+          "y": 200,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 201,
+          "width": 122.234375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 236,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "304px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 320,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 337,
+          "y": 190,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 191,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 211,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 162,
+        "y": 244,
+        "width": 220,
+        "height": 62
+      },
+      "estilo": {
+        "posicao": "fixed",
+        "overflowY": "auto",
+        "maxHeight": "304px",
+        "scrollHeight": 60,
+        "clientHeight": 60
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": [],
+      "teclado": {
+        "totalHabilitados": 1,
+        "focoInicial": true,
+        "focoSeguinte": true,
+        "focoRetornou": true,
+        "escape": true,
+        "scrollInterno": true,
+        "scrollExterno": true,
+        "resize": true
+      }
+    }
+  ]
+}

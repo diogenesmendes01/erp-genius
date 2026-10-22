@@ -1,0 +1,672 @@
+{
+  "fase": "antes",
+  "cenario": "motor",
+  "fonte": "37914e4a5d970bbf15e36f660e8aa2750ba79ffe",
+  "perfil": "integracao",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 799.453125,
+          "y": 597,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 641,
+          "y": 602,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": 599.453125,
+        "y": 621,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 1055,
+          "y": 521,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 797.359375,
+          "y": 526,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 797.359375,
+          "y": 546,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 855,
+        "y": 545,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 799.453125,
+          "y": 597,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 641,
+          "y": 602,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": 599.453125,
+        "y": 621,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 1055,
+          "y": 521,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 797.359375,
+          "y": 526,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 797.359375,
+          "y": 546,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 855,
+        "y": 545,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": true,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 759.453125,
+          "y": 651,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 601,
+          "y": 656,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": 559.453125,
+        "y": 675,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": false,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 959,
+          "y": 575,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 701.359375,
+          "y": 580,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 701.359375,
+          "y": 600,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 759,
+        "y": 599,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": false,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 759.453125,
+          "y": 651,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 601,
+          "y": 656,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": 559.453125,
+        "y": 675,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": false,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 959,
+          "y": 575,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 701.359375,
+          "y": 580,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 701.359375,
+          "y": 600,
+          "width": 265.640625,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 759,
+        "y": 599,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": false,
+      "toque": false,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 199.453125,
+          "y": 610,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 615,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": -0.546875,
+        "y": 634,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": false,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 341,
+          "y": 514,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 519,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 539,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 141,
+        "y": 538,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 199.453125,
+          "y": 610,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 615,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": -0.546875,
+        "y": 634,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": false,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 341,
+          "y": 514,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 519,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 539,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 141,
+        "y": 538,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": true,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 160,
+      "tema": "light",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 199.453125,
+          "y": 54,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 59,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": -0.546875,
+        "y": 86,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": false,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 160,
+      "tema": "light",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 341,
+          "y": 34,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 39,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 59,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 141,
+        "y": 94,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": false,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 160,
+      "tema": "dark",
+      "tipo": "entrada-sem-autor",
+      "texto": {
+        "gatilho": {
+          "x": 199.453125,
+          "y": 54,
+          "width": 16,
+          "height": 16
+        },
+        "autor": null,
+        "primeiraLinhaCorpo": {
+          "x": 41,
+          "y": 59,
+          "width": 166.453125,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": true
+      },
+      "menu": {
+        "x": -0.546875,
+        "y": 86,
+        "width": 220,
+        "height": 150
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 148,
+        "clientHeight": 148
+      },
+      "cabe": false,
+      "toque": true,
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 160,
+      "tema": "dark",
+      "tipo": "saida-com-autor",
+      "texto": {
+        "gatilho": {
+          "x": 341,
+          "y": 34,
+          "width": 16,
+          "height": 16
+        },
+        "autor": {
+          "x": 107.40625,
+          "y": 39,
+          "width": 131.578125,
+          "height": 14
+        },
+        "primeiraLinhaCorpo": {
+          "x": 107.40625,
+          "y": 59,
+          "width": 208.34375,
+          "height": 17
+        },
+        "sobrepoeAutor": false,
+        "sobrepoeCorpo": false
+      },
+      "menu": {
+        "x": 141,
+        "y": 94,
+        "width": 220,
+        "height": 238
+      },
+      "estilo": {
+        "posicao": "absolute",
+        "overflowY": "visible",
+        "maxHeight": "none",
+        "scrollHeight": 236,
+        "clientHeight": 236
+      },
+      "cabe": false,
+      "toque": true,
+      "erros": []
+    }
+  ]
+}

@@ -1,6 +1,14 @@
 # #305 — Chevron fora do texto e menu dentro da viewport
 
-Estado em 22/10/2026: implementação, recortes e gates globais aprovados no Node22.23.2; **aguarda TESTER e capturas visuais coordenadas**. Branch `codex/inbox-e0-305` iniciada em #303 congelada `79a905a2ffe4e34a905f174b416ed2982601d9a1` e rebaseada por coordenação sobre #303 final `37914e4a5d970bbf15e36f660e8aa2750ba79ffe` (PR#384), worktree exclusivo DEV A, perfil `dev-email`. Planejamento prévio preservado em `output/inbox-305-plan.md`.
+Estado final em 22/10/2026: **implementação e validação concluídas; PR em publicação**. TESTER aprovou o código `4c2424ab`, com 46/46 testes dirigidos e aceite visual nos três tamanhos/dois temas, acrescido de telas baixas. Delta final `e21ae815` somente documental, conferido pelo TESTER. Branch `codex/inbox-e0-305`, base `37914e4a` (PR #384); publicação adiciona apenas docs, imagens e manifestos. Planejamento em `output/inbox-305-plan.md`. As pendências nas seções cronológicas abaixo foram resolvidas conforme o aceite final. Sem merge/deploy.
+
+## Aceite final independente no aplicativo
+
+Parecer em `output/inbox-305-visual/qa/inbox-305-review.md`; 128 PNGs e quatro manifestos nas subpastas visuais. Node 22.23.2 em ambos os servidores e capturadores. Dois cenários fictícios: BAILEYS desconectado e capacidade MOTOR simulada localmente, sem endpoint externo. Cada cenário tem 16 estados por fase: entrada sem autor/saída com autor × dois temas × três tamanhos contratuais e um tamanho baixo adicional (390×320 no BAILEYS;390×160 no MOTOR).
+
+Antes/depois: BAILEYS passou de quatro menus fora da tela e oito sobreposições para zero/zero; MOTOR passou de dez fora e oito sobreposições para zero/zero. `pageerrors=[]`. Em390×160, o menu corrigido ficou dentro da tela, com144px de altura e rolagem interna real (saída236>142; entrada148>142). Confirmados foco inicial, ArrowDown entre múltiplos habilitados, Escape retornando ao gatilho, toque, scroll interno preservado e fechamento por scroll externo/resize. Nenhum comando de mensagem foi executado.
+
+Sessões ANTES do integrador: `53991` (BAILEYS) e `78172` (MOTOR), ambas saída0. O TESTER registra as sessões DEPOIS no parecer; uma primeira execução pressupôs dois itens habilitados no BAILEYS e atingiu timeout120s. A premissa do harness foi corrigida e a matriz repetida com sucesso; não foi defeito da aplicação. Ambas as fixtures foram restauradas para BAILEYS/DESCONECTADO e servidores QA encerrados após a captura. Overlay Next preexistente documentado. Os gates de código abaixo foram executados na fonte invariável; não repetidos por adição exclusiva de docs/PNG/JSON.
 
 ## SPEC e implementação
 
