@@ -210,10 +210,13 @@ export const MAPA_BOTOES: Record<string, string[]> = {
   "configuracao/whatsapp/NumerosPainel.tsx": [
     "const btnPri → primario/md",
     "const btnSec → secundario/sm",
+    "const btnPerigo → perigo/sm",
     "<button> Novo número → btnPri",
     "<button> Conectar → btnSec",
     "<button> Desconectar → btnSec",
     "<button> Editar → btnSec",
+    "<button> Desativar · Ativar → perigo|fantasma/sm",
+    "<button> Excluir → btnPerigo",
     "<button> Salvando… · Salvar número → btnPri",
     "<button> Salvando… · Salvar setores → btnPri",
     "<button> Fechar → btnSec",

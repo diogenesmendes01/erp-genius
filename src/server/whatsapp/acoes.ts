@@ -2,7 +2,7 @@
 import { referenciaDestinoCobranca } from "./elegibilidade";
 
 import { revalidatePath } from "next/cache";
-import { DriverWhatsApp, Papel, StatusCobranca, type OrigemEnvio, type SessaoNumero } from "@prisma/client";
+import { DriverWhatsApp, Papel, StatusCobranca, type OrigemEnvio, type Prisma, type SessaoNumero } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { contentTypePorExtensao } from "@/lib/uploads";
 import {
@@ -648,15 +648,46 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
 
     const conflito = await prisma.numeroWhatsApp.findFirst({
       where: { telefoneE164: dados.telefoneE164, ...(dados.id ? { id: { not: dados.id } } : {}) },
-      select: { id: true },
+      select: { id: true, excluidoEm: true },
     });
-    if (conflito) throw new ErroRegra("Já existe um número cadastrado com este telefone.");
+    // Telefone de número excluído: o cadastro novo restaura aquele registro (o histórico volta junto).
+    const restaurar = conflito?.excluidoEm && !dados.id ? conflito.id : null;
+    if (conflito && !restaurar) {
+      throw new ErroRegra(conflito.excluidoEm
+        ? "Este telefone é de um número excluído. Cadastre-o em \"Novo número\" para restaurá-lo."
+        : "Já existe um número cadastrado com este telefone.");
+    }
 
     let driverEditado: string = dados.driver;
+    let ativoFinal = dados.ativo ?? true;
     const id = await prisma.$transaction(async (tx) => {
+      if (restaurar) {
+        const antes = await tx.numeroWhatsApp.findUniqueOrThrow({ where: { id: restaurar } });
+        await tx.numeroWhatsApp.update({
+          where: { id: restaurar },
+          data: { rotulo: dados.rotulo, finalidade: dados.finalidade, donoId: dados.donoId, ativo: ativoFinal, excluidoEm: null },
+        });
+        driverEditado = antes.driver;
+        await registrarEvento(tx, {
+          tipo: "NumeroWhatsAppRestaurado",
+          agregadoTipo: "NumeroWhatsApp",
+          agregadoId: restaurar,
+          autorId: autor.id,
+          payload: {
+            excluidoEm: antes.excluidoEm?.toISOString() ?? null,
+            antes: { rotulo: antes.rotulo, finalidade: antes.finalidade, donoId: antes.donoId },
+            depois: { rotulo: dados.rotulo, finalidade: dados.finalidade, donoId: dados.donoId, ativo: ativoFinal },
+          },
+        });
+        return restaurar;
+      }
       if (dados.id) {
         const antes = await tx.numeroWhatsApp.findUnique({ where: { id: dados.id } });
-        if (!antes) throw new ErroRegra("Número não encontrado.");
+        if (!antes || antes.excluidoEm) throw new ErroRegra("Número não encontrado.");
+        if (dados.ativo !== undefined && dados.ativo !== antes.ativo) {
+          throw new ErroRegra("Use \"Desativar\" ou \"Ativar\" na lista de números.");
+        }
+        ativoFinal = antes.ativo;
         await tx.numeroWhatsApp.update({
           where: { id: dados.id },
           data: {
@@ -664,7 +695,6 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
             rotulo: dados.rotulo,
             finalidade: dados.finalidade,
             donoId: dados.donoId,
-            ativo: dados.ativo,
           },
         });
         // Edição preserva driver e providerRef do registro (número legado não vira MOTOR aqui).
@@ -692,7 +722,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
               finalidade: dados.finalidade,
               providerRef: antes.providerRef,
               donoId: dados.donoId,
-              ativo: dados.ativo,
+              ativo: antes.ativo,
             },
           },
         });
@@ -705,7 +735,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
           driver: dados.driver,
           finalidade: dados.finalidade,
           donoId: dados.donoId,
-          ativo: dados.ativo,
+          ativo: ativoFinal,
         },
       });
       // providerRef de número MOTOR = id (numeroId do motor).
@@ -721,7 +751,8 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
     });
 
     // Cadastro no motor fora da transação: motor fora do ar não desfaz o número (o conectar refaz).
-    if (driverEditado === "MOTOR") {
+    // Número inativo não volta ao motor (reativar faz o cadastro).
+    if (driverEditado === "MOTOR" && ativoFinal) {
       try {
         await garantirNumeroNoMotor({ providerRef: id, rotulo: dados.rotulo });
       } catch (e) {
@@ -731,7 +762,7 @@ export async function salvarNumeroWhatsApp(input: NumeroWhatsAppInput): Promise<
 
     // Linha comercial (SPEC-ERP-005 LC-15): conversas desta linha que estavam na triagem passam já
     // para a inbox do dono. O cron repete o backfill; falha aqui não desfaz o número salvo.
-    if (dados.finalidade === "VENDAS" && dados.ativo) {
+    if (dados.finalidade === "VENDAS" && ativoFinal) {
       try {
         await adotarMensagensOrfasDaLinha({ numeroId: id, limiteConversas: 500 });
       } catch (e) {
@@ -844,15 +875,7 @@ export async function desconectarNumero(numeroId: string): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const numero = await numeroMotorParaSessao(numeroId);
-    try {
-      await desconectarNumeroMotor({ id: numero.id, providerRef: numero.id });
-    } catch (e) {
-      if (e instanceof ErroMotor && e.codigo === "NUMERO_INEXISTENTE") {
-        // O motor nunca conheceu este número: nada a desligar lá.
-      } else {
-        throw new ErroRegra("Não foi possível desconectar no motor agora. Tente de novo em instantes.");
-      }
-    }
+    await desligarNoMotor(numero.id);
     await prisma.$transaction(async (tx) => {
       await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "DESCONECTADO" } });
       await registrarEvento(tx, {
@@ -864,6 +887,137 @@ export async function desconectarNumero(numeroId: string): Promise<Resultado> {
       });
     });
     revalidatePath("/configuracao/whatsapp", "layout");
+    return undefined;
+  });
+}
+
+/** Logout no motor; motor fora do ar recusa a ação (nada muda no ERP antes de a sessão cair lá). */
+async function desligarNoMotor(numeroId: string): Promise<void> {
+  try {
+    await desconectarNumeroMotor({ id: numeroId, providerRef: numeroId });
+  } catch (e) {
+    if (e instanceof ErroMotor && e.codigo === "NUMERO_INEXISTENTE") {
+      // O motor nunca conheceu este número: nada a desligar lá.
+    } else {
+      throw new ErroRegra("Não foi possível desconectar no motor agora. Tente de novo em instantes.");
+    }
+  }
+}
+
+/**
+ * Tira o número de operação: sessão do motor desligada (logout) antes de gravar, para não ficar um número
+ * inativo ainda recebendo e enviando. Número de outro driver só é marcado inativo.
+ */
+async function tirarDeOperacao(
+  tx: Prisma.TransactionClient,
+  numero: { id: string; driver: DriverWhatsApp; sessao: SessaoNumero },
+  autorId: string,
+  data: Prisma.NumeroWhatsAppUpdateInput,
+): Promise<void> {
+  await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { ...data, ativo: false, sessao: numero.driver === "MOTOR" ? "DESCONECTADO" : numero.sessao } });
+  if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") {
+    await registrarEvento(tx, {
+      tipo: "NumeroWhatsAppDesconectado",
+      agregadoTipo: "NumeroWhatsApp",
+      agregadoId: numero.id,
+      autorId,
+      payload: { de: numero.sessao },
+    });
+  }
+}
+
+/** Desativa: o número para de enviar e receber (logout no motor) e continua na lista para reativar. */
+export async function desativarNumeroWhatsApp(numeroId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
+    if (!numero || numero.excluidoEm) throw new ErroRegra("Número não encontrado.");
+    // Repetir é inofensivo: já inativo e sem sessão, não há o que fazer.
+    if (!numero.ativo && (numero.driver !== "MOTOR" || numero.sessao === "DESCONECTADO")) return undefined;
+    if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") await desligarNoMotor(numero.id);
+    await prisma.$transaction(async (tx) => {
+      await tirarDeOperacao(tx, numero, autor.id, {});
+      if (numero.ativo) {
+        await registrarEvento(tx, {
+          tipo: "NumeroWhatsAppDesativado",
+          agregadoTipo: "NumeroWhatsApp",
+          agregadoId: numero.id,
+          autorId: autor.id,
+          payload: { sessaoAntes: numero.sessao },
+        });
+      }
+    });
+    revalidatePath("/configuracao/whatsapp", "layout");
+    revalidatePath("/inbox");
+    return undefined;
+  });
+}
+
+/** Reativa: o número volta ao motor e precisa ser pareado de novo (Conectar). */
+export async function reativarNumeroWhatsApp(numeroId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
+    if (!numero || numero.excluidoEm) throw new ErroRegra("Número não encontrado.");
+    if (numero.ativo) return undefined;
+    await prisma.$transaction(async (tx) => {
+      await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { ativo: true } });
+      await registrarEvento(tx, {
+        tipo: "NumeroWhatsAppReativado",
+        agregadoTipo: "NumeroWhatsApp",
+        agregadoId: numero.id,
+        autorId: autor.id,
+        payload: {},
+      });
+    });
+    if (numero.driver === "MOTOR") {
+      try {
+        await garantirNumeroNoMotor({ providerRef: numero.id, rotulo: numero.rotulo });
+      } catch (e) {
+        console.error("[reativarNumeroWhatsApp] cadastro no motor fica para o conectar:", e);
+      }
+    }
+    revalidatePath("/configuracao/whatsapp", "layout");
+    revalidatePath("/inbox");
+    return undefined;
+  });
+}
+
+/**
+ * Exclui o número da configuração sem apagar dados: desativa (logout no motor) e marca `excluidoEm`. Ele some
+ * da tela de Números; conversas, mensagens e Eventos ficam. Recusa o número em uso pela política da régua ou
+ * pelos avisos da agenda (a tela deles apontaria para um número invisível). Repetir, pela mesma pessoa, é ok.
+ */
+export async function excluirNumeroWhatsApp(numeroId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
+    const numero = await prisma.numeroWhatsApp.findUnique({ where: { id: numeroId } });
+    if (!numero) throw new ErroRegra("Número não encontrado.");
+    if (numero.excluidoEm) {
+      const repetida = await prisma.$transaction((tx) =>
+        ultimoEventoDoAutor(tx, { tipo: "NumeroWhatsAppExcluido", agregadoTipo: "NumeroWhatsApp", agregadoId: numero.id, autorId: autor.id }));
+      if (repetida) return undefined;
+      throw new ErroRegra("Número não encontrado.");
+    }
+    const [politica, avisos] = await Promise.all([
+      prisma.politicaRegua.findFirst({ where: { numeroRemetenteId: numero.id }, select: { id: true } }),
+      prisma.configuracaoOperacional.findFirst({ where: { numeroAvisosAgendaId: numero.id }, select: { id: true } }),
+    ]);
+    if (politica) throw new ErroRegra("Este número é o remetente da política da régua. Troque o remetente antes de excluir.");
+    if (avisos) throw new ErroRegra("Este número envia os avisos da agenda. Escolha outro em \"Avisos da agenda\" antes de excluir.");
+    if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") await desligarNoMotor(numero.id);
+    await prisma.$transaction(async (tx) => {
+      await tirarDeOperacao(tx, numero, autor.id, { excluidoEm: new Date() });
+      await registrarEvento(tx, {
+        tipo: "NumeroWhatsAppExcluido",
+        agregadoTipo: "NumeroWhatsApp",
+        agregadoId: numero.id,
+        autorId: autor.id,
+        payload: { telefoneE164: numero.telefoneE164, rotulo: numero.rotulo, ativoAntes: numero.ativo, sessaoAntes: numero.sessao },
+      });
+    });
+    revalidatePath("/configuracao/whatsapp", "layout");
+    revalidatePath("/inbox");
     return undefined;
   });
 }
