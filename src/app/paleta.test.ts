@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { literaisDeString } from "@/test/literais-string";
 import config from "../../tailwind.config";
 
 // docs/18: só as shades mapeadas no tailwind.config.ts invertem no dark. O config usa `extend`,
@@ -15,6 +16,27 @@ const MAPA = new Map(
 const PADRAO_TAILWIND = new Set(
   "slate gray zinc neutral stone red orange amber yellow lime green emerald teal cyan sky blue indigo violet purple fuchsia pink rose".split(" "),
 );
+
+const CORES_SEM_TOM = new Set<string>([
+  "transparent", "current", "inherit", "black", "white",
+  ...Object.entries(cores).flatMap(([nome, v]) =>
+    typeof v === "string" ? [nome] : Object.keys(v).filter((chave) => !/^\d+$/.test(chave)).map((chave) => `${nome}-${chave}`)),
+]);
+const NAO_E_COR: Record<string, readonly string[]> = {
+  text: ["xs", "sm", "base", "lg", "xl", "left", "center", "right", "justify", "start", "end", "ellipsis", "clip", "wrap", "nowrap", "balance", "pretty"],
+  bg: ["fixed", "local", "scroll", "bottom", "center", "left", "right", "top", "repeat", "no-repeat", "repeat-x", "repeat-y", "repeat-round", "repeat-space", "auto", "cover", "contain", "none"],
+  border: ["t", "r", "b", "l", "x", "y", "s", "e", "solid", "dashed", "dotted", "double", "hidden", "none", "collapse", "separate"],
+  ring: ["inset", "offset"], outline: ["none", "dashed", "dotted", "double"], divide: ["x", "y", "solid", "dashed", "dotted", "double", "none"],
+  decoration: ["solid", "double", "dotted", "dashed", "wavy", "auto", "clone", "slice"], accent: ["auto"], fill: ["none"], stroke: ["none"],
+};
+const UTILITARIO_SEM_TOM =
+  /(?<![\w-])(?:[a-z0-9-]+:)*!?(bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+(?:-[a-z]+)*)(?:\/\d+)?(?![\w-])/g;
+
+function corSemToken(texto: string): string[] {
+  return [...texto.matchAll(UTILITARIO_SEM_TOM)]
+    .filter((m) => !CORES_SEM_TOM.has(m[2]) && !NAO_E_COR[m[1].split("-")[0]]?.includes(m[2]))
+    .map((m) => m[0]);
+}
 
 const UTILITARIO_COR =
   /(?<![\w-])(?:[a-z0-9-]+:)*!?(?:bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|placeholder|accent|caret|decoration)-([a-z]+)-(\d{2,3})(?:\/\d+)?(?![\w-])/g;
@@ -46,6 +68,20 @@ const fontes = RAIZES_UI.flatMap((raiz) =>
 );
 
 describe("paleta do design system", () => {
+  it("detecta cores sem tom não declaradas e aceita tokens e utilitários reais", () => {
+    expect(corSemToken('"rounded-full bg-brand px-1.5 text-on-brand"')).toEqual(["bg-brand"]);
+    expect(corSemToken('"text-brand hover:text-muted-foreground bg-muted/50 border-brand"'))
+      .toEqual(["text-brand", "hover:text-muted-foreground", "bg-muted/50", "border-brand"]);
+    expect(corSemToken('"bg-brand-solid text-on-brand bg-brand-bg bg-surface-raised border-border-soft divide-border-soft bg-ai-solid text-white bg-transparent border-current"')).toEqual([]);
+    expect(corSemToken('"text-sm text-left border-t border-dashed outline-none ring-inset bg-cover text-start text-2xl"')).toEqual([]);
+    expect(corSemToken('"text-brand-700 bg-gray-100"')).toEqual([]);
+  });
+
+  it("nenhum literal TypeScript de UI usa cor sem tom ausente do Tailwind", () => {
+    const ofensores = fontes.filter(({ arquivo }) => /\.tsx?$/.test(arquivo)).flatMap(({ arquivo, linhas }) =>
+      literaisDeString(linhas.join("\n")).flatMap(corSemToken).map((classe) => `${arquivo} ${classe}`));
+    expect(ofensores).toEqual([]);
+  });
   it("o detector pega cor fora do mapa, shade não mapeada, variantes, sombra e hex; e aceita o mapeado", () => {
     expect(violacoesDePaleta(`"bg-rose-500 dark:text-emerald-700 hover:border-gray-950 md:dark:ring-sky-300 !text-slate-400 text-brand-900 border-t-red-300"`))
       .toEqual(["bg-rose-500", "dark:text-emerald-700", "hover:border-gray-950", "md:dark:ring-sky-300", "!text-slate-400", "text-brand-900", "border-t-red-300"]);
