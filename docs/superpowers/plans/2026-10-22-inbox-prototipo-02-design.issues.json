@@ -68,7 +68,7 @@
       "inbox",
       "etapa-1",
       "ui",
-      "bloqueado-por-decisao"
+      "decisao-pendente"
     ],
     "body": "**Objetivo:** Criar a coluna com cabeçalho, seletor de número (todos os papéis, D17), filtros em popover, nova conversa em popover, busca com ⌘K, chips com contagem e slot `faixaAria`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-8`\n\n**Arquivos:**\n- `src/app/(app)/inbox/ColunaConversas.tsx`\n- `src/app/(app)/inbox/ChipsFiltro.tsx`\n- `src/app/(app)/inbox/SeletorNumero.tsx`\n- `src/app/(app)/inbox/PopoverFiltros.tsx`\n- `src/app/(app)/inbox/PopoverColuna.tsx`\n- `src/app/(app)/inbox/filtros-url.ts`\n- `src/components/BotaoIcone.tsx`\n- `src/app/(app)/inbox/NovoAtendimento.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 8; aceite visual de `filtros`, `seletor-numero`, `nova-conversa` e `celular-lista`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.3, E1.5, E1.7; D17 (padrão: todos os papéis).\n\nImplementa o padrão da coluna \"Padrão enquanto aberta\" do índice. Se a decisão vier diferente, a task é revista no mesmo PR que atualiza a tabela."
   },
@@ -87,7 +87,7 @@
       "inbox",
       "etapa-1",
       "ui",
-      "bloqueado-por-decisao"
+      "decisao-pendente"
     ],
     "body": "**Objetivo:** Cabeçalho de 68 px com Buscar, Transferir, Assumir, Painel e ⋮; as ações atuais vão para o `MenuConversa`, sem status manual (D7), com Bloquear desabilitado (D15) e não lida pessoal (D16).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-10`\n\n**Arquivos:**\n- `src/app/(app)/inbox/CabecalhoConversa.tsx`\n- `src/app/(app)/inbox/MenuConversa.tsx`\n- `src/app/(app)/inbox/AcoesAtendimento.tsx`\n- `src/components/Menu.tsx`\n- `src/components/Botao.tsx`\n- `src/app/botoes-mapa.ts`\n\n**Critérios de aceite:**\n- Testes da Task 10; aceite visual de `menu-mais` e `celular-conversa`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.3, E1.4, E1.8; D7, D15, D16 (padrões).\n\nImplementa o padrão da coluna \"Padrão enquanto aberta\" do índice. Se a decisão vier diferente, a task é revista no mesmo PR que atualiza a tabela."
   },
@@ -97,7 +97,7 @@
       "inbox",
       "etapa-1",
       "ui",
-      "bloqueado-por-decisao"
+      "decisao-pendente"
     ],
     "body": "**Objetivo:** Barra de busca nas mensagens carregadas, sem acento e sem caixa, com navegação, destaque no balão e ⌘F dentro da conversa (D19).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-11`\n\n**Arquivos:**\n- `src/app/(app)/inbox/busca-conversa.ts`\n- `src/app/(app)/inbox/BuscaConversa.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 11; aceite visual de `busca-conversa`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.9, E1.10; D19 (padrão: entra na E1).\n\nImplementa o padrão da coluna \"Padrão enquanto aberta\" do índice. Se a decisão vier diferente, a task é revista no mesmo PR que atualiza a tabela."
   },
