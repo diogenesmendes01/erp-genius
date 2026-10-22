@@ -6,9 +6,27 @@ import {
   ESTADOS, TAMANHOS, TEMAS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo,
 } from "../../scripts/visual/nucleo-captura.mjs";
 import { exigirBancoDescartavel } from "../../scripts/visual/demo-inbox";
-import { autenticarApp, esperarConteudoApp } from "../../scripts/visual/espera-app.mjs";
+import { autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "../../scripts/visual/espera-app.mjs";
 
 describe("harness visual do Inbox", () => {
+  it("conteúdo SSR não libera a foto antes da assinatura SSE confirmar hidratação", async () => {
+    let liberar!: () => void;
+    const hidratada = new Promise<void>((resolve) => { liberar = resolve; });
+    const waitFor = vi.fn(() => hidratada);
+    const locator = vi.fn(() => ({ waitFor }));
+    let terminou = false;
+    const espera = esperarHidratacaoApp({ locator } as unknown as Parameters<typeof esperarHidratacaoApp>[0]).then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    expect(locator).toHaveBeenCalledWith('[data-conectado="1"]');
+    liberar();
+    await espera;
+    expect(terminou).toBe(true);
+  });
+  it("falha de prontidão da hidratação reprova a captura em vez de ser ignorada", async () => {
+    const pagina = { locator: () => ({ waitFor: async () => { throw new Error("Inbox não hidratou/conectou"); } }) };
+    await expect(esperarHidratacaoApp(pagina as unknown as Parameters<typeof esperarHidratacaoApp>[0])).rejects.toThrow("Inbox não hidratou/conectou");
+  });
   it("CLI documenta as opções sem abrir browser nem banco", () => {
     const r = spawnSync(process.execPath, ["scripts/visual/capturar-inbox.mjs", "--help"], { cwd: process.cwd(), encoding: "utf8" });
     expect(r.status).toBe(0);
