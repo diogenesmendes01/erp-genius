@@ -2,7 +2,7 @@
 
 ## Estado
 
-Implementação, medição e gates DEV concluídos; revisão TESTER, homologação e regressão global integrada pelo integrador pendentes. Branch `codex/inbox-e0-304`, origem obrigatória #299 `729a0fe7faeb7ea918fa0223c58912ff45ef4a37`, reaplicada na base E0 `797994aaab6f53017b72a808cf0de92abf827ac5`. #305 preservada em branch separada. SPEC: `docs/specs/inbox-rolagem-pagina.md`.
+Implementação, gates DEV, revisão independente, aceite visual e regressão integrada concluídos; PR em publicação. Branch `codex/inbox-e0-304`, origem #299 `729a0fe7`, reaplicada na base E0 `797994aa`. Fonte revisada98c76bd4, DEVheadc0b1dd2b. Fechamento e evidências em `output/inbox-304-visual/ACEITE-TESTER.md`; notas abaixo preservam o histórico anterior ao aceite. SPEC: `docs/specs/inbox-rolagem-pagina.md`. Sem merge/deploy.
 
 ## Entrega
 

@@ -4674,7 +4674,9 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 ### Inbox E0.7 — #304: página sem rolagem dupla — 2026-10-22
 
-**Estado: implementação e gates DEV concluídos; TESTER/homologação e global integrado pendentes.** Branch `codex/inbox-e0-304`, origem #299 `729a0fe7`, reaplicada na baseE0 `797994aa`. Fonte revisável `98c76bd4`. SPEC `docs/specs/inbox-rolagem-pagina.md`; relatório `output/inbox-304-report.md`.
+**Estado: implementação e validação concluídas; PR em publicação.** Branch `codex/inbox-e0-304`, baseE0 `797994aa`, fonte98c76bd4. SPEC `docs/specs/inbox-rolagem-pagina.md`; relatório `output/inbox-304-report.md`.
+
+- Fechamento: TESTER47165 exit0,20estados/40PNGs depois sem rolagem externa/controles inacessíveis/pageerror; baseline20/20 rolavam. Antes/depois, tentativas do harness e parecer em `output/inbox-304-visual/`. Full combinado7657c528:845arquivos6526testes99285 exit0; TSC40124 exit0; lint5709 exit0/40avisos. Integrações dirigidas26+13testes87157/56869 exit0, sem ignorados. Warning React preexistente em10estados selecionados tratado em corretiva técnica separada. Etapas abaixo são históricas; sem merge/deploy.
 
 - Página limitada à área real do main (barra57px abaixo de sm,53px entre sm e md); Inbox ocupa o restante com flex/min-h-0. Formulário, filtros e ações da conversa têm rolagem interna nas telas baixas, preservando controles e thread. Contexto relativo contém avisos acessíveis absolutos no cabeçalho/painel.
 - TDD RED2/25 e GREEN25/25; pós-rebase fonte98c76bd4: recorte22arquivos/272testes (sessão97122), TSC heap8192 com tiposNext presentes (37381) e lint global sem filtros0erros/40avisos (93477), todos saída0 Node22.23.2. Full histórico em5d44:840arquivos/6480testes saída0 (95297); não atribuído à nova base. TSC inicial falhou por export extra preexistente de rota, corrigido separadamente pelo integrador. Global final301+304 será executado pelo integrador.
