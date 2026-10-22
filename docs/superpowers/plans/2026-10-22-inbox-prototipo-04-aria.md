@@ -1706,7 +1706,7 @@ Objetivo: cartão na thread com título, motivo, texto proposto, ações, aviso 
 Plano: `…#task-9`
 Arquivos: `aria/sugestao-visual.ts`, `aria/intercalar.ts`, `aria/CartaoSugestaoAria.tsx`, `ConversaAberta.tsx`.
 Aceite: `sugestao-visual.test.ts`, `intercalar.test.ts`, `CartaoSugestaoAria.test.ts` (inclui `aprovar_sugestao_expirada_mostra_erro`) e aceite visual.
-Depende de: E1 (thread), E3.8.
+Depende de: E1 (thread), E2 (fio, `ItemFio`) se já mergeada, E3.8.
 
 **[Inbox E3.10] Resumo do handoff no servidor**
 Labels: `inbox`, `etapa-3`, `aria`
