@@ -9,6 +9,13 @@ const roboto = localFont({
   display: "swap",
 });
 
+// Inbox (docs/18): mono local para números e horas; consumidores escolhem 400 ou 500.
+const mono = localFont({
+  src: [{ path: "./fonts/jetbrains-mono-latin-wght.woff2", weight: "400 500", style: "normal" }],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   // Cada tela pode dar o próprio título (ex.: "M-000123 · Ana Silva · ERP Genius"); sem título, fica "ERP Genius".
   title: { default: "ERP Genius", template: "%s · ERP Genius" },
@@ -20,7 +27,7 @@ const temaScript = `(function(){try{var t=localStorage.getItem('tema');if(t==='d
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={roboto.variable} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${roboto.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: temaScript }} />
       </head>

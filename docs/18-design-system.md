@@ -5,7 +5,9 @@
 
 ## Princípios
 - **Flat & minimalista:** superfícies, bordas finas, cantos arredondados (8–12px). **Sem
-  sombras, sem gradientes.**
+  sombras, sem gradientes.** Exceção estreita: o fundo da conversa do Inbox pode usar
+  `radial-gradient` somente para pontos de 1 px repetidos a cada 18 px, via `fundo-conversa` e
+  `--chat-dot`. Isso não libera gradientes em superfícies, botões ou componentes em geral.
 - **Tokens primeiro:** cor vem de variável CSS (nunca hex solto no componente). Definidas em
   [`globals.css`](../src/app/globals.css) e referenciadas via Tailwind ([`tailwind.config.ts`](../tailwind.config.ts)).
 - **Sentence case sempre:** nada de Title Case nem CAIXA ALTA (inclusive sem `uppercase` no CSS).
@@ -19,6 +21,17 @@
   600 (`font-bold` evitado; use `font-semibold`). Elementos que o navegador deixa em negrito por padrão
   (`h1`–`h6`, `dt`, `b`, `strong`, `th`) são levados a 600 em `globals.css`.
   `src/app/tipografia.test.ts` confere a fonte, o hash e falha se um peso maior voltar ao código.
+
+- Fonte mono: **JetBrains Mono 5.3.0**, variável local registrada apenas nos pesos **400–500**,
+  `font-display: swap`, em `src/app/fonts/jetbrains-mono-latin-wght.woff2`, com
+  `LICENSE-JetBrainsMono.txt` (SIL Open Font License 1.1). SHA256:
+  `18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e`.
+  O integrador entregou o asset e a licença; não há fonte ou runtime de CDN. A variável
+  `--font-mono` alimenta `font-mono` com fallback `ui-monospace`, `SFMono-Regular`, `Menlo`, `monospace`.
+  Horas, contagens e telefones usam `font-mono tabular-nums` nas tasks consumidoras do Inbox;
+  Roboto permanece a fonte do texto. Registrar 600 para mono não faz parte desta entrega:
+  contadores futuros com `font-semibold` precisam resolver o peso na sua própria task.
+  A mudança também alcança os usos existentes de `font-mono` em códigos, hashes e templates.
 
 ## Cantos & bordas
 - Raios: `rounded-md` = 8px (campo, cartão pequeno) · `rounded-item` = 10px (item de lista) · `rounded-lg`/`rounded-xl` = 12px (painel) · `rounded-dialog` = 14px · `rounded-full` (botão, chip, avatar).
@@ -137,6 +150,36 @@ estão no quadro de semânticos acima e no de marca e ações sólidas abaixo.
 >
 > **Hover do primário** (`hover:brightness-95`, `src/components/Botao.tsx`) escurece o fundo só enquanto o
 > ponteiro está em cima; a conta de 3:1 vale para o estado em repouso, que é o que mostra a seleção.
+
+## Tokens — Inbox
+
+| Token | Claro | Escuro | Uso |
+|---|---|---|---|
+| `--avatar-1` | `#007c9b` | herda | iniciais brancas |
+| `--avatar-2` | `#a5524d` | herda | iniciais brancas |
+| `--avatar-3` | `#0f825e` | herda | iniciais brancas |
+| `--avatar-4` | `#6e62aa` | herda | iniciais brancas |
+| `--avatar-5` | `#93640c` | herda | iniciais brancas |
+| `--avatar-6` | `#985383` | herda | iniciais brancas |
+| `--avatar-7` | `#677823` | herda | iniciais brancas |
+| `--avatar-8` | `#008188` | herda | iniciais brancas |
+| `--bubble-ia` | `#efebfa` | `#2b2a37` | balão da Aria |
+| `--bubble-note` | `#fff7e5` | `#3a3020` | nota interna |
+| `--chat-dot` | `rgba(0, 0, 0, 0.035)` | `rgba(255, 255, 255, 0.035)` | pontos sobre `--bg-page` |
+
+Os avatares adaptam `oklch(0.58 0.11 h)` do protótipo para L 0,54 (h = 220,25,165,290,75,340,120,200),
+congelando os hex acima para o parser de contraste. O branco passa em todos (mínimo 4,67:1);
+L 0,58 reprova tons do protótipo. O mapa `TEXTO_SOBRE_SOLIDO` e seu autoteste impedem a regressão.
+As classes são `bg-avatar-1`…`bg-avatar-8`, `bg-bubble-ia` e `bg-bubble-note`.
+
+Texto primário/secundário sobre os quatro fundos de balão e autores IA/nota passam 4,5:1 nos dois temas.
+O autor humano no balão verde deve usar `text-brand-800` (`--brand-strong`): no escuro,
+`text-brand-700` (`--brand-text`) fica em 4,09:1 sobre `--entry-accent`, abaixo do mínimo.
+
+`fundo-conversa` usa fundo `--bg-page`, `radial-gradient(var(--chat-dot) 1px, transparent 1px)` e
+`background-size: 18px 18px`. É apenas o padrão pontilhado autorizado acima. Tailwind gera os
+utilitários quando há consumidores; a trava compila uma amostra explícita para provar que todas
+as classes novas têm CSS, sem presumir emissão só por existir uma chave no config.
 
 ## Tokens — Sombras
 `--shadow-popover` (`0 5px 20px #0002` / `0 6px 24px #0006`) e `--shadow-dialog` (`0 15px 60px #0006`, igual nos

@@ -4689,3 +4689,13 @@ Implementação e verificação local concluídas; revisão independente e publi
 - TDD RED2/25 e GREEN25/25; pós-rebase fonte98c76bd4: recorte22arquivos/272testes (sessão97122), TSC heap8192 com tiposNext presentes (37381) e lint global sem filtros0erros/40avisos (93477), todos saída0 Node22.23.2. Full histórico em5d44:840arquivos/6480testes saída0 (95297); não atribuído à nova base. TSC inicial falhou por export extra preexistente de rota, corrigido separadamente pelo integrador. Global final301+304 será executado pelo integrador.
 - Aplicativo real:24cenários antes +24depois, seis tamanhos (1440×900,1024×768,390×844,700×768,390×500,1440×500), dois temas, com/sem seleção e formulário aberto. Medição final sessão99646 saída0: documento igual à viewport, zero pageerror, controles alcançáveis e prova geométrica de scroll interno. Capturas/métricas e limites em `output/inbox-304-visual/`.
 - Sem alteração de pacote, lock, schema, servidor/SSE ou permissão; nenhum envio externo. TESTER/homologação e integração/publicação pendentes; não marca E0 concluída.
+
+### Inbox E1: design da tela — 2026-10-22
+
+#### E1.1 — #306: tokens, fonte mono e travas
+
+**Estado: implementação e recortes DEV concluídos; globals, TESTER e aceite visual pendentes.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
+
+- Tokens de avatar/balão/pontos, utilitário de fundo e fonte mono local 400–500; Roboto e travas anteriores preservadas. Fonte/licença entregues pelo integrador no commit3eb87ea6, hash conferido; sem pacote/lock/schema/CDN.
+- TDD RED 9 falhas/33 aprovados; GREEN 5 arquivos/53 testes e lint dirigido sem avisos, saídas 0 Node 22.23.2. CSS compilado com amostra explícita; contraste positivo e autoteste de avatar reprovado.
+- Aceite visual depende do harness #307:app×protótipo nos3 tamanhos/2 temas, document.fonts.load+amostra mono e regressão de usos mono fora Inbox. Mono 600 futuro pertence às tasks consumidoras. Nenhum envio/integração externa, nenhuma homologação presumida.
