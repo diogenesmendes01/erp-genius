@@ -30,6 +30,15 @@ describe("InboxPage", () => {
     sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo");
   });
 
+  it("a página é uma coluna limitada e entrega o restante ao InboxNovo", async () => {
+    mocks.preferencia.mockResolvedValue({ ok: false });
+    const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    const raiz = h.match(/^<div class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(raiz).toEqual(expect.arrayContaining(["flex", "flex-col", "min-h-0"]));
+    const caixa = h.match(/<div class="([^"]*)">inbox:/)?.[1].split(" ") ?? [];
+    expect(caixa).toEqual(expect.arrayContaining(["flex", "flex-col", "min-h-0", "flex-1"]));
+  });
+
   it("inbox_mostra_o_sino", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
     sino.listar.mockResolvedValue([{ id: "n1", titulo: "Prazo estourado: Maria (Comercial)" }]);

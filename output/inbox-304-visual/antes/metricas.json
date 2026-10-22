@@ -1,0 +1,2458 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 900,
+    "documentHeight": 1045,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 1045,
+      "width": 1216,
+      "height": 1045,
+      "clientHeight": 1045,
+      "scrollHeight": 1045,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 981,
+      "clientHeight": 981,
+      "scrollHeight": 981,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 772,
+      "clientHeight": 770,
+      "scrollHeight": 770,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 1012,
+      "width": 359,
+      "height": 600,
+      "clientHeight": 600,
+      "scrollHeight": 600,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 242,
+      "bottom": 1012,
+      "width": 470,
+      "height": 770,
+      "clientHeight": 770,
+      "scrollHeight": 770,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 600
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 770
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 900,
+    "documentHeight": 1045,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 1045,
+      "width": 1216,
+      "height": 1045,
+      "clientHeight": 1045,
+      "scrollHeight": 1045,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 981,
+      "clientHeight": 981,
+      "scrollHeight": 981,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 772,
+      "clientHeight": 770,
+      "scrollHeight": 770,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 1012,
+      "width": 359,
+      "height": 600,
+      "clientHeight": 600,
+      "scrollHeight": 600,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 449,
+      "bottom": 967,
+      "width": 470,
+      "height": 518,
+      "clientHeight": 518,
+      "scrollHeight": 518,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 600
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 518
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 900,
+    "documentHeight": 1045,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 1045,
+      "width": 1216,
+      "height": 1045,
+      "clientHeight": 1045,
+      "scrollHeight": 1045,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 981,
+      "clientHeight": 981,
+      "scrollHeight": 981,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 772,
+      "clientHeight": 770,
+      "scrollHeight": 770,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 1012,
+      "width": 359,
+      "height": 600,
+      "clientHeight": 600,
+      "scrollHeight": 600,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 242,
+      "bottom": 1012,
+      "width": 470,
+      "height": 770,
+      "clientHeight": 770,
+      "scrollHeight": 770,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 600
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 770
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 900,
+    "documentHeight": 1045,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 1045,
+      "width": 1216,
+      "height": 1045,
+      "clientHeight": 1045,
+      "scrollHeight": 1045,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 981,
+      "clientHeight": 981,
+      "scrollHeight": 981,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 1013,
+      "width": 1152,
+      "height": 772,
+      "clientHeight": 770,
+      "scrollHeight": 770,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 1012,
+      "width": 359,
+      "height": 600,
+      "clientHeight": 600,
+      "scrollHeight": 600,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 449,
+      "bottom": 955,
+      "width": 470,
+      "height": 506,
+      "clientHeight": 506,
+      "scrollHeight": 506,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 600
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 506
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 933,
+    "documentWidth": 1024,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 933,
+      "width": 800,
+      "height": 933,
+      "clientHeight": 933,
+      "scrollHeight": 933,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 901,
+      "width": 736,
+      "height": 869,
+      "clientHeight": 869,
+      "scrollHeight": 869,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 901,
+      "width": 736,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 900,
+      "width": 319,
+      "height": 468,
+      "clientHeight": 468,
+      "scrollHeight": 468,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 262,
+      "bottom": 900,
+      "width": 414,
+      "height": 638,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 468
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 638
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 933,
+    "documentWidth": 1024,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 933,
+      "width": 800,
+      "height": 933,
+      "clientHeight": 933,
+      "scrollHeight": 933,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 901,
+      "width": 736,
+      "height": 869,
+      "clientHeight": 869,
+      "scrollHeight": 869,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 901,
+      "width": 736,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 900,
+      "width": 319,
+      "height": 468,
+      "clientHeight": 468,
+      "scrollHeight": 468,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 503,
+      "bottom": 843,
+      "width": 414,
+      "height": 340,
+      "clientHeight": 340,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 468
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 340
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 933,
+    "documentWidth": 1024,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 933,
+      "width": 800,
+      "height": 933,
+      "clientHeight": 933,
+      "scrollHeight": 933,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 901,
+      "width": 736,
+      "height": 869,
+      "clientHeight": 869,
+      "scrollHeight": 869,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 901,
+      "width": 736,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 900,
+      "width": 319,
+      "height": 468,
+      "clientHeight": 468,
+      "scrollHeight": 468,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 262,
+      "bottom": 900,
+      "width": 414,
+      "height": 638,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 468
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 638
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 933,
+    "documentWidth": 1024,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 933,
+      "width": 800,
+      "height": 933,
+      "clientHeight": 933,
+      "scrollHeight": 933,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 901,
+      "width": 736,
+      "height": 869,
+      "clientHeight": 869,
+      "scrollHeight": 869,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 901,
+      "width": 736,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 900,
+      "width": 319,
+      "height": 468,
+      "clientHeight": 468,
+      "scrollHeight": 468,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 503,
+      "bottom": 843,
+      "width": 414,
+      "height": 340,
+      "clientHeight": 340,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 468
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 340
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 844,
+    "documentHeight": 1221,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 1221,
+      "width": 390,
+      "height": 1164,
+      "clientHeight": 1164,
+      "scrollHeight": 1164,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 1205,
+      "width": 358,
+      "height": 1132,
+      "clientHeight": 1132,
+      "scrollHeight": 1132,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 1205,
+      "width": 358,
+      "height": 716,
+      "clientHeight": 714,
+      "scrollHeight": 714,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 805,
+      "bottom": 1204,
+      "width": 355,
+      "height": 399,
+      "clientHeight": 399,
+      "scrollHeight": 399,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 399
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 844,
+    "documentHeight": 1221,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 1221,
+      "width": 390,
+      "height": 1164,
+      "clientHeight": 1164,
+      "scrollHeight": 1164,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 1205,
+      "width": 358,
+      "height": 1132,
+      "clientHeight": 1132,
+      "scrollHeight": 1132,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 1205,
+      "width": 358,
+      "height": 716,
+      "clientHeight": 714,
+      "scrollHeight": 714,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 819,
+      "bottom": 1147,
+      "width": 356,
+      "height": 328,
+      "clientHeight": 328,
+      "scrollHeight": 328,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 328
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 844,
+    "documentHeight": 1221,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 1221,
+      "width": 390,
+      "height": 1164,
+      "clientHeight": 1164,
+      "scrollHeight": 1164,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 1205,
+      "width": 358,
+      "height": 1132,
+      "clientHeight": 1132,
+      "scrollHeight": 1132,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 1205,
+      "width": 358,
+      "height": 716,
+      "clientHeight": 714,
+      "scrollHeight": 714,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 805,
+      "bottom": 1204,
+      "width": 355,
+      "height": 399,
+      "clientHeight": 399,
+      "scrollHeight": 399,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 399
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 844,
+    "documentHeight": 1221,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 1221,
+      "width": 390,
+      "height": 1164,
+      "clientHeight": 1164,
+      "scrollHeight": 1164,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 1205,
+      "width": 358,
+      "height": 1132,
+      "clientHeight": 1132,
+      "scrollHeight": 1132,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 1205,
+      "width": 358,
+      "height": 716,
+      "clientHeight": 714,
+      "scrollHeight": 714,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 819,
+      "bottom": 1147,
+      "width": 356,
+      "height": 328,
+      "clientHeight": 328,
+      "scrollHeight": 328,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 328
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 961,
+    "documentWidth": 700,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 53,
+      "bottom": 961,
+      "width": 700,
+      "height": 908,
+      "clientHeight": 908,
+      "scrollHeight": 908,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 945,
+      "width": 668,
+      "height": 876,
+      "clientHeight": 876,
+      "scrollHeight": 876,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 945,
+      "width": 668,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 944,
+      "width": 319,
+      "height": 447,
+      "clientHeight": 447,
+      "scrollHeight": 447,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 306,
+      "bottom": 944,
+      "width": 346,
+      "height": 638,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 447
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 638
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 961,
+    "documentWidth": 700,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 53,
+      "bottom": 961,
+      "width": 700,
+      "height": 908,
+      "clientHeight": 908,
+      "scrollHeight": 908,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 945,
+      "width": 668,
+      "height": 876,
+      "clientHeight": 876,
+      "scrollHeight": 876,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 945,
+      "width": 668,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 944,
+      "width": 319,
+      "height": 447,
+      "clientHeight": 447,
+      "scrollHeight": 447,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 563,
+      "bottom": 887,
+      "width": 346,
+      "height": 324,
+      "clientHeight": 324,
+      "scrollHeight": 324,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 447
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 324
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 961,
+    "documentWidth": 700,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 53,
+      "bottom": 961,
+      "width": 700,
+      "height": 908,
+      "clientHeight": 908,
+      "scrollHeight": 908,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 945,
+      "width": 668,
+      "height": 876,
+      "clientHeight": 876,
+      "scrollHeight": 876,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 945,
+      "width": 668,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 944,
+      "width": 319,
+      "height": 447,
+      "clientHeight": 447,
+      "scrollHeight": 447,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 306,
+      "bottom": 944,
+      "width": 346,
+      "height": 638,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 447
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 638
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 768,
+    "documentHeight": 961,
+    "documentWidth": 700,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 53,
+      "bottom": 961,
+      "width": 700,
+      "height": 908,
+      "clientHeight": 908,
+      "scrollHeight": 908,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 945,
+      "width": 668,
+      "height": 876,
+      "clientHeight": 876,
+      "scrollHeight": 876,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 945,
+      "width": 668,
+      "height": 640,
+      "clientHeight": 638,
+      "scrollHeight": 638,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 944,
+      "width": 319,
+      "height": 447,
+      "clientHeight": 447,
+      "scrollHeight": 447,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 563,
+      "bottom": 887,
+      "width": 346,
+      "height": 324,
+      "clientHeight": 324,
+      "scrollHeight": 324,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 447
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 324
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 925,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 925,
+      "width": 390,
+      "height": 868,
+      "clientHeight": 868,
+      "scrollHeight": 868,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 909,
+      "width": 358,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 909,
+      "width": 358,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 805,
+      "bottom": 908,
+      "width": 355,
+      "height": 103,
+      "clientHeight": 103,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 103
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 925,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 925,
+      "width": 390,
+      "height": 868,
+      "clientHeight": 868,
+      "scrollHeight": 868,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 909,
+      "width": 358,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 909,
+      "width": 358,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 819,
+      "bottom": 851,
+      "width": 356,
+      "height": 32,
+      "clientHeight": 32,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 32
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 925,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 925,
+      "width": 390,
+      "height": 868,
+      "clientHeight": 868,
+      "scrollHeight": 868,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 909,
+      "width": 358,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 909,
+      "width": 358,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 805,
+      "bottom": 908,
+      "width": 355,
+      "height": 103,
+      "clientHeight": 103,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 103
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 925,
+    "documentWidth": 390,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 57,
+      "bottom": 925,
+      "width": 390,
+      "height": 868,
+      "clientHeight": 868,
+      "scrollHeight": 868,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 909,
+      "width": 358,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 489,
+      "bottom": 909,
+      "width": 358,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 819,
+      "bottom": 851,
+      "width": 356,
+      "height": 32,
+      "clientHeight": 32,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 32
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 693,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 693,
+      "width": 1216,
+      "height": 693,
+      "clientHeight": 693,
+      "scrollHeight": 693,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 661,
+      "width": 1152,
+      "height": 629,
+      "clientHeight": 629,
+      "scrollHeight": 629,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 661,
+      "width": 1152,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 660,
+      "width": 359,
+      "height": 248,
+      "clientHeight": 248,
+      "scrollHeight": 248,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 242,
+      "bottom": 660,
+      "width": 470,
+      "height": 418,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 248
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 418
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 693,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 693,
+      "width": 1216,
+      "height": 693,
+      "clientHeight": 693,
+      "scrollHeight": 693,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 661,
+      "width": 1152,
+      "height": 629,
+      "clientHeight": 629,
+      "scrollHeight": 629,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 661,
+      "width": 1152,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 660,
+      "width": 359,
+      "height": 248,
+      "clientHeight": 248,
+      "scrollHeight": 248,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 449,
+      "bottom": 603,
+      "width": 470,
+      "height": 154,
+      "clientHeight": 154,
+      "scrollHeight": 212,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 248
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 154
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 693,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 693,
+      "width": 1216,
+      "height": 693,
+      "clientHeight": 693,
+      "scrollHeight": 693,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 661,
+      "width": 1152,
+      "height": 629,
+      "clientHeight": 629,
+      "scrollHeight": 629,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 661,
+      "width": 1152,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 660,
+      "width": 359,
+      "height": 248,
+      "clientHeight": 248,
+      "scrollHeight": 248,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 242,
+      "bottom": 660,
+      "width": 470,
+      "height": 418,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 248
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 418
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "innerHeight": 500,
+    "documentHeight": 693,
+    "documentWidth": 1440,
+    "semRolagemExterna": false,
+    "main": {
+      "top": 0,
+      "bottom": 693,
+      "width": 1216,
+      "height": 693,
+      "clientHeight": 693,
+      "scrollHeight": 693,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 661,
+      "width": 1152,
+      "height": 629,
+      "clientHeight": 629,
+      "scrollHeight": 629,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 661,
+      "width": 1152,
+      "height": 420,
+      "clientHeight": 418,
+      "scrollHeight": 418,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 660,
+      "width": 359,
+      "height": 248,
+      "clientHeight": 248,
+      "scrollHeight": 248,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 449,
+      "bottom": 603,
+      "width": 470,
+      "height": 154,
+      "clientHeight": 154,
+      "scrollHeight": 212,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 248
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 154
+      }
+    ],
+    "erros": []
+  }
+]
