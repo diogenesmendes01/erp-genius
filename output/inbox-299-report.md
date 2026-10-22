@@ -1,6 +1,6 @@
 # Relatório DEV B — #299
 
-Estado em 22/10/2026: implementação preparada para re-review, com gates finais pendentes. Branch `codex/inbox-e0-299`, base inicial `7e4810e5e6c4f25a00497fe743e0ea4abfb0c6ee`; revisão inicial no antigo commit `201f0a9daaeb23c5447a6f351729298fb3db60f2`. A branch agora está sobre o baseline Windows aprovado `3dbd3df803ef840bf2190cec9d4fc98d4a05a755` (PR #380); o SHA corrente é a ponta da branch.
+Estado em 22/10/2026: implementação em revisão, com aceite visual e homologação pendentes. Branch `codex/inbox-e0-299`, base inicial `7e4810e5e6c4f25a00497fe743e0ea4abfb0c6ee`; revisão inicial no antigo commit `201f0a9daaeb23c5447a6f351729298fb3db60f2`. A branch está empilhada sobre a #298 publicada no PR #381, HEAD `1ce8e5820094e988a56da4868aedb037fdbd22df`, que incorpora o baseline Windows `3dbd3df803ef840bf2190cec9d4fc98d4a05a755` (PR #380). O SHA corrente é a ponta da branch.
 
 ## Alterações
 
@@ -12,6 +12,14 @@ Estado em 22/10/2026: implementação preparada para re-review, com gates finais
 - SPEC em `docs/specs/inbox-leitura-automatica.md` e evidências no quadro único.
 
 ## Evidências executadas
+
+- **Base publicada do PR #381:** rebase dos quatro commits #299 de `ed50a770` para `1ce8e582` sem conflito, mantendo a seção final da #298 no quadro. `git diff --name-only ed50a770..1ce8e582 -- src output/inbox-298-visual/capturar.mjs` vazio: só documentação, PNGs e JSON de QA mudaram na base. O diff do PR #299 permanece restrito à issue. Os gates globais abaixo foram medidos no SHA com a mesma fonte/testes/harness; não os atribuo a uma execução nova em `1ce8e582`. Aceite visual e homologação da #299 ainda pendentes.
+
+- **Gates globais sobre a #298 congelada `ed50a770`:** quatro commits #299 rebaseados sem conflito; diff contra a base contém só #299, `git diff --check` saída 0. TSC com heap 8192 saída **0**. Vitest completo sem filtro, `--maxWorkers=2`: **840 arquivos / 6.478 testes**, nenhum ignorado, `session_id 64403` acompanhado até saída **0** (17:42:57–17:45:50). ESLint global `eslint . --max-warnings 40`, incluindo harness MJS: **0 erros / 40 avisos**, `session_id 34109` acompanhado até saída **0**. A mudança da base `815d863d` para `ed50a770` tocou apenas harness de captura, métricas e documentação. Integração #299 13/13 foi executada na base imediatamente anterior. Aceite visual e homologação seguem pendentes.
+
+- **Após rebase sobre a base final #298 `815d863d`:** quatro commits #299 aplicados sem conflito; diff contra a base contém só #299 e as entradas de ambos os DEVs no quadro foram preservadas. TSC global com heap 8192, saída 0 (17:40:05). Unitário direcionado #299 **4 arquivos / 36 testes**, saída 0, nenhum ignorado (17:40:05). Detector de botões herdado da #298 **1 arquivo / 64 testes**, saída 0, nenhum ignorado (17:40:06). Integração direcionada #299 **2 arquivos / 13 testes**, saída 0, nenhum ignorado no `dev-gravacoes`, `session_id 11998` acompanhado até código final 0 (17:40:19–17:41:03). A suíte Vitest e o ESLint globais abaixo foram executados na base imediatamente anterior `8f26101e`; a atualização posterior da #298 tocou teste do detector, documentação e capturas, sem UI de produção. Re-review do SHA final, visual e decisão do integrador pendentes.
+
+- **Gates globais na base provisória #298 `8f26101e`:** TSC com heap 8192 revelou dois TS2493 em mock criado pela #299 (`session_id 55940`, saída 1); a assinatura do mock foi tipada sem alterar comportamento, e TSC repetido deu saída 0. Vitest completo sem filtro, `--maxWorkers=2`: **840 arquivos / 6.457 testes**, saída 0, nenhum ignorado, `session_id 43465` observado até o fim (17:33:56–17:36:49). ESLint global inicial teve 42 avisos (2 no mock), saída 1, `session_id 36513`; após remover os dois, `eslint . --max-warnings 40` terminou com **0 erros / 40 avisos**, saída 0, `session_id 6467` observado até o fim. Teste afetado 2/2 e ESLint do arquivo sem avisos, saídas 0. A base #298 terá ajuste posterior; repetir gates relevantes depois do rebase final.
 
 - **P2 residual do re-review R1 (`91e554d0`):** RED determinístico: GET anterior à `mensagem.nova` devolveu 0 após falha da leitura e da reconciliação, quando a última contagem conhecida era 1. GREEN cobre também GET fresco válido que atualiza para 2. Unitário direcionado **4 arquivos / 36 testes**, saída 0, nenhum ignorado (17:26:54); integração direcionada **2 arquivos / 13 testes**, saída 0, nenhum ignorado no `dev-gravacoes`, `session_id 23506` até código final 0 (17:27:03–17:27:56); ESLint dos dois arquivos TypeScript tocados, saída 0. Novo re-review ainda pendente.
 
@@ -28,7 +36,7 @@ Estado em 22/10/2026: implementação preparada para re-review, com gates finais
 
 ## Pendências explícitas
 
-- TypeScript (`tsc --noEmit`), `npm test`, lint global e checks pós-rebase: aguardam janela global do integrador; não há alegação de aprovação.
+- TSC, Vitest completo e ESLint global passaram na base #298 congelada `ed50a770`; a integração #299 13/13 passou na base anterior, antes de mudança restrita a harness de captura e documentação.
 - Aceite visual nos três tamanhos e dois temas, com contador antes/depois: TESTER organizará fixture isolada; ainda não há captura. O harness visual da E1 não existe na base E0.
 - Novo re-review do commit corrigido pelo TESTER, homologação, PR/push e integração: a cargo do integrador. O primeiro review (`201f0a9d`) e o re-review R1 (`91e554d0`) encontraram P2 reproduzidos e corrigidos acima; não marcar #299 concluída até os gates restantes.
 - Node em uso: 24.16.0; `.nvmrc` pede 22. Registrar qualquer diferença observada nos checks finais.
