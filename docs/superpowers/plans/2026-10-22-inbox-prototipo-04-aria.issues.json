@@ -1,0 +1,170 @@
+[
+  {
+    "title": "[Inbox E3.1] Estado da Aria derivado no servidor",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "back-end"
+    ],
+    "body": "**Objetivo:** definir `EstadoAria` (ia, aprovação, handoff, humano) por atendimento, numa função pura e em condições Prisma equivalentes, com o índice parcial do handoff.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-1](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-1)\n\n**Arquivos:** `src/server/inbox/estado-aria.ts`; migration `20261023200000_inbox_aria_indice_handoff`.\n\n**Critérios de aceite:** `estado-aria.test.ts` e `estado-aria.int.test.ts` (inclui `condicao_e_derivacao_concordam`, `pausa_global_tira_todas_de_ia` e `resposta_pelo_celular_encerra_handoff_pendente`). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** —."
+  },
+  {
+    "title": "[Inbox E3.2] Estado da Aria e prévia com autor no item da lista",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "back-end"
+    ],
+    "body": "**Objetivo:** `ItemListaInbox` ganha `estadoAria`, `atendidoPorVoce`, `previaAutor` e `previaRotulo`.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-2](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-2)\n\n**Arquivos:** `src/server/inbox/previa.ts`, `src/server/inbox/consultas-pagina.ts`.\n\n**Critérios de aceite:** `previa.test.ts` (inclui `previa_de_sugestao_mostra_so_o_rotulo`) e os casos novos de `consultas-pagina.int.test.ts`. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E3.1."
+  },
+  {
+    "title": "[Inbox E3.3] Filtro por estado da Aria e contagens dos chips",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "back-end"
+    ],
+    "body": "**Objetivo:** `?aria=` na URL, uma consulta única de contagens (sete chips) e a situação da Aria para a faixa, também pela rota da lista (`contagens=1`).\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-3](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-3)\n\n**Arquivos:** `src/server/inbox/filtros.ts`, `consultas-pagina.ts`, `contagens.ts`, `src/app/api/inbox/atendimentos/route.ts`, `InboxNovo.tsx` (`paramsDosFiltros`).\n\n**Critérios de aceite:** `filtros.test.ts`, `contagens.int.test.ts`, `filtro_e_item_concordam_em_cada_estado`. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E3.1, E3.2."
+  },
+  {
+    "title": "[Inbox E3.4] Tempo real: sugestões, decisões, handoff e estado global da Aria",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "back-end"
+    ],
+    "body": "**Objetivo:** gatilhos em `AcaoAgenteIA` e `AgenteIA` publicam `AvisoInbox` (`atendimento.atualizado` e o novo `aria.global`), e o cliente reage.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-4](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-4)\n\n**Arquivos:** migration `20261023210000_inbox_aria_tempo_real`, `barramento.ts`, `eventos-sse.ts`, `useEventosInbox.ts`, `historico-conversa.ts`, `InboxNovo.tsx`.\n\n**Critérios de aceite:** `barramento.int.test.ts` (casos novos), `eventos-sse.test.ts`, `useEventosInbox.test.ts`, `historico-conversa.test.ts`, `InboxNovo.test.ts` (`avisoRecarregaPainel`). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** —."
+  },
+  {
+    "title": "[Inbox E3.5] Badge, selo IA e prévia no item; chips da Aria com contagem",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui"
+    ],
+    "body": "**Objetivo:** o item mostra o estado da Aria, o selo e a prévia com autor; os chips ganham os quatro estados e as contagens.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-5](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-5)\n\n**Arquivos:** `chips-inbox.ts`, `estado-visual.ts`, `ItemConversa.tsx`, `ChipsFiltro.tsx`, `ColunaConversas.tsx`, `InboxNovo.tsx`, `page.tsx`, `scripts/visual/demo-inbox.ts`.\n\n**Critérios de aceite:** `estado-visual.test.ts`, `chips-inbox.test.ts`, `ItemConversa.test.ts` e aceite visual dos cenários `aria-*`. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E1 (lista e chips), E3.2, E3.3, E3.4."
+  },
+  {
+    "title": "[Inbox E3.6] Faixa \"Aria ativa\" na coluna (sem interruptor)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui"
+    ],
+    "body": "**Objetivo:** faixa com \"N em atendimento · M aguardando você\", pausada ou em ensaio; o link \"Gerenciar\" para quem pode pausar.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-6](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-6)\n\n**Arquivos:** `aria/FaixaAriaAtiva.tsx`, `InboxNovo.tsx`.\n\n**Critérios de aceite:** `FaixaAriaAtiva.test.ts` (inclui `sem_interruptor_no_padrao_d4`) e aceite visual. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E1 (`ColunaConversas`), E3.3."
+  },
+  {
+    "title": "[Inbox E3.7] Estado da Aria no cabeçalho e \"Devolver para Aria\"",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui"
+    ],
+    "body": "**Objetivo:** linha de estado (\"Aria está atendendo\"…) e o botão \"Devolver para Aria\" no cabeçalho de 68 px.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-7](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-7)\n\n**Arquivos:** `aria/textos-aria.ts`, `aria/BotaoDevolverAria.tsx`, `CabecalhoConversa.tsx`, `ConversaAberta.tsx`.\n\n**Critérios de aceite:** `textos-aria.test.ts`, `BotaoDevolverAria.test.ts` e aceite visual. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E1 (`CabecalhoConversa`), E3.2."
+  },
+  {
+    "title": "[Inbox E3.8] Dados do cartão de sugestão e decisão idempotente",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "aria"
+    ],
+    "body": "**Objetivo:** `AriaDoAtendimento` ganha `podeDecidir` e `cartoes` (pendentes e decididas nas últimas 24 h); `aprovarAcaoAria` e `rejeitarAcaoAria` ficam idempotentes por natureza (#166).\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-8](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-8)\n\n**Arquivos:** `src/server/aria/sugestoes-thread.ts`, `historico.ts`, `src/server/whatsapp/consultas-inbox.ts`.\n\n**Critérios de aceite:** `sugestoes-thread.test.ts`, `consultas-inbox.aria.int.test.ts` e `historico.int.test.ts` (inclui `aprovar_repetido_pelo_mesmo_decisor_nao_duplica_intencao` e `gerente_de_outra_equipe_ve_estado_sem_cartao`). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E3.1."
+  },
+  {
+    "title": "[Inbox E3.9] Cartão \"Aria sugere\" na thread (aprovar e rejeitar)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui"
+    ],
+    "body": "**Objetivo:** cartão na thread com título, motivo, texto proposto, ações, aviso de envio, \"Aprovar e enviar\" e \"Rejeitar\" e estado decidido. Padrão D1/D2: uma por vez, sem edição.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-9](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-9)\n\n**Arquivos:** `aria/sugestao-visual.ts`, `aria/intercalar.ts`, `aria/CartaoSugestaoAria.tsx`, `ConversaAberta.tsx`.\n\n**Critérios de aceite:** `sugestao-visual.test.ts`, `intercalar.test.ts`, `CartaoSugestaoAria.test.ts` (inclui `aprovar_sugestao_expirada_mostra_erro`) e aceite visual. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E1 (thread), E3.8."
+  },
+  {
+    "title": "[Inbox E3.10] Resumo do handoff no servidor",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "aria"
+    ],
+    "body": "**Objetivo:** `AriaDoAtendimento.handoff`, com motivo, a nota do resumo separada por campo, o que a Aria já fez e as alçadas para assumir e responder.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-10](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-10)\n\n**Arquivos:** `src/server/aria/turno/handoff.ts` (`lerNotaResumo`), `src/server/aria/handoff-inbox.ts`, `consultas-inbox.ts`, `src/lib/labels.ts` (`MOTIVO_HANDOFF_LABEL`), `Playground.tsx`, `enums-rotulos.test.ts`.\n\n**Critérios de aceite:** `handoff.test.ts`, `handoff-inbox.int.test.ts` e `enums-rotulos.test.ts`. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E3.1, E0 (notas do atendimento visíveis)."
+  },
+  {
+    "title": "[Inbox E3.11] Faixa e modal de handoff na conversa",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui"
+    ],
+    "body": "**Objetivo:** faixa \"Aria pediu ajuda há N min\" e modal \"Resumo de handoff\" com \"Assumir e responder\" (só da fila) ou \"Responder\" (responsável). Padrão D3.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-11](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-11)\n\n**Arquivos:** `aria/FaixaHandoff.tsx`, `aria/ModalResumoHandoff.tsx`, `ConversaAberta.tsx`, compositor (`data-compositor-campo`).\n\n**Critérios de aceite:** `FaixaHandoff.test.ts`, `ModalResumoHandoff.test.ts` e aceite visual. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E0 (`agora` vivo), E3.7, E3.10."
+  },
+  {
+    "title": "[Inbox E3.12] Retirar o PainelAria e registrar a entrega da E3",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui"
+    ],
+    "body": "**Objetivo:** o `PainelAria` sai, `sugestoes` vira `cartoes` na consulta, os testes de trava são atualizados e entra o registro no quadro de entregas.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-12](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-12)\n\n**Arquivos:** `PainelAria.tsx` (sai), `InboxNovo.tsx`, `PainelAtendimento.aria.test.ts`, `consultas-inbox.ts`, `consultas-inbox.aria.int.test.ts`, `quadro-entregas.md`, `00-indice.md`.\n\n**Critérios de aceite:** `PainelAtendimento.aria.test.ts`, `consultas-inbox.aria.int.test.ts` e a verificação completa (tsc, `npm test`, lint e a integração de `src/server/inbox` e `src/server/aria`). Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** E3.7, E3.9, E3.11."
+  },
+  {
+    "title": "[Inbox E3.13] Vendedor dono decide sugestões da Aria no Inbox (D1)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "aria",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** se a D1 aprovar, o vendedor dono da oportunidade aprova e rejeita as sugestões das próprias conversas no Inbox. `/aria` continua para Admin e GC.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-13](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-13)\n\n**Arquivos:** `escopo-decisao.ts`, `historico.ts` (núcleos), `decisao-inbox.ts`, `acoes.ts`, `sugestoes-thread.ts`, `CartaoSugestaoAria.tsx`.\n\n**Critérios de aceite:** `decisao-inbox.int.test.ts` e `consultas-inbox.aria.int.test.ts`. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** D1, E3.9."
+  },
+  {
+    "title": "[Inbox E3.14] Aprovar sugestão da Aria com edição (D2)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "aria",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** editar o texto, a tarefa e o horário antes de aprovar, com autoria e pausa conforme a D2 (pergunta 17).\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-14](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-14)\n\n**Arquivos:** `historico.ts` (`aprovarAcaoAriaEditada`), `acoes.ts`, `CartaoSugestaoAria.tsx`, `sugestao-visual.ts`.\n\n**Critérios de aceite:** `historico-edicao.int.test.ts` e os testes de UI da task. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** D2, E3.9, E2 (modal de tarefa), agendador (E4 ou o atual)."
+  },
+  {
+    "title": "[Inbox E3.15] Sugestão da Aria em pacote por turno (D2)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "aria",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** aprovar ou rejeitar de uma vez as sugestões do mesmo turno (enviar, mover etapa, criar tarefa), tudo ou nada.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-15](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-15)\n\n**Arquivos:** `historico.ts` (`aprovarTurnoAria`, `rejeitarTurnoAria`), `intercalar.ts`, `sugestao-visual.ts`, `CartaoSugestaoAria.tsx`.\n\n**Critérios de aceite:** `historico-turno.int.test.ts` e `intercalar.test.ts`. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** D2, E3.9."
+  },
+  {
+    "title": "[Inbox E3.16] Assumir conversa da Aria com pausa MANUAL (D3)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "aria",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** \"Assumir\" pausa a Aria (`MANUAL`), faz da pessoa a responsável e trata as sugestões pendentes conforme a D3.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-16](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-16)\n\n**Arquivos:** `acoes-atendimento.ts` (`assumirConversaDaAria`), `ConversaAberta.tsx`, `ModalResumoHandoff.tsx`.\n\n**Critérios de aceite:** `assumir-da-aria.int.test.ts`. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** D3, E3.7, E3.11."
+  },
+  {
+    "title": "[Inbox E3.17] Compositor travado enquanto a Aria conduz (D3)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** barra \"Aria está respondendo…\" com \"Nota interna\" e \"Assumir para responder\"; trava também no servidor se a D3 pedir.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-17](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-17)\n\n**Arquivos:** `aria/modo-rodape.ts`, `ConversaAberta.tsx`, opcional `src/server/whatsapp/acoes.ts`.\n\n**Critérios de aceite:** `modo-rodape.test.ts`, opcional `trava-aria.int.test.ts`, e aceite visual. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** D3, E3.16."
+  },
+  {
+    "title": "[Inbox E3.18] Interruptor \"Aria ativa\" no Inbox (D4)",
+    "labels": [
+      "inbox",
+      "etapa-3",
+      "ui",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** interruptor na faixa para quem pode pausar, com motivo conforme a D4; `pausarAria` e `reativarAria` idempotentes (#166).\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-18](docs/superpowers/plans/2026-10-22-inbox-prototipo-04-aria.md#task-18)\n\n**Arquivos:** `aria/FaixaAriaAtiva.tsx`, `src/server/aria/estado.ts`.\n\n**Critérios de aceite:** `FaixaAriaAtiva.test.ts` e `estado.int.test.ts`. Aceite visual conforme o índice (1440×900, 1024×768 e 390×844, claro e escuro, comparado com o protótipo). Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` e a integração tocada.\n\n**Dependências:** D4, E3.6."
+  }
+]
