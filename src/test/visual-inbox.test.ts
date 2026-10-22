@@ -104,6 +104,23 @@ describe("harness visual do Inbox", () => {
     expect(terminou).toBe(true);
   });
 
+  it.each(["celular-painel", "tablet-painel"])("no Drawer %s espera o painel sem exigir a conversa que ficou oculta", async (estado) => {
+    let painelPronto!: () => void;
+    const painel = new Promise<void>((resolve) => { painelPronto = resolve; });
+    const pagina = { getByRole: (_role: string, opcoes: { name: string }) => {
+      if (opcoes.name === "Conversa") return { waitFor: async () => { throw new Error("Conversa oculta pelo Drawer"); } };
+      if (opcoes.name === "Painel Comercial") return { waitFor: () => painel };
+      throw new Error(`Região inesperada: ${opcoes.name}`);
+    } };
+    let terminou = false;
+    const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], estado, estado === "celular-painel" ? "celular" : "tablet").then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    painelPronto();
+    await espera;
+    expect(terminou).toBe(true);
+  });
+
   it("autentica via CSRF e confirma sessão antes de abrir o Inbox", async () => {
     const chamadas: string[] = [];
     const request = {

@@ -22,6 +22,8 @@ coordenados pelo integrador.
   mensagem específica da fixture antes da captura. No estado de Beatriz também
   aguarda a nota; painel desktop/Drawer exige o conteúdo do painel. O clique no
   Drawer ocorre após a mensagem renderizar, provando a hidratação da tela.
+  Depois do clique, a região da conversa fica oculta e a segunda espera exige
+  somente o painel visível.
   Nenhuma dessas esperas depende de atraso fixo. O protótipo abre via `file://`, usa
   recursos npm locais e Google Fonts vazio; tráfego inesperado é bloqueado.
   Cada contexto registra requisições falhas, 404 e exceções da página.
