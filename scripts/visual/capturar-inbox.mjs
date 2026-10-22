@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
+import { autenticarApp, esperarConteudoApp } from "./espera-app.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
 const nodeModules = path.join(raiz, "node_modules");
@@ -57,18 +58,17 @@ async function prepararRede(contexto, alvo, base, falhas) {
   });
 }
 
-async function abrirApp(pagina, base, ids, estado) {
-  await pagina.goto(`${base}/login`, { waitUntil: "domcontentloaded" });
-  await pagina.getByLabel("E-mail").fill(process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com");
-  await pagina.getByLabel("Senha").fill(process.env.INBOX_VISUAL_SENHA ?? "genius123");
-  await pagina.getByRole("button", { name: "Entrar", exact: true }).click();
-  await pagina.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 30_000 });
+async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
+  await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com", process.env.INBOX_VISUAL_SENHA ?? "genius123");
   const id = estado === "humano-compositor" ? ids.beatriz : ids.mariana;
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista";
   await pagina.goto(`${base}/inbox${semSelecao ? "" : `?c=${encodeURIComponent(id)}`}`, { waitUntil: "domcontentloaded" });
-  await pagina.locator("[data-vista]").waitFor({ state: "visible" });
-  if (!semSelecao) await pagina.getByRole("region", { name: "Conversa", exact: true }).waitFor({ state: "visible" });
-  if (estado === "celular-painel" || estado === "tablet-painel") await pagina.getByRole("button", { name: "Detalhes da conversa" }).click();
+  if (estado === "celular-painel" || estado === "tablet-painel") {
+    // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no Drawer.
+    await esperarConteudoApp(pagina, "conversa", tamanho);
+    await pagina.getByRole("button", { name: "Detalhes da conversa" }).click();
+  }
+  await esperarConteudoApp(pagina, estado, tamanho);
 }
 
 async function abrirPrototipo(pagina, estado) {
@@ -117,7 +117,7 @@ async function main() {
         pagina.on("requestfailed", (pedido) => falhas.push(`requestfailed: ${pedido.url()} ${pedido.failure()?.errorText ?? ""}`));
         pagina.on("response", (resposta) => { if (resposta.status() === 404) falhas.push(`404: ${resposta.url()}`); });
         pagina.setDefaultTimeout(30_000);
-        if (tarefa.alvo === "app") await abrirApp(pagina, o.base, ids, tarefa.estado);
+        if (tarefa.alvo === "app") await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho);
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
         const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);

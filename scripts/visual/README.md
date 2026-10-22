@@ -49,6 +49,10 @@ node scripts/visual/capturar-inbox.mjs --help
 ```
 
 O protótipo abre de `docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html`.
+No app, a CLI confirma a sessão por CSRF/credentials no mesmo contexto do
+navegador e só captura após encontrar o texto da mensagem da fixture; no estado
+do compositor humano, exige também a nota interna. O painel aberto é aguardado
+quando aparece na captura. Assim uma resposta inicial lenta não gera foto vazia.
 React, ReactDOM, Babel e Lucide solicitados a `unpkg.com` são servidos dos
 pacotes **locais** em `node_modules`; Google Fonts recebe CSS vazio. A captura
 bloqueia outros destinos externos e registra falhas de requisição, HTTP 404 e

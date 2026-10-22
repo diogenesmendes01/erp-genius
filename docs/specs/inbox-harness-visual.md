@@ -17,8 +17,12 @@ coordenados pelo integrador.
   versão do pacote e a query de fonte Lucide. O caminho final é conferido
   dentro de `node_modules` antes da leitura.
 - `capturar-inbox.mjs` admite `--alvo app|prototipo|ambos`, `--estado nome|todos`
-  e base HTTP local. O app faz login com conta fictícia, usa os IDs do perfil
-  correspondente e captura a conversa. O protótipo abre via `file://`, usa
+  e base HTTP local. O app autentica a conta fictícia por CSRF/credentials no
+  contexto HTTP do navegador, confirma a sessão, usa os IDs do perfil e aguarda
+  mensagem específica da fixture antes da captura. No estado de Beatriz também
+  aguarda a nota; painel desktop/Drawer exige o conteúdo do painel. O clique no
+  Drawer ocorre após a mensagem renderizar, provando a hidratação da tela.
+  Nenhuma dessas esperas depende de atraso fixo. O protótipo abre via `file://`, usa
   recursos npm locais e Google Fonts vazio; tráfego inesperado é bloqueado.
   Cada contexto registra requisições falhas, 404 e exceções da página.
 - `tmp/visual/` contém PNGs e manifesto. `conversa` produz exatamente 12 PNGs
