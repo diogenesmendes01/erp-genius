@@ -3,7 +3,7 @@ import { exigirSessao, ErroAutenticacao, exigirPapel, ErroPermissao } from "@/se
 import { PAPEIS_INBOX } from "@/server/whatsapp/escopo";
 import { lerFiltrosInbox } from "@/server/inbox/filtros";
 import { decodificarCursor } from "@/server/inbox/cursor";
-import { listarAtendimentosPagina } from "@/server/inbox/consultas-pagina";
+import { contarChipsInbox, listarAtendimentosPagina } from "@/server/inbox/consultas-pagina";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,5 +26,9 @@ export async function GET(req: Request) {
   if (bruto && !cursor) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
   // `envio=1`: só os atendimentos em que o usuário pode enviar (destino do encaminhar).
   const enviar = params.get("envio") === "1";
-  return NextResponse.json(await listarAtendimentosPagina(usuario, filtros, cursor, undefined, { enviar }), { headers: { "Cache-Control": "no-store" } });
+  const [pagina, contagens] = await Promise.all([
+    listarAtendimentosPagina(usuario, filtros, cursor, undefined, { enviar }),
+    params.get("contagens") === "1" && !cursor ? contarChipsInbox(usuario, filtros, { enviar }) : Promise.resolve(undefined),
+  ]);
+  return NextResponse.json({ ...pagina, ...(contagens ? { contagens } : {}) }, { headers: { "Cache-Control": "no-store" } });
 }

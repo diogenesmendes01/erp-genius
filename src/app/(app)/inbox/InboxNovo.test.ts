@@ -99,3 +99,9 @@ describe("mesclarPrimeiraPagina", () => {
     expect(ids(mesclarPrimeiraPagina([it_("a", "2026-10-03"), it_("aberta", "2026-10-04")] as never, [it_("a", "2026-10-03")] as never, "cur", "aberta"))).toContain("aberta");
   });
 });
+
+it("contagens são opt-in só na primeira página dos parâmetros", () => {
+  expect(paramsDosFiltros({ busca: "Ana" }, null, { contagens: true })).toBe("busca=Ana&contagens=1");
+  expect(paramsDosFiltros({}, "cursor", { contagens: true })).toBe("cursor=cursor");
+  expect(paramsDosFiltros({})).toBe("");
+});
