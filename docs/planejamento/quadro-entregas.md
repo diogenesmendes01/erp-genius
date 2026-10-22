@@ -1,5 +1,13 @@
 # Quadro único de entregas
 
+## Inbox E0.3 — notas internas na thread (#300, 22/10/2026)
+
+**Estado: implementação em revisão; não concluída.** Branch `codex/inbox-e0-300`, empilhada sobre #299. A página inicial e `depois` entregam notas de atendimento e, sob permissão comercial separada, de oportunidade, com `origem` e ordem `(criadoEm,id)`; `antes` devolve `notas: null`. Nova nota de atendimento emite aviso SSE transacional apenas com ids, sem novo aviso na repetição idempotente. A consulta interna sem checagem de escopo fica fora do módulo de Server Actions. Contrato em `docs/specs/inbox-notas-thread.md`; sem schema, migration ou mudança de permissões.
+
+- TDD RED em `dev-gravacoes`: 2 arquivos de integração tiveram 4 falhas funcionais esperadas (3 respostas sem notas do atendimento e 1 aviso SSE ausente), com 22 testes já verdes; sessão `23893`, saída 1. GREEN antes do isolamento da consulta interna: `nota-interna.int.test.ts`, `consultas-pagina.int.test.ts` e `inbox.int.test.ts`, **3 arquivos / 45 testes**, Node 22.23.2, sessão `3068` até saída **0**, nenhum ignorado.
+- Regressão dirigida antes do isolamento da consulta interna: `src/server/inbox` e `acoes-atendimento-pool.int.test.ts`, `inbox-idempotencia.int.test.ts`, `aria/historico.int.test.ts`: **10 arquivos / 115 testes**, Node 22.23.2, sessão `46885` até saída **0** em 562 s, nenhum ignorado. Não é a suíte completa. O isolamento muda somente a localização da função, sem alterar sua lógica.
+- Recorte pós-isolamento: `nota-interna.int.test.ts` e `consultas-pagina.int.test.ts`, **2 arquivos / 26 testes**, sessão `10696` até saída **0**; `inbox.int.test.ts`, **1 arquivo / 19 testes**, sessão `27335` até saída **0**. Ambos no Node 22.23.2 e perfil `dev-gravacoes`, nenhum ignorado. ESLint dos 7 arquivos TypeScript da #300 com `--max-warnings 0`, saída **0**. Revisão independente do TESTER, TypeScript, Vitest completo, lint global e homologação **pendentes** neste registro. A #300 é contrato de servidor/SSE; a visualização das notas é escopo da #301. Nenhum envio externo ou teste em banco de produção.
+
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
 ## Inbox E0.2 — leitura automática (#299, 22/10/2026)

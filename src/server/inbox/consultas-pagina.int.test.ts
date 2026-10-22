@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
+import { registrarEvento } from "@/server/_shared";
 import { listarAtendimentosPagina, listarMensagensPagina, obterItemListaInbox } from "./consultas-pagina";
 import { codificarCursor, cursorThreadValido } from "./cursor";
 
@@ -208,6 +209,58 @@ describe("lista paginada por cursor", () => {
 });
 
 describe("thread paginada", () => {
+  it("notas do atendimento não comercial vêm na carga e em depois; antes devolve null", async () => {
+    const a = await criarAtendimento(new Date());
+    await prisma.mensagemWhatsApp.createMany({ data: Array.from({ length: 65 }, (_, i) => ({
+      atendimentoId: a.id, conversaId: a.conversaId, numeroId, direcao: "ENTRADA" as const, driver: DriverWhatsApp.BAILEYS,
+      corpo: `m${i}`, criadoEm: new Date(Date.UTC(2026, 9, 1, 0, 0, i)),
+    })) });
+    for (const nota of ["primeira", "segunda"]) {
+      await prisma.$transaction((tx) => registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: admin.id, payload: { nota } }));
+    }
+    const p1 = (await listarMensagensPagina(sess(admin), a.id, {}))!;
+    expect(p1.notas?.map((n) => [n.nota, n.origem])).toEqual([["primeira", "atendimento"], ["segunda", "atendimento"]]);
+    expect((await listarMensagensPagina(sess(admin), a.id, { antes: p1.antes! }))!.notas).toBeNull();
+    expect((await listarMensagensPagina(sess(admin), a.id, { depois: p1.depois! }))!.notas).toHaveLength(2);
+    expect(await listarMensagensPagina(sess(outro), a.id, {})).toBeNull();
+  });
+
+  it("notas arquivadas não voltam e só as 50 mais recentes são consultadas", async () => {
+    const a = await criarAtendimento(new Date());
+    const base = Date.UTC(2026, 9, 1);
+    const notas = [];
+    for (let i = 0; i < 51; i++) {
+      const e = await prisma.$transaction((tx) => registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: admin.id, payload: { nota: `n${i}` } }));
+      notas.push(e);
+      await prisma.evento.update({ where: { id: e.id }, data: { criadoEm: new Date(base + i * 1000) } });
+    }
+    const pagina = (await listarMensagensPagina(sess(admin), a.id, {}))!;
+    expect(pagina.notas).toHaveLength(50);
+    expect(pagina.notas?.[0].nota).toBe("n1");
+    expect(pagina.notas?.at(-1)?.nota).toBe("n50");
+    await prisma.$transaction((tx) => registrarEvento(tx, { tipo: "NotaInternaArquivada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: admin.id, payload: { eventoId: notas[50].id } }));
+    expect((await listarMensagensPagina(sess(admin), a.id, {}))!.notas?.some((n) => n.id === notas[50].id)).toBe(false);
+  });
+
+  it("mescla notas do atendimento e da oportunidade por data/id sem vazar lead pela linha", async () => {
+    const a = await criarAtendimento(new Date());
+    const donoLead = await criarUsuario([Papel.VENDEDOR]);
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead de outro", vendedorDonoId: donoLead.id } });
+    await prisma.numeroWhatsApp.update({ where: { id: numeroId }, data: { finalidade: "VENDAS", donoId: outro.id } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { finalidade: "COMERCIAL", contextoChave: "COMERCIAL::", leadId: lead.id } });
+    const at = await prisma.$transaction((tx) => registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: admin.id, payload: { nota: "do atendimento" } }));
+    const op = await prisma.$transaction((tx) => registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "Lead", agregadoId: lead.id, autorId: admin.id, payload: { nota: "da oportunidade" } }));
+    const empate = new Date("2026-10-01T12:00:00.000Z");
+    await prisma.evento.updateMany({ where: { id: { in: [at.id, op.id] } }, data: { criadoEm: empate } });
+    const esperado = [at, op].sort((x, y) => x.id.localeCompare(y.id)).map((e) => e.id);
+    const daAdmin = (await listarMensagensPagina(sess(admin), a.id, {}))!;
+    expect(daAdmin.notas?.map((n) => n.id)).toEqual(esperado);
+    expect(daAdmin.notas?.map((n) => n.origem).sort()).toEqual(["atendimento", "oportunidade"]);
+    const daLinha = (await listarMensagensPagina(sess(outro), a.id, {}))!;
+    expect(daLinha.notas?.map((n) => [n.nota, n.origem])).toEqual([["do atendimento", "atendimento"]]);
+    expect((await listarMensagensPagina(sess(donoLead), a.id, {}))?.notas?.some((n) => n.origem === "oportunidade")).toBe(true);
+  });
+
   it("antes/depois sem sobreposição e 404 fora do escopo", async () => {
     const a = await criarAtendimento(new Date());
     const t0 = Date.UTC(2026, 9, 1);
