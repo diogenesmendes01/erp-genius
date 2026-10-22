@@ -14,7 +14,7 @@ import { capacidadesDoNumero } from "@/server/whatsapp/motor/capacidades";
 import { notasInternasDoAtendimento } from "@/server/whatsapp/notas-consulta";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
-import type { FiltrosInbox } from "./filtros";
+import type { ContagensChipsInbox, FiltrosInbox } from "./filtros";
 
 export interface ItemListaInbox extends ConversaResumo {
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
@@ -66,6 +66,22 @@ async function condicoesDosFiltros(u: UsuarioSessao, f: FiltrosInbox): Promise<P
   if (f.busca) c.push(whereBuscaConversas(f.busca));
   if (f.naoLidas) c.push(await condicaoNaoLidaPessoal(u.id));
   return c;
+}
+
+/** Agregados do mesmo universo autorizado, retirando somente os filtros controlados pelos chips. */
+export async function contarChipsInbox(
+  u: UsuarioSessao, f: FiltrosInbox, opcoes: { enviar?: boolean } = {},
+): Promise<ContagensChipsInbox> {
+  const filtrosBase = { ...f, responsavel: undefined, naoLidas: undefined, prazoEstourado: undefined };
+  const base = [await escopoAtendimentos(u, { enviar: opcoes.enviar === true }), ...await condicoesDosFiltros(u, filtrosBase)];
+  const contar = (extra: Prisma.AtendimentoWhatsAppWhereInput[] = []) => prisma.atendimentoWhatsApp.count({ where: { AND: [...base, ...extra] } });
+  const naoLida = await condicaoNaoLidaPessoal(u.id);
+  const [todas, minhas, naoLidas, prazo, fila] = await Promise.all([
+    contar(), contar([{ responsavelId: u.id }]), contar([naoLida]),
+    contar(await condicoesDosFiltros(u, { prazoEstourado: true })),
+    contar([{ responsavelId: null, encerradoEm: null }]),
+  ]);
+  return { todas, minhas, naoLidas, prazo, fila };
 }
 
 const fixadaDoUsuario = (usuarioId: string): Prisma.AtendimentoWhatsAppWhereInput =>
