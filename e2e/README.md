@@ -16,7 +16,7 @@ e2e/
   auth.setup.ts           loga uma vez com cada papel e salva a sessão em e2e/.auth/
   fixtures/usuarios.ts    e-mail e senha de cada papel, lidos do ambiente
   fixtures/auth.ts        login(page, papel) e o `test` com a opção { papel }
-  login.spec.ts           ACE-01 login + menu por papel, ACE-02 senha errada, ACE-03 rota sem sessão
+  login.spec.ts           ACE-03 login + menu por papel, ACE-07 senha errada, ACE-06 rota sem sessão
   permissoes.spec.ts      PER-NNx: papel X abre URL Y e recebe "Acesso negado"
 ```
 
@@ -142,12 +142,12 @@ opção `papel`.
 - **Nome do teste começa pelo ID do roteiro** `docs/qa/03-roteiro-testes-manuais.md`, seguido de
   uma frase do que se espera. Assim o resultado do Playwright casa com o roteiro e com a issue de
   bug. Os IDs destes specs são **definitivos**:
-  - `ACE-01` login com sucesso e menu lateral (roda uma vez por papel), `ACE-02` senha errada e
-    e-mail inexistente, `ACE-03` rotas protegidas sem sessão (`/alunos`, `/financeiro`,
+  - `ACE-03` login com sucesso e menu lateral (roda uma vez por papel), `ACE-07` senha errada e
+    e-mail inexistente, `ACE-06` rotas protegidas sem sessão (`/alunos`, `/financeiro`,
     `/configuracao/usuarios`, `/funil`);
   - `PER-NNx` permissões: `NN` é o papel (`01` Professor, `02` Vendedor, `03` Gerente
     Pedagógico, `04` Secretaria, `05` Financeiro; `06` a `08` são bugs conhecidos ou decisões
-    pendentes) e a letra é a URL (`PER-01a`, `PER-01b`…).
+    pendentes) e a letra é a URL (`PER-13a`, `PER-13b`…).
   Novos specs seguem o mesmo padrão com o prefixo do módulo no roteiro.
 - **Menu esperado** (`MENU_ESPERADO` em `login.spec.ts`): espelha o array `NAV` de `src/lib/nav.ts`,
   na mesma ordem (a Sidebar não reordena; a Home não é o primeiro item). Se o menu mudar, atualize
@@ -180,6 +180,6 @@ opção `papel`.
 - Não commite `playwright-report/` nem `test-results/` (também ignorados).
 - Não coloque senha, token ou URL do UAT direto no código. Sempre pela variável de ambiente.
 - Não cole senha nem trace com dado real em issue, print ou chat aberto.
-- Não rode o ACE-02 (senha errada) em loop: depois de 5 falhas em 15 min o e-mail fica
+- Não rode o ACE-07 (senha errada) em loop: depois de 5 falhas em 15 min o e-mail fica
   bloqueado temporariamente e o login daquele usuário para de funcionar.
 - Não altere `vitest.config.ts` nem os testes em `src/` (são do time de dev).

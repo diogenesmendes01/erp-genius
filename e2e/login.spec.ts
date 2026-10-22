@@ -1,5 +1,5 @@
 // =============================================================================
-// Login e menu lateral por papel (ACE-01 a ACE-03 do roteiro).
+// Login e menu lateral por papel (ACE-03 a ACE-06 do roteiro).
 //
 // Estes testes começam SEM sessão (não usam test.use({ papel })), porque o que se
 // testa aqui é justamente a tela de login.
@@ -38,7 +38,7 @@ const ADMIN_COMPLETO = [
 ];
 
 // "Empresas" aparece para Gerente Comercial e Secretaria, mas a página nega o acesso
-// (bug X2 da auditoria consolidada). O ACE-01 confere o menu como ele é HOJE; se o
+// (bug X2 da auditoria consolidada). O ACE-03 confere o menu como ele é HOJE; se o
 // X2 for corrigido tirando o item do menu, remova "Empresas" das listas do GC e da SEC.
 const MENU_GERENTE_COMERCIAL = [
   "Comissões",
@@ -129,7 +129,7 @@ const MENSAGEM_LOGIN_RECUSADO = "E-mail ou senha incorretos.";
 
 test.describe("Login", () => {
   for (const papel of PAPEIS) {
-    test(`ACE-01 login com sucesso e menu lateral do papel ${papel}`, async ({ page }) => {
+    test(`ACE-03 login com sucesso e menu lateral do papel ${papel}`, async ({ page }) => {
       await login(page, papel);
 
       // Cada item do menu é um <a> dentro de <nav aria-label="Navegação principal">.
@@ -137,7 +137,7 @@ test.describe("Login", () => {
     });
   }
 
-  test("ACE-02 senha errada e e-mail inexistente mostram a mesma mensagem e continuam em /login", async ({ page }) => {
+  test("ACE-07 senha errada e e-mail inexistente mostram a mesma mensagem e continuam em /login", async ({ page }) => {
     // 1) E-mail real (VENDEDOR2) com senha inválida de propósito. Não precisa da senha
     //    verdadeira, por isso usamos emailDe (não exige E2E_PASSWORD_VENDEDOR2).
     // Atenção: o sistema bloqueia o e-mail após 5 falhas em 15 min (rate-limit em
@@ -162,7 +162,7 @@ test.describe("Login", () => {
   });
 
   for (const url of ["/alunos", "/financeiro", "/configuracao/usuarios", "/funil"]) {
-    test(`ACE-03 rota protegida sem sessão redireciona para /login: ${url}`, async ({ page }) => {
+    test(`ACE-06 rota protegida sem sessão redireciona para /login: ${url}`, async ({ page }) => {
       // Sem login, tentamos abrir uma página interna direto pela URL. O guard do layout
       // (exigirSessaoPagina) manda para /login?callbackUrl=<rota pedida>, para o login
       // devolver a pessoa à página depois de entrar.

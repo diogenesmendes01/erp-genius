@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Guia do projeto e onboarding do QA</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  /* Ajustes locais deste documento, sobre a folha da marca */
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .card p + p { margin-top: 6px; }
+  .card .who { font-size: 9pt; color: var(--text-terciary); margin: 2px 0 6px; }
+  .card .label { font-weight: 500; color: var(--text-primary); }
+  .flow { margin-bottom: 6px; }
+  .flow .node { flex-direction: column; }
+  .flow .node small { display: block; font-weight: 400; font-size: 8pt; color: var(--text-secondary); margin-top: 2px; }
+  .flow-cont { display: flex; justify-content: flex-end; color: var(--text-terciary); font-size: 9pt; margin: 0 0 6px; }
+  .area h3 { margin-top: 14px; }
+  .cards.facts .card { background: var(--info-bg); border-color: transparent; }
+  .cards.facts .card .title, .cards.facts .card .title svg { color: var(--info-text); }
+  .cards.facts .card p { color: var(--info-text); }
+  dl.terms { grid-template-columns: 36mm 1fr; gap: 0 14px; }
+  dl.terms dt, dl.terms dd { padding: 4px 0; border-bottom: 1px dotted var(--border); break-inside: avoid; }
+  .qa { margin: 0 0 12px; }
+  .qa .pair { break-inside: avoid; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .qa dt { font-weight: 600; }
+  .qa dd { margin: 2px 0 0; color: var(--text-secondary); }
+  .marker { font-weight: 600; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- ============================ CAPA ============================ -->
+<section class="cover">
+  <div>
+    <div class="mark"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Genius</div>
+  </div>
+  <div>
+    <div class="kicker">Kit do QA · UAT v1 · Documento 1</div>
+    <h1>Guia do projeto e onboarding do QA</h1>
+    <p class="subtitle">O que é o ERP Genius, como a escola trabalha com ele, o que já sabemos que não funciona e como você começa a testar no primeiro dia.</p>
+    <dl class="meta">
+      <dt>Versão</dt><dd>Commit 9e3d1d3c · 21/10/2026</dd>
+      <dt>Ambiente</dt><dd>UAT v1 (homologação)</dd>
+      <dt>Público</dt><dd>QA júnior recém-contratado e qualquer pessoa não técnica que precise entender o projeto</dd>
+      <dt>Base</dt><dd>Auditoria código × documentação de 21/10/2026 e o kit de QA da mesma data</dd>
+    </dl>
+  </div>
+  <div class="band">Leia este guia inteiro antes de abrir o sistema. Ele não exige conhecimento de programação: cada termo é explicado na primeira vez que aparece.</div>
+</section>
+
+<!-- ============================ SUMÁRIO ============================ -->
+<h1>Sumário</h1>
+<nav class="toc">
+  <ol>
+    <li><span class="num">1.</span>Bem-vindo<span class="desc">O que esperamos de você</span></li>
+    <li><span class="num">2.</span>O que é o ERP Genius<span class="desc">A escola, o problema e quem usa</span></li>
+    <li><span class="num">3.</span>Os módulos<span class="desc">Cada item do menu, em poucas linhas</span></li>
+    <li><span class="num">4.</span>Como o dia a dia flui<span class="desc">Comercial, entrada, acadêmico e financeiro</span></li>
+    <li><span class="num">5.</span>Os papéis em uma frase<span class="desc">As oito personas e o glossário</span></li>
+    <li><span class="num">6.</span>O ambiente de UAT<span class="desc">O que está simulado e por que nada sai de verdade</span></li>
+    <li><span class="num">7.</span>O que já sabemos que não funciona<span class="desc">Bloqueadores B1 a B8 e o que parece bug mas não é</span></li>
+    <li><span class="num">8.</span>Seus acessos e sua máquina<span class="desc">O que você recebe e o que instala</span></li>
+    <li><span class="num">9.</span>Seu primeiro dia e o ciclo de teste<span class="desc">Passo a passo, resultados e marcadores</span></li>
+    <li><span class="num">10.</span>Quando travar e contatos<span class="desc">Perguntas frequentes e canais</span></li>
+    <li><span class="num">11.</span>Os outros documentos do kit<span class="desc">O que ler depois deste</span></li>
+  </ol>
+</nav>
+
+<div class="callout brand"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /><path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /></svg><div><div class="title">Como ler este guia</div><p>As seções 1 a 5 explicam o negócio. As seções 6 e 7 dizem o que esperar do ambiente de testes. As seções 8 a 10 são práticas: o que fazer hoje, amanhã e quando algo der errado. Guarde a seção 7 por perto durante os testes.</p></div></div>
+
+<!-- ============================ 1. BEM-VINDO ============================ -->
+<section class="section">
+<h2><span class="num">1.</span>Bem-vindo</h2>
+<p class="lead">Você chega num momento importante. O ERP Genius está pronto para ser testado por alguém de fora do time de desenvolvimento, e essa pessoa é você.</p>
+
+<p>Seu trabalho é usar o sistema como a escola vai usar e dizer, com evidência, o que funciona e o que não funciona. Você não precisa ler código nem saber programar. Precisa de atenção, curiosidade e cuidado com o registro.</p>
+
+<h3>O que esperamos de você</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3.5 5.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 11.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 17.5l1.5 1.5l2.5 -2.5" /><path d="M11 6l9 0" /><path d="M11 12l9 0" /><path d="M11 18l9 0" /></svg> Seguir o roteiro</div><p>Execute os cenários na ordem do roteiro de testes. A ordem importa: cada módulo cria os dados que os próximos usam.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg> Registrar tudo</div><p>Para cada cenário, anote um resultado: Passou, Falhou, Bloqueado ou Não aplicável. Um registro claro vale mais que um teste rápido.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 9v-1a3 3 0 0 1 6 0v1" /><path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /><path d="M3 13l4 0" /><path d="M17 13l4 0" /><path d="M12 20l0 -6" /><path d="M4 19l3.35 -2" /><path d="M20 19l-3.35 -2" /><path d="M4 7l3.75 2.4" /><path d="M20 7l-3.75 2.4" /></svg> Reportar bem</div><p>Quando algo falhar, abra uma issue no GitHub com passos que qualquer pessoa consiga repetir. Uma issue por bug, não por cenário.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 16v.01" /><path d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" /></svg> Perguntar cedo</div><p>Se não sabe se é bug ou regra, pergunte ao gestor. Uma pergunta hoje evita uma issue errada amanhã.</p></div>
+</div>
+
+<h3>O que você não precisa fazer</h3>
+<ul>
+  <li>Corrigir nada no sistema. Isso é com o time de desenvolvimento.</li>
+  <li>Decidir regra de negócio. Quando o roteiro marcar uma decisão pendente, você registra o que viu e segue.</li>
+  <li>Abrir bug para problemas já conhecidos. A seção 7 lista o que já está mapeado.</li>
+</ul>
+
+<div class="callout success"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg><div><div class="title">A meta do primeiro dia</div><p>Terminar o dia com os acessos funcionando, a versão do ambiente anotada, os documentos do kit lidos e o primeiro módulo do roteiro (login, menu e acesso) começado.</p></div></div>
+
+<div class="callout warning"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Três regras que não têm exceção</div><p>1. Senhas só por canal privado: nunca em issue, print, gravação de tela ou chat aberto.<br>2. Nunca escaneie o QR code do WhatsApp.<br>3. Nunca aponte nada para produção: você testa só no UAT.</p></div></div>
+</section>
+
+<!-- ============================ 2. O QUE É ============================ -->
+<section class="section">
+<h2><span class="num">2.</span>O que é o ERP Genius</h2>
+<p class="lead">É o sistema de gestão da Escola Genius, usado pelo navegador. Ele reúne num só lugar a venda, a matrícula, as aulas, as notas e o dinheiro da escola.</p>
+
+<h3>A escola</h3>
+<p>A Escola Genius é uma escola de idiomas com turmas online. Hoje o idioma ensinado é o português. Os alunos vêm de mais de um país, e cada país cobra na sua própria moeda. O público se divide em adultos, crianças (Kids), adolescentes (Teens) e empresas.</p>
+<p>Cada curso combina um idioma com uma <strong>modalidade</strong>, que é o jeito de o curso funcionar: regular, semi-intensivo, intensivo, super-intensivo ou aula particular. O aluno avança por <strong>níveis</strong> (Pré A1, A1, A2, B1, B2, C1 e C2) dentro do mesmo contrato.</p>
+
+<h3>O problema que o sistema resolve</h3>
+<p>Antes, a operação dependia de planilhas soltas, papel e conversas espalhadas. O ERP Genius existe para centralizar a gestão e reduzir o trabalho manual. Ele acompanha o aluno do primeiro contato até o resultado final de cada nível.</p>
+
+<div class="cards three">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1" /></svg> Vender</div><p>Atender interessados pelo WhatsApp, acompanhar cada oportunidade e marcar a aula experimental.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5" /><path d="M3 14a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M4.5 17l-1.5 5l3 -1.5l3 1.5l-1.5 -5" /></svg> Matricular</div><p>Reservar a vaga, gerar e conferir o contrato, cobrar a entrada e ativar a matrícula.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v18" /><path d="M13 8l2 0" /><path d="M13 12l2 0" /></svg> Ensinar</div><p>Montar turmas e agenda, registrar a chamada, lançar notas e fechar o resultado do aluno.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg> Cobrar</div><p>Emitir cobranças, conferir pagamentos, controlar descontos e pagar a comissão do vendedor.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /><path d="M15 19l2 2l4 -4" /></svg> Acompanhar</div><p>Manter a ficha do aluno, seus documentos, créditos e mudanças de turma ou de nível.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg> Configurar</div><p>Cadastrar países, cursos, preços, turmas, usuários, prazos e modelos de contrato.</p></div>
+</div>
+
+<h3>Quem usa</h3>
+<p>A equipe da escola entra no ERP com usuário e senha. Cada pessoa tem um ou mais <strong>papéis</strong>, e o papel define o que ela vê e o que ela pode fazer. São sete papéis da equipe: Administrador, Gerente comercial, Vendedor, Gerente pedagógico, Professor, Financeiro e Secretaria acadêmica.</p>
+<p>O aluno não entra no ERP. Ele usa o <strong>portal do aluno</strong>, uma área separada com login próprio, onde vê seus resultados e suas reposições de aula. A seção 5 apresenta cada papel como uma pessoa.</p>
+
+<div class="callout info"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">Uma regra que você vai ver em todo lugar: "outra pessoa"</div><p>Quase toda decisão importante exige duas pessoas: uma prepara e outra decide. Um desconto grande, uma nota oficial, um calendário, um contrato. Ninguém aprova o próprio pedido, mesmo quando acumula papéis. Por isso o kit tem usuários "segundos", como <span class="nowrap">ADM-2</span>, <span class="nowrap">GP-2</span> e <span class="nowrap">FIN-2</span>.</p></div></div>
+</section>
+
+<!-- ============================ 3. MÓDULOS ============================ -->
+<section class="section">
+<h2><span class="num">3.</span>Os módulos</h2>
+<p class="lead">Cada cartão é um item do menu lateral do sistema. Os chips mostram quais papéis veem o item. O Administrador vê todos.</p>
+
+<div class="callout info"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg><div><div class="title">O menu não segue a ordem deste guia</div><p>Aqui os módulos estão agrupados por área. Na tela, a ordem é outra, e a Home não é o primeiro item: para Administrador, Financeiro e Gerente pedagógico, o primeiro é Permutas. Isso é o comportamento atual, não um bug.</p></div></div>
+
+<div class="area">
+<h3>Para quase todos</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg> Home</div><p>Página inicial, pensada como lista de tarefas e não como painel de números. Muda conforme o papel: gestão para Administrador e Gerente comercial, turmas e experimentais para o Professor, atalhos para os demais.</p><div class="chips"><span class="chip brand">Todos os papéis da equipe</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1" /></svg> Inbox</div><p>Atendimento por WhatsApp, com as conversas filtradas pelo que cada pessoa atende. No UAT funciona em modo simulado: nada sai de verdade.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span><span class="chip brand">Financeiro</span><span class="chip brand">Secretaria</span><span class="chip brand">Professor</span><span class="chip brand">Ger. pedagógico</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9.615 20h-2.615a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8" /><path d="M14 19l2 2l4 -4" /><path d="M9 8h4" /><path d="M9 12h2" /></svg> Tarefas</div><p>Lembretes, retornos combinados com clientes e mensagens agendadas. Os lembretes dependem de a rotina automática do sistema estar no ar.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span><span class="chip brand">Financeiro</span><span class="chip brand">Secretaria</span></div></div>
+</div>
+</div>
+
+<div class="area">
+<h3>Comercial</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 4l6 0" /><path d="M14 4l6 0" /><path d="M4 10a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2l0 -8" /><path d="M14 10a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2l0 -2" /></svg> Funil</div><p>Quadro com as oportunidades de venda em colunas, uma por etapa: do primeiro contato até matriculado ou perdido. O vendedor arrasta o cartão quando a negociação avança.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9" /><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" /><path d="M12 12l0 .01" /><path d="M3 13a20 20 0 0 0 18 0" /></svg> Carteira</div><p>As oportunidades e clientes de cada vendedor. O vendedor vê a própria carteira e as que ele cobre; o gerente vê a da equipe.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 6v12a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2" /><path d="M10 16h6" /><path d="M11 11a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 8h3" /><path d="M4 12h3" /><path d="M4 16h3" /></svg> Contatos</div><p>Cadastro das pessoas com quem a escola conversa, antes e depois de virarem alunos.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span><span class="chip brand">Secretaria</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -6" /><path d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -10" /><path d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -14" /><path d="M4 20h14" /></svg> Relatórios</div><p>Números do comercial: desempenho da equipe, conversas e metas. O gerente chega à definição de metas a partir daqui.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6" /></svg> Agente de IA</div><p>Configuração da Aria, a assistente que responde automaticamente no WhatsApp comercial. No UAT ela usa respostas fixas de simulação.</p><div class="chips"><span class="chip brand">Ger. comercial</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3" /><path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4" /><path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598" /><path d="M3 6v10c0 .888 .772 1.45 2 2" /><path d="M3 11c0 .888 .772 1.45 2 2" /></svg> Comissões</div><p>A comissão que o vendedor recebe sobre a taxa de matrícula. O vendedor vê a dele, o gerente a da equipe, o Financeiro todas.</p><div class="chips"><span class="chip brand">Ger. comercial</span><span class="chip brand">Vendedor</span><span class="chip brand">Financeiro</span></div></div>
+</div>
+</div>
+
+<div class="area">
+<h3>Secretaria e alunos</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5" /><path d="M3 14a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M4.5 17l-1.5 5l3 -1.5l3 1.5l-1.5 -5" /></svg> Matrículas</div><p>Painel da Secretaria. Aqui ela assume cada matrícula, prepara o contrato, emite as cobranças de entrada e conclui a ativação.</p><div class="chips"><span class="chip brand">Secretaria</span><span class="chip brand">Vendedor</span><span class="chip brand">Ger. comercial</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" /><path d="M3 7l9 6l9 -6" /></svg> Envios do portal</div><p>Fila dos e-mails do portal do aluno: convites, recuperação de senha e troca de e-mail. A equipe nunca vê senha nem link do aluno.</p><div class="chips"><span class="chip brand">Secretaria</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /><path d="M15 19l2 2l4 -4" /></svg> Alunos</div><p>Ficha de cada aluno: dados, documentos, créditos, financeiro e acesso ao portal. Mudanças como pausar ou trocar de turma viraram pedidos com aprovação.</p><div class="chips"><span class="chip brand">Secretaria</span><span class="chip brand">Ger. pedagógico</span><span class="chip brand">Financeiro</span><span class="chip brand">Professor</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 21l18 0" /><path d="M9 8l1 0" /><path d="M9 12l1 0" /><path d="M9 16l1 0" /><path d="M14 8l1 0" /><path d="M14 12l1 0" /><path d="M14 16l1 0" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" /></svg> Empresas</div><p>Cadastro de empresas clientes. Hoje é só um cadastro: fatura única e matrícula de colaboradores em lote estão desligadas por decisão do dono.</p><div class="chips"><span class="chip brand">Financeiro</span><span class="chip warning">Aparece para Ger. comercial e Secretaria, mas não abre (X2)</span></div></div>
+</div>
+</div>
+
+<div class="area">
+<h3>Acadêmico</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 15a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M13 17.5v4.5l2 -1.5l2 1.5v-4.5" /><path d="M10 19h-5a2 2 0 0 1 -2 -2v-10c0 -1.1 .9 -2 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -1 1.73" /><path d="M6 9l12 0" /><path d="M6 12l3 0" /><path d="M6 15l2 0" /></svg> Mudanças acadêmicas</div><p>A área pedagógica: regras de avaliação, calendário, grades, admissões, notas, correções, segunda chamada, recuperação e mudança de nível. Cada papel vê só as abas dele.</p><div class="chips"><span class="chip brand">Secretaria</span><span class="chip brand">Ger. pedagógico</span><span class="chip brand">Professor</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v18" /><path d="M13 8l2 0" /><path d="M13 12l2 0" /></svg> Diário de aulas</div><p>A vida de cada aula: encontros da agenda, chamada, pendências, regularizações, reposições e exceções de gravação.</p><div class="chips"><span class="chip brand">Ger. pedagógico</span><span class="chip brand">Professor</span></div></div>
+</div>
+</div>
+
+<div class="area">
+<h3>Financeiro</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg> Financeiro</div><p>Painel do dinheiro: fila de cobranças, pagamentos a conferir, descontos, aprovações, comissões, visão geral e câmbio. O Gerente comercial vê só Comissões, Descontos e Aprovações.</p><div class="chips"><span class="chip brand">Financeiro</span><span class="chip brand">Ger. comercial</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M7 10h14l-4 -4" /><path d="M17 14h-14l4 4" /></svg> Permutas</div><p>Acordos em que a escola recebe um serviço em vez de dinheiro. O Financeiro prepara o acordo, a gestão pedagógica confirma o serviço prestado e outra pessoa aprova a compensação.</p><div class="chips"><span class="chip brand">Financeiro</span><span class="chip brand">Ger. pedagógico</span></div></div>
+</div>
+</div>
+
+<div class="area">
+<h3>Administração e área do aluno</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg> Configuração</div><p>Países, catálogo e preços, turmas, usuários, operação (fuso e prazos), modelos de contrato, CRM e WhatsApp. Cada papel vê só as abas dele; o Administrador vê as nove.</p><div class="chips"><span class="chip brand">Ger. pedagógico</span><span class="chip brand">Secretaria</span><span class="chip info">Ger. comercial só por link, aba CRM (R13)</span></div></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Portal do aluno</div><p>Não está no menu da equipe. É a área do aluno, com login próprio criado a partir de um convite. Mostra resultados, reposições e preferências.</p><div class="chips"><span class="chip">Aluno</span></div></div>
+</div>
+</div>
+</section>
+
+<!-- ============================ 4. FLUXOS ============================ -->
+<section class="section">
+<h2><span class="num">4.</span>Como o dia a dia flui</h2>
+<p class="lead">Quatro fluxos contam a história da escola. Eles acontecem nesta ordem, e o roteiro de testes segue a mesma ordem.</p>
+
+<div class="keep">
+<h3>4.1 Comercial: do interesse à contratação</h3>
+<div class="flow">
+  <div class="node">Oportunidade<small>chega e ganha dono</small></div><div class="arrow">→</div>
+  <div class="node">Atendimento<small>Inbox e Funil</small></div><div class="arrow">→</div>
+  <div class="node">Experimental<small>aula de avaliação</small></div><div class="arrow">→</div>
+  <div class="node">Proposta<small>preço e condições</small></div><div class="arrow">→</div>
+  <div class="node neutral">Contratação<small>abre a entrada</small></div>
+</div>
+<p>Uma <strong>oportunidade</strong> é uma pessoa interessada em estudar. Ela entra no Funil com um vendedor <strong>dono</strong>, que é quem recebe a comissão se a venda fechar. O vendedor conversa pelo WhatsApp e move o cartão pelas etapas. A <strong>aula experimental</strong> tem duas funções: convencer o aluno e descobrir o nível dele. Depois vem a proposta e, por fim, a contratação, que abre o fluxo de entrada.</p>
+</div>
+<table class="compact">
+  <thead><tr><th>Passo</th><th>Quem faz</th><th>Fique atento</th></tr></thead>
+  <tbody>
+    <tr><td>Atender e mover no Funil</td><td>Vendedor; Gerente comercial acompanha a equipe</td><td>A Aria pode responder sozinha no WhatsApp comercial (simulada no UAT).</td></tr>
+    <tr><td>Agendar a experimental</td><td>Vendedor</td><td>Hoje o agendamento fica sem professor.</td></tr>
+    <tr><td>Registrar presença na experimental</td><td>Professor, na Home</td><td class="no">Inalcançável pela tela: bloqueador B6.</td></tr>
+    <tr><td>Enviar proposta e abrir a contratação</td><td>Vendedor, Gerente comercial ou Secretaria</td><td>Preço com desconto acima da alçada vai para aprovação.</td></tr>
+  </tbody>
+</table>
+
+<div class="keep">
+<h3>4.2 Entrada: da contratação à matrícula ativa</h3>
+<div class="flow">
+  <div class="node">Preparação<small>pessoa, oferta e preço</small></div><div class="arrow">→</div>
+  <div class="node">Reserva<small>vaga guardada com prazo</small></div><div class="arrow">→</div>
+  <div class="node">Admissão<small>Secretaria assume e cobra</small></div><div class="arrow">→</div>
+  <div class="node">Contrato<small>prévia, original, assinatura</small></div><div class="arrow">→</div>
+  <div class="node neutral">Ativa<small>aluno na turma</small></div>
+</div>
+<p>Na <strong>preparação</strong>, quem vende escolhe a pessoa, a oferta e o preço. O sistema cria a matrícula em rascunho e uma <strong>reserva</strong> da vaga na turma, com prazo para vencer. A turma só aceita a entrada dentro da sua <strong>janela de admissão</strong>, aprovada pela gestão pedagógica. A Secretaria então <strong>assume</strong> a matrícula, registra quem paga e as condições, e emite as cobranças de entrada. O contrato nasce como <strong>prévia</strong>, vira <strong>original</strong> em PDF e segue para assinatura. Com contrato aceito e pagamentos confirmados, a Secretaria conclui e a matrícula fica <strong>Ativa</strong>.</p>
+</div>
+<table class="compact">
+  <thead><tr><th>Passo</th><th>Quem faz</th><th>Fique atento</th></tr></thead>
+  <tbody>
+    <tr><td>Preparar a contratação</td><td>Vendedor (só a própria carteira), Gerente comercial ou Secretaria</td><td>Nenhuma cobrança nasce aqui. Preço fora da alçada espera o Gerente comercial.</td></tr>
+    <tr><td>Aprovar a janela de admissão da turma</td><td>Secretaria ou Ger. pedagógico prepara; outro Ger. pedagógico decide</td><td>Sem janela, a reserva é recusada.</td></tr>
+    <tr><td>Assumir, registrar pagador e condições, emitir</td><td>Secretaria</td><td>Depois que a Secretaria assume, o vendedor só pede correção.</td></tr>
+    <tr><td>Pagar a taxa de entrada</td><td>Secretaria informa; Financeiro confirma</td><td>Pagamento online desligado: bloqueador B3.</td></tr>
+    <tr><td>Prévia, participantes, original</td><td>Secretaria</td><td>O modelo de contrato precisa estar publicado.</td></tr>
+    <tr><td>Assinatura e aceite</td><td>Serviço de assinatura; Secretaria aceita</td><td class="no">Não existe nem simulado: bloqueador B2.</td></tr>
+    <tr><td>Concluir a matrícula</td><td>Secretaria ou Financeiro</td><td>Ativar coloca o aluno na turma e aprova a comissão do vendedor.</td></tr>
+  </tbody>
+</table>
+<div class="callout warning"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Existe também um caminho antigo de matrícula</div><p>O assistente antigo de nova matrícula ainda está no ar. Ele sempre cria um aluno novo e já emite taxa e mensalidade. Se ele continua ou sai do ciclo é uma decisão pendente (R1). O roteiro diz quando usar.</p></div></div>
+
+<div class="keep">
+<h3>4.3 Acadêmico: da regra ao resultado no portal</h3>
+<div class="flow">
+  <div class="node">Regra<small>como o nível é avaliado</small></div><div class="arrow">→</div>
+  <div class="node">Turma<small>modalidade e nível</small></div><div class="arrow">→</div>
+  <div class="node">Grade<small>dias e horários</small></div><div class="arrow">→</div>
+  <div class="node">Encontros<small>aulas na agenda</small></div>
+</div>
+<div class="flow-cont">continua ↓</div>
+<div class="flow">
+  <div class="node">Chamada<small>presença e falta</small></div><div class="arrow">→</div>
+  <div class="node">Avaliação<small>nota lançada e oficial</small></div><div class="arrow">→</div>
+  <div class="node">Fechamento<small>resultado do nível</small></div><div class="arrow">→</div>
+  <div class="node neutral">Portal<small>aluno vê o resultado</small></div>
+</div>
+<p>Tudo começa na <strong>regra de avaliação</strong> de cada nível: quais provas, pesos e notas mínimas. Ela precisa estar publicada antes de a turma ser criada. A <strong>turma</strong> recebe uma <strong>grade</strong> (dias e horários), e a grade aprovada gera os <strong>encontros</strong>, que são as aulas marcadas na agenda, pulando os feriados do calendário. Depois de cada aula, o professor faz a <strong>chamada</strong> no diário. As notas que ele lança só valem depois de <strong>oficializadas</strong> por outra pessoa da gestão. No fim do nível, a gestão faz o <strong>fechamento</strong>, e o aluno vê o resultado no portal.</p>
+</div>
+<table class="compact">
+  <thead><tr><th>Passo</th><th>Quem faz</th><th>Fique atento</th></tr></thead>
+  <tbody>
+    <tr><td>Calendário (feriados e recessos)</td><td>Secretaria ou Ger. pedagógico prepara; outro Ger. pedagógico decide</td><td>O fuso da escola precisa estar configurado.</td></tr>
+    <tr><td>Regra de avaliação</td><td>Ger. pedagógico prepara; outro Ger. pedagógico publica</td><td>Só vale para turma criada depois da publicação.</td></tr>
+    <tr><td>Turma e grade</td><td>Ger. pedagógico cria; a grade é decidida por outra pessoa</td><td>Nenhuma tela muda o status da turma: bloqueador B1.</td></tr>
+    <tr><td>Chamada</td><td>Professor da aula</td><td>Só abre depois do fim real da aula.</td></tr>
+    <tr><td>Concluir a aula</td><td>Professor; a exceção é decidida por outro gestor</td><td>Gravação exige Google Drive: bloqueador B5.</td></tr>
+    <tr><td>Lançar e oficializar notas</td><td>Professor lança; Ger. pedagógico oficializa</td><td>Oficializar já publica no portal (decisão R4).</td></tr>
+    <tr><td>Segunda chamada, recuperação, correção</td><td>Professor ou Ger. pedagógico propõe; outro decide</td><td>A segunda chamada só abre por endereço direto.</td></tr>
+    <tr><td>Fechamento</td><td>Ger. pedagógico</td><td>Fica bloqueado se houver qualquer pendência aberta.</td></tr>
+  </tbody>
+</table>
+
+<div class="keep">
+<h3>4.4 Financeiro: da cobrança à comissão</h3>
+<div class="flow">
+  <div class="node">Cobrança<small>taxa e mensalidades</small></div><div class="arrow">→</div>
+  <div class="node">Informe<small>"o aluno pagou"</small></div><div class="arrow">→</div>
+  <div class="node">Confirmação<small>Financeiro confere</small></div><div class="arrow">→</div>
+  <div class="node neutral">Comissão<small>do vendedor dono</small></div>
+</div>
+<p>A matrícula gera <strong>cobranças</strong>: taxa de matrícula, mensalidades e, em alguns casos, horas de aula particular, material ou certificado. Cada uma na moeda do país. Quando o aluno diz que pagou, a Secretaria registra um <strong>informe de pagamento</strong>. Ele não muda saldo nenhum. Só quando outra pessoa do Financeiro <strong>confirma</strong> o informe a cobrança é baixada. O Financeiro também pode registrar o recebimento direto. A <strong>comissão</strong> do vendedor nasce aprovada quando a matrícula é ativada.</p>
+</div>
+<table class="compact">
+  <thead><tr><th>Passo</th><th>Quem faz</th><th>Fique atento</th></tr></thead>
+  <tbody>
+    <tr><td>Fila de cobranças (régua)</td><td>Financeiro</td><td>A régua automática começa desligada. "Em atraso" é calculado na hora, não gravado.</td></tr>
+    <tr><td>Enviar cobrança pelo WhatsApp</td><td>Financeiro, à mão</td><td>No UAT aparece como "Simulada (ensaio)".</td></tr>
+    <tr><td>Informar pagamento</td><td>Secretaria</td><td>Fica "A conferir" até outra pessoa decidir.</td></tr>
+    <tr><td>Confirmar ou rejeitar o informe</td><td>Financeiro, outra pessoa</td><td>Rejeitar exige motivo. Quem informou não confere.</td></tr>
+    <tr><td>Desconto e renegociação</td><td>Vendedor, Ger. comercial, Financeiro</td><td>Dentro da alçada aplica direto; acima, vira pedido de aprovação.</td></tr>
+    <tr><td>Comissão</td><td>Automática na ativação; Financeiro acompanha</td><td>Não existe estorno automático em cancelamento.</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ============================ 5. PAPÉIS ============================ -->
+<section class="section">
+<h2><span class="num">5.</span>Os papéis em uma frase</h2>
+<p class="lead">Os nomes abaixo vêm dos usuários de teste. Use os apelidos (ADM, GC, <span class="nowrap">VEND-A</span>…) quando falar com o time e quando escrever uma issue.</p>
+
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0" /><path d="M15 9h.01" /></svg> Administrador</div><div class="who">Diógenes Mendes <span class="chip brand">ADM</span> · Tomás Rivera <span class="chip brand">ADM-2</span></div><p><span class="label">Faz:</span> configura o sistema, cria usuários, define prazos e toma as decisões de direção. Vê todos os módulos.</p><p><span class="label">Nunca faz:</span> aprovar o próprio pedido nem aumentar as próprias permissões. Quem faz isso por ele é o <span class="nowrap">ADM-2</span>.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -6" /><path d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -10" /><path d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -14" /><path d="M4 20h14" /></svg> Gerente comercial</div><div class="who">Ricardo Vargas <span class="chip brand">GC</span></div><p><span class="label">Faz:</span> acompanha a equipe de vendas, aprova descontos dentro da alçada dele e define metas.</p><p><span class="label">Nunca faz:</span> operar cobranças. Também não aprova desconto acima da própria alçada: esse vai para a direção.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9" /><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" /><path d="M12 12l0 .01" /><path d="M3 13a20 20 0 0 0 18 0" /></svg> Vendedor</div><div class="who">João Silva <span class="chip brand">VEND-A</span> · também <span class="nowrap">VEND-B</span> e <span class="nowrap">VEND-0</span></div><p><span class="label">Faz:</span> atende oportunidades, agenda experimentais, envia propostas e prepara a contratação.</p><p><span class="label">Nunca faz:</span> mexer na carteira de outro vendedor sem cobertura, nem dar desconto acima da alçada sem aprovação.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 15a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M13 17.5v4.5l2 -1.5l2 1.5v-4.5" /><path d="M10 19h-5a2 2 0 0 1 -2 -2v-10c0 -1.1 .9 -2 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -1 1.73" /><path d="M6 9l12 0" /><path d="M6 12l3 0" /><path d="M6 15l2 0" /></svg> Gerente pedagógico</div><div class="who">Paula Gómez <span class="chip brand">GP</span> · Elena Quesada <span class="chip brand">GP-2</span></div><p><span class="label">Faz:</span> cuida de regras de avaliação, calendário, turmas, grades, oficialização de notas e fechamento.</p><p><span class="label">Nunca faz:</span> decidir o que ela mesma preparou. Também não vê o contato do aluno nem a página de movimentações.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v18" /><path d="M13 8l2 0" /><path d="M13 12l2 0" /></svg> Professor</div><div class="who">Carla Fernández <span class="chip brand">PROF</span> · Marcos Jiménez <span class="chip brand">PROF-2</span></div><p><span class="label">Faz:</span> dá a aula, faz a chamada, lança notas e propõe segunda chamada ou recuperação.</p><p><span class="label">Nunca faz:</span> ver aluno de turma que não é dele, nem documentos, contato, endereço ou valores. Não oficializa a própria nota.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg> Financeiro</div><div class="who">Fernanda Rojas <span class="chip brand">FIN</span> · Gabriel Solís <span class="chip brand">FIN-2</span></div><p><span class="label">Faz:</span> confere pagamentos, registra recebimentos, prepara acertos e permutas e acompanha comissões.</p><p><span class="label">Nunca faz:</span> conferir um pagamento que ele mesmo informou, nem aprovar um acerto que ele mesmo preparou.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5" /><path d="M3 14a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M4.5 17l-1.5 5l3 -1.5l3 1.5l-1.5 -5" /></svg> Secretaria acadêmica</div><div class="who">Sofía Mora <span class="chip brand">SEC</span></div><p><span class="label">Faz:</span> assume matrículas, prepara contratos, informa pagamentos e convida o aluno para o portal.</p><p><span class="label">Nunca faz:</span> confirmar pagamento (só informa) nem abrir o painel financeiro. Hoje também não gerencia turmas (R14).</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6" /><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4" /></svg> Aluno</div><div class="who">Conta do portal, criada pelo convite <span class="chip">Aluno do portal</span></div><p><span class="label">Faz:</span> ativa a conta pelo e-mail, vê resultados, acompanha reposições e envia atividades.</p><p><span class="label">Nunca faz:</span> entrar no ERP da equipe. O usuário Bruno Salas (<span class="nowrap">ALUNO-EQUIPE</span>) existe só para provar isso.</p></div>
+</div>
+
+<div class="callout info"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg><div><div class="title">Usuários com dois papéis</div><p>Mariana López (<span class="nowrap">GC+V</span>) é gerente e vendedora. Ana Torres (<span class="nowrap">FIN+SEC</span>) é financeiro e secretaria. Daniel Araya (<span class="nowrap">VEND+PROF</span>) é vendedor e professor. Eles servem para testar a soma de papéis e a regra de "outra pessoa". Não use esses usuários para testar um papel sozinho.</p></div></div>
+
+<h3>Glossário: os termos que você vai ver</h3>
+<p>Em ordem de aparição no dia a dia. Volte aqui sempre que um termo do roteiro parecer estranho.</p>
+<dl class="terms">
+  <dt>Oportunidade</dt><dd>Pessoa interessada em estudar, acompanhada no Funil. Tem um vendedor dono.</dd>
+  <dt>Dono</dt><dd>O vendedor responsável pela oportunidade. É quem recebe a comissão.</dd>
+  <dt>Etapa</dt><dd>Coluna do Funil: Novo, 1º contato, Qualificado, Exp. agendada, Exp. realizada, No-show, Proposta, Aguardando matrícula, Matriculado e Perdido.</dd>
+  <dt>Experimental</dt><dd>Aula de avaliação antes da compra. Converte a venda e define o nível.</dd>
+  <dt>No-show</dt><dd>Quando a pessoa falta à aula experimental.</dd>
+  <dt>Carteira</dt><dd>O conjunto de oportunidades e clientes de um vendedor.</dd>
+  <dt>Cobertura</dt><dd>Quando um vendedor cuida, por um tempo, da carteira de outro.</dd>
+  <dt>Alçada</dt><dd>O desconto máximo que uma pessoa pode dar sozinha, separado em taxa e mensalidade. Campo vazio quer dizer 0%, não "sem limite".</dd>
+  <dt>Aprovação independente</dt><dd>A regra de "outra pessoa": quem prepara não decide.</dd>
+  <dt>Preparação</dt><dd>Primeiro passo da contratação: pessoa, oferta e preço. Cria a matrícula em rascunho.</dd>
+  <dt>Reserva</dt><dd>A vaga guardada na turma enquanto a contratação anda. Tem prazo para vencer.</dd>
+  <dt>Admissão</dt><dd>A janela em que a turma aceita alunos novos, com limite de entrada. Precisa estar aprovada para haver reserva.</dd>
+  <dt>Assumir</dt><dd>Quando a Secretaria toma para si a matrícula preparada pelo comercial.</dd>
+  <dt>Pagador</dt><dd>Quem paga: o próprio aluno, o responsável ou uma empresa.</dd>
+  <dt>Prévia</dt><dd>A versão de conferência do contrato, gerada a partir do modelo. Não muda depois de criada.</dd>
+  <dt>Original</dt><dd>O PDF definitivo do contrato, guardado com uma marca de integridade, que segue para assinatura.</dd>
+  <dt>Aceite</dt><dd>A confirmação de que o original foi assinado. Sem aceite não há matrícula ativa.</dd>
+  <dt>Aditivo</dt><dd>Uma alteração num contrato já assinado. Tem aprovações próprias. Inacessível no UAT por causa do B2.</dd>
+  <dt>Matrícula ativa</dt><dd>Contrato aceito e pagamentos de entrada confirmados. O aluno passa a ocupar a vaga na turma.</dd>
+  <dt>Cobrança</dt><dd>Cada valor a receber: taxa de matrícula, mensalidade, hora particular, material ou certificado.</dd>
+  <dt>Régua</dt><dd>A sequência de lembretes de cobrança antes e depois do vencimento. A versão automática começa desligada.</dd>
+  <dt>Informe</dt><dd>O registro da Secretaria de que o aluno disse ter pago. Não mexe no saldo.</dd>
+  <dt>Conferência</dt><dd>Quando outra pessoa do Financeiro confirma ou rejeita um informe.</dd>
+  <dt>Promessa</dt><dd>Data em que o aluno promete pagar. A cobrança fica parada até lá, sem mudar o vencimento.</dd>
+  <dt>Crédito</dt><dd>Valor pago a mais que fica guardado para o aluno usar depois.</dd>
+  <dt>Permuta</dt><dd>Acordo em que a escola recebe um serviço em vez de dinheiro.</dd>
+  <dt>Modalidade</dt><dd>Como o curso funciona: regular, intensivo, particular e outras. Define a duração da aula.</dd>
+  <dt>Nível</dt><dd>Etapa do aprendizado, de Pré A1 a C2.</dd>
+  <dt>Regra de avaliação</dt><dd>Provas, pesos, notas mínimas e prazos de um nível.</dd>
+  <dt>Grade</dt><dd>Dias e horários de aula de uma turma.</dd>
+  <dt>Encontro</dt><dd>Cada aula marcada na agenda. Começa "Previsto" e vira "Ministrado".</dd>
+  <dt>Chamada</dt><dd>O registro de presença e falta de cada aluno, feito no diário depois da aula.</dd>
+  <dt>Pendência</dt><dd>Aula que terminou e ainda não tem o diário completo.</dd>
+  <dt>Regularização</dt><dd>O acerto de uma aula que ficou pendente: a gestão designa alguém para completar o registro. Também se diz que uma reposição regulariza uma falta.</dd>
+  <dt>Exceção de gravação</dt><dd>Pedido para concluir a aula sem gravação. Outra pessoa da gestão aprova.</dd>
+  <dt>Reposição</dt><dd>Forma de recuperar uma aula perdida: aula particular ou gravação com atividade.</dd>
+  <dt>Oficializar</dt><dd>Tornar válida a nota lançada pelo professor. Feito por outra pessoa da gestão.</dd>
+  <dt>Correção de nota</dt><dd>Pedido para mudar uma nota já oficial. A nota antiga vale até a decisão.</dd>
+  <dt>Segunda chamada</dt><dd>Nova chance de fazer uma avaliação perdida, com prazo e aula própria.</dd>
+  <dt>Recuperação</dt><dd>Plano para o aluno que ficou abaixo do mínimo numa habilidade. Vale a maior nota.</dd>
+  <dt>Fechamento</dt><dd>O resultado final do aluno no nível: suficiente ou insuficiente.</dd>
+  <dt>Mudança de nível</dt><dd>Passar o aluno para outro nível, com pedido, parecer do professor, aprovação e execução.</dd>
+  <dt>Equivalência</dt><dd>Transferência para outra turma do mesmo nível, aproveitando as notas.</dd>
+  <dt>Convite do portal</dt><dd>O e-mail que cria a conta do aluno no portal.</dd>
+</dl>
+</section>
+
+<!-- ============================ 6. UAT ============================ -->
+<section class="section">
+<h2><span class="num">6.</span>O ambiente de UAT</h2>
+<p class="lead">UAT quer dizer teste de aceitação do usuário. É o ambiente de homologação: uma cópia do sistema, com banco de dados próprio, feita para testar antes de a escola usar de verdade.</p>
+
+<p>Hoje o UAT é o único ambiente do projeto. Cada vez que o time junta uma mudança na versão principal, ela vai ao ar no UAT automaticamente. Por isso a versão pode mudar de um dia para o outro, e você precisa anotar qual versão testou.</p>
+
+<div class="callout brand"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M19.5 13.572l-7.5 7.428l-2.896 -2.868m-6.117 -8.104a5 5 0 0 1 9.013 -3.022a5 5 0 1 1 7.5 6.572" /><path d="M3 13h2l2 3l2 -6l1 3h3" /></svg><div><div class="title">Como saber a versão: /api/health</div><p>Abra o endereço do UAT seguido de <code>/api/health</code>. A página mostra um texto curto com o campo <code>sha</code>, que é o código da versão no ar. Anote esse código no começo de cada dia de teste, na planilha e em toda issue.</p></div></div>
+
+<h3>Por que nada sai de verdade</h3>
+<p>No UAT, tudo o que fala com o mundo de fora está simulado ou desligado. Assim você pode testar sem mandar mensagem para um aluno real, sem cobrar ninguém e sem gastar com serviços pagos.</p>
+
+<table class="compact">
+  <thead><tr><th>Serviço</th><th>Estado no UAT</th><th>O que você vai ver</th><th>O que fazer</th></tr></thead>
+  <tbody>
+    <tr><td><strong>WhatsApp, envio</strong></td><td>Simulado</td><td>O que você envia pela Inbox some e não aparece na conversa. Cobrança mostra "Simulada (ensaio)".</td><td>Registrar como observação. Não é bug (B8).</td></tr>
+    <tr><td><strong>WhatsApp, recebimento</strong></td><td>Sem simulação pela tela</td><td>Conversa nova só aparece se o dev simular a mensagem.</td><td>Pedir ao dev (B8).</td></tr>
+    <tr><td><strong>E-mail</strong></td><td>Desligado, sem simulado</td><td>Convites e avisos ficam "Preparado" para sempre.</td><td>Portal fica Bloqueado (B4) até o gestor decidir (R3).</td></tr>
+    <tr><td><strong>Pagamento online</strong></td><td>Desligado</td><td>A página de pagamento não tem botão de pagar.</td><td>Pagar = Secretaria informa e Financeiro confirma (B3).</td></tr>
+    <tr><td><strong>Assinatura de contrato</strong></td><td>Não existe</td><td>"O envio ao serviço de assinatura ainda não está disponível."</td><td>Ativação só com ajuda do dev (B2).</td></tr>
+    <tr><td><strong>Google Drive</strong></td><td>Não configurado</td><td>Publicar gravação dá "Erro inesperado. Tente novamente."</td><td>Concluir a aula pela exceção de gravação (B5).</td></tr>
+    <tr><td><strong>Aria (IA)</strong></td><td>Simulada</td><td>Respostas fixas. O selo "SIMULAÇÃO" só aparece no Playground.</td><td>Esperado. Registrar o que viu (R9).</td></tr>
+    <tr><td><strong>Rotinas automáticas</strong></td><td>Rodam a cada 1 a 5 minutos</td><td>A turma passa a "Em andamento" até 5 minutos depois do 1º encontro.</td><td>Confirmar com o dev que estão no ar.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M7 17l0 .01" /><path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M7 7l0 .01" /><path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M17 7l0 .01" /><path d="M14 14l3 0" /><path d="M20 14l0 .01" /><path d="M14 14l0 3" /><path d="M14 20l3 0" /><path d="M17 17l3 0" /><path d="M20 17l0 3" /></svg><div><div class="title">Nunca escaneie o QR code do WhatsApp</div><p>Em Configuração › WhatsApp, o sistema pode mostrar um QR code de verdade. Se você escanear com um celular, aquele número fica conectado. Algumas ações da Inbox (encaminhar, reagir, editar, apagar, bloquear) não passam pela trava do modo simulado e sairiam de verdade, para pessoas reais. Feche o diálogo e siga. Este é o achado X15 da auditoria.</p></div></div>
+
+</section>
+
+<!-- ============================ 7. NÃO FUNCIONA ============================ -->
+<section class="section">
+<h2><span class="num">7.</span>O que já sabemos que não funciona</h2>
+<p class="lead">A auditoria de 21/10 encontrou oito <strong>bloqueadores</strong>: problemas que impedem um fluxo inteiro no UAT. Eles já têm dono. Quando você esbarrar num deles, não abra bug: marque o cenário como Bloqueado, com o código, e siga.</p>
+
+<p>Se o dev avisar que um bloqueador foi resolvido, confira a versão em <code>/api/health</code> e execute o cenário normalmente.</p>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B1 · Nenhuma tela muda o status da turma</div><p>Toda turma tem um status: planejada, aberta, em andamento ou concluída. Hoje nenhuma tela faz a turma mudar de status. A passagem para "Em andamento" acontece sozinha, pela rotina automática, e "Concluída" não se alcança.</p><p><strong>O que você vai ver:</strong> a turma não aparece como opção na matrícula do caminho antigo; não há botão para abrir nem para concluir a turma.</p><p><strong>O que fazer:</strong> pedir ao dev que abra a turma. Sem isso, marcar <strong class="nowrap">Bloqueado (B1)</strong>.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B2 · Não existe assinatura de contrato, nem simulada</div><p>Para a matrícula ficar ativa, o contrato precisa ser assinado e aceito. O serviço de assinatura não está ligado e não há versão de teste.</p><p><strong>O que você vai ver:</strong> "O envio ao serviço de assinatura ainda não está disponível"; o botão "Concluir matrícula" recusa. Aditivos e substituição de contrato ficam inacessíveis.</p><p><strong>O que fazer:</strong> a ativação só sai com uma preparação feita pelo dev. Sem ela, marcar <strong class="nowrap">Bloqueado (B2)</strong>.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B3 · Pagamento online desligado</div><p>O pagamento simulado está desligado no próprio sistema. Nenhuma tela gera o link de pagamento online.</p><p><strong>O que você vai ver:</strong> a página de pagamento mostra a cobrança, mas sem botão de pagar. Dá para testar só link inválido e link expirado.</p><p><strong>O que fazer:</strong> pagar pelo caminho manual (Secretaria informa e Financeiro confirma, ou Financeiro registra o recebimento). Cenários de pagamento online: <strong class="nowrap">Bloqueado (B3)</strong>. Ligar ou não é a decisão R2.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B4 · O portal do aluno precisa de e-mail real</div><p>A conta do aluno nasce de um link enviado por e-mail. No UAT o e-mail está desligado e não há modo simulado.</p><p><strong>O que você vai ver:</strong> o convite fica "Preparado" para sempre em Envios do portal. Ativação, login e recuperação de senha do portal não têm como ser testados.</p><p><strong>O que fazer:</strong> marcar <strong class="nowrap">Bloqueado (B4)</strong> até o gestor definir como você recebe o link (decisão R3), por exemplo com uma caixa de e-mail de teste.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B5 · Gravação de aula exige Google Drive</div><p>O caminho normal para concluir uma aula é publicar a gravação. Sem o Drive configurado, isso falha.</p><p><strong>O que você vai ver:</strong> "Erro inesperado. Tente novamente." ao publicar a gravação.</p><p><strong>O que fazer:</strong> concluir a aula pela exceção de gravação, aprovada por outra pessoa da gestão (<span class="nowrap">GP-2</span>). O cenário de publicar gravação: <strong class="nowrap">Bloqueado (B5)</strong>.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B6 · A experimental não chega ao professor</div><p>O Funil agenda a experimental sem professor, e não há tela para escolher um. O registro de presença exige professor.</p><p><strong>O que você vai ver:</strong> a experimental agendada não aparece para o professor registrar presença; as etapas "Exp. realizada" e "No-show" nunca são alcançadas.</p><p><strong>O que fazer:</strong> marcar <strong class="nowrap">Bloqueado (B6)</strong>. O dev precisa corrigir.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B7 · O ambiente não vem montado</div><p>A carga inicial de dados de teste não cria a configuração mínima: alçadas, vínculo dos vendedores com o gerente, prazos, calendário, regras, turmas, modelos de contrato e os usuários "segundos".</p><p><strong>O que você vai ver:</strong> Home do Gerente comercial vazia; todo desconto indo para aprovação; "Regras de entrada incompletas"; reserva falhando; notas que não lançam.</p><p><strong>O que fazer:</strong> confirmar com o gestor que o checklist de preparação do ambiente (19 passos) foi feito. Se não foi, marcar <strong class="nowrap">Bloqueado (B7)</strong>.</p></div></div>
+
+<div class="callout danger"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg><div><div class="title">B8 · Não dá para simular mensagem recebida no WhatsApp</div><p>Na Inbox, você não consegue fazer "o aluno mandar uma mensagem". E o que você envia no modo simulado fica só guardado, sem aparecer.</p><p><strong>O que você vai ver:</strong> conversa nova não aparece; a mensagem enviada some do campo; nota interna e contexto de transferência não aparecem.</p><p><strong>O que fazer:</strong> pedir ao dev que simule a mensagem recebida e confira o que foi guardado. Sem esse apoio, marcar <strong class="nowrap">Bloqueado (B8)</strong>.</p></div></div>
+</section>
+
+<section class="section">
+<h3>O que parece bug mas não é</h3>
+<p>Estes comportamentos são a regra atual. Confira que acontecem como descrito. Só é falha se acontecer outra coisa.</p>
+<div class="cards facts">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 7v5l3 3" /></svg> O fuso da escola é obrigatório</div><p>Sem o fuso configurado em Configuração › Operação, não dá para lançar notas, preparar calendário nem usar o portal. A tela mostra um aviso para configurar o fuso.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 15a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M13 17.5v4.5l2 -1.5l2 1.5v-4.5" /><path d="M10 19h-5a2 2 0 0 1 -2 -2v-10c0 -1.1 .9 -2 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -1 1.73" /><path d="M6 9l12 0" /><path d="M6 12l3 0" /><path d="M6 15l2 0" /></svg> A regra de avaliação vem antes da turma</div><p>A regra precisa estar publicada e aprovada antes de criar a turma. O vínculo só acontece para turma que ainda vai começar.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" /><path d="M16 3l0 4" /><path d="M8 3l0 4" /><path d="M4 11l16 0" /><path d="M8 15h2v2h-2l0 -2" /></svg> A chamada só abre depois do fim da aula</div><p>E a aula dura o tempo da modalidade: duas horas no Regular. Para testar sem esperar, o dev cria uma modalidade curta de UAT, com aulas de 15 minutos.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> Quase tudo pede outra pessoa</div><p>Use o segundo usuário do mesmo papel (<span class="nowrap">ADM-2</span>, <span class="nowrap">GP-2</span>, <span class="nowrap">FIN-2</span>). Usar o Administrador como segundo decisor esconde erros de papel, porque ele passa em tudo.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg> "Em atraso" é calculado na hora</div><p>O status de atraso não fica gravado. Por isso a página de pagamento pode mostrar uma cobrança vencida como "Pagamento em aberto".</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1" /></svg> Professor e Gerente pedagógico abrem a Inbox</div><p>É o comportamento atual. E o que você envia em modo simulado não aparece na conversa.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6" /></svg> A Aria responde com frases fixas</div><p>Sem a chave do serviço de IA, ela usa um modo simulado. Enviar PDF para a base de conhecimento falha: é esperado.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg> Bloqueio de login e senha</div><p>Cinco senhas erradas em 15 minutos bloqueiam aquele e-mail, inclusive para a senha certa. Não existe "esqueci minha senha" nem troca de senha pelo próprio usuário: só o Administrador redefine.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M7 10h14l-4 -4" /><path d="M17 14h-14l4 4" /></svg> Mudanças do aluno viraram pedidos</div><p>Pausar, encerrar, reativar e trocar de turma saíram da ficha do aluno. Agora são propostas com aprovação, na página de movimentações e em Mudanças acadêmicas. O Gerente pedagógico não abre a página de movimentações.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5" /><path d="M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5" /><path d="M14 5.5a1.5 1.5 0 0 1 3 0v6.5" /><path d="M17 7.5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47" /></svg> Desistência antes da ativação</div><p>Funciona nos casos simples, administrativo, financeiro e de acerto contratual. Falta só encerrar a assinatura externa, que não tem tela.</p></div>
+</div>
+
+<div class="callout warning"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9" /><path d="M5 21v-7" /></svg><div><div class="title">Não testar: ainda não existe ou está desligado</div><p>Fatura única e lote de colaboradores de empresas. Exportação e anonimização de dados por aluno. Estorno automático de comissão e estorno de recebimento. Cancelamento de aula pedido pelo professor e substituição de professor. Lead automático e réguas comerciais antigas. Continuidade mensal automática. Régua de cobrança automática (começa desligada). Modo simulado de e-mail. Não abra bug para esses itens.</p></div></div>
+</section>
+
+<!-- ============================ 8. ACESSOS ============================ -->
+<section class="section">
+<h2><span class="num">8.</span>Seus acessos e sua máquina</h2>
+<p class="lead">Você recebe tudo do gestor. Nada disso deve chegar por canal aberto.</p>
+
+<table>
+  <thead><tr><th>Item</th><th>O que é</th><th>Quem entrega</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Endereço do UAT</strong></td><td>O site do ambiente de homologação. Confira a versão em <code>/api/health</code>.</td><td>Gestor, por canal privado</td></tr>
+    <tr><td><strong>Usuários de teste</strong></td><td>Um por papel, mais os "segundos" e os combinados. Lista e apelidos no documento de usuários e papéis.</td><td>Gestor; senhas só por canal privado</td></tr>
+    <tr><td><strong>Repositório no GitHub</strong></td><td>Onde você abre issues. Você só grava alterações na pasta de testes automatizados.</td><td>Convite do GitHub</td></tr>
+    <tr><td><strong>GitHub Projects</strong></td><td>O quadro onde os bugs andam de "Novo" até "Fechado".</td><td>Mesmo convite</td></tr>
+    <tr><td><strong>Caixa de e-mail de teste</strong></td><td>Só se o gestor optar por e-mail real de teste para o portal (B4).</td><td>Gestor</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warning"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0" /><path d="M15 9h.01" /></svg><div><div class="title">Senhas e e-mails de usuário</div><p>As senhas chegam por canal privado e não aparecem em nenhum documento. Se você precisar criar um usuário, escreva o e-mail todo em minúsculas: com letra maiúscula ele nunca consegue entrar (bug X1).</p></div></div>
+<div class="callout warning"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg><div><div class="title">Cuidado com dados de pessoas</div><p>Nunca cole senha, token ou dado real de aluno numa issue. Se um print mostrar nome, telefone ou documento que parece de alguém real, corte ou borre antes de anexar.</p></div></div>
+
+<h3>Sua máquina</h3>
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 19l18 0" /><path d="M5 7a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -8" /></svg> Teste manual</div><p>Só um navegador atualizado. Para testar duas pessoas ao mesmo tempo (quem pede e quem aprova), use uma janela normal e uma anônima, ou dois navegadores.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 8.04l-12.122 12.124a2.857 2.857 0 1 1 -4.041 -4.04l12.122 -12.124" /><path d="M7 13h8" /><path d="M19 15l1.5 1.6a2 2 0 1 1 -3 0l1.5 -1.6" /><path d="M15 3l6 6" /></svg> Teste automatizado</div><p>Node.js 20 ou superior, Git e o VS Code com a extensão "Playwright Test for VSCode". O guia de automação do kit explica a instalação.</p></div>
+</div>
+<p>Você não precisa instalar banco de dados nem rodar o sistema na sua máquina: os testes rodam contra o UAT. O teste automatizado também roda na sua máquina, não no GitHub.</p>
+<p>Para o modo celular (marcador [MOB] do roteiro), use um celular de verdade ou o navegador no tamanho 375 × 812, pelo modo dispositivo das ferramentas de desenvolvedor.</p>
+</section>
+
+<!-- ============================ 9. PRIMEIRO DIA E CICLO ============================ -->
+<section class="section">
+<h2><span class="num">9.</span>Seu primeiro dia e o ciclo de teste</h2>
+
+<h3>Seu primeiro dia</h3>
+<ol class="steps">
+  <li><div><div class="title">Receba e teste os acessos</div><p>Endereço do UAT, usuários e senhas por canal privado, convite do GitHub. Entre com o ADM e com um usuário de cada papel.</p></div></li>
+  <li><div><div class="title">Anote a versão</div><p>Abra <code>/api/health</code> e copie o <code>sha</code> para a planilha do ciclo.</p></div></li>
+  <li><div><div class="title">Leia este guia até o fim</div><p>Principalmente as seções 6 e 7: elas evitam horas de investigação em problemas já conhecidos.</p></div></li>
+  <li><div><div class="title">Leia o documento de usuários e papéis</div><p>Quem pode o quê, os apelidos do roteiro e as armadilhas de alçada e de "outra pessoa".</p></div></li>
+  <li><div><div class="title">Leia o roteiro de testes</div><p>Entenda a ordem dos módulos, a massa de dados com nome fixo (<span class="nowrap">QA-TURMA-A1</span>, <span class="nowrap">QA-OPORT-01</span>…) e a linha do tempo sugerida.</p></div></li>
+  <li><div><div class="title">Leia como reportar bugs</div><p>O modelo de issue, a severidade, as etiquetas e o quadro.</p></div></li>
+  <li><div><div class="title">Confirme o ambiente com o gestor</div><p>O checklist de preparação foi feito (B7)? A rotina automática está no ar? Nenhum número de WhatsApp está conectado?</p></div></li>
+  <li><div><div class="title">Comece o Módulo 0</div><p>Login, sessão, menu por papel e acesso negado. É o módulo mais simples e o que mais ensina sobre o sistema.</p></div></li>
+</ol>
+
+<div class="callout ai"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 6a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2l0 -4" /><path d="M12 2v2" /><path d="M9 12v9" /><path d="M15 12v9" /><path d="M5 16l4 -2" /><path d="M15 14l4 2" /><path d="M9 18h6" /><path d="M10 8v.01" /><path d="M14 8v.01" /></svg><div><div class="title">Do manual para o automatizado</div><p>O primeiro ciclo é só manual. A partir do segundo, cada cenário de prioridade P1 que passou vira candidato a teste automatizado no Playwright, com o mesmo código de cenário.</p></div></div>
+
+<h3>Como é um ciclo de teste</h3>
+<p>Um ciclo é executar os módulos 0 a 11 do roteiro, na ordem, do primeiro ao último cenário. A configuração e a preparação acadêmica do começo alimentam todo o resto.</p>
+<ol class="steps">
+  <li><div><div class="title">Execute módulo por módulo, na ordem</div><p>Configurar, preparar a parte acadêmica, captar, atender, matricular, acompanhar o aluno, dar aula, avaliar, cobrar e, por fim, conferir permissões e a Home.</p></div></li>
+  <li><div><div class="title">Registre um resultado por cenário</div><p>Use um dos quatro resultados da tabela abaixo, na planilha de resultados.</p></div></li>
+  <li><div><div class="title">Falhou: abra a issue antes de seguir</div><p>Pelo modelo "Bug" do GitHub, com o código do cenário. Anote o número da issue na planilha. Se o roteiro marca 🐞 X#, cite o X# no título.</p></div></li>
+  <li><div><div class="title">Bloqueado: anote o motivo e siga</div><p>Escreva o B# ou o motivo (por exemplo, "Bloqueado B2") e vá para o próximo cenário possível.</p></div></li>
+  <li><div><div class="title">Decisão pendente: registre e não abra bug</div><p>Anote o que viu na coluna Observação, com o R#. Esses cenários vão para a lista do gestor no fim do ciclo.</p></div></li>
+  <li><div><div class="title">Feche o ciclo</div><p>Entregue a planilha de resultados, a lista de issues abertas e um resumo curto por módulo.</p></div></li>
+</ol>
+
+<h4>Os quatro resultados possíveis</h4>
+<table class="compact">
+  <thead><tr><th>Resultado</th><th>Quando usar</th></tr></thead>
+  <tbody>
+    <tr><td class="ok nowrap"><strong>Passou</strong></td><td>O sistema fez exatamente o que está em "Resultado esperado".</td></tr>
+    <tr><td class="no nowrap"><strong>Falhou → issue</strong></td><td>O sistema fez outra coisa. Abra a issue e anote o número dela.</td></tr>
+    <tr><td class="nowrap"><strong>Bloqueado</strong></td><td>Não deu para executar: falta pré-condição, a tela quebrou antes do passo ou apareceu um bloqueador B#.</td></tr>
+    <tr><td class="nowrap"><strong>Não aplicável</strong></td><td>O cenário não vale neste ciclo, por exemplo quando o gestor tirou um fluxo do ciclo. Anote o motivo.</td></tr>
+  </tbody>
+</table>
+
+<h4>Os marcadores do roteiro</h4>
+<table class="compact">
+  <thead><tr><th>Marcador</th><th>O que significa</th><th>O que fazer</th></tr></thead>
+  <tbody>
+    <tr><td class="marker">⚠️ R#</td><td>Decisão pendente: o sistema e a documentação dizem coisas diferentes e o gestor ainda não decidiu.</td><td>Executar, registrar o observado e anotar o R#. Não abrir bug.</td></tr>
+    <tr><td class="marker">🛑 B#</td><td>Bloqueador conhecido, que impede o fluxo (seção 7).</td><td>Se acontecer, marcar Bloqueado (B#). Se já foi resolvido, executar normalmente.</td></tr>
+    <tr><td class="marker">🐞 X#</td><td>Bug provável: a auditoria viu um defeito que você precisa confirmar.</td><td>Se acontecer, Falhou e issue com o X# no título. Se não, Passou com "X# não reproduz".</td></tr>
+    <tr><td class="marker">ℹ️</td><td>Não é bug: parece estranho, mas é a regra atual.</td><td>Conferir que acontece como descrito. Só é falha se for diferente.</td></tr>
+    <tr><td class="marker">[DEV]</td><td>Precisa de um passo fora da tela, feito pelo desenvolvedor.</td><td>Pedir ao dev de plantão antes. Sem apoio, Bloqueado ([DEV]).</td></tr>
+    <tr><td class="marker">[MOB]</td><td>Repetir no celular ou no navegador em 375 × 812.</td><td>Anotar o resultado na mesma linha, com "MOB:" na observação.</td></tr>
+    <tr><td class="marker">⏭</td><td>Depende de algo que só existe mais adiante no ciclo.</td><td>Pular e voltar depois. Anotar "adiado" até lá.</td></tr>
+  </tbody>
+</table>
+
+<div class="keep">
+<h4>Linha do tempo sugerida para o primeiro ciclo</h4>
+<table class="compact">
+  <thead><tr><th>Quando</th><th>O que executar</th></tr></thead>
+  <tbody>
+    <tr><td class="nowrap"><strong>Antes do ciclo</strong></td><td>Dev e Administrador preparam o ambiente (checklist de 19 passos).</td></tr>
+    <tr><td class="nowrap"><strong>Dia 1</strong></td><td>Módulos 0, 1 e 2. Na grade, marque o 1º encontro das turmas de teste para o dia 3, no fim da tarde.</td></tr>
+    <tr><td class="nowrap"><strong>Dia 2</strong></td><td>Módulos 3 e 4 (o que não depende de aluno) e Módulo 5 até as ativações. Do início da matrícula até a emissão das cobranças, termine dentro do prazo de reserva (120 minutos).</td></tr>
+    <tr><td class="nowrap"><strong>Dia 3</strong></td><td>Módulo 6. Depois do fim do 1º encontro, comece o Módulo 7 (diário).</td></tr>
+    <tr><td class="nowrap"><strong>Dias 4 a 6</strong></td><td>Os próximos encontros, o resto do Módulo 7 e os Módulos 8, 9, 10 e 11.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================ 10. QUANDO TRAVAR ============================ -->
+<div class="s10">
+<h2><span class="num">10.</span>Quando travar e contatos</h2>
+<p class="lead">Travar faz parte. Antes de abrir bug, passe por estas perguntas.</p>
+
+<dl class="qa">
+  <div class="pair"><dt>Não consigo entrar no sistema.</dt><dd>Confira se o endereço é o do UAT e se a senha é a do UAT. Se o e-mail do usuário tem letra maiúscula, é o bug X1: use um usuário com e-mail todo em minúsculas e abra a issue. Lembre que cinco erros em 15 minutos bloqueiam o e-mail.</dd></div>
+  <div class="pair"><dt>Apareceu "Acesso negado".</dt><dd>Pode ser o correto para aquele papel. Confira a matriz do documento de usuários e papéis antes de abrir bug. Se aparecer "Não foi possível carregar esta tela" no lugar de "Acesso negado", é o bug X3.</dd></div>
+  <div class="pair"><dt>O item está no menu, mas a página não abre.</dt><dd>Menu não é permissão. "Empresas" aparece para Gerente comercial e Secretaria e a página nega: é o bug X2.</dd></div>
+  <div class="pair"><dt>A ação pede "outra pessoa" para aprovar.</dt><dd>É a regra. Use o segundo usuário do mesmo papel (<span class="nowrap">ADM-2</span>, <span class="nowrap">GP-2</span>, <span class="nowrap">FIN-2</span>). Nunca use o Administrador como atalho.</dd></div>
+  <div class="pair"><dt>Todo desconto está indo para aprovação.</dt><dd>Confira os dois campos de alçada do usuário. Vazio quer dizer 0%. Se o ambiente não foi preparado, é o B7.</dd></div>
+  <div class="pair"><dt>A chamada não abre.</dt><dd>Ela só abre depois do fim real da aula. Peça ao dev a modalidade curta de UAT.</dd></div>
+  <div class="pair"><dt>Enviei uma mensagem pela Inbox e ela sumiu.</dt><dd>É o modo simulado (B8). Registre como observação.</dd></div>
+  <div class="pair"><dt>O roteiro manda fazer algo fora da tela.</dt><dd>É um passo [DEV]. Peça ao dev de plantão. Sem apoio, marque Bloqueado ([DEV]).</dd></div>
+  <div class="pair"><dt>Não sei se é bug ou regra.</dt><dd>Pergunte ao gestor e anote a resposta na issue ou no roteiro. Se for uma divergência nova entre sistema e documentação, abra a issue com a etiqueta de decisão pendente.</dd></div>
+</dl>
+
+<div class="keep">
+<h3>Contatos e canais</h3>
+<table>
+  <thead><tr><th>Para</th><th>Canal</th></tr></thead>
+  <tbody>
+    <tr><td>Dúvida de regra, "é bug ou é assim mesmo"</td><td>Gestor (canal a definir)</td></tr>
+    <tr><td>Passo que só o dev faz ([DEV] no roteiro: abrir turma, disparar rotina, simular mensagem)</td><td>Dev de plantão (canal a definir)</td></tr>
+    <tr><td>Bug</td><td>GitHub Issues, modelo "Bug"</td></tr>
+    <tr><td>Senhas e acessos</td><td>Canal privado com o gestor</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================ 11. KIT ============================ -->
+<div class="keep">
+<h2><span class="num">11.</span>Os outros documentos do kit</h2>
+<p class="lead">Este guia é a porta de entrada. Leia os próximos nesta ordem.</p>
+
+<div class="cards">
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> Usuários e papéis</div><p>Os usuários de teste e seus apelidos, como preparar cada um, o que cada papel abre, o menu de cada um, as alçadas de desconto e as armadilhas mais comuns.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3.5 5.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 11.5l1.5 1.5l2.5 -2.5" /><path d="M3.5 17.5l1.5 1.5l2.5 -2.5" /><path d="M11 6l9 0" /><path d="M11 12l9 0" /><path d="M11 18l9 0" /></svg> Roteiro de testes manuais</div><p>Os cenários ponta a ponta, na ordem real de uso, com pré-condição, passos, resultado esperado, prioridade e marcadores B, X e R.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M9 9v-1a3 3 0 0 1 6 0v1" /><path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /><path d="M3 13l4 0" /><path d="M17 13l4 0" /><path d="M12 20l0 -6" /><path d="M4 19l3.35 -2" /><path d="M20 19l-3.35 -2" /><path d="M4 7l3.75 2.4" /><path d="M20 7l-3.75 2.4" /></svg> Como reportar bugs</div><p>Como abrir uma issue no GitHub, o que é um bom relatório, a severidade (crítico, alto, médio, baixo), as etiquetas e as colunas do quadro.</p></div>
+  <div class="card"><div class="title"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M6 6a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2l0 -4" /><path d="M12 2v2" /><path d="M9 12v9" /><path d="M15 12v9" /><path d="M5 16l4 -2" /><path d="M15 14l4 2" /><path d="M9 18h6" /><path d="M10 8v.01" /><path d="M14 8v.01" /></svg> Automação com Playwright</div><p>Como preparar a máquina e rodar os testes automatizados contra o UAT, a partir do segundo ciclo.</p></div>
+</div>
+
+<div class="callout brand"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg><div><div class="title">Para consulta: a auditoria consolidada</div><p>É o documento que deu origem a este kit. Lista os 8 bloqueadores, os 15 bugs prováveis, as 14 decisões pendentes, o que não existe e o que parece bug mas não é. Você não precisa ler tudo no primeiro dia, mas vai voltar a ela durante o ciclo.</p></div></div>
+
+<div class="callout warning"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0" /><path d="M12 16h.01" /></svg><div><div class="title">Cuidado com material antigo</div><p>O kit de agosto e vários documentos de produto descrevem uma versão anterior do sistema, com telas que não existem mais (Leads, Pipeline, ficha do lead). Não use esse material como resultado esperado. Quando a documentação e o sistema discordarem, vale o que o roteiro diz.</p></div></div>
+
+<hr>
+<p class="muted">ERP Genius · Kit do QA, UAT v1 · Guia do projeto e onboarding · versão do commit 9e3d1d3c, 21/10/2026. Dúvidas sobre este documento: fale com o gestor do projeto.</p>
+</div>
+</div>
+</section>
+
+</body>
+</html>

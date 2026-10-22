@@ -47,14 +47,14 @@ function escaparRegex(texto: string): string {
 const CASOS_NEGADOS: CasoNegado[] = [
   // --- Professor ---
   {
-    id: "PER-01a",
+    id: "PER-13a",
     papel: "PROFESSOR",
     url: "/financeiro",
     mecanismo: "na-pagina", // financeiro/(painel)/page.tsx: <AcessoNegado recurso="o financeiro" />
     descricao: "Professor não abre o painel Financeiro",
   },
   {
-    id: "PER-01b",
+    id: "PER-13b",
     papel: "PROFESSOR",
     url: "/empresas",
     mecanismo: "na-pagina", // empresas/page.tsx: só FIN (e ADM)
@@ -84,14 +84,14 @@ const CASOS_NEGADOS: CasoNegado[] = [
   },
   // --- Gerente Pedagógico ---
   {
-    id: "PER-03a",
+    id: "PER-11a",
     papel: "GERENTE_PEDAGOGICO",
     url: "/funil",
     mecanismo: "redirect", // funil/page.tsx: GC, VEN
     descricao: "Gerente Pedagógico não abre o Funil",
   },
   {
-    id: "PER-03b",
+    id: "PER-11b",
     papel: "GERENTE_PEDAGOGICO",
     url: "/configuracao/usuarios",
     mecanismo: "na-pagina", // o layout de Configuração aceita GP; a página exige ADM
@@ -99,21 +99,21 @@ const CASOS_NEGADOS: CasoNegado[] = [
   },
   // --- Secretaria ---
   {
-    id: "PER-04a",
+    id: "PER-07a",
     papel: "SECRETARIA",
     url: "/financeiro",
     mecanismo: "na-pagina", // painel só ADM, FIN, GC (financeiro/papeis.ts)
     descricao: "Secretaria não abre o painel Financeiro",
   },
   {
-    id: "PER-04b",
+    id: "PER-07b",
     papel: "SECRETARIA",
     url: "/academico/regras",
     mecanismo: "redirect", // academico/regras/page.tsx: só GP
     descricao: "Secretaria não abre Regras de avaliação",
   },
   {
-    id: "PER-04c",
+    id: "PER-07c",
     papel: "SECRETARIA",
     url: "/comissoes",
     mecanismo: "redirect", // comissoes/page.tsx: FIN, GC, VEN
@@ -121,14 +121,14 @@ const CASOS_NEGADOS: CasoNegado[] = [
   },
   // --- Financeiro ---
   {
-    id: "PER-05a",
+    id: "PER-09a",
     papel: "FINANCEIRO",
     url: "/relatorios",
     mecanismo: "redirect", // relatorios/page.tsx: GC, VEN
     descricao: "Financeiro não abre Relatórios comerciais",
   },
   {
-    id: "PER-05b",
+    id: "PER-09b",
     papel: "FINANCEIRO",
     url: "/aria",
     mecanismo: "redirect", // aria/page.tsx: só GC
@@ -190,8 +190,8 @@ async function conferirMenuCoerenteComPagina(page: Page, rotuloMenu: string, url
 // mas a página só abre para Financeiro e Administrador (empresas/page.tsx). Hoje o
 // clique no menu leva a "Acesso negado — ... as empresas (B2B)".
 for (const [id, papel] of [
-  ["PER-06a", "GERENTE_COMERCIAL"],
-  ["PER-06b", "SECRETARIA"],
+  ["PER-05a", "GERENTE_COMERCIAL"],
+  ["PER-07d", "SECRETARIA"],
 ] as const) {
   test.describe(`${papel}: menu Empresas × página /empresas`, () => {
     test.use({ papel });
@@ -212,13 +212,13 @@ for (const [id, papel] of [
 // Sem `mecanismo`: a forma da negação depende de como o X3 for corrigido.
 const CASOS_X3: Omit<CasoNegado, "mecanismo">[] = [
   {
-    id: "PER-07a",
+    id: "PER-02d",
     papel: "VENDEDOR",
     url: "/financeiro/permuta",
     descricao: "Vendedor em Permutas vê Acesso negado, não a tela de erro (bug X3)",
   },
   {
-    id: "PER-07b",
+    id: "PER-11c",
     papel: "GERENTE_PEDAGOGICO",
     url: "/configuracao/contratos",
     descricao: "Gerente Pedagógico em Modelos contratuais vê Acesso negado, não a tela de erro (bug X3)",
@@ -245,7 +245,7 @@ for (const caso of CASOS_X3) {
 test.describe("GERENTE_COMERCIAL: menu Configuração × /configuracao/crm", () => {
   test.use({ papel: "GERENTE_COMERCIAL" });
 
-  test.fixme("PER-08a item Configuração do menu e página /configuracao/crm coerentes (decisão R13)", async ({ page }) => {
+  test.fixme("PER-04a item Configuração do menu e página /configuracao/crm coerentes (decisão R13)", async ({ page }) => {
     await conferirMenuCoerenteComPagina(page, "Configuração", "/configuracao/crm");
   });
 });

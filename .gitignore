@@ -51,3 +51,6 @@ next-env.d.ts
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# capturas de conferência dos PDFs do kit de QA (docs/qa/pdf/preview.mjs e paginas.mjs)
+/docs/qa/pdf/*.png

@@ -11,6 +11,7 @@ Material de teste do ERP Genius (UAT v1), feito sobre a `main` de 21/10/2026 (co
 | [`auditoria-consolidada.md`](auditoria-consolidada.md) | Gestor, dev, QA | Código × SPECs: 8 bloqueadores de UAT, 15 bugs prováveis, 14 decisões pendentes, o que não existe, docs desatualizados |
 | [`auditoria/`](auditoria/) | Dev, gestor | Os 9 relatórios por área, com critérios de aceite conferidos, máquinas de estado, mapas de tela e cenários, sempre com arquivo e linha |
 | [`../../e2e/README.md`](../../e2e/README.md) | QA | Testes automatizados com Playwright contra o UAT |
+| [`pdf/`](pdf/) | QA (para compartilhar) | Os 5 guias em PDF com a identidade do produto: guia do projeto e onboarding, usuários e papéis, roteiro de testes, como reportar bugs, automação de testes de front. Fonte em HTML + `brand.css`; regenerar com `node docs/qa/pdf/render.mjs` |
 
 Antes de o QA começar, o gestor precisa:
 

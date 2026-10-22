@@ -64,7 +64,7 @@ interface OpcoesE2E {
  * Exemplo:
  *   test.describe("Professor", () => {
  *     test.use({ papel: "PROFESSOR" });
- *     test("PER-01a ...", async ({ page }) => { ... });
+ *     test("PER-13a ...", async ({ page }) => { ... });
  *   });
  */
 export const test = base.extend<OpcoesE2E>({
