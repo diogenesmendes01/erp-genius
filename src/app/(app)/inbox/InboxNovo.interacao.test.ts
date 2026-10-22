@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
+  contagens: undefined as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
 }));
 const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
@@ -16,7 +17,13 @@ vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
     ...real,
-    useState: ((i: unknown) => (m.g ? m.g.useState(i) : real.useState(i as never))) as unknown as typeof real.useState,
+    useState: ((i: unknown) => {
+      if (!m.g) return real.useState(i as never);
+      const estado = m.g.useState(i);
+      // Observa o estado produtor por sua forma pública, sem índice de hook ou atributo de teste na UI.
+      if (i && typeof i === "object" && "todas" in i) m.contagens = estado[0];
+      return estado;
+    }) as unknown as typeof real.useState,
     useRef: ((i: unknown) => (m.g ? m.g.useRef(i) : real.useRef(i as never))) as unknown as typeof real.useRef,
     useCallback: ((f: unknown, d: unknown[]) => (m.g ? f : real.useCallback(f as never, d))) as unknown as typeof real.useCallback,
     useMemo: ((f: () => unknown, d: unknown[]) => (m.g ? f() : real.useMemo(f, d))) as unknown as typeof real.useMemo,
@@ -292,5 +299,41 @@ describe("InboxNovo: aviso do SSE recarrega o painel do atendimento aberto (C3 d
     m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
     tela(); await esvaziar();
     expect(chamadasPainel).toHaveLength(1);
+  });
+});
+
+describe("contagens no estado produtor para os chips", () => {
+  const inicial = { todas: 90, minhas: 4, naoLidas: 8, prazo: 2, fila: 9 };
+  const render = (p: PropsInboxNovo = { ...props, selecionado: null, contagens: inicial }): ReactNode => {
+    m.posEfeito = 0;
+    return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
+  };
+  const resposta = (naoLidas: number) => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null, contagens: { ...inicial, naoLidas } }));
+  it("inicializa do servidor e aceita só a resposta mais recente de SSE; não calcula pelo tamanho da página", async () => {
+    const resolver: ((r: Response) => void)[] = [];
+    respostaLista = () => new Promise((ok) => resolver.push(ok));
+    render(); expect(m.contagens).toEqual(inicial);
+    const aviso = { tipo: "resync" as const, atendimentoId: null, mensagemId: null, conversaId: "" };
+    m.aoAviso!(aviso); m.aoAviso!(aviso);
+    resolver[1](resposta(3)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 3 });
+    resolver[0](resposta(20)); await esvaziar(); render(); expect(m.contagens).toEqual({ ...inicial, naoLidas: 3 });
+    expect(vi.mocked(fetch).mock.calls.every(([url]) => String(url).includes("contagens=1"))).toBe(true);
+  });
+  it("troca de filtros preserva os agregados novos mesmo se o GET antigo terminar depois", async () => {
+    let concluir!: (r: Response) => void; respostaLista = () => new Promise((ok) => { concluir = ok; });
+    render(); m.aoAviso!({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    const p = { ...props, selecionado: null, filtros: { busca: "novo" }, contagens: { ...inicial, todas: 2 } };
+    render(p); render(p); concluir(resposta(30)); await esvaziar(); render(p);
+    expect(m.contagens).toEqual(p.contagens);
+  });
+  it.each([true, false])("leitura em voo não aceita agregado antigo e reconcilia após resultado %s", async (ok) => {
+    let ler!: (r: { ok: boolean }) => void; marcar.mockImplementation(() => new Promise((resolve) => { ler = resolve; }));
+    const resolver: ((r: Response) => void)[] = []; respostaLista = () => new Promise((resolve) => resolver.push(resolve));
+    const p = { ...props, contagens: inicial };
+    render(p); m.aoAviso!({ tipo: "resync", atendimentoId: null, mensagemId: null, conversaId: "" });
+    resolver[0](resposta(60)); await esvaziar(); render(p); expect(m.contagens).toEqual(inicial);
+    ler({ ok }); await esvaziar(); expect(resolver).toHaveLength(2);
+    resolver[1](resposta(ok ? 0 : 8)); await esvaziar(); render(p);
+    expect(m.contagens).toEqual({ ...inicial, naoLidas: ok ? 0 : 8 });
   });
 });

@@ -7,7 +7,7 @@ import { useConversa } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
-import type { FiltrosInbox } from "@/server/inbox/filtros";
+import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
 import { marcarAtendimentoLido } from "@/server/whatsapp/preferencias";
@@ -40,10 +40,12 @@ export interface PropsInboxNovo {
   revisoes?: RevisaoEnvio[] | null;
   /** Setores e números do PainelFiltros (`opcoesFiltroInbox`); sem eles a barra de filtros não aparece. */
   opcoesFiltro?: OpcoesFiltroInbox;
+  /** Agregados autorizados; a apresentação em chips é entregue pela etapa 313. */
+  contagens?: ContagensChipsInbox;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
-export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null): string {
+export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null, opcoes: { contagens?: boolean } = {}): string {
   const q = new URLSearchParams();
   if (f.setor) q.set("setor", f.setor);
   if (f.numeroId) q.set("numeroId", f.numeroId);
@@ -53,13 +55,16 @@ export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null): strin
   if (f.prazoEstourado) q.set("prazo", "estourado");
   if (f.busca) q.set("busca", f.busca);
   if (cursor) q.set("cursor", cursor);
+  else if (opcoes.contagens) q.set("contagens", "1");
   return q.toString();
 }
 
-async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<{ itens: ItemListaInbox[]; proximo: string | null } | null> {
+type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?: ContagensChipsInbox };
+
+async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<PaginaInbox | null> {
   try {
-    const r = await fetch(`/api/inbox/atendimentos?${paramsDosFiltros(filtros, cursor)}`, { cache: "no-store", credentials: "same-origin" });
-    return r.ok ? await r.json() as { itens: ItemListaInbox[]; proximo: string | null } : null;
+    const r = await fetch(`/api/inbox/atendimentos?${paramsDosFiltros(filtros, cursor, { contagens: true })}`, { cache: "no-store", credentials: "same-origin" });
+    return r.ok ? await r.json() as PaginaInbox : null;
   } catch { return null; }
 }
 
@@ -109,10 +114,13 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[700px]:flex min-[700px]:w-[320px] min-[700px]:shrink-0 min-[1100px]:w-[360px]";
 const COLUNA_CONVERSA = "min-[700px]:flex min-[700px]:min-w-0 min-[700px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais }: PropsInboxNovo) {
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
+  // Estado produtor reservado aos chips (#313), sem inventar contagem pelo tamanho da página.
+  const [, setContagens] = useState(contagensIniciais);
+  const possuiContagensRef = useRef(contagensIniciais !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
@@ -126,6 +134,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setFiltrosVistos(chaveFiltros);
     setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
     setProximo(inicial.proximo);
+    setContagens(contagensIniciais);
     setSelecionado(selecionadoInicial);
     setVista(selecionadoInicial ? "conversa" : "lista");
   }
@@ -134,7 +143,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
-  useEffect(() => { filtrosRef.current = filtros; }, [filtros]);
+  useEffect(() => {
+    filtrosRef.current = filtros;
+    // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
+    consultasRef.current.aplicada = ++consultasRef.current.iniciada;
+  }, [chaveFiltros, filtros]);
+  useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
   const carregarLista = useCallback((filtro: FiltrosInbox) => {
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
@@ -146,6 +160,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       // Um GET da leitura anterior (ou da fase pendente) pode conter zero anterior à mensagem nova.
       if (leitura.fase === "falha" && (inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "falha")) return;
       consultasRef.current.aplicada = pedido;
+      // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
+      if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
+        && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
       const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
       const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
       if (linha && !(leitura.fase === "sucesso" && antiga)) {
@@ -171,6 +188,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       leitura.fase = sucesso ? "sucesso" : "falha";
       if (sucesso) {
         leitura.ultimaContagem = 0;
+        if (possuiContagensRef.current) carregarLista(filtrosRef.current);
       } else {
         // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
