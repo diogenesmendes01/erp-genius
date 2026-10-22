@@ -6,7 +6,6 @@ import { decodificarCursor } from "@/server/inbox/cursor";
 import { contarChipsInbox, listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import { InboxNovo } from "./InboxNovo";
-import { NovoAtendimento } from "./NovoAtendimento";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { listarNotificacoes } from "@/server/crm/notificacoes";
@@ -61,19 +60,11 @@ export default async function InboxPage({
   const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
   return (
-    <div className="flex min-h-0 flex-col h-[calc(100dvh-2rem-3.5625rem)] sm:h-[calc(100dvh-2rem-3.3125rem)] md:h-[calc(100dvh-4rem)]">
-      <div className="flex shrink-0 items-center justify-between gap-2">
-        <h1 className="text-2xl font-medium">Inbox</h1>
-        <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />
-      </div>
-      <div role="region" aria-label="Abrir atendimento" className="mt-4 min-h-0 max-h-[30%] shrink-0 overflow-y-auto">
-        <NovoAtendimento opcoes={opcoes} />
-      </div>
-      <div className="mt-4 flex min-h-0 flex-1 flex-col">
-        <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
-          destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
-          triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens} />
-      </div>
+    <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
+      <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
+        destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
+        triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens}
+        opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />
     </div>
   );
 }

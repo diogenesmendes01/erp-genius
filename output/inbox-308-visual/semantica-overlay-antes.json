@@ -1,0 +1,17 @@
+[
+  {
+    "width": 1024,
+    "role": "dialog",
+    "modal": "true",
+    "externo": {
+      "x": 297.4296875,
+      "y": 73,
+      "inert": false,
+      "alvoClicavel": true,
+      "texto": "Abrir atendimento"
+    },
+    "cliqueRecebido": true,
+    "arvoreContemNovo": true,
+    "acaoExecutada": false
+  }
+]
