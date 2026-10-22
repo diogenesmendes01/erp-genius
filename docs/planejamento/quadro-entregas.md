@@ -1,5 +1,9 @@
 # Quadro único de entregas
 
+## Inbox — chaves dos painéis irmãos — 22/10/2026
+
+Implementação, revisão e validação concluídas; PR técnico em publicação. PainelAria/AcoesContato usavam key igual, causando aviso React ao selecionar atendimento; prefixos distintos preservam identidade/remount. RED determinístico1falha20verdes; GREEN21testes+TSCglobal+lintdirigido82909 exit0. TESTER noSHA05db5a7d:21testes0 e20entradas no navegador sem aviso/pageerror (64980 exit0), contra10/10estados selecionados comwarning antes. Evidências `output/inbox-painel-keys-visual/`; relatório `output/inbox-painel-keys-report.md`. Regressão E0final99d045c4:845arquivos6527testes,TSCNext,lintglobal0/40avisos, sessão86289 até código0. Sem merge/deploy/mensagem externa.
+
 ## Inbox E0.3 — notas na rota e aviso transacional (#300, 22/10/2026)
 
 **Estado: contrato de servidor/SSE implementado e validado; PR em publicação.** Branch `codex/inbox-e0-300`, base PR #382 (#299). SPEC em `docs/specs/inbox-notas-thread.md`, investigação em `output/inbox-300-report.md`, parecer independente em `output/inbox-300-review.md`. Sem merge/deploy; renderização na tela é escopo da #301.

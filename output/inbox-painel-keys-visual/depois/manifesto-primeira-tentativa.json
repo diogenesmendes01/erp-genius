@@ -1,0 +1,117 @@
+{
+  "fonte": "05db5a7d94835dd02afbe4f215eb0188a8974507",
+  "perfil": "tester",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 700,
+      "height": 844,
+      "tema": "light",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 700,
+      "height": 844,
+      "tema": "dark",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 390,
+      "height": 500,
+      "tema": "light",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    },
+    {
+      "width": 390,
+      "height": 500,
+      "tema": "dark",
+      "avisos": {
+        "clique": [],
+        "direta": []
+      },
+      "pageerrors": [],
+      "urlComConversa": true
+    }
+  ],
+  "falhas": []
+}
