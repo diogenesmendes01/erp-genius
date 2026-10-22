@@ -1,6 +1,12 @@
 # #298 — Classes de cor do Inbox e trava de paleta sem tom
 
-Estado em 22/10/2026, rodada 4: correção do P2 da trava preparada e validada no recorte; **aguarda re-review TESTER do novo commit e aceite visual final**. Gates globais finais foram executados no código corrigido `815d863d`: TSC e 839 arquivos/6.466 testes exit 0; lint global exit 0 com 40 avisos após conversão ESM exclusiva do artefato de captura. Branch `codex/inbox-e0-298`, iniciada em `7e4810e5e6c4f25a00497fe743e0ea4abfb0c6ee`. Não houve alteração de banco, contrato ou permissão.
+Estado final em 22/10/2026: **implementação e validação concluídas; PR em publicação**. TESTER aprovou o SHA `ed50a770`, após 110/110 testes direcionados e aceite visual de todos os estados de cor tocados, nos três tamanhos e dois temas. TSC e 839 arquivos/6.466 testes exit 0 no código corrigido `815d863d`; lint global exit 0 com 40 avisos após conversão ESM exclusiva do artefato. Consolidação posterior contém somente documentação, PNGs e manifestos JSON. Branch `codex/inbox-e0-298`, baseada no pré-requisito #380. Nenhuma alteração de banco, contrato ou permissão; sem merge/deploy. As pendências nas seções cronológicas abaixo são históricas e foram resolvidas conforme o aceite final.
+
+## Aceite final independente
+
+Pareceres em `output/inbox-298-visual/qa/`: `inbox-298-final-review.md`, revisão R4 da trava e relatórios visuais do aplicativo/painel. Capturas de aplicativo em `output/inbox-298-visual/aplicativo/`: antes/depois de lista, conversa e painel nos tamanhos 1440×900, 1024×768 e 390×844, claro/escuro. As do painel incluem a gaveta no tablet/celular, com `pageerror=[]` e cores secundárias confirmadas. As 24 capturas isoladas de Enquete/Reserva continuam na raiz da pasta visual; o TESTER conferiu todas as 12 imagens depois.
+
+O aceite cobre cor e legibilidade. Enquete/Reserva foram renderizadas como componentes reais isolados, sem operar envio/finanças. O recorte à direita da gaveta de390px foi observado antes e depois e fica registrado para #318/#304. O integrador também inspecionou a captura móvel escura. Não houve regressão de cor. O delta final de publicação não altera produção, testes ou harness executável; não exige repetir os gates de código já observados.
 
 ## SPEC de comportamento
 
