@@ -906,22 +906,25 @@ async function desligarNoMotor(numeroId: string): Promise<void> {
 
 /**
  * Tira o número de operação: sessão do motor desligada (logout) antes de gravar, para não ficar um número
- * inativo ainda recebendo e enviando. Número de outro driver só é marcado inativo.
+ * inativo ainda recebendo e enviando. Número de outro driver só é marcado inativo. A sessão do Evento é
+ * relida aqui, na transação: entre o logout e a gravação, uma conexão concorrente pode tê-la mudado.
  */
 async function tirarDeOperacao(
   tx: Prisma.TransactionClient,
-  numero: { id: string; driver: DriverWhatsApp; sessao: SessaoNumero },
+  numeroId: string,
   autorId: string,
   data: Prisma.NumeroWhatsAppUpdateInput,
 ): Promise<void> {
-  await tx.numeroWhatsApp.update({ where: { id: numero.id }, data: { ...data, ativo: false, sessao: numero.driver === "MOTOR" ? "DESCONECTADO" : numero.sessao } });
-  if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") {
+  const atual = await tx.numeroWhatsApp.findUniqueOrThrow({ where: { id: numeroId }, select: { driver: true, sessao: true } });
+  const motor = atual.driver === "MOTOR";
+  await tx.numeroWhatsApp.update({ where: { id: numeroId }, data: { ...data, ativo: false, ...(motor ? { sessao: "DESCONECTADO" } : {}) } });
+  if (motor && atual.sessao !== "DESCONECTADO") {
     await registrarEvento(tx, {
       tipo: "NumeroWhatsAppDesconectado",
       agregadoTipo: "NumeroWhatsApp",
-      agregadoId: numero.id,
+      agregadoId: numeroId,
       autorId,
-      payload: { de: numero.sessao },
+      payload: { de: atual.sessao },
     });
   }
 }
@@ -936,7 +939,7 @@ export async function desativarNumeroWhatsApp(numeroId: string): Promise<Resulta
     if (!numero.ativo && (numero.driver !== "MOTOR" || numero.sessao === "DESCONECTADO")) return undefined;
     if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") await desligarNoMotor(numero.id);
     await prisma.$transaction(async (tx) => {
-      await tirarDeOperacao(tx, numero, autor.id, {});
+      await tirarDeOperacao(tx, numero.id, autor.id, {});
       if (numero.ativo) {
         await registrarEvento(tx, {
           tipo: "NumeroWhatsAppDesativado",
@@ -1007,7 +1010,7 @@ export async function excluirNumeroWhatsApp(numeroId: string): Promise<Resultado
     if (avisos) throw new ErroRegra("Este número envia os avisos da agenda. Escolha outro em \"Avisos da agenda\" antes de excluir.");
     if (numero.driver === "MOTOR" && numero.sessao !== "DESCONECTADO") await desligarNoMotor(numero.id);
     await prisma.$transaction(async (tx) => {
-      await tirarDeOperacao(tx, numero, autor.id, { excluidoEm: new Date() });
+      await tirarDeOperacao(tx, numero.id, autor.id, { excluidoEm: new Date() });
       await registrarEvento(tx, {
         tipo: "NumeroWhatsAppExcluido",
         agregadoTipo: "NumeroWhatsApp",
