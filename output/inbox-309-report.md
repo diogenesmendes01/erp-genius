@@ -36,3 +36,13 @@ Achado reproduzido na fonte0feb3bbf: capitalizar as iniciais juntas fazia ßeta 
 - TypeScript Node22 heap8192 --noEmit, sessão7322 acompanhada até exit0(260afe).
 - Não houve full novo nesta revisão, conforme coordenação do integrador. O full848/6591 e lint global0/40 acima são históricos da fonte0feb3bbf anterior ao fix; não validam este fix. A regressão global da combinação310+309 será do integrador.
 - Re-review independente do SHA fix permanece pendente; #312 não iniciada.
+
+## Gate global309 R2 — opacidade da expressão de iniciais
+
+O integrador informou execução combinada285e1a66, sessão15860, exit1:850arquivos(849passaram/1falhou),6633testes passaram/1falhou. Única falha foi identificacao-registro.test.ts:260 em Avatar, pela expressão Array.from na cadeia de selecionadas.map. Não era id real, mas a análise AST falha fechada por profundidade e é gate obrigatório. O full848/6591 pré-fixR1 continua somente histórico; o global15860 não recebe aprovação.
+
+- RED dirigido no SHA879: Avatar + identificacao-registro, exit1(efd6f4),1falha/49passaram, semignorados; reproduziu exatamente o achado opaco do gate global.
+- Ruling: capitalizar e reter o primeiro ponto Unicode no flatMap original, depois retornar só primeira+última inicial. Remove a cadeia intermediária selecionadas.map e preserva ß/ligaturas/foraBMP/atéduasiniciais. Não modifica SPEC, guardas, PROFUNDIDADE_MAXIMA, exceções, cores, hash ou consumidores.
+- GREEN: Node22 node_modules/vitest/vitest.mjs run src/components/Avatar.test.ts src/app/identificacao-registro.test.ts "src/app/(app)/inbox/BadgeEstado.test.ts" "src/app/(app)/inbox/estado-visual.test.ts" src/app/paleta.test.ts src/app/fundo-sobre-pagina.test.ts "src/app/(app)/contatos" "src/app/(app)/inbox/prazo-vivo.test.ts" "src/app/(app)/inbox/ListaAtendimentos.test.ts" --maxWorkers=2.12arquivos/147testes exit0(977c4e), nenhum teste ignorado nos arquivos selecionados.
+- ESLint dirigido dos seis arquivos de produtores/testes, max-warnings0, exit0(20b098). TypeScript Node22 heap8192 --noEmit, sessão75216 acompanhada até exit0(267f59).
+- Não rodou full novo no DEV; integrador executará global combinado após este fix. Re-review independente pendente;311 permanece só leitura, sem implementação;312 não iniciada.

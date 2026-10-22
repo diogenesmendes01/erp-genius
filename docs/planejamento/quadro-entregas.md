@@ -4723,6 +4723,8 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 - **QA309 R1, P2:** reproduzida expansão de uppercase(ß/ligatura) acima de duas iniciais: RED5falhas/2passaram/14filtrados exit1. Fix limita cada inicial capitalizada ao primeiro ponto Unicode com Array.from e preserva letras fora do BMP; cores/hash/consumidores/SPEC não mudam. GREEN ampliado11arquivos118testes exit0 sem ignorados; lint dirigido exit0. TSC heap8192 sessão7322 exit0. Não rodou full novo;848/6591 anterior é histórico de0feb3bbf, não do fix. Re-review e global combinado310+309 pendentes;312 não iniciada.
 
+- **Gate309 R2:** global combinado285/sessão15860 exit1(849/850arquivos;6633passaram/1falha), única falha da guarda AST em iniciais. RED dirigido1falha/49passaram exit1; expressão simplificada no flatMap original preservando todos casosUnicode, sem alterar guarda/profundidade/exceções. GREEN12arquivos147testes exit0 sem ignorados; lint dirigido exit0; TSC heap8192 sessão75216 exit0. Não rodou full novoDEV; global combinado e re-review pendentes.
+
 ### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
 
 **Estado: implementação e recortes locais concluídos; revisão independente e global combinado pendentes.** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Sem publicação/merge/deploy pelo DEV.
