@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ sessao: vi.fn(), naoLidas: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
-vi.mock("@/server/whatsapp/consultas", () => ({ contarNaoLidas: mocks.naoLidas }));
+vi.mock("@/server/inbox/nao-lidas", () => ({ contarConversasNaoLidas: mocks.naoLidas }));
 vi.mock("@/components/Sidebar", () => ({ Sidebar: () => createElement("aside", null, "Sidebar") }));
 vi.mock("@/components/BarraMobile", () => ({ BarraMobile: () => createElement("header", null, "BarraMobile") }));
 vi.mock("@/components/Trilha", () => ({ Trilha: () => createElement("nav", null, "Trilha") }));
