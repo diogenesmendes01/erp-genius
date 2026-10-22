@@ -1,0 +1,35 @@
+[
+  {
+    "width": 1440,
+    "painelPermanece": true,
+    "focoRetorna": false,
+    "ativo": {
+      "tag": "BODY",
+      "rotulo": null,
+      "texto": "Pular para o conteúdoInboxFusoMenuPermutasMudanças acadêmica"
+    },
+    "acaoConfirmada": false
+  },
+  {
+    "width": 1024,
+    "painelPermanece": true,
+    "focoRetorna": false,
+    "ativo": {
+      "tag": "BODY",
+      "rotulo": null,
+      "texto": "Pular para o conteúdoInboxFusoMenuPermutasMudanças acadêmica"
+    },
+    "acaoConfirmada": false
+  },
+  {
+    "width": 390,
+    "painelPermanece": true,
+    "focoRetorna": false,
+    "ativo": {
+      "tag": "BODY",
+      "rotulo": null,
+      "texto": "Pular para o conteúdoInboxFusoMenuPermutasMudanças acadêmica"
+    },
+    "acaoConfirmada": false
+  }
+]

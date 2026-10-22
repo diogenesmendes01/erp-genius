@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
-import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
+import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { autenticarApp, esperarConteudoApp } from "./espera-app.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -64,9 +64,13 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista";
   await pagina.goto(`${base}/inbox${semSelecao ? "" : `?c=${encodeURIComponent(id)}`}`, { waitUntil: "domcontentloaded" });
   if (estado === "celular-painel" || estado === "tablet-painel") {
-    // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no Drawer.
+    // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
-    await pagina.getByRole("button", { name: "Detalhes da conversa" }).click();
+    await pagina.getByRole("button", { name: "Painel do contato" }).click();
+  }
+  if (estado === "painel-fechado") {
+    await esperarConteudoApp(pagina, "conversa", tamanho);
+    await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
   }
   await esperarConteudoApp(pagina, estado, tamanho);
 }
@@ -77,7 +81,7 @@ async function abrirPrototipo(pagina, estado) {
   const root = pagina.locator('[data-m="root"]');
   await root.waitFor({ state: "visible" });
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
-  if (estado === "conversa" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
+  if (estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
     const chat = root.locator('[data-m="chat"]');
     if (!(await chat.isVisible())) await root.getByText("Mariana Costa", { exact: true }).first().click();
     await chat.waitFor({ state: "visible" });
@@ -86,6 +90,10 @@ async function abrirPrototipo(pagina, estado) {
     const detalhes = root.getByTitle("Painel do contato");
     await detalhes.first().click();
     await root.locator('[data-m="panel"]').waitFor({ state: "visible" });
+  }
+  if (estado === "painel-fechado") {
+    await root.getByTitle("Painel do contato").first().click();
+    await root.locator('[data-m="panel"]').waitFor({ state: "hidden" });
   }
   await pagina.waitForTimeout(4000);
 }
@@ -118,6 +126,7 @@ async function main() {
         await prepararRede(contexto, tarefa.alvo, o.base, falhas);
         const pagina = await contexto.newPage();
         pagina.on("pageerror", (erro) => falhas.push(`pageerror: ${erro.message}`));
+        pagina.on("console", (mensagem) => { if (tarefa.alvo === "app" && problemaReactNaCaptura(mensagem.text())) falhas.push(`React: ${mensagem.text()}`); });
         pagina.on("requestfailed", (pedido) => abortados.push({ url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
         pagina.on("requestfinished", (pedido) => {
           if (pedido.method() !== "GET") return;

@@ -110,3 +110,14 @@ it("passa usuário para o badge pessoal do item", () => {
   const h = html({ extra: { inicial: { itens: [{ ...item("a1", "Ana"), responsavelId: "u1", responsavelNome: "Usuário atual" }], proximo: null } } });
   expect(h).toContain("Com você"); expect(h).not.toContain("Com Usuário");
 });
+it("casca nova elimina moldura e mantém exatamente um painel do contato", () => {
+  const h = html({ selecionado: "a1" });
+  expect(h).not.toContain("rounded-item border");
+  expect(h.match(/<aside[^>]*aria-label="Painel do contato"/g)).toHaveLength(1);
+  expect(h).not.toContain('aria-label="Detalhes da conversa"');
+  for (const c of ["min-[960px]:w-[300px]", "min-[1100px]:w-[372px]", "min-[960px]:w-[348px]"]) expect(h).toContain(c);
+});
+it("sem seleção não monta painel, com prop false não abre automaticamente", () => {
+  expect(html()).not.toContain('<aside');
+  expect(html({ selecionado: "a1", extra: { abrirPainelPadrao: false } })).not.toContain("min-[1400px]:flex");
+});

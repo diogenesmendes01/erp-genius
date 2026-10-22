@@ -164,3 +164,30 @@ describe("harness visual do Inbox", () => {
     expect(cancelamentoDeMensagensRecuperado({ ...pedido, url: "https://example.com/api/inbox/atendimentos/id/mensagens" }, concluido, base, true)).toBe(false);
   });
 });
+
+it("inclui painel-fechado nos dois alvos sem capturar em tamanho incompatível", () => {
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-fechado"] })).toHaveLength(4);
+});
+it("painel-fechado aguarda a thread e comprova o fechamento, sem exigir conteúdo oculto", async () => {
+  const chamadas: string[] = [];
+  let liberar!: () => void; const fechado = new Promise<void>((ok) => { liberar = ok; });
+  const pagina = {
+    getByRole: (_role: string, o: { name: string }) => {
+      if (o.name === "Painel Comercial") throw new Error("Painel deveria estar fechado");
+      return { waitFor: async () => { chamadas.push(o.name); }, getByText: (texto: string) => ({ waitFor: async () => { chamadas.push(texto); } }) };
+    },
+    waitForFunction: () => fechado,
+  };
+  let terminou = false;
+  const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "painel-fechado", "desktop").then(() => { terminou = true; });
+  await new Promise((ok) => setTimeout(ok, 0)); expect(terminou).toBe(false); liberar(); await espera;
+  expect(chamadas).toContain("Quero saber o valor do Inglês Intensivo B1.");
+});
+
+it("warnings React de chave e hidratação invalidam captura do app; HMR normal não", async () => {
+  const { problemaReactNaCaptura } = await import("../../scripts/visual/nucleo-captura.mjs");
+  expect(problemaReactNaCaptura('Each child in a list should have a unique "key" prop.')).toBe(true);
+  expect(problemaReactNaCaptura('Encountered two children with the same key, a')).toBe(true);
+  expect(problemaReactNaCaptura('Hydration failed because the server rendered HTML did not match')).toBe(true);
+  expect(problemaReactNaCaptura('[Fast Refresh] done in 500ms')).toBe(false);
+});
