@@ -1,6 +1,6 @@
 # Relatório DEV B — #300
 
-Estado em 22/10/2026: implementação em revisão, homologação pendente. Branch `codex/inbox-e0-300`, banco descartável isolado `dev-gravacoes`. SHA final será informado ao integrador após os gates.
+Estado final em 22/10/2026: **contrato de servidor/SSE implementado e validado; PR em publicação**. Branch `codex/inbox-e0-300`, base #299/PR #382 (`729a0fe7`). TESTER aprovou a fonte `288c62e1` e o delta documental `9853be83`, com integração independente de 3 arquivos/45 testes, sessão `37125`, saída 0 e sem ignorados, Node 22.23.2 no perfil tester. Parecer em `output/inbox-300-review.md`. Consolidação posterior contém somente documentação. Sem merge/deploy; apresentação das notas na tela pertence à #301.
 Rebase de `aa91a47f` para a base publicada #299 `729a0fe7` sem conflito; a diferença entre essas bases em `src` é vazia e o delta empilhado contém só #300.
 
 ## Entrega
