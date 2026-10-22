@@ -7,7 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { garantirAtendimento } from "./atendimentos";
-import { alternarFavorita, alternarFixada, marcarLida, marcarNaoLida, silenciarConversa } from "./preferencias";
+import { alternarFavorita, alternarFixada, marcarAtendimentoLido, marcarLida, marcarNaoLida, silenciarConversa } from "./preferencias";
 import { preferenciasDoUsuario } from "./preferencias-consulta";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
@@ -48,6 +48,23 @@ describe("preferências pessoais da inbox (Task 8)", () => {
     expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(0);
     await marcarNaoLida(a.id);
     expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(1);
+  });
+  it("marcarAtendimentoLido zera a contagem pessoal e a compartilhada", async () => {
+    const { v1, a, chegaInbound } = await cenario();
+    await chegaInbound("oi");
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { naoLidas: 1 } });
+    comoUsuario(v1);
+    expect(await marcarAtendimentoLido(a.id)).toMatchObject({ ok: true });
+    expect((await preferenciasDoUsuario(v1.id, [a.id])).get(a.id)?.naoLidas).toBe(0);
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).naoLidas).toBe(0);
+  });
+  it("marcarAtendimentoLido fora do escopo não modifica leitura nem contador", async () => {
+    const { fora, a } = await cenario();
+    await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { naoLidas: 2 } });
+    comoUsuario(fora);
+    expect(await marcarAtendimentoLido(a.id)).toEqual({ ok: false, erro: "Conversa não encontrada ou fora do seu escopo." });
+    expect(await prisma.preferenciaConversaUsuario.count()).toBe(0);
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: a.id } })).naoLidas).toBe(2);
   });
   it("silenciar com data e reativar com null", async () => {
     const { v1, a } = await cenario();

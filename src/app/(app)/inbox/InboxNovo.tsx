@@ -10,6 +10,7 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { FiltrosInbox } from "@/server/inbox/filtros";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
+import { marcarAtendimentoLido } from "@/server/whatsapp/preferencias";
 import { ConversaAberta } from "./ConversaAberta";
 import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
@@ -21,6 +22,7 @@ import { PainelFiltros } from "./PainelFiltros";
 import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
+import { criarMarcadorDeLeitura } from "./marcar-lida";
 
 export type VistaInbox = "lista" | "conversa" | "painel";
 
@@ -77,6 +79,17 @@ export function mesclarPrimeiraPagina(atual: ItemListaInbox[], nova: ItemListaIn
   return [...nova.filter((i) => !conhecidos.has(i.id)), ...atual.filter(manter).map((i) => novas.get(i.id) ?? i)];
 }
 
+/** A leitura recém-aberta aparece imediatamente na lista, antes da próxima consulta. */
+export function zerarNaoLidas(itens: ItemListaInbox[], id: string): ItemListaInbox[] {
+  const pos = itens.findIndex((item) => item.id === id && item.naoLidas !== 0);
+  if (pos < 0) return itens;
+  return itens.map((item, indice) => indice === pos ? { ...item, naoLidas: 0 } : item);
+}
+
+export function avisoMarcaLida(aviso: AvisoInbox, selecionado: string | null): boolean {
+  return aviso.tipo === "mensagem.nova" && aviso.atendimentoId !== null && aviso.atendimentoId === selecionado;
+}
+
 /** Painel por setor (`GET /api/inbox/atendimentos/[id]/painel`): null fora do escopo ou em falha de rede. */
 /** Painel do atendimento; "sem-acesso" no 404 (fora do escopo, ex.: convite revogado); null em outra falha. */
 async function buscarPainel(id: string): Promise<DadosPainelSetor | "sem-acesso" | null> {
@@ -98,7 +111,7 @@ const COLUNA_CONVERSA = "min-[700px]:flex min-[700px]:min-w-0 min-[700px]:flex-1
 export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro }: PropsInboxNovo) {
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
-  const [itens, setItens] = useState(inicial.itens);
+  const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
   const [proximo, setProximo] = useState(inicial.proximo);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [vista, setVista] = useState<VistaInbox>(selecionadoInicial ? "conversa" : "lista");
@@ -110,13 +123,18 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);
   if (filtrosVistos !== chaveFiltros) {
     setFiltrosVistos(chaveFiltros);
-    setItens(inicial.itens);
+    setItens(selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
     setProximo(inicial.proximo);
     setSelecionado(selecionadoInicial);
     setVista(selecionadoInicial ? "conversa" : "lista");
   }
   const selecionadoRef = useRef(selecionado);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
+  const [marcarLeitura] = useState(() => criarMarcadorDeLeitura(marcarAtendimentoLido));
+  useEffect(() => {
+    if (!selecionado) return;
+    marcarLeitura(selecionado);
+  }, [selecionado, marcarLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
   const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
@@ -151,9 +169,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
+    if (avisoMarcaLida(a, selecionadoRef.current) && typeof document !== "undefined" && document.visibilityState === "visible") {
+      marcarLeitura(a.atendimentoId!);
+    }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
-  }, [filtros]);
+  }, [filtros, marcarLeitura]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
@@ -167,6 +188,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
 
   function abrir(id: string) {
+    setItens((lista) => zerarNaoLidas(lista, id));
     setSelecionado(id);
     setVista("conversa");
     try {

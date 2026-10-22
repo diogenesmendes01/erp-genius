@@ -11,6 +11,7 @@ const m = vi.hoisted(() => ({
   posEfeito: 0,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
 }));
+const marcar = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
@@ -32,16 +33,18 @@ vi.mock("react", async (original) => {
 vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => { m.aoAviso = f; return { conectado: true }; } }));
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: () => ({ mensagens: [] }) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
+vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLido: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }), usePathname: () => "/inbox" }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
+import { ListaAtendimentos } from "./ListaAtendimentos";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 
 const item = (id: string) => ({
   id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: id,
-  contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: 0, ultimaMensagemEm: "2026-10-01T02:30:00.000Z", preview: "Oi",
+  contatoTelefone: "+506", optOut: false, vinculo: null, naoLidas: id === "a2" ? 2 : 0, ultimaMensagemEm: "2026-10-01T02:30:00.000Z", preview: "Oi",
   linhaComercial: false, status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
 });
 const props = {
@@ -52,6 +55,8 @@ const props = {
 let respostaPainel: () => Response;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
+  marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
+  vi.stubGlobal("document", { visibilityState: "visible" });
   m.g = criarGanchos(); m.efeitos = []; m.aoAviso = null; chamadasPainel.length = 0;
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true }), { status: 200 });
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
@@ -64,6 +69,41 @@ afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 function tela(): ReactNode { m.posEfeito = 0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props); }
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
+
+describe("InboxNovo: leitura ao abrir", () => {
+  it("marca o atendimento selecionado pelo deep link inicial", () => {
+    tela();
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+  });
+  it("ao abrir outra conversa, zera imediatamente o contador da lista", () => {
+    const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+    lista(tela()).aoSelecionar("a2");
+    tela(); // o efeito da nova seleção publica o estado no render seguinte
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
+    expect(marcar).toHaveBeenLastCalledWith("a2");
+  });
+  it("mensagem nova marca apenas a conversa aberta quando a aba está visível", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a2", mensagemId: "m2", conversaId: "cv2" });
+    expect(marcar).not.toHaveBeenCalled();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
+    marcar.mockClear();
+    vi.stubGlobal("document", { visibilityState: "hidden" });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m3", conversaId: "cv1" });
+    expect(marcar).not.toHaveBeenCalled();
+  });
+  it("aviso recebido durante uma leitura em voo agenda uma só repetição", async () => {
+    const resolver: (() => void)[] = [];
+    marcar.mockImplementation(() => new Promise((ok) => resolver.push(() => ok({ ok: true }))));
+    tela();
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m2", conversaId: "cv1" });
+    expect(marcar).toHaveBeenCalledTimes(1);
+    resolver[0]();
+    await vi.waitFor(() => expect(marcar).toHaveBeenCalledTimes(2));
+  });
+});
 
 describe("InboxNovo: permissão de envio carregando × falhou (C2 da revisão do #218)", () => {
   it("antes do painel chegar o compositor recebe null (carregando), não false", async () => {

@@ -2,6 +2,15 @@
 
 Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
+## Inbox E0.2 — leitura automática (#299, 22/10/2026)
+
+**Estado: implementação em revisão; não concluída.** Branch `codex/inbox-e0-299`. A abertura por `?c=` ou pela lista chama a leitura pessoal e compartilhada; uma `mensagem.nova` da conversa aberta chama a leitura quando a aba está visível. Pedidos da mesma conversa em voo são consolidados. `message.read` exige a capacidade `confirmacaoLeitura`, portanto número ativo e sessão `CONECTADO`. Contrato em `docs/specs/inbox-leitura-automatica.md`; sem migration/schema, instalação ou envio real.
+
+- TDD: o teste de abertura falhou com 0 chamadas; troca de conversa falhou com contador 2; aviso SSE falhou com 0 chamadas; coalescência falhou com 3 chamadas em vez de 1. RED de integração em `dev-gravacoes`: `marcarAtendimentoLido` ausente (2 testes) e `message.read` chamado com sessão `CAIU` (1 teste).
+- Recorte unitário, saída 0: `vitest run` em `marcar-lida.test.ts`, `InboxNovo.interacao.test.ts`, `InboxNovo.test.ts` e `sem-polling.test.ts`: **4 arquivos, 30 testes**, sem ignorados (sessão 17:09:19). Não representa a suíte completa.
+- Recorte de integração, saída 0: `vitest run -c vitest.integration.config.ts` em `motor/presenca.int.test.ts` e `preferencias.int.test.ts`: **2 arquivos, 13 testes**, sem ignorados, perfil descartável `dev-gravacoes` (session_id 50977). Uma suíte por banco; nenhuma outra integração iniciada por este DEV.
+- ESLint direcionado aos 8 arquivos TypeScript alterados, saída 0, sem erros ou avisos. TypeScript, lint global, `npm test`, revisão do TESTER, aceite visual em 1440×900 / 1024×768 / 390×844 nos dois temas e homologação **pendentes**. O TESTER preparará a fixture visual isolada. A execução usa Node 24.16.0, enquanto `.nvmrc` indica 22; registrar se o check global revelar diferença de ambiente.
+
 ## Pendências da revisão do #227 e do #231 (18/10/2026)
 
 Branch `claude/pendencias-227-231`. Três pendências de revisão de PRs já mergeados.
