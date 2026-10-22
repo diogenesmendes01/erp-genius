@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { Papel } from "@prisma/client";
 const { authMock } = vi.hoisted(() => ({ authMock: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
@@ -6,12 +6,17 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
+import { assinarInbox, iniciarEscuta, type AvisoInbox } from "@/server/inbox/barramento";
 import { garantirAtendimento } from "./atendimentos";
 import { transferirAtendimento } from "./acoes-atendimento";
 import { notasDoAtendimento, registrarNotaAtendimento } from "./acoes-conversa";
 
+beforeAll(async () => { await iniciarEscuta(process.env.DATABASE_URL!); });
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); });
+afterAll(() => prisma.$disconnect());
 const comoUsuario = (u: { id: string }) => authMock.mockResolvedValue({ user: { id: u.id } });
+const pausa = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+const escutar = () => { const r: AvisoInbox[] = []; const sair = assinarInbox((x) => r.push(x)); return { r, sair }; };
 
 async function cenario() {
   const fin = await criarUsuario([Papel.VENDEDOR], "Vend");
@@ -23,6 +28,35 @@ async function cenario() {
 }
 
 describe("nota interna do atendimento", () => {
+  it("emite atendimento.atualizado só com ids após gravar a nota", async () => {
+    const { fin, a } = await cenario();
+    await pausa(300);
+    const { r, sair } = escutar();
+    try {
+      comoUsuario(fin);
+      expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "Cliente ligou" })).ok).toBe(true);
+      const esperado: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: a.id, mensagemId: null, conversaId: a.conversaId };
+      await vi.waitFor(() => expect(r).toContainEqual(esperado), { timeout: 2000 });
+      expect(r.filter((aviso) => aviso.atendimentoId === a.id)).toEqual([esperado]);
+      expect(JSON.stringify(r)).not.toContain("Cliente ligou");
+      expect(JSON.stringify(r)).not.toContain("paraUsuarioId");
+    } finally { sair(); }
+  });
+
+  it("repetição idempotente devolve a mesma nota sem novo aviso", async () => {
+    const { fin, a } = await cenario();
+    comoUsuario(fin);
+    const chave = "11111111-1111-4111-8111-111111111111";
+    expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "x", chaveIdempotencia: chave })).ok).toBe(true);
+    await pausa(300);
+    const { r, sair } = escutar();
+    try {
+      expect((await registrarNotaAtendimento({ atendimentoId: a.id, nota: "x", chaveIdempotencia: chave })).ok).toBe(true);
+      await pausa(300);
+      expect(r.filter((aviso) => aviso.atendimentoId === a.id)).toEqual([]);
+      expect(await prisma.evento.count({ where: { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id } })).toBe(1);
+    } finally { sair(); }
+  });
   it("regra 20: nota interna nunca vira mensagem nem intenção", async () => {
     const { fin, a } = await cenario();
     comoUsuario(fin);

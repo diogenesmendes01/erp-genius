@@ -43,7 +43,7 @@ export interface CobrancaAtivaThread {
   id: string; matriculaId: string; alunoId: string; alunoNome: string; moeda: string; vencimento: ReferenciaVencimentoCivil;
   valorNegociado: number; valorRecebido: number; saldo: number; status: string;
 }
-export interface NotaInternaThread { id: string; nota: string; autorNome: string | null; criadoEm: string }
+export interface NotaInternaThread { id: string; nota: string; autorNome: string | null; criadoEm: string; origem: "atendimento" | "oportunidade" }
 export interface PessoasVinculo {
   alunos: { id: string; nome: string }[];
   responsaveis: { id: string; nome: string }[];
@@ -205,7 +205,7 @@ export async function notasDoLead(leadId: string): Promise<NotaInternaThread[]> 
   const notas = await prisma.evento.findMany({ where: { agregadoTipo: "Lead", agregadoId: leadId, tipo: "NotaInterna" },
     orderBy: { criadoEm: "desc" }, take: 20, include: { autor: { select: { nome: true } } } });
   return notas.map((e) => ({ id: e.id, nota: typeof (e.payload as { nota?: unknown })?.nota === "string" ? (e.payload as { nota: string }).nota : "",
-    autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString() }));
+    autorNome: e.autor?.nome ?? null, criadoEm: e.criadoEm.toISOString(), origem: "oportunidade" }));
 }
 
 export async function cobrancaAtivaDoAtendimento(matriculaId: string, alunoId: string, contatoId: string): Promise<CobrancaAtivaThread | null> {
