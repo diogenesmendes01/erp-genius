@@ -31,6 +31,9 @@
   Horas, contagens e telefones usam `font-mono tabular-nums` nas tasks consumidoras do Inbox;
   Roboto permanece a fonte do texto. Registrar 600 para mono não faz parte desta entrega:
   contadores futuros com `font-semibold` precisam resolver o peso na sua própria task.
+  O `dt.font-mono` já existente nas variáveis de contrato herda 600 do CSS base: a amostra
+  foi conferida com a face 400–500 carregada e síntese de peso permitida pelo navegador,
+  sem recorte/overflow externo. Isso não declara uma face 600 nativa; a faixa contratada permanece.
   A mudança também alcança os usos existentes de `font-mono` em códigos, hashes e templates.
 
 ## Cantos & bordas
