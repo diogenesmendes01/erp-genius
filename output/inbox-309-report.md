@@ -1,0 +1,27 @@
+# #309 — ledger DEV B
+
+Plano aprovado: docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md, Task4. Contrato: índice00. Base7e236e642b49ee96de7146a9a5766c60d2851401; branchcodex/inbox-e1-309; worktreeinbox-dev-b. Execução inline; revisão final pelo TESTER existente.
+
+- Baseline dirigida Avatar/paleta/fundo/contatos:7arquivos45testes, exit0(bc3aae), semignorados.
+- Pre-flight: Avatar consome tokens306 presentes; estado visual consome prazoEstourado302 e ItemListaInbox; futuros consumidores são Tasks7/10/13. Não mudar consumidores nesta task.
+- Ruling: ledger neste output do worktree atribuído; plano é lido no root, sem escrever workspace SDD fora da atribuição.
+- Ruling: Task4 Step5 diz semtela própria, aceite visual naTask7; não forçar integração em consumidores para simular conclusão. Gates/evidências serão reportados sem homologação presumida.
+
+- RED inicial:10falhasAvatar/4passaram e2suítes por módulos novos ausentes, exit1(e0f74c). Um script de edição teve erro sintático de escape antes de escrever arquivos(ebff2d); corrigido sem alterar fonte parcialmente.
+- GREEN3arquivos47testes exit0(c8300e), semignorados. Recorte ampliado11arquivos111testes exit0(a444ec), semignorados: Avatar/Badge/estado/paleta/fundo/contatos/prazo/listaatual.
+- TSC heap8192 sessão92032 exit0(4f1a35). Lint dirigido acusou react/no-children-prop nohelperBadge; corrigido apenas helper, lint e Badge10/10 exit0(f7775d).
+- Fullunit43466 e lintglobal20014 iniciados antes da notícia da dependência30776a08316. Integrador pediu cherry-pick dessa correção de teste legada antes de novo full; execução em curso será observada até saída para não mudar fonte durante gate.
+
+- Execução43466 interrompida por CtrlC a pedido do integrador após guarda307 acusar fixture legada; retorno1 observado(f51c6d), suíte INCOMPLETA, não é falha de execução completa. Log preservado em output/inbox-309-vitest-interrompido.log.
+- Lint global20014 terminou exit0(1437b8),0erros40avisos herdados.
+- Dependência30776a08316995cfbac4073b69b3743852caeba97ad incorporada por cherry-pick autorizado como f7c028f00848891d46102144e17981b8e2cbfef8; muda somente import/enum no teste307. Guarda sem-provedores-legados dirigida1/1 exit0(291705), semignorados. PR309 terá basefinalcom essa dependência, não a atribuir ao escopo309.
+
+## Evidências finais da fonte309
+
+- TSC final: Node22.23.2 --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit, sessão59086 acompanhada até exit0(74876e).
+- Full unitário: Node22.23.2 node_modules/vitest/vitest.mjs run --maxWorkers=2, sessão77497 acompanhada até exit0(6366da). **848 arquivos /6591 testes passaram; nenhum filtro ou ignorado.** Duração220,75s. Log local output/inbox-309-vitest-full.log. Não inclui integração de banco, que esta task não altera.
+- Lint global final: Node22.23.2 node_modules/eslint/bin/eslint.js . --max-warnings 40, sessão56644 acompanhada até exit0(31842f), **0 erros /40 avisos herdados**. Log local output/inbox-309-eslint-global-final.log.
+- Nenhuma mudança posterior à execução no código/testes309; apenas este registro e o quadro. Trava de fundo/paleta passaram sem exceção nova, contatos e ListaAtendimentos legados também.
+- Aceite visual: sem tela própria, conforme Task4 Step5. Avatar/Badge/estado são produtores; nenhuma tela foi forçada a consumir os novos parâmetros. O aceite real em3viewports×2temas será daTask7, e não é declarado concluído nesta task.
+
+Revisão independente do commit congelado ainda pendente. Não houve instalação, alteração de package/lock, schema, banco, servidor, transporte externo, push ou PR pelo DEV.
