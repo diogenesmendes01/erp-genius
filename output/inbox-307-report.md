@@ -35,3 +35,13 @@ O patch herdado classificava aborto de GET mensagens apenas após GET idêntico 
 - Limite da preservação r3: foi possível preservar o manifesto32167 (19:19:18) e tablet claro antigo (19:18:08). Os dois PNGs celulares foram copiados depois de já sobrescritos pela captura74860 (19:24:00/02), portanto NÃO são evidência r3; não se reconstruiu imagem antiga. A distinção consta no README da pasta.
 
 Ruling DEV: causa do painel vazio resolvida no harness por condição do estado final e geometria/transição, com prova em pixels. DEV entrega pronta para revisão independente do SHA congelado; aceite formal e gates globais da combinação #306+#307 continuam do integrador/TESTER. Sem install, package/lock, seed adicional, cluster, transporte externo, push ou PR pelo DEV.
+
+## Fechamento pelo integrador — substitui as pendências históricas acima
+
+TESTER revisou6a8ab794,18testes0/diffcheck0 e parecer favorável. Fonte combinada7e236e642b49ee96de7146a9a5766c60d2851401: captura integrador51505exit0 e independenteTESTER76466exit0, cada34PNGs(18app16protótipo)/0falhas/14diagnósticos. Integradorinspecionou todos34via6índices; TESTER estados críticos/quatrogavetas/Beatriz. Prova própria TESTER fonte306400/500+Roboto6/6exit0, sempageerrors/recursoexterno. Cópias em `output/inbox-307-combinado/` e `output/inbox-307-qa/`.
+
+Primeiro global9542 interrompido após trava existente apontar literal de driver no teste de integração307; não foi suíte completa. RED dirigido ca23b0exit1 identifica sósrc/test/visual-inbox.int.test.ts. Ajuste76a08316995cfbac4073b69b3743852caeba97ad importaDriverWhatsApp eusaenum.BAILEYS, mesmo valor, sem relaxarguard. GREENe0419dexit0:3arquivos/19testes; integração própria rootperfilintegracao884210exit0:1arquivo/1teste após capturas e servidor parado. TESTER revisou delta favoravelmente; nenhum pixel mudou.
+
+Global final Node22.23.2 na fonte76a08316 sessão95778 acompanhada atéexit0:846arquivos/6547testes unitários semfiltro/semignorados/maxWorkers2, TSCheap8192, lintglobal0erros40avisos herdados. Logs anexos. Commit do enum é cherry-pick no branch307; os demais diffs depois da fonte revista são documentos/evidências.
+
+Limites explícitos do aceite: referênciaoffline usa fonte de reserva; Nextdev toast semissues ocultado somente na screenshot; abrirconversa marca leitura e contadores/listas mudam entre contextos, pois seedupdate:{} não restaura todo estado mutado. Não alegar paridadepixel de contadores. Semsuitecompleta de integração, build de produção, merge ou deploy. Entrega pronta para PR por integrador.

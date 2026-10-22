@@ -1,0 +1,152 @@
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\(app)\academico\modalidades\[id]\quantidade\AlterarQuantidadeAulas.tsx
+  20:502  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\(app)\financeiro\FinanceiroPainel.tsx
+  180:61  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\(app)\financeiro\FinanceiroPainel.tsx:180:61
+  178 |     try {
+  179 |       const saved = window.localStorage.getItem(MOEDA_CONS_KEY);
+> 180 |       if (saved && cotacoes.some((c) => c.moeda === saved)) setMoedaCons(saved);
+      |                                                             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  181 |     } catch { /* storage indisponível */ }
+  182 |   }, [cotacoes]);
+  183 |   function escolherMoeda(m: string) {  react-hooks/set-state-in-effect
+  426:5   warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\(app)\financeiro\FinanceiroPainel.tsx:426:5
+  424 |   // com o valor canônico (senão o campo ficaria com o texto antigo digitado).
+  425 |   useEffect(() => {
+> 426 |     setVals(Object.fromEntries(editaveis.map((c) => [c.moeda, c.unidadesPorUsd != null ? String(c.unidadesPorUsd) : ""])));
+      |     ^^^^^^^ Avoid calling setState() directly within an effect
+  427 |     // eslint-disable-next-line react-hooks/exhaustive-deps
+  428 |   }, [cotacoes]);
+  429 |                  react-hooks/set-state-in-effect
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\(app)\matriculas\[id]\contrato\historicos-fuso.test.ts
+  1:10  warning  'createElement' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\(app)\matriculas\[id]\fechamentos-horas\page.test.ts
+  1:10  warning  'createElement' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\portal-aluno\ativar\page.tsx
+  59:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\app\portal-aluno\ativar\page.tsx:59:5
+  57 |     // O segredo vive no fragmento, que não alcança logs HTTP, e some da barra; a cópia da aba fica para o F5.
+  58 |     if (window.location.hash) window.history.replaceState(null, "", window.location.pathname);
+> 59 |     setToken(lido);
+     |     ^^^^^^^^ Avoid calling setState() directly within an effect
+  60 |   }, []);
+  61 |
+  62 |   async function confirmar(evento: FormEvent<HTMLFormElement>) {  react-hooks/set-state-in-effect
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\academico\fluxo.int.test.ts
+  473:28  warning  '_agendaDestino' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\academico\regras.ts
+  22:91  warning  'agora' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\agenda\modalidade-quantidade-tx.ts
+  104:31  warning  'previsao' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\agenda\modalidade-quantidade.int.test.ts
+  191:10  warning  'turma' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\agenda\modalidade-quantidade.ts
+  51:91  warning  'previsao' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\agenda\quantidade-avisos-tx.ts
+  27:11  warning  'instantes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\agenda\replanejamento-tx.ts
+  59:101  warning  '_finalidade' is defined but never used  @typescript-eslint/no-unused-vars
+  60:108  warning  '_finalidade' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\avaliacoes\conferencia-regra-historica.ts
+  4:46  warning  'ErroRegra' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\avaliacoes\equivalencia-estado-tx.ts
+  18:23  warning  '_estadoHash' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\avaliacoes\recuperacao-agenda-cancelamento.ts
+  17:6  warning  'EstadoCancelamento' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\comunicacoes-agenda\fonte-replanejamento.ts
+  39:47  warning  '_origem' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\contratos\aditivo-acerto-taxa.int.test.ts
+  43:16  warning  'proximaMensalidade' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\contratos\agenda-aditivo.ts
+  18:7  warning  'RegistrarAgendaSchema' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\diario\correcao-aula.int.test.ts
+   33:68  warning  'concluirReposicaoIndividual' is defined but never used  @typescript-eslint/no-unused-vars
+  161:9   warning  'entrega' is assigned a value but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\gravacoes\troca-fonte-reposicao.int.test.ts
+  2:48  warning  'Prisma' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\continuidade-aditivo-cobertura-tx.ts
+  8:7  warning  'civil' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\continuidade-emissao-tx.ts
+  10:7  warning  'civil' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\continuidade-estado-tx.ts
+  13:97  warning  'conferirOrigensConcorrentesAposRecomposicaoTx' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\continuidade-recomposicao-tx.test.ts
+  9:20  warning  'matriculaId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\desistencia-financeiro-tx.ts
+  146:108  warning  '_origemTaxa' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\desistencia-reconferencia-delta-fontes.ts
+  174:19  warning  '_tipo' is defined but never used  @typescript-eslint/no-unused-vars
+  177:19  warning  '_tipo' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\matricula\disponibilidade-oferta.ts
+  21:7  warning  'EstadoSchema' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\migracao\acoes.ts
+   6:25  warning  'ErroRegra' is defined but never used  @typescript-eslint/no-unused-vars
+  10:6   warning  'TipoFonte' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\migracao\aplicacao-cadastro.int.test.ts
+  19:93  warning  'loteId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\migracao\consultas-financeiras.ts
+  95:19  warning  'aplicacoesAcertoTaxaAditivo' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  95:48  warning  'itemEmissaoEntrada' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  95:68  warning  'emissaoContinuidadeGerada' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  95:95  warning  'emissaoFechamentoHoras' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\migracao\planilha-acoes.ts
+  2:8  warning  'ExcelJS' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mendes\.codex\worktrees\b92c\erp-genius\src\server\portal-aluno\preferencia-fuso.ts
+  44:11  warning  'conta' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 40 problems (0 errors, 40 warnings)
+
