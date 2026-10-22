@@ -20,6 +20,8 @@ export const ROTULOS_PENDENCIA_MOEDA: Record<string, string> = {
   // R2 do #284.
   ADIANTAMENTO_SEM_COMPRA: "Há adiantamento de horas pago na moeda anterior ainda sem compra registrada. Registre a compra (e consuma, libere ou liquide as horas) antes da troca.",
   HORAS_A_FATURAR: "Há aula por hora da moeda anterior ainda não faturada: conferida sem fechamento, ou anterior à vigência ainda sem conferência financeira. Confira e feche as horas antes da troca.",
+  // R3 do #284: o fechamento de horas é mensal; a troca não pode cair no meio de um período.
+  VIGENCIA_NO_MEIO_DO_PERIODO_HORAS: "Esta matrícula fecha horas por período mensal e a vigência cai no meio de um período. Escolha a vigência no primeiro dia do mês (00:00 no fuso da escola), sem fechamento por ciclo que comece em outro dia.",
   REVISAO_CORRECAO_AULA_DEVOLVE_MINUTOS: "Há revisão financeira de correção de aula pendente que devolveria minutos a uma compra de horas da moeda anterior. Decida antes da troca.",
 };
 

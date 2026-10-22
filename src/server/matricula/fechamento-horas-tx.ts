@@ -49,6 +49,12 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     include: { conferenciaOcorrenciaHoras: { include: { itemFaturado: { include: { emissao: { select: { cobrancaId: true } } } }, consumoAntecipacao: { select: { id: true, reservaId: true } }, aplicacaoNaoCobravel: { select: { id: true } }, condicoes: { select: { regras: true } }, ocorrencia: true } },
       ocorrenciasParticulares: { orderBy: { versao: "desc" }, take: 1, select: { id: true } },
       reservasHoras: { select: { id: true, consumo: { select: { id: true } }, decisoesLiberacao: { where: { aprovada: true }, select: { id: true, proposta: { select: { destino: true } } } } } } } });
+  // Q173 (R3 do #284, B4): moeda vigente na data de cada aula. Uma troca aplicada só vale a partir da vigência; a
+  // conferência anterior a ela, já destinada (faturada, não cobrável ou antecipação), continua na moeda em que nasceu.
+  const trocas = (await tx.aplicacaoMoedaAditivo.findMany({ where: { decisao: { proposta: { matriculaId: d.matriculaId } } },
+    select: { moedaAnterior: true, decisao: { select: { proposta: { select: { versaoCondicoes: { select: { vigenciaInicio: true } } } } } } } }))
+    .map(t => ({ moedaAnterior: t.moedaAnterior, vigencia: t.decisao.proposta.versaoCondicoes.vigenciaInicio.getTime() })).sort((a, b) => a.vigencia - b.vigencia);
+  const moedaNaData = (instante: Date) => trocas.find(t => t.vigencia > instante.getTime())?.moedaAnterior ?? m.moeda;
   const itens: EntradaFechamentoHoras["encontros"] = [];
   const origens: { encontroId: string; inicio: string; fim: string; status: string; conferenciaId: string | null; informeId: string | null }[] = [];
   for (const e of encontros) {
@@ -71,8 +77,10 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     const consumoAntecipacao = c.consumoAntecipacao;
     const conferenciaConsomeAntecipacao = !!consumoAntecipacao && !!reserva && reserva.id === consumoAntecipacao.reservaId && reserva.consumo?.id === consumoAntecipacao.id
       && ["FALTA_COBRAVEL", "CANCELAMENTO_TARDIO"].includes(c.desfecho);
+    // Conferência sem destino precisa estar na moeda atual: a da moeda anterior é barrada antes da troca (HORAS_A_FATURAR).
+    const destinada = !!c.itemFaturado || !!c.aplicacaoNaoCobravel || conferenciaConsomeAntecipacao;
     if ((e.reservasHoras.length && !conferenciaConsomeAntecipacao) || c.ocorrenciaId !== e.ocorrenciasParticulares[0]?.id || s.ocorrenciaId !== c.ocorrenciaId || s.condicoesId !== c.condicoesId
-      || s.matriculaId !== d.matriculaId || s.moeda !== c.moeda || c.moeda !== m.moeda || s.minutos !== c.minutos
+      || s.matriculaId !== d.matriculaId || s.moeda !== c.moeda || c.moeda !== (destinada ? moedaNaData(e.inicio) : m.moeda) || s.minutos !== c.minutos
       || !new Prisma.Decimal(s.valorApurado).equals(c.valor) || !isDeepStrictEqual(s.regras, c.condicoes.regras)
       || c.ocorrencia.encontroId !== e.id || o.referenciaEncontro !== e.id || c.ocorrencia.inicio.getTime() !== e.inicio.getTime()
       || c.ocorrencia.fim.getTime() !== e.fim.getTime() || !!consumoAntecipacao !== conferenciaConsomeAntecipacao) throw new ErroRegra("Origem da conferência financeira diverge do encontro.");
@@ -86,7 +94,7 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
       } });
       if (!v || v.matriculaId !== d.matriculaId || v.versao !== s.aditivo.versao || v.condicoesHash !== s.aditivo.condicoesHash
         || v.vigenciaInicio.getTime() > e.inicio.getTime()) throw new ErroRegra("Referência de aditivo da conferência diverge da versão formalizada.");
-      const precoPreservado = precoDaVersaoPreservada(v, s.regras.valorHora, m.moeda);
+      const precoPreservado = precoDaVersaoPreservada(v, s.regras.valorHora, c.moeda);
       if (!new Prisma.Decimal(s.precoHoraAplicado).equals(precoPreservado)) throw new ErroRegra("Preço preservado diverge da versão de aditivo.");
       valorHoraContratado = s.precoHoraAplicado;
     } else if (s.precoHoraAplicado && !new Prisma.Decimal(s.precoHoraAplicado).equals(s.regras.valorHora)) {
