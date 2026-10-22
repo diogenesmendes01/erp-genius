@@ -176,6 +176,8 @@ cuida de TLS e domínio) e nenhum serviço publica porta no host.
    | `MOTOR_IMAGE` | ✅ | Imagem publicada do motor WhatsApp | tag da imagem do `whatsapp-web-baileys` |
    | `MOTOR_API_KEY` | ✅ | API key ERP → motor (mínimo 32 caracteres) | `openssl rand -hex 32` |
    | `MOTOR_WEBHOOK_SECRET` | ✅ | Segredo do HMAC motor → ERP (mínimo 32 caracteres) | `openssl rand -hex 32` |
+   | `MOTOR_DATABASE_URL` | ✅ | String de conexão do Postgres dedicado do motor (criado no Coolify) | `postgresql://user:pass@hostname:5432/motor` (hostname é o UUID do Coolify) |
+   | `MOTOR_MASTER_KEY` | ✅ | Chave mestra do cofre do motor (mínimo 32 caracteres) | `openssl rand -hex 32` |
    | `WHATSAPP_LIVE` | | Ativar envios reais (só após piloto) | vazio em dev/staging, `1` em produção |
    | `ANTHROPIC_API_KEY` | | Aria (opcional). Vazio = provedor local "simulado", sem rede. Com a chave, a Aria chama a API da Anthropic e, quando `ATIVA`, pode enviar mensagens. Modelos em Configurações › CRM › IA | chave da API Anthropic |
    | `PAGAMENTO_SIMULADO` | | Habilita gateway simulado (dev/demo) | `1` em demo, vazio em produção |
@@ -343,7 +345,7 @@ repetir depois da janela do backup ou aparecer fora desse horário (confira `/va
 
 - **Sem Caddy**: o Traefik do Coolify cuida de TLS e roteamento.
 - **Sem portas publicadas**: nenhum serviço tem `ports:` no compose.
-- **Sem `db-init`**: o único banco Postgres é o do app; o motor guarda seus dados no volume `motor_data`.
+- **Banco do motor**: o motor usa um Postgres dedicado criado no Coolify (rede externa `coolify`), não PGlite embarcado. O serviço `motor` se junta à rede `coolify` (onde está o banco) e à rede `default` (onde está o app). O volume `motor_data` guarda mídia WhatsApp, credenciais e chave do cofre (não mais o PGlite).
 - **Domínio**: vem da variável mágica `SERVICE_FQDN_APP_3000` (gerada pelo Coolify).
 - **Healthcheck**: endpoint `/api/ready` (readiness do container com validação de DB
   e Prisma, sem autenticação). `/api/health` continua como pure liveness.
@@ -360,4 +362,6 @@ repetir depois da janela do backup ou aparecer fora desse horário (confira `/va
 - **Motor sem conexão**: o serviço `motor` só é acessível na rede interna do
   compose. O app se comunica via `http://motor:4317` (nunca HTTPS público). O motor tem
   healthcheck nativo (`GET /api/health`) e limites de recursos (768MB RAM, 0.75 CPU) adequados
-  para um serviço Baileys em VPS compartilhada.
+  para um serviço Baileys em VPS compartilhada. No Coolify, o motor acessa o Postgres dedicado
+  pela rede externa `coolify` (variável `MOTOR_DATABASE_URL`), mantendo a comunicação com o app
+  pela rede `default`.

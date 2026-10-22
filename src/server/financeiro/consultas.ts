@@ -291,6 +291,8 @@ export async function listarContextosRecebimentoDestinado() {
     return saldo > 0 ? [{ id: cobranca.id, codigo: cobranca.codigo, tipo: cobranca.tipo, vencimento: referenciaVencimentoCivil({ ...cobranca, aplicacoesAditivoVencimento: vencimentosPorCobranca.get(cobranca.id), aplicacoesM01: m01PorCobranca.get(cobranca.id), retomadasReprogramadas }), saldo }] : [];
     });
     const identificacaoMatricula = matricula.codigo?.trim() || `ID ${matricula.id}`;
+    // Q173: o rótulo usa a moeda da matrícula porque só entram cobranças em aberto, e a troca de moeda exige a
+    // matrícula sem cobrança em aberto na moeda anterior (pendencias_moeda_antiga_173). Se isso mudar, rotular por cobrança.
     return { matriculaId: matricula.id, identificacaoMatricula, status: matricula.status, aluno: `${matricula.aluno.primeiroNome} ${matricula.aluno.sobrenome}`.trim(), moeda: matricula.moeda, cobrancas, pagadores: matricula.pagadoresPreparacao.map((p) => ({ id: p.id, rotulo: `${p.tipo} · versão ${p.versao}` })) };
   });
 }

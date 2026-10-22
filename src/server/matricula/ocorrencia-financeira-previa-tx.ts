@@ -21,6 +21,15 @@ export async function carregarPreviaOcorrenciaFinanceiraTx(tx: Prisma.Transactio
   const e = o.encontro;
   if (e.matriculaId !== d.matriculaId || e.turmaId || e.inicio.getTime() !== o.inicio.getTime() || e.fim.getTime() !== o.fim.getTime()) throw new ErroRegra("A agenda mudou após o informe. Regularize as origens.");
   if (await tx.ocorrenciaParticular.count({ where: { encontroId: e.id, versao: { gt: o.versao } } })) throw new ErroRegra("Há uma versão mais recente do informe.");
+  // Q173 (R4 do #284, B5): aula a partir da vigência de uma troca de moeda ainda não aplicada não é conferida na moeda
+  // anterior; seria faturada na moeda errada. Depois da aplicação, a conferência sai na moeda nova.
+  const trocaPendente = await tx.propostaMoedaAditivo.findFirst({ where: { matriculaId: d.matriculaId, moedaAnterior: m.moeda, versaoCondicoes: { vigenciaInicio: { lte: e.inicio } },
+    OR: [{ decisao: { is: null } }, { decisao: { is: { aprovada: true, aplicacao: { is: null } } } }] }, orderBy: { versaoCondicoes: { vigenciaInicio: "asc" } },
+    select: { fuso: true, versaoCondicoes: { select: { vigenciaInicio: true } } } });
+  if (trocaPendente) {
+    const dia = new Intl.DateTimeFormat("pt-BR", { timeZone: trocaPendente.fuso, day: "2-digit", month: "2-digit" }).format(trocaPendente.versaoCondicoes.vigenciaInicio);
+    throw new ErroRegra(`Há troca de moeda com vigência em ${dia} aguardando aplicação; aplique a troca antes de conferir esta aula.`);
+  }
   const condicoes = await tx.condicoesHorasMatricula.findMany({ where: { matriculaId: d.matriculaId, status: { in: ["PENDENTE", "APROVADA"] } }, orderBy: { versao: "desc" } });
   const c = condicoes.find(c => c.id === d.condicoesId);
   if (!c || c.status !== "APROVADA") throw new ErroRegra("Escolha condições aprovadas da matrícula.");
