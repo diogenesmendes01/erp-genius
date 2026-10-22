@@ -141,8 +141,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     const pedido = ++consultasRef.current.iniciada;
     void buscarPagina(filtro, null).then((p) => {
       if (!p || pedido < consultasRef.current.aplicada) return;
-      consultasRef.current.aplicada = pedido;
       const leitura = leituraRef.current;
+      // Após falha, só uma consulta iniciada já nessa fase pode corrigir a contagem restaurada.
+      // Um GET da leitura anterior (ou da fase pendente) pode conter zero anterior à mensagem nova.
+      if (leitura.fase === "falha" && (inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "falha")) return;
+      consultasRef.current.aplicada = pedido;
       const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
       const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
       if (linha && !(leitura.fase === "sucesso" && antiga)) {

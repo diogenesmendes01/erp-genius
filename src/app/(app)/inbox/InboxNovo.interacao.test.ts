@@ -167,6 +167,28 @@ describe("InboxNovo: leitura ao abrir", () => {
     tela(); await esvaziar();
     expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(2);
   });
+  it("GET da leitura anterior não desfaz a restauração após falha; GET fresco continua válido", async () => {
+    tela(); await esvaziar(); // leitura inicial v1 concluída
+    let concluirAntigo!: (r: Response) => void;
+    let consultas = 0;
+    respostaLista = () => {
+      consultas++;
+      return consultas === 1 ? new Promise((ok) => { concluirAntigo = ok; }) : Promise.resolve(new Response("", { status: 503 }));
+    };
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m0", conversaId: "cv1" });
+    marcar.mockResolvedValue({ ok: false });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar(); // a leitura v2 falha; a consulta de reconciliação também falha
+    expect(consultas).toBe(3);
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    concluirAntigo(pagina([item("a1"), item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+  });
 });
 
 describe("InboxNovo: permissão de envio carregando × falhou (C2 da revisão do #218)", () => {
