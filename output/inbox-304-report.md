@@ -2,7 +2,7 @@
 
 ## Estado
 
-Implementação e medição DEV concluídas; revisão TESTER, gates globais finais e homologação pendentes. Branch `codex/inbox-e0-304`, base obrigatória #299 `729a0fe7faeb7ea918fa0223c58912ff45ef4a37`. #305 preservada em branch separada. SPEC: `docs/specs/inbox-rolagem-pagina.md`.
+Implementação, medição e gates DEV concluídos; revisão TESTER, homologação e regressão global integrada pelo integrador pendentes. Branch `codex/inbox-e0-304`, origem obrigatória #299 `729a0fe7faeb7ea918fa0223c58912ff45ef4a37`, reaplicada na base E0 `797994aaab6f53017b72a808cf0de92abf827ac5`. #305 preservada em branch separada. SPEC: `docs/specs/inbox-rolagem-pagina.md`.
 
 ## Entrega
 
@@ -30,4 +30,23 @@ O integrador preparou fixture segura no perfil `dev-email` e servidor Node22 loc
 
 ## Pendências e limites
 
-Revisão independente do commit exato e homologação TESTER; integração/publicação pelo integrador. Medições não cobrem zoom arbitrário nem viewport menor que as listadas. Não houve build ou suíte de integração de banco neste recorte de geometria. Nenhuma entrega E1 iniciada.
+Revisão independente do commit exato e homologação TESTER; regressão global integrada e publicação pelo integrador. Medições não cobrem zoom arbitrário nem viewport menor que as listadas. Não houve build ou suíte de integração de banco neste recorte de geometria. Nenhuma entrega E1 iniciada.
+
+## Gates observados e rebase final
+
+Todos os comandos desta seção usaram Node **22.23.2**, confirmado pelo executável local do integrador. Nenhuma instalação ou mudança de package/lock. Comandos observados até exit; nenhum processo de DEV restante.
+
+### Histórico na fonte inicial 5d44ef3c03087a5624d5b0f5596182611710d0cd
+
+- `vitest run --maxWorkers=2`: sessão **95297**, chunk **1762ec**, saída **0**; **840 arquivos/6480 testes**, nenhum ignorado/todo, duração227,21s. Suíte unitária completa dessa base; não é execução na base E0 integrada posterior.
+- `eslint . --max-warnings 40`, sem filtros: sessão **99223**, chunk **c22246**, saída **0**, zero erros/40 avisos existentes.
+- `tsc --noEmit`, heap8192: sessão **90264**, chunk **1a3e27**, saída **1**. O servidor3110 havia gerado `.next/dev/types/app/api/inbox/eventos/route.ts`; o validador recusou export extra VIDA_MAX_MS. Rota e exports eram idênticos na base729a0fe7. O integrador corrigiu o pré-requisito Next separadamente (constantes em módulo não-route) e incorporou na baseE0; DEV não removeu tipos gerados para contornar a falha.
+
+### Fonte congelada após rebase 98c76bd486c50251cda8a04430637e52b2eff28d
+
+- Rebase somente do commit304 sobre **797994aaab6f53017b72a808cf0de92abf827ac5**, seis issues publicadas e pré-requisito Next. Único conflito no quadro: preservadas todas as seções existentes e acrescida304. Comparação com5d44 dos quatro arquivos TS304 e do harness de captura vazia: fonte/testes/harness304 invariáveis. Diff de src contra base contém apenas page/InboxNovo e seus dois testes.
+- Recorte `vitest run --maxWorkers=2 'src/app/(app)/inbox' src/app/responsivo.test.ts src/app/paleta.test.ts src/app/design-system.test.ts src/app/botoes.test.ts`: sessão **97122**, chunk **635fbd**, saída **0**, **22 arquivos/272 testes**, nenhum ignorado. Os demais testes existentes da nova base também pertencem ao recorte.
+- `tsc --noEmit`, heap8192: sessão **37381**, chunk **637f9c**, saída **0**, com o arquivo de tipos Next acima presente. A correção do integrador resolveu o defeito sem alteração da fonte304.
+- `eslint . --max-warnings 40`, sem filtros: sessão **93477**, chunk **178b9b**, saída **0**, zero erros/40 avisos existentes, incluindo harnessMJS rastreado.
+- Full não repetido após rebase por orientação explícita do integrador: ele executará um único global final na combinação301+304. Não atribuo os840/6480 históricos à nova base. Consolidação posterior restrita a documentação não requer repetir os gates de fonte.
+- Capturas DEV pertencem à implementação304 na base #299; TESTER repetirá seu harness independente na base integrada. A seleção de conversa exercita a marcação local de leitura herdada da #299; não é envio nem integração externa. O integrador encerrou seu servidor63856 após a medição final.
