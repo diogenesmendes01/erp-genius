@@ -1,0 +1,74 @@
+[
+  {
+    "title": "[Inbox E0.1] Classes de cor inexistentes e trava de paleta ampliada",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "ui"
+    ],
+    "body": "**Objetivo:** Trocar as 7 classes de cor que não geram CSS (`bg-brand`, `text-brand`, `text-muted-foreground`, `bg-muted`) e ampliar `paleta.test.ts` para barrar cor sem tom que não exista no `tailwind.config.ts`.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-1](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-1)\n\n**Arquivos:**\n- `src/test/literais-string.ts`\n- `src/app/paleta.test.ts`\n- `src/app/fundo-sobre-pagina.test.ts`\n- `src/app/(app)/inbox/ListaAtendimentos.tsx`\n- `src/components/conversa/BalaoMensagem.tsx`\n- `src/components/conversa/EnqueteLeitura.tsx`\n- `src/app/(app)/inbox/PainelSetor.tsx`\n- `src/app/(app)/alunos/[id]/creditos/[creditoId]/DevolucaoCredito.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 1 verdes, incluindo o detector `corSemToken` e a varredura sem ofensores.\n- Contador de não lidas em verde sólido e ✓✓ de lida em verde.\n- Aceite visual da E0 (Global Constraints do plano): capturas manuais de antes e depois, em 1440×900, 1024×768 e 390×844, nos dois temas, nos estados tocados.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** nenhuma.\n"
+  },
+  {
+    "title": "[Inbox E0.2] Abrir a conversa marca como lida",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "back-end"
+    ],
+    "body": "**Objetivo:** Abrir uma conversa, ou receber mensagem nela aberta, grava a leitura pessoal, zera o contador compartilhado e confirma a leitura no WhatsApp pelo motor com a sessão CONECTADO (doc 03).\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-2](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-2)\n\n**Arquivos:**\n- `src/server/whatsapp/preferencias.ts`\n- `src/server/whatsapp/acoes.ts`\n- `src/app/(app)/inbox/marcar-lida.ts`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- Testes unitários e de integração da Task 2 verdes (`presenca.int.test.ts`, `preferencias.int.test.ts`, `marcar-lida.test.ts`, `InboxNovo.interacao.test.ts`).\n- O contador some ao abrir a conversa.\n- Aceite visual da E0 (Global Constraints do plano): capturas manuais de antes e depois, em 1440×900, 1024×768 e 390×844, nos dois temas, nos estados tocados.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** nenhuma.\n"
+  },
+  {
+    "title": "[Inbox E0.3] Notas do atendimento na rota da conversa, com aviso em tempo real",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "back-end"
+    ],
+    "body": "**Objetivo:** A página da thread devolve as notas internas do atendimento (e as do lead para quem o vê), e a nota nova avisa o SSE com `atendimento.atualizado`.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-3](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-3)\n\n**Arquivos:**\n- `src/server/inbox/barramento.ts`\n- `src/server/whatsapp/consultas-inbox.ts`\n- `src/server/whatsapp/acoes-conversa.ts`\n- `src/server/inbox/consultas-pagina.ts`\n\n**Critérios de aceite:**\n- Testes de integração da Task 3 verdes (`nota-interna.int.test.ts`, `consultas-pagina.int.test.ts`, `inbox.int.test.ts`).\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** nenhuma.\n"
+  },
+  {
+    "title": "[Inbox E0.4] Notas internas aparecem na thread",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "ui"
+    ],
+    "body": "**Objetivo:** Mostrar na thread, em ordem de horário, as notas internas que a rota passa a devolver.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-4](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-4)\n\n**Arquivos:**\n- `src/components/conversa/historico-conversa.ts`\n- `src/components/conversa/fonte-erp.ts`\n- `src/components/conversa/itens-thread.ts`\n- `src/components/conversa/NotaNaThread.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 4 verdes.\n- A nota aparece para o autor e para outra pessoa com a conversa aberta, sem recarregar.\n- Aceite visual da E0 (Global Constraints do plano): capturas manuais de antes e depois, em 1440×900, 1024×768 e 390×844, nos dois temas, nos estados tocados.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E0.3.\n"
+  },
+  {
+    "title": "[Inbox E0.5] \"Prazo estourado\" vivo",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "ui"
+    ],
+    "body": "**Objetivo:** O selo \"Prazo estourado\" aparece quando o prazo vence, sem recarregar e sem polling (timer único até o próximo prazo).\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-5](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-5)\n\n**Arquivos:**\n- `src/app/(app)/inbox/prazo-vivo.ts`\n- `src/app/(app)/inbox/ListaAtendimentos.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 5 verdes, com `sem-polling.test.ts` verde.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** nenhuma.\n"
+  },
+  {
+    "title": "[Inbox E0.6] Anexos Contato, Enquete e Localização desabilitados com motivo",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "ui"
+    ],
+    "body": "**Objetivo:** Nenhum item do menu Anexar fica habilitado sem ação. Contato, Enquete e Localização ficam desabilitados com o motivo até a E4 ligar os formulários.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-6](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-6)\n\n**Arquivos:**\n- `src/components/conversa/Compositor.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 6 verdes.\n- Captura do menu Anexar com o motor conectado.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** nenhuma.\n"
+  },
+  {
+    "title": "[Inbox E0.7] Página do Inbox sem rolagem dupla",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "ui"
+    ],
+    "body": "**Objetivo:** A página do Inbox não rola: só a lista e a thread rolam.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-7](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-7)\n\n**Arquivos:**\n- `src/app/(app)/inbox/page.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 7 verdes.\n- `document.documentElement.scrollHeight <= innerHeight` em 1440×900, 1024×768 e 390×844, nos dois temas.\n- Aceite visual da E0 (Global Constraints do plano): capturas manuais de antes e depois, em 1440×900, 1024×768 e 390×844, nos dois temas, nos estados tocados.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E0.2 (mesmo arquivo, `InboxNovo.tsx`).\n"
+  },
+  {
+    "title": "[Inbox E0.8] Chevron do menu da mensagem fora do texto",
+    "labels": [
+      "inbox",
+      "etapa-0",
+      "ui"
+    ],
+    "body": "**Objetivo:** O chevron não cobre o texto do balão, e o menu da mensagem abre dentro da tela.\n\n**Plano:** [docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-8](docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-8)\n\n**Arquivos:**\n- `src/components/conversa/BalaoMensagem.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 8 verdes.\n- Menu aberto perto da borda de baixo fica dentro da tela.\n- Aceite visual da E0 (Global Constraints do plano): capturas manuais de antes e depois, em 1440×900, 1024×768 e 390×844, nos dois temas, nos estados tocados.\n- `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E0.1 (mesmo arquivo).\n"
+  }
+]
