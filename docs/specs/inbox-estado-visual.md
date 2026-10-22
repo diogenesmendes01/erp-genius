@@ -41,3 +41,7 @@ relaxar travas globais nem acrescentar exceção de fundo; estado-visual.ts não
 um componente.tsx e os consumidores ficam dentro das superfícies previstas.
 
 Verificações e pendências estão no quadro único e em output/inbox-309-report.md.
+
+## Aceite dos produtores
+
+Fonte309final bcda5a04bb849579dea79ef46a2ffb333b6ab6f3: iniciais são capitalizadas e limitadas por ponto Unicode no flatMap original, sem expansão acima de duas nem corte de pares surrogate. A simplificação preserva a análise estática de identificação, sem alterar suas guardas/exceções/profundidade. TESTER4arquivos83testes0 e parecer favorável. Global combinado com310 na fonte103a507d sessão15987exit0:850arquivos/6634testes,TSCheap8192 e lint0erros40avisos,Node22.23.2. Parecer/logs em `output/inbox-309-qa/`. Publicação sobre baseE1estável3a, sem alteração de código309 após esta revisão. Visual dos consumidores novos segue Step5/Task7; não há tela própria nesta issue.
