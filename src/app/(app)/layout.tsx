@@ -2,14 +2,14 @@ import { Sidebar } from "@/components/Sidebar";
 import { BarraMobile } from "@/components/BarraMobile";
 import { Trilha } from "@/components/Trilha";
 import { exigirSessaoPagina } from "@/server/_shared";
-import { contarNaoLidas } from "@/server/whatsapp/consultas";
+import { contarConversasNaoLidas } from "@/server/inbox/nao-lidas";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Papéis FRESCOS do banco (não do JWT) — o menu passa a refletir revogações na hora,
   // igual às páginas/ações (ver _shared/sessao). Usuário desativado cai para /login.
   const usuario = await exigirSessaoPagina();
   // Notificação básica da inbox (doc 30 E3). O escopo é fail-closed: papel sem acesso → 0.
-  const naoLidasInbox = await contarNaoLidas(usuario);
+  const naoLidasInbox = await contarConversasNaoLidas(usuario);
 
   return (
     // Coluna no celular (barra no topo), linha a partir de md (Sidebar à esquerda) — E6.

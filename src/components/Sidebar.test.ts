@@ -46,7 +46,7 @@ describe("Sidebar", () => {
     mocks.pathname.mockReturnValue("/inbox");
     const html = renderToStaticMarkup(createElement(Sidebar, { papeis: [Papel.ADMINISTRADOR], nome: "Ana", naoLidasInbox: 3 }));
     expect(html).toContain('aria-label="Navegação principal"');
-    expect(html).toContain("mensagens não lidas");
+    expect(html).toContain("conversas não lidas");
   });
 
   it("item ativo da sidebar usa accent-soft", () => {
