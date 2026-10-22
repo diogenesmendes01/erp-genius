@@ -53,15 +53,17 @@ const props = {
 } as unknown as PropsInboxNovo;
 
 let respostaPainel: () => Response;
+let respostaLista: () => Promise<Response>;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   vi.stubGlobal("document", { visibilityState: "visible" });
   m.g = criarGanchos(); m.efeitos = []; m.aoAviso = null; chamadasPainel.length = 0;
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true }), { status: 200 });
+  respostaLista = async () => new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null }), { status: 200 });
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
     if (url.endsWith("/painel")) { chamadasPainel.push(url); return respostaPainel(); }
-    return new Response(JSON.stringify({ itens: props.inicial.itens, proximo: null }), { status: 200 });
+    return respostaLista();
   }));
 });
 afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
@@ -69,6 +71,8 @@ afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 function tela(): ReactNode { m.posEfeito = 0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props); }
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
+const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
 
 describe("InboxNovo: leitura ao abrir", () => {
   it("marca o atendimento selecionado pelo deep link inicial", () => {
@@ -102,6 +106,66 @@ describe("InboxNovo: leitura ao abrir", () => {
     expect(marcar).toHaveBeenCalledTimes(1);
     resolver[0]();
     await vi.waitFor(() => expect(marcar).toHaveBeenCalledTimes(2));
+  });
+  it("GET da mensagem nova não repõe não lidas enquanto a leitura da conversa aberta está em voo", async () => {
+    tela(); await esvaziar();
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
+    let concluirLista!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirLista = ok; });
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    concluirLeitura({ ok: true });
+    await esvaziar();
+  });
+  it("GET iniciado antes de abrir outra conversa não desfaz o zero otimista", async () => {
+    tela(); await esvaziar();
+    let concluirLista!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirLista = ok; });
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a2", mensagemId: null, conversaId: "cv2" });
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
+    lista(tela()).aoSelecionar("a2");
+    tela();
+    concluirLista(pagina([item("a1"), item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
+    concluirLeitura({ ok: true });
+    await esvaziar();
+  });
+  it("GET em voo ainda é tratado como antigo após a leitura concluir; GET novo mostra a contagem atual", async () => {
+    tela(); await esvaziar();
+    let concluirLista!: (r: Response) => void;
+    respostaLista = () => new Promise((ok) => { concluirLista = ok; });
+    let concluirLeitura!: (r: { ok: boolean }) => void;
+    marcar.mockImplementation(() => new Promise((ok) => { concluirLeitura = ok; }));
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    concluirLeitura({ ok: true });
+    await esvaziar();
+    concluirLista(pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]));
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(0);
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 1 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m1", conversaId: "cv1" });
+    await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(1);
+  });
+  it("falha real da leitura restaura a contagem do servidor", async () => {
+    tela(); await esvaziar();
+    marcar.mockResolvedValue({ ok: false });
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(2);
+  });
+  it("rejeição da ação com GET falho restaura a última contagem conhecida", async () => {
+    tela(); await esvaziar();
+    marcar.mockRejectedValue(new Error("sem conexão"));
+    respostaLista = async () => new Response("", { status: 503 });
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(2);
   });
 });
 

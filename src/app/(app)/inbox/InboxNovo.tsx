@@ -25,6 +25,7 @@ import { useEventosInbox } from "./useEventosInbox";
 import { criarMarcadorDeLeitura } from "./marcar-lida";
 
 export type VistaInbox = "lista" | "conversa" | "painel";
+type EstadoLeitura = { id: string | null; versao: number; fase: "nenhuma" | "pendente" | "sucesso" | "falha"; ultimaContagem: number };
 
 export interface PropsInboxNovo {
   inicial: { itens: ItemListaInbox[]; proximo: string | null };
@@ -129,12 +130,62 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     setVista(selecionadoInicial ? "conversa" : "lista");
   }
   const selecionadoRef = useRef(selecionado);
+  const filtrosRef = useRef(filtros);
+  const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
+  const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
-  const [marcarLeitura] = useState(() => criarMarcadorDeLeitura(marcarAtendimentoLido));
+  useEffect(() => { filtrosRef.current = filtros; }, [filtros]);
+  const carregarLista = useCallback((filtro: FiltrosInbox) => {
+    // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
+    const inicio = { ...leituraRef.current };
+    const pedido = ++consultasRef.current.iniciada;
+    void buscarPagina(filtro, null).then((p) => {
+      if (!p || pedido < consultasRef.current.aplicada) return;
+      consultasRef.current.aplicada = pedido;
+      const leitura = leituraRef.current;
+      const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
+      const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
+      if (linha && !(leitura.fase === "sucesso" && antiga)) {
+        leitura.ultimaContagem = leitura.fase === "pendente" ? Math.max(leitura.ultimaContagem, linha.naoLidas) : linha.naoLidas;
+      }
+      setItens((atual) => {
+        const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
+        const vigente = leituraRef.current;
+        const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
+        return vigente.id === selecionadoRef.current && (vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))
+          ? zerarNaoLidas(lista, vigente.id!) : lista;
+      });
+    });
+  }, []);
+  const marcarLeituraRef = useRef<((id: string) => void) | null>(null);
   useEffect(() => {
-    if (!selecionado) return;
-    marcarLeitura(selecionado);
-  }, [selecionado, marcarLeitura]);
+    marcarLeituraRef.current = criarMarcadorDeLeitura(async (id) => {
+      const versao = leituraRef.current.versao;
+      let sucesso = false;
+      try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ }
+      const leitura = leituraRef.current;
+      if (leitura.id !== id || leitura.versao !== versao) return;
+      leitura.fase = sucesso ? "sucesso" : "falha";
+      if (sucesso) {
+        leitura.ultimaContagem = 0;
+      } else {
+        // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
+        setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
+        carregarLista(filtrosRef.current);
+      }
+    });
+    return () => { marcarLeituraRef.current = null; };
+  }, [carregarLista]);
+  const pedirLeitura = useCallback((id: string, mensagemNova = false) => {
+    const anterior = leituraRef.current;
+    const conhecida = anterior.id === id ? anterior.ultimaContagem : (itens.find((i) => i.id === id)?.naoLidas ?? inicial.itens.find((i) => i.id === id)?.naoLidas ?? 0);
+    leituraRef.current = { id, versao: anterior.versao + 1, fase: "pendente", ultimaContagem: mensagemNova ? conhecida + 1 : conhecida };
+    setItens((lista) => zerarNaoLidas(lista, id));
+    marcarLeituraRef.current?.(id);
+  }, [itens, inicial.itens]);
+  useEffect(() => {
+    if (selecionado && leituraRef.current.id !== selecionado) pedirLeitura(selecionado);
+  }, [selecionado, pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
   const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
@@ -161,8 +212,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // e troca as linhas afetadas, sem refazer a página inteira.
   const recarregarLista = useCallback(() => {
     setVersaoPainel((v) => v + 1);
-    void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
-  }, [filtros]);
+    carregarLista(filtros);
+  }, [filtros, carregarLista]);
   // Aviso que pode mudar a permissão do atendimento aberto (`atendimento.atualizado`: transferência, responsável,
   // status) ou resync: o painel recarrega e, com ele, o podeEnviar do compositor (C3 da revisão do #218). Mensagem
   // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
@@ -170,11 +221,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current) && typeof document !== "undefined" && document.visibilityState === "visible") {
-      marcarLeitura(a.atendimentoId!);
+      pedirLeitura(a.atendimentoId!, true);
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
-    void buscarPagina(filtros, null).then((p) => { if (p) setItens((atual) => mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current)); });
-  }, [filtros, marcarLeitura]);
+    carregarLista(filtros);
+  }, [filtros, carregarLista, pedirLeitura]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
@@ -188,7 +239,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const atual = useMemo(() => itens.find((i) => i.id === selecionado) ?? null, [itens, selecionado]);
 
   function abrir(id: string) {
-    setItens((lista) => zerarNaoLidas(lista, id));
+    selecionadoRef.current = id;
+    pedirLeitura(id);
     setSelecionado(id);
     setVista("conversa");
     try {
