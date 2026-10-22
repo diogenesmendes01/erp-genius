@@ -4694,7 +4694,7 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 #### E1.1 — #306: tokens, fonte mono e travas
 
-**Estado: implementação e aceite independente concluídos; pronta para PR, sem merge/deploy.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
+**Estado: implementação e aceite independente concluídos; [PR391 aberto](https://github.com/diogenesmendes01/erp-genius/pull/391), sem merge/deploy.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
 
 - Tokens de avatar/balão/pontos, utilitário de fundo e fonte mono local 400–500; Roboto e travas anteriores preservadas. Fonte/licença entregues pelo integrador no commit 3eb87ea6, hash conferido; sem pacote/lock/schema/CDN.
 - TDD RED 9 falhas/33 aprovados; GREEN 5 arquivos/53 testes e lint dirigido sem avisos, saídas 0 Node 22.23.2. CSS compilado com amostra explícita; contraste positivo e autoteste de avatar reprovado.
@@ -4703,7 +4703,7 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 ### Inbox E1.2 — #307: harness de comparação visual — 2026-10-22
 
-**Estado: implementação, aceite visual independente e gates combinados concluídos; pronta para PR, sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
+**Estado: implementação, aceite visual independente e gates combinados concluídos; [PR392 aberto](https://github.com/diogenesmendes01/erp-genius/pull/392), sem merge/deploy.** SPEC em `docs/specs/inbox-harness-visual.md`, instruções em `scripts/visual/README.md` e relatório em `output/inbox-307-report.md`. Branch `codex/inbox-e1-307`, base preparada `8a320f97`; publicação pelo integrador.
 
 - **Entrega:** núcleo de nomes/combinações/recursos locais, CLI Playwright com `--alvo`, `--estado`, `--base` HTTP local, protótipo `file://` sem acesso externo e demo de sete atendimentos fictícios num BAILEYS desconectado. Guarda exige host/porta locais e um dos cinco nomes de banco exatos de `scripts/test-profile.mjs`; rejeita query/fragmento. Demo reexecutável usa IDs fixos e repara caso parcial, sem alterar o número de outro cenário.
 - **TDD/recortes Node22.23.2:** RED módulo ausente exit1; GREEN núcleo4/4 exit0; RED Lucide `woff2?t` exit1 e GREEN após mapeamento local; RED da integração de reparo parcial exit1 (`Demo parcial`), GREEN integração `vitest.integration.config.ts src/test/visual-inbox.int.test.ts` 1 arquivo/1 teste exit0, nenhum ignorado, exclusivamente no banco `dev-gravacoes`; RED da CLI ausente exit1 e GREEN unitários+dependências2arquivos/9testes exit0, nenhum ignorado. Esses recortes não são suíte completa.
@@ -4715,7 +4715,7 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 ### Inbox E1.4 — #309: Avatar, BadgeEstado e estado visual — 2026-10-22
 
-**Estado: produtores e revisão independente concluídos; gates combinados aprovados, pronta para PR.** Branch codex/inbox-e1-309, base publicada codex/inbox-e1-base@3a7ff6ae (306+307). SPEC em docs/specs/inbox-estado-visual.md; evidências em output/inbox-309-report.md. Aceite visual dos novos consumidores na Task7, conforme Step5; não presume homologação dessas telas.
+**Estado: produtores e revisão independente concluídos; gates combinados aprovados, [PR393 aberto](https://github.com/diogenesmendes01/erp-genius/pull/393).** Branch codex/inbox-e1-309, base publicada codex/inbox-e1-base@3a7ff6ae (306+307). SPEC em docs/specs/inbox-estado-visual.md; evidências em output/inbox-309-report.md. Aceite visual dos novos consumidores na Task7, conforme Step5; não presume homologação dessas telas.
 
 - Avatar mantém cores/medidas legadas sem tom, acrescenta44/132, oito tons por FNV-1a, seloIA e iniciais Unicode sem emoji/números/surrogate cortado. BadgeEstado entrega sete tons, ponto, tracejado e ícone. Funções puras entregam estado/setor/prazo/semnome/fila, grupo sem badges, fronteira29/30min e cabeçalho automático; seloIa false naE1.
 - Baseline7arquivos45testes exit0. TDD: RED10falhasAvatar e dois módulos ausentes exit1; GREEN3arquivos47testes exit0. Recorte ampliado11arquivos111testes exit0, nenhum ignorado. TSC inicial92032 e final59086 exit0; lint dirigido e Badge10/10 após correção do helper de teste exit0. Full final sessão77497 exit0: **848 arquivos /6.591 testes**, sem filtros/ignorados. Execução anterior43466 foi interrompida após guarda307, sem ser chamada suíte completa; dependência76a do integrador incorporada comof7c028f0 antes do full final. Lint global final56644 exit0(0erros/40avisos); revisão independente ainda pendente.
@@ -4728,7 +4728,7 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 ### Inbox E1.5 — #310: contagens dos chips e saúde dos números — 2026-10-22
 
-**Estado: implementação, revisão independente e global combinado concluídos; pronta para PR.** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
+**Estado: implementação, revisão independente e global combinado concluídos; [PR394 aberto](https://github.com/diogenesmendes01/erp-genius/pull/394).** Branch codex/inbox-e1-310, base E0 bcc3d27a. SPEC docs/specs/inbox-contagens-saude.md; evidência detalhada output/inbox-310-report.md. Publicação pelo integrador; sem merge/deploy.
 
 - Contratos centrais IdChipInbox/ContagensChipsInbox, cinco agregados por escopo+filtros (retira somente responsável/não-lidas/prazo), API opt-in sem cursor e SSR após guarda. Estado produtor protege leitura otimista/SSE/filtros e reconcilia pontualmente; sem polling ou cálculo pelo tamanho da página. Saúde pública só id/rótulo/saúde, sem telefone/provedor, sem alterar capacidades.
 - Ruling: schema não possui SIMULADO; usa enums atuais, sem literal proibido ou adapter legado. Opção enviar preserva escopo restrito da rota, incluindo convite somente leitura. #310 antes #308 é coordenação de contrato/page, não aresta funcional obrigatória. Não altera a casca #308.
