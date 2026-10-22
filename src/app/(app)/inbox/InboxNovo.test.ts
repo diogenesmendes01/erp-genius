@@ -24,6 +24,12 @@ function html(p: { selecionado?: string | null; extra?: Record<string, unknown> 
 }
 
 describe("InboxNovo", () => {
+  it("a caixa cresce no pai, pode encolher e não fixa altura pela viewport", () => {
+    const h = html();
+    const raiz = h.match(/<div data-vista="lista" data-conectado="[01]" class="([^"]*)"/)?.[1].split(" ") ?? [];
+    expect(raiz).toEqual(expect.arrayContaining(["flex", "min-h-0", "flex-1"]));
+    expect(raiz.some((c) => c.includes("100dvh") || c === "min-h-[420px]")).toBe(false);
+  });
   it("sem conversa selecionada mostra estado vazio, não a primeira", () => {
     const h = html({ selecionado: null });
     expect(h).toContain("Escolha uma conversa");
