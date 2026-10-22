@@ -444,3 +444,7 @@ Agregado `Matricula`, cada um na transação do próprio registro. `DestinacaoEx
 ### Uso do saldo restrito a serviços (Q171)
 
 Agregado `Matricula`. `UsoSaldoServicoPermutaProposto`: propostaId, saldoId, cobrancaId, valor e moeda. `UsoSaldoServicoPermutaDecidido`: propostaId, decisaoId, aprovada, motivo e aplicacaoId (a `AplicacaoCompensacaoPermuta` criada na mesma transação da aprovação; nula na rejeição). O uso abate a cobrança como serviço compensado; não é recebimento nem crédito financeiro e nunca vira devolução.
+
+### Troca de moeda por aditivo (Q173)
+
+Agregado `Matricula`, cada um na transação do próprio registro imutável. `MoedaAditivoProposta`: propostaId, de, para, fuso (da escola, gravado na proposta) e fotografiaHash. `MoedaAditivoDecidida`: propostaId, decisaoId e aprovada; o motivo fica na decisão. `MoedaAditivoAplicada`: propostaId, aplicacaoId, de, para e fotografiaHash; na mesma transação, o trigger troca `Matricula.moeda` (única escrita aceita nessa coluna). A repetição idêntica devolve o registro existente sem novo evento. Nada é convertido: cobranças, créditos e compras de horas ficam na moeda em que nasceram, e a troca só passa com a matrícula sem pendências na moeda anterior.

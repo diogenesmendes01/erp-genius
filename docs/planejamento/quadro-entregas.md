@@ -4513,3 +4513,45 @@ Branch `claude/port-62-assinatura-simulada`, base `main` 239001ad. Traz, adaptad
   - Suítes completas de `src/server/contratos` e `src/server/matricula` (depois da volta do cluster): 57 arquivos, 571 testes passados, 4 ignorados e 2 falhas. As 2 falhas foram nos testes novos de corrida, que o run carregou no meio da edição. Rodados de novo isolados com o código final (`envio-integrado`, `aditivo`, `desistencia-acerto-contratual`): 3 arquivos, 90/90.
   - Revisões R1, R2 e rigorosa: a conciliação não confirma envelope `CANCELADO`/`RECUSADO` (fica `INCERTO` com o motivo); `ENVIANDO` só é conciliado depois de `PRAZO_CONCILIACAO_ENVIANDO_MS` (10 min), maior que `TIMEOUT_CRIACAO_ENVELOPE_MS` (2 min), que agora é aplicado na criação; a tela só oferece conciliar em `ENVIO_INCERTO` ou `ENVIANDO` vencido; o catálogo de eventos (`docs/12`) foi atualizado; a evidência repetida do cancelamento simulado não varia mais; e o valor bruto de `ASSINATURA_DRIVER` vai só para o log.
   - `npm run build`: saída 0.
+
+### Port da #62: Q173, aditivo de moeda com a matrícula "limpa" — 2026-10-21
+
+Branch `claude/port-62-q173`, base `main` 80ba5d88. Porta `3d6aa061` da #62 (decisões de 21/09, todas confirmadas em 20/10) sem cherry-pick, conferindo cada peça contra a `main` atual.
+
+- **Fluxo** (molde da Q172 na `main`): `PropostaMoedaAditivo` (Financeiro) → `DecisaoMoedaAditivo` (outro aprovador: Administração ou Financeiro com `financeiro.aprovar_acertos`) → `AplicacaoMoedaAditivo` (o próprio aprovador, só depois da vigência). O trigger `efetivar_moeda_aditivo_173` troca `Matricula.moeda` e a aplicação guarda a moeda anterior. Nada é convertido: cobranças emitidas e créditos ficam na moeda em que nasceram. Proposta, decisão e aplicação são imutáveis no banco; cada uma grava `Evento` (`MoedaAditivoProposta`/`Decidida`/`Aplicada`) na mesma transação. Ações em `contratos/moeda-aditivo.ts`, alvo em `contratos/aditivo-moeda.ts`, tela `financeiro/acertos-moeda/[matriculaId]/[propostaId]`, link na tela do aditivo para quem é do Financeiro ou da Administração.
+- **Matrícula "limpa"** (`pendencias_moeda_antiga_173`, autoridade no banco, espelhada com texto na tela): sem cobrança em aberto, comprovante a conferir, mensalidade cuja cobertura alcance a vigência, saldo ou reserva pendente de horas pré-pagas e permuta vigente, todos na moeda anterior.
+- **Migration** `20261021200000_aplicacao_moeda_aditivo` (era `20260921060000`). `conferir_campos_aplicacao_direta_231` foi copiada da definição vigente (`20261020100000`, Q172), conferida com `diff -w`, e ganhou só o ramo da moeda. A aplicação de moeda prova `MOEDA` e também `TAXA_VALOR`/`ADIANTAMENTO_VALOR` reexpressos na mesma versão, na função SQL e na cadeia TS (`aditivo-aplicacao-campos.ts`).
+- **Diferenças em relação à #62:**
+  - **Fuso da escola:** a cobertura (data civil) e a permuta são comparadas com o dia civil da vigência no fuso da escola. O fuso fica gravado na proposta (`fuso`, também na fotografia) e o banco recusa se ele estiver ausente ou tiver mudado. Na #62 era o dia UTC.
+  - Minutos liquidados no encerramento descontam só o que liquidaram. Na #62, qualquer liquidação zerava o saldo.
+  - A tela segue a Q172 da `main` (`useAcaoCliente`, `FeedbackAcao`, `IdentificacaoRegistro`, paginação), com `useChaveIdempotencia`.
+  - Recusa conhecida libera a correção (`podeRevisar`).
+  - A decisão e a aplicação recusam se a moeda ou o fuso mudaram desde a preparação.
+- **Consumidores** (iguais à base da #62, aplicados sem conflito): `continuidade-preco-tx.ts` (preparação na moeda original; depois da troca, o valor contratado é a referência e período anterior à troca é recusado) e `encerramento-contexto-tx.ts` (cobrança paga ou cancelada na moeda anterior fica fora do acerto).
+- **Perguntas ao dono (escolhido o mais conservador):**
+  - "Reserva pendente" (sexta rodada) foi lida como reserva de horas pré-pagas, como na #62. A reserva de agenda particular e a de vaga de turma só existem em matrícula em preparação e não carregam valor.
+  - Sem fuso institucional configurado, a troca é recusada. Não cai em `America/Sao_Paulo`.
+  - Limites herdados da #62, ainda abertos:
+    - Compensação de cobertura, período integral, recomposição e permuta sobre cobranças antigas continuam recusando moeda diferente da matrícula.
+    - Rótulos de totais em algumas telas financeiras usam a moeda atual.
+    - Falta o link do acerto na página inicial do Financeiro (como na Q172).
+- **TDD:** a integração (`aditivo.int.test.ts`, cenários `PRODUCAO_MENSAL_MOEDA*`) cobre:
+  - fluxo completo, com pendência listada e proposta recusada com a taxa em aberto;
+  - idempotência da proposta, da decisão e da aplicação, e chave com outra entrada recusada;
+  - uma troca em andamento por matrícula;
+  - autoaprovação e aplicação pelo preparador negadas na ação e no banco;
+  - imutabilidade e Eventos;
+  - cobrança antiga intacta em CRC;
+  - prova por campo e aplicação geral liberada;
+  - preço mensal em USD;
+  - dia civil da vigência em America/Sao_Paulo × UTC;
+  - aplicação antes da vigência recusada na ação e no banco;
+  - fuso alterado recusado no banco.
+
+  Há unitários do ramo MOEDA na cadeia TS, da tela e do formulário.
+- **Evidências** (Postgres na 54329, banco descartável `erp_genius_test_q173` com `migrate deploy` do zero, perfil temporário desfeito, banco apagado ao fim):
+  - `tsc --noEmit` (NODE_OPTIONS=--max-old-space-size=8192): saída 0.
+  - `eslint . --max-warnings 40`: saída 0, 0 erros e 40 avisos (linha de base).
+  - `vitest run`: 820 arquivos, 6.144 testes OK em TZ=UTC e em TZ=America/Sao_Paulo. A primeira rodada apontou os manifestos de tela (botões, estados vazios, trilha), atualizados.
+  - Integração de `src/server/{contratos,matricula,financeiro}`: saída 0, 63 arquivos (3 pulados) e 648 testes (4 pulados).
+  - `npm run build`: saída 0.
