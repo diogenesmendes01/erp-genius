@@ -10,8 +10,10 @@ export function criarLojaNaoLidas(inicial: number, buscar: () => Promise<Respons
   const aplicar = (n: number) => { if (n === total) return; total = n; for (const o of [...ouvintes]) o.notificar(); };
   const executar = async () => {
     emVoo = true; const iniciada = geracao;
+    let recebida: Response | undefined;
     try {
       const r = await buscar();
+      recebida = r;
       if (iniciada !== geracao) return;
       if (r.status === 401 || r.status === 403) { pendente = false; aplicar(0); return; }
       if (!r.ok) return;
@@ -19,7 +21,15 @@ export function criarLojaNaoLidas(inicial: number, buscar: () => Promise<Respons
       if (iniciada !== geracao || !dado || typeof dado !== "object" || !("total" in dado)) return;
       const n = dado.total; if (typeof n === "number" && Number.isSafeInteger(n) && n >= 0) aplicar(n);
     } catch { /* rede/5xx mantém último total; aviso posterior ou repetição pendente reconcilia */ }
-    finally { emVoo = false; if (pendente) { pendente = false; void executar(); } }
+    finally {
+      // fetch resolve nos headers. Até uma geração descartada precisa terminar o corpo
+      // antes de liberar outro GET; drenar evita abortar e gerar falha de rede no cliente.
+      if (recebida && !recebida.bodyUsed) {
+        try { await recebida.arrayBuffer(); } catch { /* corpo encerrado com erro também libera o recurso */ }
+      }
+      emVoo = false;
+      if (pendente) { pendente = false; void executar(); }
+    }
   };
   const recontar = () => { if (emVoo) pendente = true; else void executar(); };
   return {
