@@ -44,6 +44,16 @@ export function tipoDoArquivo(caminho) {
   }
 }
 
+/** Só o GET da thread cancelado e substituído por outro GET íntegro vira diagnóstico. */
+export function cancelamentoDeMensagensRecuperado(pedido, concluidos, base, conteudoCarregado) {
+  if (!conteudoCarregado || pedido.method !== "GET" || pedido.erro !== "net::ERR_ABORTED") return false;
+  try {
+    const url = new URL(pedido.url);
+    return url.origin === base && /^\/api\/inbox\/atendimentos\/[^/]+\/mensagens$/.test(url.pathname)
+      && concluidos.has(`GET ${pedido.url}`);
+  } catch { return false; }
+}
+
 export function combinacoes({ alvos, estados }) {
   const resultado = [];
   for (const alvo of alvos) for (const estado of estados) {

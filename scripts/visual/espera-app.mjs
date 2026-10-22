@@ -17,6 +17,16 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
   if (estado === "celular-painel" || estado === "tablet-painel") {
     // Após abrir o Drawer, InboxNovo oculta a região Conversa; a mensagem já foi aguardada antes do clique.
     await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
+    // `visible` inclui o Drawer ainda deslocado; a superfície final precisa caber no viewport e terminar a transição.
+    await pagina.waitForFunction(() => {
+      const drawer = document.querySelector('aside[role="dialog"][aria-label="Detalhes da conversa"]');
+      if (!drawer) return false;
+      const area = drawer.getBoundingClientRect();
+      return area.width > 0 && area.height > 0
+        && area.left >= -1 && area.right <= window.innerWidth + 1
+        && area.top >= -1 && area.bottom <= window.innerHeight + 1
+        && drawer.getAnimations().every((animacao) => animacao.playState !== "running");
+    });
     return;
   }
   if (estado === "sem-selecao" || estado === "celular-lista") {

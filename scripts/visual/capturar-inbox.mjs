@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
-import { ESTADOS, TAMANHOS, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
+import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { autenticarApp, esperarConteudoApp } from "./espera-app.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
@@ -84,7 +84,8 @@ async function abrirPrototipo(pagina, estado) {
   }
   if (estado === "celular-painel" || estado === "tablet-painel") {
     const detalhes = root.getByTitle("Painel do contato");
-    if (await detalhes.count()) await detalhes.first().click();
+    await detalhes.first().click();
+    await root.locator('[data-m="panel"]').waitFor({ state: "visible" });
   }
   await pagina.waitForTimeout(4000);
 }
@@ -106,6 +107,9 @@ async function main() {
       const [width, height] = TAMANHOS[tarefa.tamanho];
       const contexto = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, locale: "pt-BR", timezoneId: "America/Sao_Paulo", hasTouch: tarefa.tamanho === "celular" });
       const falhas = [];
+      const abortados = [];
+      const concluidos = new Set();
+      const conclusoes = [];
       try {
         await contexto.addInitScript(({ alvo, tema }) => {
           localStorage.setItem(alvo === "app" ? "tema" : "crm-theme", alvo === "app" ? (tema === "escuro" ? "dark" : "light") : tema);
@@ -114,15 +118,27 @@ async function main() {
         await prepararRede(contexto, tarefa.alvo, o.base, falhas);
         const pagina = await contexto.newPage();
         pagina.on("pageerror", (erro) => falhas.push(`pageerror: ${erro.message}`));
-        pagina.on("requestfailed", (pedido) => falhas.push(`requestfailed: ${pedido.url()} ${pedido.failure()?.errorText ?? ""}`));
+        pagina.on("requestfailed", (pedido) => abortados.push({ url: pedido.url(), method: pedido.method(), erro: pedido.failure()?.errorText ?? "" }));
+        pagina.on("requestfinished", (pedido) => {
+          if (pedido.method() !== "GET") return;
+          conclusoes.push(pedido.response().then((resposta) => { if (resposta?.ok()) concluidos.add(`GET ${pedido.url()}`); }));
+        });
         pagina.on("response", (resposta) => { if (resposta.status() === 404) falhas.push(`404: ${resposta.url()}`); });
         pagina.setDefaultTimeout(30_000);
         if (tarefa.alvo === "app") await abrirApp(pagina, contexto, o.base, ids, tarefa.estado, tarefa.tamanho);
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
         const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
-        await pagina.screenshot({ path: path.join(destino, nome) });
-        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas });
+        // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
+        await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
+        await Promise.all(conclusoes);
+        const diagnosticos = [];
+        for (const pedido of abortados) {
+          const registro = `requestfailed: ${pedido.url} ${pedido.erro}`;
+          if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
+          else falhas.push(registro);
+        }
+        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas, diagnosticos });
         process.stdout.write(`${nome}: ${falhas.length ? `FALHAS ${falhas.length}` : "OK"}\n`);
       } finally { await contexto.close(); }
     }

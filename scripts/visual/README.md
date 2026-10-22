@@ -51,13 +51,25 @@ node scripts/visual/capturar-inbox.mjs --help
 O protótipo abre de `docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html`.
 No app, a CLI confirma a sessão por CSRF/credentials no mesmo contexto do
 navegador e só captura após encontrar o texto da mensagem da fixture; no estado
-do compositor humano, exige também a nota interna. O painel aberto é aguardado
-quando aparece na captura. Assim uma resposta inicial lenta não gera foto vazia.
+do compositor humano, exige também a nota interna. A prontidão segue o estado: lista exige Mariana; conversa exige a mensagem;
+compositor humano exige também a nota de Beatriz. No Drawer, a mensagem é
+confirmada antes do clique, e depois são exigidos o Painel Comercial visível, o
+`aside` inteiro dentro do viewport e nenhuma transição em execução nesse painel.
+O teste de visibilidade do Playwright sozinho aceita elementos fora da tela.
+Assim uma resposta lenta ou a animação de abertura não gera foto vazia.
 React, ReactDOM, Babel e Lucide solicitados a `unpkg.com` são servidos dos
 pacotes **locais** em `node_modules`; Google Fonts recebe CSS vazio. A captura
 bloqueia outros destinos externos e registra falhas de requisição, HTTP 404 e
 `pageerror` no manifesto. A fonte de reserva offline pode mudar a tipografia do
-protótipo; ela não muda a fonte nem os dados do app. Só imagens de fixture
-fictícia devem ser anexadas ao PR.
+protótipo; ela não muda a fonte nem os dados do app. No manifesto, um GET de mensagens cancelado com `net::ERR_ABORTED` só vira
+`diagnosticos` quando outro GET da mesma URL terminou 2xx e a fixture já foi
+confirmada. Outros cancelamentos, rede externa, 404 e exceções continuam em
+`falhas` e fazem a CLI sair com erro. Na foto do app, um estilo temporário
+oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
+issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
+fixture fictícia devem ser anexadas ao PR.
 
-As próximas tasks E1–E4 acrescentam estados ao `ESTADOS` e seus passos à CLI.
+`--estado todos` produz 34 PNGs: 18 do app e 16 do protótipo. O painel do
+protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
+o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
+`ESTADOS` e seus passos à CLI.
