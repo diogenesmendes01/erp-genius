@@ -34,6 +34,15 @@ describe("Avatar do Inbox", () => {
   it.each([["+55 11 98765-4321", ""], ["😀", ""], ["😀 Ana", "A"], ["Ana 😀 Costa", "AC"], ["12 Ana 7 Costa", "AC"], ["𐐀 Silva", "𐐀S"]])("iniciais com letras Unicode: %s", (nome, esperado) => {
     expect(iniciais(nome)).toBe(esperado);
   });
+  it.each([
+    ["ßeta Anna", "SA"], ["Anna ßeta", "AS"], ["ﬃona Anna", "FA"], ["ﬃona", "F"],
+    ["ßeta 𐐨erta", "S𐐀"], ["𐐨erta Anna", "𐐀A"], ["𐐨erta 𐐩lfa", "𐐀𐐁"],
+  ])("maiúsculas mantêm um ponto Unicode por inicial: %s", (nome, esperado) => {
+    const resultado = iniciais(nome);
+    expect(resultado).toBe(esperado);
+    expect(Array.from(resultado).length).toBeLessThanOrEqual(2);
+    expect(renderToStaticMarkup(createElement(Avatar, { nome }))).toContain(">" + esperado + "<");
+  });
   it("número sem nome renderiza # sem quebrar surrogate", () => {
     expect(renderToStaticMarkup(createElement(Avatar, { nome: "+55 11 98765-4321" }))).toContain(">#<");
   });
