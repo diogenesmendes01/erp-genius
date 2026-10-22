@@ -11,11 +11,10 @@ const TONS = ["bg-avatar-1", "bg-avatar-2", "bg-avatar-3", "bg-avatar-4", "bg-av
 
 /** Até duas iniciais de palavras com letras; números e emoji não identificam um nome. */
 export function iniciais(nome: string | null): string {
-  const letras = (nome ?? "").trim().split(/\s+/).flatMap((palavra) => palavra.match(/\p{L}/u)?.[0] ?? []);
+  const letras = (nome ?? "").trim().split(/\s+/).flatMap((palavra) =>
+    Array.from(palavra.match(/\p{L}/u)?.[0]?.toLocaleUpperCase("pt-BR") ?? "").slice(0, 1));
   if (!letras.length) return "";
-  const selecionadas = letras.length > 1 ? [letras[0]!, letras[letras.length - 1]!] : [letras[0]!];
-  // Uma letra pode expandir ao capitalizar (ß → SS); cada inicial conserva só o primeiro ponto Unicode.
-  return selecionadas.map((letra) => Array.from(letra.toLocaleUpperCase("pt-BR"))[0]).join("");
+  return letras[0]! + (letras.length > 1 ? letras[letras.length - 1]! : "");
 }
 
 /** FNV-1a mantém a mesma cor do contato entre renders, sem depender do tema. */
