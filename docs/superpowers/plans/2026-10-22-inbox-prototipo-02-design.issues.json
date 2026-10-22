@@ -1,0 +1,140 @@
+[
+  {
+    "title": "[Inbox E1.1] Tokens, fonte mono e travas",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Criar os tokens de avatar (8 tons com branco ≥ 4,5:1), balão da IA, nota e pontos, a classe `fundo-conversa` e a fonte JetBrains Mono (`--font-mono`), atualizando as travas de design system, contraste e tipografia.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-1`\n\n**Arquivos:**\n- `src/app/globals.css`\n- `tailwind.config.ts`\n- `src/app/layout.tsx`\n- `src/app/fonts/`\n- `src/app/contraste-mapa.ts`\n- `src/app/design-system.test.ts`\n- `src/app/contraste.test.ts`\n- `src/app/tipografia.test.ts`\n- `docs/18-design-system.md`\n\n**Critérios de aceite:**\n- Testes da Task 1 verdes; tokens e fonte conferidos no DevTools nos dois temas.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E0 (plano 01). O integrador entrega `jetbrains-mono-latin-wght.woff2`, a licença e o sha256."
+  },
+  {
+    "title": "[Inbox E1.2] Harness de comparação visual",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Criar `scripts/visual/demo-inbox.ts` (dados de demonstração só no banco descartável) e `scripts/visual/capturar-inbox.mjs` (Playwright, app e protótipo, 3 tamanhos × 2 temas, unpkg servido do node_modules).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-2`\n\n**Arquivos:**\n- `scripts/visual/demo-inbox.ts`\n- `scripts/visual/nucleo-captura.mjs`\n- `scripts/visual/nucleo-captura.d.mts`\n- `scripts/visual/capturar-inbox.mjs`\n- `scripts/visual/README.md`\n- `src/test/visual-inbox.test.ts`\n\n**Critérios de aceite:**\n- `src/test/visual-inbox.test.ts` verde; 12 capturas do estado `conversa` em `tmp/visual/`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** O integrador acrescenta as devDependencies `playwright-core@1.56.1`, `@babel/standalone@7.29.0` e `lucide-static@0.460.0` (agentes não mudam o package.json)."
+  },
+  {
+    "title": "[Inbox E1.3] Casca em tela cheia",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Página só com o `InboxNovo` em tela cheia (sem h1 nem formulário), grade 372/flex/348, painel alternável (automático a partir de 1200), sobreposição de 348 px no tablet e vistas no celular.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-3`\n\n**Arquivos:**\n- `src/app/(app)/inbox/page.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n- `src/app/botoes.test.ts`\n- `scripts/visual/capturar-inbox.mjs`\n\n**Critérios de aceite:**\n- Testes da Task 3; aceite visual de `conversa`, `painel-fechado`, `tablet-painel` e `celular-*`; sem rolagem da página.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.1, E1.2, E0.7."
+  },
+  {
+    "title": "[Inbox E1.4] Avatar, BadgeEstado e estado visual",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Avatar com cor por hash, selo da IA e tamanhos 44 e 132; `BadgeEstado` com tons; `estadoVisualItem` e `estadoVisualCabecalho` como funções puras.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-4`\n\n**Arquivos:**\n- `src/components/Avatar.tsx`\n- `src/app/(app)/inbox/BadgeEstado.tsx`\n- `src/app/(app)/inbox/estado-visual.ts`\n\n**Critérios de aceite:**\n- Testes da Task 4 (incluindo nome com emoji, grupo e prazo de 30 min).\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.1, E0.5 (`prazoEstourado`)."
+  },
+  {
+    "title": "[Inbox E1.5] Contagens dos chips e saúde dos números",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "back-end"
+    ],
+    "body": "**Objetivo:** Criar `contarChipsInbox` (5 contagens no escopo, respeitando os outros filtros), `?contagens=1` na rota da lista e `saude` em `opcoesFiltroInbox`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-5`\n\n**Arquivos:**\n- `src/server/inbox/filtros.ts`\n- `src/server/inbox/consultas-pagina.ts`\n- `src/server/inbox/opcoes-filtro.ts`\n- `src/app/api/inbox/atendimentos/route.ts`\n- `src/app/(app)/inbox/page.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- Testes de integração de `consultas-pagina` e `opcoes-filtro`; testes unitários da Task 5.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** —"
+  },
+  {
+    "title": "[Inbox E1.6] Selo de não lidas do menu lateral (exceção autorizada)",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "back-end"
+    ],
+    "body": "**Objetivo:** O selo do Inbox no menu lateral passa a contar conversas não lidas pessoais (mesma regra da E0 Task 2) sobre todo o escopo e a se atualizar pelo SSE, com uma conexão por aba.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-6`\n\n**Arquivos:**\n- `src/server/inbox/nao-lidas.ts`\n- `src/app/api/inbox/nao-lidas/route.ts`\n- `src/lib/eventos-inbox.ts`\n- `src/components/SeloNaoLidasInbox.tsx`\n- `src/components/Sidebar.tsx`\n- `src/components/BarraMobile.tsx`\n- `src/app/(app)/layout.tsx`\n- `src/app/(app)/inbox/useEventosInbox.ts`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 6 (integração e unitários); aceite visual do selo caindo ao abrir e subindo com mensagem nova.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E0.2 (`docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md#task-2`), E1.5."
+  },
+  {
+    "title": "[Inbox E1.7] Item da lista",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Criar o `ItemConversa` com o desenho do protótipo (avatar 44, nome 14/600, hora mono, contador, pino, silenciada, badges) dentro da `ListaAtendimentos`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-7`\n\n**Arquivos:**\n- `src/app/(app)/inbox/ItemConversa.tsx`\n- `src/app/(app)/inbox/ListaAtendimentos.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/botoes.test.ts`\n- `src/app/estados-vazios-mapa.ts`\n\n**Critérios de aceite:**\n- Testes da Task 7; aceite visual de `conversa`, `celular-lista` e `lista-vazia`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.4, E0.1, E0.2, E0.5."
+  },
+  {
+    "title": "[Inbox E1.8] Coluna Conversas (D17)",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** Criar a coluna com cabeçalho, seletor de número (todos os papéis, D17), filtros em popover, nova conversa em popover, busca com ⌘K, chips com contagem e slot `faixaAria`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-8`\n\n**Arquivos:**\n- `src/app/(app)/inbox/ColunaConversas.tsx`\n- `src/app/(app)/inbox/ChipsFiltro.tsx`\n- `src/app/(app)/inbox/SeletorNumero.tsx`\n- `src/app/(app)/inbox/PopoverFiltros.tsx`\n- `src/app/(app)/inbox/PopoverColuna.tsx`\n- `src/app/(app)/inbox/filtros-url.ts`\n- `src/components/BotaoIcone.tsx`\n- `src/app/(app)/inbox/NovoAtendimento.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 8; aceite visual de `filtros`, `seletor-numero`, `nova-conversa` e `celular-lista`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.3, E1.5, E1.7; D17 (padrão: todos os papéis).\n\nImplementa o padrão da coluna \"Padrão enquanto aberta\" do índice. Se a decisão vier diferente, a task é revista no mesmo PR que atualiza a tabela."
+  },
+  {
+    "title": "[Inbox E1.9] Thread: balões por autor, eventos e separador de dia",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Balões por autor (cliente, humano, Aria, nota tracejada), cauda, sequência, hora mono, `EventoSistema`, `SeparadorDia` no fuso pessoal e fundo pontilhado.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-9`\n\n**Arquivos:**\n- `src/components/conversa/BalaoMensagem.tsx`\n- `src/components/conversa/itens-thread.ts`\n- `src/components/conversa/EventoSistema.tsx`\n- `src/components/conversa/SeparadorDia.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 9; aceite visual de `humano-compositor` e `celular-conversa`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.1, E1.4, E0.3, E0.4, E0.8."
+  },
+  {
+    "title": "[Inbox E1.10] Cabeçalho de 68 px e menu ⋮ (D7, D15, D16)",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** Cabeçalho de 68 px com Buscar, Transferir, Assumir, Painel e ⋮; as ações atuais vão para o `MenuConversa`, sem status manual (D7), com Bloquear desabilitado (D15) e não lida pessoal (D16).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-10`\n\n**Arquivos:**\n- `src/app/(app)/inbox/CabecalhoConversa.tsx`\n- `src/app/(app)/inbox/MenuConversa.tsx`\n- `src/app/(app)/inbox/AcoesAtendimento.tsx`\n- `src/components/Menu.tsx`\n- `src/components/Botao.tsx`\n- `src/app/botoes-mapa.ts`\n\n**Critérios de aceite:**\n- Testes da Task 10; aceite visual de `menu-mais` e `celular-conversa`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.3, E1.4, E1.8; D7, D15, D16 (padrões).\n\nImplementa o padrão da coluna \"Padrão enquanto aberta\" do índice. Se a decisão vier diferente, a task é revista no mesmo PR que atualiza a tabela."
+  },
+  {
+    "title": "[Inbox E1.11] Busca na conversa (D19)",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** Barra de busca nas mensagens carregadas, sem acento e sem caixa, com navegação, destaque no balão e ⌘F dentro da conversa (D19).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-11`\n\n**Arquivos:**\n- `src/app/(app)/inbox/busca-conversa.ts`\n- `src/app/(app)/inbox/BuscaConversa.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 11; aceite visual de `busca-conversa`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.9, E1.10; D19 (padrão: entra na E1).\n\nImplementa o padrão da coluna \"Padrão enquanto aberta\" do índice. Se a decisão vier diferente, a task é revista no mesmo PR que atualiza a tabela."
+  },
+  {
+    "title": "[Inbox E1.12] Rodapé e compositor",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** `RodapeConversa` com abas Responder e Nota interna, compositor de 44 px com botão de enviar circular e botão de agendar; variante travada pronta e desligada (D3).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-12`\n\n**Arquivos:**\n- `src/app/(app)/inbox/RodapeConversa.tsx`\n- `src/components/conversa/Compositor.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n- `src/app/botoes-mapa.ts`\n- `src/app/botoes.test.ts`\n\n**Critérios de aceite:**\n- Testes da Task 12; aceite visual de `humano-compositor` e `nota`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.3, E1.10."
+  },
+  {
+    "title": "[Inbox E1.13] Painel do contato com abas (casca)",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Painel com avatar de 132 px, nome, subtítulo, tags só leitura (✦ nas sem autor, D20) e `AbasPainel` com a regra `ABAS_ENTREGUES` (na E1, só Detalhes, com o conteúdo atual).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-13`\n\n**Arquivos:**\n- `src/app/(app)/inbox/PainelContato.tsx`\n- `src/app/(app)/inbox/LinhaCampo.tsx`\n- `src/server/inbox/paineis.ts`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/PainelSetor.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 13 (inclusive `paineis.int.test.ts`); aceite visual de `painel-detalhes`, `tablet-painel` e `celular-painel`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.3, E1.4."
+  },
+  {
+    "title": "[Inbox E1.14] Estados: sem seleção, carregando, erro e painel vazio",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Esqueletos da página, da thread e do painel no layout novo; estado sem seleção; erros do painel e da thread com tentar de novo; painel vazio.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-14`\n\n**Arquivos:**\n- `src/components/Esqueleto.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n- `src/app/(app)/inbox/PainelSetor.tsx`\n\n**Critérios de aceite:**\n- Testes da Task 14; aceite visual de `sem-selecao`, `carregando`, `painel-erro`, `thread-erro` e `lista-vazia`.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.8, E1.9, E1.13."
+  },
+  {
+    "title": "[Inbox E1.15] Fecho: componentes mortos, travas e conferência visual final",
+    "labels": [
+      "inbox",
+      "etapa-1",
+      "ui"
+    ],
+    "body": "**Objetivo:** Remover `PainelFiltros`, `NotaNaThread` e o componente `AcoesAtendimento`, limpar as travas, rodar o gate completo e comparar todos os estados com o protótipo.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md#task-15`\n\n**Arquivos:**\n- `src/app/(app)/inbox/PainelFiltros.tsx`\n- `src/app/(app)/inbox/inbox-e1.test.ts`\n- `src/app/botoes.test.ts`\n- `src/app/botoes-mapa.ts`\n- `src/app/estados-vazios-mapa.ts`\n- `src/app/fundo-sobre-pagina.test.ts`\n- `docs/planejamento/quadro-entregas.md`\n\n**Critérios de aceite:**\n- `inbox-e1.test.ts`; tsc, npm test, lint e integrações do Inbox com saída 0; tabela de capturas app × protótipo no PR.\n- Aceite visual do índice: `scripts/visual/capturar-inbox.mjs` nos estados da task, 1440×900, 1024×768 e 390×844, nos dois temas, com as capturas app × protótipo no PR.\n- Gate: `tsc --noEmit`, `npm test` e `npm run lint` com saída 0.\n\n**Dependências:** E1.1 a E1.14."
+  }
+]
