@@ -1,6 +1,7 @@
 # Relatório DEV B — #300
 
-Estado em 22/10/2026: implementação em revisão, homologação pendente. Branch `codex/inbox-e0-300`, banco descartável isolado `dev-gravacoes`. Base publicada da #299 e SHA final da #300 serão registrados após rebase e revisão.
+Estado em 22/10/2026: implementação em revisão, homologação pendente. Branch `codex/inbox-e0-300`, banco descartável isolado `dev-gravacoes`. SHA final será informado ao integrador após os gates.
+Rebase de `aa91a47f` para a base publicada #299 `729a0fe7` sem conflito; a diferença entre essas bases em `src` é vazia e o delta empilhado contém só #300.
 
 ## Entrega
 
@@ -17,4 +18,6 @@ Estado em 22/10/2026: implementação em revisão, homologação pendente. Branc
 
 ## Pendências
 
-Recorte pós-refatoração: `nota-interna.int.test.ts` e `consultas-pagina.int.test.ts`, 2 arquivos / 26 testes, sessão `10696`, saída 0; `inbox.int.test.ts`, 1 arquivo / 19 testes, sessão `27335`, saída 0. Ambos no Node 22.23.2 e banco `dev-gravacoes`, nenhum ignorado. ESLint dos 7 TypeScript tocados com `--max-warnings 0` saiu 0. Ainda pendem rebase documental sobre a #299 publicada, SHA congelado, revisão TESTER, TypeScript, Vitest completo, lint global e homologação. A apresentação das notas na UI fica na #301.
+Recorte pós-refatoração: `nota-interna.int.test.ts` e `consultas-pagina.int.test.ts`, 2 arquivos / 26 testes, sessão `10696`, saída 0; `inbox.int.test.ts`, 1 arquivo / 19 testes, sessão `27335`, saída 0. Ambos no Node 22.23.2 e banco `dev-gravacoes`, nenhum ignorado. ESLint dos 7 TypeScript tocados com `--max-warnings 0` saiu 0. Ainda pendem revisão TESTER, Vitest completo, lint global e homologação. A apresentação das notas na UI fica na #301.
+
+TSC global com heap 8192 no Node 22.23.2 inicialmente saiu 1 por inferência implícita de `any[]` no teste novo; após declarar `{ id: string }[]`, repetição com saída 0. Vitest completo, lint global, review e homologação ainda pendem.

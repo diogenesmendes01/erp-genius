@@ -228,7 +228,7 @@ describe("thread paginada", () => {
   it("notas arquivadas não voltam e só as 50 mais recentes são consultadas", async () => {
     const a = await criarAtendimento(new Date());
     const base = Date.UTC(2026, 9, 1);
-    const notas = [];
+    const notas: { id: string }[] = [];
     for (let i = 0; i < 51; i++) {
       const e = await prisma.$transaction((tx) => registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: a.id, autorId: admin.id, payload: { nota: `n${i}` } }));
       notas.push(e);
