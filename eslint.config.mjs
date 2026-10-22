@@ -12,6 +12,8 @@ const config = [
       "dist/**",
       "coverage/**",
       "next-env.d.ts",
+      // Referência visual imutável do protótipo aprovado, executada só pelo harness local.
+      "docs/planejamento/inbox-prototipo/prototipo/**",
     ],
   },
   ...nextCoreWebVitals,
