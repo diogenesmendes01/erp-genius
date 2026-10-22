@@ -1,0 +1,183 @@
+[
+  {
+    "title": "[Inbox E4.1] Transferir com a UI nova e as regras atuais",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "ui"
+    ],
+    "body": "**Objetivo:** juntar transferir para setor, atribuir, devolver para a fila e devolver para a Aria no popover de 2 passos do protótipo, com as regras atuais (D5 e D6 padrão).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-1\n\n**Arquivos:** `src/app/(app)/inbox/fluxos/PopoverFluxo.tsx`, `fluxos/transferir/{opcoes-transferir.ts,PopoverTransferir.tsx}`, `CabecalhoConversa.tsx`, `InboxNovo.tsx`, mapas de trava.\n\n**Critérios de aceite:** testes de `opcoes-transferir.test.ts` e `PopoverTransferir.test.ts` (inclusive `transferir manda a chave da tentativa e não a troca no erro`); travas de botões, estados vazios e diálogos; aceite visual com `transferir-passo1/2` e `celular-sheet-transferir`.\n\n**Dependências:** Etapa 1 (`CabecalhoConversa`, `MenuConversa`)."
+  },
+  {
+    "title": "[Inbox E4.2] Nova conversa com o fluxo atual de abrir atendimento",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "ui"
+    ],
+    "body": "**Objetivo:** trocar o formulário `NovoAtendimento` pelo popover \"Nova conversa\" do protótipo, com busca nas conversas e nos destinos, usando `abrirAtendimentoInstitucional` (D9 padrão).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-2\n\n**Arquivos:** `fluxos/nova-conversa/{busca-nova-conversa.ts,PopoverNovaConversa.tsx}`, `ColunaConversas.tsx`, `InboxNovo.tsx`, `page.tsx`; apagar `NovoAtendimento.*`.\n\n**Critérios de aceite:** testes de `busca-nova-conversa.test.ts` e `PopoverNovaConversa.test.ts` (casos portados de `NovoAtendimento.test.ts`); `page.test.ts`; aceite visual com `nova-conversa` e `nova-conversa-numero`.\n\n**Dependências:** Etapa 1 (`ColunaConversas`)."
+  },
+  {
+    "title": "[Inbox E4.3] Agendadas no servidor: aviso em tempo real, consulta, reagendar e enviar agora pelo atendimento",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end"
+    ],
+    "body": "**Objetivo:** consulta das agendadas do atendimento, wrappers de reagendar e enviar agora com idempotência, operação por quem agendou sem `tarefas.ver` e trigger de aviso (migration `20261023300000`).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-3\n\n**Arquivos:** `prisma/migrations/20261023300000_inbox_aviso_agendada`, `src/server/crm/mensagens-agendadas.ts`, `src/server/whatsapp/{acoes-conversa.ts,consultas-acoes-atendimento.ts}`.\n\n**Critérios de aceite:** `agendamento.int.test.ts` (inclusive `gerente pedagógico que agendou reagenda, envia agora e cancela pelo atendimento`, `mesma chave no reagendar e no enviar agora grava um Evento só` e `atendimento encerrado: recusa reagendar e a agendada sai da lista`); `barramento.int.test.ts` (aviso da agendada).\n\n**Dependências:** nenhuma."
+  },
+  {
+    "title": "[Inbox E4.4] Popover \"Agendar mensagem\"",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "ui"
+    ],
+    "body": "**Objetivo:** agendar com rascunho, respostas rápidas, atalhos de horário no fuso, erro de horário passado, conflito de 2 h, salvar rascunho, editar (reagendar) e `?agendar=1` (D11 padrão).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-4\n\n**Arquivos:** `src/lib/atalhos-horario.ts`, `fluxos/agendar/{validar-quando.ts,conflito.ts,PopoverAgendar.tsx}`, `Compositor.tsx`, `RodapeConversa.tsx`, `CabecalhoConversa.tsx`, `page.tsx`, `InboxNovo.tsx`.\n\n**Critérios de aceite:** `atalhos-horario.test.ts` (fuso, 18h e segunda), `conflito.test.ts`, `PopoverAgendar.test.ts` (inclusive `erro do servidor (horário de silêncio) fica no popover e o texto não se perde`), `page.test.ts`, `InboxNovo.interacao.test.ts`; aceite visual com `agendar`, `agendar-conflito`, `agendar-erro-passado` e `agendar-deeplink`.\n\n**Dependências:** E4.3; Etapa 1."
+  },
+  {
+    "title": "[Inbox E4.5] Cartões de mensagens agendadas no fio",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "ui"
+    ],
+    "body": "**Objetivo:** cartão por agendada pendente no fio, com Editar, Enviar agora e Cancelar (com confirmação), recarregado pelo SSE.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-5\n\n**Arquivos:** `fluxos/agendar/{quando-agendada.ts,useAgendadas.ts,CartaoAgendada.tsx}`, `InboxNovo.tsx`, o fio da E1.\n\n**Critérios de aceite:** `quando-agendada.test.ts`, `CartaoAgendada.test.ts`, `InboxNovo.interacao.test.ts` (`aviso do SSE do atendimento aberto recarrega os cartões`); `confirmacoes.test.ts`; aceite visual com `fio-agendada-*`.\n\n**Dependências:** E4.3, E4.4."
+  },
+  {
+    "title": "[Inbox E4.6] Anexos: câmera e resposta rápida",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "ui"
+    ],
+    "body": "**Objetivo:** menu de anexos na ordem do protótipo, com Câmera (`capture`) e Resposta rápida, sem perder Enquete.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-6\n\n**Arquivos:** `src/components/conversa/{itens-anexo.ts,Compositor.tsx}`.\n\n**Critérios de aceite:** `Compositor.test.ts` (\"itens de anexo (E4.6)\"); aceite visual com `anexos`.\n\n**Dependências:** Etapa 1 (compositor)."
+  },
+  {
+    "title": "[Inbox E4.7] Anexo de proposta da oportunidade",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end"
+    ],
+    "body": "**Objetivo:** enviar pelo Inbox um documento PROPOSTA da oportunidade da conversa, com cópia para `whatsapp-out`, idempotência e Evento.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-7\n\n**Arquivos:** `src/server/whatsapp/{proposta-atendimento.ts,midia.ts,consultas-acoes-atendimento.ts,acoes-conversa.ts}`, `Compositor.tsx`.\n\n**Critérios de aceite:** `proposta-atendimento.int.test.ts`; `Compositor.test.ts` (Proposta e vazio); estados vazios; aceite visual com `anexos-proposta`.\n\n**Dependências:** E4.6."
+  },
+  {
+    "title": "[Inbox E4.8] Enquete e localização pelo menu de anexos",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "motor"
+    ],
+    "body": "**Objetivo:** ligar Enquete e Localização a `enviarConteudoInbox` (o motor já suporta), com formulários e leitura de coordenadas.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-8\n\n**Arquivos:** `src/components/conversa/anexos/{coordenadas.ts,FormEnquete.tsx,FormLocalizacao.tsx}`, `Compositor.tsx`.\n\n**Critérios de aceite:** `coordenadas.test.ts`, `FormEnquete.test.ts`, `Compositor.test.ts`; `motor/conteudo.int.test.ts` continua verde; aceite visual com `anexo-enquete` e `anexo-localizacao`.\n\n**Dependências:** E4.6; motor conectado para o uso real."
+  },
+  {
+    "title": "[Inbox E4.9] Cartão de contato com os números da escola",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "motor"
+    ],
+    "body": "**Objetivo:** ligar o item Contato ao conteúdo CONTATO do motor, com os números ativos da escola como fonte.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-9\n\n**Arquivos:** `src/server/whatsapp/consultas-acoes-atendimento.ts`, `Compositor.tsx`.\n\n**Critérios de aceite:** `consultas-acoes-atendimento.int.test.ts` (`contatosParaCartao`), `Compositor.test.ts`.\n\n**Dependências:** E4.6, E4.8 (`aoEnviarConteudo`)."
+  },
+  {
+    "title": "[Inbox E4.10] Contexto opcional e resumo da Aria na transferência (D5)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** contexto opcional na transferência entre setores e nota com o resumo do último handoff da Aria.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-10\n\n**Arquivos:** `src/server/aria/resumo-nota.ts`, `src/server/whatsapp/{acoes-atendimento.ts,consultas-acoes-atendimento.ts}`, `fluxos/transferir/*`.\n\n**Critérios de aceite:** `transferencia.int.test.ts` (contexto vazio, resumo, sem handoff, conflito de chave); testes do popover.\n\n**Dependências:** D5; E4.1."
+  },
+  {
+    "title": "[Inbox E4.11] Transferir para pessoa por quem atende (D5)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** o responsável passa a conversa para um colega do setor, numa ação atômica com contexto e resumo opcionais, sem mexer na carteira.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-11\n\n**Arquivos:** `src/server/whatsapp/{acoes-atendimento.ts,consultas-acoes-atendimento.ts}`, `fluxos/transferir/*`.\n\n**Critérios de aceite:** `transferir-pessoa.int.test.ts`; `atribuicao.int.test.ts` continua verde; `opcoes-transferir.test.ts`.\n\n**Dependências:** D5; E4.1, E4.10."
+  },
+  {
+    "title": "[Inbox E4.12] Carga por pessoa no Transferir (D6)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** mostrar \"N conversas\" abertas de cada pessoa no Transferir.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-12\n\n**Arquivos:** `src/server/whatsapp/consultas-acoes-atendimento.ts`, `fluxos/transferir/*`.\n\n**Critérios de aceite:** teste de integração de `cargaDasPessoas`; `PopoverTransferir.test.ts`.\n\n**Dependências:** D6; E4.1."
+  },
+  {
+    "title": "[Inbox E4.13] Iniciar conversa por número novo (D9)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** com um número digitado, criar Pessoa e oportunidade em Novo (\"Prospecção ativa\") e abrir a conversa pela linha comercial (migration `20261023320000`).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-13\n\n**Arquivos:** `prisma/migrations/20261023320000_origem_prospeccao_ativa`, `prisma/schema.prisma`, `src/lib/labels.ts`, `src/server/whatsapp/nova-conversa.ts`, `fluxos/nova-conversa/*`.\n\n**Critérios de aceite:** `nova-conversa.int.test.ts`; `enums-rotulos.test.ts`; `PopoverNovaConversa.test.ts`; aceite visual com `nova-conversa-numero`.\n\n**Dependências:** D9; E4.2."
+  },
+  {
+    "title": "[Inbox E4.14] Perguntar antes de enviar se o contato responder (D11)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** reter a agendada quando o contato escreve depois de agendar e perguntar no cartão se ainda deve sair (migration `20261023310000`).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-14\n\n**Arquivos:** `prisma/migrations/20261023310000_agendada_perguntar_se_responder`, `prisma/schema.prisma`, `src/server/crm/mensagens-agendadas.ts`, `src/server/whatsapp/{despachante.ts,acoes-conversa.ts,consultas-acoes-atendimento.ts}`, `fluxos/agendar/*`.\n\n**Critérios de aceite:** `despachante-agendada.int.test.ts` e `agendamento.int.test.ts` (retém, não retém, manter, enviar agora, cancelar); testes do cartão e do popover.\n\n**Dependências:** D11; E4.3, E4.5."
+  },
+  {
+    "title": "[Inbox E4.15] Editar o texto da mensagem agendada (D11)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** editar texto e horário de uma agendada HUMANO pelo atendimento, com Evento e idempotência.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-15\n\n**Arquivos:** `src/server/crm/mensagens-agendadas.ts`, `src/server/whatsapp/acoes-conversa.ts`, `fluxos/agendar/PopoverAgendar.tsx`.\n\n**Critérios de aceite:** `agendamento.int.test.ts` (edição); `PopoverAgendar.test.ts`.\n\n**Dependências:** D11; E4.3, E4.4."
+  },
+  {
+    "title": "[Inbox E4.16] Anexo e vínculo no agendamento (D11)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** agendar com anexo (proposta ou arquivo) e vincular a oportunidade ou tarefa aberta.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-16\n\n**Arquivos:** `src/server/crm/mensagens-agendadas.ts`, `src/server/whatsapp/{acoes-conversa.ts,consultas-acoes-atendimento.ts}`, `fluxos/agendar/*`.\n\n**Critérios de aceite:** `agendamento.int.test.ts` e `despachante-agendada.int.test.ts` (anexo e vínculo); `PopoverAgendar.test.ts`; aceite visual com `agendar-mais-opcoes`.\n\n**Dependências:** D11; E4.4, E4.7."
+  },
+  {
+    "title": "[Inbox E4.17] Spike: presença e equipes no Transferir (D6)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "back-end",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** levar ao dono as opções de presença (nenhuma, automática ou manual) e de equipes (setores ou subfilas) e transformar a resposta em tasks.\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-17\n\n**Arquivos:** índice (D6); este plano.\n\n**Critérios de aceite:** D6 registrada no índice; tasks escritas ou issue fechada.\n\n**Dependências:** D6."
+  },
+  {
+    "title": "[Inbox E4.18] Spike: Insights (D12)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "aria",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** decidir se os Insights entram (fora, mínimos com os dados atuais ou completos com geração) e transformar a resposta em tasks (`abas/AbaInsights.tsx`).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-18\n\n**Arquivos:** índice (D12); este plano.\n\n**Critérios de aceite:** D12 registrada; tasks escritas ou issue fechada.\n\n**Dependências:** D12."
+  },
+  {
+    "title": "[Inbox E4.19] Spike: catálogo no menu de anexos (D22)",
+    "labels": [
+      "inbox",
+      "etapa-4",
+      "ui",
+      "bloqueado-por-decisao"
+    ],
+    "body": "**Objetivo:** propor D22 e decidir a fonte do item \"Catálogo\" (fora, materiais da Aria ou cadastro próprio).\n\n**Plano:** docs/superpowers/plans/2026-10-22-inbox-prototipo-05-fluxos.md#task-19\n\n**Arquivos:** índice (D22); este plano.\n\n**Critérios de aceite:** D22 registrada; task escrita ou issue fechada.\n\n**Dependências:** D22; E4.6."
+  }
+]
