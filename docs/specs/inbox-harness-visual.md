@@ -47,3 +47,9 @@ sete registros, repetição, reparo parcial e preservação de outro número.
 Depois, captura de app × protótipo com 12 PNGs, inspeção de desktop escuro e
 celular, TypeScript, Vitest completo e lint global com saída 0. Evidências e
 pendências ficam no [quadro único](../planejamento/quadro-entregas.md).
+
+## Aceite final
+
+DEV fonte6a8ab794 e TESTER18testes0. Na combinação com306, fonte visual7e236e64: integrador51505 e TESTER76466, ambosexit0 com34PNGs/0falhas/14diagnósticos e gavetas inspecionadas. Fontes306400/500+Roboto6/6 confirmadas independentemente. Global final76a08316 sessão95778exit0:846arquivos/6547testes semfiltros/ignorados, TSCheap8192 e lintglobal0erros40avisos. O delta após pixels tipa o enum no teste de integração307 sem alterar valor; guarda legado,19testes dirigidos e integração1teste passaram, revisão independente favorável. Não houve mudança de pixels/produção.
+
+Evidências em `output/inbox-307-combinado/` e `output/inbox-307-qa/`. As pastas r3/primeiraR4 preservam negativos, sem contar como aceite. Limites: fonte de reserva no protótipo offline; contadores pessoais mudam ao abrir conversas sequencialmente, e o seed idempotente não restaura todos os campos mutados; Nextdev tem toast semissues ocultado apenas na foto. O aceite é de estados/estrutura, não comparação pixel a pixel de contadores nem redesenho final do Inbox. Próximas tasks podem ampliar estados e exigências de prontidão.
