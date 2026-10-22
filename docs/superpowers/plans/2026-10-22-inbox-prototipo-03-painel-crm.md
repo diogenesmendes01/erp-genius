@@ -2,104 +2,109 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** o painel do contato no `/inbox` passa a ser um mini-CRM: abas Detalhes, Oportunidades e Atividade, tags, edição do contato, etapa e perda, tarefas com cartão no fio, notas, alterações da Aria com desfazer, e os atalhos de entrada e de saída do Inbox.
+**Goal:** o painel do contato no `/inbox` passa a ser um mini-CRM: abas Detalhes, Oportunidades e Atividade, tags, edição do contato, etapa e perda, tarefas com cartão no fio, alterações da Aria com desfazer, e os atalhos de entrada e de saída do Inbox.
 
-**Architecture:** quase tudo reaproveita o servidor do CRM (`comercial/acoes.ts`, `crm/tarefas.ts`, `crm/tags.ts`, `crm/contatos.ts`, `aria/historico.ts`). As consultas novas ficam em `src/server/inbox/painel-*.ts` e saem por uma rota de leitura por aba (`/api/inbox/atendimentos/[id]/painel/[aba]`) e uma rota do fio (`.../fio`). As escritas do Inbox passam por *wrappers* em `src/server/inbox/acoes-painel.ts`: eles conferem o atendimento e o alvo, chamam a ação de domínio e publicam `atendimento.atualizado` (`avisarAtendimento`). O único modelo novo é `Tarefa.atendimentoId`.
+**Architecture:** quase tudo reaproveita o servidor do CRM (`comercial/acoes.ts`, `crm/tarefas.ts`, `crm/tags.ts`, `crm/contatos.ts`, `aria/historico.ts`). As consultas novas ficam em `src/server/inbox/painel-*.ts`. O cabeçalho e as tarefas do fio vão no payload do painel que já existe (`carregarPainel`, recarregado a cada `atendimento.atualizado`); o conteúdo de cada aba sai por uma rota de leitura por aba (`/api/inbox/atendimentos/[id]/painel/[aba]`). As escritas do Inbox passam por *wrappers* em `src/server/inbox/acoes-painel.ts`: eles conferem o atendimento e o alvo, chamam a ação de domínio e publicam `atendimento.atualizado` (`avisarAtendimento`). O único modelo novo é `Tarefa.atendimentoId`.
 
 **Tech Stack:** Next.js (App Router, Server Actions), Prisma/PostgreSQL, Zod, React, Tailwind com tokens, `@tabler/icons-react`, Vitest (unit com `renderToStaticMarkup`, `*.int.test.ts` no banco descartável).
 
 **Spec:**
-- `docs/planejamento/inbox-prototipo/analise-parte3-telas-atalhos.md` (blocos B1–B7 do §7; T13–T15, T19, T23–T27, A01–A12, A18–A21, A24; §4 e §5).
-- `docs/planejamento/inbox-prototipo/analise-parte2-botoes-funcionalidades.md` §3 (T4, T6, T7), §5 (F2, F4), §7 (P2–P30), §8 (R1–R8).
+- `docs/planejamento/inbox-prototipo/analise-parte3-telas-atalhos.md`: blocos B1–B5 e B7 do §7; T13–T15, T19, T23–T27, A01–A12, A18, A24; §4 e §5.
+- `docs/planejamento/inbox-prototipo/analise-parte2-botoes-funcionalidades.md`: §3 (T6), §5 (F4), §7 (P2–P30), §8 (R1–R8).
 - `docs/planejamento/inbox-prototipo/analise-parte1-design.md` §3.7 (painel).
-- Protótipo `docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html`, linhas `P:473-650` (painel), `P:283-297` (cartão de tarefa), `P:680-735` (modal de tarefa), `P:887-933` e `P:1005-1007`, `P:1119-1154` (lógica).
-- Contrato comum: `docs/superpowers/plans/2026-10-22-inbox-prototipo-00-indice.md`. Ele vale inteiro e não é repetido aqui.
+- Protótipo `docs/planejamento/inbox-prototipo/prototipo/Inbox.dc.html`: `P:473-650` (painel), `P:283-297` (cartão de tarefa), `P:680-735` (modal de tarefa), `P:887-933`, `P:1005-1007` e `P:1119-1154` (lógica).
+- Contrato comum: `docs/superpowers/plans/2026-10-22-inbox-prototipo-00-indice.md`. Vale inteiro e não é repetido aqui.
+- Planos vizinhos consumidos sem renomear: `…-01-correcoes.md` (E0), `…-02-design.md` (E1), `…-04-aria.md` (E3), `…-05-fluxos.md` (E4).
 
 ## Global Constraints
 
-Valem todas as do índice (`00-indice.md`, "Global Constraints"), mais estas da E2:
+Valem todas as do índice ("Global Constraints"), mais estas da E2:
 
 - Faixa de migration da E2: `20261023100000`–`20261023190000`. Nenhuma fora dela.
-- Nenhum arquivo em `src/app/(app)/inbox/**` usa `router.refresh()` nem `setInterval(` (trava `sem-polling.test.ts:9-13`). Depois de uma ação, a tela chama `aoMudar()` e o `InboxNovo` recarrega o painel (`versaoPainel`); o SSE avisa os outros.
+- Nenhum arquivo em `src/app/(app)/inbox/**` usa `router.refresh()` nem `setInterval(` (trava `sem-polling.test.ts:9-13`). Depois de uma ação, a tela chama `aoMudar()`, e o `InboxNovo` recarrega o painel (`versaoPainel`); o SSE avisa os outros.
 - Toda ação nova do Inbox publica `atendimento.atualizado` pelo `avisarAtendimento` (Task 1). Nenhum tipo novo em `AvisoInbox`.
-- Nenhuma regra nova de papel. Quem pode cada coisa vem da matriz do CRM (`crm/permissoes.ts:33-48`), da Aria (`aria/permissoes-tela.ts:27-31`) e de `podeExecutar` (`inbox/permissoes.ts:41-74`). A tabela "Matriz das ações novas" abaixo é a única fonte.
+- Nenhuma regra nova de papel. Quem pode cada coisa vem da matriz do CRM (`crm/permissoes.ts:33-48`), da Aria (`aria/permissoes-tela.ts:27-31`) e de `podeExecutar` (`inbox/permissoes.ts:41-74`). A "Matriz das ações novas" abaixo é a única fonte.
 - Enquanto a decisão estiver aberta, vale o padrão da tabela do índice: D8 segue `destinoDoArraste`; D10 só os campos atuais de `criarTarefa` e cancelar com motivo; D13 sem telefone no pedagógico, sem CPF e idade, abas comerciais só na finalidade `COMERCIAL`; D14 gaveta para edição rápida e "Abrir ficha completa" navega; D18 reaproveita a oportunidade; D20 tag sem autor ganha ✦ e @menção não avisa; D21 entradas só como link; D1 só Admin e Gerente Comercial desfazem; D11 campos atuais do agendamento.
-- Textos copiados do protótipo, em sentence case e pt-BR. Quando o ERP não tem o dado, a tela mostra "—" (como o protótipo, `P:1127`).
-- Valores em dinheiro: `formatarMoedaOuIndefinida(valor, moeda)` (`lib/dinheiro.ts:194`). Instantes: `formatarInstanteExibicao(iso, fusoPessoal, fusoEscola)` (`operacao/fuso-exibicao.ts:42`). Data e hora de tarefa: data civil e hora no fuso da escola (`crm/tarefas.ts:89-101`).
-- Comandos de verificação: unit `node_modules/.bin/vitest run <arquivo>`; integração `node_modules/.bin/vitest run -c vitest.integration.config.ts <arquivo>` com o `.erp-test-profile` do worktree. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test`, `npm run lint` com saída 0.
-- Cada commit termina com o trailer de co-autoria do projeto e acrescenta a linha da entrega em `docs/planejamento/quadro-entregas.md` (seção "Inbox protótipo, E2").
+- Textos do protótipo copiados em sentence case e pt-BR. Quando o ERP não tem o dado, a tela mostra "—" (`P:1127`).
+- Dinheiro: `formatarMoedaOuIndefinida(valor, moeda)` (`lib/dinheiro.ts:194`). Instantes: `formatarInstanteExibicao(iso, fusoPessoal, fusoEscola)` (`operacao/fuso-exibicao.ts:42`). Data e hora de tarefa: data civil e hora no fuso da escola (`crm/tarefas.ts:89-101`).
+- Linhas de campo do painel usam o `LinhaCampo` da E1 (`02-design.md`, Task 13); pílulas, abas e contagem seguem os valores da mesma task.
+- Verificação: unit `node_modules/.bin/vitest run <arquivo>`; integração `node_modules/.bin/vitest run -c vitest.integration.config.ts <arquivo>`, com o `.erp-test-profile` do worktree. Antes do PR: `node_modules/.bin/tsc --noEmit`, `npm test` e `npm run lint`, com saída 0.
+- Aceite visual pelo harness da E1: cada task acrescenta seus estados a `ESTADOS` (`scripts/visual/nucleo-captura.mjs`) e os passos a `PASSOS_APP`/`PASSOS_PROTOTIPO` (`scripts/visual/capturar-inbox.mjs`), completa a demo em `criarDemoInbox` (`scripts/visual/demo-inbox.ts`; ids `mariana`, `ventura`, `beatriz`, `lucas`, `thiago`, `semNome`, `fernanda`) e roda `node scripts/visual/capturar-inbox.mjs --alvo ambos --estado <nome>`.
+- Cada commit acrescenta a linha da entrega em `docs/planejamento/quadro-entregas.md` (seção "Inbox protótipo, E2") e termina com o trailer de co-autoria do projeto.
 
 ## Review Focus
 
-1. **Vazamento de dado de quem não deveria ver.** Pessoa de responsável legal no comercial (regra 6, `inbox/paineis.ts:60-61`), oportunidade de linha alheia (LC-L02, `whatsapp/consultas-inbox.ts:181-190`) e telefone no pedagógico (regra 5): o painel não pode mostrar pessoa, tags, campos, tarefas nem ações. Testes na Task 3 (`regra_6_e_linha_alheia_nao_carregam_pessoa`) e na Task 7 (`linha_alheia_sem_oportunidade`).
-2. **Oportunidade encerrada** (`MATRICULADO` ou `PERDIDO`): a barra de etapas e o select ficam travados com o motivo de `destinoDoArraste`, e "Marcar como perdido" some. Testes na Task 7 (`opcoes_de_oportunidade_encerrada_sao_todas_recusadas`) e na Task 8 (`perdido_some_em_oportunidade_encerrada`).
-3. **Tarefa alterada por outra pessoa** entre a leitura e o clique (versão otimista, `crm/tarefas.ts:151-154`): a tela mostra "Esta tarefa foi alterada por outra pessoa. Recarregue." e recarrega o painel, sem gravar. Teste na Task 10 (`versao_antiga_recusa_e_nao_grava`).
-4. **Atalhos de horário e fuso.** "Hoje 18:00" depois das 18h na escola, e usuário com fuso pessoal diferente do da escola: os atalhos da tarefa são calculados no fuso da escola e "Hoje 18:00" fica desabilitado depois das 18h; "Segunda 09:00" numa segunda vai para a próxima semana. Testes na Task 10 (`quandoDoAtalho`) e na Task 18 (`valorDoAtalhoAgendar`).
-5. **Link `?agendar=1` para conversa encerrada ou fora do escopo:** não abre o diálogo; na encerrada mostra "Esta conversa está encerrada. Não dá para agendar mensagens."; fora do escopo nada abre, como o `?c=`. Teste na Task 16 (`agendar_ao_abrir_so_em_conversa_aberta`).
+1. **Dado de quem não deveria ver.** Pessoa de responsável legal no comercial (regra 6, `inbox/paineis.ts:60-61`), oportunidade de linha alheia (LC-L02, `whatsapp/consultas-inbox.ts:181-190`) e telefone no pedagógico (regra 5): o painel não mostra pessoa, campos, tarefas nem ações. Testes na Task 3 (`regra_6_e_linha_alheia_nao_carregam_pessoa`) e na Task 7 (`linha_alheia_sem_oportunidade`).
+2. **Oportunidade encerrada** (`MATRICULADO` ou `PERDIDO`): barra e select travados com o motivo de `destinoDoArraste`; "Marcar como perdido" some. Testes na Task 7 (`opcoes_de_oportunidade_encerrada_sao_todas_recusadas`) e na Task 8 (`perdido_some_em_oportunidade_encerrada`).
+3. **Tarefa alterada por outra pessoa** entre a leitura e o clique (versão otimista, `crm/tarefas.ts:151-154`): aparece "Esta tarefa foi alterada por outra pessoa. Recarregue.", nada é gravado e o painel recarrega. Teste na Task 10 (`versao_antiga_recusa_e_nao_grava`).
+4. **Atalhos de horário da tarefa.** São calculados no fuso da escola, não no pessoal; "Hoje 18:00" some depois das 18h na escola; "Segunda 09:00" numa segunda vai para a próxima. Teste na Task 10 (`atalhosDeHorario`).
+5. **Oportunidade sem pessoa** (`Oportunidade.pessoaId` nulo, comum em lead antigo): a aba Detalhes mostra a oportunidade e "Sem dados de contato para esta oportunidade.", sem lápis, sem "+ tag" e sem "Nova oportunidade". Testes na Task 3 (`oportunidade_sem_pessoa`) e na Task 5 (`sem_pessoa_sem_edicao`).
 
 ---
 
 ## Acréscimos ao contrato
 
-Nada do índice é renomeado. A E2 acrescenta:
+Nada do índice nem das outras etapas é renomeado. A E2 acrescenta:
 
 | Onde | Acréscimo | Por quê |
 |---|---|---|
-| `PainelContato.tsx` (E1) | Props opcionais `children?: React.ReactNode` (conteúdo da aba ativa, se a E1 ainda não o tiver), `slotTags?: React.ReactNode` (substitui a linha de tags), `slotAviso?: React.ReactNode` (entre o cabeçalho e as abas: contato sem nome, cliente que voltou) e `aoEditar?: () => void` (lápis de 34 px no canto; ausente esconde o lápis) | Tags, avisos e edição moram no cabeçalho do painel (`P:475-489`) |
-| `AbaPainel` (E1) | Campo opcional `contador?: number` (pílula mono em `--ai-bg`/`--ai-text`), se a E1 não o tiver | Contador da aba Atividade (`P:494`, `P:1114`) |
-| `ContatoPainel` (E1) | Campo opcional `subtitulo?: string`; quando presente, substitui o subtítulo padrão da E1 | "Pessoa física · …" ou "Falando com X · papel" (`P:1138`) |
-| `InboxNovo.tsx` | Prop `agendarAoAbrir?: boolean` (lida de `?agendar=1` em `page.tsx`); estado `abaPainel: IdAbaPainel` (volta a `"detalhes"` ao trocar de conversa) | A21 e as abas |
-| `RodapeConversa.tsx` (E1) | Props `pedidoNota?: number` (cada valor novo troca para a aba Nota e foca o campo) e `aoCriarTarefa?: () => void` (ícone "Nova tarefa" do compositor, `P:427`) | "Adicionar nota" do painel e "Criar tarefa" do rodapé |
-| `MenuConversa.tsx` (E1) | Item "Criar tarefa" (`P:1183`), entre "Silenciar" e "Agendar mensagem" | T14 |
-| `AcoesAtendimento.tsx` (ou o arquivo para onde a E1 mover o diálogo) | `DialogoAgendar` passa a ser exportado, com props `{ atendimentoId: string; fuso: string; agendadas?: { agendadaPara: string }[]; aoFechar(): void; aoConcluir(): void }` | `?agendar=1` e Task 18 |
-| `src/components/conversa/Compositor.tsx` | Export `gravarRascunhoConversa(atendimentoId: string, modo: "responder" \| "nota", texto: string): void`, que grava como `gravarRascunho` (`Compositor.tsx:41-43`) e dispara `window.dispatchEvent(new CustomEvent("conversa-rascunho", { detail: { atendimentoId } }))`; o `Compositor` relê o rascunho ao receber esse evento do seu atendimento | "Salvar rascunho" do agendamento (`P:401`) |
-| `funil/ModalPerda.tsx` | Prop opcional `acao?: (input: { motivoPerda: MotivoPerda; observacao?: string }) => Promise<Resultado>`. Com ela, o modal chama `acao` e não chama `router.refresh()`; sem ela, nada muda | Perda pelo Inbox com aviso e sem refresh |
+| `PainelContato.tsx` (E1) | Props opcionais `slotTags?: React.ReactNode` (substitui a linha de tags de leitura), `slotAviso?: React.ReactNode` (entre o cabeçalho e as abas) e `aoEditar?: () => void` (lápis de 34 px no canto superior direito, `P:475`; ausente esconde) | Tags, avisos e edição moram no cabeçalho (`P:475-489`) |
+| `ABAS_ENTREGUES` e `abasDoPainel` (E1, `PainelContato.tsx`) | A Task 7 acrescenta `"oportunidades"` e a Task 13 acrescenta `"atividade"`, como a regra da E1 manda. `abasDoPainel(finalidade, contagens?: Partial<Record<IdAbaPainel, number>>)`: o segundo parâmetro é opcional e vira `contagem` na aba | Abas e contador da Atividade (`P:494`, `P:1114`) |
+| `TagPainel` (E1, `{ rotulo: string; ia: boolean }`) | Campo `id: string`, preenchido por `tagsDaPessoa` (`paineis.ts`, E1) | Remover tag pelo painel |
+| `PainelSetor` (`paineis.ts`) | `cabecalho?: CabecalhoPainel \| null` (Task 3) e `tarefasNoFio?: TarefaPainel[]` (Task 12); `DadosSetor` de `FINANCEIRO` e `SECRETARIA` ganha `matriculaId: string \| null` (Task 15) | Cabeçalho, cartões de tarefa e link da matrícula |
+| `RodapeConversa` (E1) | `pedidoNota?: number` (cada valor novo troca para a aba Nota e foca o campo) e `aoCriarTarefa?: () => void` (ícone `IconListCheck` "Nova tarefa", `P:427`; a E1 reservou o lugar) | "Adicionar nota" do painel e tarefa pelo rodapé |
+| `itensDoMenuConversa` (E1, `AcoesAtendimento.tsx`) | Item `{ id: "criar-tarefa", rotulo: "Criar tarefa", icone: <IconListCheck /> }` quando `acoes.criarTarefa` existe, logo antes de "Agendar mensagem" (`P:1183`) | T14 da análise |
+| Fio (E0: `ItemThread`, `itensDaThread`) | `type ItemFio = ItemThread \| { tipo: "tarefa"; id: string; t: TarefaPainel }` e `intercalarFio(base: ItemThread[], tarefas: TarefaPainel[], o: { temMaisAntes: boolean }): ItemFio[]` em `src/components/conversa/intercalar-fio.ts`. A E3 já consome esses dois nomes (`04-aria.md`, Task 9) | Cartão de tarefa no fio |
+| `funil/ModalPerda.tsx` | Prop opcional `acao?: (input: { motivoPerda: MotivoPerda; observacao?: string }) => Promise<Resultado>`; com ela o modal chama `acao` e não chama `router.refresh()` | Perda pelo Inbox, com aviso e sem refresh |
 | `server/inbox/permissoes.ts` | `capacidadesPainel(u, ctx): CapacidadesPainel` (Task 1) | Uma fonte só para o que o painel mostra |
-| `server/inbox/paineis.ts` | `PainelSetor` acrescenta `cabecalho?: CabecalhoPainel \| null` (Task 3); `DadosSetor` de `FINANCEIRO` e `SECRETARIA` acrescenta `matriculaId: string \| null` (Task 16) | Cabeçalho do painel e link da matrícula |
-| `server/inbox/` | Arquivos novos: `aviso.ts`, `painel-detalhes.ts`, `painel-oportunidades.ts`, `painel-tarefas.ts`, `painel-atividade.ts`, `painel-abas.ts`, `itens-fio.ts`, `atalhos.ts`, `texto-aria.ts`, `acoes-painel.ts` (`"use server"`) | Consultas e ações da E2 |
-| Rotas | `GET /api/inbox/atendimentos/[id]/painel/[aba]` (`aba` ∈ `detalhes`, `oportunidades`, `atividade`) e `GET /api/inbox/atendimentos/[id]/fio` | Leitura por aba e itens do fio |
-| `src/app/(app)/inbox/abas/` | Além dos três arquivos do contrato: `abas-painel.ts`, `useAbaPainel.ts`, `TagsContato.tsx`, `ContatoSemNome.tsx`, `ClienteVoltou.tsx`, `BlocoB2B.tsx`, `GavetaContato.tsx`, `etapas-painel.ts`, `BarraEtapas.tsx`, `CartaoExperimental.tsx`, `OutrasOportunidades.tsx`, `TarefasOportunidade.tsx`, `AgendadasAtividade.tsx`, `AlteracoesAria.tsx` | Conteúdo das abas |
-| `src/app/(app)/inbox/` | `ModalTarefa.tsx`, `quando-tarefa.ts`, `useItensFio.ts`, `atalhos-agendar.ts` | Tarefa e agendamento |
-| `src/components/conversa/` | `CartaoTarefaFio.tsx`, `CartaoAgendadaFio.tsx`, `intercalar-fio.ts` e, se a E0 não entregar, `CartaoNotaFio.tsx` | Itens do fio |
-| `src/lib/href-conversa.ts` | `hrefConversa(atendimentoId: string, o?: { agendar?: boolean }): string` | Atalhos de entrada |
-| Modelo | `Tarefa.atendimentoId String?` com relação para `AtendimentoWhatsApp` (`tarefas Tarefa[]`) e `@@index([atendimentoId, status])` | Cartão no fio e "Conversa vinculada" (T13) |
+| `server/inbox/` | Novos: `aviso.ts`, `painel-detalhes.ts`, `painel-oportunidades.ts`, `painel-tarefas.ts`, `painel-atividade.ts`, `painel-abas.ts`, `atalhos.ts`, `texto-aria.ts`, `acoes-painel.ts` (`"use server"`) | Consultas e ações da E2 |
+| Rota | `GET /api/inbox/atendimentos/[id]/painel/[aba]`, `aba` ∈ `detalhes`, `oportunidades`, `atividade` | Leitura por aba |
+| `src/app/(app)/inbox/abas/` | Além dos três arquivos do contrato: `useAbaPainel.ts`, `TagsContato.tsx`, `ContatoSemNome.tsx`, `ClienteVoltou.tsx`, `BlocoB2B.tsx`, `GavetaContato.tsx`, `etapas-painel.ts`, `BarraEtapas.tsx`, `CartaoExperimental.tsx`, `OutrasOportunidades.tsx`, `TarefasOportunidade.tsx`, `AgendadasAtividade.tsx`, `AlteracoesAria.tsx` | Conteúdo das abas |
+| `src/app/(app)/inbox/ModalTarefa.tsx`, `src/components/conversa/CartaoTarefaFio.tsx` | Modal e cartão de tarefa | T13–T15 da análise |
+| `src/lib/atalhos-horario.ts` | Criado pela E2 **com a interface da E4** (`05-fluxos.md`, Task 4): `IdAtalhoHorario`, `AtalhoHorario { id; rotulo; valorLocal }`, `atalhosDeHorario(agora, fuso)`, sem o atalho `"1h"` (a E4 o acrescenta), mais `partesDoValorLocal` | A E4 pediu um módulo só |
+| `src/lib/href-conversa.ts` | `hrefConversa(atendimentoId: string, o?: { agendar?: boolean }): string` | Atalhos de entrada (a E4 lê o `?agendar=1`) |
+| Modelo | `Tarefa.atendimentoId String?` com relação para `AtendimentoWhatsApp` (`tarefas Tarefa[]`) e `@@index([atendimentoId, status])` | Cartão no fio e "Conversa vinculada" |
 | Tipos de domínio | `TarefaInput.atendimentoId?: string` (só na criação); `ItemHistoricoAria.atendimentoId: string \| null` | Vínculo e "Abrir conversa" no Agente |
+
+**Pedidos às outras etapas** (para não haver dono duplo):
+- **E4:** a seção "Mensagens agendadas" da aba Atividade (Task 13) sai com a lista e "Cancelar". A E4 acrescenta "Reagendar" e "Enviar agora" com os wrappers da Task 3 dela e pode trocar a consulta pela `agendadasDoAtendimento`. O `?agendar=1` (leitura), o popover de agendar, os atalhos de horário do agendamento, o conflito, o rascunho e os cartões de agendada no fio são da E4 (Tasks 3–5).
+- **E3:** o `ItemFio` da E2 não tem a variante `agendada` que a Task 9 da E3 cita; as agendadas vão no slot `cartoesNoFio` da E4. A `intercalarSugestoes` da E3 continua valendo, porque é genérica.
 
 ## Dependências
 
-- **E1 (plano `02`).** A E2 precisa de `PainelContato`, `AbasPainel`, `RodapeConversa`, `MenuConversa`, `CabecalhoConversa` e do harness de captura (`scripts/visual/demo-inbox.ts`, `scripts/visual/capturar-inbox.mjs`). Cada task diz o que usa.
-- **E0 (plano `01`).** O plano `01` ainda não existe em `docs/superpowers/plans/`. O índice põe "notas visíveis" na E0. A Task 12 entrega a lista e o cartão de nota no fio **só se a E0 não os tiver entregue** (a task diz como conferir). A aba Nota no compositor vem da E1.
-- **E3 e E4.** "Assumir" com pausa da Aria (D3) e o cartão de sugestão ficam na E3. Anexo, "perguntar se o contato responder", editar o texto da agendada e recorrência ficam na E4 (D11). A Task 18 entrega só a parte de UI do B6 que não depende de D11.
+- **E0** (`01-correcoes.md`): notas do atendimento na rota e no fio (`notasInternasDoAtendimento`, `NotaInternaThread.origem`, `itensDaThread`, `ItemThread`, `NotaNaThread`). A E2 não refaz nada disso.
+- **E1** (`02-design.md`): `PainelContato`, `AbasPainel`, `LinhaCampo`, `TagPainel`, `tagsDaPessoa`, `abasDoPainel`, `ABAS_ENTREGUES`, estado `aba` no `InboxNovo`, `RodapeConversa`, `itensDoMenuConversa`, o seletor de número com "Gerenciar números em Configurações" e o harness visual.
+- **E3/E4:** ver "Pedidos às outras etapas". "Assumir" com pausa da Aria (D3) é da E3; a E2 mostra o "Assumir" atual.
 
 ## Matriz das ações novas
 
-Todas em `src/server/inbox/acoes-painel.ts` (`"use server"`). Todas começam por `exigirSessao()` e `atendimentoVisivel(u, atendimentoId)` (`whatsapp/atendimentos.ts:79`), recusam com "Atendimento não encontrado." fora do escopo e terminam com `avisarAtendimento(prisma, atendimentoId)` quando houve sucesso.
+Todas em `src/server/inbox/acoes-painel.ts` (`"use server"`). Todas começam por `exigirSessao()` e `atendimentoVisivel(u, atendimentoId)` (`whatsapp/atendimentos.ts:79`), recusam com "Atendimento não encontrado." fora do escopo e, no sucesso, terminam com `avisarAtendimento`.
 
 | Ação | Permissão (sem regra nova) | Domínio reaproveitado | Idempotência (#166) |
 |---|---|---|---|
-| `moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead): Promise<Resultado>` | `COMERCIAL`, lead do atendimento; `moverEtapaTx` exige `VENDEDOR`/`GERENTE_COMERCIAL` e escopo de carteira | `moverEtapaTx` (`crm/mover-etapa.ts:18-36`) | Por natureza: mesma etapa é `"nenhum"`, sem Evento (`etapas.ts:30`) |
+| `moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead): Promise<Resultado>` | `COMERCIAL` e lead do atendimento; `moverEtapaTx` exige `VENDEDOR`/`GERENTE_COMERCIAL` e escopo de carteira | `moverEtapaTx` (`crm/mover-etapa.ts:18-36`) | Por natureza: a mesma etapa é `"nenhum"`, sem Evento (`crm/etapas.ts:30`) |
 | `marcarPerdidoNoInbox(atendimentoId: string, input: PerdaInput): Promise<Resultado>` | idem | `marcarPerdido` (`comercial/acoes.ts:572-602`) | Por natureza (`acoes.ts:578-585`) |
-| `atribuirTagNoInbox(atendimentoId: string, tagId: string)` / `removerTagNoInbox(atendimentoId: string, tagId: string): Promise<Resultado>` | `contatos.editar`; pessoa do atendimento em `escopoPessoas` | `atribuirTag`/`removerTag` (`crm/tags.ts:126-132`) | Por natureza (`tags.ts:104`) |
-| `criarEAtribuirTagNoInbox(atendimentoId: string, nome: string): Promise<Resultado<{ tagId: string }>>` | `carteira.equipe` e `contatos.editar` (as de `criarTag`, `tags.ts:39`) | `TagSchema` (`tags.ts:25-34`) e `atribuirTag` | Por natureza: nome único; tag existente é reaproveitada, `PessoaTag` existente não grava Evento |
+| `atribuirTagNoInbox(atendimentoId: string, tagId: string)` e `removerTagNoInbox(atendimentoId: string, tagId: string): Promise<Resultado>` | `contatos.editar`; pessoa do atendimento em `escopoPessoas` | `atribuirTag`/`removerTag` (`crm/tags.ts:126-132`) | Por natureza (`tags.ts:104`) |
+| `criarEAtribuirTagNoInbox(atendimentoId: string, nome: string): Promise<Resultado<{ tagId: string }>>` | `carteira.equipe` e `contatos.editar` (as de `criarTag`, `tags.ts:39`) | `TagSchema` (`tags.ts:25-34`), `atribuirTag` | Por natureza: nome único, tag existente reaproveitada, `PessoaTag` existente sem Evento |
 | `editarContatoNoInbox(atendimentoId: string, input: EditarContatoInbox): Promise<Resultado>` | `contatos.editar`; pessoa do atendimento | `editarPessoa` (`crm/contatos.ts:430`), `definirValorCampo` (`crm/campos.ts:147`) | Por natureza: diff vazio e valor igual não gravam Evento (`contatos.ts:454`, `campos.ts:190`) |
-| `criarTarefaNoInbox(atendimentoId: string, input: TarefaInboxInput): Promise<Resultado<{ id: string }>>` | `tarefas.ver` | `criarTarefa` (`crm/tarefas.ts:161`), `concluirTarefa` (`:276`) | Chave por envio (marca no `TarefaCriada`, `tarefas.ts:166-176`); "já foi feita" reconhece a conclusão do mesmo autor |
-| `editarTarefaNoInbox`, `concluirTarefaNoInbox`, `reabrirTarefaNoInbox`, `reagendarTarefaNoInbox`, `cancelarTarefaNoInbox` | `tarefas.ver`; tarefa em `escopoTarefas` e ligada ao atendimento ou ao lead dele | `editarTarefa`, `concluirTarefa`, `reabrirTarefa`, `reagendarTarefa`, `cancelarTarefa` (`tarefas.ts:217-367`) | Versão otimista (sem garantia de repetição; tela com `idempotente: false`, como `tarefas/PainelTarefa.tsx:51-55`); cancelar é por natureza (`tarefas.ts:352-360`) |
-| `desfazerAcaoAriaNoInbox(atendimentoId: string, acaoId: string): Promise<Resultado>` | `decidirHistorico` (D1: Admin e GC) e escopo (`aria/escopo-decisao.ts:35`) | `desfazerAcaoAria` (`aria/historico.ts:163-176`) | Por natureza, **nova** no domínio (Task 15) |
-| `reagendarAgendadaNoInbox(atendimentoId: string, intencaoId: string, quandoLocal: string, fuso: string)` / `enviarAgoraNoInbox(atendimentoId: string, intencaoId: string): Promise<Resultado>` | `tarefas.ver` e autor ou Admin (os de `alterar`, `crm/mensagens-agendadas.ts:279-316`) | `reagendarMensagem`, `enviarAgora` (`mensagens-agendadas.ts:320-338`) | Por natureza no wrapper (Task 13) |
-| `dadosModalTarefaNoInbox(atendimentoId: string): Promise<Resultado<DadosModalTarefa>>` (leitura) | `tarefas.ver` | `listarResponsaveisPossiveis` (`crm/tarefas-consulta.ts:43`) | — (só leitura) |
+| `criarTarefaNoInbox(atendimentoId: string, input: TarefaInboxInput): Promise<Resultado<{ id: string }>>` | `tarefas.ver` | `criarTarefa` (`crm/tarefas.ts:161`), `concluirTarefa` (`:276`) | Chave por envio (marca no `TarefaCriada`, `tarefas.ts:166-176`); "Já foi feita" reconhece a conclusão do mesmo autor |
+| `editarTarefaNoInbox`, `concluirTarefaNoInbox`, `reabrirTarefaNoInbox`, `reagendarTarefaNoInbox`, `cancelarTarefaNoInbox` | `tarefas.ver`; tarefa em `escopoTarefas`, ligada ao atendimento ou ao lead dele | `tarefas.ts:217-367` | Versão otimista, sem garantia de repetição; tela com `idempotente: false`, como `tarefas/PainelTarefa.tsx:51-55`. Cancelar é por natureza (`tarefas.ts:352-360`) |
+| `cancelarAgendadaNoInbox(atendimentoId: string, intencaoId: string): Promise<Resultado>` | autor ou Admin (as de `cancelarMensagemAgendada`) | `cancelarAgendamentoDoAtendimento` (`whatsapp/acoes-conversa.ts:102-117`) | Por natureza (`mensagens-agendadas.ts:340-345`) |
+| `desfazerAcaoAriaNoInbox(atendimentoId: string, acaoId: string): Promise<Resultado>` | `decidirHistorico` (D1: Admin e GC) e escopo (`aria/escopo-decisao.ts:35`) | `desfazerAcaoAria` (`aria/historico.ts:163-176`) | Por natureza, **nova** no domínio (Task 14) |
+| `dadosModalTarefaNoInbox(atendimentoId: string): Promise<Resultado<DadosModalTarefa>>` (leitura) | `tarefas.ver` | `listarResponsaveisPossiveis` (`crm/tarefas-consulta.ts:43`) | — |
 
 ## Migrations
 
 | ID | Task | Conteúdo | Estado |
 |---|---|---|---|
 | `20261023100000_tarefa_atendimento` | 2 | `Tarefa.atendimentoId` e FK | Entra |
-| `20261023110000_tarefa_atendimento_indice` | 2 | `CREATE INDEX CONCURRENTLY` sozinho | Entra |
-| `20261023120000_tarefa_prioridade_lembretes` | 20 | `PrioridadeTarefa.BAIXA` | Reservada (D10) |
-| `20261023130000_tarefa_recorrencia_notificar` | 20 | recorrência e "notificar também" | Reservada (D10) |
-| `20261023140000_notificacao_mencao_nota` | 19 | `TipoNotificacao.MENCAO_NOTA` | Reservada (D20) |
-| `20261023150000_pessoa_cpf_nascimento` | 22 | `Pessoa.cpf`, `Pessoa.nascimento` | Reservada (D13) |
-| `20261023160000_oportunidade_probabilidade_previsao` | 23 | `Oportunidade.probabilidadePct`, `previsaoFechamento` | Reservada (D13) |
-| `20261023170000`–`20261023190000` | — | livres | — |
+| `20261023110000_tarefa_atendimento_indice` | 2 | `CREATE INDEX CONCURRENTLY`, sozinho | Entra |
+| `20261023120000_tarefa_prioridade_lembretes` | 18 | `PrioridadeTarefa.BAIXA` | Reservada (D10) |
+| `20261023130000_tarefa_recorrencia_notificar` | 18 | Recorrência e "notificar também" | Reservada (D10) |
+| `20261023140000_notificacao_mencao_nota` | 17 | `TipoNotificacao.MENCAO_NOTA` | Reservada (D20) |
+| `20261023150000_pessoa_cpf_nascimento` | 20 | `Pessoa.documento`, `Pessoa.nascimento` | Reservada (D13) |
+| `20261023160000_oportunidade_probabilidade_previsao` | 21 | `Lead.probabilidadePct`, `Lead.previsaoFechamento` | Reservada (D13) |
+| `20261023170000`–`20261023190000` | — | Livres | — |
 
 ---
 
@@ -109,14 +114,14 @@ Todas em `src/server/inbox/acoes-painel.ts` (`"use server"`). Todas começam por
 **Files:**
 - Create: `src/server/inbox/aviso.ts`
 - Modify: `src/server/inbox/permissoes.ts` (acrescenta `capacidadesPainel` no fim)
-- Modify: `src/server/whatsapp/acoes-atendimento.ts:323-325` (`avisarMudancaDeEscopo` passa a chamar `avisarAtendimento`)
+- Modify: `src/server/whatsapp/acoes-atendimento.ts:323-325` (`avisarMudancaDeEscopo` delega a `avisarAtendimento`)
 - Test: `src/server/inbox/aviso.int.test.ts`, `src/server/inbox/permissoes.test.ts` (casos novos)
 
 **Interfaces:**
 - Consumes: `capacidadesCrm` (`crm/permissoes.ts:50`), `capacidadesAria` (`aria/permissoes-tela.ts:27`).
 - Produces:
   - `avisarAtendimento(db: Prisma.TransactionClient | typeof prisma, atendimentoId: string): Promise<void>`
-  - `type CapacidadesPainel = { veLead: boolean; verContato: boolean; editarContato: boolean; editarTags: boolean; criarTag: boolean; moverEtapa: boolean; tarefas: boolean; tarefasEquipe: boolean; desfazerAria: boolean; verEmpresa: boolean; gerenciarNumeros: boolean }`
+  - `type CapacidadesPainel = { veLead: boolean; verContato: boolean; editarContato: boolean; editarTags: boolean; criarTag: boolean; moverEtapa: boolean; tarefas: boolean; tarefasEquipe: boolean; desfazerAria: boolean; verEmpresa: boolean }`
   - `capacidadesPainel(u: Pick<UsuarioSessao, "id" | "papeis">, ctx: { finalidade: Setor; veLead: boolean }): CapacidadesPainel`
 
 - [ ] **Step 1: Write the failing tests**
@@ -128,7 +133,7 @@ describe("capacidadesPainel", () => {
   it("vendedor no comercial com o lead visível edita contato, tags e etapa; não cria tag nem desfaz a Aria", () => {
     expect(capacidadesPainel(u([Papel.VENDEDOR]), { finalidade: "COMERCIAL", veLead: true })).toEqual({
       veLead: true, verContato: true, editarContato: true, editarTags: true, criarTag: false, moverEtapa: true,
-      tarefas: true, tarefasEquipe: false, desfazerAria: false, verEmpresa: false, gerenciarNumeros: false });
+      tarefas: true, tarefasEquipe: false, desfazerAria: false, verEmpresa: false });
   });
   it("sem ver o lead (LC-L02) nada do CRM é editável", () => {
     expect(capacidadesPainel(u([Papel.VENDEDOR]), { finalidade: "COMERCIAL", veLead: false }))
@@ -142,15 +147,14 @@ describe("capacidadesPainel", () => {
     expect(capacidadesPainel(u([Papel.GERENTE_COMERCIAL]), { finalidade: "COMERCIAL", veLead: true }))
       .toMatchObject({ criarTag: true, desfazerAria: true, tarefasEquipe: true });
   });
-  it("professor não tem tarefas; administrador gerencia números", () => {
+  it("professor não tem tarefas", () => {
     expect(capacidadesPainel(u([Papel.PROFESSOR]), { finalidade: "PEDAGOGICO", veLead: false }).tarefas).toBe(false);
-    expect(capacidadesPainel(u([Papel.ADMINISTRADOR]), { finalidade: "COMERCIAL", veLead: true }).gerenciarNumeros).toBe(true);
   });
 });
 ```
 
 ```ts
-// src/server/inbox/aviso.int.test.ts — escuta e cenário como em whatsapp/participantes-aviso.int.test.ts:20-36
+// src/server/inbox/aviso.int.test.ts — escuta e cenário como em whatsapp/participantes-aviso.int.test.ts:1-36
 it("avisarAtendimento publica atendimento.atualizado só com ids", async () => {
   const { a } = await cenario();
   const { r, sair } = escutar();
@@ -175,11 +179,11 @@ Expected: FAIL com "capacidadesPainel is not a function" e "Cannot find module '
 
 - [ ] **Step 3: Implement**
 
-`avisarAtendimento`: o mesmo `UPDATE "AtendimentoWhatsApp" SET "id" = "id" WHERE "id" = ${atendimentoId}` de `acoes-atendimento.ts:323-325`, que dispara o trigger `notificar_inbox_atendimento` (`migrations/20261017100000_inbox_tempo_real/migration.sql:38`); o NOTIFY sai no commit. `avisarMudancaDeEscopo` passa a delegar a ele. `capacidadesPainel`: `comercial = finalidade === "COMERCIAL"`; `editarContato = editarTags = comercial && veLead && crm.has("contatos.editar")`; `criarTag = editarTags && crm.has("carteira.equipe")`; `moverEtapa = comercial && veLead && crm.has("funil.mover")`; `tarefas = crm.has("tarefas.ver")`; `tarefasEquipe = crm.has("tarefas.equipe")`; `desfazerAria = comercial && veLead && capacidadesAria(u).has("decidirHistorico")`; `verContato = crm.has("contatos.ver")`; `verEmpresa` = `ADMINISTRADOR` ou `FINANCEIRO` (guard de `empresas/[id]/page.tsx:13-17`); `gerenciarNumeros` = `ADMINISTRADOR` (`P:104`).
+`avisarAtendimento`: o mesmo `UPDATE "AtendimentoWhatsApp" SET "id" = "id" WHERE "id" = ${atendimentoId}` de `acoes-atendimento.ts:323-325`, que dispara o trigger `notificar_inbox_atendimento` (`migrations/20261017100000_inbox_tempo_real/migration.sql:38`); o NOTIFY sai no commit. `capacidadesPainel`: `comercial = finalidade === "COMERCIAL"`; `editarContato = editarTags = comercial && veLead && crm.has("contatos.editar")`; `criarTag = editarTags && crm.has("carteira.equipe")`; `moverEtapa = comercial && veLead && crm.has("funil.mover")`; `tarefas = crm.has("tarefas.ver")`; `tarefasEquipe = crm.has("tarefas.equipe")`; `desfazerAria = comercial && veLead && capacidadesAria(u).has("decidirHistorico")`; `verContato = crm.has("contatos.ver")`; `verEmpresa` = `ADMINISTRADOR` ou `FINANCEIRO` (guard de `empresas/[id]/page.tsx:13-17`; o vendedor não abre `/empresas/[id]`).
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Mesmos comandos. Expected: PASS. Rodar também `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/whatsapp/participantes-aviso.int.test.ts` (o refatoramento não muda o aviso).
+Mesmos comandos, mais `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/whatsapp/participantes-aviso.int.test.ts` (o aviso do convite não muda). Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -200,13 +204,13 @@ git commit -m "feat(inbox): aviso do atendimento e capacidades do painel (E2.1)"
 
 **Interfaces:**
 - Consumes: `atendimentoVisivel(usuario, id, enviar = false, db)` (`whatsapp/atendimentos.ts:79`).
-- Produces: coluna `Tarefa.atendimentoId`; `TarefaInput.atendimentoId?: string` (só criação; `editarTarefa` ignora); `TarefaCriada.payload.atendimentoId: string | null`.
+- Produces: coluna `Tarefa.atendimentoId`; `TarefaInput.atendimentoId?: string` (só na criação; `editarTarefa` descarta); `TarefaCriada.payload.atendimentoId: string | null`.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // src/server/crm/tarefa-atendimento.int.test.ts — sessão trocada como em crm/criar-tarefa-idempotencia.int.test.ts:8-20;
-// número e atendimento com criarNumeroSetor/garantirAtendimento (whatsapp/participantes-aviso.int.test.ts:29-36)
+// número e atendimento com criarNumeroSetor e garantirAtendimento (whatsapp/participantes-aviso.int.test.ts:29-36)
 it("criarTarefa com atendimentoId grava o vínculo e o TarefaCriada o leva", async () => {
   const r = await criarTarefa({ titulo: "Ligar", tipo: "LIGACAO", atendimentoId: a.id, chaveIdempotencia: "k1" });
   expect(r.ok).toBe(true);
@@ -220,8 +224,7 @@ it("atendimento fora do escopo recusa sem criar", async () => {
 });
 it("mesma chave com outro atendimento é conflito (#166)", async () => {
   await criarTarefa({ titulo: "Ligar", tipo: "LIGACAO", atendimentoId: a.id, chaveIdempotencia: "k2" });
-  const r = await criarTarefa({ titulo: "Ligar", tipo: "LIGACAO", atendimentoId: b.id, chaveIdempotencia: "k2" });
-  expect(r.ok).toBe(false);
+  expect((await criarTarefa({ titulo: "Ligar", tipo: "LIGACAO", atendimentoId: b.id, chaveIdempotencia: "k2" })).ok).toBe(false);
   expect(await prisma.tarefa.count()).toBe(1);
 });
 it("editarTarefa não troca o atendimento", async () => {
@@ -245,7 +248,7 @@ Expected: FAIL (coluna inexistente).
 
 ```sql
 -- 20261023100000_tarefa_atendimento/migration.sql
--- Vínculo da tarefa com a conversa (Inbox E2, T13): cartão no fio e "Conversa vinculada". Nulo para as tarefas de antes.
+-- Vínculo da tarefa com a conversa (Inbox E2, T13): cartão no fio e "Conversa vinculada". Nulo nas tarefas de antes.
 ALTER TABLE "Tarefa" ADD COLUMN "atendimentoId" TEXT;
 ALTER TABLE "Tarefa" ADD CONSTRAINT "Tarefa_atendimentoId_fkey" FOREIGN KEY ("atendimentoId") REFERENCES "AtendimentoWhatsApp"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ```
@@ -256,11 +259,11 @@ ALTER TABLE "Tarefa" ADD CONSTRAINT "Tarefa_atendimentoId_fkey" FOREIGN KEY ("at
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "Tarefa_atendimentoId_status_idx" ON "Tarefa"("atendimentoId", "status");
 ```
 
-No schema: `atendimentoId String?`, `atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)`, `@@index([atendimentoId, status])` em `Tarefa`; `tarefas Tarefa[]` em `AtendimentoWhatsApp`. Rodar `node_modules/.bin/prisma generate`.
+No schema: em `Tarefa`, `atendimentoId String?`, `atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)` e `@@index([atendimentoId, status])`; em `AtendimentoWhatsApp`, `tarefas Tarefa[]`. Depois, `node_modules/.bin/prisma generate`.
 
 - [ ] **Step 4: Implement the domain**
 
-`CriarTarefaSchema = CamposSchema.extend({ chaveIdempotencia: ..., atendimentoId: z.string().min(1).optional() })` (fica fora de `CamposSchema`, então `editarTarefa` o descarta). Em `criarTarefa`, depois da repetição e antes de `validarVinculos`: com `atendimentoId`, `atendimentoVisivel(autor, atendimentoId, false, tx)`; nulo lança `ErroRegra("Atendimento não encontrado.")`. Grava `atendimentoId` na tarefa e no payload do `TarefaCriada`. No executor da Aria, `atendimentoId` do turno (o mesmo que o `case "AGENDAR_MENSAGEM"` usa em `executor.ts:447`) vai para `tarefa.create`.
+`CriarTarefaSchema = CamposSchema.extend({ chaveIdempotencia: …, atendimentoId: z.string().min(1).optional() })`. Fica fora de `CamposSchema`, então `editarTarefa` o descarta. Em `criarTarefa`, depois da repetição e antes de `validarVinculos`: com `atendimentoId`, chamar `atendimentoVisivel(autor, atendimentoId, false, tx)`; se vier nulo, `ErroRegra("Atendimento não encontrado.")`. Gravar `atendimentoId` na tarefa e no payload do `TarefaCriada`. No executor da Aria, passar ao `tarefa.create` o `atendimentoId` do turno, o mesmo que o `case "AGENDAR_MENSAGEM"` usa (`executor.ts:447`).
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
@@ -279,38 +282,44 @@ git commit -m "feat(tarefas): vínculo da tarefa com a conversa (E2.2)"
 **Files:**
 - Create: `src/server/inbox/painel-detalhes.ts`, `src/server/inbox/painel-abas.ts`, `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.ts`
 - Modify: `src/server/inbox/paineis.ts:8-40` (`cabecalho` no `PainelSetor`)
-- Test: `src/server/inbox/painel-detalhes.int.test.ts`, `src/server/inbox/painel-detalhes.test.ts`, `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.test.ts`
+- Test: `src/server/inbox/painel-detalhes.test.ts`, `src/server/inbox/painel-detalhes.int.test.ts`, `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.test.ts`
 
 **Interfaces:**
-- Consumes: `capacidadesPainel` (Task 1); `podeVerLeadNaThread` (`whatsapp/consultas-inbox.ts:181`); `escopoPessoas` (`crm/pessoas.ts:32`); `camposDaPessoa` (`crm/ficha-dados.ts:21`); `tagsAtivas` (`ficha-dados.ts:40`).
-- Produces (em `painel-detalhes.ts`):
-  - `type TagPainel = { id: string; nome: string; cor: CorTag; ia: boolean }`
-  - `type CabecalhoPainel = { pessoaId: string | null; tags: TagPainel[]; tagsDisponiveis: { id: string; nome: string; cor: CorTag }[]; subtitulo: string | null; semNome: boolean; capacidades: CapacidadesPainel }`
+- Consumes: `capacidadesPainel` (Task 1); `podeVerLeadNaThread` (`whatsapp/consultas-inbox.ts:181`); `escopoPessoas` (`crm/pessoas.ts:32`); `camposDaPessoa`, `CampoDaFicha` (`crm/ficha-dados.ts:11-37`); `tagsAtivas` (`ficha-dados.ts:40`); `nomeEFonteDoAtendimento` (`whatsapp/nome-contato.ts:34-45`).
+- Produces, em `painel-detalhes.ts`:
+  - `type CabecalhoPainel = { pessoaId: string | null; tagsDisponiveis: { id: string; nome: string }[]; subtitulo: string | null; quadrado: boolean; semNome: boolean; capacidades: CapacidadesPainel }` (a Task 9 acrescenta `clienteVoltou`; a Task 14, `contadorAtividade`)
   - `type CampoPainel = CampoDaFicha & { ia: boolean }`
   - `type PessoaPainel = { id: string; nome: string; email: string | null; cidade: string | null; cargo: string | null; linkedin: string | null; origemCanal: OrigemCanal | null; telefone: string | null; empresa: { id: string; nome: string; documento: string | null; segmentoMercado: string | null; porte: string | null; site: string | null } | null }`
   - `type ResumoOportunidadePainel = { id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null; etapa: EtapaLead; b2b: boolean }`
   - `type BlocoB2BPainel = { empresa: { id: string; nome: string }; participantes: { pessoaId: string; nome: string; papel: PapelParticipante; cargo: string | null; naConversa: boolean; hrefConversa: string | null }[]; decisor: boolean | null }`
-  - `type DetalhesPainel = { tipo: "comercial"; pessoa: PessoaPainel | null; oportunidade: ResumoOportunidadePainel | null; b2b: BlocoB2BPainel | null; campos: CampoPainel[] } | { tipo: "setor"; setor: DadosSetor }`
+  - `type DetalhesPainel = { pessoa: PessoaPainel | null; oportunidade: ResumoOportunidadePainel | null; b2b: BlocoB2BPainel | null; campos: CampoPainel[] }`
   - `pessoaDoAtendimento(u: UsuarioSessao, atendimentoId: string, db?: Db): Promise<{ pessoaId: string; leadId: string | null } | null>`
   - `carregarCabecalhoPainel(u: UsuarioSessao, atendimentoId: string): Promise<CabecalhoPainel | null>`
   - `carregarDetalhesPainel(u: UsuarioSessao, atendimentoId: string): Promise<DetalhesPainel | null>`
   - `subtituloContato(i: { b2b: boolean; produto: string | null; cargo: string | null; empresa: string | null; interlocutor: { nome: string; papel: PapelParticipante } | null }): string`
-  - em `painel-abas.ts`: `type AbaDados = "detalhes" | "oportunidades" | "atividade"`; `carregarAbaPainel(u: UsuarioSessao, atendimentoId: string, aba: AbaDados): Promise<unknown | null>` (nesta task só `"detalhes"`; as outras lançam `ErroRegra("Aba inválida.")` até as Tasks 7 e 14)
+- Produces, em `painel-abas.ts`: `type AbaDados = "detalhes" | "oportunidades" | "atividade"` e `carregarAbaPainel(u: UsuarioSessao, atendimentoId: string, aba: AbaDados): Promise<unknown | null>`. Nesta task só `"detalhes"` responde; `"oportunidades"` e `"atividade"` entram nas Tasks 7 e 13.
 
 Regras fixadas aqui:
-- **Pessoa do atendimento:** só em `COMERCIAL` (D13). É a `lead.pessoaId` quando `podeVerLeadNaThread` e a pessoa não é responsável legal (regra 6, `paineis.ts:60-61`); sem lead, a `contato.pessoaId` dentro de `escopoPessoas`. Fora disso, `null`.
-- **✦ da tag (D20):** `ia = PessoaTag.criadoPorId === null` (a Aria grava assim, `aria/turno/executor.ts:390`).
-- **✦ do campo:** `ia = true` quando o último `CampoPersonalizadoAlterado` da pessoa para aquele `campoId` tem `autorId === null` (`executor.ts:411-416`).
-- **Sem nome:** `semNome = fonteNome === "contato" && !nomeExibicao && !nomePerfil` (`whatsapp/nome-contato.ts:19-45`).
-- **Telefone:** `contato.telefoneE164`, só no comercial (regra 5 cobre o pedagógico, que nem chega aqui).
-- **Subtítulo** (`P:1138`): B2B com o contato entre os participantes: `Falando com <nome> · <PAPEL_PARTICIPANTE_LABEL>`; B2B sem ele: `<cargo> · <empresa>` (sem as partes nulas); B2C: `Pessoa física · <produto ?? título>`; sem oportunidade: `Pessoa física`; fora do comercial: `null` (vale o subtítulo da E1).
+- **Pessoa do atendimento:** só em `COMERCIAL` (D13). É a `lead.pessoaId` quando `podeVerLeadNaThread` deixa e a pessoa não é responsável legal (regra 6, `paineis.ts:60-61`). Sem lead, é a `contato.pessoaId` dentro de `escopoPessoas`. Fora disso, `null`.
+- **Fora do comercial:** `carregarDetalhesPainel` devolve `{ pessoa: null, oportunidade: null, b2b: null, campos: [] }`; a aba Detalhes fica com o conteúdo da E1.
+- **✦ do campo:** `ia = true` quando o último `CampoPersonalizadoAlterado` da pessoa para aquele `campoId` tem `autorId === null` (a Aria grava assim, `aria/turno/executor.ts:411-416`). O ✦ da tag já vem da E1 (`TagPainel.ia`).
+- **Sem nome:** `semNome = fonte === "contato" && !nomeExibicao && !nomePerfil` (`nome-contato.ts:19-45`).
+- **Telefone:** `contato.telefoneE164`, só no comercial (a regra 5 cobre o pedagógico, que nem chega aqui).
+- **Subtítulo** (`P:1138`):
+  - B2B com o contato entre os participantes: `Falando com <nome> · <PAPEL_PARTICIPANTE_LABEL>`;
+  - B2B sem ele: `<cargo> · <empresa>`, sem as partes nulas;
+  - B2C: `Pessoa física · <produto ?? título>`;
+  - sem oportunidade: `Pessoa física`;
+  - fora do comercial: `null` (vale o subtítulo da E1).
+- **Quadrado:** `quadrado = oportunidade?.b2b === true` (avatar quadrado da E1 para empresa).
+- `tagsDisponiveis` = `tagsAtivas()` só com `capacidades.editarTags`; senão `[]`.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // src/server/inbox/painel-detalhes.test.ts
 describe("subtituloContato", () => {
-  it("B2C mostra produto", () => expect(subtituloContato({ b2b: false, produto: "Inglês Intensivo B1", cargo: null, empresa: null, interlocutor: null })).toBe("Pessoa física · Inglês Intensivo B1"));
+  it("B2C mostra o produto", () => expect(subtituloContato({ b2b: false, produto: "Inglês Intensivo B1", cargo: null, empresa: null, interlocutor: null })).toBe("Pessoa física · Inglês Intensivo B1"));
   it("B2B com interlocutor", () => expect(subtituloContato({ b2b: true, produto: null, cargo: "Gerente de RH", empresa: "Grupo Ventura", interlocutor: { nome: "Rafael Nunes", papel: "DECISOR" } })).toBe("Falando com Rafael Nunes · Decisor"));
   it("B2B sem interlocutor junta cargo e empresa sem partes vazias", () => expect(subtituloContato({ b2b: true, produto: null, cargo: null, empresa: "Clínica Santa Helena", interlocutor: null })).toBe("Clínica Santa Helena"));
 });
@@ -318,23 +327,24 @@ describe("subtituloContato", () => {
 
 ```ts
 // src/server/inbox/painel-detalhes.int.test.ts — fixtures como inbox/paineis.int.test.ts:14-29
-it("comercial: pessoa, campos e tags; ✦ só na tag sem autor (D20) e no campo da Aria", async () => {
-  // pessoa com tag "Inglês" (criadoPorId null) e "Noite" (criadoPorId = vendedor); campo "Objetivo" com
-  // CampoPersonalizadoAlterado autorId null e campo "Nível" com autorId = vendedor
-  const c = await carregarCabecalhoPainel(sess(dono), a.id);
-  expect(c!.tags).toEqual([{ id: tIngles.id, nome: "Inglês", cor: "IA", ia: true }, { id: tNoite.id, nome: "Noite", cor: "NEUTRA", ia: false }]);
+it("comercial: pessoa, oportunidade e campos; ✦ só no campo que a Aria preencheu por último", async () => {
+  // campo "Objetivo" com CampoPersonalizadoAlterado autorId null; "Nível" com autorId = vendedor
   const d = await carregarDetalhesPainel(sess(dono), a.id);
-  expect(d).toMatchObject({ tipo: "comercial", pessoa: { id: p.id, email: "mariana@x.com", telefone: "+5511984213307" },
-    oportunidade: { id: op.id, produto: "Inglês Intensivo B1", valor: "650.00", etapa: "PROPOSTA" } });
-  expect((d as { campos: CampoPainel[] }).campos.map((x) => [x.nome, x.ia])).toEqual([["Objetivo", true], ["Nível", false]]);
+  expect(d).toMatchObject({ pessoa: { id: p.id, email: "mariana@x.com", telefone: "+5511984213307" },
+    oportunidade: { id: op.id, produto: "Inglês Intensivo B1", valor: "650.00", etapa: "PROPOSTA", b2b: false } });
+  expect(d!.campos.map((x) => [x.nome, x.ia])).toEqual([["Objetivo", true], ["Nível", false]]);
 });
 it("regra_6_e_linha_alheia_nao_carregam_pessoa", async () => {
   expect(await carregarDetalhesPainel(sess(dono), atendimentoDaMae.id)).toMatchObject({ pessoa: null, campos: [] });
-  expect(await carregarCabecalhoPainel(sess(donoDaLinhaSemCarteira), a.id)).toMatchObject({ pessoaId: null, tags: [], capacidades: { veLead: false } });
+  expect(await carregarCabecalhoPainel(sess(donoDaLinhaSemCarteira), a.id)).toMatchObject({ pessoaId: null, tagsDisponiveis: [], capacidades: { veLead: false } });
 });
-it("fora do comercial devolve o painel do setor e nada da pessoa (D13)", async () => {
-  expect(await carregarDetalhesPainel(sess(fin), atFinanceiro.id)).toEqual({ tipo: "setor", setor: expect.objectContaining({ setor: "FINANCEIRO" }) });
-  expect(await carregarCabecalhoPainel(sess(fin), atFinanceiro.id)).toMatchObject({ pessoaId: null, tags: [], subtitulo: null });
+it("oportunidade_sem_pessoa", async () => {
+  expect(await carregarDetalhesPainel(sess(dono), semPessoa.id)).toMatchObject({ pessoa: null, oportunidade: { id: opSemPessoa.id }, campos: [] });
+  expect((await carregarCabecalhoPainel(sess(dono), semPessoa.id))!.pessoaId).toBeNull();
+});
+it("fora do comercial não traz nada da pessoa (D13)", async () => {
+  expect(await carregarDetalhesPainel(sess(fin), atFinanceiro.id)).toEqual({ pessoa: null, oportunidade: null, b2b: null, campos: [] });
+  expect(await carregarCabecalhoPainel(sess(fin), atFinanceiro.id)).toMatchObject({ pessoaId: null, subtitulo: null, quadrado: false });
 });
 it("contato só com telefone é sem nome", async () => {
   expect((await carregarCabecalhoPainel(sess(dono), atSemNome.id))!.semNome).toBe(true);
@@ -344,7 +354,7 @@ it("fora do escopo: null", async () => {
   expect(await carregarCabecalhoPainel(sess(outro), a.id)).toBeNull();
 });
 it("carregarPainel leva o cabeçalho", async () => {
-  expect(await carregarPainel(sess(dono), a.id)).toMatchObject({ cabecalho: { pessoaId: p.id } });
+  expect(await carregarPainel(sess(dono), a.id)).toMatchObject({ cabecalho: { pessoaId: p.id, subtitulo: "Pessoa física · Inglês Intensivo B1" } });
 });
 ```
 
@@ -356,7 +366,7 @@ it("aba fora da lista → 400, sem consultar", async () => {
   expect(r.status).toBe(400);
   expect(carregarAbaPainel).not.toHaveBeenCalled();
 });
-it("detalhes no escopo → 200 sem cache; fora → 404", async () => { /* como painel/route.test.ts:21-36 */ });
+it("sem sessão 401; papel sem inbox 403; null 404; dado 200 sem cache", async () => { /* como painel/route.test.ts:12-37 */ });
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -366,7 +376,7 @@ Expected: FAIL (módulos inexistentes).
 
 - [ ] **Step 3: Implement**
 
-Consultas com `select` explícito (nunca o payload inteiro do Evento). `produto = oportunidade.planoPrevisto`. B2B: `oportunidade.b2b && oportunidade.empresaId`; participantes de `ParticipanteOportunidade` (`schema.prisma:9230-9240`) com `naConversa = pessoaId === pessoa.id` e `hrefConversa` preenchido na Task 17 (aqui `null`); `decisor` = papel `DECISOR` da pessoa do atendimento, `null` sem participação. `tagsDisponiveis` = `tagsAtivas()` só com `capacidades.editarTags`; senão `[]`. A rota segue `painel/route.ts:10-24`; `aba` fora de `["detalhes", "oportunidades", "atividade"]` responde 400 `{ erro: "Aba inválida." }`; `null` responde 404.
+Consultas com `select` explícito; do Evento só `autorId` e `payload.campoId`. `produto = oportunidade.planoPrevisto`. B2B quando `oportunidade.b2b && oportunidade.empresaId`; participantes de `ParticipanteOportunidade` (`schema.prisma:9230-9240`) com `naConversa = pessoaId === pessoa.id`; `hrefConversa` fica `null` até a Task 16; `decisor` é o papel `DECISOR` da pessoa do atendimento, `null` sem participação. A rota segue `painel/route.ts:10-24`: `aba` fora de `["detalhes", "oportunidades", "atividade"]` responde 400 `{ erro: "Aba inválida." }`, e `null` responde 404.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -376,7 +386,7 @@ Mesmos comandos, mais `node_modules/.bin/vitest run -c vitest.integration.config
 
 ```bash
 git add src/server/inbox/painel-detalhes.ts src/server/inbox/painel-detalhes.test.ts src/server/inbox/painel-detalhes.int.test.ts src/server/inbox/painel-abas.ts src/server/inbox/paineis.ts "src/app/api/inbox/atendimentos/[id]/painel/[aba]" docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): consultas do cabeçalho e da aba Detalhes (E2.3)"
+git commit -m "feat(inbox): consultas do cabeçalho e da aba Detalhes (E2.3, D13)"
 ```
 
 <a id="task-4"></a>
@@ -384,38 +394,38 @@ git commit -m "feat(inbox): consultas do cabeçalho e da aba Detalhes (E2.3)"
 
 **Files:**
 - Create: `src/app/(app)/inbox/abas/TagsContato.tsx`, `src/app/(app)/inbox/abas/ContatoSemNome.tsx`, `src/server/inbox/acoes-painel.ts`
-- Modify: `src/app/(app)/inbox/PainelContato.tsx` (slots do acréscimo), `src/app/(app)/inbox/InboxNovo.tsx` (passa `cabecalho` ao `PainelContato`), `src/server/crm/tags.ts:25` (exporta `TagSchema`)
-- Test: `src/app/(app)/inbox/abas/TagsContato.test.ts`, `src/app/(app)/inbox/abas/ContatoSemNome.test.ts`, `src/server/inbox/acoes-painel-tags.int.test.ts`
+- Modify: `src/app/(app)/inbox/PainelContato.tsx` (`slotTags`, `slotAviso`, `TagPainel.id`); `src/server/inbox/paineis.ts` (`tagsDaPessoa` devolve `id`); `src/app/(app)/inbox/InboxNovo.tsx` (monta os slots); `src/server/crm/tags.ts:25` (exporta `TagSchema`)
+- Test: `src/app/(app)/inbox/abas/TagsContato.test.ts`, `src/app/(app)/inbox/abas/ContatoSemNome.test.ts`, `src/server/inbox/acoes-painel-tags.int.test.ts`, `src/server/inbox/paineis.int.test.ts` (caso da E1 com `id`)
 
 **Interfaces:**
-- Consumes: `CabecalhoPainel`, `TagPainel` (Task 3); `avisarAtendimento` (Task 1); `pessoaDoAtendimento` (Task 3); `editarNomeContatoWhatsApp({ atendimentoId, nome, nomeAnterior })` (`whatsapp/acoes.ts`, usado em `AcoesContato.tsx:114`).
+- Consumes: `TagPainel` e `tagsDaPessoa` (E1); `CabecalhoPainel`, `pessoaDoAtendimento` (Task 3); `avisarAtendimento` (Task 1); `editarNomeContatoWhatsApp({ atendimentoId, nome, nomeAnterior })` (`whatsapp/acoes.ts`, usado em `AcoesContato.tsx:114`).
 - Produces:
   - `atribuirTagNoInbox(atendimentoId: string, tagId: string): Promise<Resultado>`; `removerTagNoInbox(atendimentoId: string, tagId: string): Promise<Resultado>`; `criarEAtribuirTagNoInbox(atendimentoId: string, nome: string): Promise<Resultado<{ tagId: string }>>`
-  - `TagsContato(props: { atendimentoId: string; tags: TagPainel[]; disponiveis: { id: string; nome: string; cor: CorTag }[]; podeEditar: boolean; podeCriar: boolean; aoMudar(): void })`
-  - `tagsParaEscolher(disponiveis, atuais: TagPainel[], busca: string): { id: string; nome: string }[]` (sem as que a pessoa já tem, filtro sem acento e sem caixa, no máximo 8)
+  - `TagsContato(props: { atendimentoId: string; tags: TagPainel[]; disponiveis: { id: string; nome: string }[]; podeEditar: boolean; podeCriar: boolean; aoMudar(): void })`
+  - `tagsParaEscolher(disponiveis: { id: string; nome: string }[], atuais: TagPainel[], busca: string): { id: string; nome: string }[]` (sem as que a pessoa já tem; sem acento e sem caixa; no máximo 8)
   - `ContatoSemNome(props: { atendimentoId: string; ariaAtiva: boolean; aoMudar(): void })`
 
-Visual (análise parte 1 §3.7): pílula de 26 px, raio 13, fundo `--surface-muted`, texto 12,5 px; ✦ = `IconSparkles` 11 px em `--ai-text` com `aria-label="Criada pela Aria"`; "+ tag" tracejado em `--border`, texto `--text-secondary`. "+ tag" abre um popover (o `Menu` não serve: tem campo de busca) com campo "Buscar tag" e a lista de `tagsParaEscolher`; com `podeCriar` e busca sem correspondência exata, o último item é `Criar tag “<busca>”`. Cada pílula da pessoa tem "×" (rótulo "Remover tag <nome>") só com `podeEditar`.
+Visual: as pílulas e o ✦ são os da E1 (`h-[26px] rounded-[13px] bg-surface-muted`, `IconSparkles` com `aria-label="Criada pela Aria"`). "+ tag" (`P:486`): pílula tracejada `border-dashed border-gray-300 text-gray-600`. Abre um popover com o campo "Buscar tag" e a lista de `tagsParaEscolher`; o `Menu` não serve, porque não tem campo. Com `podeCriar` e busca sem correspondência exata, o último item é `Criar tag “<busca>”`. Cada pílula da pessoa ganha "×" (`aria-label="Remover tag <rótulo>"`) só com `podeEditar`.
 
-Contato sem nome (`P:479`): caixa tracejada, ícone `IconUserX`, texto `Contato sem nome, criado pelo telefone. Aria vai perguntar na conversa, ou você pode preencher agora.` quando `ariaAtiva`; sem Aria ativa, `Contato sem nome, criado pelo telefone. Você pode preencher agora.`. Campo "Nome do contato" e botão "Salvar"; vazio mostra "Digite o nome" (`P:1119`). Salva com `editarNomeContatoWhatsApp`. `ariaAtiva = painel.aria !== null && !painel.aria.pausada`.
+Contato sem nome (`P:479`, `slotAviso`): caixa tracejada com `IconUserX`. Com `ariaAtiva`, o texto é `Contato sem nome, criado pelo telefone. Aria vai perguntar na conversa, ou você pode preencher agora.`; sem Aria ativa, `Contato sem nome, criado pelo telefone. Você pode preencher agora.`. Tem o campo "Nome do contato" e o botão "Salvar"; vazio mostra "Digite o nome" (`P:1119`). Salva com `editarNomeContatoWhatsApp`. `ariaAtiva = painel.aria !== null && !painel.aria.pausada`.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // TagsContato.test.ts
-const props = { atendimentoId: "a1", tags: [{ id: "t1", nome: "Inglês", cor: "IA" as const, ia: true }, { id: "t2", nome: "Noite", cor: "NEUTRA" as const, ia: false }],
-  disponiveis: [{ id: "t1", nome: "Inglês", cor: "IA" as const }, { id: "t3", nome: "Bolsista", cor: "INFO" as const }], podeEditar: true, podeCriar: false, aoMudar: () => {} };
+const props = { atendimentoId: "a1", tags: [{ id: "t1", rotulo: "Noite", ia: true }, { id: "t2", rotulo: "Inglês", ia: false }],
+  disponiveis: [{ id: "t1", nome: "Noite" }, { id: "t3", nome: "Bolsista" }], podeEditar: true, podeCriar: false, aoMudar: () => {} };
 const h = (p = {}) => renderToStaticMarkup(createElement(TagsContato, { ...props, ...p }));
-it("✦ só na tag sem autor, com rótulo acessível (D20)", () => { expect(h().match(/aria-label="Criada pela Aria"/g)).toHaveLength(1); expect(h()).toMatch(/Inglês[^<]*<svg[^>]*aria-label="Criada pela Aria"/); });
-it("“+ tag” e “×” só para quem edita", () => { expect(h()).toContain("+ tag"); expect(h()).toContain('aria-label="Remover tag Noite"'); expect(h({ podeEditar: false })).not.toContain("+ tag"); expect(h({ podeEditar: false })).not.toContain("Remover tag"); });
-it("sem tags e sem edição não renderiza nada", () => { expect(h({ tags: [], podeEditar: false })).toBe(""); });
+it("✦ só na tag sem autor (D20)", () => expect(h().match(/aria-label="Criada pela Aria"/g)).toHaveLength(1));
+it("“+ tag” e “×” só para quem edita", () => {
+  expect(h()).toContain("+ tag"); expect(h()).toContain('aria-label="Remover tag Inglês"');
+  expect(h({ podeEditar: false })).not.toContain("+ tag"); expect(h({ podeEditar: false })).not.toContain("Remover tag");
+});
+it("sem tags e sem edição não renderiza nada", () => expect(h({ tags: [], podeEditar: false })).toBe(""));
 it("tagsParaEscolher tira as já atribuídas e ignora acento e caixa", () => {
   expect(tagsParaEscolher(props.disponiveis, props.tags, "")).toEqual([{ id: "t3", nome: "Bolsista" }]);
-  expect(tagsParaEscolher([{ id: "t4", nome: "Matrícula", cor: "NEUTRA" }], [], "MATRI")).toEqual([{ id: "t4", nome: "Matrícula" }]);
+  expect(tagsParaEscolher([{ id: "t4", nome: "Matrícula" }], [], "MATRI")).toEqual([{ id: "t4", nome: "Matrícula" }]);
 });
-```
-
-```ts
 // ContatoSemNome.test.ts
 it("com a Aria ativa avisa que ela vai perguntar", () => expect(h({ ariaAtiva: true })).toContain("Aria vai perguntar na conversa, ou você pode preencher agora."));
 it("sem a Aria ativa não promete a pergunta", () => { const t = h({ ariaAtiva: false }); expect(t).not.toContain("Aria"); expect(t).toContain('placeholder="Nome do contato"'); });
@@ -423,7 +433,7 @@ it("sem a Aria ativa não promete a pergunta", () => { const t = h({ ariaAtiva: 
 
 ```ts
 // acoes-painel-tags.int.test.ts — sessão por authMock como whatsapp/participantes-aviso.int.test.ts:3-5
-it("atribuir grava PessoaTag com autor, TagAtribuida e avisa o atendimento", async () => {
+it("atribuir grava PessoaTag com autor e avisa o atendimento", async () => {
   const { r, sair } = escutar(); comoUsuario(dono);
   expect(await atribuirTagNoInbox(a.id, tag.id)).toEqual({ ok: true });
   expect(await prisma.pessoaTag.findUnique({ where: { pessoaId_tagId: { pessoaId: p.id, tagId: tag.id } } })).toMatchObject({ criadoPorId: dono.id });
@@ -434,7 +444,7 @@ it("repetir a atribuição não grava outro TagAtribuida (#166 por natureza)", a
   comoUsuario(dono); await atribuirTagNoInbox(a.id, tag.id); await atribuirTagNoInbox(a.id, tag.id);
   expect(await prisma.evento.count({ where: { tipo: "TagAtribuida", agregadoId: p.id } })).toBe(1);
 });
-it("conversa sem pessoa visível recusa e nada muda", async () => {
+it("conversa sem pessoa visível recusa", async () => {
   comoUsuario(donoDaLinhaSemCarteira);
   expect(await atribuirTagNoInbox(a.id, tag.id)).toEqual({ ok: false, erro: "Contato não encontrado." });
 });
@@ -454,25 +464,25 @@ it("vendedor não cria tag nova", async () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/abas/TagsContato.test.ts" "src/app/(app)/inbox/abas/ContatoSemNome.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/acoes-painel-tags.int.test.ts`
-Expected: FAIL (módulos inexistentes).
+Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/abas/TagsContato.test.ts" "src/app/(app)/inbox/abas/ContatoSemNome.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/acoes-painel-tags.int.test.ts src/server/inbox/paineis.int.test.ts`
+Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-Os wrappers resolvem `pessoaDoAtendimento`; sem pessoa, `ErroRegra("Contato não encontrado.")`. `atribuir`/`remover` chamam `atribuirTag({ tagId, pessoaId })`/`removerTag`; resultado `ok` → `avisarAtendimento`. `criarEAtribuirTagNoInbox` exige `carteira.equipe` e `contatos.editar` (`exigirCapacidadeCrm`), valida o nome com o `TagSchema` (exportar de `tags.ts`), e numa transação: tag por nome exato (`findUnique({ where: { nome } })`); sem ela, cria com cor `NEUTRA` e grava `TagCriada` (mesmo payload de `tags.ts:46-52`), sob `comUnicidade`; depois cria a `PessoaTag` se faltar, com `TagAtribuida`. No cliente, `useAcaoCliente({ idempotente: true })` (todas são por natureza) e `aoMudar()` no sucesso.
+Os wrappers resolvem `pessoaDoAtendimento`; sem pessoa, `ErroRegra("Contato não encontrado.")`. Atribuir e remover chamam `atribuirTag({ tagId, pessoaId })` e `removerTag`; com `ok`, `avisarAtendimento`. `criarEAtribuirTagNoInbox` exige `carteira.equipe` e `contatos.editar` (`exigirCapacidadeCrm`) e valida o nome com `TagSchema`. Numa transação: busca a tag pelo nome exato; sem ela, cria com cor `NEUTRA` e grava `TagCriada` (mesmo payload de `tags.ts:46-52`), dentro de `comUnicidade`; depois cria a `PessoaTag` se faltar, com `TagAtribuida`. No cliente, `useAcaoCliente({ idempotente: true })` em todas, e `aoMudar()` no sucesso. O `InboxNovo` passa `slotTags={<TagsContato … />}` quando `cabecalho.pessoaId` existe e `slotAviso={<ContatoSemNome … />}` quando `cabecalho.semNome`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Mesmos comandos. Expected: PASS. Rodar `node_modules/.bin/vitest run "src/app/(app)/inbox/sem-polling.test.ts"`.
+Mesmos comandos, mais `node_modules/.bin/vitest run "src/app/(app)/inbox/"`. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-No `scripts/visual/demo-inbox.ts`, o cenário "Mariana Costa" ganha as tags "Inglês" (sem autor) e "Turma noturna" (com autor), e o cenário "+55 11 98765-4321" fica sem nome. Capturar os estados `painel-detalhes` e `painel-sem-nome` nas três larguras e nos dois temas; comparar com `telas/prototipo-estado-painel-detalhes.png` e `prototipo-estado-painel-sem-nome.png`. Anexar ao PR.
+Estados `painel-detalhes` (da E1, agora com "+ tag" e "×") e o novo `painel-sem-nome` (id `semNome`), com referências `telas/prototipo-estado-painel-detalhes.png` e `prototipo-estado-painel-sem-nome.png`. Anexar ao PR.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(app)/inbox/abas/TagsContato.tsx" "src/app/(app)/inbox/abas/TagsContato.test.ts" "src/app/(app)/inbox/abas/ContatoSemNome.tsx" "src/app/(app)/inbox/abas/ContatoSemNome.test.ts" "src/app/(app)/inbox/PainelContato.tsx" "src/app/(app)/inbox/InboxNovo.tsx" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-tags.int.test.ts src/server/crm/tags.ts scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
+git add "src/app/(app)/inbox/abas/TagsContato.tsx" "src/app/(app)/inbox/abas/TagsContato.test.ts" "src/app/(app)/inbox/abas/ContatoSemNome.tsx" "src/app/(app)/inbox/abas/ContatoSemNome.test.ts" "src/app/(app)/inbox/PainelContato.tsx" "src/app/(app)/inbox/InboxNovo.tsx" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-tags.int.test.ts src/server/inbox/paineis.ts src/server/inbox/paineis.int.test.ts src/server/crm/tags.ts scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): tags com marca da Aria e contato sem nome no painel (E2.4, D20)"
 ```
 
@@ -480,42 +490,37 @@ git commit -m "feat(inbox): tags com marca da Aria e contato sem nome no painel 
 ### Task 5: Aba Detalhes e bloco B2B (D13)
 
 **Files:**
-- Create: `src/app/(app)/inbox/abas/AbaDetalhes.tsx`, `src/app/(app)/inbox/abas/BlocoB2B.tsx`, `src/app/(app)/inbox/abas/abas-painel.ts`, `src/app/(app)/inbox/abas/useAbaPainel.ts`
-- Modify: `src/app/(app)/inbox/InboxNovo.tsx` (estado `abaPainel`, `abasDoPainel`, conteúdo da aba como `children` do `PainelContato`); `src/app/(app)/inbox/PainelSetor.tsx:10,15,21` (troca `text-muted-foreground`, classe inexistente, por `text-gray-600`, defeito da análise parte 1 §3.7)
-- Test: `src/app/(app)/inbox/abas/AbaDetalhes.test.ts`, `src/app/(app)/inbox/abas/abas-painel.test.ts`
+- Create: `src/app/(app)/inbox/abas/AbaDetalhes.tsx`, `src/app/(app)/inbox/abas/BlocoB2B.tsx`, `src/app/(app)/inbox/abas/useAbaPainel.ts`
+- Modify: `src/app/(app)/inbox/InboxNovo.tsx` (aba Detalhes do comercial; subtítulo e `quadrado` do `ContatoPainel` vindos do `cabecalho`)
+- Test: `src/app/(app)/inbox/abas/AbaDetalhes.test.ts`, `src/app/(app)/inbox/abas/useAbaPainel.test.ts`
 
 **Interfaces:**
-- Consumes: `DetalhesPainel`, `CabecalhoPainel` (Task 3); `PainelSetor` (componente atual).
+- Consumes: `DetalhesPainel`, `CabecalhoPainel`, `AbaDados` (Task 3); `LinhaCampo` (E1).
 - Produces:
-  - `abasDoPainel(finalidade: string, contadorAtividade: number): AbaPainel[]` → `COMERCIAL`: `detalhes` "Detalhes", `oportunidades` "Oportunidades", `atividade` "Atividade" (com `contador` quando > 0); demais: `detalhes`, `atividade`. `insights` fica para a E4 (D12).
-  - `useAbaPainel<T>(atendimentoId: string | null, aba: AbaDados, versao: number): { dado: T | null; erro: boolean; recarregar(): void }` (busca `/api/inbox/atendimentos/<id>/painel/<aba>` sem cache; nada de intervalo)
+  - `useAbaPainel<T>(atendimentoId: string | null, aba: AbaDados, versao: number, ativo: boolean): { dado: T | null; erro: boolean; recarregar(): void }` (busca `/api/inbox/atendimentos/<id>/painel/<aba>` com `cache: "no-store"` só quando `ativo`; recarrega quando `versao` muda; nada de intervalo)
+  - `urlAbaPainel(atendimentoId: string, aba: AbaDados): string`
   - `AbaDetalhes(props: { dados: DetalhesPainel; capacidades: CapacidadesPainel; aoAbrirOportunidades(): void })`
   - `BlocoB2B(props: { bloco: BlocoB2BPainel; verEmpresa: boolean })`
 
-Conteúdo (`P:497-538`, `P:1127-1139`):
-- Cartão "Oportunidade atual" (botão raio 10, `--surface-muted`, borda, `IconBriefcase` verde): linha 1 "Oportunidade atual" (11,5 px, secundária); linha 2 `<produto ?? título> · <valor> · <ETAPA_LABEL>`; valor nulo sai "Sem valor". Não tem "/mês": `valorPrevisto` não é mensal no ERP (análise parte 3 §4).
-- B2B (`P:498-502`): `IconBuilding` + nome da empresa + "Ver empresa" (`/empresas/<id>`, só com `verEmpresa`); "Contatos nesta oportunidade"; cartão por participante com iniciais, nome, `<papel> · <cargo>`, "Na conversa" (borda `--brand-solid`) ou "Falar com" (link `hrefConversa`, só quando não nulo).
-- Seção de contato, linhas min-h 52 com ícone 18 px: WhatsApp (`IconPhone`), E-mail (`IconMail`), Cidade (`IconMapPin`; no B2B, "Segmento" com `empresa.segmentoMercado`), "Origem do contato" (`IconSpeakerphone`, `ORIGEM_CANAL_LABEL`).
-- Divisor; título 12/500 em `--brand-text`: "Perfil" (B2C) ou "Empresa" (B2B). B2C: campos personalizados (`IconSchool`), ✦ "Preenchido pela IA" quando `ia`. Sem CPF, sem Idade, sem Preferências (D13 e o ERP não tem "preferências"). B2B: Empresa, Cargo, CNPJ (`empresa.documento`), Segmento, Tamanho (`porte`), "Site / LinkedIn" (`site ?? linkedin`), "Decisor?" ("Sim"/"Não"/"—"), e depois os campos personalizados.
-- Valor nulo sai "—". Link "Abrir ficha completa" (`/contatos?c=<pessoaId>`) só com `verContato` (D14).
-- `tipo: "setor"`: só `<PainelSetor painel={…} />`.
-- Sem pessoa no comercial: "Sem oportunidade visível para você." (texto atual de `PainelSetor.tsx:21`).
+Conteúdo no comercial (`P:497-538`, `P:1127-1139`). As ações que a E1 deixou na aba (PainelAria até a E3, AcoesContato, OptOutContato, PainelTriagem) continuam embaixo: nada some (análise parte 3 §1, item 7). Fora do comercial, a aba é a da E1, sem mudança.
+- **Cartão "Oportunidade atual":** botão de raio 10, `bg-surface-muted`, borda, `IconBriefcase` em `text-brand-700`. Linha 1: "Oportunidade atual" (11,5 px, `text-gray-600`). Linha 2: `<produto ?? título> · <valor> · <ETAPA_LABEL>`; valor nulo sai "Sem valor". Não tem "/mês", porque `valorPrevisto` não é mensal no ERP (análise parte 3 §4).
+- **Bloco B2B** (`P:498-502`): `IconBuilding` com o nome da empresa e "Ver empresa" (`/empresas/<id>`, só com `verEmpresa`); depois "Contatos nesta oportunidade" e um cartão por participante, com iniciais, nome e `<papel> · <cargo>`. Quem fala na conversa tem a borda `border-brand-solid` e "Na conversa"; os outros têm "Falar com" (link `hrefConversa`, só quando não nulo).
+- **Contato** (`LinhaCampo`):
+  - WhatsApp (`IconPhone`, valor `font-mono`);
+  - E-mail (`IconMail`);
+  - Cidade (`IconMapPin`); no B2B, "Segmento", com `empresa.segmentoMercado`;
+  - "Origem do contato" (`IconSpeakerphone`, `ORIGEM_CANAL_LABEL`).
+- **Perfil ou Empresa:** divisória, depois o título 12/500 em `text-brand-700`: "Perfil" (B2C) ou "Empresa" (B2B).
+  - B2C: os campos personalizados (`IconSchool`, `ia` vira o ✦ "Preenchido pela IA" do `LinhaCampo`). Sem CPF e sem Idade (D13), e sem Preferências (o ERP não tem esse dado).
+  - B2B: Empresa, Cargo, CNPJ (`empresa.documento`), Segmento, Tamanho (`porte`), "Site / LinkedIn" (`site ?? linkedin`) e "Decisor?" ("Sim", "Não" ou "—"), seguidos dos campos personalizados.
+- Valor nulo sai "—". O link "Abrir ficha completa" (`/contatos?c=<pessoaId>`) aparece só com `verContato` (D14).
+- **Sem pessoa** (`pessoa: null`): mostra só o cartão da oportunidade e "Sem dados de contato para esta oportunidade.". Sem oportunidade também: "Sem oportunidade visível para você." (texto atual de `PainelSetor.tsx:21`).
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-// abas-painel.test.ts
-it("comercial tem três abas e o contador só aparece com alterações", () => {
-  expect(abasDoPainel("COMERCIAL", 0).map((a) => a.id)).toEqual(["detalhes", "oportunidades", "atividade"]);
-  expect(abasDoPainel("COMERCIAL", 2).find((a) => a.id === "atividade")).toMatchObject({ contador: 2 });
-  expect(abasDoPainel("COMERCIAL", 0).find((a) => a.id === "atividade")?.contador).toBeUndefined();
-});
-it("fora do comercial, sem Oportunidades (D13)", () => expect(abasDoPainel("PEDAGOGICO", 0).map((a) => a.id)).toEqual(["detalhes", "atividade"]));
-```
-
-```ts
 // AbaDetalhes.test.ts
-const cap = { ...semNada, verContato: true, verEmpresa: false } as CapacidadesPainel;
+const cap = { ...nenhuma, verContato: true, verEmpresa: false } as CapacidadesPainel;
 it("B2C: oportunidade atual, contato e perfil com ✦ no campo da Aria", () => {
   const t = h(b2c);
   expect(t).toContain("Oportunidade atual");
@@ -524,7 +529,10 @@ it("B2C: oportunidade atual, contato e perfil com ✦ no campo da Aria", () => {
   expect(t).toMatch(/Objetivo[\s\S]*aria-label="Preenchido pela IA"/);
 });
 it("sem CPF nem idade (D13 padrão)", () => { const t = h(b2c); expect(t).not.toContain("CPF"); expect(t).not.toContain("Idade"); });
-it("campo vazio sai “—”; valor nulo sai “Sem valor”", () => { const t = h({ ...b2c, oportunidade: { ...b2c.oportunidade!, valor: null }, pessoa: { ...b2c.pessoa!, cidade: null } }); expect(t).toContain("Sem valor"); expect(t).toMatch(/>—<\/[^>]+>[\s\S]*Cidade/); });
+it("valor nulo sai “Sem valor”; campo nulo sai “—”", () => {
+  const t = h({ ...b2c, oportunidade: { ...b2c.oportunidade!, valor: null }, pessoa: { ...b2c.pessoa!, cidade: null } });
+  expect(t).toContain("Sem valor"); expect(t).toMatch(/>—<[\s\S]*Cidade/);
+});
 it("B2B: empresa, CNPJ e contatos; “Na conversa” em quem fala; “Ver empresa” só com permissão", () => {
   const t = h(b2b);
   expect(t).toContain("Contatos nesta oportunidade"); expect(t).toContain("12.345.678/0001-90"); expect(t).toContain("Na conversa");
@@ -535,10 +543,12 @@ it("“Abrir ficha completa” vai para /contatos?c= só para quem vê contatos"
   expect(h(b2c)).toContain('href="/contatos?c=p1"');
   expect(h(b2c, { ...cap, verContato: false })).not.toContain("/contatos?c=");
 });
-it("fora do comercial mostra só o painel do setor", () => {
-  const t = h({ tipo: "setor", setor: { setor: "PEDAGOGICO", turma: "T1", frequenciaPct: 80 } });
-  expect(t).toContain("Frequência"); expect(t).not.toContain("E-mail"); expect(t).not.toMatch(/\+\d{6,}/);
+it("sem_pessoa_sem_edicao", () => {
+  const t = h({ ...b2c, pessoa: null, campos: [] });
+  expect(t).toContain("Sem dados de contato para esta oportunidade."); expect(t).not.toContain("Abrir ficha completa");
 });
+// useAbaPainel.test.ts
+it("url da aba", () => expect(urlAbaPainel("a 1", "detalhes")).toBe("/api/inbox/atendimentos/a%201/painel/detalhes"));
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -548,7 +558,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-`AbaDetalhes` é componente de apresentação puro (sem efeito). O `InboxNovo` usa `useAbaPainel(selecionado, "detalhes", versaoPainel)` só quando `abaPainel === "detalhes"`; troca de conversa volta `abaPainel` a `"detalhes"`; aba que sumiu de `abasDoPainel` também. O cartão chama `aoAbrirOportunidades` → `setAbaPainel("oportunidades")`. Carregando: o esqueleto da E1 para o corpo do painel; erro: "Não foi possível carregar os detalhes." com "Tentar de novo" (`recarregar`). Ações de cadastro e cobrança que hoje ficam no painel (`AcoesContato`, `OptOutContato`, `PainelAria`) continuam abaixo do conteúdo da aba Detalhes até a E3 mover o `PainelAria` (análise parte 3 §1 item 7: nada some).
+`AbaDetalhes` só apresenta, sem efeito. O `InboxNovo` chama `useAbaPainel(selecionado, "detalhes", versaoPainel, aba === "detalhes" && atual?.finalidade === "COMERCIAL")`. O cartão chama `aoAbrirOportunidades`, que vira `setAba("oportunidades")` (efeito só depois da Task 7; até lá, o cartão leva a `/funil?o=<id>`). Carregando: o `EsqueletoPainel` da E1. Erro: "Não foi possível carregar os detalhes." com "Tentar de novo" (`recarregar`), o texto fixo da E1. O lápis (`aoEditar`) chega na Task 6.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -556,12 +566,12 @@ Mesmo comando, mais `node_modules/.bin/vitest run "src/app/(app)/inbox/"`. Expec
 
 - [ ] **Step 5: Aceite visual**
 
-Cenários no `demo-inbox.ts`: "Mariana Costa" (B2C, campo "Objetivo" preenchido pela Aria) e "Grupo Ventura Logística" (B2B com dois participantes). Estados `painel-detalhes` e `painel-detalhes-b2b`; referência `telas/prototipo-estado-painel-detalhes.png` e a renderização do protótipo para `c2`. Diferenças justificadas: sem CPF, Idade e Preferências (D13); sem "/mês".
+Estados `painel-detalhes` (Mariana; na demo, o campo "Objetivo" passa a ter `CampoPersonalizadoAlterado` sem autor) e o novo `painel-detalhes-b2b` (Grupo Ventura, com dois participantes na demo). Referências: `telas/prototipo-estado-painel-detalhes.png` e o protótipo renderizado em `c2`. Diferenças justificadas: sem CPF, Idade e Preferências (D13) e sem "/mês".
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(app)/inbox/abas/AbaDetalhes.tsx" "src/app/(app)/inbox/abas/AbaDetalhes.test.ts" "src/app/(app)/inbox/abas/BlocoB2B.tsx" "src/app/(app)/inbox/abas/abas-painel.ts" "src/app/(app)/inbox/abas/abas-painel.test.ts" "src/app/(app)/inbox/abas/useAbaPainel.ts" "src/app/(app)/inbox/InboxNovo.tsx" "src/app/(app)/inbox/PainelSetor.tsx" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
+git add "src/app/(app)/inbox/abas/AbaDetalhes.tsx" "src/app/(app)/inbox/abas/AbaDetalhes.test.ts" "src/app/(app)/inbox/abas/BlocoB2B.tsx" "src/app/(app)/inbox/abas/useAbaPainel.ts" "src/app/(app)/inbox/abas/useAbaPainel.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): aba Detalhes com bloco B2B (E2.5, D13)"
 ```
 
@@ -570,38 +580,44 @@ git commit -m "feat(inbox): aba Detalhes com bloco B2B (E2.5, D13)"
 
 **Files:**
 - Create: `src/app/(app)/inbox/abas/GavetaContato.tsx`
-- Modify: `src/server/inbox/acoes-painel.ts` (`editarContatoNoInbox`); `src/app/(app)/inbox/InboxNovo.tsx` (`aoEditar` do `PainelContato` abre a gaveta, só com `capacidades.editarContato`)
+- Modify: `src/server/inbox/acoes-painel.ts` (`editarContatoNoInbox`); `src/app/(app)/inbox/InboxNovo.tsx` (`aoEditar` do `PainelContato` abre a gaveta, só com `capacidades.editarContato` e `cabecalho.pessoaId`)
 - Test: `src/app/(app)/inbox/abas/GavetaContato.test.ts`, `src/server/inbox/acoes-painel-contato.int.test.ts`
 
 **Interfaces:**
-- Consumes: `DetalhesPainel` (Task 3); `editarPessoa` (`crm/contatos.ts:430-470`), `definirValorCampo` (`crm/campos.ts:147-215`), `validarValorCampo` (`crm/campos.ts`); `Drawer` (`components/Drawer.tsx:14`).
+- Consumes: `DetalhesPainel` (Task 3); `editarPessoa`, `EditarPessoaInput` (`crm/contatos.ts:382-470`); `definirValorCampo`, `validarValorCampo` (`crm/campos.ts:30,147`); `Drawer` (`components/Drawer.tsx:14`).
 - Produces:
   - `type EditarContatoInbox = { pessoa?: EditarPessoaInput; campos?: { campoId: string; valor: unknown }[] }`
   - `editarContatoNoInbox(atendimentoId: string, input: EditarContatoInbox): Promise<Resultado>`
-  - `diffContato(lido: FormContato, editado: FormContato): EditarContatoInbox` (só o que mudou; texto vazio vira `null`)
-  - `GavetaContato(props: { atendimentoId: string; dados: Extract<DetalhesPainel, { tipo: "comercial" }>; aoFechar(): void; aoSalvo(): void })`
+  - `type FormContato = { nome: string; email: string; cidade: string; cargo: string; linkedin: string; origemCanal: OrigemCanal | ""; campos: Record<string, ValorCampo> }`
+  - `formDoContato(d: DetalhesPainel): FormContato` e `diffContato(lido: FormContato, editado: FormContato): EditarContatoInbox` (só o que mudou; texto vazio vira `null`; `{}` sem mudança)
+  - `GavetaContato(props: { atendimentoId: string; dados: DetalhesPainel; aoFechar(): void; aoSalvo(): void })`
 
-Regras: `Drawer` com `title="Editar contato"`, `largura="w-full max-w-none min-[700px]:w-[348px]"` (cobre a coluna do painel, como a edição no lugar do protótipo, `P:1141`). Campos: Nome, E-mail, Cidade, Cargo, LinkedIn, "Origem do contato" (select de `ORIGEM_CANAL_LABEL` com "Sem origem"), e os campos personalizados por tipo (`TEXTO` input, `NUMERO` input numérico, `DATA` date, `SELECAO` select de `opcoes`, `BOOLEANO` checkbox). Empresa fica só leitura com "Trocar a empresa na ficha completa" (`/contatos?c=`). Não há alternância B2C/B2B: o tipo vem de `Oportunidade.b2b` (análise parte 3 §5, Pessoa). Rodapé: "Cancelar" e "Salvar"; "Salvar" desabilitado sem mudança.
+A gaveta é um `Drawer` com `title="Editar contato"` e `largura="w-full max-w-none min-[700px]:w-[348px]"`: cobre a coluna do painel, como a edição no lugar do protótipo (`P:1141`).
+- **Campos:** Nome, E-mail, Cidade, Cargo, LinkedIn e "Origem do contato" (select de `ORIGEM_CANAL_LABEL` com "Sem origem").
+- **Campos personalizados, por tipo:** `TEXTO` input, `NUMERO` input numérico, `DATA` date, `SELECAO` select de `opcoes`, `BOOLEANO` checkbox.
+- **Empresa:** só leitura, com "Trocar a empresa na ficha completa" (`/contatos?c=`).
+- **Sem alternância B2C/B2B:** o tipo vem de `Oportunidade.b2b` (análise parte 3 §5, Pessoa).
+- **Rodapé:** "Cancelar" e "Salvar"; "Salvar" fica desabilitado sem mudança.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // GavetaContato.test.ts
 it("diffContato manda só o que mudou e vazio como null", () => {
-  expect(diffContato(lido, { ...lido, cidade: "Campinas", email: "" , campos: { c1: "Avançado", c2: lido.campos.c2 } }))
+  expect(diffContato(lido, { ...lido, cidade: "Campinas", email: "", campos: { ...lido.campos, c1: "Avançado" } }))
     .toEqual({ pessoa: { cidade: "Campinas", email: null }, campos: [{ campoId: "c1", valor: "Avançado" }] });
   expect(diffContato(lido, lido)).toEqual({});
 });
 it("a gaveta mostra os campos, empresa só leitura e a ficha completa", () => {
   const t = h();
-  for (const r of ["Nome", "E-mail", "Cidade", "Cargo", "LinkedIn", "Origem do contato", "Objetivo"]) expect(t).toContain(r);
+  for (const r of ["Editar contato", "Nome", "E-mail", "Cidade", "Cargo", "LinkedIn", "Origem do contato", "Objetivo"]) expect(t).toContain(r);
   expect(t).toContain("Trocar a empresa na ficha completa"); expect(t).not.toContain("B2C");
 });
 ```
 
 ```ts
 // acoes-painel-contato.int.test.ts
-it("salva pessoa e campo numa chamada e avisa; repetir não grava Evento", async () => {
+it("salva pessoa e campo numa chamada; repetir não grava Evento", async () => {
   comoUsuario(dono);
   const input = { pessoa: { cidade: "Campinas" }, campos: [{ campoId: nivel.id, valor: "Avançado" }] };
   expect(await editarContatoNoInbox(a.id, input)).toEqual({ ok: true });
@@ -610,7 +626,7 @@ it("salva pessoa e campo numa chamada e avisa; repetir não grava Evento", async
 });
 it("valor inválido num campo recusa antes de gravar qualquer coisa", async () => {
   comoUsuario(dono);
-  const r = await editarContatoNoInbox(a.id, { pessoa: { cidade: "Campinas" }, campos: [{ campoId: idade.id /* NUMERO */, valor: "abc" }] });
+  const r = await editarContatoNoInbox(a.id, { pessoa: { cidade: "Campinas" }, campos: [{ campoId: numerico.id, valor: "abc" }] });
   expect(r.ok).toBe(false);
   expect((await prisma.pessoa.findUniqueOrThrow({ where: { id: p.id } })).cidade).not.toBe("Campinas");
 });
@@ -627,7 +643,13 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-`editarContatoNoInbox`: resolve `pessoaDoAtendimento`; carrega os `CampoPersonalizado` de `input.campos` e valida todos com `validarValorCampo` antes de qualquer escrita (o primeiro erro volta como `ErroRegra` com a mensagem do validador); só então `editarPessoa(pessoaId, input.pessoa)` (se houver) e `definirValorCampo` por campo, parando no primeiro `ok: false`. Sucesso → `avisarAtendimento`. Cliente: `useAcaoCliente({ idempotente: true })`; sucesso fecha a gaveta e chama `aoSalvo` (= `aoMudar`).
+`editarContatoNoInbox` faz, nesta ordem:
+1. resolve `pessoaDoAtendimento`;
+2. carrega os `CampoPersonalizado` de `input.campos` e valida todos com `validarValorCampo` antes de qualquer escrita (o primeiro erro volta como `ErroRegra` com a mensagem do validador);
+3. chama `editarPessoa(pessoaId, input.pessoa)`, quando houver, e `definirValorCampo` para cada campo, parando no primeiro `ok: false`;
+4. no sucesso, chama `avisarAtendimento`.
+
+No cliente, `useAcaoCliente({ idempotente: true })`; o sucesso fecha a gaveta e chama `aoSalvo` (= `aoMudar`).
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -635,12 +657,12 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estado `painel-editar-contato` (gaveta aberta sobre "Mariana Costa"); referência `telas/prototipo-estado-painel-editar-contato.png`. Diferença justificada: gaveta em vez de edição no lugar (D14) e sem alternância B2C/B2B.
+Estado novo `painel-editar-contato` (gaveta aberta sobre Mariana), com a referência `telas/prototipo-estado-painel-editar-contato.png`. Diferenças justificadas: gaveta em vez de edição no lugar (D14) e sem alternância B2C/B2B.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(app)/inbox/abas/GavetaContato.tsx" "src/app/(app)/inbox/abas/GavetaContato.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-contato.int.test.ts scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
+git add "src/app/(app)/inbox/abas/GavetaContato.tsx" "src/app/(app)/inbox/abas/GavetaContato.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-contato.int.test.ts scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): gaveta de edição do contato (E2.6, D14)"
 ```
 
@@ -649,30 +671,30 @@ git commit -m "feat(inbox): gaveta de edição do contato (E2.6, D14)"
 
 **Files:**
 - Create: `src/server/inbox/painel-oportunidades.ts`, `src/app/(app)/inbox/abas/etapas-painel.ts`, `src/app/(app)/inbox/abas/BarraEtapas.tsx`, `src/app/(app)/inbox/abas/AbaOportunidades.tsx`
-- Modify: `src/server/inbox/painel-abas.ts` (caso `"oportunidades"`); `src/server/inbox/acoes-painel.ts` (`moverEtapaNoInbox`); `src/app/(app)/inbox/InboxNovo.tsx` (renderiza a aba)
-- Test: `src/app/(app)/inbox/abas/etapas-painel.test.ts`, `src/app/(app)/inbox/abas/AbaOportunidades.test.ts`, `src/server/inbox/painel-oportunidades.int.test.ts`
+- Modify: `src/server/inbox/painel-abas.ts` (caso `"oportunidades"`); `src/server/inbox/acoes-painel.ts` (`moverEtapaNoInbox`); `src/app/(app)/inbox/PainelContato.tsx` (`ABAS_ENTREGUES` ganha `"oportunidades"`, só no `COMERCIAL`); `src/app/(app)/inbox/InboxNovo.tsx` (renderiza a aba)
+- Test: `src/app/(app)/inbox/abas/etapas-painel.test.ts`, `src/app/(app)/inbox/abas/AbaOportunidades.test.ts`, `src/app/(app)/inbox/PainelContato.test.ts` (o caso "regra da E1: só Detalhes" vira a regra da E2), `src/server/inbox/painel-oportunidades.int.test.ts`
 
 **Interfaces:**
 - Consumes: `destinoDoArraste`, `COLUNAS_FUNIL`, `DestinoArraste` (`crm/etapas.ts:6-48`); `moverEtapaTx` (`crm/mover-etapa.ts:18`); `podeVerLeadNaThread`; `capacidadesPainel`.
 - Produces:
   - `type OportunidadeAtualPainel = { id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null; etapa: EtapaLead; temperatura: Temperatura; responsavel: { id: string; nome: string } | null; dataExperimental: string | null; experimentalConfirmada: boolean; professorExperimental: string | null; motivoPerda: MotivoPerda | null }`
   - `type OutraOportunidadePainel = { id: string; titulo: string; etapa: EtapaLead; valor: string | null; moeda: string | null }`
-  - `type OportunidadesPainel = { atual: OportunidadeAtualPainel | null; outras: OutraOportunidadePainel[]; pessoaId: string | null }` (a Task 10 acrescenta `tarefas`)
+  - `type OportunidadesPainel = { atual: OportunidadeAtualPainel | null; outras: OutraOportunidadePainel[]; pessoaId: string | null }` (a Task 10 acrescenta `tarefas` e `fusoEscola`)
   - `carregarOportunidadesPainel(u: UsuarioSessao, atendimentoId: string): Promise<OportunidadesPainel | null>`
   - `moverEtapaNoInbox(atendimentoId: string, etapa: EtapaLead): Promise<Resultado>`
-  - `ETAPAS_BARRA: readonly EtapaLead[] = [NOVO, EM_ATENDIMENTO, QUALIFICADO, EXPERIMENTAL_AGENDADA, EXPERIMENTAL_REALIZADA, PROPOSTA, AGUARDANDO_MATRICULA, MATRICULADO]`
-  - `segmentosEtapa(atual: EtapaLead): { etapa: EtapaLead; estado: "feita" | "atual" | "futura"; tom: "marca" | "perigo" | "neutro" }[]` (`NO_SHOW` marca `EXPERIMENTAL_REALIZADA` como atual com tom `perigo`; `PERDIDO` deixa todos `neutro` e `futura`)
-  - `opcoesEtapa(atual: EtapaLead): { etapa: EtapaLead; rotulo: string; destino: DestinoArraste }[]` (as 10 de `COLUNAS_FUNIL`, rótulo de `ETAPA_LABEL`)
-  - `AbaOportunidades(props: { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; aoMudar(): void })` (as Tasks 8–10 acrescentam props)
+  - `ETAPAS_BARRA: readonly EtapaLead[] = ["NOVO", "EM_ATENDIMENTO", "QUALIFICADO", "EXPERIMENTAL_AGENDADA", "EXPERIMENTAL_REALIZADA", "PROPOSTA", "AGUARDANDO_MATRICULA", "MATRICULADO"]`
+  - `segmentosEtapa(atual: EtapaLead): { etapa: EtapaLead; estado: "feita" | "atual" | "futura"; tom: "marca" | "perigo" | "neutro" }[]`: com `NO_SHOW`, o segmento `EXPERIMENTAL_REALIZADA` fica `atual` com tom `perigo`; com `PERDIDO`, todos ficam `neutro` e `futura`
+  - `opcoesEtapa(atual: EtapaLead): { etapa: EtapaLead; rotulo: string; destino: DestinoArraste }[]`: as 10 de `COLUNAS_FUNIL`, com o rótulo de `ETAPA_LABEL`
+  - `AbaOportunidades(props: { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; aoMudar(): void })` (as Tasks 8–12 acrescentam props)
 
-Barra (`P:545-552`): 8 segmentos de 4 px, `gap` 3 px, raio 2; `feita`/`atual` em `--brand-solid`, `futura` em `--neutral-muted`, `perigo` em `--danger-solid`; `title` com `ETAPA_LABEL`. Abaixo, select de 34 px com as 10 etapas. Escolha (segmento ou select) por `destino.tipo`:
-- `mover` → `moverEtapaNoInbox`;
-- `recusar` → opção `disabled`, com o motivo em `title` e, no clique do segmento, o motivo em `FeedbackAcao`;
-- `acao` `marcarPerdido` → abre o `ModalPerda` (Task 8);
-- `acao` `agendarExperimental`, `enviarProposta` ou `prepararContratacao` → mensagem "Para <ação>, abra a oportunidade no funil." com link "Abrir no funil" (`/funil?o=<id>`) (D14: a ficha completa navega). Rótulos das ações: "agendar a experimental", "enviar a proposta", "preparar a contratação".
-- Sem `capacidades.moverEtapa`, barra e select só leitura.
+**Barra** (`P:545-552`): 8 segmentos de 4 px, com `gap` de 3 px e raio 2. `feita` e `atual` usam `bg-brand-solid`; `futura`, `bg-neutral-muted`; `perigo`, `bg-danger-solid`. O `title` traz o `ETAPA_LABEL`. Abaixo, um select de 34 px com as 10 etapas. A escolha, pelo segmento ou pelo select, depende de `destino.tipo`:
+- `mover` → `moverEtapaNoInbox`.
+- `recusar` → a opção fica `disabled`, com o motivo no `title`; no clique do segmento, o motivo aparece no `FeedbackAcao`.
+- `acao` com `marcarPerdido` → abre o `ModalPerda` (Task 8).
+- `acao` com `agendarExperimental`, `enviarProposta` ou `prepararContratacao` → mostra "Para <ação>, abra a oportunidade no funil." e o link "Abrir no funil" (`/funil?o=<id>`), porque a ficha completa navega (D14). As ações se escrevem "agendar a experimental", "enviar a proposta" e "preparar a contratação".
+- Sem `capacidades.moverEtapa`, barra e select ficam só leitura.
 
-Cabeçalho da aba (`P:543-544`): "Oportunidade atual" (12/500, `--brand-text`) e "Funil Matrículas" à direita (`--text-terciary`); título 15/600 (`produto ?? titulo`); valor 17/600 com `formatarMoedaOuIndefinida`. Linhas 13 px, rótulo de 104 px (`P:1140`): Responsável (`responsavel?.nome ?? "Sem responsável"`), Temperatura (`TEMPERATURA_LABEL`, sem "score"), Produto (`produto ?? "—"`). Probabilidade fica fora (Task 23, D13).
+**Cabeçalho da aba** (`P:543-544`): "Oportunidade atual" (12/500, `text-brand-700`), com "Funil Matrículas" à direita (`text-gray-500`); título em 15/600 (`produto ?? titulo`); valor em 17/600 com `formatarMoedaOuIndefinida`. Linhas de 13 px com rótulo de 104 px (`P:1140`): Responsável (`responsavel?.nome ?? "Sem responsável"`), Temperatura (`TEMPERATURA_LABEL`, sem o score, que é da E4/D12) e Produto (`produto ?? "—"`). A probabilidade fica de fora (Task 21, D13).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -696,11 +718,8 @@ it("segmentos: PROPOSTA pinta até ela; NO_SHOW é perigo na realizada; PERDIDO 
   expect(segmentosEtapa("NO_SHOW")[4]).toEqual({ etapa: "EXPERIMENTAL_REALIZADA", estado: "atual", tom: "perigo" });
   expect(segmentosEtapa("PERDIDO").every((s) => s.tom === "neutro" && s.estado === "futura")).toBe(true);
 });
-```
-
-```ts
 // AbaOportunidades.test.ts
-it("cabeçalho, valor, linhas e o select com opções recusadas desabilitadas", () => {
+it("cabeçalho, valor, linhas e opções recusadas desabilitadas", () => {
   const t = h();
   expect(t).toContain("Funil Matrículas"); expect(t).toMatch(/R\$\s650,00/);
   expect(t).toContain("Responsável"); expect(t).toContain("Temperatura"); expect(t).not.toContain("Probabilidade");
@@ -708,6 +727,11 @@ it("cabeçalho, valor, linhas e o select com opções recusadas desabilitadas", 
 });
 it("sem permissão de mover, select desabilitado", () => expect(h({ capacidades: { ...cap, moverEtapa: false } })).toMatch(/<select[^>]*disabled/));
 it("sem oportunidade visível avisa", () => expect(h({ dados: { atual: null, outras: [], pessoaId: null } })).toContain("Sem oportunidade visível para você."));
+// PainelContato.test.ts (o caso da E1 passa a ser)
+it("abas entregues até a E2.7", () => {
+  expect(abasDoPainel("COMERCIAL").map((a) => a.id)).toEqual(["detalhes", "oportunidades"]);
+  expect(abasDoPainel("PEDAGOGICO").map((a) => a.id)).toEqual(["detalhes"]);
+});
 ```
 
 ```ts
@@ -721,9 +745,9 @@ it("linha_alheia_sem_oportunidade", async () => {
 it("outras: só as da pessoa no escopo, sem a atual, mais recentes primeiro", async () => {
   expect((await carregarOportunidadesPainel(sess(dono), a.id))!.outras.map((o) => o.id)).toEqual([opGanha.id]);
 });
-it("moverEtapaNoInbox: um passo grava EtapaAlterada e avisa; a mesma etapa não grava; pular recusa", async () => {
-  comoUsuario(dono);
-  expect(await moverEtapaNoInbox(a.id, "EM_ATENDIMENTO")).toEqual({ ok: true });   // op em NOVO
+it("moverEtapaNoInbox: um passo grava EtapaAlterada; a mesma etapa não grava; pular recusa", async () => {
+  comoUsuario(dono); // op em NOVO
+  expect(await moverEtapaNoInbox(a.id, "EM_ATENDIMENTO")).toEqual({ ok: true });
   expect(await moverEtapaNoInbox(a.id, "EM_ATENDIMENTO")).toEqual({ ok: true });
   expect(await prisma.evento.count({ where: { tipo: "EtapaAlterada", agregadoId: op.id } })).toBe(1);
   expect(await moverEtapaNoInbox(a.id, "PROPOSTA")).toEqual({ ok: false, erro: "Use “Enviar proposta”." });
@@ -736,12 +760,16 @@ it("conversa sem oportunidade recusa", async () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/abas/etapas-painel.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/painel-oportunidades.int.test.ts`
+Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/abas/" "src/app/(app)/inbox/PainelContato.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/painel-oportunidades.int.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-Consulta: lead do atendimento (`podeVerLeadNaThread`) com `pais.moedaLocal`, `vendedor`, `professorExperimental`; `outras` = oportunidades com o mesmo `pessoaId`, exceto a atual, dentro de `escopoComercialAtual(u)`, `orderBy: { criadoEm: "desc" }`, `take: 10`. `moverEtapaNoInbox`: resolve `atendimento.leadId` (nulo → `ErroRegra("Esta conversa não tem oportunidade.")`); numa transação, `moverEtapaTx(tx, u, leadId, etapa)` e `avisarAtendimento(tx, atendimentoId)` (NOTIFY no commit); chama `revalidatePath("/funil")`. Cliente: `useAcaoCliente({ idempotente: true })`.
+A consulta lê o lead do atendimento (só se `podeVerLeadNaThread` deixar), com `pais.moedaLocal`, `vendedor` e `professorExperimental`. `outras` são as oportunidades do mesmo `pessoaId`, exceto a atual, dentro de `escopoComercialAtual(u)`, com `orderBy: { criadoEm: "desc" }` e `take: 10`.
+
+`moverEtapaNoInbox` resolve `atendimento.leadId`; se for nulo, `ErroRegra("Esta conversa não tem oportunidade.")`. Numa transação, chama `moverEtapaTx(tx, u, leadId, etapa)` e `avisarAtendimento(tx, atendimentoId)` (o NOTIFY sai no commit); depois chama `revalidatePath("/funil")`.
+
+No cliente, `useAcaoCliente({ idempotente: true })`. O `InboxNovo` busca a aba com `useAbaPainel(selecionado, "oportunidades", versaoPainel, aba === "oportunidades")`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -749,12 +777,12 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estado `painel-oportunidades` (Mariana em `PROPOSTA`); referência `telas/` (renderização do protótipo, aba Oportunidades de `c1`). Diferenças justificadas: 8 segmentos em vez de 6 e o select com as 10 etapas (D8); sem probabilidade (D13).
+Estado novo `painel-oportunidades` (Mariana em `PROPOSTA`), com o protótipo renderizado na aba Oportunidades de `c1`. Diferenças justificadas: 8 segmentos em vez de 6, select com as 10 etapas (D8) e sem probabilidade (D13).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/server/inbox/painel-oportunidades.ts src/server/inbox/painel-oportunidades.int.test.ts src/server/inbox/painel-abas.ts src/server/inbox/acoes-painel.ts "src/app/(app)/inbox/abas/etapas-painel.ts" "src/app/(app)/inbox/abas/etapas-painel.test.ts" "src/app/(app)/inbox/abas/BarraEtapas.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
+git add src/server/inbox/painel-oportunidades.ts src/server/inbox/painel-oportunidades.int.test.ts src/server/inbox/painel-abas.ts src/server/inbox/acoes-painel.ts "src/app/(app)/inbox/abas/etapas-painel.ts" "src/app/(app)/inbox/abas/etapas-painel.test.ts" "src/app/(app)/inbox/abas/BarraEtapas.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.test.ts" "src/app/(app)/inbox/PainelContato.tsx" "src/app/(app)/inbox/PainelContato.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): aba Oportunidades com barra de etapas do funil (E2.7, D8)"
 ```
 
@@ -763,11 +791,11 @@ git commit -m "feat(inbox): aba Oportunidades com barra de etapas do funil (E2.7
 
 **Files:**
 - Create: `src/app/(app)/inbox/abas/CartaoExperimental.tsx`
-- Modify: `src/app/(app)/funil/ModalPerda.tsx:27-55` (prop `acao`); `src/server/inbox/acoes-painel.ts` (`marcarPerdidoNoInbox`); `src/app/(app)/inbox/abas/AbaOportunidades.tsx` (cartão, seção de ações, modal)
+- Modify: `src/app/(app)/funil/ModalPerda.tsx:27-55` (prop `acao`); `src/server/inbox/acoes-painel.ts` (`marcarPerdidoNoInbox`); `src/app/(app)/inbox/abas/AbaOportunidades.tsx` (cartão, seção de ações e modal)
 - Test: `src/app/(app)/inbox/abas/CartaoExperimental.test.ts`, `src/app/(app)/inbox/abas/AbaOportunidades.test.ts` (casos novos), `src/app/(app)/funil/ModalPerda.acao.test.ts`, `src/server/inbox/acoes-painel-perda.int.test.ts`
 
 **Interfaces:**
-- Consumes: `OportunidadeAtualPainel` (Task 7); `marcarPerdido`, `PerdaInput` (`comercial/acoes.ts:572`, `comercial/schema.ts:106-115`); `ModalPerda`; `assumirAtendimento` (`whatsapp/acoes-atendimento.ts`) e `podeExecutar(u, "assumir", ctx)`.
+- Consumes: `OportunidadeAtualPainel`, `opcoesEtapa` (Task 7); `marcarPerdido`, `PerdaInput` (`comercial/acoes.ts:572`, `comercial/schema.ts:106-115`); `ModalPerda`; `assumirAtendimento` (`whatsapp/acoes-atendimento.ts`) e `podeExecutar(u, "assumir", ctx)`.
 - Produces:
   - `marcarPerdidoNoInbox(atendimentoId: string, input: PerdaInput): Promise<Resultado>`
   - `statusExperimental(o: Pick<OportunidadeAtualPainel, "etapa" | "experimentalConfirmada">): "Agendada" | "Confirmada" | "Realizada" | "Não compareceu"`
@@ -775,8 +803,11 @@ git commit -m "feat(inbox): aba Oportunidades com barra de etapas do funil (E2.7
   - `AbaOportunidades` acrescenta `podeAssumir: boolean` e `aoAssumir(): void`
 
 Regras:
-- Cartão "Aula experimental" (`P:553`) só com `dataExperimental`: `IconCalendarCheck`, título, link "Editar" (`/funil?o=<id>`), linha `<data e hora> · <professor ?? "Sem professor">`, pílula de status (`statusExperimental`: `NO_SHOW` → "Não compareceu"; `EXPERIMENTAL_REALIZADA` → "Realizada"; `experimentalConfirmada` → "Confirmada"; senão "Agendada").
-- Seção de ações (`P:585-590`), botões de texto de 44 px com ícone 17 px: "Assumir conversa" (`--brand-text`, só com `podeAssumir`, chama `assumirAtendimento`; a semântica com pausa da Aria é da E3, D3) e "Marcar como perdido" (`--danger-text`, `IconThumbDown`, só quando `opcoesEtapa(etapa)` dá `acao` `marcarPerdido` e `capacidades.moverEtapa`). "Criar tarefa" e "Adicionar nota" entram na Task 13.
+- **Cartão "Aula experimental"** (`P:553`), só quando há `dataExperimental`: `IconCalendarCheck`, o título e o link "Editar" (`/funil?o=<id>`). Abaixo, `<data e hora> · <professor ?? "Sem professor">` e uma pílula com `statusExperimental`. A pílula diz "Não compareceu" em `NO_SHOW`, "Realizada" em `EXPERIMENTAL_REALIZADA`, "Confirmada" com `experimentalConfirmada` e "Agendada" nos demais casos.
+- **Seção de ações** (`P:585-590`): botões de texto de 44 px com ícone de 17 px.
+  - "Assumir conversa" (`text-brand-700`) aparece só com `podeAssumir` e chama o `assumirAtendimento` de hoje; a versão com pausa da Aria é da E3 (D3).
+  - "Marcar como perdido" (`text-danger-text`, `IconThumbDown`) aparece só quando `opcoesEtapa(etapa)` dá a ação `marcarPerdido` para `PERDIDO` e há `capacidades.moverEtapa`.
+  - "Criar tarefa" e "Adicionar nota" entram na Task 12.
 - "Marcar como perdido" e o destino `PERDIDO` da barra abrem o `ModalPerda` com `acao={(i) => marcarPerdidoNoInbox(atendimentoId, i)}` e `aoConcluir={aoMudar}`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -789,9 +820,6 @@ it("status pela etapa e pela confirmação", () => {
   expect(statusExperimental({ etapa: "EXPERIMENTAL_AGENDADA", experimentalConfirmada: true })).toBe("Confirmada");
 });
 it("cartão com professor e “Editar” no funil", () => { const t = h(); expect(t).toContain("Aula experimental"); expect(t).toContain("Helena Prado"); expect(t).toContain('href="/funil?o=o1"'); });
-```
-
-```ts
 // AbaOportunidades.test.ts (acrescentar)
 it("perdido_some_em_oportunidade_encerrada", () => {
   expect(h()).toContain("Marcar como perdido");
@@ -801,8 +829,9 @@ it("“Assumir conversa” só com podeAssumir", () => { expect(h({ podeAssumir:
 ```
 
 ```ts
-// ModalPerda.acao.test.ts — interação sem DOM como inbox/InboxNovo.interacao.test.ts:8-40
-it("com `acao`, confirmar chama a ação recebida e não chama router.refresh", async () => { /* escolhe PRECO, confirma */
+// ModalPerda.acao.test.ts — interação sem DOM, como inbox/InboxNovo.interacao.test.ts:8-40
+it("com `acao`, confirmar chama a ação recebida e não chama router.refresh", async () => {
+  // escolhe PRECO e confirma
   expect(acao).toHaveBeenCalledWith({ motivoPerda: "PRECO", observacao: undefined });
   expect(refresh).not.toHaveBeenCalled();
   expect(marcarPerdidoMock).not.toHaveBeenCalled();
@@ -811,7 +840,7 @@ it("com `acao`, confirmar chama a ação recebida e não chama router.refresh", 
 
 ```ts
 // acoes-painel-perda.int.test.ts
-it("marca perdido com motivo, avisa, e repetir não grava outro LeadPerdido", async () => {
+it("marca perdido com motivo e avisa; repetir não grava outro LeadPerdido", async () => {
   comoUsuario(dono);
   expect(await marcarPerdidoNoInbox(a.id, { motivoPerda: "PRECO" })).toEqual({ ok: true });
   expect(await marcarPerdidoNoInbox(a.id, { motivoPerda: "PRECO" })).toEqual({ ok: true });
@@ -830,7 +859,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-`marcarPerdidoNoInbox`: resolve `leadId` como na Task 7, chama `marcarPerdido(leadId, input)` e, com `ok`, `avisarAtendimento(prisma, atendimentoId)`. `ModalPerda`: com `acao`, `acao.executar(() => acao(input))` e, no `ok`, só `aoConcluir?.()` e `aoFechar()`.
+`marcarPerdidoNoInbox` resolve o `leadId` como na Task 7, chama `marcarPerdido(leadId, input)` e, com `ok`, `avisarAtendimento(prisma, atendimentoId)`. No `ModalPerda` com `acao`: `acao.executar(() => acao(input))` e, no `ok`, só `aoConcluir?.()` e `aoFechar()`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -838,12 +867,12 @@ Mesmos comandos, mais `node_modules/.bin/vitest run "src/app/(app)/funil/"`. Exp
 
 - [ ] **Step 5: Aceite visual**
 
-Estados `painel-oportunidades` (com experimental realizada) e `perda` (modal aberto pelo painel); referência: aba Oportunidades de `c1` no protótipo (o modal de perda não existe lá, `P:589` sem ação: comparar com o `ModalPerda` do funil).
+Estado `painel-oportunidades` com a experimental realizada, e o estado novo `perda` (o modal aberto pelo painel). Como `P:589` não tem ação no protótipo, o `perda` se compara ao `ModalPerda` do funil.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(app)/inbox/abas/CartaoExperimental.tsx" "src/app/(app)/inbox/abas/CartaoExperimental.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.test.ts" "src/app/(app)/funil/ModalPerda.tsx" "src/app/(app)/funil/ModalPerda.acao.test.ts" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-perda.int.test.ts docs/planejamento/quadro-entregas.md
+git add "src/app/(app)/inbox/abas/CartaoExperimental.tsx" "src/app/(app)/inbox/abas/CartaoExperimental.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.test.ts" "src/app/(app)/funil/ModalPerda.tsx" "src/app/(app)/funil/ModalPerda.acao.test.ts" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-perda.int.test.ts scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): perda, experimental e ações da oportunidade no painel (E2.8, D8)"
 ```
 
@@ -856,17 +885,26 @@ git commit -m "feat(inbox): perda, experimental e ações da oportunidade no pai
 - Test: `src/app/(app)/inbox/abas/OutrasOportunidades.test.ts`, `src/app/(app)/inbox/abas/ClienteVoltou.test.ts`, `src/server/inbox/cliente-voltou.int.test.ts`, `src/app/(app)/funil/page.test.ts` (caso novo)
 
 **Interfaces:**
-- Consumes: `OutraOportunidadePainel` (Task 7); `vincularContatoWhatsApp({ contatoId, alvo: { tipo: "lead", id }, atendimentoId })` (`whatsapp/acoes.ts:466-523`); `NovaOportunidade` com `preenchido={{ pessoaId, nome }}` (`funil/NovaOportunidade.tsx:41-47`, já usado por `contatos/FichaContato.tsx:459`).
+- Consumes: `OutraOportunidadePainel` (Task 7); `vincularContatoWhatsApp({ contatoId, alvo: { tipo: "lead", id }, atendimentoId })` (`whatsapp/acoes.ts:466-523`); `NovaOportunidade` com `preenchido={{ pessoaId, nome }}` (`funil/NovaOportunidade.tsx:41-47`; a ficha de contato já usa assim, `contatos/FichaContato.tsx:459`).
 - Produces:
   - `CabecalhoPainel.clienteVoltou: { oportunidadeId: string; titulo: string; situacao: "ganha" | "perdida"; contatoId: string; podeVincular: boolean } | null`
-  - `situacaoOutra(etapa: EtapaLead): string` → `MATRICULADO` "Ganha", `PERDIDO` "Perdida", demais `<ETAPA_LABEL> · em aberto`
+  - `situacaoOutra(etapa: EtapaLead): string`: "Ganha" em `MATRICULADO`, "Perdida" em `PERDIDO` e `<ETAPA_LABEL> · em aberto` nas demais
   - `hrefNovaOportunidade(pessoaId: string): string` → `/funil?nova=<pessoaId>`
+  - `OutrasOportunidades(props: { outras: OutraOportunidadePainel[]; pessoaId: string | null; podeCriar: boolean; verContato: boolean })`
   - `ClienteVoltou(props: { atendimentoId: string; nome: string; dado: NonNullable<CabecalhoPainel["clienteVoltou"]>; podeCriar: boolean; pessoaId: string; aoMudar(): void })`
 
 Regras:
-- **Cliente que voltou (D18, padrão "reaproveitar"):** só em `COMERCIAL`, atendimento sem `leadId`, e a pessoa do contato (`contato.pessoaId`, em `escopoPessoas`) com uma oportunidade `MATRICULADO` ou `PERDIDO` visível; vale a mais recente. Texto (`P:1124`): `<primeiro nome> já é cliente e voltou a escrever. A oportunidade <título> foi <ganha|perdida>.` Botões: "Vincular a <título até o primeiro “ · ”>" (primário, só com `podeVincular` = telefone da oportunidade igual ao do contato e oportunidade no escopo, a regra de `whatsapp/acoes.ts:496-501`) e "Criar nova oportunidade" (secundário, link `hrefNovaOportunidade`, só com `capacidades.moverEtapa`). A pergunta "é um novo interesse?" do protótipo fica fora até D18.
-- **Outras oportunidades** (`P:577-581`): título "Outras oportunidades deste contato" + "Ver no contato" (`/contatos?c=<pessoaId>`, só com `verContato`); linhas em `--surface-muted` com `IconBriefcase`, título, `situacaoOutra` e valor mono à direita; vazio: "Nenhuma outra. Rematrícula ou novo curso geram uma nova oportunidade."; botão tracejado "Nova oportunidade" (link `hrefNovaOportunidade`, só com `moverEtapa` e `pessoaId`).
-- **Funil `?nova=<pessoaId>`:** a página lê `nova`, busca a pessoa com `escopoPessoas(usuario)` e, achando, abre `NovaOportunidade` com `preenchido={{ pessoaId, nome }}`; fora do escopo, ignora o parâmetro (sem erro).
+- **Cliente que voltou** (D18, com o padrão "reaproveitar"). O cartão aparece só em `COMERCIAL`, com o atendimento sem `leadId`, quando a pessoa do contato (`contato.pessoaId`, em `escopoPessoas`) tem uma oportunidade visível em `MATRICULADO` ou `PERDIDO`; vale a mais recente.
+  - Texto (`P:1124`): `<primeiro nome> já é cliente e voltou a escrever. A oportunidade <título> foi <ganha|perdida>.`
+  - "Vincular a <título até o primeiro “ · ”>": botão primário, só com `podeVincular`. `podeVincular` é a regra de `whatsapp/acoes.ts:496-501`: o telefone da oportunidade igual ao do contato e a oportunidade no escopo.
+  - "Criar nova oportunidade": link secundário para `hrefNovaOportunidade`, só com `capacidades.moverEtapa`.
+  - A pergunta "é um novo interesse?" do protótipo fica de fora até D18.
+- **Outras oportunidades** (`P:577-581`):
+  - título "Outras oportunidades deste contato", com "Ver no contato" (`/contatos?c=<pessoaId>`, só com `verContato`);
+  - linhas em `bg-surface-muted` com `IconBriefcase`, título, `situacaoOutra` e o valor em mono à direita;
+  - vazio: "Nenhuma outra. Rematrícula ou novo curso geram uma nova oportunidade.";
+  - botão tracejado "Nova oportunidade" (link `hrefNovaOportunidade`), só com `podeCriar` e `pessoaId`.
+- **Funil `?nova=<pessoaId>`:** a página lê `nova` e busca a pessoa com `escopoPessoas(usuario)`. Se achar, abre `NovaOportunidade` com `preenchido={{ pessoaId, nome }}`; fora do escopo, ignora o parâmetro, sem erro.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -875,7 +913,7 @@ Regras:
 it("conversa sem lead de pessoa com oportunidade ganha mostra o cartão", async () => {
   expect((await carregarCabecalhoPainel(sess(dono), semLead.id))!.clienteVoltou).toEqual({ oportunidadeId: ganha.id, titulo: "Francês A1 · Semestral", situacao: "ganha", contatoId: ct.id, podeVincular: true });
 });
-it("conversa com lead, pessoa sem oportunidade encerrada ou fora do comercial: null", async () => {
+it("com lead, sem oportunidade encerrada ou fora do comercial: null", async () => {
   for (const id of [comLead.id, semHistorico.id, financeiro.id]) expect((await carregarCabecalhoPainel(sess(dono), id))?.clienteVoltou ?? null).toBeNull();
 });
 it("telefone diferente não deixa vincular", async () => {
@@ -888,20 +926,17 @@ it("telefone diferente não deixa vincular", async () => {
 it("texto do protótipo e os dois caminhos", () => {
   const t = h();
   expect(t).toContain("Fernanda já é cliente e voltou a escrever. A oportunidade Francês A1 · Semestral foi ganha.");
-  expect(t).toContain("Vincular a Francês A1"); expect(t).toContain('href="/funil?nova=p8"');
-  expect(t).not.toContain("novo interesse");
+  expect(t).toContain("Vincular a Francês A1"); expect(t).toContain('href="/funil?nova=p8"'); expect(t).not.toContain("novo interesse");
 });
 it("sem podeVincular não oferece o vínculo", () => expect(h({ dado: { ...dado, podeVincular: false } })).not.toContain("Vincular a"));
 // OutrasOportunidades.test.ts
-it("situação, valor e o vazio", () => {
+it("situação e vazio", () => {
   expect(situacaoOutra("MATRICULADO")).toBe("Ganha"); expect(situacaoOutra("QUALIFICADO")).toBe("Qualificado · em aberto");
   expect(h({ outras: [] })).toContain("Nenhuma outra. Rematrícula ou novo curso geram uma nova oportunidade.");
 });
-```
-
-```ts
+it("“Nova oportunidade” só com pessoa e permissão", () => { expect(h({ pessoaId: null })).not.toContain("Nova oportunidade"); expect(h({ podeCriar: false })).not.toContain("Nova oportunidade"); });
 // funil/page.test.ts (acrescentar, no molde dos casos existentes)
-it("?nova=<pessoa no escopo> abre a nova oportunidade preenchida; fora do escopo ignora", async () => { /* ... */ });
+it("?nova=<pessoa no escopo> abre a nova oportunidade preenchida; fora do escopo ignora", async () => { /* … */ });
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -911,7 +946,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-`ClienteVoltou` chama `vincularContatoWhatsApp` com `useAcaoCliente({ idempotente: false })` (a action não tem garantia de repetição) e, no `ok`, `aoMudar()`. Não precisa de `avisarAtendimento`: o `garantirAtendimento` da action (`whatsapp/acoes.ts:507`) já grava `leadId` no atendimento, e o UPDATE dispara o aviso. No `FunilCliente`, o estado `novo` nasce `true` quando a página manda `preenchidoNova`.
+`ClienteVoltou` chama `vincularContatoWhatsApp` com `useAcaoCliente({ idempotente: false })`, porque a action não garante repetição, e no `ok` chama `aoMudar()`. Não precisa de `avisarAtendimento`: o `garantirAtendimento` da action (`whatsapp/acoes.ts:507`) grava `leadId` no atendimento, e esse UPDATE dispara o aviso. No `FunilCliente`, o estado `novo` nasce `true` quando a página manda `preenchidoNova`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -919,12 +954,12 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estados `painel-cliente-voltou` (cenário "Fernanda Rocha", `c8`) e `painel-oportunidades` com uma oportunidade ganha antiga; referência `telas/prototipo-estado-painel-cliente-voltou.png`.
+Estado novo `painel-cliente-voltou` (id `fernanda`; na demo, a Fernanda ganha uma oportunidade `MATRICULADO` "Francês A1 · Semestral" e uma conversa sem lead), com a referência `telas/prototipo-estado-painel-cliente-voltou.png`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(app)/inbox/abas/OutrasOportunidades.tsx" "src/app/(app)/inbox/abas/OutrasOportunidades.test.ts" "src/app/(app)/inbox/abas/ClienteVoltou.tsx" "src/app/(app)/inbox/abas/ClienteVoltou.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" "src/app/(app)/inbox/InboxNovo.tsx" src/server/inbox/painel-detalhes.ts src/server/inbox/cliente-voltou.int.test.ts "src/app/(app)/funil/page.tsx" "src/app/(app)/funil/FunilCliente.tsx" "src/app/(app)/funil/page.test.ts" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
+git add "src/app/(app)/inbox/abas/OutrasOportunidades.tsx" "src/app/(app)/inbox/abas/OutrasOportunidades.test.ts" "src/app/(app)/inbox/abas/ClienteVoltou.tsx" "src/app/(app)/inbox/abas/ClienteVoltou.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" "src/app/(app)/inbox/InboxNovo.tsx" src/server/inbox/painel-detalhes.ts src/server/inbox/cliente-voltou.int.test.ts "src/app/(app)/funil/page.tsx" "src/app/(app)/funil/FunilCliente.tsx" "src/app/(app)/funil/page.test.ts" scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): outras oportunidades, nova oportunidade e cliente que volta (E2.9, D18)"
 ```
 
@@ -932,46 +967,59 @@ git commit -m "feat(inbox): outras oportunidades, nova oportunidade e cliente qu
 ### Task 10: Tarefas da oportunidade: lista e ações (D10)
 
 **Files:**
-- Create: `src/server/inbox/painel-tarefas.ts`, `src/app/(app)/inbox/abas/TarefasOportunidade.tsx`, `src/app/(app)/inbox/quando-tarefa.ts`
-- Modify: `src/server/inbox/painel-oportunidades.ts` (`tarefas`); `src/server/inbox/acoes-painel.ts` (`concluirTarefaNoInbox`, `reabrirTarefaNoInbox`, `reagendarTarefaNoInbox`, `cancelarTarefaNoInbox`); `src/app/(app)/inbox/abas/AbaOportunidades.tsx`
-- Test: `src/app/(app)/inbox/quando-tarefa.test.ts`, `src/app/(app)/inbox/abas/TarefasOportunidade.test.ts`, `src/server/inbox/acoes-painel-tarefas.int.test.ts`
+- Create: `src/server/inbox/painel-tarefas.ts`, `src/app/(app)/inbox/abas/TarefasOportunidade.tsx`, `src/lib/atalhos-horario.ts`
+- Modify: `src/server/inbox/painel-oportunidades.ts` (`tarefas`, `fusoEscola`); `src/server/inbox/acoes-painel.ts` (`concluirTarefaNoInbox`, `reabrirTarefaNoInbox`, `reagendarTarefaNoInbox`, `cancelarTarefaNoInbox`); `src/app/(app)/inbox/abas/AbaOportunidades.tsx`
+- Test: `src/lib/atalhos-horario.test.ts`, `src/app/(app)/inbox/abas/TarefasOportunidade.test.ts`, `src/server/inbox/acoes-painel-tarefas.int.test.ts`
 
 **Interfaces:**
-- Consumes: `escopoTarefas` (`crm/tarefas.ts:73`); `grupoDaTarefa` (`crm/tarefas-regras.ts:17`); `dataCivilInstitucional` (`operacao/fuso.ts:86`); `somarDiasDataCivil` (`tarefas-regras.ts:7`); as ações de `crm/tarefas.ts:276-367`.
+- Consumes: `escopoTarefas` (`crm/tarefas.ts:73`); `grupoDaTarefa` (`crm/tarefas-regras.ts:17`); `instanteDoCampoLocal` (`operacao/fuso-entrada.ts:60`); `carregarFusoInstitucionalTx` (`operacao/relogio.ts:4`); as ações de `crm/tarefas.ts:276-367`.
 - Produces:
   - `type TarefaPainel = { id: string; versao: number; titulo: string; descricao: string | null; tipo: TipoTarefa; status: StatusTarefa; prioridade: PrioridadeTarefa; dataCivil: string | null; hora: string | null; fusoOrigem: string; lembreteAntecedenciaMin: number | null; responsavel: { id: string; nome: string } | null; atrasada: boolean; ia: boolean; leadId: string | null; atendimentoId: string | null; criadoEm: string; criadorNome: string | null; podeAgir: boolean }`
-  - `carregarTarefasDoAtendimento(u: UsuarioSessao, a: { id: string; leadId: string | null }, agora?: Date): Promise<TarefaPainel[]>` (abertas, mais as 5 concluídas mais recentes; sem canceladas)
+  - `carregarTarefasDoAtendimento(u: UsuarioSessao, a: { id: string; leadId: string | null }, o: { soDaConversa: boolean; agora?: Date }): Promise<TarefaPainel[]>`. Com `soDaConversa: false`, devolve as abertas e as 5 concluídas mais recentes, sem as canceladas. Com `true` (o fio, Task 12), devolve só as de `atendimentoId === a.id`, de qualquer status.
   - `OportunidadesPainel.tarefas: TarefaPainel[]` e `OportunidadesPainel.fusoEscola: string`
-  - `type AtalhoQuando = "hoje18" | "amanha9" | "amanha14" | "seg9"`
-  - `quandoDoAtalho(atalho: AtalhoQuando, agora: Date, fusoEscola: string): { dataCivil: string; hora: string } | null` (`null` para "hoje18" depois das 18:00 na escola)
-  - `rotuloAtalho(atalho: AtalhoQuando): string` → "Hoje 18:00", "Amanhã 09:00", "Amanhã 14:00", "Segunda 09:00"
-  - `concluirTarefaNoInbox(atendimentoId: string, tarefaId: string, versao: number): Promise<Resultado>`; `reabrirTarefaNoInbox(…, versao)`; `reagendarTarefaNoInbox(atendimentoId, tarefaId, versao, q: { dataCivil: string | null; hora: string | null })`; `cancelarTarefaNoInbox(atendimentoId, tarefaId, versao, motivo: string)`
+  - Em `src/lib/atalhos-horario.ts`, com a interface da E4 (`05-fluxos.md`, Task 4) e sem o `"1h"`, que a E4 acrescenta:
+    - `type IdAtalhoHorario = "hoje18" | "amanha9" | "amanha14" | "seg9"`
+    - `interface AtalhoHorario { id: IdAtalhoHorario; rotulo: string; valorLocal: string }` (`valorLocal` no formato do `datetime-local`, no `fuso`)
+    - `atalhosDeHorario(agora: Date, fuso: string): AtalhoHorario[]` (rótulos "Hoje 18:00", "Amanhã 09:00", "Amanhã 14:00" e "Segunda 09:00")
+    - `partesDoValorLocal(v: string): { dataCivil: string; hora: string }`
+  - `concluirTarefaNoInbox(atendimentoId: string, tarefaId: string, versao: number): Promise<Resultado>`; `reabrirTarefaNoInbox(atendimentoId, tarefaId, versao)`; `reagendarTarefaNoInbox(atendimentoId, tarefaId, versao, q: { dataCivil: string | null; hora: string | null })`; `cancelarTarefaNoInbox(atendimentoId, tarefaId, versao, motivo: string)`
   - `TarefasOportunidade(props: { atendimentoId: string; tarefas: TarefaPainel[]; fusoEscola: string; fuso: string | null; podeCriar: boolean; aoNova(): void; aoEditar(t: TarefaPainel): void; aoMudar(): void })`
 
 Regras:
-- Tarefa pertence ao atendimento quando `atendimentoId === a.id` ou (`a.leadId` e `leadId === a.leadId`), sempre dentro de `escopoTarefas(u, tarefas.equipe)`. Os wrappers recusam com "Tarefa não encontrada." o que não pertence.
-- `ia = origem in ["IA", "IA_SUGERIDA"]`; `atrasada = grupoDaTarefa(…) === "ATRASADAS"`; `hora` no `fusoOrigem`.
-- Lista (`P:559-576`): "Tarefas · <n> aberta(s)" + "+ Nova tarefa" (só com `podeCriar`). Linha: caixa 18 px (concluir/reabrir, `title` "Concluir"/"Reabrir"), título 13,5 px (riscado se concluída), meta 12 px `<prazo> · <responsável> · <TIPO_TAREFA_LABEL>` em `--danger-text` se atrasada, ✦ "Criada pela IA"; com a tarefa aberta, ícones "Reagendar para amanhã 09:00" (`IconCalendarTime`), "Editar" (`IconPencil`) e "Cancelar tarefa" (`IconTrash`). Vazio: "Nenhuma tarefa para esta oportunidade."
-- "Cancelar tarefa" (D10, no lugar de "Excluir"): `Modal` "Cancelar tarefa" com campo "Motivo" obrigatório (até 500) e botão perigo "Cancelar tarefa".
-- Erro de versão ("Esta tarefa foi alterada por outra pessoa. Recarregue.") mostra a mensagem e chama `aoMudar()` para recarregar.
+- **Atalhos** (as regras da E4 valem aqui):
+  - "Hoje 18:00" só entra se 18:00 de hoje, no `fuso`, ainda não passou;
+  - "Segunda" é a próxima segunda; numa segunda, a da semana seguinte;
+  - um atalho cujo valor local não existe no fuso (`instanteDoCampoLocal` com `ok: false`) fica de fora.
+  
+  Para tarefa, o `fuso` é sempre o da escola, porque a tarefa grava a data civil e a hora nele.
+- **Tarefa do atendimento:** é a que tem `atendimentoId === a.id`, ou `leadId === a.leadId` quando há lead, sempre dentro de `escopoTarefas(u, tarefas.equipe)`. Os wrappers recusam as outras com "Tarefa não encontrada.".
+- `ia` vale para `origem` `IA` ou `IA_SUGERIDA`; `atrasada = grupoDaTarefa(…) === "ATRASADAS"`; `hora` sai no `fusoOrigem`; `podeAgir` só nas abertas.
+- **Lista** (`P:559-576`):
+  - cabeçalho "Tarefas · <n> aberta(s)" e "+ Nova tarefa" (só com `podeCriar`);
+  - em cada linha: caixa de 18 px (concluir ou reabrir, com `title` "Concluir" ou "Reabrir"), título em 13,5 px (riscado se concluída), meta em 12 px `<prazo> · <responsável> · <TIPO_TAREFA_LABEL>` (em `text-danger-text` se atrasada) e o ✦ "Criada pela IA";
+  - na tarefa aberta, três ícones: "Reagendar para amanhã 09:00" (`IconCalendarTime`, valor do atalho `amanha9`), "Editar" (`IconPencil`) e "Cancelar tarefa" (`IconTrash`);
+  - vazio: "Nenhuma tarefa para esta oportunidade.".
+- **"Cancelar tarefa"** (D10, no lugar de "Excluir"): um `Modal` com o campo "Motivo", obrigatório e com até 500 caracteres, e o botão de perigo "Cancelar tarefa".
+- **Erro de versão** ("Esta tarefa foi alterada por outra pessoa. Recarregue."): aparece a mensagem e `aoMudar()` recarrega o painel.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-// quando-tarefa.test.ts — fuso da escola "America/Sao_Paulo"
+// src/lib/atalhos-horario.test.ts — fuso da escola "America/Sao_Paulo" (UTC-3)
 const sp = "America/Sao_Paulo";
-it("amanhã 9h e 14h no dia civil da escola, mesmo com UTC já no dia seguinte", () => {
-  const agora = new Date("2026-10-22T02:30:00Z"); // 21/10 23:30 em SP
-  expect(quandoDoAtalho("amanha9", agora, sp)).toEqual({ dataCivil: "2026-10-22", hora: "09:00" });
-  expect(quandoDoAtalho("amanha14", agora, sp)).toEqual({ dataCivil: "2026-10-22", hora: "14:00" });
+const ids = (a: AtalhoHorario[]) => a.map((x) => x.id);
+it("amanhã no dia civil da escola, mesmo com o UTC já no dia seguinte", () => {
+  const a = atalhosDeHorario(new Date("2026-10-22T02:30:00Z"), sp); // 21/10 23:30 em SP
+  expect(a.find((x) => x.id === "amanha9")).toEqual({ id: "amanha9", rotulo: "Amanhã 09:00", valorLocal: "2026-10-22T09:00" });
+  expect(partesDoValorLocal("2026-10-22T14:00")).toEqual({ dataCivil: "2026-10-22", hora: "14:00" });
 });
-it("hoje 18h some depois das 18h na escola", () => {
-  expect(quandoDoAtalho("hoje18", new Date("2026-10-22T20:00:00Z"), sp)).toEqual({ dataCivil: "2026-10-22", hora: "18:00" }); // 17:00 SP
-  expect(quandoDoAtalho("hoje18", new Date("2026-10-22T21:00:00Z"), sp)).toBeNull(); // 18:00 SP
+it("“Hoje 18:00” some às 18h da escola", () => {
+  expect(ids(atalhosDeHorario(new Date("2026-10-22T20:00:00Z"), sp))).toContain("hoje18"); // 17:00 SP
+  expect(ids(atalhosDeHorario(new Date("2026-10-22T21:00:00Z"), sp))).not.toContain("hoje18"); // 18:00 SP
 });
-it("segunda 9h numa segunda vai para a próxima", () => {
-  expect(quandoDoAtalho("seg9", new Date("2026-10-26T12:00:00Z"), sp)).toEqual({ dataCivil: "2026-11-02", hora: "09:00" }); // 26/10 é segunda
-  expect(quandoDoAtalho("seg9", new Date("2026-10-22T12:00:00Z"), sp)).toEqual({ dataCivil: "2026-10-26", hora: "09:00" });
+it("segunda numa segunda vai para a próxima", () => {
+  expect(atalhosDeHorario(new Date("2026-10-26T12:00:00Z"), sp).find((x) => x.id === "seg9")!.valorLocal).toBe("2026-11-02T09:00");
+  expect(atalhosDeHorario(new Date("2026-10-22T12:00:00Z"), sp).find((x) => x.id === "seg9")!.valorLocal).toBe("2026-10-26T09:00");
 });
 ```
 
@@ -980,7 +1028,7 @@ it("segunda 9h numa segunda vai para a próxima", () => {
 it("contagem, atraso em perigo, ✦ da IA e ações só na aberta", () => {
   const t = h();
   expect(t).toContain("Tarefas · 1 aberta(s)");
-  expect(t).toMatch(/text-danger[^"]*"[^>]*>[^<]*Ontem/);
+  expect(t).toMatch(/text-danger[^"]*"[^>]*>[\s\S]*?Ligação/);
   expect(t).toContain('aria-label="Criada pela IA"');
   expect(t.match(/title="Reagendar para amanhã 09:00"/g)).toHaveLength(1);
   expect(t).not.toContain("Excluir");
@@ -1005,22 +1053,22 @@ it("tarefa de outro lead não pertence ao atendimento", async () => {
   comoUsuario(dono);
   expect(await concluirTarefaNoInbox(a.id, deOutroLead.id, 1)).toEqual({ ok: false, erro: "Tarefa não encontrada." });
 });
-it("cancelar com motivo repetido não grava outro TarefaCancelada", async () => {
+it("cancelar com o mesmo motivo duas vezes grava um TarefaCancelada", async () => {
   comoUsuario(dono);
   await cancelarTarefaNoInbox(a.id, t.id, 1, "Cliente pediu"); await cancelarTarefaNoInbox(a.id, t.id, 1, "Cliente pediu");
   expect(await prisma.evento.count({ where: { tipo: "TarefaCancelada", agregadoId: t.id } })).toBe(1);
 });
-it("carregarTarefasDoAtendimento: abertas, 5 concluídas mais recentes, sem canceladas, com ia", async () => { /* ... */ });
+it("carregarTarefasDoAtendimento: abertas, 5 concluídas mais recentes, sem canceladas; ia pela origem", async () => { /* … */ });
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/quando-tarefa.test.ts" "src/app/(app)/inbox/abas/TarefasOportunidade.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/acoes-painel-tarefas.int.test.ts`
+Run: `node_modules/.bin/vitest run src/lib/atalhos-horario.test.ts "src/app/(app)/inbox/abas/TarefasOportunidade.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/acoes-painel-tarefas.int.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-Os wrappers carregam a tarefa (`findFirst` com `escopoTarefas` e a regra de pertença), chamam a ação de domínio de mesmo nome e, com `ok`, `avisarAtendimento`. O fuso da escola vem de `carregarFusoInstitucionalTx` (`operacao/relogio.ts`) e vai em `OportunidadesPainel.fusoEscola`. No cliente, `useAcaoCliente({ idempotente: false })` para concluir, reabrir e reagendar; `{ idempotente: true }` para cancelar.
+Os wrappers carregam a tarefa com `findFirst`, aplicando `escopoTarefas` e a regra de pertença. Depois chamam a ação de domínio de mesmo nome e, com `ok`, `avisarAtendimento`. O `fusoEscola` vem de `carregarFusoInstitucionalTx`. No cliente, concluir, reabrir e reagendar usam `useAcaoCliente({ idempotente: false })`, e cancelar usa `{ idempotente: true }`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -1028,12 +1076,12 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estado `painel-oportunidades-tarefas` (Mariana com uma tarefa aberta atrasada, uma da Aria e uma concluída); referência `telas/` do protótipo, aba Oportunidades com tarefas (`prototipo-estado-painel-oportunidades-tarefas.png` do conjunto completo, renderizada pelo script). Diferença justificada: lixeira vira "Cancelar tarefa" com motivo (D10).
+Estado novo `painel-oportunidades-tarefas`. Na demo, a Mariana tem uma tarefa atrasada, uma tarefa da Aria e uma concluída. A referência é o protótipo renderizado na aba Oportunidades com tarefas (`c1`). Diferença justificada: a lixeira vira "Cancelar tarefa", com motivo (D10).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/server/inbox/painel-tarefas.ts src/server/inbox/painel-oportunidades.ts src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-tarefas.int.test.ts "src/app/(app)/inbox/quando-tarefa.ts" "src/app/(app)/inbox/quando-tarefa.test.ts" "src/app/(app)/inbox/abas/TarefasOportunidade.tsx" "src/app/(app)/inbox/abas/TarefasOportunidade.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
+git add src/server/inbox/painel-tarefas.ts src/server/inbox/painel-oportunidades.ts src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-tarefas.int.test.ts src/lib/atalhos-horario.ts src/lib/atalhos-horario.test.ts "src/app/(app)/inbox/abas/TarefasOportunidade.tsx" "src/app/(app)/inbox/abas/TarefasOportunidade.test.ts" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): tarefas da oportunidade no painel (E2.10, D10)"
 ```
 
@@ -1046,7 +1094,7 @@ git commit -m "feat(inbox): tarefas da oportunidade no painel (E2.10, D10)"
 - Test: `src/app/(app)/inbox/ModalTarefa.test.ts`, `src/server/inbox/acoes-painel-criar-tarefa.int.test.ts`
 
 **Interfaces:**
-- Consumes: `quandoDoAtalho`, `rotuloAtalho`, `TarefaPainel` (Task 10); `criarTarefa`, `editarTarefa` (`crm/tarefas.ts:161,217`), `TarefaInput` com `atendimentoId` (Task 2); `listarResponsaveisPossiveis` (`crm/tarefas-consulta.ts:43`); `camposAlterados` (`tarefas/edicao.ts`, usado em `PainelTarefa.tsx:91`).
+- Consumes: `atalhosDeHorario`, `partesDoValorLocal`, `TarefaPainel`, `cancelarTarefaNoInbox` (Task 10); `criarTarefa`, `editarTarefa` (`crm/tarefas.ts:161,217`) e `TarefaInput.atendimentoId` (Task 2); `listarResponsaveisPossiveis` (`crm/tarefas-consulta.ts:43`); `camposAlterados` (`tarefas/edicao.ts:19`); `pessoaDoAtendimento` (Task 3).
 - Produces:
   - `type TarefaInboxInput = { titulo: string; tipo: TipoTarefa; descricao?: string; dataCivil: string | null; hora: string | null; prioridade?: PrioridadeTarefa; lembreteAntecedenciaMin?: 0 | 10 | 30 | 60 | null; responsavelId?: string | null; vincularOportunidade: boolean; jaFeita?: boolean; chaveIdempotencia: string }`
   - `criarTarefaNoInbox(atendimentoId: string, input: TarefaInboxInput): Promise<Resultado<{ id: string }>>`
@@ -1056,7 +1104,17 @@ git commit -m "feat(inbox): tarefas da oportunidade no painel (E2.10, D10)"
   - `validarTarefaModal(v: { titulo: string; dataCivil: string | null; hora: string | null; lembrete: number | null }): string | null`
   - `ModalTarefa(props: { atendimentoId: string; modo: { tipo: "nova" } | { tipo: "editar"; tarefa: TarefaPainel }; fuso: string | null; aoFechar(): void; aoSalvo(): void })`
 
-Conteúdo (`P:680-735`, só os campos atuais, D10): `Modal` (folha no celular) com título "Nova tarefa" ou "Editar tarefa". Contexto: chip com avatar e nome do contato e "Conversa vinculada" (`IconMessageCircle`). Campo título 17/500 sem borda, sublinhado 2 px (`--brand-solid`, ou `--danger-solid` depois de tentar salvar vazio), placeholder "O que precisa ser feito?". "Tipo": chips WhatsApp, Ligação, E-mail, Reunião, Outro (`TIPO_TAREFA_LABEL`, ícones `IconMessageCircle`, `IconPhone`, `IconMail`, `IconCalendar`, `IconCircleDot`); padrão WhatsApp. "Quando": chips dos quatro atalhos (o desabilitado quando `quandoDoAtalho` é `null`) + data + hora, com a legenda do fuso da escola; padrão "Amanhã 09:00"; na edição, o prazo atual vem como chip selecionado "<data> · <hora>" (`P:1064`). "Responsável": "Você" + `responsaveis` (só aparece com equipe). "Lembrete": Sem lembrete, Na hora, 10 min antes, 30 min antes, 1 h antes (valores de `tarefas.ts:51`; padrão "Sem lembrete"). "Descrição" (opcional, 2000). "Vincular à oportunidade" (marcado por padrão quando há oportunidade; mostra o título; some sem oportunidade). "Mais opções": só "Prioridade" com Normal e Alta. Rodapé: "Já foi feita" (só na criação), "Cancelar tarefa" (só na edição, abre o motivo da Task 10), "Cancelar" e "Criar tarefa"/"Salvar"; o botão fica cinza com título vazio e, clicado, mostra "Dê um título para a tarefa".
+Conteúdo (`P:680-735`), só com os campos atuais (D10). É um `Modal` (folha no celular) com o título "Nova tarefa" ou "Editar tarefa".
+- **Contexto:** chip com o avatar e o nome do contato e "Conversa vinculada" (`IconMessageCircle`).
+- **Título:** 17/500, sem borda, com sublinhado de 2 px (`border-brand-solid`, ou `border-danger-solid` depois de tentar salvar vazio) e o placeholder "O que precisa ser feito?".
+- **"Tipo":** chips WhatsApp, Ligação, E-mail, Reunião e Outro (`TIPO_TAREFA_LABEL`, ícones `IconMessageCircle`, `IconPhone`, `IconMail`, `IconCalendar` e `IconCircleDot`). O padrão é WhatsApp.
+- **"Quando":** chips de `atalhosDeHorario(agora, fusoEscola)`, mais data e hora com a legenda do fuso da escola. O padrão é "Amanhã 09:00". Na edição, o prazo atual vem como chip selecionado "<dd/mm> · <hh:mm>" (`P:1064`).
+- **"Responsável":** "Você" mais os `responsaveis`; o campo só aparece para quem tem equipe.
+- **"Lembrete":** Sem lembrete, Na hora, 10 min antes, 30 min antes e 1 h antes (os valores de `tarefas.ts:51`). O padrão é "Sem lembrete".
+- **"Descrição":** opcional, até 2000 caracteres.
+- **"Vincular à oportunidade":** marcado por padrão quando há oportunidade, mostrando o título; some quando não há.
+- **"Mais opções":** só "Prioridade", com Normal e Alta.
+- **Rodapé:** "Já foi feita" (só na criação), "Cancelar tarefa" (só na edição; abre o motivo da Task 10), "Cancelar" e "Criar tarefa" ou "Salvar". Com o título vazio, o botão de salvar fica cinza e, se clicado, mostra "Dê um título para a tarefa".
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1070,7 +1128,7 @@ it("validação", () => {
 it("só os campos atuais do ERP (D10)", () => {
   const t = h({ modo: { tipo: "nova" } }, dados);
   for (const r of ["Sem lembrete", "Na hora", "10 min antes", "30 min antes", "1 h antes", "Conversa vinculada", "Vincular à oportunidade", "Já foi feita"]) expect(t).toContain(r);
-  for (const r of ["15 min antes", "1 dia antes", "Repetir", "Notificar também", "Baixa"]) expect(t).not.toContain(r);
+  for (const r of ["15 min antes", "1 dia antes", "Repetir", "Notificar também", "Baixa", "Enviar mensagem nesta data"]) expect(t).not.toContain(r);
 });
 it("edição: sem “Já foi feita”, com “Cancelar tarefa” e o prazo atual como chip", () => {
   const t = h({ modo: { tipo: "editar", tarefa } }, dados);
@@ -1092,7 +1150,7 @@ it("mesma chave devolve a mesma tarefa (#166)", async () => {
   const r2 = await criarTarefaNoInbox(a.id, { ...base, vincularOportunidade: true, chaveIdempotencia: "k2" });
   expect(r2.dado!.id).toBe(r1.dado!.id); expect(await prisma.tarefa.count()).toBe(1);
 });
-it("já foi feita conclui; repetir com a mesma chave não falha nem conclui de novo", async () => {
+it("“Já foi feita” conclui; repetir com a mesma chave não falha nem conclui de novo", async () => {
   comoUsuario(dono);
   const i = { ...base, vincularOportunidade: true, jaFeita: true, chaveIdempotencia: "k3" };
   expect((await criarTarefaNoInbox(a.id, i)).ok).toBe(true); expect((await criarTarefaNoInbox(a.id, i)).ok).toBe(true);
@@ -1108,7 +1166,14 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-`criarTarefaNoInbox`: `atendimentoVisivel`; `leadId = vincularOportunidade && podeVerLeadNaThread ? a.leadId : undefined`; `pessoaId` de `pessoaDoAtendimento` quando houver; chama `criarTarefa({ …campos, atendimentoId, leadId, pessoaId, chaveIdempotencia })`. Com `jaFeita`: relê a tarefa; `ABERTA` → `concluirTarefa(id, versao)`; `CONCLUIDA` com `concluidaPorId === u.id` → ok sem nova chamada. `avisarAtendimento` no fim. Na tela, `useChaveIdempotencia()` + `useAcaoCliente({ idempotente: true })` na criação (`PainelTarefa.tsx:51-55`), `{ idempotente: false }` na edição; a edição manda só `camposAlterados`. Dados do modal carregados na abertura por `dadosModalTarefaNoInbox`.
+`criarTarefaNoInbox`, nesta ordem:
+1. chama `atendimentoVisivel`;
+2. calcula `leadId = vincularOportunidade && podeVerLeadNaThread ? a.leadId : undefined` e pega o `pessoaId` de `pessoaDoAtendimento`, quando existe;
+3. chama `criarTarefa({ …campos, atendimentoId, leadId, pessoaId, chaveIdempotencia })`;
+4. com `jaFeita`, relê a tarefa: se estiver `ABERTA`, chama `concluirTarefa(id, versao)`; se já estiver `CONCLUIDA` com `concluidaPorId === u.id`, devolve ok sem nova chamada;
+5. termina com `avisarAtendimento`.
+
+Na tela, a criação usa `useChaveIdempotencia()` com `useAcaoCliente({ idempotente: true })`, como `PainelTarefa.tsx:51-55`; a edição usa `{ idempotente: false }` e manda só `camposAlterados`. Os dados do modal são carregados ao abrir, por `dadosModalTarefaNoInbox`. "Enviar mensagem nesta data" fica de fora (Task 19, D11).
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -1116,124 +1181,59 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estados `tarefa-nova` e `tarefa-editar`; referências `telas/prototipo-estado-tarefa-nova.png` e `prototipo-estado-tarefa-editar.png`. Diferenças justificadas (D10): lembretes do ERP, sem Repetir, sem "Notificar também", sem Baixa, "Cancelar tarefa" no lugar de "Excluir", sem "Enviar mensagem nesta data" (Task 21).
+Estados novos `tarefa-nova` e `tarefa-editar`, com as referências `telas/prototipo-estado-tarefa-nova.png` e `prototipo-estado-tarefa-editar.png`. Diferenças justificadas (D10 e D11): lembretes do ERP, sem Repetir, sem "Notificar também", sem Baixa, "Cancelar tarefa" no lugar de "Excluir" e sem "Enviar mensagem nesta data".
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add "src/app/(app)/inbox/ModalTarefa.tsx" "src/app/(app)/inbox/ModalTarefa.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-criar-tarefa.int.test.ts docs/planejamento/quadro-entregas.md
+git add "src/app/(app)/inbox/ModalTarefa.tsx" "src/app/(app)/inbox/ModalTarefa.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" "src/app/(app)/inbox/abas/AbaOportunidades.tsx" src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-criar-tarefa.int.test.ts scripts/visual docs/planejamento/quadro-entregas.md
 git commit -m "feat(inbox): modal de tarefa para criar e editar (E2.11, D10)"
 ```
 
 <a id="task-12"></a>
-### Task 12: Itens do fio: consulta, rota e notas (B2)
+### Task 12: Cartão de tarefa no fio e entradas de tarefa e nota
 
 **Files:**
-- Create: `src/server/inbox/itens-fio.ts`, `src/app/api/inbox/atendimentos/[id]/fio/route.ts`, `src/components/conversa/intercalar-fio.ts`, `src/app/(app)/inbox/useItensFio.ts`
-- Create (só se a E0 não entregou, ver Step 0): `src/components/conversa/CartaoNotaFio.tsx`
-- Modify: `src/server/whatsapp/acoes-conversa.ts:47-63` (`notasDoAtendimento` delega a `listarNotasDoAtendimento`); a thread (`ConversaAberta.tsx:146-160` ou o arquivo da thread da E1) passa a renderizar `ItemFio`
-- Test: `src/server/inbox/itens-fio.int.test.ts`, `src/components/conversa/intercalar-fio.test.ts`, `src/app/api/inbox/atendimentos/[id]/fio/route.test.ts`, `src/components/conversa/CartaoNotaFio.test.ts` (se criado)
+- Create: `src/components/conversa/CartaoTarefaFio.tsx`, `src/components/conversa/intercalar-fio.ts`
+- Modify: `src/server/inbox/paineis.ts` (`tarefasNoFio`); a thread (`src/app/(app)/inbox/ConversaAberta.tsx`, que já usa o `itensDaThread` da E0, passa a usar `intercalarFio`); `src/app/(app)/inbox/AcoesAtendimento.tsx` (`itensDoMenuConversa` com "Criar tarefa"); `src/app/(app)/inbox/RodapeConversa.tsx` (`aoCriarTarefa`, `pedidoNota`); `src/app/(app)/inbox/abas/AbaOportunidades.tsx` ("Criar tarefa" e "Adicionar nota" na seção de ações); `src/app/(app)/inbox/InboxNovo.tsx`
+- Test: `src/components/conversa/intercalar-fio.test.ts`, `src/components/conversa/CartaoTarefaFio.test.ts`, `src/app/(app)/inbox/RodapeConversa.test.ts` e `src/app/(app)/inbox/AcoesAtendimento.test.ts` (casos novos), `src/server/inbox/paineis.int.test.ts` (caso novo)
 
 **Interfaces:**
-- Consumes: `NotaInternaThread` (`whatsapp/consultas-inbox.ts:46`); `TarefaPainel`, `carregarTarefasDoAtendimento` (Task 10); `MensagemThread`.
+- Consumes: `ItemThread`, `itensDaThread` (E0); `TarefaPainel`, `carregarTarefasDoAtendimento`, `concluirTarefaNoInbox` (Task 10); `ModalTarefa` (Task 11).
 - Produces:
-  - `listarNotasDoAtendimento(u: UsuarioSessao, atendimentoId: string): Promise<NotaInternaThread[]>` (a consulta de `acoes-conversa.ts:52-62`, com as notas arquivadas fora; até 50)
-  - `type AgendadaFio = { id: string; texto: string; agendadaPara: string; criadaEm: string; autor: { tipo: "voce" } | { tipo: "aria" } | { tipo: "pessoa"; nome: string }; podeAlterar: boolean }`
-  - `type ItensFio = { notas: NotaInternaThread[]; tarefas: TarefaPainel[]; agendadas: AgendadaFio[] }`
-  - `carregarItensFio(u: UsuarioSessao, atendimentoId: string): Promise<ItensFio | null>`
-  - `type ItemFio = { tipo: "mensagem"; m: MensagemThread } | { tipo: "nota"; n: NotaInternaThread } | { tipo: "tarefa"; t: TarefaPainel } | { tipo: "agendada"; a: AgendadaFio }`
-  - `intercalarFio(mensagens: MensagemThread[], itens: ItensFio, o: { temMaisAntes: boolean }): ItemFio[]`
-  - `useItensFio(atendimentoId: string | null, aviso: AvisoInbox | null): { itens: ItensFio; recarregar(): void }`
+  - `PainelSetor.tarefasNoFio?: TarefaPainel[]`: `carregarTarefasDoAtendimento(u, a, { soDaConversa: true })`, só com `tarefas.ver`, e `[]` nos demais casos
+  - `type ItemFio = ItemThread | { tipo: "tarefa"; id: string; t: TarefaPainel }`, com `id = \`tarefa:${t.id}\``
+  - `intercalarFio(base: ItemThread[], tarefas: TarefaPainel[], o: { temMaisAntes: boolean }): ItemFio[]`
+  - `CartaoTarefaFio(props: { t: TarefaPainel; fuso: string | null; usuarioNome: string | null; aoEditar(): void; aoConcluir(): void })`
+  - `textoCriadorTarefa(t: Pick<TarefaPainel, "ia" | "criadorNome">, usuarioNome: string | null): string`: "Aria criou uma tarefa", "Você criou uma tarefa" ou "<Nome> criou uma tarefa"
 
 Regras:
-- `tarefas` do fio: só as com `atendimentoId === id` (não as do lead), em `escopoTarefas`, de qualquer status; `podeAgir` só para abertas.
-- `agendadas`: `IntencaoMensagem` do atendimento com `agendadaPara`, status `PENDENTE`/`ADIADA`, `passo` e `passoComercial` nulos (filtro de `consultas-acoes-atendimento.ts:60`), de qualquer autor; `autor`: `voce` quando `autorId === u.id`, `aria` quando `origem === "IA"`, senão o nome; `podeAlterar = autorId === u.id || ADMINISTRADOR`.
-- `intercalarFio`: notas e tarefas entram por `criadoEm` entre as mensagens; com `temMaisAntes`, item mais antigo que a primeira mensagem carregada fica de fora (aparece ao carregar as anteriores); agendadas vão sempre no fim, por `agendadaPara`. Desempate por id.
-- `useItensFio` busca `/api/inbox/atendimentos/<id>/fio` ao abrir e a cada `atendimento.atualizado` do atendimento aberto ou `resync`; nada de intervalo.
-- **Step 0 (dependência da E0):** se `docs/superpowers/plans/2026-10-22-inbox-prototipo-01-correcoes.md` já tiver entregue a nota no fio (procure `CartaoNota`/`NotaThread` em `src/components/conversa/` e a chamada de `notasDoAtendimento`), não crie `CartaoNotaFio` e use o componente da E0 no `ItemFio` `"nota"`; a consulta deste fio continua sendo a fonte das notas. Senão, crie `CartaoNotaFio` (`P:273-279`, `P:1010-1013`): balão `--bubble-note` com borda tracejada `--warning-text`, cabeçalho "Nota interna · só equipe", autor e hora mono.
+- **`intercalarFio`:** a tarefa entra no fio pelo `criadoEm`, entre as mensagens e notas da E0. Com `temMaisAntes`, a tarefa mais antiga que o primeiro item `"mensagem"` da base fica de fora; ela aparece quando as anteriores carregam (a mesma regra da nota na E0). O desempate é pelo `id`. A E3 intercala as sugestões sobre esta saída, e a E4 põe as agendadas no slot `cartoesNoFio`.
+- **Cartão** (`P:283-297`, `P:1005-1007`):
+  - forma: largura `min(440px, 86%)`, centralizado, `bg-surface` com borda e raio 12;
+  - ícone de 34 px pelo tipo, em `bg-brand-bg`/`text-brand-700` quando criado por pessoa e em `bg-ai-50`/`text-ai-700` quando criado pela Aria;
+  - cabeçalho `<textoCriadorTarefa> · <hora mono>`;
+  - título 13,5/500, riscado se concluída;
+  - meta `<prazo> · <responsável> · <tipo>`, em `text-danger-text` se atrasada;
+  - com a tarefa aberta e `podeAgir`: o lápis "Editar" (abre o `ModalTarefa`) e "Concluir" (`IconCheck`, chama `concluirTarefaNoInbox`);
+  - concluída: "Concluída" em `text-brand-700`;
+  - cancelada: "Cancelada" em `text-gray-500` (o protótipo diz "Excluída", D10).
+- **Entradas:** "Criar tarefa" no menu ⋮ (`P:1183`), o ícone "Nova tarefa" do rodapé (`P:427`) e "Criar tarefa" na seção de ações da aba (`P:586`) abrem o `ModalTarefa` em modo novo, quando há `capacidades.tarefas`. "Adicionar nota" (`P:587`) incrementa o `pedidoNota` do `RodapeConversa`, que troca para a aba Nota da E1 e foca o campo.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // intercalar-fio.test.ts
-const m = (id: string, em: string) => ({ id, criadoEm: em } as MensagemThread);
-it("nota e tarefa entram pela hora; agendadas no fim", () => {
-  const r = intercalarFio([m("m1", "2026-10-22T10:00:00Z"), m("m2", "2026-10-22T10:10:00Z")],
-    { notas: [{ id: "n1", nota: "x", autorNome: "Ana", criadoEm: "2026-10-22T10:05:00Z" }], tarefas: [{ ...tarefa, id: "t1", criadoEm: "2026-10-22T10:11:00Z" }],
-      agendadas: [{ ...ag, id: "g1", agendadaPara: "2026-10-23T12:00:00Z" }] }, { temMaisAntes: false });
-  expect(r.map((x) => x.tipo)).toEqual(["mensagem", "nota", "mensagem", "tarefa", "agendada"]);
+const msg = (id: string, em: string): ItemThread => ({ tipo: "mensagem", id, m: { id, criadoEm: em } as MensagemThread });
+const tar = (id: string, em: string) => ({ ...tarefa, id, criadoEm: em });
+it("tarefa entra pela hora entre mensagens e notas", () => {
+  const base = [msg("m1", "2026-10-22T10:00:00Z"), { tipo: "nota", id: "nota:n1", n: { id: "n1", criadoEm: "2026-10-22T10:05:00Z" } } as ItemThread, msg("m2", "2026-10-22T10:10:00Z")];
+  expect(intercalarFio(base, [tar("t1", "2026-10-22T10:07:00Z")], { temMaisAntes: false }).map((i) => i.id)).toEqual(["m1", "nota:n1", "tarefa:t1", "m2"]);
 });
-it("com mensagens anteriores por carregar, o item mais antigo que a janela fica de fora", () => {
-  const r = intercalarFio([m("m1", "2026-10-22T10:00:00Z")], { notas: [{ id: "n0", nota: "x", autorNome: null, criadoEm: "2026-10-22T09:00:00Z" }], tarefas: [], agendadas: [] }, { temMaisAntes: true });
-  expect(r.map((x) => x.tipo)).toEqual(["mensagem"]);
+it("com mensagens anteriores por carregar, a tarefa mais antiga que a janela fica de fora", () => {
+  expect(intercalarFio([msg("m1", "2026-10-22T10:00:00Z")], [tar("t0", "2026-10-22T09:00:00Z")], { temMaisAntes: true }).map((i) => i.id)).toEqual(["m1"]);
+  expect(intercalarFio([msg("m1", "2026-10-22T10:00:00Z")], [tar("t0", "2026-10-22T09:00:00Z")], { temMaisAntes: false }).map((i) => i.id)).toEqual(["tarefa:t0", "m1"]);
 });
-```
-
-```ts
-// itens-fio.int.test.ts
-it("notas do atendimento (sem as arquivadas), tarefas ligadas e agendadas pendentes de qualquer autor", async () => {
-  const f = await carregarItensFio(sess(dono), a.id);
-  expect(f!.notas.map((n) => n.nota)).toEqual(["Prefere noite"]);
-  expect(f!.tarefas.map((t) => t.id)).toEqual([daConversa.id]);   // a do lead sem atendimentoId não entra
-  expect(f!.agendadas).toEqual([expect.objectContaining({ id: daAria.id, autor: { tipo: "aria" }, podeAlterar: false })]);
-});
-it("fora do escopo: null", async () => expect(await carregarItensFio(sess(outro), a.id)).toBeNull());
-it("notasDoAtendimento continua igual", async () => { /* resultado de notasDoAtendimento === listarNotasDoAtendimento */ });
-```
-
-```ts
-// fio/route.test.ts — molde de painel/route.test.ts: 401, 403, 404 e 200 sem cache
-```
-
-- [ ] **Step 2: Run the tests to verify they fail**
-
-Run: `node_modules/.bin/vitest run src/components/conversa/intercalar-fio.test.ts "src/app/api/inbox/atendimentos/[id]/fio/route.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/itens-fio.int.test.ts src/server/aria/historico.int.test.ts`
-Expected: FAIL nos novos.
-
-- [ ] **Step 3: Implement**
-
-Como descrito. A thread recebe `itens: ItemFio[]` no lugar de `conversa.mensagens` no `VirtualList` (`getKey` = `${tipo}:${id}`); o item `"mensagem"` continua no `BalaoMensagem`. Os itens `"tarefa"` e `"agendada"` usam os cartões da Task 13; até lá, a thread os ignora (`null`).
-
-- [ ] **Step 4: Run the tests to verify they pass**
-
-Mesmos comandos, mais `node_modules/.bin/vitest run "src/app/(app)/inbox/" src/components/conversa/`. Expected: PASS.
-
-- [ ] **Step 5: Aceite visual**
-
-Estado `nota-interna` (nota no fio de "Mariana Costa"); referência `telas/prototipo-estado-nota-interna.png`.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/server/inbox/itens-fio.ts src/server/inbox/itens-fio.int.test.ts "src/app/api/inbox/atendimentos/[id]/fio" src/components/conversa/intercalar-fio.ts src/components/conversa/intercalar-fio.test.ts "src/app/(app)/inbox/useItensFio.ts" "src/app/(app)/inbox/ConversaAberta.tsx" src/server/whatsapp/acoes-conversa.ts docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): itens do fio com notas, tarefas e agendadas (E2.12)"
-```
-
-<a id="task-13"></a>
-### Task 13: Cartões de tarefa e de agendada no fio; entradas de tarefa e nota
-
-**Files:**
-- Create: `src/components/conversa/CartaoTarefaFio.tsx`, `src/components/conversa/CartaoAgendadaFio.tsx`
-- Modify: `src/server/inbox/acoes-painel.ts` (`reagendarAgendadaNoInbox`, `enviarAgoraNoInbox`, `cancelarAgendadaNoInbox`); a thread (renderiza os itens `"tarefa"` e `"agendada"`); `src/app/(app)/inbox/MenuConversa.tsx` (item "Criar tarefa"); `src/app/(app)/inbox/RodapeConversa.tsx` (`aoCriarTarefa`, `pedidoNota`); `src/app/(app)/inbox/abas/AbaOportunidades.tsx` (ações "Criar tarefa" e "Adicionar nota"); `src/app/(app)/inbox/InboxNovo.tsx`
-- Test: `src/components/conversa/CartaoTarefaFio.test.ts`, `src/components/conversa/CartaoAgendadaFio.test.ts`, `src/server/inbox/acoes-painel-agendadas.int.test.ts`
-
-**Interfaces:**
-- Consumes: `TarefaPainel`, `concluirTarefaNoInbox` (Task 10); `ModalTarefa` (Task 11); `AgendadaFio` (Task 12); `reagendarMensagem`, `enviarAgora` (`crm/mensagens-agendadas.ts:320-338`); `cancelarAgendamentoDoAtendimento` (`whatsapp/acoes-conversa.ts:102-117`); `exigirInstanteDoCampoLocal` (`_shared/campo-local.ts`).
-- Produces:
-  - `CartaoTarefaFio(props: { t: TarefaPainel; fuso: string | null; usuarioId: string; aoEditar(): void; aoConcluir(): void })`
-  - `textoCriadorTarefa(t: Pick<TarefaPainel, "ia" | "criadorNome">, usuarioNome: string | null): string` → "Aria criou uma tarefa", "Você criou uma tarefa", "<Nome> criou uma tarefa"
-  - `CartaoAgendadaFio(props: { a: AgendadaFio; fuso: string | null; aoReagendar(): void; aoEnviarAgora(): void; aoCancelar(): void })`
-  - `reagendarAgendadaNoInbox(atendimentoId: string, intencaoId: string, quandoLocal: string, fuso: string): Promise<Resultado>`; `enviarAgoraNoInbox(atendimentoId: string, intencaoId: string): Promise<Resultado>`; `cancelarAgendadaNoInbox(atendimentoId: string, intencaoId: string): Promise<Resultado>`
-
-Regras:
-- Cartão de tarefa (`P:283-297`, `P:1005-1007`): largura `min(440px, 86%)`, centralizado, `--surface` com borda, raio 12; ícone 34 px do tipo em `--brand-bg`/`--brand-text` (humano) ou `--ai-bg`/`--ai-text` (Aria); cabeçalho `<textoCriadorTarefa> · <hora mono>`; título 13,5/500 (riscado se concluída); meta `<prazo> · <responsável> · <tipo>` em `--danger-text` se atrasada; aberta e `podeAgir`: lápis "Editar" e "Concluir" (`IconCheck`); concluída: "Concluída" em `--brand-text`; cancelada: "Cancelada" em `--text-terciary` e meta "Cancelada" (D10: o protótipo diz "Excluída").
-- Cartão de agendada (`P:328-348`): `IconClock`, "Agendada para <Hoje|Amanhã|dd/mm> às <hh:mm> · por <você|Aria|nome>", texto em duas linhas; com `podeAlterar`: "Reagendar" (abre `Modal` com `CampoDataHoraLocal` e `validarQuando` de `AcoesAtendimento.tsx:56-62`), "Enviar agora" e "Cancelar" (`ConfirmarAcao` com o texto de `AcoesAtendimento.tsx:356`). Editar o texto, anexo, "Repete" e "X respondeu depois…" ficam na E4 (D11).
-- Idempotência dos wrappers de agendada: `reagendarAgendadaNoInbox` lê a intenção; `agendadaPara` já igual ao instante pedido → ok sem chamar o domínio. `enviarAgoraNoInbox`: status fora de `PENDENTE`/`ADIADA` e último `MensagemReagendada` dessa intenção do mesmo autor com `enviarAgora: true` → ok. Cancelar delega a `cancelarAgendamentoDoAtendimento` (já por natureza). Os três conferem `intencao.atendimentoId === atendimentoId` e avisam.
-- Entradas: "Criar tarefa" no menu ⋮ (`P:1183`), ícone `IconListCheck` "Nova tarefa" no compositor (`P:427`) e "Criar tarefa" na seção de ações da aba (`P:586`) abrem `ModalTarefa` (nova) quando `capacidades.tarefas`. "Adicionar nota" (`P:587`) incrementa `pedidoNota` do `RodapeConversa`.
-
-- [ ] **Step 1: Write the failing tests**
-
-```ts
 // CartaoTarefaFio.test.ts
 it("autor da tarefa", () => {
   expect(textoCriadorTarefa({ ia: true, criadorNome: null }, "Carla")).toBe("Aria criou uma tarefa");
@@ -1241,100 +1241,115 @@ it("autor da tarefa", () => {
   expect(textoCriadorTarefa({ ia: false, criadorNome: "Rodrigo" }, "Carla")).toBe("Rodrigo criou uma tarefa");
 });
 it("aberta tem Editar e Concluir; concluída e cancelada só o estado", () => {
-  expect(h(aberta)).toContain("Concluir"); expect(h(aberta)).toContain('aria-label="Editar"');
-  expect(h({ ...aberta, status: "CONCLUIDA" })).toContain("Concluída"); expect(h({ ...aberta, status: "CONCLUIDA" })).not.toContain(">Concluir<");
-  expect(h({ ...aberta, status: "CANCELADA" })).toContain("Cancelada");
+  expect(h(aberta)).toContain(">Concluir<"); expect(h(aberta)).toContain('aria-label="Editar"');
+  expect(h({ ...aberta, status: "CONCLUIDA", podeAgir: false })).toContain("Concluída");
+  expect(h({ ...aberta, status: "CANCELADA", podeAgir: false })).toContain("Cancelada");
+  expect(h({ ...aberta, status: "CONCLUIDA", podeAgir: false })).not.toContain(">Concluir<");
 });
-it("atrasada pinta a meta em perigo", () => expect(h({ ...aberta, atrasada: true })).toMatch(/class="[^"]*text-danger[^"]*"[^>]*>[^<]*Ligação/));
-// CartaoAgendadaFio.test.ts
-it("cabeçalho, autor e ações só com podeAlterar", () => {
-  expect(h(ag)).toMatch(/Agendada para (Hoje|Amanhã|\d{2}\/\d{2}) às \d{2}:\d{2} · por você/);
-  expect(h({ ...ag, podeAlterar: false })).not.toContain("Enviar agora");
-  expect(h(ag)).not.toContain("Editar");
-});
+// RodapeConversa.test.ts e AcoesAtendimento.test.ts (acrescentar)
+it("“Nova tarefa” no rodapé só com aoCriarTarefa", () => { /* toContain('aria-label="Nova tarefa"') com a prop; sem ela, não */ });
+it("menu ⋮ com “Criar tarefa” antes de “Agendar mensagem” quando acoes.criarTarefa existe", () => { /* ordem dos rótulos de itensDoMenuConversa */ });
 ```
 
 ```ts
-// acoes-painel-agendadas.int.test.ts
-it("reagendar para o mesmo horário não grava MensagemReagendada", async () => { /* … */ });
-it("enviar agora vira agendadaPara ≈ agora; repetir depois de despachada pelo mesmo autor devolve ok", async () => { /* … */ });
-it("intenção de outro atendimento: “Mensagem agendada não encontrada.”", async () => { /* … */ });
-it("quem não é o autor nem admin é recusado", async () => { /* … */ });
+// paineis.int.test.ts (acrescentar)
+it("tarefasNoFio: só as ligadas à conversa, de qualquer status; sem tarefas.ver, vazio", async () => {
+  expect((await carregarPainel(sess(dono), a.id))!.tarefasNoFio!.map((t) => [t.id, t.status])).toEqual([[daConversa.id, "ABERTA"], [cancelada.id, "CANCELADA"]]);
+  expect((await carregarPainel(sess(professor), atPedagogico.id))!.tarefasNoFio).toEqual([]);
+});
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run src/components/conversa/CartaoTarefaFio.test.ts src/components/conversa/CartaoAgendadaFio.test.ts` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/acoes-painel-agendadas.int.test.ts`
-Expected: FAIL.
+Run: `node_modules/.bin/vitest run src/components/conversa/intercalar-fio.test.ts src/components/conversa/CartaoTarefaFio.test.ts "src/app/(app)/inbox/RodapeConversa.test.ts" "src/app/(app)/inbox/AcoesAtendimento.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/paineis.int.test.ts`
+Expected: FAIL nos casos novos.
 
 - [ ] **Step 3: Implement**
 
-Como descrito. Os cartões ficam em `src/components/conversa/` sem importar ações (recebem callbacks); quem liga as ações é a thread do Inbox. `reagendarAgendadaNoInbox` converte com `exigirInstanteDoCampoLocal(quandoLocal, fuso)` e chama `reagendarMensagem(id, iso)`.
+A thread passa `intercalarFio(itensDaThread(…), painel?.tarefasNoFio ?? [], { temMaisAntes })` ao `VirtualList` (`getKey = item.id`) e renderiza `CartaoTarefaFio` para `tipo: "tarefa"`. O cartão fica em `src/components/conversa/`, não importa ações e recebe callbacks; quem liga as ações é a thread do Inbox.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Mesmos comandos, mais `node_modules/.bin/vitest run "src/app/(app)/inbox/"`. Expected: PASS.
+Mesmos comandos, mais `node_modules/.bin/vitest run "src/app/(app)/inbox/" src/components/conversa/`. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estados `fio-tarefa` (cartão "Você criou uma tarefa" e um da Aria) e `fio-agendada`; referência: renderização do protótipo de `c1` (tarefa) e `c4` (agendada) pelo script.
+Estado novo `fio-tarefa`, com um cartão "Você criou uma tarefa" e outro da Aria (na demo, as duas tarefas da Mariana ganham `atendimentoId`). A referência é o protótipo renderizado em `c1`, onde o cartão aparece depois de "criar tarefa".
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/components/conversa/CartaoTarefaFio.tsx src/components/conversa/CartaoTarefaFio.test.ts src/components/conversa/CartaoAgendadaFio.tsx src/components/conversa/CartaoAgendadaFio.test.ts src/server/inbox/acoes-painel.ts src/server/inbox/acoes-painel-agendadas.int.test.ts "src/app/(app)/inbox/" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): cartões de tarefa e de agendada no fio e entradas de tarefa e nota (E2.13)"
+git add src/components/conversa/CartaoTarefaFio.tsx src/components/conversa/CartaoTarefaFio.test.ts src/components/conversa/intercalar-fio.ts src/components/conversa/intercalar-fio.test.ts src/server/inbox/paineis.ts src/server/inbox/paineis.int.test.ts "src/app/(app)/inbox/" scripts/visual docs/planejamento/quadro-entregas.md
+git commit -m "feat(inbox): cartão de tarefa no fio e entradas de tarefa e nota (E2.12)"
 ```
 
-<a id="task-14"></a>
-### Task 14: Aba Atividade: agendadas, atividade recente e notas (D11)
+<a id="task-13"></a>
+### Task 13: Aba Atividade: agendadas, atividade recente e notas (D11)
 
 **Files:**
 - Create: `src/server/inbox/painel-atividade.ts`, `src/app/(app)/inbox/abas/AbaAtividade.tsx`, `src/app/(app)/inbox/abas/AgendadasAtividade.tsx`
-- Modify: `src/server/inbox/painel-abas.ts` (caso `"atividade"`); `src/app/(app)/inbox/InboxNovo.tsx`
-- Test: `src/server/inbox/painel-atividade.int.test.ts`, `src/app/(app)/inbox/abas/AbaAtividade.test.ts`
+- Modify: `src/server/inbox/painel-abas.ts` (caso `"atividade"`); `src/server/inbox/acoes-painel.ts` (`cancelarAgendadaNoInbox`); `src/app/(app)/inbox/PainelContato.tsx` (`ABAS_ENTREGUES` ganha `"atividade"`, em todas as finalidades); `src/app/(app)/inbox/InboxNovo.tsx`
+- Test: `src/server/inbox/painel-atividade.int.test.ts`, `src/app/(app)/inbox/abas/AbaAtividade.test.ts`, `src/app/(app)/inbox/PainelContato.test.ts` (regra das abas)
 
 **Interfaces:**
-- Consumes: `listarNotasDoAtendimento`, `AgendadaFio` (Task 12); wrappers de agendada (Task 13).
+- Consumes: `notasInternasDoAtendimento` e `NotaInternaThread` (E0, `whatsapp/consultas-inbox.ts`); `carregarTarefasDoAtendimento` (Task 10); `cancelarAgendamentoDoAtendimento` (`whatsapp/acoes-conversa.ts:102`).
 - Produces:
+  - `type AgendadaAtividade = { id: string; texto: string; agendadaPara: string; autor: { tipo: "voce" } | { tipo: "aria" } | { tipo: "pessoa"; nome: string }; podeCancelar: boolean }`
   - `type AtividadeRecente = { ultimaInteracaoEm: string | null; conversas: number; tarefasAbertas: number; notas: NotaInternaThread[] }` (`notas`: as 2 mais recentes)
-  - `listarAgendadasDoAtendimento(u: UsuarioSessao, atendimentoId: string): Promise<AgendadaFio[]>` (extraída de `itens-fio.ts`, usada pelo fio e pela aba)
-  - `type AtividadePainel = { agendadas: AgendadaFio[]; recente: AtividadeRecente }` (a Task 15 acrescenta `aria` e `alteracoes`)
+  - `type AtividadePainel = { agendadas: AgendadaAtividade[]; recente: AtividadeRecente }` (a Task 14 acrescenta `aria` e `alteracoes`)
   - `carregarAtividadePainel(u: UsuarioSessao, atendimentoId: string): Promise<AtividadePainel | null>`
+  - `cancelarAgendadaNoInbox(atendimentoId: string, intencaoId: string): Promise<Resultado>`
   - `AbaAtividade(props: { dados: AtividadePainel; atendimentoId: string; fuso: string | null; fusoEscola: string; aoMudar(): void })`
 
 Regras (`P:593-621`):
-- "Mensagens agendadas" (só com itens): linhas com `IconClock` em `--brand-text`, "<quando curto> · <autor>" (autor da Aria em `--ai-text`), prévia de uma linha; ícones "Reagendar", "Enviar agora", "Cancelar" (`podeAlterar`).
-- "Atividade recente": `Última interação <instante> · <n> conversas · <n> tarefa(s) aberta(s)`; `ultimaInteracaoEm` = `atendimento.ultimaMensagemEm`; `conversas` = atendimentos do mesmo contato visíveis ao usuário (`escopoAtendimentos`); `tarefasAbertas` = abertas de `carregarTarefasDoAtendimento` (Task 10); as 2 notas com `IconNote` em `--warning-text`, texto em 2 linhas, "<autor> · <instante>"; vazio: "Nenhuma nota interna ainda."
-- Fora do comercial a aba existe (agendadas e notas são do atendimento), sem a parte da Aria.
+- **"Mensagens agendadas"** aparece só com itens. São as `IntencaoMensagem` do atendimento com `agendadaPara`, status `PENDENTE` ou `ADIADA` e `passo` e `passoComercial` nulos (o filtro de `consultas-acoes-atendimento.ts:60`), de qualquer autor.
+  - `autor` é `voce` quando `autorId === u.id`, `aria` quando `origem === "IA"`, e o nome nos demais casos;
+  - `podeCancelar = autorId === u.id || ADMINISTRADOR` (a regra de `cancelarMensagemAgendada`).
+  - Cada linha tem `IconClock` em `text-brand-700`, "<quando> · <autor>" (a Aria em `text-ai-700`), a prévia numa linha e o ícone "Cancelar", que abre o `ConfirmarAcao` com o texto de `AcoesAtendimento.tsx:356`.
+  - "Reagendar", "Enviar agora" e "Editar" são da E4 (ver "Pedidos às outras etapas").
+- **"Atividade recente":**
+  - `Última interação <instante> · <n> conversas · <n> tarefa(s) aberta(s)`;
+  - `ultimaInteracaoEm` = `atendimento.ultimaMensagemEm`;
+  - `conversas` = atendimentos do mesmo contato que o usuário enxerga (`escopoAtendimentos`);
+  - `tarefasAbertas` = as abertas de `carregarTarefasDoAtendimento(…, { soDaConversa: false })`;
+  - as 2 notas aparecem com `IconNote` em `text-warning-text`, o texto em 2 linhas e "<autor> · <instante>";
+  - sem notas: "Nenhuma nota interna ainda.".
+- A aba existe em todas as finalidades (agendadas e notas são do atendimento). A parte da Aria entra só no comercial (Task 14).
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // painel-atividade.int.test.ts
-it("agendadas pendentes, contagem de conversas do contato e as duas últimas notas", async () => {
+it("agendadas pendentes de qualquer autor, conversas do contato e as duas últimas notas", async () => {
   const d = await carregarAtividadePainel(sess(dono), a.id);
-  expect(d!.agendadas.map((x) => x.id)).toEqual([g1.id]);
+  expect(d!.agendadas).toEqual([expect.objectContaining({ id: daAria.id, autor: { tipo: "aria" }, podeCancelar: false }), expect.objectContaining({ id: minha.id, autor: { tipo: "voce" }, podeCancelar: true })]);
   expect(d!.recente).toMatchObject({ conversas: 2, tarefasAbertas: 1 });
   expect(d!.recente.notas.map((n) => n.nota)).toEqual(["Terceira", "Segunda"]);
 });
-it("conversa de outro setor do mesmo contato fora do escopo não conta", async () => { /* conversas: 1 */ });
+it("conversa de outro setor do mesmo contato, fora do escopo, não conta", async () => { /* conversas: 1 */ });
+it("cancelarAgendadaNoInbox: intenção de outro atendimento recusa; a própria cancela e avisa", async () => { /* … */ });
 // AbaAtividade.test.ts
-it("seção de agendadas só com itens; vazio de notas", () => {
+it("seção de agendadas só com itens; contagens; vazio de notas", () => {
   expect(h({ ...d, agendadas: [] })).not.toContain("Mensagens agendadas");
-  expect(h({ ...d, recente: { ...d.recente, notas: [] } })).toContain("Nenhuma nota interna ainda.");
   expect(h(d)).toMatch(/Última interação .+ · 3 conversas · 1 tarefa\(s\) aberta\(s\)/);
+  expect(h({ ...d, recente: { ...d.recente, notas: [] } })).toContain("Nenhuma nota interna ainda.");
+});
+it("cancelar só onde pode", () => expect(h(d).match(/aria-label="Cancelar mensagem agendada"/g)).toHaveLength(1));
+// PainelContato.test.ts
+it("abas entregues até a E2.13", () => {
+  expect(abasDoPainel("COMERCIAL").map((a) => a.id)).toEqual(["detalhes", "oportunidades", "atividade"]);
+  expect(abasDoPainel("PEDAGOGICO").map((a) => a.id)).toEqual(["detalhes", "atividade"]);
 });
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/abas/AbaAtividade.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/painel-atividade.int.test.ts`
+Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/abas/AbaAtividade.test.ts" "src/app/(app)/inbox/PainelContato.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/painel-atividade.int.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-Agendadas: `listarAgendadasDoAtendimento`, a consulta da Task 12 extraída em `itens-fio.ts` e usada pelos dois. `AgendadasAtividade` reaproveita os callbacks e modais da Task 13.
+`cancelarAgendadaNoInbox` delega a `cancelarAgendamentoDoAtendimento` e, com `ok`, chama `avisarAtendimento`; até a E4 criar o trigger de `IntencaoMensagem`, a mudança de agendada não avisa sozinha. O `InboxNovo` busca a aba com `useAbaPainel(selecionado, "atividade", versaoPainel, aba === "atividade")`. O cancelamento na tela usa `ConfirmarAcao` com `idempotente`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -1342,22 +1357,22 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estados `painel-atividade` e `painel-atividade-agendadas`; referência `telas/prototipo-estado-painel-atividade.png`. Diferença justificada: "Reagendar" no lugar de "Editar" (D11).
+Estados novos `painel-atividade` e `painel-atividade-agendadas` (Beatriz, que na demo da E1 já tem nota; ela ganha duas agendadas, uma da Aria). A referência é `telas/prototipo-estado-painel-atividade.png`. Diferença justificada: só "Cancelar" até a E4 (D11).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/server/inbox/painel-atividade.ts src/server/inbox/painel-atividade.int.test.ts src/server/inbox/painel-abas.ts src/server/inbox/itens-fio.ts "src/app/(app)/inbox/abas/AbaAtividade.tsx" "src/app/(app)/inbox/abas/AbaAtividade.test.ts" "src/app/(app)/inbox/abas/AgendadasAtividade.tsx" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): aba Atividade com agendadas, atividade recente e notas (E2.14, D11)"
+git add src/server/inbox/painel-atividade.ts src/server/inbox/painel-atividade.int.test.ts src/server/inbox/painel-abas.ts src/server/inbox/acoes-painel.ts "src/app/(app)/inbox/abas/AbaAtividade.tsx" "src/app/(app)/inbox/abas/AbaAtividade.test.ts" "src/app/(app)/inbox/abas/AgendadasAtividade.tsx" "src/app/(app)/inbox/PainelContato.tsx" "src/app/(app)/inbox/PainelContato.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual docs/planejamento/quadro-entregas.md
+git commit -m "feat(inbox): aba Atividade com agendadas, atividade recente e notas (E2.13, D11)"
 ```
 
-<a id="task-15"></a>
-### Task 15: Aba Atividade: Aria neste contato e alterações da IA com desfazer (D1)
+<a id="task-14"></a>
+### Task 14: Aba Atividade: Aria neste contato e alterações da IA com desfazer (D1)
 
 **Files:**
 - Create: `src/server/inbox/texto-aria.ts`, `src/app/(app)/inbox/abas/AlteracoesAria.tsx`
-- Modify: `src/server/inbox/painel-atividade.ts` (`aria`, `alteracoes`); `src/server/inbox/painel-detalhes.ts` (`CabecalhoPainel.contadorAtividade`); `src/server/aria/historico.ts:163-176` (idempotência por natureza do desfazer); `src/server/inbox/acoes-painel.ts` (`desfazerAcaoAriaNoInbox`); `src/app/(app)/inbox/abas/AbaAtividade.tsx`; `src/app/(app)/inbox/InboxNovo.tsx` (`abasDoPainel(finalidade, cabecalho.contadorAtividade)`)
-- Test: `src/server/inbox/texto-aria.test.ts`, `src/app/(app)/inbox/abas/AlteracoesAria.test.ts`, `src/server/inbox/painel-atividade-aria.int.test.ts`, `src/server/aria/historico.int.test.ts` (casos novos)
+- Modify: `src/server/inbox/painel-atividade.ts` (`aria`, `alteracoes`); `src/server/inbox/painel-detalhes.ts` (`CabecalhoPainel.contadorAtividade`); `src/server/aria/historico.ts:163-176` (idempotência por natureza do desfazer); `src/server/inbox/acoes-painel.ts` (`desfazerAcaoAriaNoInbox`); `src/app/(app)/inbox/abas/AbaAtividade.tsx`; `src/app/(app)/inbox/PainelContato.tsx` (`abasDoPainel(finalidade, contagens?)`); `src/app/(app)/inbox/InboxNovo.tsx`
+- Test: `src/server/inbox/texto-aria.test.ts`, `src/app/(app)/inbox/abas/AlteracoesAria.test.ts`, `src/app/(app)/inbox/PainelContato.test.ts` (contagem), `src/server/inbox/painel-atividade-aria.int.test.ts`, `src/server/aria/historico.int.test.ts` (casos novos)
 
 **Interfaces:**
 - Consumes: `versaoPublicada` (`aria/versoes.ts:30`), `modoDaAcao` (`aria/config-schema.ts:163`), `ACOES_MATRIZ` (`aria/matriz.ts:14`); `desfazerAcaoAria` (`aria/historico.ts:163`); `ACAO_AGENTE_IA_LABEL` (`lib/labels.ts:536`).
@@ -1368,17 +1383,47 @@ git commit -m "feat(inbox): aba Atividade com agendadas, atividade recente e not
   - `type AriaNoContato = { ultimaAcao: { texto: string; confianca: number; em: string } | null; faixa: { executaAPartirDe: number; transfereAbaixoDe: number }; etapa: EtapaLead | null; automatico: AcaoAgenteIATipo[]; comAprovacao: AcaoAgenteIATipo[] }`
   - `AtividadePainel` acrescenta `aria: AriaNoContato | null; alteracoes: AlteracaoAriaPainel[]`
   - `CabecalhoPainel.contadorAtividade: number`
+  - `abasDoPainel(finalidade: string, contagens?: Partial<Record<IdAbaPainel, number>>): AbaPainel[]` (zero ou ausente não gera `contagem`)
   - `desfazerAcaoAriaNoInbox(atendimentoId: string, acaoId: string): Promise<Resultado>`
   - `AlteracoesAria(props: { itens: AlteracaoAriaPainel[]; atendimentoId: string; aoMudar(): void })`
 
 Regras (`P:623-649`, `P:745-751`, `P:903-910`, `P:1145`, `P:1154`):
-- `aria` só em `COMERCIAL` com `veLead`; `null` fora.
-- **Lista:** `AcaoAgenteIA` do atendimento com status `EXECUTADA`, `APROVADA` ou `DESFEITA`, `acao` diferente de `CLASSIFICAR_SETOR`, mais recentes primeiro, até 30 (índice `[atendimentoId, criadoEm]`, `schema.prisma:9149`). `podeDesfazer = capacidades.desfazerAria && reversivel && status in (EXECUTADA, APROVADA)` (mesma regra de `aria/consultas.ts:239`). Visível a quem vê o lead; o botão só a quem desfaz (D1).
-- **Contador:** quantos da lista têm `EXECUTADA` ou `APROVADA`. Zero esconde o contador.
-- **Texto:** `MOVER_ETAPA` "Moveu para <ETAPA_LABEL[para]>"; `MARCAR_PERDIDO` "Marcou como perdido"; `TAG` "Adicionou a tag <nome>"; `ATUALIZAR_CAMPO` "Preencheu <nomeCampo ?? "um campo">"; `CRIAR_TAREFA` "Criou a tarefa <titulo>"; `AGENDAR_MENSAGEM` "Agendou uma mensagem"; `NOTA_INTERNA` "Registrou uma nota interna"; `RESPONDER` "Enviou uma mensagem"; `ENVIAR_DOCUMENTO` "Enviou um documento"; `CONDICAO_COMERCIAL` "Ofereceu uma condição comercial"; `HANDOFF` "Pediu ajuda a uma pessoa". Payload sem o campo esperado cai no rótulo de `ACAO_AGENTE_IA_LABEL`.
-- **Linha:** ícone 28 px em `--ai-bg`/`--ai-text`, texto 13,5 px (riscado e opacidade 0,5 se desfeita), meta mono 11 px (`Desfeito · ` + hora). "Desfazer" (`IconArrowBackUp`) com `podeDesfazer`; irreversível: botão cadeado (`IconLock`) "Por que não dá para desfazer" que mostra `Não dá para desfazer: <motivo em minúsculas>. Se precisar corrigir, envie uma nova mensagem.` (`P:1154`). Vazio: "Aria ainda não alterou nada neste contato."; texto de introdução: "Tudo que Aria fez neste contato. Desfazer restaura o valor anterior. Mensagens enviadas e handoffs já comunicados ao lead não podem ser desfeitos."
-- **"Aria neste contato":** título com `IconSparkles` em `--ai-text`; `ultimaAcao` = ação mais recente do atendimento (qualquer status menos `SIMULADA`) com `textoAlteracaoAria` e `confianca`; barra de 4 px com largura `<confianca>%` e cor por `faixaConfianca` contra a faixa da **versão publicada** (`config.confianca`; sem versão, 75 e 55 do protótipo): `alta` `--brand-solid`, `media` `--warning-text`, `baixa` `--danger-solid`; número mono. Sem ação: "Aria ainda não atuou neste contato." Regras: `Automático em <ETAPA_LABEL>: <rótulos EXECUTA>` e `Com aprovação: <rótulos SUGERE>` (`modoDaAcao` para cada `ACOES_MATRIZ` na etapa do lead); lista vazia vira "nenhuma".
-- **Desfazer idempotente (#166):** em `desfazerAcaoAria`, depois de `travarAcao` e `exigirEscopo`, `status === "DESFEITA" && desfeitaPorId === u.id` devolve ok sem Evento; desfeita por outra pessoa segue "Esta ação já foi desfeita.". O wrapper confere `acao.atendimentoId === atendimentoId` ("Ação da Aria não encontrada.") e avisa.
+- `aria` e `alteracoes` só existem no `COMERCIAL` com `veLead`; fora disso, `null` e `[]`.
+- **Lista:**
+  - `AcaoAgenteIA` do atendimento com status `EXECUTADA`, `APROVADA` ou `DESFEITA` e `acao` diferente de `CLASSIFICAR_SETOR`, das mais recentes para as mais antigas, até 30 (índice `[atendimentoId, criadoEm]`, `schema.prisma:9149`).
+  - `podeDesfazer = capacidades.desfazerAria && reversivel && status ∈ {EXECUTADA, APROVADA}` (a regra de `aria/consultas.ts:239`).
+  - Quem vê o lead vê a lista; o botão aparece só para quem desfaz (D1).
+- **Contador:** quantos itens da lista estão em `EXECUTADA` ou `APROVADA`. Zero esconde o contador.
+- **Texto** de cada ação, por `textoAlteracaoAria`. Payload sem o campo esperado cai no rótulo de `ACAO_AGENTE_IA_LABEL`.
+
+  | Ação | Texto |
+  |---|---|
+  | `MOVER_ETAPA` | "Moveu para <ETAPA_LABEL[para]>" |
+  | `MARCAR_PERDIDO` | "Marcou como perdido" |
+  | `TAG` | "Adicionou a tag <nome>" |
+  | `ATUALIZAR_CAMPO` | "Preencheu <nomeCampo ?? "um campo">" |
+  | `CRIAR_TAREFA` | "Criou a tarefa <titulo>" |
+  | `AGENDAR_MENSAGEM` | "Agendou uma mensagem" |
+  | `NOTA_INTERNA` | "Registrou uma nota interna" |
+  | `RESPONDER` | "Enviou uma mensagem" |
+  | `ENVIAR_DOCUMENTO` | "Enviou um documento" |
+  | `CONDICAO_COMERCIAL` | "Ofereceu uma condição comercial" |
+  | `HANDOFF` | "Pediu ajuda a uma pessoa" |
+- **Linha da lista:**
+  - ícone de 28 px em `bg-ai-50`/`text-ai-700`;
+  - texto de 13,5 px, riscado e com opacidade 0,5 quando desfeita;
+  - meta em mono de 11 px (`Desfeito · ` + hora);
+  - "Desfazer" (`IconArrowBackUp`) quando `podeDesfazer`;
+  - nas irreversíveis, o botão de cadeado (`IconLock`) "Por que não dá para desfazer", que mostra `Não dá para desfazer: <motivo em minúsculas>. Se precisar corrigir, envie uma nova mensagem.` (`P:1154`).
+  - Introdução: "Tudo que Aria fez neste contato. Desfazer restaura o valor anterior. Mensagens enviadas e handoffs já comunicados ao lead não podem ser desfeitos."
+  - Vazio: "Aria ainda não alterou nada neste contato."
+- **"Aria neste contato":**
+  - título com `IconSparkles` em `text-ai-700`;
+  - `ultimaAcao` é a ação mais recente do atendimento (qualquer status, menos `SIMULADA`), com `textoAlteracaoAria` e `confianca`;
+  - a barra de 4 px tem largura `<confianca>%` e cor por `faixaConfianca`, contra a faixa da **versão publicada** (`config.confianca`; sem versão, 75 e 55, como o protótipo): `alta` em `bg-brand-solid`, `media` em `text-warning-text`/`bg-warning-solid` e `baixa` em `bg-danger-solid`; o número vai em mono;
+  - sem ação: "Aria ainda não atuou neste contato.";
+  - regras da etapa: `Automático em <ETAPA_LABEL>: <rótulos EXECUTA>` e `Com aprovação: <rótulos SUGERE>`, calculadas com `modoDaAcao` para cada item de `ACOES_MATRIZ` na etapa do lead; lista vazia vira "nenhuma".
+- **Desfazer idempotente (#166):** em `desfazerAcaoAria`, depois de `travarAcao` e `exigirEscopo`, a ação com `status === "DESFEITA"` e `desfeitaPorId === u.id` devolve ok sem Evento. Desfeita por outra pessoa, continua "Esta ação já foi desfeita.". A E3 (`04-aria.md`, Task 8) faz o mesmo com aprovar e rejeitar no mesmo arquivo. O wrapper confere `acao.atendimentoId === atendimentoId` (senão, "Ação da Aria não encontrada.") e avisa.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1395,12 +1440,17 @@ it("faixa de confiança pela versão publicada", () => {
 });
 // AlteracoesAria.test.ts
 it("desfazer só onde pode; cadeado no irreversível; desfeita riscada", () => {
-  const t = h([{ ...it1, podeDesfazer: true }, { ...it2, podeDesfazer: false, motivoIrreversivel: "Mensagem já enviada" }, { ...it3, desfeita: true }]);
+  const t = h([{ ...i1, podeDesfazer: true }, { ...i2, podeDesfazer: false, motivoIrreversivel: "Mensagem já enviada" }, { ...i3, desfeita: true }]);
   expect(t.match(/>Desfazer</g)).toHaveLength(1);
   expect(t).toContain('title="Por que não dá para desfazer"');
   expect(t).toMatch(/line-through[\s\S]*Desfeito · /);
 });
 it("vazio", () => expect(h([])).toContain("Aria ainda não alterou nada neste contato."));
+// PainelContato.test.ts
+it("contagem da Atividade só quando maior que zero", () => {
+  expect(abasDoPainel("COMERCIAL", { atividade: 2 }).find((a) => a.id === "atividade")).toEqual({ id: "atividade", rotulo: "Atividade", contagem: 2 });
+  expect(abasDoPainel("COMERCIAL", { atividade: 0 }).find((a) => a.id === "atividade")).toEqual({ id: "atividade", rotulo: "Atividade" });
+});
 ```
 
 ```ts
@@ -1411,24 +1461,24 @@ it("desfazer_repetido_pelo_mesmo_autor_e_ok_sem_evento", async () => {
   expect(await desfazerAcaoAria(a.id)).toEqual({ ok: true });
   expect(await prisma.evento.count({ where: { tipo: "AcaoAriaDesfeita", agregadoId: a.id } })).toBe(1);
 });
-it("desfeita_por_outro_segue_recusada", async () => { /* admin desfaz; gerente tenta → "Esta ação já foi desfeita." */ });
+it("desfeita_por_outro_segue_recusada", async () => { /* admin desfaz; o gerente tenta e recebe "Esta ação já foi desfeita." */ });
 // painel-atividade-aria.int.test.ts
 it("lista, contador, última ação, regras da etapa e podeDesfazer por papel (D1)", async () => {
   expect((await carregarAtividadePainel(sess(vendedor), a.id))!.alteracoes.every((x) => !x.podeDesfazer)).toBe(true);
   expect((await carregarAtividadePainel(sess(gerente), a.id))!.alteracoes.some((x) => x.podeDesfazer)).toBe(true);
   expect((await carregarCabecalhoPainel(sess(vendedor), a.id))!.contadorAtividade).toBe(2);
 });
-it("desfazerAcaoAriaNoInbox recusa ação de outro atendimento e o vendedor (D1)", async () => { /* … */ });
+it("desfazerAcaoAriaNoInbox recusa a ação de outro atendimento e o vendedor (D1)", async () => { /* … */ });
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run src/server/inbox/texto-aria.test.ts "src/app/(app)/inbox/abas/AlteracoesAria.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/aria/historico.int.test.ts src/server/inbox/painel-atividade-aria.int.test.ts`
-Expected: FAIL nos novos.
+Run: `node_modules/.bin/vitest run src/server/inbox/texto-aria.test.ts "src/app/(app)/inbox/abas/AlteracoesAria.test.ts" "src/app/(app)/inbox/PainelContato.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/aria/historico.int.test.ts src/server/inbox/painel-atividade-aria.int.test.ts`
+Expected: FAIL nos casos novos.
 
 - [ ] **Step 3: Implement**
 
-Como descrito. Cliente: `useAcaoCliente({ idempotente: true })` no "Desfazer"; sucesso chama `aoMudar()`.
+O "Desfazer" usa `useAcaoCliente({ idempotente: true })` e, no sucesso, `aoMudar()`. O `InboxNovo` monta as abas com `abasDoPainel(atual.finalidade, { atividade: cabecalho?.contadorAtividade ?? 0 })`.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -1436,33 +1486,35 @@ Mesmos comandos, mais `node_modules/.bin/vitest run -c vitest.integration.config
 
 - [ ] **Step 5: Aceite visual**
 
-Estado `painel-atividade` com alterações (uma desfeita, uma irreversível) para Gerente e para Vendedor; referência `telas/prototipo-estado-painel-atividade.png`. Diferença justificada: o vendedor não vê "Desfazer" (D1).
+Estado `painel-atividade` com alterações: uma desfeita e uma irreversível, capturado como Gerente e como Vendedor (a demo ganha três `AcaoAgenteIA` da Mariana). A referência é `telas/prototipo-estado-painel-atividade.png`. Diferença justificada: o vendedor não vê "Desfazer" (D1).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/server/inbox/texto-aria.ts src/server/inbox/texto-aria.test.ts src/server/inbox/painel-atividade.ts src/server/inbox/painel-atividade-aria.int.test.ts src/server/inbox/painel-detalhes.ts src/server/inbox/acoes-painel.ts src/server/aria/historico.ts src/server/aria/historico.int.test.ts "src/app/(app)/inbox/abas/AlteracoesAria.tsx" "src/app/(app)/inbox/abas/AlteracoesAria.test.ts" "src/app/(app)/inbox/abas/AbaAtividade.tsx" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual/demo-inbox.ts docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): Aria neste contato e alterações da IA com desfazer (E2.15, D1)"
+git add src/server/inbox/texto-aria.ts src/server/inbox/texto-aria.test.ts src/server/inbox/painel-atividade.ts src/server/inbox/painel-atividade-aria.int.test.ts src/server/inbox/painel-detalhes.ts src/server/inbox/acoes-painel.ts src/server/aria/historico.ts src/server/aria/historico.int.test.ts "src/app/(app)/inbox/abas/AlteracoesAria.tsx" "src/app/(app)/inbox/abas/AlteracoesAria.test.ts" "src/app/(app)/inbox/abas/AbaAtividade.tsx" "src/app/(app)/inbox/PainelContato.tsx" "src/app/(app)/inbox/PainelContato.test.ts" "src/app/(app)/inbox/InboxNovo.tsx" scripts/visual docs/planejamento/quadro-entregas.md
+git commit -m "feat(inbox): Aria neste contato e alterações da IA com desfazer (E2.14, D1)"
 ```
 
-<a id="task-16"></a>
-### Task 16: Atalhos de saída e `?agendar=1`
+<a id="task-15"></a>
+### Task 15: Atalhos de saída: matrícula, contato e link da conversa
 
 **Files:**
 - Create: `src/lib/href-conversa.ts`
-- Modify: `src/app/(app)/inbox/page.tsx:31,72` (`agendarAoAbrir`); `src/app/(app)/inbox/InboxNovo.tsx` (abre o `DialogoAgendar`); `src/app/(app)/inbox/AcoesAtendimento.tsx:291` (exporta `DialogoAgendar`); `src/server/inbox/paineis.ts:19-20,63-82` (`matriculaId`); `src/app/(app)/inbox/PainelSetor.tsx:23,29` (link da matrícula); `src/app/(app)/inbox/ColunaConversas.tsx` (E1: o popover do seletor de número ganha "Gerenciar números em Configurações"); `src/app/(app)/funil/PainelOportunidade.tsx:281` (corrige `/contatos/<id>` para `/contatos?c=<id>`)
-- Test: `src/lib/href-conversa.test.ts`, `src/app/(app)/inbox/PainelSetor.test.ts` (casos novos), `src/app/(app)/inbox/InboxNovo.interacao.test.ts` (casos novos), `src/app/(app)/inbox/page.test.ts` (caso novo), `src/app/(app)/funil/PainelOportunidade.test.ts` (caso novo)
+- Modify: `src/server/inbox/paineis.ts:19-20,63-82` (`matriculaId`); `src/app/(app)/inbox/PainelSetor.tsx` (código da matrícula vira link); `src/app/(app)/funil/PainelOportunidade.tsx:281` (`/contatos/<id>` vira `/contatos?c=<id>`, achado da análise parte 3, A07)
+- Test: `src/lib/href-conversa.test.ts`, `src/app/(app)/inbox/PainelSetor.test.ts` (caso novo), `src/server/inbox/paineis.int.test.ts` (caso novo), `src/app/(app)/funil/PainelOportunidade.test.ts` (caso novo)
 
 **Interfaces:**
-- Consumes: `capacidadesPainel().gerenciarNumeros` (Task 1); `DialogoAgendar`.
 - Produces:
-  - `hrefConversa(atendimentoId: string, o?: { agendar?: boolean }): string` → `/inbox?c=<id>` e `&agendar=1`
-  - `PropsInboxNovo.agendarAoAbrir?: boolean`
-  - `DadosSetor` `FINANCEIRO`/`SECRETARIA`: `matriculaId: string | null`
+  - `hrefConversa(atendimentoId: string, o?: { agendar?: boolean }): string` → `/inbox?c=<id>` e, com `agendar`, `&agendar=1` (quem lê o parâmetro é a E4)
+  - `DadosSetor` de `FINANCEIRO` e `SECRETARIA`: `matriculaId: string | null`
 
-Regras:
-- Saídas (B1): "Abrir ficha completa" e "Ver no contato" → `/contatos?c=` (Tasks 5 e 9); "Ver empresa" → `/empresas/<id>` (Task 5); matrícula → `/matriculas/<id>` no painel de Financeiro e Secretaria (código vira link quando `matriculaId`, só para quem já via o código); "Gerenciar números em Configurações" → `/configuracao/whatsapp/numeros`, só com `gerenciarNumeros` (`P:104`).
-- `?agendar=1` (A21, `P:881`): `page.tsx` passa `agendarAoAbrir = um(parametros.agendar) === "1" && !!c`. O `InboxNovo` abre o `DialogoAgendar` uma vez, quando o painel do atendimento `c` chegou: com o item `status !== "ENCERRADO"`; se encerrado, `FeedbackAcao` "Esta conversa está encerrada. Não dá para agendar mensagens."; fora do escopo (item ausente), nada. Depois tira `agendar` da URL com `history.replaceState` (recarregar não reabre). D11 padrão: não exige ter assumido.
+Saídas do B1 nesta etapa:
+- `/contatos?c=`: "Abrir ficha completa" e "Ver no contato" (Tasks 5 e 9).
+- `/empresas/<id>`: "Ver empresa" (Task 5).
+- `/matriculas/<id>`: o código da matrícula vira link no painel de Financeiro e Secretaria, só para quem já via o código (a regra de papel de `paineis.ts:64,74`).
+- Correção: o "Abrir contato" do funil apontava para uma rota que não existe.
+
+Ficam com outras etapas: "Gerenciar números em Configurações" (E1, seletor de número) e a leitura de `?agendar=1` (E4).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1474,60 +1526,74 @@ it("monta o link com e sem agendar", () => {
 });
 // PainelSetor.test.ts (acrescentar)
 it("matrícula vira link para a ficha", () => expect(h({ setor: "SECRETARIA", matriculaCodigo: "M-2", matriculaId: "m2", documentosPendentes: 0 })).toMatch(/<a [^>]*href="\/matriculas\/m2"[^>]*>M-2<\/a>/));
-// InboxNovo.interacao.test.ts (acrescentar)
-it("agendar_ao_abrir_so_em_conversa_aberta", async () => {
-  // aberto: o diálogo "Agendar mensagem" aparece uma vez e a URL perde agendar=1
-  // encerrado: aparece "Esta conversa está encerrada. Não dá para agendar mensagens." e nenhum diálogo
-});
-// page.test.ts (acrescentar)
-it("?agendar=1 só vale com ?c=", async () => { /* agendarAoAbrir true com c; false sem c */ });
+it("sem matriculaId o código fica em texto", () => expect(h({ setor: "FINANCEIRO", matriculaCodigo: "M-1", matriculaId: null, cobrancas: [] })).not.toContain("/matriculas/"));
+// paineis.int.test.ts (acrescentar)
+it("secretaria e financeiro recebem o id da matrícula; quem não vê o código, não vê o id", async () => { /* … */ });
 // PainelOportunidade.test.ts (acrescentar)
 it("“Abrir contato” usa /contatos?c=", () => expect(h()).toContain('href="/contatos?c=p1"'));
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run src/lib/href-conversa.test.ts "src/app/(app)/inbox/" "src/app/(app)/funil/PainelOportunidade.test.ts"`
-Expected: FAIL nos novos.
+Run: `node_modules/.bin/vitest run src/lib/href-conversa.test.ts "src/app/(app)/inbox/PainelSetor.test.ts" "src/app/(app)/funil/PainelOportunidade.test.ts"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/paineis.int.test.ts`
+Expected: FAIL nos casos novos.
 
 - [ ] **Step 3: Implement**
 
-Como descrito. `paineis.ts`: o `include` já traz `matricula.id` (`:46`); acrescentar ao retorno.
+Em `paineis.ts`, o `include` já traz `matricula.id` (`:46`); basta acrescentá-lo ao retorno, com a mesma condição do código.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Mesmo comando, mais `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/paineis.int.test.ts`. Expected: PASS.
+Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Estado `agendar-deeplink` (`/inbox?c=<Beatriz>&agendar=1`); referência `telas/prototipo-estado-agendar-deeplink.png` (só a abertura; o conteúdo do diálogo é da Task 18 e da E4).
+Estado novo `painel-secretaria` (Lucas, transferido da Secretaria na demo da E1), sem referência no protótipo: confere só o link.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/lib/href-conversa.ts src/lib/href-conversa.test.ts "src/app/(app)/inbox/" src/server/inbox/paineis.ts "src/app/(app)/funil/PainelOportunidade.tsx" "src/app/(app)/funil/PainelOportunidade.test.ts" docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): atalhos de saída e ?agendar=1 (E2.16)"
+git add src/lib/href-conversa.ts src/lib/href-conversa.test.ts src/server/inbox/paineis.ts src/server/inbox/paineis.int.test.ts "src/app/(app)/inbox/PainelSetor.tsx" "src/app/(app)/inbox/PainelSetor.test.ts" "src/app/(app)/funil/PainelOportunidade.tsx" "src/app/(app)/funil/PainelOportunidade.test.ts" scripts/visual docs/planejamento/quadro-entregas.md
+git commit -m "feat(inbox): atalhos de saída para matrícula e contato (E2.15)"
 ```
 
-<a id="task-17"></a>
-### Task 17: Atalhos de entrada nas outras telas (D21)
+<a id="task-16"></a>
+### Task 16: Atalhos de entrada nas outras telas (D21)
 
 **Files:**
 - Create: `src/server/inbox/atalhos.ts`
-- Modify: `src/app/(app)/funil/page.tsx` e `src/app/(app)/funil/PainelOportunidade.tsx` (prop `conversa`); `src/app/(app)/tarefas/page.tsx:49,84` e `src/app/(app)/tarefas/PainelTarefa.tsx` (prop `conversa`); `src/app/(app)/contatos/page.tsx:42,88` e `src/app/(app)/contatos/FichaContato.tsx` (prop `conversa`); `src/server/aria/consultas.ts:29-40,230-243` (`atendimentoId` no item) e `src/app/(app)/aria/_componentes/Historico.tsx` (link por linha); `src/server/inbox/painel-detalhes.ts` (`hrefConversa` dos participantes B2B)
-- Test: `src/server/inbox/atalhos.int.test.ts`, `src/app/(app)/funil/PainelOportunidade.test.ts`, `src/app/(app)/tarefas/PainelTarefa.interacao.test.ts` (ou render novo), `src/app/(app)/contatos/FichaContato.test.ts`, `src/server/aria/consultas.int.test.ts` (caso novo)
+- Modify:
+  - `src/app/(app)/funil/page.tsx` e `src/app/(app)/funil/PainelOportunidade.tsx` (prop `conversa`);
+  - `src/app/(app)/tarefas/page.tsx:49,84` e `src/app/(app)/tarefas/PainelTarefa.tsx` (prop `conversa`);
+  - `src/app/(app)/contatos/page.tsx:42,88` e `src/app/(app)/contatos/FichaContato.tsx` (prop `conversa`);
+  - `src/server/aria/consultas.ts:29-40,230-243` (`atendimentoId` no item) e `src/app/(app)/aria/_componentes/Historico.tsx` (link por linha);
+  - `src/server/inbox/painel-detalhes.ts` (`hrefConversa` dos participantes B2B).
+- Test: `src/server/inbox/atalhos.int.test.ts`, `src/app/(app)/funil/PainelOportunidade.test.ts`, `src/app/(app)/tarefas/PainelTarefa.test.ts` (render novo), `src/app/(app)/contatos/FichaContato.test.ts`, `src/server/aria/consultas.int.test.ts` (caso novo), `src/server/inbox/painel-detalhes.int.test.ts` (caso novo)
 
 **Interfaces:**
-- Consumes: `hrefConversa` (Task 16); `escopoAtendimentos` (`whatsapp/escopo.ts:47`).
+- Consumes: `hrefConversa` (Task 15); `escopoAtendimentos` (`whatsapp/escopo.ts:47`); `PAPEIS_INBOX` (`whatsapp/escopo.ts:16`).
 - Produces:
   - `type ConversaParaAbrir = { atendimentoId: string; aberta: boolean }`
   - `atendimentoParaAbrir(u: UsuarioSessao, alvo: { atendimentoId?: string | null; leadId?: string | null; pessoaId?: string | null }): Promise<ConversaParaAbrir | null>`
-  - Prop `conversa?: ConversaParaAbrir | null` em `PainelOportunidade`, `PainelTarefa` e `FichaContato`; `ItemHistoricoAria.atendimentoId: string | null`
+  - Prop `conversa?: ConversaParaAbrir | null` em `PainelOportunidade`, `PainelTarefa` e `FichaContato`
+  - `ItemHistoricoAria.atendimentoId: string | null`
 
 Regras:
-- Ordem de busca, sempre dentro de `escopoAtendimentos(u)` e sem grupo: o `atendimentoId` dado; senão o atendimento não encerrado do `leadId` com `ultimaMensagemEm` mais recente; senão o não encerrado de um contato com `pessoaId`; senão o encerrado mais recente das mesmas fontes. `aberta = status !== "ENCERRADO"`.
-- Links (só texto, D21): "Abrir conversa" (`hrefConversa(id)`) e, com `aberta`, "Agendar mensagem" (`hrefConversa(id, { agendar: true })`). Funil: no topo do painel da oportunidade, ao lado do código. Tarefas: abaixo do status, quando a tarefa tem `atendimentoId`, `leadId` ou `pessoaId`. Contatos: no cabeçalho da ficha. Agente (Histórico): link "Abrir conversa" na linha, quando `atendimentoId` não é nulo. Sem conversa, nada aparece.
-- Participantes B2B (Task 5): `hrefConversa` do atendimento da pessoa do participante, por `atendimentoParaAbrir(u, { pessoaId })`.
+- **Ordem de busca**, sempre dentro de `escopoAtendimentos(u)` e sem grupo:
+  1. o `atendimentoId` dado;
+  2. o atendimento não encerrado do `leadId`, com a `ultimaMensagemEm` mais recente;
+  3. o atendimento não encerrado de um contato com o `pessoaId`;
+  4. o atendimento encerrado mais recente das mesmas fontes.
+  
+  `aberta = status !== "ENCERRADO"`. Quem não tem papel de `PAPEIS_INBOX` recebe `null`.
+- **Links** (só texto, D21): "Abrir conversa" (`hrefConversa(id)`) e, quando a conversa está aberta, "Agendar mensagem" (`hrefConversa(id, { agendar: true })`). Onde ficam:
+  - Funil: no topo do painel da oportunidade, ao lado do código;
+  - Tarefas: abaixo do status, quando a tarefa tem `atendimentoId`, `leadId` ou `pessoaId`;
+  - Contatos: no cabeçalho da ficha;
+  - Agente (Histórico): "Abrir conversa" na linha, quando `atendimentoId` não é nulo.
+  
+  Sem conversa, nada aparece.
+- **B2B (Task 5):** `hrefConversa` do participante, a partir de `atendimentoParaAbrir(u, { pessoaId })`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1540,25 +1606,30 @@ it("cai na pessoa e, sem aberto, no encerrado", async () => {
   expect(await atendimentoParaAbrir(sess(dono), { pessoaId: p.id })).toEqual({ atendimentoId: aDaPessoa.id, aberta: true });
   expect(await atendimentoParaAbrir(sess(dono), { leadId: soEncerrado.id })).toEqual({ atendimentoId: aEncerrado.id, aberta: false });
 });
-it("fora do escopo: null", async () => expect(await atendimentoParaAbrir(sess(outro), { leadId: op.id })).toBeNull());
+it("fora do escopo ou sem papel do Inbox: null", async () => {
+  expect(await atendimentoParaAbrir(sess(outro), { leadId: op.id })).toBeNull();
+  expect(await atendimentoParaAbrir(sess(aluno), { leadId: op.id })).toBeNull();
+});
 // PainelOportunidade.test.ts
 it("“Abrir conversa” e “Agendar mensagem” com conversa aberta; só abrir com encerrada", () => {
   expect(h({ conversa: { atendimentoId: "a1", aberta: true } })).toContain('href="/inbox?c=a1&amp;agendar=1"');
   expect(h({ conversa: { atendimentoId: "a1", aberta: false } })).not.toContain("Agendar mensagem");
   expect(h({ conversa: null })).not.toContain("Abrir conversa");
 });
-// consultas.int.test.ts (aria)
+// aria/consultas.int.test.ts
 it("historicoAria devolve o atendimentoId da ação", async () => { /* … */ });
+// painel-detalhes.int.test.ts
+it("participante B2B com conversa visível tem hrefConversa", async () => { /* … */ });
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `node_modules/.bin/vitest run "src/app/(app)/funil/" "src/app/(app)/tarefas/" "src/app/(app)/contatos/" "src/app/(app)/aria/"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/atalhos.int.test.ts src/server/aria/consultas.int.test.ts`
-Expected: FAIL nos novos.
+Run: `node_modules/.bin/vitest run "src/app/(app)/funil/" "src/app/(app)/tarefas/" "src/app/(app)/contatos/" "src/app/(app)/aria/"` e `node_modules/.bin/vitest run -c vitest.integration.config.ts src/server/inbox/atalhos.int.test.ts src/server/aria/consultas.int.test.ts src/server/inbox/painel-detalhes.int.test.ts`
+Expected: FAIL nos casos novos.
 
 - [ ] **Step 3: Implement**
 
-As páginas chamam `atendimentoParaAbrir` só quando o painel está aberto (`?o=`, `?t=`, `?c=`) e só para quem tem papel do Inbox (`PAPEIS_INBOX`); senão passam `null`. No Agente, `historicoAria` acrescenta `atendimentoId: a.atendimentoId` (o link usa o escopo do Inbox ao abrir).
+As páginas só chamam `atendimentoParaAbrir` com o painel aberto (`?o=`, `?t=` ou `?c=`). No Agente, `historicoAria` acrescenta `atendimentoId: a.atendimentoId`; o escopo é conferido pelo Inbox ao abrir (`inbox/page.tsx:53-57`).
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -1566,165 +1637,112 @@ Mesmos comandos. Expected: PASS.
 
 - [ ] **Step 5: Aceite visual**
 
-Capturar `/funil?o=<Mariana>`, `/tarefas?t=<tarefa>`, `/contatos?c=<Mariana>` e `/aria?aba=historico` em 1440×900 nos dois temas, com os links; referências: os protótipos `ui2/Funil.dc.html:628`, `Tarefas.dc.html:582`, `Contatos.dc.html:624` e `Agente.dc.html:618` (só a presença e o texto do link).
+Capturar `/funil?o=<Mariana>`, `/tarefas?t=<tarefa da Mariana>`, `/contatos?c=<Mariana>` e `/aria?aba=historico` em 1440×900, nos dois temas (são estados novos `entrada-funil`, `entrada-tarefas`, `entrada-contatos` e `entrada-agente`, só do app). As referências são `ui2/Funil.dc.html:628`, `Tarefas.dc.html:582`, `Contatos.dc.html:624` e `Agente.dc.html:618`, e só valem para a presença e o texto do link.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/server/inbox/atalhos.ts src/server/inbox/atalhos.int.test.ts src/server/inbox/painel-detalhes.ts src/server/aria/consultas.ts src/server/aria/consultas.int.test.ts "src/app/(app)/funil/" "src/app/(app)/tarefas/" "src/app/(app)/contatos/" "src/app/(app)/aria/_componentes/Historico.tsx" docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): abrir conversa e agendar mensagem a partir de funil, tarefas, contatos e agente (E2.17, D21)"
+git add src/server/inbox/atalhos.ts src/server/inbox/atalhos.int.test.ts src/server/inbox/painel-detalhes.ts src/server/inbox/painel-detalhes.int.test.ts src/server/aria/consultas.ts src/server/aria/consultas.int.test.ts "src/app/(app)/funil/" "src/app/(app)/tarefas/" "src/app/(app)/contatos/" "src/app/(app)/aria/_componentes/Historico.tsx" scripts/visual docs/planejamento/quadro-entregas.md
+git commit -m "feat(inbox): abrir conversa e agendar mensagem a partir de funil, tarefas, contatos e agente (E2.16, D21)"
 ```
 
-<a id="task-18"></a>
-### Task 18: Agendar: atalhos de horário, aviso de conflito e salvar rascunho (D11)
+<a id="task-17"></a>
+### Task 17: @menção em nota interna com aviso no sino (D20), bloqueada
 
-**Files:**
-- Create: `src/app/(app)/inbox/atalhos-agendar.ts`
-- Modify: `src/app/(app)/inbox/AcoesAtendimento.tsx:291-321` (`DialogoAgendar`); `src/components/conversa/Compositor.tsx:38-44` (`gravarRascunhoConversa` e releitura pelo evento)
-- Test: `src/app/(app)/inbox/atalhos-agendar.test.ts`, `src/app/(app)/inbox/AcoesAtendimento.test.ts` (casos novos), `src/components/conversa/Compositor.test.ts` (casos novos, no molde de `:80-92`, com o `armazenamento` do próprio arquivo)
-
-**Interfaces:**
-- Consumes: `DialogoAgendar` exportado (Task 16); `listarAgendadasDoAtendimento` (Task 14) via a aba Atividade ou `listarConvitesEAgendamentos` (`whatsapp/consultas-acoes-atendimento.ts:46`) quando o diálogo abre sem a aba carregada.
-- Produces:
-  - `type AtalhoAgendar = "1h" | "hoje18" | "amanha9" | "amanha14" | "seg9"`
-  - `valorDoAtalhoAgendar(atalho: AtalhoAgendar, agora: Date, fuso: string): string | null` (texto `YYYY-MM-DDTHH:mm` no `fuso` do campo; `null` para "hoje18" depois das 18:00)
-  - `ROTULOS_ATALHO_AGENDAR: Record<AtalhoAgendar, string>` = "Em 1 hora", "Hoje 18:00", "Amanhã 09:00", "Amanhã 14:00", "Segunda 09:00" (`P:861`)
-  - `conflitoAgendamento(quando: Date, agendadas: { agendadaPara: string }[]): string | null` → `Já existe uma mensagem agendada para <hh:mm>, a menos de 2 horas.` quando alguma está a menos de 2 h (`P:1076`)
-  - `gravarRascunhoConversa(atendimentoId: string, modo: "responder" | "nota", texto: string): void`
-
-Regras: chips acima de "Enviar em" preenchem o campo (o selecionado com `--brand-bg`); o aviso de conflito aparece abaixo do campo em `--warning-text` e não impede agendar; "Salvar rascunho" (`P:401`) grava o texto no rascunho do compositor desta conversa e fecha o diálogo, com "Rascunho salvo no compositor." no `FeedbackAcao` da tela. "Em 1 hora" zera os segundos. "Escrever com Aria", respostas rápidas no diálogo, anexo, "perguntar se o contato responder", "Repetir" e "Vincular a" ficam na E4 (D11).
-
-- [ ] **Step 1: Write the failing tests**
-
-```ts
-// atalhos-agendar.test.ts
-const sp = "America/Sao_Paulo";
-it("atalhos no fuso do campo", () => {
-  const agora = new Date("2026-10-22T13:20:30Z"); // 10:20:30 SP
-  expect(valorDoAtalhoAgendar("1h", agora, sp)).toBe("2026-10-22T11:20");
-  expect(valorDoAtalhoAgendar("amanha9", agora, sp)).toBe("2026-10-23T09:00");
-  expect(valorDoAtalhoAgendar("seg9", agora, sp)).toBe("2026-10-26T09:00");
-  expect(valorDoAtalhoAgendar("hoje18", new Date("2026-10-22T21:30:00Z"), sp)).toBeNull();
-});
-it("conflito a menos de 2 h", () => {
-  const ags = [{ agendadaPara: "2026-10-23T12:00:00Z" }];
-  expect(conflitoAgendamento(new Date("2026-10-23T13:30:00Z"), ags)).toMatch(/^Já existe uma mensagem agendada para \d{2}:\d{2}, a menos de 2 horas\.$/);
-  expect(conflitoAgendamento(new Date("2026-10-23T14:00:00Z"), ags)).toBeNull();
-});
-// Compositor.test.ts (acrescentar)
-it("gravarRascunhoConversa grava a chave do compositor e avisa o atendimento", () => {
-  const disparar = vi.fn(); vi.stubGlobal("window", { dispatchEvent: disparar });
-  gravarRascunhoConversa("at1", "responder", "Oi!");
-  expect(armazenamento.get("conversa-rascunho:at1:responder")).toBe("Oi!");
-  expect(disparar.mock.calls[0][0]).toMatchObject({ type: "conversa-rascunho", detail: { atendimentoId: "at1" } });
-});
-// AcoesAtendimento.test.ts
-it("diálogo de agendar mostra os cinco atalhos e “Salvar rascunho”", () => { /* render do DialogoAgendar */ });
-```
-
-- [ ] **Step 2: Run the tests to verify they fail**
-
-Run: `node_modules/.bin/vitest run "src/app/(app)/inbox/atalhos-agendar.test.ts" "src/app/(app)/inbox/AcoesAtendimento.test.ts" src/components/conversa/Compositor.test.ts`
-Expected: FAIL nos casos novos.
-
-- [ ] **Step 3: Implement**
-
-Como descrito.
-
-- [ ] **Step 4: Run the tests to verify they pass**
-
-Mesmo comando. Expected: PASS.
-
-- [ ] **Step 5: Aceite visual**
-
-Estados `agendar-deeplink` e `agendar-conflito`; referência `telas/prototipo-estado-agendar-mais-opcoes.png` (só chips, conflito e rascunho; o resto é da E4).
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add "src/app/(app)/inbox/atalhos-agendar.ts" "src/app/(app)/inbox/atalhos-agendar.test.ts" "src/app/(app)/inbox/AcoesAtendimento.tsx" "src/app/(app)/inbox/AcoesAtendimento.test.ts" src/components/conversa/Compositor.tsx src/components/conversa/Compositor.test.ts docs/planejamento/quadro-entregas.md
-git commit -m "feat(inbox): atalhos de horário, conflito e rascunho no agendamento (E2.18, D11)"
-```
-
-<a id="task-19"></a>
-### Task 19: @menção em nota interna com aviso no sino (D20) — bloqueada
-
-**Estado:** bloqueada por D20. O padrão ("@menção sem aviso") não pede nada além da aba Nota da E1, que já aceita `@` como texto. Só anda quando o dono aprovar o aviso.
+**Estado:** bloqueada por D20. O padrão ("@menção sem aviso") não pede nada além da aba Nota da E1, onde `@` já é texto comum. A task só anda quando o dono aprovar o aviso.
 
 **Files (quando aprovada):**
 - Create: `prisma/migrations/20261023140000_notificacao_mencao_nota/migration.sql` (`ALTER TYPE "TipoNotificacao" ADD VALUE 'MENCAO_NOTA';`, sozinho na migration)
 - Create: `src/server/inbox/mencoes.ts`
-- Modify: `src/server/whatsapp/acoes-conversa.ts:24-45` (`registrarNotaAtendimento` grava as notificações na mesma transação); `src/app/(app)/tarefas/SinoNotificacoes.tsx` (rótulo e link `/inbox?c=`); `RodapeConversa` (lista de pessoas ao digitar `@`, `P:1108`)
+- Modify: `src/server/whatsapp/acoes-conversa.ts:24-45` (`registrarNotaAtendimento` grava as notificações na mesma transação); `src/app/(app)/tarefas/SinoNotificacoes.tsx` (rótulo e link `/inbox?c=`); `src/app/(app)/inbox/RodapeConversa.tsx` (lista de pessoas ao digitar `@`, `P:1108`)
 - Test: `src/server/inbox/mencoes.test.ts`, `src/server/whatsapp/nota-mencao.int.test.ts`
 
 **Interfaces (quando aprovada):**
-- `extrairMencoes(texto: string, pessoas: { id: string; nome: string }[]): string[]` (ids; `@` seguido do primeiro nome ou do nome completo, sem acento e sem caixa; ignora o autor)
-- Notificação `MENCAO_NOTA` com `refTipo: "AtendimentoWhatsApp"`, `refId: atendimentoId`, `titulo: "<autor> mencionou você numa nota"`, só para quem enxerga o atendimento (`atendimentoVisivel`), uma por pessoa por nota (idempotência pela marca da nota, #166).
+- `extrairMencoes(texto: string, pessoas: { id: string; nome: string }[]): string[]`: devolve ids; reconhece `@` com o primeiro nome ou com o nome completo, sem acento e sem caixa; ignora o autor.
+- Notificação `MENCAO_NOTA`, com `refTipo: "AtendimentoWhatsApp"`, `refId: atendimentoId` e `titulo: "<autor> mencionou você numa nota"`. Só vai para quem enxerga o atendimento (`atendimentoVisivel`), uma por pessoa e por nota; a idempotência vem da marca da nota (#166).
 
-- [ ] **Step 1:** testes `extrai_primeiro_nome_e_nome_completo`, `ignora_o_autor_e_quem_nao_ve_o_atendimento`, `repetir_a_nota_com_a_mesma_chave_nao_duplica_notificacao`.
-- [ ] **Step 2–4:** ciclo TDD com os comandos das tasks anteriores.
+- [ ] **Step 1:** testes `extrai_primeiro_nome_e_nome_completo`, `ignora_o_autor_e_quem_nao_ve_o_atendimento` e `repetir_a_nota_com_a_mesma_chave_nao_duplica_notificacao`.
+- [ ] **Steps 2–4:** ciclo TDD, com os comandos das tasks anteriores.
 - [ ] **Step 5:** aceite visual do estado `nota-interna` com a lista de menção (`P:1105-1109`).
-- [ ] **Step 6:** commit `feat(inbox): menção em nota com aviso no sino (E2.19, D20)`.
+- [ ] **Step 6:** commit `feat(inbox): menção em nota com aviso no sino (E2.17, D20)`.
 
-<a id="task-20"></a>
-### Task 20: Tarefa: prioridade baixa, lembretes de 15 min e 1 dia, recorrência e "notificar também" (D10) — bloqueada
+<a id="task-18"></a>
+### Task 18: Tarefa com prioridade baixa, lembretes de 15 min e 1 dia, recorrência e "notificar também" (D10), bloqueada
 
 **Estado:** bloqueada por D10. O padrão mantém os campos atuais (Task 11).
 
 **Files (quando aprovada):**
 - Create: `prisma/migrations/20261023120000_tarefa_prioridade_lembretes/migration.sql` (`ALTER TYPE "PrioridadeTarefa" ADD VALUE 'BAIXA';`, sozinho)
-- Create: `prisma/migrations/20261023130000_tarefa_recorrencia_notificar/migration.sql` (`Tarefa.recorrencia` enum `NAO_REPETE | DIARIA | SEMANAL | MENSAL` com padrão `NAO_REPETE`; tabela `TarefaNotificado(tarefaId, usuarioId)` com PK composta)
-- Modify: `src/server/crm/tarefas.ts:50-51` (prioridade `BAIXA`; lembretes `0 | 15 | 60 | 1440`, mantendo `10 | 30` para as tarefas antigas), `src/server/crm/lembretes.ts` (gera a próxima ocorrência ao concluir a recorrente; avisa os notificados); `ModalTarefa` ("Mais opções" com Repetir e "Notificar também", `P:724-727`)
+- Create: `prisma/migrations/20261023130000_tarefa_recorrencia_notificar/migration.sql`: `Tarefa.recorrencia`, enum `NAO_REPETE | DIARIA | SEMANAL | MENSAL` com o padrão `NAO_REPETE`; tabela `TarefaNotificado(tarefaId, usuarioId)` com PK composta
+- Modify:
+  - `src/server/crm/tarefas.ts:50-51`: prioridade `BAIXA`; lembretes `0 | 15 | 60 | 1440`, mantendo `10 | 30` para as tarefas antigas;
+  - `src/server/crm/lembretes.ts`: gera a próxima ocorrência quando a recorrente é concluída e avisa os notificados;
+  - `ModalTarefa`: "Mais opções" com Repetir e "Notificar também" (`P:724-727`).
 - Test: `src/server/crm/tarefa-recorrencia.int.test.ts`, `ModalTarefa.test.ts`
 
-- [ ] **Step 1:** testes `concluir_recorrente_cria_a_proxima_com_a_mesma_hora`, `lembrete_de_1_dia`, `notificados_recebem_o_lembrete`, `prioridade_baixa`.
-- [ ] **Step 2–5:** ciclo TDD, aceite visual `tarefa-nova-mais-opcoes` (`telas/prototipo-estado-tarefa-nova-mais-opcoes.png`).
-- [ ] **Step 6:** commit `feat(tarefas): recorrência, lembretes e notificados (E2.20, D10)`.
+- [ ] **Step 1:** testes `concluir_recorrente_cria_a_proxima_com_a_mesma_hora`, `lembrete_de_1_dia`, `notificados_recebem_o_lembrete` e `prioridade_baixa`.
+- [ ] **Steps 2–5:** ciclo TDD; aceite visual `tarefa-nova-mais-opcoes` (`telas/prototipo-estado-tarefa-nova-mais-opcoes.png`).
+- [ ] **Step 6:** commit `feat(tarefas): recorrência, lembretes e notificados (E2.18, D10)`.
 
-<a id="task-21"></a>
-### Task 21: Tarefa: "Enviar mensagem nesta data" (D11) — bloqueada
+<a id="task-19"></a>
+### Task 19: "Enviar mensagem nesta data" na tarefa (D11), bloqueada
 
-**Estado:** bloqueada por D11 ("vínculo" do agendamento com a tarefa; o padrão é "campos atuais", e `agendarMensagemNoAtendimento` não passa `tarefaId`, `whatsapp/acoes-conversa.ts:72-87`).
-
-**Files (quando aprovada):**
-- Modify: `src/server/whatsapp/acoes-conversa.ts:72-99` (`tarefaId?: string` repassado a `agendarMensagem`, que já o aceita, `crm/mensagens-agendadas.ts:32`); `src/server/inbox/acoes-painel.ts` (`criarTarefaNoInbox` aceita `mensagem?: { texto: string; chaveIdempotencia: string }` e agenda para `inicioEm` da tarefa, só se futuro, `P:926-927`); `ModalTarefa` (caixa "Enviar mensagem nesta data", `P:715-720`)
-- Test: `src/server/inbox/acoes-painel-criar-tarefa.int.test.ts` (casos `mensagem_agendada_com_tarefaId`, `horario_passado_nao_agenda`, `repetir_nao_agenda_duas_vezes`)
-
-- [ ] **Step 1–6:** ciclo TDD; aceite `tarefa-nova-mais-opcoes`; commit `feat(inbox): mensagem agendada junto da tarefa (E2.21, D11)`.
-
-<a id="task-22"></a>
-### Task 22: CPF e idade na Pessoa (D13) — bloqueada
-
-**Estado:** bloqueada por D13 (padrão: sem CPF e idade na Pessoa; hoje só em `Aluno.documento` e `nascimento`, `schema.prisma:1197-1207`).
+**Estado:** bloqueada por D11, que decide o vínculo do agendamento com a tarefa. O padrão é "campos atuais", e `agendarMensagemNoAtendimento` não passa `tarefaId` (`whatsapp/acoes-conversa.ts:72-87`). A Task 16 da E4 ("Anexo e vínculo no agendamento") cuida do mesmo vínculo; esta task consome o que ela entregar.
 
 **Files (quando aprovada):**
-- Create: `prisma/migrations/20261023150000_pessoa_cpf_nascimento/migration.sql` (`Pessoa.documento TEXT`, `Pessoa.nascimento DATE`, ambos nulos; sem índice)
-- Modify: `src/server/crm/contatos.ts:382-407` (`EditarPessoaSchema` com documento validado por país e `nascimento` data civil, nunca no payload do Evento em claro, como o e-mail); `painel-detalhes.ts` (`PessoaPainel.documento`, `idade` calculada no fuso da escola); `AbaDetalhes` e `GavetaContato` (linhas "CPF" e "Idade", `P:1129`); regra de exibição por setor conforme a resposta
+- Modify: `src/server/inbox/acoes-painel.ts`: `criarTarefaNoInbox` aceita `mensagem?: { texto: string; chaveIdempotencia: string }` e agenda para o `inicioEm` da tarefa, só se for futuro (`P:926-927`), pelo wrapper de agendamento com vínculo da E4.
+- Modify: `ModalTarefa`, com a caixa "Enviar mensagem nesta data" (`P:715-720`).
+- Test: `src/server/inbox/acoes-painel-criar-tarefa.int.test.ts`, casos `mensagem_agendada_com_tarefaId`, `horario_passado_nao_agenda` e `repetir_nao_agenda_duas_vezes`.
+
+- [ ] **Steps 1–6:** ciclo TDD; aceite `tarefa-nova-mais-opcoes`; commit `feat(inbox): mensagem agendada junto da tarefa (E2.19, D11)`.
+
+<a id="task-20"></a>
+### Task 20: CPF e idade na Pessoa (D13), bloqueada
+
+**Estado:** bloqueada por D13. O padrão é não ter CPF nem idade na Pessoa; hoje esses dados só existem em `Aluno.documento` e `Aluno.nascimento` (`schema.prisma:1197-1207`).
+
+**Files (quando aprovada):**
+- Create: `prisma/migrations/20261023150000_pessoa_cpf_nascimento/migration.sql`: `Pessoa.documento TEXT` e `Pessoa.nascimento DATE`, ambos nulos e sem índice.
+- Modify:
+  - `src/server/crm/contatos.ts:382-407`: `EditarPessoaSchema` com o documento validado por país e o `nascimento` como data civil. O documento nunca vai em claro no payload do Evento, como já acontece com o e-mail.
+  - `painel-detalhes.ts`: `PessoaPainel.documento` e a `idade`, calculada no fuso da escola.
+  - `AbaDetalhes` e `GavetaContato`: linhas "CPF" e "Idade" (`P:1129`).
+  - Regra de exibição por setor conforme a resposta do dono.
 - Test: `src/server/crm/pessoa-documento.int.test.ts`, `AbaDetalhes.test.ts`
 
-- [ ] **Step 1–6:** ciclo TDD; aceite `painel-detalhes`; commit `feat(crm): CPF e nascimento na pessoa (E2.22, D13)`.
+- [ ] **Steps 1–6:** ciclo TDD; aceite `painel-detalhes`; commit `feat(crm): CPF e nascimento na pessoa (E2.20, D13)`.
 
-<a id="task-23"></a>
-### Task 23: Probabilidade e previsão de fechamento da oportunidade (D13) — bloqueada
+<a id="task-21"></a>
+### Task 21: Probabilidade e previsão de fechamento da oportunidade (D13), bloqueada
 
-**Estado:** bloqueada por D13 (o pedido inclui estes campos na mesma decisão; não existem em `Oportunidade`, `schema.prisma:1408-1494`).
+**Estado:** bloqueada por D13. O pedido da etapa põe estes campos na mesma decisão. Eles não existem em `Oportunidade` (`schema.prisma:1408-1494`).
 
 **Files (quando aprovada):**
-- Create: `prisma/migrations/20261023160000_oportunidade_probabilidade_previsao/migration.sql` (`"Lead"."probabilidadePct" INTEGER` com `CHECK` 0–100 e `"Lead"."previsaoFechamento" TEXT` como data civil)
-- Modify: `src/server/comercial/schema.ts` e `comercial/acoes.ts:321` (`editarLead`); `crm/historico.ts:21-64,158-222` (`DetalheOportunidade`); `painel-oportunidades.ts` e `AbaOportunidades` (linha "Probabilidade · previsão", `P:1140`)
+- Create: `prisma/migrations/20261023160000_oportunidade_probabilidade_previsao/migration.sql`: `"Lead"."probabilidadePct" INTEGER`, com `CHECK` de 0 a 100, e `"Lead"."previsaoFechamento" TEXT`, como data civil.
+- Modify:
+  - `src/server/comercial/schema.ts` e `comercial/acoes.ts:321` (`editarLead`);
+  - `crm/historico.ts:21-64,158-222` (`DetalheOportunidade`);
+  - `painel-oportunidades.ts` e `AbaOportunidades`: linha "Probabilidade · previsão" (`P:1140`).
 - Test: `src/server/comercial/probabilidade.int.test.ts`, `AbaOportunidades.test.ts`
 
-- [ ] **Step 1–6:** ciclo TDD; aceite `painel-oportunidades`; commit `feat(comercial): probabilidade e previsão de fechamento (E2.23, D13)`.
+- [ ] **Steps 1–6:** ciclo TDD; aceite `painel-oportunidades`; commit `feat(comercial): probabilidade e previsão de fechamento (E2.21, D13)`.
 
 ---
 
-## Fora da E2 (para não haver dúvida)
+## Fora da E2
 
-- "Marcar como não lida" e "Devolver para Aria" no cabeçalho (B1 da análise): menu ⋮ e cabeçalho da E1; "Devolver" com a regra da E3.
-- Cartão de sugestão, faixa e modal de handoff, assumir com pausa da Aria: E3 (D1–D3).
-- Editar o texto da agendada, anexo, "perguntar se o contato responder", recorrência e "Escrever com Aria" no agendamento: E4 (D11).
-- Aba Insights e temperatura com score: E4 (D12).
-- "Falar com" que troca o interlocutor sem conversa aberta da pessoa: sem back-end (análise parte 3, T27); a E2 só leva à conversa existente.
+| Item | Onde fica |
+|---|---|
+| "Marcar como não lida" | E1 (menu ⋮) |
+| "Devolver para Aria" | E3 (Task 7) |
+| "Gerenciar números em Configurações" | E1 (seletor de número) |
+| Parte de UI do B6: atalhos de horário do agendamento, conflito, rascunho e cartões de agendada no fio | E4 (Tasks 3–5), que já os planeja. O pedido da etapa os punha na E2 "se não dependerem de D11"; entraram na E4 para não ter dois donos. A E2 deixou o `src/lib/atalhos-horario.ts` com a interface dela |
+| Leitura do `?agendar=1` | E4. A E2 só gera os links (Task 16) |
+| Editar o texto da agendada, anexo, "perguntar se o contato responder", recorrência e "Escrever com Aria" | E4 (D11) |
+| Cartão de sugestão, faixa e modal de handoff, assumir com pausa da Aria | E3 (D1–D3) |
+| Aba Insights e temperatura com score | E4 (D12) |
+| "Falar com" sem uma conversa da pessoa já aberta | Sem back-end (análise parte 3, T27). A E2 só leva à conversa que já existe |
+| Notas do atendimento no fio e na rota | E0 (Tasks 3 e 4) |
 
 ---
 
@@ -1757,7 +1775,7 @@ Criar `avisarAtendimento`, que publica `atendimento.atualizado` para as ações 
 
 **Labels:** `inbox`, `etapa-2`, `back-end`
 
-Acrescentar `Tarefa.atendimentoId` (migrations `20261023100000` e `20261023110000`), aceito por `criarTarefa` e gravado pela Aria ao criar tarefa.
+Acrescentar `Tarefa.atendimentoId` (migrations `20261023100000` e `20261023110000`), aceito por `criarTarefa` e gravado pela Aria quando cria tarefa.
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-2`
 
@@ -1771,7 +1789,7 @@ Acrescentar `Tarefa.atendimentoId` (migrations `20261023100000` e `2026102311000
 **Critérios de aceite:**
 - `src/server/crm/tarefa-atendimento.int.test.ts` passando
 - `src/server/aria/turno/executor-crm.int.test.ts` passando
-- `src/server/crm/criar-tarefa-idempotencia.int.test.ts` e `tarefas.int.test.ts` sem regressão
+- `criar-tarefa-idempotencia.int.test.ts` e `tarefas.int.test.ts` sem regressão
 
 **Dependências:**
 - Nenhuma
@@ -1780,7 +1798,7 @@ Acrescentar `Tarefa.atendimentoId` (migrations `20261023100000` e `2026102311000
 
 **Labels:** `inbox`, `etapa-2`, `back-end`
 
-Consultas do cabeçalho do painel (tags com ✦, contato sem nome, subtítulo) e da aba Detalhes, respeitando as regras 5 e 6 e o padrão de D13, mais a rota `GET /api/inbox/atendimentos/[id]/painel/[aba]`.
+Consultas do cabeçalho do painel (subtítulo, contato sem nome, tags disponíveis, capacidades) e da aba Detalhes, com as regras 5 e 6 e o padrão de D13, mais a rota `GET /api/inbox/atendimentos/[id]/painel/[aba]`.
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-3`
 
@@ -1791,9 +1809,7 @@ Consultas do cabeçalho do painel (tags com ✦, contato sem nome, subtítulo) e
 - `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.ts`
 
 **Critérios de aceite:**
-- `src/server/inbox/painel-detalhes.test.ts` passando
-- `src/server/inbox/painel-detalhes.int.test.ts` passando
-- `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.test.ts` passando
+- `painel-detalhes.test.ts`, `painel-detalhes.int.test.ts` e `painel/[aba]/route.test.ts` passando
 
 **Dependências:**
 - E2.1
@@ -1803,7 +1819,7 @@ Consultas do cabeçalho do painel (tags com ✦, contato sem nome, subtítulo) e
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Pílulas de tag com ✦ nas criadas pela Aria, "+ tag" com busca (e criação para quem gerencia equipe), remoção de tag e o bloco "contato sem nome".
+"+ tag" com busca (e criação para quem gerencia equipe), remoção de tag sobre as pílulas da E1 com ✦, e o bloco "contato sem nome".
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-4`
 
@@ -1813,40 +1829,40 @@ Pílulas de tag com ✦ nas criadas pela Aria, "+ tag" com busca (e criação pa
 - `src/app/(app)/inbox/PainelContato.tsx`
 - `src/app/(app)/inbox/InboxNovo.tsx`
 - `src/server/inbox/acoes-painel.ts`
+- `src/server/inbox/paineis.ts`
 - `src/server/crm/tags.ts`
 
 **Critérios de aceite:**
-- `TagsContato.test.ts`, `ContatoSemNome.test.ts` e `src/server/inbox/acoes-painel-tags.int.test.ts` passando
-- Aceite visual dos estados `painel-detalhes` e `painel-sem-nome` (1440×900, 1024×768, 390×844, claro e escuro) anexado ao PR
+- `TagsContato.test.ts`, `ContatoSemNome.test.ts`, `acoes-painel-tags.int.test.ts` e `paineis.int.test.ts` passando
+- Aceite visual de `painel-detalhes` e `painel-sem-nome` (1440×900, 1024×768 e 390×844, claro e escuro) anexado ao PR
 
 **Dependências:**
 - E2.3
-- E1 (`PainelContato`)
+- E1 (`PainelContato`, `TagPainel`, `tagsDaPessoa`)
 - D20 (vale o padrão)
 
 ### [Inbox E2.5] Aba Detalhes e bloco B2B (D13)
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Conteúdo da aba Detalhes: oportunidade atual, contato, perfil ou empresa, bloco B2B, e o painel do setor fora do comercial.
+Conteúdo comercial da aba Detalhes: oportunidade atual, contato, perfil ou empresa e bloco B2B; fora do comercial fica a aba da E1.
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-5`
 
 **Arquivos:**
 - `src/app/(app)/inbox/abas/AbaDetalhes.tsx`
 - `src/app/(app)/inbox/abas/BlocoB2B.tsx`
-- `src/app/(app)/inbox/abas/abas-painel.ts`
 - `src/app/(app)/inbox/abas/useAbaPainel.ts`
 - `src/app/(app)/inbox/InboxNovo.tsx`
-- `src/app/(app)/inbox/PainelSetor.tsx`
 
 **Critérios de aceite:**
-- `AbaDetalhes.test.ts` e `abas-painel.test.ts` passando
-- Aceite visual dos estados `painel-detalhes` e `painel-detalhes-b2b` anexado ao PR
+- `AbaDetalhes.test.ts` e `useAbaPainel.test.ts` passando
+- Aceite visual de `painel-detalhes` e `painel-detalhes-b2b` anexado ao PR
 
 **Dependências:**
 - E2.3
 - E2.4
+- E1 (`LinhaCampo`)
 - D13 (vale o padrão)
 
 ### [Inbox E2.6] Gaveta de edição do contato (D14)
@@ -1863,8 +1879,8 @@ O lápis do painel abre a gaveta "Editar contato", que salva os dados da pessoa 
 - `src/server/inbox/acoes-painel.ts`
 
 **Critérios de aceite:**
-- `GavetaContato.test.ts` e `src/server/inbox/acoes-painel-contato.int.test.ts` passando
-- Aceite visual do estado `painel-editar-contato` anexado ao PR
+- `GavetaContato.test.ts` e `acoes-painel-contato.int.test.ts` passando
+- Aceite visual de `painel-editar-contato` anexado ao PR
 
 **Dependências:**
 - E2.5
@@ -1874,7 +1890,7 @@ O lápis do painel abre a gaveta "Editar contato", que salva os dados da pessoa 
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Aba Oportunidades com a barra e o select de etapas pelas regras do funil (`destinoDoArraste`), e a ação `moverEtapaNoInbox`.
+Aba Oportunidades com a barra e o select de etapas pelas regras do funil (`destinoDoArraste`) e a ação `moverEtapaNoInbox`.
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-7`
 
@@ -1885,11 +1901,12 @@ Aba Oportunidades com a barra e o select de etapas pelas regras do funil (`desti
 - `src/app/(app)/inbox/abas/etapas-painel.ts`
 - `src/app/(app)/inbox/abas/BarraEtapas.tsx`
 - `src/app/(app)/inbox/abas/AbaOportunidades.tsx`
+- `src/app/(app)/inbox/PainelContato.tsx`
 - `src/app/(app)/inbox/InboxNovo.tsx`
 
 **Critérios de aceite:**
-- `etapas-painel.test.ts`, `AbaOportunidades.test.ts` e `src/server/inbox/painel-oportunidades.int.test.ts` passando
-- Aceite visual do estado `painel-oportunidades` anexado ao PR
+- `etapas-painel.test.ts`, `AbaOportunidades.test.ts`, `PainelContato.test.ts` e `painel-oportunidades.int.test.ts` passando
+- Aceite visual de `painel-oportunidades` anexado ao PR
 
 **Dependências:**
 - E2.1
@@ -1911,8 +1928,8 @@ Aba Oportunidades com a barra e o select de etapas pelas regras do funil (`desti
 - `src/server/inbox/acoes-painel.ts`
 
 **Critérios de aceite:**
-- `CartaoExperimental.test.ts`, `AbaOportunidades.test.ts`, `ModalPerda.acao.test.ts` e `src/server/inbox/acoes-painel-perda.int.test.ts` passando
-- Aceite visual dos estados `painel-oportunidades` e `perda` anexado ao PR
+- `CartaoExperimental.test.ts`, `AbaOportunidades.test.ts`, `ModalPerda.acao.test.ts` e `acoes-painel-perda.int.test.ts` passando
+- Aceite visual de `painel-oportunidades` e `perda` anexado ao PR
 
 **Dependências:**
 - E2.7
@@ -1936,8 +1953,8 @@ Outras oportunidades da pessoa, "Nova oportunidade" pelo funil (`/funil?nova=`) 
 - `src/app/(app)/funil/FunilCliente.tsx`
 
 **Critérios de aceite:**
-- `OutrasOportunidades.test.ts`, `ClienteVoltou.test.ts`, `src/server/inbox/cliente-voltou.int.test.ts` e `src/app/(app)/funil/page.test.ts` passando
-- Aceite visual do estado `painel-cliente-voltou` anexado ao PR
+- `OutrasOportunidades.test.ts`, `ClienteVoltou.test.ts`, `cliente-voltou.int.test.ts` e `funil/page.test.ts` passando
+- Aceite visual de `painel-cliente-voltou` anexado ao PR
 
 **Dependências:**
 - E2.7
@@ -1947,7 +1964,7 @@ Outras oportunidades da pessoa, "Nova oportunidade" pelo funil (`/funil?nova=`) 
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Lista de tarefas na aba Oportunidades, com concluir, reabrir, reagendar para amanhã 9h, editar e cancelar com motivo.
+Lista de tarefas na aba Oportunidades, com concluir, reabrir, reagendar para amanhã 9h, editar e cancelar com motivo; cria `src/lib/atalhos-horario.ts` com a interface da E4.
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-10`
 
@@ -1955,13 +1972,13 @@ Lista de tarefas na aba Oportunidades, com concluir, reabrir, reagendar para ama
 - `src/server/inbox/painel-tarefas.ts`
 - `src/server/inbox/painel-oportunidades.ts`
 - `src/server/inbox/acoes-painel.ts`
-- `src/app/(app)/inbox/quando-tarefa.ts`
+- `src/lib/atalhos-horario.ts`
 - `src/app/(app)/inbox/abas/TarefasOportunidade.tsx`
 - `src/app/(app)/inbox/abas/AbaOportunidades.tsx`
 
 **Critérios de aceite:**
-- `quando-tarefa.test.ts`, `TarefasOportunidade.test.ts` e `src/server/inbox/acoes-painel-tarefas.int.test.ts` passando
-- Aceite visual do estado `painel-oportunidades-tarefas` anexado ao PR
+- `atalhos-horario.test.ts`, `TarefasOportunidade.test.ts` e `acoes-painel-tarefas.int.test.ts` passando
+- Aceite visual de `painel-oportunidades-tarefas` anexado ao PR
 
 **Dependências:**
 - E2.2
@@ -1983,97 +2000,74 @@ Modal de tarefa do protótipo, só com os campos atuais do ERP, ligado à conver
 - `src/server/inbox/acoes-painel.ts`
 
 **Critérios de aceite:**
-- `ModalTarefa.test.ts` e `src/server/inbox/acoes-painel-criar-tarefa.int.test.ts` passando
-- Aceite visual dos estados `tarefa-nova` e `tarefa-editar` anexado ao PR
+- `ModalTarefa.test.ts` e `acoes-painel-criar-tarefa.int.test.ts` passando
+- Aceite visual de `tarefa-nova` e `tarefa-editar` anexado ao PR
 
 **Dependências:**
 - E2.10
 - D10 (vale o padrão)
 
-### [Inbox E2.12] Itens do fio: consulta, rota e notas
+### [Inbox E2.12] Cartão de tarefa no fio e entradas de tarefa e nota
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Notas, tarefas ligadas e mensagens agendadas no fio da conversa, intercaladas pela hora; o cartão de nota entra só se a E0 não o entregou.
+Tarefas ligadas à conversa entram no fio (`ItemFio`, `intercalarFio`, sobre o `itensDaThread` da E0) com editar e concluir; "Criar tarefa" no menu ⋮, no rodapé e no painel; "Adicionar nota" no painel.
 
 **Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-12`
 
 **Arquivos:**
-- `src/server/inbox/itens-fio.ts`
-- `src/app/api/inbox/atendimentos/[id]/fio/route.ts`
-- `src/components/conversa/intercalar-fio.ts`
-- `src/app/(app)/inbox/useItensFio.ts`
-- `src/app/(app)/inbox/ConversaAberta.tsx`
-- `src/server/whatsapp/acoes-conversa.ts`
-
-**Critérios de aceite:**
-- `intercalar-fio.test.ts`, `src/server/inbox/itens-fio.int.test.ts` e `fio/route.test.ts` passando
-- Aceite visual do estado `nota-interna` anexado ao PR
-
-**Dependências:**
-- E2.2
-- E2.10
-- E0 (notas visíveis)
-- E1 (thread)
-
-### [Inbox E2.13] Cartões de tarefa e de agendada no fio; entradas de tarefa e nota
-
-**Labels:** `inbox`, `etapa-2`, `ui`
-
-Cartões no fio para tarefa (editar, concluir) e mensagem agendada (reagendar, enviar agora, cancelar); "Criar tarefa" no menu, no compositor e no painel; "Adicionar nota" no painel.
-
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-13`
-
-**Arquivos:**
 - `src/components/conversa/CartaoTarefaFio.tsx`
-- `src/components/conversa/CartaoAgendadaFio.tsx`
-- `src/server/inbox/acoes-painel.ts`
-- `src/app/(app)/inbox/MenuConversa.tsx`
+- `src/components/conversa/intercalar-fio.ts`
+- `src/server/inbox/paineis.ts`
+- `src/app/(app)/inbox/ConversaAberta.tsx`
+- `src/app/(app)/inbox/AcoesAtendimento.tsx`
 - `src/app/(app)/inbox/RodapeConversa.tsx`
 - `src/app/(app)/inbox/abas/AbaOportunidades.tsx`
 - `src/app/(app)/inbox/InboxNovo.tsx`
 
 **Critérios de aceite:**
-- `CartaoTarefaFio.test.ts`, `CartaoAgendadaFio.test.ts` e `src/server/inbox/acoes-painel-agendadas.int.test.ts` passando
-- Aceite visual dos estados `fio-tarefa` e `fio-agendada` anexado ao PR
+- `intercalar-fio.test.ts`, `CartaoTarefaFio.test.ts`, `RodapeConversa.test.ts`, `AcoesAtendimento.test.ts` e `paineis.int.test.ts` passando
+- Aceite visual de `fio-tarefa` anexado ao PR
 
 **Dependências:**
 - E2.11
-- E2.12
-- E1 (`MenuConversa`, `RodapeConversa`)
+- E0 (`itensDaThread`, `ItemThread`)
+- E1 (`RodapeConversa`, `itensDoMenuConversa`)
 
-### [Inbox E2.14] Aba Atividade: agendadas, atividade recente e notas (D11)
+### [Inbox E2.13] Aba Atividade: agendadas, atividade recente e notas (D11)
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Aba Atividade com as mensagens agendadas, o resumo da atividade e as duas últimas notas internas.
+Aba Atividade com as mensagens agendadas (lista e cancelar), o resumo da atividade e as duas últimas notas internas.
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-14`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-13`
 
 **Arquivos:**
 - `src/server/inbox/painel-atividade.ts`
 - `src/server/inbox/painel-abas.ts`
-- `src/server/inbox/itens-fio.ts`
+- `src/server/inbox/acoes-painel.ts`
 - `src/app/(app)/inbox/abas/AbaAtividade.tsx`
 - `src/app/(app)/inbox/abas/AgendadasAtividade.tsx`
+- `src/app/(app)/inbox/PainelContato.tsx`
 - `src/app/(app)/inbox/InboxNovo.tsx`
 
 **Critérios de aceite:**
-- `AbaAtividade.test.ts` e `src/server/inbox/painel-atividade.int.test.ts` passando
-- Aceite visual dos estados `painel-atividade` e `painel-atividade-agendadas` anexado ao PR
+- `AbaAtividade.test.ts`, `PainelContato.test.ts` e `painel-atividade.int.test.ts` passando
+- Aceite visual de `painel-atividade` e `painel-atividade-agendadas` anexado ao PR
 
 **Dependências:**
-- E2.12
-- E2.13
+- E2.10
+- E0 (`notasInternasDoAtendimento`)
 - D11 (vale o padrão)
+- Pedido à E4: "Reagendar" e "Enviar agora" na seção
 
-### [Inbox E2.15] Aba Atividade: Aria neste contato e alterações da IA com desfazer (D1)
+### [Inbox E2.14] Aba Atividade: Aria neste contato e alterações da IA com desfazer (D1)
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Confiança, regras da etapa e lista das alterações da Aria com desfazer (idempotente por natureza), mais o contador da aba.
+Confiança, regras da etapa e lista das alterações da Aria com desfazer idempotente, mais o contador da aba.
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-15`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-14`
 
 **Arquivos:**
 - `src/server/inbox/texto-aria.ts`
@@ -2083,48 +2077,44 @@ Confiança, regras da etapa e lista das alterações da Aria com desfazer (idemp
 - `src/server/aria/historico.ts`
 - `src/app/(app)/inbox/abas/AlteracoesAria.tsx`
 - `src/app/(app)/inbox/abas/AbaAtividade.tsx`
+- `src/app/(app)/inbox/PainelContato.tsx`
 
 **Critérios de aceite:**
-- `texto-aria.test.ts`, `AlteracoesAria.test.ts`, `src/server/aria/historico.int.test.ts` e `src/server/inbox/painel-atividade-aria.int.test.ts` passando
-- Aceite visual do estado `painel-atividade` (gerente e vendedor) anexado ao PR
+- `texto-aria.test.ts`, `AlteracoesAria.test.ts`, `PainelContato.test.ts`, `historico.int.test.ts` e `painel-atividade-aria.int.test.ts` passando
+- Aceite visual de `painel-atividade` (gerente e vendedor) anexado ao PR
 
 **Dependências:**
-- E2.14
+- E2.13
 - D1 (vale o padrão)
 
-### [Inbox E2.16] Atalhos de saída e ?agendar=1
+### [Inbox E2.15] Atalhos de saída: matrícula, contato e link da conversa
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
-Links do Inbox para contatos, empresa, matrícula e números; `?agendar=1` abre o agendamento da conversa; corrige o link "Abrir contato" do funil.
+Código da matrícula vira link para `/matriculas/[id]`; `hrefConversa`; corrige o "Abrir contato" do funil para `/contatos?c=`.
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-16`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-15`
 
 **Arquivos:**
 - `src/lib/href-conversa.ts`
-- `src/app/(app)/inbox/page.tsx`
-- `src/app/(app)/inbox/InboxNovo.tsx`
-- `src/app/(app)/inbox/AcoesAtendimento.tsx`
-- `src/app/(app)/inbox/PainelSetor.tsx`
-- `src/app/(app)/inbox/ColunaConversas.tsx`
 - `src/server/inbox/paineis.ts`
+- `src/app/(app)/inbox/PainelSetor.tsx`
 - `src/app/(app)/funil/PainelOportunidade.tsx`
 
 **Critérios de aceite:**
-- `href-conversa.test.ts`, `PainelSetor.test.ts`, `InboxNovo.interacao.test.ts`, `src/app/(app)/inbox/page.test.ts` e `PainelOportunidade.test.ts` passando
-- Aceite visual do estado `agendar-deeplink` anexado ao PR
+- `href-conversa.test.ts`, `PainelSetor.test.ts`, `paineis.int.test.ts` e `PainelOportunidade.test.ts` passando
+- Aceite visual de `painel-secretaria` anexado ao PR
 
 **Dependências:**
-- E2.5
 - E1
 
-### [Inbox E2.17] Atalhos de entrada nas outras telas (D21)
+### [Inbox E2.16] Atalhos de entrada nas outras telas (D21)
 
 **Labels:** `inbox`, `etapa-2`, `ui`
 
 "Abrir conversa" e "Agendar mensagem" no Funil, em Tarefas, em Contatos e no Agente, pela conversa visível da oportunidade ou da pessoa.
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-17`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-16`
 
 **Arquivos:**
 - `src/server/inbox/atalhos.ts`
@@ -2136,43 +2126,21 @@ Links do Inbox para contatos, empresa, matrícula e números; `?agendar=1` abre 
 - `src/app/(app)/aria/_componentes/Historico.tsx`
 
 **Critérios de aceite:**
-- `src/server/inbox/atalhos.int.test.ts` e `src/server/aria/consultas.int.test.ts` passando
-- Testes de render das quatro telas passando
-- Aceite visual de `/funil`, `/tarefas`, `/contatos` e `/aria?aba=historico` anexado ao PR
+- `atalhos.int.test.ts`, `aria/consultas.int.test.ts`, `painel-detalhes.int.test.ts` e os testes de render das quatro telas passando
+- Aceite visual de `entrada-funil`, `entrada-tarefas`, `entrada-contatos` e `entrada-agente` anexado ao PR
 
 **Dependências:**
-- E2.16
+- E2.15
+- E4 (leitura de `?agendar=1`)
 - D21 (vale o padrão)
 
-### [Inbox E2.18] Agendar: atalhos de horário, aviso de conflito e salvar rascunho (D11)
-
-**Labels:** `inbox`, `etapa-2`, `ui`
-
-Parte de UI do B6 que não depende de D11: chips de horário, aviso de outra agendada a menos de 2 h e "Salvar rascunho" no compositor.
-
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-18`
-
-**Arquivos:**
-- `src/app/(app)/inbox/atalhos-agendar.ts`
-- `src/app/(app)/inbox/AcoesAtendimento.tsx`
-- `src/components/conversa/Compositor.tsx`
-
-**Critérios de aceite:**
-- `atalhos-agendar.test.ts`, `AcoesAtendimento.test.ts` e `src/components/conversa/Compositor.test.ts` passando
-- Aceite visual dos estados `agendar-deeplink` e `agendar-conflito` anexado ao PR
-
-**Dependências:**
-- E2.14
-- E2.16
-- D11 (vale o padrão)
-
-### [Inbox E2.19] @menção em nota interna com aviso no sino (D20)
+### [Inbox E2.17] @menção em nota interna com aviso no sino (D20)
 
 **Labels:** `inbox`, `etapa-2`, `back-end`, `bloqueado-por-decisao`
 
 Mencionar uma pessoa com `@` na nota interna e avisá-la no sino (migration reservada `20261023140000`).
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-19`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-17`
 
 **Arquivos:**
 - `prisma/migrations/20261023140000_notificacao_mencao_nota/migration.sql`
@@ -2183,19 +2151,20 @@ Mencionar uma pessoa com `@` na nota interna e avisá-la no sino (migration rese
 
 **Critérios de aceite:**
 - Testes da task passando
-- Aceite visual do estado `nota-interna` com a lista de menção anexado ao PR
+- Aceite visual de `nota-interna` com a lista de menção anexado ao PR
 
 **Dependências:**
 - D20 (aguarda resposta)
-- E2.12
+- E0
+- E1
 
-### [Inbox E2.20] Tarefa: prioridade baixa, lembretes de 15 min e 1 dia, recorrência e "notificar também" (D10)
+### [Inbox E2.18] Tarefa com prioridade baixa, lembretes de 15 min e 1 dia, recorrência e "notificar também" (D10)
 
 **Labels:** `inbox`, `etapa-2`, `back-end`, `bloqueado-por-decisao`
 
 Campos de tarefa do protótipo que o ERP não tem (migrations reservadas `20261023120000` e `20261023130000`).
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-20`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-18`
 
 **Arquivos:**
 - `prisma/migrations/20261023120000_tarefa_prioridade_lembretes/migration.sql`
@@ -2206,40 +2175,40 @@ Campos de tarefa do protótipo que o ERP não tem (migrations reservadas `202610
 
 **Critérios de aceite:**
 - Testes da task passando
-- Aceite visual do estado `tarefa-nova-mais-opcoes` anexado ao PR
+- Aceite visual de `tarefa-nova-mais-opcoes` anexado ao PR
 
 **Dependências:**
 - D10 (aguarda resposta)
 - E2.11
 
-### [Inbox E2.21] Tarefa: "Enviar mensagem nesta data" (D11)
+### [Inbox E2.19] "Enviar mensagem nesta data" na tarefa (D11)
 
 **Labels:** `inbox`, `etapa-2`, `back-end`, `bloqueado-por-decisao`
 
-Agendar a mensagem ao contato junto da tarefa, ligada a ela.
+Agendar a mensagem ao contato junto da tarefa, ligada a ela, pelo vínculo de agendamento da E4.
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-21`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-19`
 
 **Arquivos:**
-- `src/server/whatsapp/acoes-conversa.ts`
 - `src/server/inbox/acoes-painel.ts`
 - `src/app/(app)/inbox/ModalTarefa.tsx`
 
 **Critérios de aceite:**
 - Testes da task passando
-- Aceite visual do estado `tarefa-nova-mais-opcoes` anexado ao PR
+- Aceite visual de `tarefa-nova-mais-opcoes` anexado ao PR
 
 **Dependências:**
 - D11 (aguarda resposta)
 - E2.11
+- E4 (Task 16, vínculo no agendamento)
 
-### [Inbox E2.22] CPF e idade na Pessoa (D13)
+### [Inbox E2.20] CPF e idade na Pessoa (D13)
 
 **Labels:** `inbox`, `etapa-2`, `back-end`, `bloqueado-por-decisao`
 
 Documento e data de nascimento na Pessoa, no painel e na gaveta (migration reservada `20261023150000`).
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-22`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-20`
 
 **Arquivos:**
 - `prisma/migrations/20261023150000_pessoa_cpf_nascimento/migration.sql`
@@ -2250,20 +2219,20 @@ Documento e data de nascimento na Pessoa, no painel e na gaveta (migration reser
 
 **Critérios de aceite:**
 - Testes da task passando
-- Aceite visual do estado `painel-detalhes` anexado ao PR
+- Aceite visual de `painel-detalhes` anexado ao PR
 
 **Dependências:**
 - D13 (aguarda resposta)
 - E2.5
 - E2.6
 
-### [Inbox E2.23] Probabilidade e previsão de fechamento da oportunidade (D13)
+### [Inbox E2.21] Probabilidade e previsão de fechamento da oportunidade (D13)
 
 **Labels:** `inbox`, `etapa-2`, `back-end`, `bloqueado-por-decisao`
 
 Probabilidade e previsão de fechamento na oportunidade e na aba Oportunidades (migration reservada `20261023160000`).
 
-**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-23`
+**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-21`
 
 **Arquivos:**
 - `prisma/migrations/20261023160000_oportunidade_probabilidade_previsao/migration.sql`
@@ -2275,7 +2244,7 @@ Probabilidade e previsão de fechamento na oportunidade e na aba Oportunidades (
 
 **Critérios de aceite:**
 - Testes da task passando
-- Aceite visual do estado `painel-oportunidades` anexado ao PR
+- Aceite visual de `painel-oportunidades` anexado ao PR
 
 **Dependências:**
 - D13 (aguarda resposta)

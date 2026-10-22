@@ -15,7 +15,7 @@
       "etapa-2",
       "back-end"
     ],
-    "body": "Acrescentar `Tarefa.atendimentoId` (migrations `20261023100000` e `20261023110000`), aceito por `criarTarefa` e gravado pela Aria ao criar tarefa.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-2`\n\n**Arquivos:**\n- `prisma/schema.prisma`\n- `prisma/migrations/20261023100000_tarefa_atendimento/migration.sql`\n- `prisma/migrations/20261023110000_tarefa_atendimento_indice/migration.sql`\n- `src/server/crm/tarefas.ts`\n- `src/server/aria/turno/executor.ts`\n\n**Critérios de aceite:**\n- `src/server/crm/tarefa-atendimento.int.test.ts` passando\n- `src/server/aria/turno/executor-crm.int.test.ts` passando\n- `src/server/crm/criar-tarefa-idempotencia.int.test.ts` e `tarefas.int.test.ts` sem regressão\n\n**Dependências:**\n- Nenhuma"
+    "body": "Acrescentar `Tarefa.atendimentoId` (migrations `20261023100000` e `20261023110000`), aceito por `criarTarefa` e gravado pela Aria quando cria tarefa.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-2`\n\n**Arquivos:**\n- `prisma/schema.prisma`\n- `prisma/migrations/20261023100000_tarefa_atendimento/migration.sql`\n- `prisma/migrations/20261023110000_tarefa_atendimento_indice/migration.sql`\n- `src/server/crm/tarefas.ts`\n- `src/server/aria/turno/executor.ts`\n\n**Critérios de aceite:**\n- `src/server/crm/tarefa-atendimento.int.test.ts` passando\n- `src/server/aria/turno/executor-crm.int.test.ts` passando\n- `criar-tarefa-idempotencia.int.test.ts` e `tarefas.int.test.ts` sem regressão\n\n**Dependências:**\n- Nenhuma"
   },
   {
     "title": "[Inbox E2.3] Cabeçalho e Detalhes: consultas e rota das abas (D13)",
@@ -24,7 +24,7 @@
       "etapa-2",
       "back-end"
     ],
-    "body": "Consultas do cabeçalho do painel (tags com ✦, contato sem nome, subtítulo) e da aba Detalhes, respeitando as regras 5 e 6 e o padrão de D13, mais a rota `GET /api/inbox/atendimentos/[id]/painel/[aba]`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-3`\n\n**Arquivos:**\n- `src/server/inbox/painel-detalhes.ts`\n- `src/server/inbox/painel-abas.ts`\n- `src/server/inbox/paineis.ts`\n- `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.ts`\n\n**Critérios de aceite:**\n- `src/server/inbox/painel-detalhes.test.ts` passando\n- `src/server/inbox/painel-detalhes.int.test.ts` passando\n- `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.test.ts` passando\n\n**Dependências:**\n- E2.1\n- D13 (vale o padrão)"
+    "body": "Consultas do cabeçalho do painel (subtítulo, contato sem nome, tags disponíveis, capacidades) e da aba Detalhes, com as regras 5 e 6 e o padrão de D13, mais a rota `GET /api/inbox/atendimentos/[id]/painel/[aba]`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-3`\n\n**Arquivos:**\n- `src/server/inbox/painel-detalhes.ts`\n- `src/server/inbox/painel-abas.ts`\n- `src/server/inbox/paineis.ts`\n- `src/app/api/inbox/atendimentos/[id]/painel/[aba]/route.ts`\n\n**Critérios de aceite:**\n- `painel-detalhes.test.ts`, `painel-detalhes.int.test.ts` e `painel/[aba]/route.test.ts` passando\n\n**Dependências:**\n- E2.1\n- D13 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.4] Tags e contato sem nome no cabeçalho do painel (D20)",
@@ -33,7 +33,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "Pílulas de tag com ✦ nas criadas pela Aria, \"+ tag\" com busca (e criação para quem gerencia equipe), remoção de tag e o bloco \"contato sem nome\".\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-4`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/TagsContato.tsx`\n- `src/app/(app)/inbox/abas/ContatoSemNome.tsx`\n- `src/app/(app)/inbox/PainelContato.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/server/inbox/acoes-painel.ts`\n- `src/server/crm/tags.ts`\n\n**Critérios de aceite:**\n- `TagsContato.test.ts`, `ContatoSemNome.test.ts` e `src/server/inbox/acoes-painel-tags.int.test.ts` passando\n- Aceite visual dos estados `painel-detalhes` e `painel-sem-nome` (1440×900, 1024×768, 390×844, claro e escuro) anexado ao PR\n\n**Dependências:**\n- E2.3\n- E1 (`PainelContato`)\n- D20 (vale o padrão)"
+    "body": "\"+ tag\" com busca (e criação para quem gerencia equipe), remoção de tag sobre as pílulas da E1 com ✦, e o bloco \"contato sem nome\".\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-4`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/TagsContato.tsx`\n- `src/app/(app)/inbox/abas/ContatoSemNome.tsx`\n- `src/app/(app)/inbox/PainelContato.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/server/inbox/acoes-painel.ts`\n- `src/server/inbox/paineis.ts`\n- `src/server/crm/tags.ts`\n\n**Critérios de aceite:**\n- `TagsContato.test.ts`, `ContatoSemNome.test.ts`, `acoes-painel-tags.int.test.ts` e `paineis.int.test.ts` passando\n- Aceite visual de `painel-detalhes` e `painel-sem-nome` (1440×900, 1024×768 e 390×844, claro e escuro) anexado ao PR\n\n**Dependências:**\n- E2.3\n- E1 (`PainelContato`, `TagPainel`, `tagsDaPessoa`)\n- D20 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.5] Aba Detalhes e bloco B2B (D13)",
@@ -42,7 +42,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "Conteúdo da aba Detalhes: oportunidade atual, contato, perfil ou empresa, bloco B2B, e o painel do setor fora do comercial.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-5`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/AbaDetalhes.tsx`\n- `src/app/(app)/inbox/abas/BlocoB2B.tsx`\n- `src/app/(app)/inbox/abas/abas-painel.ts`\n- `src/app/(app)/inbox/abas/useAbaPainel.ts`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/PainelSetor.tsx`\n\n**Critérios de aceite:**\n- `AbaDetalhes.test.ts` e `abas-painel.test.ts` passando\n- Aceite visual dos estados `painel-detalhes` e `painel-detalhes-b2b` anexado ao PR\n\n**Dependências:**\n- E2.3\n- E2.4\n- D13 (vale o padrão)"
+    "body": "Conteúdo comercial da aba Detalhes: oportunidade atual, contato, perfil ou empresa e bloco B2B; fora do comercial fica a aba da E1.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-5`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/AbaDetalhes.tsx`\n- `src/app/(app)/inbox/abas/BlocoB2B.tsx`\n- `src/app/(app)/inbox/abas/useAbaPainel.ts`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `AbaDetalhes.test.ts` e `useAbaPainel.test.ts` passando\n- Aceite visual de `painel-detalhes` e `painel-detalhes-b2b` anexado ao PR\n\n**Dependências:**\n- E2.3\n- E2.4\n- E1 (`LinhaCampo`)\n- D13 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.6] Gaveta de edição do contato (D14)",
@@ -51,7 +51,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "O lápis do painel abre a gaveta \"Editar contato\", que salva os dados da pessoa e os campos personalizados numa ação só.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-6`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/GavetaContato.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/server/inbox/acoes-painel.ts`\n\n**Critérios de aceite:**\n- `GavetaContato.test.ts` e `src/server/inbox/acoes-painel-contato.int.test.ts` passando\n- Aceite visual do estado `painel-editar-contato` anexado ao PR\n\n**Dependências:**\n- E2.5\n- D14 (vale o padrão)"
+    "body": "O lápis do painel abre a gaveta \"Editar contato\", que salva os dados da pessoa e os campos personalizados numa ação só.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-6`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/GavetaContato.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/server/inbox/acoes-painel.ts`\n\n**Critérios de aceite:**\n- `GavetaContato.test.ts` e `acoes-painel-contato.int.test.ts` passando\n- Aceite visual de `painel-editar-contato` anexado ao PR\n\n**Dependências:**\n- E2.5\n- D14 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.7] Aba Oportunidades: consulta e barra de etapas (D8)",
@@ -60,7 +60,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "Aba Oportunidades com a barra e o select de etapas pelas regras do funil (`destinoDoArraste`), e a ação `moverEtapaNoInbox`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-7`\n\n**Arquivos:**\n- `src/server/inbox/painel-oportunidades.ts`\n- `src/server/inbox/painel-abas.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/abas/etapas-painel.ts`\n- `src/app/(app)/inbox/abas/BarraEtapas.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `etapas-painel.test.ts`, `AbaOportunidades.test.ts` e `src/server/inbox/painel-oportunidades.int.test.ts` passando\n- Aceite visual do estado `painel-oportunidades` anexado ao PR\n\n**Dependências:**\n- E2.1\n- E2.5\n- D8 (vale o padrão)"
+    "body": "Aba Oportunidades com a barra e o select de etapas pelas regras do funil (`destinoDoArraste`) e a ação `moverEtapaNoInbox`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-7`\n\n**Arquivos:**\n- `src/server/inbox/painel-oportunidades.ts`\n- `src/server/inbox/painel-abas.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/abas/etapas-painel.ts`\n- `src/app/(app)/inbox/abas/BarraEtapas.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/inbox/PainelContato.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `etapas-painel.test.ts`, `AbaOportunidades.test.ts`, `PainelContato.test.ts` e `painel-oportunidades.int.test.ts` passando\n- Aceite visual de `painel-oportunidades` anexado ao PR\n\n**Dependências:**\n- E2.1\n- E2.5\n- D8 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.8] Perda, aula experimental e ações da oportunidade (D8)",
@@ -69,7 +69,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "\"Marcar como perdido\" com o `ModalPerda` do funil, cartão da aula experimental e \"Assumir conversa\" na aba Oportunidades.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-8`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/CartaoExperimental.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/funil/ModalPerda.tsx`\n- `src/server/inbox/acoes-painel.ts`\n\n**Critérios de aceite:**\n- `CartaoExperimental.test.ts`, `AbaOportunidades.test.ts`, `ModalPerda.acao.test.ts` e `src/server/inbox/acoes-painel-perda.int.test.ts` passando\n- Aceite visual dos estados `painel-oportunidades` e `perda` anexado ao PR\n\n**Dependências:**\n- E2.7\n- D8 (vale o padrão)"
+    "body": "\"Marcar como perdido\" com o `ModalPerda` do funil, cartão da aula experimental e \"Assumir conversa\" na aba Oportunidades.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-8`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/CartaoExperimental.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/funil/ModalPerda.tsx`\n- `src/server/inbox/acoes-painel.ts`\n\n**Critérios de aceite:**\n- `CartaoExperimental.test.ts`, `AbaOportunidades.test.ts`, `ModalPerda.acao.test.ts` e `acoes-painel-perda.int.test.ts` passando\n- Aceite visual de `painel-oportunidades` e `perda` anexado ao PR\n\n**Dependências:**\n- E2.7\n- D8 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.9] Outras oportunidades, nova oportunidade e cliente que volta (D18)",
@@ -78,7 +78,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "Outras oportunidades da pessoa, \"Nova oportunidade\" pelo funil (`/funil?nova=`) e o cartão \"já é cliente e voltou\", que reaproveita a oportunidade anterior.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-9`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/OutrasOportunidades.tsx`\n- `src/app/(app)/inbox/abas/ClienteVoltou.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/app/(app)/funil/page.tsx`\n- `src/app/(app)/funil/FunilCliente.tsx`\n\n**Critérios de aceite:**\n- `OutrasOportunidades.test.ts`, `ClienteVoltou.test.ts`, `src/server/inbox/cliente-voltou.int.test.ts` e `src/app/(app)/funil/page.test.ts` passando\n- Aceite visual do estado `painel-cliente-voltou` anexado ao PR\n\n**Dependências:**\n- E2.7\n- D18 (vale o padrão)"
+    "body": "Outras oportunidades da pessoa, \"Nova oportunidade\" pelo funil (`/funil?nova=`) e o cartão \"já é cliente e voltou\", que reaproveita a oportunidade anterior.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-9`\n\n**Arquivos:**\n- `src/app/(app)/inbox/abas/OutrasOportunidades.tsx`\n- `src/app/(app)/inbox/abas/ClienteVoltou.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/app/(app)/funil/page.tsx`\n- `src/app/(app)/funil/FunilCliente.tsx`\n\n**Critérios de aceite:**\n- `OutrasOportunidades.test.ts`, `ClienteVoltou.test.ts`, `cliente-voltou.int.test.ts` e `funil/page.test.ts` passando\n- Aceite visual de `painel-cliente-voltou` anexado ao PR\n\n**Dependências:**\n- E2.7\n- D18 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.10] Tarefas da oportunidade: lista e ações (D10)",
@@ -87,7 +87,7 @@
       "etapa-2",
       "ui"
     ],
-    "body": "Lista de tarefas na aba Oportunidades, com concluir, reabrir, reagendar para amanhã 9h, editar e cancelar com motivo.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-10`\n\n**Arquivos:**\n- `src/server/inbox/painel-tarefas.ts`\n- `src/server/inbox/painel-oportunidades.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/quando-tarefa.ts`\n- `src/app/(app)/inbox/abas/TarefasOportunidade.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n\n**Critérios de aceite:**\n- `quando-tarefa.test.ts`, `TarefasOportunidade.test.ts` e `src/server/inbox/acoes-painel-tarefas.int.test.ts` passando\n- Aceite visual do estado `painel-oportunidades-tarefas` anexado ao PR\n\n**Dependências:**\n- E2.2\n- E2.7\n- D10 (vale o padrão)"
+    "body": "Lista de tarefas na aba Oportunidades, com concluir, reabrir, reagendar para amanhã 9h, editar e cancelar com motivo; cria `src/lib/atalhos-horario.ts` com a interface da E4.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-10`\n\n**Arquivos:**\n- `src/server/inbox/painel-tarefas.ts`\n- `src/server/inbox/painel-oportunidades.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/lib/atalhos-horario.ts`\n- `src/app/(app)/inbox/abas/TarefasOportunidade.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n\n**Critérios de aceite:**\n- `atalhos-horario.test.ts`, `TarefasOportunidade.test.ts` e `acoes-painel-tarefas.int.test.ts` passando\n- Aceite visual de `painel-oportunidades-tarefas` anexado ao PR\n\n**Dependências:**\n- E2.2\n- E2.7\n- D10 (vale o padrão)"
   },
   {
     "title": "[Inbox E2.11] Modal de tarefa: criar e editar (D10)",
@@ -96,119 +96,101 @@
       "etapa-2",
       "ui"
     ],
-    "body": "Modal de tarefa do protótipo, só com os campos atuais do ERP, ligado à conversa, com \"Já foi feita\".\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-11`\n\n**Arquivos:**\n- `src/app/(app)/inbox/ModalTarefa.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/server/inbox/acoes-painel.ts`\n\n**Critérios de aceite:**\n- `ModalTarefa.test.ts` e `src/server/inbox/acoes-painel-criar-tarefa.int.test.ts` passando\n- Aceite visual dos estados `tarefa-nova` e `tarefa-editar` anexado ao PR\n\n**Dependências:**\n- E2.10\n- D10 (vale o padrão)"
+    "body": "Modal de tarefa do protótipo, só com os campos atuais do ERP, ligado à conversa, com \"Já foi feita\".\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-11`\n\n**Arquivos:**\n- `src/app/(app)/inbox/ModalTarefa.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/server/inbox/acoes-painel.ts`\n\n**Critérios de aceite:**\n- `ModalTarefa.test.ts` e `acoes-painel-criar-tarefa.int.test.ts` passando\n- Aceite visual de `tarefa-nova` e `tarefa-editar` anexado ao PR\n\n**Dependências:**\n- E2.10\n- D10 (vale o padrão)"
   },
   {
-    "title": "[Inbox E2.12] Itens do fio: consulta, rota e notas",
+    "title": "[Inbox E2.12] Cartão de tarefa no fio e entradas de tarefa e nota",
     "labels": [
       "inbox",
       "etapa-2",
       "ui"
     ],
-    "body": "Notas, tarefas ligadas e mensagens agendadas no fio da conversa, intercaladas pela hora; o cartão de nota entra só se a E0 não o entregou.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-12`\n\n**Arquivos:**\n- `src/server/inbox/itens-fio.ts`\n- `src/app/api/inbox/atendimentos/[id]/fio/route.ts`\n- `src/components/conversa/intercalar-fio.ts`\n- `src/app/(app)/inbox/useItensFio.ts`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n- `src/server/whatsapp/acoes-conversa.ts`\n\n**Critérios de aceite:**\n- `intercalar-fio.test.ts`, `src/server/inbox/itens-fio.int.test.ts` e `fio/route.test.ts` passando\n- Aceite visual do estado `nota-interna` anexado ao PR\n\n**Dependências:**\n- E2.2\n- E2.10\n- E0 (notas visíveis)\n- E1 (thread)"
+    "body": "Tarefas ligadas à conversa entram no fio (`ItemFio`, `intercalarFio`, sobre o `itensDaThread` da E0) com editar e concluir; \"Criar tarefa\" no menu ⋮, no rodapé e no painel; \"Adicionar nota\" no painel.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-12`\n\n**Arquivos:**\n- `src/components/conversa/CartaoTarefaFio.tsx`\n- `src/components/conversa/intercalar-fio.ts`\n- `src/server/inbox/paineis.ts`\n- `src/app/(app)/inbox/ConversaAberta.tsx`\n- `src/app/(app)/inbox/AcoesAtendimento.tsx`\n- `src/app/(app)/inbox/RodapeConversa.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `intercalar-fio.test.ts`, `CartaoTarefaFio.test.ts`, `RodapeConversa.test.ts`, `AcoesAtendimento.test.ts` e `paineis.int.test.ts` passando\n- Aceite visual de `fio-tarefa` anexado ao PR\n\n**Dependências:**\n- E2.11\n- E0 (`itensDaThread`, `ItemThread`)\n- E1 (`RodapeConversa`, `itensDoMenuConversa`)"
   },
   {
-    "title": "[Inbox E2.13] Cartões de tarefa e de agendada no fio; entradas de tarefa e nota",
+    "title": "[Inbox E2.13] Aba Atividade: agendadas, atividade recente e notas (D11)",
     "labels": [
       "inbox",
       "etapa-2",
       "ui"
     ],
-    "body": "Cartões no fio para tarefa (editar, concluir) e mensagem agendada (reagendar, enviar agora, cancelar); \"Criar tarefa\" no menu, no compositor e no painel; \"Adicionar nota\" no painel.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-13`\n\n**Arquivos:**\n- `src/components/conversa/CartaoTarefaFio.tsx`\n- `src/components/conversa/CartaoAgendadaFio.tsx`\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/MenuConversa.tsx`\n- `src/app/(app)/inbox/RodapeConversa.tsx`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `CartaoTarefaFio.test.ts`, `CartaoAgendadaFio.test.ts` e `src/server/inbox/acoes-painel-agendadas.int.test.ts` passando\n- Aceite visual dos estados `fio-tarefa` e `fio-agendada` anexado ao PR\n\n**Dependências:**\n- E2.11\n- E2.12\n- E1 (`MenuConversa`, `RodapeConversa`)"
+    "body": "Aba Atividade com as mensagens agendadas (lista e cancelar), o resumo da atividade e as duas últimas notas internas.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-13`\n\n**Arquivos:**\n- `src/server/inbox/painel-atividade.ts`\n- `src/server/inbox/painel-abas.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/abas/AbaAtividade.tsx`\n- `src/app/(app)/inbox/abas/AgendadasAtividade.tsx`\n- `src/app/(app)/inbox/PainelContato.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `AbaAtividade.test.ts`, `PainelContato.test.ts` e `painel-atividade.int.test.ts` passando\n- Aceite visual de `painel-atividade` e `painel-atividade-agendadas` anexado ao PR\n\n**Dependências:**\n- E2.10\n- E0 (`notasInternasDoAtendimento`)\n- D11 (vale o padrão)\n- Pedido à E4: \"Reagendar\" e \"Enviar agora\" na seção"
   },
   {
-    "title": "[Inbox E2.14] Aba Atividade: agendadas, atividade recente e notas (D11)",
+    "title": "[Inbox E2.14] Aba Atividade: Aria neste contato e alterações da IA com desfazer (D1)",
     "labels": [
       "inbox",
       "etapa-2",
       "ui"
     ],
-    "body": "Aba Atividade com as mensagens agendadas, o resumo da atividade e as duas últimas notas internas.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-14`\n\n**Arquivos:**\n- `src/server/inbox/painel-atividade.ts`\n- `src/server/inbox/painel-abas.ts`\n- `src/server/inbox/itens-fio.ts`\n- `src/app/(app)/inbox/abas/AbaAtividade.tsx`\n- `src/app/(app)/inbox/abas/AgendadasAtividade.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n\n**Critérios de aceite:**\n- `AbaAtividade.test.ts` e `src/server/inbox/painel-atividade.int.test.ts` passando\n- Aceite visual dos estados `painel-atividade` e `painel-atividade-agendadas` anexado ao PR\n\n**Dependências:**\n- E2.12\n- E2.13\n- D11 (vale o padrão)"
+    "body": "Confiança, regras da etapa e lista das alterações da Aria com desfazer idempotente, mais o contador da aba.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-14`\n\n**Arquivos:**\n- `src/server/inbox/texto-aria.ts`\n- `src/server/inbox/painel-atividade.ts`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/server/aria/historico.ts`\n- `src/app/(app)/inbox/abas/AlteracoesAria.tsx`\n- `src/app/(app)/inbox/abas/AbaAtividade.tsx`\n- `src/app/(app)/inbox/PainelContato.tsx`\n\n**Critérios de aceite:**\n- `texto-aria.test.ts`, `AlteracoesAria.test.ts`, `PainelContato.test.ts`, `historico.int.test.ts` e `painel-atividade-aria.int.test.ts` passando\n- Aceite visual de `painel-atividade` (gerente e vendedor) anexado ao PR\n\n**Dependências:**\n- E2.13\n- D1 (vale o padrão)"
   },
   {
-    "title": "[Inbox E2.15] Aba Atividade: Aria neste contato e alterações da IA com desfazer (D1)",
+    "title": "[Inbox E2.15] Atalhos de saída: matrícula, contato e link da conversa",
     "labels": [
       "inbox",
       "etapa-2",
       "ui"
     ],
-    "body": "Confiança, regras da etapa e lista das alterações da Aria com desfazer (idempotente por natureza), mais o contador da aba.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-15`\n\n**Arquivos:**\n- `src/server/inbox/texto-aria.ts`\n- `src/server/inbox/painel-atividade.ts`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/server/aria/historico.ts`\n- `src/app/(app)/inbox/abas/AlteracoesAria.tsx`\n- `src/app/(app)/inbox/abas/AbaAtividade.tsx`\n\n**Critérios de aceite:**\n- `texto-aria.test.ts`, `AlteracoesAria.test.ts`, `src/server/aria/historico.int.test.ts` e `src/server/inbox/painel-atividade-aria.int.test.ts` passando\n- Aceite visual do estado `painel-atividade` (gerente e vendedor) anexado ao PR\n\n**Dependências:**\n- E2.14\n- D1 (vale o padrão)"
+    "body": "Código da matrícula vira link para `/matriculas/[id]`; `hrefConversa`; corrige o \"Abrir contato\" do funil para `/contatos?c=`.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-15`\n\n**Arquivos:**\n- `src/lib/href-conversa.ts`\n- `src/server/inbox/paineis.ts`\n- `src/app/(app)/inbox/PainelSetor.tsx`\n- `src/app/(app)/funil/PainelOportunidade.tsx`\n\n**Critérios de aceite:**\n- `href-conversa.test.ts`, `PainelSetor.test.ts`, `paineis.int.test.ts` e `PainelOportunidade.test.ts` passando\n- Aceite visual de `painel-secretaria` anexado ao PR\n\n**Dependências:**\n- E1"
   },
   {
-    "title": "[Inbox E2.16] Atalhos de saída e ?agendar=1",
+    "title": "[Inbox E2.16] Atalhos de entrada nas outras telas (D21)",
     "labels": [
       "inbox",
       "etapa-2",
       "ui"
     ],
-    "body": "Links do Inbox para contatos, empresa, matrícula e números; `?agendar=1` abre o agendamento da conversa; corrige o link \"Abrir contato\" do funil.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-16`\n\n**Arquivos:**\n- `src/lib/href-conversa.ts`\n- `src/app/(app)/inbox/page.tsx`\n- `src/app/(app)/inbox/InboxNovo.tsx`\n- `src/app/(app)/inbox/AcoesAtendimento.tsx`\n- `src/app/(app)/inbox/PainelSetor.tsx`\n- `src/app/(app)/inbox/ColunaConversas.tsx`\n- `src/server/inbox/paineis.ts`\n- `src/app/(app)/funil/PainelOportunidade.tsx`\n\n**Critérios de aceite:**\n- `href-conversa.test.ts`, `PainelSetor.test.ts`, `InboxNovo.interacao.test.ts`, `src/app/(app)/inbox/page.test.ts` e `PainelOportunidade.test.ts` passando\n- Aceite visual do estado `agendar-deeplink` anexado ao PR\n\n**Dependências:**\n- E2.5\n- E1"
+    "body": "\"Abrir conversa\" e \"Agendar mensagem\" no Funil, em Tarefas, em Contatos e no Agente, pela conversa visível da oportunidade ou da pessoa.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-16`\n\n**Arquivos:**\n- `src/server/inbox/atalhos.ts`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/server/aria/consultas.ts`\n- `src/app/(app)/funil/PainelOportunidade.tsx`\n- `src/app/(app)/tarefas/PainelTarefa.tsx`\n- `src/app/(app)/contatos/FichaContato.tsx`\n- `src/app/(app)/aria/_componentes/Historico.tsx`\n\n**Critérios de aceite:**\n- `atalhos.int.test.ts`, `aria/consultas.int.test.ts`, `painel-detalhes.int.test.ts` e os testes de render das quatro telas passando\n- Aceite visual de `entrada-funil`, `entrada-tarefas`, `entrada-contatos` e `entrada-agente` anexado ao PR\n\n**Dependências:**\n- E2.15\n- E4 (leitura de `?agendar=1`)\n- D21 (vale o padrão)"
   },
   {
-    "title": "[Inbox E2.17] Atalhos de entrada nas outras telas (D21)",
-    "labels": [
-      "inbox",
-      "etapa-2",
-      "ui"
-    ],
-    "body": "\"Abrir conversa\" e \"Agendar mensagem\" no Funil, em Tarefas, em Contatos e no Agente, pela conversa visível da oportunidade ou da pessoa.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-17`\n\n**Arquivos:**\n- `src/server/inbox/atalhos.ts`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/server/aria/consultas.ts`\n- `src/app/(app)/funil/PainelOportunidade.tsx`\n- `src/app/(app)/tarefas/PainelTarefa.tsx`\n- `src/app/(app)/contatos/FichaContato.tsx`\n- `src/app/(app)/aria/_componentes/Historico.tsx`\n\n**Critérios de aceite:**\n- `src/server/inbox/atalhos.int.test.ts` e `src/server/aria/consultas.int.test.ts` passando\n- Testes de render das quatro telas passando\n- Aceite visual de `/funil`, `/tarefas`, `/contatos` e `/aria?aba=historico` anexado ao PR\n\n**Dependências:**\n- E2.16\n- D21 (vale o padrão)"
-  },
-  {
-    "title": "[Inbox E2.18] Agendar: atalhos de horário, aviso de conflito e salvar rascunho (D11)",
-    "labels": [
-      "inbox",
-      "etapa-2",
-      "ui"
-    ],
-    "body": "Parte de UI do B6 que não depende de D11: chips de horário, aviso de outra agendada a menos de 2 h e \"Salvar rascunho\" no compositor.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-18`\n\n**Arquivos:**\n- `src/app/(app)/inbox/atalhos-agendar.ts`\n- `src/app/(app)/inbox/AcoesAtendimento.tsx`\n- `src/components/conversa/Compositor.tsx`\n\n**Critérios de aceite:**\n- `atalhos-agendar.test.ts`, `AcoesAtendimento.test.ts` e `src/components/conversa/Compositor.test.ts` passando\n- Aceite visual dos estados `agendar-deeplink` e `agendar-conflito` anexado ao PR\n\n**Dependências:**\n- E2.14\n- E2.16\n- D11 (vale o padrão)"
-  },
-  {
-    "title": "[Inbox E2.19] @menção em nota interna com aviso no sino (D20)",
+    "title": "[Inbox E2.17] @menção em nota interna com aviso no sino (D20)",
     "labels": [
       "inbox",
       "etapa-2",
       "back-end",
       "bloqueado-por-decisao"
     ],
-    "body": "Mencionar uma pessoa com `@` na nota interna e avisá-la no sino (migration reservada `20261023140000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-19`\n\n**Arquivos:**\n- `prisma/migrations/20261023140000_notificacao_mencao_nota/migration.sql`\n- `src/server/inbox/mencoes.ts`\n- `src/server/whatsapp/acoes-conversa.ts`\n- `src/app/(app)/tarefas/SinoNotificacoes.tsx`\n- `src/app/(app)/inbox/RodapeConversa.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual do estado `nota-interna` com a lista de menção anexado ao PR\n\n**Dependências:**\n- D20 (aguarda resposta)\n- E2.12"
+    "body": "Mencionar uma pessoa com `@` na nota interna e avisá-la no sino (migration reservada `20261023140000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-17`\n\n**Arquivos:**\n- `prisma/migrations/20261023140000_notificacao_mencao_nota/migration.sql`\n- `src/server/inbox/mencoes.ts`\n- `src/server/whatsapp/acoes-conversa.ts`\n- `src/app/(app)/tarefas/SinoNotificacoes.tsx`\n- `src/app/(app)/inbox/RodapeConversa.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual de `nota-interna` com a lista de menção anexado ao PR\n\n**Dependências:**\n- D20 (aguarda resposta)\n- E0\n- E1"
   },
   {
-    "title": "[Inbox E2.20] Tarefa: prioridade baixa, lembretes de 15 min e 1 dia, recorrência e \"notificar também\" (D10)",
+    "title": "[Inbox E2.18] Tarefa com prioridade baixa, lembretes de 15 min e 1 dia, recorrência e \"notificar também\" (D10)",
     "labels": [
       "inbox",
       "etapa-2",
       "back-end",
       "bloqueado-por-decisao"
     ],
-    "body": "Campos de tarefa do protótipo que o ERP não tem (migrations reservadas `20261023120000` e `20261023130000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-20`\n\n**Arquivos:**\n- `prisma/migrations/20261023120000_tarefa_prioridade_lembretes/migration.sql`\n- `prisma/migrations/20261023130000_tarefa_recorrencia_notificar/migration.sql`\n- `src/server/crm/tarefas.ts`\n- `src/server/crm/lembretes.ts`\n- `src/app/(app)/inbox/ModalTarefa.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual do estado `tarefa-nova-mais-opcoes` anexado ao PR\n\n**Dependências:**\n- D10 (aguarda resposta)\n- E2.11"
+    "body": "Campos de tarefa do protótipo que o ERP não tem (migrations reservadas `20261023120000` e `20261023130000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-18`\n\n**Arquivos:**\n- `prisma/migrations/20261023120000_tarefa_prioridade_lembretes/migration.sql`\n- `prisma/migrations/20261023130000_tarefa_recorrencia_notificar/migration.sql`\n- `src/server/crm/tarefas.ts`\n- `src/server/crm/lembretes.ts`\n- `src/app/(app)/inbox/ModalTarefa.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual de `tarefa-nova-mais-opcoes` anexado ao PR\n\n**Dependências:**\n- D10 (aguarda resposta)\n- E2.11"
   },
   {
-    "title": "[Inbox E2.21] Tarefa: \"Enviar mensagem nesta data\" (D11)",
+    "title": "[Inbox E2.19] \"Enviar mensagem nesta data\" na tarefa (D11)",
     "labels": [
       "inbox",
       "etapa-2",
       "back-end",
       "bloqueado-por-decisao"
     ],
-    "body": "Agendar a mensagem ao contato junto da tarefa, ligada a ela.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-21`\n\n**Arquivos:**\n- `src/server/whatsapp/acoes-conversa.ts`\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/ModalTarefa.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual do estado `tarefa-nova-mais-opcoes` anexado ao PR\n\n**Dependências:**\n- D11 (aguarda resposta)\n- E2.11"
+    "body": "Agendar a mensagem ao contato junto da tarefa, ligada a ela, pelo vínculo de agendamento da E4.\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-19`\n\n**Arquivos:**\n- `src/server/inbox/acoes-painel.ts`\n- `src/app/(app)/inbox/ModalTarefa.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual de `tarefa-nova-mais-opcoes` anexado ao PR\n\n**Dependências:**\n- D11 (aguarda resposta)\n- E2.11\n- E4 (Task 16, vínculo no agendamento)"
   },
   {
-    "title": "[Inbox E2.22] CPF e idade na Pessoa (D13)",
+    "title": "[Inbox E2.20] CPF e idade na Pessoa (D13)",
     "labels": [
       "inbox",
       "etapa-2",
       "back-end",
       "bloqueado-por-decisao"
     ],
-    "body": "Documento e data de nascimento na Pessoa, no painel e na gaveta (migration reservada `20261023150000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-22`\n\n**Arquivos:**\n- `prisma/migrations/20261023150000_pessoa_cpf_nascimento/migration.sql`\n- `src/server/crm/contatos.ts`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/app/(app)/inbox/abas/AbaDetalhes.tsx`\n- `src/app/(app)/inbox/abas/GavetaContato.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual do estado `painel-detalhes` anexado ao PR\n\n**Dependências:**\n- D13 (aguarda resposta)\n- E2.5\n- E2.6"
+    "body": "Documento e data de nascimento na Pessoa, no painel e na gaveta (migration reservada `20261023150000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-20`\n\n**Arquivos:**\n- `prisma/migrations/20261023150000_pessoa_cpf_nascimento/migration.sql`\n- `src/server/crm/contatos.ts`\n- `src/server/inbox/painel-detalhes.ts`\n- `src/app/(app)/inbox/abas/AbaDetalhes.tsx`\n- `src/app/(app)/inbox/abas/GavetaContato.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual de `painel-detalhes` anexado ao PR\n\n**Dependências:**\n- D13 (aguarda resposta)\n- E2.5\n- E2.6"
   },
   {
-    "title": "[Inbox E2.23] Probabilidade e previsão de fechamento da oportunidade (D13)",
+    "title": "[Inbox E2.21] Probabilidade e previsão de fechamento da oportunidade (D13)",
     "labels": [
       "inbox",
       "etapa-2",
       "back-end",
       "bloqueado-por-decisao"
     ],
-    "body": "Probabilidade e previsão de fechamento na oportunidade e na aba Oportunidades (migration reservada `20261023160000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-23`\n\n**Arquivos:**\n- `prisma/migrations/20261023160000_oportunidade_probabilidade_previsao/migration.sql`\n- `src/server/comercial/schema.ts`\n- `src/server/comercial/acoes.ts`\n- `src/server/crm/historico.ts`\n- `src/server/inbox/painel-oportunidades.ts`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual do estado `painel-oportunidades` anexado ao PR\n\n**Dependências:**\n- D13 (aguarda resposta)\n- E2.7"
+    "body": "Probabilidade e previsão de fechamento na oportunidade e na aba Oportunidades (migration reservada `20261023160000`).\n\n**Plano:** `docs/superpowers/plans/2026-10-22-inbox-prototipo-03-painel-crm.md#task-21`\n\n**Arquivos:**\n- `prisma/migrations/20261023160000_oportunidade_probabilidade_previsao/migration.sql`\n- `src/server/comercial/schema.ts`\n- `src/server/comercial/acoes.ts`\n- `src/server/crm/historico.ts`\n- `src/server/inbox/painel-oportunidades.ts`\n- `src/app/(app)/inbox/abas/AbaOportunidades.tsx`\n\n**Critérios de aceite:**\n- Testes da task passando\n- Aceite visual de `painel-oportunidades` anexado ao PR\n\n**Dependências:**\n- D13 (aguarda resposta)\n- E2.7"
   }
 ]

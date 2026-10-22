@@ -52,6 +52,7 @@ Enquanto uma decisão estiver aberta, vale a **regra atual do ERP** (coluna "Pad
 | D19 | Seguir conversa, mesclar contato, exportar PDF e recorrência continuam fora? "Buscar na conversa" entra quando? | Fora; busca na conversa entra na E1 (doc 03 linha 17) | E1 |
 | D20 | "+ tag" e marca de tag criada pela Aria; @menção em nota avisa no sino? | Tag criada sem autor = marca ✦; @menção sem aviso | E2 |
 | D21 | Funil, Tarefas, Contatos e Agente ganham "Abrir conversa" e "Agendar mensagem"? | Sim, só como link (`/inbox?c=`, `?agendar=1`) | E2 |
+| D22 | O anexo "Catálogo" entra? De onde vêm os arquivos? | Fora | E4 |
 
 ## Contrato de componentes
 
@@ -133,6 +134,22 @@ Função SQL redefinida exige `diff -w` contra a definição vigente no main, no
 ## Formato das issues
 
 - **Título:** `[Inbox E<etapa>.<task>] <título da task>`, com `(D<n>)` ao final quando depende de decisão.
-- **Labels:** `inbox`, `etapa-<n>`, um tipo (`ui`, `back-end`, `aria`, `motor`), `bloqueado-por-decisao` quando aplicável.
+- **Labels:** `inbox`, `etapa-<n>`, um tipo (`ui`, `back-end`, `aria`, `motor`) e, quando depende de decisão:
+  - `bloqueado-por-decisao`: a task só anda com a resposta do dono;
+  - `decisao-pendente`: a task anda com o padrão da tabela de decisões, e a resposta pode mudar detalhes depois.
 - **Corpo:** objetivo em 1–2 frases; link para a task no plano (`docs/superpowers/plans/<arquivo>.md#task-<n>`); arquivos; critérios de aceite (os testes da task e o aceite visual); dependências (outras issues e decisões).
 - Cada plano termina com a seção **Issues**: um bloco por task, já no formato acima, e um arquivo irmão `<plano>.issues.json` com a lista `[{ "title", "labels", "body" }]` para criação em lote.
+
+## Notas de integração entre os planos
+
+Pontos em que um plano estende ou substitui o que outro cria. A ordem de execução é E0 → E1 → E2 → E3 → E4; dentro de cada etapa, a ordem das tasks.
+
+- **Contagem dos chips.** A E1.5 cria `contarChipsInbox` em `consultas-pagina.ts`. A E3.3 a substitui por `resumoDaListaInbox` em `src/server/inbox/contagens.ts`, que passa a ser a única contagem, e remove a da E1.
+- **Fio da conversa.** A E0 entrega `itensDaThread` e `ItemThread`. A E1.9 os decora (`decorarThread`). A E2 monta `ItemFio`/`intercalarFio` sobre eles; a E3 acrescenta a variante `sugestao-aria`; as mensagens agendadas entram pelo slot `cartoesNoFio` da E4.
+- **Agendamento.** A E4 é dona da leitura de `?agendar=1`, do popover, dos atalhos, do conflito, do rascunho e dos cartões no fio. A E2 só gera os links e cria `src/lib/atalhos-horario.ts` com a interface que a E4 usa. "Reagendar" e "Enviar agora" na aba Atividade entram pela E4.3.
+- **Abas do painel.** `ABAS_ENTREGUES` começa em `["detalhes"]` na E1.13; a E2.7 acrescenta `"oportunidades"`, a E2.13 `"atividade"`, a E4 (D12) `"insights"`.
+- **`PainelAria`.** Fica na aba Detalhes até a E3.12, que o retira depois de o cartão e o handoff estarem na thread.
+- **Transferir.** "Atribuir" e "Devolver para a fila" saem do menu ⋮ da E1.10 e viram opções do Transferir na E4.1.
+- **Desfazer e decidir da Aria.** Ficam idempotentes por natureza em `src/server/aria/historico.ts`: desfazer na E2.14, aprovar e rejeitar na E3.8.
+- **Selo de não lidas do menu lateral.** Exceção autorizada ao escopo: E1.6, sobre a regra pessoal da E0.2.
+- **Dependências do integrador:** a E1.1 precisa do arquivo da JetBrains Mono com a licença; a E1.2 precisa das devDependencies `playwright-core@1.56.1`, `@babel/standalone@7.29.0` e `lucide-static@0.460.0`.
