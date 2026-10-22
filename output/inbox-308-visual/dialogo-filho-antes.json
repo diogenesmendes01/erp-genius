@@ -1,0 +1,6 @@
+{
+  "origem": "Saída terminal0511c1 da sessão83466, antes da correção local de Escape",
+  "exitCode": 1,
+  "observacao": "alertdialog permaneceu visível após Escape; waitFor(hidden) excedeu30000ms",
+  "acaoConfirmada": false
+}
