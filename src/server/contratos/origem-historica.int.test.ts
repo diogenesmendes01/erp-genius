@@ -217,6 +217,12 @@ it("Origem histórica: PDF + transcrição + conferência dupla viram fonte de a
   // B1 da #285: enquanto o dono não decide o ambiente de assinatura, a ação não prepara aditivo sobre a origem histórica
   // e diz o porquê (não a mensagem genérica de ambiente do envio). Nada é gravado.
   expect(await prepararAditivoContratual(base)).toEqual({ ok: false, erro: MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA });
+  // Q173 (#284): a troca de moeda só tem fonte em conclusão assinada em PRODUCAO; sobre a origem histórica, a regra B1
+  // recusa antes, com a mesma mensagem, sozinha ou com os valores na moeda nova.
+  for (const alteracoes of [
+    [{ origem: "MOEDA" as const, novo: "USD", valorEstruturado: { tipo: "MOEDA" as const, moeda: "USD" } }],
+    [{ origem: "MOEDA" as const, novo: "USD", valorEstruturado: { tipo: "MOEDA" as const, moeda: "USD" } }, { origem: "MENSALIDADE_VALOR" as const, novo: "130.00 USD", valorEstruturado: { tipo: "DINHEIRO" as const, valor: "130.00", moeda: "USD" } }],
+  ]) expect(await prepararAditivoContratual({ ...base, chaveIdempotencia: `aditivo-historico-moeda-${alteracoes.length}`, alteracoes })).toEqual({ ok: false, erro: MSG_ADITIVO_ORIGEM_HISTORICA_SEM_ASSINATURA });
   expect(await prisma.propostaAditivoContratual.count({ where: { matriculaId: alvo.matriculaId } })).toBe(0);
   // A base continua correta (o limite é só de formalização): uma proposta montada como a ação montaria entra no banco...
   const proposta = await inserirPropostaDireta(base);
