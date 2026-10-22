@@ -36,7 +36,7 @@ const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
 });
 const conversaVazia = { mensagens: [], notas: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
 const propsConversa = (o: Partial<PropsConversaAberta> & { podeEnviar: boolean | null }): PropsConversaAberta => ({
-  item: item(), usuario, fuso: null, conversa: conversaVazia, aoVoltar: () => {}, aoAbrirPainel: () => {}, aoMudar: () => {}, ...o,
+  item: item(), usuario, fuso: null, conversa: conversaVazia, aoVoltar: () => {}, aoAlternarPainel: () => {}, aoMudar: () => {}, ...o,
 });
 const msg: MensagemThread = {
   id: "m1", direcao: "SAIDA", tipo: "TEXTO", corpo: "Olá", midiaPath: null, status: "ENVIADA", origem: "HUMANO",

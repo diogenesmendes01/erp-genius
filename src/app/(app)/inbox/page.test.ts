@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,7 +9,7 @@ vi.mock("@/server/inbox/consultas-pagina", () => ({ contarChipsInbox: mocks.cont
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ listarOpcoesAtendimento: mocks.opcoes, listarTriagemWhatsApp: mocks.triagem, listarRevisoesEnvio: mocks.revisoes }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/inbox/opcoes-filtro", () => ({ opcoesFiltroInbox: mocks.filtro }));
-vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro, contagens }: { contagens?: unknown; opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}|contagens:${JSON.stringify(contagens)}` }));
+vi.mock("./InboxNovo", () => ({ InboxNovo: ({ fuso, filtros, selecionado, inicial, triagem, revisoes, opcoesFiltro, contagens, sino: sinoRenderizado, opcoesNovaConversa }: { sino?: import("react").ReactNode; opcoesNovaConversa?: unknown; contagens?: unknown; opcoesFiltro?: { setores: string[]; numeros: { id: string }[] }; fuso: string | null; filtros: object; selecionado: string | null; triagem: unknown[] | null; revisoes: unknown[] | null; inicial: { proximo: string | null; itens: { id: string }[] } }) => `nova:${opcoesNovaConversa ? "sim" : "nao"}|${renderToStaticMarkup(createElement("span", null, sinoRenderizado))}|inbox:${fuso}|tri:${triagem === null ? "nao" : triagem.length}|rev:${revisoes === null ? "nao" : revisoes.length}|filtros:${JSON.stringify(filtros)}|sel:${selecionado}|prox:${inicial.proximo}|setores:${opcoesFiltro?.setores}|numeros:${opcoesFiltro?.numeros.map((n) => n.id)}|itens:${inicial.itens.map((i) => i.id)}|contagens:${JSON.stringify(contagens)}` }));
 vi.mock("./NovoAtendimento", () => ({ NovoAtendimento: () => "novo-atendimento" }));
 const sino = vi.hoisted(() => ({ listar: vi.fn(), fuso: vi.fn() }));
 vi.mock("@/server/crm/notificacoes", () => ({ listarNotificacoes: sino.listar }));
@@ -42,13 +43,13 @@ describe("InboxPage", () => {
     sino.listar.mockResolvedValue([]); sino.fuso.mockResolvedValue("America/Sao_Paulo");
   });
 
-  it("a página é uma coluna limitada e entrega o restante ao InboxNovo", async () => {
+  it("casca anula padding do main e passa sino/Novo sem removê-los", async () => {
     mocks.preferencia.mockResolvedValue({ ok: false });
     const h = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     const raiz = h.match(/^<div class="([^"]*)"/)?.[1].split(" ") ?? [];
-    expect(raiz).toEqual(expect.arrayContaining(["flex", "flex-col", "min-h-0"]));
-    const caixa = h.match(/<div class="([^"]*)">inbox:/)?.[1].split(" ") ?? [];
-    expect(caixa).toEqual(expect.arrayContaining(["flex", "flex-col", "min-h-0", "flex-1"]));
+    expect(raiz).toEqual(expect.arrayContaining(["-m-4", "md:-m-8", "flex", "flex-col", "min-h-0", "md:h-dvh", "h-[calc(100dvh-3.5625rem)]", "sm:h-[calc(100dvh-3.3125rem)]"]));
+    expect(h).not.toContain("<h1"); expect(h).not.toContain("novo-atendimento");
+    expect(h).toContain("nova:sim"); expect(h).toContain("Notificações:");
   });
 
   it("inbox_mostra_o_sino", async () => {
