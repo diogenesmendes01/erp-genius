@@ -1,0 +1,3458 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 137,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 242,
+      "bottom": 412,
+      "width": 359,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 900,
+    "documentHeight": 900,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 900,
+      "width": 1216,
+      "height": 900,
+      "clientHeight": 900,
+      "scrollHeight": 900,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 868,
+      "width": 1152,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 868,
+      "width": 1152,
+      "height": 627,
+      "clientHeight": 625,
+      "scrollHeight": 625,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 867,
+      "width": 359,
+      "height": 455,
+      "clientHeight": 455,
+      "scrollHeight": 455,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 242,
+      "bottom": 867,
+      "width": 470,
+      "height": 625,
+      "clientHeight": 625,
+      "scrollHeight": 625,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 455
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 625
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 137,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 242,
+      "bottom": 412,
+      "width": 359,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 242,
+      "bottom": 449,
+      "width": 470,
+      "height": 207,
+      "clientHeight": 206,
+      "scrollHeight": 206,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 900,
+    "documentHeight": 900,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 900,
+      "width": 1216,
+      "height": 900,
+      "clientHeight": 900,
+      "scrollHeight": 900,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 868,
+      "width": 1152,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 868,
+      "width": 1152,
+      "height": 627,
+      "clientHeight": 625,
+      "scrollHeight": 625,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 867,
+      "width": 359,
+      "height": 455,
+      "clientHeight": 455,
+      "scrollHeight": 455,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 449,
+      "bottom": 810,
+      "width": 470,
+      "height": 361,
+      "clientHeight": 361,
+      "scrollHeight": 361,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 455
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 361
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 11,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 137,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 242,
+      "bottom": 412,
+      "width": 359,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 900,
+    "documentHeight": 900,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 900,
+      "width": 1216,
+      "height": 900,
+      "clientHeight": 900,
+      "scrollHeight": 900,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 868,
+      "width": 1152,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 868,
+      "width": 1152,
+      "height": 627,
+      "clientHeight": 625,
+      "scrollHeight": 625,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 867,
+      "width": 359,
+      "height": 455,
+      "clientHeight": 455,
+      "scrollHeight": 455,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 242,
+      "bottom": 867,
+      "width": 470,
+      "height": 625,
+      "clientHeight": 625,
+      "scrollHeight": 625,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 455
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 625
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 137,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 242,
+      "bottom": 412,
+      "width": 359,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 242,
+      "bottom": 449,
+      "width": 470,
+      "height": 207,
+      "clientHeight": 206,
+      "scrollHeight": 206,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 900,
+    "documentHeight": 900,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 900,
+      "width": 1216,
+      "height": 900,
+      "clientHeight": 900,
+      "scrollHeight": 900,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 868,
+      "width": 1152,
+      "height": 836,
+      "clientHeight": 836,
+      "scrollHeight": 836,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 241,
+      "bottom": 868,
+      "width": 1152,
+      "height": 627,
+      "clientHeight": 625,
+      "scrollHeight": 625,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 412,
+      "bottom": 867,
+      "width": 359,
+      "height": 455,
+      "clientHeight": 455,
+      "scrollHeight": 455,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 449,
+      "bottom": 810,
+      "width": 470,
+      "height": 361,
+      "clientHeight": 361,
+      "scrollHeight": 361,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 455
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 361
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 11,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 157,
+      "scrollHeight": 157,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 262,
+      "bottom": 432,
+      "width": 319,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 1024,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 768,
+      "width": 800,
+      "height": 768,
+      "clientHeight": 768,
+      "scrollHeight": 768,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 736,
+      "width": 736,
+      "height": 704,
+      "clientHeight": 704,
+      "scrollHeight": 704,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 736,
+      "width": 736,
+      "height": 475,
+      "clientHeight": 473,
+      "scrollHeight": 473,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 735,
+      "width": 319,
+      "height": 303,
+      "clientHeight": 303,
+      "scrollHeight": 303,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 262,
+      "bottom": 735,
+      "width": 414,
+      "height": 473,
+      "clientHeight": 473,
+      "scrollHeight": 473,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 303
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 473
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 157,
+      "scrollHeight": 157,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 262,
+      "bottom": 432,
+      "width": 319,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 262,
+      "bottom": 451.1875,
+      "width": 414,
+      "height": 189.1875,
+      "clientHeight": 188,
+      "scrollHeight": 240,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 1024,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 768,
+      "width": 800,
+      "height": 768,
+      "clientHeight": 768,
+      "scrollHeight": 768,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 736,
+      "width": 736,
+      "height": 704,
+      "clientHeight": 704,
+      "scrollHeight": 704,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 736,
+      "width": 736,
+      "height": 475,
+      "clientHeight": 473,
+      "scrollHeight": 473,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 735,
+      "width": 319,
+      "height": 303,
+      "clientHeight": 303,
+      "scrollHeight": 303,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 451.1875,
+      "bottom": 678,
+      "width": 414,
+      "height": 226.8125,
+      "clientHeight": 227,
+      "scrollHeight": 227,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 303
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 227
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 12,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 157,
+      "scrollHeight": 157,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 262,
+      "bottom": 432,
+      "width": 319,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 1024,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 768,
+      "width": 800,
+      "height": 768,
+      "clientHeight": 768,
+      "scrollHeight": 768,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 736,
+      "width": 736,
+      "height": 704,
+      "clientHeight": 704,
+      "scrollHeight": 704,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 736,
+      "width": 736,
+      "height": 475,
+      "clientHeight": 473,
+      "scrollHeight": 473,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 735,
+      "width": 319,
+      "height": 303,
+      "clientHeight": 303,
+      "scrollHeight": 303,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 262,
+      "bottom": 735,
+      "width": 414,
+      "height": 473,
+      "clientHeight": 473,
+      "scrollHeight": 473,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 303
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 473
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 157,
+      "scrollHeight": 157,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 262,
+      "bottom": 432,
+      "width": 319,
+      "height": 170,
+      "clientHeight": 170,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 262,
+      "bottom": 451.1875,
+      "width": 414,
+      "height": 189.1875,
+      "clientHeight": 188,
+      "scrollHeight": 240,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 1024,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 768,
+      "width": 800,
+      "height": 768,
+      "clientHeight": 768,
+      "scrollHeight": 768,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 736,
+      "width": 736,
+      "height": 704,
+      "clientHeight": 704,
+      "scrollHeight": 704,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 245,
+      "width": 736,
+      "height": 157,
+      "clientHeight": 155,
+      "scrollHeight": 155,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 261,
+      "bottom": 736,
+      "width": 736,
+      "height": 475,
+      "clientHeight": 473,
+      "scrollHeight": 473,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 432,
+      "bottom": 735,
+      "width": 319,
+      "height": 303,
+      "clientHeight": 303,
+      "scrollHeight": 303,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 451.1875,
+      "bottom": 678,
+      "width": 414,
+      "height": 226.8125,
+      "clientHeight": 227,
+      "scrollHeight": 227,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 303
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 227
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 12,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 359.5,
+      "width": 358,
+      "height": 226.5,
+      "clientHeight": 227,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 376.5,
+      "bottom": 601.75,
+      "width": 355,
+      "height": 225.25,
+      "clientHeight": 225,
+      "scrollHeight": 315,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 844,
+    "documentHeight": 844,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 844,
+      "width": 390,
+      "height": 787,
+      "clientHeight": 787,
+      "scrollHeight": 787,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 828,
+      "width": 358,
+      "height": 755,
+      "clientHeight": 755,
+      "scrollHeight": 755,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 375.5,
+      "bottom": 828,
+      "width": 358,
+      "height": 452.5,
+      "clientHeight": 451,
+      "scrollHeight": 451,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 601.75,
+      "bottom": 827,
+      "width": 355,
+      "height": 225.25,
+      "clientHeight": 225,
+      "scrollHeight": 225,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 225
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 359.5,
+      "width": 358,
+      "height": 226.5,
+      "clientHeight": 227,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 376.5,
+      "bottom": 556.6875,
+      "width": 356,
+      "height": 180.1875,
+      "clientHeight": 179,
+      "scrollHeight": 328,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 844,
+    "documentHeight": 844,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 844,
+      "width": 390,
+      "height": 787,
+      "clientHeight": 787,
+      "scrollHeight": 787,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 828,
+      "width": 358,
+      "height": 755,
+      "clientHeight": 755,
+      "scrollHeight": 755,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 375.5,
+      "bottom": 828,
+      "width": 358,
+      "height": 452.5,
+      "clientHeight": 451,
+      "scrollHeight": 451,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 556.6875,
+      "bottom": 770,
+      "width": 356,
+      "height": 213.3125,
+      "clientHeight": 213,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 213
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 13,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 359.5,
+      "width": 358,
+      "height": 226.5,
+      "clientHeight": 227,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 376.5,
+      "bottom": 601.75,
+      "width": 355,
+      "height": 225.25,
+      "clientHeight": 225,
+      "scrollHeight": 315,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 844,
+    "documentHeight": 844,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 844,
+      "width": 390,
+      "height": 787,
+      "clientHeight": 787,
+      "scrollHeight": 787,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 828,
+      "width": 358,
+      "height": 755,
+      "clientHeight": 755,
+      "scrollHeight": 755,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 375.5,
+      "bottom": 828,
+      "width": 358,
+      "height": 452.5,
+      "clientHeight": 451,
+      "scrollHeight": 451,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 601.75,
+      "bottom": 827,
+      "width": 355,
+      "height": 225.25,
+      "clientHeight": 225,
+      "scrollHeight": 225,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 225
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 359.5,
+      "width": 358,
+      "height": 226.5,
+      "clientHeight": 227,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 376.5,
+      "bottom": 556.6875,
+      "width": 356,
+      "height": 180.1875,
+      "clientHeight": 179,
+      "scrollHeight": 328,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 844,
+    "documentHeight": 844,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 844,
+      "width": 390,
+      "height": 787,
+      "clientHeight": 787,
+      "scrollHeight": 787,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 828,
+      "width": 358,
+      "height": 755,
+      "clientHeight": 755,
+      "scrollHeight": 755,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 375.5,
+      "bottom": 828,
+      "width": 358,
+      "height": 452.5,
+      "clientHeight": 451,
+      "scrollHeight": 451,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 556.6875,
+      "bottom": 770,
+      "width": 356,
+      "height": 213.3125,
+      "clientHeight": 213,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 213
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 13,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 164,
+      "scrollHeight": 164,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 306,
+      "bottom": 497,
+      "width": 319,
+      "height": 191,
+      "clientHeight": 191,
+      "scrollHeight": 191,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 700,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 53,
+      "bottom": 768,
+      "width": 700,
+      "height": 715,
+      "clientHeight": 715,
+      "scrollHeight": 715,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 752,
+      "width": 668,
+      "height": 683,
+      "clientHeight": 683,
+      "scrollHeight": 683,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 752,
+      "width": 668,
+      "height": 447,
+      "clientHeight": 445,
+      "scrollHeight": 445,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 751,
+      "width": 319,
+      "height": 254,
+      "clientHeight": 254,
+      "scrollHeight": 254,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 306,
+      "bottom": 751,
+      "width": 346,
+      "height": 445,
+      "clientHeight": 445,
+      "scrollHeight": 445,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 254
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 445
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 164,
+      "scrollHeight": 164,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 306,
+      "bottom": 497,
+      "width": 319,
+      "height": 191,
+      "clientHeight": 191,
+      "scrollHeight": 191,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 306,
+      "bottom": 484,
+      "width": 346,
+      "height": 178,
+      "clientHeight": 177,
+      "scrollHeight": 256,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 700,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 53,
+      "bottom": 768,
+      "width": 700,
+      "height": 715,
+      "clientHeight": 715,
+      "scrollHeight": 715,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 752,
+      "width": 668,
+      "height": 683,
+      "clientHeight": 683,
+      "scrollHeight": 683,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 752,
+      "width": 668,
+      "height": 447,
+      "clientHeight": 445,
+      "scrollHeight": 445,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 751,
+      "width": 319,
+      "height": 254,
+      "clientHeight": 254,
+      "scrollHeight": 254,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 484,
+      "bottom": 694,
+      "width": 346,
+      "height": 210,
+      "clientHeight": 210,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 254
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 210
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 12,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 164,
+      "scrollHeight": 164,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 306,
+      "bottom": 497,
+      "width": 319,
+      "height": 191,
+      "clientHeight": 191,
+      "scrollHeight": 191,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 700,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 53,
+      "bottom": 768,
+      "width": 700,
+      "height": 715,
+      "clientHeight": 715,
+      "scrollHeight": 715,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 752,
+      "width": 668,
+      "height": 683,
+      "clientHeight": 683,
+      "scrollHeight": 683,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 752,
+      "width": 668,
+      "height": 447,
+      "clientHeight": 445,
+      "scrollHeight": 445,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 751,
+      "width": 319,
+      "height": 254,
+      "clientHeight": 254,
+      "scrollHeight": 254,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 306,
+      "bottom": 751,
+      "width": 346,
+      "height": 445,
+      "clientHeight": 445,
+      "scrollHeight": 445,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 254
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 445
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 700,
+    "height": 768,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 164,
+      "scrollHeight": 164,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 306,
+      "bottom": 497,
+      "width": 319,
+      "height": 191,
+      "clientHeight": 191,
+      "scrollHeight": 191,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 306,
+      "bottom": 484,
+      "width": 346,
+      "height": 178,
+      "clientHeight": 177,
+      "scrollHeight": 256,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 768,
+    "documentHeight": 768,
+    "documentWidth": 700,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 53,
+      "bottom": 768,
+      "width": 700,
+      "height": 715,
+      "clientHeight": 715,
+      "scrollHeight": 715,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 69,
+      "bottom": 752,
+      "width": 668,
+      "height": 683,
+      "clientHeight": 683,
+      "scrollHeight": 683,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 53,
+      "width": 700,
+      "height": 53,
+      "clientHeight": 52,
+      "scrollHeight": 52,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 125,
+      "bottom": 289,
+      "width": 668,
+      "height": 164,
+      "clientHeight": 162,
+      "scrollHeight": 162,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 305,
+      "bottom": 752,
+      "width": 668,
+      "height": 447,
+      "clientHeight": 445,
+      "scrollHeight": 445,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 497,
+      "bottom": 751,
+      "width": 319,
+      "height": 254,
+      "clientHeight": 254,
+      "scrollHeight": 254,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 484,
+      "bottom": 694,
+      "width": 346,
+      "height": 210,
+      "clientHeight": 210,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 254
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 210
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 12,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 256.296875,
+      "width": 358,
+      "height": 123.296875,
+      "clientHeight": 123,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 273.296875,
+      "bottom": 378.140625,
+      "width": 355,
+      "height": 104.84375,
+      "clientHeight": 105,
+      "scrollHeight": 315,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 500,
+      "width": 390,
+      "height": 443,
+      "clientHeight": 443,
+      "scrollHeight": 443,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 484,
+      "width": 358,
+      "height": 411,
+      "clientHeight": 411,
+      "scrollHeight": 411,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 272.296875,
+      "bottom": 484,
+      "width": 358,
+      "height": 211.703125,
+      "clientHeight": 210,
+      "scrollHeight": 210,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 378.140625,
+      "bottom": 483,
+      "width": 355,
+      "height": 104.859375,
+      "clientHeight": 105,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 105
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 256.296875,
+      "width": 358,
+      "height": 123.296875,
+      "clientHeight": 123,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 273.296875,
+      "bottom": 357.171875,
+      "width": 356,
+      "height": 83.875,
+      "clientHeight": 83,
+      "scrollHeight": 328,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 500,
+      "width": 390,
+      "height": 443,
+      "clientHeight": 443,
+      "scrollHeight": 443,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 484,
+      "width": 358,
+      "height": 411,
+      "clientHeight": 411,
+      "scrollHeight": 411,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 272.296875,
+      "bottom": 484,
+      "width": 358,
+      "height": 211.703125,
+      "clientHeight": 210,
+      "scrollHeight": 210,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 357.171875,
+      "bottom": 426,
+      "width": 356,
+      "height": 68.828125,
+      "clientHeight": 69,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 69
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 13,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 256.296875,
+      "width": 358,
+      "height": 123.296875,
+      "clientHeight": 123,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 273.296875,
+      "bottom": 378.140625,
+      "width": 355,
+      "height": 104.84375,
+      "clientHeight": 105,
+      "scrollHeight": 315,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 500,
+      "width": 390,
+      "height": 443,
+      "clientHeight": 443,
+      "scrollHeight": 443,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 484,
+      "width": 358,
+      "height": 411,
+      "clientHeight": 411,
+      "scrollHeight": 411,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 272.296875,
+      "bottom": 484,
+      "width": 358,
+      "height": 211.703125,
+      "clientHeight": 210,
+      "scrollHeight": 210,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 378.140625,
+      "bottom": 483,
+      "width": 355,
+      "height": 104.859375,
+      "clientHeight": 105,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 105
+      },
+      {
+        "nome": "Conversa",
+        "visivel": false
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 390,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 133,
+      "bottom": 256.296875,
+      "width": 358,
+      "height": 123.296875,
+      "clientHeight": 123,
+      "scrollHeight": 340,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 273.296875,
+      "bottom": 357.171875,
+      "width": 356,
+      "height": 83.875,
+      "clientHeight": 83,
+      "scrollHeight": 328,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 390,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 57,
+      "bottom": 500,
+      "width": 390,
+      "height": 443,
+      "clientHeight": 443,
+      "scrollHeight": 443,
+      "overflowY": "visible",
+      "paddingTop": "16px",
+      "paddingBottom": "16px"
+    },
+    "pagina": {
+      "top": 73,
+      "bottom": 484,
+      "width": 358,
+      "height": 411,
+      "clientHeight": 411,
+      "scrollHeight": 411,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 57,
+      "width": 390,
+      "height": 57,
+      "clientHeight": 56,
+      "scrollHeight": 56,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 133,
+      "bottom": 473,
+      "width": 358,
+      "height": 340,
+      "clientHeight": 338,
+      "scrollHeight": 338,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 272.296875,
+      "bottom": 484,
+      "width": 358,
+      "height": 211.703125,
+      "clientHeight": 210,
+      "scrollHeight": 210,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 357.171875,
+      "bottom": 426,
+      "width": 356,
+      "height": 68.828125,
+      "clientHeight": 69,
+      "scrollHeight": 232,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": false
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 69
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 13,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "light",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 218.796875,
+      "width": 1152,
+      "height": 130.796875,
+      "clientHeight": 131,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 235.796875,
+      "bottom": 351.390625,
+      "width": 359,
+      "height": 115.59375,
+      "clientHeight": 116,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 500,
+      "width": 1216,
+      "height": 500,
+      "clientHeight": 500,
+      "scrollHeight": 500,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 468,
+      "width": 1152,
+      "height": 436,
+      "clientHeight": 436,
+      "scrollHeight": 436,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 234.796875,
+      "bottom": 468,
+      "width": 1152,
+      "height": 233.203125,
+      "clientHeight": 231,
+      "scrollHeight": 231,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 351.390625,
+      "bottom": 467,
+      "width": 359,
+      "height": 115.609375,
+      "clientHeight": 116,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 235.796875,
+      "bottom": 467,
+      "width": 470,
+      "height": 231.203125,
+      "clientHeight": 231,
+      "scrollHeight": 231,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 116
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 231
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "light",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 218.796875,
+      "width": 1152,
+      "height": 130.796875,
+      "clientHeight": 131,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 235.796875,
+      "bottom": 351.390625,
+      "width": 359,
+      "height": 115.59375,
+      "clientHeight": 116,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 235.796875,
+      "bottom": 328.265625,
+      "width": 470,
+      "height": 92.46875,
+      "clientHeight": 91,
+      "scrollHeight": 206,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 500,
+      "width": 1216,
+      "height": 500,
+      "clientHeight": 500,
+      "scrollHeight": 500,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 468,
+      "width": 1152,
+      "height": 436,
+      "clientHeight": 436,
+      "scrollHeight": 436,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 234.796875,
+      "bottom": 468,
+      "width": 1152,
+      "height": 233.203125,
+      "clientHeight": 231,
+      "scrollHeight": 231,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 351.390625,
+      "bottom": 467,
+      "width": 359,
+      "height": 115.609375,
+      "clientHeight": 116,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 328.265625,
+      "bottom": 410,
+      "width": 470,
+      "height": 81.734375,
+      "clientHeight": 82,
+      "scrollHeight": 212,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 116
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 82
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 11,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": false,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 218.796875,
+      "width": 1152,
+      "height": 130.796875,
+      "clientHeight": 131,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 235.796875,
+      "bottom": 351.390625,
+      "width": 359,
+      "height": 115.59375,
+      "clientHeight": 116,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": null,
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 500,
+      "width": 1216,
+      "height": 500,
+      "clientHeight": 500,
+      "scrollHeight": 500,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 468,
+      "width": 1152,
+      "height": 436,
+      "clientHeight": 436,
+      "scrollHeight": 436,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 234.796875,
+      "bottom": 468,
+      "width": 1152,
+      "height": 233.203125,
+      "clientHeight": 231,
+      "scrollHeight": 231,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 351.390625,
+      "bottom": 467,
+      "width": 359,
+      "height": 115.609375,
+      "clientHeight": 116,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 235.796875,
+      "bottom": 467,
+      "width": 470,
+      "height": 231.203125,
+      "clientHeight": 231,
+      "scrollHeight": 231,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 116
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 231
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  },
+  {
+    "width": 1440,
+    "height": 500,
+    "tema": "dark",
+    "selecionado": true,
+    "formulario": "aberto (estado atual da página)",
+    "formularioRegiao": {
+      "top": 88,
+      "bottom": 218.796875,
+      "width": 1152,
+      "height": 130.796875,
+      "clientHeight": 131,
+      "scrollHeight": 137,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "filtrosRegiao": {
+      "top": 235.796875,
+      "bottom": 351.390625,
+      "width": 359,
+      "height": 115.59375,
+      "clientHeight": 116,
+      "scrollHeight": 170,
+      "overflowY": "auto",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "cabecalhoThread": {
+      "top": 235.796875,
+      "bottom": 328.265625,
+      "width": 470,
+      "height": 92.46875,
+      "clientHeight": 91,
+      "scrollHeight": 206,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "innerHeight": 500,
+    "documentHeight": 500,
+    "documentWidth": 1440,
+    "semRolagemExterna": true,
+    "main": {
+      "top": 0,
+      "bottom": 500,
+      "width": 1216,
+      "height": 500,
+      "clientHeight": 500,
+      "scrollHeight": 500,
+      "overflowY": "visible",
+      "paddingTop": "32px",
+      "paddingBottom": "32px"
+    },
+    "pagina": {
+      "top": 32,
+      "bottom": 468,
+      "width": 1152,
+      "height": 436,
+      "clientHeight": 436,
+      "scrollHeight": 436,
+      "overflowY": "visible",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "barra": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "clientHeight": 0,
+      "scrollHeight": 0,
+      "overflowY": "visible",
+      "paddingTop": "6px",
+      "paddingBottom": "6px"
+    },
+    "form": {
+      "top": 88,
+      "bottom": 225,
+      "width": 1152,
+      "height": 137,
+      "clientHeight": 135,
+      "scrollHeight": 135,
+      "overflowY": "visible",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "inbox": {
+      "top": 234.796875,
+      "bottom": 468,
+      "width": 1152,
+      "height": 233.203125,
+      "clientHeight": 231,
+      "scrollHeight": 231,
+      "overflowY": "hidden",
+      "paddingTop": "0px",
+      "paddingBottom": "0px"
+    },
+    "lista": {
+      "top": 351.390625,
+      "bottom": 467,
+      "width": 359,
+      "height": 115.609375,
+      "clientHeight": 116,
+      "scrollHeight": 122,
+      "overflowY": "auto",
+      "paddingTop": "4px",
+      "paddingBottom": "4px"
+    },
+    "thread": {
+      "top": 328.265625,
+      "bottom": 410,
+      "width": 470,
+      "height": 81.734375,
+      "clientHeight": 82,
+      "scrollHeight": 212,
+      "overflowY": "auto",
+      "paddingTop": "12px",
+      "paddingBottom": "12px"
+    },
+    "provaScroll": [
+      {
+        "nome": "Conversas",
+        "visivel": true,
+        "moveu": true,
+        "altura": 116
+      },
+      {
+        "nome": "Conversa",
+        "visivel": true,
+        "moveu": true,
+        "altura": 82
+      }
+    ],
+    "controlesAcessiveis": [
+      {
+        "regiao": "Abrir atendimento",
+        "controles": 3,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "Filtros de conversas",
+        "controles": 9,
+        "todosAlcancaveis": true
+      },
+      {
+        "regiao": "cabeçalho da conversa",
+        "controles": 11,
+        "todosAlcancaveis": true
+      }
+    ],
+    "erros": []
+  }
+]

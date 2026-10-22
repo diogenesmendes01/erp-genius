@@ -288,13 +288,13 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   ) : <p className="p-4 text-sm text-gray-600">Escolha uma conversa para ver os detalhes.</p>;
 
   return (
-    <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="flex h-[calc(100dvh-8rem)] min-h-[420px] overflow-hidden rounded-item border">
-      <section aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full flex-col border-r ${COLUNA_LISTA}`}>
-        {opcoesFiltro && <PainelFiltros filtros={filtros} setores={opcoesFiltro.setores} numeros={opcoesFiltro.numeros} />}
+    <div data-vista={vista} data-conectado={conectado ? "1" : "0"} className="flex min-h-0 flex-1 overflow-hidden rounded-item border">
+      <section aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-r ${COLUNA_LISTA}`}>
+        {opcoesFiltro && <div role="region" aria-label="Filtros de conversas" className="min-h-0 max-h-[50%] shrink-0 overflow-y-auto"><PainelFiltros filtros={filtros} setores={opcoesFiltro.setores} numeros={opcoesFiltro.numeros} /></div>}
         <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} />
       </section>
 
-      <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-w-0 flex-col ${COLUNA_CONVERSA}`}>
+      <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>
         {!selecionado ? (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
@@ -321,7 +321,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         )}
       </section>
 
-      <aside aria-label="Detalhes" className="hidden w-[320px] shrink-0 overflow-y-auto border-l min-[1100px]:block">{painel}</aside>
+      <aside aria-label="Detalhes" className="relative hidden w-[320px] shrink-0 overflow-y-auto border-l min-[1100px]:block">{painel}</aside>
       <div className="min-[1100px]:hidden">
         <Drawer open={vista === "painel"} onClose={() => setVista(selecionado ? "conversa" : "lista")} title="Detalhes da conversa">{painel}</Drawer>
       </div>

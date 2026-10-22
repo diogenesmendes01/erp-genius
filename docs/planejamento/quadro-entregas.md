@@ -4629,6 +4629,7 @@ Implementação e verificação local concluídas; revisão independente e publi
 - **Visual:** capturas antes/depois de lista/conversa/detalhes em1440×900,1024×768,390×844 e temas claro/escuro, sem pageerror. Contador verde sólido, ✓✓ verde e textos secundários legíveis. Enquete/Reserva:24 PNGs de componentes reais isolados, CSS/fontes reais e métricas antes/depois, sem executar envio/finanças. TESTER inspecionou todas as12 imagens depois desses componentes. Evidências em `output/inbox-298-visual/` (aplicativo, harness, métricas e pareceres); consolidação final adiciona somente docs/PNG/JSON, sem alterar fonte validada.
 - **Limites registrados:** drawer390px já corta valores à direita antes/depois; acompanhar na casca do painel#318 e geometria#304. Aviso de chave React duplicada no app dev também é preexistente. Capturas isoladas não homologam operações financeiras. Node local24.16.0 versus22 declarado no projeto; CI será acompanhado no PR. Sem mensagem real, integração externa ou produção.
 
+
 ### Inbox E0.5 — #302: prazo estourado vivo — 2026-10-22
 
 **Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-302-report.md`, parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Branch `codex/inbox-e0-302`, base `1ce8e582` (PR #381). Sem merge/deploy.
@@ -4658,3 +4659,13 @@ Implementação e verificação local concluídas; revisão independente e publi
 - **Gates Node22.23.2:** TSC heap8192 sessão54239 saída0; full unitário sessão18026 saída0,842 arquivos/6500 testes, zero falhas/ignorados/todo, maxWorkers2; lint global sessão81037 saída0,0 erros/40 avisos, sem exclusões. Diff-check0. Gates não repetidos por consolidação exclusiva de docs/capturas.
 - **Visual:** 128 PNGs e quatro manifestos em `output/inbox-305-visual/`,32 estados por cenário entre antes/depois. BAILEYS:4 menus fora/8 sobreposições antes→0/0 depois. MOTOR fictício:10 fora/8 sobreposições→0/0. Entrada sem autor e saída com autor,3 tamanhos×2 temas e viewport baixa adicional; toque, foco, setas, Escape+retorno, fechamento por scroll externo/resize confirmados. Em390×160, menu144px dentro da tela e overflow interno real236>142 na saída,148>142 na entrada. Pageerrors vazios.
 - **Ambiente/limites:** simulação de capacidade só no banco descartável, nenhum comando enviado. Primeira captura BAILEYS falhou por premissa do harness (esperava2 itens onde há1), corrigida e repetida; não houve alteração de código por isso. Fixtures integracao/tester restauradas para BAILEYS/DESCONECTADO, saída0, servidores QA encerrados. Overlay dev preexistente. CI aguarda retarget para main após integrar384.
+
+### Inbox E0.7 — #304: página sem rolagem dupla — 2026-10-22
+
+**Estado: implementada e medida pelo DEV; gates finais e TESTER pendentes.** Branch `codex/inbox-e0-304` sobre #299 `729a0fe7`. SPEC `docs/specs/inbox-rolagem-pagina.md`; relatório `output/inbox-304-report.md`.
+
+- Página limitada à área real do main (barra57px abaixo de sm,53px entre sm e md); Inbox ocupa o restante com flex/min-h-0. Formulário, filtros e ações da conversa têm rolagem interna nas telas baixas, preservando controles e thread. Contexto relativo contém avisos acessíveis absolutos no cabeçalho/painel.
+- TDD RED2/25 e GREEN25/25, recorte20arquivos/253testes saída0 Node22.23.2. Nenhum ignorado; globals finais serão registrados após fonte congelada.
+- Aplicativo real:24cenários antes +24depois, seis tamanhos (1440×900,1024×768,390×844,700×768,390×500,1440×500), dois temas, com/sem seleção e formulário aberto. Medição final sessão99646 saída0: documento igual à viewport, zero pageerror, controles alcançáveis e prova geométrica de scroll interno. Capturas/métricas e limites em `output/inbox-304-visual/`.
+- Sem alteração de pacote, lock, schema, servidor/SSE ou permissão; nenhum envio externo. TESTER/homologação e integração/publicação pendentes; não marca E0 concluída.
+

@@ -60,15 +60,15 @@ export default async function InboxPage({
   const fuso = resolverFusoExibicao((preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null, fusoEscola);
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
+    <div className="flex min-h-0 flex-col h-[calc(100dvh-2rem-3.5625rem)] sm:h-[calc(100dvh-2rem-3.3125rem)] md:h-[calc(100dvh-4rem)]">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <h1 className="text-2xl font-medium">Inbox</h1>
         <SinoNotificacoes notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />
       </div>
-      <div className="mt-4">
+      <div role="region" aria-label="Abrir atendimento" className="mt-4 min-h-0 max-h-[30%] shrink-0 overflow-y-auto">
         <NovoAtendimento opcoes={opcoes} />
       </div>
-      <div className="mt-4">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col">
         <InboxNovo inicial={inicial} filtros={filtros} selecionado={c} usuario={{ id: usuario.id, papeis: usuario.papeis }} fuso={fuso}
           destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
           triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} />
