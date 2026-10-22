@@ -1,6 +1,12 @@
 # #303 — Anexos sem formulário desabilitados com motivo
 
-Estado em 22/10/2026: implementação, testes dirigidos e gates globais aprovados em Node22.23.2; **aguarda TESTER e captura visual**. Branch `codex/inbox-e0-303` sobre #302 congelada `133b935ed71e20af4f9f517762131dc4ce98d8fd`, worktree exclusivo DEV A, perfil `dev-email`.
+Estado final em 22/10/2026: **implementação e validação concluídas; PR em publicação**. TESTER aprovou o código em `79a905a2`, com 86/86 testes e aceite visual nos três tamanhos/dois temas. Rebase para `cf5b077b` sobre fechamento #302/PR #383 (`0c9a1519`) conferido: somente documentação/PNG/JSON da base, fonte invariável; conflito do quadro resolvido preservando #302 final e #303. Publicação adiciona apenas docs/capturas/manifestos. Branch `codex/inbox-e0-303`; sem merge/deploy. As pendências cronológicas abaixo foram resolvidas conforme o aceite final.
+
+## Aceite final independente
+
+Parecer em `output/inbox-303-visual/qa/inbox-303-review.md`, incluindo equivalência do rebase. Fotos e manifestos em `output/inbox-303-visual/{antes,depois}/`: 24 PNGs no total, seis contextos por fase, Node 22.23.2. Sessão ANTES do integrador `34581` e DEPOIS do TESTER `56440`, ambas saída 0 e `pageerrors=[]`. Na mesma capacidade fictícia, antes os três itens eram habilitados sem ação; depois estão desabilitados com motivo individual. Documento/Fotos/Áudio permanecem habilitados. O integrador também inspecionou o recorte móvel escuro; o motivo aparece legível.
+
+Simulação apenas no registro fictício de bancos descartáveis, com transportes externos vazios. Nenhum item de anexo foi acionado, arquivo enviado ou integração real ativada. Servidores encerrados após as capturas e ambas as fixtures restauradas para BAILEYS/DESCONECTADO, saída 0. O aviso legado sem capacidade foi validado em teste; as fotos mostram a capacidade disponível. TSC, 841 arquivos/6.488 testes completos e lint (0 erros/40 avisos) passaram no Node 22 conforme sessões abaixo, sem repetir por alteração documental.
 
 ## SPEC
 

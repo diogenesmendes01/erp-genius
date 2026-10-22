@@ -1,0 +1,193 @@
+{
+  "fase": "antes",
+  "fonte": "0c9a151971153a87487608b86119a5332a1fd75d",
+  "perfil": "integracao",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": false,
+          "motivo": null
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": false,
+          "motivo": null
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": false,
+          "motivo": null
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": false,
+          "motivo": null
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": false,
+          "motivo": null
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": false,
+          "motivo": null
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": false,
+          "motivo": null
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    }
+  ]
+}
