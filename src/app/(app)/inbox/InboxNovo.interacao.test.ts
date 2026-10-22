@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   g: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as { deps?: unknown[]; limpar?: void | (() => void) }[],
   posEfeito: 0,
+  modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   aoAviso: null as null | ((a: import("@/server/inbox/barramento").AvisoInbox) => void),
 }));
@@ -17,6 +18,7 @@ vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
     ...real,
+    useSyncExternalStore: (() => m.modo) as unknown as typeof real.useSyncExternalStore,
     useState: ((i: unknown) => {
       if (!m.g) return real.useState(i as never);
       const estado = m.g.useState(i);
@@ -65,6 +67,7 @@ let respostaPainel: () => Response;
 let respostaLista: () => Promise<Response>;
 const chamadasPainel: string[] = [];
 beforeEach(() => {
+  m.modo = null;
   marcar.mockReset(); marcar.mockResolvedValue({ ok: true });
   vi.stubGlobal("document", { visibilityState: "visible" });
   m.g = criarGanchos(); m.efeitos = []; m.aoAviso = null; chamadasPainel.length = 0;
@@ -86,7 +89,7 @@ it("painéis simultâneos do atendimento têm identidades React distintas", asyn
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
   tela(); await esvaziar();
   const paineis = elementos(tela()).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement[];
-  expect(paineis).toHaveLength(4); // painel desktop e Drawer
+  expect(paineis).toHaveLength(2); // uma única montagem do painel
   for (let i = 0; i < paineis.length; i += 2) {
     expect(paineis[i].key).not.toBeNull();
     expect(paineis[i + 1].key).not.toBe(paineis[i].key);
@@ -335,5 +338,21 @@ describe("contagens no estado produtor para os chips", () => {
     ler({ ok }); await esvaziar(); expect(resolver).toHaveLength(2);
     resolver[1](resposta(ok ? 0 : 8)); await esvaziar(); render(p);
     expect(m.contagens).toEqual({ ...inicial, naoLidas: ok ? 0 : 8 });
+  });
+});
+const cabecalho = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as unknown as import("./ConversaAberta").PropsConversaAberta;
+describe("ligação do painel à casca", () => {
+  it("toggle considera automático efetivo, não apenas escolha true", () => {
+    m.modo = "tres"; vi.stubGlobal("window", { innerWidth: 1440 });
+    expect(cabecalho(tela()).painelAberto).toBe(true);
+    cabecalho(tela()).aoAlternarPainel(); expect(cabecalho(tela()).painelAberto).toBe(false);
+    cabecalho(tela()).aoAlternarPainel(); expect(cabecalho(tela()).painelAberto).toBe(true);
+  });
+  it("abaixo do corte muda vista; ao cruzar três colunas retorna ao automático", () => {
+    m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
+    cabecalho(tela()).aoAlternarPainel(); expect(elementos(tela())[0].props["data-vista"]).toBe("painel");
+    m.modo = "tres"; tela(); const atual = tela();
+    expect(cabecalho(atual).painelAberto).toBe(true); expect(cabecalho(atual).painelAuto).toBe(true);
+    expect(elementos(atual)[0].props["data-vista"]).toBe("conversa");
   });
 });
