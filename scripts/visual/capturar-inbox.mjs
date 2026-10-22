@@ -62,7 +62,8 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   await autenticarApp(contexto, base, process.env.INBOX_VISUAL_EMAIL ?? "admin@genius.com", process.env.INBOX_VISUAL_SENHA ?? "genius123");
   const id = estado === "humano-compositor" ? ids.beatriz : ids.mariana;
   const semSelecao = estado === "sem-selecao" || estado === "celular-lista";
-  await pagina.goto(`${base}/inbox${semSelecao ? "" : `?c=${encodeURIComponent(id)}`}`, { waitUntil: "domcontentloaded" });
+  const consulta = estado === "lista-vazia" ? "?busca=zzzz" : semSelecao ? "" : `?c=${encodeURIComponent(id)}`;
+  await pagina.goto(`${base}/inbox${consulta}`, { waitUntil: "domcontentloaded" });
   if (estado === "celular-painel" || estado === "tablet-painel") {
     // A mensagem chega pelo efeito cliente: este ponto também comprova a hidratação antes do clique no painel.
     await esperarConteudoApp(pagina, "conversa", tamanho);
@@ -80,6 +81,11 @@ async function abrirPrototipo(pagina, estado) {
   await pagina.goto(`${pathToFileURL(prototipo).href}?c=${c}`, { waitUntil: "load" });
   const root = pagina.locator('[data-m="root"]');
   await root.waitFor({ state: "visible" });
+  if (estado === "lista-vazia") {
+    const lista = root.locator('[data-m="list"]');
+    await lista.getByPlaceholder("Buscar conversas, contatos, tags").fill("zzzz");
+    await lista.getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
+  }
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
   if (estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
     const chat = root.locator('[data-m="chat"]');

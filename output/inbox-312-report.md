@@ -31,3 +31,25 @@ Node22 node_modules/vitest/vitest.mjs run "src/app/(app)/inbox" src/components/c
 ## Pendências obrigatórias antes da entrega
 
 Integração da casca/harness308 pelo coordenador; captura app×protótipo conversa/celular-lista/lista-vazia em3tamanhos/2temas; inspeção real inclusive legibilidade Mono600 sintetizada; >100itens com alturasmedidas/Tab/Shift+Tab/scroll/seleção/resize; preservação de negativos. Depois gates dirigidos finais, QAindependente e global integrado. Nenhuma homologação presumida. Não freeze/publicar como concluída antes dessas provas.
+
+## Integração coordenada e harness
+
+Checkpoint parcial8e981d9796f2f26bb62313f9cc162828935d0276; UI/medidas pendentes explicitamente no commit. Merge da basec7e85eb2014bffd9919eedc1808dcb7dcc5b1f24 finalizado em3712bb9dc459100412538d77da2ff1f076134642. Conflitos: quadro preserva ambas entregas; InboxNovo preserva casca308 e finally311, diferença produtiva contra c7 somente usuarioId na Lista. InboxNovo.test conserva testes308 de limiares/painel e testes312 de badges/usuário/número fora. Nenhum outro conflito produtivo.
+
+Pós-base:74267/ae4e48 exit0,36arquivos435testes; TSC86854/77b378 heap8192 exit0; lintdirigido10arquivosbb8db8 exit0. Não full próprio. Globals/UI do integrador emc7 não são prova da fonte312.
+
+Ownership do harness transferido ao B após freeze308. Delta localizado lista-vazia: app ?busca=zzzz semseleção, esperar EstadoVazio+zeroitens; protótipo preencher busca realzzzz/esperar vazio; três tamanhos/dois temas12PNGs adicionais. RED41e08e:2falhas17passaram exit1; GREEN5e0e11:19testes exit0; lint4arquivos0edb5b exit0. --estado todos passa de38 para50PNGs (26app24protótipo). Outros passos/diagnósticos/guards React não alterados.
+
+Integrador comprovou corrida SSR/caret na captura semseleção e fará fix de prontidão em commit separado após o global de c7. B não implementa espera paralela nem ignora warning; deve incorporar fix antes das capturas. Nenhuma captura312 realizada até aqui.
+
+## Preparo privado150 — só escrito para inspeção/execução do integrador
+
+Arquivo local não publicável output/preparar-inbox-312-virtual.mjs; SHA256C56671787682CD628D528D5387DA111FDEEF31F25D9C69595CB36F51262BB838. Node22 --check/--help exit0, sem banco. Integrador executa após inspecionar; DEV não executou DB.
+
+Guards OWN/cwdB e perfildev-gravacoes/bancohostlocalhost54329 exatos; IDsfixos prefixoinbox-312-virtual-. Valida titularidade de número/contatos/conversas/atendimentos/mensagens antes do primeiro upsert dentro de transação única. Semtruncate/delete/recriarAuth; emerro rollback natural e preservação do banco. Número enumCOBRANCA porque enum atual não possuiSECRETARIA, mas setor e150atendimentos sãoSECRETARIA (padrão existente das integrações), BAILEYS DESCONECTADO semproviderRef. Semgrupo/transporte/actionsenvio.
+
+75casos compartilhados2 com2ENTRADAs,75casos compartilhados0 com1ENTRADA e lidaAteAdmin posterior, sem mexer emleiturasalheias. Todas as mensagens/datas de ordenação são anteriores à menor data das7fixture307 (menos24h), semfixada para manter topo canônico. Novo número produz225mensagens e75nãoLidaspessoais iniciais, não mascarar esse efeito no selo311. Prova150 usa filtro explícito numeroId via UI; formal usa7casos normais. Não há manifesto deexecução enquanto integrador não rodar.
+
+## Probe de navegador previsto
+
+Abrir lista canônica e consumir prontidão do harness corrigido pelo integrador; escolher o número privado pelo select Número, sem requestmock de dados. Carregar páginas por Carregar mais50→100→150. Medir pelo menos duas alturas reais, wrapper virtual e janelaDOM limitada; rolar a lista, verificar contiguidade/ausência de sobreposição/âncora apósResizeObserver. Tab/Shift+Tab atravessam fronteira da janela com linha anterior focada preservada, Enter seleciona atendimento real, voltar para lista preserva seleção. Redimensionar300/372 e390 para forçar quebra/recalcularaltura, repetir foco e coletar screenshots/manifesto com falhas, alturas, offsets e fonte mono computada. Nenhuma extensão do motor antes de diagnóstico caso essa prova falhe.
