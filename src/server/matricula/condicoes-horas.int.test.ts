@@ -91,13 +91,13 @@ async function prepararPreviaFinanceira() {
   return { d: { alunoId: m.alunoId, matriculaId, ocorrenciaId: o.dado.id, condicoesId: p.dado.id }, e, professor };
 }
 
-async function emitirCobrancaDaPrevia(d: { alunoId: string; matriculaId: string }, chave: string) {
+async function emitirCobrancaDaPrevia(d: { alunoId: string; matriculaId: string }, chave: string, dataNoPeriodo = "2026-01-15", vencimento = "2026-02-10") {
   const { prepararFechamentoHoras } = await import("./fechamento-horas-rascunho");
   const { decidirFechamentoHoras } = await import("./fechamento-horas-decisao");
   const { emitirFechamentoHorasTx } = await import("./fechamento-horas-emissao-tx");
   login(adminId);
   const rascunho = await prepararFechamentoHoras({ alunoId: d.alunoId, matriculaId: d.matriculaId, documentoId, versaoAnterior: 0,
-    periodo: { referencia: { referencia: "MES_CIVIL" as const }, dataNoPeriodo: "2026-01-15", fuso: "America/Sao_Paulo", vencimento: "2026-02-10", clausula: "Apuração mensal da aula conferida" },
+    periodo: { referencia: { referencia: "MES_CIVIL" as const }, dataNoPeriodo, fuso: "America/Sao_Paulo", vencimento, clausula: "Apuração mensal da aula conferida" },
     escolha: "AGUARDAR" as const, motivo: "Apuração para fotografia financeira Q23", chaveIdempotencia: chave });
   if (!rascunho.ok || !rascunho.dado) throw new Error("Rascunho para Q23 ausente");
   const aprovador = await criarUsuario(["ADMINISTRADOR"]); login(aprovador.id);
@@ -987,4 +987,86 @@ it("Q173 (R2 do #284, B3): aula por hora da moeda anterior ainda não faturada i
   expect(await registrarPagamento(cobranca.id, { chaveIdempotencia: "q173-b3-pagamento", valorRecebido: cobranca.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Aula por hora recebida antes da troca." })).toMatchObject({ ok: true });
   expect(await pendencias("2026-03-01T00:00:00")).toEqual([]);
   expect(await alvo()).toMatchObject({ podePreparar: true, pendencias: [] });
+});
+
+it("Q173 (R3 do #284, B4): vigência no meio do período de horas é recusada; no dia 1, janeiro em CRC continua apurável e fevereiro fecha em USD", async () => {
+  const { d, e: aulaJaneiro, professor } = await prepararPreviaFinanceira();
+  const { preverConferenciaOcorrenciaHoras } = await import("./ocorrencia-financeira-previa");
+  const { conferirOcorrenciaHoras } = await import("./ocorrencia-financeira-conferir");
+  const { carregarApuracaoHorasTx } = await import("./fechamento-horas-tx");
+  const { registrarOcorrenciaParticular } = await import("./ocorrencia-particular");
+  const { consultarAlvoMoedaTx } = await import("@/server/contratos/aditivo-moeda");
+  const { registrarPagamento } = await import("@/server/financeiro/acoes");
+  await prisma.configuracaoOperacional.upsert({ where: { id: "escola" }, create: { id: "escola", fusoInstitucional: "America/Sao_Paulo" }, update: { fusoInstitucional: "America/Sao_Paulo" } });
+  const pendencias = async (vigencia: string) => (await prisma.$queryRaw<Array<{ p: string[] }>>`SELECT pendencias_moeda_antiga_173(${matriculaId}, 'CRC', ${vigencia}::timestamp, 'America/Sao_Paulo') AS p`)[0].p;
+  const alvo = (vigencia: string) => prisma.$transaction(tx => consultarAlvoMoedaTx(tx, matriculaId, { condicoes: { MOEDA: { tipo: "MOEDA", moeda: "USD" } }, vigenciaInicio: new Date(vigencia) }));
+  const conferir = async (dados: typeof d, chave: string) => {
+    const previa = await preverConferenciaOcorrenciaHoras(dados); if (!previa.ok || !previa.dado) throw new Error(JSON.stringify(previa));
+    const conf = await conferirOcorrenciaHoras({ ...dados, estadoPrevia: previa.dado.estadoPrevia, motivo: "Conferência da aula por hora", chaveIdempotencia: chave });
+    if (!conf.ok || !conf.dado) throw new Error(JSON.stringify(conf));
+  };
+  const pagar = async (cobrancaId: string, chave: string) => {
+    login(adminId);
+    const c = await prisma.cobranca.findUniqueOrThrow({ where: { id: cobrancaId } });
+    expect(await registrarPagamento(c.id, { chaveIdempotencia: chave, valorRecebido: c.valorNegociado.toNumber(), forma: "DINHEIRO", comentario: "Aula por hora recebida." })).toMatchObject({ ok: true });
+  };
+  // Janeiro: aula de 10/01 conferida (156,25 CRC), fechada e paga.
+  await conferir(d, "q173-b4-janeiro");
+  const janeiro = await emitirCobrancaDaPrevia(d, "q173-b4-fechamento-janeiro");
+  await pagar(janeiro.cobrancaId, "q173-b4-pagamento-janeiro");
+
+  // Fuso da escola e do fechamento: São Paulo. Vigência no meio do período (20/01) é recusada, na checagem TS e no
+  // banco; 01/02 00:00 UTC também, porque em São Paulo ainda é 31/01, dentro do fechamento de janeiro.
+  expect(await pendencias("2026-01-20T03:00:00")).toEqual(["VIGENCIA_NO_MEIO_DO_PERIODO_HORAS"]);
+  expect(await pendencias("2026-02-01T00:00:00")).toEqual(["VIGENCIA_NO_MEIO_DO_PERIODO_HORAS"]);
+  expect(await alvo("2026-01-20T03:00:00Z")).toMatchObject({ podePreparar: false, pendencias: [{ codigo: "VIGENCIA_NO_MEIO_DO_PERIODO_HORAS", texto: expect.stringContaining("primeiro dia do mês") }] });
+  // No dia 1, 00:00 em São Paulo (03:00Z), a matrícula está limpa.
+  expect(await pendencias("2026-02-01T03:00:00")).toEqual([]);
+  expect(await alvo("2026-02-01T03:00:00Z")).toMatchObject({ podePreparar: true, pendencias: [] });
+
+  // Troca aplicada com vigência em 01/02 (00:00 em São Paulo). Atalho só desta fixture, que não tem aditivo: os registros da troca (versão e
+  // aplicação geral das condições, proposta, decisão e aplicação da moeda) são gravados com os triggers desligados; a moeda da matrícula muda pela guarda real
+  // (aplicação desta transação + GUC). O fluxo completo da troca está em aditivo.int.test.ts.
+  const { hashSubstituicao } = await import("@/server/contratos/substituicao-estado");
+  const condicoesTroca = { MOEDA: { tipo: "MOEDA", moeda: "USD" } };
+  await prisma.$transaction(async tx => {
+    const id = (s: string) => `q173-b4-${s}-${Math.random().toString(36).slice(2)}`;
+    const v = id("v"), pa = id("pa"), pr = id("p"), de = id("d"), ap = id("a"), h = "a".repeat(64);
+    await tx.$executeRawUnsafe("SET LOCAL session_replication_role = replica");
+    await tx.$executeRaw`INSERT INTO "VersaoCondicoesAditivo" (id,"matriculaId","propostaId","conferenciaFinalId","autorId",versao,condicoes,"condicoesHash","vigenciaInicio") VALUES (${v},${matriculaId},${pa},${id("cf")},${adminId},1,${JSON.stringify(condicoesTroca)}::jsonb,${hashSubstituicao(condicoesTroca)},'2026-02-01T03:00:00')`;
+    await tx.$executeRaw`INSERT INTO "AplicacaoCondicoesAditivo" (id,"versaoCondicoesId","matriculaId","propostaId","autorId","revisaoHash","condicoesHash","vigenciaInicio","chaveIdempotencia") VALUES (${id("ac")},${v},${matriculaId},${pa},${adminId},${h},${hashSubstituicao(condicoesTroca)},'2026-02-01T03:00:00',${id("ac")})`;
+    await tx.$executeRaw`INSERT INTO "PropostaMoedaAditivo" (id,"matriculaId","propostaAditivoId","versaoCondicoesId","preparadorId","moedaAnterior","moedaNova",fuso,fotografia,"fotografiaHash",motivo,evidencia,"chaveIdempotencia") VALUES (${pr},${matriculaId},'x',${v},${adminId},'CRC','USD','America/Sao_Paulo','{}',${h},'x','x',${pr})`;
+    await tx.$executeRaw`INSERT INTO "DecisaoMoedaAditivo" (id,"propostaId","decisorId",aprovada,motivo,"fotografiaHash","chaveIdempotencia") VALUES (${de},${pr},${adminId},true,'x',${h},${de})`;
+    await tx.$executeRaw`INSERT INTO "AplicacaoMoedaAditivo" (id,"decisaoId","executorId","fotografiaHash","chaveIdempotencia","moedaAnterior","moedaNova","aplicadaEm") VALUES (${ap},${de},${adminId},${h},${ap},'CRC','USD',(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::timestamp(3))`;
+    await tx.$executeRawUnsafe("SET LOCAL session_replication_role = origin");
+    await tx.$queryRaw`SELECT set_config('erp_genius.aplicacao_moeda_173', ${ap}, true)`;
+    await tx.$executeRaw`UPDATE "Matricula" SET moeda='USD' WHERE id=${matriculaId}`;
+  });
+  expect((await prisma.matricula.findUniqueOrThrow({ where: { id: matriculaId } })).moeda).toBe("USD");
+  const apurar = (inicio: string, fimExclusivo: string, vencimento: string) => prisma.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola',0))`;
+    return carregarApuracaoHorasTx(tx, { alunoId: d.alunoId, matriculaId, periodo: { referencia: "mes-civil", inicio, fimExclusivo }, vencimento, escolha: "AGUARDAR" });
+  });
+  // Janeiro, já faturado em CRC antes da vigência, continua apurável: a aula fica preservada como FATURADA.
+  expect(await apurar("2026-01-01T03:00:00Z", "2026-02-01T03:00:00Z", "2026-02-10")).toMatchObject({ preservados: [{ encontroId: aulaJaneiro.id, destinacao: { tipo: "FATURADA", cobrancaId: janeiro.cobrancaId } }] });
+
+  // Fevereiro: condições de horas em USD a partir de 01/02 e aula de 10/02 conferida e fechada em USD.
+  login(secretariaId);
+  const usd = await prepararCondicoesHoras({ ...input(), regras: { ...regras, moeda: "USD", valorHora: "40.00", vigenteDesde: "2026-02-01T00:00:00Z" } });
+  if (!usd.ok || !usd.dado) throw new Error(JSON.stringify(usd));
+  login(adminId); expect(await decidirCondicoesHoras({ id: usd.dado.id, aprovar: true, motivo: "Condições em USD depois da troca" })).toMatchObject({ ok: true });
+  const encontro = await prisma.encontroAgenda.create({ data: { matriculaId, professorId: professor.id, preparadorId: adminId,
+    inicio: new Date("2026-02-10T15:00:00Z"), fim: new Date("2026-02-10T16:00:00Z"), fusoOrigem: "America/Sao_Paulo", status: "PREVISTO",
+    motivo: "Agenda contratada", chaveIdempotencia: "q173-b4-encontro-fevereiro", entradaHash: "fixture" } });
+  login(professor.id);
+  const o = await registrarOcorrenciaParticular({ encontroId: encontro.id, versaoAnterior: 0, tipo: "REALIZADA", evidencia: "Informe do professor", chaveIdempotencia: "q173-b4-informe-fevereiro" });
+  if (!o.ok || !o.dado) throw new Error(JSON.stringify(o));
+  login(adminId);
+  const fevereiro = { ...d, ocorrenciaId: o.dado.id, condicoesId: usd.dado.id };
+  await conferir(fevereiro, "q173-b4-fevereiro");
+  const emissao = await emitirCobrancaDaPrevia(fevereiro, "q173-b4-fechamento-fevereiro", "2026-02-15", "2026-03-10");
+  expect(await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } })).toMatchObject({ moeda: "USD", tipo: "HORA_PARTICULAR" });
+  expect((await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } })).valorNegociado.toFixed(2)).toBe("40.00");
+  // Janeiro segue apurável depois do fechamento de fevereiro.
+  expect(await apurar("2026-01-01T03:00:00Z", "2026-02-01T03:00:00Z", "2026-02-10")).toMatchObject({ preservados: [{ destinacao: { tipo: "FATURADA", cobrancaId: janeiro.cobrancaId } }] });
 });
