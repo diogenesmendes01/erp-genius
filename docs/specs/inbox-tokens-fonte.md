@@ -24,4 +24,4 @@ Fonte entregue pelo integrador: JetBrains Mono 5.3.0, OFL 1.1; SHA256 `18be45272
 
 ## Estado
 
-Implementação concluída e recorte verde:5 arquivos/53 testes, lint dirigido sem avisos, Node 22.23.2. RED observado:9 falhas/33 aprovados antes da implementação. Globais, TESTER e aceite visual aguardam coordenação/harness 307; não homologada. Detalhes em `output/inbox-306-report.md`.
+Fonte congelada b8d5128a; código aprovado pelo TESTER (53 testes independentes). TSC global, full 845 arquivos/6533 testes e lint 0/40 aprovados no Node 22.23.2. Prova DEV:18 PNGs nos 3 tamanhos/2 temas, fonte carregada 400/500, Roboto preservada, trechos reais isolados sem overflow externo. dt já existente solicita 600 com face 400–500; limite documentado sem alterar a faixa contratada. Aceite formal app×protótipo aguarda harness 307. Relatório: `output/inbox-306-report.md`.

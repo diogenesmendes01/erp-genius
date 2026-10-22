@@ -4694,8 +4694,9 @@ Implementação e verificação local concluídas; revisão independente e publi
 
 #### E1.1 — #306: tokens, fonte mono e travas
 
-**Estado: implementação e recortes DEV concluídos; globals, TESTER e aceite visual pendentes.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
+**Estado: implementação, gates DEV e código TESTER aprovados; aceite formal app×protótipo pendente 307.** Branch `codex/inbox-e1-306`; SPEC `docs/specs/inbox-tokens-fonte.md`, relatório `output/inbox-306-report.md`.
 
-- Tokens de avatar/balão/pontos, utilitário de fundo e fonte mono local 400–500; Roboto e travas anteriores preservadas. Fonte/licença entregues pelo integrador no commit3eb87ea6, hash conferido; sem pacote/lock/schema/CDN.
+- Tokens de avatar/balão/pontos, utilitário de fundo e fonte mono local 400–500; Roboto e travas anteriores preservadas. Fonte/licença entregues pelo integrador no commit 3eb87ea6, hash conferido; sem pacote/lock/schema/CDN.
 - TDD RED 9 falhas/33 aprovados; GREEN 5 arquivos/53 testes e lint dirigido sem avisos, saídas 0 Node 22.23.2. CSS compilado com amostra explícita; contraste positivo e autoteste de avatar reprovado.
-- Aceite visual depende do harness #307:app×protótipo nos3 tamanhos/2 temas, document.fonts.load+amostra mono e regressão de usos mono fora Inbox. Mono 600 futuro pertence às tasks consumidoras. Nenhum envio/integração externa, nenhuma homologação presumida.
+- Globais em b8d5128a: TSC heap8192 sessão 50415, full 845 arquivos/6533 testes sessão 99205, lint global 0 erros/40 avisos sessão 59333, todos saída 0 Node 22.23.2. TESTER: 5 arquivos/53 testes, saída 0 e parecer de código favorável.
+- Prova DEV 18 PNGs/6 contextos (3 tamanhos×2 temas): fonte Next local loaded 400–500 via document.fonts.load, sans Roboto preservada; 6 trechos reais isolados sem overflow externo, dt 600 registrado sem afirmar face 600 nativa. Relatório separa pilha anterior reconstituída de fotos do app atual. App×protótipo aguarda 307; nenhuma homologação presumida.
