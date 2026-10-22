@@ -21,7 +21,7 @@ vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ encerrarAtendimentoW
 vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
 
 import { BalaoMensagem } from "@/components/conversa/BalaoMensagem";
-import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
+import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consultas-inbox";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import type { ConversaHook } from "@/components/conversa/useConversa";
@@ -34,7 +34,7 @@ const item = (o: Partial<ItemListaInbox> = {}): ItemListaInbox => ({
   status: "EM_ATENDIMENTO", responsavelNome: null, prazoRespostaEm: null, fixada: false, silenciada: false, grupo: false,
   responsavelId: "u1", numeroDonoId: null, setoresDoNumero: ["COMERCIAL"], atendimentoOrigemId: null, capacidades: [], ...o,
 });
-const conversaVazia = { mensagens: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
+const conversaVazia = { mensagens: [], notas: [], temMaisAntes: false, carregandoAntigas: false, erro: null, maisAntigas: async () => {} } as unknown as ConversaHook;
 const propsConversa = (o: Partial<PropsConversaAberta> & { podeEnviar: boolean | null }): PropsConversaAberta => ({
   item: item(), usuario, fuso: null, conversa: conversaVazia, aoVoltar: () => {}, aoAbrirPainel: () => {}, aoMudar: () => {}, ...o,
 });
@@ -42,6 +42,19 @@ const msg: MensagemThread = {
   id: "m1", direcao: "SAIDA", tipo: "TEXTO", corpo: "Olá", midiaPath: null, status: "ENVIADA", origem: "HUMANO",
   autorNome: null, templateNome: null, criadoEm: "2026-10-17T15:30:00.000Z", participanteNome: null, favorita: false, clientMessageId: null,
 };
+
+describe("ConversaAberta: notas internas na thread", () => {
+  it("mostra nota com as mensagens na ordem temporal e sem comandos externos", () => {
+    const n: NotaInternaThread = { id: "e1", nota: "Combinar desconto", autorNome: "Ana", criadoEm: "2026-10-17T16:00:00.000Z", origem: "atendimento" };
+    const conversa = { ...conversaVazia, mensagens: [msg], notas: [n] } as ConversaHook;
+    const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true, conversa })));
+    expect(h.indexOf("Olá")).toBeLessThan(h.indexOf("Combinar desconto"));
+    expect(h).toContain("Nota interna · só equipe");
+    expect(h).toContain("Combinar desconto");
+    expect(h).toContain('role="note"');
+    expect(h.match(/aria-label="Opções da mensagem"/g)).toHaveLength(1);
+  });
+});
 
 describe("ConversaAberta: menu da mensagem só com comandos ligados (C3 da R1 do #217 · C4 da R1 do #219)", () => {
   const TODAS = ["editar", "apagar", "reagir", "encaminhar"] as const;
