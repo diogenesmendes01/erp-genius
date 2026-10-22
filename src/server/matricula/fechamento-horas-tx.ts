@@ -55,6 +55,9 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     select: { moedaAnterior: true, decisao: { select: { proposta: { select: { versaoCondicoes: { select: { vigenciaInicio: true } } } } } } } }))
     .map(t => ({ moedaAnterior: t.moedaAnterior, vigencia: t.decisao.proposta.versaoCondicoes.vigenciaInicio.getTime() })).sort((a, b) => a.vigencia - b.vigencia);
   const moedaNaData = (instante: Date) => trocas.find(t => t.vigencia > instante.getTime())?.moedaAnterior ?? m.moeda;
+  // R4 do #284 (B5): a conferência já destinada só é preservada, sem gerar item. Aceita a moeda da data ou qualquer moeda
+  // anterior de troca aplicada (dado legado de aula na janela entre a vigência e a aplicação, faturada na moeda anterior).
+  const moedasAceitas = (instante: Date) => new Set([moedaNaData(instante), ...trocas.map(t => t.moedaAnterior)]);
   const itens: EntradaFechamentoHoras["encontros"] = [];
   const origens: { encontroId: string; inicio: string; fim: string; status: string; conferenciaId: string | null; informeId: string | null }[] = [];
   for (const e of encontros) {
@@ -77,10 +80,11 @@ export async function carregarApuracaoHorasTx(tx: Prisma.TransactionClient, d: O
     const consumoAntecipacao = c.consumoAntecipacao;
     const conferenciaConsomeAntecipacao = !!consumoAntecipacao && !!reserva && reserva.id === consumoAntecipacao.reservaId && reserva.consumo?.id === consumoAntecipacao.id
       && ["FALTA_COBRAVEL", "CANCELAMENTO_TARDIO"].includes(c.desfecho);
-    // Conferência sem destino precisa estar na moeda atual: a da moeda anterior é barrada antes da troca (HORAS_A_FATURAR).
+    // Conferência sem destino precisa estar na moeda atual: a da moeda anterior é barrada antes da troca (HORAS_A_FATURAR)
+    // e, na janela entre a vigência e a aplicação, pela guarda da conferência.
     const destinada = !!c.itemFaturado || !!c.aplicacaoNaoCobravel || conferenciaConsomeAntecipacao;
     if ((e.reservasHoras.length && !conferenciaConsomeAntecipacao) || c.ocorrenciaId !== e.ocorrenciasParticulares[0]?.id || s.ocorrenciaId !== c.ocorrenciaId || s.condicoesId !== c.condicoesId
-      || s.matriculaId !== d.matriculaId || s.moeda !== c.moeda || c.moeda !== (destinada ? moedaNaData(e.inicio) : m.moeda) || s.minutos !== c.minutos
+      || s.matriculaId !== d.matriculaId || s.moeda !== c.moeda || (destinada ? !moedasAceitas(e.inicio).has(c.moeda) : c.moeda !== m.moeda) || s.minutos !== c.minutos
       || !new Prisma.Decimal(s.valorApurado).equals(c.valor) || !isDeepStrictEqual(s.regras, c.condicoes.regras)
       || c.ocorrencia.encontroId !== e.id || o.referenciaEncontro !== e.id || c.ocorrencia.inicio.getTime() !== e.inicio.getTime()
       || c.ocorrencia.fim.getTime() !== e.fim.getTime() || !!consumoAntecipacao !== conferenciaConsomeAntecipacao) throw new ErroRegra("Origem da conferência financeira diverge do encontro.");
