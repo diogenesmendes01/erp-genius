@@ -322,7 +322,7 @@ it("recusa aprovar origem histórica com processo de assinatura do contrato em a
   const origem = await registrarOrigemLegada("origem-historica-aberto");
   const decisao = { propostaId: origem.id, aprovada: true, motivo: "PDF e transcrição conferidos.", pdfHashConferido: origem.pdfHash, transcricaoHashConferido: origem.transcricaoHash };
   authMock.mockResolvedValue({ user: { id: base.adminId } });
-  expect(await decidirOrigemContratualHistorica(decisao)).toEqual({ ok: false, erro: "Há processo de assinatura do contrato em aberto nesta matrícula (enviado para assinatura). Cancele ou conclua o envio antes de aprovar a origem histórica." });
+  expect(await decidirOrigemContratualHistorica(decisao)).toEqual({ ok: false, erro: "Há processo de assinatura do contrato em aberto nesta matrícula (Enviado). Cancele ou conclua o envio antes de aprovar a origem histórica." });
   await expect(prisma.decisaoOrigemContratualHistorica.create({ data: { propostaId: origem.id, decisorId: base.adminId, aprovada: true, motivo: "Direto no banco.", pdfHashConferido: origem.pdfHash, transcricaoHashConferido: origem.transcricaoHash } }))
     .rejects.toThrow(/cancele ou conclua o envio antes de aprovar a origem histórica/);
   expect(await prisma.decisaoOrigemContratualHistorica.count()).toBe(0);
