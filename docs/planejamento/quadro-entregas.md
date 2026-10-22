@@ -4607,6 +4607,10 @@ Branch `claude/adm-whatsapp-number-removal-7ecfa1`. Relato: o administrador não
 - **Escopo:** preparação do épico #379. O módulo `aria/_componentes/abas.ts` passa a `abas-aria.ts`, eliminando a colisão de caixa com `Abas.tsx` no Windows. Leituras em três testes normalizam CRLF, preservando as asserções de estilo, confirmação e CI; nenhum workflow foi alterado.
 - **Evidências:** página Aria 12 falhas antes e 13/13 após; recorte de quatro arquivos 90/90; recorte CI 16/16; TypeScript global com heap 8192 e lint global (0 erros, 40 avisos), todos saída 0. A primeira suíte completa revelou três falhas CRLF no CI, corrigidas e verificadas no recorte.
 - **SPEC/limites:** `docs/planejamento/inbox-validacao-windows.md`. Suíte unitária completa final: 839 arquivos, 6.437 testes, saída 0, sem ignorados; não inclui integração. TESTER aprovou o commit exato `58eeb7b3`, sem achados bloqueantes, com 106/106 testes dirigidos e saída 0. Nenhum efeito de banco, mensagem, integração externa ou produção. Pré-requisito validado; merge e deploy não executados.
+### Inbox — pré-requisito Next/SSE — 2026-10-22
+
+Implementação e verificação local concluídas; revisão independente e publicação em andamento. O tipo gerado pelo Next recusava constantes exportadas pela rota SSE. Extraídas para módulo próprio sem alterar valores/comportamento. Reprodução TSC sessão10576 código2/TS2344; após correção sessão59855 código0 para10 testes de rota, TypeScript global com tipos Next presentes e lint dos três arquivos. Relatório `output/inbox-next-sse-report.md`. Regressão da combinação E0 ainda pendente. Sem merge/deploy.
+
 ### Inbox E0.1 — #298: classes de cor inexistentes e trava de paleta — 2026-10-22
 
 **Estado: implementação e validação concluídas; PR em publicação.** SPEC e histórico de investigação em `output/inbox-298-report.md`; parecer independente em `output/inbox-298-visual/qa/inbox-298-final-review.md`. Merge e deploy não executados.
