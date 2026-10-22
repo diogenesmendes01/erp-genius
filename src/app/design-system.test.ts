@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
+import postcss from "postcss";
+import tailwind from "tailwindcss";
 import { TEXTO_SOBRE_SOLIDO } from "./contraste-mapa";
 import { paresTexto, reprovados, reprovadosSolidos, temasDoCss } from "./contraste-nucleo";
 
@@ -51,6 +53,17 @@ const ESPERADO = {
     "--entry": "#ffffff",
     "--entry-accent": "#d9fdd3",
     "--composer": "#ffffff",
+    "--avatar-1": "#007c9b",
+    "--avatar-2": "#a5524d",
+    "--avatar-3": "#0f825e",
+    "--avatar-4": "#6e62aa",
+    "--avatar-5": "#93640c",
+    "--avatar-6": "#985383",
+    "--avatar-7": "#677823",
+    "--avatar-8": "#008188",
+    "--bubble-ia": "#efebfa",
+    "--bubble-note": "#fff7e5",
+    "--chat-dot": "rgba(0, 0, 0, 0.035)",
     "--shadow-popover": "0 5px 20px #0002",
     "--shadow-dialog": "0 15px 60px #0006",
   },
@@ -93,6 +106,17 @@ const ESPERADO = {
     "--entry": "#242626",
     "--entry-accent": "#144d37",
     "--composer": "#242626",
+    "--avatar-1": "#007c9b",
+    "--avatar-2": "#a5524d",
+    "--avatar-3": "#0f825e",
+    "--avatar-4": "#6e62aa",
+    "--avatar-5": "#93640c",
+    "--avatar-6": "#985383",
+    "--avatar-7": "#677823",
+    "--avatar-8": "#008188",
+    "--bubble-ia": "#2b2a37",
+    "--bubble-note": "#3a3020",
+    "--chat-dot": "rgba(255, 255, 255, 0.035)",
     "--shadow-popover": "0 6px 24px #0006",
     "--shadow-dialog": "0 15px 60px #0006",
   },
@@ -108,8 +132,15 @@ describe("design system: tokens nos dois temas", () => {
   });
 
   it("texto sobre cada sólido ≥ 4,5:1 com o par do mapa", () => {
-    expect(TEXTO_SOBRE_SOLIDO).toEqual({ "--brand-solid": "--on-brand-solid", "--success-solid": "--on-brand-solid", "--danger-solid": "white", "--ai-solid": "white" });
+    const avatares = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [`--avatar-${n}`, "white"]));
+    expect(TEXTO_SOBRE_SOLIDO).toEqual({ "--brand-solid": "--on-brand-solid", "--success-solid": "--on-brand-solid", "--danger-solid": "white", "--ai-solid": "white", ...avatares });
     expect(reprovadosSolidos()).toEqual([]);
+  });
+
+  it("autoteste: o avatar do protótipo L 0,58 reprova com branco", () => {
+    const css = CSS.replace("--avatar-8: #008188", "--avatar-8: #008d94");
+    expect(css).not.toBe(CSS);
+    expect(reprovadosSolidos(css)).toEqual(expect.arrayContaining([expect.stringContaining("white/--avatar-8")]));
   });
 
   it("placeholder ≥ 4,5:1 sobre controle e página", () => {
@@ -128,6 +159,9 @@ describe("design system: tokens nos dois temas", () => {
 
   it("tailwind mapeia as cores novas", () => {
     const c = config.theme!.extend!.colors as Record<string, unknown>;
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) expect(c[`avatar-${n}`]).toBe(`var(--avatar-${n})`);
+    expect(c["bubble-ia"]).toBe("var(--bubble-ia)");
+    expect(c["bubble-note"]).toBe("var(--bubble-note)");
     expect(c["on-brand"]).toBe("var(--on-brand-solid)");
     expect(c["surface-raised"]).toBe("var(--surface-raised)");
     expect(c.highlight).toBe("var(--highlight)");
@@ -145,7 +179,33 @@ describe("design system: tokens nos dois temas", () => {
     const ext = config.theme!.extend!;
     expect(ext.borderRadius).toMatchObject({ md: "8px", item: "10px", lg: "12px", xl: "12px", dialog: "14px" });
     expect(ext.boxShadow).toEqual({ popover: "var(--shadow-popover)", dialog: "var(--shadow-dialog)" });
-    expect(ext.fontFamily).toEqual({ sans: ["var(--font-sans)", "Segoe UI", "Roboto", "system-ui", "sans-serif"] });
+    expect(ext.fontFamily).toEqual({
+      sans: ["var(--font-sans)", "Segoe UI", "Roboto", "system-ui", "sans-serif"],
+      mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+    });
+  });
+
+  it("fundo pontilhado usa pontos de 1 px a cada 18 px sobre a página", () => {
+    const corpo = CSS.match(/\.fundo-conversa\s*\{([^}]*)\}/)?.[1]?.replace(/\s+/g, " ") ?? "";
+    expect(corpo).toContain("background-color: var(--bg-page)");
+    expect(corpo).toContain("background-image: radial-gradient(var(--chat-dot) 1px, transparent 1px)");
+    expect(corpo).toContain("background-size: 18px 18px");
+  });
+
+  it("utilitários novos geram CSS quando há consumidores explícitos", async () => {
+    const classes = ["fundo-conversa", "bg-bubble-ia", "bg-bubble-note", "font-mono", ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `bg-avatar-${n}`)];
+    const resultado = await postcss([tailwind({ ...config, content: [{ raw: `<div class="${classes.join(" ")}"></div>`, extension: "html" }] })]).process(CSS, { from: undefined });
+    const regras = new Map<string, Map<string, string>>();
+    resultado.root.walkRules((regra) => {
+      const valores = new Map<string, string>();
+      regra.walkDecls((d) => { valores.set(d.prop, d.value); });
+      regras.set(regra.selector, valores);
+    });
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) expect(regras.get(`.bg-avatar-${n}`)?.get("background-color")).toBe(`var(--avatar-${n})`);
+    for (const nome of ["ia", "note"]) expect(regras.get(`.bg-bubble-${nome}`)?.get("background-color")).toBe(`var(--bubble-${nome})`);
+    expect(regras.get(".font-mono")?.get("font-family")).toContain("var(--font-mono)");
+    expect(regras.get(".fundo-conversa")?.get("background-image")).toBe("radial-gradient(var(--chat-dot) 1px, transparent 1px)");
+    expect(regras.get(".fundo-conversa")?.get("background-size")).toBe("18px 18px");
   });
 
   it("nenhum asset ou ícone do WhatsApp", () => {

@@ -25,6 +25,17 @@ const config: Config = {
         entry: "var(--entry)",
         "entry-accent": "var(--entry-accent)",
         composer: "var(--composer)",
+        // Inbox: avatares com iniciais brancas e superfícies dos balões semânticos.
+        "avatar-1": "var(--avatar-1)",
+        "avatar-2": "var(--avatar-2)",
+        "avatar-3": "var(--avatar-3)",
+        "avatar-4": "var(--avatar-4)",
+        "avatar-5": "var(--avatar-5)",
+        "avatar-6": "var(--avatar-6)",
+        "avatar-7": "var(--avatar-7)",
+        "avatar-8": "var(--avatar-8)",
+        "bubble-ia": "var(--bubble-ia)",
+        "bubble-note": "var(--bubble-note)",
         // temperatura Frio
         cold: { 700: "var(--cold-text)" },
         // neutros (texto/borda) — shades mapeadas para os tokens
@@ -100,6 +111,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "Segoe UI", "Roboto", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
     },
   },
