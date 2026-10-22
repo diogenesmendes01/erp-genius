@@ -9,7 +9,7 @@ import { paresTexto, reprovados, reprovadosSolidos, temasDoCss } from "./contras
 // Valores R são literais do spec; os A são adaptações com o motivo em docs/18-design-system.md. O escuro herda
 // do claro o que não redefine (--shadow-dialog, --ai-border do claro não, etc.), como no navegador.
 
-const CSS = readFileSync("src/app/globals.css", "utf-8");
+const CSS = readFileSync("src/app/globals.css", "utf-8").replace(/\r\n/g, "\n");
 
 const ESPERADO = {
   claro: {
