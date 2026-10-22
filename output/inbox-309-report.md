@@ -46,3 +46,9 @@ O integrador informou execução combinada285e1a66, sessão15860, exit1:850arqui
 - GREEN: Node22 node_modules/vitest/vitest.mjs run src/components/Avatar.test.ts src/app/identificacao-registro.test.ts "src/app/(app)/inbox/BadgeEstado.test.ts" "src/app/(app)/inbox/estado-visual.test.ts" src/app/paleta.test.ts src/app/fundo-sobre-pagina.test.ts "src/app/(app)/contatos" "src/app/(app)/inbox/prazo-vivo.test.ts" "src/app/(app)/inbox/ListaAtendimentos.test.ts" --maxWorkers=2.12arquivos/147testes exit0(977c4e), nenhum teste ignorado nos arquivos selecionados.
 - ESLint dirigido dos seis arquivos de produtores/testes, max-warnings0, exit0(20b098). TypeScript Node22 heap8192 --noEmit, sessão75216 acompanhada até exit0(267f59).
 - Não rodou full novo no DEV; integrador executará global combinado após este fix. Re-review independente pendente;311 permanece só leitura, sem implementação;312 não iniciada.
+
+## Fechamento pelo integrador — substitui as pendências históricas
+
+Fonte309 bcda5a04bb849579dea79ef46a2ffb333b6ab6f3, TESTER re-review favorável,4arquivos83testes0/diffcheck0. P2 Unicode e gateAST encerrados, sem relaxar regra. O full15860 vermelho e o full848/6591 anterior permanecem históricos, sem reatribuição.
+
+Global final combinado309+310 fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67, Node22.23.2, sessão15987 acompanhada atéexit0:850arquivos/6634testes semfiltro/semignorados/maxWorkers2, TSCheap8192, lintglobal0erros40avisos herdados. Logs e parecer em `output/inbox-309-qa/`. Branch309 recebeu a baseE1publicada3a; apenasquadro conflitou e foi consolidado, código309 preservado. Os arquivos depois desta revisão são docs/QA. Semsuite de integração/banco neste produtor; visual dos consumidores é Task7 conforme contrato. Pronta para PR; nenhum merge/deploy.
