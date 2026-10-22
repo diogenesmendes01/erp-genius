@@ -17,6 +17,6 @@ Três arquivos de teste liam CSS, TSX e YAML com CRLF e depois procuravam sequê
 - TypeScript global: `node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit --pretty false`, saída 0. A tentativa inicial no limite padrão de 4 GB terminou por falta de heap, saída 134; não representa aprovação.
 - Lint global: saída 0, 0 erros e 40 avisos preexistentes (`--max-warnings 40`). A cópia local do protótipo do PR #297 foi excluída por `--ignore-pattern docs/planejamento/inbox-prototipo/**`, a mesma exclusão de referência prevista naquele PR.
 - Suíte unitária completa final: `node node_modules/vitest/vitest.mjs run --maxWorkers=2`, saída 0, 839 arquivos e 6.437 testes aprovados, sem ignorados. Não inclui os testes de integração (`*.int.test.ts`).
-- Revisão independente: pendente; o pré-requisito permanece em validação até a revisão do commit exato.
+- Revisão independente do commit `58eeb7b36b7718cc27e35efd635dcc66d4878144`: favorável, sem achados bloqueantes; recorte dos cinco arquivos afetados com 106/106 testes e saída 0 no worktree TESTER. O commit posterior altera somente este registro de evidências e o quadro.
 
 Prisma Client foi regenerado pelo integrador em cada worktree a partir de seu próprio schema. Dependências foram copiadas fisicamente e conferidas contra o lockfile, sem instalar pacotes, compartilhar junction/symlink ou alterar manifesto/lockfile. Os testes de integração do Inbox usam bancos descartáveis separados; esta correção de baseline não altera banco ou servidor.
