@@ -11,6 +11,7 @@ Abrir uma conversa no Inbox não registra a leitura. O indicador pessoal usa `Pr
 - Ao abrir um atendimento visível, inclusive por `/inbox?c=<id>`, o servidor marca `lidaAte` do usuário, limpa `marcadaNaoLida` e zera `AtendimentoWhatsApp.naoLidas`.
 - A lista mostra zero imediatamente para o atendimento aberto; a consulta seguinte confirma o valor persistido.
 - Uma consulta iniciada antes da abertura ou durante a leitura não pode repor contagem antiga na conversa aberta, mesmo que termine após a confirmação. Consulta iniciada após a confirmação pode mostrar uma contagem nova. Se a ação falhar, a lista restaura a última contagem conhecida e faz uma consulta de reconciliação, sem repetição automática.
+- Após uma falha, respostas de consultas iniciadas antes dela não substituem a contagem restaurada. Uma consulta iniciada já na fase de falha pode corrigir essa contagem com o valor atual do servidor.
 - Uma nova mensagem da conversa aberta repete a leitura somente quando a aba está visível. Mensagens de outra conversa, avisos de outros tipos e aba oculta não disparam leitura.
 - Pedidos simultâneos da mesma conversa são consolidados; se outro pedido chegar durante um envio em voo, uma única repetição ocorre ao terminar. Conversas distintas podem seguir em paralelo.
 - Fora do escopo, a ação devolve erro e não grava preferências nem altera contador. A confirmação ao WhatsApp exige recurso `confirmacaoLeitura`, disponível apenas com número ativo, driver compatível e sessão `CONECTADO`. Falha do motor não desfaz a leitura local.

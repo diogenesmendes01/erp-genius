@@ -8,9 +8,12 @@ Estado em 22/10/2026: implementação preparada para re-review, com gates finais
 - `acoes.ts`: `message.read` agora depende da capacidade `confirmacaoLeitura` do número (ativo, driver compatível, sessão `CONECTADO`). O contador local continua sendo zerado quando o motor está indisponível.
 - `InboxNovo.tsx` e `marcar-lida.ts`: abertura inicial, troca de conversa e `mensagem.nova` da thread visível disparam leitura; contador da lista zera de imediato. Pedidos da mesma conversa em voo viram uma repetição final; conversas distintas são independentes. Sem polling.
 - Correção pós-review P2: GET iniciado antes ou durante a leitura não repõe `naoLidas` da conversa aberta. O zero otimista termina quando a leitura falha: restaura-se a última contagem conhecida e faz-se uma consulta única. GET posterior a uma leitura bem-sucedida pode mostrar nova contagem.
+- Correção pós-re-review R1: após falha de uma leitura nova, GET da versão anterior é descartado; somente GET iniciado já na fase de falha pode corrigir a contagem restaurada.
 - SPEC em `docs/specs/inbox-leitura-automatica.md` e evidências no quadro único.
 
 ## Evidências executadas
+
+- **P2 residual do re-review R1 (`91e554d0`):** RED determinístico: GET anterior à `mensagem.nova` devolveu 0 após falha da leitura e da reconciliação, quando a última contagem conhecida era 1. GREEN cobre também GET fresco válido que atualiza para 2. Unitário direcionado **4 arquivos / 36 testes**, saída 0, nenhum ignorado (17:26:54); integração direcionada **2 arquivos / 13 testes**, saída 0, nenhum ignorado no `dev-gravacoes`, `session_id 23506` até código final 0 (17:27:03–17:27:56); ESLint dos dois arquivos TypeScript tocados, saída 0. Novo re-review ainda pendente.
 
 - **Pós-rebase sobre o baseline Windows:** rebase dos dois commits #299 sem conflito, preservando no quadro as entradas do baseline e da #299. Unitário direcionado **4 arquivos / 35 testes**, saída 0, nenhum ignorado (17:21:58); integração direcionada **2 arquivos / 13 testes**, saída 0, nenhum ignorado, perfil `dev-gravacoes`, `session_id 29621` acompanhado até código final 0 (17:22:05–17:22:58); ESLint direcionado aos oito arquivos TypeScript da #299, saída 0. O diff contra `codex/inbox-baseline-windows` contém só a #299. Ainda aguardam janela global, re-review e aceite visual.
 
@@ -27,5 +30,5 @@ Estado em 22/10/2026: implementação preparada para re-review, com gates finais
 
 - TypeScript (`tsc --noEmit`), `npm test`, lint global e checks pós-rebase: aguardam janela global do integrador; não há alegação de aprovação.
 - Aceite visual nos três tamanhos e dois temas, com contador antes/depois: TESTER organizará fixture isolada; ainda não há captura. O harness visual da E1 não existe na base E0.
-- Re-review do commit corrigido pelo TESTER, homologação, PR/push e integração: a cargo do integrador. O primeiro review (`201f0a9d`) encontrou P2 reproduzido e corrigido acima; não marcar #299 concluída até os gates restantes.
+- Novo re-review do commit corrigido pelo TESTER, homologação, PR/push e integração: a cargo do integrador. O primeiro review (`201f0a9d`) e o re-review R1 (`91e554d0`) encontraram P2 reproduzidos e corrigidos acima; não marcar #299 concluída até os gates restantes.
 - Node em uso: 24.16.0; `.nvmrc` pede 22. Registrar qualquer diferença observada nos checks finais.
