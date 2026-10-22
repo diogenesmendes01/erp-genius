@@ -16,9 +16,9 @@ vi.mock("react", async (original) => {
   };
 });
 
-import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, type PropsCompositor } from "./Compositor";
+import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, AVISO_ANEXO_EM_BREVE, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
-import { AVISO_RECURSO_MOTOR } from "./recursos-canal";
+import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
 import { CampoTexto } from "@/components/CampoTexto";
 import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
 
@@ -152,14 +152,52 @@ describe("Compositor", () => {
     for (const r of ["Contato", "Enquete", "Localização"]) expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
   });
 
-  it("contato, enquete e localização só ficam ativos quando estão nas capacidades da thread", () => {
+  it("com capacidade do motor, os três anexos seguem desabilitados com motivo do Inbox", () => {
     m.g = criarGanchos();
     const p = props({ capacidades: ["cartaoContato", "enquete", "localizacao"] });
     const tela = () => m.g!.renderizar(Compositor, p);
     (elementos(tela()).find((n) => n.props["aria-label"] === "Anexar")!.props.onClick as () => void)();
     const h = renderToStaticMarkup(createElement("div", null, tela() as ReactNode));
+    expect(h).toContain("O envio deste tipo pelo Inbox ainda não está disponível.");
+    expect(h).toContain(AVISO_ANEXO_EM_BREVE);
     expect(h).not.toContain(AVISO_RECURSO_MOTOR);
-    for (const r of ["Contato", "Enquete", "Localização"]) expect(h).not.toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
+    for (const r of ["Contato", "Enquete", "Localização"]) expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${r}</button>`));
+  });
+
+  it("capacidades parciais mostram o motivo correspondente em cada anexo, sempre desabilitado", () => {
+    m.g = criarGanchos();
+    const p = props({ capacidades: ["enquete"] });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    (elementos(tela()).find((n) => n.props["aria-label"] === "Anexar")!.props.onClick as () => void)();
+    const h = renderToStaticMarkup(createElement("div", null, tela() as ReactNode));
+    for (const [rotulo, aviso] of [
+      ["Contato", AVISO_RECURSO_MOTOR],
+      ["Enquete", "O envio deste tipo pelo Inbox ainda não está disponível."],
+      ["Localização", AVISO_RECURSO_MOTOR],
+    ]) {
+      expect(h).toMatch(new RegExp(`<button[^>]* disabled=""[^>]*>${rotulo}</button>`));
+      expect(h.match(new RegExp(`>${rotulo}</button><small[^>]*>([^<]+)</small>`))?.[1]).toBe(aviso);
+    }
+  });
+
+  it("nenhum item habilitado do menu Anexar fica sem ação", () => {
+    for (const capacidades of [[], ["cartaoContato", "enquete", "localizacao"]] as RecursoMotor[][]) {
+      m.g = criarGanchos();
+      const p = props({ capacidades });
+      const tela = () => m.g!.renderizar(Compositor, p);
+      (elementos(tela()).find((n) => n.props["aria-label"] === "Anexar")!.props.onClick as () => void)();
+      const itens = elementos(tela()).filter((n) => n.props.role === "menuitem" && !n.props.disabled);
+      expect(itens.length).toBeGreaterThan(0);
+      for (const i of itens) expect(typeof i.props.onClick, String(i.props.children)).toBe("function");
+    }
+  });
+
+  it("modo Nota não oferece Anexar nem avisos de anexos, mesmo com capacidades do motor", () => {
+    const h = html({ modo: "nota", capacidades: ["cartaoContato", "enquete", "localizacao"] });
+    expect(h).toContain(AVISO_NOTA);
+    expect(h).not.toContain('aria-label="Anexar"');
+    expect(h).not.toContain('role="menuitem"');
+    expect(h).not.toContain("O envio deste tipo pelo Inbox ainda não está disponível.");
   });
 
   // C2 da R1 do #217: anexar arquivo e gravar áudio (os do Inbox antigo) ficam no compositor novo.
