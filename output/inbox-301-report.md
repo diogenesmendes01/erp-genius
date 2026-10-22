@@ -1,6 +1,6 @@
 # Relatório DEV B — #301
 
-Estado em 22/10/2026: implementação em revisão. Branch `codex/inbox-e0-301`, criada sobre o commit congelado #300 `9853be8356f6a31664224d5b9b332ce108bcac06`. Rebase sobre a #300 publicada e SHA final ainda pendentes.
+Estado em 22/10/2026: implementação em revisão. Branch `codex/inbox-e0-301`, criada sobre o commit congelado #300 `9853be8356f6a31664224d5b9b332ce108bcac06` e rebaseada sobre o HEAD publicado `30706754ae9b67ee6a37c40da6272212ed242b23`. O conflito foi apenas no quadro e ambas as seções foram preservadas; a base não mudou `src`. SHA pós-rebase de código `4803b06100b6907968304ffddc11cd7da9fbeab4`.
 
 ## Entrega
 
@@ -14,7 +14,8 @@ Estado em 22/10/2026: implementação em revisão. Branch `codex/inbox-e0-301`, 
 - RED funcional: 4 arquivos, 5 falhas esperadas / 35 testes verdes, saída 1. RED de janela fora de ordem: 1 falha / 4 verdes, saída 1. RED da paleta: 1 falha / 318 verdes, saída 1.
 - GREEN dirigido Node 22.23.2: `src/components/conversa`, `src/app/(app)/inbox`, paleta, botões e contraste, 29 arquivos / 319 testes, saída 0, nenhum ignorado. Cenário adicional de duas sessões, 1 arquivo / 16 testes, saída 0. Recortes não são suíte completa.
 - Recorte dirigido final com o cenário adicional: mesmos filtros, 29 arquivos / 320 testes, saída 0, nenhum ignorado. ESLint dos 9 TypeScript alterados com `--max-warnings 0`, saída 0.
+- Mesmo recorte repetido no SHA pós-rebase: 29 arquivos / 320 testes, saída 0, nenhum ignorado, Node 22.23.2. Não se inferiu execução nova do lint por rebase exclusivamente documental.
 
 ## Pendências
 
-Rebase sobre HEAD publicado #300, testes dirigidos finais, TypeScript, Vitest completo, ESLint global, revisão TESTER e aceite manual/visual em duas sessões nos três viewports e dois temas. Sem instalação ou envio externo.
+TypeScript, Vitest completo, ESLint global, revisão TESTER e aceite manual/visual em duas sessões nos três viewports e dois temas. Sem instalação ou envio externo.
