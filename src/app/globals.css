@@ -83,6 +83,21 @@
   --entry-accent: #d9fdd3;
   --composer: #ffffff;
 
+  /* Inbox (protótipo HTML:753): tons adaptados de L 0,58 para L 0,54; iniciais brancas >= 4,5:1. */
+  --avatar-1: #007c9b;
+  --avatar-2: #a5524d;
+  --avatar-3: #0f825e;
+  --avatar-4: #6e62aa;
+  --avatar-5: #93640c;
+  --avatar-6: #985383;
+  --avatar-7: #677823;
+  --avatar-8: #008188;
+  /* Inbox (índice E1): superfícies próprias para conteúdo da IA e nota interna. */
+  --bubble-ia: #efebfa;
+  --bubble-note: #fff7e5;
+  /* Inbox (HTML:162): pontos discretos sobre o fundo da conversa. */
+  --chat-dot: rgba(0, 0, 0, 0.035);
+
   /* Camadas flutuantes: as únicas com sombra (menu/popover e modal/drawer). Fora da conta de contraste. */
   --shadow-popover: 0 5px 20px #0002;
   --shadow-dialog: 0 15px 60px #0006;
@@ -138,6 +153,11 @@
   --entry: #242626;
   --entry-accent: #144d37;
   --composer: #242626;
+
+  /* Inbox (índice E1): superfícies e pontos no escuro; avatares herdam os tons do claro. */
+  --bubble-ia: #2b2a37;
+  --bubble-note: #3a3020;
+  --chat-dot: rgba(255, 255, 255, 0.035);
 
   --shadow-popover: 0 6px 24px #0006;
 }
@@ -245,4 +265,12 @@
 /* Movimento reduzido: quem pediu menos movimento ao sistema não vê animação nem transição (esqueleto, hover, rolagem suave). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
+}
+/* Exceção do Inbox ao princípio sem gradientes: somente o padrão de pontos da conversa. */
+@layer utilities {
+  .fundo-conversa {
+    background-color: var(--bg-page);
+    background-image: radial-gradient(var(--chat-dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
 }
