@@ -1170,7 +1170,7 @@ it("Q173 (R4 do #284, B5): aula entre a vigência e a aplicação da troca não 
   const conf = await conferir({ ...aula.dados, condicoesId }, "q173-b5-05-02-usd");
   if (!conf.ok) throw new Error(JSON.stringify(conf));
   expect(await prisma.conferenciaOcorrenciaHoras.findUniqueOrThrow({ where: { encontroId: aula.encontro.id } })).toMatchObject({ moeda: "USD" });
-  const emissao = await emitirCobrancaDaPrevia({ ...aula.dados, condicoesId }, "q173-b5-fechamento-fevereiro", "2026-02-15", "2026-03-10");
+  const emissao = await emitirCobrancaDaPrevia(aula.dados, "q173-b5-fechamento-fevereiro", "2026-02-15", "2026-03-10");
   const cobranca = await prisma.cobranca.findUniqueOrThrow({ where: { id: emissao.cobrancaId } });
   expect(cobranca).toMatchObject({ moeda: "USD", tipo: "HORA_PARTICULAR" });
   expect(cobranca.valorNegociado.toFixed(2)).toBe("40.00");
