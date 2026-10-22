@@ -1,0 +1,55 @@
+{
+  "fonteAntes": "3dbd3df803ef840bf2190cec9d4fc98d4a05a755",
+  "fonteDepois": "8f26101e6d194bb1be4ddb303f71a2e8a60828fa",
+  "notas": "Funções JSX reais extraídas por TypeScript AST. Reserva usa apenas dados de fixture e rótulo de estado injetado; ações não são executadas. CSS gerado do globals.css e tailwind.config.ts reais. Captura de componente isolado, não homologação do fluxo financeiro.",
+  "metricas": [
+    {
+      "componente": "enquete",
+      "versao": "antes",
+      "tema": "claro",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "componente": "enquete",
+      "versao": "antes",
+      "tema": "escuro",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "componente": "enquete",
+      "versao": "depois",
+      "tema": "claro",
+      "background": "rgb(27, 135, 85)"
+    },
+    {
+      "componente": "enquete",
+      "versao": "depois",
+      "tema": "escuro",
+      "background": "rgb(33, 192, 99)"
+    },
+    {
+      "componente": "reserva",
+      "versao": "antes",
+      "tema": "claro",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "componente": "reserva",
+      "versao": "antes",
+      "tema": "escuro",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "componente": "reserva",
+      "versao": "depois",
+      "tema": "claro",
+      "background": "rgb(237, 237, 237)"
+    },
+    {
+      "componente": "reserva",
+      "versao": "depois",
+      "tema": "escuro",
+      "background": "rgb(42, 44, 44)"
+    }
+  ]
+}

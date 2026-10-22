@@ -1,6 +1,6 @@
 # #298 — Classes de cor do Inbox e trava de paleta sem tom
 
-Estado em 22/10/2026: implementação e testes dirigidos preparados; **validação global e aceite visual pendentes**. Branch `codex/inbox-e0-298`, iniciada em `7e4810e5e6c4f25a00497fe743e0ea4abfb0c6ee`. Não houve alteração de banco, contrato ou permissão.
+Estado em 22/10/2026, rodada 4: correção do P2 da trava preparada e validada no recorte; **aguarda re-review TESTER do novo commit e aceite visual final**. Gates globais foram aprovados no HEAD de entrada `8f26101e` pelo integrador; não foram repetidos nesta rodada. Branch `codex/inbox-e0-298`, iniciada em `7e4810e5e6c4f25a00497fe743e0ea4abfb0c6ee`. Não houve alteração de banco, contrato ou permissão.
 
 ## SPEC de comportamento
 
@@ -17,7 +17,7 @@ Os sete usos sem CSS que o detector encontrou no código-base eram: `ListaAtendi
 - GREEN dirigido: `node_modules/.bin/vitest run src/app/paleta.test.ts src/app/fundo-sobre-pagina.test.ts src/app/contraste-elementos.test.ts src/app/(app)/inbox/ListaAtendimentos.test.ts src/components/conversa/BalaoMensagem.test.ts src/app/(app)/inbox/PainelSetor.test.ts`: código 0, 6 arquivos, 43 testes. Nenhum teste ignorado nesse recorte. O aviso preexistente de `useLayoutEffect` no SSR de `VirtualList` apareceu no RED; a saída GREEN resumida não o mostrou.
 - `git diff --check`: código 0.
 
-## Verificação pendente e limites
+## Histórico da primeira validação e limites (superado parcialmente nas rodadas abaixo)
 
 - `node_modules/.bin/tsc --noEmit` global: código 1 antes da correção ambiental, com colisão `aria/_componentes/Abas.ts` × `abas.ts` e erros numerosos de tipos Prisma ausentes em contratos/matrícula/permuta. O client Prisma copiado foi identificado como desatualizado; o integrador vai regenerá-lo. A colisão de casing terá correção transversal separada. Nenhum desses arquivos foi alterado pela #298.
 - `node_modules/.bin/vitest run` global foi iniciado antes do pedido de pausa do integrador e interrompido pela mesma sessão (código 1); **não é uma execução completa**. Até a interrupção havia falhas em `design-system.test.ts` (2), `aria/page.test.ts` (12), `inbox/AcoesAtendimento.test.ts` (1) e `botoes.test.ts` (1), fora do recorte da #298. Repetir após reparo ambiental.
@@ -36,3 +36,34 @@ Dois testes de regressão em `paleta.test.ts` falharam antes do ajuste (2 falhas
 O re-review do commit `8d3c3ea2ea0438762b5bafbf4032e02505dcf27d` mostrou que outras variantes de `bg-origin-*` e `bg-clip-*` ainda eram falsos positivos. Inspecionei `tailwindcss/lib/corePlugins.js` e `tailwindcss/defaultTheme` instalados: origem tem 3 variantes, recorte 4, posições compostas 4, blend 16, divisão reversa 2 e espessura `decoration-from-font` 1. Compilei essas **30 classes** com Tailwind em memória, passando o objeto `tailwind.config.ts` e `content` bruto isolado: todas geraram seletores CSS. O teste de tabela das famílias falhou antes da correção (`bg-origin-padding` e `bg-origin-content` apareceram já na primeira linha) e passou depois. Nomes inventados `bg-origin-brand`, `bg-clip-brand`, `bg-blend-brand` e o gradiente proibido `bg-gradient-to-r` continuam ofensores.
 
 Resultado após esta rodada: **6 arquivos, 46 testes, código 0, nenhum ignorado**; ESLint dirigido dos 11 arquivos da #298: **código 0, sem saída**. Mantive a whitelist exata dos utilitários não-cor do Tailwind instalado; cores sem `DEFAULT` continuam barradas. Re-review do novo SHA, checks globais e aceite visual continuam pendentes.
+
+## Rodada 4 — P2 da trava de botões e consolidação
+
+O TESTER revisou o SHA `8f26101e6d194bb1be4ddb303f71a2e8a60828fa` e apontou que `classeEmElementoSemAcao` isentava qualquer tag fora de `button`, `Link` e `a`. Confirmei no AST e por execução: os literais primários de `<Botao className="bg-danger text-white">` e `<MeuBotao className="bg-brand-solid text-on-brand">` eram ignorados, sem recuperação na segunda varredura. A rodada altera somente a trava de testes e estas evidências; nenhuma UI de produção foi alterada.
+
+A isenção agora exige tag intrínseca `span` ou `div` e ausência de `role`, `tabIndex`, atributos de evento `on[A-Z]` e spread. O critério é conservador: papel ou atributos não verificáveis impedem provar passividade. Componentes customizados continuam sujeitos à varredura de primários, sem allowlist por arquivo/classe. Selos informativos sem esses atributos continuam ignorados pelos casos existentes. Não foram alteradas as outras verificações de variantes, cores, tamanhos ou `solid`.
+
+### TDD e verificações executadas pelo DEV A substituto
+
+- RED: `node_modules/.bin/vitest.cmd run src/app/botoes.test.ts -t 'o detector preserva primários|o detector não isenta'`: **exit 1**, 18 falhas por assertion (os dois componentes e 16 combinações de `span`/`div` com papel, foco, eventos ou spread), 3 casos nativos aprovados, 43 testes fora do filtro. Resultado terminal `f46948`, sem sessão pendente. A falha era lista vazia onde se esperava exatamente um primário.
+- GREEN: `node_modules/.bin/vitest.cmd run src/app/botoes.test.ts`: **exit 0**, **1 arquivo, 64 testes**, sem filtro de nome ou ignorados. Resultado terminal `4b5fcb`. Inclui componentes customizados, `button`/`Link`/`a`, elementos interativos e selos passivos.
+- Recorte #298: `node_modules/.bin/vitest.cmd run src/app/paleta.test.ts src/app/fundo-sobre-pagina.test.ts src/app/contraste-elementos.test.ts 'src/app/(app)/inbox/ListaAtendimentos.test.ts' src/components/conversa/BalaoMensagem.test.ts 'src/app/(app)/inbox/PainelSetor.test.ts'`: **exit 0**, **6 arquivos, 46 testes**, sem ignorados ou filtro de nome, resultado terminal `dee347`. Esse recorte não é a suíte global.
+- ESLint dirigido: `node_modules/.bin/eslint.cmd` sobre os **12 arquivos TS/TSX** retornados por `git diff 3dbd3df803ef840bf2190cec9d4fc98d4a05a755 --name-only -- '*.ts' '*.tsx'`: **exit 0**, sem erros/avisos ESLint, resultado terminal `c172dd`. O Git avisou conversão LF/CRLF no arquivo editado; não é diagnóstico de lint.
+- `git diff --check`: **exit 0**, resultado terminal `de2f59`; apenas avisos Git LF/CRLF, sem erros de whitespace.
+- As execuções acima terminaram diretamente com código final; não houve `session_id` pendente nem processo desacoplado. O Vitest emitiu aviso preexistente sobre resolução nativa de caminhos versus `vite-tsconfig-paths`; não houve alteração de dependências/configuração.
+
+### Gates globais já obtidos, sem apagar o histórico de falhas
+
+Segundo o handoff do integrador (`inbox-298-r4-brief.md`), no SHA de entrada `8f26101e6d194bb1be4ddb303f71a2e8a60828fa`: TSC global com heap 8192 **exit 0**; lint global **exit 0**, zero erros e 40 avisos preexistentes; Vitest unitário completo **exit 0**, **839 arquivos, 6.445 testes**, sem ignorados. São resultados executados pelo integrador antes desta correção, não uma nova execução global no commit da rodada 4. Os erros de ambiente e a primeira execução interrompida registrados acima permanecem como histórico. Integração de banco não foi executada nesta issue visual. Eventual repetição global final cabe à coordenação do integrador após o re-review.
+
+### Evidência visual preservada e limites de aceite
+
+O parecer do TESTER em `output/inbox-298-visual.md` de seu worktree registrou 12 pares lista/conversa nos três tamanhos e dois temas, mais quatro detalhes móveis, capturados no SHA `a384afd736c7ce5838c55c1e4483a822fee3b4c6`. Badge e ✓✓ legíveis, painel lateral desktop legível, `pageerror=[]` nas seis combinações. O diff de produção entre esse SHA e o estado desta rodada é vazio; alterações posteriores são exclusivamente na trava de testes. As capturas do TESTER permanecem em seu `output/inbox-capturas/depois-298/`, e as anteriores no `output/inbox-capturas/antes/` do integrador. Esse parecer não cobre o drawer do painel em tablet/celular, enquete nem devolução de crédito no fluxo real.
+
+Preservados em `output/inbox-298-visual/`: harness `capturar.cjs`, `metricas.json` e **24 PNGs** de antes/depois para `EnqueteLeitura` e o bloco `Reserva` de `DevolucaoCredito`, em 1440×900, 1024×768 e 390×844, claro/escuro. O harness extrai funções JSX reais por AST do baseline `3dbd3df8` e do SHA `8f26101e`, com CSS global/Tailwind/Roboto reais e fixture local, sem executar ações. As métricas mostram fundo transparente antes; enquete verde `rgb(27,135,85)` claro/`rgb(33,192,99)` escuro depois; reserva cinza `rgb(237,237,237)` claro/`rgb(42,44,44)` escuro depois.
+
+O substituto inspecionou por amostragem `enquete-depois-escuro-390x844.png`, `enquete-antes-claro-1024x768.png`, `reserva-depois-claro-1024x768.png` e `reserva-depois-escuro-390x844.png`: progresso e bloco de reserva visíveis, sem corte dos componentes. São capturas isoladas, não homologação do fluxo financeiro ou visual de todos os estados. Não foram regeneradas nesta rodada porque a UI não mudou.
+
+### Pendências para o integrador
+
+Re-review independente do novo SHA pelo TESTER; aceite visual final dos estados restantes, especialmente drawer tablet/celular e uso real de enquete/devolução conforme exigência da issue; decisão sobre repetição dos gates globais no novo SHA e publicação do PR. O overlay Next dev visto antes/depois segue observação preexistente no parecer TESTER, sem causa confirmada nesta rodada. Issue **não concluída**; sem push, PR, merge, deploy, mensagens reais, integração externa, alterações de package/lockfile ou início da #302. Logs locais `output/inbox-dev-a-migrations*.log` permanecem preservados fora do commit.

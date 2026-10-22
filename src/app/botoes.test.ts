@@ -213,8 +213,12 @@ export function botoesCrus(fonte: string): string[] {
     while (ancestral && !ts.isJsxAttribute(ancestral) && !ts.isSourceFile(ancestral)) ancestral = ancestral.parent;
     if (!ancestral || !ts.isJsxAttribute(ancestral) || ancestral.name.getText(sf) !== "className") return false;
     const elemento = ancestral.parent?.parent;
-    return !!elemento && (ts.isJsxOpeningElement(elemento) || ts.isJsxSelfClosingElement(elemento))
-      && !["button", "Link", "a"].includes(elemento.tagName.getText(sf));
+    if (!elemento || !(ts.isJsxOpeningElement(elemento) || ts.isJsxSelfClosingElement(elemento))
+      || !["span", "div"].includes(elemento.tagName.getText(sf))) return false;
+    // Só selos/contêineres comprovadamente passivos: componentes podem encapsular botões,
+    // e spread, papel, foco ou eventos impedem garantir que span/div não tenha ação.
+    return elemento.attributes.properties.every((p) => ts.isJsxAttribute(p)
+      && !/^(role|tabIndex|on[A-Z])/.test(p.name.getText(sf)));
   };
   const visitar = (n: ts.Node) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n) || ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) {
@@ -1271,6 +1275,30 @@ describe("botões nas áreas migradas", () => {
   it("a lista de exceções não sobra", () => {
     const sobrando = Object.entries(NAO_SAO_BOTOES_DE_ACAO).filter(([a, n]) => botoesCrus(arquivos.find((x) => x.arquivo === a)?.conteudo ?? "").length < n);
     expect(sobrando).toEqual([]);
+  });
+
+  it.each([
+    '<Botao className="bg-danger text-white">Excluir</Botao>',
+    '<MeuBotao className="bg-brand-solid text-on-brand">Salvar</MeuBotao>',
+    '<button className="bg-brand-solid text-on-brand">Salvar</button>',
+    '<Link href="/x" className="bg-brand-solid text-on-brand">Salvar</Link>',
+    '<a href="/x" className="bg-danger text-white">Excluir</a>',
+  ])("o detector preserva primários artesanais em componentes e ações nativas: %s", (fonte) => {
+    expect(botoesCrus(fonte)).toHaveLength(1);
+  });
+
+  it.each(["span", "div"].flatMap((tag) => [
+    'role="button"',
+    'role="link"',
+    'role={papel}',
+    'tabIndex={-1}',
+    'onClick={agir}',
+    'onKeyDown={agir}',
+    'onPointerDown={agir}',
+    '{...props}',
+  ].map((atributo) => `<${tag} ${atributo} className="bg-brand-solid text-on-brand">Salvar</${tag}>`)))
+  ("o detector não isenta span/div com ação ou atributos não verificáveis: %s", (fonte) => {
+    expect(botoesCrus(fonte)).toHaveLength(1);
   });
 
   it("o detector pega todas as formas: atributo, expressão, template, concatenação, brand-600, secundário curto", () => {
