@@ -4592,3 +4592,9 @@ Branch `claude/adm-whatsapp-number-removal-7ecfa1`. Relato: o administrador não
 - **Evidências:** CI do GitHub no head `9feee981` — typecheck, lint, build e `vitest run` (UTC e America/Sao_Paulo) verdes. O worktree local não tem `node_modules` nem `.erp-test-profile`; pela regra de 16/09 nada foi instalado.
 - **Pendências:** integração (`whatsapp/acoes-numero.int.test.ts` e `linha-comercial.int.test.ts`) e a migration num banco descartável **não foram executadas** — o CI não roda `*.int.test.ts`. Reserva do ID da migration pelo integrador. Sem homologação na tela.
 - **Estado**: implementado, integração pendente.
+
+### Inbox: pré-requisito de validação no Windows — 2026-10-22
+
+- **Escopo:** preparação do épico #379. O módulo `aria/_componentes/abas.ts` passa a `abas-aria.ts`, eliminando a colisão de caixa com `Abas.tsx` no Windows. Leituras em três testes normalizam CRLF, preservando as asserções de estilo, confirmação e CI; nenhum workflow foi alterado.
+- **Evidências:** página Aria 12 falhas antes e 13/13 após; recorte de quatro arquivos 90/90; recorte CI 16/16; TypeScript global com heap 8192 e lint global (0 erros, 40 avisos), todos saída 0. A primeira suíte completa revelou três falhas CRLF no CI, corrigidas e verificadas no recorte.
+- **SPEC/limites:** `docs/planejamento/inbox-validacao-windows.md`. Suíte unitária completa final: 839 arquivos, 6.437 testes, saída 0, sem ignorados; não inclui integração. TESTER aprovou o commit exato `58eeb7b3`, sem achados bloqueantes, com 106/106 testes dirigidos e saída 0. Nenhum efeito de banco, mensagem, integração externa ou produção. Pré-requisito validado; merge e deploy não executados.
