@@ -8,7 +8,7 @@ import { capacidadesAria } from "@/server/aria/permissoes-tela";
 import { carregarTelaAria } from "@/server/aria/tela";
 import { ACOES_MATRIZ, ETAPAS_ARIA } from "@/server/aria/matriz";
 import { Abas } from "./_componentes/Abas";
-import { ABAS_ARIA, ABAS_DE_EDICAO } from "./_componentes/abas";
+import { ABAS_ARIA, ABAS_DE_EDICAO } from "./_componentes/abas-aria";
 import { AvisoEdicaoNoComputador } from "./_componentes/AvisoEdicaoNoComputador";
 import { BarraPublicar } from "./_componentes/BarraPublicar";
 import { Cabecalho } from "./_componentes/Cabecalho";

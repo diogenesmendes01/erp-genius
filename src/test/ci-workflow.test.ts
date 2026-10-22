@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 // número de avisos do `main` quando a trava entrou (40); ao resolver avisos, baixe-o no mesmo PR. Esta trava
 // impede que o passo volte a `npx eslint .` sem teto, ou que o teto suba sem passar por aqui.
 const TETO_DE_AVISOS = 40;
-const ci = readFileSync(".github/workflows/ci.yml", "utf-8");
-const image = readFileSync(".github/workflows/image.yml", "utf-8");
+const ci = readFileSync(".github/workflows/ci.yml", "utf-8").replace(/\r\n/g, "\n");
+const image = readFileSync(".github/workflows/image.yml", "utf-8").replace(/\r\n/g, "\n");
 
 describe("CI — lint com teto de avisos (C46)", () => {
   it(`o passo de lint roda o ESLint com --max-warnings ${TETO_DE_AVISOS}`, () => {
