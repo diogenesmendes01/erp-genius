@@ -82,7 +82,8 @@ export const NumeroWhatsAppSchema = z.object({
     .trim()
     .optional()
     .transform((v) => (v ? v : null)),
-  ativo: z.boolean().default(true),
+  // Só no cadastro (padrão: ativo). Na edição, ativar e desativar têm ações próprias (desativar desconecta).
+  ativo: z.boolean().optional(),
 });
 export type NumeroWhatsAppInput = z.input<typeof NumeroWhatsAppSchema>;
 

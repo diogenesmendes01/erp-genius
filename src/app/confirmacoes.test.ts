@@ -57,6 +57,8 @@ const COPIA_ACOES: { arquivo: string; modulo: string; acao: string; achado: stri
   { arquivo: "src/app/(app)/contatos/MesclarContatos.tsx", modulo: "@/server/crm/contatos-acoes", acao: "mesclarContatosDaLista", achado: "F2-T24" },
   { arquivo: "src/app/(app)/comissoes/EstornarComissao.tsx", modulo: "@/server/crm/comissoes-estorno-acao", acao: "estornarComissaoDoPainel", achado: "F2-T35" },
   { arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "desconectarNumero", achado: "Fase 4D" },
+  { arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "desativarNumeroWhatsApp", achado: "Fase 4D" },
+  { arquivo: "src/app/(app)/configuracao/whatsapp/NumerosPainel.tsx", modulo: "@/server/whatsapp/acoes", acao: "excluirNumeroWhatsApp", achado: "Fase 4D" },
   { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", modulo: "@/server/whatsapp/motor/acoes-mensagem", acao: "apagarMensagemWhatsApp", achado: "Fase 4D" },
   { arquivo: "src/app/(app)/inbox/AcoesMensagem.tsx", modulo: "@/server/whatsapp/motor/acoes-mensagem", acao: "encaminharMensagemWhatsApp", achado: "Fase 4D" },
   // Confirmações que faltavam (#175; triagem B6).
