@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { IconAlertCircle, IconCheck, IconChecks, IconChevronDown, IconClock, IconStar } from "@tabler/icons-react";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { ORIGEM_ENVIO_LABEL } from "@/lib/labels";
-import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
+import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU, ligarMenuAberto } from "@/components/Menu";
+import { posicaoPopover } from "@/lib/popover";
 import { CartaoPix, type PixDados } from "./CartaoPix";
 import { EnqueteLeitura, type EnqueteDados } from "./EnqueteLeitura";
 import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
@@ -46,15 +47,16 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
 }) {
   const [menu, setMenu] = useState(menuAberto);
   const [visualizador, setVisualizador] = useState(false);
-  const raiz = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menu) return;
-    const fora = (e: MouseEvent) => { if (!raiz.current?.contains(e.target as Node)) setMenu(false); };
-    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(false); };
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", tecla);
-    return () => { document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", tecla); };
-  }, [menu]);
+  const [pos, setPos] = useState<{ topo: number; esquerda: number } | null>(null);
+  const gatilhoRef = useRef<HTMLButtonElement>(null);
+  const painelRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const fechar = useCallback((devolverFoco: boolean) => {
+    setMenu(false);
+    setPos(null);
+    if (devolverFoco) gatilhoRef.current?.focus();
+  }, []);
+  const habilitados = useCallback(() => Array.from(painelRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? []), []);
 
   const saida = m.direcao === "SAIDA";
   const autor = autorDaMensagem(m);
@@ -69,10 +71,40 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
     { cmd: "apagar", rotulo: "Apagar", recurso: "apagar", perigo: true },
   ];
   const itens = comandos ? todos.filter((i) => comandos.includes(i.cmd)) : todos;
+  // Texto, ordem e disponibilidade alteram a altura do menu, inclusive após atualização da thread.
+  const medidasDoMenu = itens.map((i) => `${i.cmd}:${i.rotulo}:${!!i.recurso && !recursos(i.recurso)}`).join("|");
+  useLayoutEffect(() => {
+    if (!menu || !gatilhoRef.current || !painelRef.current) return;
+    const ancora = gatilhoRef.current.getBoundingClientRect();
+    const painel = painelRef.current.getBoundingClientRect();
+    const { topo, esquerda } = posicaoPopover({
+      ancora,
+      painel: { largura: painel.width, altura: painel.height },
+      viewport: { largura: window.innerWidth, altura: window.innerHeight },
+    });
+    setPos({ topo, esquerda });
+  }, [menu, medidasDoMenu]);
+  useEffect(() => {
+    // Hidden não recebe foco; preventScroll evita fechar o menu por rolagem ao focar.
+    if (menu && pos) habilitados()[0]?.focus({ preventScroll: true });
+  }, [menu, pos, habilitados]);
+  useEffect(() => {
+    if (!menu) return;
+    return ligarMenuAberto({
+      doc: document,
+      painel: () => painelRef.current,
+      gatilho: () => gatilhoRef.current,
+      habilitados,
+      fechar,
+    });
+  }, [menu, habilitados, fechar]);
 
   return (
     <div data-mensagem-id={m.id} className={`flex ${saida ? "justify-end" : "justify-start"}`}>
-      <div ref={raiz} className={`relative max-w-[80%] rounded-lg px-3 py-2 text-sm ${saida ? "bg-entry-accent" : "bg-entry"}`}>
+      <div className={`group relative max-w-[80%] rounded-lg px-3 py-2 text-sm ${saida ? "bg-entry-accent" : "bg-entry"}`}>
+        <button ref={gatilhoRef} type="button" aria-label="Opções da mensagem" aria-haspopup="menu" aria-expanded={menu} aria-controls={menu ? menuId : undefined}
+          onClick={() => menu ? fechar(false) : setMenu(true)}
+          className={`float-right -mr-1 ml-2 rounded hover:bg-highlight focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 ${menu ? "opacity-100" : "opacity-0"}`}><IconChevronDown size={16} aria-hidden /></button>
         {autor && <span className="mb-1 block text-xs font-semibold text-gray-600">{autor}</span>}
         {m.templateNome && <small className="block text-gray-600">Modelo: {m.templateNome}</small>}
         {temMidia(m) && <MidiaMensagem m={m} aoAbrir={() => setVisualizador(true)} />}
@@ -85,17 +117,17 @@ export function BalaoMensagem({ m, fuso, aoComando, recursos, comandos, menuAber
           <time dateTime={m.criadoEm}>{hora(m.criadoEm, fuso)}</time>
           {st && <span title={st.rotulo} className={`inline-flex items-center gap-0.5 ${st.erro ? "text-red-700" : ""}`}>{st.icone}{st.erro && <span>{st.rotulo}</span>}</span>}
         </div>
-        <button type="button" aria-label="Opções da mensagem" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}
-          className="absolute right-1 top-1 rounded hover:bg-highlight"><IconChevronDown size={16} aria-hidden /></button>
         {menu && (
-          <div role="menu" aria-label="Opções da mensagem" className={`absolute right-0 top-7 z-20 ${CLASSE_PAINEL_MENU}`}>
+          <div ref={painelRef} id={menuId} role="menu" aria-label="Opções da mensagem"
+            style={{ position: "fixed", top: pos?.topo ?? 0, left: pos?.esquerda ?? 0, visibility: pos ? "visible" : "hidden", zIndex: 50, maxHeight: "calc(100dvh - 16px)", overflowY: "auto" }}
+            className={CLASSE_PAINEL_MENU}>
             {itens.map((i) => {
               const indisponivel = !!i.recurso && !recursos(i.recurso);
               const classeItem = `${CLASSE_ITEM_MENU} ${i.perigo ? "text-red-700" : "text-gray-800"}`;
               return (
                 <div key={i.cmd}>
                   <button type="button" role="menuitem" aria-label={i.rotulo} disabled={indisponivel}
-                    onClick={() => { setMenu(false); aoComando(i.cmd); }}
+                    onClick={() => { fechar(true); aoComando(i.cmd); }}
                     className={classeItem}>{i.rotulo}</button>
                   {indisponivel && <small className="block px-5 pb-1 text-xs text-gray-600">{AVISO_RECURSO_MOTOR}</small>}
                 </div>
