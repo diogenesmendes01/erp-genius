@@ -1,8 +1,9 @@
 # Inbox E1.2 — harness visual (#307)
 
 Estado em 22/10/2026: núcleo, guarda, fixture e protótipo offline implementados.
-Aceite de app × protótipo e gates globais ainda dependem do servidor e da janela
-coordenados pelo integrador.
+Rodada4 DEV validou34PNGs app × protótipo, incluindo painéis celular/tablet nos
+dois temas. Revisão independente e gates globais combinados seguem pendentes
+com integrador/TESTER.
 
 ## Contrato
 
@@ -22,13 +23,22 @@ coordenados pelo integrador.
   mensagem específica da fixture antes da captura. No estado de Beatriz também
   aguarda a nota; painel desktop/Drawer exige o conteúdo do painel. O clique no
   Drawer ocorre após a mensagem renderizar, provando a hidratação da tela.
+  Depois do clique, a região da conversa fica oculta e a segunda espera exige
+  o Painel Comercial visível, o `aside` móvel inteiro no viewport e nenhuma
+  transição em execução. A região só visível no DOM não basta para a foto.
   Nenhuma dessas esperas depende de atraso fixo. O protótipo abre via `file://`, usa
   recursos npm locais e Google Fonts vazio; tráfego inesperado é bloqueado.
-  Cada contexto registra requisições falhas, 404 e exceções da página.
+  Cada contexto registra requisições falhas, 404 e exceções da página. Somente
+  GET local de mensagens abortado, substituído por GET idêntico 2xx e conteúdo
+  confirmado, fica em `diagnosticos`; qualquer outro aborto continua falha.
+  O estilo transitório da screenshot oculta só o toast Next sem issues, mantendo
+  indicadores com issues e listeners de erros. Nenhum componente produtivo muda.
 - `tmp/visual/` contém PNGs e manifesto. `conversa` produz exatamente 12 PNGs
   nos dois alvos, três tamanhos e dois temas; o protótipo isolado produz seis.
   A referência offline pode ter tipografia de reserva diferente da imagem
-  original com Google Fonts. Nenhuma operação aciona transporte WhatsApp.
+  original com Google Fonts. `--estado todos` exige 34 PNGs (18 app, 16 protótipo),
+  incluindo os painéis celular/tablet nos dois temas. O painel do protótipo exige
+  comando e superfície visível. Nenhuma operação aciona transporte WhatsApp.
 
 ## Prova exigida
 

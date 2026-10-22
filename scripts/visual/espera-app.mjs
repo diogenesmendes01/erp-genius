@@ -14,6 +14,21 @@ export async function autenticarApp(contexto, base, email, senha) {
 
 /** Espera o conteúdo identificável da fixture, não somente o contêiner inicial da tela. */
 export async function esperarConteudoApp(pagina, estado, tamanho) {
+  if (estado === "celular-painel" || estado === "tablet-painel") {
+    // Após abrir o Drawer, InboxNovo oculta a região Conversa; a mensagem já foi aguardada antes do clique.
+    await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
+    // `visible` inclui o Drawer ainda deslocado; a superfície final precisa caber no viewport e terminar a transição.
+    await pagina.waitForFunction(() => {
+      const drawer = document.querySelector('aside[role="dialog"][aria-label="Detalhes da conversa"]');
+      if (!drawer) return false;
+      const area = drawer.getBoundingClientRect();
+      return area.width > 0 && area.height > 0
+        && area.left >= -1 && area.right <= window.innerWidth + 1
+        && area.top >= -1 && area.bottom <= window.innerHeight + 1
+        && drawer.getAnimations().every((animacao) => animacao.playState !== "running");
+    });
+    return;
+  }
   if (estado === "sem-selecao" || estado === "celular-lista") {
     await pagina.getByRole("region", { name: "Conversas", exact: true }).getByText("Mariana Costa", { exact: true }).waitFor({ state: "visible" });
     return;
@@ -23,7 +38,7 @@ export async function esperarConteudoApp(pagina, estado, tamanho) {
   const humano = estado === "humano-compositor";
   await conversa.getByText(humano ? "Quero matricular meu filho Pedro." : "Quero saber o valor do Inglês Intensivo B1.", { exact: true }).waitFor({ state: "visible" });
   if (humano) await conversa.getByRole("note").getByText("Família pediu atendimento no período da tarde.", { exact: true }).waitFor({ state: "visible" });
-  if (tamanho === "desktop" || estado === "celular-painel" || estado === "tablet-painel") {
+  if (tamanho === "desktop") {
     await pagina.getByRole("region", { name: "Painel Comercial", exact: true }).waitFor({ state: "visible" });
   }
 }

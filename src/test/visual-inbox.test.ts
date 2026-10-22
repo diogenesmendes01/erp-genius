@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
-  ESTADOS, TAMANHOS, TEMAS, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo,
+  ESTADOS, TAMANHOS, TEMAS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo,
 } from "../../scripts/visual/nucleo-captura.mjs";
 import { exigirBancoDescartavel } from "../../scripts/visual/demo-inbox";
 import { autenticarApp, esperarConteudoApp } from "../../scripts/visual/espera-app.mjs";
@@ -104,6 +104,42 @@ describe("harness visual do Inbox", () => {
     expect(terminou).toBe(true);
   });
 
+  it.each(["celular-painel", "tablet-painel"])("no Drawer %s espera o painel sem exigir a conversa que ficou oculta", async (estado) => {
+    let painelPronto!: () => void;
+    let drawerPronto!: () => void;
+    const painel = new Promise<void>((resolve) => { painelPronto = resolve; });
+    const drawer = new Promise<void>((resolve) => { drawerPronto = resolve; });
+    const pagina = { waitForFunction: () => drawer, getByRole: (_role: string, opcoes: { name: string }) => {
+      if (opcoes.name === "Conversa") return { waitFor: async () => { throw new Error("Conversa oculta pelo Drawer"); } };
+      if (opcoes.name === "Painel Comercial") return { waitFor: () => painel };
+      throw new Error(`Região inesperada: ${opcoes.name}`);
+    } };
+    let terminou = false;
+    const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], estado, estado === "celular-painel" ? "celular" : "tablet").then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    painelPronto();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(terminou).toBe(false);
+    drawerPronto();
+    await espera;
+    expect(terminou).toBe(true);
+  });
+
+  it.each(["altura zero", "fora da altura", "transição em execução"])("não fotografa Drawer com %s mesmo dentro da largura", async (caso) => {
+    const area = { width: 390, height: caso === "altura zero" ? 0 : 844, left: 0, right: 390, top: 0, bottom: caso === "fora da altura" ? 900 : 844 };
+    const drawer = { getBoundingClientRect: () => area, getAnimations: () => caso === "transição em execução" ? [{ playState: "running" }] : [] };
+    vi.stubGlobal("document", { querySelector: () => drawer });
+    vi.stubGlobal("window", { innerWidth: 390, innerHeight: 844 });
+    try {
+      const pagina = {
+        getByRole: () => ({ waitFor: async () => undefined }),
+        waitForFunction: async (condicao: () => boolean) => { expect(condicao()).toBe(false); },
+      };
+      await esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "celular-painel", "celular");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("autentica via CSRF e confirma sessão antes de abrir o Inbox", async () => {
     const chamadas: string[] = [];
     const request = {
@@ -112,5 +148,19 @@ describe("harness visual do Inbox", () => {
     };
     await autenticarApp({ request } as unknown as Parameters<typeof autenticarApp>[0], "http://127.0.0.1:3017", "admin@genius.com", "genius123");
     expect(chamadas).toEqual(["GET http://127.0.0.1:3017/api/auth/csrf", "POST http://127.0.0.1:3017/api/auth/callback/credentials", "GET http://127.0.0.1:3017/api/auth/session"]);
+  });
+
+  it("só diagnostica aborto de GET mensagens quando outro GET idêntico concluiu e a fixture apareceu", () => {
+    const base = "http://localhost:3108";
+    const url = `${base}/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens`;
+    const concluido = new Set([`GET ${url}`]);
+    const pedido = { url, method: "GET", erro: "net::ERR_ABORTED" };
+    expect(cancelamentoDeMensagensRecuperado(pedido, concluido, base, true)).toBe(true);
+    expect(cancelamentoDeMensagensRecuperado(pedido, new Set(), base, true)).toBe(false);
+    expect(cancelamentoDeMensagensRecuperado(pedido, concluido, base, false)).toBe(false);
+    expect(cancelamentoDeMensagensRecuperado({ ...pedido, erro: "net::ERR_CONNECTION_RESET" }, concluido, base, true)).toBe(false);
+    expect(cancelamentoDeMensagensRecuperado({ ...pedido, method: "POST" }, concluido, base, true)).toBe(false);
+    expect(cancelamentoDeMensagensRecuperado({ ...pedido, url: `${base}/api/inbox/atendimentos/inbox-demo-mariana-307/painel` }, concluido, base, true)).toBe(false);
+    expect(cancelamentoDeMensagensRecuperado({ ...pedido, url: "https://example.com/api/inbox/atendimentos/id/mensagens" }, concluido, base, true)).toBe(false);
   });
 });
