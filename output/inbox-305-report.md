@@ -1,6 +1,6 @@
 # #305 — Chevron fora do texto e menu dentro da viewport
 
-Estado em 22/10/2026: implementação e recortes aprovados no Node22.23.2; **aguarda janela global, TESTER e capturas visuais coordenadas**. Branch `codex/inbox-e0-305` iniciada em #303 congelada `79a905a2ffe4e34a905f174b416ed2982601d9a1` e rebaseada por coordenação sobre #303 final `37914e4a5d970bbf15e36f660e8aa2750ba79ffe` (PR#384), worktree exclusivo DEV A, perfil `dev-email`. Planejamento prévio preservado em `output/inbox-305-plan.md`.
+Estado em 22/10/2026: implementação, recortes e gates globais aprovados no Node22.23.2; **aguarda TESTER e capturas visuais coordenadas**. Branch `codex/inbox-e0-305` iniciada em #303 congelada `79a905a2ffe4e34a905f174b416ed2982601d9a1` e rebaseada por coordenação sobre #303 final `37914e4a5d970bbf15e36f660e8aa2750ba79ffe` (PR#384), worktree exclusivo DEV A, perfil `dev-email`. Planejamento prévio preservado em `output/inbox-305-plan.md`.
 
 ## SPEC e implementação
 
@@ -32,6 +32,17 @@ As execuções acima terminaram diretamente com exit code final, sem session_id 
 
 ## Pendências
 
-Janela do integrador para TSC heap8192, full unitário e lint global baseline40, sem concorrência com DEV B. TESTER no SHA exato. Capturas antes/depois coordenadas em1440×900,1024×768,390×844, claro/escuro: primeira linha curta com/sem autor, entrada/saída, menu perto das bordas, foco/toque e painel alto com avisos. Sem envio externo. Integrador publica PR por issue; sem push/PR/merge/deploy neste papel. Não declarar #305 concluída antes desses gates.
+Janela global liberada pelo integrador foi utilizada conforme evidências abaixo. TESTER no SHA exato. Capturas antes/depois coordenadas em1440×900,1024×768,390×844, claro/escuro: primeira linha curta com/sem autor, entrada/saída, menu perto das bordas, foco/toque e painel alto com avisos. Sem envio externo. Integrador publica PR por issue; sem push/PR/merge/deploy neste papel. Não declarar #305 concluída antes desses gates.
 
 Rebase anterior aos globals: conflito somente no quadro, resolvido preservando #302/#303 finais e acrescentando #305. Fonte e testes da feature não foram alterados pelo rebase.
+
+## Gates globais próprios no código `4c2424ab0df7465212cb1927d049517162232901`
+
+Executados após rebase documental sobre `37914e4a`, usando `C:/Users/Mendes/AppData/Local/hermes/node/node.exe` v22.23.2, sem instalar/regenerar dependências. A limitação a dois workers foi determinada pelo integrador para preservar recursos enquanto DEV B diagnosticava integração isolada; não é filtro de arquivos/testes.
+
+- `NODE_OPTIONS=--max-old-space-size=8192 node.exe node_modules/typescript/bin/tsc --noEmit`: **exit 0**, sessão `54239`, conclusão `5e99cf`.
+- `node.exe node_modules/vitest/vitest.mjs run --maxWorkers=2 --reporter=json --outputFile=output/inbox-305-unitarias.json`: **exit 0**, sessão `18026`, conclusão `0415be`. JSON conferido em `ec2447`: **842 arquivos, 6.500 testes aprovados, zero falhas, pendentes ou todo**, sem filtro de nome. É a suíte unitária completa configurada; integração `*.int.test.ts` permanece excluída pela configuração normal. JSON somente local, fora do commit. Sessão acompanhada durante todo o período sem saída intermediária do reporter, sem processo desacoplado/interrupção.
+- `node.exe node_modules/eslint/bin/eslint.js . --max-warnings 40`: **exit 0**, sessão `81037`, conclusão `b00e05`, **zero erros e 40 avisos preexistentes**, sem exclusões adicionais. Nenhum aviso acrescentado pela feature.
+- `git diff 37914e4a5d970bbf15e36f660e8aa2750ba79ffe HEAD --check`: **exit 0**, `ec2447`.
+
+Todos os processos encerrados com saída terminal observada. A consolidação posterior altera somente relatório/quadro, sem mudar fonte/testes nem repetir gates. TESTER e capturas visuais coordenadas seguem pendentes; nenhuma outra issue será iniciada antes do fechamento integrado E0.
