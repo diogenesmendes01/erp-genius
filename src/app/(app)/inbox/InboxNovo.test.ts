@@ -44,9 +44,9 @@ describe("InboxNovo", () => {
     expect(h).toContain("Ana");
     expect(h).toContain("Beto");
   });
-  it("a lista é a ListaAtendimentos: setor, número e status em cada linha", () => {
+  it("a lista usa estado visual e setor, sem número em cada linha", () => {
     const h = html();
-    expect(h).toContain("Comercial"); expect(h).toContain("Escola"); expect(h).toContain("Em atendimento");
+    expect(h).toContain("Comercial"); expect(h).not.toContain("Escola"); expect(h).toContain("Na fila");
   });
   it("com as opções do servidor mostra o PainelFiltros (busca, abas e setores do usuário)", () => {
     const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola" }] } } });
@@ -104,4 +104,9 @@ it("contagens são opt-in só na primeira página dos parâmetros", () => {
   expect(paramsDosFiltros({ busca: "Ana" }, null, { contagens: true })).toBe("busca=Ana&contagens=1");
   expect(paramsDosFiltros({}, "cursor", { contagens: true })).toBe("cursor=cursor");
   expect(paramsDosFiltros({})).toBe("");
+});
+
+it("passa usuário para o badge pessoal do item", () => {
+  const h = html({ extra: { inicial: { itens: [{ ...item("a1", "Ana"), responsavelId: "u1", responsavelNome: "Usuário atual" }], proximo: null } } });
+  expect(h).toContain("Com você"); expect(h).not.toContain("Com Usuário");
 });
