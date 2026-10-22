@@ -19,7 +19,7 @@ export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaite
     {dados.matriculas.map((m) => <section key={m.id} className="space-y-3 rounded border p-4 text-sm">
       {m.precoAguardandoAprovacao && <p className="rounded bg-amber-50 p-3 text-amber-800">Os valores propostos foram encaminhados para aprovação independente. Os preços de referência permanecem vigentes até a decisão, e a ativação aguarda essa análise.</p>}
       <h2 className="font-medium">{m.codigo} · {m.produto}</h2><p>Pagamento inicial: {m.pagamentoInicialConfirmado ? "confirmado" : "aguardando confirmação"}</p>
-      {m.precos.map((p) => <LinhaAjustePreco key={p.id} preco={p} moeda={m.moeda} />)}
+      {m.precos.map((p) => <LinhaAjustePreco key={p.id} preco={p} moeda={p.moeda} />)}
       {m.comissoes.map((c) => <p key={c.id}>Comissão: {formatarMoeda(c.valor, c.moeda)} · {c.tipo === "VALOR_FIXO" ? "valor fixo" : `${c.percentual}% da taxa`} · {rotular(STATUS_COMISSAO_LABEL, c.status)}</p>)}
     </section>)}
   </div>;
