@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
-import { autenticarApp, esperarConteudoApp } from "./espera-app.mjs";
+import { autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "./espera-app.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
 const nodeModules = path.join(raiz, "node_modules");
@@ -73,6 +73,7 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
     await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
   }
   await esperarConteudoApp(pagina, estado, tamanho);
+  await esperarHidratacaoApp(pagina);
 }
 
 async function abrirPrototipo(pagina, estado) {

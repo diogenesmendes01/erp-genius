@@ -12,6 +12,11 @@ export async function autenticarApp(contexto, base, email, senha) {
   if (!sessao.ok() || (await sessao.json()).user?.email !== email) throw new Error("Sessão da demo não foi autenticada.");
 }
 
+/** O conteúdo pode vir de SSR; a conexão só acontece após a assinatura cliente hidratar. */
+export async function esperarHidratacaoApp(pagina) {
+  await pagina.locator('[data-conectado="1"]').waitFor({ state: "visible" });
+}
+
 /** Espera o conteúdo identificável da fixture, não somente o contêiner inicial da tela. */
 export async function esperarConteudoApp(pagina, estado, tamanho) {
   if (estado === "celular-painel" || estado === "tablet-painel") {
