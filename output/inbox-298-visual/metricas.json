@@ -1,6 +1,6 @@
 {
   "fonteAntes": "3dbd3df803ef840bf2190cec9d4fc98d4a05a755",
-  "fonteDepois": "8f26101e6d194bb1be4ddb303f71a2e8a60828fa",
+  "fonteDepois": "815d863de66982505026980faa786290211a6ae1",
   "notas": "Funções JSX reais extraídas por TypeScript AST. Reserva usa apenas dados de fixture e rótulo de estado injetado; ações não são executadas. CSS gerado do globals.css e tailwind.config.ts reais. Captura de componente isolado, não homologação do fluxo financeiro.",
   "metricas": [
     {

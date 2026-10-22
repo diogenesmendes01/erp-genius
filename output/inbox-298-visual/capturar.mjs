@@ -1,15 +1,20 @@
-const fs = require("fs");
-const path = require("path");
-const cp = require("child_process");
-const ts = require("typescript");
-const React = require("react");
-const { renderToStaticMarkup } = require("react-dom/server");
-const { IconCircle, IconCircleCheck } = require("@tabler/icons-react");
-const postcss = require("postcss");
-const tailwind = require("tailwindcss");
-const { chromium } = require("playwright");
+import fs from "node:fs";
+import path from "node:path";
+import cp from "node:child_process";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import ts from "typescript";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { IconCircle, IconCircleCheck } from "@tabler/icons-react";
+import postcss from "postcss";
+import tailwind from "tailwindcss";
+import { chromium } from "playwright";
 
-const root = path.resolve(__dirname, "../..");
+// O JSX extraído é transpilado para CommonJS; só sua avaliação e a config TS usam este loader.
+const requireForCapture = createRequire(import.meta.url);
+const captureDir = fileURLToPath(new URL(".", import.meta.url));
+const root = path.resolve(captureDir, "../..");
 const base = "3dbd3df803ef840bf2190cec9d4fc98d4a05a755";
 const sources = {
   enquete: "src/components/conversa/EnqueteLeitura.tsx",
@@ -29,7 +34,7 @@ function loadFunction(source, name, globals) {
   const js = ts.transpileModule(code, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const mod = { exports: {} };
   const names = Object.keys(globals);
-  new Function("require", "module", "exports", ...names, js)(require, mod, mod.exports, ...Object.values(globals));
+  new Function("require", "module", "exports", ...names, js)(requireForCapture, mod, mod.exports, ...Object.values(globals));
   return mod.exports[name];
 }
 function render(name, stage) {
@@ -72,7 +77,7 @@ function documentHtml(name, stage, theme, markup, css) {
   for (const name of Object.keys(sources)) for (const stage of ["antes", "depois"]) {
     markup[name + "-" + stage] = render(name, stage);
   }
-  const config = require(path.join(root, "tailwind.config.ts")).default;
+  const config = requireForCapture(path.join(root, "tailwind.config.ts")).default;
   const cssPath = path.join(root, "src/app/globals.css");
   const allHtml = Object.values(markup).join("\n") + " bg-page text-gray-900";
   const result = await postcss([tailwind({ ...config, content: [{ raw: allHtml, extension: "html" }] })])
@@ -91,14 +96,14 @@ function documentHtml(name, stage, theme, markup, css) {
       for (const v of viewport) {
         await page.setViewportSize(v);
         const file = name + "-" + stage + "-" + theme + "-" + v.width + "x" + v.height + ".png";
-        await page.screenshot({ path: path.join(__dirname, file), fullPage: false });
+        await page.screenshot({ path: path.join(captureDir, file), fullPage: false });
       }
       await page.close();
     }
   } finally {
     await browser.close();
   }
-  fs.writeFileSync(path.join(__dirname, "metricas.json"), JSON.stringify({
+  fs.writeFileSync(path.join(captureDir, "metricas.json"), JSON.stringify({
     fonteAntes: base,
     fonteDepois: cp.execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),
     notas: "Funções JSX reais extraídas por TypeScript AST. Reserva usa apenas dados de fixture e rótulo de estado injetado; ações não são executadas. CSS gerado do globals.css e tailwind.config.ts reais. Captura de componente isolado, não homologação do fluxo financeiro.",
