@@ -40,6 +40,15 @@ export const TEXTO_SOBRE_SOLIDO = {
   "--success-solid": "--on-brand-solid",
   "--danger-solid": "white",
   "--ai-solid": "white",
+  // Iniciais brancas sobre a cor do avatar (análise parte 1 §5).
+  "--avatar-1": "white",
+  "--avatar-2": "white",
+  "--avatar-3": "white",
+  "--avatar-4": "white",
+  "--avatar-5": "white",
+  "--avatar-6": "white",
+  "--avatar-7": "white",
+  "--avatar-8": "white",
 } as const;
 
 /**
