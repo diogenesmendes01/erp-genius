@@ -1,5 +1,5 @@
 import { DriverWhatsApp } from "@prisma/client";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Interação do InboxNovo sem DOM (src/test/tela-sem-dom.ts): o componente é chamado como função, com useState/useRef/
@@ -40,6 +40,8 @@ vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: v
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
 import { ListaAtendimentos } from "./ListaAtendimentos";
+import { PainelAria } from "./PainelAria";
+import { AcoesContato } from "./AcoesContato";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 
 const item = (id: string) => ({
@@ -72,6 +74,17 @@ const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 function tela(): ReactNode { m.posEfeito = 0; return m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props); }
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+
+it("painéis simultâneos do atendimento têm identidades React distintas", async () => {
+  respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
+  tela(); await esvaziar();
+  const paineis = elementos(tela()).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement[];
+  expect(paineis).toHaveLength(4); // painel desktop e Drawer
+  for (let i = 0; i < paineis.length; i += 2) {
+    expect(paineis[i].key).not.toBeNull();
+    expect(paineis[i + 1].key).not.toBe(paineis[i].key);
+  }
+});
 const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
 
 describe("InboxNovo: leitura ao abrir", () => {
