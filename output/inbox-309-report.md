@@ -25,3 +25,14 @@ Plano aprovado: docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md, 
 - Aceite visual: sem tela própria, conforme Task4 Step5. Avatar/Badge/estado são produtores; nenhuma tela foi forçada a consumir os novos parâmetros. O aceite real em3viewports×2temas será daTask7, e não é declarado concluído nesta task.
 
 Revisão independente do commit congelado ainda pendente. Não houve instalação, alteração de package/lock, schema, banco, servidor, transporte externo, push ou PR pelo DEV.
+
+## QA309 R1 — P2: expansão Unicode de maiúsculas
+
+Achado reproduzido na fonte0feb3bbf: capitalizar as iniciais juntas fazia ßeta Anna virar SSA e a ligatura ﬃona Anna virar FFIA, excedendo duas iniciais. A correção capitaliza cada inicial selecionada separadamente e retém seu primeiro ponto Unicode com Array.from. Letras fora do BMP continuam inteiras; não houve mudança de SPEC, cores, hash, medidas, selo ou consumidores.
+
+- RED dirigido: Node22 node_modules/vitest/vitest.mjs run src/components/Avatar.test.ts -t "maiúsculas mantêm" --maxWorkers=2. Exit1(797c98),5 falhas/2 passaram/14 filtrados. Casos: ß no começo/fim, ligatura isolada/composta e combinação com Deseret; duas regressões fora do BMP já passavam.
+- GREEN ampliado: Avatar/Badge/estado + paleta/fundo/contatos/prazo/lista,11 arquivos/118 testes exit0(092940), sem filtros/ignorados. Mesmo comando ampliado anterior, agora com os sete casos novos.
+- Lint dirigido dos seis arquivos de produtores/testes exit0(038f6e), sem avisos.
+- TypeScript Node22 heap8192 --noEmit, sessão7322 acompanhada até exit0(260afe).
+- Não houve full novo nesta revisão, conforme coordenação do integrador. O full848/6591 e lint global0/40 acima são históricos da fonte0feb3bbf anterior ao fix; não validam este fix. A regressão global da combinação310+309 será do integrador.
+- Re-review independente do SHA fix permanece pendente; #312 não iniciada.
