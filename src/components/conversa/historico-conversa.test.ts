@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
+import type { MensagemThread, NotaInternaThread } from "@/server/whatsapp/consultas-inbox";
 import type { AvisoInbox } from "@/server/inbox/barramento";
 import { fonteErp } from "./fonte-erp";
 import { HistoricoConversa, LIMITE_HISTORICO, reagirAoAviso, type FonteHistorico, type PaginaHistorico } from "./historico-conversa";
@@ -32,8 +32,70 @@ function fonteFalsa(total: Record<string, number>) {
   return fonte;
 }
 const ids = (h: HistoricoConversa) => h.getState().mensagens.map((m) => m.id);
+const nota = (id: string): NotaInternaThread => ({ id, nota: id, autorNome: "Ana", criadoEm: msg(0).criadoEm, origem: "atendimento" });
 
 describe("HistoricoConversa", () => {
+  it("abrir publica notas; antes mantém; depois substitui inclusive por vazio; recarregar reconcilia", async () => {
+    const base = fonteFalsa({ a: 150 }), h = new HistoricoConversa({
+      pagina: async (id, o, s) => ({ ...(await base.pagina(id, o, s)), notas: o.antes ? null : notas }),
+    });
+    let notas = [nota("n1")];
+    await h.abrir("a");
+    expect(h.getState().notas).toEqual([nota("n1")]);
+    await h.maisAntigas();
+    expect(h.getState().notas).toEqual([nota("n1")]);
+    notas = [nota("n1"), nota("n2")];
+    await h.maisNovas();
+    expect(h.getState().notas).toEqual(notas);
+    notas = [];
+    await h.maisNovas();
+    expect(h.getState().notas).toEqual([]);
+    notas = [nota("n3")];
+    await h.recarregar();
+    expect(h.getState().notas).toEqual([nota("n3")]);
+    h.limpar();
+    expect(h.getState().notas).toEqual([]);
+  });
+
+  it("aviso de nota atualiza a thread mesmo sem mensagem nova", async () => {
+    const base = fonteFalsa({ a: 1 });
+    let notas = [nota("n1")];
+    const h = new HistoricoConversa({ pagina: async (id, o, s) => ({ ...(await base.pagina(id, o, s)), notas }) });
+    await h.abrir("a");
+    notas = [nota("n1"), nota("n2")];
+    await reagirAoAviso(h, "a", { tipo: "atendimento.atualizado", atendimentoId: "a", conversaId: "cv", mensagemId: null });
+    expect(h.getState().mensagens).toHaveLength(1);
+    expect(h.getState().notas).toEqual(notas);
+  });
+
+  it("autor e outra sessão recebem nota em conversa sem mensagens, sem recarregar a página", async () => {
+    let notas: NotaInternaThread[] = [];
+    const fonte: FonteHistorico = { pagina: async () => ({ mensagens: [], notas, antes: null, depois: null, temMais: false }) };
+    const autor = new HistoricoConversa(fonte), colega = new HistoricoConversa(fonte);
+    await Promise.all([autor.abrir("a"), colega.abrir("a")]);
+    notas = [nota("n1")];
+    const aviso: AvisoInbox = { tipo: "atendimento.atualizado", atendimentoId: "a", conversaId: "cv", mensagemId: null };
+    await Promise.all([reagirAoAviso(autor, "a", aviso), reagirAoAviso(colega, "a", aviso)]);
+    expect(autor.getState().notas).toEqual(notas);
+    expect(colega.getState().notas).toEqual(notas);
+    expect(autor.getState().mensagens).toEqual([]);
+    expect(colega.getState().mensagens).toEqual([]);
+  });
+
+  it("resposta antiga não vaza notas para atendimento recém-aberto", async () => {
+    let soltarA!: () => void;
+    const h = new HistoricoConversa({ pagina: async (id) => {
+      if (id === "a") await new Promise<void>((ok) => { soltarA = ok; });
+      return { mensagens: [], notas: [nota(id)], antes: null, depois: null, temMais: false };
+    } });
+    const a = h.abrir("a");
+    const b = h.abrir("b");
+    await b;
+    soltarA(); await a;
+    expect(h.getState().atendimentoId).toBe("b");
+    expect(h.getState().notas).toEqual([nota("b")]);
+  });
+
   it("carrega a última página e, ao subir, as antigas sem duplicar", async () => {
     const f = fonteFalsa({ a: 150 }), h = new HistoricoConversa(f);
     await h.abrir("a");
@@ -180,10 +242,14 @@ describe("fonteErp", () => {
     const fetchFalso = vi.fn<(url: string) => Promise<Response>>(async () => new Response(JSON.stringify(corpo)));
     vi.stubGlobal("fetch", fetchFalso);
     try {
-      expect(await fonteErp.pagina("a/1", { depois: "x y" })).toEqual({ mensagens: [], antes: null, depois: "d", temMais: false });
+      expect(await fonteErp.pagina("a/1", { depois: "x y" })).toEqual({ mensagens: [], notas: [], antes: null, depois: "d", temMais: false });
       expect(fetchFalso.mock.calls[0][0]).toBe("/api/inbox/atendimentos/a%2F1/mensagens?depois=x+y");
       await fonteErp.pagina("a", {});
       expect(fetchFalso.mock.calls[1][0]).toBe("/api/inbox/atendimentos/a/mensagens");
+      fetchFalso.mockResolvedValueOnce(new Response(JSON.stringify({ ...corpo, notas: null })));
+      expect((await fonteErp.pagina("a", { antes: "c" })).notas).toBeNull();
+      fetchFalso.mockResolvedValueOnce(new Response(JSON.stringify({ mensagens: [], antes: null, depois: null, temMais: false })));
+      expect((await fonteErp.pagina("a", {})).notas).toBeNull();
       fetchFalso.mockResolvedValueOnce(new Response("{}", { status: 404 }));
       await expect(fonteErp.pagina("a", {})).rejects.toMatchObject({ status: 404 });
     } finally { vi.unstubAllGlobals(); }

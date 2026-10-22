@@ -5,6 +5,8 @@ import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconArrowLeft, IconLayoutSidebarRight } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
 import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
+import { itensDaThread } from "@/components/conversa/itens-thread";
+import { NotaNaThread } from "@/components/conversa/NotaNaThread";
 import { Compositor, MOTIVO_SEM_ENVIO } from "@/components/conversa/Compositor";
 import { VirtualList } from "@/components/conversa/VirtualList";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
@@ -146,17 +148,21 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList
-          items={conversa.mensagens}
-          getKey={(m) => m.id}
+          items={itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes)}
+          getKey={(i) => i.id}
           estimatedHeight={72}
           scrollRef={rolagem}
-          renderItem={(m) => (
-            <BalaoMensagem m={m} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
-              aoComando={(c) => {
-                if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo);
-                else if ((c === "reagir" || c === "encaminhar" || c === "editar" || c === "apagar") && item) setAcaoMensagem({ acao: c, m, atendimentoId: item.id, numeroId: item.numeroId });
-              }} />
-          )}
+          renderItem={(i) => {
+            if (i.tipo === "nota") return <NotaNaThread n={i.n} fuso={fuso} />;
+            const m = i.m;
+            return (
+              <BalaoMensagem m={m} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
+                aoComando={(c) => {
+                  if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo);
+                  else if ((c === "reagir" || c === "encaminhar" || c === "editar" || c === "apagar") && item) setAcaoMensagem({ acao: c, m, atendimentoId: item.id, numeroId: item.numeroId });
+                }} />
+            );
+          }}
         />
       </div>
       {item ? (

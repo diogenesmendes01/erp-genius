@@ -1,5 +1,14 @@
 # Quadro único de entregas
 
+## Inbox E0.4 — notas internas visíveis na thread (#301, 22/10/2026)
+
+**Estado: implementação em revisão; não concluída.** Branch `codex/inbox-e0-301`, dependente da #300. A fonte ERP preserva `notas: array | null`; histórico mantém em `antes`, substitui em inicial/`depois`/reconexão, limpa na troca e ignora respostas antigas. O aviso atualiza mesmo sem mensagem nova. A thread intercala notas e mensagens por tempo, distingue chave `nota:<id>` e oculta nota anterior à janela enquanto houver mensagens antigas. Cartão interno mostra origem, autor e hora no fuso, sem ações externas. Contrato em `docs/specs/inbox-notas-visiveis.md`; sem schema, permissão ou transporte novo.
+
+- TDD RED no Node 22.23.2: quatro arquivos tiveram cinco falhas funcionais e 35 testes verdes, saída 1 — fonte descartava notas, histórico não guardava, UI não mostrava e módulos novos inexistiam. Depois, cenário de janela fora de ordem falhou com nota ausente (1 falha, 4 verdes); corrigida a seleção do instante mais antigo. Recorte de design system encontrou `text-amber-900` não mapeado (1 falha, 318 verdes); substituído por `text-amber-700`, token válido nos dois temas.
+- GREEN dirigido: `src/components/conversa`, `src/app/(app)/inbox`, paleta, botões e contraste: **29 arquivos / 319 testes**, saída **0**, nenhum ignorado. Cenário adicional de duas sessões com conversa só de notas: `historico-conversa.test.ts` **1 arquivo / 16 testes**, saída **0**, nenhum ignorado. Não equivale à suíte completa.
+- Recorte dirigido final após adicionar o cenário de duas sessões: mesmos filtros, **29 arquivos / 320 testes**, saída **0**, nenhum ignorado, Node 22.23.2. ESLint dos 9 arquivos TypeScript tocados com `--max-warnings 0`, saída **0**.
+- Rebase para a #300 publicada, TypeScript, Vitest completo, lint global, revisão independente, capturas nos três viewports/dois temas e homologação **pendentes** neste registro. O integrador/TESTER prepararão fixture e servidores em bancos descartáveis; este DEV não iniciou servidor nem envio externo.
+
 ## Inbox E0.3 — notas na rota e aviso transacional (#300, 22/10/2026)
 
 **Estado: contrato de servidor/SSE implementado e validado; PR em publicação.** Branch `codex/inbox-e0-300`, base PR #382 (#299). SPEC em `docs/specs/inbox-notas-thread.md`, investigação em `output/inbox-300-report.md`, parecer independente em `output/inbox-300-review.md`. Sem merge/deploy; renderização na tela é escopo da #301.

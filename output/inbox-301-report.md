@@ -1,0 +1,20 @@
+# Relatório DEV B — #301
+
+Estado em 22/10/2026: implementação em revisão. Branch `codex/inbox-e0-301`, criada sobre o commit congelado #300 `9853be8356f6a31664224d5b9b332ce108bcac06`. Rebase sobre a #300 publicada e SHA final ainda pendentes.
+
+## Entrega
+
+- `fonteErp` preserva as notas da rota; `HistoricoConversa` mantém `null`/ausência e substitui por arrays, inclusive vazio. Abertura/troca limpam estado, resposta de geração anterior não vaza. Aviso `atendimento.atualizado` atualiza notas mesmo com página sem mensagens novas.
+- `itensDaThread` mescla por horário e id com mensagem antes de nota no empate, chave `nota:<id>` e janela delimitada pela mensagem mais antiga. Notas não afetam cursores nem o limite de 600 mensagens.
+- `NotaNaThread` renderiza conteúdo interno, origem, autor, texto escapado com quebras e hora no fuso. `ConversaAberta` usa a mescla e não oferece comandos de mensagem à nota. Não houve alteração em `InboxNovo`, schema, permissões, dependências ou transporte.
+- SPEC `docs/specs/inbox-notas-visiveis.md` e quadro único atualizados.
+
+## Evidência até agora
+
+- RED funcional: 4 arquivos, 5 falhas esperadas / 35 testes verdes, saída 1. RED de janela fora de ordem: 1 falha / 4 verdes, saída 1. RED da paleta: 1 falha / 318 verdes, saída 1.
+- GREEN dirigido Node 22.23.2: `src/components/conversa`, `src/app/(app)/inbox`, paleta, botões e contraste, 29 arquivos / 319 testes, saída 0, nenhum ignorado. Cenário adicional de duas sessões, 1 arquivo / 16 testes, saída 0. Recortes não são suíte completa.
+- Recorte dirigido final com o cenário adicional: mesmos filtros, 29 arquivos / 320 testes, saída 0, nenhum ignorado. ESLint dos 9 TypeScript alterados com `--max-warnings 0`, saída 0.
+
+## Pendências
+
+Rebase sobre HEAD publicado #300, testes dirigidos finais, TypeScript, Vitest completo, ESLint global, revisão TESTER e aceite manual/visual em duas sessões nos três viewports e dois temas. Sem instalação ou envio externo.
