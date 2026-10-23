@@ -90,6 +90,23 @@ const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify
 const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
 
 describe("InboxNovo: leitura ao abrir", () => {
+  it("soma entrada oculta nova à contagem prévia conhecida mesmo com leitura e recuperação falhas", async () => {
+    tela(); await esvaziar(); marcar.mockClear();
+    mudarVisibilidade("hidden");
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 2 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.status", atendimentoId: "a1", mensagemId: "m-antiga", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(2);
+    respostaLista = async () => pagina([{ ...item("a1"), naoLidas: 0 }, item("a2")]);
+    m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-nova-apos-contagem", conversaId: "cv1" });
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+    marcar.mockResolvedValue({ ok: false });
+    respostaLista = async () => new Response("", { status: 503 });
+    mudarVisibilidade("visible"); m.aoVisibilidade!();
+    await esvaziar(); tela();
+    expect(lista(tela()).itens.find((i) => i.id === "a1")?.naoLidas).toBe(3);
+  });
   it("entrada oculta mantém contagem conhecida se leitura e GET de recuperação falharem", async () => {
     tela(); await esvaziar(); marcar.mockClear();
     mudarVisibilidade("hidden");
