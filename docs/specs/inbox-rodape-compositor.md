@@ -107,3 +107,43 @@ Visuais antigos não são reatribuídos ao C3f896/741. C2menu teve prova ERP
 sem submit; C3 tem testes ReactDOM/StrictMode e não alega envio ERP/DB.
 Pareceres e metadados históricos curados em output/pr403-qa. CI/main/392B2
 pendentes antes do merge; sem deploy ou homologação presumida.
+
+
+## PR403 — C4/C5/C7: contrato explícito e rastreabilidade (23/10/2026)
+
+Base desta revisão: 68e95d8e9cea0842ccdab441be475c302fe9c7e3. Nenhuma mudança em produção, testes, scripts ou permissões. C2 mantém Nota por leitura individual inclusive ENCERRADO, com grupo sem Nota e envio/agenda/gestão bloqueados; C3 vigente continua sendo o token de intenção e a reconciliação visual f896/741 descritos acima. A regra histórica de revogar por qualquer remount não é a regra vigente.
+
+### C4: anexos e gravação pertencem temporariamente a Responder
+
+Os rascunhos de TEXTO são separados por atendimento e modo no localStorage. File selecionado e gravação em curso não são rascunhos persistidos: trocar Responder→Nota descarta o arquivo e interrompe/descarta a gravação. Ao voltar a Responder, o texto reaparece, mas o arquivo precisa ser escolhido novamente e o áudio precisa ser gravado novamente. Nota não recebe anexo, voz ou agenda. Esse descarte é intencional; não há promessa de preservar File/voz, diálogo de confirmação ou armazenamento global.
+
+Inspeção de Compositor.tsx: chave inclui modo; mudança de contexto zera arquivo; cleanup marca descartar e para MediaRecorder. onstop encerra tracks e ignora contexto antigo/descartado, sem anexar Blob ou enviar mídia. getUserMedia resolvido após sair do contexto encerra suas tracks. Upload HTTP já iniciado pode terminar: o guard de contexto/revisão impede despachar a URL antiga ao callback aoEnviarMidia; não há AbortController e não alegamos cancelamento do POST. Envio de texto/mídia já despachado é uma tentativa legítima em andamento, não é cancelado pela troca de aba; seus efeitos tardios continuam sob C3/idempotência.
+
+Essa conclusão sobre cleanup de gravação na troca é inspeção de código. Os testes existentes exercitam gravação→anexo→envio simulado, upload antigo e ausência dos controles na Nota; não foi acrescentado teste específico de MediaRecorder na troca nem feita prova de microfone/browser/ERP nesta revisão documental.
+
+### C5: mapa Task12 → nomes reais
+
+Plano de referência: docs/superpowers/plans/2026-10-22-inbox-prototipo-02-design.md, Task12 (consultado no checkout ROOT; não introduzido nesta branch). Os nomes reais são preservados para evitar renomear testes já auditados.
+
+| Contrato/nome no plano | Arquivo e nome real / prova correspondente |
+| --- | --- |
+| compositor: abas Responder e Nota interna, dica de respostas rápidas | RodapeConversa.test.ts: compositor oferece abas sem selecionar nota, dica e campo nomeado sem moldura duplicada |
+| abaInicial nota: campo e enviar em tons de aviso | RodapeConversa.test.ts: nota inicial mantém aviso e controles internos, sem agendar/anexar/voz; os tons são inspecionados no render de Compositor e nas capturas históricas identificadas, sem atribuir a este caso uma asserção CSS inexistente |
+| travado: barra da IA com Nota interna e Assumir para responder, sem campo | RodapeConversa.test.ts: variante travada só mostra comandos fornecidos e nunca campo; variante segue desligada na E1 |
+| enviar é círculo de 44 com rótulo acessível; agendar aparece com aoAgendar | Compositor.test.ts: agendar só aparece com callback real e fora da nota; modo responder envia pelo aoEnviarTexto, limpa o campo e o rascunho. Círculo/classes h-11 w-11/rounded-full e span sr-only Enviar estão em Compositor.tsx; a geometria pertence à prova visual histórica, não a um it novo com o nome literal do plano |
+| integração ConversaAberta / agenda real | ConversaAberta.rodape.test.ts: um controlador real fornece agenda ao rodapé e ações ao cabeçalho sem duplicar instância; re-render da mesma conversa mantém identidade do scroller/VList e agenda ausente não vira stub |
+| abas/teclado/contexto | RodapeConversa.interacao.test.ts: setas/Home/End alternam e focam aba com aria-selected, mantendo o mesmo compositor; contato novo começa na aba inicial e nota indisponível não é selecionável |
+| rascunhos separados e resultados antigos | Compositor.test.ts: trocar de atendimento ou de modo carrega o rascunho certo e limpa o erro da conversa anterior; upload antigo não despacha mídia nem modifica arquivo/texto de outra conversa |
+| regressão C3 posterior ao plano | Compositor.rascunho.interacao.test.ts: 17 casos ReactDOM/createRoot/StrictMode, incluindo retorno sem editar responder/nota, erro/incerto, intenção posterior de texto/arquivo, modos, storage externo, mídia despachada e cleanup integral |
+
+RodapeConversa.test.ts usa SSR; RodapeConversa.interacao/Compositor.test.ts usam o harness controlado tela-sem-dom. Os 17 casos C3 usam ReactDOM real e StrictMode sobre DOM mínimo, com mocks de controles; comprovam ciclo de montagem/cleanup e callbacks, não layout/microfone ou sucesso ERP. Nenhum deles é chamado de navegador real.
+
+### C7: artefatos curados, fontes e limite de volume
+
+Contra a base própria a8dba58c443ff24be4745e51aab47abed9c4cf2a, o head68e acrescenta em output 22 arquivos/1.826 linhas: 14 MD/501 linhas e 8 JSON/1.325 linhas, zero remoções, zero PNG e zero scripts de probes. A contagem inicial de aproximadamente1,2mil linhas da R1 descrevia um head anterior; o aumento inclui as revisões C2/C3 posteriores. Não é o inventário de todos os outputs herdados do repositório.
+
+Os MD preservam execução nominal, negativos e pareceres independentes. Os JSON são índices/allowlists/hashes/fontes e manifesto do complemento do menu; a maioria do volume é rastreabilidade, não implementação. Preservá-los evita apagar a distinção entre capturas antigas e C3 final. Índice curado e links dos dois ZIPs em output/pr403-qa/revisao.md, seção Evidências visuais e seus limites; relatório desta revisão em output/inbox-pr403-review-todos.md. Não se duplicam os PNGs nem se inclui probe bruto novo.
+
+O pacote original317 (85f) tem122PNG/137arquivos/15.823.526B, SHA256 74a17180135461a99a50e6e48e45b42280ef4b804321607ce3480645ca27f4aa. O complemento menuC2 tem16PNG/21arquivos/1.677.732B, SHA256 4faa6c22ef72e4614d293c869d0986aca56047ee57a5ed5eeb4800490ebaa60c. São metadados históricos conferidos pelo integrador original; nesta rodada não houve download/reupload/inspeção nova das imagens. Fontes317bbb/df9 e29f/A7 não são QA visual de C3f896/741.
+
+C1 (main/CI/retarget/composição) e C6 (conflitos documentais de pais) permanecem com o integrador. Esta revisão não resolve esses gates por declaração nem modifica inbox-nao-lidas-menu.md.
