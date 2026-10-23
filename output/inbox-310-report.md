@@ -31,3 +31,9 @@ Full global próprio não executado por coordenação explícita: integrador com
 ## Congelamento para revisão
 
 Recorte final com as guardas pertinentes: chunk a0b1e7, exit0,10 arquivos/161 testes sem ignorados (os5 arquivos/82 testes acima + sem-polling, sem-provedores-legados, paleta, responsivo e botões). ESLint final dos13 arquivos --max-warnings0: chunk264633 exit0. TypeScript final heap8192: sessão11852/chunk1c666d exit0. Runtime confirmado em355125: v22.23.2. Diff-check5d3012 exit0. Esses gates antecedem somente a consolidação documental; nenhuma fonte mudou depois deles. O full integrado permanece pendente do integrador e não foi imputado a este SHA.
+
+## Fechamento pelo integrador — substitui pendências históricas
+
+TESTER revisou fonte67014764f664a6602f9f6b2992e5594d3ad775cc favoravelmente;6arquivos86testes unitários0 e integração isolada perfiltester sessão78316exit0,2arquivos26testes semignorados. Nenhum servidor/fixture visual próprio deste produtor. Parecer `output/inbox-310-qa/parecer-tester.md`.
+
+Global final combinado309+310 fonte103a507d8a8fda7a6758a4eee46177d4c3ce7a67, Node22.23.2, sessão15987 acompanhada atéexit0:850arquivos/6634testes unitários semfiltro/semignorados/maxWorkers2,TSCheap8192,lintglobal0erros40avisos herdados. Logs em `output/inbox-310-qa/`. Primeiro global15860 falhou somente na guarda AST do Avatar309 e não é aprovação;309foicorrigida/revistaantesdeste global. O código310 não mudou após seuSHArevisto; diffs seguintes são documentos/evidências. Pronta para PR, visual consumidor313conformeplano, sem merge/deploy.

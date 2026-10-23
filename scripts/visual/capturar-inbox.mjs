@@ -6,6 +6,7 @@ import { chromium } from "playwright-core";
 import { resolverBancoTeste } from "../test-profile.mjs";
 import { ESTADOS, TAMANHOS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, problemaReactNaCaptura, tipoDoArquivo } from "./nucleo-captura.mjs";
 import { autenticarApp, esperarConteudoApp } from "./espera-app.mjs";
+import { anonimizarTelefonesNoDom } from "./anonimizar-telefones.mjs";
 
 const raiz = fileURLToPath(new URL("../../", import.meta.url));
 const nodeModules = path.join(raiz, "node_modules");
@@ -138,6 +139,7 @@ async function main() {
         else await abrirPrototipo(pagina, tarefa.estado);
         await pagina.evaluate(() => document.fonts.ready);
         const nome = nomeDaCaptura(tarefa.alvo, tarefa.tema, tarefa.tamanho, tarefa.estado);
+        const anonimizacao = tarefa.alvo === "prototipo" ? await pagina.evaluate(anonimizarTelefonesNoDom) : null;
         // Estilo temporário só da foto: mantém indicadores de issues e todos os listeners de diagnóstico.
         await pagina.screenshot({ path: path.join(destino, nome), style: tarefa.alvo === "app" ? '[data-nextjs-toast]:not(:has([data-has-issues="true"])) { visibility: hidden !important; }' : undefined });
         await Promise.all(conclusoes);
@@ -147,7 +149,7 @@ async function main() {
           if (tarefa.alvo === "app" && cancelamentoDeMensagensRecuperado(pedido, concluidos, o.base, true)) diagnosticos.push(`GET da thread cancelado e recuperado: ${pedido.url}`);
           else falhas.push(registro);
         }
-        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas, diagnosticos });
+        capturas.push({ ...tarefa, arquivo: nome, width, height, falhas, diagnosticos, anonimizacao });
         process.stdout.write(`${nome}: ${falhas.length ? `FALHAS ${falhas.length}` : "OK"}\n`);
       } finally { await contexto.close(); }
     }

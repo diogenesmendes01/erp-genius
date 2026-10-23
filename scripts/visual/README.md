@@ -79,3 +79,20 @@ o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.
 
 A captura do app reprova também warnings React de chave/hidratação no console, além dos pageerrors e falhas de rede já existentes. Fotos estáticas, geometria e interação/AT são evidências diferentes. Probes locais da308 em output/inbox-308-visual usam credenciais fictícias por INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA, Chrome instalado e servidor coordenado3110; não enviam mensagem nem submetem formulário.
+
+# Telefones em evidências
+
+A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
+os valores antigos reconhecidos no próprio cenário. O harness anonimiza os
+telefones do DOM do protótipo imediatamente antes da foto e declara essa
+transformação no manifesto, preservando o arquivo HTML original.
+
+Harnesses de outras issues podem importar `anonimizarTelefonesNoDom` de
+`./anonimizar-telefones.mjs` e executar
+`const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom)` depois
+das interações e antes de `screenshot`. Salvar o retorno no manifesto; não salvar
+um mapa dos valores originais. Reaplicar depois de nova renderização.
+
+O teste do DOM real usa Chrome já instalado, sem baixar navegador:
+`PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
+Esse teste dirigido de navegador é separado da suíte unitária Vitest.

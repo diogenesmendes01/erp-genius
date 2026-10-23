@@ -86,3 +86,25 @@ Após autorização da janela pelo integrador, executei sobre `815d863de66982505
 - `git diff --check` após conversão: **exit 0** (`3df8d6`). O primeiro staged check anterior havia detectado uma linha em branco extra no EOF do harness, removida antes do commit `815d863d` (staged check posterior exit 0, `d69dcf`).
 
 O commit adicional desta consolidação altera somente o artefato de captura/métricas e a documentação; UI e código de testes permanecem exatamente os validados em `815d863d`. TSC e suíte completa não foram repetidos após essa alteração exclusiva do artefato; lint global e execução real do harness cobrem o estado ESM final. Re-review independente e aceite visual final continuam pendentes; não declarar a issue encerrada.
+
+## PR #381 — correções de review C1/C3
+
+A trava AST agora inspeciona ancestrais interativos (elementos nativos,
+componentes, papel/foco/eventos e spread), impedindo que um filho span/div
+desenhe um primário artesanal e receba a isenção de conteúdo passivo. Dentro
+de ações, a exceção aceita somente contador numérico compacto, incluindo o
+limite 99+ e sua descrição sr-only. O círculo do passo do assistente de matrícula
+existente usa uma exceção contada por arquivo; nenhum componente produtivo mudou.
+
+TDD:15 falhas/64pass no RED,79/79 GREEN em botoes.test.ts. TypeScript global e
+lint global (0erros/40avisos herdados) passaram com saída0. A suíte unitária
+global desta revisão será registrada no quadro após terminar.
+
+Os64PNGs foram retirados do estado atual do código após download/hashconfirmado
+doZIPautorizado. Relatórios/manifestos/harness continuam nesta pasta e noZIP.
+Veja [arquivo das evidências](inbox-298-visual/README.md) paraasset/link/SHA256.
+O draft não foi publicado. Commits históricos das branches ainda contêm osPNGs.
+
+Gates finais desta revisão: Node22.23.2, suíte unitária completa839arquivos/6481testes,
+sem filtros/ignorados, sessão85347 exit0; TypeScript30297 exit0;
+lintglobal12045 exit0 (0erros/40avisos herdados). Integração não executada.
