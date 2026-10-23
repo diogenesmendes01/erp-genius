@@ -156,3 +156,7 @@ Informe INBOX_VISUAL_FONTE com o SHA exato do app para as evidências finais. O 
 ## Cabeçalho/menu #315
 
 Após o freeze de código315, menu-mais acrescenta12PNGs (3tamanhos,2temas,app×protótipo). O app confirma thread, hidratação/SSE, abre Mais ações da conversa e exige header68/menu no viewport, Buscar disabled Em breve e Bloquear disabled com o motivo completo. Não executa comandos. O protótipo abre seu menu Mais original, preservando diferenças D7/D15/D16 e itensERP. Demais estados313/314/318 permanecem; helperDOM392 roda após interações e antes da foto, consoleReact/hidratação/404/rede continuam invalidando o manifesto. FonteApp e hashes4módulos ficam no manifesto; não há seed ou writes de negócio pela CLI.
+
+## Busca local #316
+
+Estado busca-conversa é APP-only:6PNGs (3tamanhos/2temas), sem referência funcional do protótipo, explicitado no manifesto. Total da CLI124PNG(66app/58protótipo); estados313/314/315/318 preservados. A fixture canônica Beatriz contém matricular em mensagens, enquanto desconto do exemplo do plano não existe no corpo; a CLI usa matricular, sem seed/DB, e não busca notas. Abre pelo botão desktop ou item de menu móvel após thread/hidratação; exige campo focado, resultado destacado, contador e header68. menu-mais agora exige Buscar habilitado; Bloquear permanece indisponível com motivo integral. GuardReact/404/rede/hidratação/anonDOM392 apósinteração/antesfoto continuam ativos.
