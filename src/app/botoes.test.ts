@@ -36,6 +36,7 @@ const FONTE_DO_BOTAO = "src/components/Botao.tsx";
 
 /** Exceções contadas por arquivo: não são botões de ação (chips de seleção, item de lista). */
 const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
+  "src/app/(app)/inbox/ItemConversa.tsx": 1, // item de lista: seleção anuncia aria-current, não ação de negócio
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/configuracao/whatsapp/PoliticaPainel.tsx": 2, // chip de dia da semana (selecionado = marca)
   "src/app/(app)/alunos/[id]/financeiro/FichaFinanceira.tsx": 1, // selo "regularização integral" (link em pílula)
@@ -64,6 +65,7 @@ const NAO_SAO_BOTOES_DE_ACAO: Record<string, number> = {
  * Listados por nome (texto, aria-label/title ou key) — qualquer outro <button> do painel precisa de botaoClasses.
  */
 const CONTROLES_QUE_NAO_SAO_BOTAO: Record<string, string[]> = {
+  "src/app/(app)/inbox/ItemConversa.tsx": ["(sem nome)"], // só a linha de conversa: nome dinâmico, seleção em aria-current
   "src/app/(app)/aria/_componentes/Campos.tsx": ["Ligado · Desligado"], // interruptor (role=switch): liga/desliga, é estado e não ação
   "src/app/(app)/configuracao/paises/PaisFormulario.tsx": ["Remover documento"], // ícone de lixeira
   "src/app/(app)/configuracao/turmas/TurmaFormulario.tsx": ["key d.n"], // chip de dia da semana

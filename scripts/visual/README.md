@@ -90,6 +90,10 @@ O preparo muda somente preferências pessoais do Admin: Thiago/Ventura explicita
 
 A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; valida gaveta no viewport e Sidebar224. Mantém diagnóstico de rede e só oculta toast Next sem issues durante a foto. Em erro escreve manifesto-incompleto; não sobrescreva uma tentativa negativa antes de preservá-la. A CLI principal permanece responsável pelas referências offline app×protótipo.
 
+## Estado de lista vazia (#312)
+
+#312 acrescenta `--estado lista-vazia`: app em `?busca=zzzz` sem seleção, protótipo com busca real `zzzz`, três tamanhos e dois temas (12PNGs). A espera exige EstadoVazio visível e nenhum item da lista; os passos dos demais estados permanecem iguais.
+
 # Telefones em evidências
 
 A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
