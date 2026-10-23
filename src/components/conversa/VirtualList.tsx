@@ -179,7 +179,9 @@ export function VirtualList<T>({
         const key = node.dataset.virtualKey;
         if (key === undefined) continue;
         const height = node.getBoundingClientRect().height;
-        if (height > 0 && Math.abs((measured.current.get(key) ?? estimatedHeight) - height) > 0.5) {
+        // Natural-flow rows must carry their subpixel size into absolute layout;
+        // discarding <0.5px per row would accumulate into a visible anchor jump.
+        if (height > 0 && Math.abs((measured.current.get(key) ?? estimatedHeight) - height) > (stableMount ? 0.001 : 0.5)) {
           measured.current.set(key, height);
           changed = true;
         }
