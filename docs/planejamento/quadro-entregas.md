@@ -6111,3 +6111,14 @@ Fonte266b180e:7e988310patch474+399978compostos;1blocoquadroconservaambos,Convers
 ## PR #402 — composição e comentários da busca
 
 Fonte6aa08b37:patchf94/7fdb52ed+4014b9;1blocoquadroconservaambos. C2hookscroll/RAF/pin/intenção9e9ad0+test8c129preservados, C3Shiftatalhorejeitado, C4contratosdocumentados e C5inventáriopreservado. Próprio12/176d55b9b,TSC30533/f27cd4 e lint79500/513ce0 terminais0/40avisos. QApatchf94favorável7/40porfusopróprios/hash2b6b61...versionada;QAcomposta/401main/CI402gatespendentes. B2/QA280/Pick315/patches398399400preservados; sem317/E2antecipados, DB/captura/migração/install/envio. output/pr402-qa/composicao-todos.md.
+## PR #400 integrada; PR399 pronta para CI final
+
+#400 squash0cfff251a4475137b421b3926e1048a4998ad5a3, CI40015569278 success5/5, QAcompostad546favorável, issue313CLOSEDconfirmada. Squashtreeigualdb6; incorporação à399INDEXINTEIROigual978 após12conflitos deancestralidade. Fontea5,QA5d5,recorte9/187 eINTpaineis1/12(+30complementares) preservados. C1main/paisresolvidos,CI399final2TZaindapendente;semfechar318antecipadamente.
+
+## PR #401 — QA composta e fonte preservada após399efa
+
+QA266favorávelestática, original47f69e99...versionado tester-composicao-266.md; atribuiçãodosgatesexternoscorrigida para10/201+2/5próprios401 (não9/187399), nenhumtesterepetido/hashantigo5d6nãofinal. Merge399efa(main4000c) sódocs/ancestralidade,quadro1blocopreservambos e fonte266preservada. QAconcluída,399main/CI401aindagates.
+
+## PR #402 — QA composta e fonte preservada
+
+QA6aafavorávelestática/hash1ee9e13c... versionada tester-composicao-6aa.md; DOM/hook/testesf94 eprodutores401preservados, semnovotestesDB/browser doparecer. Merge4012252sódocs/ancestralidade,1blocoquadroconservaambos,fonte6aaexecutáveligual. QAconcluída,401main/CI402aindagates.

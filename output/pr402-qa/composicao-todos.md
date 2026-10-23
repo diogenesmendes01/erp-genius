@@ -12,4 +12,6 @@ C1 HIGH e C6 LOW: composição local preserva main/QA280/planejamento297/B2 e os
 
 QA independente do patchf94 favorável: sete arquivos/40testes por fuso, executados pelo TESTER em dois recortes; original SHA256 2b6b61b7b1d8b09a526d721cad6333ae6da65bd4a352d97a95c90a87e6dc85ce, cópia tester-patch-f94.md com EOF normalizado. Não é uma execução no head6aa.
 
-QA composta, squash401/main e CI final ainda pendentes. Global894/6.987 e capturas316/C2 pertencem às fontes nominais históricas; não houve nova captura, DB, migração, instalação, seed, envio ou deploy.
+QA composta6aa é favorável, estática: busca DOM/hook/testes iguaisf94; header/useAcoes/Pick401, quatro argumentos da thread, stableMount/pin e remoção de props órfãs preservados. Planos/QA280/deps/schema iguais ao pai4b. Não executou novos testes/DB/browser nessa extensão. Parecer original SHA256 1ee9e13c095ada38e28bff885c38bdbfbd1d43b403b3f95a392ae4f97a7db2f6, em tester-composicao-6aa.md com apenas EOF normalizado.
+
+Incorporação posterior de4012252 adiciona documentos/ancestralidade dos pais sem alterar a fonte6aa; um bloco do quadro preserva ambos os lados. Squash401/main e CI final ainda pendentes. Global894/6.987 e capturas316/C2 pertencem às fontes nominais históricas; não houve nova captura, DB, migração, instalação, seed, envio ou deploy.
