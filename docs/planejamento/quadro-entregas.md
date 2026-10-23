@@ -4664,6 +4664,15 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - **Visual:** 12 PNGs ANTES (integrador sessão34581) e12 DEPOIS (TESTER sessão56440), seis combinações de viewport/tema por fase, saída0 e pageerrors[]. Antes os3 itens estavam habilitados sem ação; depois disabled com motivo individual legível. Documento/Fotos/Áudio habilitados nas duas fases. Capturas/manifestos em `output/inbox-303-visual/`, sem clique nos anexos, upload ou envio.
 - **Ambiente/limites:** capacidade MOTOR simulada somente em número fictício dos bancos descartáveis integracao/tester, endpoints externos vazios. Ao terminar, servidores51088/99153 encerrados e fixtures restauradas para BAILEYS/DESCONECTADO, saídas0. Aviso legado com capacidade ausente coberto pelo teste; foto corresponde a capacidade disponível. Overlay dev preexistente. CI aguarda retarget para main após integrar383.
 
+### Inbox E0.8 — #305: chevron fora do texto e menu na viewport — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-305-report.md`, planejamento em `output/inbox-305-plan.md`, parecer independente em `output/inbox-305-visual/qa/inbox-305-review.md`. Branch `codex/inbox-e0-305`, base PR #384 (#303). Sem merge/deploy.
+
+- **Entrega:** gatilho float reserva espaço antes de autor/texto; menu fixed medido antes de focar, altura limitada com scroll interno. Reutiliza helpers globais para teclado, Escape/Tab, clique fora, scroll externo e resize, sem alterá-los. Atualiza medição/foco ao mudar comandos/capacidades. Nenhum servidor, schema, permissão ou contrato de envio alterado.
+- **TDD/recortes:** RED de SSR/interação com React DOM real; GREEN 31 arquivos/349 testes no Node22. TESTER código4c2424ab: 5 arquivos/46 testes saída0, sem ignorados, parecer favorável. Delta e21ae815 apenas docs/quadro conferido, fontes invariáveis.
+- **Gates Node22.23.2:** TSC heap8192 sessão54239 saída0; full unitário sessão18026 saída0,842 arquivos/6500 testes, zero falhas/ignorados/todo, maxWorkers2; lint global sessão81037 saída0,0 erros/40 avisos, sem exclusões. Diff-check0. Gates não repetidos por consolidação exclusiva de docs/capturas.
+- **Visual:** 128 PNGs e quatro manifestos em `output/inbox-305-visual/`,32 estados por cenário entre antes/depois. BAILEYS:4 menus fora/8 sobreposições antes→0/0 depois. MOTOR fictício:10 fora/8 sobreposições→0/0. Entrada sem autor e saída com autor,3 tamanhos×2 temas e viewport baixa adicional; toque, foco, setas, Escape+retorno, fechamento por scroll externo/resize confirmados. Em390×160, menu144px dentro da tela e overflow interno real236>142 na saída,148>142 na entrada. Pageerrors vazios.
+- **Ambiente/limites:** simulação de capacidade só no banco descartável, nenhum comando enviado. Primeira captura BAILEYS falhou por premissa do harness (esperava2 itens onde há1), corrigida e repetida; não houve alteração de código por isso. Fixtures integracao/tester restauradas para BAILEYS/DESCONECTADO, saída0, servidores QA encerrados. Overlay dev preexistente. CI aguarda retarget para main após integrar384.
 ### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
 
 **Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
@@ -4761,3 +4770,21 @@ hardnav ainda em investigação na frente313.
 
 Merges normais incorporaram382R6/main3d756 e386e7 para preservar ancestrais.
 Aguardar386 integrado e CI do novo head contra main antes de mergear387.
+
+## PR #385 — C1: capturas fora do estado atual do código
+
+128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
+local antes de retirar do index. Arquivos locais movidos para backup interno
+validado, originais preservados no commit3f7fa9a7 e ancestralidade sem force.
+Pacote legado: output/qa-archives/inbox-pr385-legado-3f7fa9a7.zip,
+5.328.073bytes/133arquivos/128PNG, SHA256
+57772124b6e858b7255677165313bf53debcd53ca61507c9ab72cde99adb1c81.
+Sem novo upload das capturas legadas; README e manifesto de128hashes continuam
+na pasta de evidências. Não é nova homologação visual.
+
+Fontes específicas BalaoMensagem e testes byteiguais a3f7fa9a7 já revisado;
+predecessores382R6/386/387/main7982 recebidos por merges normais, conflitos
+somente no quadro, preservados. Recorte Node22:3arquivos/26testes, saída0,
+sem filtro/ignorados; TypeScript99520 saída0. Sem nova suíte de banco/global
+ou alteração da UI. C5CI e revisão final depois de trazer a maincorrente
+continuam gates antes do merge.
