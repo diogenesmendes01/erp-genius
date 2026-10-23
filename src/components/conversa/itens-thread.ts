@@ -80,7 +80,8 @@ export function decorarThread(itens: ItemThread[], { fuso, agora, transferidoDe 
     const emSequencia = !!dia && dia === diaAnterior && autor !== null && autor === autorAnterior;
     if (dia && dia !== diaAnterior) visual.push({ tipo: "dia", id: `dia:${dia}`, rotulo: rotuloParaChaves(iso, fuso, dia, hoje) });
     visual.push({ ...i, emSequencia });
-    diaAnterior = dia; autorAnterior = autor;
+    if (dia) diaAnterior = dia;
+    autorAnterior = autor;
   }
   return visual;
 }

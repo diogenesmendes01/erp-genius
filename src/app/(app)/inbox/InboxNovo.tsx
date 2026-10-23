@@ -39,7 +39,7 @@ export interface PropsInboxNovo {
   selecionado: string | null;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
-  /** Instante SSR compartilhado: a hidratação usa exatamente o número serializado pela página. */
+  /** Instante obrigatório para consumidores SSR: serializar o número capturado na página; sem ele, usa 0 até hidratar. */
   agoraInicial?: number;
   /** Destinos de transferência com contexto (FINANCEIRO/PEDAGOGICO), de `listarOpcoesAtendimento`. */
   destinos?: DestinoTransferencia[];
