@@ -26,3 +26,9 @@ em aceite.json e preload.json. PNGs e probe privados locais, sem novos binários
 no Git. Preview33433 encerrado; bloco gerado do AGENTS removido e backup original
 comparado/restaurado byte a byte. Integração dos pais/gates globais/CI e revisão
 independente final ainda pendentes.
+
+Gates finais do estado integrado3410df0b: full17966 saída0,845arquivos/6570testes,
+sem filtro/ignorados (maxWorkers=2); TSC47138 saída0; lintglobal64541 saída0,
+0erros/40avisos herdados. Fontes da correção idênticas a7d29. Integração do
+refR6 com classes de altura389 conciliada explicitamente. Dependências E0 e
+CI/revisão final ainda pendentes; sem nova suíte DB ou recaptura completa.

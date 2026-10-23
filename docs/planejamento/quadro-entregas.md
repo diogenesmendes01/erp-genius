@@ -4824,3 +4824,21 @@ hardnav ainda em investigação na frente313.
 
 Merges normais incorporaram382R6/main3d756 e386e7 para preservar ancestrais.
 Aguardar386 integrado e CI do novo head contra main antes de mergear387.
+
+## PR #391 — gates do estado integrado
+
+Fonte3410df0b incorpora382R6/386/387e main7982 por merges normais. Conflito
+pontual de InboxNovo conciliou ref da região real de conversa com todas as
+classes de altura/rolagem da base389; não descartou nenhuma das regras.
+Arquivos da correção mono permanecem idênticos ao commit7d29f1dc.
+
+Gates Node22.23.2, todos encerrados com saída0: suíte unitária completa17966,
+845arquivos/6.570testes, sem filtro de nomes/ignorados, apenas maxWorkers=2;
+TypeScript47138; lintglobal64541,0erros/40avisos herdados. Não houve nova
+integração de banco (mudança de fonte local sem dados), nem recaptura do
+produto completo após os merges; a amostra isolada de fonte usa os mesmos
+layout/woff2/config/CSS e está registrada em output/pr391-qa.
+
+A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
+e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
+Novo parecer no head exato e CI contra main continuam pendentes.
