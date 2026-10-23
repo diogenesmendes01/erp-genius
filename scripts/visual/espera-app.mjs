@@ -19,6 +19,22 @@ export async function esperarHidratacaoApp(pagina) {
 
 /** Espera o conteúdo identificável da fixture, não somente o contêiner inicial da tela. */
 export async function esperarConteudoApp(pagina, estado, tamanho) {
+  const tituloColuna = { filtros: "Filtrar conversas", "seletor-numero": "Ver conversas de", "nova-conversa": "Nova conversa" }[estado];
+  if (tituloColuna) {
+    const dialogo = pagina.getByRole("dialog", { name: tituloColuna, exact: true });
+    await dialogo.waitFor({ state: "visible" });
+    if (estado === "filtros") {
+      await dialogo.getByRole("group", { name: "Setor", exact: true }).waitFor({ state: "visible" });
+      await dialogo.getByRole("group", { name: "Status", exact: true }).waitFor({ state: "visible" });
+      await dialogo.getByRole("button", { name: "Mostrar conversas", exact: true }).waitFor({ state: "visible" });
+    } else if (estado === "nova-conversa") {
+      await dialogo.getByLabel("Finalidade e destinatário", { exact: true }).waitFor({ state: "visible" });
+      await dialogo.getByLabel("Canal da escola", { exact: true }).waitFor({ state: "visible" });
+      await dialogo.getByRole("button", { name: "Abrir atendimento", exact: true }).waitFor({ state: "visible" });
+    } else await dialogo.getByRole("button", { name: "Todos os números", exact: true }).waitFor({ state: "visible" });
+    await pagina.waitForFunction(semanticaPopoverColunaPronta, tituloColuna);
+    return;
+  }
   if (estado === "lista-vazia") {
     await pagina.getByRole("region", { name: "Conversas", exact: true }).getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
     await pagina.waitForFunction(() => {
@@ -76,4 +92,26 @@ export function semanticaThreadHumanaPronta() {
     && !n.querySelector('button,[role="menu"],img,video,audio') && !n.querySelector(status));
   const dia = [...conversa.querySelectorAll('[data-virtual-key]')].some(n => n.getAttribute('data-virtual-key')?.startsWith('dia:') && n.textContent.trim());
   return autor && nota && dia && mensagens.some(m => m.querySelector(status));
+}
+
+/** O clique não pode acontecer no markupSSR antes de o React assinar a página. */
+export async function abrirPopoverColunaApp(pagina, estado, tamanho) {
+  if (!["filtros", "seletor-numero", "nova-conversa"].includes(estado)) throw new Error("Popover da coluna desconhecido: " + estado);
+  await esperarConteudoApp(pagina, "celular-lista", tamanho);
+  await esperarHidratacaoApp(pagina);
+  if (estado === "seletor-numero") await pagina.getByRole("region", { name: "Conversas", exact: true }).getByRole("button", { name: /^Todos os números(?: · |$)/ }).click();
+  else await pagina.getByRole("button", { name: estado === "filtros" ? "Filtros" : "Nova conversa", exact: true }).click();
+}
+
+/** Callback DOM autocontido: folha final, transição terminada e ação/rodapé dentro do viewport. */
+export function semanticaPopoverColunaPronta(titulo) {
+  const dialogo = [...document.querySelectorAll('[role="dialog"]')].find(d => d.getAttribute("aria-label") === titulo);
+  if (!dialogo || dialogo.inert || dialogo.getAttribute("aria-hidden") === "true") return false;
+  const dentro = r => r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= window.innerWidth + 1 && r.top >= -1 && r.bottom <= window.innerHeight + 1;
+  const area = dialogo.getBoundingClientRect();
+  if (!dentro(area) || dialogo.getAnimations().some(a => a.playState === "running")) return false;
+  const final = dialogo.querySelector("footer") ?? dialogo.querySelector("form button");
+  if (!final) return true;
+  const fim = final.getBoundingClientRect();
+  return dentro(fim) && fim.top >= area.top - 1 && fim.bottom <= area.bottom + 1;
 }

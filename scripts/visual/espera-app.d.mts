@@ -5,3 +5,6 @@ export function esperarConteudoApp(pagina: Page, estado: string, tamanho: string
 export function esperarHidratacaoApp(pagina: Page): Promise<void>;
 
 export function semanticaThreadHumanaPronta(): boolean;
+
+export function abrirPopoverColunaApp(pagina: Page, estado: string, tamanho: string): Promise<void>;
+export function semanticaPopoverColunaPronta(titulo: string): boolean;

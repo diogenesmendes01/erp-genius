@@ -12,7 +12,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 // abrirAtendimentoInstitucional (operacoes-atendimento.ts) recebe chave de idempotência (#166): o reenvio da
 // mesma tentativa devolve o atendimento já aberto sem gravar outro Evento. A chave só muda depois do sucesso.
 
-export function NovoAtendimento({ opcoes }: { opcoes: OpcoesAtendimento }) {
+export function NovoAtendimento({ opcoes, compacto = false }: { opcoes: OpcoesAtendimento; compacto?: boolean }) {
   const router = useRouter();
   const [destino, setDestino] = useState("");
   const [numero, setNumero] = useState("");
@@ -23,7 +23,7 @@ export function NovoAtendimento({ opcoes }: { opcoes: OpcoesAtendimento }) {
   const numeros = destinoSelecionado?.finalidade === "COMERCIAL" ? opcoes.numeros.filter((n) => n.comercial) : opcoes.numeros;
   const semLinha = destinoSelecionado?.finalidade === "COMERCIAL" && !numeros.length;
   return <div className="space-y-3">
-    <form className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-3" onSubmit={async (e) => {
+    <form className={"flex flex-wrap items-end gap-3" + (compacto ? "" : " rounded-lg border border-gray-200 bg-surface p-3")} onSubmit={async (e) => {
       e.preventDefault();
       const d = await acao.executar(() => abrirAtendimentoInstitucional({ destinoChave: destino, numeroId: numero, chaveIdempotencia: tentativa.atual }));
       tentativa.depoisDo(d);

@@ -49,7 +49,7 @@ vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: v
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
-import { ListaAtendimentos } from "./ListaAtendimentos";
+import { ColunaConversas } from "./ColunaConversas";
 import { PainelAria } from "./PainelAria";
 import { AcoesContato } from "./AcoesContato";
 import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
@@ -88,16 +88,16 @@ beforeEach(() => {
 afterEach(() => { m.g = null; vi.unstubAllGlobals(); });
 
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
-function tela(): ReactNode {
+function tela(p: PropsInboxNovo = props): ReactNode {
   m.posEfeito = 0;
-  const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, props);
+  const t = m.g!.renderizar(InboxNovo as (p: PropsInboxNovo) => ReactNode, p);
   const secao = elementos(t).find((n) => n.type === "section" && n.props["aria-label"] === "Conversa");
   const ref = (secao as { ref?: { current: unknown } } | undefined)?.ref;
   if (ref) ref.current = { getClientRects: () => regiaoConversaVisivel ? [{}] : [] };
   return t;
 }
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
-const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
 it("painéis simultâneos do atendimento têm identidades React distintas", async () => {
   respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
@@ -182,7 +182,7 @@ describe("InboxNovo: leitura ao abrir", () => {
     expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
   });
   it("ao abrir outra conversa, zera imediatamente o contador da lista", () => {
-    const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
+    const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ColunaConversas)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
     lista(tela()).aoSelecionar("a2");
     tela(); // o efeito da nova seleção publica o estado no render seguinte
     expect(lista(tela()).itens.find((i) => i.id === "a2")?.naoLidas).toBe(0);
@@ -441,4 +441,26 @@ it("referência civil do SSR permanece estável ao selecionar e receber SSE",asy
  expect(referencia(tela())).toBe(props.agoraInicial);
  lista(tela()).aoSelecionar("a2");await esvaziar();expect(referencia(tela())).toBe(props.agoraInicial);
  m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a2",mensagemId:"m314",conversaId:"cv2"});await esvaziar();expect(referencia(tela())).toBe(props.agoraInicial);
+});
+
+const navegar313=(p:PropsInboxNovo)=>{tela(p);return tela(p);};
+const coluna313=(t:ReactNode)=>elementos(t).find(n=>n.type===ColunaConversas)!.props as unknown as import("./ColunaConversas").PropsColunaConversas;
+it("navegação AppRouter troca c real e fechaNova, mas prop inalterada conserva seleção local",async()=>{
+ tela();await esvaziar();coluna313(tela()).aoNovaConversa();expect(coluna313(tela()).novaConversaAberta).toBe(true);
+ const navegada={...props,selecionado:"a2"};const t=navegar313(navegada);expect(coluna313(t).selecionado).toBe("a2");expect(coluna313(t).novaConversaAberta).toBe(false);expect(elementos(t)[0].props["data-vista"]).toBe("conversa");
+ coluna313(t).aoSelecionar("a1");expect(coluna313(tela(navegada)).selecionado).toBe("a1");
+});
+it("navegação c→null retorna lista e não deixa a conversa anterior selecionada",async()=>{
+ tela();await esvaziar();const t=navegar313({...props,selecionado:null});expect(coluna313(t).selecionado).toBeNull();expect(elementos(t)[0].props["data-vista"]).toBe("lista");expect(elementos(t).some(n=>n.type===ConversaAberta)).toBe(false);
+});
+it("filtro e navegação concorrentes usam juntos a nova página e o novo selecionado",async()=>{
+ tela();await esvaziar();const novo={...props,filtros:{busca:"nova"},selecionado:"a3",inicial:{itens:[item("a3")],proximo:"p3"}} as PropsInboxNovo;
+ const t=navegar313(novo);expect(coluna313(t).selecionado).toBe("a3");expect(coluna313(t).itens.map(i=>i.id)).toEqual(["a3"]);expect(coluna313(t).proximo).toBe("p3");expect(coluna313(t).filtros).toEqual({busca:"nova"});
+});
+it("navegar para null descarta repetição e falha tardia da leitura anterior",async()=>{
+ let concluir!:(r:{ok:boolean})=>void;marcar.mockImplementationOnce(()=>new Promise(r=>{concluir=r;}));
+ const inicial={...props,inicial:{itens:[{...item("a1"),naoLidas:7},item("a2")],proximo:null}} as PropsInboxNovo;
+ tela(inicial);m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a1",mensagemId:"m313",conversaId:"cv1"});
+ const navegada={...inicial,selecionado:null,inicial:{itens:[{...item("a1"),naoLidas:3},item("a2")],proximo:null}} as PropsInboxNovo;
+ navegar313(navegada);concluir({ok:false});await esvaziar();const t=tela(navegada);expect(marcar).toHaveBeenCalledTimes(1);expect(coluna313(t).itens.find(i=>i.id==="a1")?.naoLidas).toBe(3);
 });

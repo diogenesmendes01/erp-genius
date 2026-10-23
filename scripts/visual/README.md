@@ -69,7 +69,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 58 PNGs: 30 do app e 28 do protótipo. O painel do
+`--estado todos` produz 94 PNGs: 48 do app e 46 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -115,3 +115,9 @@ Esse teste dirigido de navegador é separado da suíte unitária Vitest.
 `humano-compositor` agora cobre1440×900,1024×768 e390×844 nos dois temas,12PNGs app×protótipo. Junto de `conversa` e `celular-conversa`, são28capturas formais. A prontidão humana exige a mensagem/nota real307, autorVocê, separador civil identificado, status de saída e notas sem comandos/mídia/status de transporte; não depende de data fixa Hoje no seed histórico. Casos LIDA/FALHOU e autoresCamila/Carlos/origens314 usam a fixture complementar privada preparada pelo integrador e probes sem envio/alteraçãoDB.
 
 No app humano, a CLI rola internamente até a nota307, para mostrar nota seguida da autoria/status sem sintetizar conteúdo; as notas/autores adicionais podem exigir fotos complementares. No protótipo celular abreBeatriz antes da foto. HidrataçãoSSE, guardasReact/rede e anonimizaçãoDOM392 após interações/antesfoto com registro no manifesto permanecem ativos. A fixture314 de99→101 é prova privada separada e deve ser retirada pelo integrador com guards antes do formal; não executar seed ou limpeza automática pela CLI.
+
+## Coluna Conversas (#313)
+
+Estados filtros, seletor-numero e nova-conversa acrescentam36PNG, três tamanhos/dois temas/app×protótipo. A abertura real no app espera lista e data-conectado=1 antes do clique; prontidão exige título/conteúdo/grupos ou campos, ação final/rodapé no viewport e fim da transição. Abaixo700 a folha não é aceita fora da tela. Não há submit de NovoAtendimento nem transporte/seed na CLI.
+
+O protótipo usa seus próprios gatilhos e conteúdo, incluindo fluxo D9 futuro apenas como referência; nenhum botão de criação/envio é acionado. AnonimizaçãoDOM392 continua após as interações/antesfoto e declarada no manifesto; HTML original intacto. Estados314/autoria/hidratação/guardReact e diagnóstico de rede são preservados. Formal313: conversa12+filtros12+seletor12+Nova12+celular-lista4=52PNG. Prova390×500/teclado/navegação e >100itens exige complemento coordenado; não se presume aceite por gerar arquivos.

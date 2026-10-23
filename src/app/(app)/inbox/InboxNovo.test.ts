@@ -48,11 +48,10 @@ describe("InboxNovo", () => {
     const h = html();
     expect(h).toContain("Comercial"); expect(h).not.toContain("Escola"); expect(h).toContain("Na fila");
   });
-  it("com as opções do servidor mostra o PainelFiltros (busca, abas e setores do usuário)", () => {
-    const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola" }] } } });
-    expect(h).toContain('aria-label="Buscar conversas"');
-    for (const t of ["Todas", "Minhas", "Fila", "Não lidas", "Prazo estourado", "Todos os setores"]) expect(h).toContain(t);
-    expect(html()).not.toContain('aria-label="Buscar conversas"');
+  it("com opções do servidor mostra coluna com busca/chips/seletor; sem opções mantém busca e chips", () => {
+    const h = html({ extra: { opcoesFiltro: { setores: ["COMERCIAL"], numeros: [{ id: "n1", rotulo: "Escola", saude:"conectado" }] } } });
+    for (const t of ["Conversas",'aria-label="Buscar conversas"',"Todas","Minhas","Não lidas","Prazo estourado","Não atribuídas","Todos os números"]) expect(h).toContain(t);
+    expect(html()).toContain('aria-label="Buscar conversas"'); expect(html()).not.toContain("Todos os números");
   });
   it("conversa aberta: o painel por setor carrega da rota e o opt-out do contato está no painel", () => {
     const h = html({ selecionado: "a1" });
