@@ -1,5 +1,7 @@
 # Quadro único de entregas
 
+Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
+
 ## Pós-merge PR396 C5 — hook compartilhado — 23/10/2026
 
 Teste ReactDOM real de useEventosInbox com EventSource falso/semrede:3casos ligados ao módulo produtivo, conectado/callback atualizado semreassinar/2consumidores1fonte/cleanup/StrictMode/ausênciadeEventSource. Mutação callback obsoleto1fail/2pass, fonte restaurada byteexata; GREEN6/49 e amplo11/367 terminais0. TSC79557/lint6fontes0 após última mudançaexecutável. Helperantigo e runtimehook/SSE/loja preservados. Report output/inbox-posmerge-guardas-report.md separa todosgates/limites. Semnovo global/browser/PNG/deps/schema/migration/push; QAintegrador pendente.
@@ -43,11 +45,10 @@ Implementação, revisão e validação concluídas; PR técnico em publicação
 
 **Estado: contrato de servidor/SSE implementado e validado; PR em publicação.** Branch `codex/inbox-e0-300`, base PR #382 (#299). SPEC em `docs/specs/inbox-notas-thread.md`, investigação em `output/inbox-300-report.md`, parecer independente em `output/inbox-300-review.md`. Sem merge/deploy; renderização na tela é escopo da #301.
 
-- **Entrega:** rota inicial/depois combina notas do atendimento e, sob permissão comercial específica, da oportunidade; origem identificada e ordem crescente por tempo/id. Cursor antes devolve notas:null. Seleciona50 recentes e retira arquivadas. Consulta sem escopo está em módulo interno não-action; chamadores validam acesso antes de delegar. Nota e NOTIFY apenas com IDs gravados na mesma transação; repetição idempotente não avisa novamente.
-- **TDD/integração DEV:** quatro falhas RED esperadas antes do código; GREEN45 testes. Após extrair o módulo interno:2 arquivos/26 testes sessão10696 e1 arquivo/19 testes sessão27335, todos saída0 noNode22/perfildev-gravacoes. Regressão dirigida anterior10arquivos/115testes sessão46885 saída0 em562s, nenhum ignorado; não é suíte completa nem execução pós-extração.
+- **Entrega:** rota inicial/depois combina notas do atendimento e, sob permissão comercial específica, da oportunidade; origem identificada e ordem crescente por tempo/id. Cursor antes devolve notas:null. Seleciona 50 recentes e retira arquivadas. Consulta sem escopo está em módulo interno não-action; chamadores validam acesso antes de delegar. Nota e NOTIFY apenas com IDs gravados na mesma transação; repetição idempotente não avisa novamente.
+- **TDD/integração DEV:** quatro falhas RED esperadas antes do código; GREEN45 testes. Após extrair o módulo interno:2 arquivos/26 testes sessão 10696 e 1 arquivo/19 testes sessão27335, todos saída0 noNode22/perfildev-gravacoes. Regressão dirigida anterior10arquivos/115testes sessão46885 saída0 em562s, nenhum ignorado; não é suíte completa nem execução pós-extração.
 - **Gates globais Node22.23.2:** na fonte288c62e1, TSC heap8192 saída0 após tipar mock novo; unitário completo840arquivos/6478testes sessão47978 saída0, maxWorkers2 e sem ignorados; lint global sessão61365 saída0,0 erros/40 avisos herdados. Commit9853be83 somente documental; nenhum gate atribuído como nova execução por isso.
 - **TESTER:** fonte288c62e1 revisada sem achados bloqueantes em fronteira, escopo, paginação, limite/arquivo ou transação/idempotência. Delta9853be83 sem alteração emsrc. Integração independente nos3 arquivos exigidos:45 testes, sessão37125 saída0,187,69s, sem ignorados/filtro por nome, Node22.23.2/perfiltester. Sem visual ou transporte externo nesta issue de servidor. CI aguarda retarget para main após integrar382.
-Atualização: 21/09/2026. Este resumo e a tabela representam o estado corrente; as notas de verificações abaixo preservam etapas anteriores. Medir funcionalidades concluídas, em andamento e bloqueadas, sem reutilizar 36,9% como progresso global.
 
 ## Inbox E0.2 — leitura automática (#299, 22/10/2026)
 
@@ -4656,7 +4657,7 @@ Branch `claude/adm-whatsapp-number-removal-7ecfa1`. Relato: o administrador não
 - **SPEC/limites:** `docs/planejamento/inbox-validacao-windows.md`. Suíte unitária completa final: 839 arquivos, 6.437 testes, saída 0, sem ignorados; não inclui integração. TESTER aprovou o commit exato `58eeb7b3`, sem achados bloqueantes, com 106/106 testes dirigidos e saída 0. Nenhum efeito de banco, mensagem, integração externa ou produção. Pré-requisito validado; merge e deploy não executados.
 ### Inbox — pré-requisito Next/SSE — 2026-10-22
 
-Implementação e verificação local concluídas; revisão independente e publicação em andamento. O tipo gerado pelo Next recusava constantes exportadas pela rota SSE. Extraídas para módulo próprio sem alterar valores/comportamento. Reprodução TSC sessão10576 código2/TS2344; após correção sessão59855 código0 para10 testes de rota, TypeScript global com tipos Next presentes e lint dos três arquivos. Relatório `output/inbox-next-sse-report.md`. Regressão da combinação E0 ainda pendente. Sem merge/deploy.
+Implementação e verificação local concluídas; revisão independente e publicação em andamento. O tipo gerado pelo Next recusava constantes exportadas pela rota SSE. Extraídas para módulo próprio sem alterar valores/comportamento. Reprodução TSC sessão 10576 código2/TS2344; após correção sessão59855 código0 para 10 testes de rota, TypeScript global com tipos Next presentes e lint dos três arquivos. Relatório `output/inbox-next-sse-report.md`. Regressão da combinação E0 ainda pendente. Sem merge/deploy.
 
 ### Inbox E0.1 — #298: classes de cor inexistentes e trava de paleta — 2026-10-22
 
@@ -6561,3 +6562,7 @@ Decisão explícita: não ignorar inputs genericamente; Escape normal emcoluna f
 ## Revisão pós-merge — arquivo de capturas E0 (23/10/2026)
 
 Retirados apenas do índice os 97 PNGs históricos das issues #299/#302/#303 (25/48/24), após comparar arquivos locais com blobs main8c e reabrir/conferir 97/97 entradas do ZIP local. Arquivo de 4.484.568 bytes, SHA-256 fc84c7c070c10e5bfc478594894d7f4bb2ca40c9d8c8f9d9ed5ffb2b6e56b76a. Catálogo em output/inbox-posmerge-arquivo-capturas.json; SPEC inbox-curadoria-evidencias.md e README locais documentam a política. Processo12482/8ddf21 terminal0. Imagens físicas e histórico preservados, nenhum upload ou nova captura. Não equivale a nova execução de testes, merge ou deploy; QA do catálogo e integração final seguem pendentes.
+
+## Revisão pós-merge — curadoria de textos e rastreabilidade (23/10/2026)
+
+Corrigidos JSDoc de identidade estável (383 C1), mapas Task 8/Task 3 (385 C2/386 C4), posição do metadado inicial e espaços históricos (386 C5/387 C3), referência do parecer de chaves (390 C2), EOF/prefixos pessoais de logs (391 C3/392 C3/394 C3), avisos locais das capturas retiradas (392 C9) e curadoria explícita dos logs/sondas (393 C6/395 C7). Originais e hashes preservados; 16 logs conferidos e cinco manifestos conservaram todos os campos originais. Processo 81434/76233d terminal 0; JSDoc emite o mesmo JS. Não houve nova captura, chamada externa, mudança de resultado histórico ou nova execução dos testes desses registros. QA da curadoria e regressão da combinação final permanecem pendentes.

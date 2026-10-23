@@ -1,5 +1,17 @@
 # Inbox #314 — autoria, notas e dias na thread
 
+## Rastreabilidade do menu herdado — Task 8 / revisão #385 C2
+
+O menu da issue #305 permanece no balão. Estes nomes finais mais curtos correspondem aos três exemplos do plano E0:
+
+| Exemplo do plano | Nome atual em `src/components/conversa/BalaoMensagem.test.ts` |
+| --- | --- |
+| Chevron antes do conteúdo, flutuando à direita, sem posição absoluta | `chevron vem antes de autor/texto, flutua à direita e não é absoluto` |
+| Visibilidade no hover, foco, toque e com o menu aberto | `chevron aparece em hover/foco/toque e fica visível com menu aberto` |
+| Menu fixo na viewport, independente do balão | `painel aberto tem posição fixa e altura limitada com rolagem interna` |
+
+Os testes de interação do menu ficam em `BalaoMensagem.interacao.test.ts`. O mapa preserva os nomes executáveis e não renomeia testes nem atribui uma nova execução à documentação.
+
 ## Base e escopo
 
 Branch codex/inbox-e1-314, base c7e85eb2014bffd9919eedc1808dcb7dcc5b1f24 (308+311). Implementação parcial liberada pelo integrador. Consome tokens/fonte306, casca308, mensagens/notas300/301 e menu305. Não modifica schema, consultas públicas, autorId, permissões, transporte ou lógica de leitura/count/SSE. CLI/núcleo/esperas/README do harness continuam com B312; delta proposto em output/inbox-314-handoff-harness.md.
