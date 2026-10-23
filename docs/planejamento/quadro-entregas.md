@@ -5220,3 +5220,7 @@ Fonte04d27fd8: global45766/7a6585 terminal0,852arquivos6704testes232,85s,maxWork
 ## PR #395 — preservar casca308 ao portar B2
 
 Composição17+825:aplicação/testes/servidorbyteiguais17,6deltaslimitadosaosmanifestos/travaB2/CLIumaexpressão/READMEportabilidade. Package/lock/eslint/guard2iguais825. Prova932074/2db696 saída0 e6conflitosquadropreservamboslados. Recorte13266/e54381 saída0:27arquivos309testes53,35s,maxWorkers2semfiltro/skipsnovos;nãoéglobal. Typegen/TSC18116 e lint63574 saída0/0erros40avisos. Global855/6723permaneceNOMINAL3fc403de;nãorepetidolocalporcódigoappigual/BBcompartilhadojávalidado,CIglobalfinal2TZobrigatório. #393merge61b8ebefconfirmadoCI39939948787success5/5. QAcomposta/ancestralidadefinalmain/CI395/mergeaindapendentes. Semnovobrowser/banco/install;output/pr395-qa/b2.md.
+
+## PR #395 — ancestralidade main393
+
+Fonte7e60dc36 preservada: main61b8ebef tem árvore inteira igual ao ancestral825. Merge apenas de ancestralidade, quadro7e mantido sem perda distinta, árvore préMD igual7e. Registros finais só2MD, executáveis iguais7e. QA independente7e/CI remota/mainmerge395 pendentes, sem repetir gates por MD.
