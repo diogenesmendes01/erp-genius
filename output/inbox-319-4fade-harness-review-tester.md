@@ -1,0 +1,14 @@
+# QA independente #319 — harness no SHA 4fade8995573d1a9abaa343e9fa25295506f0cbf
+
+**Parecer favorável ao delta dirigido do harness**, sem nova homologação browser pelo TESTER. A comparação do harness é contra a fonte histórica `5e9aa0a92f6e7ad9f98d0614069ff6458f45f067`; o delta cumulativo inclui outras mudanças de produto fora deste recorte.
+
+## Evidência própria
+
+- Node 22.23.2 e Vitest local: `visual-inbox-conclusao-thread`, `visual-inbox-falha-controlada`, `visual-inbox-estados` e `visual-inbox-estados-fluxo`: **4 arquivos/36 testes, exit 0**, chunk `92623a`, `--maxWorkers=2`, sem filtros de nome/ignorados. `node --check` dos dois módulos `.mjs` e `git diff --check` passaram. `nucleo-captura.mjs`, classificador global da recuperação de GET200, é byteigual a 5e9 (`git diff --quiet` 0). HEAD exato e rastreados limpos.
+- `abrirCarregandoApp` espera `/home` com `waitUntil:load` antes de usar router/CDP; o teste causal retém load e prova que CDP não inicia prematuramente. O fallback é do router real; não há HTML/RSC fabricado nesta mudança.
+- Para `painel-erro` e `painel-vazio`, `instalarConclusaoMensagens` instala o listener antes de `goto` e o finalizador aguarda os corpos/falhas de GET sem query da conversa exata **já iniciados** até o veredito. Limite 30 s e remoção de listener/timer cobertos. Não abre GET, não exige status200 nem thread oculta visível. Reproduzi `finalizar()` sem nenhum GET (`390510`, exit 0): `Promise.all([])` resolve, que é **N/A legítimo** neste contrato, não falha. SPEC linha58, README visual linha195 e report seção da barreira declaram explicitamente esse limite. Corrigi a classificação preliminar de P2 comunicada ao integrador.
+- Falha500 controlada: só GET/origem/id/path sem query exatos entram no route; o request abortado tem injeção com `fulfill` concluído, erro `net::ERR_ABORTED`, e outro request posterior da mesma URL precisa ter headers500 observados e injeção concluída. Alerta/retry públicos reais são revalidados antes de aceitar o diagnóstico. Status diferente, request alheio, query, POST, erro distinto, ausência de substituto ou `fulfill` falho continuam negativos. A resposta500 não exige leitura de body porque o consumidor rejeita `!ok` antes de consumi-lo; o relatório não alega corpo consumido. Observador, timer e listener são removidos inclusive após erro/timeout.
+
+## Limites de aceite
+
+O teste e a inspeção estática não substituem a formal browser do DEV B. Minhas 32 PNGs ERP na fonte `5e9` são históricas; o novo conjunto formal 42 em `4fade` é evidência separada do DEV, sem reatribuição a este parecer. Não executei preview, DB, integração, global ou instalação. Uma captura de painel pode legitimamente não ter GET da thread; portanto esta revisão não afirma GET200 de mensagens em todo contexto, apenas que GETs iniciados não escapam da barreira até o veredito.

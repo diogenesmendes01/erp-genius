@@ -1,0 +1,31 @@
+{
+  "issue": 319,
+  "releaseDraft": true,
+  "tag": "inbox-qa-2026-10-22",
+  "fonteIntegradaExecutavel": "b8edd5d39298dac617f65060098f6a5d66786159",
+  "fonteIntegradaDocumental": "09df7316562644b5180013fcc5f0229d40e70a77",
+  "basePublicada403": "68e95d8e9cea0842ccdab441be475c302fe9c7e3",
+  "arquivo": "inbox-319-evidencias-b8.zip",
+  "url": "https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-319-evidencias-b8.zip",
+  "sha256": "0972487e1b482aaf5058dff7482585b2404bd09751be7de9c90503f1a37b68c5",
+  "bytes": 12106367,
+  "arquivos": 149,
+  "pngs": 140,
+  "fontesVisuais": {
+    "dev4fade": { "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf", "normal": 54, "longaECorrida": 42, "triagem": 6 },
+    "testerHistorico5e9": { "fonte": "5e9aa0a92f6e7ad9f98d0614069ff6458f45f067", "pngs": 32 },
+    "testerTriagemComposta1769": { "fonte": "176903280c3007c3b839735a16090f408419b016", "pngs": 6 }
+  },
+  "executores": {
+    "empacotamento": "4dcaa4",
+    "zip": "a06084",
+    "releaseDraft": "5fbb67",
+    "upload": "92c045",
+    "downloadSha": "17c576"
+  },
+  "downloadConferido": true,
+  "qaZipLocalTester": { "executor": "e4b75e", "exit": 0, "entradas": 149, "hashesDeArquivosConferidos": 148, "parecer": "output/inbox-319-pacote-review-tester.md", "limite": "TESTER conferiu ZIP local; roundtrip remoto foi executado pelo integrador17c576." },
+  "uploadExit": 0,
+  "downloadExit": 0,
+  "limites": "Somente PNGs positivas inspecionadas/allowlisted, oito documentos curados e manifesto. Sem binários novos no Git, brutos de API/HTML/RSC, logs, scripts, cookies, seeds, snapshots ou negativos. Cinco estados sem referência funcional no protótipo têm N/A declarado. Visuais DEV4fade/TESTER5e9 são históricos; seis PNG independentes de Triagem usam composição1769. Nenhuma captura comprova confirmação de envio C3, coberta por testes React reais no PR403. Tela320 exige rolagem local/Tab em alguns estados; não comprova cabimento inicial. Release permanece rascunho, sem deploy ou envio externo."
+}
