@@ -12,7 +12,7 @@ const config = [
       "dist/**",
       "coverage/**",
       "next-env.d.ts",
-      // Referência visual imutável do protótipo aprovado, executada só pelo harness local.
+      // Protótipo exportado do Claude Design (referência, não é código do app).
       "docs/planejamento/inbox-prototipo/prototipo/**",
     ],
   },
