@@ -13,6 +13,12 @@ com integrador/TESTER.
   são recusados antes da conexão. A fixture usa IDs fixos, número BAILEYS
   desconectado e sete atendimentos individuais. Reexecução não duplica; a
   criação parcial é completada por upserts no próprio cenário.
+  A linha usa `+5500000000300`; contatos/oportunidades usam `0301` a `0307`
+  no mesmo prefixo fictício. Ao reexecutar a versão antiga, repara somente os
+  telefones legados reconhecidos dos IDs fixos, em uma transação. Exige linha
+  BAILEYS desconectada e vínculos contato/oportunidade/conversa da demo;
+  telefone modificado, vínculo inesperado ou colisão com terceiro aborta tudo.
+  Não restaura outros campos mutados durante o QA.
 - `nucleo-captura.mjs` fornece viewports, temas, estados, nomes e combinações.
   `caminhoNoNpm` mapeia URLs de `unpkg.com` para `node_modules`, retirando a
   versão do pacote e a query de fonte Lucide. O caminho final é conferido
