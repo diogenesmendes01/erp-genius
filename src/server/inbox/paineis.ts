@@ -5,9 +5,12 @@ import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 import { escopoAtendimentos } from "@/server/whatsapp/escopo";
 import { carregarAcoesContatoInbox, carregarAriaDoAtendimento, type AriaDoAtendimento, cobrancaAtivaDoAtendimento, podeVerLeadNaThread, type AcoesContatoInbox } from "@/server/whatsapp/consultas-inbox";
 
+import { carregarCabecalhoPainel, type CabecalhoPainel } from "./painel-detalhes";
+
 export type TagPainel = { rotulo: string; ia: boolean };
 
 export type PainelSetor = DadosSetor & {
+  cabecalho?: CabecalhoPainel | null;
   /** Só pessoa comercial já autorizada; ausente apenas em fixtures antigas. */
   tags?: TagPainel[];
   /** Ações de cadastro e cobrança (as do Inbox antigo); null em grupo. Ausente nos testes de marcação antigos. */
@@ -35,16 +38,19 @@ const CATEGORIAS_EXIGIDAS = ["CONTRATO", "COMPROVANTE"] as const;
 export async function carregarPainel(u: UsuarioSessao, atendimentoId: string): Promise<PainelSetor | null> {
   const dados = await carregarDadosSetor(u, atendimentoId);
   if (!dados) return null;
+  const cabecalho = await carregarCabecalhoPainel(u, atendimentoId);
+  if (!cabecalho) return null;
   const [acoes, envio, aria, tags] = await Promise.all([
     carregarAcoesContatoInbox(u, atendimentoId),
     atendimentoVisivel(u, atendimentoId, true),
     carregarAriaDoAtendimento(u, atendimentoId),
-    dados.setor === "COMERCIAL" && dados.pessoaId ? tagsDaPessoa(dados.pessoaId) : Promise.resolve([]),
+    dados.setor === "COMERCIAL" && cabecalho.pessoaId ? tagsDaPessoa(cabecalho.pessoaId) : Promise.resolve([]),
   ]);
-  return { ...dados, acoes, podeEnviar: !!envio, aria, tags };
+  const identidade = dados.setor === "COMERCIAL" ? { ...dados, pessoaId: cabecalho.pessoaId, oportunidade: cabecalho.capacidades.veLead ? dados.oportunidade : null } : dados;
+  return { ...identidade, acoes, podeEnviar: !!envio, aria, tags, cabecalho };
 }
 
-/** Somente depois de carregarDadosSetor autorizar a pessoa; não é action/endpoint. */
+/** Somente depois do cabeçalho resolver a pessoa autorizada; não é action/endpoint. */
 async function tagsDaPessoa(pessoaId: string): Promise<TagPainel[]> {
   const tags = await prisma.pessoaTag.findMany({
     where: { pessoaId }, orderBy: { tag: { nome: "asc" } },
