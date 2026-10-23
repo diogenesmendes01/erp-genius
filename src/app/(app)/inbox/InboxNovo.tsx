@@ -131,6 +131,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   }
   const selecionadoRef = useRef(selecionado);
   const regiaoConversa = useRef<HTMLElement>(null);
+  const mensagemOcultaRef = useRef<string | null>(null);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
@@ -181,6 +182,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     return () => { marcarLeituraRef.current = null; };
   }, [carregarLista]);
   const pedirLeitura = useCallback((id: string, mensagemNova = false) => {
+    mensagemOcultaRef.current = null;
     const anterior = leituraRef.current;
     const conhecida = anterior.id === id ? anterior.ultimaContagem : (itens.find((i) => i.id === id)?.naoLidas ?? inicial.itens.find((i) => i.id === id)?.naoLidas ?? 0);
     leituraRef.current = { id, versao: anterior.versao + 1, fase: "pendente", ultimaContagem: mensagemNova ? conhecida + 1 : conhecida };
@@ -194,7 +196,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     const pagina = document;
     const aoRetornar = () => {
       const id = selecionadoRef.current;
-      if (pagina.visibilityState === "visible" && id && regiaoConversa.current?.getClientRects().length) pedirLeitura(id);
+      const leitura = leituraRef.current;
+      const precisaLer = id && (mensagemOcultaRef.current === id || (leitura.id === id && leitura.ultimaContagem > 0));
+      if (pagina.visibilityState === "visible" && precisaLer && regiaoConversa.current?.getClientRects().length) pedirLeitura(id);
     };
     pagina.addEventListener("visibilitychange", aoRetornar);
     return () => pagina.removeEventListener("visibilitychange", aoRetornar);
@@ -233,8 +237,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // pisca em "Carregando…".
   const aoAviso = useCallback((a: AvisoInbox) => {
     setEventoRecente(a);
-    if (avisoMarcaLida(a, selecionadoRef.current) && regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") {
-      pedirLeitura(a.atendimentoId!, true);
+    if (avisoMarcaLida(a, selecionadoRef.current)) {
+      if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, true);
+      else mensagemOcultaRef.current = a.atendimentoId;
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
     carregarLista(filtros);

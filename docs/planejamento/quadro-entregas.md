@@ -4633,3 +4633,9 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - C4:base já main após380; CI anterior39874376426success não substitui CI do novo head. Novo push/revisão independente/CI ainda pendentes neste registro. Sem deploy ou integração externa.
 
 PR381 integrada por squash em `ea60a8a7d29cd1b3d87edf13c6c4c2d0f10ddcac`, após CI39878884253 success (5 jobs) e revisão independente favorável do TESTER no head9e5b5929. ZIP/download/hash confirmados; rascunho não publicado. PR382 incorpora a correção381 para não reintroduzir as imagens e aguarda seu próprio CI/revisão.
+
+### PR #382 — novo C1 medium da revisão R2: retorno sem leitura redundante
+
+**Estado: correção e gates locais concluídos; revisão independente e CI do novo head pendentes.** Retornar à aba com a conversa já lida não chama a ação. Contagem positiva ou entrada recebida com aba/região oculta exige leitura; esse sinal sobrevive a GET antigo ou leitura anterior que termina com zero. A leitura ao abrir e a recuperação de repetição descartada continuam válidas. Sem polling ou alteração de servidor/permissão/schema.
+
+TDD: RED com 2 falhas / 28 passes; GREEN com 4 arquivos / 46 testes dirigidos, incluindo 3 casos novos de alternância e corrida. Fonte sobre 5f29c3ce, já integrada com main/#381. Node 22.23.2: suíte unitária completa 2861, 840 arquivos / 6.503 testes; TypeScript 63783; lint global 33022 (0 erros / 40 avisos herdados); integração 90136, 2 arquivos / 15 testes, sem filtros/ignorados no recorte, exclusivamente ci-integracao. Todos encerrados com saída 0. Não é suíte completa de integração. Relatório em output/pr382-qa/revisao-r2.md. Nenhum merge da #382 presumido; a revisão R2 externa aprovou a correção anterior, mas este novo medium foi tratado antes de integrar.
