@@ -40,7 +40,9 @@ export function estadoVisualItem(item: ItemListaInbox, agora: Date, usuarioId?: 
   return { badges, previa: item.preview ?? "", avatarTom: tomDoAvatar(item.contatoId), seloIa: false };
 }
 
-export function estadoVisualCabecalho(item: ItemListaInbox, usuarioId: string): { status: string; estado: { tom: TomEstado; texto: string }; subtitulo: string } {
+export type ItemEstadoCabecalho = Pick<ItemListaInbox, "grupo" | "status" | "responsavelId" | "responsavelNome" | "finalidade" | "numeroRotulo">;
+
+export function estadoVisualCabecalho(item: ItemEstadoCabecalho, usuarioId: string): { status: string; estado: { tom: TomEstado; texto: string }; subtitulo: string } {
   const estado: { tom: TomEstado; texto: string } = item.grupo ? { tom: "neutro", texto: "Conversa em grupo" }
     : item.status === "ENCERRADO" ? { tom: "neutro", texto: "Atendimento encerrado" }
     : !item.responsavelId ? { tom: "neutro", texto: "Sem responsável" }
