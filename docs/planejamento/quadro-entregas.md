@@ -4785,3 +4785,16 @@ Branch codex/inbox-e1-308 incorpora base codex/inbox-e1-base-revisoes (130+3819e
 Evidências sanitizadas arquivadas: asset667561603,8.005.192bytes,SHA2566d88e5a7d2c810eafb137db9b30eca82622e96b20c658d9ad3a4563ec1ff9704, URL em output/inbox-308-visual/README.md. Upload/download conferidos;48PNG positivas,0HTML bruto.40PNG históricos retirados só do índice, cópias locais preservadas. Global combinado2f19074:857files6680unitários/TSC0;lint final66935exit0/40herdados. Capturas38+complementos aprovados/inspecionados. Recorte da branch e PR ainda em preparação neste registro; CI/merge/deploy não presumidos.
 
 Gates do candidato separado4ae3e9ce: sessão49326,25arquivos/356testes unitários exit0, sem ignorados; lint dirigido b7183f exit0,0avisos. O primeiro TSC encontrou somente validator gerado em outra branch apontando para rota311 ausente nesta. Após limpar exclusivamente caches de tipos Next e executar typegen, TSC da mesma fonte terminou na sessão34821 com exit0. Nenhuma correção de código foi necessária para esse cache. PR aguarda publicação; revisão/CI do novo head continuam obrigatórios antes de merge.
+
+## PR #395 — C1/C3: limites documentados e foco do opt-out
+
+Issue #308 recebeu adendo dos limiares 960/1400 px e lista 300/372 px, com a
+justificativa da Sidebar 224 px e medições da SPEC. Protótipo preservado.
+Botão de origem do opt-out permanece habilitado; o modal já isola o fundo
+com inert, e o helper global não foi alterado. TDD RED 2 falhas → GREEN
+6 arquivos / 33 testes, sem filtro/ignorados; TypeScript 52955 e lint dos
+arquivos alterados, saída 0. Chrome real 12/12 contextos (Voltar/Escape,
+1440/1024/390, dois temas) devolveu foco, conservou painel e não confirmou
+opt-out. Banco ci-integracao: 7 contatos fictícios, nenhum opt-out ativo.
+Relatório output/pr395-qa/foco.md e JSON. B1/C2 dependem de merges normais dos
+pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
