@@ -49,3 +49,9 @@ RED73676 e GREEN1473 terminaram; banco A liberado ao ROOT após fa0266, nenhum e
 Visual obrigatório ainda pendente: estado app-only painel-secretaria, fixture legítima ROOT com Aluno/Matrícula/código e permissão, dois temas, clique até página autorizada/retorno/foco. Não presumir que Lucas-origem307 possui matrícula: seed histórico não informa esse vínculo. Nenhuma imagem/probe/captura ou código de CLI335 foi produzido; B337 mantém scripts até handoff e só ROOT inicia preview/fixtures.
 
 QA independente, global integrado, fixture/visual, base de publicação/PR e CI pendentes. Nenhum global próprio ou gate antigo da324 é reatribuído à335. Fonte executável permaneceu igual após os gates; somente SPEC/quadro/relatório serão consolidados antes do commit. Plano/investigações325/335 e todos outputs privados anteriores preservados.
+
+## Harness visual335 — checkpoint antes do navegador
+
+Produto permanece byteidêntico a4c76d200257ea4c3df3707e95100d9180a9efdbc. Estado novo painel-secretaria app-only, seis combinações;176 anteriores preservadas (182 total). PreflightGET real autorizado exige setor/matrícula/código; prontidão exige link real visível e painel único, sem mensagem fictícia. Protótipo funcional N/A. ROOT preparou11linhas privadas (6contexto/atores+5catálogo ausente), snapshot original preservado segundo seu preflight. Preview79643 e ações autorizadas apenas de navegação/leitura.
+
+Node22.23.2: RED832b7f terminal1:7casos falham, dois causais (estado não reconhecido/ausência deGET) e cinco por helper ainda inexistente; não tratar ausência de export como regressão de autorização. GREEN235d12 terminal0:14arquivos/100testes visual-inbox, sem-t/skips novos. TSC11c019 terminal0/heap8192; lintdirigido5c575a terminal0/max0 e diffcheck0. SemINT/global/DB deste checkpoint. AGENTS contém somente blocoNext gerado10linhas mantido fora do commit até o stop do ROOT. Imagens e cliques ainda pendentes; não declarar aceite visual concluído.

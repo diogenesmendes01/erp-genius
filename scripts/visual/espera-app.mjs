@@ -244,3 +244,24 @@ export function semanticaPainelSemNomePronto() {
   return texto.includes("Contato sem nome, criado pelo telefone.") && texto.includes("Você pode preencher agora.") && !texto.includes("Aria vai perguntar")
     && dentro(campo.getBoundingClientRect()) && dentro(salvar.getBoundingClientRect()) && painel.querySelectorAll('button[aria-label="Fechar painel do contato"]').length === 1;
 }
+
+/** #335: a referência precisa existir na projeção autorizada real, nunca no DOM fabricado. */
+export async function confirmarPainelSecretaria(contexto, base, id) {
+  if (typeof id !== "string" || !id.trim()) throw new Error("ID real da Secretaria não foi configurado.");
+  const r = await contexto.request.get(base + "/api/inbox/atendimentos/" + encodeURIComponent(id) + "/painel");
+  if (r.status() !== 200) throw new Error("Painel Secretaria indisponível: HTTP " + r.status());
+  const dado = await r.json();
+  if (dado?.setor !== "SECRETARIA" || typeof dado.matriculaId !== "string" || !dado.matriculaId.trim()
+    || typeof dado.matriculaCodigo !== "string" || !dado.matriculaCodigo.trim()) throw new Error("Secretaria sem matrícula autorizada e código público.");
+  return { status: 200, matriculaId: dado.matriculaId, codigo: dado.matriculaCodigo };
+}
+/** Autocontido: exige link real íntegro, código público e painel único/visível após a hidratação. */
+export function semanticaPainelSecretariaPronto(alvo) {
+  const painel = document.querySelector('aside[aria-label="Painel do contato"]');
+  const regiao = painel?.querySelector('[aria-label="Painel Secretaria"]');
+  if (!painel || !regiao || painel.inert || painel.getAttribute('aria-hidden') === 'true') return false;
+  const dentro = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1; };
+  const links = [...regiao.querySelectorAll('a')].filter(a => a.getAttribute('href') === '/matriculas/' + encodeURIComponent(alvo.matriculaId) && a.textContent.trim() === alvo.codigo);
+  return document.querySelectorAll('aside[aria-label="Painel do contato"]').length === 1 && links.length === 1 && dentro(painel) && dentro(links[0])
+    && regiao.textContent.includes('Documentos pendentes') && !painel.getAnimations().some(a => a.playState === 'running');
+}
