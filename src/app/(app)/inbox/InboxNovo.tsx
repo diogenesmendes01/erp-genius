@@ -149,6 +149,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   useEffect(() => {
     // Um objeto SSR equivalente não elimina a reconciliação pessoal pendente.
     if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros) atualizadorListaRef.current?.cancelarPendentes();
+    else atualizadorListaRef.current?.invalidarSnapshotEmVoo();
     filtrosRef.current = filtros;
     // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;

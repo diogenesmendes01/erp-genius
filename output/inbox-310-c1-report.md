@@ -31,3 +31,13 @@ Recorte54301 EXIT0:24arquivos329testes, sem filtro por nome/skip, maxWorkers2. C
 TSC93642 EXIT2 somente .next/dev/types/validator.ts2024 referenciando rota nao-lidas311 ausente neste head310. Nexttypegen gerou .next/types atuais, mas preservou cachedev; rodada91272 terminouEXIT2 no mesmo artefato antigo. Não é falha de produto. Integrador limpou exclusivamente5arquivos gerados B/.next/dev/types, operação c2cade EXIT0 e destino absoluto validado. TSC5951 terminou com saída0 após essa limpeza, heap8192; nenhum arquivo gerado foi incluído.
 
 Logs negativos/positivos completos preservados localmente em output/inbox-310-c1-*.log, foraGit. Não transportar caminhos/logs brutos no PR. A entrega C1 ainda pede porte sobre676 preservando R6/syncURL/ACK150/SSRúnico/finally311/automático f51, gates desse porte e complemento coordenado; capturas4f anteriores não provam este novo agendamento.
+
+## P2 pós-review: props equivalentes invalidam GET em voo
+
+82a7a32f é checkpoint HISTÓRICO, não aprovado para adoção. TESTER reproduziu SSE sem leitura: ao atualizar props com outro objeto filtros de mesma chave DURANTE o body, o guard incrementa aplicada, descarta o snapshot, e a fila antes ficava sem pendência. Estado pessoal permanecia2 em vez de3. A primeira fixture do DEV só cobria ACK com pendência já criada pelo fim da leitura, portanto não excluía este bug.
+
+RED público3d0994 EXIT1:2fail/34skip. Sem leitura, esperado naoLidas3 recebido2; com leitura ainda pendente, esperados2GETs recebidos1. Usa Response/ReadableStream real com headers antes do body; não mocka o helper nem aguarda leitura para produzir o defeito.
+
+Correção: invalidarSnapshotEmVoo marca1pendência somente se voo físico pertence à época numérica atual. O effect do consumidor continua incrementando aplicada e mantendo todos guards, mas avisa a fila antes disso quando as props são equivalentes. Contexto REAL mudou→cancelar; época cancelada nunca é reabilitada pela chave textual igual emA→B→A. Idle não consulta, timerprévoo jácapturará props atuais e mantém fronteira50ms,20invalidações no voo deixam só1trailing. Body continua serial e erro sem pendência não repete.
+
+GREEN69cceb EXIT0:2arquivos47testes semskip, incluindo as duas variantes públicas e3novos testes do helper (idle/prévoo; lote20; épocaA→B→Aantiga). A leitura pendente continua recusando agregado; só seu resultado agenda a próxima consulta fresca na fase final, sem piso de IDs ou subtração heurística. Lint4fontes78e0c3 EXIT0. Recorte6764 EXIT0:24arquivos334testes semskip/filtro, maxWorkers2; typegen/TSC32952heap8192 EXIT0. Commit corretivo sobre82 pronto para revisão exata; permanece pendente porte mínimo sobre checkpoint parcialb494; QAindependente/browser/adoção pendentes, semDB/preview neste trabalho.

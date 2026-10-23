@@ -448,3 +448,32 @@ it("C1 objeto de filtros equivalente não cancela reconciliação pendente", asy
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain("busca=A");
 });
+
+describe("C1 P2: snapshot invalidado por props equivalentes durante voo",()=>{
+  const contagens={todas:2,minhas:1,naoLidas:2,prazo:0,fila:0};
+  const aviso={tipo:"resync" as const,atendimentoId:null,mensagemId:null,conversaId:""};
+  const render=(p:PropsInboxNovo)=>{m.posEfeito=0;return m.g!.renderizar(InboxNovo as (p:PropsInboxNovo)=>ReactNode,p);};
+  const dados=(n:number)=>({itens:props.inicial.itens,proximo:null,contagens:{...contagens,naoLidas:n}});
+  it.each([false,true])("P2 props equivalentes durantebody exigem snapshot fresco, leituraPendente=%s",async leituraPendente=>{
+    let ler!:(r:{ok:boolean})=>void;
+    if(leituraPendente)marcar.mockImplementation(()=>new Promise(r=>{ler=r;}));
+    let controle!:ReadableStreamDefaultController<Uint8Array>;
+    const corpo=new ReadableStream<Uint8Array>({start(c){controle=c;}});
+    respostaLista=vi.fn().mockResolvedValueOnce(new Response(corpo))
+      .mockResolvedValueOnce(new Response(JSON.stringify(dados(3))))
+      .mockResolvedValue(new Response(JSON.stringify(dados(0))));
+    const p={...props,selecionado:leituraPendente?"a1":null,filtros:{busca:"A"},contagens};
+    render(p);m.aoAviso!(aviso);await esvaziar();
+    const ack={...p,filtros:{busca:"A"}};render(ack);
+    controle.enqueue(new TextEncoder().encode(JSON.stringify(dados(3))));controle.close();
+    await esvaziar();render(ack);
+    if(!leituraPendente)expect(m.contagens).toEqual({...contagens,naoLidas:3});
+    expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(2);
+    if(leituraPendente){
+      expect(m.contagens).toEqual(contagens);
+      ler({ok:true});await esvaziar();render(ack);
+      expect(m.contagens).toEqual({...contagens,naoLidas:0});
+      expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(3);
+    }
+  });
+});
