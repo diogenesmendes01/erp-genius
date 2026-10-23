@@ -129,7 +129,13 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       )}
       {buscaAberta && <BuscaConversa termo={termo} aoMudar={mudarBusca} total={achados.length} posicao={posicao} campoRef={campoRef}
         aoAnterior={() => navegarBusca(-1)} aoProximo={() => navegarBusca(1)} aoFechar={fecharBusca}
-        temMaisAntes={conversa.temMaisAntes} temMaisDepois={conversa.temMaisDepois} carregandoAntigas={conversa.carregandoAntigas} aoCarregarAntigas={() => void conversa.maisAntigas()} />}
+        temMaisAntes={conversa.temMaisAntes} temMaisDepois={conversa.temMaisDepois} carregandoAntigas={conversa.carregandoAntigas} aoCarregarAntigas={() => {
+          if (conversa.carregandoAntigas || !conversa.temMaisAntes) return;
+          // O controle pode perder foco ao ficar ocupado/desmontar. Entrega antes da carga,
+          // sem restaurar depois e tomar foco que o usuário moveu durante a espera.
+          campoRef.current?.focus({preventScroll: true});
+          void conversa.maisAntigas();
+        }} />}
       <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
