@@ -51,6 +51,8 @@ export interface PropsInboxNovo {
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
+  /** Snapshot único do servidor, compartilhado com lista/thread na hidratação. */
+  agoraInicial?: number;
 }
 
 /** Filtros no formato da URL de `GET /api/inbox/atendimentos` (inverso de `lerFiltrosInbox`). */
@@ -370,6 +372,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             item={atual}
             usuario={usuario}
             fuso={fuso}
+            agoraInicial={agoraInicial}
             conversa={conversa}
             podeEnviar={podeEnviar}
             falhaPermissao={falhaPermissao}
