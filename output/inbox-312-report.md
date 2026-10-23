@@ -63,3 +63,38 @@ Esse negativo é BUG PRODUTIVO312 de snapshot do relógio, diferente da corrida 
 RED5ca4a1exit1: markup29→30,1falha/12filtrados. REDhidratação inicialaa71be expôs limitação de NamedNodeMap do DOMmínimo, suprida só na folhaSSR sem atributos; REDreal7aacbb exit1 demonstra texto divergente e troca da árvore pelo hydrateRoot. RED733229exit1:2falhas/30filtrados no page/forward. GREEN778cdc:5arquivos57testes0; ampliado61944/53a73d exit0:38arquivos472testes, semignorados. TSC64256/af3533heap8192 exit0. Lintiniciala0ea53 exit0/1warning exclusivamente react-hooks/purity da capturaautorizada na page ServerComponent; justificativa pontual adicionada nessa linha, sem mexer em warningsReact/AST/guards. Fix de produto exige recaptura formal completa na fonte nova antes de seed150.
 
 Capturas/hashes/manifestos/pranchas novos permanecerão locais, sem commitPNG. RelatórioJSON/links remotos serão incorporados após depósito confirmado pelo coordenador; não apagar originais/negativos.
+
+## Provas reais na fonte a3da8 — checkpoint de documentação
+
+Fonte produtiva congelada a3da8a153e5291bb4f7d9273194a518fb51a42e4; preview3111 preparado pelo integrador, mesma sessão90638. Nenhuma alteração produtiva durante os probes. Gates anteriores desta fonte: 38 arquivos/472 testes, TSC heap8192 e lint dirigido8 arquivos EXIT0/0 avisos. Não repetidos por mudança exclusivamente documental. Full próprio não executado; QA independente e global integrado continuam obrigatórios.
+
+- Depois da pausa, o integrador sanitizou somente telefones dos7 casos fixos no bancoB para +5500000000300/0301..0307, sem alterar datas, leituras ou autenticação. Não foi rerodada a demo antiga. A captura pré-sanitização38868 ficou apenas histórica em historico-a3-pre-sanitizacao-38868.
+- Formal sanitizado da aplicação: sessão11405 EXIT0; conversa12 + celular-lista4 + lista-vazia12 =28 PNGs,14 app/14 referências. Os28 hashes foram conferidos (97e61b), todas as imagens inspecionadas nas7 pranchas. Manifestos originais/hashes/inspeção local em output/inbox-312-visual/formal-sanitizado-a3. Zero falhas e6 diagnósticos de GET thread cancelado e recuperado, somente nas6 capturas app de conversa; regras de classificação não alteradas.
+- As14 imagens da aplicação usam dados fictícios sanitizados. As14 referências do protótipo original ainda mostram telefones antigos: NÃO sanitizadas, NÃO publicar. Metadado corrigido para separar telefonesSanitizadosApp=true e prototipoSanitizado=false; hashes, PNGs e manifestos originais mantidos. Falta helperDOM coordenado e recaptura dessas referências. Não editar HTML original nem duplicar trabalho do integrador.
+- Inspeção: seleção cinza, avatars44, nome/prévia/hora/contadores e badges reais; conversa móvel mostra chat, estado celular-lista mostra lista; vazioDS com moldura nos3 tamanhos/2 temas. Diferenças de produto aprovadas permanecem: setor em vez de etapa, IA/autoria da prévia naE3 e avatarB2B naE2. Ventura continua contato individualB2B, não prova de grupoWhatsApp.
+
+### Fronteira real SSR29 → cliente30
+
+Integrador ajustou temporariamente só prazoMariana e restaurou o original com EXIT0 antes de executar seed150. Controle de relógio SOMENTE no contexto Playwright page.clock, sem mudar SO/servidor. HTMLSSR original guardado por contexto, sem credenciais.
+
+Primeiro probe c938a4 EXIT1 em ssr-2026-10-23T00-22-30.098Z: SSR29/cliente30 corretos, zero erroReact/rede e SSE1, mas a instrumentação exigia identidade do próprio BadgeEstado. Como seu key é badge.texto, a atualização29→30 remonta legitimamente esse badge após assinatura. Essa asserção era inadequada para detectar troca da árvore de hidratação. Negativo completo preservado:2 PNGs/hashes/HTML/manifesto. Nenhuma correção produtiva foi feita para esse negativo.
+
+Probe corrigido d539e4 EXIT0 em ssr-2026-10-23T00-23-38.828Z: dois contextos, um inicial29 seguido de fastForward60s e outro com offsetCliente60s antes de hidratar. Ambos: HTMLSSR29 → cliente30, mesmo botão da linha e mesmo span do nomeSSR, zero pageerror/React/rede, uma SSE conectada. As3 PNGs inspecionadas mostram badge âmbar29 → vermelho30. Identidade do badge é diagnóstico informativo; identidade da linha/nome é o contrato de preservação medido. Prova não substitui o negativo produtivo85883, que foi corrigido em a3da8.
+
+### Virtualização real com150 conversas
+
+Seed executado EXCLUSIVAMENTE pelo integrador após formal7 e restauração do prazo; DEV não executou SQL/seed. Helper privado atualizado para telefones claramente fictícios: output/preparar-inbox-312-virtual.mjs SHA256 289B50D32054F3CA37EBD9ECC6953F3622846A65E3E60FC43F9B622A4C02B4FB (substitui hashC566 anterior). Resultado:150 atendimentos individuais/225 ENTRADAs/75 não lidas pessoais iniciais, número BAILEYS desconectado, datas anteriores aos7 canônicos, sem grupo/transporte/truncate.
+
+Probe privado output/inbox-312-visual/probe-virtual.mjs, sessão28814 EXIT0,6 contextos3 viewports×2 temas. Diretório virtual-2026-10-23T00-24-11.306Z com18 PNGs/hashes/manifesto e6 pranchas inspecionadas. Acesso por filtro real Número; Carregar mais50→100→150, sem mocks de resposta.
+
+- Até100, DOM real50/100; em150, janela10–18 botões observados. Alturas reais90.5/91/116.5/117/142.5/143px, com quebra dos badges. Sem lacuna ou sobreposição das linhas visíveis após ResizeObserver.
+- Tab0→35 e Shift+Tab35→0 atravessaram a janela; Enter selecionou35, abriu mensagens reais, retorno nativo à lista preservou aria-current35. Ao redimensionar a posição selecionada pode estar fora do viewport; preservação da seleção foi medida separadamente da âncora, sem alegar auto-scroll ao selecionado.
+- Caixas CSS372/300 resultam em clientWidth371/299 por borda; também foi medida largura390. Primeiro item visível e offset ficaram iguais entre resize e retorno: desktop31/-19.5px, tablet38/-4px, celular33/-18.5px. Alturas mudaram/reverteram com largura, sem reescrever motorVirtualList.
+- Zero falhas e zero diagnósticos nos6 contextos. Selecionar35 marca sua leitura pessoal; não restaurar contador compartilhado nem atribuir os75 iniciais a cenários posteriores. A prova formal7 ocorreu antes do seed150.
+- Tipografia complementar3f93f1 EXIT0 nos2 temas: Avatar44×44, nome14/600, prévia13, horaMono11.5/400, contadorMono11/600 computados. Legibilidade inspecionada; não se afirma arquivo de face600 nativa. O seletor inicial c76d81 media Avatar ao procurar nome por .text-sm; JSON inicial preservado como tipografia-primeira-seletor-avatar.json, seletor do nome corrigido para .truncate.text-sm.font-semibold sem mudar produto. tipografia.json contém medição final do nome.
+
+Todos os browsers foram fechados em finally, sem DBsuite DEV ou transporte. Scripts privados de probe são reproduzíveis no worktreeB, exigem servidor preparado e usam somente autenticação fictícia; não são fonte de produto nem prova de global.
+
+### Pendências deste checkpoint
+
+HelperDOM e referências sanitizadas; depósito remoto autorizado de binários e links confirmados; QA independente do SHA exato e global integrado antes de publicação. Nenhum PNG novo commitado. Originais/negativos/pranchas locais preservados; referências antigas não serão enviadas. Este checkpoint não declara homologação ou conclusão integral.
