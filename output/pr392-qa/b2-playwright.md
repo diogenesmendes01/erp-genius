@@ -34,3 +34,16 @@ Recorte da composição antes do commit: `b21319`, saída 0, dois arquivos / 20 
 ### Compatibilidade com #280
 
 O merge-tree do patch isolado com `bab2c9f9` ainda sai com conflito textual em package/lock (`649847`). A inspeção `903cfe` mostra que os dois conflitos agora contêm somente a linha de `@babel/standalone` 7.29.0 deste harness contra um lado vazio da #280. Não há conflito de versão, resolução ou integridade do trio Playwright. A dependência Babel é necessária para servir o protótipo offline e deve ser preservada na integração da #280; não removê-la para tornar o merge automático. Trata-se de uma resolução textual determinada pelo consumidor existente, sem decisão de produto. Este relatório não declara merge-tree limpo com #280.
+
+## Gates da composição c7
+
+Fonte `c7bae481f099fc3c7d237b9fe81132c89968d948`, congelada durante os gates. A conferência `d8674c`, saída 0, confirmou `src/`, `scripts/`, `prisma/` e package/lock sem alteração durante a execução.
+
+| Gate composto | Evidência terminal |
+|---|---|
+| Global unitário | `65804` / `c1315c`, saída 0, 849 arquivos / 6.651 testes, 236,80 s, maxWorkers=2, sem filtro de nomes ou skips acrescentados; integração excluída pela configuração. |
+| Next typegen / TypeScript | `26045` / `9a91b5`, saída 0, tipos gerados e TSC sem erros, heap 8.192 MiB. |
+| ESLint global | `60950` / `59613a`, saída 0, zero erros / 40 avisos herdados. |
+| Integração visual, arquivo inteiro | `47303` / `ea3111`, saída 0, um arquivo / cinco testes, 33,36 s, maxWorkers=1, banco ci-integracao exclusivo. |
+
+O teste Chrome `12b89d` continua nominal ao patch isolado; os helpers e a CLI do harness na composição c7 são byte a byte iguais aos testados, sem recaptura do ERP. Este registro posterior acrescenta somente documentação. A revisão independente c7, a CI remota contra main e o merge continuam pendentes nesta etapa. Nenhum resultado local é apresentado como check remoto.
