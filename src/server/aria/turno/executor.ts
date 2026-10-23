@@ -435,10 +435,11 @@ export async function aplicarAcao(tx: Tx, acao: AcaoAgenteIA, politicas?: Config
           leadId: lead?.id ?? null,
           pessoaId: lead?.pessoaId ?? null,
           origem: "IA",
+          atendimentoId,
         },
       });
       resultado.tarefaId = t.id;
-      const dados = { tarefaId: t.id, titulo: t.titulo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil };
+      const dados = { tarefaId: t.id, titulo: t.titulo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil, atendimentoId: t.atendimentoId };
       evento = await registrarEvento(tx, { tipo: "TarefaCriada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: null, payload: payloadDaAria(acao.id, { ...dados, origem: "IA" }) });
       if (lead) await eventoLead("TarefaCriada", dados);
       break;

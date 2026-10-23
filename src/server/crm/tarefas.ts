@@ -11,6 +11,7 @@ import { ErroRegra, exigirSessao, type UsuarioSessao } from "@/server/_shared/se
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
 import { capacidadesCrm, exigirCapacidadeCrm, setoresDoUsuario } from "./permissoes";
+import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 
 export type TarefaInput = {
   titulo: string;
@@ -26,6 +27,8 @@ export type TarefaInput = {
   pessoaId?: string;
   alunoId?: string;
   matriculaId?: string;
+  /** Vínculo definido somente na criação; editarTarefa o descarta (#322). */
+  atendimentoId?: string;
   /** Só na criação pela tela (#166): a mesma chave até o sucesso; o reenvio devolve a tarefa já criada. */
   chaveIdempotencia?: string;
 };
@@ -55,8 +58,11 @@ const CamposSchema = z.object({
   alunoId: z.string().min(1).optional(),
   matriculaId: z.string().min(1).optional(),
 });
-// A chave só existe na criação: `editarTarefa` continua com `CamposSchema.partial()`, sem ela.
-const CriarTarefaSchema = CamposSchema.extend({ chaveIdempotencia: ChaveIdempotenciaSchema.optional() });
+// Chave e atendimento só existem na criação: editarTarefa usa CamposSchema.partial(), sem ambos.
+const CriarTarefaSchema = CamposSchema.extend({
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
+  atendimentoId: z.string().min(1).optional(),
+});
 
 const CANAL_POR_TIPO: Partial<Record<TipoTarefa, string>> = {
   WHATSAPP: "WHATSAPP",
@@ -181,6 +187,9 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
       const antecedencia = d.lembreteAntecedenciaMin ?? null;
       if (antecedencia !== null && !(dataCivil && hora)) throw new ErroRegra("O lembrete exige data e horário.");
       const quando = agendamento(dataCivil, hora, fuso, antecedencia);
+      if (d.atendimentoId && !(await atendimentoVisivel(autor, d.atendimentoId, false, tx))) {
+        throw new ErroRegra("Atendimento não encontrado.");
+      }
       await validarVinculos(tx, autor, d);
       const dono = await resolverResponsavel(tx, autor, d.responsavelId);
       const t = await tx.tarefa.create({
@@ -202,9 +211,10 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
           pessoaId: d.pessoaId ?? null,
           alunoId: d.alunoId ?? null,
           matriculaId: d.matriculaId ?? null,
+          atendimentoId: d.atendimentoId ?? null,
         },
       });
-      const payload = { titulo: t.titulo, tipo: t.tipo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil, hora };
+      const payload = { titulo: t.titulo, tipo: t.tipo, setor: t.setor, responsavelId: t.responsavelId, dataCivil: t.dataCivil, hora, atendimentoId: t.atendimentoId };
       await registrarEvento(tx, { tipo: "TarefaCriada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: autor.id, payload: { ...payload, ...marca } });
       await espelharNoLead(tx, t, "TarefaCriada", autor.id, { tarefaId: t.id, ...payload });
       return t.id;

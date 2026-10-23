@@ -6118,3 +6118,12 @@ QA independente: estática b509, testfix491 e visual491 favoráveis. TESTER53837
 Pacote imutável inbox-320-evidencias-442d.zip:23.677.284bytes/272entradas, SHA d4f0168d80a248b081adaa1fabca426b789734aee7b0d0c53cdcdfe54cf5c0a4. Release DRAFT33f312, upload6f5778/download0785d3 saída0 com bytes/SHA/sidecar iguais. Auditoria LOCAL independente do TESTER saída0:271hashes/bytes, três allowlists originais, tabela/bijeção164, ausência de extras/duplicações de caminhos/traversal/proibidos;14pares de conteúdoPNG idêntico em estados diferentes são declarados. Parecer output/inbox-320-pacote-review-tester.md; roundtrip remoto atribuído ao ROOT.
 
 Previews/browsers encerrados, bancos A551/TESTER1386 restaurados com424hashes originais (defae5/fa0de1); somente blocoNext gerado removido deAGENTS. Nenhum envio real, integração externa ou deploy. Fecho técnico autoriza preparar as próximas duas frentes E2 após o PR concreto; CI/revisão GitHub/dependências/merge emmain continuam pendentes. A issue320 não está fechada nem homologada em produção.
+
+
+### #322 — vínculo da tarefa ao atendimento, gates DEV aprovados
+
+Base B `1bb721b7`, branch `codex/inbox-e2-322`. Campo opcional somente na criação, validação de leitura na mesma tx, idempotência incluindo atendimento e preservando hash legado; Aria usa o ID confiável do turno. Edição e extensões D10 permanecem no escopo existente. UI N/A: produtor backend.
+
+RED91946:25pass/17fail (três Aria causais e14 de fixture, não contadas como feature). Fixture corrigida sem relaxar guardas; RED73553:14casos/nove falhas causais/cinco pass. Após revisão e reserva ROOT, schema/duas SQL aplicados pelo integrador: Prisma5.22/28331 saída0, validação FK/índice/legadaNULL2db2d4 saída0; snapshot novoE267fd6e,424tabelas/1.374registros/487migrations, originais preservados. Nenhum helper E1 após DDL.
+
+GREEN78268: quatro arquivos completos/62testes/173,05s/maxWorkers1/sem filtro ou skips, saída0. Unitário dirigido6/43, TSC65848 heap8192 e lint4/zero avisos também0. Banco liberado após GREEN; ROOT restaurou E2 em23337c saída0:424 hashes/1.374registros/487migrations e fixture3mensagens/1nota preservada. Report/evidências/SPEC registram contratos, hashes, negativos e limites. Nenhum global próprio ou preview; QA exata, global integrado e publicação pendentes, sem homologação presumida.
