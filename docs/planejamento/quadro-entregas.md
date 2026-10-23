@@ -5451,3 +5451,9 @@ backup próprio com limites/hashes validados; histórico preservado. Zero
 delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
 Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
 preservar ausência nas próximas integrações, sem reescrita de histórico.
+
+### PR #398 — R1 C3/C4 corrigidos, C5/C6 documentados (DEV A)
+
+Base ffddfdae exata, branch codex/inbox-pr398-review-todos. RED92ab90:4falhasnovas/40pass; dados inválidos intercalados apagavam memória civil e duplicavam keydia, notaautorvazio/branco não usavafallback. Patchmínimo em itens-thread/Balao: preservar diaAnterior quando dia inválido, autor.trim()||Autor não informado. Não alterar VirtualList/SSR/relógio/SSE/permissões/harness/deps. Cinco casos novos preservando anteriores e controles de dia real/nome válido/null/origem/status/mídia.
+
+GREEN dirigido9arquivos88testes0, repetidoUTC34b6fe eAmericaSaoPaulo275459 ambos0, semfiltro/skipsnovos;lint4fontes92a338max0. TSC inicial falhou só cacheNextdev da rota323 ausente nesta base; typegen0 e limpezaapenascacheignorado, repetiçãofinal73649/bac043heap8192TERMINAL0. C5telaociosaàmeia-noite élimiteaceito sempolling, renovação porrevisão/seleção/assinatura eSSR preservados; C6SPECmapa12nomes plano→testesreais, seminventarE2E. C1/C2/composiçãomainQA280/retarget/CIremota continuam comintegrador após397, não resolvidos porgatelocal. Relatório output/inbox-pr398-review-todos.md. Investigação324privada preservada; nenhuma implementação324/DB/preview/browser iniciada.
