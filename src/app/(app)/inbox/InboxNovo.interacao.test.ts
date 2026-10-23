@@ -89,15 +89,32 @@ function tela(): ReactNode {
 const conversa = (t: ReactNode) => elementos(t).find((n) => n.type === ConversaAberta)!.props as { podeEnviar: boolean | null; falhaPermissao?: () => void };
 const lista = (t: ReactNode) => elementos(t).find((n) => n.type === ListaAtendimentos)!.props as { itens: { id: string; naoLidas: number }[]; aoSelecionar(id: string): void };
 
-it("painéis simultâneos do atendimento têm identidades React distintas", async () => {
-  respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
-  tela(); await esvaziar();
-  const paineis = elementos(tela()).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement[];
-  expect(paineis).toHaveLength(4); // painel desktop e Drawer
-  for (let i = 0; i < paineis.length; i += 2) {
-    expect(paineis[i].key).not.toBeNull();
-    expect(paineis[i + 1].key).not.toBe(paineis[i].key);
-  }
+describe("InboxNovo: identidades React dos painéis", () => {
+  it("distingue irmãos, conserva a mesma conversa e troca identidades ao selecionar outra", async () => {
+    respostaPainel = () => new Response(JSON.stringify({ podeEnviar: true, aria: {}, acoes: {} }), { status: 200 });
+    const paineis = (t: ReactNode) => elementos(t).filter((n) => n.type === PainelAria || n.type === AcoesContato) as ReactElement<{ atendimentoId: string }>[];
+    tela(); await esvaziar();
+    const anteriores = paineis(tela());
+    expect(anteriores).toHaveLength(4); // painel desktop e Drawer desta fonte
+    expect(anteriores.every((p) => p.props.atendimentoId === "a1")).toBe(true);
+    for (let i = 0; i < anteriores.length; i += 2) {
+      expect(anteriores[i].key).not.toBeNull();
+      expect(anteriores[i + 1].key).not.toBe(anteriores[i].key);
+    }
+    m.aoAviso!({ tipo: "atendimento.atualizado", atendimentoId: "a1", conversaId: "cv1", mensagemId: null });
+    tela(); await esvaziar();
+    expect(paineis(tela()).map((p) => p.key)).toEqual(anteriores.map((p) => p.key));
+
+    lista(tela()).aoSelecionar("a2");
+    tela(); await esvaziar();
+    const atuais = paineis(tela());
+    expect(atuais).toHaveLength(4);
+    for (const [i, atual] of atuais.entries()) {
+      expect(atual.props.atendimentoId).toBe("a2");
+      expect(atual.type).toBe(anteriores[i].type);
+      expect(atual.key).not.toBe(anteriores[i].key);
+    }
+  });
 });
 const pagina = (itens: ReturnType<typeof item>[]) => new Response(JSON.stringify({ itens, proximo: null }), { status: 200 });
 const mudarVisibilidade = (estado: string) => { (document as unknown as { visibilityState: string }).visibilityState = estado; };
