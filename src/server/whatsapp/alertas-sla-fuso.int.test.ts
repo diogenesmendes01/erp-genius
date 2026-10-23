@@ -14,7 +14,7 @@ async function criarAtendimento(prazoRespostaEm: Date) {
   sequencia += 1;
   const numero = await prisma.numeroWhatsApp.create({ data: {
     telefoneE164: "+550000" + String(sequencia).padStart(7, "0"), rotulo: "SLA ficticio",
-    driver: "BAILEYS", finalidade: "VENDAS", providerRef: "sla-fuso-" + sequencia,
+    driver: "MOTOR", finalidade: "VENDAS", providerRef: "sla-fuso-" + sequencia,
   } });
   const contato = await prisma.contatoWhatsApp.create({ data: {
     telefoneE164: "+550001" + String(sequencia).padStart(7, "0"), nomeExibicao: "Contato ficticio SLA",
@@ -108,7 +108,7 @@ describe.each(["UTC", "America/Sao_Paulo"])("claim SLA em %s", (fuso) => {
       const conversa = await prisma.conversaWhatsApp.findUniqueOrThrow({ where: { id: atendimento.conversaId } });
       await prisma.mensagemWhatsApp.create({ data: {
         atendimentoId: atendimento.id, conversaId: conversa.id, numeroId: conversa.numeroId,
-        direcao: "SAIDA", origem: "IA", status: "ENVIADA", driver: "BAILEYS",
+        direcao: "SAIDA", origem: "IA", status: "ENVIADA", driver: "MOTOR",
         criadoEm: new Date("2026-10-19T14:30:00Z"), enviadaEm,
       } });
     }
