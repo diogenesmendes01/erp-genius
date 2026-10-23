@@ -1,0 +1,193 @@
+{
+  "fase": "depois",
+  "fonte": "79a905a2ffe4e34a905f174b416ed2982601d9a1",
+  "perfil": "tester",
+  "resultados": [
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "driver": "MOTOR",
+      "sessao": "CONECTADO",
+      "ativo": true,
+      "itens": [
+        {
+          "rotulo": "Contato",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Enquete",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        },
+        {
+          "rotulo": "Localização",
+          "disabled": true,
+          "motivo": "O envio deste tipo pelo Inbox ainda não está disponível."
+        }
+      ],
+      "operacionais": [
+        "Documento",
+        "Fotos e vídeos",
+        "Áudio"
+      ],
+      "erros": []
+    }
+  ]
+}

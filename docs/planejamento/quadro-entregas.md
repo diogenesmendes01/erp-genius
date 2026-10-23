@@ -4618,6 +4618,16 @@ Branch `claude/adm-whatsapp-number-removal-7ecfa1`. Relato: o administrador não
 - **Visual no Node22.23.2:** 24 PNGs ANTES (integrador sessão24336) e24 DEPOIS (TESTER sessão31652), ambos saída0. Em1440×900,1024×768,390×844, claro/escuro, mesma URL sem reload e prazo do banco intacto: base0→0 e correção0→1 no selo após vencer. Sem pageerror. Imagens/manifestos em `output/inbox-302-visual/`; selo inspecionado e legível nos seis contextos.
 - **Limites:** atualiza o selo dos itens carregados; não inclui atendimento automaticamente no filtro de servidor. Overlay dev preexistente toca parte esquerda do item móvel, sem encobrir selo. Somente fixture descartável, nenhum serviço externo ou produção. CI aguarda retarget para main após integrar381.
 
+### Inbox E0.6 — #303: anexos sem formulário desabilitados com motivo — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-303-report.md`, parecer independente em `output/inbox-303-visual/qa/inbox-303-review.md`. Branch `codex/inbox-e0-303`, base PR #383 (#302). Sem merge/deploy.
+
+- **Entrega:** Contato, Enquete e Localização sempre desabilitados até os formulários da E4. Sem capacidade, mantém aviso MOTOR; com capacidade, informa que o envio pelo Inbox ainda não está disponível. Trava exige handler para todo item habilitado. Documento/Fotos/Áudio e seus handlers, upload e Nota preservados. Sem alteração de schema, servidor, permissão, driver ou contrato de envio.
+- **TDD/recortes:** RED de comportamento e item habilitado sem onClick; GREEN Node22.23.2 com 8 arquivos/131 testes, sem ignorados. TESTER no79a905a2: 2 arquivos/86 testes, saída0 e parecer favorável. Rebase documental para cf5b077b sobre fechamento302 revisado, sem diff emsrc; conflito somente no quadro, preservados302 final e303.
+- **Gates Node22.23.2:** código fe051d41, TSC heap8192 sessão77141 saída0; suíte unitária completa sessão11868 saída0,841 arquivos/6488 testes, zero falhas/ignorados/todo; lint global sessão61660 saída0,0 erros/40 avisos, sem filtros. Últimos commits e rebase sódocs/artefatos, não imputados como novas execuções.
+- **Visual:** 12 PNGs ANTES (integrador sessão34581) e12 DEPOIS (TESTER sessão56440), seis combinações de viewport/tema por fase, saída0 e pageerrors[]. Antes os3 itens estavam habilitados sem ação; depois disabled com motivo individual legível. Documento/Fotos/Áudio habilitados nas duas fases. Capturas/manifestos em `output/inbox-303-visual/`, sem clique nos anexos, upload ou envio.
+- **Ambiente/limites:** capacidade MOTOR simulada somente em número fictício dos bancos descartáveis integracao/tester, endpoints externos vazios. Ao terminar, servidores51088/99153 encerrados e fixtures restauradas para BAILEYS/DESCONECTADO, saídas0. Aviso legado com capacidade ausente coberto pelo teste; foto corresponde a capacidade disponível. Overlay dev preexistente. CI aguarda retarget para main após integrar383.
+
 ### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
 
 **Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
