@@ -4794,6 +4794,13 @@ sem overflow externo ou erro, sans preservada. Probe/login sempreloadmono no
 DOM/header e um preloadRoboto. Relatório/JSON output/pr391-qa; PNGs locais,
 sem novoasset noGit. São amostras isoladas, não fluxos completos das8telas.
 Integração dos pais, global, parecer/CI do head final continuam pendentes.
+### PR394/#310 C1 — lote de primeira página e contagens (revisão em andamento)
+
+Branch DEV codex/inbox-310-c1 sobre eb68e314,676/313 imutável. Helper local agrupa50ms fixos,1GET incluindo corpo+1pendência, reconciliação pessoal final preservada. Thread/painel/leitura imediatos, sem SQL/SSEstore/polling/deps/DB/preview. RED consumidor3casos→GREEN42unitários; recorte24/32954301 e lint4fontes967cd5 saída0. TSC5951heap8192 saída0 após limpeza exclusiva do cache gerado dev pelo integrador; dois negativos antigos só tipogerado rota311 fora do head310, preservados. Ledger output/inbox-310-c1-report.md. Aguardam porte equivalente no agregado676 em SHAseparado, QA/browser e publicação; não é concluída/homologada.
+
+### C1 PR394 — correçãoP2 equivalente em voo, revisão pendente
+
+82históriconãoadotado. RED público3d0994 reproduz perda2→3semleitura e faltatrailingcomleiturapendente. invalidarSnapshotEmVoo conserva1pendência somentepara época físicaatual; guardsinvalidação/R6preservados, semreviverAantigoapósA→B→A, semretry/polling. GREEN2arquivos47testes69cceb e lint78e0c3 saída0; recorte6764EXIT0/24arquivos334testes e typegenTSC32952heap8192EXIT0. FonteisoladacorrigidaprontaparaTESTER;porte/QA/browser ainda pendentes. SemDB/preview/deps.
 ### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
 
 **Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
@@ -5406,3 +5413,14 @@ Porte OWN sobre676 preserva todoscontratosR6/313;78unitários e recorte56/622481
 ### C1 PR394 — porte P2 corrigido, pronto para QA exata
 
 Isolado b2338414 sobre82/eb68 (24/334+TSC32952/lint78e0c3 saída0) e porte sobre676/b494 separados; jamais merge313→310. Porte preserva R6/finally311/f51/syncURL/ACK150/SSR/Virtual, cancelar por contextoREAL+versaoREAL e elseinvalidarSnapshotEmVoo porépoca numérica. Prova de texto: abrir/JSX igual676 e blocosleitura/visibilidade/SSE iguais salvo chamadasfila; helper igualb233.83unit9ed709, recorte56/62773762,typegenTSC82827heap8192,lint4fontes25da72 terminaram0. Semskip/filtro/DB/preview/deps/global próprio. TESTERexato/mediçãoHTTPbrowser/complemento313/global/adoção/publicação pendentes; fotos3134f mantêmfontehistórica, semreatribuição.
+### Base #313 — correção isolada394 com R6
+
+Merge normal4696b422 na basefe9. Conflitos preservam casca308, decoração314,
+quatro argumentos388, stableMount e dois painéis390; fila/helper/consumidor394
+incorporados. Testes mantêm ambos beforeEach (modo e relógio), todos os casos
+da casca e da fila; nenhum oráculo de contagem afrouxado. Recorte4280e2→80b420
+terminou0:42arquivos/524testes, semskip, Node22/maxWorkers2. Não é suíteglobal
+nem integração. Base não incorpora ColunaConversas313 ou cabeçalho315.
+QAexata/global/DB da isolada394 permanecem com TESTER e outra frente; esta
+composição da base não presume esses resultados. Próximo merge publica313
+com o fix310 como dependência identificada, preservando PR por funcionalidade.
