@@ -37,6 +37,8 @@ export interface PropsInboxNovo {
   selecionado: string | null;
   usuario: { id: string; papeis: Papel[] };
   fuso: string | null;
+  /** Instante SSR compartilhado: a hidratação usa exatamente o número serializado pela página. */
+  agoraInicial?: number;
   /** Destinos de transferência com contexto (FINANCEIRO/PEDAGOGICO), de `listarOpcoesAtendimento`. */
   destinos?: DestinoTransferencia[];
   /** Triagem e revisão de envio (Task 33): nulas para quem `listarTriagemWhatsApp` / `listarRevisoesEnvio` recusam. */
@@ -120,7 +122,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial }: PropsInboxNovo) {
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
@@ -341,7 +343,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           </header>
           {opcoesFiltro && <div role="region" aria-label="Filtros de conversas"><PainelFiltros filtros={filtros} setores={opcoesFiltro.setores} numeros={opcoesFiltro.numeros} /></div>}
         </div>}
-        <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} usuarioId={usuario.id} />
+        <ListaAtendimentos itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()} fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} />
       </section>
 
       <section aria-label="Conversa" className={`${vista === "conversa" ? "flex" : "hidden"} w-full min-h-0 min-w-0 flex-col overflow-hidden fundo-conversa relative [&>header]:relative [&>header]:min-h-0 [&>header]:max-h-[40%] [&>header]:shrink-0 [&>header]:overflow-y-auto ${COLUNA_CONVERSA}`}>

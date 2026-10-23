@@ -121,3 +121,13 @@ it("sem seleção não monta painel, com prop false não abre automaticamente", 
   expect(html()).not.toContain('<aside');
   expect(html({ selecionado: "a1", extra: { abrirPainelPadrao: false } })).not.toContain("min-[1400px]:flex");
 });
+
+it("encaminha agoraInicial da página à lista sem recalcular durante SSR", () => {
+  const T = Date.UTC(2026, 9, 22, 12);
+  vi.useFakeTimers({ toFake: ["Date"] });
+  try {
+    vi.setSystemTime(T + 60_000);
+    const h = html({ extra: { agoraInicial: T, inicial: { itens: [{ ...item("a1", "Ana"), prazoRespostaEm: new Date(T - 29 * 60_000).toISOString() }], proximo: null } } });
+    expect(h).toContain("Prazo estourado · 29 min"); expect(h).not.toContain("30 min");
+  } finally { vi.useRealTimers(); }
+});
