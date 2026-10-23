@@ -4956,3 +4956,22 @@ Recorte pós-merge 11 arquivos / 174 testes, TSC71047 e lint de 14 arquivos
 terminaram 0, sem ignorados/avisos no recorte. Não houve novo global local ou
 browser. Retarget/main e push serão seguidos por CI global e parecer final;
 aguardar esses gates antes do merge. Relatório output/pr391-qa/revisao.md.
+
+## PR #394 — fila C1 e conciliação com R6
+
+Adotado b233, aprovado pelo TESTER, após falha P2 do checkpoint82. Janela fixa
+50 ms, um GET físico com corpo e uma pendência; props equivalentes preservam
+reconciliação sem reabilitar épocas canceladas. Merge4696 com main preserva
+R6: IDs pendentes, época de entradas, visibilidade e GET fresco autoritativo.
+Três testes passam a iniciar efetivamente o GET antes do evento/resultado;
+expectativas de dados intactas. Recorte três arquivos / 81 testes, saída0.
+
+Gates4696 encerrados0: full33127, 848 arquivos / 6.628 testes unitários sem
+filtro/ignorados, maxWorkers2; TSC64771; lint10790 zero erros / 40 avisos.
+DB31266 em ci-integracao/erp_genius_test_ciint: dois arquivos / 26 testes,
+consultas-pagina e opcoes-filtro, sem filtro/ignorados ou concorrência no banco.
+
+Mergec710 incorpora fonte/tokens #391 da main, sem mudar Inbox/servidor310.
+Composição oito arquivos / 135 testes e TSC29938 terminaram0. Não atribuir
+o full anterior ao head novo. Parecer final e CI global contra main pendentes;
+sem novo browser, pacote/lock/schema ou envio. output/pr394-qa/revisao.md.
