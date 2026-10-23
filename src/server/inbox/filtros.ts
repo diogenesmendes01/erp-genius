@@ -28,3 +28,6 @@ export function lerFiltrosInbox(p: Record<string, string | string[] | undefined>
   if (busca) f.busca = busca;
   return f;
 }
+
+export type IdChipInbox = "todas" | "minhas" | "naoLidas" | "prazo" | "fila";
+export type ContagensChipsInbox = Record<IdChipInbox, number>;
