@@ -147,8 +147,9 @@ describe("InboxNovo: leitura ao abrir", () => {
     expect(marcar).toHaveBeenCalledExactlyOnceWith("a1");
   });
   it("não lê entrada quando o painel ocupa a vista da conversa no celular", async () => {
+    m.modo = "uma"; vi.stubGlobal("window", { innerWidth: 390 });
     const t = tela(); await esvaziar(); marcar.mockClear();
-    (conversa(t) as unknown as { aoAbrirPainel(): void }).aoAbrirPainel();
+    cabecalho(t).aoAlternarPainel();
     regiaoConversaVisivel = false; tela();
     m.aoAviso!({ tipo: "mensagem.nova", atendimentoId: "a1", mensagemId: "m-painel", conversaId: "cv1" });
     expect(marcar).not.toHaveBeenCalled();
