@@ -1,0 +1,24 @@
+import { act, createElement } from "react";
+import type { Root } from "react-dom/client";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { criarDomMinimo, desligarObservadores, type Elemento } from "@/test/dom-minimo";
+import { useBuscaConversa } from "./useBuscaConversa";
+import { BuscaConversaFixture as Tela } from "@/test/busca-conversa.fixture";
+const m=(id:string,corpo="matrícula")=>({id,corpo,criadoEm:'2026-10-22T12:00:00Z',apagada:false});
+let root:Root,container:Elemento,api:ReturnType<typeof useBuscaConversa>;
+beforeEach(async()=>{const dom=criarDomMinimo();vi.stubGlobal('document',dom.documento);vi.stubGlobal('window',dom.janela);vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubGlobal('requestAnimationFrame',()=>1);vi.stubGlobal('cancelAnimationFrame',()=>{});container=dom.documento.createElement('div');dom.documento.body.appendChild(container);const {createRoot}=await import('react-dom/client');root=createRoot(container as unknown as HTMLElement);});
+afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
+const render=async(id='a',ms=[m('1'),m('2')])=>{await act(async()=>root.render(createElement(Tela,{id,ms,aoAtualizar:a=>{api=a;}})));for(const el of container.querySelectorAll('button'))Object.assign(el,{getClientRects:()=>[{}]});};
+it("abrir/mudar/navegar/fechar usam estado real; achado preservado porID no SSE/paginação",async()=>{await render();await act(async()=>api.abrir());await act(async()=>api.aoMudar('Matrícula'));expect(api.atual).toBe('1');expect(api.posicao).toBe(1);await act(async()=>api.navegar(1));expect(api.atual).toBe('2');await render('a',[m('0'),m('1'),m('2'),m('3')]);expect(api.atual).toBe('2');expect(api.posicao).toBe(3);await act(async()=>api.navegar(-1));expect(api.atual).toBe('1');await render('a',[m('2')]);expect(api.atual).toBe('2');await act(async()=>api.fechar());expect(api.aberta).toBe(false);expect(api.atual).toBeNull();});
+it("troca de atendimento não conserva termo/pin nem remonta scroller",async()=>{await render();const scroll=container.querySelector('div');await act(async()=>{api.abrir();api.aoMudar('matri');});expect(api.atual).toBe('1');await render('outro',[m('novo')]);expect(api.aberta).toBe(false);expect(api.termo).toBe('');expect(api.atual).toBeNull();expect(container.querySelector('div')===scroll).toBe(true);});
+
+it("foco real vai ao campo e volta ao gatilho visível; repetir atalho não perde retorno",async()=>{await render();const search=container.querySelector('[aria-label="Buscar na conversa"]')!;Object.assign(search,{getClientRects:()=>[{}]});search.focus();await act(async()=>api.abrir());const field=container.querySelector('input')!;expect((document.activeElement as unknown)===field).toBe(true);Object.assign(field,{getClientRects:()=>[{}]});await act(async()=>api.abrir(true));await act(async()=>api.fechar());expect((document.activeElement as unknown)===search).toBe(true);});
+
+it("voltar ao contato anterior não ressuscita a busca que foi abandonada",async()=>{await render('a');await act(async()=>{api.abrir();api.aoMudar('matri');});await render('b');await render('a');expect(api.aberta).toBe(false);expect(api.termo).toBe('');expect(api.atual).toBeNull();});
+
+it("mobile retorna ao Mais ações visível quando Buscar está oculto",async()=>{await render();const search=container.querySelector('[aria-label="Buscar na conversa"]')!,more=container.querySelector('[aria-label="Mais ações da conversa"]')!;Object.assign(search,{getClientRects:()=>[]});more.focus();await act(async()=>api.abrir());await act(async()=>api.fechar());expect((document.activeElement as unknown)===more).toBe(true);});
+it("atalho preserva foco anterior válido dentro da coluna",async()=>{await render();const anterior=container.querySelector('[aria-label="Mais ações da conversa"]')!;anterior.focus();await act(async()=>api.abrir(true));await act(async()=>api.fechar());expect((document.activeElement as unknown)===anterior).toBe(true);});
+
+it("o primeiro achado também mantém seu ID quando uma página anterior acrescenta match antes dele",async()=>{await render('a',[m('149')]);await act(async()=>{api.abrir();api.aoMudar('matricula');});expect(api.atual).toBe('149');await render('a',[m('000'),m('149')]);expect(api.atual).toBe('149');expect(api.posicao).toBe(2);});
+
+it("remoção reconcilia e reaparição não ressuscita cursor antigo; zero e1caractere limpam achado",async()=>{await render('a',[m('000'),m('149')]);await act(async()=>{api.abrir();api.aoMudar('matri');});await act(async()=>api.navegar(1));expect(api.atual).toBe('149');await render('a',[m('000')]);expect(api.atual).toBe('000');await render('a',[m('000'),m('149')]);expect(api.atual).toBe('000');await render('a',[]);expect(api.atual).toBeNull();await render('a',[m('149')]);expect(api.atual).toBe('149');await act(async()=>api.aoMudar('m'));expect(api.atual).toBeNull();expect(api.achados).toEqual([]);});

@@ -13,9 +13,9 @@ describe("menu da conversa315", () => {
   m[0].aoEscolher(); expect(acoes.naoLida).toHaveBeenCalledOnce();
   expect(m.every(i=>typeof i.aoEscolher === "function")).toBe(true);
  });
- it("sem capacidade de negócio mantém pessoais; busca não anuncia função inexistente", () => {
+ it("sem capacidade de negócio mantém pessoais; busca local ligada para todos", () => {
   const m=menu(()=>false); expect(m.map(i=>i.id)).toEqual(["naoLida","fixar","silenciar","buscar"]);
-  expect(m.find(i=>i.id==="buscar")).toMatchObject({desabilitado:true,dica:"Em breve"});
+  expect(m.find(i=>i.id==="buscar")?.desabilitado).not.toBe(true);expect(m.find(i=>i.id==="buscar")?.dica).toBeUndefined();m.find(i=>i.id==="buscar")!.aoEscolher();expect(acoes.buscar).toHaveBeenCalled();
  });
  it("rótulos pessoais e bloqueio explicam a capacidade indisponível",()=>{
   const m=menu(()=>true,true); expect(m.find(i=>i.id==="fixar")).toMatchObject({rotulo:"Desafixar conversa",dica:"só você"});
