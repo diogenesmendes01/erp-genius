@@ -6420,3 +6420,7 @@ QA95ffavorávelestática/hash320755...versionada tester-composicao-95f.md;INT10/
 ## PR #407 — fundações321 compostas, INT exigida concluída
 
 Fonte57530e8c:3258+40621979, deltaSRCresidualEXATAMENTE6arquivos321/OIDs3258. B1Pickee565/harness164/QA280/297/B2/mergeauthpreservados,paismain406/retarget/CIaindagates. Quadro4blocospreservambos,2docs307conflitosapenaslinhaembranco→406. C1INTaviso+participantes completos2/8sessão2842/36809aterminal0,31,13s,perfilciintexclusivo/configintegration/maxWorkers1;semfiltro/skips/provider/cluster/migrationchange. Unitário5/894c12ea,TSC98357/7e7d0f e lint94412/289af8terminals0/40avisos. C3diffbaselineexplícito/C4projeçãofornececonsumer323semnovaalçadaD1,sem322323antecipado. QAcomposta/final406main/CI407pendentes;output/pr407-qa/composicao-todos.md.
+
+## PR #407 — QA composta favorável
+
+QA575favorávelestática/hash103b9688...versionada tester-composicao-575.md;6paths321/OIDs3258, UI/harness/Pick/B2/schema485/QA280297preservados,sem322/323futuro. NenhumDB/testeadicional doparecer,lintpróprio94412/289af8terminou0/40depoisinspeção. Fonte575preservadaapósMD;406main/B1final/CI407aindagates.

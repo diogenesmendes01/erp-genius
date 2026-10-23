@@ -13,4 +13,6 @@ C1 MEDIUM: os dois arquivos INT exigidos rodaram completos na fonte575, oito cas
 - Next typegen/TypeScript98357/7e7d0f e lint global94412/289af8 terminais0, zero erros/40avisos herdados.
 - Provasc8f461/c7660b terminais0: seis arquivos321 iguais3258, scripts/visual inteiro/Pick/package/lock/guardas/schema/migrations/decisões-produto iguais406. O delta src residual foi enumerado antes do commit. A remoção do INT puramente duplicado406 permanece, sem ressuscitar o caso.
 
-As execuções históricas da fonte9d/281 e agregadosROOT permanecem nominais; não substituem os gates próprios acima. QA composta, squash406main, CI final contra main nos dois fusos e merge ainda pendentes. Sem captura, seed, envio real ou deploy nesta composição.
+QA composta575 é favorável estática: delta src próprio exatamente os seis caminhos321, OIDs iguais3258/9d; UI/harness/B2/schema485/migrations/deps/QA280297 iguais406, sem322/323. Não repetiu testes/DB/browser nessa extensão. Parecer original SHA256 103b9688351eca6aca4ce6ef9ef8f8f627cf5cfc7a5ea79b57b261b63979398e, em tester-composicao-575.md com apenas EOF normalizado. O lint próprio terminou0/40avisos após a inspeção inicial do TESTER, conforme registro acima.
+
+As execuções históricas da fonte9d/281 e agregadosROOT permanecem nominais; não substituem os gates próprios acima. Squash406main, CI final contra main nos dois fusos e merge ainda pendentes. Sem captura, seed, envio real ou deploy nesta composição.
