@@ -46,3 +46,8 @@ Composição produtiva93a5 e harness317bf4ad incorporados noOWN; delta319 não m
 ## Fonte composta para gates finais
 
 Composição DEV0f80f61d incorpora C2 e o patch isolado nota-protótipo317; helper/ESTADOS319 preservados, CLIforçadaLF pelo atributo específico. DEV observou recorte70arquivos863testes, NodeChromeoffline2, TSCheap8192 e lint14fontes semavisos, todos saída0. Não é global nem prova deUI. Integrador executará global com fonte imóvel antes do Ready e formal42PNG+12mobile/complementos; evidências472 permanecem preliminares. C6SSE não portado. Detalhes/comandos/limites em output/inbox-319-report.md.
+
+
+### Prontidão do preparador de carregando
+
+O preparador aguarda o evento real load da navegaçãoHome antes de ativarCDP e solicitar routerPush; existência do router apósDOMContentLoaded não garantia montagem. A/B real5e9 demonstrou Homepermanente/zero fallback versus fallbackpronto, e TDD causal cobre CDPsomenteapósload. Predicado geométrico/timeouts/latência permanecem iguais, semsleep/fabricação. Formal84095 interrompido é negativo histórico inteiro, não pacote final; repetição42+12 exige novoReady/fonteexata. Gatesdirigidos66/TSC/lint0 no report, global5e9 éanterior e não reatribuído.

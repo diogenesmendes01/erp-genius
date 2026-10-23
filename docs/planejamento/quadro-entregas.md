@@ -5747,3 +5747,8 @@ Fonte317bbb, formalR2/4941EXIT0 com24/24APP×proto humano+nota/3tamanhos/2temas,
 ### #317 — composição final e artefato revisável
 
 Fonte85f (produtoa86+harnessaa570+buscaC2+SSEC6), metadados9005; global56369 EXIT0 897arquivos/7021testes270,09s/maxWorkers2/semfiltro/skips, typegen/TSC38143 e lint49666 EXIT0 (42avisos40src+2stagingprivado). Formal4941 EXIT0 24/24; DEV70originais+18pranchas e TESTER34PNG allowlisted,122PNG/137files no ZIPdraft15.823.526bytes SHA74a17180 conferido por download. Artefato e fontes/limites em output/inbox-317-evidencias-remotas.json e global-final.md. C6 igualisolado01a; visuais anteriores não provam retryC6. SnapshotA424hashes551 e TESTER424hashes1386 restaurados após317, semsend/external/deploy. PublicaçãoPR/CI/revisão/dependências e merge ainda pendentes, issue não fechada.
+
+
+### #319 — prontidão Home do harness corrigida, recaptura pendente
+
+Formal84095 saída1 timeoutcarregando; execução inteira fora daallowlistfinal. A/B64168 helperreal: DCLantesmount/zero fallback/URLHome/manifestoexit1 versusload/fallbackreal/predicadoigual/exit0. ROOTparou94575 e autorizou1linhagotohomewaitUntil load antesCDP/routerPush; semalterarprodução/predicado/timeouts/JSON2xx/protótipo/guardas/sleep. AGENTSNext removido isoladamente, CRLF original. RED4b27341fail10pass→GREENbb4c6510files66testes0; TSC29431heap8192/lint2fontes5a2b82zeroavisos saída0. Global5e9899/7054 histórico préajuste, nãoatribuídoanovaCLI. Sem browser/DB/previewapósstop; formal42+12 e fases150/Triagem aguardamnovoReady.

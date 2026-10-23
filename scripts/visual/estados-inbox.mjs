@@ -47,7 +47,7 @@ import {esperarHidratacaoApp} from './espera-app.mjs';
 
 /** Loading.tsx real sob latência local; a hidratação do Inbox só é aguardada após a foto. */
 export async function abrirCarregandoApp(pagina, contexto, base) {
-  await pagina.goto(base + '/home', {waitUntil:'domcontentloaded'});
+  await pagina.goto(base + '/home', {waitUntil:'load'});
   await pagina.getByLabel('Navegação principal', {exact:true}).waitFor({state:'attached'});
   await pagina.waitForFunction(() => typeof window.next?.router?.push === 'function');
   const documento = await pagina.evaluate(() => performance.timeOrigin);
