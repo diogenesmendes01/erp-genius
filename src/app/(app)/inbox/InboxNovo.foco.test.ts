@@ -4,7 +4,8 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, Elemento, type Documento } from "@/test/dom-minimo";
 import type { InboxNovo as Inbox, PropsInboxNovo } from "./InboxNovo";
-vi.mock("next/navigation",()=>({useRouter:()=>({replace:vi.fn(),push:vi.fn()}),usePathname:()=>"/inbox"}));
+const rota313=vi.hoisted(()=>({busca:null as string|null}));
+vi.mock("next/navigation",()=>({useRouter:()=>({replace:vi.fn(),push:vi.fn()}),usePathname:()=>"/inbox",useSearchParams:()=>rota313.busca===null?null:new URLSearchParams(rota313.busca)}));
 vi.mock("./useEventosInbox",()=>({useEventosInbox:()=>({conectado:true})}));
 vi.mock("@/components/conversa/useConversa",()=>({useConversa:()=>({mensagens:[]})}));
 vi.mock("@/server/whatsapp/preferencias",()=>({marcarAtendimentoLido:async()=>({ok:true})}));
@@ -18,7 +19,7 @@ const ouvintes:{alvo:object;tipo:string;f:(e:Event)=>void;captura:boolean}[]=[];
 function eventos(alvo:object){return{addEventListener(tipo:string,f:(e:Event)=>void,captura=false){ouvintes.push({alvo,tipo,f,captura});},removeEventListener(tipo:string,f:(e:Event)=>void){const i=ouvintes.findIndex(o=>o.alvo===alvo&&o.tipo===tipo&&o.f===f);if(i>=0)ouvintes.splice(i,1);}};}
 const item={id:"a1",numeroId:"n1",numeroRotulo:"Central",finalidade:"COMERCIAL",driver:DriverWhatsApp.META_CLOUD,contatoId:"c1",contatoNome:"Ana",contatoTelefone:"+5500000000301",optOut:false,vinculo:null,naoLidas:0,ultimaMensagemEm:null,preview:"Oi",linhaComercial:false,status:"EM_ATENDIMENTO",responsavelNome:null,prazoRespostaEm:null,fixada:false,silenciada:false,grupo:false,responsavelId:null,numeroDonoId:null,setoresDoNumero:["COMERCIAL"],atendimentoOrigemId:null,capacidades:[]};
 const props={inicial:{itens:[item],proximo:null},filtros:{},selecionado:null,usuario:{id:"u1",papeis:["VENDEDOR"]},fuso:null,opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;
-beforeEach(async()=>{const dom=criarDomMinimo();doc=dom.documento;ouvintes.length=0;Object.assign(doc,eventos(doc),{visibilityState:"visible",querySelector:(s:string)=>doc.body.querySelector(s)});Object.assign(dom.janela,eventos(dom.janela),{innerWidth:390,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});vi.stubGlobal("window",dom.janela);vi.stubGlobal("document",doc);vi.stubGlobal("MutationObserver",dom.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.stubGlobal("fetch",vi.fn(async()=>new Response(null,{status:404})));container=doc.createElement("div");doc.body.appendChild(container);Object.assign(container,eventos(container));
+beforeEach(async()=>{rota313.busca=null;const dom=criarDomMinimo();doc=dom.documento;ouvintes.length=0;Object.assign(doc,eventos(doc),{visibilityState:"visible",querySelector:(s:string)=>doc.body.querySelector(s)});Object.assign(dom.janela,eventos(dom.janela),{innerWidth:390,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});vi.stubGlobal("window",dom.janela);vi.stubGlobal("document",doc);vi.stubGlobal("MutationObserver",dom.MutationObserver);vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.stubGlobal("fetch",vi.fn(async()=>new Response(null,{status:404})));container=doc.createElement("div");doc.body.appendChild(container);Object.assign(container,eventos(container));
  // Geometria explícita do DOM mínimo; CSS390 real será validado no browser coordenado.
  Object.defineProperty(Elemento.prototype,"options",{configurable:true,get:function(this:Elemento){return this.querySelectorAll("option");}});
  Object.defineProperty(Elemento.prototype,"getClientRects",{configurable:true,value:function(this:Elemento){if(this.getAttribute("aria-label")==="Conversa")return container.querySelector('[data-vista="conversa"]')?[{}]:[];return[{}];}});
@@ -54,4 +55,8 @@ it.each(["Filtros","Todos os números · 1 conectado"])("navegação recebida co
 });
 it("snapshot que confirma seleção local preserva Nova e seu retorno de foco ao gatilho",async()=>{
  await render(props);const linha=rotulo("Conversas").querySelectorAll("button").find(e=>e.textContent?.includes("Ana"))!;await evento("click",linha);await evento("click",rotulo("Voltar para a lista"));const gatilho=rotulo("Nova conversa");gatilho.focus();await evento("click",gatilho);await render({...props,selecionado:"a1"});expect(container.querySelector('[role="dialog"]')!==null).toBe(true);expect(container.querySelector('[data-vista="lista"]')!==null).toBe(true);await evento("keydown",rotulo("Fechar"),{key:"Escape"});expect(doc.activeElement===gatilho).toBe(true);
+});
+it("URL pública c→null fechaNova com propSSRnull igual e retorna foco à busca real",async()=>{
+ rota313.busca="";const local={href:"http://localhost/inbox"};Object.assign(window,{location:local,history:{replaceState(_d:unknown,_t:string,url:string|URL){local.href=String(url);rota313.busca=new URL(local.href).search.slice(1);}}});await render(props);
+ const linha=rotulo("Conversas").querySelectorAll("button").find(e=>e.textContent?.includes("Ana"))!;await evento("click",linha);await evento("click",rotulo("Voltar para a lista"));const gatilho=rotulo("Nova conversa");gatilho.focus();await evento("click",gatilho);expect(rota313.busca).toBe("c=a1");rota313.busca="";await render(props);expect(container.querySelector('[role="dialog"]')===null).toBe(true);expect(container.querySelector('[data-vista="lista"]')!==null).toBe(true);expect(doc.activeElement===rotulo("Buscar conversas")).toBe(true);
 });

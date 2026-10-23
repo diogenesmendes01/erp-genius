@@ -3,6 +3,7 @@ import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
+import { useSearchParams } from "next/navigation";
 import { NovoAtendimento } from "./NovoAtendimento";
 import { PainelContato } from "./PainelContato";
 import { classesDoPainel, painelEfetivo, proximoEstadoPainel, useModoInbox } from "./painel-inbox";
@@ -123,6 +124,9 @@ const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
 export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial }: PropsInboxNovo) {
+  const parametrosDaRota = useSearchParams();
+  const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
+  const [rotaVista, setRotaVista] = useState(selecionadoDaRota);
   const triagem = ouNulo(triagemBruta);
   const revisoes = ouNulo(revisoesBrutas);
   const [itens, setItens] = useState(() => selecionadoInicial ? zerarNaoLidas(inicial.itens, selecionadoInicial) : inicial.itens);
@@ -157,7 +161,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // Estado derivado no render, sem key de remontagem: o que não depende do filtro (Drawer, digitação) fica.
   const chaveFiltros = paramsDosFiltros(filtros);
   const [filtrosVistos, setFiltrosVistos] = useState(chaveFiltros);
-  if (filtrosVistos !== chaveFiltros || selecionadoRecebido !== selecionadoInicial) {
+  const rotaMudou = rotaVista !== selecionadoDaRota;
+  if (rotaMudou) setRotaVista(selecionadoDaRota);
+  if (selecionadoInicial === selecionadoDaRota && (filtrosVistos !== chaveFiltros || selecionadoRecebido !== selecionadoInicial || (rotaMudou && selecionado !== selecionadoDaRota))) {
     setSelecionadoRecebido(selecionadoInicial);
     if (filtrosVistos !== chaveFiltros || selecionado !== selecionadoInicial) {
       setVersaoNavegacao((v) => v + 1);
@@ -196,7 +202,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
     filtrosRef.current = filtros;
     // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;
-  }, [chaveFiltros, filtros, selecionadoInicial]);
+  }, [chaveFiltros, filtros, selecionadoInicial, versaoNavegacao]);
   useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
   const carregarLista = useCallback((filtro: FiltrosInbox) => {
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
