@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 
 type Manifesto = { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
@@ -22,6 +23,23 @@ export function conferirDependenciasInstaladas(raiz = process.cwd()) {
       try { instalada = JSON.parse(readFileSync(join(raiz, "node_modules", nome, "package.json"), "utf8")).version; }
       catch { /* Ausência ou manifesto inválido não comprovam a versão. */ }
       if (!esperada || instalada !== esperada) problemas.push(`${nome}: lock=${esperada ?? "ausente"}, instalada=${instalada ?? "ausente"}`);
+    }
+  }
+  if (manifesto.devDependencies?.["@playwright/test"]) {
+    try {
+      const direto = createRequire(join(raiz, "package.json"));
+      const teste = createRequire(direto.resolve("@playwright/test/package.json"));
+      const runner = createRequire(teste.resolve("playwright/package.json"));
+      const versao = (arquivo: string) => (JSON.parse(readFileSync(arquivo, "utf8")) as { version: string }).version;
+      const harness = versao(direto.resolve("playwright-core/package.json"));
+      const coreDoRunner = versao(runner.resolve("playwright-core/package.json"));
+      const versaoTeste = versao(direto.resolve("@playwright/test/package.json"));
+      const versaoRunner = versao(teste.resolve("playwright/package.json"));
+      if (harness !== coreDoRunner || versaoTeste !== versaoRunner || versaoRunner !== coreDoRunner) {
+        problemas.push(`Playwright: harness=${harness}, runner=${coreDoRunner}, test=${versaoTeste}, playwright=${versaoRunner}`);
+      }
+    } catch {
+      problemas.push("Playwright: não foi possível conferir a resolução do harness e do runner");
     }
   }
   if (problemas.length) throw new Error(`Dependências inconsistentes; estabilize o ambiente antes dos testes de banco:\n${problemas.join("\n")}`);
