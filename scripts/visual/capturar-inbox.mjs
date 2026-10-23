@@ -68,10 +68,12 @@ export async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   const id = estado === "painel-secretaria" ? process.env.INBOX_VISUAL_SECRETARIA : estado === "painel-sem-nome" ? process.env.INBOX_VISUAL_SEM_NOME ?? ids.semNome : ["humano-compositor", "busca-conversa", "nota", "painel-erro", "thread-erro", "painel-vazio"].includes(estado) ? ids.beatriz : ids.mariana;
   if (estado === "painel-secretaria") {
     const painelSecretariaReal = await confirmarPainelSecretaria(contexto, base, id);
+    const concluirMensagens = instalarConclusaoMensagens(pagina, base, id);
     await pagina.goto(`${base}/inbox?c=${encodeURIComponent(id)}`, { waitUntil: "domcontentloaded" });
     await esperarHidratacaoApp(pagina);
     if (!(await pagina.locator('aside[aria-label="Painel do contato"]').isVisible())) await pagina.getByRole("button", { name: "Painel do contato", exact: true }).click();
     await pagina.waitForFunction(semanticaPainelSecretariaPronto, painelSecretariaReal);
+    await concluirMensagens();
     return { metadados: { painelSecretariaReal } };
   }
   const painelSemNomeReal = estado === "painel-sem-nome" ? await confirmarPainelSemNome(contexto, base, id) : undefined;
