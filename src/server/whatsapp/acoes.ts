@@ -24,6 +24,7 @@ import type { ModeloWhatsapp } from "@/server/financeiro/schema";
 import { buscarPessoasVinculo, contatoSoNoAlcance, conversaVisivel, type PessoasVinculo } from "./consultas";
 import { despacharFila } from "./despachante";
 import { executarAcaoMotor } from "./motor/acoes";
+import { capacidadesDoNumero } from "./motor/capacidades";
 import { escopoConversas } from "./escopo";
 import { garantirAtendimento } from "./atendimentos";
 import { adotarMensagensOrfasDaLinha, ehLinhaComercial } from "./linha-comercial";
@@ -336,7 +337,7 @@ export async function marcarConversaLida(conversaId: string): Promise<Resultado>
       await prisma.atendimentoWhatsApp.update({ where: { id: conversaId }, data: { naoLidas: 0 } });
     }
     // Marca como lida no WhatsApp sem bloquear: motor fora do ar não impede a leitura local.
-    if (conversa.numero.driver === "MOTOR") {
+    if (capacidadesDoNumero(conversa.numero).includes("confirmacaoLeitura")) {
       const digitos = (conversa.contato.waId ?? conversa.contato.telefoneE164).replace(/\D/g, "");
       try {
         void executarAcaoMotor(conversa.numero.providerRef ?? conversa.numero.id, "message.read", { chatId: `${digitos}@s.whatsapp.net` })
