@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { Suspense, lazy, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import type { Resultado } from "@/server/_shared/resultado";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
@@ -70,6 +70,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
 ];
 
 export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, contido = false }: PropsCompositor) {
+  const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erro, setErro] = useState("");
@@ -318,11 +319,11 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
                 <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("image/*,video/*")}>Fotos e vídeos</button>
                 <button type="button" role="menuitem" className={`${CLASSE_ITEM_MENU} text-gray-800`} onClick={() => abrirSeletor("audio/*")}>Áudio</button>
                 {ITENS_MOTOR.map((i) => {
-                  const livre = capacidades.includes(i.recurso);
+                  const temCapacidade = capacidades.includes(i.recurso);
                   return (
                     <div key={i.recurso}>
-                      <button type="button" role="menuitem" disabled className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>
-                      <small className="block px-5 pb-1 text-xs text-gray-600">{livre ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR}</small>
+                      <button type="button" role="menuitem" disabled aria-describedby={idAvisosAnexos + "-" + i.recurso} className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>
+                      <small id={idAvisosAnexos + "-" + i.recurso} className="block px-5 pb-1 text-xs text-gray-600">{temCapacidade ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR}</small>
                     </div>
                   );
                 })}
