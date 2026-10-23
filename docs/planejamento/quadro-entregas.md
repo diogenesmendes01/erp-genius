@@ -5124,3 +5124,19 @@ Chrome offline: 40 pares × dois temas, 80 comparações de geometria/estilo,
 tela Next/RSC completa. Duas imagens inspecionadas e locais. Sem DB/envio.
 Relatório output/pr393-qa/revisao.md. Parecer do head final e CI pendentes;
 #392/B2 ainda bloqueia a integração da pilha em main por decisão humana.
+
+## PR #395 — B1/C2: pais e testes da casca conciliados
+
+Fonte d4c110cc recebe a base-r3@00147761 por merge normal. Base559 original
+preservada para396. Main5f,392062,393a1 e394696 incorporadas, sem package/lock
+novo. Fila/R6 preservadas no Inbox; janela388 passa quatro argumentos.
+OptOutContato/PainelContato/scripts visuais idênticos ao4818 aprovado.
+Guardas389 mantêm header direto/teto e as três alturas adaptadas à casca;
+teste390 usa dois painéis preservando os três contratos de identidade.
+Uma expectativa4 residual falhou1/88; corrigida para montagem única2,
+recorte três arquivos /89 testes terminou0.
+
+Global2766 terminou0:855 arquivos /6.723 testes unitários sem filtro/ignorados,
+maxWorkers2; TSC57449 e lint97075 terminaram0, zero erros /40 avisos herdados.
+Sem novo DB/browser nesta conciliação. Parecer final e CI pendentes;392/B2
+continua decisão humana e impede merge antecipado. output/pr395-qa/pais.md.
