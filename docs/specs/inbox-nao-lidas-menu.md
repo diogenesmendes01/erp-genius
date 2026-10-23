@@ -65,7 +65,22 @@ política de transporte não altera a loja GET, autorização ou regras do motor
 RED causal quatro falhas/oito passes; GREEN quinze testes de compartilhamento
 e recorte quatro arquivos/34 testes EXIT0. Cobertura de limite/reset, teardown,
 antecipação, callback cancelado, construção indisponível e CONNECTING nativo.
-Gates finais/Chrome/revisão independente ainda pendentes no congelamento C6.
+Global final01a: 860 arquivos/6.756 testes unitários, sessão22304 EXIT0,
+sem filtros/ignorados,maxWorkers2,262,87s. TSC5638 e lint97309 EXIT0,
+zero erros/40 avisos anteriores. TESTER01a favorável,seis arquivos/47 testes
+próprios,execcb5243 EXIT0; sem DB/browser/global próprios.
+
+Chrome/EventSource nativo com HTTP local real passou em dois cenários
+(ff9c5d EXIT0):503→retry1008ms→200 com dois ouvintes sem remontagem/resync;
+200 fechado→CONNECTING nativo→200 com o mesmo objeto. Teardown após CLOSED
+ficou1300ms sem novo pedido e remontagem posterior abriu200. Máximo uma
+stream ativa, um documento/foco externo preservados,zero pageerror.
+Fixture do helper sem Next/ERP/DB/proxy externo; sem alegar zero console de
+rede diante do503 deliberado. Duas capturas positivas inspecionadas.
+ZIP inbox-pr396-c6-01a254f5.zip:38.437bytes/2PNG/5arquivos, SHA256
+361b6f89e7e4dcc0eb59bcfdd3503910195b544b36f1575cf2baa1caee5190b0,
+asset668211207/DRAFT421321214,download/hash confirmados. Report
+output/pr396-qa/c6.md; composição dos dependentes/CI/main permanecem gates.
 
 ### Evidência B1 isolada
 

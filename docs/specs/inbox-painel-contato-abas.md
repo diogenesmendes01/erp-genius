@@ -54,3 +54,16 @@ Allowlist positiva output/inbox-318-probes/allowlist-positiva.json:80screenshots
 Equivalência estática d041→f5 de9módulos e JSX do painel registrada em equivalencia-d041-f5b7.json. Limite: não transforma fotos anteriores em QA de navegação/leitura/SSE posterior ao fixURL ou à corretiva382pendente. QA final do combinado é responsabilidade do fluxo integrador/TESTER. O parecer preliminar do TESTER sobre9e é favorável e parcial, preservado em output/inbox-318-parecer-preliminar-tester-9e080190.md.
 
 O integrador encerrou preview50441 porCtrl+C/exit1 esperado. A restaurou apenas o blocoNext10linhas deAGENTS. Integrador restaurou snapshot original do dev-email,34417 EXIT0:424tabelas/hashesoriginais,canônicas307/314 preservadas; removeu fixtures318longa/Aria. Não houve DB direto peloDEV depois da integração12/12 autorizada. Confirmações/ações de negócio não executadas nos probes; não alegar prova real nova desses fluxos apenas por preservar componentes/testes.
+## Revisão C1 da PR399 — composição atualizada
+
+Base318-r3@167856f4 recebe4003b/398bc4 por merges normais, preservandof534.
+Fonte33236c6e concilia apenas quadro; PainelContato/Conversa/LinhaCampo,
+backend/testesDB/scripts/package/lock ficam idênticosaoee498. Produtores
+394/R6/prazo puro/Avatar/SSE são atualizados sem mudar tags/permissões.
+Recorte8/133 e global20394 EXIT0:883arquivos/6.926testes,sem filtros/ignorados;
+Nexttypegen/TSC95347 e lint60640 EXIT0,0erros40avisos anteriores. Integração
+DB12 permanece nominalab8, arquivos idênticos; sem novo DB/browser nessa
+composição. TESTER332 favorável11/196+3/23 próprios,saídas0,sem DB/browser/
+global/TSC/lint; CI/main/#392B2 pendentes. Base278615a9 recebe sódocs do
+parecer398/limpeza404,source/deps iguais332 e zeroPNG298. Evidências e limites em
+output/pr399-qa/ancestralidade.md.
