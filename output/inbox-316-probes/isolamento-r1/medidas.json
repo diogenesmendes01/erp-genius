@@ -1,0 +1,142 @@
+{
+  "fonte": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+  "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "resultados": [
+    {
+      "fonte": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 390,
+      "isolamento": {
+        "focoDentro": true,
+        "cancelado": false
+      },
+      "listaAtalhoConsumido": false,
+      "imagens": [
+        {
+          "arquivo": "light-390-modal.png",
+          "sha256": "fafc0000b946d86c26c79335a544dc58f2cf71ab8a8a31b6d47c302fae0127f8",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-troca.png",
+          "sha256": "c35bf6e76f28be62d5bfd2176aa5dd58f99db9d3486e63bced55aa1c1cf4e50c",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "light",
+      "width": 1440,
+      "isolamento": {
+        "focoDentro": true,
+        "cancelado": false
+      },
+      "listaAtalhoConsumido": false,
+      "imagens": [
+        {
+          "arquivo": "light-1440-modal.png",
+          "sha256": "49439da0f1f8f288b0f1c6b46ef4a1ad9396d29139761ac4ac739b40ce4ca627",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-troca.png",
+          "sha256": "ae1c23af0de5d4fced18b862bb7f1eecfc408284a592e9d864913fd551239396",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 390,
+      "isolamento": {
+        "focoDentro": true,
+        "cancelado": false
+      },
+      "listaAtalhoConsumido": false,
+      "imagens": [
+        {
+          "arquivo": "dark-390-modal.png",
+          "sha256": "85b232004e82d75f73c759dd5528964a650848965db5144cc20b987a5cf10c72",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-troca.png",
+          "sha256": "0d4b2cea63cf2622641211119c178624d1250f32600451a8f6189be1ed1c4e7a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+      "harness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+      "tema": "dark",
+      "width": 1440,
+      "isolamento": {
+        "focoDentro": true,
+        "cancelado": false
+      },
+      "listaAtalhoConsumido": false,
+      "imagens": [
+        {
+          "arquivo": "dark-1440-modal.png",
+          "sha256": "34dc7f4e6144a42899b465a056c74612388e404f50109c7e8a42db5e6c81edde",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-troca.png",
+          "sha256": "1e06231de9a2dd72a0df3d7f68a7eee81f4a6fdd2923c812fb2b4936b2598fee",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}

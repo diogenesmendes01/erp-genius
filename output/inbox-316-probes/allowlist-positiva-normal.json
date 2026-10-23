@@ -1,0 +1,399 @@
+{
+  "fonteProduto": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+  "fonteHarness": "23cdbc35a1a87dcf6465b7775c43ee6829ade567",
+  "sessoes": {
+    "normal": {
+      "id": 26040,
+      "exit": 0,
+      "contextos": 16,
+      "png": 32
+    },
+    "formal": {
+      "id": 52086,
+      "exit": 0,
+      "app": 6,
+      "prototipo": 0
+    },
+    "isolamento": {
+      "id": 63491,
+      "exit": 0,
+      "contextos": 4,
+      "png": 8
+    }
+  },
+  "politica": "HelperDOM392v1 após interação/antes foto; dados fictícios; sem seed/negócio/DB. Não copiar pastas inteiras, logs/HTML/credenciais/negativos; PNGs locais nãoGit.",
+  "inspecao": "46capturas inspecionadas:6formais originais+40complementos em20pranchas;320×500 barra cresce para alcançarFechar,headercontinua68; semoverflow novo.",
+  "limites": [
+    "Somente mensagens já carregadas; busca não inclui notas/dias/eventos.",
+    "Nenhum submit/ação de negócio; modalNota apenas abriu/fechou, sem escrita.",
+    "Prova >100/paginação/SSE comfixtureguardada e revisãoTESTER/global integrados ainda pendentes.",
+    "Recorte não equivale a suíte completa. Estado app-only sem equivalente funcional protótipo explicitado no manifesto."
+  ],
+  "resumo": {
+    "arquivos": 72,
+    "png": 66,
+    "bytes": 7109197
+  },
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/medidas.json",
+      "tamanho": 28530,
+      "sha256": "69d8be3118837a5d53334bd692fca3b7102ce1c61441ad467770dc63063144ec"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-1440x900-primeiro.png",
+      "tamanho": 190029,
+      "sha256": "aab20a12b2d870a036b089dab797937d589ed400145bb71aace5ea00f91f7de4"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-1440x900-atalho.png",
+      "tamanho": 190712,
+      "sha256": "9b227ff9c59b130fa7a02a779251985bd378d0a5477c6cc34a66dc76974443ed"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-1024x768-primeiro.png",
+      "tamanho": 127591,
+      "sha256": "d85df05ac77ae0c82b6f873275c140d5c2802fa545964bfd11c55cd99efe6602"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-1024x768-atalho.png",
+      "tamanho": 128177,
+      "sha256": "9786246c8d91f31187a6f021ea106bf8a271328330209fb2715ee42572667e91"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-390x844-primeiro.png",
+      "tamanho": 46585,
+      "sha256": "2959e858db900b0527be7e174b98e06dbee7f3a65f480379b845b251f574c2ee"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-390x844-atalho.png",
+      "tamanho": 47011,
+      "sha256": "f49fe7f5469cabb739606c24329cbcda0e6d394941f82ed7acf0f92bd33d2cab"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-320x500-primeiro.png",
+      "tamanho": 26455,
+      "sha256": "9d80705009806db50d83338b3337b0cd16236b7c22df45abc3848d83e29908bd"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-320x500-atalho.png",
+      "tamanho": 26856,
+      "sha256": "0df00438e50322a4e6119ab9fec346291cafddf33981a7a04ce8ef32b56f9d69"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-390x500-primeiro.png",
+      "tamanho": 29967,
+      "sha256": "d2ccf241733a7cd3d6f927c7c4242ca9bd15a85c403bb533e5954c70c5ea24ba"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-390x500-atalho.png",
+      "tamanho": 30466,
+      "sha256": "0faaf07fbeba5610a4b23925b9120edeeac9ef7979b00f31fd59f892c96f767b"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-699x500-primeiro.png",
+      "tamanho": 34191,
+      "sha256": "51e5365791d407cc54814a6905898b79dc1af91e324a7b5e43e22ebb8f7d750b"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-699x500-atalho.png",
+      "tamanho": 34730,
+      "sha256": "c14248b456657472be64718e14720b3e754c20f1d246ae6d1be1c69525958643"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-700x500-primeiro.png",
+      "tamanho": 36066,
+      "sha256": "aac0901e40b4feef05a83046751af6c8eed8e92e78c066a38020d94e4c729213"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-700x500-atalho.png",
+      "tamanho": 36579,
+      "sha256": "713079c4306c03480f70c840e9586398f450ee886ece2ea1ebf9b192cf2aca43"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-1400x500-primeiro.png",
+      "tamanho": 112819,
+      "sha256": "478c824c7000d39bd6f3d7de543b3649532b0684a76389d1071e96ef6f2634bf"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/light-1400x500-atalho.png",
+      "tamanho": 113219,
+      "sha256": "9dd7345c145b16ea7279ea78b2f36577d4ac03013125e58a9f9fc052ffc32a33"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-1440x900-primeiro.png",
+      "tamanho": 191327,
+      "sha256": "b9412d55a0a3b5d1f5d6899a4727de7cd5ca94a58624790fe0c07eccdb2e6167"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-1440x900-atalho.png",
+      "tamanho": 192040,
+      "sha256": "dd4b2d2a011eca155867cd5ffdda09f1a820566743ef095cd954de85cf57d813"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-1024x768-primeiro.png",
+      "tamanho": 128892,
+      "sha256": "fb26d50d5858fda8cff9f68c5bb2897b8aa61b2a62af9b8c66804dd3b1dd07a4"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-1024x768-atalho.png",
+      "tamanho": 129460,
+      "sha256": "8babf9dbebf40744d17090aacd05f4b628a79e8738d293973b3c757c09df3850"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-390x844-primeiro.png",
+      "tamanho": 47599,
+      "sha256": "b00ea9ea6226db1f924ed7c9756cfd2c980313571c91d5edba2d86691374e933"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-390x844-atalho.png",
+      "tamanho": 48007,
+      "sha256": "f91334bda07b01d892f18fb2a7564a8d3c71ff1990b7b76b40bdfdf21a631423"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-320x500-primeiro.png",
+      "tamanho": 27257,
+      "sha256": "92d8bf686f965653dca5b087be89341797cfba86c76d6490108d42653bc10b0c"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-320x500-atalho.png",
+      "tamanho": 27739,
+      "sha256": "343c6df3b99309b9bef58515862a21373b0b488fa4e80d8e0a6488af7ffde004"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-390x500-primeiro.png",
+      "tamanho": 30575,
+      "sha256": "ce76986172f387949aa6a862fa378d9ab699ffb310c0e4af25c1de62712cc63b"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-390x500-atalho.png",
+      "tamanho": 31099,
+      "sha256": "74fa8fdacd43204dc3bd6e4ab076e4ebfc813599755bb5f9f03650299819a0a9"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-699x500-primeiro.png",
+      "tamanho": 35217,
+      "sha256": "fedc47e3af5b3a2450ad758112794744199b5e85754ab9e90870b1e16f5308c1"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-699x500-atalho.png",
+      "tamanho": 35742,
+      "sha256": "ad51502c0f379953abffd66a4be889e926200c709dc3c3bf23371ae83e8f64a1"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-700x500-primeiro.png",
+      "tamanho": 37355,
+      "sha256": "65ef145ad1d7f7127437227812b473eb3feea94c8af0a97a4c7626f6e752451c"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-700x500-atalho.png",
+      "tamanho": 37990,
+      "sha256": "40ce5c8150fe4fc64e5e7af73bdbca225b67541654930b786e04a72420ad7452"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-1400x500-primeiro.png",
+      "tamanho": 113938,
+      "sha256": "9db770f33273beb518dc13f62ec5e93f5261bc1bd386e53bb2c4197c50be6134"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/dark-1400x500-atalho.png",
+      "tamanho": 114575,
+      "sha256": "4cd1bcde3cb89c4e339648ee72d383072014b33c9ffa730cfe88dbe4b409a64e"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-1024x768.png",
+      "tamanho": 231343,
+      "sha256": "2343b234cf0a3490a125ceeefd24c6fb17fc2f9034058345f7bc5e8dd03bbe47"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-1400x500.png",
+      "tamanho": 134127,
+      "sha256": "e9617e3d651c6b4370aadcd25e48268521247d2edc033a9b7ca00101c4bea7cd"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-1440x900.png",
+      "tamanho": 209740,
+      "sha256": "bce852e56dd0801584fc8e0462baf1ac2f03c6eecd635c6464a733c6be21df5c"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-320x500.png",
+      "tamanho": 133317,
+      "sha256": "a96aef578abf2ef6f74e195f8e5d20bcd1bb658e64a87d8bbe3bbaca6986b772"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-390x500.png",
+      "tamanho": 145881,
+      "sha256": "5f051d21816e4cc5eeac402f9aa7ca12e9030cca8db243c6570f56dc2ea74b3c"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-390x844.png",
+      "tamanho": 132994,
+      "sha256": "175e869620de273548586cde4e0b57e3cea491b1781f0df8c93898c2079bb70a"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-699x500.png",
+      "tamanho": 113945,
+      "sha256": "f8358e265221627f90b269b8c9c797fbfcca09656338e352c88e48c9fb308b9b"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/dark-700x500.png",
+      "tamanho": 106373,
+      "sha256": "5f41dca92309b6bc0ef72eb678dfb22bb168db68a6022863c4c0ca58ca9e7bf5"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-1024x768.png",
+      "tamanho": 211256,
+      "sha256": "1bb79a99f7f4442ac8281751b87a8d01a69defe00604a9724786f6756e72ead7"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-1400x500.png",
+      "tamanho": 122586,
+      "sha256": "a3434ed026fe976529d4a84f010d70b906d4e985378779e8099add55b696780c"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-1440x900.png",
+      "tamanho": 186828,
+      "sha256": "aeea2546abe1fe647476ddb180de6cd278a999d9c57b263a15d0b831f0568029"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-320x500.png",
+      "tamanho": 116937,
+      "sha256": "33a3630e5ad37e339bc868ac810174727811ba3aaf4dc225f3ae2725f6fc53e1"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-390x500.png",
+      "tamanho": 129002,
+      "sha256": "ca3abe32a6b5f1a3a692e12b81151890cb4306f0e660a391bf8594224a3b3c97"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-390x844.png",
+      "tamanho": 120803,
+      "sha256": "cacc3cc59c0d6a0acc32f4f5541762139526794677a97719d52da2ff5792d929"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-699x500.png",
+      "tamanho": 99906,
+      "sha256": "8feb5c8074a9cdf8e345d05de30667d065970b20a4f937fb6edf8fc7aa8f614e"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/normal-r1/pranchas/light-700x500.png",
+      "tamanho": 94300,
+      "sha256": "74a7f727c961f47db896d2e04fe53841ad66437c21ee41634085a57bbdaa87b7"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/medidas.json",
+      "tamanho": 4448,
+      "sha256": "62011a548240a49474f9e336fa535d646fc27d780ae7de75d6baabf60895340a"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/light-390-modal.png",
+      "tamanho": 41160,
+      "sha256": "fafc0000b946d86c26c79335a544dc58f2cf71ab8a8a31b6d47c302fae0127f8"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/light-390-troca.png",
+      "tamanho": 20110,
+      "sha256": "c35bf6e76f28be62d5bfd2176aa5dd58f99db9d3486e63bced55aa1c1cf4e50c"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/light-1440-modal.png",
+      "tamanho": 174423,
+      "sha256": "49439da0f1f8f288b0f1c6b46ef4a1ad9396d29139761ac4ac739b40ce4ca627"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/light-1440-troca.png",
+      "tamanho": 149185,
+      "sha256": "ae1c23af0de5d4fced18b862bb7f1eecfc408284a592e9d864913fd551239396"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/dark-390-modal.png",
+      "tamanho": 39503,
+      "sha256": "85b232004e82d75f73c759dd5528964a650848965db5144cc20b987a5cf10c72"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/dark-390-troca.png",
+      "tamanho": 20456,
+      "sha256": "0d4b2cea63cf2622641211119c178624d1250f32600451a8f6189be1ed1c4e7a"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/dark-1440-modal.png",
+      "tamanho": 165984,
+      "sha256": "34dc7f4e6144a42899b465a056c74612388e404f50109c7e8a42db5e6c81edde"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/dark-1440-troca.png",
+      "tamanho": 149826,
+      "sha256": "1e06231de9a2dd72a0df3d7f68a7eee81f4a6fdd2923c812fb2b4936b2598fee"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/pranchas/dark-1440x844.png",
+      "tamanho": 286736,
+      "sha256": "1d3c39decb299ec572a670b1f88f2c0bcf7ea8fd275355ad33f92d7122c85762"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/pranchas/dark-390x844.png",
+      "tamanho": 132457,
+      "sha256": "9fb6e6146b6ba3d56a9e2764b78a9fe5649ba46325a17cf1cee32094acd4b0cb"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/pranchas/light-1440x844.png",
+      "tamanho": 284584,
+      "sha256": "096d13436495b5463d6d6e81a95b39a262b24fb4dac7a9c0b3efa3c5831669c3"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/isolamento-r1/pranchas/light-390x844.png",
+      "tamanho": 129927,
+      "sha256": "d1cb118dac7f8e22f89232634bf5d85757d4bc765f1005dcdbccd34ddabdb924"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/manifesto.json",
+      "tamanho": 5459,
+      "sha256": "dadffe370be0d500ff01b94a167b8c974c575cc3124677336ade89aac047d369"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/app-escuro-desktop-busca-conversa.png",
+      "tamanho": 191478,
+      "sha256": "5aa1253b22c264d54a0d088984a6114b77d63ea120a2adfa1a8c5e9e75ce426f"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/app-escuro-tablet-busca-conversa.png",
+      "tamanho": 128860,
+      "sha256": "0776f47dc79b2d7cebe6278e2112e2b462f2bf8481f0d7684d1086d2a5f56b4b"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/app-escuro-celular-busca-conversa.png",
+      "tamanho": 48085,
+      "sha256": "b8ec3fa97c8cca52e9eef8973cfab409111ba08dbdfa474b763c73aa86faa8a8"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/app-claro-desktop-busca-conversa.png",
+      "tamanho": 189976,
+      "sha256": "94f595384442c23e3165c190a58c40cb7559efdf39969385ac4b1308767c2423"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/app-claro-tablet-busca-conversa.png",
+      "tamanho": 127490,
+      "sha256": "e699cd0af78cb1ec69cc1b5d20a8630d53dbb9a79cfe473e82876ba1ac1f84c4"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/formal-r1/app-claro-celular-busca-conversa.png",
+      "tamanho": 47045,
+      "sha256": "bf9f1f3b132b49c4dc116c1fb65526078d1eb60b2b815c00cfcc805cffdf77e1"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/medir-normal-r1.mjs",
+      "tamanho": 8052,
+      "sha256": "c688f4ec16877e5e21c6aaccad7af627c001f9f31640de854b8b746fa215c932"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/medir-isolamento-r1.mjs",
+      "tamanho": 4701,
+      "sha256": "aeef6a9ef9e6848d04ba1aecba88571baafbf28024421c87c6a6e22651892796"
+    },
+    {
+      "arquivo": "output/inbox-316-probes/copiar-formal-r1.mjs",
+      "tamanho": 1119,
+      "sha256": "d14c0299e1e3d34eaed82ccfa18e71265fd54d19adb2291c4fcbae77ac79b1e2"
+    }
+  ]
+}

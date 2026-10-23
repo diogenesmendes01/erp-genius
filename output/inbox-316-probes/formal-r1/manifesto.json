@@ -1,0 +1,139 @@
+{
+  "fonteApp": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+  "fontesHarness": {
+    "capturar-inbox.mjs": "f856ec5b3d0d88f0a0498171cf8fb96f8a6441ded499a90a6c4a22ca0615174e",
+    "nucleo-captura.mjs": "134cf95fbd222454d864a038c05a466acaece74c6ef699ff2e48967b1d590d72",
+    "espera-app.mjs": "c58cd3493ebe8ba9f98d610a88fa9e34ab859e505c2e30de6a4faff3b4e7c464",
+    "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce"
+  },
+  "capturas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "busca-conversa",
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "arquivo": "app-escuro-desktop-busca-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "5aa1253b22c264d54a0d088984a6114b77d63ea120a2adfa1a8c5e9e75ce426f"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "busca-conversa",
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "arquivo": "app-escuro-tablet-busca-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "0776f47dc79b2d7cebe6278e2112e2b462f2bf8481f0d7684d1086d2a5f56b4b"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "busca-conversa",
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "arquivo": "app-escuro-celular-busca-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "b8ec3fa97c8cca52e9eef8973cfab409111ba08dbdfa474b763c73aa86faa8a8"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "busca-conversa",
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "arquivo": "app-claro-desktop-busca-conversa.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "94f595384442c23e3165c190a58c40cb7559efdf39969385ac4b1308767c2423"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "busca-conversa",
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "arquivo": "app-claro-tablet-busca-conversa.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "e699cd0af78cb1ec69cc1b5d20a8630d53dbb9a79cfe473e82876ba1ac1f84c4"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "busca-conversa",
+      "referenciaFuncionalPrototipo": null,
+      "motivoSemReferencia": "Busca local E1 não tem comportamento equivalente no protótipo aprovado.",
+      "arquivo": "app-claro-celular-busca-conversa.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "bf9f1f3b132b49c4dc116c1fb65526078d1eb60b2b815c00cfcc805cffdf77e1"
+    }
+  ],
+  "fonteProduto": "1415e517b7da809ce3ab32f9174486c10dab2abb",
+  "fonteHarnessGit": "23cdbc35a1a87dcf6465b7775c43ee6829ade567"
+}
