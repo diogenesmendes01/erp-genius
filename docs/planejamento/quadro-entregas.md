@@ -5588,3 +5588,7 @@ QA independente643 favorável: identidade43/43QA280 e JS emitido das3anotações
 ## PR #398 — composição local de todos os comentários
 
 Fonte d441c631: patch isolado d5/e11 preservado, candidata3970473/main3401/QA280/B2 incorporados; dois blocos do quadro preservam ambos os lados. C3/C4 corrigidos; C5 limite de snapshot ocioso documentado; C6 mapa nominal da SPEC. Gates próprios: 13 arquivos/183 testes por fuso UTC495885/SP556266, TypeScript37331/b7b921 e lint99368/7d248f terminais0, zero erros/40avisos. Não é suíte global/DB. QA exata d5 favorável, hash3d235d2a... em tester-patch-d5.md. QA composta, squash397main e CI398 permanecem pendentes. Sem publicação antecipada, captura nova, banco, instalação ou deploy; output/pr398-qa/composicao-todos.md.
+
+## PR #397 integrada; ancestralidade398 pronta para CI
+
+#397 squashb98da36314a719e118d1e9da510cb966311c0fc7, CI40013125860 success5/5, freshhead/main/comments/threads conferidos, issue312CLOSED confirmada. #398696e6270 incorpora squashb98 com árvore inteira igual794 após três conflitos resolvidos por identidade integral; fontes executáveisd441 preservadas. QAcomposta e CI398 serão paralelos, ambos gates antes demerge; não há conclusão antecipada da issue314.
