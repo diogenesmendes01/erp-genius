@@ -5286,3 +5286,14 @@ arquivos integrados terminaram com saída0. Sem banco/browser próprios.
 TESTER na revisão f901:3arquivos/52testes próprios e36hashes de PNG locais
 conferidos. Suíte global da composição313 anterior92faa:877/6848 saída0;
 não estender esse gate ao novo código388 antes da nova verificação.
+
+### #313 — regressão global após composição #388
+
+Fonte4fcdc6cad73c3ad8782405c29db8770122fa8432/base9b78b1e9, Node22.23.2:
+unit37524 saída0,877arquivos/6.854testes/254,94s,maxWorkers2,semfiltro/skip;
+typegen0,TSC95820heap8192 saída0,lint47827 saída0/0erros42avisos.
+40avisos herdados das fontes+2 de probe privado no staging318, sem alteração
+para ocultá-los. Não é suíte completa de integração DB. Relatório
+output/inbox-313-global-final.md. TESTERestático próprio4f18/285+39R6saída0.
+DEV e TESTER em browser nos próprios worktrees/bancos; formal/QAfinal/ZIP/PR
+continuam pendentes. Nenhum aceite visual ou integração presumidos.
