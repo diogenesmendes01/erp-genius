@@ -16,4 +16,8 @@ C5: Hoje/Ontem permanecem um snapshot atualizado por revisão/conteúdo/seleçã
 - Next typegen e TypeScript: sessão37331, terminal0 em b7b921; lint global: sessão99368, terminal0 em7d248f, zero erros / 40 avisos herdados.
 - Provas de identidade:13cf40 detectou uma asserção inicialmente ampla demais sobre o harness, pois espera-app/nucleo têm deltas314 legítimos. Inspeção6c9e87 confirmou isso; a asserção corrigida d3fc20 terminou0 e confirmou essas duas fontes iguais e11, guardas/manifestos iguais0473. Nenhuma restauração descartou esses deltas.
 
-Global histórico 867 arquivos / 6.819 testes pertence à fonte671; as capturas314 continuam nominais às suas fontes originais. Não houve novo browser, integração, seed, migração, instalação, mensagem ou deploy. QA da composição, ancestralidade final com squash397/main e CI remoto permanecem pendentes.
+Global histórico 867 arquivos / 6.819 testes pertence à fonte671; as capturas314 continuam nominais às suas fontes originais. Não houve novo browser, integração, seed, migração, instalação, mensagem ou deploy.
+
+## Ancestralidade final
+
+#397 integrou por squash b98da363 após CI40013125860, cinco checks verdes e conferência dos comentários; a issue312 está fechada. A árvore inteira desse squash é igual0473. O merge b98 na candidata398 gerou696e6270, com três conflitos por causa da ancestralidade squash. Mantive quadro/README/nucleo já compostos e provei o índice inteiro igual794 antes de confirmar o merge (f824aa, terminal0). Fontes executáveis iguaisd441 novamente em81d112, terminal0. Nenhum gate foi repetido por esse merge de ancestralidade. QA da composição e CI remoto final rodam em paralelo; ambos obrigatórios antes do merge398.

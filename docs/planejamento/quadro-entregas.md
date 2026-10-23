@@ -5864,3 +5864,6 @@ Fonte d441c631: patch isolado d5/e11 preservado, candidata3970473/main3401/QA280
 ## PR #400 — composição local de todos os comentários
 
 Fontecb89727a: patch616/17fcdac0 e candidata398794 incorporados sem antecipar publicação/merge. Quadro6blocos preserva ambos; testeInbox400 integralmente preservado, thread398 idêntica794 e B2/QA280 mantidos. C3 alias legado documentado, C4 artefatos avaliados, C5 SPEC alinhada. Recorte12/208b514c0, TSC94403/8be42f e lint21031/3bba19 terminais0/40avisos. IntegraçãoC2 nominal260a20testes, arquivosINTiguais, preferencias sóJSDoc; nenhuma nova DB. QA616 favorável hashde3107... versionada tester-patch-616.md. QA composta e pais397/398main/CI final2TZ ainda gates; output/pr400-qa/composicao-todos.md.
+## PR #397 integrada; ancestralidade398 pronta para CI
+
+#397 squashb98da36314a719e118d1e9da510cb966311c0fc7, CI40013125860 success5/5, freshhead/main/comments/threads conferidos, issue312CLOSED confirmada. #398696e6270 incorpora squashb98 com árvore inteira igual794 após três conflitos resolvidos por identidade integral; fontes executáveisd441 preservadas. QAcomposta e CI398 serão paralelos, ambos gates antes demerge; não há conclusão antecipada da issue314.
