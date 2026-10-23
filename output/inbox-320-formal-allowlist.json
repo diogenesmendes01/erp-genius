@@ -1,0 +1,1660 @@
+{
+  "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "equivalencia": {
+    "origemProduto": "b5094856c326c4fdf559b1833dbe0827868b591a",
+    "composicaoRoot": "442d1a665e82c7376ce7e8707b3a4d365257c7db",
+    "limite": "Produção byteigual; fotos pertencem somente à fonte OWN491, não à HEADROOT442d."
+  },
+  "executor": "36201",
+  "previewRoot": "8165",
+  "totalBytes": 16777708,
+  "arquivos": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "carregando",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-carregando.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5c048c37776326291247c8c27cb44aa3397da159cf75b612c9f4a85e876d9ef3",
+      "bytes": 44145
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "carregando",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-carregando.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "197b86f04a58f92e51d8e74b5f1e7ba77fa85ed571890901ae40d58302acb166",
+      "bytes": 34509
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "carregando",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-carregando.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ccd11e3836d799f402e5a3f303422f3a32ea86e02c32dfe525eeb3158ccfd12a",
+      "bytes": 8628
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "carregando",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-carregando.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5e7d25b5ac6be86fe21c9fac2cd23d9818eb1b72a1181bb82cfc0934cb12545a",
+      "bytes": 43748
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "carregando",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-carregando.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b9f5758a819fc21fde27a46d153d8647337bbdb6606ac47c638b73fd05efbccc",
+      "bytes": 33824
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "carregando",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-carregando.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9e2133190c5d66ceb5773d628ec3800b6b2e9db678575244a311033e02798233",
+      "bytes": 7940
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a5446eb04ca434cd6991eaaec7896ad802e6c8023596f18463c3ee0be091c141",
+      "bytes": 149793
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-painel-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b1f4b4bcb36b1c359fe15d94cc325ea54909cc429e33a0e09606c18df0767690",
+      "bytes": 120154
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-painel-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7d90d1a41f4fb44b73e06f3028ee73d570d579dd2514ed94cd7e7b271e7acad5",
+      "bytes": 23584
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "dd4dd3bf67d696d31c9e3a15525385d916c2ead72d54f6ecfb6a343c07a2de8c",
+      "bytes": 186256
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-painel-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d327a2efc4eb8bc2b9e2d4fc2581cd268b730777f73fba0cb9f8fa2d2448388c",
+      "bytes": 120955
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-painel-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a42dcab155b1578ba0223bef90f369076775519a780e35aac0f88238c5cdd078",
+      "bytes": 23626
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "thread-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-thread-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "280e7d27258d51384febe0f825bf2d6ba9ea13cf6f472801841b147e484ae0d2",
+      "bytes": 144492
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "thread-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-thread-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d2ba1cda8813f0a46b33b78ed49fd04e18a7851893356dfd860037147141ba8e",
+      "bytes": 103667
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "thread-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-thread-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fad1de51e96dfab5c5e0e9deb8f465aee0ed270b43a05d3826834f5bcedfd5fb",
+      "bytes": 23345
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "thread-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-thread-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "65388f153dea549b2e258edfd846ab50d17a1dec8da3e51f74f0deac71a79b20",
+      "bytes": 155744
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "thread-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-thread-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a67ef5fabd15c407a8cd7b80d3e4d07d86583b2b1eef81cfc40b49e30c9ab8ea",
+      "bytes": 102304
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "thread-erro",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-thread-erro.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ba3375d33570e2c16516c1610a503a05172ce16e1dc080d2a76974d3b8bfd24a",
+      "bytes": 23310
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-vazio",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-vazio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8f1f739a839cbc827f9bc5737293e055ecca3681286ee48154399da703587b15",
+      "bytes": 172885
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-vazio",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-painel-vazio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "72ef0f3cdc86e6426ab5212162f60b15705ecd3aac3202363b3d6f636d1b963a",
+      "bytes": 109517
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-vazio",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-painel-vazio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "36a500164995bab75a64df9ebb7d27634afb03a69497136586bea8eaa2be0e07",
+      "bytes": 23635
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-vazio",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-vazio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "05a74c0240633f718aab40e357ef873678a7789ce8ca55312fa32f39169c270d",
+      "bytes": 172709
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-vazio",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-painel-vazio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "4aa785db52ed22004f99086dd7fd3b645a97565bb3c3d3cf95b6f97281bb70f0",
+      "bytes": 110893
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-vazio",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-painel-vazio.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c72fc339313f3ff01a2334dc35b84fe57686878234c64d694ec9fa8ea7b0657f",
+      "bytes": 23754
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ea112a818e1ee419a0428772114f629cb9ad5a292cdb51f9d63722454b65ede0",
+      "bytes": 196853
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "375bd79f4188697ff3a40d1631a712bf34793b0c066fa3a85c9fd3a9a05fa850",
+      "bytes": 136747
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "04735bdf42e9b10cfc792ab416b7abdcde7b025bb3cc3a776522adf3086fd3f0",
+      "bytes": 55704
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b52452862c3e2d4489ac1f0c2baf694b27e107071f82a71ac973b13bcbcf1da3",
+      "bytes": 195698
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ebad77ab92dcdd34f2e26da0e8a5eb4c854a1e2b0d2339129742b1da9ba15cdc",
+      "bytes": 135019
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "90a233985759d089c537310845238a92c04b7f99e1a2a7278d2c77c93638af39",
+      "bytes": 54622
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "busca-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-busca-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1d0a07b59114a0f94299580f1d56cc3e01dce3ce4a6ad28d59a2555a93f020e6",
+      "bytes": 191312
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "busca-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-busca-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7b58666fe92fc9d6aebb4ee8819890af35032fad1f14dfe48eda9cfa5eb634af",
+      "bytes": 131541
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "busca-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-busca-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "90abebd73ab3531a200ac7ee2614dcc4b85720d066078bc54a8804f9efd3c695",
+      "bytes": 50080
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "busca-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-busca-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f480d0a45146c424ab1134f49fa7a71b3f317b990dc2fab53e3cbc74e5ceca4e",
+      "bytes": 190314
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "busca-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-busca-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a7348f0d4413efc7cf63c505212b1dba7babf3b11cc6b515c4c40423cde6c306",
+      "bytes": 130246
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "busca-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-busca-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8df8d90c59ad2fb003a47dbb1a2a41c837a64b2040cba398b0aa2dec9968b61b",
+      "bytes": 49297
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b0ba6ac58f0c72e6833a823583fb96347910675fbd267822bc8c5e542443f495",
+      "bytes": 161526
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3d10bd1904702081c48ad1338532039e173a5c428a7cd8acdca5c883d747515a",
+      "bytes": 104925
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8992be7b4b15f8e10716fb5ee748aeb548054b3abc4fb2539a918aa688850140",
+      "bytes": 24621
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0f94e73ccfa3d4451c0436ffa21a4447f9713b5503be0f8a810851cb2f2b0c4e",
+      "bytes": 161132
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7a265737b08bd6ab8461214f791386948851b02da5d7521ad59b73465ba4af71",
+      "bytes": 103763
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "38145ea8cb93c335007eaf21c301eed31b8d95327b5945f409196f5ce2e59099",
+      "bytes": 24446
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8566965988cebb3bb15640be71254438374e6fc9385b27c537970105a63f73e2",
+      "bytes": 180720
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3b1e1e2ca2249a71d95f51856aa71fcc5a042090069d2f17d96f364298c6abde",
+      "bytes": 135228
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9e571e0debf458554eff2d5c4124451d3a81387c79a34ed93b7aab82675599c0",
+      "bytes": 44261
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a58061e1360ae3dff839f2d4ec25b0bff7463eacc18f158bb164f053ea2b493b",
+      "bytes": 178979
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "530d79e64cf6f5790b4302c55aedb602f39fa6d85498270bc678b700ddd289db",
+      "bytes": 132872
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "570b075ae5c1dc22d2d6dd53acf1b9958c4ee99e65ccfa402bab399d25cf246f",
+      "bytes": 42014
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b0ba6ac58f0c72e6833a823583fb96347910675fbd267822bc8c5e542443f495",
+      "bytes": 161526
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "6be3e70b0b39cdb2504ba1dce311f5b690d739da9ad9fcd47e496c5e65eb9cd9",
+      "bytes": 121477
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "bbc00eb0534cecf899c9adb111a939a30ba1ae6ef79f95b4f0ba298e79a79b71",
+      "bytes": 31914
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "835a9bc5758b8804004f6b3bf826311111a0c9634786c0011420f83b5a0910a4",
+      "bytes": 161193
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "70acd935c0367a4f59937a233f8edf835cdab8ea38ed90bf228b4969216a5c1b",
+      "bytes": 122926
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b87a032ddd4786bf7aff520417323a2c1809ab7fad66ded5d182200332e40982",
+      "bytes": 31690
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-fechado",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-painel-fechado.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "39acb3ef4f289a237189a95fa33980d0a4332589e3463d774bc96c4c8b7b6aae",
+      "bytes": 136227
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-fechado",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-painel-fechado.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "10d3827e7ee2460ba5f7c4cfb671d70cbf9e2acdb204794d5df833cd2ef537ae",
+      "bytes": 135520
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "sem-selecao",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-sem-selecao.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fcdf09f198be4aa0e1fa9216a0e13bc95e6acb29d9c391419181b316a4ba3741",
+      "bytes": 116999
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "sem-selecao",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-sem-selecao.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "736e980316dacd7459b9e367e4def005a2177ed791c7d2f6cfc1f19ffcf51dbe",
+      "bytes": 88657
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "sem-selecao",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-sem-selecao.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "95fb671eaaa0f914a8f38892d788312b6585d001bbcf6abeecee7cfbf83c5448",
+      "bytes": 68416
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "sem-selecao",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-sem-selecao.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "31e47847579690dc50e1cc59f35c3b660b07f1a017b4a1d68cd3595da18f9b4b",
+      "bytes": 116324
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "sem-selecao",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-sem-selecao.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "87c50b9e37b4510b4cccef0c6d609fd81605e973584baf3f0c94b89f8e6275db",
+      "bytes": 87309
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "sem-selecao",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-sem-selecao.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "2307d94dc136b85fdd510b335059b6f8448c11d5208fe3444d364bf926ccbcd1",
+      "bytes": 67301
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d5582566f83145b8912f4a3c9f3fa18ab631d1e66b274521891c8386e3c10441",
+      "bytes": 195602
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b6be16764c6496db6ce247bdd61d7fe7b182cfee9b4f1aab43ea93ad510f8d33",
+      "bytes": 133611
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "862d2a99cc0cd3888fcfd5c54b979a139d7b305bee530e3e75ecd7ec2fefa858",
+      "bytes": 52071
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d8152ca37c12404f2aa942f942de1bfcbe39c1102c7b08b92cfa2d81c9f32f40",
+      "bytes": 194461
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3ee9a908a48a2d9f6d1e1b5ad38b6177713ec7de303eb6a6f4658d447fdd5309",
+      "bytes": 131962
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8ea49bdab75d45d62da8c94002de3db47d4b6703a43b29aa70f0ba4c3c8ec05b",
+      "bytes": 51079
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "85704492444ad43ee3bac5cd46f9c771fde1dfda088d4c9657372d222afb025f",
+      "bytes": 105887
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "210c100b851acf69a34b615519b7863f8d5ec8e0e0432c84d448f4d1df485523",
+      "bytes": 83688
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c4ebb2be5bafcca8fbf772e0cdbeb3174edfe8dd7dc6f84f398bec4f59a1b18f",
+      "bytes": 60162
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1c30bc2cd7846863c5099177dea259959757017db1a9babd77c32d5389ac7f76",
+      "bytes": 105661
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "930a24ee38bd45cd4751babcdaab4bf4d1a0778b88320651f516bff4e162f6f4",
+      "bytes": 83024
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "715dc3a0d720ff2238ee24df8c827df273242a56af1feeb1abf3e7f40f1692e4",
+      "bytes": 58561
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "42bbd3bcefcbee3194677a632165651b95272116ae9fc79850d40344fe1aa3a5",
+      "bytes": 106769
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "118e0d3414797d341c8b6e0dd1f998e14149d95158258ffaa6f04bc277e89dac",
+      "bytes": 82219
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1612ce6eddf079117e41a5d22c0690aefa0c336c554bf99ebda98869420230b0",
+      "bytes": 60483
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c6e76382a385dbda938f49729158fda927af994edb7906c4b9d273207d1bb3fc",
+      "bytes": 106785
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "038e315a1c11fe3c3841760e321a027503f8ac97485c04075ceaa7de6e7ccc3d",
+      "bytes": 81770
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fb82d80f199c677c403f40b66455cccf56f9c042d0c92d0088f9b0f47daacbd3",
+      "bytes": 59012
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "94046a7f3b60af9f0b41e984fe8fb928849eea532ebbad03da0a24df3bca2483",
+      "bytes": 110082
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f6ce10ba9b764693cabb007696c6a0f4bb0a6edb82ff6aaade43429c38caea16",
+      "bytes": 83913
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e4679bbba6698ef6dc9d56ad13cb1c8c5ff8fcd86bfda56d974636f15d273426",
+      "bytes": 63435
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "dae03dc6becd72d934e1e15650eba8c5a57276251e090981b6bccd8d3425633e",
+      "bytes": 109710
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f8c0dc1733d20273d94dccc51451332c914dc895096b8da46192502f56f5cbbf",
+      "bytes": 83508
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "09976c66ded6aaacf9e98a8f8ec04a6a599bc6c1180f9d058094ea759094ac39",
+      "bytes": 61228
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-desktop-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f70e580c3e0b7f84d5447e794761cc3489173620ac957b804d915ade9b979bab",
+      "bytes": 61181
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1cfef1bf274de40eba3c5b97259b40f77a1fc3112188c3821351e0a87355a87d",
+      "bytes": 51326
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ff8bc66b3e5adad91d473acf339c15a5cd3a33dc7ce4bec19d504f5b6b80c19a",
+      "bytes": 22083
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-desktop-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "2962d239a7637f1fab4fe5d2afe7b5e0aca715cde5d23028b2764ae33356905c",
+      "bytes": 59910
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "49e7b343c214f9192c80e001a03ddafb4c75b76173fe4e7c3273b217368e60e6",
+      "bytes": 50503
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fdb575b407d0358e850e3d0a2d2b40756eac2c7b62c080e79c919eec4d90122b",
+      "bytes": 21360
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-celular-lista.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "95fb671eaaa0f914a8f38892d788312b6585d001bbcf6abeecee7cfbf83c5448",
+      "bytes": 68416
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-celular-lista.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c76ff7279d62e756fe1ac6c947791a0262e96f317f91cd0c488e71a2bfc09621",
+      "bytes": 67231
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-celular-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "bbc00eb0534cecf899c9adb111a939a30ba1ae6ef79f95b4f0ba298e79a79b71",
+      "bytes": 31914
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-celular-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b87a032ddd4786bf7aff520417323a2c1809ab7fad66ded5d182200332e40982",
+      "bytes": 31690
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-celular-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8992be7b4b15f8e10716fb5ee748aeb548054b3abc4fb2539a918aa688850140",
+      "bytes": 24621
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-celular-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "38145ea8cb93c335007eaf21c301eed31b8d95327b5945f409196f5ce2e59099",
+      "bytes": 24446
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-escuro-tablet-tablet-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "14e55538b3a3b7dc1a381fc4eef0a1f5cf1428025e868d93cc6be0e3a3c17a71",
+      "bytes": 121326
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/app-claro-tablet-tablet-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "982fcba4af3246fcc59c237602f6261b57a0c859fe75e7d63e8fa3d4826d67d7",
+      "bytes": 122825
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7a3030dd66d50efe1e79f13406f0dc47e010224a7192b9b7116b795701d61522",
+      "bytes": 189283
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3eda8d880f3f6ebd55618bc7e93be95daf8b268072bbefc5238f61e71f9a348a",
+      "bytes": 125423
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "761ff058f6ec495604fc5ea53f8e957b3ff94da8f9fa2cd1b26168f22906b69e",
+      "bytes": 54433
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a74d8c93783197477e7ef04323b66c2432ac9afafcfc7cc029145a5056cb535c",
+      "bytes": 189080
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5a00c9eb843891e0c72b5625246a13ead925602e537c44c0047cc095951d87cf",
+      "bytes": 124202
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nota",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-nota.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "db92e590b724d717cf2d2ea95467a8fc4ebb3f2b7aabea44de43ad1bd34baa8e",
+      "bytes": 53144
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "91847b947ccf9fd4b57e735504614029435ec81cfba31841cd991a0c1d9ef959",
+      "bytes": 196695
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "55e0f3e3c0d85d3b5ca5e89a33a23b8a227d37f52ad98fd936f21f69a6d4c3f5",
+      "bytes": 128785
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "69c8232fe0bc96c47c002da0d223a91585faa726ab6078a70713103a34982dde",
+      "bytes": 54251
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "53fc285d8fdb8611d8542c5ecf2c96b5d89cbe3f360485287c679dc3e2a6cd53",
+      "bytes": 197841
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8ee76130c71d7f7b68eec8fab9bdb5565dd8e33d0fd5e0484e055e9f27258fb2",
+      "bytes": 128889
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02",
+      "bytes": 54029
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "91c5b89cc42bd7a7f8966f9ab183e1fe575cbe994a28ad03e5702a0481babb68",
+      "bytes": 215101
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "cbe4c071fe15bfba3e9accca755a62ade939df3a3dfbd97e9199c0c1535039b3",
+      "bytes": 145610
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5f675768fe2a541a23cbbfcf645467faa66aeedb26a65bc3797de7a920269cfe",
+      "bytes": 48960
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "159edf1e6e85b4033715ea5b5f3bfaaae07ad1e550393add8d85404561854bcf",
+      "bytes": 214689
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c8d1f46bf691141c301d154db8a51803b4cdcad731a34da2ae64f8405943a34b",
+      "bytes": 144938
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-menu-mais.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a06a4e3a2d3f17d176e13d86bed74223b2dc8d043eeb404519f64bf282dc9e1c",
+      "bytes": 50327
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "91847b947ccf9fd4b57e735504614029435ec81cfba31841cd991a0c1d9ef959",
+      "bytes": 196695
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3cab096d526ccbf82b6181f6563ffb87d2fb3edcaccc15ed1a4c4caf820652af",
+      "bytes": 143271
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5ce7d50827045563afc451ade7d98138b820f4efdd9d0f06d50a7f7fc3889766",
+      "bytes": 37389
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "53fc285d8fdb8611d8542c5ecf2c96b5d89cbe3f360485287c679dc3e2a6cd53",
+      "bytes": 197841
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3f6aee918ecd52c951e13df4870b1296b97d63d3faefe38cb2b1887c53f4e926",
+      "bytes": 146028
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "painel-detalhes",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-painel-detalhes.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0b52644468693c63da4ae448b97eefd91d4bd5796904ba63fcd3abafe79e8441",
+      "bytes": 36798
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "painel-fechado",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-painel-fechado.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d868bf346d935ad35ee011c814c5ba9dd54ce2ff55b926885403007f2509696e",
+      "bytes": 163375
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "painel-fechado",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-painel-fechado.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c07cc1de79f9dcd9be3ee05cdf9ea34b7a16bcbb167552a25c9d775561656dfa",
+      "bytes": 164101
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "6e64f2ee5ec485f9c34a167e233c147e98c0f93a6a8bd9640f6796b05c66e751",
+      "bytes": 188584
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e99420edcad620db8cbd7ce8daa6ab56932c706d5c9de0ac5bb9a61722bc34ef",
+      "bytes": 124848
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "871a6d8a1836e3c58099dc763a46a5a7c0e0ec8932212df1ade98c6854270f3a",
+      "bytes": 54000
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "dc0e380b07b290f76906a96491ad3377e05e4f0915710cdc9434b8d492559ed4",
+      "bytes": 188573
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f077fe1f4790ccf9334daa1615b93eaf3bd195b88ca431b5ac6169025f9d0d8a",
+      "bytes": 123773
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-humano-compositor.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "51b3062993f17565cff4170a11544a63a57c4909c9a9891a5f7766cff0617df3",
+      "bytes": 52874
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0d96a79c50644b54acde6ea3a0894e1ad440182648f798837f26399e22a646ee",
+      "bytes": 177641
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "40a973d1552d1fbc45dbbe8cfb8a563457a21a711fd7d2d54d0a454a9cdf60e0",
+      "bytes": 117346
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a5694788a1b8e30f19ef3393d552479230f282966156923d4eca668065c9a20b",
+      "bytes": 50139
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ae5dc26f7c6f958fdc08466b0577c4c88175539843a2e413489f3884858305f0",
+      "bytes": 176692
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "02ba110368f739d6cd709cdfff9d433e98828cb755c3ddb9a365b1004974e548",
+      "bytes": 117095
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "filtros",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-filtros.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e5c5f91f564a919381751a299e9510dbd1b7eec8f6c96e081d766e440cdd40b5",
+      "bytes": 49038
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "153289cace59207f47e5e727c2dc7510cd5c19dfc491310d74faad1b2e66c7b5",
+      "bytes": 194945
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d2f48d1eae829a3c7e451734ab0dd5fa12bfe42f80b7d558609feff674184f51",
+      "bytes": 131189
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e7fcab8c558932bbe9f44733b870ada15a0c6de4f8255224eb712cb5a6862127",
+      "bytes": 68692
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5ac5f4ad6273a2d6a4b1e7671fe132b5bd3c69a901e463fc0021eab44062bca4",
+      "bytes": 199065
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e7152e0928b8007848fc6e76f3e64d29224bb3e8cbeac8b6fb8f2ad1838d389d",
+      "bytes": 135387
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "seletor-numero",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-seletor-numero.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "4fa4f33b7749f738ca3aaae2e99b88763b34ead9dc828e330c47bdf0c33f6d84",
+      "bytes": 69606
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "388f6fdbb6b190de31ac3fe65675575f8188742e1b249b30e2230f31ac3d4bc1",
+      "bytes": 191959
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "6e47ee6e544521bebea0c475556af44a62d8a292f0f79ae5b0b9e1fa8d88c3a4",
+      "bytes": 128590
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8d393eb85cb1d2942166eb088363388d7d9eab91ee54e5320fca01bd0adfc087",
+      "bytes": 61454
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0f7db43b4c184f13a977c571ed0e5b07b48fb84c42fd1241cbcee4b4ccceff23",
+      "bytes": 190422
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5e459404dbd72bdde81fef2d085993b6b828df9fd8070872a38c5ffc63673604",
+      "bytes": 127400
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "nova-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-nova-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5452406e89620156a263145074bf52d9f9c235d3ee69cd1a0b06d1f763c32501",
+      "bytes": 60577
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-desktop-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fe11042080c24d6e4a1e8f0040960a2a44f679211636ce02e37b814bf61e7063",
+      "bytes": 144561
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7c93519fe24fb599eeecf694b332e09418f12c313472a0dbf54fa4b7e6a90deb",
+      "bytes": 96325
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "36b85e33acd1bb8d26aee4254d884f32c33738bc69a3054bece276c63b5e9262",
+      "bytes": 28426
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-desktop-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3096fb0633fb08ee2b1d944cbe65e4dc5e084a4c80a1fb19ee855422d9bd2247",
+      "bytes": 144162
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c64c892c903376dfca5ab838ba96235a0029892ea3b785124a039083ed03495b",
+      "bytes": 95624
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "lista-vazia",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-lista-vazia.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0fd00cb3cf5ec952d3526069fc403d9cafbb6c9b5cc5a9b6439f0bb39d49e03c",
+      "bytes": 27269
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-celular-lista.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "420036e655827ede78a8c8a43fffb03221f80d47bde9d3a175ee0bd5ea9a550f",
+      "bytes": 71407
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-lista",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-celular-lista.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8fdb9656e54a6288b71dc6643e19246514eba2cb621e136eb90d69f44ac1a1e0",
+      "bytes": 70770
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-celular-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "5ce7d50827045563afc451ade7d98138b820f4efdd9d0f06d50a7f7fc3889766",
+      "bytes": 37389
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-celular-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "0b52644468693c63da4ae448b97eefd91d4bd5796904ba63fcd3abafe79e8441",
+      "bytes": 36798
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-celular-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "69c8232fe0bc96c47c002da0d223a91585faa726ab6078a70713103a34982dde",
+      "bytes": 54251
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "celular-conversa",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-celular-celular-conversa.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b950185c8c9d96155b2750b33d00ed73baaca0ee2cb03585943ba65f9aa06f02",
+      "bytes": 54029
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-escuro-tablet-tablet-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3cab096d526ccbf82b6181f6563ffb87d2fb3edcaccc15ed1a4c4caf820652af",
+      "bytes": 143271
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "output/inbox-320-probes/formal-r1/prototipo-claro-tablet-tablet-painel.png",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3f6aee918ecd52c951e13df4870b1296b97d63d3faefe38cb2b1887c53f4e926",
+      "bytes": 146028
+    }
+  ],
+  "limites": [
+    "Somente164 originais positivos da rodada formal-r1 terminal0;100APP64protótipo/20estados/6estadossemreferência.",
+    "40pranchas derivadas inspecionadas separadamente, fora desta allowlist.",
+    "Não inclui complemento-r1 negativo nem logs,HTML,requests,diagnósticos ou scripts privados.",
+    "Fonte OWN491; produção byteigualb509/ROOT442d sem atribuir imagens a HEAD alheia.",
+    "AnonDOM392 aprovado aplicado antes das fotos; nenhuma escrita de negócio, seed ou transporte externo."
+  ]
+}

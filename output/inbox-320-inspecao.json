@@ -1,0 +1,714 @@
+{
+  "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+  "originaisInspecionados": 252,
+  "pranchasTotal": 51,
+  "formal": [
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/carregando-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fcca414e7838e10b98a4608d8b0bcd13a2b9542943bac50165dac4d875fbc014",
+      "bytes": 57121,
+      "originais": [
+        "app-escuro-desktop-carregando.png",
+        "app-escuro-tablet-carregando.png",
+        "app-escuro-celular-carregando.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/carregando-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "bdc855b34d5845dc2ed717ba57d36d54cdc8d0fab7a6e3f3425d108f79c020a0",
+      "bytes": 54680,
+      "originais": [
+        "app-claro-desktop-carregando.png",
+        "app-claro-tablet-carregando.png",
+        "app-claro-celular-carregando.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-erro-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9d6cb64526c96e2f4b878ca3bf9cb02e7aaa0196bd0cf4dffb2c06fbe2d75232",
+      "bytes": 97931,
+      "originais": [
+        "app-escuro-desktop-painel-erro.png",
+        "app-escuro-tablet-painel-erro.png",
+        "app-escuro-celular-painel-erro.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-erro-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "a2bb7f48a96af4df4e3fb741fedb8b1857a8ce64700092eeeec3402243d707bb",
+      "bytes": 102605,
+      "originais": [
+        "app-claro-desktop-painel-erro.png",
+        "app-claro-tablet-painel-erro.png",
+        "app-claro-celular-painel-erro.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/thread-erro-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "4cd053e1f155544f89fc085b9211d0954a6693600e2d473feba33df2cad09501",
+      "bytes": 92298,
+      "originais": [
+        "app-escuro-desktop-thread-erro.png",
+        "app-escuro-tablet-thread-erro.png",
+        "app-escuro-celular-thread-erro.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/thread-erro-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "fca7f3728e9d2c162c4b0cd10052976397faac3e8aafeffada67b186f362b655",
+      "bytes": 94932,
+      "originais": [
+        "app-claro-desktop-thread-erro.png",
+        "app-claro-tablet-thread-erro.png",
+        "app-claro-celular-thread-erro.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-vazio-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "d9f4d5bef5a703ba8f73945cfab624777e7c050135ebedf6236891aefff149e8",
+      "bytes": 98875,
+      "originais": [
+        "app-escuro-desktop-painel-vazio.png",
+        "app-escuro-tablet-painel-vazio.png",
+        "app-escuro-celular-painel-vazio.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-vazio-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "2f3bcb245898de48e0d2c8a9206f7f0bfccae0088f344f68282d5a7626e0f6a9",
+      "bytes": 97486,
+      "originais": [
+        "app-claro-desktop-painel-vazio.png",
+        "app-claro-tablet-painel-vazio.png",
+        "app-claro-celular-painel-vazio.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/nota-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3a0f2b228fabbc6a3260ba8d986d3ac161636d2d8ab80ca6d61724d92910afa7",
+      "bytes": 276716,
+      "originais": [
+        "app-escuro-desktop-nota.png",
+        "app-escuro-tablet-nota.png",
+        "app-escuro-celular-nota.png",
+        "prototipo-escuro-desktop-nota.png",
+        "prototipo-escuro-tablet-nota.png",
+        "prototipo-escuro-celular-nota.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/nota-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "46fccca2a890fcb4bf969c5c40e5cf4dd54d26f20ecc5b070d72e1e4ea85c327",
+      "bytes": 266087,
+      "originais": [
+        "app-claro-desktop-nota.png",
+        "app-claro-tablet-nota.png",
+        "app-claro-celular-nota.png",
+        "prototipo-claro-desktop-nota.png",
+        "prototipo-claro-tablet-nota.png",
+        "prototipo-claro-celular-nota.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/busca-conversa-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "59e1eacaec1b6f0fff25d5c25585edbb2c30d19bf1e27d2c20b9f8b6e4ab04f9",
+      "bytes": 126929,
+      "originais": [
+        "app-escuro-desktop-busca-conversa.png",
+        "app-escuro-tablet-busca-conversa.png",
+        "app-escuro-celular-busca-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/busca-conversa-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9c41dcd75380ec06cda72b2e41248e7585eef902fc18a1a23f25a7f343a9bc19",
+      "bytes": 123724,
+      "originais": [
+        "app-claro-desktop-busca-conversa.png",
+        "app-claro-tablet-busca-conversa.png",
+        "app-claro-celular-busca-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/conversa-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b99dc4020bf62736ece22329e45947a790ddf9ed3eeaf922dbd929903216d1d1",
+      "bytes": 243776,
+      "originais": [
+        "app-escuro-desktop-conversa.png",
+        "app-escuro-tablet-conversa.png",
+        "app-escuro-celular-conversa.png",
+        "prototipo-escuro-desktop-conversa.png",
+        "prototipo-escuro-tablet-conversa.png",
+        "prototipo-escuro-celular-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/conversa-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "43a37bcb1ccbcfce81d11277be2eb18e85c9d92172aff7dcfa50711e04e6233d",
+      "bytes": 236512,
+      "originais": [
+        "app-claro-desktop-conversa.png",
+        "app-claro-tablet-conversa.png",
+        "app-claro-celular-conversa.png",
+        "prototipo-claro-desktop-conversa.png",
+        "prototipo-claro-tablet-conversa.png",
+        "prototipo-claro-celular-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/menu-mais-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "58f3d0c8b9d8ca555ba08e6956bdc708b9081e2fe6706326662140727d98f9b0",
+      "bytes": 253031,
+      "originais": [
+        "app-escuro-desktop-menu-mais.png",
+        "app-escuro-tablet-menu-mais.png",
+        "app-escuro-celular-menu-mais.png",
+        "prototipo-escuro-desktop-menu-mais.png",
+        "prototipo-escuro-tablet-menu-mais.png",
+        "prototipo-escuro-celular-menu-mais.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/menu-mais-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "2a0cee39eab91c5033fab24a58fe8a918dc6d56c31938c6afb8b062a3c4cc1bb",
+      "bytes": 244859,
+      "originais": [
+        "app-claro-desktop-menu-mais.png",
+        "app-claro-tablet-menu-mais.png",
+        "app-claro-celular-menu-mais.png",
+        "prototipo-claro-desktop-menu-mais.png",
+        "prototipo-claro-tablet-menu-mais.png",
+        "prototipo-claro-celular-menu-mais.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-detalhes-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "dcd55a5cce1b0cd950d0c79701961cd894b937b413e405bebebb02ed2a915561",
+      "bytes": 236020,
+      "originais": [
+        "app-escuro-desktop-painel-detalhes.png",
+        "app-escuro-tablet-painel-detalhes.png",
+        "app-escuro-celular-painel-detalhes.png",
+        "prototipo-escuro-desktop-painel-detalhes.png",
+        "prototipo-escuro-tablet-painel-detalhes.png",
+        "prototipo-escuro-celular-painel-detalhes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-detalhes-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8fd54b0919b2450643c6fea84be6f08be3d6965b4b88bb3cd1482b00ba0fd0d2",
+      "bytes": 228743,
+      "originais": [
+        "app-claro-desktop-painel-detalhes.png",
+        "app-claro-tablet-painel-detalhes.png",
+        "app-claro-celular-painel-detalhes.png",
+        "prototipo-claro-desktop-painel-detalhes.png",
+        "prototipo-claro-tablet-painel-detalhes.png",
+        "prototipo-claro-celular-painel-detalhes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-fechado-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "7ee126cb7beaa30eafc69e5601c8379d7019e264b9d6c4087abee02654df427f",
+      "bytes": 76440,
+      "originais": [
+        "app-escuro-desktop-painel-fechado.png",
+        "prototipo-escuro-desktop-painel-fechado.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/painel-fechado-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3b05ff2ae2cc100e01d72abe2d0f84abf532ed430b21b4f052906acb961996a0",
+      "bytes": 75117,
+      "originais": [
+        "app-claro-desktop-painel-fechado.png",
+        "prototipo-claro-desktop-painel-fechado.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/sem-selecao-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1e3d5e20cdc5a4ee32708cf44a353feaa1d3c7e2c102204103b78d239c420ec4",
+      "bytes": 98497,
+      "originais": [
+        "app-escuro-desktop-sem-selecao.png",
+        "app-escuro-tablet-sem-selecao.png",
+        "app-escuro-celular-sem-selecao.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/sem-selecao-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "be5a8ac34a43f46085af5b6e4b3de3e13e25c758fc3950efeb794179d6242492",
+      "bytes": 99641,
+      "originais": [
+        "app-claro-desktop-sem-selecao.png",
+        "app-claro-tablet-sem-selecao.png",
+        "app-claro-celular-sem-selecao.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/humano-compositor-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3b10c2af31ffa222931f3af5cabf0a48f775e78dfdccd3eb7d3326cd21cd905d",
+      "bytes": 276663,
+      "originais": [
+        "app-escuro-desktop-humano-compositor.png",
+        "app-escuro-tablet-humano-compositor.png",
+        "app-escuro-celular-humano-compositor.png",
+        "prototipo-escuro-desktop-humano-compositor.png",
+        "prototipo-escuro-tablet-humano-compositor.png",
+        "prototipo-escuro-celular-humano-compositor.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/humano-compositor-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "f1c068b5219bf289c7a9fae7aac34c58f937ed7f1c66681859461df7a286b8d3",
+      "bytes": 267542,
+      "originais": [
+        "app-claro-desktop-humano-compositor.png",
+        "app-claro-tablet-humano-compositor.png",
+        "app-claro-celular-humano-compositor.png",
+        "prototipo-claro-desktop-humano-compositor.png",
+        "prototipo-claro-tablet-humano-compositor.png",
+        "prototipo-claro-celular-humano-compositor.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/filtros-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "16d8a8398fe3592f9f92db5fa9a7b5309a2e990de68177309954d465b08cbc3e",
+      "bytes": 227866,
+      "originais": [
+        "app-escuro-desktop-filtros.png",
+        "app-escuro-tablet-filtros.png",
+        "app-escuro-celular-filtros.png",
+        "prototipo-escuro-desktop-filtros.png",
+        "prototipo-escuro-tablet-filtros.png",
+        "prototipo-escuro-celular-filtros.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/filtros-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "2c413f7aa67ece64c4b35e0f45dc158cd10bc851e59929abd8903a54b378f069",
+      "bytes": 222166,
+      "originais": [
+        "app-claro-desktop-filtros.png",
+        "app-claro-tablet-filtros.png",
+        "app-claro-celular-filtros.png",
+        "prototipo-claro-desktop-filtros.png",
+        "prototipo-claro-tablet-filtros.png",
+        "prototipo-claro-celular-filtros.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/seletor-numero-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ceeb74a35a674c81a459f2fba016cfc7ae5205f7e261688b02f587a434acb100",
+      "bytes": 238247,
+      "originais": [
+        "app-escuro-desktop-seletor-numero.png",
+        "app-escuro-tablet-seletor-numero.png",
+        "app-escuro-celular-seletor-numero.png",
+        "prototipo-escuro-desktop-seletor-numero.png",
+        "prototipo-escuro-tablet-seletor-numero.png",
+        "prototipo-escuro-celular-seletor-numero.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/seletor-numero-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c67a6d1df78a6bc33b8145a50732f4d238ed720366f46c6f68eba7b5da4d27d3",
+      "bytes": 233227,
+      "originais": [
+        "app-claro-desktop-seletor-numero.png",
+        "app-claro-tablet-seletor-numero.png",
+        "app-claro-celular-seletor-numero.png",
+        "prototipo-claro-desktop-seletor-numero.png",
+        "prototipo-claro-tablet-seletor-numero.png",
+        "prototipo-claro-celular-seletor-numero.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/nova-conversa-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "ad8bf1a447cd257713047bbc8c0b9c3433b3e8522299e018fda7216204c20b12",
+      "bytes": 239619,
+      "originais": [
+        "app-escuro-desktop-nova-conversa.png",
+        "app-escuro-tablet-nova-conversa.png",
+        "app-escuro-celular-nova-conversa.png",
+        "prototipo-escuro-desktop-nova-conversa.png",
+        "prototipo-escuro-tablet-nova-conversa.png",
+        "prototipo-escuro-celular-nova-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/nova-conversa-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "1865e7642d46c007933cdfcf4885301c01981fffc5df6effc78632aca3ee82b4",
+      "bytes": 235421,
+      "originais": [
+        "app-claro-desktop-nova-conversa.png",
+        "app-claro-tablet-nova-conversa.png",
+        "app-claro-celular-nova-conversa.png",
+        "prototipo-claro-desktop-nova-conversa.png",
+        "prototipo-claro-tablet-nova-conversa.png",
+        "prototipo-claro-celular-nova-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/lista-vazia-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "66631a337c25da16d3fcc4d6afbc7f028d15840bf8ee7fe8aa3f46cd2fb0fcb2",
+      "bytes": 170006,
+      "originais": [
+        "app-escuro-desktop-lista-vazia.png",
+        "app-escuro-tablet-lista-vazia.png",
+        "app-escuro-celular-lista-vazia.png",
+        "prototipo-escuro-desktop-lista-vazia.png",
+        "prototipo-escuro-tablet-lista-vazia.png",
+        "prototipo-escuro-celular-lista-vazia.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/lista-vazia-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "159bebec6ef455bc9bf3101f5a115d4078edb21340f45d08b9831fceb5eb52f4",
+      "bytes": 165346,
+      "originais": [
+        "app-claro-desktop-lista-vazia.png",
+        "app-claro-tablet-lista-vazia.png",
+        "app-claro-celular-lista-vazia.png",
+        "prototipo-claro-desktop-lista-vazia.png",
+        "prototipo-claro-tablet-lista-vazia.png",
+        "prototipo-claro-celular-lista-vazia.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/celular-lista-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "297f0f7b7302bc1910d5670412a00c93f35a64217b08907ed931ed2490f4a8ac",
+      "bytes": 83503,
+      "originais": [
+        "app-escuro-celular-celular-lista.png",
+        "prototipo-escuro-celular-celular-lista.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/celular-lista-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "9628b36323e11a53919f77088386050bd59c58fb16425fb1d8d8ae28816dc321",
+      "bytes": 81156,
+      "originais": [
+        "app-claro-celular-celular-lista.png",
+        "prototipo-claro-celular-celular-lista.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/celular-painel-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "e1a11cb1d2916294124b19841adb4755e8acdd56b895c745bc39690e3ed0bedb",
+      "bytes": 54960,
+      "originais": [
+        "app-escuro-celular-celular-painel.png",
+        "prototipo-escuro-celular-celular-painel.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/celular-painel-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "3a4a881e14c9fbc598c663f781f0451c5c70f12fca59035d49ec6f3837da9fd2",
+      "bytes": 52212,
+      "originais": [
+        "app-claro-celular-celular-painel.png",
+        "prototipo-claro-celular-celular-painel.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/celular-conversa-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "8287e6665925009d951bdef80e3248ff82ef653565fbb05f36b60a87e8d6ecf4",
+      "bytes": 68256,
+      "originais": [
+        "app-escuro-celular-celular-conversa.png",
+        "prototipo-escuro-celular-celular-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/celular-conversa-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "b4ceaff0eb20724537780dbef0702910b62a56d02d69e0379b8a8ea50be77bcd",
+      "bytes": 65102,
+      "originais": [
+        "app-claro-celular-celular-conversa.png",
+        "prototipo-claro-celular-celular-conversa.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/tablet-painel-escuro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "734bf5c3e383b9586c7ddad6d523e1c46d9e9d63c4d488a44c01778ea7e0ed8a",
+      "bytes": 98532,
+      "originais": [
+        "app-escuro-tablet-tablet-painel.png",
+        "prototipo-escuro-tablet-tablet-painel.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/formal-r1/pranchas/tablet-painel-claro.jpg",
+      "fonte": "491de47c06403c96724b09701bbc20a187d1ae59",
+      "sha256": "c56c5d0b0966c95fc0c1d2e0b62ca72cd269e1c5a833fe8ffecfca746ce9a883",
+      "bytes": 96613,
+      "originais": [
+        "app-claro-tablet-tablet-painel.png",
+        "prototipo-claro-tablet-tablet-painel.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A; ver comparação por estado/tema/tamanho."
+    }
+  ],
+  "complemento": [
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-01.jpg",
+      "sha256": "7bd2fa3871f71aefa04e437c1917d48d9ea89baa3e0170269454fc4f76d88ce5",
+      "bytes": 281792,
+      "originais": [
+        "light-1440x900-inicial.png",
+        "light-1440x900-filtro-real.png",
+        "light-1440x900-interacoes.png",
+        "light-320x500-inicial.png",
+        "light-320x500-textarea-inicio.png",
+        "light-320x500-textarea-fim.png",
+        "light-320x500-rodape-apos-tab.png",
+        "light-320x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-02.jpg",
+      "sha256": "8680895665ed2758375147786790ddc18858d6771c74516fd51bae38bd9b6f53",
+      "bytes": 251722,
+      "originais": [
+        "light-390x500-inicial.png",
+        "light-390x500-interacoes.png",
+        "light-699x500-inicial.png",
+        "light-699x500-interacoes.png",
+        "light-700x500-inicial.png",
+        "light-700x500-interacoes.png",
+        "light-767x500-inicial.png",
+        "light-767x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-03.jpg",
+      "sha256": "5603c6c5e21e194a381dfa3950dc94e928b96f1a0e344ac2252ae24aee3ecda7",
+      "bytes": 212256,
+      "originais": [
+        "light-768x500-inicial.png",
+        "light-768x500-interacoes.png",
+        "light-959x500-inicial.png",
+        "light-959x500-interacoes.png",
+        "light-960x500-inicial.png",
+        "light-960x500-interacoes.png",
+        "light-1024x500-inicial.png",
+        "light-1024x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-04.jpg",
+      "sha256": "c74d088609cd23529de7e675811ccc8a97ec3b1f0dcea55036d1c3e8778fd131",
+      "bytes": 196244,
+      "originais": [
+        "light-1099x500-inicial.png",
+        "light-1099x500-interacoes.png",
+        "light-1100x500-inicial.png",
+        "light-1100x500-interacoes.png",
+        "light-1199x500-inicial.png",
+        "light-1199x500-interacoes.png",
+        "light-1200x500-inicial.png",
+        "light-1200x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-05.jpg",
+      "sha256": "a9c5c4cd33f74c8d7e903cbeab78d47c788879ed42e236d32aa6df3a90a16e53",
+      "bytes": 172269,
+      "originais": [
+        "light-1279x500-inicial.png",
+        "light-1279x500-interacoes.png",
+        "light-1280x500-inicial.png",
+        "light-1280x500-interacoes.png",
+        "light-1399x500-inicial.png",
+        "light-1399x500-interacoes.png",
+        "light-1400x500-inicial.png",
+        "light-1400x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-06.jpg",
+      "sha256": "9919a42965442cfc4296545936ce6691f0d1b4e869a0e223e67e68438461ca6d",
+      "bytes": 222653,
+      "originais": [
+        "light-1440x500-inicial.png",
+        "light-1440x500-interacoes.png",
+        "light-320x500-painel500-inicial.png",
+        "light-320x500-painel500-apos-tab.png",
+        "dark-1440x900-inicial.png",
+        "dark-1440x900-filtro-real.png",
+        "dark-1440x900-interacoes.png",
+        "dark-320x500-inicial.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-07.jpg",
+      "sha256": "9bf7f1d4eddffe4591f6b393164e4f7b6063a6351a233e07ee7d73f3ae2accd4",
+      "bytes": 299649,
+      "originais": [
+        "dark-320x500-textarea-inicio.png",
+        "dark-320x500-textarea-fim.png",
+        "dark-320x500-rodape-apos-tab.png",
+        "dark-320x500-interacoes.png",
+        "dark-390x500-inicial.png",
+        "dark-390x500-interacoes.png",
+        "dark-699x500-inicial.png",
+        "dark-699x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-08.jpg",
+      "sha256": "bc82091b5e7626d6b5236f6b76631ab9797dfd9122b3176b36285a00307a95b5",
+      "bytes": 209308,
+      "originais": [
+        "dark-700x500-inicial.png",
+        "dark-700x500-interacoes.png",
+        "dark-767x500-inicial.png",
+        "dark-767x500-interacoes.png",
+        "dark-768x500-inicial.png",
+        "dark-768x500-interacoes.png",
+        "dark-959x500-inicial.png",
+        "dark-959x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-09.jpg",
+      "sha256": "7656d01d2058fa9eda07d4091d08df578657f2b16d404787589ef086d75b5f6d",
+      "bytes": 221828,
+      "originais": [
+        "dark-960x500-inicial.png",
+        "dark-960x500-interacoes.png",
+        "dark-1024x500-inicial.png",
+        "dark-1024x500-interacoes.png",
+        "dark-1099x500-inicial.png",
+        "dark-1099x500-interacoes.png",
+        "dark-1100x500-inicial.png",
+        "dark-1100x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-10.jpg",
+      "sha256": "43803ea7cad748ae5820cd1c351ca75a30d3486b32a4074cf030f58f5a97225c",
+      "bytes": 190234,
+      "originais": [
+        "dark-1199x500-inicial.png",
+        "dark-1199x500-interacoes.png",
+        "dark-1200x500-inicial.png",
+        "dark-1200x500-interacoes.png",
+        "dark-1279x500-inicial.png",
+        "dark-1279x500-interacoes.png",
+        "dark-1280x500-inicial.png",
+        "dark-1280x500-interacoes.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    },
+    {
+      "arquivo": "output/inbox-320-probes/complemento-r2/pranchas/complemento-11.jpg",
+      "sha256": "5811187ecc6d35e1991c55c420443fc37b9b9380dfdb5f740131ec9c6d53c314",
+      "bytes": 188540,
+      "originais": [
+        "dark-1399x500-inicial.png",
+        "dark-1399x500-interacoes.png",
+        "dark-1400x500-inicial.png",
+        "dark-1400x500-interacoes.png",
+        "dark-1440x500-inicial.png",
+        "dark-1440x500-interacoes.png",
+        "dark-320x500-painel500-inicial.png",
+        "dark-320x500-painel500-apos-tab.png"
+      ],
+      "inspecao": "Inspecionada visualmente pelo DEV A;88originais em11pranchas, com limites de scroll nativo e erro500."
+    }
+  ],
+  "limites": [
+    "Pranchas derivadas separadas das allowlists de PNG originais.",
+    "AbaDetalhes semcount=N/Avisual/SSRisolado; não habilitar aba futura.",
+    "Placeholder estreito em320usa scroll nativo do textarea, não corte pelo footer."
+  ]
+}

@@ -1,6 +1,6 @@
 # Inbox E1 — fecho de componentes e travas (#320)
 
-Estado: código DEV congelável sobre16e3298d9f26d1bdd8ec327bf6acbaec489bb6f3; E1 ainda NÃO homologada. IntegraçõesDB, globalROOT, matriz visual final e QA independente aguardam coordenação. Branch codex/inbox-e1-320, Node22.23.2, perfil dev-email preservado, nenhum preview/DB usado nesta implementação.
+Estado: entrega DEV #320 congelada na fonte de código 491de47c06403c96724b09701bbc20a187d1ae59, com252capturas positivas inspecionadas e metadados curados. Global/integrações ROOT442d informados com saída0; QA independente favorável. E1 aguarda publicação/CI/decisão de aceite pelo integrador, sem homologação presumida. Node22.23.2; nenhum SQL/seed/integraçãoDB executado pelo DEV; preview isolado iniciado/parado e banco restaurado pelo ROOT.
 
 ## Recorte
 
@@ -32,7 +32,7 @@ inbox-e1.test.ts trava a ausência dos componentes substituídos, export antigo 
 - Recorte amplo32910:89arquivos/972testes saída0. Filtros por diretório Inbox e componentes/conversa, Selo (unidade+interação), Chip, ItemLista, visual-inbox e guardas botoes/estados-vazios/fundo/campos/design/identificação/confirmações. sem-polling incluído no diretórioInbox. Sem filtro -t, nenhum skip adicionado/observado; configuração unitária padrão exclui integrações. Não é suíte global.
 - Next typegen + TypeScript heap8192, executor92066: tipos gerados e terminal0; lint dirigido7e2bc1 nas15fontes alteradas/existentes incluindo nova guarda, max-warnings0, saída0; diff970b810. Node v22.23.2 verificado.
 
-## Gates pendentes para fechar E1
+## Plano histórico dos gates coordenados (resultados finais abaixo)
 
 ROOT coordenará global unitário/lintmáximo40, oito integrações src/server/inbox e transversais definidas no brief; um banco/suíte por vez. Só depois de truncantes o integrador restaura551registros/fixture segura e libera preview. Nenhum gate antigo de317/319 foi reatribuído a esta fonte.
 
@@ -49,4 +49,39 @@ Correção mínima: somente esse casoINT usa IDs públicos fixos atendimento-u9/
 
 RED causal4e146a:8casos/7pass1fail com a asserção antiga. GREENc0fe9a:4arquivos/37testes (SSEunit8/8, rotaSSE, clienteeventos e guardainbox-e1), saída0. TSC50335 heap8192, lint2fontesbed2e5 e diff74e752 saída0, Node22.23.2. Nenhum skip ou integraçãoDEV. Em comparação com b509, os únicos deltas src deste checkpoint são os dois arquivos de teste; app/formatter/filtro/permissões/IDs reais gerados continuam byteiguais.
 
-ROOT coordenará SSEintdirigida, repetição15INT e novo global; nenhum resultado pendente foi presumido. Preparo privado da matriz164/complementos está offline; Ready para browser/fixtureA ainda obrigatório. Fonte/hashes da futura captura devem refletir o checkpoint exato, registrando b509 como origem produtiva equivalente. E1 permanece pendente de QA/gates/visual/publicação.
+Na data deste checkpoint491, SSEintdirigida/15INT/global/matriz ainda aguardavamReady; os resultados finais posteriores estão na seção seguinte, mantendo fontes/executores distintos.
+
+
+## Fecho DEV visual e gates coordenados — fonte491
+
+Produção das fotos: OWN491de47c06403c96724b09701bbc20a187d1ae59, byteigual ao produtob509 e à composiçãoROOT442d1a665e82c7376ce7e8707b3a4d365257c7db (esta difere somente na integração dos testes/documentos). Fotos não são atribuídas à HEADROOT. CLI/infra herdados não foram alterados. PreviewROOT8165 em3110, Node22.23.2, perfildev-email, provedores externos vazios. FixtureA conferida b94a4d0:424hashes/551originais,9mensagens4notas.
+
+Formal36201 TERMINAL0:20estados,100APP+64protótipo=164PNG, pasta output/inbox-320-probes/formal-r1. Todos164originais conferidos visualmente nas40pranchas. Tabela output/inbox-320-app-prototipo.json tem100linhas,64comparáveis e36N/A (6estadosfuncionais:carregando,painel-erro,thread-erro,painel-vazio,sem-selecao,busca-conversa). N/A não fabrica referência. Diferenças registradas por estado:SidebarERP224/barra móvel existentes, sóDetalhesE1, dados/capacidades/filtros/canais reais, aprovaçãoAria e negócios futuros apenas ilustrados pelo protótipo. Nenhum submit/envio/nota criado.
+
+Limite explícito de duas fotos positivas: app-escuro-desktop-painel-erro.png prova erro do painel, mas thread independente ainda em skeleton; app-escuro-desktop-thread-erro.png prova erro da thread, mas detalhes independentes ainda em Carregando. CLI verificou o alvo correto/saída0, sem requisito de conclusão do outro setor nessas fotos. Não provam estabilidade global ou fim de toda carga da página. Nenhuma espera foi relaxada.
+
+Complemento91340 TERMINAL0:40contextos/88PNG, pasta output/inbox-320-probes/complemento-r2, todos inspecionados em11pranchas. Dois temas:1440×900,18larguras×500 (320,390,699,700,767,768,959,960,1024,1099,1100,1199,1200,1279,1280,1399,1400,1440), mais320×500 com erro de painel controlado por transporte no endpoint exato. Abas por setas, buscaCtrlF/Escape, MenuHome/End/Escape/rolagem interna/resize, retorno do painel ao gatilho, uma instância de painel e identidade scroller/VList na mesma conversa foram verificados. Após navegação sem seleção mobile, lista e chips reais visíveis. Nenhuma falha React/HTTPinesperado/externa/submit; SSEmáxima1/ativa1,2construídas sequencialmente por contexto, sem alegar1construída total.
+
+| Métrica real em1440×900, ambos temas | Valor |
+|---|---|
+| Sidebar / lista / painel |224 /372 /348px|
+| Header / busca da lista / chips |68 /38 /28px|
+| Padding item, vertical/horizontal |11 /10px|
+| Maior balão nesta fixture |307,125px, abaixo do teto560; não prova todas as mensagens possíveis|
+| Textarea / documento / scrollY |44px de altura /900px /0|
+
+A busca NA CONVERSA mantém sua altura acessível316 e não foi confundida com os38px da busca DA LISTA. Cortes reais:uma vista abaixo960, lista300 em960..1099 e372 a partir1100; painel em coluna automático só1400. Bordas medidas sem alterar shell ou regra global.
+
+Em320×500, ambos temas, textarea x172/y442/w80/h44/bottom486 está integralmente dentro dos ancestrais/viewport. Placeholder quebra dentro dos80px:clientHeight42/scrollHeight102/overflowYauto, sem corte do rodapé. Rascunho local breve mostrou scroll nativo até início/fim viaCtrlHome/End (scrollHeight142), sem enviar; Tab real alcançouResponder,Anexar,Agendar,Emojis,campo,Enviar e controles íntegros. Documento500/500/scrollY0. Campo estreito é limite visual registrado;44px é altura/alvo, não largura mínima do editor. No erro de painel320×500, frame inicial preservado antes de rolar; Tab alcançaTentar de novo e rola localmente, frame após acesso separado, sem clicar retry/opt-out. Não se alega cabimento inicial de todos os campos.
+
+Tipografia sem vacuidade:em1440há5spans de chips visíveis,1pílula pessoal visível e1badge de filtro realComercial aplicado pelos controles; fontFamilymono/monospace e fontVariantNumerictabular-nums computados nos dois temas. BadgeColuna=quantidade de filtros aplicados, não sino. Mobile mede chips visíveis na lista sem seleção; pílula daSidebar oculta não vira prova visual. Ponto real8px tem texto vazio/background próprio e fontVariantNumericnormal, sem virar contador. AbaDetalhesE1tem0spansdecontagem:N/Avisual, coberta pelo SSR PainelContato.test.ts (aba opcional isolada); não se habilitou aba futura. SeloNaoLidasInbox.test.ts prova pílula/99+/zero/ponto, preservando testes existentes.
+
+Rodada privada32366/complemento-r1 TERMINAL1 preservada INTEIRA e excluída das allowlists:probe leu padding do botão interno errado e continuou a sequência sem reabrir a conversa após filtro real limpar seleção. Só seletores/fluxo do probe privado foram corrigidos na repetição91340; nenhuma fonte de produto/CLI mudou para passar. Rascunhos locais/frames parciais/diagnósticos não foram reciclados como positivos dessa rodada.
+
+GatesROOT da composição442d, informados pelo integrador (não executados peloDEV491):unidade69820 TERMINAL0,904arquivos/7103testes,286,57s,maxWorkers2,sem-t/skipsnovos,configunitexcluiINT; TSC5809 heap8192 TERMINAL0; lint89210 TERMINAL0,0erros/40avisos/max40; SSEint5423 TERMINAL0/11;15INT78114 TERMINAL0,15arquivos/138testes,546,02s,maxWorkers1,sem-t/skipsnovos,bancoROOTisolado. O primeiroINT80680EXIT1/137pass1fail permanece no histórico acima; correção test-only491 não alterou formatter/permissões. TESTER4914arquivos/37 e QAestático32012/161+3/24 favoráveis informados peloROOT; prova independente320×500 confirmou campo/controles íntegros sem submissão.
+
+PacoteDEV positivo:252originais/23.322.166bytes, hashes/bytes/fontes por arquivo em output/inbox-320-formal-allowlist.json (164) e output/inbox-320-complemento-allowlist.json (88). Pranchas51derivadas ficam separadas, índice output/inbox-320-inspecao.json; métricas sanitizadas output/inbox-320-metricas.json. SemPNG,HTML,APIbruta,logs,credenciais,seed,snapshot ou scripts privados emGit. Probes/negativos locais preservados, fora do pacote.
+
+Todos browsers/contextos fechados; ROOT parou8165/CtrlCexit1esperado (465168), exigiu porta3110livre e restaurouA defae5 TERMINAL0/424hashes551originais. Apenas blocoNext10linhas deAGENTS conferido/removido; instruções reais preservadas. Commit final sódocs/SPEC/quadro/allowlists/tabela/métricas/índice; runtime491 permanece igual. Publicação/zip remoto/CI/aceite final continuam com integrador; nenhuma próxima feature iniciada.
+
+Validador curado18156c saiu0:252originais/51pranchas/100linhas/40contextos, hashes/tamanhos/fontes e invariância src/scripts/AGENTS conferidos; diffcheck0. Não houve repetição global por este commit documental.
