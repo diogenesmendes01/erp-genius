@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { seedCanal } from "@/test/integracao-whatsapp";
+import { comAvisosInbox } from "@/test/avisos-inbox";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { configPadrao, type ConfigAria } from "../config-schema";
 import { montarContextoTurno } from "./contexto";
@@ -107,11 +108,13 @@ describe("executarHandoff", () => {
 
   it("nota_interna_com_resumo", async () => {
     const c = await cenario(true);
-    await handoff(c, "CONFIANCA", { resumo: { motivo: "Dúvida de preço", resumo: "Quer noite", proximoPasso: "Ligar" } });
+    const { avisos } = await comAvisosInbox(() => handoff(c, "CONFIANCA", { resumo: { motivo: "Dúvida de preço", resumo: "Quer noite", proximoPasso: "Ligar" } }));
     const n = await ultimaNota();
     expect(n.corpo).toContain("Motivo: Dúvida de preço");
     expect(n.corpo).toContain("Resumo: Quer noite");
     expect(n.autorId).toBeNull();
+    expect(avisos).toContainEqual({ tipo: "atendimento.atualizado", atendimentoId: c.at.id, conversaId: c.at.conversaId, mensagemId: null });
+    expect(JSON.stringify(avisos)).not.toContain("Quer noite");
   });
 
   it("nota_so_com_campos_escolhidos", async () => {
