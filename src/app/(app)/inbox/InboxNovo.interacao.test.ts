@@ -482,7 +482,8 @@ describe("composição318: Detalhes do contato selecionado", () => {
     expect(no.props.abas).toEqual([{ id: "detalhes", rotulo: "Detalhes" }]); expect(no.props.abaAtiva).toBe("detalhes");
     const blocos = elementos(no.props.children as ReactNode).filter(n => [LinhaCampo, PainelSetor, PainelAria, AcoesContato, OptOutContato, PainelTriagem].includes(n.type as never));
     expect(blocos.map(n => n.type)).toEqual([LinhaCampo, PainelSetor, PainelAria, AcoesContato, OptOutContato, PainelTriagem]);
-    expect(blocos[0].props).toMatchObject({ valor: "+506", rotulo: "WhatsApp" });
+    expect(blocos[0].props.rotulo).toBe("WhatsApp");
+    expect((blocos[0].props.valor as ReactElement<{ className: string; children: string }>).props).toMatchObject({ className: "font-mono", children: "+506" });
     expect(elementos(t).filter(n => n.type === PainelContato)).toHaveLength(1);
     expect(elementos(t).filter(n => n.type === PainelTriagem)).toHaveLength(1);
     expect(elementos(t).find(n => n.type === ConversaAberta)!.props).not.toHaveProperty("triagem");
