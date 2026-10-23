@@ -1,16 +1,40 @@
 # Cabeçalho e menu da conversa — #315
 
-Contrato: cabeçalho68px, identidade truncada, status automático do ERP (D7), Buscar indisponível até316 com motivo acessível, Transferir/Assumir pelas capacidades atuais, Painel único318 e menu de comandos. Não lida é preferência pessoal pelo servidor existente (D16); Bloquear permanece desabilitado com AVISO_RECURSO_MOTOR (D15).
+Contrato: cabeçalho68px, identidade truncada, status automático do ERP (D7), Transferir/Assumir pelas capacidades atuais, Painel único318 e menu de comandos. Não lida é preferência pessoal pelo servidor existente (D16); Bloquear permanece desabilitado com AVISO_RECURSO_MOTOR (D15).
+
+Busca nesta etapa315/PR401 permanece desabilitada no cabeçalho e no menu,
+com motivo acessível “Em breve”, inclusive pelo teclado. aoBuscar/buscaAberta
+são o contrato de integração preparado, sem alternância acionável nesta etapa.
+A ativação pertence à dependência [#316 / PR402](https://github.com/diogenesmendes01/erp-genius/pull/402),
+que implementa a barra e a busca local. Essa divisão substitui a expectativa
+do pseudocódigo315 de já alternar buscaAberta; não afirma que a busca está
+ativa na fonte desta PR. CabecalhoConversa.test.ts e MenuConversa.test.ts
+cobrem o disabled/motivo; as provas da316 têm fonte própria.
 
 Recorte: CabecalhoConversa/MenuConversa, controlador e useAcoesAtendimento preservando contexto original, diálogos, ocupado, chaves idempotentes e fuso; Menu opt-in compacto/folha e Botao neutro; estadoVisualCabecalho tipo puro6campos. ConversaAberta recebe somente a nova composição do header, preservando thread314 e ciclo318; InboxNovo apenas props/JSX.
 
 Cortes vigentes: Voltar abaixo960, avatar/busca ocultos abaixo700, textos de ações a1200, painel automático1400. Diverge dos cortes700/1200 do pseudocódigo para preservar uma vista308 e Sidebar224. Botao mantém alvo móvel44.
+Entre700 e959 a casca308 ainda mostra só uma região por vez; ocultar Voltar
+em700 impediria o retorno à lista por esse controle. Em960 a lista e a
+conversa coexistem; em1400 o painel pode integrar a composição automática.
+O corte700 continua sendo de apresentação dos controles, não da troca de
+vista. CabecalhoConversa.test.ts cobre Voltar até960 e Painel em1400; a
+geometria real mantém as fontes históricas descritas abaixo.
 
 Menu padrão não muda. Opt-ins: compacto290px, itens mínimo38 crescendo com dicas; folha abaixo700, max85dvh, coordenadas desktop por CSS sem top inline impedindo bottom móvel. Navegação pula disabled, dicas/separadores não focáveis, Escape filho não fecha pai, rolagem interna não fecha, externa/resize fecham.
 
 Entrega ainda em desenvolvimento. Evidência automática, visual, QA e limites em output/inbox-315-report.md.
 
-Implementação parcial315: controlador key=item.id chama hook incondicional; grupo/encerrado preservam somente preferências e busca indisponível. A fábrica usa capacidades AcaoInbox (notaInterna; pendentes=convidar||agendar), bloqueio disabled e razão completa. Busca segue disabled inclusive teclado. Recontagem pessoal311 consumida uma vez só após marcarNaoLida.ok, sem alterar produtor/eventos/leitura e sem polling. Feedback ausente não ocupa faixa; erros/sucessos não truncados.
+Implementação parcial315: controlador key=item.id chama hook incondicional; grupo/encerrado preservam somente preferências e busca indisponível. A fábrica usa capacidades AcaoInbox (notaInterna; pendentes=convidar||agendar), bloqueio disabled e razão completa. Busca segue disabled inclusive teclado. Recontagem pessoal311 consumida uma vez só após marcarNaoLida.ok, sem alterar produtor/eventos/leitura e sem polling.
+Esse comando reconta o selo da aba atual; falha não dispara a recontagem de
+sucesso. marcarNaoLida não publica aviso SSE próprio. As demais abas não têm
+garantia de atualização imediata por essa ação: dependem do próximo evento
+SSE/resync ou dos gatilhos já existentes da loja, como nova assinatura/SSR.
+Não há canal novo, sincronização entre abas ou promessa de realtime adicionada.
+useAcoesAtendimento.test.ts cobre sucesso/ocupado e falha; o ciclo da loja
+está em [Não lidas — cliente e ciclo de vida](inbox-nao-lidas-menu.md#cliente-e-ciclo-de-vida).
+
+Feedback ausente não ocupa faixa; erros/sucessos não truncados.
 
 Menu compacto também limita altura a calc(100dvh - 16px) e rola em desktop baixo; abaixo700 a folha prevalece com max85dvh/bottom0/top-auto. Default conserva classes/markup/posicionamento/listeners e keyindice; nenhum algoritmo/exceção de guarda alterado. Botao neutro é aditivo. Status permanece no header móvel em coluna quando pouco espaço, sujeito à medição real.
 

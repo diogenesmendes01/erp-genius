@@ -5820,3 +5820,21 @@ backup próprio com limites/hashes validados; histórico preservado. Zero
 delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
 Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
 preservar ausência nas próximas integrações, sem reescrita de histórico.
+
+
+## PR #401 — LOWs C2–C5 documentados (DEV B)
+
+Base exata 0fcaf459; branch codex/inbox-pr401-review-todos. Só três MD:
+SPEC cabeçalho/menu, quadro e output/inbox-pr401-review-todos.md.
+C2 separa Busca Em breve315 da ativação316/PR402; C3 justifica Voltar960
+pela casca308 e painel1400; C4 explicita recontagem na aba atual sem promessa
+de atualização imediata entre abas ou SSE novo. Trechos existentes refinados,
+sem duplicar o histórico. C5 inventário/ZIP/fontes/curadoria preservados;
+nenhum artefato alheio removido ou imagem nova atribuída.
+
+UTC e5e7da e SP d86623 EXIT0: sete arquivos/53 testes em cada fuso, sem
+filtros/ignorados. Zero delta src/scripts/prisma/deps/PNG/testes e objetos
+conferidos; TSC/lint não repetidos para MD, sem atribuir gates históricos
+ao head novo. Banco B490 intacto, cliente402 compatível, sem DB/Prisma/
+preview/browser/deps/harness/push. C1/main/retarget/CI/QA280 e revisão
+independente do novo SHA continuam com o integrador; sem merge presumido.
