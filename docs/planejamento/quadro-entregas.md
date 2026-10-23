@@ -6497,6 +6497,9 @@ Fonte7a94fc12:e6c/45ddMD+4077ca, deltaEXATAMENTE7paths322/OIDsddfCEA;quadro6pres
 ## PR #409 — D13 contextual e 28INT exigidos aprovados
 
 Fonte1dd4af91:b0c/dc726+4087e5;deltaEXATAMENTE12src323/OIDsb0c,INTnovoD13igualdc,restantes11fonte0c61. Quadro1preservambos/decisõesmantêmmergeauth297+somenteapêndiceD13novo,sem337490. Próprios6/38615ea9,INT2/28sessão91833/c2888d105,53sperfilciint487exclusivo/configintegration/maxWorkers1semfiltro/skipsnovos, TSC80882/981e64 e lint73747/5a00b0terminals0/40. QApatchdc4dcb+QAcomposta1dd0287favoráveisversionadas. C1humanoD13+C2INTcomprovados,C3CI/C4pais408main/C5quadroaindagates finais;C6B2B/C7subtítulovazio/C8custoconsultas/C9mapatestesdocumentados. Ciintlivre487/cliente487,nenhumtestes/processoativo;semnovamigration/seed/envio/captura/deploy. output/pr409-qa/composicao-todos.md.
+## PR #406 integrada; PR407 sincronizada com a main
+
+406squash4b3c39434f2e48273cd45fee483ca9dbc9b25955, CI40027085473success5/5, QA320755 e gates próprios favoráveis, issue320CLOSED confirmada. Auditoria298–320:23issues fechadas;321–323 seguem abertas antes dos merges. Árvore squash406 igualb955; merge97339323 à407 resolveu apenas dois blocos de ancestralidade do quadro, índice inteiro igual69adef. Fonte executável575/QA103b/INT2-8/unit5-89/TSC/lint40 preservados. B1Pick/harness/main e C2quadro resolvidos; retarget407main/CI final ainda pendentes, sem antecipar322323.
 ## PR #399 integrada; PR401 pronta para CI final
 
 #399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
