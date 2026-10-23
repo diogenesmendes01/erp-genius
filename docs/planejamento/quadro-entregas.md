@@ -4608,6 +4608,16 @@ Branch `claude/adm-whatsapp-number-removal-7ecfa1`. Relato: o administrador não
 - **Visual:** capturas antes/depois de lista/conversa/detalhes em1440×900,1024×768,390×844 e temas claro/escuro, sem pageerror. Contador verde sólido, ✓✓ verde e textos secundários legíveis. Enquete/Reserva:24 PNGs de componentes reais isolados, CSS/fontes reais e métricas antes/depois, sem executar envio/finanças. TESTER inspecionou todas as12 imagens depois desses componentes. Evidências em `output/inbox-298-visual/` (aplicativo, harness, métricas e pareceres); consolidação final adiciona somente docs/PNG/JSON, sem alterar fonte validada.
 - **Limites registrados:** drawer390px já corta valores à direita antes/depois; acompanhar na casca do painel#318 e geometria#304. Aviso de chave React duplicada no app dev também é preexistente. Capturas isoladas não homologam operações financeiras. Node local24.16.0 versus22 declarado no projeto; CI será acompanhado no PR. Sem mensagem real, integração externa ou produção.
 
+### Inbox E0.5 — #302: prazo estourado vivo — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-302-report.md`, parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Branch `codex/inbox-e0-302`, base `1ce8e582` (PR #381). Sem merge/deploy.
+
+- **Entrega:** snapshot estável por lista e um timeout até o próximo prazo; o selo aparece no prazo+1 ms, sem polling ou consulta adicional. Troca SSE usa o relógio real, inclusive para prazo já vencido. Grupos, encerrados e datas inválidas não armam timer. Limpeza na troca/desmontagem e teto nativo preservados. Interfaces exportadas para #309/#312. Sem schema, servidor ou permissão novos.
+- **Testes:** TDD RED com oito falhas de interação real e módulo ausente; GREEN Inbox inteiro com 17 arquivos/168 testes. TESTER aprovou código `1740a337`, recorte de 2 arquivos/19 testes saída 0; delta final `133b935e` apenas documental. Integrador repetiu os 19 testes com Node 22.23.2, saída 0.
+- **Gates globais:** em1740a337, TSC heap8192 sessão39736 saída0; unitário completo sessão86563 saída0,841 arquivos/6485 testes, sem falhas/ignorados/todo; lint global sessão23565 saída0,0 erros/40 avisos preexistentes, sem filtros. Runtime desses gates: Node24.16.0. Não repetidos por alteração exclusiva de docs/capturas.
+- **Visual no Node22.23.2:** 24 PNGs ANTES (integrador sessão24336) e24 DEPOIS (TESTER sessão31652), ambos saída0. Em1440×900,1024×768,390×844, claro/escuro, mesma URL sem reload e prazo do banco intacto: base0→0 e correção0→1 no selo após vencer. Sem pageerror. Imagens/manifestos em `output/inbox-302-visual/`; selo inspecionado e legível nos seis contextos.
+- **Limites:** atualiza o selo dos itens carregados; não inclui atendimento automaticamente no filtro de servidor. Overlay dev preexistente toca parte esquerda do item móvel, sem encobrir selo. Somente fixture descartável, nenhum serviço externo ou produção. CI aguarda retarget para main após integrar381.
+
 ### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
 
 **Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
