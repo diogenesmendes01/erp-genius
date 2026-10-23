@@ -4902,6 +4902,7 @@ Fonte57587838: sessão54690 terminou exit1 após **862arquivos/6736testes unitá
 
 - **RulingURL313 atualizado:** Linkpúblico/cnulligual mostrou limite de observar só valorprop. Inbox usa c público via useSearchParams para intenção; URLlocalACK mantém150/cursor/vista/Nova, navegação externaID/null/vazio troca contexto, SSRstale divergente daURL é ignorado. FallbacknullableSSR sem novo relógio/rede. RED2→GREEN72 e REDGETobsoleto1→GREENfinal8arquivos236testes; TSC38867heap8192/lint4fontes44043b EXIT0. Recorte anterior98/978 é pré-últimadep, não global final. SemNext/backend/VirtualList/leitura382/helper/CLI alterados. HardnavNext trace51222 é diagnóstico separado ainda não adjudicado; novas provasChrome/QA/global pendentes.
 
+
 ### PR #392 — revisão C1/C4: fixture com telefones fictícios — 2026-10-22
 
 **Estado: correção de fonte e integração local verificadas; artefatos sanitizados, blockers de dependências e revalidação externa ainda pendentes.**
@@ -5096,6 +5097,12 @@ opt-out. Banco ci-integracao: 7 contatos fictícios, nenhum opt-out ativo.
 Relatório output/pr395-qa/foco.md e JSON. B1/C2 dependem de merges normais dos
 pais; C4 depende do CI contra main. Parecer exato final ainda pendente.
 
+- **Checkpoint313 com baseR6/main/foco:** mergec207 sobre9c porcontrato, preservando syncURL/ACK150/foco/ref382/Virtual314 e incorporando entradasPendentes/contadorR6/OptOut/finally311. Guard381 RED integração1 e regressão2→GREEN apenas6tokens do contador passivo, negativas Salvar/onClick/spread/padding; semexceção porarquivo/analisadornovo/UIalterada. Final97149 EXIT0/99arquivos1015testes, TSC21762heap8192/lint10fontes0avisos EXIT0. Formal52+virtual18 históricas9c inspecionadas/fontes anotadas, semPNGcommit; nãoatribuídas ao mergeR6. TESTERestático9c236testes0; hardnav staleMPANext documentado emresumo causal sanitizado, repetiçãoatual/global/QAvisual/depósitoremoto pendentes. Semhomologação/publicação presumida.
+
+- **Experimento técnico313/cache de leitura:** a208 ainda reproduz hardnav em Linkpúblico (negativo49540 preservado). Apóscausa observada de duas tarefasB incompletas→retryMPAstale, wrappersautomáticos reutilizam helpersprivados semrevalidatePath; legadosmanuais invalidam1vez, flagsinternasfixas, auth/escritas/motor/NOTIFY/GET/seloR6 preservados, semNext/ordemhistoryalterados. RED7→GREEN11servidor; recorte43297 EXIT0/100arquivos1026, TSC20905/66410heap8192 e lint9fontes0avisosEXIT0. DBisolado/snapshotintegrador:87224negativo porpremissaparticipantesemlidaAte corrigida sónafixture,39942 EXIT0/2arquivos20testes, bancoliberadopararestauraçãoantespreview. CheckpointEXPERIMENTAL separado dea208, adoção dependeA/B rápido Router/Sidebar+açãoemvoo semesperaPOST; NÃOconcluída/homologada/publicada. RawRSC/PNGnovos foraGit/ZIP.
+
+- **Adoção técnica313/f51:** integrador+TESTERexato(4/81+39R6,0) adotaram wrappersautomáticos semrevalidate, legadosintactos. MESMOLinkpúblico antesfalhavaMPAB ema208, agora62981 exit0/4ctx; leituraAUTOrealretida atéapósURLMariana4e5471 exit0, CDPmismatch3alvos/0pausas. RouterERR_ABORTED deconversaabandonada preservado comcleanupobservado, semguardglobalrelaxado. Inspeção20complementospositivos/hash:15V2+5V3clarocurto, fotoDraweremtransição excluída/preservada; V3 sóesperafotoCSSfinal. NenhumPNG/raw/RSCnoGit/ZIP. Preview40527parado; falta merge391/formalAPP26/virtual/baseatual/QA/global/publicação, semhomologaçãofinal.
+
 ### #314 — composição final verificada com foco395 e ancestralidade main
 
 Fontecf1ab4e1591a77937f5afc1c8f4f408dcdebc32d, basec207079d. Desde7e71,
@@ -5219,3 +5226,5 @@ A PR ainda depende das entregas E0presentes na base (#385/#388/#389/#390)
 e da integração387; não retargetar/mergear391 antes dos MEDIUM dessas frentes.
 Novo parecer no head exato e CI contra main continuam pendentes.
 - **Experimento técnico313/cache de leitura:** a208 ainda reproduz hardnav em Linkpúblico (negativo49540 preservado). Apóscausa observada de duas tarefasB incompletas→retryMPAstale, wrappersautomáticos reutilizam helpersprivados semrevalidatePath; legadosmanuais invalidam1vez, flagsinternasfixas, auth/escritas/motor/NOTIFY/GET/seloR6 preservados, semNext/ordemhistoryalterados. RED7→GREEN11servidor; recorte43297 EXIT0/100arquivos1026, TSC20905/66410heap8192 e lint9fontes0avisosEXIT0. DBisolado/snapshotintegrador:87224negativo porpremissaparticipantesemlidaAte corrigida sónafixture,39942 EXIT0/2arquivos20testes, bancoliberadopararestauraçãoantespreview. CheckpointEXPERIMENTAL separado dea208, adoção dependeA/B rápido Router/Sidebar+açãoemvoo semesperaPOST; NÃOconcluída/homologada/publicada. RawRSC/PNGnovos foraGit/ZIP.
+
+- **Base atual391 noDEV313:** merge normalf8d2 sobre047/f51, quadroamboshistóricos e refs/focoInbox preservados, sem alteração dos hooks/leitura/Conversa/VirtualList. Gates61045 EXIT0/102arquivos1045testes, TSC51351heap8192/lint13fontes16be200avisos EXIT0; diffcheck0. Aguarda previewcoordenado/formalAPP26+virtual150atuais; protótipos26imutáveis2e e complementos20f51 identificados àparte. SemDB/Next/deps/ownfull/PNGnovo, global/publicação peloROOT.

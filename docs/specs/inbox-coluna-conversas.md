@@ -63,3 +63,11 @@ A formal histórica52PNG e virtual18PNG da fonte9c foram inspecionadas, com hash
 ### Experimento automático de leitura — adoção pendente de A/B
 
 Os exports manuais de leitura mantêm invalidação única da rota. Novos exports automáticos, sem parâmetro de política vindo do cliente, reutilizam os mesmos helpers privados com revalidar=false. Inbox usa somente marcarAtendimentoLidoAutomatico; preserva escopo/persistência/motor/erros, consultas de reconciliação, entrada pendente e selo finally. A mudança busca evitar novas árvores RSC da leitura automática após navegação mais recente; não altera Next nem a ordemhistory/leitura. A/B rápido Router/Link público com pedido anterior em voo ainda é obrigatório antes de adoção. Contratos:11unitáriosnovos, recorte100/1026 e integração2/20,TSC/lint0; detalhes/negativosnoledger. Nenhuma homologação/global presumida.
+
+### Adoção do caminho automático após evidência
+
+O integrador adotou tecnicamente o caminho automático f51 após A/B público rápido e parecer independente exato. Legados manuais continuam revalidando uma vez, automáticos nunca, com política fixada no servidor. Link público passou4contextos e resposta real da leitura anterior, retida até depois de URLMariana, não reverteu a seleção. ProvaCDP não observou os retries antes reproduzidos; não houve mudança deNext. Vinte imagens de complemento foram inspecionadas e têm allowlist/hash sanitizada; uma foto durante transição doDrawer foi preservada/excluída e recapturada com esperaCSSfinal. Formal atual apósbase391, virtual, global e publicação ainda pendentes; detalhes/limites no ledger.
+
+### Base atual de fontes391
+
+Basef8d2 incorporada após adoçãof51, preservando todos os hooks/contratos313/R6. Gates102arquivos1045testes/TSCheap8192/lint13fontes0avisos EXIT0. RecapturaAPP26/virtual na fonte agregada atual é obrigatória; protótipo26imutável2e882 e complementos20f51 conservam fontes/hashes separados. Global integrado e publicação ficam com integrador; não há aceite final nesta etapa.
