@@ -5677,3 +5677,20 @@ do parecer397. Global3971 EXIT0:879arquivos/6.894testes,270,86s,maxWorkers2,
 sem filtros/ignorados. Nexttypegen/TSC50060 e lint29580 EXIT0,0erros40avisos.
 TESTERc221 favorável7/133 próprios,exec3f5f3a EXIT0,sem DB/preview/browser/
 global próprios. CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
+
+
+## PR #400 — LOWs C3/C4/C5 (DEV B)
+
+Base exata3b852c54, branch codex/inbox-pr400-review-todos. C3 sóJSDoc
+@deprecated: alias legado299 preservado, sem callerprodutivo nestaárvore;
+Inbox usaAutomatico com política fixa no servidor. JS emitido semcomentários
+idêntico antes/depois (SHA1c84aacf6c3b95b466a9257a6fdb023c8a010be96442dec7d804e1befcc95e9d),
+sem alterar corpo/assinatura/imports. C5 SPEC alinha Conversas/1conectado aos
+testes existentes. C4 inventário/curadoria/ZIPshistóricos no relatório
+output/inbox-pr400-review-todos.md, sem apagar ou reatribuir evidências.
+
+UTCef39c4 e SPa361ad EXIT0:8arquivos139testes emcadafuso, semfiltro/ignorados;
+TSC56267 e lint2fcadb EXIT0/0avisos. Schema igual402/cliente jácompatível,
+nenhumDB/Prisma/preview/browser/deps/harness/PNG/global/push. C2 continua20INT
+nominais260a/44027, não reexecutados nestehead. C1/main/CI e C6conflitos do
+quadro pertencem ao integrador; revisão independente e merge pendentes.

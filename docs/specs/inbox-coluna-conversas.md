@@ -89,3 +89,18 @@ O porte C1 sobre676 mantém abrir/JSX e contratosR6/syncURL/ACK150/SSRúnico/Vir
 ### Complemento realizado após C1
 
 Porte3a preserva fontes históricas4f/2e e676. UI26973 saída 0:20 PNG inspecionados em390 × 500/1440 × 900, claro/escuro; popovers/foco/teclado/URL/linha e Link público rápido sem assentamento prévio de POST,1 documento/1 SSE/máximo1 GETcorpo. Lotes76702 saída 0 acrescentam2 PNG inspecionados e prova HTTP real de coalescência/trailing/propsSSR equivalentes/leitura. Allowlist22 e resumo sanitizado em output/inbox-310-c1-allowlist.json/output/inbox-310-c1-evidencias.json. Não houve submit/criação/envio ou nova prova virtual150 nesta rodada; as provas virtuais4f permanecem identificadas, com helperVirtual inalterado. QAglobal e publicação são do integrador.
+
+## PR #400 — C5: equivalência dos rótulos ao plano
+
+O título visível da coluna é **Conversas**, o único h1 da composição:
+ColunaConversas o fornece e page.tsx não duplica o cabeçalho. É o nome em
+português do conteúdo que o plano chamava Inbox; a rota /inbox, a navegação,
+o escopo e as permissões permanecem iguais. A prova está em
+ColunaConversas.test.ts (cabeçalho) e page.test.ts (sem h1 duplicado).
+
+O seletor anuncia **1 conectado**, **0 conectados** e **2 conectados**.
+É a correção de concordância do exemplo “1 conectados” do plano, sem mudar
+a contagem: somente a saúde conectado participa; instáveis/desconectados
+continuam descritos pelas opções. SeletorNumero.test.ts cobre singular,
+plural, saúde, seleção conhecida/desconhecida e Gerenciar restrito a Admin.
+Nenhum rótulo, layout, prop ou comportamento produtivo muda nesta revisão.
