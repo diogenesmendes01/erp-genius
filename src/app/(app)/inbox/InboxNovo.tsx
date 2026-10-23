@@ -1,4 +1,5 @@
 "use client";
+import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel } from "@prisma/client";
@@ -230,7 +231,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const versao = leituraRef.current.versao;
       const entradasNoPedido = entradasPendentesRef.current?.id === id ? new Set(entradasPendentesRef.current.mensagens) : null;
       let sucesso = false;
-      try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ }
+      try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ } finally { recontarNaoLidasInbox(); }
       const entradasAtuais = entradasPendentesRef.current;
       if (sucesso && entradasNoPedido && entradasAtuais?.id === id) {
         for (const mensagemId of entradasNoPedido) entradasAtuais.mensagens.delete(mensagemId);

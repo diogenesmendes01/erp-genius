@@ -77,6 +77,16 @@ protótipo exige o botão de detalhes e a região aberta; não é ignorado quand
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
 
+## Selo pessoal do menu (#311)
+
+A demo aceita `--entrada thiago` (ou outra chave fictícia fechada) para inserir uma ENTRADA local, sem transporte. Exige fixture existente no BAILEYS desconectado e banco local descartável; não recria a demo nem emite NOTIFY manual. O trigger existente publica o evento após commit.
+
+`node scripts/visual/capturar-selo-inbox.mjs --base http://localhost:3111` é o harness dedicado ao selo, coordenado com a casca #308. Exige exclusivamente perfil dev-gravacoes, banco erp_genius_test_dev_gravacoes na porta54329, IDs fictícios exatos e Chrome local. A autenticação usa conta fictícia preparada pelo integrador; INBOX_VISUAL_EMAIL/INBOX_VISUAL_SENHA podem substituir os padrões locais. Não use credenciais reais.
+
+O preparo muda somente preferências pessoais do Admin: Thiago/Ventura explicitamente não lidas, outras cinco lidas; compartilhados/fixada/silenciada são preservados. Gera 24 PNGs em output/inbox-311-visual, nas quatro fases2→1→2→1, três tamanhos e dois temas. Antes de provocar a subida, navega Home por Link para desmontar a seleção: chat selecionado lê entrada automaticamente. Outra entrada com chat aberto prova reconciliação para1 sem loop. A segunda aba também confirma2, cada aba com uma SSE simultânea e no máximo um GET da contagem em voo.
+
+A captura espera a hidratação inicial/SSE/GET, fonte e transições finitas; valida gaveta no viewport e Sidebar224. Mantém diagnóstico de rede e só oculta toast Next sem issues durante a foto. Em erro escreve manifesto-incompleto; não sobrescreva uma tentativa negativa antes de preservá-la. A CLI principal permanece responsável pelas referências offline app×protótipo.
+
 ## Atualização da casca #308
 
 O gatilho do app é “Painel do contato”, ligado à única instância de aside. O estado adicional painel-fechado captura desktop nos dois temas, após fechar o painel automático. Esperas de painel não exigem a thread oculta; painel fechado exige thread pronta e largura zero do aside. O protótipo conserva sua própria navegação e os recursos locais.

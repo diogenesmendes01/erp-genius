@@ -15,6 +15,7 @@ import { notasInternasDoAtendimento } from "@/server/whatsapp/notas-consulta";
 import type { RecursoMotor } from "@/components/conversa/recursos-canal";
 import { codificarCursor, decodificarCursor, type CursorInbox } from "./cursor";
 import type { ContagensChipsInbox, FiltrosInbox } from "./filtros";
+import { condicaoNaoLidaPessoal } from "./nao-lidas";
 
 export interface ItemListaInbox extends ConversaResumo {
   status: string; responsavelNome: string | null; prazoRespostaEm: string | null;
@@ -29,29 +30,6 @@ const LIMITE_LISTA = 50;
 const LIMITE_FIXADAS = 100;
 const LIMITE_THREAD = 60;
 const LIMITE_THREAD_MAX = 100;
-
-/**
- * Atendimentos com não lida PARA ESTE usuário (mesma regra de preferenciasDoUsuario), em qualquer posição da lista.
- * Vira condição da própria consulta paginada (sempre combinada com o escopo), sem varrer o banco todo:
- * - marcada como não lida pelo usuário;
- * - sem leitura registrada (lidaAte nulo ou sem preferência) e contador compartilhado > 0;
- * - com leitura registrada: ENTRADA depois de lidaAte, achada a partir das preferências DO USUÁRIO
- *   (limitadas às conversas dele) e não de todos os atendimentos.
- */
-async function condicaoNaoLidaPessoal(usuarioId: string): Promise<Prisma.AtendimentoWhatsAppWhereInput> {
-  const comLeitura = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    SELECT DISTINCT a."id" FROM "PreferenciaConversaUsuario" p
-    JOIN "AtendimentoWhatsApp" a ON a."conversaId" = p."conversaId"
-    WHERE p."usuarioId" = ${usuarioId} AND p."lidaAte" IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM "MensagemWhatsApp" m
-        WHERE m."atendimentoId" = a."id" AND m."direcao" = 'ENTRADA' AND m."criadoEm" > p."lidaAte")`);
-  return { OR: [
-    { conversa: { preferenciasUsuarios: { some: { usuarioId, marcadaNaoLida: true } } } },
-    { naoLidas: { gt: 0 }, conversa: { preferenciasUsuarios: { none: { usuarioId, lidaAte: { not: null } } } } },
-    { id: { in: comLeitura.map((l) => l.id) } },
-  ] };
-}
 
 /** Filtros da URL como condições; sempre combinadas com o escopo (nunca o substituem). */
 async function condicoesDosFiltros(u: UsuarioSessao, f: FiltrosInbox): Promise<Prisma.AtendimentoWhatsAppWhereInput[]> {

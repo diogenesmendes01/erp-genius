@@ -4796,6 +4796,18 @@ Usuário autorizou o integrador a regenerar somente o lockfile offline com scrip
 - Aceite visual reservado à #313 (Task5Step5, sem tela própria nesta entrega), sem homologação presumida. Global final coordenado após combinar309+310; full próprio deliberadamente não executado. TESTER deve revisar SHA exato. Sem schema/migration, pacote/lock, permissão nova, servidor iniciado ou mensagem externa.
 - Congelamento: recorte final10arquivos161testes a0b1e7 exit0 (inclui guardas sem-polling/provedores/paleta/responsivo/botões), lint dirigido final264633 exit0/0avisos e TSCheap8192 final11852 exit0. Node22.23.2 confirmado. Sem mudança de fonte após esses gates, apenas documentação. Full integrado e TESTER ainda pendentes.
 
+### Inbox E1.6 — #311: selo pessoal e SSE compartilhado — 2026-10-22
+
+**Estado: entrega DEV com prova visual inspecionada; TESTER e global integrado pendentes.** Branch codex/inbox-e1-311 sobre103a507d. SPEC docs/specs/inbox-nao-lidas-menu.md; ledger output/inbox-311-report.md; imagens/manifestos output/inbox-311-visual. Nenhum PR/push pelo DEV.
+
+- Contagem pessoal usa a condição extraída de #310 e escopo inteiro, sem filtros/paginação; zero sem papel antes de consultar. API com sessão/papel/no-store. SSR sem rede/mutação em render; Sidebar224 e geometria global preservadas. InboxNovo apenas finally da leitura. Uma SSE por aba, assinantes independentes, resync dirigido a quem monta tarde, descarte/StrictMode protegidos. Loja com GET único e uma repetição pendente, geração/dispose/auth/erro testados; rótulos dizem conversas.
+- TDD: módulos ausentes RED; API/consumidores RED; backend RED; demo--entrada RED; testes adicionais RED para assinante tardio/propSSR com outro consumidor montado. Extração inicial com CRLF incorreta gerou parse/TSC vermelho e foi corrigida antes dos GREEN. Integração dirigida dev-gravacoes2arquivos27testes exit0 sessão67611 (nao-lidas+consultas-pagina); demo/trigger+reparo3072arquivos2testes exit0 sessão9095. Nenhum ignorado; não é suíte completa de integração. JanelaDB encerrada antes do preparo visual.
+- Visual final95056 exit0:24PNG app,0falhas0diagnósticos; seis referências protótipo18038 exit0. Todos os estados/temas/tamanhos inspecionados, 2→1→2→1. Duas abas SSEativa/máxima1 cada, GETmáximo1. Ruling Step5: Home desmonta chat entre queda e subida; chat aberto auto-lê entrada e mantém1 sem loop. Reset marca apenas preferências pessoais dos dois alvos; não restaura compartilhados. Tentativas negativas preservadas em output/inbox-311-visual-tentativa1/2, sem chamar falha de harness de correção produtiva.
+- Full próprio21392 terminou exit1:855arquivos/6647testes, só guard botoes falhou por literal no JSX mobile. Simplificação sem alterar guard/pixels; GREEN final32arquivos359testes exit0 sessão42967, sem filtros/ignorados dentro do recorte listado no ledger. Lint dirigido23arquivos exit0. Lint global anterior1345 exit0/40avisos e TSC97388 exit0 são anteriores à simplificação; novo TypeScript e global integrado devem ser registrados separadamente. Não atribuir full verde ao fix antes do integrador.
+- Sem schema/migração, transporte externo, pacote/lock ou modificação da casca #308. Preview e autenticação fictícia preparados/parados pelo integrador. Protótipo offline tem outra navegação; não se afirma paridade integral com a casca futura.
+
+- Fechamento DEV: TSC final heap8192 sessão39406 exit0 após simplificação mobile. Fonte sem alterações após recorte359/TSC/lintdirigido. Global integrado e TESTER continuam pendentes.
+
 ### Inbox E1.3 — #308: casca em tela cheia e painel único — 2026-10-22
 
 **Estado: implementação e provas DEV concluídas; revisão independente, aceite visual e global combinado pendentes.** Branch codex/inbox-e1-308, base103a507d. SPEC docs/specs/inbox-casca-tela-cheia.md, relatório output/inbox-308-report.md; sem publicação/merge/deploy pelo DEV.
@@ -4867,6 +4879,20 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - Captura dirigida5962 exit0:6PNGs do protótipo (conversa,3tamanhos,2temas), nenhuma falha; manifesto em `output/pr392-qa/prototipo-anonimizado.json`. Desktop escuro e celular claro inspecionados. PNGs ficam somente no tmp local até arquivamento autorizado. Não representa captura do app nem aceite integral307.
 - Gates da fixture83043f51: global80400 exit0,846arquivos/6541testes sem filtro/ignorados. Após helper: unitários dirigidos2arquivos/18testes exit0, TSC30797 exit0, lint dos3arquivos de código exit0. Global terminou durante a adição do helper; seus testes de DOM/captura são as verificações específicas posteriores, sem atribuir o teste de navegador ao Vitest.
 - Permanecem B1/B2 (dependências), C2 (remoção/arquivo de evidências anteriores), C5/C6 e revalidação externa. C1 ainda exige retirar as imagens antigas com telefones do código; fonte e caminho de recaptura estão corrigidos. Nenhuma integração externa/WhatsApp acionada.
+
+### Publicação separada #311 — selo pessoal e contador HTTP
+
+Branch codex/inbox-e1-311 incorpora a nova base codex/inbox-e1-base-revisoes e os reparos83c6ec36/7d27c031 (singular e drenagem do corpo HTTP antes da repetição pendente). Candidato e67d26ca: sessão7949, Node22.23.2,29arquivos/347testes unitários exit0; Next typegen, TSCheap8192 e lint dirigido exit0, sem avisos. Sem ignorados; integração já evidenciada no DEV, não repetida nesta consolidação sem mudança de banco.
+
+Evidências sanitizadas: asset667561601,5.058.283bytes,SHA2569ef7b6d1ab42aada9c6e4ebac142501430372a32ed189e8673857e9d3022bf83, link em output/inbox-311-visual/README.md. Upload/download e hash conferidos;33PNGs positivos,0HTML. Recaptura89381 exit0/0falhas/0diagnósticos prova2→1→2→1, duas abas, uma SSE e um GET HTTP máximo por aba.46PNGs históricos saem apenas do índice; cópias locais e histórico preservados. Global combinado2f19074:857arquivos6680unit/TSC0;lint66935exit0/40herdados. TESTER favorável no combinado86093f4d. PR/retarget e CI final ainda pendentes; merge/deploy não presumidos.
+
+### PR396/#311 B1 e C1 — revisão isolada em andamento
+
+Branch OWN codex/inbox-311-b1 sobre head remoto confirmado5ff849d1. B1: CLOSED libera ciclo físico e próxima assinatura recupera Sidebar ainda montada; token antes da instalação protege callbacks síncronos/velhos, resync coletivo e CONNECTING nativo. Sem timers/retry/polling/Inbox/store/servidor/SQL. RED3falhas/1pass/3skip→GREEN2arquivos10, recorte5741/31arquivos365testes e lint3fontes saída0. Typegen e TSC19799 heap8192 concluídos com saída0. C1 somente nota de capacidade e HTTP/2 não verificado. TESTER/porte/browser/global/publicação pendentes; LOWs diferidos. Relatório output/inbox-396-report.md; sem homologação presumida.
+
+### PR396 B1/C1 — isolado revisado e prova nativa realizada
+
+Fonte babd: DEV31arquivos365testes/TSC19799heap8192/lint3fontes saída0; TESTER independente7/41 e784b60 saída0 informado peloROOT. Probe d56ad6 saída0,503SSEexato→CLOSEDnativo antes do helper→Link público com Sidebar preservada→SSEreal200,1ativa/1documento, resync da assinatura antiga comprovado. Zero falhas;2diagnósticos privados esperados503, guardglobal intacto.2PNG inspecionados/177.044bytes, allowlist/resumo sanitizados em output/inbox-396-allowlist.json/evidencias.json; negativos/raw/probes locais foraGit, sem binário novo. SemPG/SQL/submit/envio. Porte mínimo no agregado, browser agregado/global/publicação pendentes do integrador; nenhuma homologação presumida.
 
 ### Publicação separada #308 com dependências revisadas
 
@@ -5184,6 +5210,42 @@ maxWorkers2; TSC57449 e lint97075 terminaram0, zero erros /40 avisos herdados.
 Sem novo DB/browser nesta conciliação. Parecer final e CI pendentes;392/B2
 continua decisão humana e impede merge antecipado. output/pr395-qa/pais.md.
 
+## PR #396 — CLOSED e composição sobre a casca
+
+Fonte9cfbbad6 recebe ad47/babd isolado, base-r3/main e3953fc por merges normais.
+CLOSED libera ciclo; nova assinatura abre uma SSE e recupera assinantes antigos
+com resync, CONNECTING segue nativo, sem timer/retry. C1 capacidade por aba e
+HTTP/2 documentado, sem alterar proxy. C2 README/quadro conciliados preservando
+ambas as seções; diff311 fica sobre308, sem313/315. SSE/hooktest idênticosad47;
+OptOut/PainelContato/ConversaAberta idênticos395. Fonte9cf contra base3127c só
+difere nos três arquivos SSE. Checkpoint4ef anterior passou857/6727, não final.
+
+Gates9cf encerrados0: global82670,860 arquivos /6.748 testes unitários sem
+filtro/ignorados,maxWorkers2; TSC83357 e lint95898 zero erros /40 avisos.
+Quatro PNGs positivos do probeB babd/3b em ZIPdraft344.425bytes, SHA c7c4fb49...
+com fontes explícitas; sem recaptura9cf/DB/browser próprio. Parecer final,
+395/#392B2 e CI/main continuam gates. output/pr396-qa/revisao.md.
+## PR #396 — C6: recuperação autônoma verificada localmente
+
+Sobre31a9b666, apenas fonte/testes SSE: CLOSED agenda um timer com backoff
+1/2/4/8/16/30s, reset emopen e cancelamento no último unsubscribe. Assinatura
+nova antecipa/cancela; CONNECTING nativo e uma fonte física preservados.
+Callback cancelado/antigo não afeta substituta; falha construtora segue retry.
+EventSource não distingue HTTP de autenticação noerro; rota conserva guarda,
+tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
+RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
+prefer-const na fixture de teardown, corrigido sem alterar produção; lint
+dirigido posterior0. Global01a22304 EXIT0:860arquivos/6.756testes,sem
+filtros/ignorados,maxWorkers2,262,87s. TSC5638/lint97309 EXIT0,0erros40avisos.
+TESTER01a favorável6/47 próprios,cb5243 EXIT0,sem DB/browser/global próprios.
+Chromehelper/EventSource/HTTP reais locais ff9c5d EXIT0:503→1008ms→200 sem
+remontar dois ouvintes; CONNECTING nativo no mesmo objeto; teardown impede
+retry1300ms/remount200, máximo1stream/1documento/foco mantido,0pageerror.
+Não é Next/ERP/DB/proxy. ZIP positivo2PNG/5arquivos38.437B, SHA256
+361b6f89e7e4dcc0eb59bcfdd3503910195b544b36f1575cf2baa1caee5190b0,
+asset668211207/DRAFT421321214,download/hash conferidos. Report c6.md em
+output/pr396-qa. Porte nos dependentes, CI/main/392B2 ainda pendentes.
+
 ## Inbox — retirar reintrodução de capturas298 já arquivadas
 
 Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
@@ -5200,6 +5262,12 @@ Base-r3450318f9 recebe maincce21e19,retira64PNG298 já arquivados e mantém
 src/scripts/prisma/package/lock idênticos3fc403de após composição. Sódocs/
 artefatos,sem repetir ou reatribuir suítes. Gate/parecer3fc nominal,CI/main/
 392B2 pendentes. output/pr395-qa/pais.md,nenhum upload/captura novo.
+## PR #396 — preservar retirada404 sem delta produtivo
+
+Porte pai39517ab18b7 mantém maincce21e19 e retira64PNG298;src/scripts/
+prisma/package/lock idênticosbc09e572. Sódocs/artefatos,sem repetirouatribuir
+novas suítes. Gates/parecer01a permanecem nominais;CI/main/392B2 pendentes.
+output/pr396-qa/c6.md,sem nova captura/upload/DB/servidor.
 
 ## PR #392 — composição B2 com main
 
@@ -5224,3 +5292,13 @@ Composição17+825:aplicação/testes/servidorbyteiguais17,6deltaslimitadosaosma
 ## PR #395 — ancestralidade main393
 
 Fonte7e60dc36 preservada: main61b8ebef tem árvore inteira igual ao ancestral825. Merge apenas de ancestralidade, quadro7e mantido sem perda distinta, árvore préMD igual7e. Registros finais só2MD, executáveis iguais7e. QA independente7e/CI remota/mainmerge395 pendentes, sem repetir gates por MD.
+
+## PR #396 — composição B2 sem alterar SSE
+
+Base395f8 incorporada: aplicação/testes/backend/SSE iguaisaa42, apenas seis caminhos de tooling B2, CLI uma expressão e README. Trava/package/lock iguaisf8. Provas3de6ea/e0e650 saída0; um conflito do quadro preserva ambos os lados. Recorte04fcc1 terminal0:8arquivos62testes/maxWorkers2/sem filtro ou skips novos; não é global. TSC36132/f0495d e lint14373/2bf43d terminais0/0erros40avisos. Executores anteriores expirados não contados; apenas TSC/lint repetidos. Global860/6756 continua nominal01a254f5; CI global final2TZ e QA independente compostos obrigatórios. Sem novo DB/browser/install; evidências C6 anteriores não reatribuídas. Predecessor395 ainda aguarda QA/merge, nenhuma antecipação funcional.
+
+## PR #396 — QA independente e base395 mergeada
+
+Fonte 83f5947d preservada. O TESTER aprovou nove arquivos / 79 testes próprios (5de06e, saída 0), syntax/help/resoluções/diff check (236822, saída 0) e OIDs (bdf174). Parecer original conferido pelo SHA256 6f8b05ce...; cópia versionada em output/pr396-qa/tester-b2-83.md, com apenas EOF normalizado. O parecer do predecessor395 também é preservado, sem substituir a QA desta fonte.
+
+A main395 363c0e83 tem árvore inteira igual ao ancestral f8 já incorporado. Dois conflitos documentais mantêm a versão83; toda a árvore foi conferida igual a83 antes destes registros (9d5e10, saída 0). O head final acrescenta apenas Markdown. QA concluída, CI global final contra main ainda pendente; nenhum merge antecipado, novo banco, navegador ou instalação.

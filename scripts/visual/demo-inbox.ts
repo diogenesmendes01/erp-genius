@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -126,11 +127,41 @@ export async function criarDemoInbox(prisma: PrismaClient): Promise<IdsDemo> {
   return IDS;
 }
 
+export function lerOpcoesDemo(args: string[]): { entrada: keyof IdsDemo | null } {
+  if (!args.length) return { entrada: null };
+  if (args.length !== 2 || args[0] !== "--entrada" || !Object.hasOwn(IDS, args[1]!)) throw new Error("Uso: demo-inbox.ts [--entrada <chave fictícia da demo>]");
+  return { entrada: args[1] as keyof IdsDemo };
+}
+/** Insere somente ENTRADA local; o trigger existente publica mensagem.nova após o commit. */
+export async function inserirEntradaDemoInbox(prisma: PrismaClient, chave: string) {
+  if (!Object.hasOwn(IDS, chave)) throw new Error("Chave fictícia da demo inválida.");
+  const id = IDS[chave as keyof IdsDemo];
+  return prisma.$transaction(async (tx) => {
+    const a = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id }, include: { conversa: { include: { numero: true } } } });
+    if (a.conversa.numeroId !== ID_NUMERO || a.conversa.contatoId !== "inbox-demo-contato-" + chave + "-307"
+      || a.conversa.numero.driver !== "BAILEYS" || a.conversa.numero.sessao !== "DESCONECTADO") throw new Error("Fixture local da demo inválida.");
+    const agora = new Date();
+    const mensagem = await tx.mensagemWhatsApp.create({ data: {
+      id: "inbox-demo-entrada-311-" + randomUUID(), atendimentoId: id, conversaId: a.conversaId, numeroId: ID_NUMERO,
+      direcao: "ENTRADA", corpo: "Entrada fictícia #311 para " + chave + ".", driver: "BAILEYS", status: "ENTREGUE", criadoEm: agora,
+    } });
+    await tx.atendimentoWhatsApp.update({ where: { id }, data: { naoLidas: { increment: 1 }, ultimaMensagemEm: agora, ultimoInboundEm: agora } });
+    await tx.conversaWhatsApp.update({ where: { id: a.conversaId }, data: { naoLidas: { increment: 1 }, ultimaMensagemEm: agora } });
+    return mensagem;
+  });
+}
+
 async function main() {
+  const opcoes = lerOpcoesDemo(process.argv.slice(2));
   const { url, perfil } = resolverBancoTeste();
   exigirBancoDescartavel(url);
   const prisma = new PrismaClient({ datasources: { db: { url } } });
   try {
+    if (opcoes.entrada) {
+      const m = await inserirEntradaDemoInbox(prisma, opcoes.entrada);
+      process.stdout.write("Entrada fictícia inserida no perfil " + perfil + ": " + m.id + "\n");
+      return;
+    }
     const ids = await criarDemoInbox(prisma);
     const destino = path.resolve("tmp/visual/demo-ids.json");
     await mkdir(path.dirname(destino), { recursive: true });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { SeloNaoLidasInbox } from "./SeloNaoLidasInbox";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -102,12 +103,7 @@ export function NavLinks({ papeis, naoLidasInbox = 0, aoNavegar, rotulo = "Naveg
             >
               <Icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
-              {item.href === "/inbox" && naoLidasInbox > 0 && (
-                <span className="rounded-full bg-brand-solid px-1.5 py-0.5 text-[10px] font-medium leading-none text-on-brand">
-                  {naoLidasInbox > 99 ? "99+" : naoLidasInbox}
-                  <span className="sr-only"> mensagens não lidas</span>
-                </span>
-              )}
+              {item.href === "/inbox" && <SeloNaoLidasInbox inicial={naoLidasInbox} variante="pilula" />}
             </Link>
           );
         })}
@@ -122,7 +118,7 @@ export function Sidebar({
 }: {
   papeis: string[];
   nome: string;
-  /** Notificação básica da inbox (doc 30 E3): soma de não-lidas no escopo do usuário. */
+  /** Notificação básica da inbox (doc 30 E3): conversas não lidas pessoais no escopo do usuário. */
   naoLidasInbox?: number;
 }) {
   // Só a partir de md; abaixo disso a navegação fica na barra mobile (BarraMobile), que abre a
