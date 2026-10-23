@@ -90,3 +90,20 @@ A→B→A sem editar: ok limpa armazenamento E campo atual de A, e nova ida B→
 GREEN388841:2arquivos/62testes (17React reais/StrictMode+45controlados, incluindo emoji/upload/idempotência). Gate dirigido final2293:14arquivos/325testes saída0, inclui legado AcoesAtendimento corrigido, menu/useAcoes, Conversa/rodapé, compositor/owner, idempotência e guardas completas afetadas. TSC57710 heap8192, lint9fc451 trêsfontes e diff537006 saída0, Node22.23.2. Não é full global, integraçãoDB ou QAvisual. Sem preview/browser/DB/envio/instalação/push nesta revisão.
 
 Imagens do complemento menu028fd6 permanecem fonte29f explícita: os controles do menu não mudaram, mas elas NÃO comprovam esta reconciliação C3 nova. Fontes317bbb/df9 seguem históricas. QA independente exata e global integrado/publicação permanecem comROOT, sem homologação presumida.
+## Fechamento da composição moderna da revisão403
+
+Fonte741f595e1f9f32cd3511cbba6808bcd005e1c9c8 integra f896 e base317-r3
+a8dba58c: C3/menu/rodapé/Conversa iguaisf896,delta adicional só seis arquivos
+de prazo puro/Avatar/testes. Contraexemplos adicionais do integradorGREEN19
+ae412b,arquivo oficial restaurado paraf896 com17React/StrictMode. Recorte
+final8/100344b38 EXIT0. Global53047 EXIT0:899arquivos/7.046unitários,
+288,08s,maxWorkers2,sem filtros/ignorados. Nexttypegen/TSC36894/lint6472
+EXIT0,0erros40avisosSrc. TESTERf8962/62d60052 e composição7416/85
+63aaeb EXIT0,sem DB/browser/global próprios nesta revisão estática.
+
+Pacote85f original preservado; complemento menuA7/29f16PNG/21arquivos,
+1.677.732B/SHA4faa6c22... remoto/download/hash confirmados em DRAFT.
+Visuais antigos não são reatribuídos ao C3f896/741. C2menu teve prova ERP
+sem submit; C3 tem testes ReactDOM/StrictMode e não alega envio ERP/DB.
+Pareceres e metadados históricos curados em output/pr403-qa. CI/main/392B2
+pendentes antes do merge; sem deploy ou homologação presumida.
