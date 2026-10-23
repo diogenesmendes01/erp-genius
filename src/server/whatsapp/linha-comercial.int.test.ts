@@ -8,7 +8,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
-import { contarNaoLidas, listarLinhasDoUsuario } from "./consultas";
+import { listarLinhasDoUsuario } from "./consultas";
+import { contarConversasNaoLidas } from "@/server/inbox/nao-lidas";
 import { obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { carregarPainel } from "@/server/inbox/paineis";
 import { listaDoInbox, mensagensDoInbox } from "@/test/inbox-consultas";
@@ -114,7 +115,7 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
     expect(await listaDoInbox(sessao(vendedorB))).toHaveLength(0);
     expect(await obterItemListaInbox(sessao(vendedorB), a.id)).toBeNull();
     expect(await atendimentoVisivel(sessao(vendedorB), a.id)).toBeNull();
-    expect(await contarNaoLidas(sessao(vendedorB))).toBe(0);
+    expect(await contarConversasNaoLidas(sessao(vendedorB))).toBe(0);
     expect(await listaDoInbox(sessao(vendedorB), { busca: "Desconhecido" })).toHaveLength(0);
     entrar(vendedorB);
     expect((await enviarTextoInbox({ conversaId: a.id, texto: "intrusão" })).ok).toBe(false);
@@ -128,7 +129,7 @@ describe("LC-03/LC-04/LC-13: quem vê a linha", () => {
     expect(await listaDoInbox(sessao(gerenteA))).toHaveLength(1);
     // E5, Task 13: GERENTE_COMERCIAL vê todo COMERCIAL (antes: só a carteira da equipe).
     expect(await listaDoInbox(sessao(gerenteB))).toHaveLength(1);
-    expect(await contarNaoLidas(sessao(gerenteA))).toBe(1);
+    expect(await contarConversasNaoLidas(sessao(gerenteA))).toBe(1);
   });
 
   it("LC-13: financeiro e secretaria não veem linha comercial; admin vê", async () => {

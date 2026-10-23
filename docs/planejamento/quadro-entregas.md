@@ -1,5 +1,9 @@
 # Quadro único de entregas
 
+## Pós-merge PR396 C3/C4 — montagem e legado — 23/10/2026
+
+AvaliaçãoC3 explícita na SPEC: resync tardio cobre snapshotSSR antigo e recontagem pessoal cobre leitura semNOTIFY; custo de GETs redundantes de montagem aceito, sem afirmar otimização/coalescência. C4 remove função/export contarNaoLidas sem callerprod (barrel só export*), preserva consulta atual do selo e troca duasasserts/import do testeLC, sem enfraquecer escopo0/1. INT30761 completo1/24 terminal0 no banco integracao487 EXCLUSIVO, depois liberado; perfilrestauradoRootf6de8b, bancoB490 intacto. Unit11/367/TSC79557/lint0 na fonte finalexecutável. QA/publicação integrador, sempresunçãoCI.
+
 ## Pós-merge PR381 C2 — paleta — 23/10/2026
 
 Retirado apenas offset morto de NAO_E_COR.ring. Caso existente agora recusa ring-offset vazio e conserva ring-offset-white/ring-offset-2; regex/limites/paleta não mudam. RED1/7→GREEN6/49 e amplo11/367, TSC79557/lint6fontes0 na árvorecomposta. docs18 registra contrato; sem alteraçãoUI/deps.
