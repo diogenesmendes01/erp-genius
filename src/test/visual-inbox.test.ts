@@ -6,9 +6,27 @@ import {
   ESTADOS, TAMANHOS, TEMAS, cancelamentoDeMensagensRecuperado, caminhoNoNpm, combinacoes, nomeDaCaptura, tipoDoArquivo,
 } from "../../scripts/visual/nucleo-captura.mjs";
 import { exigirBancoDescartavel } from "../../scripts/visual/demo-inbox";
-import { autenticarApp, esperarConteudoApp } from "../../scripts/visual/espera-app.mjs";
+import { autenticarApp, esperarConteudoApp, esperarHidratacaoApp } from "../../scripts/visual/espera-app.mjs";
 
 describe("harness visual do Inbox", () => {
+  it("conteúdo SSR não libera a foto antes da assinatura SSE confirmar hidratação", async () => {
+    let liberar!: () => void;
+    const hidratada = new Promise<void>((resolve) => { liberar = resolve; });
+    const waitFor = vi.fn(() => hidratada);
+    const locator = vi.fn(() => ({ waitFor }));
+    let terminou = false;
+    const espera = esperarHidratacaoApp({ locator } as unknown as Parameters<typeof esperarHidratacaoApp>[0]).then(() => { terminou = true; });
+    await Promise.resolve();
+    expect(terminou).toBe(false);
+    expect(locator).toHaveBeenCalledWith('[data-conectado="1"]');
+    liberar();
+    await espera;
+    expect(terminou).toBe(true);
+  });
+  it("falha de prontidão da hidratação reprova a captura em vez de ser ignorada", async () => {
+    const pagina = { locator: () => ({ waitFor: async () => { throw new Error("Inbox não hidratou/conectou"); } }) };
+    await expect(esperarHidratacaoApp(pagina as unknown as Parameters<typeof esperarHidratacaoApp>[0])).rejects.toThrow("Inbox não hidratou/conectou");
+  });
   it("CLI documenta as opções sem abrir browser nem banco", () => {
     const r = spawnSync(process.execPath, ["scripts/visual/capturar-inbox.mjs", "--help"], { cwd: process.cwd(), encoding: "utf8" });
     expect(r.status).toBe(0);
@@ -163,4 +181,31 @@ describe("harness visual do Inbox", () => {
     expect(cancelamentoDeMensagensRecuperado({ ...pedido, url: `${base}/api/inbox/atendimentos/inbox-demo-mariana-307/painel` }, concluido, base, true)).toBe(false);
     expect(cancelamentoDeMensagensRecuperado({ ...pedido, url: "https://example.com/api/inbox/atendimentos/id/mensagens" }, concluido, base, true)).toBe(false);
   });
+});
+
+it("inclui painel-fechado nos dois alvos sem capturar em tamanho incompatível", () => {
+  expect(combinacoes({ alvos: ["app", "prototipo"], estados: ["painel-fechado"] })).toHaveLength(4);
+});
+it("painel-fechado aguarda a thread e comprova o fechamento, sem exigir conteúdo oculto", async () => {
+  const chamadas: string[] = [];
+  let liberar!: () => void; const fechado = new Promise<void>((ok) => { liberar = ok; });
+  const pagina = {
+    getByRole: (_role: string, o: { name: string }) => {
+      if (o.name === "Painel Comercial") throw new Error("Painel deveria estar fechado");
+      return { waitFor: async () => { chamadas.push(o.name); }, getByText: (texto: string) => ({ waitFor: async () => { chamadas.push(texto); } }) };
+    },
+    waitForFunction: () => fechado,
+  };
+  let terminou = false;
+  const espera = esperarConteudoApp(pagina as unknown as Parameters<typeof esperarConteudoApp>[0], "painel-fechado", "desktop").then(() => { terminou = true; });
+  await new Promise((ok) => setTimeout(ok, 0)); expect(terminou).toBe(false); liberar(); await espera;
+  expect(chamadas).toContain("Quero saber o valor do Inglês Intensivo B1.");
+});
+
+it("warnings React de chave e hidratação invalidam captura do app; HMR normal não", async () => {
+  const { problemaReactNaCaptura } = await import("../../scripts/visual/nucleo-captura.mjs");
+  expect(problemaReactNaCaptura('Each child in a list should have a unique "key" prop.')).toBe(true);
+  expect(problemaReactNaCaptura('Encountered two children with the same key, a')).toBe(true);
+  expect(problemaReactNaCaptura('Hydration failed because the server rendered HTML did not match')).toBe(true);
+  expect(problemaReactNaCaptura('[Fast Refresh] done in 500ms')).toBe(false);
 });
