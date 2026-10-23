@@ -132,6 +132,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const selecionadoRef = useRef(selecionado);
   const regiaoConversa = useRef<HTMLElement>(null);
   const mensagensOcultasRef = useRef<{ id: string; mensagens: Set<string | null> } | null>(null);
+  const versaoEntradasRef = useRef(0);
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
@@ -140,6 +141,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const carregarLista = useCallback((filtro: FiltrosInbox) => {
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
+    const entradasNoInicio = versaoEntradasRef.current;
     const pagina = typeof document === "undefined" ? null : document;
     const pedido = ++consultasRef.current.iniciada;
     void buscarPagina(filtro, null).then((p) => {
@@ -153,7 +155,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
       if (linha && !(leitura.fase === "sucesso" && antiga)) {
         const ocultas = mensagensOcultasRef.current?.id === leitura.id ? mensagensOcultasRef.current.mensagens.size : 0;
-        leitura.ultimaContagem = leitura.fase === "pendente" || ocultas > 0 ? Math.max(leitura.ultimaContagem, linha.naoLidas, ocultas) : linha.naoLidas;
+        const entrouDepois = entradasNoInicio !== versaoEntradasRef.current;
+        leitura.ultimaContagem = leitura.fase === "pendente" || entrouDepois
+          ? Math.max(leitura.ultimaContagem, linha.naoLidas, ocultas)
+          : Math.max(linha.naoLidas, ocultas);
       }
       setItens((atual) => {
         const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
@@ -255,7 +260,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       if (regiaoConversa.current?.getClientRects().length && typeof document !== "undefined" && document.visibilityState === "visible") pedirLeitura(a.atendimentoId!, true);
       else {
         const repetida = mensagensOcultasRef.current?.id === a.atendimentoId && mensagensOcultasRef.current.mensagens.has(a.mensagemId);
-        if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
+        if (!repetida) {
+          versaoEntradasRef.current++;
+          if (leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
+        }
         if (mensagensOcultasRef.current?.id === a.atendimentoId) mensagensOcultasRef.current.mensagens.add(a.mensagemId);
         else mensagensOcultasRef.current = { id: a.atendimentoId!, mensagens: new Set([a.mensagemId]) };
       }
