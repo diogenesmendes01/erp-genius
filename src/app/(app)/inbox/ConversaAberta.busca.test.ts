@@ -1,0 +1,20 @@
+import { type ReactNode } from "react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { criarGanchos, elementos, identidadeNoReact } from "@/test/tela-sem-dom";
+const g=vi.hoisted(()=>({atual:null as ReturnType<typeof criarGanchos>|null}));
+vi.mock("react",async original=>{const real=await original<typeof import('react')>();return {...real,useState:((i:unknown)=>g.atual!.useState(i)) as typeof real.useState,useRef:((i:unknown)=>g.atual!.useRef(i)) as typeof real.useRef,useMemo:((fn:()=>unknown)=>fn()) as typeof real.useMemo,useCallback:((fn:unknown)=>fn) as typeof real.useCallback,useEffect:()=>{},useLayoutEffect:()=>{}};});
+vi.mock('@/components/conversa/agora-thread',()=>({useAgoraDaThread:()=>Date.UTC(2026,9,22,12)}));
+vi.mock('./AcoesAtendimento',()=>({useAcoesAtendimento:()=>({feedback:null,dialogos:null})}));
+vi.mock('@/server/whatsapp/acoes',()=>({enviarMidiaInbox:vi.fn(),enviarTextoInbox:vi.fn()}));
+vi.mock('@/server/crm-config/acoes-respostas',()=>({respostasRapidasDoCompositor:vi.fn()}));
+vi.mock('@/server/whatsapp/acoes-conversa',()=>({registrarNotaAtendimento:vi.fn()}));
+vi.mock('@/server/whatsapp/consultas-acoes-atendimento',()=>({origemVisivelDaTransferencia:vi.fn()}));
+import { ConversaAberta, type PropsConversaAberta } from './ConversaAberta';
+import { VirtualList } from '@/components/conversa/VirtualList';
+import { BuscaConversa } from './BuscaConversa';
+import { BalaoMensagem } from '@/components/conversa/BalaoMensagem';
+const ms=Array.from({length:150},(_,i)=>({id:'id['+i+']',corpo:i===149?'Matrícula no fim':'outra',direcao:'ENTRADA',tipo:'TEXTO',status:'RECEBIDA',criadoEm:'2026-10-22T12:00:00Z'}));
+const props={item:{id:'a',capacidades:[],status:'EM_ATENDIMENTO'},usuario:{id:'u',papeis:[]},fuso:'UTC',conversa:{mensagens:ms,notas:[{id:'nota',nota:'Matrícula não buscável',criadoEm:'2026-10-22T12:00:00Z'}],temMaisAntes:true,temMaisDepois:true,maisAntigas:vi.fn()},aoVoltar(){},aoAlternarPainel(){},aoMudar(){},podeEnviar:false} as unknown as PropsConversaAberta;
+function tela(p=props){return g.atual!.renderizar(ConversaAberta,p);}
+beforeEach(()=>{g.atual=criarGanchos();});
+it('ligação real header→barra→destaque/pin usa ID da mensagem decorada, não índice de mensagens',()=>{let t=tela();const identidade=identidadeNoReact(t,VirtualList);const header=elementos(t).find(e=>typeof e.type==='function'&&e.type.name==='CabecalhoControlado')!;(header.props.aoBuscar as ()=>void)();t=tela();let barra=elementos(t).find(e=>e.type===BuscaConversa)!;expect(barra).toBeDefined();(barra.props.aoMudar as (s:string)=>void)('matricula');t=tela();barra=elementos(t).find(e=>e.type===BuscaConversa)!;expect(barra.props.total).toBe(1);expect(barra.props.temMaisDepois).toBe(true);const list=elementos(t).find(e=>e.type===VirtualList)!;expect(list.props.pinKeys).toEqual(['id[149]']);expect(identidadeNoReact(t,VirtualList)).toEqual(identidade);const items=list.props.items as {id:string;tipo:string}[];expect(items.length).toBeGreaterThan(150);const render=list.props.renderItem as (i:unknown)=>ReactNode;const balao=elementos(render(items.find(i=>i.id==='id[149]'))).find(e=>e.type===BalaoMensagem)!;expect(balao.props.destacada).toBe(true);const nota=elementos(render(items.find(i=>i.tipo==='nota'))).find(e=>e.type===BalaoMensagem)!;expect(nota.props.destacada).not.toBe(true);});

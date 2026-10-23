@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconChevronLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
 import { BotaoIcone } from "@/components/BotaoIcone";
@@ -24,6 +24,8 @@ import type { Setor } from "@/server/whatsapp/setor";
 import type { ItemTriagem, RevisaoEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
 import { CabecalhoConversa } from "./CabecalhoConversa";
+import { BuscaConversa } from "./BuscaConversa";
+import { useBuscaConversa } from "./useBuscaConversa";
 import { AcoesMensagem, type AcaoMensagem } from "./AcoesMensagem";
 
 export interface PropsConversaAberta {
@@ -102,6 +104,8 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
     return () => { ativo = false; };
   }, [origemId]);
   const transferidoDe = origemId && origem.de === origemId && origem.setor ? rotular(SETOR_ATENDIMENTO_LABEL, origem.setor) : null;
+  const itens = useMemo(() => decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes, conversa.temMaisDepois), { fuso, agora: new Date(agora), transferidoDe }), [conversa.mensagens, conversa.notas, conversa.temMaisAntes, conversa.temMaisDepois, fuso, agora, transferidoDe]);
+  const { aberta: buscaAberta, termo, atual: achadoAtual, achados, posicao, campoRef, abrir: abrirBusca, fechar: fecharBusca, aoMudar: mudarBusca, navegar: navegarBusca } = useBuscaConversa(item?.id ?? null, conversa.mensagens, rolagem, itens);
   // A origem (atendimento e número) fica guardada no clique: o encaminhar não muda de conversa se a seleção mudar.
   const [acaoMensagem, setAcaoMensagem] = useState<{ acao: AcaoMensagem; m: MensagemThread; atendimentoId: string; numeroId: string } | null>(null);
   const [respostas, setRespostas] = useState<{ id: string; atalho: string; titulo: string; corpo: string }[]>([]);
@@ -116,18 +120,22 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
 
   return (
     <>
-      {item ? <CabecalhoControlado key={item.id} item={item} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoVoltar={aoVoltar} aoAlternarPainel={aoAlternarPainel} painelAberto={painelAberto} painelAuto={painelAuto} /> : (
+      {item ? <CabecalhoControlado key={item.id} buscaAberta={buscaAberta} aoBuscar={abrirBusca} item={item} usuario={usuario} fuso={fuso} destinos={destinos} aoMudar={aoMudar} aoVoltar={aoVoltar} aoAlternarPainel={aoAlternarPainel} painelAberto={painelAberto} painelAuto={painelAuto} /> : (
         <header className="flex h-[68px] shrink-0 items-center gap-2.5 border-b border-gray-200 bg-surface px-3">
           <BotaoIcone tamanho={36} rotulo="Voltar para a lista" onClick={aoVoltar} className="min-[960px]:hidden"><IconChevronLeft size={20} /></BotaoIcone>
           <p className="min-w-0 flex-1 truncate">Conversa</p>
           <BotaoIcone tamanho={36} rotulo="Painel do contato" aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel}><IconLayoutSidebarRight size={17} /></BotaoIcone>
         </header>
       )}
+      {buscaAberta && <BuscaConversa termo={termo} aoMudar={mudarBusca} total={achados.length} posicao={posicao} campoRef={campoRef}
+        aoAnterior={() => navegarBusca(-1)} aoProximo={() => navegarBusca(1)} aoFechar={fecharBusca}
+        temMaisAntes={conversa.temMaisAntes} temMaisDepois={conversa.temMaisDepois} carregandoAntigas={conversa.carregandoAntigas} aoCarregarAntigas={() => void conversa.maisAntigas()} />}
       <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
         <VirtualList stableMount
-          items={decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes, conversa.temMaisDepois), { fuso, agora: new Date(agora), transferidoDe })}
+          items={itens}
+          pinKeys={achadoAtual ? [achadoAtual] : []}
           getKey={(i) => i.id}
           isItemFocusable={(i) => i.tipo === "mensagem"}
           estimatedHeight={72}
@@ -138,7 +146,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
             const m = i.m;
             return (
-              <BalaoMensagem m={m} autor={autorDoItem(i)} emSequencia={i.emSequencia} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
+              <BalaoMensagem m={m} destacada={achadoAtual === m.id} autor={autorDoItem(i)} emSequencia={i.emSequencia} fuso={fuso} comandos={comandosDaMensagem(m, capacidades, envioLiberado === true)} recursos={(r) => capacidades.includes(r)}
                 aoComando={(c) => {
                   if (c === "copiar" && m.corpo) void navigator.clipboard?.writeText(m.corpo);
                   else if ((c === "reagir" || c === "encaminhar" || c === "editar" || c === "apagar") && item) setAcaoMensagem({ acao: c, m, atendimentoId: item.id, numeroId: item.numeroId });
@@ -171,9 +179,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
 }
 
 /** Monta apenas para atendimento válido; a key no chamador encerra seus diálogos na seleção. */
-function CabecalhoControlado({ item, usuario, fuso, destinos, aoMudar, aoVoltar, aoAlternarPainel, painelAberto, painelAuto }: { item: ItemListaInbox } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoVoltar" | "aoAlternarPainel" | "painelAberto" | "painelAuto">) {
-  const [buscaAberta, setBuscaAberta] = useState(false);
-  const aoBuscar = () => setBuscaAberta(true);
+function CabecalhoControlado({ item, usuario, fuso, destinos, aoMudar, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, buscaAberta, aoBuscar }: { item: ItemListaInbox; buscaAberta: boolean; aoBuscar(): void } & Pick<PropsConversaAberta, "usuario" | "fuso" | "destinos" | "aoMudar" | "aoVoltar" | "aoAlternarPainel" | "painelAberto" | "painelAuto">) {
   const acoes = useAcoesAtendimento({
     atendimento: { id: item.id, finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, status: item.status as StatusAtendimentoWhatsApp },
     usuario, grupo: item.grupo, setoresDoNumero: item.setoresDoNumero, fixada: item.fixada, silenciada: item.silenciada,
