@@ -6098,3 +6098,10 @@ Base16e PR405. PainelFiltros sem consumidor produtivo removido com3testes/scaffo
 ### #320 — primeiraINTROOT falhou por asserçãoSSE de substring; testfix separado
 
 ROOTb509: unidade904/7102,TSC/lintmax40 todos0; INT80680EXIT1 com15arquivos14pass1fail/138testes137pass1fail. Teste de privacidade confundiu trecho u9 permitido emIDpúblico com campo privado. Testfix sóunit/int: parse event/data/terminadores/JSON público+ausência propriedadeprivada; formatter/filtro/app intactos. SeteunitáriosSSEoriginais preservados+1causal: RED4e146a7pass1fail→GREENc0fe9a4arquivos/37testes0; TSC50335heap8192/lintbed2e5/diff74e7520 Node22.23.2. SemDBDEV/preview. SSEintdirigida+15rerun/novoGlobal/QA/matriz164 aguardamROOT; E1nãohomologada.
+
+
+### #320 — entrega DEV visual final e gatesROOT442d observados
+
+FonteOWN491 imutável/produção byteigualb509/ROOT442d. Formal36201 saída0:164PNG100APP64proto/20estados/6N/A; complemento91340 saída0:40contextos88PNG/limiares320..1440/altura500/doistemas,252originais inspecionados51pranchas/23.322.166B. Tabela100linhas em output/inbox-320-app-prototipo.json com diferenças/N/A e limites explícitos dos dois errodesktopdark com outro setor ainda emloading. 1440real224/372/348/header68/buscaLista38/chip28/padding11-10/editor44;320textarea80×44integral/scrollnativo/Tabações alcançáveis/document500/y0. Tipografiacomcontagemreal5chips+1pílula+1badgeFiltro,abaDetalhessemcountN/A+SSR,ponto8pxsemmono. Semsubmit/React/externo;SSEmáx1/ativa1/2construídas sequenciais. Negativo32366inteiro excluído, probe privado corrigido semprodutivo.
+
+ROOT442d informou todosTERM0:unit69820904/7103maxWorkers2,TSC5809heap8192,lint89210max40(40avisos),SSEint5423/11,15INT78114/138maxWorkers1. Primeira80680EXIT1/137+1flaky continua histórica;491sótestfixSSE+docs. QA4914/37+estático32012/161+3/24 favoráveis, fonte/executores distintos das fotos491. Allowlists formal164/complemento88+índice51pranchas/métricas/tabela curados,semPNG/raw/scripts emGit. ROOTstop8165/465168 e restoreA defae5 saída0/424hashes551originais; browsersfechados/AGENTSsóNextrestaurado. CI/artefato remoto/publicação/aceitefinal pendentesROOT; não iniciarE2nem presumirhomologação.
