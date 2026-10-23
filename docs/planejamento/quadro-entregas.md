@@ -5623,3 +5623,8 @@ sem enfraquecer identidade/pin/termo. GREEN013e72 exit0:12/312,8,81s, sem filtro
 de nome ou skips. TSC63460heap8192 após ajuste e lint9fontes748069 zeroavisos, exit0.
 Não é global nem aceite; C2#402, CLI, imagens formais e QA da composição pendem.
 Evidências em output/inbox-317-319-composicao-checkpoint.md.
+
+
+### #317 — CLI preparada separadamente, formal pendente
+
+Produto a86c9ade imutável enviado ao TESTER. RED8a9d756/6→GREENff1da18arquivos51testes; TSC38512heap8192/lint8fontes be4324/diffcheck c07e2e saída0 Node22. Estado nota12PNG e humano+nota24 formais planejadas, total136 CLI preservando estados prévios. Espera317 exige abas/campo/alvos44/header68/viewport; aviso footer separado de notas reais314, sem relaxar comandos/status/mídia. Sem browser/DB/PNG, nenhuma geometria real alegada. Formal/QA/global aguardam C2/#402 e janela ROOT. Produto e harness têm fontes distintas; capturas antigas não contam para317.

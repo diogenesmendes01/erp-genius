@@ -69,7 +69,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 118 PNGs: 60 do app e 58 do protótipo. O painel do
+`--estado todos` produz 136 PNGs: 72 do app e 64 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -159,4 +159,15 @@ Após o freeze de código315, menu-mais acrescenta12PNGs (3tamanhos,2temas,app×
 
 ## Busca local #316
 
-Estado busca-conversa é APP-only:6PNGs (3tamanhos/2temas), sem referência funcional do protótipo, explicitado no manifesto. Total da CLI124PNG(66app/58protótipo); estados313/314/315/318 preservados. A fixture canônica Beatriz contém matricular em mensagens, enquanto desconto do exemplo do plano não existe no corpo; a CLI usa matricular, sem seed/DB, e não busca notas. Abre pelo botão desktop ou item de menu móvel após thread/hidratação; exige campo focado, resultado destacado, contador e header68. menu-mais agora exige Buscar habilitado; Bloquear permanece indisponível com motivo integral. GuardReact/404/rede/hidratação/anonDOM392 apósinteração/antesfoto continuam ativos.
+Estado busca-conversa é APP-only:6PNGs (3tamanhos/2temas), sem referência funcional do protótipo, explicitado no manifesto. No checkpoint316, total da CLI124PNG(66app/58protótipo); estados313/314/315/318 preservados. A fixture canônica Beatriz contém matricular em mensagens, enquanto desconto do exemplo do plano não existe no corpo; a CLI usa matricular, sem seed/DB, e não busca notas. Abre pelo botão desktop ou item de menu móvel após thread/hidratação; exige campo focado, resultado destacado, contador e header68. menu-mais agora exige Buscar habilitado; Bloquear permanece indisponível com motivo integral. GuardReact/404/rede/hidratação/anonDOM392 apósinteração/antesfoto continuam ativos.
+
+
+## Rodapé/compositor #317
+
+Após o checkpoint produtivo a86c9ade, o estado nota acrescenta12PNG (1440×900,1024×768,390×844; dois temas e app×protótipo). Humano-compositor mais nota totalizam24PNG formais317. A CLI abre Beatriz em ambos os alvos e troca a aba por seu controle real; não escreve nem envia conteúdo. A foto humana conserva a rolagem interna até a nota307. Fixtures314/nomes/autoria continuam canônicas, sem seeds/limpezas pela CLI.
+
+A prontidão do app exige cabeçalho68, duas abas com seleção coerente/tabpanel, editor CampoTexto habilitado, alvos44 e rodapé/campo/controles dentro do viewport. Nota exige aviso de uso interno e ausência de anexo/agenda/voz; Responder usa seus controles reais, agenda opcional segundo capacidade do controlador. Dica do app não promete @ mencionar. O aviso no footer não é item da thread: a espera314 continua estrita para todas as notas reais fora do footer, incluindo ausência de mídia/status/comandos.
+
+No protótipo, nota usa sua aba original e placeholder Nota interna · @ para mencionar; a menção é apenas diferença histórica da referência, não funcionalidade implementada no app. A CLI não altera HTML da referência, não aciona Enviar, Assumir ou agenda. AnonDOM392 apósinterações/antesfoto, manifesto com fonteApp/hashes4módulos, hidrataçãoSSE/guardReact/rede continuam intactos. Produto e harness têm fontes distintas e precisam ser registrados; não atribuir capturas anteriores ao novo compositor.
+
+Geometria/foco/scroll/identidade real a320×500, estados de permissão, idempotência e resultados tardios precisam de complementos coordenados e QA independente. Os testes unitários de prontidão não substituem navegador real. Formal/browser aguardam integração coordenadaC2/#402 e preview do integrador; nenhum browser/DB foi usado ao preparar este deltaCLI.
