@@ -4640,3 +4640,82 @@ PR382 C1/C2/C3: retorno da aba lê somente região exibida e remove listener ao 
 - C1 evidências locais no perfil exclusivo ci-integracao:92375 exit0,4arquivos/75testes (consultas-pagina,executor-crm,handoff,historico), e93492 exit0,2arquivos/25testes (nota-interna,inbox), sem filtro/ignorados nesses6arquivos. Não é suíte de integração completa. O pedido de rodar no head final após retarget para main permanece pendente; não atribuir este recorte a um futuro head integrado.
 - Gates finais Node22.23.2:unitários12136 exit0,840arquivos/6485testes sem filtro/ignorados;TSC70245 exit0;lintglobal78342 exit0,0erros/40avisos herdados. Base382correções183c incorporada pelo merge localbb543667. Ainda sem merge/deploy destaPR; nenhum envio externo.
 - Registro da dependência:PR381 já merged por squash emea60a8a7,comCI39878884253success eTESTER9e5favorável;64PNGarquivados com roundtrip/hash confirmado no draft autorizado. Incorporar correção381/main antes de retarget das filhas para não reintroduzir imagens.
+### Inbox E0.5 — #302: prazo estourado vivo — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-302-report.md`, parecer independente em `output/inbox-302-visual/qa/inbox-302-review.md`. Branch `codex/inbox-e0-302`, base `1ce8e582` (PR #381). Sem merge/deploy.
+
+- **Entrega:** snapshot estável por lista e um timeout até o próximo prazo; o selo aparece no prazo+1 ms, sem polling ou consulta adicional. Troca SSE usa o relógio real, inclusive para prazo já vencido. Grupos, encerrados e datas inválidas não armam timer. Limpeza na troca/desmontagem e teto nativo preservados. Interfaces exportadas para #309/#312. Sem schema, servidor ou permissão novos.
+- **Testes:** TDD RED com oito falhas de interação real e módulo ausente; GREEN Inbox inteiro com 17 arquivos/168 testes. TESTER aprovou código `1740a337`, recorte de 2 arquivos/19 testes saída 0; delta final `133b935e` apenas documental. Integrador repetiu os 19 testes com Node 22.23.2, saída 0.
+- **Gates globais:** em1740a337, TSC heap8192 sessão39736 saída0; unitário completo sessão86563 saída0,841 arquivos/6485 testes, sem falhas/ignorados/todo; lint global sessão23565 saída0,0 erros/40 avisos preexistentes, sem filtros. Runtime desses gates: Node24.16.0. Não repetidos por alteração exclusiva de docs/capturas.
+- **Visual no Node22.23.2:** 24 PNGs ANTES (integrador sessão24336) e24 DEPOIS (TESTER sessão31652), ambos saída0. Em1440×900,1024×768,390×844, claro/escuro, mesma URL sem reload e prazo do banco intacto: base0→0 e correção0→1 no selo após vencer. Sem pageerror. Imagens/manifestos em `output/inbox-302-visual/`; selo inspecionado e legível nos seis contextos.
+- **Limites:** atualiza o selo dos itens carregados; não inclui atendimento automaticamente no filtro de servidor. Overlay dev preexistente toca parte esquerda do item móvel, sem encobrir selo. Somente fixture descartável, nenhum serviço externo ou produção. CI aguarda retarget para main após integrar381.
+
+### Inbox E0.6 — #303: anexos sem formulário desabilitados com motivo — 2026-10-22
+
+**Estado: implementação e validação concluídas; PR em publicação.** SPEC em `output/inbox-303-report.md`, parecer independente em `output/inbox-303-visual/qa/inbox-303-review.md`. Branch `codex/inbox-e0-303`, base PR #383 (#302). Sem merge/deploy.
+
+- **Entrega:** Contato, Enquete e Localização sempre desabilitados até os formulários da E4. Sem capacidade, mantém aviso MOTOR; com capacidade, informa que o envio pelo Inbox ainda não está disponível. Trava exige handler para todo item habilitado. Documento/Fotos/Áudio e seus handlers, upload e Nota preservados. Sem alteração de schema, servidor, permissão, driver ou contrato de envio.
+- **TDD/recortes:** RED de comportamento e item habilitado sem onClick; GREEN Node22.23.2 com 8 arquivos/131 testes, sem ignorados. TESTER no79a905a2: 2 arquivos/86 testes, saída0 e parecer favorável. Rebase documental para cf5b077b sobre fechamento302 revisado, sem diff emsrc; conflito somente no quadro, preservados302 final e303.
+- **Gates Node22.23.2:** código fe051d41, TSC heap8192 sessão77141 saída0; suíte unitária completa sessão11868 saída0,841 arquivos/6488 testes, zero falhas/ignorados/todo; lint global sessão61660 saída0,0 erros/40 avisos, sem filtros. Últimos commits e rebase sódocs/artefatos, não imputados como novas execuções.
+- **Visual:** 12 PNGs ANTES (integrador sessão34581) e12 DEPOIS (TESTER sessão56440), seis combinações de viewport/tema por fase, saída0 e pageerrors[]. Antes os3 itens estavam habilitados sem ação; depois disabled com motivo individual legível. Documento/Fotos/Áudio habilitados nas duas fases. Capturas/manifestos em `output/inbox-303-visual/`, sem clique nos anexos, upload ou envio.
+- **Ambiente/limites:** capacidade MOTOR simulada somente em número fictício dos bancos descartáveis integracao/tester, endpoints externos vazios. Ao terminar, servidores51088/99153 encerrados e fixtures restauradas para BAILEYS/DESCONECTADO, saídas0. Aviso legado com capacidade ausente coberto pelo teste; foto corresponde a capacidade disponível. Overlay dev preexistente. CI aguarda retarget para main após integrar383.
+
+### PR #381 — revisão C1/C3 e evidências arquivadas — 2026-10-22
+
+**Estado: correções verificadas; aguardando revisão independente/CI do novo head antes do merge.**
+
+- C1: trava AST de primário artesanal avalia ancestrais button/link/componentes e contêineres com foco/papel/eventos/spread. A isenção dentro da ação fica restrita a contador compacto numérico (inclusive99+ e sr-only); texto de ação continua detectado. Círculo/check do passo de matrícula existente tem exceção explícita contada por arquivo. Nenhuma fonte de produção alterada. TDD RED15falhas64pass→GREEN79/79.
+- C3:64PNGs retirados do estado atual da branch após upload autorizado e download/hash confirmado do ZIP `inbox-pr381-1ce8e582.zip`, asset667467990,3399189bytes,SHA25626a30c20c415b5acb856bfade252b4f0891ecfa6775bfb2700519890a271df8b. Rascunho de release não publicado; relatórios/manifestos/harness permanecem,README contém link/hash. Arquivos locais e histórico das branches preservados.
+- Gates finais Node22.23.2:suíte unitária completa85347 exit0,839arquivos/6481testes sem filtros/ignorados;TSC30297 exit0;lintglobal12045 exit0,0erros/40avisos herdados. Integração não executada nesta revisão de teste/docs/remoção de imagens.
+- C4:base já main após380; CI anterior39874376426success não substitui CI do novo head. Novo push/revisão independente/CI ainda pendentes neste registro. Sem deploy ou integração externa.
+
+PR381 integrada por squash em `ea60a8a7d29cd1b3d87edf13c6c4c2d0f10ddcac`, após CI39878884253 success (5 jobs) e revisão independente favorável do TESTER no head9e5b5929. ZIP/download/hash confirmados; rascunho não publicado. PR382 incorpora a correção381 para não reintroduzir as imagens e aguarda seu próprio CI/revisão.
+
+### PR #382 — novo C1 medium da revisão R2: retorno sem leitura redundante
+
+**Estado: correção e gates locais concluídos; revisão independente e CI do novo head pendentes.** Retornar à aba com a conversa já lida não chama a ação. Contagem positiva ou entrada recebida com aba/região oculta exige leitura; esse sinal sobrevive a GET antigo ou leitura anterior que termina com zero. A leitura ao abrir e a recuperação de repetição descartada continuam válidas. Sem polling ou alteração de servidor/permissão/schema.
+
+TDD: RED com 2 falhas / 28 passes; GREEN com 4 arquivos / 46 testes dirigidos, incluindo 3 casos novos de alternância e corrida. Fonte sobre 5f29c3ce, já integrada com main/#381. Node 22.23.2: suíte unitária completa 2861, 840 arquivos / 6.503 testes; TypeScript 63783; lint global 33022 (0 erros / 40 avisos herdados); integração 90136, 2 arquivos / 15 testes, sem filtros/ignorados no recorte, exclusivamente ci-integracao. Todos encerrados com saída 0. Não é suíte completa de integração. Relatório em output/pr382-qa/revisao-r2.md. Nenhum merge da #382 presumido; a revisão R2 externa aprovou a correção anterior, mas este novo medium foi tratado antes de integrar.
+
+### PR #382 — R3: falha de leitura não descarta entradas ocultas
+
+**Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** O TESTER rejeitou a5143f2a por P2 reproduzível: após entrada oculta, GET antigo em zero e falha tanto da leitura quanto da recuperação, a indicação era consumida cedo demais e o próximo retorno não tentava novamente. A fonte rejeitada não foi mergeada.
+
+Reprodução no teste oficial: 2 falhas / 31 passes. Agora as entradas ocultas ficam por ID de mensagem; o início do pedido tira uma cópia e somente o sucesso consome as observadas. Uma entrada posterior ao início permanece pendente. A quantidade de IDs únicos preserva a contagem conhecida em falha e não duplica SSE repetido. A conversa lida, sem nova entrada, continua sem ação ao alternar abas; sem retry por timer.
+
+Gates finais Node22.23.2: global88982, 840 arquivos / 6.507 testes; TypeScript30482; lint global87886 (0 erros / 40 avisos herdados); integração5900, 2 arquivos / 15 testes, exclusivamente ci-integracao, sem filtro/ignorados no recorte. Todos encerrados com saída0. Não é a suíte completa de integração. Relatório output/pr382-qa/revisao-r3.md. O CI/parecer de a514 não vale para este delta; aguardar o novo head antes do merge.
+
+### PR #382 — R4: preservar contagem prévia mais entrada oculta
+
+**Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** O TESTER rejeitou ca9 por contagem conhecida2 + entrada oculta1 restaurar2 após falha de leitura/GET. A reprodução oficial foi mais forte, com GET atrasado retornando0: RED1falha/34passes. Nenhuma fonte rejeitada foi mergeada.
+
+Cada entrada oculta única agora incrementa a contagem conhecida ao chegar. GET atrasado não a reduz enquanto há entradas pendentes, e a lista oculta preserva esse mínimo. SSE repetido não incrementa de novo. O sucesso consome somente os IDs observados no começo e ajusta a contagem aos posteriores restantes; falha mantém contador/tentativa no próximo retorno. Sem retry por timer nem chamada redundante ao alternar abas sem entrada.
+
+Node22.23.2, todos encerrados com saída0: recorte4arquivos/51testes; global35541, 842arquivos/6.530testes sem filtro/ignorados, já com main/#383/#384; TypeScript62642; lintglobal71746,0erros/40avisos; integração55774,2arquivos/15testes sem filtro/ignorados, só ci-integracao. Não é suíte completa de integração. A primeira execução do recorte teve quatro rejeições tardias após remoção do document no harness; a referência da página foi capturada na consulta e o recorte reexecutado com saída0. Relatório output/pr382-qa/revisao-r4.md. Aguardar revisão/CI do novo head, sem presumir merge.
+
+### PR #382 — R5: convergência com GET fresco e SSE atrasado
+
+**Estado: correção e gates finais locais concluídos; novo parecer independente e CI pendentes.** A R4 foi rejeitada pelo TESTER por contar duas vezes uma mensagem que já estava no GET; a fonte não foi mergeada. O caso oficial reproduziu4 em vez3, com1falha/36passes. R5 captura a época das entradas no início de cada GET: entrada posterior preserva o mínimo novo; sem entrada posterior/sem leitura em voo, o snapshot fresco corrige a contagem, mantendo os IDs sem confirmação para retry. O recorte mantém o caso2+1 com GETs falhos e separa uma resposta realmente iniciada antes do SSE, evitando tratar um GET novo como obsoleto só pelo seu conteúdo.
+
+GREEN4arquivos/53testes. Gates finais Node22.23.2: global4477,842arquivos/6.532testes; TypeScript97106; lintglobal84654,0erros/40avisos; integração26219,2arquivos/15testes sem filtro/ignorados, exclusivamente ci-integracao. Todos encerrados com saída0. Não é a suíte completa de integração. Relatório output/pr382-qa/revisao-r5.md. Sem alteração de API/servidor/schema/permissões/transporte; nova revisão e novo CI exigidos antes do merge. As fontes rejeitadas R2/R3/R4 continuam fora da main.
+
+## PR #382 — R6: contador e confirmação independentes
+
+A R5 bc144a79 foi rejeitada pelo TESTER: um GET fresco zero permanecia em um
+por causa do mínimo de IDs pendentes. A R6 aceita o snapshot da mesma versão
+sem entrada posterior, inclusive zero, e mantém os IDs apenas para retry.
+GET realmente anterior ao SSE preserva a entrada posterior. Sucesso não eleva
+zero fresco; entradas visíveis enfileiradas também ficam pendentes se a aba
+for ocultada antes da repetição. Sem alteração de API, schema ou permissões.
+
+TDD: três casos novos falharam na R5 (37 passes / 3 falhas). O oráculo antigo
+foi corrigido com o TESTER para iniciar o GET antes do SSE, sem enfraquecer
+contagem 2 + 1 sem GET válido, deduplicação ou entrada durante leitura.
+Recorte final: 4 arquivos / 65 testes, saída 0. Gates Node 22.23.2 encerrados
+com saída 0: suíte unitária completa 73160, 842 arquivos / 6.535 testes;
+TypeScript 78883; lint 45672, 0 erros / 40 avisos herdados; integração 9920,
+2 arquivos / 15 testes (preferencias e motor/presenca), sem filtro ou ignorados,
+exclusivamente ci-integracao. Não é suíte completa de integração.
+
+Relatório: output/pr382-qa/revisao-r6.md. Parecer independente no commit exato
+e CI contra main continuam pendentes; não marcar #299 concluída antes deles.

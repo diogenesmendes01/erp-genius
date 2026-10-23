@@ -1,0 +1,62 @@
+{
+  "fase": "depois",
+  "fonte": "133b935ed71e20af4f9f517762131dc4ce98d8fd",
+  "perfil": "tester",
+  "prazo": "2026-10-22T20:56:58.841Z",
+  "resultados": [
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "light",
+      "antes": 0,
+      "depois": 1,
+      "url": "http://localhost:3109/inbox",
+      "erros": []
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "tema": "dark",
+      "antes": 0,
+      "depois": 1,
+      "url": "http://localhost:3109/inbox",
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "light",
+      "antes": 0,
+      "depois": 1,
+      "url": "http://localhost:3109/inbox",
+      "erros": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "tema": "dark",
+      "antes": 0,
+      "depois": 1,
+      "url": "http://localhost:3109/inbox",
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "light",
+      "antes": 0,
+      "depois": 1,
+      "url": "http://localhost:3109/inbox",
+      "erros": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "tema": "dark",
+      "antes": 0,
+      "depois": 1,
+      "url": "http://localhost:3109/inbox",
+      "erros": []
+    }
+  ]
+}
