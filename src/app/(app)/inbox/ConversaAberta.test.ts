@@ -197,10 +197,3 @@ it("decora a thread no fuso usando referência explícita SSR e preserva nota se
  expect((h.match(/aria-label="Opções da mensagem"/g)||[]).length).toBe(1);
  expect(renderToStaticMarkup(createElement(ConversaAberta,props))).toBe(h);
 });
-
-
-it("triagem318 pertence ao painel, sem duplicata no fluxo da thread", () => {
-  const triagem = [{ id: "t1", conversaId: "cv1", nome: "Contato fictício", corpo: "Pendente administrativa", tipo: "TEXTO", criadoEm: "2026-10-22T15:00:00Z", midiaPath: null, atendimentos: [] }];
-  const h = renderToStaticMarkup(createElement(ConversaAberta, propsConversa({ podeEnviar: true, triagem })));
-  expect(h).not.toContain("Triagem administrativa"); expect(h).not.toContain("Pendente administrativa");
-});

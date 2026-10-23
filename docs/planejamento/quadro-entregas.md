@@ -5763,3 +5763,11 @@ backup próprio com limites/hashes validados; histórico preservado. Zero
 delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
 Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
 preservar ausência nas próximas integrações, sem reescrita de histórico.
+
+### PR #399 — revisão C1–C6 e limpeza mínima de contrato (DEV A)
+
+Base EXATA62e0f74d, branch codex/inbox-pr399-review-todos. C5 remove APENAS importtypeItemTriagem/RevisaoEnvio, comentário e2propsórfãos dePropsConversaAberta; único consumidorprodInbox nãoos passa. Um casoSSR queinjetavapropignorado retirado por autorizaçãoROOT, sem testeartificial deausência. Os3casos reais de composição/triagem/tagsporcontexto/semseleção noInbox ePainelTriagem.test continuam. aoFecharobrigatório/contatoopcional preservamfallback308; min-h26 suporta rótuloextenso/acessibilidade, sem mudançaCSS. C4SPEC aponta960/1400/Sidebar224/overlayaté1399 ejustifica fecharpersistente, nãohide1100.
+
+C3 registrado precisamente:snapshotjárecebido sómesmoID permanece inclusive tags; acoesContatonull e podeEnviarfalse. Aria/optout podemseguirvisíveis, cadaactionrevalidaautorizaçãocorrente; nãoalegarremoçãouniversal/novaqueryouacesso. Regressão223/404 eproteçãoA→B cobertasnorecorte. C6delta própriopós278615 quantificado23output/6699linhas(9MD305,10JSON6319,4MJS75), índice deproveniência/cobertura/hashes relacionadoaoZIP318histórico142PNG/SHA c8e082..., semapagarevidências/probes/negativos nemreatribuirfotos. Semupload/downloadnovo.
+
+Unitdefinitivoae680f:12arquivos165testes0/3.26s,maxWorkers2,semfiltro/skipsnovos;lint2fontes912b9emax0. RevisãodiffdetectouCRLF antesfreeze,correçãoefetivaaplicadaegatesrepetidos,nominaispreliminaresnãoatribuídos;TSCfinal42027/ee3e3cheap8192 TERMINAL0. C1composiçãomain/QA280/retarget/CI eC2INTfinal são dointegrador:12INThistóricosab8nãoprovam execução no novohead. Relatório output/inbox-pr399-review-todos.md/SPEC318atualizada. SemDB/browser/preview/global/deps/harness/PNG/GitHub peloDEV;398d5f78 e investigação324preservados.
