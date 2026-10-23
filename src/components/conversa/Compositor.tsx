@@ -15,6 +15,7 @@ export const MOTIVO_SEM_ENVIO = "Você não pode enviar nesta conversa.";
 export const CARREGANDO_ENVIO = "Carregando…";
 export const FALHA_PERMISSAO_ENVIO = "Não foi possível verificar se você pode enviar nesta conversa.";
 export const AVISO_NOTA = "Nota interna: fica só para a equipe e não é enviada ao contato.";
+export const AVISO_ANEXO_EM_BREVE = "O envio deste tipo pelo Inbox ainda não está disponível.";
 const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
@@ -252,8 +253,8 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
                   const livre = capacidades.includes(i.recurso);
                   return (
                     <div key={i.recurso}>
-                      <button type="button" role="menuitem" disabled={!livre} className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>
-                      {!livre && <small className="block px-5 pb-1 text-xs text-gray-600">{AVISO_RECURSO_MOTOR}</small>}
+                      <button type="button" role="menuitem" disabled className={`${CLASSE_ITEM_MENU} text-gray-800`}>{i.rotulo}</button>
+                      <small className="block px-5 pb-1 text-xs text-gray-600">{livre ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR}</small>
                     </div>
                   );
                 })}
