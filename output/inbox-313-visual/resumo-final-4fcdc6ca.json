@@ -1,0 +1,2316 @@
+{
+  "fonteAplicacao": "4fcdc6cad73c3ad8782405c29db8770122fa8432",
+  "fontePrototipo": "2e88216481bd5889070d572e1a867baeec21b668",
+  "formal": {
+    "sessao": 43844,
+    "exit": 0,
+    "totais": {
+      "capturas": 52,
+      "app": 26,
+      "prototipo": 26,
+      "falhas": 0,
+      "diagnosticos": 6,
+      "anonimizacoesDOM": 26
+    },
+    "estados": [
+      "conversa",
+      "filtros",
+      "seletor-numero",
+      "nova-conversa",
+      "celular-lista"
+    ],
+    "inspecao": "26APP atuais inspecionadas em5pranchas;26protos imutáveis já inspecionados e hashes revalidados. Todos estados corretos. Seis GETs cancelados e recuperados pelo classificador existente; zero falhas.",
+    "fontesSeparadas": true
+  },
+  "virtual": {
+    "sessao": 10555,
+    "exit": 0,
+    "limite": "Prova com150individuais fictícios existentes e filtro explícito; nenhum SQL/seed do DEV. Não comprova centralização da linha35; comprova seleção mantida, foco visível e geometria/âncora observadas.",
+    "contextos": [
+      {
+        "tema": "escuro",
+        "tamanho": "desktop",
+        "width": 1440,
+        "height": 900,
+        "falhas": 0,
+        "chips": [
+          "Todas150",
+          "Minhas100",
+          "Não lidas74",
+          "Prazo estourado100",
+          "Não atribuídas50"
+        ],
+        "fases": [
+          {
+            "fase": "50",
+            "scrollTop": 0,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": null,
+            "linhasMontadas": 50,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 6,
+              "top": 652.5,
+              "bottom": 743,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "100",
+            "scrollTop": 4757,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": null,
+            "linhasMontadas": 100,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 44,
+              "top": -6.5,
+              "bottom": 110,
+              "height": 116.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 50,
+              "top": 642,
+              "bottom": 758.5,
+              "height": 116.5,
+              "width": 355
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "150-inicio",
+            "scrollTop": 0,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 12,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 6,
+              "top": 652.5,
+              "bottom": 743,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "voltar390",
+            "scrollTop": 3802,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 18,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 36,
+              "top": -30,
+              "bottom": 60.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 41,
+              "top": 501.5,
+              "bottom": 618.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -146.5,
+                "bottom": -30,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          },
+          {
+            "fase": "resize",
+            "scrollTop": 3802,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 19,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 36,
+              "top": -30,
+              "bottom": 60.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 618.5,
+              "bottom": 709,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -146.5,
+                "bottom": -30,
+                "height": 116.5,
+                "width": 355
+              }
+            ]
+          },
+          {
+            "fase": "retorno-tamanho",
+            "scrollTop": 3802,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 19,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 36,
+              "top": -30,
+              "bottom": 60.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 618.5,
+              "bottom": 709,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -146.5,
+                "bottom": -30,
+                "height": 116.5,
+                "width": 355
+              }
+            ]
+          }
+        ],
+        "focos": [
+          {
+            "sentido": "Tab0→35",
+            "indiceFocado": 35,
+            "fase": "foco",
+            "scrollTop": 3778,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 19,
+            "alturasDistintas": [
+              117,
+              90.5,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 35,
+              "top": 0,
+              "bottom": 116.5,
+              "height": 116.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 41,
+              "top": 648,
+              "bottom": 765,
+              "height": 117,
+              "width": 355
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          },
+          {
+            "sentido": "ShiftTab35→0",
+            "indiceFocado": 0,
+            "fase": "foco",
+            "scrollTop": 4,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 13,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 0,
+              "bottom": 90.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 6,
+              "top": 648.5,
+              "bottom": 739,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          }
+        ]
+      },
+      {
+        "tema": "escuro",
+        "tamanho": "tablet",
+        "width": 1024,
+        "height": 768,
+        "falhas": 0,
+        "chips": [
+          "Todas150",
+          "Minhas100",
+          "Não lidas74",
+          "Prazo estourado100",
+          "Não atribuídas50"
+        ],
+        "fases": [
+          {
+            "fase": "50",
+            "scrollTop": 0,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": null,
+            "linhasMontadas": 50,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5,
+              143
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 4,
+              "top": 419,
+              "bottom": 561.5,
+              "height": 142.5,
+              "width": 283
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "100",
+            "scrollTop": 5217,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": null,
+            "linhasMontadas": 100,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5,
+              143
+            ],
+            "primeiraVisivel": {
+              "indice": 46,
+              "top": -25,
+              "bottom": 91.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 50,
+              "top": 442,
+              "bottom": 558.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "150-inicio",
+            "scrollTop": 0,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 10,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 4,
+              "top": 419,
+              "bottom": 561.5,
+              "height": 142.5,
+              "width": 283
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "voltar390",
+            "scrollTop": 3984,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 18,
+            "alturasDistintas": [
+              116.5,
+              91,
+              90.5,
+              117
+            ],
+            "primeiraVisivel": {
+              "indice": 38,
+              "top": -4,
+              "bottom": 112.5,
+              "height": 116.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 43,
+              "top": 527.5,
+              "bottom": 644.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -328,
+                "bottom": -211.5,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          },
+          {
+            "fase": "resize",
+            "scrollTop": 4010,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 16,
+            "alturasDistintas": [
+              116.5,
+              91,
+              142.5,
+              90.5,
+              117
+            ],
+            "primeiraVisivel": {
+              "indice": 38,
+              "top": -4,
+              "bottom": 112.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 463,
+              "bottom": 553.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -328,
+                "bottom": -211.5,
+                "height": 116.5,
+                "width": 283
+              }
+            ]
+          },
+          {
+            "fase": "retorno-tamanho",
+            "scrollTop": 4010,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 16,
+            "alturasDistintas": [
+              116.5,
+              91,
+              142.5,
+              90.5,
+              117
+            ],
+            "primeiraVisivel": {
+              "indice": 38,
+              "top": -4,
+              "bottom": 112.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 463,
+              "bottom": 553.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -328,
+                "bottom": -211.5,
+                "height": 116.5,
+                "width": 283
+              }
+            ]
+          }
+        ],
+        "focos": [
+          {
+            "sentido": "Tab0→35",
+            "indiceFocado": 35,
+            "fase": "foco",
+            "scrollTop": 3960,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 16,
+            "alturasDistintas": [
+              143,
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 35,
+              "top": 0,
+              "bottom": 116.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 39,
+              "top": 440.5,
+              "bottom": 557.5,
+              "height": 117,
+              "width": 283
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          },
+          {
+            "sentido": "ShiftTab35→0",
+            "indiceFocado": 0,
+            "fase": "foco",
+            "scrollTop": 4,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 10,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 0,
+              "bottom": 90.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 4,
+              "top": 415,
+              "bottom": 557.5,
+              "height": 142.5,
+              "width": 283
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          }
+        ]
+      },
+      {
+        "tema": "escuro",
+        "tamanho": "celular",
+        "width": 390,
+        "height": 844,
+        "falhas": 0,
+        "chips": [
+          "Todas150",
+          "Minhas100",
+          "Não lidas74",
+          "Prazo estourado100",
+          "Não atribuídas50"
+        ],
+        "fases": [
+          {
+            "fase": "50",
+            "scrollTop": 0,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": null,
+            "linhasMontadas": 50,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 5,
+              "top": 535.5,
+              "bottom": 652.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "100",
+            "scrollTop": 4870,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": null,
+            "linhasMontadas": 100,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 45,
+              "top": -3,
+              "bottom": 88,
+              "height": 91,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 50,
+              "top": 529,
+              "bottom": 645.5,
+              "height": 116.5,
+              "width": 374
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "150-inicio",
+            "scrollTop": 0,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 12,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 5,
+              "top": 535.5,
+              "bottom": 652.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "voltar390",
+            "scrollTop": 3272,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 17,
+            "alturasDistintas": [
+              117,
+              116.5,
+              91,
+              90.5
+            ],
+            "primeiraVisivel": {
+              "indice": 31,
+              "top": -19.5,
+              "bottom": 97.5,
+              "height": 117,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 36,
+              "top": 538,
+              "bottom": 628.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": 421.5,
+                "bottom": 538,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          },
+          {
+            "fase": "resize",
+            "scrollTop": 3298,
+            "altura": 574,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 17,
+            "alturasDistintas": [
+              117,
+              116.5,
+              91,
+              143,
+              90.5,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 31,
+              "top": -19.5,
+              "bottom": 97.5,
+              "height": 117,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 36,
+              "top": 564,
+              "bottom": 654.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": 447.5,
+                "bottom": 564,
+                "height": 116.5,
+                "width": 283
+              }
+            ]
+          },
+          {
+            "fase": "retorno-tamanho",
+            "scrollTop": 3272,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 17,
+            "alturasDistintas": [
+              117,
+              116.5,
+              91,
+              90.5
+            ],
+            "primeiraVisivel": {
+              "indice": 31,
+              "top": -19.5,
+              "bottom": 97.5,
+              "height": 117,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 36,
+              "top": 538,
+              "bottom": 628.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": 421.5,
+                "bottom": 538,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          }
+        ],
+        "focos": [
+          {
+            "sentido": "Tab0→35",
+            "indiceFocado": 35,
+            "fase": "foco",
+            "scrollTop": 3247,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 18,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 30,
+              "top": -0.5,
+              "bottom": 90,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 35,
+              "top": 531,
+              "bottom": 647.5,
+              "height": 116.5,
+              "width": 374
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          },
+          {
+            "sentido": "ShiftTab35→0",
+            "indiceFocado": 0,
+            "fase": "foco",
+            "scrollTop": 4,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 12,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 0,
+              "bottom": 90.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 5,
+              "top": 531.5,
+              "bottom": 648.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          }
+        ]
+      },
+      {
+        "tema": "claro",
+        "tamanho": "desktop",
+        "width": 1440,
+        "height": 900,
+        "falhas": 0,
+        "chips": [
+          "Todas150",
+          "Minhas100",
+          "Não lidas74",
+          "Prazo estourado100",
+          "Não atribuídas50"
+        ],
+        "fases": [
+          {
+            "fase": "50",
+            "scrollTop": 0,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": null,
+            "linhasMontadas": 50,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 6,
+              "top": 652.5,
+              "bottom": 743,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "100",
+            "scrollTop": 4757,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": null,
+            "linhasMontadas": 100,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 44,
+              "top": -6.5,
+              "bottom": 110,
+              "height": 116.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 50,
+              "top": 642,
+              "bottom": 758.5,
+              "height": 116.5,
+              "width": 355
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "150-inicio",
+            "scrollTop": 0,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 12,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 6,
+              "top": 652.5,
+              "bottom": 743,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "voltar390",
+            "scrollTop": 3802,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 18,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 36,
+              "top": -30,
+              "bottom": 60.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 41,
+              "top": 501.5,
+              "bottom": 618.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -146.5,
+                "bottom": -30,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          },
+          {
+            "fase": "resize",
+            "scrollTop": 3802,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 19,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 36,
+              "top": -30,
+              "bottom": 60.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 618.5,
+              "bottom": 709,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -146.5,
+                "bottom": -30,
+                "height": 116.5,
+                "width": 355
+              }
+            ]
+          },
+          {
+            "fase": "retorno-tamanho",
+            "scrollTop": 3802,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 19,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 36,
+              "top": -30,
+              "bottom": 60.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 618.5,
+              "bottom": 709,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -146.5,
+                "bottom": -30,
+                "height": 116.5,
+                "width": 355
+              }
+            ]
+          }
+        ],
+        "focos": [
+          {
+            "sentido": "Tab0→35",
+            "indiceFocado": 35,
+            "fase": "foco",
+            "scrollTop": 3778,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 19,
+            "alturasDistintas": [
+              117,
+              90.5,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 35,
+              "top": 0,
+              "bottom": 116.5,
+              "height": 116.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 41,
+              "top": 648,
+              "bottom": 765,
+              "height": 117,
+              "width": 355
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          },
+          {
+            "sentido": "ShiftTab35→0",
+            "indiceFocado": 0,
+            "fase": "foco",
+            "scrollTop": 4,
+            "altura": 698,
+            "largura": 371,
+            "totalVirtual": 150,
+            "linhasMontadas": 13,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 0,
+              "bottom": 90.5,
+              "height": 90.5,
+              "width": 355
+            },
+            "ultimaVisivel": {
+              "indice": 6,
+              "top": 648.5,
+              "bottom": 739,
+              "height": 90.5,
+              "width": 355
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          }
+        ]
+      },
+      {
+        "tema": "claro",
+        "tamanho": "tablet",
+        "width": 1024,
+        "height": 768,
+        "falhas": 0,
+        "chips": [
+          "Todas150",
+          "Minhas100",
+          "Não lidas74",
+          "Prazo estourado100",
+          "Não atribuídas50"
+        ],
+        "fases": [
+          {
+            "fase": "50",
+            "scrollTop": 0,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": null,
+            "linhasMontadas": 50,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5,
+              143
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 4,
+              "top": 419,
+              "bottom": 561.5,
+              "height": 142.5,
+              "width": 283
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "100",
+            "scrollTop": 5217,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": null,
+            "linhasMontadas": 100,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5,
+              143
+            ],
+            "primeiraVisivel": {
+              "indice": 46,
+              "top": -25,
+              "bottom": 91.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 50,
+              "top": 442,
+              "bottom": 558.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "150-inicio",
+            "scrollTop": 0,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 10,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 4,
+              "top": 419,
+              "bottom": 561.5,
+              "height": 142.5,
+              "width": 283
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "voltar390",
+            "scrollTop": 3984,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 18,
+            "alturasDistintas": [
+              116.5,
+              91,
+              90.5,
+              117
+            ],
+            "primeiraVisivel": {
+              "indice": 38,
+              "top": -4,
+              "bottom": 112.5,
+              "height": 116.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 43,
+              "top": 527.5,
+              "bottom": 644.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -328,
+                "bottom": -211.5,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          },
+          {
+            "fase": "resize",
+            "scrollTop": 4010,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 16,
+            "alturasDistintas": [
+              116.5,
+              91,
+              142.5,
+              90.5,
+              117
+            ],
+            "primeiraVisivel": {
+              "indice": 38,
+              "top": -4,
+              "bottom": 112.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 463,
+              "bottom": 553.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -328,
+                "bottom": -211.5,
+                "height": 116.5,
+                "width": 283
+              }
+            ]
+          },
+          {
+            "fase": "retorno-tamanho",
+            "scrollTop": 4010,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 16,
+            "alturasDistintas": [
+              116.5,
+              91,
+              142.5,
+              90.5,
+              117
+            ],
+            "primeiraVisivel": {
+              "indice": 38,
+              "top": -4,
+              "bottom": 112.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 42,
+              "top": 463,
+              "bottom": 553.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": -328,
+                "bottom": -211.5,
+                "height": 116.5,
+                "width": 283
+              }
+            ]
+          }
+        ],
+        "focos": [
+          {
+            "sentido": "Tab0→35",
+            "indiceFocado": 35,
+            "fase": "foco",
+            "scrollTop": 3960,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 16,
+            "alturasDistintas": [
+              143,
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 35,
+              "top": 0,
+              "bottom": 116.5,
+              "height": 116.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 39,
+              "top": 440.5,
+              "bottom": 557.5,
+              "height": 117,
+              "width": 283
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          },
+          {
+            "sentido": "ShiftTab35→0",
+            "indiceFocado": 0,
+            "fase": "foco",
+            "scrollTop": 4,
+            "altura": 498,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 10,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 0,
+              "bottom": 90.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 4,
+              "top": 415,
+              "bottom": 557.5,
+              "height": 142.5,
+              "width": 283
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          }
+        ]
+      },
+      {
+        "tema": "claro",
+        "tamanho": "celular",
+        "width": 390,
+        "height": 844,
+        "falhas": 0,
+        "chips": [
+          "Todas150",
+          "Minhas100",
+          "Não lidas74",
+          "Prazo estourado100",
+          "Não atribuídas50"
+        ],
+        "fases": [
+          {
+            "fase": "50",
+            "scrollTop": 0,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": null,
+            "linhasMontadas": 50,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 5,
+              "top": 535.5,
+              "bottom": 652.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "100",
+            "scrollTop": 4870,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": null,
+            "linhasMontadas": 100,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 45,
+              "top": -3,
+              "bottom": 88,
+              "height": 91,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 50,
+              "top": 529,
+              "bottom": 645.5,
+              "height": 116.5,
+              "width": 374
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "150-inicio",
+            "scrollTop": 0,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 12,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 4,
+              "bottom": 94.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 5,
+              "top": 535.5,
+              "bottom": 652.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": []
+          },
+          {
+            "fase": "voltar390",
+            "scrollTop": 3272,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 17,
+            "alturasDistintas": [
+              117,
+              116.5,
+              91,
+              90.5
+            ],
+            "primeiraVisivel": {
+              "indice": 31,
+              "top": -19.5,
+              "bottom": 97.5,
+              "height": 117,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 36,
+              "top": 538,
+              "bottom": 628.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": 421.5,
+                "bottom": 538,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          },
+          {
+            "fase": "resize",
+            "scrollTop": 3298,
+            "altura": 574,
+            "largura": 299,
+            "totalVirtual": 150,
+            "linhasMontadas": 17,
+            "alturasDistintas": [
+              117,
+              116.5,
+              91,
+              143,
+              90.5,
+              142.5
+            ],
+            "primeiraVisivel": {
+              "indice": 31,
+              "top": -19.5,
+              "bottom": 97.5,
+              "height": 117,
+              "width": 283
+            },
+            "ultimaVisivel": {
+              "indice": 36,
+              "top": 564,
+              "bottom": 654.5,
+              "height": 90.5,
+              "width": 283
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": 447.5,
+                "bottom": 564,
+                "height": 116.5,
+                "width": 283
+              }
+            ]
+          },
+          {
+            "fase": "retorno-tamanho",
+            "scrollTop": 3272,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 17,
+            "alturasDistintas": [
+              117,
+              116.5,
+              91,
+              90.5
+            ],
+            "primeiraVisivel": {
+              "indice": 31,
+              "top": -19.5,
+              "bottom": 97.5,
+              "height": 117,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 36,
+              "top": 538,
+              "bottom": 628.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "selecionadas": [
+              {
+                "indice": 35,
+                "top": 421.5,
+                "bottom": 538,
+                "height": 116.5,
+                "width": 374
+              }
+            ]
+          }
+        ],
+        "focos": [
+          {
+            "sentido": "Tab0→35",
+            "indiceFocado": 35,
+            "fase": "foco",
+            "scrollTop": 3247,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 18,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 30,
+              "top": -0.5,
+              "bottom": 90,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 35,
+              "top": 531,
+              "bottom": 647.5,
+              "height": 116.5,
+              "width": 374
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          },
+          {
+            "sentido": "ShiftTab35→0",
+            "indiceFocado": 0,
+            "fase": "foco",
+            "scrollTop": 4,
+            "altura": 585,
+            "largura": 390,
+            "totalVirtual": 150,
+            "linhasMontadas": 12,
+            "alturasDistintas": [
+              90.5,
+              117,
+              116.5,
+              91
+            ],
+            "primeiraVisivel": {
+              "indice": 0,
+              "top": 0,
+              "bottom": 90.5,
+              "height": 90.5,
+              "width": 374
+            },
+            "ultimaVisivel": {
+              "indice": 5,
+              "top": 531.5,
+              "bottom": 648.5,
+              "height": 117,
+              "width": 374
+            },
+            "selecionadas": [],
+            "tipografia": {
+              "familia": "mono, \"mono Fallback\", ui-monospace, SFMono-Regular, Menlo, monospace",
+              "peso": "400",
+              "tamanho": "11.5px"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "complemento": {
+    "sessao": 15517,
+    "exit": 0,
+    "limite": "Cliques reais de linha/Link público, sem esperar POSTs assentarem antes de navegar. Após Link, captura aguarda apenas animações CSS finitas/Drawer fora da viewport. Nenhum submit/criação/envio real, nem escrita direta DB; submit mockado tem testes próprios. Não é E2E de actionNova.",
+    "contextos": [
+      {
+        "tema": "escuro",
+        "tamanho": "curto",
+        "width": 390,
+        "height": 500,
+        "falhas": 0,
+        "checks": [
+          {
+            "estado": "filtros",
+            "geometria": {
+              "rect": {
+                "x": 0,
+                "y": 189,
+                "width": 390,
+                "height": 311,
+                "top": 189,
+                "right": 390,
+                "bottom": 500,
+                "left": 0
+              },
+              "corpo": 187,
+              "viewport": {
+                "width": 390,
+                "height": 500
+              }
+            }
+          },
+          {
+            "estado": "filtros",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "seletor-numero",
+            "geometria": {
+              "rect": {
+                "x": 0,
+                "y": 217.25,
+                "width": 390,
+                "height": 282.75,
+                "top": 217.25,
+                "right": 390,
+                "bottom": 500,
+                "left": 0
+              },
+              "corpo": 184,
+              "viewport": {
+                "width": 390,
+                "height": 500
+              }
+            }
+          },
+          {
+            "estado": "seletor-numero",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "nova-conversa",
+            "geometria": {
+              "rect": {
+                "x": 0,
+                "y": 155,
+                "width": 390,
+                "height": 345,
+                "top": 155,
+                "right": 390,
+                "bottom": 500,
+                "left": 0
+              },
+              "corpo": 290,
+              "viewport": {
+                "width": 390,
+                "height": 500
+              }
+            }
+          },
+          {
+            "estado": "nova-conversa",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+          },
+          {
+            "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+          },
+          {
+            "selecaoMobile": "Beatriz",
+            "retornoLista": true
+          }
+        ],
+        "documentosHTTP": 1,
+        "documentosTrace": 1,
+        "mesmoDocumentoInicial": true,
+        "linkPublico": "MenuDrawer",
+        "modoNavegacao": "LinkSidebarInbox",
+        "rotaFinal": "/inbox",
+        "focoFinal": "Buscar conversas",
+        "sse": {
+          "ativos": 1,
+          "maximo": 1,
+          "criados": 2
+        },
+        "diagnosticos": 0
+      },
+      {
+        "tema": "escuro",
+        "tamanho": "desktop",
+        "width": 1440,
+        "height": 900,
+        "falhas": 0,
+        "checks": [
+          {
+            "estado": "filtros",
+            "geometria": {
+              "rect": {
+                "x": 236,
+                "y": 56,
+                "width": 347,
+                "height": 335,
+                "top": 56,
+                "right": 583,
+                "bottom": 391,
+                "left": 236
+              },
+              "corpo": 221,
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              }
+            }
+          },
+          {
+            "estado": "filtros",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "seletor-numero",
+            "geometria": {
+              "rect": {
+                "x": 236,
+                "y": 72,
+                "width": 347,
+                "height": 282.75,
+                "top": 72,
+                "right": 583,
+                "bottom": 354.75,
+                "left": 236
+              },
+              "corpo": 184,
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              }
+            }
+          },
+          {
+            "estado": "seletor-numero",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "nova-conversa",
+            "geometria": {
+              "rect": {
+                "x": 236,
+                "y": 56,
+                "width": 347,
+                "height": 383,
+                "top": 56,
+                "right": 583,
+                "bottom": 439,
+                "left": 236
+              },
+              "corpo": 328,
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              }
+            }
+          },
+          {
+            "estado": "nova-conversa",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+          },
+          {
+            "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+          },
+          {
+            "estado": "filtros",
+            "cliqueLinhaFecha": true,
+            "focoConversa": true
+          },
+          {
+            "estado": "seletor-numero",
+            "cliqueLinhaFecha": true,
+            "focoConversa": true
+          },
+          {
+            "estado": "nova-conversa",
+            "cliqueLinhaFecha": true,
+            "focoConversa": true
+          }
+        ],
+        "documentosHTTP": 1,
+        "documentosTrace": 1,
+        "mesmoDocumentoInicial": true,
+        "linkPublico": "Sidebar",
+        "modoNavegacao": "LinkSidebarInbox",
+        "rotaFinal": "/inbox",
+        "focoFinal": "Buscar conversas",
+        "sse": {
+          "ativos": 1,
+          "maximo": 1,
+          "criados": 2
+        },
+        "diagnosticos": 0
+      },
+      {
+        "tema": "claro",
+        "tamanho": "curto",
+        "width": 390,
+        "height": 500,
+        "falhas": 0,
+        "checks": [
+          {
+            "estado": "filtros",
+            "geometria": {
+              "rect": {
+                "x": 0,
+                "y": 189,
+                "width": 390,
+                "height": 311,
+                "top": 189,
+                "right": 390,
+                "bottom": 500,
+                "left": 0
+              },
+              "corpo": 187,
+              "viewport": {
+                "width": 390,
+                "height": 500
+              }
+            }
+          },
+          {
+            "estado": "filtros",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "seletor-numero",
+            "geometria": {
+              "rect": {
+                "x": 0,
+                "y": 217.25,
+                "width": 390,
+                "height": 282.75,
+                "top": 217.25,
+                "right": 390,
+                "bottom": 500,
+                "left": 0
+              },
+              "corpo": 184,
+              "viewport": {
+                "width": 390,
+                "height": 500
+              }
+            }
+          },
+          {
+            "estado": "seletor-numero",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "nova-conversa",
+            "geometria": {
+              "rect": {
+                "x": 0,
+                "y": 155,
+                "width": 390,
+                "height": 345,
+                "top": 155,
+                "right": 390,
+                "bottom": 500,
+                "left": 0
+              },
+              "corpo": 290,
+              "viewport": {
+                "width": 390,
+                "height": 500
+              }
+            }
+          },
+          {
+            "estado": "nova-conversa",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+          },
+          {
+            "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+          },
+          {
+            "selecaoMobile": "Beatriz",
+            "retornoLista": true
+          }
+        ],
+        "documentosHTTP": 1,
+        "documentosTrace": 1,
+        "mesmoDocumentoInicial": true,
+        "linkPublico": "MenuDrawer",
+        "modoNavegacao": "LinkSidebarInbox",
+        "rotaFinal": "/inbox",
+        "focoFinal": "Buscar conversas",
+        "sse": {
+          "ativos": 1,
+          "maximo": 1,
+          "criados": 2
+        },
+        "diagnosticos": 0
+      },
+      {
+        "tema": "claro",
+        "tamanho": "desktop",
+        "width": 1440,
+        "height": 900,
+        "falhas": 0,
+        "checks": [
+          {
+            "estado": "filtros",
+            "geometria": {
+              "rect": {
+                "x": 236,
+                "y": 56,
+                "width": 347,
+                "height": 335,
+                "top": 56,
+                "right": 583,
+                "bottom": 391,
+                "left": 236
+              },
+              "corpo": 221,
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              }
+            }
+          },
+          {
+            "estado": "filtros",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "seletor-numero",
+            "geometria": {
+              "rect": {
+                "x": 236,
+                "y": 72,
+                "width": 347,
+                "height": 282.75,
+                "top": 72,
+                "right": 583,
+                "bottom": 354.75,
+                "left": 236
+              },
+              "corpo": 184,
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              }
+            }
+          },
+          {
+            "estado": "seletor-numero",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "estado": "nova-conversa",
+            "geometria": {
+              "rect": {
+                "x": 236,
+                "y": 56,
+                "width": 347,
+                "height": 383,
+                "top": 56,
+                "right": 583,
+                "bottom": 439,
+                "left": 236
+              },
+              "corpo": 328,
+              "viewport": {
+                "width": 1440,
+                "height": 900
+              }
+            }
+          },
+          {
+            "estado": "nova-conversa",
+            "tab": true,
+            "shiftTab": true,
+            "escape": true,
+            "ctrlK": true,
+            "metaK": true
+          },
+          {
+            "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+          },
+          {
+            "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+          },
+          {
+            "estado": "filtros",
+            "cliqueLinhaFecha": true,
+            "focoConversa": true
+          },
+          {
+            "estado": "seletor-numero",
+            "cliqueLinhaFecha": true,
+            "focoConversa": true
+          },
+          {
+            "estado": "nova-conversa",
+            "cliqueLinhaFecha": true,
+            "focoConversa": true
+          }
+        ],
+        "documentosHTTP": 1,
+        "documentosTrace": 1,
+        "mesmoDocumentoInicial": true,
+        "linkPublico": "Sidebar",
+        "modoNavegacao": "LinkSidebarInbox",
+        "rotaFinal": "/inbox",
+        "focoFinal": "Buscar conversas",
+        "sse": {
+          "ativos": 1,
+          "maximo": 1,
+          "criados": 2
+        },
+        "diagnosticos": 0
+      }
+    ]
+  },
+  "gatesDev": {
+    "recorte": {
+      "log": "output/inbox-313-base-388-unit.log",
+      "arquivos": 16,
+      "testes": 369,
+      "exit": 0
+    },
+    "typescript": {
+      "sessao": 11375,
+      "heapMB": 8192,
+      "exit": 0
+    },
+    "lint": {
+      "sessao": "a60e94",
+      "arquivos": 6,
+      "exit": 0
+    }
+  },
+  "gatesIntegrador": {
+    "atribuicao": "Relato do integrador exato4f, não execução global pelo DEV",
+    "global": {
+      "sessao": 37524,
+      "arquivos": 877,
+      "testes": 6854,
+      "exit": 0
+    },
+    "typescript": {
+      "sessao": 95820,
+      "exit": 0
+    },
+    "lint": {
+      "sessao": 47827,
+      "exit": 0,
+      "avisosSrcHerdados": 40,
+      "avisosStagingPrivado": 2
+    }
+  },
+  "negativos": "Preservados localmente e excluídos desta allowlist/pacote. Comparações antigas dd141/9c e complemento20f51 são históricas; não atribuídas a4f. CorposRSC e traces causais permanecem privados, sem Git/ZIP.",
+  "inspecao": "Favorável em todas64PNGsAPP atuais;26protos históricos por hash imutável. Não há homologação presumida."
+}

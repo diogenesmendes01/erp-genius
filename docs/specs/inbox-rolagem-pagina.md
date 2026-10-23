@@ -29,6 +29,36 @@ O harness percorre todos os controles visíveis do formulário/filtros/cabeçalh
 
 Testes SSR de page/InboxNovo: raiz flex limitada e filho flex que encolhe; Inbox sem altura por viewport/min-height de 420 px. Vermelho observado antes da implementação (2 falhas/23 aprovados), verde depois (25/25). A geometria CSS é validada pelo aplicativo real, não inferida somente das classes. Recorte: Inbox + responsivo + paleta + design-system + botoes, sem testes ignorados. Gates globais no relatório DEV.
 
+## Revisão C1/C2/C3 da PR #389
+
+As guardas agora conferem as três contas de altura, o padding do main e a
+composição real da barra mobile. O teste SSR da composição InboxNovo +
+ConversaAberta exige o header direto e todas as classes do seletor de teto:
+um wrapper que o tornaria inoperante passa a falhar. A prova negativa removeu
+temporariamente a altura e envolveu o header; os dois testes falharam. Código
+de produção restaurado integralmente, recorte3arquivos/53testes passou.
+
+Na fonte desta PR, Chrome repetiu390/700/1024/1440×500 nos dois temas, com e
+sem seleção:8contextos/16estados. Documento500px e controles alcançáveis por
+scrollIntoView em todos; a prova geométrica de overflow usa o mesmo bloco
+temporário descrito acima. Sem clique de abertura/envio. Zero pageerror;
+o overlay de Issues do Next dev ficou visível e o servidor registrou stream
+encerrado antecipadamente durante navegação/fechamento de contextos. Não se
+atribui causa a esta PR nem se declara ausência de diagnósticos de servidor.
+Duas imagens inspecionadas (celular claro/desktop escuro); capturas novas
+permanecem locais, métricas positivas versionadas. O alcance é desta fonte
+intermediária, não homologação dos layouts308/315 posteriores.
+
 ## Limites
 
 Medições cobrem os seis tamanhos da tabela, zoom normal e fonte padrão carregada, nos temas claro/escuro. Não afirmam suporte irrestrito a alturas arbitrariamente menores, zoom ampliado ou conteúdo de formulários futuros. Não foi feito envio nem abertura de atendimento; fixture local fictícia com transportes externos desativados. A seleção da conversa pode marcar leitura pela implementação #299 já existente, apenas no banco de teste. O indicador de Issues do Next dev e avisos de chave duplicada são preexistentes; nenhum erro de página ocorreu. O painel drawer menor e menus de mensagem pertencem a outras issues. TESTER deve revisar o SHA exato e homologar visual; merge/deploy dependem do integrador.
+
+## Composição posterior com a casca #308
+
+Na base313 atual, o padding do main é anulado por -m-4/md:-m-8; a raiz usa
+h-[calc(100dvh-3.5625rem)], sm:h-[calc(100dvh-3.3125rem)] e md:h-dvh.
+O porte das guardas389 preserva essas classes atuais, o vínculo com p-4/md:p-8
+no main e as alturas móveis44/40 mais borda/padding. Não reintroduz as contas
+intermediárias da304. A guarda390 valida os dois blocos do painel único:
+irmãos distintos, identidade estável após SSE e troca de keys/atendimentoId
+na mudança de conversa. Não introduz novas cópias do painel.

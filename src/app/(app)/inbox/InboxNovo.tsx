@@ -26,6 +26,7 @@ import { PainelSetor } from "./PainelSetor";
 import { PainelTriagem } from "./PainelTriagem";
 import { useEventosInbox } from "./useEventosInbox";
 import { criarMarcadorDeLeitura } from "./marcar-lida";
+import { criarAtualizadorEmLote } from "./atualizar-lista-em-lote";
 
 const useEfeitoDeLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -74,7 +75,8 @@ type PaginaInbox = { itens: ItemListaInbox[]; proximo: string | null; contagens?
 async function buscarPagina(filtros: FiltrosInbox, cursor: string | null): Promise<PaginaInbox | null> {
   try {
     const r = await fetch(`/api/inbox/atendimentos?${paramsDosFiltros(filtros, cursor, { contagens: true })}`, { cache: "no-store", credentials: "same-origin" });
-    return r.ok ? await r.json() as PaginaInbox : null;
+    if (!r.ok) { await r.arrayBuffer(); return null; }
+    return await r.json() as PaginaInbox;
   } catch { return null; }
 }
 
@@ -199,52 +201,64 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const filtrosRef = useRef(filtros);
   const leituraRef = useRef<EstadoLeitura>({ id: null, versao: 0, fase: "nenhuma", ultimaContagem: 0 });
   const consultasRef = useRef({ iniciada: 0, aplicada: 0 });
+  const atualizadorListaRef = useRef<ReturnType<typeof criarAtualizadorEmLote> | null>(null);
+  const navegacaoDaListaRef = useRef(versaoNavegacao);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
   useEffect(() => {
+    // Um objeto SSR equivalente não elimina a reconciliação pessoal pendente.
+    if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros || navegacaoDaListaRef.current !== versaoNavegacao) atualizadorListaRef.current?.cancelarPendentes();
+    else atualizadorListaRef.current?.invalidarSnapshotEmVoo();
+    navegacaoDaListaRef.current = versaoNavegacao;
     filtrosRef.current = filtros;
     // Invalida inclusive A→B→A: uma resposta antiga não pertence ao novo contexto da lista.
     consultasRef.current.aplicada = ++consultasRef.current.iniciada;
   }, [chaveFiltros, filtros, selecionadoInicial, versaoNavegacao]);
   useEffect(() => { possuiContagensRef.current = contagensIniciais !== undefined; }, [contagensIniciais]);
-  const carregarLista = useCallback((filtro: FiltrosInbox) => {
+  const executarAtualizacao = useCallback(async (contextoVigente: () => boolean) => {
+    const filtro = filtrosRef.current;
     // Uma consulta iniciada antes da leitura (ou enquanto ela estava em voo) pode trazer um contador antigo.
     const inicio = { ...leituraRef.current };
     const entradasNoInicio = versaoEntradasRef.current;
     const pagina = typeof document === "undefined" ? null : document;
     const pedido = ++consultasRef.current.iniciada;
-    void buscarPagina(filtro, null).then((p) => {
-      if (!p || pedido < consultasRef.current.aplicada) return;
-      const leitura = leituraRef.current;
-      const mesmaLeitura = inicio.id === leitura.id && inicio.versao === leitura.versao;
-      // Uma consulta de outra leitura não pode apagar a restauração após falha.
-      // Na mesma versão, a resposta continua válida mesmo se a ação falhar enquanto o GET está em voo.
-      if (leitura.fase === "falha" && !mesmaLeitura) return;
-      consultasRef.current.aplicada = pedido;
-      // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
-      if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
-        && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
-      const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
-      const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
-      if (linha && !(leitura.fase === "sucesso" && antiga)) {
-        const entrouDepois = entradasNoInicio !== versaoEntradasRef.current;
-        // O GET fresco é autoritativo inclusive em zero (outra aba pode ter lido).
-        // IDs ocultos governam a próxima tentativa, sem impor um mínimo ao contador.
-        leitura.ultimaContagem = mesmaLeitura && !entrouDepois
-          ? linha.naoLidas
-          : Math.max(leitura.ultimaContagem, linha.naoLidas);
+    const p = await buscarPagina(filtro, null);
+    if (!contextoVigente() || !p || pedido < consultasRef.current.aplicada) return;
+    const leitura = leituraRef.current;
+    const mesmaLeitura = inicio.id === leitura.id && inicio.versao === leitura.versao;
+    // Uma consulta de outra leitura não pode apagar a restauração após falha.
+    // Na mesma versão, a resposta continua válida mesmo se a ação falhar enquanto o GET está em voo.
+    if (leitura.fase === "falha" && !mesmaLeitura) return;
+    consultasRef.current.aplicada = pedido;
+    // O agregado não admite o zero otimista por linha: só um snapshot iniciado após a leitura vale.
+    if (p.contagens && leitura.fase !== "pendente" && inicio.id === leitura.id
+      && inicio.versao === leitura.versao && inicio.fase === leitura.fase) setContagens(p.contagens);
+    const linha = leitura.id ? p.itens.find((i) => i.id === leitura.id) : null;
+    const antiga = inicio.id !== leitura.id || inicio.versao !== leitura.versao || inicio.fase !== "sucesso";
+    if (linha && !(leitura.fase === "sucesso" && antiga)) {
+      const entrouDepois = entradasNoInicio !== versaoEntradasRef.current;
+      // O GET fresco é autoritativo inclusive em zero (outra aba pode ter lido).
+      // IDs ocultos governam a próxima tentativa, sem impor um mínimo ao contador.
+      leitura.ultimaContagem = mesmaLeitura && !entrouDepois
+        ? linha.naoLidas
+        : Math.max(leitura.ultimaContagem, linha.naoLidas);
+    }
+    setItens((atual) => {
+      const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
+      const vigente = leituraRef.current;
+      const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
+      if (vigente.id === selecionadoRef.current && (entradasPendentesRef.current?.id === vigente.id || vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))) {
+        const otimista = vigente.fase === "pendente" && pagina?.visibilityState === "visible" && regiaoConversa.current?.getClientRects().length;
+        return lista.map((i) => i.id === vigente.id ? { ...i, naoLidas: otimista ? 0 : vigente.ultimaContagem } : i);
       }
-      setItens((atual) => {
-        const lista = mesclarPrimeiraPagina(atual, p.itens, p.proximo, selecionadoRef.current);
-        const vigente = leituraRef.current;
-        const antiga = inicio.id !== vigente.id || inicio.versao !== vigente.versao || inicio.fase !== "sucesso";
-        if (vigente.id === selecionadoRef.current && (entradasPendentesRef.current?.id === vigente.id || vigente.fase === "pendente" || (vigente.fase === "sucesso" && antiga))) {
-          const otimista = vigente.fase === "pendente" && pagina?.visibilityState === "visible" && regiaoConversa.current?.getClientRects().length;
-          return lista.map((i) => i.id === vigente.id ? { ...i, naoLidas: otimista ? 0 : vigente.ultimaContagem } : i);
-        }
-        return lista;
-      });
+      return lista;
     });
   }, []);
+  useEffect(() => {
+    const atualizador = criarAtualizadorEmLote(executarAtualizacao);
+    atualizadorListaRef.current = atualizador;
+    return () => { atualizador.descartar(); atualizadorListaRef.current = null; };
+  }, [executarAtualizacao]);
+  const carregarLista = useCallback(() => { atualizadorListaRef.current?.solicitar(); }, []);
   const marcarLeituraRef = useRef<((id: string) => void) | null>(null);
   useEffect(() => {
     marcarLeituraRef.current = criarMarcadorDeLeitura(async (id) => {
@@ -264,11 +278,11 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         const restantes = entradasPendentesRef.current?.id === id ? entradasPendentesRef.current.mensagens.size : 0;
         leitura.ultimaContagem = Math.min(leitura.ultimaContagem, restantes);
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
-        if (possuiContagensRef.current) carregarLista(filtrosRef.current);
+        if (possuiContagensRef.current) carregarLista();
       } else {
         // O zero otimista deixa de valer; uma consulta nova apura o valor exato sem repetição automática.
         setItens((atual) => atual.map((i) => i.id === id ? { ...i, naoLidas: leitura.ultimaContagem } : i));
-        carregarLista(filtrosRef.current);
+        carregarLista();
       }
     }, (id) => selecionadoRef.current === id && document.visibilityState === "visible" && Boolean(regiaoConversa.current?.getClientRects().length));
     return () => { marcarLeituraRef.current = null; };
@@ -323,8 +337,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   // e troca as linhas afetadas, sem refazer a página inteira.
   const recarregarLista = useCallback(() => {
     setVersaoPainel((v) => v + 1);
-    carregarLista(filtros);
-  }, [filtros, carregarLista]);
+    carregarLista();
+  }, [carregarLista]);
   // Aviso que pode mudar a permissão do atendimento aberto (`atendimento.atualizado`: transferência, responsável,
   // status) ou resync: o painel recarrega e, com ele, o podeEnviar do compositor (C3 da revisão do #218). Mensagem
   // nova ou status de mensagem não mudam permissão (C1 da R1 do #220). Sem trocar o painelSetor: o compositor não
@@ -342,8 +356,8 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       else if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
     }
     if (a.tipo === "resync" || (a.tipo === "atendimento.atualizado" && a.atendimentoId !== null && a.atendimentoId === selecionadoRef.current)) setVersaoPainel((v) => v + 1);
-    carregarLista(filtros);
-  }, [filtros, carregarLista, pedirLeitura]);
+    carregarLista();
+  }, [carregarLista, pedirLeitura]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
