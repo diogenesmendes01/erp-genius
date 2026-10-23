@@ -7,13 +7,14 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("./acoes", () => ({ executarAcaoMotor: acao }));
 
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "../atendimentos";
-import { marcarConversaLida } from "../acoes";
+import { marcarConversaLida, marcarConversaLidaAutomatico } from "../acoes";
 import { avisarDigitando } from "./acoes-mensagem";
 
-beforeEach(async () => { await truncarBanco(); authMock.mockReset(); acao.mockReset(); acao.mockResolvedValue({}); vi.useRealTimers(); });
+beforeEach(async () => { await truncarBanco(); authMock.mockReset(); vi.mocked(revalidatePath).mockClear(); acao.mockReset(); acao.mockResolvedValue({}); vi.useRealTimers(); });
 const comoUsuario = async <T,>(u: { id: string }, f: () => Promise<T>) => { authMock.mockResolvedValue({ user: { id: u.id } }); return f(); };
 
 async function cenario() {
@@ -27,6 +28,20 @@ async function cenario() {
 }
 
 describe("marcar lida e digitando pelo motor", () => {
+  it("leitura automática conserva message.read e contador, mas não revalida a rota", async () => {
+    const { autor, numero, at } = await cenario();
+    expect((await comoUsuario(autor, () => marcarConversaLidaAutomatico(at.id))).ok).toBe(true);
+    expect(acao).toHaveBeenCalledExactlyOnceWith(numero.id, "message.read", { chatId: "50688880001@s.whatsapp.net" });
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: at.id } })).naoLidas).toBe(0);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+  it("leitura automática desconectada zera localmente sem motor ou invalidação", async () => {
+    const { autor, numero, at } = await cenario();
+    await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "CAIU" } });
+    expect((await comoUsuario(autor, () => marcarConversaLidaAutomatico(at.id))).ok).toBe(true);
+    expect(acao).not.toHaveBeenCalled(); expect(revalidatePath).not.toHaveBeenCalled();
+    expect((await prisma.atendimentoWhatsApp.findUniqueOrThrow({ where: { id: at.id } })).naoLidas).toBe(0);
+  });
   it("abrir conversa chama message.read com o JID", async () => {
     const { autor, numero, at } = await cenario();
     const r = await comoUsuario(autor, () => marcarConversaLida(at.id));

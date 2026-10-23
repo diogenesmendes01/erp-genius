@@ -10,11 +10,24 @@ const mensagem = (id: string, criadoEm: string): MensagemThread => ({
 const nota = (id: string, criadoEm: string): NotaInternaThread => ({ id, criadoEm, nota: id, autorNome: "Ana", origem: "atendimento" });
 
 describe("itensDaThread", () => {
+  it("nota posterior à janela só aparece quando não há mensagens mais novas fora dela", () => {
+    const mensagens = [mensagem("m1", "2026-10-01T10:00:00.000Z")];
+    const notas = [nota("n1", "2026-10-01T11:00:00.000Z")];
+    expect(itensDaThread(mensagens, notas, false, true).map((i) => i.id)).toEqual(["m1"]);
+    expect(itensDaThread(mensagens, notas, false, false).map((i) => i.id)).toEqual(["m1", "nota:n1"]);
+  });
+
+  it("filtra as duas bordas fora de ordem, incluindo notas exatamente nos limites", () => {
+    const mensagens = [mensagem("m2", "2026-10-01T12:00:00.000Z"), mensagem("m1", "2026-10-01T10:00:00.000Z")];
+    const notas = [nota("fora-antes", "2026-10-01T09:00:00.000Z"), nota("inicio", "2026-10-01T10:00:00.000Z"),
+      nota("fim", "2026-10-01T12:00:00.000Z"), nota("fora-depois", "2026-10-01T13:00:00.000Z")];
+    expect(itensDaThread(mensagens, notas, true, true).map((i) => i.id)).toEqual(["m1", "nota:inicio", "m2", "nota:fim"]);
+  });
   it("intercala por horário e id; mensagem vem antes da nota no empate", () => {
     const t = "2026-10-01T12:00:00.000Z";
     const itens = itensDaThread(
       [mensagem("m2", t), mensagem("m1", "2026-10-01T10:00:00.000Z")],
-      [nota("n2", t), nota("n1", "2026-10-01T11:00:00.000Z")], false,
+      [nota("n2", t), nota("n1", "2026-10-01T11:00:00.000Z")], false, false,
     );
     expect(itens.map((i) => i.id)).toEqual(["m1", "nota:n1", "m2", "nota:n2"]);
     expect(itens.map((i) => i.tipo)).toEqual(["mensagem", "nota", "mensagem", "nota"]);
@@ -22,31 +35,31 @@ describe("itensDaThread", () => {
 
   it("desempata notas por id e usa chave distinta quando id coincide com mensagem", () => {
     const t = "2026-10-01T12:00:00.000Z";
-    expect(itensDaThread([mensagem("n1", t)], [nota("n2", t), nota("n1", t)], false).map((i) => i.id))
+    expect(itensDaThread([mensagem("n1", t)], [nota("n2", t), nota("n1", t)], false, false).map((i) => i.id))
       .toEqual(["n1", "nota:n1", "nota:n2"]);
   });
 
   it("nota anterior à janela aparece só depois de carregar todas as mensagens anteriores", () => {
     const mensagens = [mensagem("m1", "2026-10-01T10:00:00.000Z")];
     const notas = [nota("n0", "2026-10-01T09:00:00.000Z")];
-    expect(itensDaThread(mensagens, notas, true).map((i) => i.id)).toEqual(["m1"]);
-    expect(itensDaThread(mensagens, notas, false).map((i) => i.id)).toEqual(["nota:n0", "m1"]);
+    expect(itensDaThread(mensagens, notas, true, false).map((i) => i.id)).toEqual(["m1"]);
+    expect(itensDaThread(mensagens, notas, false, false).map((i) => i.id)).toEqual(["nota:n0", "m1"]);
   });
 
   it("usa a mensagem mais antiga da janela mesmo se a entrada chegar fora de ordem", () => {
     const mensagens = [mensagem("m2", "2026-10-01T12:00:00.000Z"), mensagem("m1", "2026-10-01T10:00:00.000Z")];
     const notas = [nota("n1", "2026-10-01T11:00:00.000Z")];
-    expect(itensDaThread(mensagens, notas, true).map((i) => i.id)).toEqual(["m1", "nota:n1", "m2"]);
+    expect(itensDaThread(mensagens, notas, true, false).map((i) => i.id)).toEqual(["m1", "nota:n1", "m2"]);
   });
 
   it("thread só com notas mantém todas elas", () => {
-    expect(itensDaThread([], [nota("n2", "2026-10-01T12:00:00.000Z"), nota("n1", "2026-10-01T11:00:00.000Z")], true)
+    expect(itensDaThread([], [nota("n2", "2026-10-01T12:00:00.000Z"), nota("n1", "2026-10-01T11:00:00.000Z")], true, false)
       .map((i) => i.id)).toEqual(["nota:n1", "nota:n2"]);
   });
 });
 
 const saida = (id: string, p: Partial<MensagemThread> = {}): MensagemThread => ({ ...mensagem(id, "2026-10-22T12:00:00.000Z"), direcao: "SAIDA", origem: "HUMANO", autorNome: "Camila", ...p });
-const decoracao = (mensagens: MensagemThread[], notas: NotaInternaThread[] = []) => decorarThread(itensDaThread(mensagens, notas, false), { fuso: "UTC", agora: new Date("2026-10-22T13:00:00Z") });
+const decoracao = (mensagens: MensagemThread[], notas: NotaInternaThread[] = []) => decorarThread(itensDaThread(mensagens, notas, false, false), { fuso: "UTC", agora: new Date("2026-10-22T13:00:00Z") });
 const sequencias = (mensagens: MensagemThread[], notas: NotaInternaThread[] = []) => decoracao(mensagens, notas).filter(i=>i.tipo === "mensagem" || i.tipo === "nota").map(i=>i.emSequencia);
 describe("decoração da thread", () => {
   it("clasifica entrada, humano, IA e nota sem mudar itens persistidos", () => {
@@ -71,7 +84,7 @@ describe("decoração da thread", () => {
     expect(sequencias([ {...mensagem("a","2026-10-22T12:00:00Z"),participanteNome:"Pai"}, {...mensagem("b","2026-10-22T12:01:00Z"),participanteNome:"Mãe"} ])).toEqual([false,false]);
   });
   it("evento no topo e separadores usam keys civis estáveis, sem colisão com nota", () => {
-    const itens=itensDaThread([mensagem("a","2026-10-21T12:00:00Z"),mensagem("b","2026-10-22T12:00:00Z")],[nota("a","2026-10-22T12:00:00Z")],false);
+    const itens=itensDaThread([mensagem("a","2026-10-21T12:00:00Z"),mensagem("b","2026-10-22T12:00:00Z")],[nota("a","2026-10-22T12:00:00Z")],false,false);
     const visual=decorarThread(itens,{fuso:"UTC",agora:new Date("2026-10-22T13:00:00Z"),transferidoDe:"Secretaria"});
     expect(visual.map(i=>i.tipo)).toEqual(["evento","dia","mensagem","dia","mensagem","nota"]);
     expect(visual.filter(i=>i.tipo==="dia").map(i=>i.id)).toEqual(["dia:2026-10-21","dia:2026-10-22"]);
@@ -106,9 +119,9 @@ describe("rótulo por dia civil no fuso pessoal", () => {
 
 it("decorar paginação preserva âncora de mensagem e chaves mesmo ao trocar rótulo de Hoje",()=>{
  const depois=[mensagem("a","2026-10-22T12:00:00Z"),mensagem("b","2026-10-22T12:01:00Z")];
- const antes=decorarThread(itensDaThread(depois,[],true),{fuso:"UTC",agora:new Date("2026-10-22T13:00:00Z")});
+ const antes=decorarThread(itensDaThread(depois,[],true,false),{fuso:"UTC",agora:new Date("2026-10-22T13:00:00Z")});
  const layout=buildVirtualLayout(antes.map(i=>i.id),new Map(),50),ancora=captureVirtualAnchor(layout,65);
- const mais=decorarThread(itensDaThread([mensagem("antiga","2026-10-21T12:00:00Z"),...depois],[],false),{fuso:"UTC",agora:new Date("2026-10-23T13:00:00Z")});
+ const mais=decorarThread(itensDaThread([mensagem("antiga","2026-10-21T12:00:00Z"),...depois],[],false,false),{fuso:"UTC",agora:new Date("2026-10-23T13:00:00Z")});
  expect(ancora?.key).toBe("a");expect(restoreVirtualAnchor(buildVirtualLayout(mais.map(i=>i.id),new Map(),50),ancora)).toBe(165);
  expect(antes.find(i=>i.id==="dia:2026-10-22")).toMatchObject({rotulo:"Hoje"});expect(mais.find(i=>i.id==="dia:2026-10-22")).toMatchObject({rotulo:"Ontem"});
 });

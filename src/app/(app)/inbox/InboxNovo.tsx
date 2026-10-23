@@ -16,7 +16,7 @@ import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import type { ContagensChipsInbox, FiltrosInbox } from "@/server/inbox/filtros";
 import type { OpcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
 import type { PainelSetor as DadosPainelSetor } from "@/server/inbox/paineis";
-import { marcarAtendimentoLido } from "@/server/whatsapp/preferencias";
+import { marcarAtendimentoLidoAutomatico } from "@/server/whatsapp/preferencias";
 import { ConversaAberta } from "./ConversaAberta";
 import type { ItemTriagem, RevisaoEnvio, OpcoesAtendimento } from "@/server/whatsapp/operacoes-atendimento";
 import type { DestinoTransferencia } from "./AcoesAtendimento";
@@ -253,7 +253,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       const versao = leituraRef.current.versao;
       const entradasNoPedido = entradasPendentesRef.current?.id === id ? new Set(entradasPendentesRef.current.mensagens) : null;
       let sucesso = false;
-      try { sucesso = (await marcarAtendimentoLido(id)).ok; } catch { /* reconcilia abaixo */ } finally { recontarNaoLidasInbox(); }
+      try { sucesso = (await marcarAtendimentoLidoAutomatico(id)).ok; } catch { /* reconcilia abaixo */ } finally { recontarNaoLidasInbox(); }
       const entradasAtuais = entradasPendentesRef.current;
       if (sucesso && entradasNoPedido && entradasAtuais?.id === id) {
         for (const mensagemId of entradasNoPedido) entradasAtuais.mensagens.delete(mensagemId);
