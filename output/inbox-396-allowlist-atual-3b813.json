@@ -1,0 +1,35 @@
+{
+  "fonte": "3b813fadb7c956a588a660959ecd68b2211de0a5",
+  "quantidade": 2,
+  "bytes": 177342,
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-396-browser/closed-2026-10-23T04-56-09.746Z/home-closed.png",
+      "bytes": 62030,
+      "sha256": "1a341bf7811e5c03c341b942e6eb8a1fc162c263aa8c056dae21ec2265981e4d",
+      "tipo": "B1-transporte-controlado",
+      "fonte": "3b813fadb7c956a588a660959ecd68b2211de0a5",
+      "inspecao": "favoravel"
+    },
+    {
+      "arquivo": "output/inbox-396-browser/closed-2026-10-23T04-56-09.746Z/inbox-recuperada.png",
+      "bytes": 115312,
+      "sha256": "c6e8626582a0a79c241053c10ba3424e25f2e08962c5707d08aa1a1a9b9f197f",
+      "tipo": "B1-transporte-controlado",
+      "fonte": "3b813fadb7c956a588a660959ecd68b2211de0a5",
+      "inspecao": "favoravel"
+    }
+  ],
+  "metadados": [
+    "output/inbox-396-evidencias-atual-3b813.json"
+  ],
+  "excluir": [
+    "rawstack",
+    "traces",
+    "rawlogs",
+    "scripts privados",
+    "negativos",
+    "HTML",
+    "RSC"
+  ]
+}
