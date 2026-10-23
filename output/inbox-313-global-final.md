@@ -94,3 +94,18 @@ SSRrefreshinstrumentalequivalente→1trailingsemoutroaviso, leituraUIcombody
 anterior→1trailing e cinco contagensDOM iguais aoHTTPfresco. Não havia queda
 do número76nesseúltimocaso; não se alega decremento. Não houve envio externo.
 Relatório/allowlist dessa medição e revisão final do head serão ligados no PR.
+
+## Publicação e revisão final
+
+TESTER no d36d0a3b:14arquivos/166testes próprios, sessão81c6a8 saída0.
+Comparação confirma Inbox/helper iguais3a, componentes Coluna/Chips/Novo/Virtual/
+conversa iguais4f, mudanças restantes somente3testes389/390 e documentos.
+Parecer `output/inbox-313-d36-final-review-tester.md`; semnovoDB/browser/global
+atribuído aoTESTER. Headposterior sódocumental, sujeito àidentidade executável.
+
+Pacote complementar394/313 publicado na mesma releaseDRAFT421321214 e
+download/hashconfirmados:22PNG/29arquivos/1.714.633bytes, asset667981473,
+sidecar667981472, SHA256bd80252b79b544b75f0f47257a7476dd67e0f91718a64876f35ef90bcdd9811a.
+URL https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-394-evidencias-3a.zip
+SóPNGspositivos/allowlist/metadadossanitizados/relatório e3pareceres; nenhuma
+imagem nova noGit, negativo/log/HTML/RSC/credencial/seed/snapshot noZIP.
