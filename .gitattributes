@@ -4,6 +4,11 @@
 Dockerfile text eol=lf
 deploy/** text eol=lf
 
+# Fontes lidas pelas guardas AST/textuais têm checkout igual em Windows e Linux.
+/src/**/*.ts text eol=lf
+/src/**/*.tsx text eol=lf
+/.github/workflows/ci.yml text eol=lf
+
 # A CLI também é importada nos testes Vite: CRLF no shebang falha no runner Windows.
 /scripts/visual/capturar-inbox.mjs text eol=lf
 

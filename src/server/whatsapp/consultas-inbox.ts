@@ -75,11 +75,6 @@ export function resumirConversa(atendimento: AtendimentoDaLista): ConversaResumo
     linhaComercial: a.finalidade === "COMERCIAL" && ehLinhaComercial(a.conversa.numero) };
 }
 
-export async function contarNaoLidas(usuario: UsuarioSessao): Promise<number> {
-  const r = await prisma.atendimentoWhatsApp.aggregate({ where: await escopoAtendimentos(usuario), _sum: { naoLidas: true } });
-  return r._sum.naoLidas ?? 0;
-}
-
 /** Botões de cadastro da conversa: criar lead/oportunidade só em linha comercial sem lead e aberta; vincular fora do pedagógico. */
 export function regrasCadastroDoAtendimento(
   usuario: UsuarioSessao, a: { finalidade: string; leadId: string | null; encerradoEm: Date | null }, linhaComercial: boolean,

@@ -84,7 +84,7 @@ export function PainelContato({ visivel, sobreposto, className, aoFechar, childr
     <aside id="painel-contato" ref={painel} aria-label="Painel do contato" role={sobreposto ? "dialog" : undefined}
       aria-modal={sobreposto ? true : undefined} aria-hidden={visivel === false ? true : undefined} tabIndex={-1}
       className={className} onKeyDown={(e) => {
-        if (sobreposto || e.key !== "Escape") return;
+        if (sobreposto || e.defaultPrevented || e.key !== "Escape") return;
         const alvo = e.target as Element;
         // Portais propagam pelo pai React: a confirmação filha deve consumir seu próprio Escape.
         if (!e.currentTarget.contains(alvo) || alvo.closest('[role="dialog"], [role="alertdialog"]')) return;

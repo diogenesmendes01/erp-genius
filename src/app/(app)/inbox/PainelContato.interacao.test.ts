@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { criarDomMinimo, desligarObservadores, type Documento, type Elemento } from "@/test/dom-minimo";
 import type { PainelContato as Painel } from "./PainelContato";
 let doc: Documento, container: Elemento, root: Root, PainelContato: typeof Painel;
-let render: (visivel: boolean, sobreposto: boolean, enriquecido?: boolean) => Promise<void>;
+let render: (visivel: boolean, sobreposto: boolean, enriquecido?: boolean, consumirEscape?: boolean) => Promise<void>;
 vi.mock("@tabler/icons-react", () => ({
   IconChevronLeft: (p: object) => createElement("span", p), IconX: (p: object) => createElement("span", p), IconSparkles: (p: object) => createElement("span", p),
 }));
@@ -17,7 +17,7 @@ function eventos(alvo: object) { return {
 async function disparar(tipo: string, alvo: Elemento, key?: string, shiftKey = false) {
   let parado = false;
   const evento = { type: tipo, target: alvo, button: 0, bubbles: true, key, shiftKey,
-    preventDefault: vi.fn(), stopPropagation() { parado = true; } };
+    defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, stopPropagation() { parado = true; } };
   await act(async () => {
     for (const objeto of [container, doc]) for (const captura of [true, false]) {
       for (const o of [...ouvintes]) if (!parado && o.alvo === objeto && o.tipo === tipo && o.captura === captura) o.f(evento as unknown as Event);
@@ -33,13 +33,13 @@ beforeEach(async () => {
   vi.stubGlobal("document", doc); vi.stubGlobal("window", dom.janela); vi.stubGlobal("MutationObserver", dom.MutationObserver); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const { createRoot } = await import("react-dom/client"); ({ PainelContato } = await import("./PainelContato"));
   container = doc.createElement("div"); doc.body.appendChild(container); Object.assign(container, eventos(container)); root = createRoot(container as unknown as HTMLElement);
-  function Tela({ inicial, modal, enriquecido }: { inicial: boolean; modal: boolean; enriquecido?: boolean }) {
+  function Tela({ inicial, modal, enriquecido, consumirEscape }: { inicial: boolean; modal: boolean; enriquecido?: boolean; consumirEscape?: boolean }) {
     const [aberto, setAberto] = useState(inicial);
     return createElement("div", null,
       createElement("button", { "aria-controls": "painel-contato", onClick: () => setAberto(true) }, "Painel"),
-      createElement(PainelContato, { visivel: aberto, sobreposto: modal && aberto, className: "", contato: enriquecido ? { id: "c1", nome: "Mariana Costa", subtitulo: "Comercial", tags: [] } : undefined, focarAoAbrir: true, aoFechar: () => setAberto(false) }, createElement("input", { "aria-label": "Campo preservado" })));
+      createElement(PainelContato, { visivel: aberto, sobreposto: modal && aberto, className: "", contato: enriquecido ? { id: "c1", nome: "Mariana Costa", subtitulo: "Comercial", tags: [] } : undefined, focarAoAbrir: true, aoFechar: () => setAberto(false) }, createElement("input", { "aria-label": "Campo preservado", onKeyDown: (e: { key: string; preventDefault(): void }) => { if (consumirEscape && e.key === "Escape") e.preventDefault(); } })));
   }
-  render = async (visivel, sobreposto, enriquecido) => { await act(async () => root.render(createElement(Tela, { inicial: visivel, modal: sobreposto, enriquecido }))); };
+  render = async (visivel, sobreposto, enriquecido, consumirEscape) => { await act(async () => root.render(createElement(Tela, { inicial: visivel, modal: sobreposto, enriquecido, consumirEscape }))); };
 });
 afterEach(async () => { if (root) await act(async () => root.unmount()); desligarObservadores(); vi.unstubAllGlobals(); });
 it("abrir sobreposição foca fechar; Tab fica no painel; Escape fecha e retorna ao gatilho", async () => {
@@ -109,4 +109,24 @@ it("abas controladas usam setas/Home/End para selecionar e mover foco", async ()
   await disparar('keydown',tabs[1],'Home'); expect(doc.activeElement === tabs[0]).toBe(true); expect(tabs[0].getAttribute('tabindex')).toBe('0');
   await disparar('keydown',tabs[0],'End'); expect(doc.activeElement === tabs[1]).toBe(true);
   await disparar('keydown',tabs[1],'ArrowRight'); expect(doc.activeElement === tabs[0]).toBe(true);
+});
+
+
+it("PR395 C6: Escape normal no input fecha a coluna, retorna foco e reabrir conserva a montagem e o rascunho", async () => {
+  await render(false, false); trigger().focus(); await disparar('click', trigger());
+  const campo = container.querySelector('input')! as Elemento & { value: string };
+  campo.value = 'rascunho local preservado'; campo.focus();
+  await disparar('keydown', campo, 'Escape');
+  expect(painel().inert).toBe(true); expect(doc.activeElement === trigger()).toBe(true);
+  await disparar('click', trigger());
+  expect(painel().inert).toBe(false); expect(container.querySelector('input') === campo).toBe(true);
+  expect(campo.value).toBe('rascunho local preservado');
+});
+it("PR395 C6: editor filho que consome Escape mantém a coluna aberta e seu rascunho", async () => {
+  await render(false, false, false, true); trigger().focus(); await disparar('click', trigger());
+  const campo = container.querySelector('input')! as Elemento & { value: string };
+  campo.value = 'edição deliberada'; campo.focus();
+  await disparar('keydown', campo, 'Escape');
+  expect(painel().inert).toBe(false); expect(doc.activeElement === campo).toBe(true);
+  expect(container.querySelector('input') === campo).toBe(true); expect(campo.value).toBe('edição deliberada');
 });

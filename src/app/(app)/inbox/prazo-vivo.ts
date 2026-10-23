@@ -57,6 +57,12 @@ function criarRelogioDosPrazos(itens: ItemListaInbox[], inicial: number) {
   };
 }
 
+/**
+ * Preserve a identidade de `itens` entre renders sem mudança da lista.
+ * Um array recriado inline (por exemplo, `itens.filter(...)`) recria o relógio
+ * memoizado e sua assinatura, rearmando o timer a cada render. Uma nova revisão
+ * SSE pode trocar a referência deliberadamente para recalcular os prazos.
+ */
 export function useAgoraDosPrazos(itens: ItemListaInbox[], agoraInicial?: number): number {
   // Uma lista SSE nova usa o relógio atual já no primeiro render e substitui a assinatura anterior.
   const ssr = typeof agoraInicial === "number" && Number.isFinite(new Date(agoraInicial).getTime()) ? agoraInicial : 0;
