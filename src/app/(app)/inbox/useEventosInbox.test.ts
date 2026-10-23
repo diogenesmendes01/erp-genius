@@ -6,12 +6,13 @@ import { assinarEventosInbox, type FonteEventos } from "./useEventosInbox";
 // se perdido, então cada reabertura depois da primeira entrega um `resync` para a tela recarregar o que mostra.
 
 class FonteFalsa implements FonteEventos {
+  readyState = 0;
   onopen: ((e: Event) => void) | null = null;
   onerror: ((e: Event) => void) | null = null;
   readonly ouvintes = new Map<string, (e: Event) => void>();
   fechada = false;
   addEventListener(tipo: string, f: (e: Event) => void) { this.ouvintes.set(tipo, f); }
-  close() { this.fechada = true; }
+  close() { this.readyState = 2; this.fechada = true; }
   emitir(tipo: string, data: string) { this.ouvintes.get(tipo)?.({ data } as unknown as Event); }
 }
 
