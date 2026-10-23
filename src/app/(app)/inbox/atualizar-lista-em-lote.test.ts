@@ -110,3 +110,33 @@ it("StrictMode React real setup→cleanup→setup conserva um timer e um GET; un
     flushSync(()=>root.unmount());montado=false;expect(vi.getTimerCount()).toBe(0);
   }finally{if(montado)flushSync(()=>root.unmount());vi.unstubAllGlobals();}
 });
+
+it("P2 invalidação do snapshot em voo consolida1trailing, sem liberar corpo/consultas concorrentes",async()=>{
+  const concluir:(()=>void)[]=[];
+  const executar=vi.fn(()=>new Promise<void>(r=>concluir.push(r)));
+  const fila=criarAtualizadorEmLote(executar);
+  fila.solicitar();await vi.advanceTimersByTimeAsync(50);
+  for(let n=0;n<20;n++)fila.invalidarSnapshotEmVoo();
+  await vi.advanceTimersByTimeAsync(500);expect(executar).toHaveBeenCalledTimes(1);
+  concluir[0]();await vi.advanceTimersByTimeAsync(50);expect(executar).toHaveBeenCalledTimes(2);
+  fila.descartar();concluir[1]();
+});
+it("P2 invalidar idle não consulta e antesdoGET não muda fronteira/duplica lote",async()=>{
+  const executar=vi.fn(async()=>{});
+  const fila=criarAtualizadorEmLote(executar);
+  fila.invalidarSnapshotEmVoo();await vi.advanceTimersByTimeAsync(100);expect(executar).not.toHaveBeenCalled();
+  fila.solicitar();await vi.advanceTimersByTimeAsync(40);fila.invalidarSnapshotEmVoo();
+  await vi.advanceTimersByTimeAsync(10);expect(executar).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(100);expect(executar).toHaveBeenCalledTimes(1);
+  fila.descartar();
+});
+it("P2 A→B→A não reabilita voo da épocaA antiga nem cria trailing ao invalidar props atuais",async()=>{
+  let concluir!:()=>void;
+  const executar=vi.fn(()=>new Promise<void>(r=>{concluir=r;}));
+  const fila=criarAtualizadorEmLote(executar);
+  fila.solicitar();await vi.advanceTimersByTimeAsync(50);
+  fila.cancelarPendentes();fila.cancelarPendentes();
+  fila.invalidarSnapshotEmVoo();concluir();await vi.advanceTimersByTimeAsync(500);
+  expect(executar).toHaveBeenCalledTimes(1);expect(vi.getTimerCount()).toBe(0);
+  fila.descartar();
+});
