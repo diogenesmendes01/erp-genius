@@ -42,6 +42,17 @@ it("setas levam do campo às sugestões e voltam ao campo sem sequestrar Home na
   await key("ArrowUp", botao("Bolsista")); expect(doc.activeElement === input).toBe(true);
   await key("Home", input); expect(doc.activeElement === input).toBe(true);
 });
+it("busca sem sugestões anuncia o estado vazio e conserva a criação separada", async () => {
+  await montarTags(); await clicar("+ tag"); await digitar("Nova fictícia");
+  const vazio = host.querySelector("[data-estado-vazio]");
+  expect(vazio).not.toBeNull(); expect(vazio!.getAttribute("role")).toBe("status");
+  expect(vazio!.textContent).toBe("Nenhuma tag encontrada.");
+  expect(botao("Criar tag “Nova fictícia”")).toBeDefined();
+  expect(doc.activeElement === campo()).toBe(true); expect(acoes.criar).not.toHaveBeenCalled();
+  await digitar("Bolsista");
+  expect(host.querySelector("[data-estado-vazio]")).toBeNull();
+  expect(botao("Bolsista")).toBeDefined(); expect(acoes.criar).not.toHaveBeenCalled();
+});
 it("ação repetida fica bloqueada e resultado de A desmontado não reconcilia B", async () => {
   let resolver!: (r: { ok: true }) => void; acoes.atribuir.mockImplementation(() => new Promise(r => { resolver = r; }));
   const mudarA = vi.fn(), mudarB = vi.fn(); await montarTags({ aoMudar: mudarA }); await clicar("+ tag"); await clicar("Bolsista"); await clicar("Bolsista");
