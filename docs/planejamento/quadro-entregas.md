@@ -5619,7 +5619,7 @@ fonte C2/Ready para capturas317. Parecer em output/inbox-317-static-review-teste
 ### #317 — CLI preparada separadamente, formal pendente
 
 Produto a86c9ade imutável enviado ao TESTER. RED8a9d756/6→GREENff1da18arquivos51testes; TSC38512heap8192/lint8fontes be4324/diffcheck c07e2e saída0 Node22. Estado nota12PNG e humano+nota24 formais planejadas, total136 CLI preservando estados prévios. Espera317 exige abas/campo/alvos44/header68/viewport; aviso footer separado de notas reais314, sem relaxar comandos/status/mídia. Sem browser/DB/PNG, nenhuma geometria real alegada. Formal/QA/global aguardam C2/#402 e janela ROOT. Produto e harness têm fontes distintas; capturas antigas não contam para317.
-## PR #402 — C2: rolagem manual preservada, gates finais pendentes
+## PR #402 — C2: rolagem manual preservada, gates locais aprovados
 
 Correção isolada sobre d8dde4a1, só hook/teste: registra área/ID/scrollTop da
 centralização e não reassume a posição movida pelo usuário (>1px). Novo ID
@@ -5633,7 +5633,16 @@ compilador, sem mudar regra/dependências/contrato; TSC39739 e lint2fontes0.
 Chromefixture real de hook/barra/VirtualList/CSS com150mensagens+prepend40,
 seis contextos/dois temas: manual600/focoexterno/pin000/Enter/Shift/prepend
 preservados, antes600→0 reproduzido; sem Next/SSE/API/DB/externos. Não é
-homologação de app completo. Global final/lintglobal e TESTER pendentes.
+homologação de app completo. Global final7a: 893arquivos/6.977testes, sessão
+30869 EXIT0, sem filtros/ignorados. TSC39739 EXIT0; lint global3582 EXIT0,
+0erros/40avisos anteriores. TESTER independente7a favorável,7/37 exec220bac0,
+sem DB/browser/global próprio. Portar o funcional7a para317/319 e conferir
+linha selecionada com SSE/paginação real na composição, conforme ressalva.
+ZIP positivo seisPNG/nove arquivos,113.219B, SHA256
+6a30496c67a9ee472bbf4c58f34e802c8d385a35b10e460a77442094fa07753e,
+asset668148410/DRAFT421321214, upload/download/hash confirmados. Report
+output/pr402-qa/revisao.md. C2 resolvido localmente; C1 continua aguardando
+ancestralidade dos pais/CI/main. Não concluir a issue antes do merge.
 
 ### #317 — fix C2 da busca incorporado após gates
 
