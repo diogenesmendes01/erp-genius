@@ -1009,6 +1009,7 @@ const CODIGOS_EM_TEXTO: { arquivo: string; codigo: string; motivo: string }[] = 
 /** Campos com nome de enum que já chegam como texto (o servidor rotulou) ou não são enum. Cada um casa com
  * exatamente `vezes` achados (1, se omitido). */
 const TEXTO_JA_ROTULADO: { arquivo: string; trecho: string; motivo: string; vezes?: number }[] = [
+  { arquivo: "src/app/(app)/inbox/CabecalhoConversa.tsx", trecho: "visual.status", vezes: 2, motivo: "estadoVisualCabecalho já devolve Grupo ou rotular(STATUS_ATENDIMENTO_LABEL, item.status); string traduzida no título e texto do selo, coberta pelos quatro estados no SSR do cabeçalho" },
   { arquivo: "src/app/(app)/academico/recuperacoes/page.tsx", trecho: "item.estado", motivo: "o servidor já devolve o texto (\"Sem nota\", \"Oficializada\"…), server/avaliacoes/recuperacao-consulta.ts" },
   { arquivo: "src/app/(app)/financeiro/acertos-taxa/[matriculaId]/[propostaId]/page.tsx", trecho: "c.tipo", motivo: "tipo de comissão já rotulado no servidor (\"Fixa\"/\"Percentual\"), server/contratos/aditivo-acerto-taxa-consulta.ts" },
   { arquivo: "src/app/(app)/secretaria/CondicoesEncerramento.tsx", trecho: "acerto.alcance", motivo: "frase montada por descreverAcerto (\"todas as cobranças da matrícula\"…)" },

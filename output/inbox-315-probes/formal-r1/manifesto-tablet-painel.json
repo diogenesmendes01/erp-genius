@@ -1,0 +1,84 @@
+{
+  "fonteApp": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+  "fontesHarness": {
+    "capturar-inbox.mjs": "a30053490d35e288c1d3790b60957f7fc900f94bf74c8dafa15b72cb0f9acf71",
+    "nucleo-captura.mjs": "870b486ef9161a6683808354fa631e865ff9afa94cfade50ce40d77086085b8b",
+    "espera-app.mjs": "af5c506d7a945ac79c710a10f63b910bf62e9e6b1c6eaff0b90c57a4df3b13fa",
+    "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce"
+  },
+  "capturas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "app-escuro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "b9ab20613cb0b785d9a8bd70b49aab833fef9ec08529b0cde4b32b57375043fa"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "app-claro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "2270a727fa177ae451dee076e8c969741eea85a48709fb8b00c35b29419625e8"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "prototipo-escuro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "3cab096d526ccbf82b6181f6563ffb87d2fb3edcaccc15ed1a4c4caf820652af"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "tablet-painel",
+      "arquivo": "prototipo-claro-tablet-tablet-painel.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "3f6aee918ecd52c951e13df4870b1296b97d63d3faefe38cb2b1887c53f4e926"
+    }
+  ],
+  "prototipoSha256": "3ef115c8eb95091b0841a69af982442cf8db7d9f0f96bd2b7b9c8f46e6901845"
+}

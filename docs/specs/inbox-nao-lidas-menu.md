@@ -85,3 +85,7 @@ output/pr396-qa/c6.md; composição dos dependentes/CI/main permanecem gates.
 ### Evidência B1 isolada
 
 No SHA babd, TESTER independente favorável (7 arquivos/41 testes, saída0 informado pelo integrador) e probe browser d56ad6 saída0. Um503 controlado local levou o EventSource nativo a CLOSED, observado antes do callback produtivo. Sem nova fonte até o Link público Home→Inbox, que preservou a Sidebar e abriu uma única SSE real200; máximo1ativa e um documento/timeOrigin. Resync ao assinante antigo comprovado pela recontagem originada no fanout da abertura. Dois diagnósticos esperados do503exato, nenhum guard global alterado. Duas imagens inspecionadas e resumo/allowlist sanitizados em output/inbox-396-evidencias.json/output/inbox-396-allowlist.json. Não é deploy real, teste prolongado de capacidade ou prova estética do agregado atual. Porte/browser agregado/global/publicação permanecem coordenados pelo integrador.
+
+### B1 no agregado315/396
+
+Helper e testes byte-equivalentes a babd na fonte3b813. Repetição browser16dde0 saída0 comprovou503exato→CLOSEDnativo→nova assinatura pelo Link público com Sidebar preservada→SSE200real/resync, máximo1ativa/umdocumento. DoisPNG atuais inspecionados, semPG/SQL/envio. Resumo e allowlist atual-3b813 ficam separados dos isolados; sem nova lógica ou binário noGit. Gate global agregado permanece com integrador.

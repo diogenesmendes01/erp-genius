@@ -1,0 +1,7014 @@
+{
+  "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+  "fixture": "snapshot307314 normal; nenhum submit/write de negócio",
+  "resultados": [
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 320,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320,
+          "bottom": 125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 172,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 216,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 222,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 258,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 264,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 308,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 56,
+            "y": 62.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 153.8125,
+            "bottom": 82.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 56,
+            "y": 84.125,
+            "w": 88.953125,
+            "h": 18,
+            "right": 144.953125,
+            "bottom": 102.125
+          }
+        },
+        "documento": {
+          "w": 320,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 320,
+          "h": 425,
+          "bottom": 500,
+          "right": 320
+        },
+        "scroll": {
+          "top": 0,
+          "total": 591,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 320,
+          "h": 425,
+          "bottom": 500,
+          "right": 320
+        },
+        "scroll": {
+          "top": 168,
+          "total": 591,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 320,
+          "h": 425,
+          "bottom": 500,
+          "right": 320
+        },
+        "scroll": {
+          "top": 0,
+          "total": 591,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-320-header.png",
+          "sha256": "7d871451c96eebe4fffa1decc02f0aa492a6b91905b90812159e48ccf8f7490d",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320-menu-topo.png",
+          "sha256": "51f2abdedf1dba35db3153e3504a649cdee656186b4e7d1a2d6fd6894a10bd27",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-320-menu-fim.png",
+          "sha256": "b6bae843a927cc309c8e58be2b01a75a93f0224295d2ea26cafe52583e19d0b5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 390,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390,
+          "bottom": 125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 242,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 286,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 292,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 328,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 334,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 378,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 56,
+            "y": 62.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 153.8125,
+            "bottom": 82.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 56,
+            "y": 84.125,
+            "w": 88.953125,
+            "h": 18,
+            "right": 144.953125,
+            "bottom": 102.125
+          }
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 390,
+          "h": 425,
+          "bottom": 500,
+          "right": 390
+        },
+        "scroll": {
+          "top": 0,
+          "total": 574,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 390,
+          "h": 425,
+          "bottom": 500,
+          "right": 390
+        },
+        "scroll": {
+          "top": 151,
+          "total": 574,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 390,
+          "h": 425,
+          "bottom": 500,
+          "right": 390
+        },
+        "scroll": {
+          "top": 0,
+          "total": 574,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-390-header.png",
+          "sha256": "06bb14e1ea7eea9ea85959886e71881b37a095148aa092014ebc0db0c6149a1a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-menu-topo.png",
+          "sha256": "7cd3870f76628bc32468755cd1024898125d7235ed97ba538ffe03cb53fc5a87",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-390-menu-fim.png",
+          "sha256": "abcff532c8398c3a6670f0b3108d7e7e524431d3392b1687b804804316efa871",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 699,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 68,
+          "right": 699,
+          "bottom": 121
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 566,
+              "y": 68.5,
+              "w": 37,
+              "h": 36,
+              "right": 603,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 609,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 645,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 651,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 687,
+              "bottom": 104.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 56,
+            "y": 58.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 153.8125,
+            "bottom": 78.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 56,
+            "y": 80.125,
+            "w": 88.953125,
+            "h": 18,
+            "right": 144.953125,
+            "bottom": 98.125
+          }
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 699,
+          "h": 425,
+          "bottom": 500,
+          "right": 699
+        },
+        "scroll": {
+          "top": 0,
+          "total": 567,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 699,
+          "h": 425,
+          "bottom": 500,
+          "right": 699
+        },
+        "scroll": {
+          "top": 144,
+          "total": 567,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 699,
+          "h": 425,
+          "bottom": 500,
+          "right": 699
+        },
+        "scroll": {
+          "top": 0,
+          "total": 567,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-699-header.png",
+          "sha256": "e64575b3de502542030938b70b5c61d3f9911e88f30d58695d5e2d36afd9ef64",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-699-menu-topo.png",
+          "sha256": "b1f78db04c080eae6f5fc122182e97b84eb49aabd2362070b8550940e3063212",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-699-menu-fim.png",
+          "sha256": "cc8e132605ab549c0149f70ad3319a12a3812a80259679d74b18107e01344594",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 700,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 68,
+          "right": 700,
+          "bottom": 121
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 525,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 561,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 567,
+              "y": 68.5,
+              "w": 37,
+              "h": 36,
+              "right": 604,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 610,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 646,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 652,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 688,
+              "bottom": 104.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 106,
+            "y": 68.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 203.8125,
+            "bottom": 88.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 211.8125,
+            "y": 69.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 300.765625,
+            "bottom": 87.375
+          }
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 402,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 692
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 402,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 692
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 402,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 692
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-700-header.png",
+          "sha256": "562004aa6caa1ea8494e335f56ec24dd8c9d3c564bec3e185d1ac6d230b359ba",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-700-menu-topo.png",
+          "sha256": "b17de78f076be1940f58f894bde76c1f485524bbd9b7f7f31a09adc2a8664c4f",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-700-menu-fim.png",
+          "sha256": "fe62e6a3bfbe92943d365e51763ec25679dc4e3aeb36c0ff3ac8da11b273cf7a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 959,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 68,
+          "right": 959,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 234,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 270,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 784,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 820,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 826,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 863,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 869,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 905,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 911,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 947,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 330,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 427.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 435.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 524.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 661,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 951
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 661,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 951
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 661,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 951
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-959-header.png",
+          "sha256": "03bce65b572437431e1430a8c10390c367f76d2b03de5d24dfe2472ddde676cb",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-959-menu-topo.png",
+          "sha256": "0ffae8a0922cb48ed3de837d5902cb93f103837b3048526023628023e3d7425e",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-959-menu-fim.png",
+          "sha256": "6623f6c9bb5425bdb830a0af540ea8159f42127faa8ac156669fc028da2571f1",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 960,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 436,
+          "h": 68,
+          "right": 960,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 785,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 821,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 827,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 864,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 870,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 906,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 912,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 948,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 584,
+            "y": 15.625,
+            "w": 94.046875,
+            "h": 19.5,
+            "right": 678.046875,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 686.046875,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 775,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 662,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 952
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 662,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 952
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 662,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 952
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-960-header.png",
+          "sha256": "6b19ba8dd3344d6a22bf079c45261c3208ce225d5e26be7b477f1d467d2a0da1",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-960-menu-topo.png",
+          "sha256": "5a1ba8cff7a6f430805257f5e62cd631df559f7568c033e77ab13ccba97e84e1",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-960-menu-fim.png",
+          "sha256": "34ad486b8395f45f67d78136d7891b300e6d651f7e9b80db57a7b7f8375fa9e5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1024,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 500,
+          "h": 68,
+          "right": 1024,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 849,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 885,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 891,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 928,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 934,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 970,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 976,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1012,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 584,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 681.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 689.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 778.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 726,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1016
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 726,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1016
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 726,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1016
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-1024-header.png",
+          "sha256": "a5626720e7f5abe293605f997a8e2b6b0917f09eccb35e601702f74d6a33fcde",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1024-menu-topo.png",
+          "sha256": "d406f9368c6358f5fa850faf78b8eba072245c7795e0a6300584019394b5fd90",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1024-menu-fim.png",
+          "sha256": "bed053c54a0921bae90135457ea241d51f55335d8eff7c9d6917698a059d44da",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1399,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 803,
+          "h": 68,
+          "right": 1399,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 1142.953125,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1178.953125,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 1184.953125,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1303,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 1309,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1345,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 1351,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1387,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 656,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 753.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 761.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 850.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 1101,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1391
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 1101,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1391
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 1101,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1391
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-1399-header.png",
+          "sha256": "b244af04168e2bd23782a7ebb0fa9a032a529b7a7e140f1c56a2cac7b30e67d3",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1399-menu-topo.png",
+          "sha256": "bb2288e5b2fa828362189386f6a4fc623f8e62a03ba9c3d649062dfc5b0db8a9",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1399-menu-fim.png",
+          "sha256": "9bda4267dba9fff070675194c0236d2d8c683d11c0be46990990c0980ac15ed8",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1400,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 877,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 913,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 919,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 956,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 962,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 998,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 1004,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1040,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 656,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 753.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 761.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 850.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 1004,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1294
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 1004,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1294
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 1004,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1294
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": true,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-1400-header.png",
+          "sha256": "49bf4fe745d1d7e1d08bcdb15fdf062f7b90a166de133b017f5a24fa0d3fb311",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1400-menu-topo.png",
+          "sha256": "cc965583f86d7f7845368a05e2c675e07fb0576225b16d24f1080272beeb8dd4",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1400-menu-fim.png",
+          "sha256": "339cb2995a3393d58e211f3be57758c4f2050240cc9df750bdb64fc38fed9825",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1440,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 917,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 953,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 959,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 996,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 1002,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1038,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 1044,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1080,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 656,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 753.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 761.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 850.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 1044,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1334
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 1044,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1334
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 1044,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1334
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": true,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "light-1440-header.png",
+          "sha256": "08c2176035fbbfc0b620af9b451da4e40be7c99515b94c9adcb6800b0c9a735d",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-menu-topo.png",
+          "sha256": "c94f44c4efb0642c7e500b4f4022be5aa848e143ead2e9cfb89183f3754b41a9",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "light-1440-menu-fim.png",
+          "sha256": "df3a7b0e87a6b7034bc8c7b256dbf53c7725d3e28bca3303f3dbe2c75ae9b6fa",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 320,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320,
+          "bottom": 125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 172,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 216,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 222,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 258,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 264,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 308,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 56,
+            "y": 62.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 153.8125,
+            "bottom": 82.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 56,
+            "y": 84.125,
+            "w": 88.953125,
+            "h": 18,
+            "right": 144.953125,
+            "bottom": 102.125
+          }
+        },
+        "documento": {
+          "w": 320,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 320,
+          "h": 425,
+          "bottom": 500,
+          "right": 320
+        },
+        "scroll": {
+          "top": 0,
+          "total": 591,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 320,
+          "h": 425,
+          "bottom": 500,
+          "right": 320
+        },
+        "scroll": {
+          "top": 168,
+          "total": 591,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 320,
+          "h": 425,
+          "bottom": 500,
+          "right": 320
+        },
+        "scroll": {
+          "top": 0,
+          "total": 591,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-320-header.png",
+          "sha256": "eb6d1eb1782210edcda2587c047cf1abdbd42737429c6b0e774d9bac8edcf0cf",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320-menu-topo.png",
+          "sha256": "c9c36ab861486866e24c180d91939983bdca9f3a98588382339f18feeac33669",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-320-menu-fim.png",
+          "sha256": "ac2603f0f8e800ffeab01a531fc94fdcbeb067820fec3c4caac8d02398d2c130",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 390,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390,
+          "bottom": 125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 242,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 286,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 292,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 328,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 334,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 378,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 56,
+            "y": 62.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 153.8125,
+            "bottom": 82.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 56,
+            "y": 84.125,
+            "w": 88.953125,
+            "h": 18,
+            "right": 144.953125,
+            "bottom": 102.125
+          }
+        },
+        "documento": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 390,
+          "h": 425,
+          "bottom": 500,
+          "right": 390
+        },
+        "scroll": {
+          "top": 0,
+          "total": 574,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 390,
+          "h": 425,
+          "bottom": 500,
+          "right": 390
+        },
+        "scroll": {
+          "top": 151,
+          "total": 574,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 390,
+          "h": 425,
+          "bottom": 500,
+          "right": 390
+        },
+        "scroll": {
+          "top": 0,
+          "total": 574,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-390-header.png",
+          "sha256": "71d241be974fe6c951e7ee6f276f956838366a858a1488a6af00e3d3f127c661",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-menu-topo.png",
+          "sha256": "3adf01dda0336e03c81476edce59eb15a8fc337a30a458f32f02e1e758e7e7f4",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-390-menu-fim.png",
+          "sha256": "13c037f673dc3ed1a30e8588edccaa41f8063b8d70f356b99fab42358838c1f4",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 699,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 699,
+          "h": 68,
+          "right": 699,
+          "bottom": 121
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 566,
+              "y": 68.5,
+              "w": 37,
+              "h": 36,
+              "right": 603,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 609,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 645,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 651,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 687,
+              "bottom": 104.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 56,
+            "y": 58.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 153.8125,
+            "bottom": 78.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 56,
+            "y": 80.125,
+            "w": 88.953125,
+            "h": 18,
+            "right": 144.953125,
+            "bottom": 98.125
+          }
+        },
+        "documento": {
+          "w": 699,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 699,
+          "h": 425,
+          "bottom": 500,
+          "right": 699
+        },
+        "scroll": {
+          "top": 0,
+          "total": 567,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 699,
+          "h": 425,
+          "bottom": 500,
+          "right": 699
+        },
+        "scroll": {
+          "top": 144,
+          "total": 567,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 0,
+          "y": 75,
+          "w": 699,
+          "h": 425,
+          "bottom": 500,
+          "right": 699
+        },
+        "scroll": {
+          "top": 0,
+          "total": 567,
+          "altura": 423
+        },
+        "top": "75px",
+        "bottom": "0px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-699-header.png",
+          "sha256": "c8038d071134fd9f9dfdca9a88d41affdf728917cd75a50aa98d174ca86a667c",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-699-menu-topo.png",
+          "sha256": "62d94852933c5eccf6636c5940266918943f7e0b21bcfe43686d2cc98c754769",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-699-menu-fim.png",
+          "sha256": "536ade4c883ea3390459571772885b57c29384072034a5f1a9f1df606a32d16c",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 700,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 0,
+          "y": 53,
+          "w": 700,
+          "h": 68,
+          "right": 700,
+          "bottom": 121
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 10,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 525,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 561,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 567,
+              "y": 68.5,
+              "w": 37,
+              "h": 36,
+              "right": 604,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 610,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 646,
+              "bottom": 104.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 652,
+              "y": 68.5,
+              "w": 36,
+              "h": 36,
+              "right": 688,
+              "bottom": 104.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 106,
+            "y": 68.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 203.8125,
+            "bottom": 88.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 211.8125,
+            "y": 69.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 300.765625,
+            "bottom": 87.375
+          }
+        },
+        "documento": {
+          "w": 700,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 402,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 692
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 402,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 692
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 402,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 692
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-700-header.png",
+          "sha256": "5cd03d6d1931a584cf24598230950965cd31115eaab1ccf7bc44c2b8955bee05",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-700-menu-topo.png",
+          "sha256": "8b801a07645d0e9c4ace4796881b9c45a8b484f98a2e6104293563fbe3ab71a4",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-700-menu-fim.png",
+          "sha256": "f1307ce264353d4e305633f253441b238f76be4be71fcb4fb0a96fbfaabaaaba",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 959,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 224,
+          "y": 0,
+          "w": 735,
+          "h": 68,
+          "right": 959,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "disabled": false,
+            "rect": {
+              "x": 234,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 270,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 784,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 820,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 826,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 863,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 869,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 905,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 911,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 947,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 330,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 427.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 435.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 524.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 959,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 661,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 951
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 661,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 951
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 661,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 951
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-959-header.png",
+          "sha256": "c64f8d5437bf5d5117dcb69696ab6f6137b3a3186a9de13ba0610c4bda014bc6",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-959-menu-topo.png",
+          "sha256": "fcb48a2048ff0cfb8a503760e40e768d178830f2158675be5c19ffb200b77ec5",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-959-menu-fim.png",
+          "sha256": "5efe417fd095084670c0345d71c14afca2bda167e3c5a8ec1bffc47345e53852",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 960,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 436,
+          "h": 68,
+          "right": 960,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 785,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 821,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 827,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 864,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 870,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 906,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 912,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 948,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 584,
+            "y": 15.625,
+            "w": 94.046875,
+            "h": 19.5,
+            "right": 678.046875,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 686.046875,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 775,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 960,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 662,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 952
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 662,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 952
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 662,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 952
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-960-header.png",
+          "sha256": "7d8a812d1020edee8f69b1f5226071b28ca9e3fe362b6d228f742e7c737a721f",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-960-menu-topo.png",
+          "sha256": "1c9249a3bcedcf59be51043f259cee1bd58d08a8dd4d7d7275a6dfae5ebc6ffd",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-960-menu-fim.png",
+          "sha256": "2d5645d42bd28f107fd0c57c1d8d0c35b598c26a3215f028b27a36227595d09c",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1024,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 524,
+          "y": 0,
+          "w": 500,
+          "h": 68,
+          "right": 1024,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 849,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 885,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 891,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 928,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 934,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 970,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 976,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1012,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 584,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 681.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 689.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 778.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1024,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 726,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1016
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 726,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1016
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 726,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1016
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1024-header.png",
+          "sha256": "c4d8adc8e5e41b41c1cc4395de1b65d374196184ee060c337a9652c905d1d19f",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1024-menu-topo.png",
+          "sha256": "0768b31aacab383360da7fb8e239f9e926fb7baffcdd204b7129d9f908e83266",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1024-menu-fim.png",
+          "sha256": "81d898986135487d55c1e3b2ca7004331a66fe36528dff996b8201aee148d498",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1399,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 803,
+          "h": 68,
+          "right": 1399,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 1142.953125,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1178.953125,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 1184.953125,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1303,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 1309,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1345,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 1351,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1387,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 656,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 753.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 761.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 850.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1399,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 1101,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1391
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 1101,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1391
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 1101,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1391
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": false,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1399-header.png",
+          "sha256": "3fc4c5097a10e805b338011b403884f2076c2a82fb8abbeafffe489cc22ab291",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1399-menu-topo.png",
+          "sha256": "fbfb7443e5aadec6ac24dca3833b94625f7f1704c895b86da55a41b66a97f197",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1399-menu-fim.png",
+          "sha256": "360fc47e70241bd7ab86fca03ccc35288151bfb7aa476c07b5ff1a4f4979aa33",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1400,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 877,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 913,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 919,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 956,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 962,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 998,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 1004,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1040,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 656,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 753.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 761.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 850.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 1004,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1294
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 1004,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1294
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 1004,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1294
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": true,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1400-header.png",
+          "sha256": "12267a364f061c0e89e22bf20524bfc3ff320a5f1a3dcb9ce6aca46468b3f43a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1400-menu-topo.png",
+          "sha256": "3d1a4e07eae582110adbeedf419aac466ee67ed39fb4fac411da4263308bad97",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1400-menu-fim.png",
+          "sha256": "8315a2cff325370465ec693ea4ce45a76de1a31a1f1ca1d01c2214955cb81faa",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1440,
+      "height": 500,
+      "antes": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "disabled": true,
+            "rect": {
+              "x": 917,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 953,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "disabled": false,
+            "rect": {
+              "x": 959,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 996,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "disabled": false,
+            "rect": {
+              "x": 1002,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1038,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "disabled": false,
+            "rect": {
+              "x": 1044,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1080,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "nome": {
+          "texto": "Mariana Costa",
+          "rect": {
+            "x": 656,
+            "y": 15.625,
+            "w": 97.8125,
+            "h": 19.5,
+            "right": 753.8125,
+            "bottom": 35.125
+          }
+        },
+        "status": {
+          "texto": "Em atendimento",
+          "rect": {
+            "x": 761.8125,
+            "y": 16.375,
+            "w": 88.953125,
+            "h": 18,
+            "right": 850.765625,
+            "bottom": 34.375
+          }
+        },
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "topo": {
+        "rect": {
+          "x": 1044,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1334
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "fim": {
+        "rect": {
+          "x": 1044,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1334
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Encerrar atendimento",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "inicio": {
+        "rect": {
+          "x": 1044,
+          "y": 8,
+          "w": 290,
+          "h": 484,
+          "bottom": 492,
+          "right": 1334
+        },
+        "scroll": {
+          "top": 0,
+          "total": 525,
+          "altura": 482
+        },
+        "top": "8px",
+        "bottom": "8px",
+        "foco": {
+          "nome": "Marcar como não lida",
+          "disabled": false,
+          "dentro": true
+        },
+        "itens": [
+          {
+            "nome": "Marcar como não lida",
+            "disabled": false
+          },
+          {
+            "nome": "Desafixar conversasó você",
+            "disabled": false
+          },
+          {
+            "nome": "Silenciar8 h · só você",
+            "disabled": false
+          },
+          {
+            "nome": "Nota interna",
+            "disabled": false
+          },
+          {
+            "nome": "Agendar mensagem",
+            "disabled": false
+          },
+          {
+            "nome": "Convites e agendamentos",
+            "disabled": false
+          },
+          {
+            "nome": "Buscar na conversaEm breve",
+            "disabled": true
+          },
+          {
+            "nome": "Atribuir",
+            "disabled": false
+          },
+          {
+            "nome": "Devolver para a fila",
+            "disabled": false
+          },
+          {
+            "nome": "Convidar",
+            "disabled": false
+          },
+          {
+            "nome": "Encerrar atendimento",
+            "disabled": false
+          },
+          {
+            "nome": "Bloquear contatoDisponível quando o motor próprio da escola entrar em uso.",
+            "disabled": true
+          }
+        ]
+      },
+      "retorno": true,
+      "retornoDialogo": true,
+      "painelInicial": true,
+      "painelAberto": {
+        "visivel": true,
+        "unico": true
+      },
+      "focoPainel": true,
+      "imagens": [
+        {
+          "arquivo": "dark-1440-header.png",
+          "sha256": "f10214486fa049c0901e1a423bb5ae0a46ee79a25ae7917808f8d55486d92e4f",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-menu-topo.png",
+          "sha256": "4256e800a989aca2fd431ac087a8fc59f12e1cbb30eabb32769184b3739c2fce",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        },
+        {
+          "arquivo": "dark-1440-menu-fim.png",
+          "sha256": "2fc3460be3c5b59be29c916a8b4c9ef27a17b563169cbe09858ee15ad83d4c1a",
+          "politica": {
+            "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+            "versao": 1,
+            "substituicoes": 0
+          }
+        }
+      ],
+      "falhas": [],
+      "erros": [],
+      "externos": []
+    }
+  ]
+}

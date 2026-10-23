@@ -9,14 +9,21 @@ vi.mock("@/server/whatsapp/acoes-atendimento", () => ({ assumirAtendimento: vi.f
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ agendarMensagemNoAtendimentoLocal: vi.fn(), agendarMensagemNoAtendimento: vi.fn(), cancelarAgendamentoDoAtendimento: vi.fn(), registrarNotaAtendimento: vi.fn() }));
 vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ listarConvitesEAgendamentos: vi.fn(() => new Promise(() => {})), listarPessoasParaAtendimento: vi.fn(), origemVisivelDaTransferencia: vi.fn() }));
 vi.mock("@/server/whatsapp/operacoes-atendimento", () => ({ encerrarAtendimentoWhatsApp: vi.fn() }));
-vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
+vi.mock("@/server/whatsapp/preferencias", () => ({ alternarFixada: vi.fn(), silenciarConversa: vi.fn(), marcarNaoLida: vi.fn() }));
 
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { Setor } from "@/server/whatsapp/setor";
 import { Modal } from "@/components/Modal";
-import { AcoesAtendimento, DialogoPendentes, DialogoPessoa, DialogoTransferir, quandoPendente, validarQuando } from "./AcoesAtendimento";
+import { useAcoesAtendimento, type PropsAcoesAtendimento, DialogoPendentes, DialogoPessoa, DialogoTransferir, quandoPendente, validarQuando } from "./AcoesAtendimento";
 import { ConversaAberta, textoOrigem } from "./ConversaAberta";
 
+// Inspeciona todos os comandos retornados pelo hook; o menu da tela começa fechado.
+function AcoesAtendimento(p: PropsAcoesAtendimento) {
+ const a=useAcoesAtendimento({...p,aoBuscar(){}});
+ return createElement("div",null,
+  ...[a.assumir,a.transferir].filter(x=>x!==null).map(x=>createElement("button",{key:x.rotulo},x.rotulo)),
+  ...a.menu.map(x=>createElement("button",{key:x.id,disabled:x.desabilitado,title:x.dica},x.rotulo)),a.feedback,a.dialogos);
+}
 type Opcoes = { papeis?: Papel[]; responsavelId?: string | null; finalidade?: Setor; status?: string; linhaComercial?: boolean; donoLinhaId?: string | null };
 const html = (o: Opcoes = {}) =>
   renderToStaticMarkup(createElement(AcoesAtendimento, {
@@ -42,7 +49,7 @@ describe("AcoesAtendimento", () => {
   it("gerente do setor: Atribuir e Encerrar atendimento; Bloquear desabilitado com o aviso do motor", () => {
     const h = html({ papeis: [Papel.GERENTE_COMERCIAL], responsavelId: "outro" });
     expect(h).toContain("Atribuir"); expect(h).toContain("Encerrar atendimento");
-    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Bloquear<\/button>/);
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Bloquear contato<\/button>/);
     expect(h).toContain(AVISO_RECURSO_MOTOR);
   });
   it("vendedor não vê Bloquear", () => { expect(html({ papeis: [Papel.VENDEDOR] })).not.toContain("Bloquear"); });
@@ -50,7 +57,7 @@ describe("AcoesAtendimento", () => {
     expect(htmlTransferir({ setoresDoNumero: ["COMERCIAL", "SECRETARIA"], finalidade: "COMERCIAL" })).toMatch(/Secretaria(?![\s\S]*Comercial)/);
   });
   it("não existe Arquivar; preferências dizem 'só para você'", () => {
-    const h = html({}); expect(h).not.toContain("Arquivar"); expect(h).toContain("só para você");
+    const h = html({}); expect(h).not.toContain("Arquivar"); expect(h).toContain("só você");
   });
   it("encerrado: só as preferências pessoais", () => {
     const h = html({ papeis: [Papel.GERENTE_COMERCIAL], status: "ENCERRADO" });

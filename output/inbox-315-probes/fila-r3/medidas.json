@@ -1,0 +1,1461 @@
+{
+  "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+  "resultados": [
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 320,
+      "painel": "padrao",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320,
+          "bottom": 125
+        },
+        "nome": {
+          "x": 56,
+          "y": 62.625,
+          "w": 56,
+          "h": 19.5,
+          "right": 112,
+          "bottom": 82.125
+        },
+        "status": {
+          "x": 56,
+          "y": 84.125,
+          "w": 42.328125,
+          "h": 18,
+          "right": 98.328125,
+          "bottom": 102.125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 122,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 166,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 172,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 216,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 222,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 258,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 264,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 308,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 320,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-320-padrao-header.png",
+      "sha256": "6931b9a0080936414c835e368d75fd730e0bcdbb7e9ed6e1db516d71f9868e67",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 390,
+      "painel": "padrao",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390,
+          "bottom": 125
+        },
+        "nome": {
+          "x": 56,
+          "y": 62.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 158.34375,
+          "bottom": 82.125
+        },
+        "status": {
+          "x": 56,
+          "y": 84.125,
+          "w": 42.328125,
+          "h": 18,
+          "right": 98.328125,
+          "bottom": 102.125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 192,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 236,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 242,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 286,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 292,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 328,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 334,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 378,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-390-padrao-header.png",
+      "sha256": "daeb92b568b60f3b210cb58c59924d95c63b2d538e5ffb801f3768db2cb66a8b",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1399,
+      "painel": "padrao",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 803,
+          "h": 68,
+          "right": 1399,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 969.171875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1005.171875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 1011.171875,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1129.21875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 1135.21875,
+              "y": 15.5,
+              "w": 167.78125,
+              "h": 36,
+              "right": 1303,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1309,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1345,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1351,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1387,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1399,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-1399-padrao-header.png",
+      "sha256": "545205fa066f830cded647f3d0e6e97116ecfdf978f2ba40dbf9d87c03a90083",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1400,
+      "painel": "aberto",
+      "painelReal": true,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 835,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 871,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 877,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 914,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 920,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 956,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 962,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 998,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1004,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1040,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-1400-aberto-header.png",
+      "sha256": "eb264489435f4540e84485f57b859f4cd7f2a8d55d5f7babeef8953ccb026bca",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1400,
+      "painel": "fechado",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 804,
+          "h": 68,
+          "right": 1400,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 970.171875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1006.171875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 1012.171875,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1130.21875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 1136.21875,
+              "y": 15.5,
+              "w": 167.78125,
+              "h": 36,
+              "right": 1304,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1310,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1346,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1352,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1388,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-1400-fechado-header.png",
+      "sha256": "1f25e0ba6c3656efe0cde9931a7b6bba006d98856487d5569f91a6e76e713076",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1440,
+      "painel": "aberto",
+      "painelReal": true,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 87.46875,
+          "h": 19.5,
+          "right": 743.46875,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 751.46875,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 793.796875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 803.796875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 839.796875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 845.796875,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 882.796875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 888.796875,
+              "y": 15.5,
+              "w": 107.203125,
+              "h": 36,
+              "right": 996,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1002,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1038,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1044,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1080,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-1440-aberto-header.png",
+      "sha256": "cdb064f3c2a1bb32ca026289cc6626c2f221b2b3b2be02a7b623b64a3c8b5ce0",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "light",
+      "width": 1440,
+      "painel": "fechado",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 844,
+          "h": 68,
+          "right": 1440,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 1010.171875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1046.171875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 1052.171875,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1170.21875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 1176.21875,
+              "y": 15.5,
+              "w": 167.78125,
+              "h": 36,
+              "right": 1344,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1350,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1386,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1392,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1428,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "light-1440-fechado-header.png",
+      "sha256": "2cd68c17dc8c79f2b2241869b1f938333087d54144bbb97d0a6f93fff9c4266e",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 320,
+      "painel": "padrao",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 320,
+          "h": 68,
+          "right": 320,
+          "bottom": 125
+        },
+        "nome": {
+          "x": 56,
+          "y": 62.625,
+          "w": 56,
+          "h": 19.5,
+          "right": 112,
+          "bottom": 82.125
+        },
+        "status": {
+          "x": 56,
+          "y": 84.125,
+          "w": 42.328125,
+          "h": 18,
+          "right": 98.328125,
+          "bottom": 102.125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 122,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 166,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 172,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 216,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 222,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 258,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 264,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 308,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 320,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-320-padrao-header.png",
+      "sha256": "86fe7956c3f3bf26709e13ba8319292fa1ffa310f0a939529dbb7b95afd81d7e",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 390,
+      "painel": "padrao",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 0,
+          "y": 57,
+          "w": 390,
+          "h": 68,
+          "right": 390,
+          "bottom": 125
+        },
+        "nome": {
+          "x": 56,
+          "y": 62.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 158.34375,
+          "bottom": 82.125
+        },
+        "status": {
+          "x": 56,
+          "y": 84.125,
+          "w": 42.328125,
+          "h": 18,
+          "right": 98.328125,
+          "bottom": 102.125
+        },
+        "botoes": [
+          {
+            "nome": "Voltar para a lista",
+            "rect": {
+              "x": 10,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 46,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 192,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 236,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 242,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 286,
+              "bottom": 112.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 292,
+              "y": 72.5,
+              "w": 36,
+              "h": 36,
+              "right": 328,
+              "bottom": 108.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 334,
+              "y": 68.5,
+              "w": 44,
+              "h": 44,
+              "right": 378,
+              "bottom": 112.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 390,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-390-padrao-header.png",
+      "sha256": "621360d9d15a067deda32a312d9d224bb7975e957dfa7850c6e1868831611ef3",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1399,
+      "painel": "padrao",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 803,
+          "h": 68,
+          "right": 1399,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 969.171875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1005.171875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 1011.171875,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1129.21875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 1135.21875,
+              "y": 15.5,
+              "w": 167.78125,
+              "h": 36,
+              "right": 1303,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1309,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1345,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1351,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1387,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1399,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-1399-padrao-header.png",
+      "sha256": "65a3d8c12d5a6e349cbfb56a2c26c00d0d284c5d3ec2df477066f3b45b898ef2",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1400,
+      "painel": "aberto",
+      "painelReal": true,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 456,
+          "h": 68,
+          "right": 1052,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 835,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 871,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 877,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 914,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 920,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 956,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 962,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 998,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1004,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1040,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-1400-aberto-header.png",
+      "sha256": "995b8b577d86bd86dc12902b5c2d3bf19e6fd516ec201f8b2b057c223b99c2e0",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1400,
+      "painel": "fechado",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 804,
+          "h": 68,
+          "right": 1400,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 970.171875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1006.171875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 1012.171875,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1130.21875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 1136.21875,
+              "y": 15.5,
+              "w": 167.78125,
+              "h": 36,
+              "right": 1304,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1310,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1346,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1352,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1388,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1400,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-1400-fechado-header.png",
+      "sha256": "6c86235e8242f19cd7d70808e3c1e41c53d3b46898e687c123ec7645a4fbf1ee",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1440,
+      "painel": "aberto",
+      "painelReal": true,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 496,
+          "h": 68,
+          "right": 1092,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 87.46875,
+          "h": 19.5,
+          "right": 743.46875,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 751.46875,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 793.796875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 803.796875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 839.796875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 845.796875,
+              "y": 15.5,
+              "w": 37,
+              "h": 36,
+              "right": 882.796875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 888.796875,
+              "y": 15.5,
+              "w": 107.203125,
+              "h": 36,
+              "right": 996,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1002,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1038,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1044,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1080,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-1440-aberto-header.png",
+      "sha256": "ce258e09832bff5c85c2e7ae185e7c31ff2fb02ac6150694e5833428f7b0a0d5",
+      "falhas": [],
+      "erros": []
+    },
+    {
+      "fonte": "f7df2ea9f9815d1f37e6dadcba7808992901e77f",
+      "tema": "dark",
+      "width": 1440,
+      "painel": "fechado",
+      "painelReal": false,
+      "height": 500,
+      "m": {
+        "header": {
+          "x": 596,
+          "y": 0,
+          "w": 844,
+          "h": 68,
+          "right": 1440,
+          "bottom": 68
+        },
+        "nome": {
+          "x": 656,
+          "y": 15.625,
+          "w": 102.34375,
+          "h": 19.5,
+          "right": 758.34375,
+          "bottom": 35.125
+        },
+        "status": {
+          "x": 766.34375,
+          "y": 16.375,
+          "w": 42.328125,
+          "h": 18,
+          "right": 808.671875,
+          "bottom": 34.375
+        },
+        "botoes": [
+          {
+            "nome": "Buscar na conversa",
+            "rect": {
+              "x": 1010.171875,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1046.171875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Transferir",
+            "rect": {
+              "x": 1052.171875,
+              "y": 15.5,
+              "w": 118.046875,
+              "h": 36,
+              "right": 1170.21875,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Assumir conversa",
+            "rect": {
+              "x": 1176.21875,
+              "y": 15.5,
+              "w": 167.78125,
+              "h": 36,
+              "right": 1344,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Painel do contato",
+            "rect": {
+              "x": 1350,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1386,
+              "bottom": 51.5
+            }
+          },
+          {
+            "nome": "Mais ações da conversa",
+            "rect": {
+              "x": 1392,
+              "y": 15.5,
+              "w": 36,
+              "h": 36,
+              "right": 1428,
+              "bottom": 51.5
+            }
+          }
+        ],
+        "documento": {
+          "w": 1440,
+          "h": 500
+        }
+      },
+      "politica": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "arquivo": "dark-1440-fechado-header.png",
+      "sha256": "0e0f83535cb51a33911620cd1b67ba40d49b6a35935557749594b5603eac6204",
+      "falhas": [],
+      "erros": []
+    }
+  ]
+}

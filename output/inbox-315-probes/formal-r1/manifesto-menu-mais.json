@@ -1,0 +1,228 @@
+{
+  "fonteApp": "efeb0e1f259bb295e4cfb39789c30807820ce337",
+  "fontesHarness": {
+    "capturar-inbox.mjs": "a30053490d35e288c1d3790b60957f7fc900f94bf74c8dafa15b72cb0f9acf71",
+    "nucleo-captura.mjs": "870b486ef9161a6683808354fa631e865ff9afa94cfade50ce40d77086085b8b",
+    "espera-app.mjs": "af5c506d7a945ac79c710a10f63b910bf62e9e6b1c6eaff0b90c57a4df3b13fa",
+    "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce"
+  },
+  "capturas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "app-escuro-desktop-menu-mais.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "9b38dc0d7e6af7d81e8a868983d63da8f45f2644d77f1b317dd378a7a52a8db6"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "app-escuro-tablet-menu-mais.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "009be76b3a074357df8217981d189688472a4373ef062b198493232aabc6eaa8"
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "app-escuro-celular-menu-mais.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "3585bf6e7ac7f5f3a8edf246d22dde8f8cb5ac4da898ce4af4c20b5bcc817cc5"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "app-claro-desktop-menu-mais.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "5eb9fe8d5df921e6c5db65b9c5b8528283845492b559b62cc77b5716d2acdd89"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "app-claro-tablet-menu-mais.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "49d381372dc3997b7430f152004fdc8306ee6282da67a7f16dd3bdd5c82a6875"
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "app-claro-celular-menu-mais.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-mariana-307/mensagens"
+      ],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 0
+      },
+      "sha256": "b35da4af31cc170675719ee74cbfa7ee8098186947d5fa4fd154e3f3dac839f6"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "prototipo-escuro-desktop-menu-mais.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "91c5b89cc42bd7a7f8966f9ab183e1fe575cbe994a28ad03e5702a0481babb68"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "prototipo-escuro-tablet-menu-mais.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "cbe4c071fe15bfba3e9accca755a62ade939df3a3dfbd97e9199c0c1535039b3"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "prototipo-escuro-celular-menu-mais.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "5f675768fe2a541a23cbbfcf645467faa66aeedb26a65bc3797de7a920269cfe"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "menu-mais",
+      "arquivo": "prototipo-claro-desktop-menu-mais.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      },
+      "sha256": "159edf1e6e85b4033715ea5b5f3bfaaae07ad1e550393add8d85404561854bcf"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "menu-mais",
+      "arquivo": "prototipo-claro-tablet-menu-mais.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "c8d1f46bf691141c301d154db8a51803b4cdcad731a34da2ae64f8405943a34b"
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "menu-mais",
+      "arquivo": "prototipo-claro-celular-menu-mais.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      },
+      "sha256": "a06a4e3a2d3f17d176e13d86bed74223b2dc8d043eeb404519f64bf282dc9e1c"
+    }
+  ],
+  "prototipoSha256": "3ef115c8eb95091b0841a69af982442cf8db7d9f0f96bd2b7b9c8f46e6901845"
+}

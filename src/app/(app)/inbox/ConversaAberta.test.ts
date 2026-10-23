@@ -197,3 +197,9 @@ it("decora a thread no fuso usando referência explícita SSR e preserva nota se
  expect((h.match(/aria-label="Opções da mensagem"/g)||[]).length).toBe(1);
  expect(renderToStaticMarkup(createElement(ConversaAberta,props))).toBe(h);
 });
+
+it("315 liga o cabeçalho68 real sem remontar a thread ou repetir a barra antiga",()=>{
+ const h=renderToStaticMarkup(createElement(ConversaAberta,propsConversa({podeEnviar:true})));
+ expect(h).toContain("h-[68px]"); expect(h).toContain('aria-label="Mais ações da conversa"');
+ expect(h).not.toContain('aria-label="Ações do atendimento"');
+});

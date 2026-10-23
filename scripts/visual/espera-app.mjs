@@ -19,6 +19,11 @@ export async function esperarHidratacaoApp(pagina) {
 
 /** Espera o conteúdo identificável da fixture, não somente o contêiner inicial da tela. */
 export async function esperarConteudoApp(pagina, estado, tamanho) {
+  if (estado === "menu-mais") {
+    await pagina.getByRole("menu", { name: "Mais ações da conversa", exact: true }).waitFor({ state: "visible" });
+    await pagina.waitForFunction(semanticaMenuConversaPronto);
+    return;
+  }
   const tituloColuna = { filtros: "Filtrar conversas", "seletor-numero": "Ver conversas de", "nova-conversa": "Nova conversa" }[estado];
   if (tituloColuna) {
     const dialogo = pagina.getByRole("dialog", { name: tituloColuna, exact: true });
@@ -124,4 +129,24 @@ export function semanticaPainelDetalhesPronto() {
   const fechar = [...painel.querySelectorAll('button[aria-label="Fechar painel do contato"]')];
   const botao = fechar[0]?.getBoundingClientRect();
   return fechar.length === 1 && !!botao && Math.abs(botao.width - 36) <= .5 && Math.abs(botao.height - 36) <= .5;
+}
+
+/** Abre somente depois da thread e da assinatura cliente; nunca aciona um comando. */
+export async function abrirMenuConversaApp(pagina, tamanho) {
+  await esperarConteudoApp(pagina, "conversa", tamanho);
+  await esperarHidratacaoApp(pagina);
+  await pagina.getByRole("button", { name: "Mais ações da conversa", exact: true }).click();
+}
+/** Callback DOM autocontido315: menu real no viewport e capacidades indisponíveis legíveis. */
+export function semanticaMenuConversaPronto() {
+  const header = document.querySelector('section[aria-label="Conversa"] > header');
+  const menu = document.querySelector('[role="menu"][aria-label="Mais ações da conversa"]');
+  if (!header || !menu || Math.abs(header.getBoundingClientRect().height - 68) > .5) return false;
+  const r = menu.getBoundingClientRect();
+  if (r.width <= 0 || r.height <= 0 || r.left < -1 || r.right > window.innerWidth + 1 || r.top < -1 || r.bottom > window.innerHeight + 1) return false;
+  const itens = [...menu.querySelectorAll('[role="menuitem"]')];
+  const busca = itens.find(i => i.textContent.includes('Buscar na conversa'));
+  const bloqueio = itens.find(i => i.textContent.includes('Bloquear contato'));
+  return itens.length >= 4 && !!busca?.disabled && busca.textContent.includes('Em breve') && !!bloqueio?.disabled
+    && bloqueio.textContent.includes('Disponível quando o motor próprio da escola entrar em uso.');
 }
