@@ -7,13 +7,17 @@ const referencia = (nome) => path.join(raiz, "docs", "planejamento", "inbox-prot
 export const TAMANHOS = Object.freeze({ desktop: [1440, 900], tablet: [1024, 768], celular: [390, 844] });
 export const TEMAS = Object.freeze(["escuro", "claro"]);
 export const ESTADOS = Object.freeze({
+  carregando: { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Fallback real da página não é desenhado no protótipo." },
+  "painel-erro": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Falha de transporte do painel não é desenhada no protótipo." },
+  "thread-erro": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Falha de transporte da thread não é desenhada no protótipo." },
+  "painel-vazio": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Ausência legítima autorizada de oportunidade não tem comportamento equivalente no protótipo." },
   nota: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-nota-interna.png") },
   "busca-conversa": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false },
   conversa: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-escuro-admin-desktop.png") },
   "menu-mais": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-menu-mais.png") },
   "painel-detalhes": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-painel-detalhes.png") },
   "painel-fechado": { tamanhos: ["desktop"], prototipo: true },
-  "sem-selecao": { tamanhos: ["desktop"], prototipo: false },
+  "sem-selecao": { tamanhos: ["desktop", "tablet", "celular"], prototipo: false, motivoSemReferencia: "Sem seleção E1 não tem referência funcional equivalente no protótipo." },
   "humano-compositor": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-claro-admin-desktop-humano-compositor.png") },
   filtros: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-estado-filtros.png") },
   "seletor-numero": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true },

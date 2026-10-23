@@ -69,7 +69,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 136 PNGs: 72 do app e 64 do protótipo. O painel do
+`--estado todos` produz 164 PNGs: 100 do app e 64 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -171,3 +171,20 @@ A prontidão do app exige cabeçalho68, duas abas com seleção coerente/tabpane
 No protótipo, nota usa sua aba original e placeholder Nota interna · @ para mencionar; a menção é apenas diferença histórica da referência, não funcionalidade implementada no app. A CLI não altera HTML da referência, não aciona Enviar, Assumir ou agenda. AnonDOM392 apósinterações/antesfoto, manifesto com fonteApp/hashes4módulos, hidrataçãoSSE/guardReact/rede continuam intactos. Produto e harness têm fontes distintas e precisam ser registrados; não atribuir capturas anteriores ao novo compositor.
 
 Geometria/foco/scroll/identidade real a320×500, estados de permissão, idempotência e resultados tardios precisam de complementos coordenados e QA independente. Os testes unitários de prontidão não substituem navegador real. Formal/browser aguardam integração coordenadaC2/#402 e preview do integrador; nenhum browser/DB foi usado ao preparar este deltaCLI.
+
+
+## Estados #319 (harness preparado; formal aguarda composiçãoC2/Ready)
+
+Estados APP-only carregando, painel-erro, thread-erro e painel-vazio, além de sem-selecao ampliado aos três tamanhos. Lista-vazia mantém seus6APP+6refs reais. O recorte319 consiste em36APP+6refs=42PNG (1440×900,1024×768,390×844;dois temas). Complemento320×500 dos6estados/dois temas será privado,12APP adicionais, sem mudar TAMANHOS global. A matriz global164 preserva nota/humano-compositor317, busca316, autoria314 e estados313/315/318.
+
+Para o recorte, executar os cinco estados APP-only com --alvo app e lista-vazia com --alvo ambos, sempre um estado por invocação. Preservar tmp/visual/manifesto.json e os arquivos em diretório próprio antes da chamada seguinte. O manifesto explicita referenciaFuncionalPrototipo:null e motivoSemReferencia para os cinco estados sem referência funcional; não fabrica HTML/props/pixels de protótipo. A referência funcional existente listEmpty continua real e passa por anonimizaçãoDOM392.
+
+Carregando autentica, abre /home e navega pelo router real para /inbox com busca única sob latênciaCDP3000ms; exige loading.tsx real, anúncio/título únicos e casca contida. Fotografa o fallback antes de aguardar hidratação do Inbox. Após a foto, retira a latência, espera hidratação/SSE e confirma mesmoTimeOrigin; não aborta propositalmente o request. É fallback observado sob latência, não medição de chunks/streaming. Nenhum HTML/RSC/resposta de negócio é fabricado.
+
+Painel-erro/thread-erro injetam500 só no GETsemquery do endpoint exato de Beatriz/painel ou mensagens e origem local. Apenas a mesma identidade Request efetivamente interceptada pode classificar sua resposta500 como diagnóstico esperado. POST, outro contato/path/origem/query ou qualquer outro status não são aceitos. Todo HTTP>=400 restante reprova; React/hidratação/pageerror/externos/requestfailed e classificador existente de GET substituído continuam ativos. A foto exige alerta público/retryenabled inteiros no viewport; no painel móvel abre a única instância após hidratação. Não faz retry/envio pela CLI; complementos privados provarão retry real200 e teclado sem refoco tardio apósC2.
+
+Painel-vazio usa fakeJoão por padrão quando INBOX_VISUAL_EMAIL não foi definido; os demais estados usam fakeAdmin. Override de email continua respeitado e pode reprovar preflight se enxergar uma oportunidade. Antes de abrir a UI, GETreal200 autorizado deve retornar objetoCOMERCIAL com oportunidade:null;500/404/403/401/null ou oportunidade visível falham em vez de virar ausência. Só então espera aviso neutro semalerta no painel. Não há seed/SQL ou transformação de JSON.
+
+Sem-selecao exige lista/hidratação e painel ausente. A área central é visível a partir de960, enquanto no celular a vista lista permanece com a conversa oculta; não força CSS para fotografar estado inexistente. Triagem não estava na fixture preliminar472: complemento com produtor real será fase coordenada separada. Esperas originais317/316 ficam byteiguais ao handoffbf4ad; somente novo helper estados-inbox/declarações e ligação da CLI tratam319. Todos os5módulos do harness têm SHA no manifesto. CLI exporta abrirApp para teste de fluxo sem executar main ao importar; chamada direta e --help permanecem iguais.
+
+Nenhuma captura final319 foi produzida por este delta.29PNG preliminares472 continuam históricos com fonte/limites explícitos, sem atribuição ao produto317/C2. Formal/inspeção/allowlist/QA/global/publicação aguardam janela do integrador.

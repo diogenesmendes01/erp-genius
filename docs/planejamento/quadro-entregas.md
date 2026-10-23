@@ -5628,3 +5628,8 @@ Evidências em output/inbox-317-319-composicao-checkpoint.md.
 ### #317 — CLI preparada separadamente, formal pendente
 
 Produto a86c9ade imutável enviado ao TESTER. RED8a9d756/6→GREENff1da18arquivos51testes; TSC38512heap8192/lint8fontes be4324/diffcheck c07e2e saída0 Node22. Estado nota12PNG e humano+nota24 formais planejadas, total136 CLI preservando estados prévios. Espera317 exige abas/campo/alvos44/header68/viewport; aviso footer separado de notas reais314, sem relaxar comandos/status/mídia. Sem browser/DB/PNG, nenhuma geometria real alegada. Formal/QA/global aguardam C2/#402 e janela ROOT. Produto e harness têm fontes distintas; capturas antigas não contam para317.
+
+
+### #319 — harness após handoff317, formal aguardaC2
+
+OWN93a5+bf4ad→dbb64b23, conflito somentequadro preservando históricos. DeltaCLI/helper/ESTADOS/testes/README, nenhum srcprodutivo; nota317/esperas/anonDOM intactos. REDs337787/35ae08/e7933f e CLI9321ef preservados; ligaçãoCRLF corrigida após lint36bf69. Recorte41761 saída0/15files307semfiltros; TSC82627 tuplemock falhou2 e após tipo sófixture TSCae2ba3heap8192 saída0; a1c7082files14+lint11zeroavisos saída0.42PNG+12mobile planejados, N/Aexplícito; nenhuma nova captura formal ouhomologação. C2#402/Ready/fixtureTriagem/complementos/TESTER/globalROOT/publicação pendentes. Sem ownfull/DB/preview/install/envio.

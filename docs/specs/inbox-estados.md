@@ -36,3 +36,8 @@ Sem schema/deps/package/lock, SQL/seed, servidor iniciado pelo DEV, transporte e
 ## Checkpoint preliminar de navegador472
 
 Em1440×900 claro/320×500 escuro foram observados fallback real sob latência, erros500 públicos/retry real200, ausência legítima comprovada porGET200 e paginação até157itens decorados preservando notas/pin/foco.29PNG inspecionados permanecem locais com allowlist explícita em output/inbox-319-preliminar-allowlist.json. Métricas, negativos e limites no report/evidencias-preliminares. A fixture não contémTriagem; sua ordem visual presente não foi comprovada. O scroll próprio do painel/thread permite alcançar retry porTab, sem alterar documento; estado inicial e alcançado separados. Fonte472 ainda antecede composição317/C2#402: não é formal final nem homologação/global.
+
+
+## Harness319 após handoff317
+
+Composição produtiva93a5 e harness317bf4ad incorporados noOWN; delta319 não modifica app. CLI acrescenta carregando/painel-erro/thread-erro/painel-vazio, sem-seleção nos3tamanhos e mantém lista-vazia:42PNG no recorte,12APP320×500 adicionais privados. Cinco estados têm N/Afuncional explícito; só lista-vazia possui referência do protótipo. Helper testado aceita500 somente do GETlocal exato efetivamente interceptado, certifica vazio com200real e observa fallbackreal sob latência sem fabricarHTML/RSC. Prontidão valida estado/viewport; carregar página só espera hidratação depoisfoto. Nota317/busca316/anonDOM392/guardas existentes preservados. TDD/gates e negativos no report. C2#402, Ready, formal, inspeção/QA/global/publicação ainda pendentes.
