@@ -1,0 +1,662 @@
+{
+  "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+  "natureza": "Complemento de interação adotado, anterior à integração de fontes391; não substitui formal atual.",
+  "politica": "Somente20PNGs fictícias inspecionadas. Sem raw/RSC/cookies/logs/trace. Nenhum submit/envio/SQL direto. Imagens locais, zero binários novos emGit.",
+  "contextos": [
+    {
+      "tema": "escuro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500,
+      "execucao": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z",
+      "checks": [
+        {
+          "estado": "filtros",
+          "geometria": {
+            "rect": {
+              "x": 0,
+              "y": 189,
+              "width": 390,
+              "height": 311,
+              "top": 189,
+              "right": 390,
+              "bottom": 500,
+              "left": 0
+            },
+            "corpo": 187,
+            "viewport": {
+              "width": 390,
+              "height": 500
+            }
+          }
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero",
+          "geometria": {
+            "rect": {
+              "x": 0,
+              "y": 217.25,
+              "width": 390,
+              "height": 282.75,
+              "top": 217.25,
+              "right": 390,
+              "bottom": 500,
+              "left": 0
+            },
+            "corpo": 184,
+            "viewport": {
+              "width": 390,
+              "height": 500
+            }
+          }
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa",
+          "geometria": {
+            "rect": {
+              "x": 0,
+              "y": 155,
+              "width": 390,
+              "height": 345,
+              "top": 155,
+              "right": 390,
+              "bottom": 500,
+              "left": 0
+            },
+            "corpo": 290,
+            "viewport": {
+              "width": 390,
+              "height": 500
+            }
+          }
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "selecaoMobile": "Beatriz",
+          "retornoLista": true
+        }
+      ],
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "rotaFinal": "/inbox",
+      "foco": "Buscar conversas",
+      "inspecao": "favorável"
+    },
+    {
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "execucao": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z",
+      "checks": [
+        {
+          "estado": "filtros",
+          "geometria": {
+            "rect": {
+              "x": 236,
+              "y": 56,
+              "width": 347,
+              "height": 335,
+              "top": 56,
+              "right": 583,
+              "bottom": 391,
+              "left": 236
+            },
+            "corpo": 221,
+            "viewport": {
+              "width": 1440,
+              "height": 900
+            }
+          }
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero",
+          "geometria": {
+            "rect": {
+              "x": 236,
+              "y": 72,
+              "width": 347,
+              "height": 282.75,
+              "top": 72,
+              "right": 583,
+              "bottom": 354.75,
+              "left": 236
+            },
+            "corpo": 184,
+            "viewport": {
+              "width": 1440,
+              "height": 900
+            }
+          }
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa",
+          "geometria": {
+            "rect": {
+              "x": 236,
+              "y": 56,
+              "width": 347,
+              "height": 383,
+              "top": 56,
+              "right": 583,
+              "bottom": 439,
+              "left": 236
+            },
+            "corpo": 328,
+            "viewport": {
+              "width": 1440,
+              "height": 900
+            }
+          }
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "estado": "filtros",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "seletor-numero",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "nova-conversa",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        }
+      ],
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "rotaFinal": "/inbox",
+      "foco": "Buscar conversas",
+      "inspecao": "favorável"
+    },
+    {
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900,
+      "execucao": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z",
+      "checks": [
+        {
+          "estado": "filtros",
+          "geometria": {
+            "rect": {
+              "x": 236,
+              "y": 56,
+              "width": 347,
+              "height": 335,
+              "top": 56,
+              "right": 583,
+              "bottom": 391,
+              "left": 236
+            },
+            "corpo": 221,
+            "viewport": {
+              "width": 1440,
+              "height": 900
+            }
+          }
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero",
+          "geometria": {
+            "rect": {
+              "x": 236,
+              "y": 72,
+              "width": 347,
+              "height": 282.75,
+              "top": 72,
+              "right": 583,
+              "bottom": 354.75,
+              "left": 236
+            },
+            "corpo": 184,
+            "viewport": {
+              "width": 1440,
+              "height": 900
+            }
+          }
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa",
+          "geometria": {
+            "rect": {
+              "x": 236,
+              "y": 56,
+              "width": 347,
+              "height": 383,
+              "top": 56,
+              "right": 583,
+              "bottom": 439,
+              "left": 236
+            },
+            "corpo": 328,
+            "viewport": {
+              "width": 1440,
+              "height": 900
+            }
+          }
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "estado": "filtros",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "seletor-numero",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        },
+        {
+          "estado": "nova-conversa",
+          "cliqueLinhaFecha": true,
+          "focoConversa": true
+        }
+      ],
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "rotaFinal": "/inbox",
+      "foco": "Buscar conversas",
+      "inspecao": "favorável"
+    },
+    {
+      "tema": "claro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500,
+      "execucao": "output/inbox-313-visual/complemento-publico-r6-v3-claro-curto-2026-10-23T03-15-40.411Z",
+      "checks": [
+        {
+          "estado": "filtros",
+          "geometria": {
+            "rect": {
+              "x": 0,
+              "y": 189,
+              "width": 390,
+              "height": 311,
+              "top": 189,
+              "right": 390,
+              "bottom": 500,
+              "left": 0
+            },
+            "corpo": 187,
+            "viewport": {
+              "width": 390,
+              "height": 500
+            }
+          }
+        },
+        {
+          "estado": "filtros",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "seletor-numero",
+          "geometria": {
+            "rect": {
+              "x": 0,
+              "y": 217.25,
+              "width": 390,
+              "height": 282.75,
+              "top": 217.25,
+              "right": 390,
+              "bottom": 500,
+              "left": 0
+            },
+            "corpo": 184,
+            "viewport": {
+              "width": 390,
+              "height": 500
+            }
+          }
+        },
+        {
+          "estado": "seletor-numero",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "estado": "nova-conversa",
+          "geometria": {
+            "rect": {
+              "x": 0,
+              "y": 155,
+              "width": 390,
+              "height": 345,
+              "top": 155,
+              "right": 390,
+              "bottom": 500,
+              "left": 0
+            },
+            "corpo": 290,
+            "viewport": {
+              "width": 390,
+              "height": 500
+            }
+          }
+        },
+        {
+          "estado": "nova-conversa",
+          "tab": true,
+          "shiftTab": true,
+          "escape": true,
+          "ctrlK": true,
+          "metaK": true
+        },
+        {
+          "urlAplicar": "http://localhost:3111/inbox?setor=SECRETARIA&status=EM_ATENDIMENTO"
+        },
+        {
+          "urlBuscaChip": "http://localhost:3111/inbox?resp=eu&busca=Mariana"
+        },
+        {
+          "selecaoMobile": "Beatriz",
+          "retornoLista": true
+        }
+      ],
+      "sse": {
+        "ativos": 1,
+        "maximo": 1,
+        "criados": 2
+      },
+      "rotaFinal": "/inbox",
+      "foco": "Buscar conversas",
+      "inspecao": "favorável"
+    }
+  ],
+  "capturas": [
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-curto-filtros.png",
+      "sha256": "7f0635908186f430ac82adb2d9dd412a1cdb90b506f163a3bb8754a8bb3e2f64",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-curto-seletor-numero.png",
+      "sha256": "753a0c50658f394b62353c7a6993ca6f514dccb01310b75cade4b06a7961f350",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-curto-nova-conversa.png",
+      "sha256": "ad93330778b6ff1404d80933e56672f2b48fb6d536fdd0603f908fea031965cd",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-curto-filtros-aplicados.png",
+      "sha256": "1fb4137e9b6fff6996a54f13d99ebb25356073a410e45fc7ab304062e9d2c96c",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-curto-navegacao-final.png",
+      "sha256": "3031394b0c8ab53860389ad15495339bf8436d66579b45113efb2e8ed2775523",
+      "tema": "escuro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-desktop-filtros.png",
+      "sha256": "6a4dafb89cc43c668d71fd7313c9a639543d426f855c779e85ddd2d7b791aa95",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-desktop-seletor-numero.png",
+      "sha256": "f098e6b49fcf7f0a85815cea97767cd4a5824fae4d8e68cbb846dfe9fb1a8533",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-desktop-nova-conversa.png",
+      "sha256": "61188b48479f1b2896d3955d486cdc7039e0d8d18dd041c9d0cfb1e82e61c97d",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-desktop-filtros-aplicados.png",
+      "sha256": "5f6597f30649df067bc2ff5a05313ba21dd07ea5ad403898a0d3940c00c24db8",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/escuro-desktop-navegacao-final.png",
+      "sha256": "9e99f8ae337bf7da8973ec05b47df01266212ca9610b776bc0a78eeaf9a9e45a",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/claro-desktop-filtros.png",
+      "sha256": "7f0f62cdf0d79340fb714c9cbf3f15df7f3cac0ed1f83dc6f72ff03ae7b39016",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/claro-desktop-seletor-numero.png",
+      "sha256": "8a854b624b73176a74925169da403f5138e26b8cf88c33b8c921bb38c9825a75",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/claro-desktop-nova-conversa.png",
+      "sha256": "e8f2df06ef8f04a81b1b5ce323820081700266c92e3551bd9dc029c596c21fe5",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/claro-desktop-filtros-aplicados.png",
+      "sha256": "724b6e8dc0a816511344068978ea00bf668ce099ffb837674ee885588789fd8c",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/claro-desktop-navegacao-final.png",
+      "sha256": "3bd1b62048b8c4ec94ee6933d7449eb9e5f5a5c6266124a70f16def6168fa31b",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v3-claro-curto-2026-10-23T03-15-40.411Z/claro-curto-filtros.png",
+      "sha256": "48722cc943536636d3d0ed476c0e0a0c03d30180d0d2d1fbcf895b85f1a215da",
+      "tema": "claro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v3-claro-curto-2026-10-23T03-15-40.411Z/claro-curto-seletor-numero.png",
+      "sha256": "e96abf5a9918b498c207b01c940c04154d638b12a53b3a805b3a758959de5eaf",
+      "tema": "claro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v3-claro-curto-2026-10-23T03-15-40.411Z/claro-curto-nova-conversa.png",
+      "sha256": "7ab6ede5a7508eef1697c4a6e4571da31185c3d64ec2a88f1e73c88d163a7b91",
+      "tema": "claro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v3-claro-curto-2026-10-23T03-15-40.411Z/claro-curto-filtros-aplicados.png",
+      "sha256": "d32563a5e8d16cd983bbbbf697288c56803a2b4fb747f6af87b29eaa26e894a0",
+      "tema": "claro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    },
+    {
+      "fonte": "f51c42a27300ae0feae7ccc1c764350fd641da22",
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v3-claro-curto-2026-10-23T03-15-40.411Z/claro-curto-navegacao-final.png",
+      "sha256": "e792ba6b02460184439f12ef698f3903d63505d996230cd3bc39d04615aa4118",
+      "tema": "claro",
+      "tamanho": "curto",
+      "width": 390,
+      "height": 500
+    }
+  ],
+  "exclusoes": [
+    {
+      "arquivo": "output/inbox-313-visual/complemento-publico-r6-v2-2026-10-23T03-11-04.755Z/claro-curto-navegacao-final.png",
+      "sha256": "890125dc961d199ca5266e6e6a677fa767523fbaa83ac6057ac719074d5ad41d",
+      "motivo": "foto durante fechamento CSS do Drawer; execução0 não garante imagem final. Preservada, substituída por V3 aguardando animações finitas e geometria final."
+    }
+  ]
+}

@@ -39,3 +39,7 @@ Referências: [funções oficiais do Inbox](../planejamento/funcoes-do-inbox.md)
 ## Experimento de leitura automática sem revalidar a árvore
 
 Follow-up técnico da integração313, sujeito a A/B de navegação rápida. marcarConversaLida e marcarAtendimentoLido manuais continuam invalidando exatamente uma vez, incluindo fallback pessoal em falha compartilhada; marcarLida isolada também permanece. Os novos wrappers automáticos fixam internamente revalidar=false e não recebem essa opção do cliente. As mesmas verificações de sessão/escopo e escritas operacionais são compartilhadas. Inbox automático conserva GET lista/chips, selo finally e proteçõesR6; nenhum transporte ou política de autorização mudou. Integração dirigida2arquivos20testes e unitáriosdirigidos aprovados, mas a experiência do browser/global ainda não autoriza adoção definitiva. Relatóriooutput/inbox-313-report.md.
+
+### Adoção técnica na integração313
+
+Após A/B no mesmo banco restaurado e ambiente, e revisão independente f51, o integrador adotou o caminho automático sem invalidação de rota. A navegação pública rápida e a resposta de leitura antiga retida até após a URL nova passaram. Os exports legados e suas invalidações continuam preservados. A adoção técnica não substitui a regressão global/QA do agregado atual; evidências sanitizadas e negativos estão no ledger313.
