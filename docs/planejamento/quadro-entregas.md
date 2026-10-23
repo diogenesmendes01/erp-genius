@@ -4975,3 +4975,13 @@ Mergec710 incorpora fonte/tokens #391 da main, sem mudar Inbox/servidor310.
 Composição oito arquivos / 135 testes e TSC29938 terminaram0. Não atribuir
 o full anterior ao head novo. Parecer final e CI global contra main pendentes;
 sem novo browser, pacote/lock/schema ou envio. output/pr394-qa/revisao.md.
+## Inbox — retirar reintrodução de capturas298 já arquivadas
+
+Main5f476a19/squash394 voltou a conter64PNG298 ausentes no head3819e5 e
+squash381ea60. Limpeza técnica isolada sobre main:64arquivos/3.595.413B
+comparados por tamanho/SHA256/GitOID com ZIP381 autorizado, todosiguais;
+ZIPSHA26a30c20... reconferido, sem novo upload. Cópias físicas movidas para
+backup próprio com limites/hashes validados; histórico preservado. Zero
+delta src/scripts/prisma/package/lock,sem referência literal aosPNG no código.
+Report/manifesto output/pr-qa-cleanup-298. CI/TESTER exato ainda pendentes;
+preservar ausência nas próximas integrações, sem reescrita de histórico.
