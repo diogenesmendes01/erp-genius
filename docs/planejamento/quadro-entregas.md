@@ -5092,3 +5092,55 @@ excluída pela configuração, não repetida. Relatório output/inbox-314-global
 Próximo commit somente documental; publicação do PR e CI/merge permanecem
 separados. Não marcar314 integrada antes da main e fechamento da issue.
 - **Checkpoint313 com baseR6/main/foco:** mergec207 sobre9c porcontrato, preservando syncURL/ACK150/foco/ref382/Virtual314 e incorporando entradasPendentes/contadorR6/OptOut/finally311. Guard381 RED integração1 e regressão2→GREEN apenas6tokens do contador passivo, negativas Salvar/onClick/spread/padding; semexceção porarquivo/analisadornovo/UIalterada. Final97149 EXIT0/99arquivos1015testes, TSC21762heap8192/lint10fontes0avisos EXIT0. Formal52+virtual18 históricas9c inspecionadas/fontes anotadas, semPNGcommit; nãoatribuídas ao mergeR6. TESTERestático9c236testes0; hardnav staleMPANext documentado emresumo causal sanitizado, repetiçãoatual/global/QAvisual/depósitoremoto pendentes. Semhomologação/publicação presumida.
+
+### Publicação #314 e contagem de integrações — 23/10/2026
+
+PR398 aberto e anexado: https://github.com/diogenesmendes01/erp-genius/pull/398.
+Head aa366a0c06a9b4ec72076420594745513f888c59, base c207079d; ambos enviados.
+TESTER confirmou o head final no próprio worktree: delta de quatro documentos
+desde cf1, árvores src/scripts/prisma/package/lock idênticas, estendendo o
+parecer favorável9/93. Gates globais do código cf1:865/6773, typegen/TSC/lint
+com saída0 e40avisos herdados. Revisão externa/CI/integração ainda pendentes.
+
+GitHub confirmou #300 fechada às02:51:30UTC após squash do PR386 na
+main7982e415, com cinco checksCI verdes e parecer incremental favorável.
+Total5/81issues integradas:298,299,300,302,303. Dezesseis issues têm PR
+(298–312 e314); abrir PR não significa concluir a issue.
+
+### #318 — QA independente e evidências arquivadas
+
+TESTER favorável no freeze156d1a6f:13arquivos/138testes próprios,12contextos
+normais24PNG,20passos resize e6contextos extremos18PNG, todos finais exit0.
+Nome97/15tags e Aria fictícia alcançáveis por teclado/rolagem em altura500;
+nenhum envio/aprovação/opt-out acionado. AllowlistDEV113 e TESTER48 com
+hashes/tamanhos conferidos. Fonte pós-baseR6 d31f4213 preserva a composição
+318 e os hooks de a208; gates de composição A52/616/TSC/lint0. Não estender
+a QA visual histórica156 à leitura/SSE posterior sem verificação própria.
+
+ZIP sanitizado142PNG/167arquivos:15.982.197bytes, asset667770036,
+SHA256c8e08228150f9d09bef0efe100b846cb3fec849987076d9b515cef0cd76fec8b.
+Upload/download/hash confirmados na release DRAFT421321214, sem publicação.
+Link: https://github.com/diogenesmendes01/erp-genius/releases/download/untagged-fa5a4dab1bbf8d54cb05/inbox-318-evidencias-156d.zip.
+Só allowlists positivas; zero HTML/log/negativos/seeds/snapshots/RSC no ZIP,
+nenhum PNG novo no Git. Relatório output/inbox-318-final-review-tester.md.
+Snapshots A e TESTER restaurados por hashes após parar os previews; dados
+canônicos preservados. Global agregado e PR318 aguardam a base313 corrente.
+
+### #313 — bloqueio de navegação e experimento coordenado
+
+Agregado de preparação e698693f conserva os executáveis do freeze B a208.
+O browser na base atual ainda reproduz Link público para /inbox retornando
+indevidamente a Beatriz. Patch RSC antigo entra com mpa=true antes da guarda
+de árvore no Next16.3.5; nenhuma alteração de Next/node_modules foi feita.
+Não há PR313 nem homologação presumida desse fluxo. B fará TDD e A/B do
+caminho automático de leitura sem revalidatePath, preservando integralmente
+os exports manuais, permissões, preferência pessoal, motor e falha parcial.
+A mudança só será adotada se o mesmo fluxo rápido passar sem waits artificiais.
+
+Snapshot B preservado e roundtrip9c8077 exit0:424tabelas/1372linhas, hashes
+iguais; perfildev-gravacoes exclusivo. Fixture real B é307 (3mensagens/1nota),
+lista150 conservada. A premissa inicial9/4 de A/tester foi recusada antes de
+qualquer alteração; diagnóstico confirmado e validação corrigida para B.
+Uma suíte de integração B por vez, depois restauro pelo integrador antes
+do próximo preview. A315 trabalha somente header/menu/componentes, sem
+alterar hooks ou backend de B; no máximo duas frentes de implementação.
