@@ -11,7 +11,7 @@ describe("cabeçalho315",()=>{
  });
  it("voltar continua na vista única até960; alvo móvel não diminui",()=>{
   const html=h(); expect(html).toMatch(/aria-label="Voltar para a lista"[^>]*min-\[960px\]:hidden/);
-  expect(html).toContain("max-sm:min-h-11"); expect(html).toContain("min-[1200px]:inline");
+  expect(html).toContain("max-sm:min-h-11"); expect(html).toContain("min-[1200px]:[@container(min-width:576px)]:inline");
  });
  it("busca indisponível até316 e painel efetivo único com corte1400",()=>{
   const html=h(); expect(html).toMatch(/disabled=""[^>]*aria-label="Buscar na conversa"|aria-label="Buscar na conversa"[^>]*disabled=""/);
@@ -22,4 +22,10 @@ describe("cabeçalho315",()=>{
   const html=h({atendimento:{...at,grupo:true} as PropsCabecalhoConversa["atendimento"],acoes:{assumir:null,transferir:null,menu:[],dialogos:null,feedback:null,abrirAgendar:null}});
   expect(html).toContain("Conversa em grupo"); expect(html).not.toContain("Assumir"); expect(html).not.toContain("Transferir");
  });
+});
+
+it("rótulos consideram largura útil local sem alterar shell ou nomes acessíveis",()=>{
+ const html=h(); expect(html).toContain("[container-type:inline-size]");
+ expect(html).toContain("[@container(min-width:576px)]"); expect(html).toContain("[@container(min-width:432px)]");
+ expect(html).toContain('title="Transferir"'); expect(html).toContain('title="Assumir conversa"');
 });
