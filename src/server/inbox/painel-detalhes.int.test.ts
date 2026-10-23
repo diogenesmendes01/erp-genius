@@ -99,8 +99,8 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     const d = await carregarDetalhesPainel(c.dono, c.a.id);
     expect(d?.pessoa).toMatchObject({ id: c.pessoa.id, empresa: { id: empresa.id, nome: empresa.nome } });
     expect(d?.b2b).toMatchObject({ empresa: { id: empresa.id }, decisor: true });
-    expect(d?.b2b?.participantes.find(p => p.pessoaId === interlocutor.id)).toEqual({ pessoaId: interlocutor.id, nome: interlocutor.nome, papel: "DECISOR", cargo: "RH", naConversa: true, hrefConversa: null });
-    expect(d?.b2b?.participantes.find(p => p.pessoaId === c.pessoa.id)?.naConversa).toBe(false);
+    expect(d?.b2b?.participantes.find(p => p.pessoaId === interlocutor.id)).toEqual({ pessoaId: interlocutor.id, nome: interlocutor.nome, papel: "DECISOR", cargo: "RH", naConversa: true, hrefConversa: "/inbox?c=" + c.a.id });
+    expect(d?.b2b?.participantes.find(p => p.pessoaId === c.pessoa.id)).toMatchObject({ naConversa: false, hrefConversa: null });
     expect(await carregarCabecalhoPainel(c.dono, c.a.id)).toMatchObject({ pessoaId: c.pessoa.id, quadrado: true, subtitulo: "Falando com Interlocutor fictício · Decisor", capacidades: { verEmpresa: false } });
     await prisma.contatoWhatsApp.update({ where: { id: c.contato.id }, data: { pessoaId: null } });
     expect((await carregarDetalhesPainel(c.dono, c.a.id))?.b2b).toMatchObject({ decisor: null });
@@ -191,7 +191,7 @@ describe("consultas autorizadas da ficha por atendimento", () => {
     expect(detalhes?.oportunidade).toMatchObject({ id: c.op.id, b2b: true });
     expect(detalhes?.b2b).toEqual({ empresa: { id: empresa.id, nome: empresa.nome }, decisor: true, participantes: expect.arrayContaining([
       { pessoaId: pessoa.id, nome: pessoa.nome, papel: "INFLUENCIADOR", cargo: pessoa.cargo, naConversa: false, hrefConversa: null },
-      { pessoaId: interlocutor.id, nome: interlocutor.nome, papel: "DECISOR", cargo: interlocutor.cargo, naConversa: true, hrefConversa: null },
+      { pessoaId: interlocutor.id, nome: interlocutor.nome, papel: "DECISOR", cargo: interlocutor.cargo, naConversa: true, hrefConversa: "/inbox?c=" + c.a.id },
     ]) });
     expect(detalhes?.b2b?.participantes).toHaveLength(2);
     expect(detalhes?.campos).toEqual([]); // A exceção contextual não libera os campos personalizados do CRM.

@@ -1,6 +1,7 @@
 import { Papel } from "@prisma/client";
 import Link from "next/link";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { atendimentoParaAbrir } from "@/server/inbox/atalhos";
 import { prisma } from "@/lib/prisma";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -35,6 +36,7 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
     idAberto ? obterOportunidade(idAberto, usuario) : Promise.resolve(null),
     consultarPreferenciaFusoEquipe(),
   ]);
+  const conversa = oportunidade ? await atendimentoParaAbrir(usuario, { leadId: oportunidade.id, pessoaId: oportunidade.pessoaId }) : null;
   const historico = oportunidade ? ((await historicoOportunidade(oportunidade.id, usuario)) ?? []) : [];
 
   const total = colunas.reduce((soma, c) => soma + c.total, 0);
@@ -72,7 +74,7 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
         filtros={filtros}
         dirOrdem={dir}
         salvos={salvos.map((s) => ({ id: s.id, nome: s.nome, filtros: s.filtros }))}
-        aberta={oportunidade ? { oportunidade, historico } : null}
+        aberta={oportunidade ? { oportunidade, historico, conversa } : null}
         oportunidadeNaoEncontrada={!!idAberto && !oportunidade}
         capacidades={capacidades}
         podeAtribuir={podeAtribuir}

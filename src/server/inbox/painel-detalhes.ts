@@ -1,4 +1,6 @@
 import type { EtapaLead, OrigemCanal, PapelParticipante, Prisma } from "@prisma/client";
+import { hrefConversa } from "@/lib/href-conversa";
+import { atendimentosParaPessoas } from "./atalhos";
 import { prisma } from "@/lib/prisma";
 import { PAPEL_PARTICIPANTE_LABEL } from "@/lib/labels";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
@@ -110,10 +112,11 @@ export async function carregarDetalhesPainel(u: UsuarioSessao, atendimentoId: st
     const autoria = autoriaDosCampos(eventos);
     campos = ficha.map(campo => ({ ...campo, ia: autoria.get(campo.id) ?? false }));
   }
+  const conversas = op?.b2b && op.empresa ? await atendimentosParaPessoas(u, op.participantes.map(p => p.pessoaId)) : new Map();
   return {
     pessoa: pessoa ? { id: pessoa.id, nome: pessoa.nome, email: pessoa.email, cidade: pessoa.cidade, cargo: pessoa.cargo, linkedin: pessoa.linkedin, origemCanal: pessoa.origemCanal, telefone: a.conversa.contato.telefoneE164, empresa: pessoa.empresa } : null,
     oportunidade: op ? { id: op.id, titulo: op.nome, produto: op.planoPrevisto, valor: op.valorPrevisto?.toFixed(2) ?? null, moeda: op.pais?.moedaLocal ?? null, etapa: op.etapa, b2b: op.b2b } : null,
-    b2b: op?.b2b && op.empresa ? { empresa: op.empresa, participantes: op.participantes.map(p => ({ pessoaId: p.pessoaId, nome: p.pessoa.nome, papel: p.papel, cargo: p.pessoa.cargo, naConversa: p.pessoaId === a.conversa.contato.pessoaId, hrefConversa: null })), decisor: interlocutor ? interlocutor.papel === "DECISOR" : null } : null,
+    b2b: op?.b2b && op.empresa ? { empresa: op.empresa, participantes: op.participantes.map(p => ({ pessoaId: p.pessoaId, nome: p.pessoa.nome, papel: p.papel, cargo: p.pessoa.cargo, naConversa: p.pessoaId === a.conversa.contato.pessoaId, hrefConversa: conversas.has(p.pessoaId) ? hrefConversa(conversas.get(p.pessoaId)!.atendimentoId) : null })), decisor: interlocutor ? interlocutor.papel === "DECISOR" : null } : null,
     campos,
   };
 }

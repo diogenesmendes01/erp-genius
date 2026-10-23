@@ -136,7 +136,7 @@ describe("consultas da tela da Aria", () => {
     expect(p2.itens).toHaveLength(10);
     expect(p2.proximo).toBeNull();
     expect(new Set([...p1.itens, ...p2.itens].map((i) => i.id)).size).toBe(60);
-    expect(p1.itens[0]).toMatchObject({ contato: "Maria Silva", podeDesfazer: true, motivoIrreversivel: null });
+    expect(p1.itens[0]).toMatchObject({ atendimentoId: propria.at.id, contato: "Maria Silva", podeDesfazer: true, motivoIrreversivel: null });
   });
 
   it("historico_filtros", async () => {

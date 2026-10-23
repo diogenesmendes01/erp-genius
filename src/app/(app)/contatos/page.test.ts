@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { papeisDoGuardArquivo } from "@/test/guard-pagina";
 
 const mocks = vi.hoisted(() => ({
+  conversa: vi.fn(async () => ({ atendimentoId: "at-336", aberta: true })),
   usuario: { valor: { id: "u1", nome: "U", papeis: ["VENDEDOR"], permissoes: [] as string[] } },
   listar: vi.fn(),
   obter: vi.fn(async () => null as unknown),
@@ -34,6 +35,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { configuracaoOperacional: { findUnique
 vi.mock("./ListaContatos", () => ({ ListaContatos: mocks.lista }));
 vi.mock("./FichaContato", () => ({ FichaContato: mocks.ficha }));
 
+vi.mock("@/server/inbox/atalhos", () => ({ atendimentoParaAbrir: mocks.conversa }));
 import Page from "./page";
 
 async function renderPagina(sp: Record<string, string>, papeis: string[] = ["VENDEDOR"], permissoes: string[] = []) {
@@ -99,4 +101,15 @@ describe("/contatos (página)", () => {
     expect(html).toContain("max-[699px]:hidden");
     expect(await renderPagina({})).not.toContain("max-[699px]:hidden");
   });
+});
+
+it("#336 lista e ficha negada não consultam conversa; ficha autorizada recebe o DTO", async () => {
+  mocks.conversa.mockClear();
+  await renderPagina({});
+  await renderPagina({ c: "fora" });
+  expect(mocks.conversa).not.toHaveBeenCalled();
+  mocks.obter.mockResolvedValueOnce({ id: "p336", nome: "Pessoa fictícia" });
+  await renderPagina({ c: "p336" });
+  expect(mocks.conversa).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: "u1" }), { pessoaId: "p336" });
+  expect(props(mocks.ficha)).toMatchObject({ conversa: { atendimentoId: "at-336", aberta: true } });
 });

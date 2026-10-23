@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { hrefConversa } from "@/lib/href-conversa";
+import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
+
 import { useRouter } from "next/navigation";
 import type { CorTag } from "@prisma/client";
 import { Avatar } from "@/components/Avatar";
@@ -43,6 +46,7 @@ const ABAS: { id: Aba; rotulo: string }[] = [
 const CONTROLE = "w-full rounded-md border border-border-soft bg-surface-raised px-2 py-1.5 text-sm max-sm:min-h-11";
 
 type Props = {
+  conversa?: ConversaParaAbrir | null;
   detalhe: DetalheContato;
   historico: ItemHistorico[];
   campos: CampoDaFicha[];
@@ -89,6 +93,7 @@ function valorInicial(c: CampoDaFicha): string {
 
 function FichaCorpo({
   detalhe: d,
+  conversa,
   historico,
   campos,
   tagsDisponiveis,
@@ -195,6 +200,11 @@ function FichaCorpo({
           <p className="text-sm text-gray-600">
             {[d.codigo, d.empresa?.nome, d.ehAluno ? "Aluno" : null].filter(Boolean).join(" · ") || "Contato"}
           </p>
+
+          {conversa && <div className="flex flex-wrap gap-x-3">
+            <Link href={hrefConversa(conversa.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>
+            {conversa.aberta && <Link href={hrefConversa(conversa.atendimentoId, { agendar: true })} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Agendar mensagem</Link>}
+          </div>}
           {d.optOut && <p className="mt-1 text-sm text-red-700">Opt-out registrado: não recebe mensagens.</p>}
         </div>
         {podeCriarOportunidade && (

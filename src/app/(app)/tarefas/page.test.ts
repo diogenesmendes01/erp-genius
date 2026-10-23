@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { papeisDoGuardArquivo } from "@/test/guard-pagina";
 
 const mocks = vi.hoisted(() => ({
+  conversa: vi.fn(async () => ({ atendimentoId: "at-336", aberta: true })),
   usuario: { valor: { id: "u1", nome: "U", papeis: ["VENDEDOR"] as string[], permissoes: [] as string[] } },
   config: vi.fn(async () => ({ fusoInstitucional: "America/Costa_Rica" }) as { fusoInstitucional: string } | null),
   itensLista: vi.fn(async () => [] as unknown[]),
@@ -25,6 +26,7 @@ vi.mock("@/server/crm/tarefas-acoes", () => ({
   cancelarTarefa: vi.fn(), assumirTarefa: vi.fn(), marcarNotificacaoLida: vi.fn(),
 }));
 
+vi.mock("@/server/inbox/atalhos", () => ({ atendimentoParaAbrir: mocks.conversa }));
 import Page from "./page";
 
 const t1 = {
@@ -83,4 +85,14 @@ describe("/tarefas (página)", () => {
     mocks.config.mockResolvedValue(null);
     expect(await renderPagina(vendedor, {})).toContain("Fuso da escola não configurado");
   });
+});
+
+it("#336 não consulta em lista/nova/negada; tarefa autorizada fornece seus três vínculos", async () => {
+  mocks.obter.mockResolvedValue(null); mocks.conversa.mockClear();
+  await renderPagina(vendedor, {}); await renderPagina(vendedor, { t: "nova" }); await renderPagina(vendedor, { t: "fora" });
+  expect(mocks.conversa).not.toHaveBeenCalled();
+  mocks.obter.mockResolvedValue({ ...t1, atendimentoId: "a336", leadId: "l336", pessoaId: "p336" });
+  const html = await renderPagina(vendedor, { t: "t1" });
+  expect(mocks.conversa).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: "u1" }), { atendimentoId: "a336", leadId: "l336", pessoaId: "p336" });
+  expect(html).toContain('/inbox?c=at-336');
 });

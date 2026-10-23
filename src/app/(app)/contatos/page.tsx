@@ -1,6 +1,7 @@
 import { Papel } from "@prisma/client";
 import Link from "next/link";
 import { exigirSessaoPagina } from "@/server/_shared";
+import { atendimentoParaAbrir } from "@/server/inbox/atalhos";
 import { prisma } from "@/lib/prisma";
 import { hrefLista } from "@/lib/pagina-url";
 import { listarVendedores } from "@/server/comercial/consultas";
@@ -43,6 +44,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
     podeMesclar ? paresDuplicados(usuario) : Promise.resolve([]),
     consultarPreferenciaFusoEquipe(),
   ]);
+  const conversa = detalhe ? await atendimentoParaAbrir(usuario, { pessoaId: detalhe.id }) : null;
   const [historico, campos] = detalhe
     ? await Promise.all([historicoPessoa(detalhe.id, usuario, filtroHistorico).then((h) => h ?? []), camposDaPessoa(detalhe.id, usuario)])
     : [[], []];
@@ -87,6 +89,7 @@ export default async function ContatosPage({ searchParams }: { searchParams: Pro
           <div>
             <FichaContato
               detalhe={detalhe}
+              conversa={conversa}
               historico={historico}
               campos={campos}
               tagsDisponiveis={tags}

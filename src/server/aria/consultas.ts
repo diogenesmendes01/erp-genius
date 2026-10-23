@@ -27,6 +27,7 @@ export type VisaoGeralAria = {
 };
 
 export type ItemHistoricoAria = {
+  atendimentoId: string | null;
   id: string;
   quando: string;
   acao: AcaoAgenteIATipo;
@@ -241,6 +242,7 @@ export async function historicoAria(f: {
     const leadId = a.oportunidadeId ?? a.atendimento?.leadId ?? null;
     return {
       id: a.id,
+      atendimentoId: a.atendimentoId,
       quando: a.criadoEm.toISOString(),
       acao: a.acao,
       contato: (leadId && nomeLead.get(leadId)) || "Contato sem cadastro",
