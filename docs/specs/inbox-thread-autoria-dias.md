@@ -14,7 +14,7 @@ BalaoMensagem usa entrada, verde humano, roxo IA ou nota tracejada, cauda soment
 
 Nota é adaptação estritamente visual, com role=note e data-nota-id, origem no rótulo e autor (ou Autor não informado) na linha da hora. Não tem menu, gatilho, status do transporte, modelo, mídia, enquete, Pix ou visualizador, mesmo com props de mensagem impróprias. Não dispara action; não recebe comandos externos. NotaNaThread e seu teste foram retirados após busca de consumidores; contratos de origem/autor/hora/quebras/XSS portados ao teste do balão.
 
-EventoSistema e SeparadorDia trazem caixa própria flex/justify-center: self-center isolado seria ineficaz nos Fragments ou wrappers flow-root do VirtualList. isItemFocusable exclui dia/evento/nota sem comandos, sem mudar o motor compartilhado. Casca304/308 conserva rolagem interna; padding da thread7%, celular até699px10px. Transferência sai do cabeçalho e aparece como evento, mantendo action de escopo e guard de resposta antiga/seleção.
+EventoSistema e SeparadorDia trazem caixa própria flex/justify-center: self-center isolado seria ineficaz nos Fragments ou wrappers flow-root do VirtualList. isItemFocusable exclui dia/evento/nota sem comandos, sem mudar o comportamento padrão do motor compartilhado. Casca304/308 conserva rolagem interna; padding da thread7%, celular até699px10px. Transferência sai do cabeçalho e aparece como evento, mantendo action de escopo e guard de resposta antiga/seleção.
 
 ## Dia civil, fuso e SSR
 
@@ -43,3 +43,7 @@ Chrome real na fonte02905042 confirmou identidade/foco/âncora99→101 em6/6cont
 ## Harness formal314 após handoff312
 
 Base dd141 integrada com312/hidratação/anonDOM392/382; conflito de quadro preservou históricos. humano-compositor cobre3tamanhos nos2temas e2alvos, conversa+humano+celular-conversa totalizam28PNGs. Prontidão verifica autoriaVocê, separador civil, status de saída e nota real sem comandos/mídia; sequência de notas não exige cabeçalho repetido. A CLI ancora a nota307 com scroll interno e abreBeatriz no protótipo celular. Notas/autores314adicionais e Lucas são complementos privados; não se exigeHoje fixo de seed histórico. GuardReact, conexãoSSE e anonimizaçãoDOM392antesfoto/manifesto conservados.
+
+## Evidências finais DEV
+
+Fonte/harness944e1736: recorte51arquivos613testes/TSCheap8192/lintdirigido0 comNode22. Formal28PNG app×protótipo concluído e individualmente inspecionado; complemento24PNG/API/DOM/menu nos6contextos inspecionado por pranchas; virtual12PNG/6contextos delta0/mesmo nó e foco no029, runtime idêntico ao944 porobjetoGit. Hashes/política392 efontes exatas em output/inbox-314-visual/formal/manifesto-final.json, normais-final/manifesto.json evirtual-green99-101/manifesto.json. PNGs somente locais por ruling; negativos separados. Detalhes/limites históricos no relatório. TESTER/globalcoordenado pendentes, sem aceite presumido.

@@ -1,0 +1,100 @@
+{
+  "capturas": [
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-escuro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 2
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      }
+    },
+    {
+      "alvo": "prototipo",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "prototipo-claro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [],
+      "anonimizacao": {
+        "politica": "telefones +55 do DOM anonimizados antes da captura; HTML original intacto",
+        "versao": 1,
+        "substituicoes": 1
+      }
+    }
+  ]
+}

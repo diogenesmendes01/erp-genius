@@ -1,0 +1,88 @@
+{
+  "capturas": [
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null
+    },
+    {
+      "alvo": "app",
+      "tema": "escuro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "app-escuro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "desktop",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-desktop-humano-compositor.png",
+      "width": 1440,
+      "height": 900,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "tablet",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-tablet-humano-compositor.png",
+      "width": 1024,
+      "height": 768,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null
+    },
+    {
+      "alvo": "app",
+      "tema": "claro",
+      "tamanho": "celular",
+      "estado": "humano-compositor",
+      "arquivo": "app-claro-celular-humano-compositor.png",
+      "width": 390,
+      "height": 844,
+      "falhas": [],
+      "diagnosticos": [
+        "GET da thread cancelado e recuperado: http://localhost:3110/api/inbox/atendimentos/inbox-demo-beatriz-307/mensagens"
+      ],
+      "anonimizacao": null
+    }
+  ]
+}

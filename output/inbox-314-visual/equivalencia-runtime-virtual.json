@@ -1,0 +1,14 @@
+[
+  {
+    "arquivo": "src/components/conversa/VirtualList.tsx",
+    "objeto029": "b402739329b18c0c026bf99f4f4f4c52609bdd4b",
+    "objetoFinal": "b402739329b18c0c026bf99f4f4f4c52609bdd4b",
+    "identico": true
+  },
+  {
+    "arquivo": "src/app/(app)/inbox/ConversaAberta.tsx",
+    "objeto029": "0420097323950621f9f7ccb4ca461e1fd4b6f36f",
+    "objetoFinal": "0420097323950621f9f7ccb4ca461e1fd4b6f36f",
+    "identico": true
+  }
+]
