@@ -31,3 +31,17 @@ Evidência em output/inbox-311-visual: 24 PNGs app (4 fases × 3 tamanhos × 2 t
 Recortes e códigos observados em output/inbox-311-report.md e quadro-entregas. Integração dirigida foi exclusivamente no perfil dev-gravacoes, antes da preparação final/preview; não é suíte completa de integração. Captura final95056 exit0: 24 PNGs, zero falhas e zero diagnósticos. Cada aba teve SSE ativa/máxima1 e GET máximo1. Todas as 24 imagens e seis referências foram inspecionadas. Tentativas negativas preservadas separadamente são problemas do harness/preparo, sem alegar correção de fonte produtiva por causa delas.
 
 Revisão independente e gate global integrado #308+#311 permanecem a cargo do integrador antes da publicação. Não há homologação presumida, push ou PR pelo DEV.
+
+## Revisão PR396 B1 — recuperação de uma fonte CLOSED
+
+O estado da fonte física segue readyState: CONNECTING mantém a reconexão nativa; CLOSED invalida seus callbacks, fecha o recurso e libera a referência compartilhada. Não existe timer, backoff ou retry automático criado pela aplicação. A próxima assinatura/remontagem cria uma fonte única e recupera também os assinantes que continuaram montados, como a Sidebar. Sem nova assinatura, a fonte permanece desconectada; após autenticação expirada, a rota continua exigindo sessão/papel e não há loop de tentativas.
+
+Cada ciclo físico tem identidade própria, reservada antes de criar/instalar listeners. Encerramento definitivo libera essa identidade antes de notificar consumidores, inclusive se um callback síncrono montar outro consumidor. O retorno da instalação antiga não sobrescreve a fonte nova. Callbacks open/error/event atrasados da fonte antiga são ignorados. A primeira abertura da substituta entrega um resync coletivo para cobrir o intervalo desconectado; reconexão nativa mantém o resync existente. Cleanup/último unsubscribe e assinaturas com o mesmo callback continuam idempotentes e independentes.
+
+O tipo FonteEventos inclui readyState somente leitura, compatível com EventSource. O argumento opcional de encerramento do helper é usado internamente pelo compartilhamento; os três argumentos existentes continuam válidos. Não muda hook, endpoint, autenticação, autorização, produtor, loja HTTP ou comportamento da leitura do Inbox.
+
+### C1 — capacidade de operação
+
+O compartilhamento é por aba: usuários autorizados mantêm uma SSE física inclusive fora da tela Inbox. Múltiplas abas multiplicam conexões e consultas de contagem; a loja conserva no máximo um GET incluindo corpo mais uma pendência por aba, sem consolidar abas. Em HTTP/1.1 os limites de conexões por navegador/origem podem restringir esse uso. Recomenda-se verificar e configurar HTTP/2 no proxy antes de operação com muitas abas; a negociação de streams não equivale a capacidade ilimitada. A configuração efetiva do proxy não foi verificada nem alterada nesta entrega. Referências: [modelo EventSource no HTML Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html#processing-model) e [limites documentados pelo MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
+
+B1/C1 são o único escopo desta revisão. C2 de base/CI pertence ao integrador; C3–C5 estão diferidos. Gates e pendências de porte/revisão/browser constam em output/inbox-396-report.md. Nenhum aceite visual/global é presumido.
