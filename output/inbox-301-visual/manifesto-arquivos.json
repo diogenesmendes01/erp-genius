@@ -1,0 +1,182 @@
+[
+  {
+    "bytes": 114307,
+    "arquivo": "output/inbox-301-visual/antes/1024x768-dark-autor-inicial.png",
+    "sha256": "67e1cb57a2ec0d163032e9205951ead2211f3d7e1db09e80a0e8cb7ff53d2765"
+  },
+  {
+    "bytes": 113248,
+    "arquivo": "output/inbox-301-visual/antes/1024x768-dark-colega-inicial.png",
+    "sha256": "53fcb0742e92fadb75db02c24d49dab50a9abbeacdb46d14346d9c2fecf63793"
+  },
+  {
+    "bytes": 115355,
+    "arquivo": "output/inbox-301-visual/antes/1024x768-light-autor-inicial.png",
+    "sha256": "4eb644a57ae5b29f5f790316945a8092bcecace2265e5dfa360ceee34c115a4d"
+  },
+  {
+    "bytes": 114154,
+    "arquivo": "output/inbox-301-visual/antes/1024x768-light-colega-inicial.png",
+    "sha256": "4a5b769c73f7b72bfa9a2ccc83d09dc8b7fb87a237c82b9ef53bea3e23fd3446"
+  },
+  {
+    "bytes": 139422,
+    "arquivo": "output/inbox-301-visual/antes/1440x900-dark-autor-inicial.png",
+    "sha256": "c5332182adb6cf047512282cfc8b59f3589505a54a345554d4245a5744106f10"
+  },
+  {
+    "bytes": 138408,
+    "arquivo": "output/inbox-301-visual/antes/1440x900-dark-colega-inicial.png",
+    "sha256": "72f8b195e4fefd88c713ae8ad4fe15ed3549ca6b420636ba8bc28e73599c802c"
+  },
+  {
+    "bytes": 140470,
+    "arquivo": "output/inbox-301-visual/antes/1440x900-light-autor-inicial.png",
+    "sha256": "f7a0356e9d2c3621d691355167b8054d6f6bb127a3e00334ba45f57b82d66824"
+  },
+  {
+    "bytes": 140539,
+    "arquivo": "output/inbox-301-visual/antes/1440x900-light-colega-inicial.png",
+    "sha256": "c044f898988b003fa0d60cd7a5ca5e099c065121764cac2a378d233d1a942a4a"
+  },
+  {
+    "bytes": 72336,
+    "arquivo": "output/inbox-301-visual/antes/390x844-dark-autor-inicial.png",
+    "sha256": "db71e7e7e60a47e560ea025761644ef1e7a8d1efe0002f633959803c8d7046fd"
+  },
+  {
+    "bytes": 56447,
+    "arquivo": "output/inbox-301-visual/antes/390x844-dark-colega-inicial.png",
+    "sha256": "83ee9db0e336476aa741e25f7a73a9b57fd89dec5979d57062780407600a7280"
+  },
+  {
+    "bytes": 72920,
+    "arquivo": "output/inbox-301-visual/antes/390x844-light-autor-inicial.png",
+    "sha256": "e27e452d0f754284537f842fd42df61d2f54bad2190b5688d3e370cdc86ca44b"
+  },
+  {
+    "bytes": 70825,
+    "arquivo": "output/inbox-301-visual/antes/390x844-light-colega-inicial.png",
+    "sha256": "f3e4ca651549aca0b307beb59790ee2ae01d4125629e5c12a43e0854aeec1e97"
+  },
+  {
+    "bytes": 123628,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-dark-autor-apos-aviso.png",
+    "sha256": "1fee89a005b6d3f941dc678e63a09e2ede2d99c6d0d58fa46b3ac4a284adc407"
+  },
+  {
+    "bytes": 122202,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-dark-autor-inicial.png",
+    "sha256": "9fe24b8e2fde6346625a3b832de73bbede0aba7e1fb6f3ac936a1142afaf8f7d"
+  },
+  {
+    "bytes": 127282,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-dark-colega-apos-aviso.png",
+    "sha256": "2bdeff809fa817bb9d7b8b84726ffae6be60266beecb3b57db7a7f3bb1dc6c91"
+  },
+  {
+    "bytes": 121136,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-dark-colega-inicial.png",
+    "sha256": "88c39915c2ba833fc1df07228b3888ac8949d80a4978185df30ebd060b7dcce4"
+  },
+  {
+    "bytes": 125280,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-light-autor-apos-aviso.png",
+    "sha256": "791027b04d4481f93719ca5e94e75b119f251b3406e19e6e045950688e00b23d"
+  },
+  {
+    "bytes": 123387,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-light-autor-inicial.png",
+    "sha256": "0fe9cb05e47a2c42a5e1afbf1f6677a7045de4d657d47283588b0527c8c9922f"
+  },
+  {
+    "bytes": 128785,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-light-colega-apos-aviso.png",
+    "sha256": "727238007812ad8f2e4aad577ed239077aedde65fb2633f04c4e219f8e1b679f"
+  },
+  {
+    "bytes": 122122,
+    "arquivo": "output/inbox-301-visual/depois/1024x768-light-colega-inicial.png",
+    "sha256": "9d7d792ce96a2baad5d8891df853a2cf51696321505666892e963ef7746db811"
+  },
+  {
+    "bytes": 172123,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-dark-autor-apos-aviso.png",
+    "sha256": "ab2da0008937d262ae181e6baf5311ce6cc2a55bfa6af905b3cc0ee9f2d0f7e3"
+  },
+  {
+    "bytes": 166160,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-dark-autor-inicial.png",
+    "sha256": "4a17f5ff77237923684fa0cf6d69e239f626e483291f47e3e5979767d651c76a"
+  },
+  {
+    "bytes": 175346,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-dark-colega-apos-aviso.png",
+    "sha256": "03f43044ecad6e98e3a9d72ff16e77dbf9e7caf4076a1903bda9ea466ad28c1b"
+  },
+  {
+    "bytes": 164939,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-dark-colega-inicial.png",
+    "sha256": "dd8810108d97e789b45a9f4004f367e80a70fd313a39be5f43adbd5c79f09218"
+  },
+  {
+    "bytes": 174375,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-light-autor-apos-aviso.png",
+    "sha256": "1d1dbde36ee887465f5343006ae95310ba70c2ace903e21b8f5f60bc6cf07e2f"
+  },
+  {
+    "bytes": 168518,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-light-autor-inicial.png",
+    "sha256": "897dc40af537cf10a73c9cf7527b59f6cbee41e1151c27655ca5c1f8d06a79fa"
+  },
+  {
+    "bytes": 177492,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-light-colega-apos-aviso.png",
+    "sha256": "5f8107f80f8edd4224d20ef991a3a0653c3cf03f0f02758c1bd5c42312b524f4"
+  },
+  {
+    "bytes": 167161,
+    "arquivo": "output/inbox-301-visual/depois/1440x900-light-colega-inicial.png",
+    "sha256": "7b0a400f1616ff76a0428c702219665dd5f2819112a4dcf64b12bf41517c2dd5"
+  },
+  {
+    "bytes": 77024,
+    "arquivo": "output/inbox-301-visual/depois/390x844-dark-autor-apos-aviso.png",
+    "sha256": "00212707377a11ef95583c3d6b270a59a71ba6e02b80415155c8e48272f387e5"
+  },
+  {
+    "bytes": 79827,
+    "arquivo": "output/inbox-301-visual/depois/390x844-dark-autor-inicial.png",
+    "sha256": "aedb7be69f45a0a355ebe04e27de79bddfda08606d35e08509da7d6aa437b96d"
+  },
+  {
+    "bytes": 80527,
+    "arquivo": "output/inbox-301-visual/depois/390x844-dark-colega-apos-aviso.png",
+    "sha256": "0d1f9bc1563c098706944835e40fbe56bfeaa8e9f00f89441e2e08062243e2cb"
+  },
+  {
+    "bytes": 79833,
+    "arquivo": "output/inbox-301-visual/depois/390x844-dark-colega-inicial.png",
+    "sha256": "4696a881f67e6fc46797b31fbf96a6212e3b065b97fd4ac07f1486c417b0008d"
+  },
+  {
+    "bytes": 78251,
+    "arquivo": "output/inbox-301-visual/depois/390x844-light-autor-apos-aviso.png",
+    "sha256": "fb65aff8c55a4109ba420c55e7bb1dcbefda1c008d486af6ae7f7cbab2c6806e"
+  },
+  {
+    "bytes": 80396,
+    "arquivo": "output/inbox-301-visual/depois/390x844-light-autor-inicial.png",
+    "sha256": "446719034eb5fe7e24ba0d4df584f044f5ef87797b1b782f982362e2323a2e47"
+  },
+  {
+    "bytes": 81407,
+    "arquivo": "output/inbox-301-visual/depois/390x844-light-colega-apos-aviso.png",
+    "sha256": "bfcb76f66a8ab72cc3e9f894fdf11598f36f148b32f4e389ffe54cb1c9a09026"
+  },
+  {
+    "bytes": 80383,
+    "arquivo": "output/inbox-301-visual/depois/390x844-light-colega-inicial.png",
+    "sha256": "21d1a0b5c7065fa2aac260bf9b2dc284a276955f42fe16ecec51dbe6062f531f"
+  }
+]

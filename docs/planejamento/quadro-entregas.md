@@ -5228,3 +5228,61 @@ Novo parecer no head exato e CI contra main continuam pendentes.
 - **Experimento técnico313/cache de leitura:** a208 ainda reproduz hardnav em Linkpúblico (negativo49540 preservado). Apóscausa observada de duas tarefasB incompletas→retryMPAstale, wrappersautomáticos reutilizam helpersprivados semrevalidatePath; legadosmanuais invalidam1vez, flagsinternasfixas, auth/escritas/motor/NOTIFY/GET/seloR6 preservados, semNext/ordemhistoryalterados. RED7→GREEN11servidor; recorte43297 EXIT0/100arquivos1026, TSC20905/66410heap8192 e lint9fontes0avisosEXIT0. DBisolado/snapshotintegrador:87224negativo porpremissaparticipantesemlidaAte corrigida sónafixture,39942 EXIT0/2arquivos20testes, bancoliberadopararestauraçãoantespreview. CheckpointEXPERIMENTAL separado dea208, adoção dependeA/B rápido Router/Sidebar+açãoemvoo semesperaPOST; NÃOconcluída/homologada/publicada. RawRSC/PNGnovos foraGit/ZIP.
 
 - **Base atual391 noDEV313:** merge normalf8d2 sobre047/f51, quadroamboshistóricos e refs/focoInbox preservados, sem alteração dos hooks/leitura/Conversa/VirtualList. Gates61045 EXIT0/102arquivos1045testes, TSC51351heap8192/lint13fontes16be200avisos EXIT0; diffcheck0. Aguarda previewcoordenado/formalAPP26+virtual150atuais; protótipos26imutáveis2e e complementos20f51 identificados àparte. SemDB/Next/deps/ownfull/PNGnovo, global/publicação peloROOT.
+## PR #385 — C1: capturas fora do estado atual do código
+
+128PNGs conferidos individualmente por tamanho/SHA256 com o ZIP histórico
+local antes de retirar do index. Arquivos locais movidos para backup interno
+validado, originais preservados no commit3f7fa9a7 e ancestralidade sem force.
+Pacote legado: output/qa-archives/inbox-pr385-legado-3f7fa9a7.zip,
+5.328.073bytes/133arquivos/128PNG, SHA256
+57772124b6e858b7255677165313bf53debcd53ca61507c9ab72cde99adb1c81.
+Sem novo upload das capturas legadas; README e manifesto de128hashes continuam
+na pasta de evidências. Não é nova homologação visual.
+
+Fontes específicas BalaoMensagem e testes byteiguais a3f7fa9a7 já revisado;
+predecessores382R6/386/387/main7982 recebidos por merges normais, conflitos
+somente no quadro, preservados. Recorte Node22:3arquivos/26testes, saída0,
+sem filtro/ignorados; TypeScript99520 saída0. Sem nova suíte de banco/global
+ou alteração da UI. C5CI e revisão final depois de trazer a maincorrente
+continuam gates antes do merge.
+
+## PR #388 — revisão C2/C3/C4 e gates finais
+
+C2: aviso SSE sem cursor usa recarregar, conservando notas durante consulta e
+falha comum. Limpeza em troca/perda de acesso preservada. C3: quarto argumento
+obrigatório temMaisDepois em itensDaThread, coordenado com a outra frente;
+ConversaAberta repassa ambas as bordas. Notas fora da janela cortada no fim
+ficam ocultas até avançar; limites inclusivos e entrada fora de ordem cobertos.
+
+TDD:6falhas/46passes antes →3arquivos/52testes passando após. Inclui SSE de
+outro atendimento, consulta em voo/falha, consumidor SSR e corte da classe
+HistoricoConversa com fonte em memória1260mensagens, janela600 e recuperação
+da nota ao avançar. Não é teste de banco. Gates Node22.23.2 com saída0:
+full73171,845arquivos/6.566unitários completos (maxWorkers=2, sem filtro/skip),
+TypeScript84277 e lintglobal92738,0erros/40avisos herdados.
+
+C4:40arquivos eram36PNG+4metadados. Os36PNG foram conferidos por tamanho/hash
+contra ZIPlegadoLOCAL antes de retirar do index; originais em9a201c28 ebackup
+local, semforce/novo upload. ZIP4162790bytes, SHA256
+cb4b02a5a1aeffed2efa4d99f257dc6aa77068ae110f54f3922e268cd92651cc.
+README/manifesto e relatório output/pr388-qa/revisao.md preservados. Nenhuma
+nova homologação visual/integração DB é atribuída a esta revisão.
+
+Fonte recebe385corrigida/387/386/R6/main1a56031 por merges normais. Aguardar
+385na main, parecer independente do head exato e CI antes do merge388.
+
+### Base #313 — composição da revisão #388 e atualização de integrações
+
+#305 fechada em 23/10/2026 às03:23:39UTC, PR385 integrado na main
+ eea8a6b4. Total6/81issues integradas:298,299,300,302,303,305.
+PR aberto não conta como issue concluída.
+
+Merge normal f9011fef na base f8d2cc preserva decoração314, stableMount,
+autoria/dias/notas e foco/paginação. Consumidor decorado passa temMaisDepois
+real como quarto argumento obrigatório; quatro chamadas de testes antigos
+explicitam janela sem mensagens posteriores. Não foi introduzido default.
+Recorte próprio6arquivos/75testes, TypeScript56905 heap8192 e lint dos seis
+arquivos integrados terminaram com saída0. Sem banco/browser próprios.
+TESTER na revisão f901:3arquivos/52testes próprios e36hashes de PNG locais
+conferidos. Suíte global da composição313 anterior92faa:877/6848 saída0;
+não estender esse gate ao novo código388 antes da nova verificação.
