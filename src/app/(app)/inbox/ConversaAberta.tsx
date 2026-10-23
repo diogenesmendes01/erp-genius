@@ -154,7 +154,7 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
         {(triagem || revisoes) && <div className="mb-3"><PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} /></div>}
         {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
         {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
-        <VirtualList
+        <VirtualList stableMount
           items={decorarThread(itensDaThread(conversa.mensagens, conversa.notas ?? [], conversa.temMaisAntes), { fuso, agora: new Date(agora), transferidoDe })}
           getKey={(i) => i.id}
           isItemFocusable={(i) => i.tipo === "mensagem"}
