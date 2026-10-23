@@ -5492,6 +5492,17 @@ Composição oito arquivos / 135 testes e TSC29938 terminaram0. Não atribuir
 o full anterior ao head novo. Parecer final e CI global contra main pendentes;
 sem novo browser, pacote/lock/schema ou envio. output/pr394-qa/revisao.md.
 
+## PR #400 — C2: integração da escrita automática
+
+Fonte260a4599: preferencias.int e motor/presenca.int completos, dois arquivos /
+20 testes, sessão44027 terminou0 no ci-integracao/erp_genius_test_ciint exclusivo.
+Sem filtro/ignorados; não é suíte completa. Escrita pessoal/compartilhada,
+escopo/falha parcial e ausência de revalidate na automática conferidas;
+invalidação manual e comando motor simulado preservados. Postgres real,
+mocks de auth/cache/motor; nenhum envio externo. Sem alteração de produção
+ou teste. Relatório output/pr400-qa/leitura-integracao.md. C1 HIGH de pais,
+main/retarget e CI final permanece pendente.
+
 ### C1 PR394 — entrega DEV corrigida e complemento real no porte 3a
 
 Isolado b233 e porte 3a separados, sem merge313→310. TESTER favorável5/106+40R6/P2 próprios0 informado peloROOT. Gates DEV corrigidos isolado24 arquivos/334 testes/porte56 arquivos/627 testes+typegenTSC/lint0 permanecem exatos; sem ownfull. UI26973 saída 0/20 PNG inspecionados:4 contextos/dois temas/foco/teclado/filtros/Link público rápido sem esperar POST antes da navegação. Lotes76702 saída 0/2 PNG inspecionados:124 avisos reais,1/20/50→1 GET cada; retenção51→inicial+1 trailing, SSRidentidade nova/chaveigual e leitura200→trailing fresco, máximos HTTP/body/SSE1 e1 documento. DOM5 contagens=HTTP fresco, sem alegar decremento76→76. Negativo privado de abort da conversa abandonada preservado/proprietário comprovado, guard global intacto. Allowlist22 PNG/1.771.729bytes e resumo sanitizado em output/inbox-310-c1-allowlist.json/evidencias.json; nenhum binário/rawtrace noGit. Preview23046 encerrado peloROOT, banco restaurado f809d6/424 hashes e bloco NextAGENTS removido isoladamente. Depósito remoto, global, adoção/publicação pendentes do integrador; nenhuma homologação presumida.
