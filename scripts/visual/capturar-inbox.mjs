@@ -76,6 +76,10 @@ async function abrirApp(pagina, contexto, base, ids, estado, tamanho) {
   }
   await esperarConteudoApp(pagina, estado, tamanho);
   await esperarHidratacaoApp(pagina);
+  if (estado === "humano-compositor") {
+    // Mostra a nota real seguida da autoria/status; rolagem interna explícita, sem sintetizar conteúdo.
+    await pagina.getByRole("region", { name: "Conversa", exact: true }).getByRole("note").filter({ hasText: "Família pediu atendimento no período da tarde." }).evaluate(nota => nota.scrollIntoView({ block: "start" }));
+  }
 }
 
 async function abrirPrototipo(pagina, estado) {
@@ -89,9 +93,9 @@ async function abrirPrototipo(pagina, estado) {
     await lista.getByText("Nenhuma conversa neste filtro.", { exact: true }).waitFor({ state: "visible" });
   }
   if (estado === "celular-lista") await root.locator('[data-m="list"]').waitFor({ state: "visible" });
-  if (estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
+  if (estado === "humano-compositor" || estado === "conversa" || estado === "painel-fechado" || estado === "celular-conversa" || estado === "celular-painel" || estado === "tablet-painel") {
     const chat = root.locator('[data-m="chat"]');
-    if (!(await chat.isVisible())) await root.getByText("Mariana Costa", { exact: true }).first().click();
+    if (!(await chat.isVisible())) await root.getByText(estado === "humano-compositor" ? "Beatriz Lima" : "Mariana Costa", { exact: true }).first().click();
     await chat.waitFor({ state: "visible" });
   }
   if (estado === "celular-painel" || estado === "tablet-painel") {

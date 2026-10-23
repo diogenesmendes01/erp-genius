@@ -10,7 +10,7 @@ export const ESTADOS = Object.freeze({
   conversa: { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-escuro-admin-desktop.png") },
   "painel-fechado": { tamanhos: ["desktop"], prototipo: true },
   "sem-selecao": { tamanhos: ["desktop"], prototipo: false },
-  "humano-compositor": { tamanhos: ["desktop"], prototipo: true, referencia: referencia("prototipo-claro-admin-desktop-humano-compositor.png") },
+  "humano-compositor": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true, referencia: referencia("prototipo-claro-admin-desktop-humano-compositor.png") },
   "lista-vazia": { tamanhos: ["desktop", "tablet", "celular"], prototipo: true },
   "celular-lista": { tamanhos: ["celular"], prototipo: true },
   "celular-painel": { tamanhos: ["celular"], prototipo: true },

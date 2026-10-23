@@ -39,3 +39,7 @@ A prova Chrome no648 mostrou RED6/6 em99→101: troca Fragment→div recriava ro
 A precisão da medição opt-in é0,001px: diferenças subpixel menores que0,5 por linha não podem ser descartadas ao sair do fluxo natural, pois se acumulam em salto da âncora. O limiar0,5 dos consumidores padrão não foi alterado. TDD inclui sequência de alturas71,75/71,875 versus estimativa72; não usa altura fixa para o layout.
 
 Chrome real na fonte02905042 confirmou identidade/foco/âncora99→101 em6/6contextos: delta0px, Tab seguinte correto,20–24rows montadas, sem warning/overflow/rede extra. As medições prévias confirmaram que5,0625px acumulados vinham das frações descartadas pela regra antiga, não de padding/listOffset. Manifesto privado no relatório; formal app×protótipo ainda separado/pendente.
+
+## Harness formal314 após handoff312
+
+Base dd141 integrada com312/hidratação/anonDOM392/382; conflito de quadro preservou históricos. humano-compositor cobre3tamanhos nos2temas e2alvos, conversa+humano+celular-conversa totalizam28PNGs. Prontidão verifica autoriaVocê, separador civil, status de saída e nota real sem comandos/mídia; sequência de notas não exige cabeçalho repetido. A CLI ancora a nota307 com scroll interno e abreBeatriz no protótipo celular. Notas/autores314adicionais e Lucas são complementos privados; não se exigeHoje fixo de seed histórico. GuardReact, conexãoSSE e anonimizaçãoDOM392antesfoto/manifesto conservados.
