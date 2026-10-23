@@ -190,6 +190,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   useEffect(() => {
     if (selecionado && leituraRef.current.id !== selecionado) pedirLeitura(selecionado);
   }, [selecionado, pedirLeitura]);
+  useEffect(() => {
+    const pagina = document;
+    const aoRetornar = () => {
+      const id = selecionadoRef.current;
+      if (pagina.visibilityState === "visible" && id && regiaoConversa.current?.getClientRects().length) pedirLeitura(id);
+    };
+    pagina.addEventListener("visibilitychange", aoRetornar);
+    return () => pagina.removeEventListener("visibilitychange", aoRetornar);
+  }, [pedirLeitura]);
   // Painel por setor do atendimento aberto; recarrega ao trocar de conversa e depois de uma ação.
   const [painelSetor, setPainelSetor] = useState<{ id: string; dado: DadosPainelSetor | null } | null>(null);
   const [versaoPainel, setVersaoPainel] = useState(0);
