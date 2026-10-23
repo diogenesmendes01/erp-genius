@@ -6416,3 +6416,7 @@ Fonte95fb5e23:cherrySOMENTEd36→8a67sobre1bb+4053bd;quadrocherryapenasentry4061
 ## PR #406 — QA composta favorável
 
 QA95ffavorávelestática/hash320755...versionada tester-composicao-95f.md;INT10/unit8exatosd36/negativaprivacidadepreservada,sem323ouDDLfuturo. ProdutorInbox/schema8a e pais405/Shift/Pick/B2preservados. SemnovaexecuçãoDB/testesdoparecer;fonte95preservadaapósregistrosMD,405main/CI406aindagates.
+
+## PR #407 — fundações321 compostas, INT exigida concluída
+
+Fonte57530e8c:3258+40621979, deltaSRCresidualEXATAMENTE6arquivos321/OIDs3258. B1Pickee565/harness164/QA280/297/B2/mergeauthpreservados,paismain406/retarget/CIaindagates. Quadro4blocospreservambos,2docs307conflitosapenaslinhaembranco→406. C1INTaviso+participantes completos2/8sessão2842/36809aterminal0,31,13s,perfilciintexclusivo/configintegration/maxWorkers1;semfiltro/skips/provider/cluster/migrationchange. Unitário5/894c12ea,TSC98357/7e7d0f e lint94412/289af8terminals0/40avisos. C3diffbaselineexplícito/C4projeçãofornececonsumer323semnovaalçadaD1,sem322323antecipado. QAcomposta/final406main/CI407pendentes;output/pr407-qa/composicao-todos.md.
