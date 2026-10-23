@@ -62,3 +62,35 @@ Recorte de composição da base:6 arquivos/75 testes, TSC56905 e lint6,
 todos saída0. TESTER próprio no4f:18 arquivos/285 testes mais39adversariaisR6,
 ambos saída0. Browser independente e capturas DEV ainda em andamento;
 esses gates não substituem a validação visual nem o CI do futuro PR.
+
+## Composição final com fila394 — 23/10/2026
+
+Fonte executada `9c68e91d93532413e4e220465fd04dd81022f530`, após o porte
+moderno3a e a dependência isolada4696/R6. Consumidor/helpers produtivos iguais
+ao3a revisado pelo TESTER. Base313 inclui a correção310, mantendo o escopo do
+PR313 na coluna. Merge documental posteriord1299473 incorpora696 publicado e
+fonte391 já presente: diffquiet em src/scripts/prisma/package/lock retorna0.
+
+Gates Node22.23.2 acompanhados até saída terminal0:
+
+- Global unitário `vitest run --maxWorkers=2`, sessão39296: **878 arquivos,
+  6.880 testes**,244,88s, sem filtro de nomes/arquivos ou ignorados reportados.
+  Integrações DB excluídas pela configuração, sem alegar suíte completa delas.
+- Nexttypegen9fa0bd saída0; TypeScript heap8192 sessão25390 saída0.
+- Lintglobal sessão47970 saída0,0erros/42avisos,40dasfontes anteriores e2do
+  staging privado318 já identificado. Sem mascarar avisos ou alterar o ZIP.
+
+Logs privados `output/inbox-313-394-global-{unitarios,tsc,lint}.log` e
+`output/inbox-313-394-typegen.log`. Recortes intermediários35/359 e42/524
+registram integrações da publicação/base; não substituem o global acima.
+
+TESTERmoderno3a:5/106oficiais e40R6/P2privados0, semskip; isolada4696:5/86 e
+40R6/P2próprios0; extensãoc7106/124próprios0, fontes310byteiguais4696.
+Capturas formais103PNG do pacote remoto continuam atribuídas à4f, sem
+reatribuição àfila394. Complemento HTTP real3a peloDEV B: quatro contextos
+UI/20PNG,Link/navegaçãorápida/umdocumento/timeOrigin e máximo1SSE/GETatébody;
+124avisosPGreais recebidos,1/20/50→1GETcada,51duranteHTTPretido→1trailing,
+SSRrefreshinstrumentalequivalente→1trailingsemoutroaviso, leituraUIcombody
+anterior→1trailing e cinco contagensDOM iguais aoHTTPfresco. Não havia queda
+do número76nesseúltimocaso; não se alega decremento. Não houve envio externo.
+Relatório/allowlist dessa medição e revisão final do head serão ligados no PR.

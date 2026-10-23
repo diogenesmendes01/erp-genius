@@ -5448,6 +5448,21 @@ nem integração. Base não incorpora ColunaConversas313 ou cabeçalho315.
 QAexata/global/DB da isolada394 permanecem com TESTER e outra frente; esta
 composição da base não presume esses resultados. Próximo merge publica313
 com o fix310 como dependência identificada, preservando PR por funcionalidade.
+
+### #313 — regressão final após394 e contagem atual
+
+Fonte9c68e91:global39296 terminou0,878arquivos/6.880testes,244,88s,
+maxWorkers2 semfiltro/skip; não é suíteDB. Typegen9fa0bd0,TSC25390heap81920,
+lintglobal479700erros42avisos (40fontes+2stagingprivado318). Merged1299473
+incorpora696 publicado apenasdocumental, executáveisbyteiguais9c68.
+Complemento3a HTTPrealDEV B:20PNG/4contextos,124avisosrecebidos, máximo1GET
+inclbody/1SSE,51duranteHTTPretido→1trailing,SSRidentidadeequivalente e leitura
+UIreconciliamsemconcorrer. PareceresTESTER3a/4696/c710 própriosfavoráveis;
+metadados finais/publicação/CI seguem necessários antes de fechar313.
+
+GitHub306closed04:29:22UTC, squash391mainb287f9043566bfea7c18447506355df552c273de.
+**Total9/81integradas:298–306.** PRsabertosnãocontamcomoconcluídos. Release
+de evidências permaneceDRAFT; semmensagensreais, ativaçãoexterna oudeploy.
 ## PR #391 — pais integrados e gate contra main
 
 Main8d00124 incorporada por merge normal 8c6930c2. Os arquivos Inbox/conversa
