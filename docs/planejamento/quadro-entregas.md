@@ -5635,4 +5635,5 @@ de prazo puro/Avatar acessível/SSEbabd, documentos distintos preservados.
 Recorte8/1500; global74482 EXIT0:879arquivos/6.886testes,242,57s,maxWorkers2,
 sem filtros/ignorados. Nexttypegen/TSC47616 e lint96198 EXIT0,0erros40avisos.
 BackendC2 idêntico260a, integração anterior20testes nominal. TESTER08f
-solicitado; CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.
+favorável10/163 próprios,execafb4ce EXIT0; sem DB/browser/global próprios.
+CI/main/392B2 pendentes. output/pr400-qa/ancestralidade.md.

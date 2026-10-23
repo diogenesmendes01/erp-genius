@@ -30,6 +30,8 @@ Nenhuma instalação, mudança de lock, schema, DB, preview ou recaptura.
 A integração DB do C2 anterior permanece nominal à fonte260a: duas suítes
 completas dirigidas/20 testes,44027 EXIT0; backend e seus testes inalterados
 na composição. Não representa execução da suíte completa de integração.
-TESTER exato08f solicitado. C1 de código resolvido localmente; retarget/main,
+TESTER exato08f favorável: dez arquivos/163 testes próprios,execafb4ce EXIT0;
+objetos dos nove arquivos e demais módulos preservados conferidos. Sem DB,
+browser ou global próprios. C1 de código resolvido localmente; retarget/main,
 CI e #392/B2 continuam gates antes do merge. O novo C6 da revisão396 será
 tratado separadamente, sem atribuir retentativa inexistente a este resultado.
