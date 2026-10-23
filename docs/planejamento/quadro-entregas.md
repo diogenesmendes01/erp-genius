@@ -5605,3 +5605,21 @@ sobrebasecomum294, seçõescompartilhadascoordenadas; nenhuma terceira função.
 Base29479848, branch própria preservando316/27b. Rodape com abas Responder/Nota, CampoTexto/agenda real/variante travada sem ativação Aria E1. Coordenador local mantém UMA instância de ações/diálogos; mesma conversa preserva caminho React scroller/VList, troca real pode remontar. Nota individual separada da permissão de envio; idempotência opcional por atendimento+texto e guarda de contexto/revisão contra resultados antigos, sem backend novo. Registros exatos de guardas aprovados; detector intacto.
 
 RED final a27db5 confirmou perda de edição/anexo durante await; GREEN97237343/43 inclui upload substituído e nota/emoji. Após patch: Node22.23.2, recorte7989 saída0 com72 arquivos/809 testes,34,75s/maxWorkers2/sem filtro de nome ou ignorados; TSC57095 heap8192 e lint11 fontes fa7780 --max-warnings0 saída0. Gates38827/72/803 e33289 são históricos anteriores ao patch final. Sem ownfull/DB/browser, sem imagens317. CLI, visual app×protótipo/320×500, QA independente e global integrado pendentes; C2/#402 reservado a outra frente, fonte de busca intacta na base294. SPEC docs/specs/inbox-rodape-compositor.md e relatório output/inbox-317-report.md; nenhuma homologação presumida.
+### #319 — checkpoint estático, UI e integração317 pendentes
+
+Branch OWN codex/inbox-e1-319 sobre294. Estados de página/thread/painel/semseleção com skeleton real960/1100/1400, sem ocultar notas388; erro público com retry/handoff síncrono, sem restaurar foco apósawait. VirtualList/busca/pin316 e hooksInbox R6/fila394/SSE396 preservados; lowerblockCompositor/ações/header byte-igual294 para merge coordenado A317. Mapas somente3Botao exatos e remoção da isenção raw migrada. REDs/negativos preservados em relatório, GREEN final9927/61arquivos861testes, TSC13787heap8192 e lint13fontes688eae0avisos terminaram saída0. SPEC inbox-estados.md/report output/inbox-319-report.md. NÃOconcluída: revisão exata, integração317, handoffCLI, imagens/inspeção/medição5estados+320×500 e globalROOT ainda obrigatórios. Sem ownfull/DB/SQL/seed/servidor/deps/envio; nenhum binário novo ou homologação presumida.
+
+
+### #319 — navegador preliminar472, formal combinado pendente
+
+QA estática independente11files306saída0 favorável condicional. Probes privados a62951/2d7b25/608110/33841/12443 saída0, desktopclaro1440×900+escuro320×500;29PNG inspecionados/2.777.875bytes com allowlistSHA. GETvazio200 real; erros500exatos/retry200, focoTabnatural12443 e notas/pin preservados60→120→153msgs/2notas/157itens.8873/90071negativos privados preservados e premissas descritas, sem alterarproduto/guard/CLI. Triagem ausente eC2#402/composição317 exigem formal posterior. ROOT encerroupreview22285/restaurou424hashes1372originais bfa460; DEV removeu sóAGENTSNext. Fonte472 imutável; sem ownfull/DB/servidor/envio. SPEC/report/allowlist/evidências explícitos, não concluída nem homologada.
+
+### #319 — composição preliminar com #317
+
+ROOT conciliou coordenador/rodapé a86c9ade com estados472e17fd na branch própria
+319. Primeiro recorte12arquivos:311pass/1fail por seletor legado
+CabecalhoControlado no novo teste319; ajustado só para CabecalhoConversa real,
+sem enfraquecer identidade/pin/termo. GREEN013e72 exit0:12/312,8,81s, sem filtros
+de nome ou skips. TSC63460heap8192 após ajuste e lint9fontes748069 zeroavisos, exit0.
+Não é global nem aceite; C2#402, CLI, imagens formais e QA da composição pendem.
+Evidências em output/inbox-317-319-composicao-checkpoint.md.

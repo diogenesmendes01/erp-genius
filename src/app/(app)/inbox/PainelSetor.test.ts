@@ -35,7 +35,7 @@ describe("PainelSetor", () => {
     const comOportunidade = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: null }, pessoaId: null });
     const semOportunidade = h({ setor: "COMERCIAL", oportunidade: null, pessoaId: null });
     expect(comOportunidade).toContain('<dt class="text-[12.5px] text-gray-600">');
-    expect(semOportunidade).toContain('class="text-sm text-gray-600"');
+    expect(semOportunidade).toContain('class="text-[12.5px] text-gray-400"');
     expect(comOportunidade + semOportunidade).not.toContain("text-muted-foreground");
   });
 });
@@ -43,4 +43,8 @@ describe("PainelSetor", () => {
 it("conteúdo do setor não acrescenta padding externo ao corpo da aba", () => {
  const t = h({ setor: "COMERCIAL", oportunidade: { id: "o1", titulo: "Maria", etapa: "PROPOSTA", valor: null }, pessoaId: null });
  expect(t).not.toContain("p-4"); expect(h(null)).not.toContain("p-4"); expect(t).toContain("text-[12.5px]");
+});
+
+it("319: ausência válida de conteúdo é neutra, não erro de transporte",()=>{
+ const t=h({setor:"COMERCIAL",oportunidade:null,pessoaId:null});expect(t).toContain("Sem oportunidade visível para você.");expect(t).toContain("text-[12.5px] text-gray-400");expect(t).not.toContain('role="alert"');expect(t).not.toContain("Tentar de novo");
 });

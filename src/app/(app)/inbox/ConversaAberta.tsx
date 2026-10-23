@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { IconChevronLeft, IconLayoutSidebarRight, IconArrowsExchange } from "@tabler/icons-react";
+import { Botao } from "@/components/Botao";
+import { EsqueletoThread } from "@/components/Esqueleto";
 import { BotaoIcone } from "@/components/BotaoIcone";
 import { BalaoMensagem, type ComandoMensagem } from "@/components/conversa/BalaoMensagem";
 import { itensDaThread, decorarThread, autorDoItem, notaComoMensagem } from "@/components/conversa/itens-thread";
@@ -121,6 +123,12 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
   const capacidades = item?.capacidades ?? [];
   // null (carregando) só chega ao compositor; os comandos da mensagem exigem o envio confirmado.
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
+  const ocupada = conversa.carregando || conversa.carregandoAntigas || conversa.carregandoNovas;
+  const cargaInicial = conversa.carregando && !conversa.mensagens.length && !(conversa.notas?.length);
+  function focarAntesDaCarga() {
+    if (buscaAberta && campoRef.current) campoRef.current.focus({ preventScroll: true });
+    else rolagem.current?.closest<HTMLElement>('section[aria-label="Conversa"]')?.focus({ preventScroll: true });
+  }
 
   const barraBusca = buscaAberta && <BuscaConversa termo={termo} aoMudar={mudarBusca} total={achados.length} posicao={posicao} campoRef={campoRef}
         aoAnterior={() => navegarBusca(-1)} aoProximo={() => navegarBusca(1)} aoFechar={fecharBusca}
@@ -143,9 +151,19 @@ export function ConversaAberta({ item, usuario, fuso, conversa, podeEnviar, falh
       )}
       {acoes?.feedback}{acoes?.dialogos}
       {barraBusca}
-      <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
-        {conversa.temMaisAntes && <button type="button" onClick={() => void conversa.maisAntigas()} disabled={conversa.carregandoAntigas} className="mb-2 w-full text-sm text-brand-800">Mensagens anteriores</button>}
-        {conversa.erro && <p role="alert" className="text-sm text-red-700">{conversa.erro}</p>}
+      <div ref={rolagem} aria-busy={ocupada ? true : undefined} className="min-h-0 flex-1 overflow-y-auto px-[7%] pb-2.5 pt-[18px] max-[699px]:px-2.5 max-[699px]:pb-2 max-[699px]:pt-3">
+        {conversa.temMaisAntes && <Botao variante="fantasma" tamanho="sm" ocupado={ocupada} className="mx-auto mb-2 block bg-surface text-gray-600" onClick={() => {
+          if (ocupada) return;
+          focarAntesDaCarga(); void conversa.maisAntigas();
+        }}>Mensagens anteriores</Botao>}
+        {conversa.erro && <div role="alert" className="mx-auto my-2 flex max-w-full flex-wrap items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          <p>Não foi possível carregar as mensagens.</p>
+          <Botao variante="fantasma" tamanho="sm" ocupado={ocupada} onClick={() => {
+            if (ocupada) return;
+            focarAntesDaCarga(); void conversa.recarregar();
+          }}>Tentar de novo</Botao>
+        </div>}
+        {cargaInicial && <EsqueletoThread rotulo="mensagens" />}
         <VirtualList stableMount
           items={itens}
           pinKeys={achadoAtual ? [achadoAtual] : []}

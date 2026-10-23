@@ -1,0 +1,580 @@
+{
+  "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+  "natureza": "PRELIMINAR319-NAO-FORMAL",
+  "sessoes": {
+    "semSelecao": "a62951 saída0",
+    "painelFinalEPaginacao": "12443 saída0",
+    "thread": "2d7b25 saída0",
+    "vazio": "608110 saída0",
+    "paginaFinal": "33841 saída0",
+    "negativoPagina": "8873 saída1",
+    "negativoPaginacao": "90071 saída1"
+  },
+  "resultados": [
+    {
+      "cenario": "sem-selecao",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 0,
+      "semSelecao": {
+        "titulo": "Escolha uma conversa",
+        "apoio": true,
+        "triagemPresente": false,
+        "triagemAntes": null,
+        "visivel": true
+      }
+    },
+    {
+      "cenario": "sem-selecao",
+      "tema": "escuro",
+      "viewport": {
+        "width": 320,
+        "height": 500
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 0,
+      "semSelecao": {
+        "titulo": "Escolha uma conversa",
+        "apoio": true,
+        "triagemPresente": false,
+        "triagemAntes": null,
+        "visivel": false
+      }
+    },
+    {
+      "cenario": "painel",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 7,
+      "geometriaErroInicial": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alert": {
+          "x": 1111,
+          "y": 429.5,
+          "width": 311,
+          "height": 54,
+          "top": 429.5,
+          "right": 1422,
+          "bottom": 483.5,
+          "left": 1111
+        },
+        "retry": {
+          "x": 1111,
+          "y": 457.5,
+          "width": 105.8125,
+          "height": 26,
+          "top": 457.5,
+          "right": 1216.8125,
+          "bottom": 483.5,
+          "left": 1111
+        },
+        "painel": {
+          "x": 1092,
+          "y": 0,
+          "width": 348,
+          "height": 900,
+          "top": 0,
+          "right": 1440,
+          "bottom": 900,
+          "left": 1092
+        },
+        "scroll": [
+          {
+            "tag": "DIV",
+            "id": "",
+            "overflow": "auto",
+            "top": 0,
+            "bottom": 900,
+            "scrollTop": 0,
+            "clientHeight": 900,
+            "scrollHeight": 900
+          }
+        ],
+        "foco": {
+          "tag": "BODY",
+          "label": null,
+          "dentro": false
+        }
+      }
+    },
+    {
+      "cenario": "painel",
+      "tema": "escuro",
+      "viewport": {
+        "width": 320,
+        "height": 500
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 7,
+      "geometriaErroInicial": {
+        "viewport": [
+          320,
+          500
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alert": {
+          "x": 18,
+          "y": 486.5,
+          "width": 284,
+          "height": 72,
+          "top": 486.5,
+          "right": 302,
+          "bottom": 558.5,
+          "left": 18
+        },
+        "retry": {
+          "x": 18,
+          "y": 514.5,
+          "width": 105.8125,
+          "height": 44,
+          "top": 514.5,
+          "right": 123.8125,
+          "bottom": 558.5,
+          "left": 18
+        },
+        "painel": {
+          "x": 0,
+          "y": 57,
+          "width": 320,
+          "height": 443,
+          "top": 57,
+          "right": 320,
+          "bottom": 500,
+          "left": 0
+        },
+        "scroll": [
+          {
+            "tag": "DIV",
+            "id": "",
+            "overflow": "auto",
+            "top": 57,
+            "bottom": 500,
+            "scrollTop": 0,
+            "clientHeight": 443,
+            "scrollHeight": 611
+          }
+        ],
+        "foco": {
+          "tag": "BUTTON",
+          "label": "Fechar painel do contato",
+          "dentro": true
+        }
+      },
+      "tabsAteRetry": 2,
+      "tecladoRetry": {
+        "focado": true,
+        "rect": {
+          "x": 18,
+          "y": 346.5,
+          "width": 105.8125,
+          "height": 44,
+          "top": 346.5,
+          "right": 123.8125,
+          "bottom": 390.5,
+          "left": 18
+        },
+        "viewport": [
+          320,
+          500
+        ]
+      }
+    },
+    {
+      "cenario": "thread",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 7
+    },
+    {
+      "cenario": "thread",
+      "tema": "escuro",
+      "viewport": {
+        "width": 320,
+        "height": 500
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 7
+    },
+    {
+      "cenario": "vazio",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 1,
+      "validacaoVazio": {
+        "status": 200,
+        "setor": "COMERCIAL",
+        "oportunidadeNula": true
+      }
+    },
+    {
+      "cenario": "vazio",
+      "tema": "escuro",
+      "viewport": {
+        "width": 320,
+        "height": 500
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 1,
+      "validacaoVazio": {
+        "status": 200,
+        "setor": "COMERCIAL",
+        "oportunidadeNula": true
+      }
+    },
+    {
+      "cenario": "pagina",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 0,
+      "skeleton": {
+        "anuncios": 1,
+        "titulos": 1,
+        "rect": {
+          "x": 224,
+          "y": 0,
+          "width": 1216,
+          "height": 900,
+          "top": 0,
+          "right": 1440,
+          "bottom": 900,
+          "left": 224
+        },
+        "viewport": [
+          1440,
+          900
+        ]
+      },
+      "navegacaoClienteSemHardnav": true
+    },
+    {
+      "cenario": "pagina",
+      "tema": "escuro",
+      "viewport": {
+        "width": 320,
+        "height": 500
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 0,
+      "skeleton": {
+        "anuncios": 1,
+        "titulos": 1,
+        "rect": {
+          "x": 0,
+          "y": 57,
+          "width": 320,
+          "height": 443,
+          "top": 57,
+          "right": 320,
+          "bottom": 500,
+          "left": 0
+        },
+        "viewport": [
+          320,
+          500
+        ]
+      },
+      "navegacaoClienteSemHardnav": true
+    },
+    {
+      "cenario": "paginacao-busca",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 4,
+      "carregandoAntigas": {
+        "ocupado": true,
+        "skeleton": false,
+        "nota": true,
+        "mensagem": true,
+        "foco": "Buscar na conversa",
+        "mesmaLista": true
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 630.71875,
+          "y": -8542,
+          "width": 426.5625,
+          "height": 40,
+          "top": -8542,
+          "right": 1057.28125,
+          "bottom": -8502,
+          "left": 630.71875
+        },
+        "retry": {
+          "x": 913.78125,
+          "y": -8534,
+          "width": 103.8125,
+          "height": 24,
+          "top": -8534,
+          "right": 1017.59375,
+          "bottom": -8510,
+          "left": 913.78125
+        },
+        "scroll": {
+          "top": 149,
+          "bottom": 843,
+          "scrollTop": 8750,
+          "clientHeight": 694,
+          "scrollHeight": 9500
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetryParcial": 6,
+      "alertaParcialRect": {
+        "x": 630.71875,
+        "y": 208,
+        "width": 426.5625,
+        "height": 40
+      },
+      "virtualMais100": "122",
+      "posicaoAntesEnter": "2 de 2",
+      "posicaoDepoisEnter": "1 de 2",
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "focus": "Buscar na conversa"
+      },
+      "retornoFoco": {
+        "dentro": true,
+        "visivel": true
+      }
+    },
+    {
+      "cenario": "paginacao-busca",
+      "tema": "escuro",
+      "viewport": {
+        "width": 320,
+        "height": 500
+      },
+      "fonte": "472e17fd3c44d2163a853a2f706b7fba1c6206a8",
+      "exit": 0,
+      "sse": {
+        "ativos": 1,
+        "maximo": 1
+      },
+      "diagnosticosEsperados": 4,
+      "carregandoAntigas": {
+        "ocupado": true,
+        "skeleton": false,
+        "nota": true,
+        "mensagem": true,
+        "foco": "Buscar na conversa",
+        "mesmaLista": true
+      },
+      "erroParcialInicial": {
+        "viewport": [
+          320,
+          500
+        ],
+        "docScroll": [
+          0,
+          0
+        ],
+        "alerta": {
+          "x": 10,
+          "y": -9977,
+          "width": 300,
+          "height": 87.5,
+          "top": -9977,
+          "right": 310,
+          "bottom": -9889.5,
+          "left": 10
+        },
+        "retry": {
+          "x": 108.09375,
+          "y": -9941.5,
+          "width": 103.8125,
+          "height": 44,
+          "top": -9941.5,
+          "right": 211.90625,
+          "bottom": -9897.5,
+          "left": 108.09375
+        },
+        "scroll": {
+          "top": 296,
+          "bottom": 443,
+          "scrollTop": 10345,
+          "clientHeight": 147,
+          "scrollHeight": 10595
+        },
+        "foco": "Buscar na conversa"
+      },
+      "tabsAteRetryParcial": 6,
+      "alertaParcialRect": {
+        "x": 10,
+        "y": 363,
+        "width": 300,
+        "height": 87.5
+      },
+      "virtualMais100": "122",
+      "posicaoAntesEnter": "2 de 2",
+      "posicaoDepoisEnter": "1 de 2",
+      "final": {
+        "mesmaLista": true,
+        "total": 157,
+        "pin": [
+          "inbox-319-estados-msg-000"
+        ],
+        "focus": "Buscar na conversa"
+      },
+      "retornoFoco": {
+        "dentro": true,
+        "visivel": true
+      }
+    }
+  ],
+  "negativos": [
+    {
+      "arquivo": "output/inbox-319-probes/pagina-escuro-320-2026-10-23T05-31-11.969Z/manifesto.json",
+      "sha256": "67f3ab1a02376782026a4ce79441764c96f09ac37568cdd202d99b295248212f",
+      "falhas": [
+        {
+          "tipo": "asserção",
+          "mensagem": "TimeoutError: locator.waitFor: Timeout 25000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Navegação principal', { exact: true }) to be visible\u001b[22m\n\u001b[2m    54 × locator resolved to hidden <nav class=\"flex flex-col gap-1\" aria-label=\"Navegação principal\">…</nav>\u001b[22m\n"
+        }
+      ]
+    },
+    {
+      "arquivo": "output/inbox-319-probes/paginacao-busca-claro-1440-2026-10-23T05-39-19.165Z/manifesto.json",
+      "sha256": "1c0cccd406aad90b755cae7436da4fc82f4d71188234981e9f0e1cd022d65397",
+      "falhas": [
+        {
+          "tipo": "asserção",
+          "mensagem": "TimeoutError: locator.waitFor: Timeout 25000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: 'Conversa', exact: true }).getByRole('status').filter({ hasText: '1 de 2' }) to be visible\u001b[22m\n"
+        }
+      ]
+    }
+  ],
+  "scripts": [
+    {
+      "arquivo": "output/inbox-319-probes/infra.mjs",
+      "bytes": 6936,
+      "sha256": "2f367ff5ce40ab8e42d111e3f2b0027b5a271f4018249886736ccad4fc714981",
+      "privado": true
+    },
+    {
+      "arquivo": "output/inbox-319-probes/probe-estados.mjs",
+      "bytes": 8111,
+      "sha256": "0f78faa2d02fe2df34cd1389ab32d4d741456b06bff3b6bfbd74e7cdc22594a9",
+      "privado": true
+    },
+    {
+      "arquivo": "output/inbox-319-probes/probe-paginacao.mjs",
+      "bytes": 6239,
+      "sha256": "95fccb401a6ca925ccebd1bacb6f6802eead3139ef135edb13a54c9c9dd30ae1",
+      "privado": true
+    }
+  ],
+  "limites": [
+    "Prova preliminar da fonte472, não formal da composição317/C2#402. Nenhuma alteração de fonte/CLI/DB/SQL/servidor pelo DEV.",
+    "Somente desktop1440x900 claro e celular320x500 escuro; não matriz completa de temas/viewports.",
+    "Triagem ausente nesta fixture: não prova visual de sua presença/ordem; assertivas estáticas continuam válidas.",
+    "Fallback real por /home→Next router.push /inbox com URLbuscaúnica e latênciaCDP3000ms; não é medição de chunks/streaming ou retenção do HTML/RSC.",
+    "Somente status500 dos GETs exatos de painel/mensagens foram injetados e classificados; restantes erros mantidos como falhas.",
+    "Retenções de GETreal200 preservam corpo/resposta; hashes privados, sem fabricação de conteúdo.",
+    "9133 mediu foco programático+Tab/ShiftTab e fica histórico; travessia natural só12443.",
+    "Fotos de alerta fora da dobra registram estado inicial ou histórico; 12443 prova Tab real alcançando retry dentro do scroll próprio. Sem correção produtiva alegada.",
+    "Pré-check privado teve caminhoPython inexistente antes de escrita; corrigido usandoNode22 sem instalação."
+  ],
+  "browsers": "Todos fechados emfinally; nenhum novo browser após12443.",
+  "ambienteEncerrado": "ROOT encerrou preview22285 Ctrl+C/exit1 esperado; porta semlistener confirmada2bfca0 saída0; snapshotbfa460 saída0 conferiu424hashes/1372originais/3mensagens1nota, semprivados319. DEV não executouSQL ou servidor."
+}
