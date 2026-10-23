@@ -69,7 +69,7 @@ oculta apenas o toast de desenvolvimento do Next sem issues; indicadores com
 issues e todos os listeners de diagnóstico permanecem ativos. Só imagens de
 fixture fictícia devem ser anexadas ao PR.
 
-`--estado todos` produz 38 PNGs: 20 do app e 18 do protótipo. O painel do
+`--estado todos` produz 58 PNGs: 30 do app e 28 do protótipo. O painel do
 protótipo exige o botão de detalhes e a região aberta; não é ignorado quando
 o comando está ausente. As próximas tasks E1–E4 acrescentam estados ao
 `ESTADOS` e seus passos à CLI.
@@ -112,3 +112,26 @@ O teste do DOM real usa Chrome já instalado, sem baixar navegador:
 Esse teste dirigido de navegador é separado da suíte unitária Vitest.
 
 Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.
+
+# Telefones em evidências
+
+A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
+os valores antigos reconhecidos no próprio cenário. O harness anonimiza os
+telefones do DOM do protótipo imediatamente antes da foto e declara essa
+transformação no manifesto, preservando o arquivo HTML original.
+
+Harnesses de outras issues podem importar `anonimizarTelefonesNoDom` de
+`./anonimizar-telefones.mjs` e executar
+`const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom)` depois
+das interações e antes de `screenshot`. Salvar o retorno no manifesto; não salvar
+um mapa dos valores originais. Reaplicar depois de nova renderização.
+
+O teste do DOM real usa Chrome já instalado, sem baixar navegador:
+`PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
+Esse teste dirigido de navegador é separado da suíte unitária Vitest.
+
+## Thread por autor (#314)
+
+`humano-compositor` agora cobre1440×900,1024×768 e390×844 nos dois temas,12PNGs app×protótipo. Junto de `conversa` e `celular-conversa`, são28capturas formais. A prontidão humana exige a mensagem/nota real307, autorVocê, separador civil identificado, status de saída e notas sem comandos/mídia/status de transporte; não depende de data fixa Hoje no seed histórico. Casos LIDA/FALHOU e autoresCamila/Carlos/origens314 usam a fixture complementar privada preparada pelo integrador e probes sem envio/alteraçãoDB.
+
+No app humano, a CLI rola internamente até a nota307, para mostrar nota seguida da autoria/status sem sintetizar conteúdo; as notas/autores adicionais podem exigir fotos complementares. No protótipo celular abreBeatriz antes da foto. HidrataçãoSSE, guardasReact/rede e anonimizaçãoDOM392 após interações/antesfoto com registro no manifesto permanecem ativos. A fixture314 de99→101 é prova privada separada e deve ser retirada pelo integrador com guards antes do formal; não executar seed ou limpeza automática pela CLI.

@@ -4,6 +4,8 @@
 
 A revisão de código no SHA664eedf2 foi favorável (TESTER146testes dirigidos exit0). Na UI combinada c7e85eb2, a TESTER preservou captura34498 exit1: warning exclusivamente do estilo caret-color:transparent, injetado por screenshot antes da hidratação do input Buscar. Probe independente reproduziu1/5 sem espera e0/5 após data-conectado=1; código da Inbox não contém esse estilo. O integrador passou a aguardar a assinatura cliente após o conteúdo e antes da foto, preservando todos os diagnósticos.
 
+Fechamento: TESTER favorável também no combinado86093f4d para layout/foco/inert/AX/Escape/filha,20PNGs e medições390/960/1024/1400/390×500. GlobalFINAL50503 nessafonte terminou **exit0** com857arquivos6673testes,TSCheap8192,lint0erros40avisos. Rootrepetiuapp20comnovohelper1156exit0/0falhas16diagnósticosrecuperados;18referênciasofflineanterioresinalteradas. Evidências completas e negativos emoutput/inbox-308-311-combinado. PR308aguardapublicação comdepósitoremotoconfirmadodasimagens; não háhomologaçãooumergepresumidos.
+
 TDD do delta:359f85 exit1 com2falhas/17pass; GREEN955e1b exit0/19testes e lint dirigido0. TSC492ab1 exit0. Não altera código de produto, estilo ou comportamento do Inbox. Global anterior46900 no c7e85eb2 terminou exit0:857arquivos6663testes/TSC/lint0erros40avisos. A nova fonte do harness será verificada em novo global e captura; não atribuir a essa fonte a execução anterior. A captura canônica24284 c7 gerou38PNGs/0falhas16diagnósticos de GET recuperado, preservados em output/inbox-308-311-combinado.
 
 ## Estado e recorte
