@@ -1,0 +1,87 @@
+{
+  "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+  "execucoes": {
+    "triagem": {
+      "session_id": 66205,
+      "exit": 0,
+      "contextos": 6,
+      "png": 6
+    }
+  },
+  "inspecao": {
+    "concluida": true,
+    "pngInspecionadas": 6,
+    "metodo": "Inspeção visual dos três pares claro/escuro1440x900,1024x768,320x500; PNG originais completos preservados.",
+    "limites": [
+      "Triagem recebida por documento real autorizado200finished e DOM público; nenhum endpoint de triagem criado ou JSON/HTML fabricado.",
+      ">=960: banner contagem1 acima de Escolha uma conversa e painel ausente. Mobile320x500: central oculta e lista visível; não exige banner central visível.",
+      "Mensagem privada inbox-319-triagem-msg-001 inserida exclusivamente pelo integrador, null atendimento; nenhuma classificação/envio/POST de negócio pelo probe.",
+      "Fonte4fade imutável; telefones+5500 fictícios/pseudônimos preservados explicitamente."
+    ]
+  },
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-319-final-probes/triagem-final-real-claro-1440-2026-10-23T08-34-23.384Z/triagem-sem-selecao-real.png",
+      "bytes": 120823,
+      "sha256": "20ab8c77795cecdf92a6699985932b15af45f6dea2d9ad077bc08ab87db8e8fd",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-triagem",
+      "estado": "triagem-sem-selecao-real",
+      "tema": "claro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/triagem-final-real-escuro-1440-2026-10-23T08-34-27.734Z/triagem-sem-selecao-real.png",
+      "bytes": 122424,
+      "sha256": "3889e18b36bf48b23125e5c6f46b19569bb7d57b1b9297f3a3a2c9be05a701e1",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-triagem",
+      "estado": "triagem-sem-selecao-real",
+      "tema": "escuro",
+      "tamanho": "1440x900"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/triagem-final-real-claro-1024-2026-10-23T08-34-29.639Z/triagem-sem-selecao-real.png",
+      "bytes": 90711,
+      "sha256": "520e6d2fc4a71a6ce412629e9251fafaab4a009c7ffc7c911b331396c8fb85eb",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-triagem",
+      "estado": "triagem-sem-selecao-real",
+      "tema": "claro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/triagem-final-real-escuro-1024-2026-10-23T08-34-31.551Z/triagem-sem-selecao-real.png",
+      "bytes": 92190,
+      "sha256": "4dbea25da3cc348765a5825097ff53bfe045a0dd1db8fef46f923313cda11f99",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-triagem",
+      "estado": "triagem-sem-selecao-real",
+      "tema": "escuro",
+      "tamanho": "1024x768"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/triagem-final-real-claro-320-2026-10-23T08-34-33.529Z/triagem-sem-selecao-real.png",
+      "bytes": 36181,
+      "sha256": "5a305c79f37bc502a3d375608768f10443e13909ee271bf38e3a831f0c695074",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-triagem",
+      "estado": "triagem-sem-selecao-real",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/triagem-final-real-escuro-320-2026-10-23T08-34-35.386Z/triagem-sem-selecao-real.png",
+      "bytes": 37319,
+      "sha256": "1dcccf7860bbdbfdf70f4813f7aaca1613feec6253a4d66913401d0eb78f3661",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "tipo": "complemento-triagem",
+      "estado": "triagem-sem-selecao-real",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    }
+  ],
+  "totalBytes": 499648,
+  "metadadosSanitizados": "output/inbox-319-triagem-evidencias.json",
+  "pacote": "Somente array arquivos; nenhum manifesto bruto, probe, prancha, log, RSC, HTML, snapshot, seed ou negativo."
+}

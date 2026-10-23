@@ -1,0 +1,622 @@
+{
+  "versao": 1,
+  "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+  "harness": {
+    "capturar-inbox.mjs": "7d9436eb4ecdc0a77cbd82e4c8fba9483726a39627c375569a89ad5e835cf211",
+    "nucleo-captura.mjs": "6a2e45b86626027540007f5090d0885814884daff5d1b355610dc2f4e281f500",
+    "espera-app.mjs": "39e3f5c23ef00340ee1fbcd2fc4452cafff6be9c217a4e59c61cff2a0a98cd35",
+    "anonimizar-telefones.mjs": "96a5aa52b7797c5f4cc9db5b154a112508ea6409cd659a807ff2a77bd0cf96ce",
+    "estados-inbox.mjs": "d1bcfda15e9aa901938a5fc21520e98d3130a27d8f6896569c7ad4817732b2c9"
+  },
+  "produtoByteIgual": "afd08c1aca5e08d5715836ce50e1f72d2562d3eb",
+  "fase": "NORMAL_ORIGINAL1372_SEM_LONGA_OU_TRIAGEM_PRIVADA",
+  "execucoes": {
+    "preflight": {
+      "session_id": 84121,
+      "exit": 0,
+      "incluirFotos": false
+    },
+    "formal": {
+      "session_id": 3127,
+      "exit": 0,
+      "png": 42
+    },
+    "mobile": {
+      "session_id": 22954,
+      "exit": 0,
+      "png": 12
+    }
+  },
+  "inspecao": {
+    "manual": true,
+    "resultado": "favorável",
+    "png": 54,
+    "formal42Pranchas": 21,
+    "mobile12Pranchas": 2,
+    "mobileVazio": "Após rolagem local real instantânea do painel, rect inicial486.5..505.25 final287.5..306.25, scrollTop0→199, documento0/0. Não comprova cabimento inicial ou foco. Iniciaisforaallowlist.",
+    "mobileErro": "Retry alcançado porTabnatural quandoinicialfora da dobra; fotoapósrolagemporkeyboard, semrefocoartificial.",
+    "listaVazia": "Texto público exato/1marcador esperado/rectinteiroviewport/semCTA; marcadorNotificaçõesfora viewport não duplicaa lista."
+  },
+  "referenciaPrototipo": {
+    "blob": "9166cbe27c0187369657b4a42eabf3d1586c5b91",
+    "NA": [
+      "carregando",
+      "painel-erro",
+      "thread-erro",
+      "painel-vazio",
+      "sem-selecao"
+    ]
+  },
+  "reprodutoresPrivados": [
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile.mjs",
+      "sha256": "762ec737e1cf224c21352fb8bc7905042fea2b11ba94aaf6033b42f04ab0ebeb",
+      "limite": "ReprodutorprivadoforadoZIP; nãoéarquivoaselecionar."
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/infra.mjs",
+      "sha256": "7611d7d9c8e02416bd6cee90f169de9a9e1660546befe4dc5231b3cfff2e79c9",
+      "limite": "ReprodutorprivadoforadoZIP; nãoéarquivoaselecionar."
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/esperar-lista-vazia-mobile.mjs",
+      "sha256": "2764815c3bf12a74eb8660cd9d6076b9ce64df02adb3a16efd5be9b6a1b9f330",
+      "limite": "ReprodutorprivadoforadoZIP; nãoéarquivoaselecionar."
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/posicionar-vazio-painel.mjs",
+      "sha256": "e04eda6f7aa35af50437ba9208619001a4cce619c1511d1b0e27a9144462a2b7",
+      "limite": "ReprodutorprivadoforadoZIP; nãoéarquivoaselecionar."
+    }
+  ],
+  "exclusoes": [
+    "Todasexecuções84095/96724/88639 epreflight52089/diagnósticos/retencoes200repassadas",
+    "Mobile51674incompleta inteira",
+    "Mobile85691exec0masinspeção2vazioscortados inteira",
+    "Preflight/diagnóstico/gate/contexto-inicial/pranchas/logs/HTML/RSC/SQL/seeds/snapshots/credenciais",
+    "Faseslonga/Triagem eQA/global ainda pendentes; não inferir conclusãofinal319"
+  ],
+  "arquivos": [
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/sem-selecao/app-escuro-desktop-sem-selecao.png",
+      "bytes": 115709,
+      "sha256": "1a10834458a7c37fd1b2f599af3bed6698e23a52577350d0851a2dc245997af7",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/sem-selecao/app-escuro-tablet-sem-selecao.png",
+      "bytes": 87298,
+      "sha256": "549f47ed21803478161c8d19cba07b2287a9ea3fe25e457e6bc9fa6866979d27",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/sem-selecao/app-escuro-celular-sem-selecao.png",
+      "bytes": 70785,
+      "sha256": "cdab92ed4d6424406375e6cdbc4ed0c7d0b878ec11bffe0b9d090ddf37b6d194",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/sem-selecao/app-claro-desktop-sem-selecao.png",
+      "bytes": 115560,
+      "sha256": "c89a035870a04295987bccecaca8738cade562254d742d07f116e0c18adce12f",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/sem-selecao/app-claro-tablet-sem-selecao.png",
+      "bytes": 86260,
+      "sha256": "9a7ccd6c30995c8192c1b08219ac53eaedcc6862f4a6d075f46c9951ecaf4bd1",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/sem-selecao/app-claro-celular-sem-selecao.png",
+      "bytes": 69899,
+      "sha256": "6ed28d487a5b0a30c532681652150f43dc5d50064e3f045dd2c5d8735b14c99e",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/carregando/app-escuro-desktop-carregando.png",
+      "bytes": 44259,
+      "sha256": "64bdc7fbf68f446632da389a6792c2153b3a9631256cc7ce2bfe4353be5a5bd2",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/carregando/app-escuro-tablet-carregando.png",
+      "bytes": 34624,
+      "sha256": "3c5a9e87dfe71e83c0663f296781c70b1c1c6323387b7ab2eb05c0ec131fe0a9",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/carregando/app-escuro-celular-carregando.png",
+      "bytes": 8628,
+      "sha256": "ccd11e3836d799f402e5a3f303422f3a32ea86e02c32dfe525eeb3158ccfd12a",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/carregando/app-claro-desktop-carregando.png",
+      "bytes": 43873,
+      "sha256": "8cbf6f644108e5510679dfc43c8a7fb3b6d2123796b37ecaef24f9953324d397",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/carregando/app-claro-tablet-carregando.png",
+      "bytes": 33944,
+      "sha256": "276465f0f2a0918ec96c046e02ca7d2ea5a23442a30e7a629b488b2e03a760b3",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/carregando/app-claro-celular-carregando.png",
+      "bytes": 7940,
+      "sha256": "9e2133190c5d66ceb5773d628ec3800b6b2e9db678575244a311033e02798233",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-erro/app-escuro-desktop-painel-erro.png",
+      "bytes": 169380,
+      "sha256": "fb0fdaaeeea9967599eb798f54178b98d9673c60c598eb253568478402093aa2",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-erro/app-escuro-tablet-painel-erro.png",
+      "bytes": 116663,
+      "sha256": "a9793d3a5c9713c16d95f9ede2a5b9a3f47b98ffc65cd4eed7cf403d2c678d7b",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-erro/app-escuro-celular-painel-erro.png",
+      "bytes": 23584,
+      "sha256": "7d90d1a41f4fb44b73e06f3028ee73d570d579dd2514ed94cd7e7b271e7acad5",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-erro/app-claro-desktop-painel-erro.png",
+      "bytes": 169082,
+      "sha256": "31eb4bf78ea7bfe7b832dbe9eb47e07026689adbfd31ab3dc1d21b87b3f6bbc7",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-erro/app-claro-tablet-painel-erro.png",
+      "bytes": 117868,
+      "sha256": "869969dd9befc63120e61b8dfe9360e2e4b72ea70c293f2a011b04d983a3f607",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-erro/app-claro-celular-painel-erro.png",
+      "bytes": 23626,
+      "sha256": "a42dcab155b1578ba0223bef90f369076775519a780e35aac0f88238c5cdd078",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/thread-erro/app-escuro-desktop-thread-erro.png",
+      "bytes": 155131,
+      "sha256": "4b0e511c753e0b6e11a0dfa86ff15400a869fd3f6db86d2acc58808f6ca278be",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/thread-erro/app-escuro-tablet-thread-erro.png",
+      "bytes": 102431,
+      "sha256": "5cb5d73985847b8563b9d61b4d6860fe04b0253d1470aa3e028b29e46ab25f7b",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/thread-erro/app-escuro-celular-thread-erro.png",
+      "bytes": 23345,
+      "sha256": "fad1de51e96dfab5c5e0e9deb8f465aee0ed270b43a05d3826834f5bcedfd5fb",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/thread-erro/app-claro-desktop-thread-erro.png",
+      "bytes": 154959,
+      "sha256": "dd9f0ce53ae10eb81712f0e4fc72628f56b5f49fb5d3d772886bb288fd3d4f42",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/thread-erro/app-claro-tablet-thread-erro.png",
+      "bytes": 101416,
+      "sha256": "658f611898acc340637ba1c8caa996363a9e342127e5ef37c09513aef0e8b771",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/thread-erro/app-claro-celular-thread-erro.png",
+      "bytes": 23310,
+      "sha256": "ba3375d33570e2c16516c1610a503a05172ce16e1dc080d2a76974d3b8bfd24a",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-vazio/app-escuro-desktop-painel-vazio.png",
+      "bytes": 154564,
+      "sha256": "4f838e5a630868e03f23f43f8c1633777b25e2512324a99d374efbcd42082686",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-vazio/app-escuro-tablet-painel-vazio.png",
+      "bytes": 106186,
+      "sha256": "3e14cff41ff9cff89f863574057a3fec8f4f08286dc77fab57ac75a46fd4c552",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-vazio/app-escuro-celular-painel-vazio.png",
+      "bytes": 23635,
+      "sha256": "36a500164995bab75a64df9ebb7d27634afb03a69497136586bea8eaa2be0e07",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-vazio/app-claro-desktop-painel-vazio.png",
+      "bytes": 154154,
+      "sha256": "7a0208cfba1f9cfe58e76170dc6c14b1afd6ab18a5df9efb55f1c0b5f9a26aed",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-vazio/app-claro-tablet-painel-vazio.png",
+      "bytes": 109513,
+      "sha256": "3a634f8820267ca6186eef717329754bdbeafb4f8d88f5d81c0463f508939986",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/painel-vazio/app-claro-celular-painel-vazio.png",
+      "bytes": 23754,
+      "sha256": "c72fc339313f3ff01a2334dc35b84fe57686878234c64d694ec9fa8ea7b0657f",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/app-escuro-desktop-lista-vazia.png",
+      "bytes": 61294,
+      "sha256": "0527f25c6a7dcc6f50c25bdc63f91c320b99e32381b3db3f727c32f2c0ebb74c",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/app-escuro-tablet-lista-vazia.png",
+      "bytes": 51438,
+      "sha256": "79004e912e8c0616cfca9c4952838a2089fd317d3c89af59585aac587a9d6b77",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/app-escuro-celular-lista-vazia.png",
+      "bytes": 22083,
+      "sha256": "ff8bc66b3e5adad91d473acf339c15a5cd3a33dc7ce4bec19d504f5b6b80c19a",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/app-claro-desktop-lista-vazia.png",
+      "bytes": 60022,
+      "sha256": "0f6600cbd9c0583837887feff559fc69397c8259fe797c22be46b4bd02735785",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/app-claro-tablet-lista-vazia.png",
+      "bytes": 50617,
+      "sha256": "dfdbe0a2352dd91e14d4a6c5f8a31e2b0cd048166a1fb01fe371abcdb8aefb00",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/app-claro-celular-lista-vazia.png",
+      "bytes": 21360,
+      "sha256": "fdb575b407d0358e850e3d0a2d2b40756eac2c7b62c080e79c919eec4d90122b",
+      "tipo": "formal319-app",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/prototipo-escuro-desktop-lista-vazia.png",
+      "bytes": 144561,
+      "sha256": "fe11042080c24d6e4a1e8f0040960a2a44f679211636ce02e37b814bf61e7063",
+      "tipo": "referencia-lista-vazia-prototipo",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/prototipo-escuro-tablet-lista-vazia.png",
+      "bytes": 96325,
+      "sha256": "7c93519fe24fb599eeecf694b332e09418f12c313472a0dbf54fa4b7e6a90deb",
+      "tipo": "referencia-lista-vazia-prototipo",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/prototipo-escuro-celular-lista-vazia.png",
+      "bytes": 28426,
+      "sha256": "36b85e33acd1bb8d26aee4254d884f32c33738bc69a3054bece276c63b5e9262",
+      "tipo": "referencia-lista-vazia-prototipo",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/prototipo-claro-desktop-lista-vazia.png",
+      "bytes": 144162,
+      "sha256": "3096fb0633fb08ee2b1d944cbe65e4dc5e084a4c80a1fb19ee855422d9bd2247",
+      "tipo": "referencia-lista-vazia-prototipo",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "desktop"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/prototipo-claro-tablet-lista-vazia.png",
+      "bytes": 95624,
+      "sha256": "c64c892c903376dfca5ab838ba96235a0029892ea3b785124a039083ed03495b",
+      "tipo": "referencia-lista-vazia-prototipo",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "tablet"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/formal-2026-10-23T07-58-22.714Z/lista-vazia/prototipo-claro-celular-lista-vazia.png",
+      "bytes": 27269,
+      "sha256": "0fd00cb3cf5ec952d3526069fc403d9cafbb6c9b5cc5a9b6439f0bb39d49e03c",
+      "tipo": "referencia-lista-vazia-prototipo",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "celular"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-carregando-claro-320-2026-10-23T08-08-51.977Z/mobile-carregando.png",
+      "bytes": 5912,
+      "sha256": "3f04b9aab7430bfc9fe7d477eccf72049b09e6e5ed9c553bab13a41fe4bbcec0",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-carregando-escuro-320-2026-10-23T08-09-17.977Z/mobile-carregando.png",
+      "bytes": 6364,
+      "sha256": "0bf62d06b0efc7e6751c37f6bbd00f1ffddc48cb0d2c7edc1a56baee463a4062",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "carregando",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-lista-vazia-claro-320-2026-10-23T08-09-10.467Z/mobile-lista-vazia.png",
+      "bytes": 18249,
+      "sha256": "27d891313f7a1dff23645e929e3800f12245c380930ab910554f31139201cac6",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-lista-vazia-escuro-320-2026-10-23T08-09-38.098Z/mobile-lista-vazia.png",
+      "bytes": 18976,
+      "sha256": "fb5a3cdd7ced4698332a4ca483b5baa22491efd136aa1d319cb5c987b016bb5f",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "lista-vazia",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-painel-erro-claro-320-2026-10-23T08-09-00.156Z/mobile-painel-erro.png",
+      "bytes": 20272,
+      "sha256": "582db92ab09240ed5d8836fca0de61428d57316e45caafa4bb454b13541258ff",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-painel-erro-escuro-320-2026-10-23T08-09-28.309Z/mobile-painel-erro.png",
+      "bytes": 20196,
+      "sha256": "d3fabc55391d70653710758258575a76199a0cc9a3a378b0faf8504a8b295d7e",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-erro",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-painel-vazio-claro-320-2026-10-23T08-09-06.879Z/mobile-painel-vazio.png",
+      "bytes": 17979,
+      "sha256": "5813c6f0591b1b205896a7db2e987fbeeaff233ec6c5694e096b0c0bddcab740",
+      "tipo": "mobile319-apos-rolagem-local",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-painel-vazio-escuro-320-2026-10-23T08-09-35.041Z/mobile-painel-vazio.png",
+      "bytes": 17843,
+      "sha256": "2302014bac5d8c0f857e14a0a081e8896bb1eff9059e66af2325bfc2f3653716",
+      "tipo": "mobile319-apos-rolagem-local",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "painel-vazio",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-sem-selecao-claro-320-2026-10-23T08-08-49.727Z/mobile-sem-selecao.png",
+      "bytes": 36060,
+      "sha256": "dcd99093b8e5bb76a4fe8379400309e4b57ac5c6a76d3beeff4593ab637ea76d",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-sem-selecao-escuro-320-2026-10-23T08-09-13.940Z/mobile-sem-selecao.png",
+      "bytes": 37075,
+      "sha256": "07d7cfa88aa37cc1b357c7c01ebb76fa100290c11ab89d4555664b8cfb149e0f",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "sem-selecao",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-thread-erro-claro-320-2026-10-23T08-09-03.523Z/mobile-thread-erro.png",
+      "bytes": 19799,
+      "sha256": "42a804d681e80e661540d1636824eb3abf9742dbe1ba3ba3be00d32822856cd2",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "claro",
+      "tamanho": "320x500"
+    },
+    {
+      "arquivo": "output/inbox-319-final-probes/mobile-thread-erro-escuro-320-2026-10-23T08-09-31.978Z/mobile-thread-erro.png",
+      "bytes": 19762,
+      "sha256": "befa1b61c878041ace9575cf2b76c31ce6392f2dea35a8f57db092cb6f1fce08",
+      "tipo": "mobile319",
+      "fonte": "4fade8995573d1a9abaa343e9fa25295506f0cbf",
+      "estado": "thread-erro",
+      "tema": "escuro",
+      "tamanho": "320x500"
+    }
+  ],
+  "totalBytes": 3513048
+}
