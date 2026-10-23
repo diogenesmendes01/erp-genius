@@ -472,6 +472,7 @@ model AtendimentoWhatsApp {
   atendimentoOrigemId String?
   atendimentoOrigem AtendimentoWhatsApp? @relation("TransferenciaAtendimento", fields: [atendimentoOrigemId], references: [id], onDelete: Restrict)
   transferidos AtendimentoWhatsApp[] @relation("TransferenciaAtendimento")
+  tarefas Tarefa[]
   mensagens MensagemWhatsApp[]
   intencoes IntencaoMensagem[]
   participantes ParticipanteAtendimentoWhatsApp[]
@@ -9635,6 +9636,10 @@ model Tarefa {
   matriculaId String?
   matricula   Matricula?    @relation(fields: [matriculaId], references: [id], onDelete: Restrict)
 
+  // Vínculo opcional definido na criação; tarefas anteriores permanecem sem atendimento (#322).
+  atendimentoId String?
+  atendimento AtendimentoWhatsApp? @relation(fields: [atendimentoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
   origem       OrigemTarefa @default(HUMANO)
   versao       Int          @default(1)
   criadoEm     DateTime     @default(now())
@@ -9645,6 +9650,7 @@ model Tarefa {
   @@index([responsavelId, status, dataCivil])
   @@index([setor, status, responsavelId])
   @@index([status, lembrarEm])
+  @@index([atendimentoId, status])
   @@index([leadId, status])
   @@index([pessoaId, status])
 }
