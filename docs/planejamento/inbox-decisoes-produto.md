@@ -26,4 +26,4 @@ O usuário autorizou Sol nos dois papéis DEV e no papel TESTER em substituiçã
 
 As perguntas de produto enviadas nesta rodada foram respondidas. D7, D8, D14–D19 e D21 seguem as regras atuais do plano até instrução diferente. As extensões de modelo, gerador e UI decorrentes dos spikes deverão virar tasks verificáveis com dependências; sua aprovação não permite encerrar as issues antes da implementação exigida. Novas dúvidas concretas serão apresentadas ao usuário, sem interpretar silêncio como aprovação.
 
-Nenhuma decisão acima autoriza mensagem real, ativação de integrações externas, merge ou deploy nesta fase. Os testes do gerador usarão o provedor simulado e nunca uma chamada externa real.
+As decisões de produto não autorizam mensagem real, ativação de integrações externas ou deploy. Em23/10/2026 o usuário autorizou explicitamente resolver todos os comentários das PRs e realizar os merges na main após verificação, preservando a ordem de dependências. Os testes do gerador usarão o provedor simulado e nunca uma chamada externa real.

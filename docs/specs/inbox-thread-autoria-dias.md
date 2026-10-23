@@ -47,3 +47,51 @@ Base dd141 integrada com312/hidratação/anonDOM392/382; conflito de quadro pres
 ## Evidências finais DEV
 
 Fonte/harness944e1736: recorte51arquivos613testes/TSCheap8192/lintdirigido0 comNode22. Formal28PNG app×protótipo concluído e individualmente inspecionado; complemento24PNG/API/DOM/menu nos6contextos inspecionado por pranchas; virtual12PNG/6contextos delta0/mesmo nó e foco no029, runtime idêntico ao944 porobjetoGit. Hashes/política392 efontes exatas em output/inbox-314-visual/formal/manifesto-final.json, normais-final/manifesto.json evirtual-green99-101/manifesto.json. PNGs somente locais por ruling; negativos separados. Detalhes/limites históricos no relatório. TESTER/globalcoordenado pendentes, sem aceite presumido.
+## Revisão C1 da PR398 — composição dos pais
+
+Base314-r3@cada334f incorpora3975f8/main por merge normal, sem moverc207.
+Composição67192a57 preserva balões/VirtualList/relógio/scripts314, recebe
+produtor394/R6, prazo puro/Avatar/SSE revisados e mantém agoraInicial314.
+Conversa passa temMaisDepois ao itensDaThread de quatro argumentos388,
+conservando decorarThread/stableMount e foco por mensagem. SSR314 e testes
+C1/R6 são mantidos em blocos independentes.
+
+Global671:867 arquivos/6.819 unitários,4467 EXIT0,sem filtros/ignorados;
+lint global44100 EXIT0/40 avisos anteriores. TSC60102 identificou quatro
+fixtures314 com três argumentos; adaptação posterior somente no teste passa
+false explícito. Recorte final7/143,TSC84417 e lint do teste EXIT0. Nenhum
+runtime posterior ao global, sem repetir o global pela adaptação de fixtures.
+TESTERbc4 favorável7/148 próprios,d722b1 EXIT0,sem DB/browser/global/TSC;
+CI/main/#392B2 pendentes. Baseb23ff13b recebe limpeza404(sóPNG/docs),
+runtime/scripts/deps iguaisbc4. Quatro variantes legadas preservadas só
+em backup local antes da retirada, sem reatribuição aoZIP381.
+output/pr398-qa/revisao.md.
+
+## PR398 R1 — C3/C4 e rastreabilidade C5/C6 (base ffdd)
+
+Patch sobre ffddfdae6969e93f865be73357c95816d6b090aa, preservando a base publicada e todos os contratos existentes. C3: um item com criadoEm inválido continua na thread, sem inventar dia, mas já não apaga o último dia civil válido e não provoca segunda key dia:AAAA-MM-DD quando o próximo item pertence ao mesmo dia. Uma mudança civil real continua inserindo separador. C4: autorNome de nota nulo/vazio/sóbranco usa Autor não informado; nome preenchido continua exibido e escapado porReact. Nenhuma alteração em VirtualList, cursor, janela de notas, relógio, SSR, SSE ou permissões.
+
+C5 é LIMITE DE ESCOPO MANTIDO, não correção por timer: tela totalmente ociosa que atravessa meia-noite pode conservar Hoje/Ontem do snapshot anterior. O relógio atualiza na assinatura cliente e quando mudam referências de mensagens/notas, seleção ou epoch SSR. O teste real de hidratação abaixo já preserva o primeiro nó/HTML e comprova atualização com mensagem00:02, seleção/notas posteriores, mantendo timerCount0. Não se adiciona polling nem se promete virada automática da tela parada. Isso não afeta o cálculo por dia civil/DST, que continua correto em cada revisão.
+
+### C6 — nomes do plano Task9 e testes executáveis atuais
+
+Não foram renomeados testes já estáveis apenas para coincidir com a redação do plano. A correspondência abaixo é explícita; alguns requisitos são cobertos por um conjunto, sem atribuir a um teste uma asserção que ele não contém. Caminhos relativos ao repositório:
+
+| Nome/requisito do plano Task9 | Arquivo e nome real do teste |
+|---|---|
+| cliente: fundo de entrada, cauda à esquerda, sem autor | src/components/conversa/BalaoMensagem.test.ts — entrada tem cauda esquerda e participante só em grupo |
+| humano: Você para a própria, nome para a de outra pessoa, verde forte | BalaoMensagem.test.ts — humano próprio é Você; outra pessoa mantém nome e cor de contraste306 |
+| aria: balão roxo e Aria · IA | BalaoMensagem.test.ts — Aria roxa e primeira autoria; sequência sem autor/cauda |
+| nota: tracejado de aviso, rótulo pela origem, autor na linha da hora, sem ✓✓ | BalaoMensagem.test.ts — nota preserva origem/autor/hora/XSS e não cria menu/status/mídia mesmo com props impróprias; complementado por C4 PR398: nota com autor vazio/branco %j informa autoria ausente |
+| em sequência: raio inteiro e sem autor | BalaoMensagem.test.ts — Aria roxa e primeira autoria; sequência sem autor/cauda; itens-thread.test.ts — Você→Camila→Carlos identificam cada autor; só repetição conhecida faz sequência |
+| hora mono 10,5 e ✓✓ de 13 | BalaoMensagem.test.ts — hora mono10,5/status13 e destaque de busca preservam erro/lida |
+| rotuloDia usa o fuso de exibição | src/components/conversa/itens-thread.test.ts — distingue hoje, ontem e data pelo fuso; Ontem é a véspera civil nos dois DST London, não menos24h; virada de ano, bissexto e fallback de fuso inválido |
+| decorarThread: evento de transferência no topo, separador a cada dia, sequência por autor no mesmo dia | itens-thread.test.ts — evento no topo e separadores usam keys civis estáveis, sem colisão com nota; Você→Camila→Carlos identificam cada autor; só repetição conhecida faz sequência; notas conservam origem e autor ao decidir sequência |
+| grupo: participantes diferentes não fazem sequência | itens-thread.test.ts — grupo troca participante e dia quebra a sequência |
+| pílula IA e neutra com hora mono | src/components/conversa/EventoSistema.test.ts — centraliza por própria caixa, pílula IA/neutra e hora mono, sem controle fictício |
+| pílula de superfície 12/500 | src/components/conversa/SeparadorDia.test.ts — centraliza também fora de flex/VirtualList e usa pílula superfície12/500 |
+| thread com fundo pontilhado da casca, padding de7% e evento de transferência | src/app/(app)/inbox/ConversaAberta.test.ts — decora a thread no fuso usando referência explícita SSR e preserva nota sem comandos (padding/fuso/nota); transferência por composição de itens-thread.test.ts (evento no topo...) + EventoSistema.test.ts. Não é nova prova ponta a ponta de transferência |
+
+Regressões adicionais do contrato: src/components/conversa/agora-thread.test.ts — SSR23:59 hidrata00:01 preservando nó e depois nova mensagem00:02 usa dia cliente; SSR sem epoch válido(%s) usa snapshot neutro estável sem consultar relógio. VirtualList.estavel.test.ts — opt-in conserva o mesmo pai, linha, botão focado e viewport na transição99→101; SSR default continua sem wrapper e opt-in fornece a mesma estrutura de pai/rows abaixo do limite; opt-in não acumula diferenças subpixel ignoradas perto da altura estimada. Esses arquivos foram executados no recorte, mas não alterados.
+
+C1/ancestralidade/retarget e C2/CI remota seguem com o integrador após397; a correção local não declara esses gates concluídos nem compõe QA280. Relatório de todos os comentários e gates locais: output/inbox-pr398-review-todos.md.

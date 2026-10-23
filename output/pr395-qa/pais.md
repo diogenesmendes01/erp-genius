@@ -35,3 +35,11 @@ Sem novo browser ou DB nesta integração. Os 12 contextos de foco do relatório
 foco.md são do4818 e não são apresentados como recaptura do novo consumidor.
 B1/C2 de conflitos foram conciliados. Parecer do head final e C4/CI contra
 main são gates; #392/B2 impede o merge antecipado da pilha. Sem deploy/envio.
+## Preservação da limpeza404
+
+Base-r3 posterior450318f9 incorpora maincce21e19, somente docs e64PNG298
+retirados. A composição posterior preserva src/scripts/prisma/package/lock
+iguais3fc403de,sem novo runtime ou suíte presumida. A ausência dos PNG
+mantém a correção técnica404,com ZIP/manifesto já auditados; nenhum upload
+ou captura novo. Pareceres/gates3fc permanecem nominais à fonte verificada,
+CI e decisão humana392/B2 continuam pendentes antes do merge.
