@@ -1,8 +1,10 @@
 "use client";
 
-import { Suspense, lazy, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import { IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import type { Resultado } from "@/server/_shared/resultado";
+import { executarAcaoCliente } from "@/lib/acao-cliente";
+import { useChavesPorAlvo, type ChavesPorAlvo } from "@/lib/chave-idempotencia";
 import { Botao } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
@@ -29,7 +31,12 @@ export interface PropsCompositor {
   capacidades: readonly RecursoMotor[];
   aoEnviarTexto(t: string): Promise<Resultado<unknown>>;
   aoEnviarMidia(url: string, legenda: string): Promise<Resultado<unknown>>;
-  aoNota(t: string): Promise<Resultado>;
+  aoNota(t: string, chaveIdempotencia?: string): Promise<Resultado>;
+  /** Compartilhado pelo dono da conversa para conservar tentativa incerta mesmo ao alternar contatos. */
+  tentativasNota?: ChavesPorAlvo;
+  aoAgendar?: () => void;
+  /** O rodapé hospeda a moldura; controles e estados continuam sendo deste componente. */
+  contido?: boolean;
   /** Respostas rápidas do atendente (atalho "/"); sem elas o atalho não abre. */
   respostas?: readonly RespostaDoCompositor[];
   /** Valores das variáveis das respostas ({nome}, {responsavel}, {curso}). */
@@ -58,7 +65,7 @@ const ITENS_MOTOR: { rotulo: string; recurso: RecursoMotor }[] = [
   { rotulo: "Localização", recurso: "localizacao" },
 ];
 
-export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {} }: PropsCompositor) {
+export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, respostas = [], variaveisResposta = {}, tentativasNota, aoAgendar, contido = false }: PropsCompositor) {
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erro, setErro] = useState("");
@@ -71,89 +78,119 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   const gravador = useRef<MediaRecorder | null>(null);
   const descartar = useRef(false);
   const nota = modo === "nota";
+  const tentativasLocais = useChavesPorAlvo();
+  const tentativas = tentativasNota ?? tentativasLocais;
 
   // Troca de atendimento ou de modo: o estado é ajustado no próprio render (estado derivado da prop, com a chave
   // anterior guardada), sem setState dentro de effect (react-hooks/set-state-in-effect). O React descarta este render
   // e refaz com o rascunho da conversa nova; o anexo e o erro da anterior não passam para ela.
   const chave = chaveRascunho(atendimentoId, modo);
-  const [chaveAnterior, setChaveAnterior] = useState(chave);
-  if (chaveAnterior !== chave) {
-    setChaveAnterior(chave);
+  const [contexto, setContexto] = useState(() => ({ chave }));
+  const contextoAtual = useRef<typeof contexto | null>(contexto);
+  const emCurso = useRef(new Set<object>());
+  const revisaoRascunho = useRef(0);
+  if (contexto.chave !== chave) {
+    setContexto({ chave });
     setTexto(lerRascunho(atendimentoId, modo));
     setArquivo(null);
     setErro("");
+    setEnviando(false);
+    setEmoji(false);
+    setAnexos(false);
+    setGravando(false);
   }
+  useLayoutEffect(() => {
+    contextoAtual.current = contexto;
+    return () => { if (contextoAtual.current === contexto) contextoAtual.current = null; };
+  }, [contexto]);
+  const contextoVigente = () => contextoAtual.current === contexto;
   useEffect(() => () => {
     descartar.current = true;
     if (gravador.current?.state === "recording") gravador.current.stop();
-  }, []);
+  }, [contexto]);
 
-  if (podeEnviar !== true && falhaPermissao) {
+  if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
-      <div className="flex flex-wrap items-center gap-2 border-t border-gray-200 bg-composer px-4 py-3 text-sm">
+      <div className={contido ? "flex flex-wrap items-center gap-2 text-sm" : "flex flex-wrap items-center gap-2 border-t border-gray-200 bg-surface px-4 py-3 text-sm"}>
         <p role="alert" className="text-red-700">{FALHA_PERMISSAO_ENVIO}</p>
         <Botao variante="secundario" tamanho="sm" onClick={falhaPermissao}>Tentar de novo</Botao>
       </div>
     );
   }
-  if (podeEnviar === null) {
+  if (!nota && podeEnviar === null) {
     return (
-      <div className="border-t border-gray-200 bg-composer px-4 py-3 text-sm text-gray-700" role="status">
+      <div className={contido ? "text-sm text-gray-700" : "border-t border-gray-200 bg-surface px-4 py-3 text-sm text-gray-700"} role="status">
         {CARREGANDO_ENVIO}
       </div>
     );
   }
-  if (!podeEnviar) {
+  if (!nota && !podeEnviar) {
     return (
-      <div className="border-t border-gray-200 bg-composer px-4 py-3 text-sm text-gray-700" role="status">
+      <div className={contido ? "text-sm text-gray-700" : "border-t border-gray-200 bg-surface px-4 py-3 text-sm text-gray-700"} role="status">
         {MOTIVO_SEM_ENVIO}
       </div>
     );
   }
 
   function mudar(v: string) {
+    if (!contextoVigente()) return;
+    revisaoRascunho.current += 1;
     setTexto(v);
     gravarRascunho(atendimentoId, modo, v);
   }
 
   function escolherArquivo(f: File | undefined) {
+    if (!contextoVigente()) return;
     if (!f) return;
     if (f.size === 0 || f.size > MAX_BYTES_MIDIA) { setErro("Arquivo vazio ou acima de 10MB."); return; }
+    revisaoRascunho.current += 1;
     setArquivo(f);
     setAnexos(false);
     setErro("");
   }
 
-  async function subir(f: File): Promise<string | null> {
+  async function subir(f: File, revisaoEnviada: number): Promise<string | null> {
     const form = new FormData();
     form.append("file", f);
     form.append("atendimentoId", atendimentoId);
     const r = await fetch("/api/whatsapp/upload", { method: "POST", body: form, credentials: "same-origin" });
     const j = (await r.json().catch(() => ({}))) as { url?: string; erro?: string };
+    if (!contextoVigente() || revisaoRascunho.current !== revisaoEnviada) return null;
     if (!r.ok || !j.url) { setErro(j.erro ?? "Falha no upload."); return null; }
     return j.url;
   }
 
   async function enviar() {
     const corpo = texto.trim();
-    if (enviando || (!corpo && !arquivo)) return;
+    if (!contextoVigente() || enviando || emCurso.current.has(contexto) || (!corpo && !arquivo)) return;
+    const revisaoEnviada = revisaoRascunho.current;
+    emCurso.current.add(contexto);
     setEnviando(true);
     setErro("");
     try {
       let r: Resultado<unknown>;
-      if (nota) r = await aoNota(corpo);
+      if (nota) {
+        const tentativa = tentativas.para(JSON.stringify([atendimentoId, corpo]));
+        const desfecho = await executarAcaoCliente(() => aoNota(corpo, tentativa.atual), { idempotente: true });
+        // Confirma a tentativa de A mesmo se a pessoa já estiver em B; só o estado visual exige contexto vigente.
+        tentativa.depoisDo(desfecho);
+        r = desfecho.tipo === "ok" ? { ok: true } : { ok: false, erro: desfecho.mensagem };
+      }
       else if (arquivo) {
-        const url = await subir(arquivo);
+        const url = await subir(arquivo, revisaoEnviada);
         if (!url) return;
         r = await aoEnviarMidia(url, corpo);
       } else r = await aoEnviarTexto(corpo);
+      // A tentativa conclui sua chave, mas não substitui uma intenção editada durante o envio.
+      if (!contextoVigente() || revisaoRascunho.current !== revisaoEnviada) return;
       if (!r.ok) { setErro(r.erro); return; }
       mudar("");
       setArquivo(null);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao enviar.");
+      if (contextoVigente() && revisaoRascunho.current === revisaoEnviada) setErro(e instanceof Error ? e.message : "Falha ao enviar.");
     } finally {
-      setEnviando(false);
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
     }
   }
 
@@ -177,12 +214,14 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
     }
     try {
       const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!contextoVigente()) { fluxo.getTracks().forEach(t => t.stop()); return; }
       const g = new MediaRecorder(fluxo, { mimeType: formato });
       const pedacos: BlobPart[] = [];
       descartar.current = false;
       g.ondataavailable = (ev) => { if (ev.data.size) pedacos.push(ev.data); };
       g.onstop = () => {
         fluxo.getTracks().forEach((t) => t.stop());
+        if (!contextoVigente()) return;
         setGravando(false);
         const tipo = g.mimeType || formato;
         if (descartar.current || !pedacos.length) return;
@@ -195,7 +234,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
       g.start();
       setGravando(true);
     } catch (e) {
-      setErro((e as Error).name === "NotAllowedError" ? "Permita o acesso ao microfone nas configurações do navegador." : "Não foi possível gravar.");
+      if (contextoVigente()) setErro((e as Error).name === "NotAllowedError" ? "Permita o acesso ao microfone nas configurações do navegador." : "Não foi possível gravar.");
     }
   }
 
@@ -207,14 +246,14 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
   const vazio = !texto.trim() && !arquivo;
   const sugestoes = nota ? [] : respostasDoAtalho(texto, respostas);
   return (
-    <div className="border-t border-gray-200 bg-composer px-3 py-2">
-      {nota && <p className="mb-2 rounded bg-highlight px-3 py-1.5 text-xs text-gray-800" role="note">{AVISO_NOTA}</p>}
+    <div className={contido ? "min-w-0" : "border-t border-gray-200 bg-surface px-4 py-3"}>
+      {nota && <p className="mb-2 text-xs text-amber-700" role="note">{AVISO_NOTA}</p>}
       {erro && <p role="alert" className="mb-2 text-sm text-red-700">{erro}</p>}
       {arquivo && (
         <div className="mb-2 flex items-center gap-2 rounded border border-gray-200 bg-surface px-3 py-1.5 text-sm">
           <span className="truncate">{arquivo.name}</span>
           <small className="text-gray-600">{tamanho(arquivo.size)}</small>
-          <button type="button" aria-label="Remover anexo" disabled={enviando} onClick={() => setArquivo(null)} className="ml-auto rounded p-1 hover:bg-highlight">
+          <button type="button" aria-label="Remover anexo" disabled={enviando} onClick={() => { revisaoRascunho.current += 1; setArquivo(null); }} className="ml-auto rounded p-1 hover:bg-highlight">
             <IconTrash size={16} aria-hidden />
           </button>
         </div>
@@ -241,7 +280,7 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
       <div className="relative flex items-end gap-2">
         {!nota && (
           <>
-            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => setAnexos(!anexos)} className="rounded-full p-2 hover:bg-highlight">
+            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => setAnexos(!anexos)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
@@ -262,33 +301,34 @@ export function Compositor({ atendimentoId, modo, podeEnviar, falhaPermissao, ca
             )}
           </>
         )}
-        <button type="button" aria-label="Emojis" aria-pressed={emoji} onClick={() => setEmoji(!emoji)} className="rounded-full p-2 hover:bg-highlight">
+        {!nota && aoAgendar && <button type="button" aria-label="Agendar mensagem" title="Agendar mensagem" onClick={aoAgendar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconCalendarEvent size={18} aria-hidden /></button>}
+        <button type="button" aria-label="Emojis" aria-pressed={emoji} onClick={() => setEmoji(!emoji)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
           <IconMoodSmile size={20} aria-hidden />
         </button>
         <CampoTexto
           ref={entrada}
-          aria-label={nota ? "Escreva uma nota interna" : "Digite uma mensagem"}
-          placeholder={nota ? "Escreva uma nota interna" : "Digite uma mensagem"}
+          aria-label={nota ? "Escreva uma nota interna" : "Escreva uma mensagem"}
+          placeholder={nota ? "Escreva uma nota interna" : "Escreva uma mensagem"}
           rows={1}
           value={texto}
           disabled={enviando || gravando}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => mudar(e.target.value)}
           onKeyDown={aoTeclar}
           onPaste={(e) => { const f = e.clipboardData?.files?.[0]; if (f && !nota) { e.preventDefault(); escolherArquivo(f); } }}
-          className="max-h-36 min-h-[40px] flex-1 resize-none rounded-[9px] border border-gray-200 bg-surface px-3 py-2 text-sm"
+          className={"min-h-[44px] max-h-[140px] min-w-0 flex-1 resize-none rounded-lg border px-3.5 py-[11px] text-sm leading-5 " + (nota ? "border-amber-600 bg-amber-50" : "border-gray-200 bg-surface-muted")}
         />
         {gravando ? (
-          <button type="button" aria-label="Parar e revisar áudio" onClick={() => gravador.current?.stop()} className="rounded-full p-2 hover:bg-highlight">
+          <button type="button" aria-label="Parar e revisar áudio" onClick={() => gravador.current?.stop()} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
             <IconPlayerStop size={20} aria-hidden />
           </button>
         ) : vazio && !nota ? (
-          <button type="button" aria-label="Gravar mensagem de voz" onClick={() => void iniciarGravacao()} className="rounded-full p-2 hover:bg-highlight">
+          <button type="button" aria-label="Gravar mensagem de voz" onClick={() => void iniciarGravacao()} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
             <IconMicrophone size={20} aria-hidden />
           </button>
         ) : (
-          <Botao disabled={vazio} ocupado={enviando} onClick={() => void enviar()}>
-            <IconSend size={16} aria-hidden />Enviar
-          </Botao>
+          <button type="button" disabled={vazio || enviando} aria-busy={enviando || undefined} onClick={() => void enviar()} className={"grid h-11 w-11 shrink-0 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-50 " + (nota ? "bg-amber-700 text-surface" : "bg-brand-solid text-on-brand")}>
+            <IconSend size={18} aria-hidden /><span className="sr-only">Enviar</span>
+          </button>
         )}
       </div>
       <input hidden ref={seletor} type="file" aria-label="Escolher arquivo" onChange={(e) => { escolherArquivo(e.target.files?.[0]); e.target.value = ""; }} />
