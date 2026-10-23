@@ -76,7 +76,7 @@ const props = {
   usuario: { id: "u1", papeis: ["VENDEDOR"] }, fuso: null, agoraInicial: Date.parse("2026-03-29T23:30:00.000Z"),
 } as unknown as PropsInboxNovo;
 
-let respostaPainel: () => Response;
+let respostaPainel: () => Response | Promise<Response>;
 let respostaLista: () => Promise<Response>;
 let regiaoConversaVisivel: boolean;
 const chamadasPainel: string[] = [];
@@ -924,4 +924,34 @@ describe("C1 P2: snapshot invalidado por props equivalentes durante voo",()=>{
       expect(vi.mocked(fetch).mock.calls.filter(([u])=>String(u).includes("/atendimentos?"))).toHaveLength(3);
     }
   });
+});
+
+
+describe("319: painel falha versus vazio e recuperação",()=>{
+ it("falha inicial aparece no painel com retry real e sem detalhes técnicos",async()=>{
+  respostaPainel=()=>new Response("detalhe técnico privado",{status:500});tela();await esvaziar();
+  const t=tela(),alerta=elementos(t).find(n=>n.props.role==="alert");expect(alerta).toBeDefined();
+  const {texto}=await import("@/test/tela-sem-dom");expect(texto(alerta!.props.children)).toContain("Não foi possível carregar os detalhes.");expect(texto(alerta!.props.children)).not.toContain("técnico");
+  expect(elementos(t).some(n=>n.type===PainelSetor&&n.props.painel===null)).toBe(false);
+  const retry=elementos(alerta!.props.children as ReactNode).find(n=>texto(n.props.children)==="Tentar de novo")!;
+  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:true}),{status:200});
+  (retry.props.onClick as (e:unknown)=>void)({currentTarget:{closest:()=>null}});tela();await esvaziar();
+  const pronto=tela();expect(elementos(pronto).some(n=>n.props.role==="alert")).toBe(false);expect(elementos(pronto).some(n=>n.type===PainelSetor&&n.props.painel!==null)).toBe(true);expect(chamadasPainel).toHaveLength(2);
+ });
+ it("resposta antiga de outro atendimento não substitui o painel selecionado",async()=>{
+  let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise<Response>(r=>{resolver=r;});tela();
+  respostaPainel=()=>new Response(JSON.stringify({setor:"COMERCIAL",oportunidade:null,pessoaId:null,podeEnviar:false}),{status:200});
+  lista(tela()).aoSelecionar("a2");tela();await esvaziar();resolver(new Response(JSON.stringify({podeEnviar:true}),{status:200}));await esvaziar();
+  expect(conversa(tela()).podeEnviar).toBe(false);
+ });
+});
+
+it("319:retry do painel entrega foco antes de remover gatilho e não rouba foco tardio",async()=>{
+ const {texto}=await import("@/test/tela-sem-dom"),{criarDomMinimo}=await import("@/test/dom-minimo");const dom=criarDomMinimo();
+ const painel=dom.documento.createElement("aside"),botao=dom.documento.createElement("button"),fora=dom.documento.createElement("button");painel.setAttribute("id","painel-contato");painel.setAttribute("tabindex","-1");painel.appendChild(botao);dom.documento.body.appendChild(painel);dom.documento.body.appendChild(fora);
+ respostaPainel=()=>new Response("",{status:500});tela();await esvaziar();const alerta=elementos(tela()).find(n=>n.props.role==="alert")!;
+ const retry=elementos(alerta.props.children as ReactNode).find(n=>typeof n.props.onClick==="function"&&texto(n.props.children)==="Tentar de novo")!;
+ let resolver!:(r:Response)=>void;respostaPainel=()=>new Promise<Response>(r=>{resolver=r;});botao.focus();
+ (retry.props.onClick as (e:unknown)=>void)({currentTarget:botao});expect(dom.documento.activeElement===painel).toBe(true);tela();
+ painel.removeChild(botao);fora.focus();resolver(new Response(JSON.stringify({podeEnviar:true}),{status:200}));await esvaziar();tela();expect(dom.documento.activeElement===fora).toBe(true);
 });
