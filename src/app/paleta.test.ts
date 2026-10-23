@@ -33,7 +33,7 @@ const NAO_E_COR: Record<string, readonly string[]> = {
     "blend-saturation", "blend-color", "blend-luminosity",
   ],
   border: ["t", "r", "b", "l", "x", "y", "s", "e", "solid", "dashed", "dotted", "double", "hidden", "none", "collapse", "separate"],
-  ring: ["inset", "offset"], outline: ["none", "dashed", "dotted", "double"], divide: ["x", "y", "x-reverse", "y-reverse", "solid", "dashed", "dotted", "double", "none"],
+  ring: ["inset"], outline: ["none", "dashed", "dotted", "double"], divide: ["x", "y", "x-reverse", "y-reverse", "solid", "dashed", "dotted", "double", "none"],
   decoration: ["solid", "double", "dotted", "dashed", "wavy", "auto", "clone", "slice", "from-font"], accent: ["auto"], fill: ["none"], stroke: ["none"],
 };
 const UTILITARIO_SEM_TOM =
@@ -82,6 +82,8 @@ describe("paleta do design system", () => {
     expect(corSemToken('"bg-brand-solid text-on-brand bg-brand-bg bg-surface-raised border-border-soft divide-border-soft bg-ai-solid text-white bg-transparent border-current"')).toEqual([]);
     expect(corSemToken('"text-sm text-left border-t border-dashed outline-none ring-inset bg-cover text-start text-2xl"')).toEqual([]);
     expect(corSemToken('"text-brand-700 bg-gray-100"')).toEqual([]);
+    expect(corSemToken('"ring-offset"')).toEqual(["ring-offset"]);
+    expect(corSemToken('"ring-offset-white ring-offset-2"')).toEqual([]);
   });
 
   it("aceita utilitários de origem, recorte e espessura que geram CSS", () => {

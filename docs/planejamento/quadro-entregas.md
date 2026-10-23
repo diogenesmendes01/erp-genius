@@ -1,5 +1,9 @@
 # Quadro único de entregas
 
+## Pós-merge PR381 C2 — paleta — 23/10/2026
+
+Retirado apenas offset morto de NAO_E_COR.ring. Caso existente agora recusa ring-offset vazio e conserva ring-offset-white/ring-offset-2; regex/limites/paleta não mudam. RED1/7→GREEN6/49 e amplo11/367, TSC79557/lint6fontes0 na árvorecomposta. docs18 registra contrato; sem alteraçãoUI/deps.
+
 ## Pós-merge PR380 C3 — portabilidade Git — 23/10/2026
 
 DEV B sobre4829: guarda dos caminhos rastreados no índice (case-insensitive), fixture Git adversarial sem materialização e LF apenas srcTS/TSX/workflow, preservando CLI/regras e sem renormalização massiva. RED3falhas/1passe→GREEN4/4; recorte composto11/367, TSC79557 e lint6fontes terminais0. SPEC guardas-portabilidade-git. Sem DB neste recorte; QA independente/global integrado permanecem integrador.
