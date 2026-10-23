@@ -28,3 +28,12 @@ O hook useBuscaConversa e seu teste permanecem intactos na base294. A correção
 ## CLI preparada, captura pendente
 
 Delta separado do produto a86: estado nota12PNG app×protótipo e três tamanhos/dois temas; humano+nota24 formais planejadas. Prontidão confirma abas/campo44/header68/viewport e conteúdo do modo, abrindo nota pelo controle real após hidratação. Aviso do footer não é item da thread314; notas reais continuam estritas. Referência mantém menção futura histórica, app não promete esse recurso. Fonte/hashes e anonDOM392/guardReact/rede permanecem. GREEN8/51, TSC38512 e lint8fontes0 observados, sem browser/DB/imagens ainda. C2 e janela do integrador necessários antes do formal.
+
+
+## Prova visual e operacional DEV final
+
+FormalR2 na317bbb:24PNGapp×protótipo/humano+nota/trêstamanhos/doistemas, sessão4941 saída0, todasinspecionadas. NormalR2 df9 invariante deproduto:8ctx24PNG, mesmaDOMscroller/VList/âncora0 duranteabas/agendaEscape/busca e rascunhosA→B→A; permissões6ctx12PNG comLucasENCERRADO realGET200/podeEnviar=false e null/503transportecontrolado. Header68/controles44/documentY0; editorResponder80px em320, campo44alto comrolageminterna de texto, não amplo. VarianteAria travada permanece semprodutorE1, semalegarativação.
+
+C2longa317bbb:2ctx10PNG/165decorados, foco natural ao carregar anteriores/149 preservado e000 pinado visível; wheelmanual preservado após atendimento.atualizado real emitido sóROOT (GETincremental?depois, semresync/alterarlinhas). Top631/575 eâncora0px mantidos, mesmosScroller/VList/foco noSSE. Renavegação revela000/149. Fixture isolada150privadas+9originais/4notas, semalegarERPprodutivo; banco restaurado01c7be424hashes peloROOT.
+
+70originais+18pranchas inspecionados, allowlistpositiva-final.json e evidencias-final.json; todaformalantiga16261 eparciais/negativos excluídos. SemPNG emGit/submit/envio/SQLDEV. Resultados tardios/idempotência continuam coberturaunitária, não transação real no browser. UI eCLI inalteradas neste freeze documental; QA/global/publicação eporteC6 posteriores dointegrador.

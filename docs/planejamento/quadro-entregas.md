@@ -5694,3 +5694,10 @@ tentativas continuam no máximo uma a cada30s com ouvintes, nenhuma semeles.
 RED4falhas/8passes; GREEN15testes e recorte4/34 EXIT0. Lint inicial apontou
 prefer-const na fixture de teardown, corrigido sem alterar produção; lint
 dirigido posterior0. TypeScript/global/Chrome/TESTER finais ainda pendentes.
+
+
+### #317 — evidências DEV encerradas, publicação/aceite integrado pendentes
+
+Fonte317bbb, formalR2/4941EXIT0 com24/24APP×proto humano+nota/3tamanhos/2temas, todasinspecionadas; formal16261 inteira fora pacote. Complementos24normal+12permissões mantêmdf9/produçãoequivalente semreatribuição: abas/rascunhos/agendaEscape/mesmaDOM/âncora0, Lucasnegado real e null/503transportecontrolado. C2/88684EXIT0:2ctx10PNG/165decorados, pin000/149visíveis, prependcomfoconatural e wheelmanual preservado apósSSErealROOT; GET4→5/5→6/?depois, top631/575 eâncora0/mesmoDOMfoco noSSE, semresync/envio/SQLDEV.
+
+70originais+18pranchas inspecionados; allowlistpositiva explícita98arquivos/88PNG/12.801.910bytes, hashes/fontes em output/inbox-317-probes/allowlist-positiva-final.json e resumo evidencias-final.json. Imagens locais/nenhumaPNG emGit; negativos/HTML/logs/seeds/credenciais/probes fora. ROOT parou53617/restaurou01c7be424hashes551originais, browsersfechados/blocoNextAGENTS isolado removido. Freeze sómetadados/SPEC/report/quadro, produçãoinvariante317bbb; gates anteriores não repetidos/relabelados. GlobalROOT897/7013saída0 informado; QAfinal/publicação/CI eC6posterior sobintegrador, semhomologação presumida.
