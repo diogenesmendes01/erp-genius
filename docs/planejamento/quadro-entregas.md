@@ -6473,3 +6473,10 @@ QA575favorávelestática/hash103b9688...versionada tester-composicao-575.md;6pat
 ## PR #408 — SQL487 validado e 62INT exigidos aprovados
 
 Fonte7a94fc12:e6c/45ddMD+4077ca, deltaEXATAMENTE7paths322/OIDsddfCEA;quadro6preservambos,sem323337futuro. Preflightb53fd1ciint485+SÓ2pendentes322/zeroatividadealheia;CLIapply2ePrismaClientown487sessão35919/2a60eaTERMINAL0,semnpm/package/lockchange. SQL08056a0nullableTEXT/FKrestrictcascadevalidada/índiceindisvalid+indisreadytrue/487migrations. Próprios3/721f836f, INT4/62sessão81621/2677ed180,27sconfigintegration/maxWorkers1/profileciintexclusivo semfiltro/skipsnovos, TSC66347/74421a e lint6984/09b8b3terminals0/40. QApatch45f518eQAcomposta7aaad2favoráveisversionadas; C1HIGHcomprovadoporINTlocal, C2CI/C3pais407main/C4quadro/C5mapatestesregistrados. Ciintlivreagora487/clienteown487;nenhumoutroDB/cluster/provider tocado. CI408final/pais407mainaindagates, output/pr408-qa/composicao-todos.md.
+## PR #399 integrada; PR401 pronta para CI final
+
+#399 squash8c079d491f3ce8cba1bc03936f131d7ecf9e817e, CI40016922055success5/5, QA5d5 e12INTfavoráveis, issue318CLOSEDconfirmada. Squashtreeigualefa; incorporação à401INDEXINTEIROigual2252 após10conflitos deancestralidade. Fonte266/QA47f/10-201+2-5/TSC/lint40preservados, sóMDapósgates. CI401main2TZaindapendente,semfechar315antecipadamente.
+
+## PR #401 integrada; PR402 pronta para CI final
+
+#401 squash408dc9a6874fad4979739ff5b3127705504994b9, CI40018129184success5/5, QA47ffavorável, issue315CLOSEDconfirmada. Squashtreeigual1222;402incorpora1222MDsemalterar6aa e squash408INDEXINTEIROigual34f45afa após15conflitos deancestralidade. Fonte6aa/QA1ee9/12-176/TSC/lint40preservados;CI402main2TZaindapendente,semfechar316antecipadamente.
