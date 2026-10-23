@@ -5332,3 +5332,7 @@ após o registro ainda pendente, sem chamar a execução4490 de aprovada.
 ### #315 — freeze após guarda de navegação da aba
 
 Mergee594→f6f104d8, conflito sóquadro/amboshistóricos. Contra8b, src/scripts mudam somente registro identificação (nenhumaUI/harness):29testes/lint0 observados819428.68capturas atuais+30pranchas/allowlist107hashes conferidos. Produto/visual8b/efeb invariantes; gates106/1058/TSC50243/lint24 são históricos exatos8b, sem novaexecução global. TESTER/globalROOT pendentes; bancosnapshot424hashes restaurado e sem processosDEV.
+
+## #316 — checkpoint DEV A, visual pendente
+
+Branchprópria sobre3155dcimutável. Busca local carregada(NFD/marcas/case/espaços),IDsreconciliadosSSE/paginação,header/menu315habilitados,pinKeys+rolagemsomenteThreadstableMount/decorada314/388,semconsultanova/VListalgoritmo/helperdialogo/read/backend. Plano/rulingfocovisívelmobileaprovados. Node22:67files734testes32180/TSC80835heap8192/lint18fontes0avisos,diffcheck0. Registroherdado315guardafundoseparado31fd; entradas316específicas autorizadas. Browser/CLIapp-only/TESTER/globalcoordenado pendentes, nenhuma homologação presumida. SPEC docs/specs/inbox-busca-conversa.md; relatório output/inbox-316-report.md. SemDB/preview/install/envio.

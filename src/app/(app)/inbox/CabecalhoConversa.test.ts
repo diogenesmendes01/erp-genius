@@ -13,9 +13,9 @@ describe("cabeçalho315",()=>{
   const html=h(); expect(html).toMatch(/aria-label="Voltar para a lista"[^>]*min-\[960px\]:hidden/);
   expect(html).toContain("max-sm:min-h-11"); expect(html).toContain("min-[1200px]:[@container(min-width:576px)]:inline");
  });
- it("busca indisponível até316 e painel efetivo único com corte1400",()=>{
-  const html=h(); expect(html).toMatch(/disabled=""[^>]*aria-label="Buscar na conversa"|aria-label="Buscar na conversa"[^>]*disabled=""/);
-  expect(html).toContain("Em breve"); expect(html).toContain('aria-controls="painel-contato"');
+ it("busca316 ligada e painel efetivo único com corte1400",()=>{
+  const html=h(); expect(html).not.toMatch(/disabled=""[^>]*aria-label="Buscar na conversa"|aria-label="Buscar na conversa"[^>]*disabled=""/);
+  expect(html).not.toContain("Em breve"); expect(html).toContain('aria-controls="painel-contato"');
   expect(html).toContain("min-[1400px]:bg-gray-100"); expect(h({painelAberto:true})).toContain('aria-pressed="true"');
  });
  it("não fabrica ações para grupo nem ausência de capacidade",()=>{
