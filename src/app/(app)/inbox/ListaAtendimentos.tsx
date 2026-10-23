@@ -15,6 +15,10 @@ export interface PropsListaAtendimentos {
   aoCarregarMais(): void;
   fuso?: string | null;
   usuarioId?: string;
+  /**
+   * Consumidores SSR devem passar o instante em ms capturado no servidor e serializado ao cliente.
+   * Sem valor válido, o snapshot é 0 e os prazos são reconciliados somente após a hidratação.
+   */
   agoraInicial?: number;
 }
 
