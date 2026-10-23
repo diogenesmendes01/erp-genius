@@ -39,6 +39,12 @@ com integrador/TESTER.
   confirmado, fica em `diagnosticos`; qualquer outro aborto continua falha.
   O estilo transitório da screenshot oculta só o toast Next sem issues, mantendo
   indicadores com issues e listeners de erros. Nenhum componente produtivo muda.
+  Antes da foto do protótipo, `anonimizarTelefonesNoDom` substitui telefones
+  brasileiros exibidos por valores fictícios determinísticos `+5500...`.
+  Inclui texto, atributos visuais/acessíveis, links `tel:` e valores de campos;
+  preserva números já fictícios, scripts e estilos. Não altera o HTML original.
+  Cada captura declara política/versão/contagem em `anonimizacao`, sem registrar
+  os telefones originais. Reaplicar após qualquer interação que renderize dados.
 - `tmp/visual/` contém PNGs e manifesto. `conversa` produz exatamente 12 PNGs
   nos dois alvos, três tamanhos e dois temas; o protótipo isolado produz seis.
   A referência offline pode ter tipografia de reserva diferente da imagem

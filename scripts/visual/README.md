@@ -92,3 +92,19 @@ A captura do app reprova também warnings React de chave/hidratação no console
 #312 acrescenta `--estado lista-vazia`: app em `?busca=zzzz` sem seleção, protótipo com busca real `zzzz`, três tamanhos e dois temas (12PNGs). A espera exige EstadoVazio visível e nenhum item da lista; os passos dos demais estados permanecem iguais.
 
 Depois do conteúdo, a CLI exige `data-conectado="1"` para confirmar a assinatura cliente e a hidratação antes de tirar a foto. O conteúdo da lista já pode estar no HTML do servidor. Sem essa espera, a ocultação temporária do cursor feita pelo screenshot pode alterar o input antes de o React hidratar e causar um warning de estilo. Erros e warnings continuam reprovando a captura; não são filtrados como solução dessa corrida.
+# Telefones em evidências
+
+A demo307 cria somente números fictícios `+5500000000300`–`0307` e repara
+os valores antigos reconhecidos no próprio cenário. O harness anonimiza os
+telefones do DOM do protótipo imediatamente antes da foto e declara essa
+transformação no manifesto, preservando o arquivo HTML original.
+
+Harnesses de outras issues podem importar `anonimizarTelefonesNoDom` de
+`./anonimizar-telefones.mjs` e executar
+`const anonimizacao = await pagina.evaluate(anonimizarTelefonesNoDom)` depois
+das interações e antes de `screenshot`. Salvar o retorno no manifesto; não salvar
+um mapa dos valores originais. Reaplicar depois de nova renderização.
+
+O teste do DOM real usa Chrome já instalado, sem baixar navegador:
+`PW_CHROMIUM=<caminho-local> node --test scripts/visual/anonimizar-telefones.browser.test.mjs`.
+Esse teste dirigido de navegador é separado da suíte unitária Vitest.
